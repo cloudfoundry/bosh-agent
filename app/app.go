@@ -12,6 +12,7 @@ import (
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshja "github.com/cloudfoundry/bosh-agent/agent/applier/jobapplier"
 	boshpa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
@@ -258,11 +259,20 @@ func (app *app) buildApplierAndCompiler(
 		dirProvider,
 	)
 
+	platformRunner := app.platform.GetRunner()
+	fileSystem := app.platform.GetFs()
+	cmdRunner := boshrunner.NewFileLoggingCmdRunner(
+		fileSystem,
+		platformRunner,
+		dirProvider.LogsDir(),
+		10*1024, // 10 Kb
+	)
+
 	compiler := boshcomp.NewConcreteCompiler(
 		app.platform.GetCompressor(),
 		blobstore,
-		app.platform.GetFs(),
-		app.platform.GetRunner(),
+		fileSystem,
+		cmdRunner,
 		dirProvider,
 		packageApplierProvider.Root(),
 		packageApplierProvider.RootBundleCollection(),

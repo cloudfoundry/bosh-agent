@@ -7,6 +7,7 @@ import (
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshpa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshblob "github.com/cloudfoundry/bosh-agent/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
@@ -21,7 +22,7 @@ type concreteCompiler struct {
 	compressor         boshcmd.Compressor
 	blobstore          boshblob.Blobstore
 	fs                 boshsys.FileSystem
-	runner             boshsys.CmdRunner
+	runner             boshrunner.CmdRunner
 	compileDirProvider CompileDirProvider
 	packageApplier     boshpa.PackageApplier
 	packagesBc         boshbc.BundleCollection
@@ -31,7 +32,7 @@ func NewConcreteCompiler(
 	compressor boshcmd.Compressor,
 	blobstore boshblob.Blobstore,
 	fs boshsys.FileSystem,
-	runner boshsys.CmdRunner,
+	runner boshrunner.CmdRunner,
 	compileDirProvider CompileDirProvider,
 	packageApplier boshpa.PackageApplier,
 	packagesBc boshbc.BundleCollection,
@@ -100,7 +101,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 			WorkingDir: compilePath,
 		}
 
-		_, _, _, err = c.runner.RunComplexCommand(command)
+		_, err := c.runner.RunCommand("compilation", "packaging", command)
 		if err != nil {
 			return "", "", bosherr.WrapError(err, "Running packaging script")
 		}
