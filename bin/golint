@@ -8,6 +8,7 @@ export PATH=$PATH:$($BIN/go env GOBIN)
 
 errors=$(
   golint $GOPATH/src/github.com/cloudfoundry/bosh-agent    \
+    | grep -v    'Godeps/_workspace'                       \
     | grep -v -e 'should have comment.* or be unexported'  \
     | grep -v    'error strings should not be capitalized'
 )
