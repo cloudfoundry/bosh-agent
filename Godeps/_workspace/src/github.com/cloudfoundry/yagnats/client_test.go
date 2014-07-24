@@ -2,11 +2,11 @@ package yagnats
 
 import (
 	"fmt"
+	. "launchpad.net/gocheck"
 	"net"
 	"os/exec"
 	"testing"
 	"time"
-	. "launchpad.net/gocheck"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -108,10 +108,10 @@ func (s *YSuite) TestClientPingWhenResponseIsTooSlow(c *C) {
 
 func (s *YSuite) TestClientSubscribe(c *C) {
 	sub, _ := s.Client.Subscribe("some.subject", func(msg *Message) {})
-	c.Assert(sub, Equals, int64(1))
+	c.Assert(sub, Equals, 1)
 
 	sub2, _ := s.Client.Subscribe("some.subject", func(msg *Message) {})
-	c.Assert(sub2, Equals, int64(2))
+	c.Assert(sub2, Equals, 2)
 }
 
 func (s *YSuite) TestClientUnsubscribe(c *C) {
@@ -297,7 +297,7 @@ func (s *YSuite) TestClientSubscribeInvalidSubject(c *C) {
 
 	c.Assert(err, Not(Equals), nil)
 	c.Assert(err.Error(), Equals, "Invalid Subject")
-	c.Assert(sid, Equals, int64(-1))
+	c.Assert(sid, Equals, -1)
 }
 
 func (s *YSuite) TestClientUnsubscribeAll(c *C) {
@@ -420,15 +420,15 @@ func (s *YSuite) TestClientMessageWithoutSubscription(c *C) {
 
 func (s *YSuite) TestClientLogging(c *C) {
 	logger := &DefaultLogger{}
-	s.Client.SetLogger(logger)
-	c.Assert(s.Client.Logger(), Equals, logger)
+	s.Client.Logger = logger
+	c.Assert(s.Client.Logger, Equals, logger)
 }
 
 func (s *YSuite) TestClientPassesLoggerToConnection(c *C) {
 	logger := &DefaultLogger{}
 
 	client := NewClient()
-	client.SetLogger(logger)
+	client.Logger = logger
 
 	conn, err := client.connect(&ConnectionInfo{
 		Addr:     "127.0.0.1:4223",
@@ -438,7 +438,7 @@ func (s *YSuite) TestClientPassesLoggerToConnection(c *C) {
 
 	c.Assert(err, IsNil)
 
-	c.Assert(conn.Logger(), Equals, logger)
+	c.Assert(conn.Logger, Equals, logger)
 }
 
 func (s *YSuite) TestClientMessageWhileResubscribing(c *C) {
