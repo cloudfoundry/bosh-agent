@@ -23,7 +23,6 @@ var _ = Describe("Server", func() {
 		logger     boshlog.Logger
 		server     Server
 		msgs       msgCollector
-		doneCh     chan struct{}
 	)
 
 	grabEphemeralPort := func() uint16 {
@@ -41,16 +40,20 @@ var _ = Describe("Server", func() {
 		return uint16(port)
 	}
 
-	captureMsgs := func(msg Msg) {
-		msgs.Add(msg)
-		if len(msgs.Msgs()) == 4 {
-			doneCh <- struct{}{}
+	captureMsgs := func(doneCh chan struct{}) func(msg Msg) {
+		return func(msg Msg) {
+			msgs.Add(msg)
+			if len(msgs.Msgs()) == 4 {
+				doneCh <- struct{}{}
+			}
 		}
 	}
 
-	captureOneMsg := func(msg Msg) {
-		msgs.Add(msg)
-		doneCh <- struct{}{}
+	captureOneMsg := func(doneCh chan struct{}) func(msg Msg) {
+		return func(msg Msg) {
+			msgs.Add(msg)
+			doneCh <- struct{}{}
+		}
 	}
 
 	waitToDial := func() (conn net.Conn, err error) {
@@ -69,15 +72,15 @@ var _ = Describe("Server", func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		server = NewServer(serverPort, logger)
 		msgs = msgCollector{}
-		doneCh = make(chan struct{})
 	})
 
 	It("it calls back on a new syslog message", func() {
+		doneCh := make(chan struct{})
 		startErrCh := make(chan error)
 
 		go func() {
 			defer GinkgoRecover()
-			startErrCh <- server.Start(captureMsgs)
+			startErrCh <- server.Start(captureMsgs(doneCh))
 		}()
 
 		conn, err := waitToDial()
@@ -111,7 +114,8 @@ var _ = Describe("Server", func() {
 	})
 
 	It("it can accept multiple connections at once", func() {
-		go server.Start(captureMsgs)
+		doneCh := make(chan struct{})
+		go server.Start(captureMsgs(doneCh))
 
 		conn1, err := waitToDial()
 		Expect(err).ToNot(HaveOccurred())
@@ -154,7 +158,8 @@ var _ = Describe("Server", func() {
 		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf, errBuf)
 		server = NewServer(serverPort, logger)
 
-		go server.Start(captureOneMsg)
+		doneCh := make(chan struct{})
+		go server.Start(captureOneMsg(doneCh))
 
 		conn, err := waitToDial()
 		Expect(err).ToNot(HaveOccurred())
