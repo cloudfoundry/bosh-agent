@@ -49,6 +49,8 @@ Note: This guide assumes a few things:
 Clone and set up the BOSH Agent repository:
 
 - `go get -d github.com/cloudfoundry/bosh-agent`
+    - Note that this will print an error message because it expects a single package; our repository consists of several packages.
+      The error message is harmless—the repository will still be checked out.
 - `cd $GOPATH/src/github.com/cloudfoundry/bosh-agent`
 
 From here on out we assume you're working in `$GOPATH/src/github.com/cloudfoundry/bosh-agent`
