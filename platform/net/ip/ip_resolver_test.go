@@ -102,7 +102,7 @@ var _ = Describe("ipResolver", func() {
 			It("returns error", func() {
 				ip, err := ipResolver.GetPrimaryIPv4("fake-iface-name")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("net: no such interface")) // error comes from net (stdlib)
+				Expect(err.Error()).To(MatchRegexp("no such( network)? interface")) // error comes from net (stdlib)
 				Expect(ip).To(BeNil())
 			})
 		})
