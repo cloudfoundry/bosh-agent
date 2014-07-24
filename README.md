@@ -53,8 +53,6 @@ Clone and set up the BOSH Agent repository:
 
 From here on out we assume you're working in `$GOPATH/src/github.com/cloudfoundry/bosh-agent`
 
-- `git checkout develop` (you should always work on the develop branch, never master)
-
 Get Golang and its dependencies (Mac example, replace with your package manager of choice):
 
 - `brew update`
