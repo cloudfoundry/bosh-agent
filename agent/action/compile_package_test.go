@@ -95,8 +95,10 @@ var _ = Describe("CompilePackageAction", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(value).To(Equal(expectedValue))
 
-			Expect(expectedPkg).To(Equal(compiler.CompilePkg))
-			Expect(expectedDeps).To(Equal(compiler.CompileDeps))
+			Expect(compiler.CompilePkg).To(Equal(expectedPkg))
+
+			// Using ConsistOf since package dependencies are specified as a hash (no order)
+			Expect(compiler.CompileDeps).To(ConsistOf(expectedDeps))
 		})
 
 		It("returns error when compile fails", func() {

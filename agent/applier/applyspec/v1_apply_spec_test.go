@@ -190,7 +190,13 @@ var _ = Describe("V1ApplySpec", func() {
 				},
 			}
 
-			Expect(spec.Jobs()).To(Equal([]models.Job{
+			// Test Packages separately since it has to be done via ConsistOf
+			// because apply spec uses a hash to specify package dependencies
+			actualJobs := spec.Jobs()
+			Expect(actualJobs[0].Packages).To(ConsistOf(expectedPackagesOnEachJob))
+			Expect(actualJobs[1].Packages).To(ConsistOf(expectedPackagesOnEachJob))
+
+			Expect(actualJobs).To(Equal([]models.Job{
 				models.Job{
 					Name:    "fake-job1-name",
 					Version: "fake-job1-version",
@@ -199,7 +205,7 @@ var _ = Describe("V1ApplySpec", func() {
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job1-name",
 					},
-					Packages: expectedPackagesOnEachJob,
+					Packages: actualJobs[0].Packages, // tested above
 				},
 				models.Job{
 					Name:    "fake-job2-name",
@@ -209,7 +215,7 @@ var _ = Describe("V1ApplySpec", func() {
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job2-name",
 					},
-					Packages: expectedPackagesOnEachJob,
+					Packages: actualJobs[1].Packages, // tested above
 				},
 			}))
 		})

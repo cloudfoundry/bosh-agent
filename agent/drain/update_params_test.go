@@ -47,7 +47,8 @@ var _ = Describe("updateDrainParams", func() {
 
 			params := NewUpdateDrainParams(oldSpec, newSpec)
 
-			Expect(params.UpdatedPackages()).To(Equal([]string{"foo", "baz"}))
+			// Use ConsistOf since packages in apply spec are in a hash (no order)
+			Expect(params.UpdatedPackages()).To(ConsistOf([]string{"foo", "baz"}))
 		})
 	})
 
