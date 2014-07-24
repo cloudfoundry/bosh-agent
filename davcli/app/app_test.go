@@ -31,7 +31,7 @@ func pathToFixture(file string) string {
 	pwd, err := os.Getwd()
 	Expect(err).ToNot(HaveOccurred())
 
-	fixturePath := filepath.Join(pwd, "../../fixtures", file)
+	fixturePath := filepath.Join(pwd, "../../Fixtures", file)
 
 	absPath, err := filepath.Abs(fixturePath)
 	Expect(err).ToNot(HaveOccurred())

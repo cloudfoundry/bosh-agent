@@ -185,7 +185,7 @@ func init() {
 
 		Describe("ServicesInGroup", func() {
 			It("services in group", func() {
-				monitStatusFilePath, _ := filepath.Abs("../../fixtures/monit_status.xml")
+				monitStatusFilePath, _ := filepath.Abs("../../Fixtures/monit_status.xml")
 				Expect(monitStatusFilePath).ToNot(BeNil())
 
 				file, err := os.Open(monitStatusFilePath)
@@ -211,7 +211,7 @@ func init() {
 
 		Describe("Status", func() {
 			It("decode status", func() {
-				monitStatusFilePath, _ := filepath.Abs("../../fixtures/monit_status.xml")
+				monitStatusFilePath, _ := filepath.Abs("../../Fixtures/monit_status.xml")
 				Expect(monitStatusFilePath).ToNot(BeNil())
 
 				file, err := os.Open(monitStatusFilePath)

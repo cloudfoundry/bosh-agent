@@ -133,7 +133,7 @@ var _ = Describe("externalBlobstore", func() {
 
 	Describe("Create", func() {
 		It("external create", func() {
-			fileName := "../fixtures/some.config"
+			fileName := "../Fixtures/some.config"
 			expectedPath, err := filepath.Abs(fileName)
 			Expect(err).ToNot(HaveOccurred())
 

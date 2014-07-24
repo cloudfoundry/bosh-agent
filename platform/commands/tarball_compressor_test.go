@@ -25,13 +25,13 @@ func createdTmpDir(t assert.TestingT, fs boshsys.FileSystem) string {
 func fixtureSrcDir(t assert.TestingT) string {
 	pwd, err := os.Getwd()
 	assert.NoError(t, err)
-	return filepath.Join(pwd, "..", "..", "fixtures", "test_filtered_copy_to_temp")
+	return filepath.Join(pwd, "..", "..", "Fixtures", "test_filtered_copy_to_temp")
 }
 
 func fixtureSrcTgz(t assert.TestingT) string {
 	pwd, err := os.Getwd()
 	assert.NoError(t, err)
-	return filepath.Join(pwd, "..", "..", "fixtures", "compressor-decompress-file-to-dir.tgz")
+	return filepath.Join(pwd, "..", "..", "Fixtures", "compressor-decompress-file-to-dir.tgz")
 }
 
 func getCompressorDependencies() (boshsys.FileSystem, boshsys.CmdRunner) {

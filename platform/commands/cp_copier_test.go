@@ -31,7 +31,7 @@ var _ = Describe("cpCopier", func() {
 		copierFixtureSrcDir := func() string {
 			pwd, err := os.Getwd()
 			Expect(err).ToNot(HaveOccurred())
-			return filepath.Join(pwd, "..", "..", "fixtures", "test_filtered_copy_to_temp")
+			return filepath.Join(pwd, "..", "..", "Fixtures", "test_filtered_copy_to_temp")
 		}
 
 		It("filtered copy to temp", func() {

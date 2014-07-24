@@ -372,7 +372,7 @@ func init() {
 		Describe("CopyFile", func() {
 			It("copies file", func() {
 				osFs, _ := createOsFs()
-				srcPath := "../fixtures/test_copy_dir_entries/foo.txt"
+				srcPath := "../Fixtures/test_copy_dir_entries/foo.txt"
 				dstFile, err := osFs.TempFile("CopyFileTestFile")
 				Expect(err).ToNot(HaveOccurred())
 				defer os.Remove(dstFile.Name())

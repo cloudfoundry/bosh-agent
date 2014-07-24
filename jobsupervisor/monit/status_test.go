@@ -18,7 +18,7 @@ import (
 var _ = Describe("status", func() {
 	Describe("ServicesInGroup", func() {
 		It("returns list of service", func() {
-			monitStatusFilePath, _ := filepath.Abs("../../fixtures/monit_status_with_multiple_services.xml")
+			monitStatusFilePath, _ := filepath.Abs("../../Fixtures/monit_status_with_multiple_services.xml")
 			Expect(monitStatusFilePath).ToNot(BeNil())
 
 			file, err := os.Open(monitStatusFilePath)

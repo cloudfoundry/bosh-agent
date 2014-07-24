@@ -41,7 +41,7 @@ var _ = Describe("PutCmd", func() {
 			pwd, err := os.Getwd()
 			Expect(err).ToNot(HaveOccurred())
 
-			sourceFilePath := filepath.Join(pwd, "../../fixtures/cat.jpg")
+			sourceFilePath := filepath.Join(pwd, "../../Fixtures/cat.jpg")
 			targetBlob := "some-other-awesome-guid"
 			serverWasHit := false
 

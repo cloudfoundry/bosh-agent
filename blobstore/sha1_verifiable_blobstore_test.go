@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("sha1VerifiableBlobstore", func() {
 	const (
-		fixturePath = "../fixtures/some.config"
+		fixturePath = "../Fixtures/some.config"
 		fixtureSHA1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 	)
 
