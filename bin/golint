@@ -1,13 +1,11 @@
 #!/bin/bash 
 
-BIN=$(dirname $0)
+bin=$(dirname $0)
 
-$BIN/go install github.com/golang/lint/golint
-
-export PATH=$PATH:$($BIN/go env GOBIN)
+$bin/go install github.com/golang/lint/golint
 
 errors=$(
-  golint $GOPATH/src/github.com/cloudfoundry/bosh-agent    \
+  bin/env golint $bin/..                                   \
     | grep -v    'Godeps/_workspace'                       \
     | grep -v -e 'should have comment.* or be unexported'  \
     | grep -v    'error strings should not be capitalized' \

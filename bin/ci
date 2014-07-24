@@ -1,8 +1,8 @@
 #!/bin/bash
 
-export BIN=$(dirname $0)
+bin=$(dirname $0)
 
-$BIN/go get code.google.com/p/go.tools/cmd/vet
-$BIN/go get github.com/golang/lint/golint
+$bin/go get code.google.com/p/go.tools/cmd/vet
+$bin/go get github.com/golang/lint/golint
 
-exec $BIN/test
+exec $bin/test

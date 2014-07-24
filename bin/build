@@ -2,8 +2,7 @@
 
 set -e
 
-BINDIR=$(dirname $0)
-BASEDIR=$(dirname $BINDIR)
+bin=$(dirname $0)
 
-$BINDIR/go build -o $BASEDIR/out/bosh-agent github.com/cloudfoundry/bosh-agent/main
-$BINDIR/go build -o $BASEDIR/out/dav-cli github.com/cloudfoundry/bosh-agent/davcli/main
+$bin/go build -o $bin/../out/bosh-agent github.com/cloudfoundry/bosh-agent/main
+$bin/go build -o $bin/../out/dav-cli    github.com/cloudfoundry/bosh-agent/davcli/main
