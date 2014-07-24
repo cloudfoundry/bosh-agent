@@ -2,7 +2,6 @@
 
 set -e
 
-BINDIR=$(dirname $0)
-BASEDIR=$(dirname $BINDIR)
+BIN=$(dirname $0)
 
-$BINDIR/go run $BASEDIR/src/bosh/main/agent.go $*
+$BIN/go run $GOPATH/src/github.com/cloudfoundry/bosh-agent/main/agent.go $*

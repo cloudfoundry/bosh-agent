@@ -46,15 +46,14 @@ Note: This guide assumes a few things:
 - You have gcc (or an equivalent)
 - You can install packages (brew, apt-get, or equivalent)
 
-Clone and set up the BOSH repository:
+Clone and set up the BOSH Agent repository:
 
-- `git clone git@github.com:cloudfoundry/bosh.git` (this may take a while as the BOSH repo is very large)
-- `cd bosh/go_agent`
+- `go get -d github.com/cloudfoundry/bosh-agent`
+- `cd $GOPATH/src/github.com/cloudfoundry/bosh-agent`
 
-From here on out we assume you're working in `~/workspace/bosh/go_agent`
+From here on out we assume you're working in `$GOPATH/src/github.com/cloudfoundry/bosh-agent`
 
 - `git checkout develop` (you should always work on the develop branch, never master)
-- `git submodule update --init --recursive`
 
 Get Golang and its dependencies (Mac example, replace with your package manager of choice):
 
@@ -62,10 +61,10 @@ Get Golang and its dependencies (Mac example, replace with your package manager 
 - `brew install go`
 - `brew install hg` (Go needs mercurial for the `go get` command)
 
-Set up Go for BOSH Agent development:
+Install tools used by the BOSH Agent test suite:
 
-- `export GOPATH=$GOPATH:$HOME/workspace/bosh/go_agent` (you may want to add this to your bash start up scripts)
-- `go get code.google.com/p/go.tools/cmd/vet` (the vet tool is used during the test suite)
+- `go get code.google.com/p/go.tools/cmd/vet`
+- `go get github.com/golang/lint/golint`
 
 You should now be able to run the tests for the Go Agent:
 
@@ -85,7 +84,7 @@ At this point all the tests should be passing. If you encounter any issues, plea
 
 Set up the Go Agent project in IntelliJ:
 
-- Open the ~/workspace/bosh/go_agent project in IntelliJ.
+- Open the ~/workspace/bosh-agent project in IntelliJ.
 - Set the Go SDK as the Project SDK: File -> Project Structure -> Project in left sidebar -> Set the Go SDK go1.2 SDK under Project SDK
 - Set the Go SDK as the Modules SDK: Modules in left sidebar -> Dependencies tab -> Set the Go SDK for the Module SDK -> Apply, OK
 

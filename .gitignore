@@ -6,6 +6,7 @@ gobin/*
 *.coverprofile
 
 *.sublime-workspace
+*.sw*
 
 .idea/workspace.xml
 .idea/tasks.xml

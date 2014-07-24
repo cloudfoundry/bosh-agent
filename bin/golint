@@ -1,15 +1,14 @@
 #!/bin/bash 
 
-BINDIR=$(dirname $0)
-BASEDIR=$(dirname $BINDIR)
+BIN=$(dirname $0)
 
-$BINDIR/go install github.com/golang/lint/golint
+$BIN/go install github.com/golang/lint/golint
 
-export PATH=$PATH:$($BINDIR/go env GOBIN)
+export PATH=$PATH:$($BIN/go env GOBIN)
 
 errors=$(
-  golint $BASEDIR/src/bosh                                  \
-    | grep -v -e 'should have comment.* or be unexported'   \
+  golint $GOPATH/src/github.com/cloudfoundry/bosh-agent    \
+    | grep -v -e 'should have comment.* or be unexported'  \
     | grep -v    'error strings should not be capitalized'
 )
 
