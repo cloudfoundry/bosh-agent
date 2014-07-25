@@ -11,6 +11,6 @@ before_install:
 
 # disable Travis' default installation of `go get -v ./...`
 # it fails because we have a test fixture using the main package
-install: /bin/true
+install: true
 
 script: bin/ci
