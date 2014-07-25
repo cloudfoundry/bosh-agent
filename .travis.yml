@@ -3,7 +3,11 @@ language: go
 go:
 - 1.2
 
-before_install: sudo apt-get update
+before_install:
+- sudo apt-get update
+# dig_dns_resolver class shells out to dig
+- sudo apt-get install dnsutils
+
 install:
 - go get code.google.com/p/go.tools/cmd/vet
 - go get github.com/golang/lint/golint
