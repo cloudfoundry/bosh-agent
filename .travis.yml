@@ -9,6 +9,8 @@ before_install:
 # dig_dns_resolver class shells out to dig
 - sudo apt-get install dnsutils
 
-install: false
+# disable Travis' default installation of `go get -v ./...`
+# it fails because we have a test fixture using the main package
+install: /bin/true
 
 script: bin/ci
