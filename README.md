@@ -66,11 +66,16 @@ Install tools used by the BOSH Agent test suite:
 - `go get code.google.com/p/go.tools/cmd/vet`
 - `go get github.com/golang/lint/golint`
 
-You should now be able to run the tests for the Go Agent:
+## Running tests
 
-- `bin/test`
+Each package in the agent has its own unit tests. You can run all unit tests with `bin/test-unit`.
 
-At this point all the tests should be passing. If you encounter any issues, please document them and add solutions to this README.
+Additionally, [BOSH](https://github.com/cloudfoundry/bosh) includes integration tests that use this agent.
+Run `bin/test-integration` to run those.
+However, in order to run the BOSH integrations tests, you will need a copy of the BOSH repo, which this script will do in `./tmp`.
+BOSH uses Ruby for its tests, so you will also need to have that available.
+
+You can run all the tests by running `bin/test`.
 
 ## Using IntelliJ with Go and the BOSH Agent
 
