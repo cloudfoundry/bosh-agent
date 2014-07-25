@@ -9,4 +9,6 @@ before_install:
 # dig_dns_resolver class shells out to dig
 - sudo apt-get install dnsutils
 
+install: false
+
 script: bin/ci
