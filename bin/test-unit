@@ -1,0 +1,24 @@
+#!/bin/bash
+
+result=0
+
+bin=$(dirname $0)
+
+# Travis randomly kills go builds when using -race
+race=$([ "$TRAVIS" != "true" ] && echo "-race")
+
+echo -e "\n Installing ginkgo..."
+$bin/go install github.com/onsi/ginkgo/ginkgo
+let "result+=$?"
+
+echo -e "\n Testing packages..."
+$bin/env ginkgo -r $race $bin/..
+let "result+=$?"
+
+if [ $result -eq 0 ]; then
+	echo -e "\nSUITE SUCCESS"
+else
+	echo -e "\nSUITE FAILURE"
+fi
+
+exit $result
