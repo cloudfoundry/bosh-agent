@@ -47,7 +47,7 @@ func testSSHSetupWithGivenPassword(expectedPwd string) {
 
 func buildSSHAction(settingsService boshsettings.Service) (*fakeplatform.FakePlatform, SSHAction) {
 	platform := fakeplatform.NewFakePlatform()
-	dirProvider := boshdirs.NewDirectoriesProvider("/foo")
+	dirProvider := boshdirs.NewProvider("/foo")
 	action := NewSSH(settingsService, platform, dirProvider)
 	return platform, action
 }

@@ -26,7 +26,7 @@ type DiskStats struct {
 	InodeUsage Usage
 }
 
-type StatsCollector interface {
+type Collector interface {
 	StartCollecting(time.Duration, chan struct{})
 
 	GetCPULoad() (load CPULoad, err error)

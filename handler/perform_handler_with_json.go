@@ -13,7 +13,7 @@ const (
 	UnlimitedResponseLength = -1
 )
 
-func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, maxResponseLength int, logger boshlog.Logger) ([]byte, Request, error) {
+func PerformHandlerWithJSON(rawJSON []byte, handler Func, maxResponseLength int, logger boshlog.Logger) ([]byte, Request, error) {
 	var request Request
 
 	err := json.Unmarshal(rawJSON, &request)

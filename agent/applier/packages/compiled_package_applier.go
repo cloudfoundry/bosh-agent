@@ -1,4 +1,4 @@
-package packageapplier
+package packages
 
 import (
 	bc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
@@ -10,9 +10,9 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
-const logTag = "concretePackageApplier"
+const logTag = "compiledPackageApplier"
 
-type concretePackageApplier struct {
+type compiledPackageApplier struct {
 	packagesBc bc.BundleCollection
 
 	// KeepOnly will permanently uninstall packages when operating as owner
@@ -24,15 +24,15 @@ type concretePackageApplier struct {
 	logger     boshlog.Logger
 }
 
-func NewConcretePackageApplier(
+func NewCompiledPackageApplier(
 	packagesBc bc.BundleCollection,
 	packagesBcOwner bool,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
-) *concretePackageApplier {
-	return &concretePackageApplier{
+) *compiledPackageApplier {
+	return &compiledPackageApplier{
 		packagesBc:      packagesBc,
 		packagesBcOwner: packagesBcOwner,
 		blobstore:       blobstore,
@@ -42,7 +42,7 @@ func NewConcretePackageApplier(
 	}
 }
 
-func (s concretePackageApplier) Prepare(pkg models.Package) error {
+func (s compiledPackageApplier) Prepare(pkg models.Package) error {
 	s.logger.Debug(logTag, "Preparing package %v", pkg)
 
 	pkgBundle, err := s.packagesBc.Get(pkg)
@@ -65,7 +65,7 @@ func (s concretePackageApplier) Prepare(pkg models.Package) error {
 	return nil
 }
 
-func (s concretePackageApplier) Apply(pkg models.Package) error {
+func (s compiledPackageApplier) Apply(pkg models.Package) error {
 	s.logger.Debug(logTag, "Applying package %v", pkg)
 
 	err := s.Prepare(pkg)
@@ -86,8 +86,8 @@ func (s concretePackageApplier) Apply(pkg models.Package) error {
 	return nil
 }
 
-func (s *concretePackageApplier) downloadAndInstall(pkg models.Package, pkgBundle bc.Bundle) error {
-	tmpDir, err := s.fs.TempDir("bosh-agent-applier-packageapplier-ConcretePackageApplier-Apply")
+func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundle bc.Bundle) error {
+	tmpDir, err := s.fs.TempDir("bosh-agent-applier-packages-CompiledPackageApplier-Apply")
 	if err != nil {
 		return bosherr.WrapError(err, "Getting temp dir")
 	}
@@ -114,7 +114,7 @@ func (s *concretePackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 	return nil
 }
 
-func (s *concretePackageApplier) KeepOnly(pkgs []models.Package) error {
+func (s *compiledPackageApplier) KeepOnly(pkgs []models.Package) error {
 	s.logger.Debug(logTag, "Keeping only packages %v", pkgs)
 
 	installedBundles, err := s.packagesBc.List()

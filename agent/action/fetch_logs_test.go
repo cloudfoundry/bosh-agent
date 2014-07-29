@@ -18,14 +18,14 @@ var _ = Describe("FetchLogsAction", func() {
 		compressor  *fakecmd.FakeCompressor
 		copier      *fakecmd.FakeCopier
 		blobstore   *fakeblobstore.FakeBlobstore
-		dirProvider boshdirs.DirectoriesProvider
+		dirProvider boshdirs.Provider
 		action      FetchLogsAction
 	)
 
 	BeforeEach(func() {
 		compressor = fakecmd.NewFakeCompressor()
 		blobstore = &fakeblobstore.FakeBlobstore{}
-		dirProvider = boshdirs.NewDirectoriesProvider("/fake/dir")
+		dirProvider = boshdirs.NewProvider("/fake/dir")
 		copier = fakecmd.NewFakeCopier()
 		action = NewFetchLogs(compressor, copier, blobstore, dirProvider)
 	})

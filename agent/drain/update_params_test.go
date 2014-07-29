@@ -8,7 +8,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/drain"
 )
 
-var _ = Describe("updateDrainParams", func() {
+var _ = Describe("updateParams", func() {
 	Describe("UpdatedPackages", func() {
 		It("returns list of packages that changed or got added", func() {
 			oldPkgs := map[string]boshas.PackageSpec{
@@ -45,7 +45,7 @@ var _ = Describe("updateDrainParams", func() {
 				PackageSpecs: newPkgs,
 			}
 
-			params := NewUpdateDrainParams(oldSpec, newSpec)
+			params := NewUpdateParams(oldSpec, newSpec)
 
 			// Use ConsistOf since packages in apply spec are in a hash (no order)
 			Expect(params.UpdatedPackages()).To(ConsistOf([]string{"foo", "baz"}))
@@ -56,7 +56,7 @@ var _ = Describe("updateDrainParams", func() {
 		It("returns JSON serialized current spec that only includes persistent disk", func() {
 			oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
 			newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
-			params := NewUpdateDrainParams(oldSpec, newSpec)
+			params := NewUpdateParams(oldSpec, newSpec)
 
 			state, err := params.JobState()
 			Expect(err).ToNot(HaveOccurred())
@@ -68,7 +68,7 @@ var _ = Describe("updateDrainParams", func() {
 		It("returns JSON serialized future spec that only includes persistent disk", func() {
 			oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
 			newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
-			params := NewUpdateDrainParams(oldSpec, newSpec)
+			params := NewUpdateParams(oldSpec, newSpec)
 
 			state, err := params.JobNextState()
 			Expect(err).ToNot(HaveOccurred())

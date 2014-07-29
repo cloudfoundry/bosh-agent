@@ -11,7 +11,7 @@ import (
 
 func createBlobManager() (blobManager BlobManager, fs *fakesys.FakeFileSystem) {
 	fs = fakesys.NewFakeFileSystem()
-	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+	dirProvider := boshdir.NewProvider("/var/vcap")
 
 	blobManager = NewBlobManager(fs, dirProvider)
 	return

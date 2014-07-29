@@ -28,7 +28,7 @@ var _ = Describe("externalBlobstore", func() {
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
 		uuidGen = &fakeuuid.FakeGenerator{}
-		dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+		dirProvider := boshdir.NewProvider("/var/vcap")
 		configPath = filepath.Join(dirProvider.EtcDir(), "blobstore-fake-provider.json")
 		blobstore = NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
 	})

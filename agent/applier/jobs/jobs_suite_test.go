@@ -1,4 +1,4 @@
-package jobapplier_test
+package jobs_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestJobapplier(t *testing.T) {
+func TestJobs(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Jobapplier Suite")
+	RunSpecs(t, "Jobs Suite")
 }

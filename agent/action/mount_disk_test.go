@@ -22,7 +22,7 @@ var _ = Describe("MountDiskAction", func() {
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		platform = fakeplatform.NewFakePlatform()
-		dirProvider := boshdirs.NewDirectoriesProvider("/fake-base-dir")
+		dirProvider := boshdirs.NewProvider("/fake-base-dir")
 		action = NewMountDisk(settingsService, platform, platform, dirProvider)
 	})
 

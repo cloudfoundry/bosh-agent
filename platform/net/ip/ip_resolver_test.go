@@ -16,11 +16,11 @@ func (i NotIPNet) Network() string { return "" }
 
 var _ = Describe("ipResolver", func() {
 	var (
-		ipResolver IPResolver
+		ipResolver Resolver
 	)
 
 	BeforeEach(func() {
-		ipResolver = NewIPResolver(NetworkInterfaceToAddrsFunc)
+		ipResolver = NewResolver(NetworkInterfaceToAddrsFunc)
 	})
 
 	Describe("GetPrimaryIPv4", func() {
@@ -52,7 +52,7 @@ var _ = Describe("ipResolver", func() {
 
 			BeforeEach(func() {
 				ifaceToAddrs := func(_ string) ([]gonet.Addr, error) { return addrs, nil }
-				ipResolver = NewIPResolver(ifaceToAddrs)
+				ipResolver = NewResolver(ifaceToAddrs)
 			})
 
 			It("returns first ipv4 address from associated interface", func() {

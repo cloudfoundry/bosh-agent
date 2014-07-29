@@ -1,28 +1,28 @@
 package task
 
-type TaskFunc func() (value interface{}, err error)
+type Func func() (value interface{}, err error)
 
-type TaskCancelFunc func(task Task) error
+type CancelFunc func(task Task) error
 
-type TaskEndFunc func(task Task)
+type EndFunc func(task Task)
 
-type TaskState string
+type State string
 
 const (
-	TaskStateRunning TaskState = "running"
-	TaskStateDone    TaskState = "done"
-	TaskStateFailed  TaskState = "failed"
+	StateRunning State = "running"
+	StateDone    State = "done"
+	StateFailed  State = "failed"
 )
 
 type Task struct {
 	ID    string
-	State TaskState
+	State State
 	Value interface{}
 	Error error
 
-	TaskFunc    TaskFunc
-	CancelFunc  TaskCancelFunc
-	TaskEndFunc TaskEndFunc
+	Func       Func
+	CancelFunc CancelFunc
+	EndFunc    EndFunc
 }
 
 func (t Task) Cancel() error {
@@ -32,7 +32,7 @@ func (t Task) Cancel() error {
 	return nil
 }
 
-type TaskStateValue struct {
-	AgentTaskID string    `json:"agent_task_id"`
-	State       TaskState `json:"state"`
+type StateValue struct {
+	AgentTaskID string `json:"agent_task_id"`
+	State       State  `json:"state"`
 }

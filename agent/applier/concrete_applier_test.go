@@ -9,9 +9,9 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	fakeja "github.com/cloudfoundry/bosh-agent/agent/applier/jobapplier/fakes"
+	fakejobs "github.com/cloudfoundry/bosh-agent/agent/applier/jobs/fakes"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	fakepa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier/fakes"
+	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -51,16 +51,16 @@ func buildPackage() models.Package {
 func init() {
 	Describe("concreteApplier", func() {
 		var (
-			jobApplier        *fakeja.FakeJobApplier
-			packageApplier    *fakepa.FakePackageApplier
+			jobApplier        *fakejobs.FakeApplier
+			packageApplier    *fakepackages.FakeApplier
 			logRotateDelegate *FakeLogRotateDelegate
 			jobSupervisor     *fakejobsuper.FakeJobSupervisor
 			applier           Applier
 		)
 
 		BeforeEach(func() {
-			jobApplier = fakeja.NewFakeJobApplier()
-			packageApplier = fakepa.NewFakePackageApplier()
+			jobApplier = fakejobs.NewFakeApplier()
+			packageApplier = fakepackages.NewFakeApplier()
 			logRotateDelegate = &FakeLogRotateDelegate{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			applier = NewConcreteApplier(
@@ -68,7 +68,7 @@ func init() {
 				packageApplier,
 				logRotateDelegate,
 				jobSupervisor,
-				boshdirs.NewDirectoriesProvider("/fake-base-dir"),
+				boshdirs.NewProvider("/fake-base-dir"),
 			)
 		})
 

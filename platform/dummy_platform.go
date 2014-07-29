@@ -17,22 +17,22 @@ import (
 )
 
 type dummyPlatform struct {
-	collector          boshstats.StatsCollector
+	collector          boshstats.Collector
 	fs                 boshsys.FileSystem
 	cmdRunner          boshsys.CmdRunner
 	compressor         boshcmd.Compressor
 	copier             boshcmd.Copier
-	dirProvider        boshdirs.DirectoriesProvider
+	dirProvider        boshdirs.Provider
 	vitalsService      boshvitals.Service
 	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
 }
 
 func NewDummyPlatform(
-	collector boshstats.StatsCollector,
+	collector boshstats.Collector,
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
-	dirProvider boshdirs.DirectoriesProvider,
+	dirProvider boshdirs.Provider,
 	logger boshlog.Logger,
 ) *dummyPlatform {
 	return &dummyPlatform{
@@ -62,7 +62,7 @@ func (p dummyPlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.copier
 }
 
-func (p dummyPlatform) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
+func (p dummyPlatform) GetDirProvider() (dirProvider boshdir.Provider) {
 	return p.dirProvider
 }
 

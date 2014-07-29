@@ -25,7 +25,7 @@ type natsHandler struct {
 	settingsService boshsettings.Service
 	client          yagnats.NATSClient
 	logger          boshlog.Logger
-	handlerFuncs    []boshhandler.HandlerFunc
+	handlerFuncs    []boshhandler.Func
 }
 
 func NewNatsHandler(
@@ -40,7 +40,7 @@ func NewNatsHandler(
 	}
 }
 
-func (h *natsHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
+func (h *natsHandler) Run(handlerFunc boshhandler.Func) error {
 	err := h.Start(handlerFunc)
 	if err != nil {
 		return bosherr.WrapError(err, "Starting nats handler")
@@ -53,8 +53,8 @@ func (h *natsHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
 	return nil
 }
 
-func (h *natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
-	h.RegisterAdditionalHandlerFunc(handlerFunc)
+func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
+	h.RegisterAdditionalFunc(handlerFunc)
 
 	connProvider, err := h.getConnectionInfo()
 	if err != nil {
@@ -81,8 +81,8 @@ func (h *natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 	return nil
 }
 
-func (h *natsHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
-	// Currently not locking since RegisterAdditionalHandlerFunc
+func (h *natsHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
+	// Currently not locking since RegisterAdditionalFunc
 	// is not a primary way of adding handlerFunc.
 	h.handlerFuncs = append(h.handlerFuncs, handlerFunc)
 }
@@ -111,7 +111,7 @@ func (h natsHandler) Stop() {
 	h.client.Disconnect()
 }
 
-func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.HandlerFunc) {
+func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.Func) {
 	respBytes, req, err := boshhandler.PerformHandlerWithJSON(
 		natsMsg.Payload,
 		handlerFunc,

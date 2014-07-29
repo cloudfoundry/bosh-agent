@@ -1,4 +1,4 @@
-package packageapplier_test
+package packages_test
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	fakeblob "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakecmd "github.com/cloudfoundry/bosh-agent/platform/commands/fakes"
@@ -37,14 +37,14 @@ func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBund
 }
 
 func init() {
-	Describe("concretePackageApplier", func() {
+	Describe("compiledPackageApplier", func() {
 		var (
 			packagesBc *fakebc.FakeBundleCollection
 			blobstore  *fakeblob.FakeBlobstore
 			compressor *fakecmd.FakeCompressor
 			fs         *fakesys.FakeFileSystem
 			logger     boshlog.Logger
-			applier    PackageApplier
+			applier    Applier
 		)
 
 		BeforeEach(func() {
@@ -53,7 +53,7 @@ func init() {
 			compressor = fakecmd.NewFakeCompressor()
 			fs = fakesys.NewFakeFileSystem()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
-			applier = NewConcretePackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
+			applier = NewCompiledPackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
 		})
 
 		Describe("Prepare & Apply", func() {
@@ -310,7 +310,7 @@ func init() {
 
 			Context("when operating on packages as a package owner", func() {
 				BeforeEach(func() {
-					applier = NewConcretePackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
+					applier = NewCompiledPackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
 				})
 
 				It("first disables and then uninstalls packages that are not in keeponly list", func() {
@@ -346,7 +346,7 @@ func init() {
 
 			Context("when operating on packages not as a package owner", func() {
 				BeforeEach(func() {
-					applier = NewConcretePackageApplier(packagesBc, false, blobstore, compressor, fs, logger)
+					applier = NewCompiledPackageApplier(packagesBc, false, blobstore, compressor, fs, logger)
 				})
 
 				It("disables and but does not uninstall packages that are not in keeponly list", func() {

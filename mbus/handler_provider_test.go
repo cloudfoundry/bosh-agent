@@ -16,20 +16,20 @@ import (
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 )
 
-var _ = Describe("MbusHandlerProvider", func() {
+var _ = Describe("HandlerProvider", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
 		platform        *fakeplatform.FakePlatform
-		dirProvider     boshdir.DirectoriesProvider
+		dirProvider     boshdir.Provider
 		logger          boshlog.Logger
-		provider        MbusHandlerProvider
+		provider        HandlerProvider
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		platform = fakeplatform.NewFakePlatform()
-		dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+		dirProvider = boshdir.NewProvider("/var/vcap")
 		provider = NewHandlerProvider(settingsService, logger)
 	})
 

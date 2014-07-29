@@ -10,12 +10,12 @@ import (
 
 type defaultNetworkResolver struct {
 	routesSearcher RoutesSearcher
-	ipResolver     boship.IPResolver
+	ipResolver     boship.Resolver
 }
 
 func NewDefaultNetworkResolver(
 	routesSearcher RoutesSearcher,
-	ipResolver boship.IPResolver,
+	ipResolver boship.Resolver,
 ) defaultNetworkResolver {
 	return defaultNetworkResolver{
 		routesSearcher: routesSearcher,

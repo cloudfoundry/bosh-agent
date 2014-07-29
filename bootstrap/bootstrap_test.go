@@ -21,7 +21,7 @@ func init() {
 			var (
 				inf         *fakeinf.FakeInfrastructure
 				platform    *fakeplatform.FakePlatform
-				dirProvider boshdir.DirectoriesProvider
+				dirProvider boshdir.Provider
 
 				settingsServiceProvider *fakesettings.FakeSettingsServiceProvider
 				settingsService         *fakesettings.FakeSettingsService
@@ -33,7 +33,7 @@ func init() {
 					GetEphemeralDiskPathRealPath: "/dev/sdz",
 				}
 				platform = fakeplatform.NewFakePlatform()
-				dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+				dirProvider = boshdir.NewProvider("/var/vcap")
 
 				settingsServiceProvider = fakesettings.NewServiceProvider()
 				settingsService = settingsServiceProvider.NewServiceSettingsService

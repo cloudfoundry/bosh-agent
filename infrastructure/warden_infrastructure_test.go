@@ -18,12 +18,12 @@ import (
 var _ = Describe("wardenInfrastructure", func() {
 	var (
 		platform    *fakeplatform.FakePlatform
-		dirProvider boshdir.DirectoriesProvider
+		dirProvider boshdir.Provider
 		inf         Infrastructure
 	)
 
 	BeforeEach(func() {
-		dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+		dirProvider = boshdir.NewProvider("/var/vcap")
 		platform = fakeplatform.NewFakePlatform()
 		fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver()
 		inf = NewWardenInfrastructure(dirProvider, platform, fakeDevicePathResolver)

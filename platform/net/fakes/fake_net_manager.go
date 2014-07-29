@@ -4,7 +4,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
-type FakeNetManager struct {
+type FakeManager struct {
 	FakeDefaultNetworkResolver
 
 	SetupManualNetworkingNetworks boshsettings.Networks
@@ -14,12 +14,12 @@ type FakeNetManager struct {
 	SetupDhcpErr      error
 }
 
-func (net *FakeNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
+func (net *FakeManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
 	net.SetupManualNetworkingNetworks = networks
 	return net.SetupManualNetworkingErr
 }
 
-func (net *FakeNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
+func (net *FakeManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
 	net.SetupDhcpNetworks = networks
 	return net.SetupDhcpErr
 }

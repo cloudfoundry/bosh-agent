@@ -19,16 +19,16 @@ var _ = Describe("ubuntuNetManager", func() {
 		fs                     *fakesys.FakeFileSystem
 		cmdRunner              *fakesys.FakeCmdRunner
 		defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
-		ipResolver             *fakeip.FakeIPResolver
+		ipResolver             *fakeip.FakeResolver
 		addressBroadcaster     *fakearp.FakeAddressBroadcaster
-		netManager             NetManager
+		netManager             Manager
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
-		ipResolver = &fakeip.FakeIPResolver{}
+		ipResolver = &fakeip.FakeResolver{}
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		netManager = NewUbuntuNetManager(

@@ -39,7 +39,7 @@ type ProviderOptions struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider, options ProviderOptions) (p provider) {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options ProviderOptions) (p provider) {
 	runner := boshsys.NewExecCmdRunner(logger)
 	fs := boshsys.NewOsFileSystem(logger)
 
@@ -60,7 +60,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
 	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
-	ipResolver := boship.NewIPResolver(boship.NetworkInterfaceToAddrsFunc)
+	ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
 
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 	arping := bosharp.NewArping(runner, fs, logger, ArpIterations, ArpIterationDelay, ArpInterfaceCheckDelay)

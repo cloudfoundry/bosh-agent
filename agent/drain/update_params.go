@@ -4,19 +4,19 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 )
 
-type updateDrainParams struct {
+type updateParams struct {
 	oldSpec boshas.V1ApplySpec
 	newSpec boshas.V1ApplySpec
 }
 
-func NewUpdateDrainParams(oldSpec, newSpec boshas.V1ApplySpec) updateDrainParams {
-	return updateDrainParams{
+func NewUpdateParams(oldSpec, newSpec boshas.V1ApplySpec) updateParams {
+	return updateParams{
 		oldSpec: oldSpec,
 		newSpec: newSpec,
 	}
 }
 
-func (p updateDrainParams) JobChange() string {
+func (p updateParams) JobChange() string {
 	switch {
 	case len(p.oldSpec.Jobs()) == 0:
 		return "job_new"
@@ -27,7 +27,7 @@ func (p updateDrainParams) JobChange() string {
 	}
 }
 
-func (p updateDrainParams) HashChange() string {
+func (p updateParams) HashChange() string {
 	switch {
 	case p.oldSpec.ConfigurationHash == "":
 		return "hash_new"
@@ -38,7 +38,7 @@ func (p updateDrainParams) HashChange() string {
 	}
 }
 
-func (p updateDrainParams) UpdatedPackages() (pkgs []string) {
+func (p updateParams) UpdatedPackages() (pkgs []string) {
 	for _, pkg := range p.newSpec.PackageSpecs {
 		currentPkg, found := p.oldSpec.PackageSpecs[pkg.Name]
 		switch {
@@ -51,10 +51,10 @@ func (p updateDrainParams) UpdatedPackages() (pkgs []string) {
 	return
 }
 
-func (p updateDrainParams) JobState() (string, error) {
+func (p updateParams) JobState() (string, error) {
 	return newPresentedJobState(&p.oldSpec).MarshalToJSONString()
 }
 
-func (p updateDrainParams) JobNextState() (string, error) {
+func (p updateParams) JobNextState() (string, error) {
 	return newPresentedJobState(&p.newSpec).MarshalToJSONString()
 }

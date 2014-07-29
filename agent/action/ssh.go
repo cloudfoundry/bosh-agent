@@ -13,13 +13,13 @@ import (
 type SSHAction struct {
 	settingsService boshsettings.Service
 	platform        boshplatform.Platform
-	dirProvider     boshdirs.DirectoriesProvider
+	dirProvider     boshdirs.Provider
 }
 
 func NewSSH(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
-	dirProvider boshdirs.DirectoriesProvider,
+	dirProvider boshdirs.Provider,
 ) (action SSHAction) {
 	action.settingsService = settingsService
 	action.platform = platform

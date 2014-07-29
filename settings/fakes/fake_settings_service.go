@@ -9,7 +9,7 @@ import (
 type FakeSettingsServiceProvider struct {
 	NewServiceFs              boshsys.FileSystem
 	NewServiceDir             string
-	NewServiceFetcher         boshsettings.SettingsFetcher
+	NewServiceFetcher         boshsettings.Fetcher
 	NewDefaultNetworkResolver boshsettings.DefaultNetworkDelegate
 	NewServiceSettingsService *FakeSettingsService
 }
@@ -23,7 +23,7 @@ func NewServiceProvider() *FakeSettingsServiceProvider {
 func (provider *FakeSettingsServiceProvider) NewService(
 	fs boshsys.FileSystem,
 	dir string,
-	fetcher boshsettings.SettingsFetcher,
+	fetcher boshsettings.Fetcher,
 	defaultNetworkResolver boshsettings.DefaultNetworkDelegate,
 	logger boshlog.Logger,
 ) boshsettings.Service {

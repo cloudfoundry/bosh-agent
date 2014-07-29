@@ -31,7 +31,7 @@ var _ = Describe("HTTPSHandler", func() {
 		mbusURL, _ := url.Parse(serverURL)
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fs = fakesys.NewFakeFileSystem()
-		dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+		dirProvider := boshdir.NewProvider("/var/vcap")
 		handler = NewHTTPSHandler(mbusURL, logger, fs, dirProvider)
 
 		go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {

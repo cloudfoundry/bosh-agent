@@ -10,7 +10,7 @@ import (
 
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	fakepa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier/fakes"
+	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakecmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	fakeblobstore "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
@@ -63,7 +63,7 @@ func init() {
 			blobstore      *fakeblobstore.FakeBlobstore
 			fs             *fakesys.FakeFileSystem
 			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
-			packageApplier *fakepa.FakePackageApplier
+			packageApplier *fakepackages.FakeApplier
 			packagesBc     *fakebc.FakeBundleCollection
 		)
 
@@ -72,7 +72,7 @@ func init() {
 			blobstore = &fakeblobstore.FakeBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
 			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
-			packageApplier = fakepa.NewFakePackageApplier()
+			packageApplier = fakepackages.NewFakeApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
 
 			compiler = NewConcreteCompiler(

@@ -4,7 +4,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
-type TaskInfo struct {
+type Info struct {
 	TaskID  string
 	Method  string
 	Payload []byte
@@ -15,7 +15,7 @@ type ManagerProvider interface {
 }
 
 type Manager interface {
-	GetTaskInfos() ([]TaskInfo, error)
-	AddTaskInfo(taskInfo TaskInfo) error
-	RemoveTaskInfo(taskID string) error
+	GetInfos() ([]Info, error)
+	AddInfo(taskInfo Info) error
+	RemoveInfo(taskID string) error
 }

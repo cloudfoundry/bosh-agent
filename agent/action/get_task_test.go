@@ -34,7 +34,7 @@ var _ = Describe("GetTask", func() {
 	It("returns a running task", func() {
 		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
 			ID:    "fake-task-id",
-			State: boshtask.TaskStateRunning,
+			State: boshtask.StateRunning,
 		}
 
 		taskValue, err := action.Run("fake-task-id")
@@ -48,7 +48,7 @@ var _ = Describe("GetTask", func() {
 	It("returns a failed task", func() {
 		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
 			ID:    "fake-task-id",
-			State: boshtask.TaskStateFailed,
+			State: boshtask.StateFailed,
 			Error: errors.New("fake-task-error"),
 		}
 
@@ -61,7 +61,7 @@ var _ = Describe("GetTask", func() {
 	It("returns a successful task", func() {
 		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
 			ID:    "fake-task-id",
-			State: boshtask.TaskStateDone,
+			State: boshtask.StateDone,
 			Value: "some-task-value",
 		}
 

@@ -14,14 +14,14 @@ import (
 
 type dummyInfrastructure struct {
 	fs                 boshsys.FileSystem
-	dirProvider        boshdir.DirectoriesProvider
+	dirProvider        boshdir.Provider
 	platform           boshplatform.Platform
 	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
 func NewDummyInfrastructure(
 	fs boshsys.FileSystem,
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 ) (inf dummyInfrastructure) {

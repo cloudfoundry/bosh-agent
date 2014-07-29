@@ -139,7 +139,7 @@ func init() {
 				})
 				defer handler.Stop()
 
-				handler.RegisterAdditionalHandlerFunc(func(req boshhandler.Request) (resp boshhandler.Response) {
+				handler.RegisterAdditionalFunc(func(req boshhandler.Request) (resp boshhandler.Response) {
 					secondHandlerRequest = req
 					return boshhandler.NewValueResponse("second-handler-resp")
 				})

@@ -1,13 +1,13 @@
 package handler
 
-type HandlerFunc func(req Request) (resp Response)
+type Func func(req Request) (resp Response)
 
 type Handler interface {
-	Run(handlerFunc HandlerFunc) error
-	Start(handlerFunc HandlerFunc) error
+	Run(handlerFunc Func) error
+	Start(handlerFunc Func) error
 	Stop()
 
-	RegisterAdditionalHandlerFunc(handlerFunc HandlerFunc)
+	RegisterAdditionalFunc(handlerFunc Func)
 
 	SendToHealthManager(topic string, payload interface{}) error
 }

@@ -20,14 +20,14 @@ type MountDiskAction struct {
 	settingsService boshsettings.Service
 	diskMounter     diskMounter
 	mountPoints     mountPoints
-	dirProvider     boshdirs.DirectoriesProvider
+	dirProvider     boshdirs.Provider
 }
 
 func NewMountDisk(
 	settingsService boshsettings.Service,
 	diskMounter diskMounter,
 	mountPoints mountPoints,
-	dirProvider boshdirs.DirectoriesProvider,
+	dirProvider boshdirs.Provider,
 ) (mountDisk MountDiskAction) {
 	mountDisk.settingsService = settingsService
 	mountDisk.diskMounter = diskMounter

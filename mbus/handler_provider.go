@@ -8,13 +8,13 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	"github.com/cloudfoundry/bosh-agent/micro"
+	boshmicro "github.com/cloudfoundry/bosh-agent/micro"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
-type MbusHandlerProvider struct {
+type HandlerProvider struct {
 	settingsService boshsettings.Service
 	logger          boshlog.Logger
 	handler         boshhandler.Handler
@@ -23,15 +23,15 @@ type MbusHandlerProvider struct {
 func NewHandlerProvider(
 	settingsService boshsettings.Service,
 	logger boshlog.Logger,
-) (p MbusHandlerProvider) {
+) (p HandlerProvider) {
 	p.settingsService = settingsService
 	p.logger = logger
 	return
 }
 
-func (p MbusHandlerProvider) Get(
+func (p HandlerProvider) Get(
 	platform boshplatform.Platform,
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 ) (handler boshhandler.Handler, err error) {
 	if p.handler != nil {
 		handler = p.handler
@@ -48,7 +48,7 @@ func (p MbusHandlerProvider) Get(
 	case "nats":
 		handler = NewNatsHandler(p.settingsService, yagnats.NewClient(), p.logger)
 	case "https":
-		handler = micro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider)
+		handler = boshmicro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider)
 	default:
 		err = bosherr.New("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
 	}

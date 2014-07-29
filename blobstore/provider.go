@@ -14,14 +14,14 @@ import (
 
 type Provider struct {
 	platform    boshplatform.Platform
-	dirProvider boshdir.DirectoriesProvider
+	dirProvider boshdir.Provider
 	uuidGen     boshuuid.Generator
 	logger      boshlog.Logger
 }
 
 func NewProvider(
 	platform boshplatform.Platform,
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 	logger boshlog.Logger,
 ) (p Provider) {
 	p.uuidGen = boshuuid.NewGenerator()

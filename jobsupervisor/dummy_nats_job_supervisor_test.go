@@ -24,7 +24,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 	Describe("MonitorJobFailures", func() {
 		It("monitors job status", func() {
 			dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
-			Expect(handler.RegisteredAdditionalHandlerFunc).ToNot(BeNil())
+			Expect(handler.RegisteredAdditionalFunc).ToNot(BeNil())
 		})
 	})
 
@@ -35,7 +35,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 		It("returns the received status", func() {
 			statusMessage := boshhandler.NewRequest("", "set_dummy_status", []byte(`{"status":"failing"}`))
-			handler.RegisteredAdditionalHandlerFunc(statusMessage)
+			handler.RegisteredAdditionalFunc(statusMessage)
 			Expect(dummyNats.Status()).To(Equal("failing"))
 		})
 
@@ -45,7 +45,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 		It("does not change the status given other messages", func() {
 			statusMessage := boshhandler.NewRequest("", "some_other_message", []byte(`{"status":"failing"}`))
-			handler.RegisteredAdditionalHandlerFunc(statusMessage)
+			handler.RegisteredAdditionalFunc(statusMessage)
 			Expect(dummyNats.Status()).To(Equal("running"))
 		})
 	})

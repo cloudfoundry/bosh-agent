@@ -2,8 +2,8 @@ package task
 
 type Service interface {
 	// Builds tasks but does not record them in any way
-	CreateTask(TaskFunc, TaskCancelFunc, TaskEndFunc) (Task, error)
-	CreateTaskWithID(string, TaskFunc, TaskCancelFunc, TaskEndFunc) Task
+	CreateTask(Func, CancelFunc, EndFunc) (Task, error)
+	CreateTaskWithID(string, Func, CancelFunc, EndFunc) Task
 
 	// Records that task to run later
 	StartTask(Task)

@@ -1,4 +1,4 @@
-package jobapplier_test
+package jobs_test
 
 import (
 	"errors"
@@ -8,9 +8,9 @@ import (
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobapplier"
+	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	fakepa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier/fakes"
+	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakeblob "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
@@ -64,17 +64,17 @@ func init() {
 		var (
 			jobsBc                 *fakebc.FakeBundleCollection
 			jobSupervisor          *fakejobsuper.FakeJobSupervisor
-			packageApplierProvider *fakepa.FakePackageApplierProvider
+			packageApplierProvider *fakepackages.FakeApplierProvider
 			blobstore              *fakeblob.FakeBlobstore
 			compressor             *fakecmd.FakeCompressor
 			fs                     *fakesys.FakeFileSystem
-			applier                JobApplier
+			applier                Applier
 		)
 
 		BeforeEach(func() {
 			jobsBc = fakebc.NewFakeBundleCollection()
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-			packageApplierProvider = fakepa.NewFakePackageApplierProvider()
+			packageApplierProvider = fakepackages.NewFakeApplierProvider()
 			blobstore = fakeblob.NewFakeBlobstore()
 			fs = fakesys.NewFakeFileSystem()
 			compressor = fakecmd.NewFakeCompressor()
@@ -244,11 +244,11 @@ func init() {
 			}
 
 			ItUpdatesPackages := func(act func() error) {
-				var packageApplier *fakepa.FakePackageApplier
+				var packageApplier *fakepackages.FakeApplier
 
 				BeforeEach(func() {
-					packageApplier = fakepa.NewFakePackageApplier()
-					packageApplierProvider.JobSpecificPackageAppliers[job.Name] = packageApplier
+					packageApplier = fakepackages.NewFakeApplier()
+					packageApplierProvider.JobSpecificAppliers[job.Name] = packageApplier
 				})
 
 				It("applies each package that job depends on and then cleans up packages", func() {

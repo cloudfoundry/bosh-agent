@@ -13,9 +13,9 @@ import (
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
-func buildVitalsService() (statsCollector *fakestats.FakeStatsCollector, service Service) {
-	dirProvider := boshdirs.NewDirectoriesProvider("/fake/base/dir")
-	statsCollector = &fakestats.FakeStatsCollector{
+func buildVitalsService() (statsCollector *fakestats.FakeCollector, service Service) {
+	dirProvider := boshdirs.NewProvider("/fake/base/dir")
+	statsCollector = &fakestats.FakeCollector{
 		CPULoad: boshstats.CPULoad{
 			One:     0.2,
 			Five:    4.55,

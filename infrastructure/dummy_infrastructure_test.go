@@ -20,13 +20,13 @@ var _ = Describe("dummyInfrastructure", func() {
 	Describe("GetSettings", func() {
 		var (
 			fs          *fakefs.FakeFileSystem
-			dirProvider boshdir.DirectoriesProvider
+			dirProvider boshdir.Provider
 			inf         Infrastructure
 		)
 
 		BeforeEach(func() {
 			fs = fakefs.NewFakeFileSystem()
-			dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+			dirProvider = boshdir.NewProvider("/var/vcap")
 			platform := fakeplatform.NewFakePlatform()
 			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver()
 			inf = NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)

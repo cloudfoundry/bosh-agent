@@ -9,7 +9,7 @@ type ServiceProvider interface {
 	NewService(
 		boshsys.FileSystem,
 		string,
-		SettingsFetcher,
+		Fetcher,
 		DefaultNetworkDelegate,
 		boshlog.Logger,
 	) Service

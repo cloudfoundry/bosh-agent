@@ -10,8 +10,8 @@ import (
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	boshja "github.com/cloudfoundry/bosh-agent/agent/applier/jobapplier"
-	boshpa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	boshaj "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
+	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
@@ -56,7 +56,7 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Loading config")
 	}
 
-	dirProvider := boshdirs.NewDirectoriesProvider(opts.BaseDirectory)
+	dirProvider := boshdirs.NewProvider(opts.BaseDirectory)
 
 	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, config.Platform)
 
@@ -145,7 +145,7 @@ func (app *app) Setup(args []string) error {
 		specFilePath,
 	)
 
-	drainScriptProvider := boshdrain.NewConcreteDrainScriptProvider(
+	drainScriptProvider := boshdrain.NewConcreteScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		dirProvider,
@@ -218,7 +218,7 @@ func (app *app) GetInfrastructure() boshinf.Infrastructure {
 }
 
 func (app *app) buildApplierAndCompiler(
-	dirProvider boshdirs.DirectoriesProvider,
+	dirProvider boshdirs.Provider,
 	blobstore boshblob.Blobstore,
 	jobSupervisor boshjobsuper.JobSupervisor,
 ) (boshapplier.Applier, boshcomp.Compiler) {
@@ -230,7 +230,7 @@ func (app *app) buildApplierAndCompiler(
 		app.logger,
 	)
 
-	packageApplierProvider := boshpa.NewConcretePackageApplierProvider(
+	packageApplierProvider := boshap.NewCompiledPackageApplierProvider(
 		dirProvider.DataDir(),
 		dirProvider.BaseDir(),
 		dirProvider.JobsDir(),
@@ -241,7 +241,7 @@ func (app *app) buildApplierAndCompiler(
 		app.logger,
 	)
 
-	jobApplier := boshja.NewRenderedJobApplier(
+	jobApplier := boshaj.NewRenderedJobApplier(
 		jobsBc,
 		jobSupervisor,
 		packageApplierProvider,

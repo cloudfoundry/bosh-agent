@@ -6,7 +6,7 @@ import (
 
 type dummyStatsCollector struct{}
 
-func NewDummyStatsCollector() (collector StatsCollector) {
+func NewDummyStatsCollector() (collector Collector) {
 	return dummyStatsCollector{}
 }
 

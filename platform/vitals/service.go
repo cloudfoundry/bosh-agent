@@ -12,11 +12,11 @@ type Service interface {
 }
 
 type concreteService struct {
-	statsCollector boshstats.StatsCollector
-	dirProvider    boshdirs.DirectoriesProvider
+	statsCollector boshstats.Collector
+	dirProvider    boshdirs.Provider
 }
 
-func NewService(statsCollector boshstats.StatsCollector, dirProvider boshdirs.DirectoriesProvider) Service {
+func NewService(statsCollector boshstats.Collector, dirProvider boshdirs.Provider) Service {
 	return concreteService{
 		statsCollector: statsCollector,
 		dirProvider:    dirProvider,

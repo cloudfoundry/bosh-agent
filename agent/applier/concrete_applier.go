@@ -2,8 +2,8 @@ package applier
 
 import (
 	as "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	ja "github.com/cloudfoundry/bosh-agent/agent/applier/jobapplier"
-	pa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -11,19 +11,19 @@ import (
 )
 
 type concreteApplier struct {
-	jobApplier        ja.JobApplier
-	packageApplier    pa.PackageApplier
+	jobApplier        jobs.Applier
+	packageApplier    packages.Applier
 	logrotateDelegate LogrotateDelegate
 	jobSupervisor     boshjobsuper.JobSupervisor
-	dirProvider       boshdirs.DirectoriesProvider
+	dirProvider       boshdirs.Provider
 }
 
 func NewConcreteApplier(
-	jobApplier ja.JobApplier,
-	packageApplier pa.PackageApplier,
+	jobApplier jobs.Applier,
+	packageApplier packages.Applier,
 	logrotateDelegate LogrotateDelegate,
 	jobSupervisor boshjobsuper.JobSupervisor,
-	dirProvider boshdirs.DirectoriesProvider,
+	dirProvider boshdirs.Provider,
 ) *concreteApplier {
 	return &concreteApplier{
 		jobApplier:        jobApplier,

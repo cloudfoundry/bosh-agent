@@ -4,66 +4,66 @@ import (
 	"path/filepath"
 )
 
-type DirectoriesProvider struct {
+type Provider struct {
 	baseDir string
 }
 
-func NewDirectoriesProvider(baseDir string) DirectoriesProvider {
-	return DirectoriesProvider{baseDir}
+func NewProvider(baseDir string) Provider {
+	return Provider{baseDir}
 }
 
-func (p DirectoriesProvider) BaseDir() string {
+func (p Provider) BaseDir() string {
 	return p.baseDir
 }
 
-func (p DirectoriesProvider) BoshDir() string {
+func (p Provider) BoshDir() string {
 	return filepath.Join(p.BaseDir(), "bosh")
 }
 
-func (p DirectoriesProvider) EtcDir() string {
+func (p Provider) EtcDir() string {
 	return filepath.Join(p.BoshDir(), "etc")
 }
 
-func (p DirectoriesProvider) StoreDir() string {
+func (p Provider) StoreDir() string {
 	return filepath.Join(p.BaseDir(), "store")
 }
 
-func (p DirectoriesProvider) DataDir() string {
+func (p Provider) DataDir() string {
 	return filepath.Join(p.BaseDir(), "data")
 }
 
-func (p DirectoriesProvider) StoreMigrationDir() string {
+func (p Provider) StoreMigrationDir() string {
 	return filepath.Join(p.BaseDir(), "store_migration_target")
 }
 
-func (p DirectoriesProvider) PkgDir() string {
+func (p Provider) PkgDir() string {
 	return filepath.Join(p.DataDir(), "packages")
 }
 
-func (p DirectoriesProvider) CompileDir() string {
+func (p Provider) CompileDir() string {
 	return filepath.Join(p.DataDir(), "compile")
 }
 
-func (p DirectoriesProvider) MonitJobsDir() string {
+func (p Provider) MonitJobsDir() string {
 	return filepath.Join(p.BaseDir(), "monit", "job")
 }
 
-func (p DirectoriesProvider) JobsDir() string {
+func (p Provider) JobsDir() string {
 	return filepath.Join(p.BaseDir(), "jobs")
 }
 
-func (p DirectoriesProvider) MicroStore() string {
+func (p Provider) MicroStore() string {
 	return filepath.Join(p.BaseDir(), "micro_bosh", "data", "cache")
 }
 
-func (p DirectoriesProvider) SettingsDir() string {
+func (p Provider) SettingsDir() string {
 	return filepath.Join(p.BoshDir(), "settings")
 }
 
-func (p DirectoriesProvider) TmpDir() string {
+func (p Provider) TmpDir() string {
 	return filepath.Join(p.DataDir(), "tmp")
 }
 
-func (p DirectoriesProvider) LogsDir() string {
+func (p Provider) LogsDir() string {
 	return filepath.Join(p.DataDir(), "sys", "log")
 }

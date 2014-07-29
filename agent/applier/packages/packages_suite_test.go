@@ -1,4 +1,4 @@
-package packageapplier_test
+package packages_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestPackageapplier(t *testing.T) {
+func TestPackages(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Packageapplier Suite")
+	RunSpecs(t, "Packages Suite")
 }

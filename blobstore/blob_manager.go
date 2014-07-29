@@ -9,10 +9,10 @@ import (
 
 type BlobManager struct {
 	fs          boshsys.FileSystem
-	dirProvider boshdir.DirectoriesProvider
+	dirProvider boshdir.Provider
 }
 
-func NewBlobManager(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider) (manager BlobManager) {
+func NewBlobManager(fs boshsys.FileSystem, dirProvider boshdir.Provider) (manager BlobManager) {
 	manager.fs = fs
 	manager.dirProvider = dirProvider
 	return

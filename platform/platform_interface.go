@@ -14,7 +14,7 @@ type Platform interface {
 	GetRunner() boshsys.CmdRunner
 	GetCompressor() boshcmd.Compressor
 	GetCopier() boshcmd.Copier
-	GetDirProvider() boshdir.DirectoriesProvider
+	GetDirProvider() boshdir.Provider
 	GetVitalsService() boshvitals.Service
 
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)

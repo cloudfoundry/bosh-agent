@@ -6,7 +6,7 @@ import (
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	boshpa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshcmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshblob "github.com/cloudfoundry/bosh-agent/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
@@ -24,7 +24,7 @@ type concreteCompiler struct {
 	fs                 boshsys.FileSystem
 	runner             boshcmdrunner.CmdRunner
 	compileDirProvider CompileDirProvider
-	packageApplier     boshpa.PackageApplier
+	packageApplier     packages.Applier
 	packagesBc         boshbc.BundleCollection
 }
 
@@ -34,7 +34,7 @@ func NewConcreteCompiler(
 	fs boshsys.FileSystem,
 	runner boshcmdrunner.CmdRunner,
 	compileDirProvider CompileDirProvider,
-	packageApplier boshpa.PackageApplier,
+	packageApplier packages.Applier,
 	packagesBc boshbc.BundleCollection,
 ) (c concreteCompiler) {
 	c.compressor = compressor

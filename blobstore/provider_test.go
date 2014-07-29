@@ -21,7 +21,7 @@ var _ = Describe("Provider", func() {
 
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
-		dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+		dirProvider := boshdir.NewProvider("/var/vcap")
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		provider = NewProvider(platform, dirProvider, logger)
 	})

@@ -26,7 +26,7 @@ type ubuntuNetManager struct {
 
 	cmdRunner          boshsys.CmdRunner
 	fs                 boshsys.FileSystem
-	ipResolver         boship.IPResolver
+	ipResolver         boship.Resolver
 	addressBroadcaster bosharp.AddressBroadcaster
 	logger             boshlog.Logger
 }
@@ -35,7 +35,7 @@ func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	defaultNetworkResolver DefaultNetworkResolver,
-	ipResolver boship.IPResolver,
+	ipResolver boship.Resolver,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) ubuntuNetManager {
@@ -88,7 +88,7 @@ func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan
 
 	addresses := []boship.InterfaceAddress{
 		// eth0 is hard coded in AWS and OpenStack stemcells.
-		// TODO: abstract hardcoded network interface name to the NetManager
+		// TODO: abstract hardcoded network interface name to the Manager
 		boship.NewResolvingInterfaceAddress("eth0", net.ipResolver),
 	}
 

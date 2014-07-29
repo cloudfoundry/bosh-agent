@@ -19,22 +19,22 @@ func init() {
 				logger := boshlog.NewLogger(boshlog.LevelNone)
 				fs := fakesys.NewFakeFileSystem()
 
-				taskInfo := boshtask.TaskInfo{
+				taskInfo := boshtask.Info{
 					TaskID:  "fake-task-id",
 					Method:  "fake-method",
 					Payload: []byte("fake-payload"),
 				}
 
 				manager := boshtask.NewManagerProvider().NewManager(logger, fs, "/dir/path")
-				err := manager.AddTaskInfo(taskInfo)
+				err := manager.AddInfo(taskInfo)
 				Expect(err).ToNot(HaveOccurred())
 
 				// Check expected file location with another manager
 				otherManager := boshtask.NewManager(logger, fs, "/dir/path/tasks.json")
 
-				taskInfos, err := otherManager.GetTaskInfos()
+				taskInfos, err := otherManager.GetInfos()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(taskInfos).To(Equal([]boshtask.TaskInfo{taskInfo}))
+				Expect(taskInfos).To(Equal([]boshtask.Info{taskInfo}))
 			})
 		})
 	})
@@ -52,16 +52,16 @@ func init() {
 			manager = boshtask.NewManager(logger, fs, "/dir/path")
 		})
 
-		Describe("GetTaskInfos", func() {
+		Describe("GetInfos", func() {
 			It("can load multiple tasks", func() {
-				err := manager.AddTaskInfo(boshtask.TaskInfo{
+				err := manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-1",
 					Method:  "fake-method-1",
 					Payload: []byte("fake-payload-1"),
 				})
 				Expect(err).ToNot(HaveOccurred())
 
-				err = manager.AddTaskInfo(boshtask.TaskInfo{
+				err = manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-2",
 					Method:  "fake-method-2",
 					Payload: []byte("fake-payload-2"),
@@ -71,15 +71,15 @@ func init() {
 				// Make sure we are not getting cached copy of taskInfos
 				reloadedManager := boshtask.NewManager(logger, fs, "/dir/path")
 
-				taskInfos, err := reloadedManager.GetTaskInfos()
+				taskInfos, err := reloadedManager.GetInfos()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(taskInfos).To(Equal([]boshtask.TaskInfo{
-					boshtask.TaskInfo{
+				Expect(taskInfos).To(Equal([]boshtask.Info{
+					boshtask.Info{
 						TaskID:  "fake-task-id-1",
 						Method:  "fake-method-1",
 						Payload: []byte("fake-payload-1"),
 					},
-					boshtask.TaskInfo{
+					boshtask.Info{
 						TaskID:  "fake-task-id-2",
 						Method:  "fake-method-2",
 						Payload: []byte("fake-payload-2"),
@@ -88,13 +88,13 @@ func init() {
 			})
 
 			It("succeeds when there is no tasks (file is not present)", func() {
-				taskInfos, err := manager.GetTaskInfos()
+				taskInfos, err := manager.GetInfos()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(taskInfos)).To(Equal(0))
 			})
 
 			It("returns an error when failing to load tasks from the file that exists", func() {
-				err := manager.AddTaskInfo(boshtask.TaskInfo{
+				err := manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-2",
 					Method:  "fake-method-2",
 					Payload: []byte("fake-payload-2"),
@@ -103,22 +103,22 @@ func init() {
 
 				fs.ReadFileError = errors.New("fake-read-error")
 
-				_, err = manager.GetTaskInfos()
+				_, err = manager.GetInfos()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-read-error"))
 			})
 		})
 
-		Describe("AddTaskInfo", func() {
+		Describe("AddInfo", func() {
 			It("can add multiple tasks", func() {
-				err := manager.AddTaskInfo(boshtask.TaskInfo{
+				err := manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-1",
 					Method:  "fake-method-1",
 					Payload: []byte("fake-payload-1"),
 				})
 				Expect(err).ToNot(HaveOccurred())
 
-				err = manager.AddTaskInfo(boshtask.TaskInfo{
+				err = manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-2",
 					Method:  "fake-method-2",
 					Payload: []byte("fake-payload-2"),
@@ -128,17 +128,17 @@ func init() {
 				content, err := fs.ReadFile("/dir/path")
 				Expect(err).ToNot(HaveOccurred())
 
-				var decodedMap map[string]boshtask.TaskInfo
+				var decodedMap map[string]boshtask.Info
 
 				err = json.Unmarshal(content, &decodedMap)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(decodedMap).To(Equal(map[string]boshtask.TaskInfo{
-					"fake-task-id-1": boshtask.TaskInfo{
+				Expect(decodedMap).To(Equal(map[string]boshtask.Info{
+					"fake-task-id-1": boshtask.Info{
 						TaskID:  "fake-task-id-1",
 						Method:  "fake-method-1",
 						Payload: []byte("fake-payload-1"),
 					},
-					"fake-task-id-2": boshtask.TaskInfo{
+					"fake-task-id-2": boshtask.Info{
 						TaskID:  "fake-task-id-2",
 						Method:  "fake-method-2",
 						Payload: []byte("fake-payload-2"),
@@ -149,7 +149,7 @@ func init() {
 			It("returns an error when failing to save task", func() {
 				fs.WriteToFileError = errors.New("fake-write-error")
 
-				err := manager.AddTaskInfo(boshtask.TaskInfo{
+				err := manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id",
 					Method:  "fake-method",
 					Payload: []byte("fake-payload"),
@@ -159,16 +159,16 @@ func init() {
 			})
 		})
 
-		Describe("RemoveTaskInfo", func() {
+		Describe("RemoveInfo", func() {
 			BeforeEach(func() {
-				err := manager.AddTaskInfo(boshtask.TaskInfo{
+				err := manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-1",
 					Method:  "fake-method-1",
 					Payload: []byte("fake-payload-1"),
 				})
 				Expect(err).ToNot(HaveOccurred())
 
-				err = manager.AddTaskInfo(boshtask.TaskInfo{
+				err = manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-2",
 					Method:  "fake-method-2",
 					Payload: []byte("fake-payload-2"),
@@ -177,18 +177,18 @@ func init() {
 			})
 
 			It("removes the task", func() {
-				err := manager.RemoveTaskInfo("fake-task-id-1")
+				err := manager.RemoveInfo("fake-task-id-1")
 				Expect(err).ToNot(HaveOccurred())
 
 				content, err := fs.ReadFile("/dir/path")
 				Expect(err).ToNot(HaveOccurred())
 
-				var decodedMap map[string]boshtask.TaskInfo
+				var decodedMap map[string]boshtask.Info
 
 				err = json.Unmarshal(content, &decodedMap)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(decodedMap).To(Equal(map[string]boshtask.TaskInfo{
-					"fake-task-id-2": boshtask.TaskInfo{
+				Expect(decodedMap).To(Equal(map[string]boshtask.Info{
+					"fake-task-id-2": boshtask.Info{
 						TaskID:  "fake-task-id-2",
 						Method:  "fake-method-2",
 						Payload: []byte("fake-payload-2"),
@@ -197,14 +197,14 @@ func init() {
 			})
 
 			It("does not return error when removing task that does not exist", func() {
-				err := manager.RemoveTaskInfo("fake-unknown-task-id")
+				err := manager.RemoveInfo("fake-unknown-task-id")
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("returns an error when failing to remove task", func() {
 				fs.WriteToFileError = errors.New("fake-write-error")
 
-				err := manager.RemoveTaskInfo("fake-task-id")
+				err := manager.RemoveInfo("fake-task-id")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-write-error"))
 			})

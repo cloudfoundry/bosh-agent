@@ -16,7 +16,7 @@ type bootstrap struct {
 	fs                      boshsys.FileSystem
 	infrastructure          boshinf.Infrastructure
 	platform                boshplatform.Platform
-	dirProvider             boshdir.DirectoriesProvider
+	dirProvider             boshdir.Provider
 	settingsServiceProvider boshsettings.ServiceProvider
 	logger                  boshlog.Logger
 }
@@ -24,7 +24,7 @@ type bootstrap struct {
 func New(
 	inf boshinf.Infrastructure,
 	platform boshplatform.Platform,
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 	settingsServiceProvider boshsettings.ServiceProvider,
 	logger boshlog.Logger,
 ) (b bootstrap) {

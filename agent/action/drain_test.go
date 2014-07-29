@@ -20,7 +20,7 @@ func init() {
 		var (
 			notifier            *fakenotif.FakeNotifier
 			specService         *fakeas.FakeV1Service
-			drainScriptProvider *fakedrain.FakeDrainScriptProvider
+			drainScriptProvider *fakedrain.FakeScriptProvider
 			jobSupervisor       *fakejobsuper.FakeJobSupervisor
 			action              DrainAction
 		)
@@ -28,13 +28,13 @@ func init() {
 		BeforeEach(func() {
 			notifier = fakenotif.NewFakeNotifier()
 			specService = fakeas.NewFakeV1Service()
-			drainScriptProvider = fakedrain.NewFakeDrainScriptProvider()
+			drainScriptProvider = fakedrain.NewFakeScriptProvider()
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			action = NewDrain(notifier, specService, drainScriptProvider, jobSupervisor)
 		})
 
 		BeforeEach(func() {
-			drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = true
+			drainScriptProvider.NewScriptScript.ExistsBool = true
 		})
 
 		It("is asynchronous", func() {
@@ -90,16 +90,16 @@ func init() {
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(1))
 
-								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+								Expect(drainScriptProvider.NewScriptTemplateName).To(Equal("foo"))
+								Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeTrue())
 
-								params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
-								Expect(params).To(Equal(boshdrain.NewUpdateDrainParams(currentSpec, newSpec)))
+								params := drainScriptProvider.NewScriptScript.RunParams
+								Expect(params).To(Equal(boshdrain.NewUpdateParams(currentSpec, newSpec)))
 							})
 
 							Context("when drain script runs and errs", func() {
 								It("returns error", func() {
-									drainScriptProvider.NewDrainScriptDrainScript.RunError = errors.New("fake-drain-run-error")
+									drainScriptProvider.NewScriptScript.RunError = errors.New("fake-drain-run-error")
 
 									value, err := act()
 									Expect(err).To(HaveOccurred())
@@ -111,13 +111,13 @@ func init() {
 
 						Context("when drain script does not exist", func() {
 							It("returns 0", func() {
-								drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = false
+								drainScriptProvider.NewScriptScript.ExistsBool = false
 
 								value, err := act()
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(0))
 
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeFalse())
+								Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeFalse())
 							})
 						})
 					})
@@ -152,7 +152,7 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(value).To(Equal(0))
 
-					Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeFalse())
+					Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeFalse())
 				})
 			})
 		})
@@ -193,11 +193,11 @@ func init() {
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(1))
 
-								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+								Expect(drainScriptProvider.NewScriptTemplateName).To(Equal("foo"))
+								Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeTrue())
 
-								params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
-								Expect(params).To(Equal(boshdrain.NewShutdownDrainParams(currentSpec, nil)))
+								params := drainScriptProvider.NewScriptScript.RunParams
+								Expect(params).To(Equal(boshdrain.NewShutdownParams(currentSpec, nil)))
 							})
 
 							It("runs drain script with job_shutdown param passing in first apply spec", func() {
@@ -208,16 +208,16 @@ func init() {
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(1))
 
-								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+								Expect(drainScriptProvider.NewScriptTemplateName).To(Equal("foo"))
+								Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeTrue())
 
-								params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
-								Expect(params).To(Equal(boshdrain.NewShutdownDrainParams(currentSpec, &newSpec)))
+								params := drainScriptProvider.NewScriptScript.RunParams
+								Expect(params).To(Equal(boshdrain.NewShutdownParams(currentSpec, &newSpec)))
 							})
 
 							Context("when drain script runs and errs", func() {
 								It("returns error", func() {
-									drainScriptProvider.NewDrainScriptDrainScript.RunError = errors.New("fake-drain-run-error")
+									drainScriptProvider.NewScriptScript.RunError = errors.New("fake-drain-run-error")
 
 									value, err := act()
 									Expect(err).To(HaveOccurred())
@@ -229,13 +229,13 @@ func init() {
 
 						Context("when drain script does not exist", func() {
 							It("returns 0", func() {
-								drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = false
+								drainScriptProvider.NewScriptScript.ExistsBool = false
 
 								value, err := act()
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(0))
 
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeFalse())
+								Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeFalse())
 							})
 						})
 					})
@@ -272,7 +272,7 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(value).To(Equal(0))
 
-					Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeFalse())
+					Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeFalse())
 				})
 			})
 		})
@@ -312,11 +312,11 @@ func init() {
 							Expect(err).ToNot(HaveOccurred())
 							Expect(value).To(Equal(1))
 
-							Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
-							Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+							Expect(drainScriptProvider.NewScriptTemplateName).To(Equal("foo"))
+							Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeTrue())
 
-							params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
-							Expect(params).To(Equal(boshdrain.NewStatusDrainParams(currentSpec, nil)))
+							params := drainScriptProvider.NewScriptScript.RunParams
+							Expect(params).To(Equal(boshdrain.NewStatusParams(currentSpec, nil)))
 						})
 
 						It("runs drain script with job_check_status param passing in first apply spec", func() {
@@ -327,16 +327,16 @@ func init() {
 							Expect(err).ToNot(HaveOccurred())
 							Expect(value).To(Equal(1))
 
-							Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
-							Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+							Expect(drainScriptProvider.NewScriptTemplateName).To(Equal("foo"))
+							Expect(drainScriptProvider.NewScriptScript.DidRun).To(BeTrue())
 
-							params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
-							Expect(params).To(Equal(boshdrain.NewStatusDrainParams(currentSpec, &newSpec)))
+							params := drainScriptProvider.NewScriptScript.RunParams
+							Expect(params).To(Equal(boshdrain.NewStatusParams(currentSpec, &newSpec)))
 						})
 
 						Context("when drain script runs and errs", func() {
 							It("returns error if drain script errs", func() {
-								drainScriptProvider.NewDrainScriptDrainScript.RunError = errors.New("fake-drain-run-error")
+								drainScriptProvider.NewScriptScript.RunError = errors.New("fake-drain-run-error")
 
 								value, err := act()
 								Expect(err).To(HaveOccurred())
@@ -348,7 +348,7 @@ func init() {
 
 					Context("when drain script does not exist", func() {
 						It("returns error because drain status must be called after starting draining", func() {
-							drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = false
+							drainScriptProvider.NewScriptScript.ExistsBool = false
 
 							value, err := act()
 							Expect(err).To(HaveOccurred())

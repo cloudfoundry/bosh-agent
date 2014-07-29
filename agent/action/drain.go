@@ -11,7 +11,7 @@ import (
 )
 
 type DrainAction struct {
-	drainScriptProvider boshdrain.DrainScriptProvider
+	drainScriptProvider boshdrain.ScriptProvider
 	notifier            boshnotif.Notifier
 	specService         boshas.V1Service
 	jobSupervisor       boshjobsuper.JobSupervisor
@@ -20,7 +20,7 @@ type DrainAction struct {
 func NewDrain(
 	notifier boshnotif.Notifier,
 	specService boshas.V1Service,
-	drainScriptProvider boshdrain.DrainScriptProvider,
+	drainScriptProvider boshdrain.ScriptProvider,
 	jobSupervisor boshjobsuper.JobSupervisor,
 ) (drain DrainAction) {
 	drain.notifier = notifier
@@ -64,10 +64,10 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		return 0, bosherr.WrapError(err, "Unmonitoring services")
 	}
 
-	drainScript := a.drainScriptProvider.NewDrainScript(currentSpec.JobSpec.Template)
+	drainScript := a.drainScriptProvider.NewScript(currentSpec.JobSpec.Template)
 
 	var newSpec *boshas.V1ApplySpec
-	var params boshdrain.DrainScriptParams
+	var params boshdrain.ScriptParams
 
 	if len(newSpecs) > 0 {
 		newSpec = &newSpecs[0]
@@ -79,7 +79,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 			return 0, bosherr.New("Drain update requires new spec")
 		}
 
-		params = boshdrain.NewUpdateDrainParams(currentSpec, *newSpec)
+		params = boshdrain.NewUpdateParams(currentSpec, *newSpec)
 
 	case DrainTypeShutdown:
 		err = a.notifier.NotifyShutdown()
@@ -87,10 +87,10 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 			return 0, bosherr.WrapError(err, "Notifying shutdown")
 		}
 
-		params = boshdrain.NewShutdownDrainParams(currentSpec, newSpec)
+		params = boshdrain.NewShutdownParams(currentSpec, newSpec)
 
 	case DrainTypeStatus:
-		params = boshdrain.NewStatusDrainParams(currentSpec, newSpec)
+		params = boshdrain.NewStatusParams(currentSpec, newSpec)
 	}
 
 	if !drainScript.Exists() {

@@ -30,8 +30,8 @@ func (a GetTaskAction) Run(taskID string) (interface{}, error) {
 		return nil, bosherr.New("Task with id %s could not be found", taskID)
 	}
 
-	if task.State == boshtask.TaskStateRunning {
-		return boshtask.TaskStateValue{
+	if task.State == boshtask.StateRunning {
+		return boshtask.StateValue{
 			AgentTaskID: task.ID,
 			State:       task.State,
 		}, nil

@@ -34,7 +34,7 @@ var _ = Describe("GetState", func() {
 		specService = fakeas.NewFakeV1Service()
 		vitalsService = fakevitals.NewFakeService()
 		ntpService := &fakentp.FakeService{
-			GetOffsetNTPOffset: boshntp.NTPInfo{
+			GetOffsetNTPOffset: boshntp.Info{
 				Offset:    "0.34958",
 				Timestamp: "12 Oct 17:37:58",
 			},
@@ -73,7 +73,7 @@ var _ = Describe("GetState", func() {
 						JobState:     "running",
 						BoshProtocol: "1",
 						VM:           boshsettings.VM{Name: "vm-abc-def"},
-						Ntp: boshntp.NTPInfo{
+						Ntp: boshntp.Info{
 							Offset:    "0.34958",
 							Timestamp: "12 Oct 17:37:58",
 						},

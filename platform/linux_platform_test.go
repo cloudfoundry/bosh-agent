@@ -26,34 +26,34 @@ import (
 
 var _ = Describe("LinuxPlatform", func() {
 	var (
-		collector          *fakestats.FakeStatsCollector
+		collector          *fakestats.FakeCollector
 		fs                 *fakesys.FakeFileSystem
 		cmdRunner          *fakesys.FakeCmdRunner
 		diskManager        *fakedisk.FakeDiskManager
-		dirProvider        boshdirs.DirectoriesProvider
+		dirProvider        boshdirs.Provider
 		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 		platform           Platform
 		cdutil             *fakecd.FakeCdUtil
 		compressor         boshcmd.Compressor
 		copier             boshcmd.Copier
 		vitalsService      boshvitals.Service
-		netManager         *fakenet.FakeNetManager
+		netManager         *fakenet.FakeManager
 		options            LinuxOptions
 	)
 
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 
-		collector = &fakestats.FakeStatsCollector{}
+		collector = &fakestats.FakeCollector{}
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		diskManager = fakedisk.NewFakeDiskManager()
-		dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
+		dirProvider = boshdirs.NewProvider("/fake-dir")
 		cdutil = fakecd.NewFakeCdUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
-		netManager = &fakenet.FakeNetManager{}
+		netManager = &fakenet.FakeManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		options = LinuxOptions{}
 

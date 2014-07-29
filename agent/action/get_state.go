@@ -50,7 +50,7 @@ type GetStateV1ApplySpec struct {
 	JobState     string             `json:"job_state"`
 	Vitals       *boshvitals.Vitals `json:"vitals,omitempty"`
 	VM           boshsettings.VM    `json:"vm"`
-	Ntp          boshntp.NTPInfo    `json:"ntp"`
+	Ntp          boshntp.Info       `json:"ntp"`
 }
 
 func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {

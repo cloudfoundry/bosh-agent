@@ -10,12 +10,12 @@ import (
 
 type MigrateDiskAction struct {
 	platform    boshplatform.Platform
-	dirProvider boshdirs.DirectoriesProvider
+	dirProvider boshdirs.Provider
 }
 
 func NewMigrateDisk(
 	platform boshplatform.Platform,
-	dirProvider boshdirs.DirectoriesProvider,
+	dirProvider boshdirs.Provider,
 ) (action MigrateDiskAction) {
 	action.platform = platform
 	action.dirProvider = dirProvider

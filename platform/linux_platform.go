@@ -41,14 +41,14 @@ type LinuxOptions struct {
 type linux struct {
 	fs                 boshsys.FileSystem
 	cmdRunner          boshsys.CmdRunner
-	collector          boshstats.StatsCollector
+	collector          boshstats.Collector
 	compressor         boshcmd.Compressor
 	copier             boshcmd.Copier
-	dirProvider        boshdirs.DirectoriesProvider
+	dirProvider        boshdirs.Provider
 	vitalsService      boshvitals.Service
 	cdutil             boshcd.CdUtil
 	diskManager        boshdisk.Manager
-	netManager         boshnet.NetManager
+	netManager         boshnet.Manager
 	diskScanDuration   time.Duration
 	devicePathResolver boshdpresolv.DevicePathResolver
 	options            LinuxOptions
@@ -58,14 +58,14 @@ type linux struct {
 func NewLinuxPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
-	collector boshstats.StatsCollector,
+	collector boshstats.Collector,
 	compressor boshcmd.Compressor,
 	copier boshcmd.Copier,
-	dirProvider boshdirs.DirectoriesProvider,
+	dirProvider boshdirs.Provider,
 	vitalsService boshvitals.Service,
 	cdutil boshcd.CdUtil,
 	diskManager boshdisk.Manager,
-	netManager boshnet.NetManager,
+	netManager boshnet.Manager,
 	diskScanDuration time.Duration,
 	options LinuxOptions,
 	logger boshlog.Logger,
@@ -104,7 +104,7 @@ func (p linux) GetCopier() (runner boshcmd.Copier) {
 	return p.copier
 }
 
-func (p linux) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
+func (p linux) GetDirProvider() (dirProvider boshdir.Provider) {
 	return p.dirProvider
 }
 

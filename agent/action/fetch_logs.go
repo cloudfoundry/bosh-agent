@@ -14,14 +14,14 @@ type FetchLogsAction struct {
 	compressor  boshcmd.Compressor
 	copier      boshcmd.Copier
 	blobstore   boshblob.Blobstore
-	settingsDir boshdirs.DirectoriesProvider
+	settingsDir boshdirs.Provider
 }
 
 func NewFetchLogs(
 	compressor boshcmd.Compressor,
 	copier boshcmd.Copier,
 	blobstore boshblob.Blobstore,
-	settingsDir boshdirs.DirectoriesProvider,
+	settingsDir boshdirs.Provider,
 ) (action FetchLogsAction) {
 	action.compressor = compressor
 	action.copier = copier

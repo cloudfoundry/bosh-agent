@@ -36,7 +36,7 @@ var _ = Describe("CancelTaskAction", func() {
 
 		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
 			ID:         "fake-task-id",
-			State:      boshtask.TaskStateRunning,
+			State:      boshtask.StateRunning,
 			CancelFunc: cancelFunc,
 		}
 
@@ -52,7 +52,7 @@ var _ = Describe("CancelTaskAction", func() {
 
 		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
 			ID:         "fake-task-id",
-			State:      boshtask.TaskStateRunning,
+			State:      boshtask.StateRunning,
 			CancelFunc: cancelFunc,
 		}
 

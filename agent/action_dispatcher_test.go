@@ -133,7 +133,7 @@ func init() {
 					actionRunner.RunValue = "fake-value"
 					dispatcher.Dispatch(req)
 
-					value, err := taskService.StartedTasks["fake-generated-task-id"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-generated-task-id"].Func()
 					Expect(value).To(Equal("fake-value"))
 					Expect(err).ToNot(HaveOccurred())
 
@@ -145,7 +145,7 @@ func init() {
 					actionRunner.RunErr = errors.New("fake-run-error")
 					dispatcher.Dispatch(req)
 
-					value, err := taskService.StartedTasks["fake-generated-task-id"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-generated-task-id"].Func()
 					Expect(value).To(BeNil())
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-run-error"))
@@ -158,13 +158,13 @@ func init() {
 
 				It("does not add task to task manager since it should not be resumed if agent is restarted", func() {
 					dispatcher.Dispatch(req)
-					taskInfos, _ := taskManager.GetTaskInfos()
+					taskInfos, _ := taskManager.GetInfos()
 					Expect(taskInfos).To(BeEmpty())
 				})
 
 				It("does not do anything after task finishes", func() {
 					dispatcher.Dispatch(req)
-					Expect(taskService.StartedTasks["fake-generated-task-id"].TaskEndFunc).To(BeNil())
+					Expect(taskService.StartedTasks["fake-generated-task-id"].EndFunc).To(BeNil())
 				})
 			})
 
@@ -197,7 +197,7 @@ func init() {
 					actionRunner.RunValue = "fake-value"
 					dispatcher.Dispatch(req)
 
-					value, err := taskService.StartedTasks["fake-generated-task-id"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-generated-task-id"].Func()
 					Expect(value).To(Equal("fake-value"))
 					Expect(err).ToNot(HaveOccurred())
 
@@ -209,7 +209,7 @@ func init() {
 					actionRunner.RunErr = errors.New("fake-run-error")
 					dispatcher.Dispatch(req)
 
-					value, err := taskService.StartedTasks["fake-generated-task-id"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-generated-task-id"].Func()
 					Expect(value).To(BeNil())
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-run-error"))
@@ -222,9 +222,9 @@ func init() {
 
 				It("adds task to task manager before task starts so that it could be resumed if agent is restarted", func() {
 					dispatcher.Dispatch(req)
-					taskInfos, _ := taskManager.GetTaskInfos()
-					Expect(taskInfos).To(Equal([]boshtask.TaskInfo{
-						boshtask.TaskInfo{
+					taskInfos, _ := taskManager.GetInfos()
+					Expect(taskInfos).To(Equal([]boshtask.Info{
+						boshtask.Info{
 							TaskID:  "fake-generated-task-id",
 							Method:  "fake-action",
 							Payload: []byte("fake-payload"),
@@ -234,14 +234,14 @@ func init() {
 
 				It("removes task from task manager after task finishes", func() {
 					dispatcher.Dispatch(req)
-					taskService.StartedTasks["fake-generated-task-id"].TaskEndFunc(boshtask.Task{ID: "fake-generated-task-id"})
+					taskService.StartedTasks["fake-generated-task-id"].EndFunc(boshtask.Task{ID: "fake-generated-task-id"})
 
-					taskInfos, _ := taskManager.GetTaskInfos()
+					taskInfos, _ := taskManager.GetInfos()
 					Expect(taskInfos).To(BeEmpty())
 				})
 
 				It("does not start running created task if task manager cannot add task", func() {
-					taskManager.AddTaskInfoErr = errors.New("fake-add-task-info-error")
+					taskManager.AddInfoErr = errors.New("fake-add-task-info-error")
 
 					resp := dispatcher.Dispatch(req)
 					boshassert.MatchesJSONString(GinkgoT(), resp,
@@ -256,14 +256,14 @@ func init() {
 			var firstAction, secondAction *fakeaction.TestAction
 
 			BeforeEach(func() {
-				err := taskManager.AddTaskInfo(boshtask.TaskInfo{
+				err := taskManager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-1",
 					Method:  "fake-action-1",
 					Payload: []byte("fake-task-payload-1"),
 				})
 				Expect(err).ToNot(HaveOccurred())
 
-				err = taskManager.AddTaskInfo(boshtask.TaskInfo{
+				err = taskManager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id-2",
 					Method:  "fake-action-2",
 					Payload: []byte("fake-task-payload-2"),
@@ -283,7 +283,7 @@ func init() {
 
 				{ // Check that first task executes first action
 					actionRunner.ResumeValue = "fake-resume-value-1"
-					value, err := taskService.StartedTasks["fake-task-id-1"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-task-id-1"].Func()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(value).To(Equal("fake-resume-value-1"))
 					Expect(actionRunner.ResumeAction).To(Equal(firstAction))
@@ -292,7 +292,7 @@ func init() {
 
 				{ // Check that second task executes second action
 					actionRunner.ResumeValue = "fake-resume-value-2"
-					value, err := taskService.StartedTasks["fake-task-id-2"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-task-id-2"].Func()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(value).To(Equal("fake-resume-value-2"))
 					Expect(actionRunner.ResumeAction).To(Equal(secondAction))
@@ -308,10 +308,10 @@ func init() {
 				Expect(len(taskService.StartedTasks)).To(Equal(2))
 
 				// Simulate all tasks ending
-				taskService.StartedTasks["fake-task-id-1"].TaskEndFunc(boshtask.Task{ID: "fake-task-id-1"})
-				taskService.StartedTasks["fake-task-id-2"].TaskEndFunc(boshtask.Task{ID: "fake-task-id-2"})
+				taskService.StartedTasks["fake-task-id-1"].EndFunc(boshtask.Task{ID: "fake-task-id-1"})
+				taskService.StartedTasks["fake-task-id-2"].EndFunc(boshtask.Task{ID: "fake-task-id-2"})
 
-				taskInfos, err := taskManager.GetTaskInfos()
+				taskInfos, err := taskManager.GetInfos()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(taskInfos).To(BeEmpty())
 			})
@@ -325,7 +325,7 @@ func init() {
 
 				{ // Check that first task propagates its resume error
 					actionRunner.ResumeErr = errors.New("fake-resume-error-1")
-					value, err := taskService.StartedTasks["fake-task-id-1"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-task-id-1"].Func()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-resume-error-1"))
 					Expect(value).To(BeNil())
@@ -335,7 +335,7 @@ func init() {
 
 				{ // Check that second task propagates its resume error
 					actionRunner.ResumeErr = errors.New("fake-resume-error-2")
-					value, err := taskService.StartedTasks["fake-task-id-2"].TaskFunc()
+					value, err := taskService.StartedTasks["fake-task-id-2"].Func()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-resume-error-2"))
 					Expect(value).To(BeNil())
@@ -352,10 +352,10 @@ func init() {
 				Expect(len(taskService.StartedTasks)).To(Equal(1))
 
 				{ // Check that first action is removed from task manager
-					taskInfos, err := taskManager.GetTaskInfos()
+					taskInfos, err := taskManager.GetInfos()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(taskInfos).To(Equal([]boshtask.TaskInfo{
-						boshtask.TaskInfo{
+					Expect(taskInfos).To(Equal([]boshtask.Info{
+						boshtask.Info{
 							TaskID:  "fake-task-id-2",
 							Method:  "fake-action-2",
 							Payload: []byte("fake-task-payload-2"),
@@ -364,7 +364,7 @@ func init() {
 				}
 
 				{ // Check that second task executes second action
-					taskService.StartedTasks["fake-task-id-2"].TaskFunc()
+					taskService.StartedTasks["fake-task-id-2"].Func()
 					Expect(actionRunner.ResumeAction).To(Equal(secondAction))
 					Expect(string(actionRunner.ResumePayload)).To(Equal("fake-task-payload-2"))
 				}

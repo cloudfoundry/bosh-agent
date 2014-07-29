@@ -11,7 +11,7 @@ import (
 
 const concreteServiceLogTag = "concreteService"
 
-type SettingsFetcher func() (Settings, error)
+type Fetcher func() (Settings, error)
 
 type concreteServiceProvider struct{}
 
@@ -22,7 +22,7 @@ func NewServiceProvider() concreteServiceProvider {
 func (provider concreteServiceProvider) NewService(
 	fs boshsys.FileSystem,
 	dir string,
-	fetcher SettingsFetcher,
+	fetcher Fetcher,
 	defaultNetworkDelegate DefaultNetworkDelegate,
 	logger boshlog.Logger,
 ) Service {
@@ -39,7 +39,7 @@ type concreteService struct {
 	fs                     boshsys.FileSystem
 	settingsPath           string
 	settings               Settings
-	settingsFetcher        SettingsFetcher
+	settingsFetcher        Fetcher
 	defaultNetworkDelegate DefaultNetworkDelegate
 	logger                 boshlog.Logger
 }
@@ -47,7 +47,7 @@ type concreteService struct {
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
-	settingsFetcher SettingsFetcher,
+	settingsFetcher Fetcher,
 	defaultNetworkDelegate DefaultNetworkDelegate,
 	logger boshlog.Logger,
 ) (service Service) {

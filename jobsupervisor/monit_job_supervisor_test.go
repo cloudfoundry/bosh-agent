@@ -25,7 +25,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		runner                *fakesys.FakeCmdRunner
 		client                *fakemonit.FakeMonitClient
 		logger                boshlog.Logger
-		dirProvider           boshdir.DirectoriesProvider
+		dirProvider           boshdir.Provider
 		jobFailuresServerPort int
 		monit                 JobSupervisor
 	)
@@ -42,7 +42,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		runner = fakesys.NewFakeCmdRunner()
 		client = fakemonit.NewFakeMonitClient()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+		dirProvider = boshdir.NewProvider("/var/vcap")
 		jobFailuresServerPort = getJobFailureServerPort()
 
 		monit = NewMonitJobSupervisor(

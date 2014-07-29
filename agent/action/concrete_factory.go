@@ -30,7 +30,7 @@ func NewFactory(
 	compiler boshcomp.Compiler,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
-	drainScriptProvider boshdrain.DrainScriptProvider,
+	drainScriptProvider boshdrain.ScriptProvider,
 	logger boshlog.Logger,
 ) (factory Factory) {
 	compressor := platform.GetCompressor()

@@ -16,13 +16,13 @@ import (
 var _ = Describe("defaultNetworkResolver", func() {
 	var (
 		routesSearcher *fakenet.FakeRoutesSearcher
-		ipResolver     *fakeip.FakeIPResolver
+		ipResolver     *fakeip.FakeResolver
 		resolver       DefaultNetworkResolver
 	)
 
 	BeforeEach(func() {
 		routesSearcher = &fakenet.FakeRoutesSearcher{}
-		ipResolver = &fakeip.FakeIPResolver{}
+		ipResolver = &fakeip.FakeResolver{}
 		resolver = NewDefaultNetworkResolver(routesSearcher, ipResolver)
 	})
 

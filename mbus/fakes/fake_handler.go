@@ -7,7 +7,7 @@ import (
 )
 
 type FakeHandler struct {
-	RunFunc     boshhandler.HandlerFunc
+	RunFunc     boshhandler.Func
 	RunCallBack func()
 	RunErr      error
 
@@ -19,7 +19,7 @@ type FakeHandler struct {
 	hmRequestsLock sync.Mutex
 	hmRequests     []HMRequest
 
-	RegisteredAdditionalHandlerFunc boshhandler.HandlerFunc
+	RegisteredAdditionalFunc boshhandler.Func
 
 	SendToHealthManagerCallBack func(HMRequest)
 	SendToHealthManagerErr      error
@@ -34,7 +34,7 @@ func NewFakeHandler() *FakeHandler {
 	return &FakeHandler{hmRequests: []HMRequest{}}
 }
 
-func (h *FakeHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
+func (h *FakeHandler) Run(handlerFunc boshhandler.Func) error {
 	h.ReceivedRun = true
 	h.RunFunc = handlerFunc
 
@@ -50,7 +50,7 @@ func (h *FakeHandler) KeepOnRunning() {
 	h.RunCallBack = func() { <-block }
 }
 
-func (h *FakeHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
+func (h *FakeHandler) Start(handlerFunc boshhandler.Func) error {
 	h.ReceivedStart = true
 	h.RunFunc = handlerFunc
 	return nil
@@ -60,8 +60,8 @@ func (h *FakeHandler) Stop() {
 	h.ReceivedStop = true
 }
 
-func (h *FakeHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
-	h.RegisteredAdditionalHandlerFunc = handlerFunc
+func (h *FakeHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
+	h.RegisteredAdditionalFunc = handlerFunc
 }
 
 func (h *FakeHandler) SendToHealthManager(topic string, payload interface{}) error {

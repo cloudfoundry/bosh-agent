@@ -33,30 +33,30 @@ func NewAsyncTaskService(uuidGen boshuuid.Generator, logger boshlog.Logger) (ser
 }
 
 func (service asyncTaskService) CreateTask(
-	taskFunc TaskFunc,
-	taskCancelFunc TaskCancelFunc,
-	taskEndFunc TaskEndFunc,
+	taskFunc Func,
+	cancelFunc CancelFunc,
+	endFunc EndFunc,
 ) (Task, error) {
 	uuid, err := service.uuidGen.Generate()
 	if err != nil {
 		return Task{}, err
 	}
 
-	return service.CreateTaskWithID(uuid, taskFunc, taskCancelFunc, taskEndFunc), nil
+	return service.CreateTaskWithID(uuid, taskFunc, cancelFunc, endFunc), nil
 }
 
 func (service asyncTaskService) CreateTaskWithID(
 	id string,
-	taskFunc TaskFunc,
-	taskCancelFunc TaskCancelFunc,
-	taskEndFunc TaskEndFunc,
+	taskFunc Func,
+	cancelFunc CancelFunc,
+	endFunc EndFunc,
 ) Task {
 	return Task{
-		ID:          id,
-		State:       TaskStateRunning,
-		TaskFunc:    taskFunc,
-		CancelFunc:  taskCancelFunc,
-		TaskEndFunc: taskEndFunc,
+		ID:         id,
+		State:      StateRunning,
+		Func:       taskFunc,
+		CancelFunc: cancelFunc,
+		EndFunc:    endFunc,
 	}
 }
 
@@ -100,18 +100,18 @@ func (service asyncTaskService) processTasks() {
 	for {
 		task := <-service.taskChan
 
-		value, err := task.TaskFunc()
+		value, err := task.Func()
 		if err != nil {
 			task.Error = err
-			task.State = TaskStateFailed
+			task.State = StateFailed
 			service.logger.Error("Task Service", "Failed processing task #%s got: %s", task.ID, err.Error())
 		} else {
 			task.Value = value
-			task.State = TaskStateDone
+			task.State = StateDone
 		}
 
-		if task.TaskEndFunc != nil {
-			task.TaskEndFunc(task)
+		if task.EndFunc != nil {
+			task.EndFunc(task)
 		}
 
 		service.taskSem <- func() {

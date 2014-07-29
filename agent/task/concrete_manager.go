@@ -31,7 +31,7 @@ type concreteManager struct {
 	tasksPath string
 
 	// Access to taskInfos must be synchronized via fsSem
-	taskInfos map[string]TaskInfo
+	taskInfos map[string]Info
 }
 
 func NewManager(logger boshlog.Logger, fs boshsys.FileSystem, tasksPath string) Manager {
@@ -40,7 +40,7 @@ func NewManager(logger boshlog.Logger, fs boshsys.FileSystem, tasksPath string) 
 		fs:        fs,
 		fsSem:     make(chan func()),
 		tasksPath: tasksPath,
-		taskInfos: make(map[string]TaskInfo),
+		taskInfos: make(map[string]Info),
 	}
 
 	go m.processFsFuncs()
@@ -48,12 +48,12 @@ func NewManager(logger boshlog.Logger, fs boshsys.FileSystem, tasksPath string) 
 	return m
 }
 
-func (m *concreteManager) GetTaskInfos() ([]TaskInfo, error) {
-	taskInfosChan := make(chan map[string]TaskInfo)
+func (m *concreteManager) GetInfos() ([]Info, error) {
+	taskInfosChan := make(chan map[string]Info)
 	errCh := make(chan error)
 
 	m.fsSem <- func() {
-		taskInfos, err := m.readTaskInfos()
+		taskInfos, err := m.readInfos()
 		m.taskInfos = taskInfos
 		taskInfosChan <- taskInfos
 		errCh <- err
@@ -66,7 +66,7 @@ func (m *concreteManager) GetTaskInfos() ([]TaskInfo, error) {
 		return nil, err
 	}
 
-	var r []TaskInfo
+	var r []Info
 	for _, taskInfo := range taskInfos {
 		r = append(r, taskInfo)
 	}
@@ -74,23 +74,23 @@ func (m *concreteManager) GetTaskInfos() ([]TaskInfo, error) {
 	return r, nil
 }
 
-func (m *concreteManager) AddTaskInfo(taskInfo TaskInfo) error {
+func (m *concreteManager) AddInfo(taskInfo Info) error {
 	errCh := make(chan error)
 
 	m.fsSem <- func() {
 		m.taskInfos[taskInfo.TaskID] = taskInfo
-		err := m.writeTaskInfos(m.taskInfos)
+		err := m.writeInfos(m.taskInfos)
 		errCh <- err
 	}
 	return <-errCh
 }
 
-func (m *concreteManager) RemoveTaskInfo(taskID string) error {
+func (m *concreteManager) RemoveInfo(taskID string) error {
 	errCh := make(chan error)
 
 	m.fsSem <- func() {
 		delete(m.taskInfos, taskID)
-		err := m.writeTaskInfos(m.taskInfos)
+		err := m.writeInfos(m.taskInfos)
 		errCh <- err
 	}
 	return <-errCh
@@ -105,8 +105,8 @@ func (m *concreteManager) processFsFuncs() {
 	}
 }
 
-func (m *concreteManager) readTaskInfos() (map[string]TaskInfo, error) {
-	taskInfos := make(map[string]TaskInfo)
+func (m *concreteManager) readInfos() (map[string]Info, error) {
+	taskInfos := make(map[string]Info)
 
 	exists := m.fs.FileExists(m.tasksPath)
 	if !exists {
@@ -126,7 +126,7 @@ func (m *concreteManager) readTaskInfos() (map[string]TaskInfo, error) {
 	return taskInfos, nil
 }
 
-func (m *concreteManager) writeTaskInfos(taskInfos map[string]TaskInfo) error {
+func (m *concreteManager) writeInfos(taskInfos map[string]Info) error {
 	newTasksJSON, err := json.Marshal(taskInfos)
 	if err != nil {
 		return bosherr.WrapError(err, "Marshalling tasks json")

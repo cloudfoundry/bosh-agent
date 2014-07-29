@@ -3,10 +3,10 @@ package fakes
 import boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 
 type FakeService struct {
-	GetOffsetNTPOffset boshntp.NTPInfo
+	GetOffsetNTPOffset boshntp.Info
 }
 
-func (oc *FakeService) GetInfo() (ntpInfo boshntp.NTPInfo) {
+func (oc *FakeService) GetInfo() (ntpInfo boshntp.Info) {
 	ntpInfo = oc.GetOffsetNTPOffset
 	return
 }

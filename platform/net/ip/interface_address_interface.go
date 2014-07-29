@@ -24,13 +24,13 @@ func (s simpleInterfaceAddress) GetIP() (string, error)   { return s.ip, nil }
 
 type resolvingInterfaceAddress struct {
 	interfaceName string
-	ipResolver    IPResolver
+	ipResolver    Resolver
 	ip            string
 }
 
 func NewResolvingInterfaceAddress(
 	interfaceName string,
-	ipResolver IPResolver,
+	ipResolver Resolver,
 ) *resolvingInterfaceAddress {
 	return &resolvingInterfaceAddress{
 		interfaceName: interfaceName,

@@ -21,14 +21,14 @@ type HTTPSHandler struct {
 	logger      boshlog.Logger
 	dispatcher  boshdispatcher.HTTPSDispatcher
 	fs          boshsys.FileSystem
-	dirProvider boshdir.DirectoriesProvider
+	dirProvider boshdir.Provider
 }
 
 func NewHTTPSHandler(
 	parsedURL *url.URL,
 	logger boshlog.Logger,
 	fs boshsys.FileSystem,
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 ) (handler HTTPSHandler) {
 	handler.parsedURL = parsedURL
 	handler.logger = logger
@@ -38,7 +38,7 @@ func NewHTTPSHandler(
 	return
 }
 
-func (h HTTPSHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
+func (h HTTPSHandler) Run(handlerFunc boshhandler.Func) error {
 	err := h.Start(handlerFunc)
 	if err != nil {
 		return bosherr.WrapError(err, "Starting https handler")
@@ -46,7 +46,7 @@ func (h HTTPSHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
 	return nil
 }
 
-func (h HTTPSHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
+func (h HTTPSHandler) Start(handlerFunc boshhandler.Func) error {
 	h.dispatcher.AddRoute("/agent", h.agentHandler(handlerFunc))
 	h.dispatcher.AddRoute("/blobs/", h.blobsHandler())
 	h.dispatcher.Start()
@@ -57,7 +57,7 @@ func (h HTTPSHandler) Stop() {
 	h.dispatcher.Stop()
 }
 
-func (h HTTPSHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
+func (h HTTPSHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
 	panic("HTTPSHandler does not support registering additional handler funcs")
 }
 
@@ -74,7 +74,7 @@ func (h HTTPSHandler) requestNotAuthorized(request *http.Request) bool {
 	return expectedAuthorizationHeader != request.Header.Get("Authorization")
 }
 
-func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.HandlerFunc) (agentHandler func(http.ResponseWriter, *http.Request)) {
+func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) (agentHandler func(http.ResponseWriter, *http.Request)) {
 	agentHandler = func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			w.WriteHeader(404)

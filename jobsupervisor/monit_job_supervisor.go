@@ -22,7 +22,7 @@ type monitJobSupervisor struct {
 	runner      boshsys.CmdRunner
 	client      boshmonit.Client
 	logger      boshlog.Logger
-	dirProvider boshdir.DirectoriesProvider
+	dirProvider boshdir.Provider
 
 	jobFailuresServerPort int
 
@@ -46,7 +46,7 @@ func NewMonitJobSupervisor(
 	runner boshsys.CmdRunner,
 	client boshmonit.Client,
 	logger boshlog.Logger,
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 	jobFailuresServerPort int,
 	reloadOptions MonitReloadOptions,
 ) (m monitJobSupervisor) {

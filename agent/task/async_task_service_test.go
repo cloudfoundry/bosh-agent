@@ -28,7 +28,7 @@ func init() {
 		Describe("StartTask", func() {
 			startAndWaitForTaskCompletion := func(task Task) Task {
 				service.StartTask(task)
-				for task.State == TaskStateRunning {
+				for task.State == StateRunning {
 					time.Sleep(time.Nanosecond)
 					task, _ = service.FindTaskWithID(task.ID)
 				}
@@ -42,7 +42,7 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 
 				task = startAndWaitForTaskCompletion(task)
-				Expect(task.State).To(BeEquivalentTo(TaskStateDone))
+				Expect(task.State).To(BeEquivalentTo(StateDone))
 				Expect(task.Value).To(Equal(123))
 				Expect(task.Error).To(BeNil())
 			})
@@ -55,7 +55,7 @@ func init() {
 				Expect(createErr).ToNot(HaveOccurred())
 
 				task = startAndWaitForTaskCompletion(task)
-				Expect(task.State).To(BeEquivalentTo(TaskStateFailed))
+				Expect(task.State).To(BeEquivalentTo(StateFailed))
 				Expect(task.Value).To(BeNil())
 				Expect(task.Error).To(Equal(err))
 			})
@@ -142,7 +142,7 @@ func init() {
 					allDone := true
 					for _, id := range ids {
 						task, _ := service.FindTaskWithID(id)
-						if task.State != TaskStateDone {
+						if task.State != StateDone {
 							allDone = false
 							break
 						}
@@ -180,15 +180,15 @@ func init() {
 				task, err := service.CreateTask(runFunc, cancelFunc, endFunc)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(task.ID).To(Equal("fake-uuid"))
-				Expect(task.State).To(Equal(TaskStateRunning))
+				Expect(task.State).To(Equal(StateRunning))
 
-				task.TaskFunc()
+				task.Func()
 				Expect(runFuncCalled).To(BeTrue())
 
 				task.CancelFunc(task)
 				Expect(cancelFuncCalled).To(BeTrue())
 
-				task.TaskEndFunc(task)
+				task.EndFunc(task)
 				Expect(endFuncCalled).To(BeTrue())
 			})
 		})
@@ -214,15 +214,15 @@ func init() {
 
 				task := service.CreateTaskWithID("fake-task-id", runFunc, cancelFunc, endFunc)
 				Expect(task.ID).To(Equal("fake-task-id"))
-				Expect(task.State).To(Equal(TaskStateRunning))
+				Expect(task.State).To(Equal(StateRunning))
 
-				task.TaskFunc()
+				task.Func()
 				Expect(runFuncCalled).To(BeTrue())
 
 				task.CancelFunc(task)
 				Expect(cancelFuncCalled).To(BeTrue())
 
-				task.TaskEndFunc(task)
+				task.EndFunc(task)
 				Expect(endFuncCalled).To(BeTrue())
 			})
 		})

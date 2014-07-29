@@ -30,7 +30,7 @@ var _ = Describe("concreteFactory", func() {
 		compiler            *fakecomp.FakeCompiler
 		jobSupervisor       *fakejobsuper.FakeJobSupervisor
 		specService         *fakeas.FakeV1Service
-		drainScriptProvider boshdrain.DrainScriptProvider
+		drainScriptProvider boshdrain.ScriptProvider
 		factory             Factory
 		logger              boshlog.Logger
 	)
@@ -45,7 +45,7 @@ var _ = Describe("concreteFactory", func() {
 		compiler = fakecomp.NewFakeCompiler()
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
-		drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, platform.GetDirProvider())
+		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider())
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		factory = NewFactory(

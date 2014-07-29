@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("sigarStatsCollector", func() {
 	var (
-		collector StatsCollector
+		collector Collector
 		fakeSigar *fakesigar.FakeSigar
 		doneCh    chan struct{}
 	)

@@ -17,18 +17,18 @@ import (
 
 var _ = Describe("dummyPlatform", func() {
 	var (
-		collector   *fakestats.FakeStatsCollector
+		collector   *fakestats.FakeCollector
 		fs          *fakesys.FakeFileSystem
 		cmdRunner   *fakesys.FakeCmdRunner
-		dirProvider boshdirs.DirectoriesProvider
+		dirProvider boshdirs.Provider
 		platform    Platform
 	)
 
 	BeforeEach(func() {
-		collector = &fakestats.FakeStatsCollector{}
+		collector = &fakestats.FakeCollector{}
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
-		dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
+		dirProvider = boshdirs.NewProvider("/fake-dir")
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		platform = NewDummyPlatform(collector, fs, cmdRunner, dirProvider, logger)
 	})

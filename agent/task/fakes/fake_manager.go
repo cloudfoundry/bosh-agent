@@ -3,29 +3,29 @@ package fakes
 import boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 
 type FakeManager struct {
-	taskIDToTaskInfo map[string]boshtask.TaskInfo
+	taskIDToTaskInfo map[string]boshtask.Info
 
-	AddTaskInfoErr error
+	AddInfoErr error
 }
 
 func NewFakeManager() *FakeManager {
-	return &FakeManager{taskIDToTaskInfo: make(map[string]boshtask.TaskInfo)}
+	return &FakeManager{taskIDToTaskInfo: make(map[string]boshtask.Info)}
 }
 
-func (m *FakeManager) GetTaskInfos() ([]boshtask.TaskInfo, error) {
-	var taskInfos []boshtask.TaskInfo
+func (m *FakeManager) GetInfos() ([]boshtask.Info, error) {
+	var taskInfos []boshtask.Info
 	for _, taskInfo := range m.taskIDToTaskInfo {
 		taskInfos = append(taskInfos, taskInfo)
 	}
 	return taskInfos, nil
 }
 
-func (m *FakeManager) AddTaskInfo(taskInfo boshtask.TaskInfo) error {
+func (m *FakeManager) AddInfo(taskInfo boshtask.Info) error {
 	m.taskIDToTaskInfo[taskInfo.TaskID] = taskInfo
-	return m.AddTaskInfoErr
+	return m.AddInfoErr
 }
 
-func (m *FakeManager) RemoveTaskInfo(taskID string) error {
+func (m *FakeManager) RemoveInfo(taskID string) error {
 	delete(m.taskIDToTaskInfo, taskID)
 	return nil
 }

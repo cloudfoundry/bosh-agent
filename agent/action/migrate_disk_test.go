@@ -12,7 +12,7 @@ import (
 
 func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action MigrateDiskAction) {
 	platform = fakeplatform.NewFakePlatform()
-	dirProvider := boshdirs.NewDirectoriesProvider("/foo")
+	dirProvider := boshdirs.NewProvider("/foo")
 	action = NewMigrateDisk(platform, dirProvider)
 	return
 }

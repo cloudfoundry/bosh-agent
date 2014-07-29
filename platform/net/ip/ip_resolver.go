@@ -17,7 +17,7 @@ func NetworkInterfaceToAddrsFunc(interfaceName string) ([]gonet.Addr, error) {
 	return iface.Addrs()
 }
 
-type IPResolver interface {
+type Resolver interface {
 	// GetPrimaryIPv4 always returns error unless IPNet is found for given interface
 	GetPrimaryIPv4(interfaceName string) (*gonet.IPNet, error)
 }
@@ -26,7 +26,7 @@ type ipResolver struct {
 	ifaceToAddrsFunc InterfaceToAddrsFunc
 }
 
-func NewIPResolver(ifaceToAddrsFunc InterfaceToAddrsFunc) ipResolver {
+func NewResolver(ifaceToAddrsFunc InterfaceToAddrsFunc) ipResolver {
 	return ipResolver{ifaceToAddrsFunc: ifaceToAddrsFunc}
 }
 

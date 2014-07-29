@@ -4,7 +4,7 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 )
 
-type staticDrainParams struct {
+type staticParams struct {
 	jobChange       string
 	hashChange      string
 	updatedPackages []string
@@ -13,11 +13,11 @@ type staticDrainParams struct {
 	newSpec *boshas.V1ApplySpec
 }
 
-func NewShutdownDrainParams(
+func NewShutdownParams(
 	oldSpec boshas.V1ApplySpec,
 	newSpec *boshas.V1ApplySpec,
-) staticDrainParams {
-	return staticDrainParams{
+) staticParams {
+	return staticParams{
 		jobChange:       "job_shutdown",
 		hashChange:      "hash_unchanged",
 		updatedPackages: []string{},
@@ -26,11 +26,11 @@ func NewShutdownDrainParams(
 	}
 }
 
-func NewStatusDrainParams(
+func NewStatusParams(
 	oldSpec boshas.V1ApplySpec,
 	newSpec *boshas.V1ApplySpec,
-) staticDrainParams {
-	return staticDrainParams{
+) staticParams {
+	return staticParams{
 		jobChange:       "job_check_status",
 		hashChange:      "hash_unchanged",
 		updatedPackages: []string{},
@@ -39,14 +39,14 @@ func NewStatusDrainParams(
 	}
 }
 
-func (p staticDrainParams) JobChange() (change string)       { return p.jobChange }
-func (p staticDrainParams) HashChange() (change string)      { return p.hashChange }
-func (p staticDrainParams) UpdatedPackages() (pkgs []string) { return p.updatedPackages }
+func (p staticParams) JobChange() (change string)       { return p.jobChange }
+func (p staticParams) HashChange() (change string)      { return p.hashChange }
+func (p staticParams) UpdatedPackages() (pkgs []string) { return p.updatedPackages }
 
-func (p staticDrainParams) JobState() (string, error) {
+func (p staticParams) JobState() (string, error) {
 	return newPresentedJobState(&p.oldSpec).MarshalToJSONString()
 }
 
-func (p staticDrainParams) JobNextState() (string, error) {
+func (p staticParams) JobNextState() (string, error) {
 	return newPresentedJobState(p.newSpec).MarshalToJSONString()
 }

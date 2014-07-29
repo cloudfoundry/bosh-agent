@@ -8,18 +8,18 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
-type ConcreteDrainScript struct {
+type ConcreteScript struct {
 	fs              boshsys.FileSystem
 	runner          boshsys.CmdRunner
 	drainScriptPath string
 }
 
-func NewConcreteDrainScript(
+func NewConcreteScript(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	drainScriptPath string,
-) (script ConcreteDrainScript) {
-	script = ConcreteDrainScript{
+) (script ConcreteScript) {
+	script = ConcreteScript{
 		fs:              fs,
 		runner:          runner,
 		drainScriptPath: drainScriptPath,
@@ -27,15 +27,15 @@ func NewConcreteDrainScript(
 	return
 }
 
-func (script ConcreteDrainScript) Exists() bool {
+func (script ConcreteScript) Exists() bool {
 	return script.fs.FileExists(script.drainScriptPath)
 }
 
-func (script ConcreteDrainScript) Path() string {
+func (script ConcreteScript) Path() string {
 	return script.drainScriptPath
 }
 
-func (script ConcreteDrainScript) Run(params DrainScriptParams) (int, error) {
+func (script ConcreteScript) Run(params ScriptParams) (int, error) {
 	jobChange := params.JobChange()
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()

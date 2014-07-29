@@ -15,12 +15,12 @@ func init() {
 
 			runner := fakesys.NewFakeCmdRunner()
 			fs := fakesys.NewFakeFileSystem()
-			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+			dirProvider := boshdir.NewProvider("/var/vcap")
 
-			scriptProvider := NewConcreteDrainScriptProvider(runner, fs, dirProvider)
-			drainScript := scriptProvider.NewDrainScript("foo")
+			scriptProvider := NewConcreteScriptProvider(runner, fs, dirProvider)
+			script := scriptProvider.NewScript("foo")
 
-			Expect(drainScript.Path()).To(Equal("/var/vcap/jobs/foo/bin/drain"))
+			Expect(script.Path()).To(Equal("/var/vcap/jobs/foo/bin/drain"))
 		})
 	})
 }

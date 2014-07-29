@@ -41,7 +41,7 @@ func init() {
 			platform = fakeplatform.NewFakePlatform()
 		})
 
-		buildService := func(fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
+		buildService := func(fetcher Fetcher) (Service, *fakesys.FakeFileSystem) {
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			service := NewService(fs, "/setting/path", fetcher, platform, logger)
 			return service, fs

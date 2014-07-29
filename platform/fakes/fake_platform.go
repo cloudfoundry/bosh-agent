@@ -129,8 +129,8 @@ func (p *FakePlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.FakeCopier
 }
 
-func (p *FakePlatform) GetDirProvider() (dirProvider boshdir.DirectoriesProvider) {
-	return boshdir.NewDirectoriesProvider("/var/vcap")
+func (p *FakePlatform) GetDirProvider() (dirProvider boshdir.Provider) {
+	return boshdir.NewProvider("/var/vcap")
 }
 
 func (p *FakePlatform) GetVitalsService() (service boshvitals.Service) {

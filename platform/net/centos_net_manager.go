@@ -22,7 +22,7 @@ type centosNetManager struct {
 	fs                 boshsys.FileSystem
 	cmdRunner          boshsys.CmdRunner
 	routesSearcher     RoutesSearcher
-	ipResolver         boship.IPResolver
+	ipResolver         boship.Resolver
 	addressBroadcaster bosharp.AddressBroadcaster
 	logger             boshlog.Logger
 }
@@ -31,7 +31,7 @@ func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	defaultNetworkResolver DefaultNetworkResolver,
-	ipResolver boship.IPResolver,
+	ipResolver boship.Resolver,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) centosNetManager {
@@ -71,7 +71,7 @@ func (net centosNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan
 
 	addresses := []boship.InterfaceAddress{
 		// eth0 is hard coded in AWS and OpenStack stemcells.
-		// TODO: abstract hardcoded network interface name to the NetManager
+		// TODO: abstract hardcoded network interface name to the Manager
 		boship.NewResolvingInterfaceAddress("eth0", net.ipResolver),
 	}
 

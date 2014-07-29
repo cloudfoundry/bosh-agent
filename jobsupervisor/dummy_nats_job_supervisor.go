@@ -51,7 +51,7 @@ func (d *dummyNatsJobSupervisor) Status() string {
 func (d *dummyNatsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	d.jobFailureHandler = handler
 
-	d.mbusHandler.RegisterAdditionalHandlerFunc(d.statusHandler)
+	d.mbusHandler.RegisterAdditionalFunc(d.statusHandler)
 
 	return nil
 }

@@ -1,4 +1,4 @@
-package jobapplier
+package jobs
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	boshpa "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshblob "github.com/cloudfoundry/bosh-agent/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
@@ -22,7 +22,7 @@ const logTag = "renderedJobApplier"
 type renderedJobApplier struct {
 	jobsBc                 boshbc.BundleCollection
 	jobSupervisor          boshjobsuper.JobSupervisor
-	packageApplierProvider boshpa.PackageApplierProvider
+	packageApplierProvider packages.ApplierProvider
 	blobstore              boshblob.Blobstore
 	compressor             boshcmd.Compressor
 	fs                     boshsys.FileSystem
@@ -32,7 +32,7 @@ type renderedJobApplier struct {
 func NewRenderedJobApplier(
 	jobsBc boshbc.BundleCollection,
 	jobSupervisor boshjobsuper.JobSupervisor,
-	packageApplierProvider boshpa.PackageApplierProvider,
+	packageApplierProvider packages.ApplierProvider,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
@@ -94,7 +94,7 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 }
 
 func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc.Bundle) error {
-	tmpDir, err := s.fs.TempDir("bosh-agent-applier-jobapplier-RenderedJobApplier-Apply")
+	tmpDir, err := s.fs.TempDir("bosh-agent-applier-jobs-RenderedJobApplier-Apply")
 	if err != nil {
 		return bosherr.WrapError(err, "Getting temp dir")
 	}

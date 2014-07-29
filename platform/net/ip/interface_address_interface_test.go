@@ -13,12 +13,12 @@ import (
 
 var _ = Describe("resolvingInterfaceAddress", func() {
 	var (
-		ipResolver       *fakeip.FakeIPResolver
+		ipResolver       *fakeip.FakeResolver
 		interfaceAddress InterfaceAddress
 	)
 
 	BeforeEach(func() {
-		ipResolver = &fakeip.FakeIPResolver{}
+		ipResolver = &fakeip.FakeResolver{}
 		interfaceAddress = NewResolvingInterfaceAddress("fake-iface-name", ipResolver)
 	})
 

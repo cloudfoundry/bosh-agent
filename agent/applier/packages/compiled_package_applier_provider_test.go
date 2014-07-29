@@ -1,24 +1,24 @@
-package packageapplier_test
+package packages_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/packageapplier"
+	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	fakeblob "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakecmd "github.com/cloudfoundry/bosh-agent/platform/commands/fakes"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
-var _ = Describe("concretePackageApplierProvider", func() {
+var _ = Describe("compiledPackageApplierProvider", func() {
 	var (
 		blobstore  *fakeblob.FakeBlobstore
 		compressor *fakecmd.FakeCompressor
 		fs         *fakesys.FakeFileSystem
 		logger     boshlog.Logger
-		provider   PackageApplierProvider
+		provider   ApplierProvider
 	)
 
 	BeforeEach(func() {
@@ -26,7 +26,7 @@ var _ = Describe("concretePackageApplierProvider", func() {
 		compressor = fakecmd.NewFakeCompressor()
 		fs = fakesys.NewFakeFileSystem()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		provider = NewConcretePackageApplierProvider(
+		provider = NewCompiledPackageApplierProvider(
 			"fake-install-path",
 			"fake-root-enable-path",
 			"fake-job-specific-enable-path",
@@ -40,7 +40,7 @@ var _ = Describe("concretePackageApplierProvider", func() {
 
 	Describe("Root", func() {
 		It("returns package applier that is configured to update system wide packages", func() {
-			expected := NewConcretePackageApplier(
+			expected := NewCompiledPackageApplier(
 				boshbc.NewFileBundleCollection(
 					"fake-install-path",
 					"fake-root-enable-path",
@@ -60,7 +60,7 @@ var _ = Describe("concretePackageApplierProvider", func() {
 
 	Describe("JobSpecific", func() {
 		It("returns package applier that is configured to only update job specific packages", func() {
-			expected := NewConcretePackageApplier(
+			expected := NewCompiledPackageApplier(
 				boshbc.NewFileBundleCollection(
 					"fake-install-path",
 					"fake-job-specific-enable-path/fake-job-name",

@@ -20,7 +20,7 @@ func init() {
 			platform              *fakeplatform.FakePlatform
 			client                *fakemonit.FakeMonitClient
 			logger                boshlog.Logger
-			dirProvider           boshdir.DirectoriesProvider
+			dirProvider           boshdir.Provider
 			jobFailuresServerPort int
 			handler               *fakembus.FakeHandler
 			provider              Provider
@@ -30,7 +30,7 @@ func init() {
 			platform = fakeplatform.NewFakePlatform()
 			client = fakemonit.NewFakeMonitClient()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
-			dirProvider = boshdir.NewDirectoriesProvider("/fake-base-dir")
+			dirProvider = boshdir.NewProvider("/fake-base-dir")
 			jobFailuresServerPort = 2825
 			handler = &fakembus.FakeHandler{}
 

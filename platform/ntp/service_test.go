@@ -13,7 +13,7 @@ var _ = Describe("concreteService", func() {
 	Describe("GetInfo", func() {
 		buildService := func(NTPData string) Service {
 			fs := fakefs.NewFakeFileSystem()
-			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+			dirProvider := boshdir.NewProvider("/var/vcap")
 
 			if NTPData != "" {
 				err := fs.WriteFileString("/var/vcap/bosh/log/ntpdate.out", NTPData)
@@ -29,7 +29,7 @@ var _ = Describe("concreteService", func() {
 `
 			service := buildService(NTPData)
 
-			expectedNTPOffset := NTPInfo{
+			expectedNTPOffset := Info{
 				Timestamp: "12 Oct 17:37:58",
 				Offset:    "-0.081236",
 			}
@@ -42,7 +42,7 @@ var _ = Describe("concreteService", func() {
 				"dsjkfsdfkjhsdfhjk\n"
 			service := buildService(NTPData)
 
-			expectedNTPOffset := NTPInfo{
+			expectedNTPOffset := Info{
 				Message: "bad file contents",
 			}
 			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
@@ -52,7 +52,7 @@ var _ = Describe("concreteService", func() {
 			NTPData := "13 Oct 18:00:05 ntpdate[1754]: no server suitable for synchronization found\n"
 			service := buildService(NTPData)
 
-			expectedNTPOffset := NTPInfo{
+			expectedNTPOffset := Info{
 				Message: "bad ntp server",
 			}
 			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
@@ -61,7 +61,7 @@ var _ = Describe("concreteService", func() {
 		It("returns nil when file does not exist", func() {
 			service := buildService("")
 
-			expectedNTPOffset := NTPInfo{
+			expectedNTPOffset := Info{
 				Message: "file missing",
 			}
 			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))

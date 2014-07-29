@@ -19,7 +19,7 @@ func NewProvider(
 	platform boshplatform.Platform,
 	client boshmonit.Client,
 	logger boshlog.Logger,
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 	handler boshhandler.Handler,
 ) (p Provider) {
 	monitJobSupervisor := NewMonitJobSupervisor(

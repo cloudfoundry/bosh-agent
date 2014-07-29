@@ -7,7 +7,7 @@ import (
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 )
 
-type FakeStatsCollector struct {
+type FakeCollector struct {
 	StartCollectingCPUStats boshstats.CPUStats
 
 	CPULoad  boshstats.CPULoad
@@ -18,31 +18,31 @@ type FakeStatsCollector struct {
 	DiskStats map[string]boshstats.DiskStats
 }
 
-func (c *FakeStatsCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
+func (c *FakeCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
 	c.cpuStats = c.StartCollectingCPUStats
 }
 
-func (c *FakeStatsCollector) GetCPULoad() (load boshstats.CPULoad, err error) {
+func (c *FakeCollector) GetCPULoad() (load boshstats.CPULoad, err error) {
 	load = c.CPULoad
 	return
 }
 
-func (c *FakeStatsCollector) GetCPUStats() (stats boshstats.CPUStats, err error) {
+func (c *FakeCollector) GetCPUStats() (stats boshstats.CPUStats, err error) {
 	stats = c.cpuStats
 	return
 }
 
-func (c *FakeStatsCollector) GetMemStats() (usage boshstats.Usage, err error) {
+func (c *FakeCollector) GetMemStats() (usage boshstats.Usage, err error) {
 	usage = c.MemStats
 	return
 }
 
-func (c *FakeStatsCollector) GetSwapStats() (usage boshstats.Usage, err error) {
+func (c *FakeCollector) GetSwapStats() (usage boshstats.Usage, err error) {
 	usage = c.SwapStats
 	return
 }
 
-func (c *FakeStatsCollector) GetDiskStats(devicePath string) (stats boshstats.DiskStats, err error) {
+func (c *FakeCollector) GetDiskStats(devicePath string) (stats boshstats.DiskStats, err error) {
 	stats, found := c.DiskStats[devicePath]
 	if !found {
 		err = errors.New("Disk not found")

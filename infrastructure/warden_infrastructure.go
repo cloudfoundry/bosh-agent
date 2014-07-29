@@ -12,13 +12,13 @@ import (
 )
 
 type wardenInfrastructure struct {
-	dirProvider        boshdir.DirectoriesProvider
+	dirProvider        boshdir.Provider
 	platform           boshplatform.Platform
 	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
 func NewWardenInfrastructure(
-	dirProvider boshdir.DirectoriesProvider,
+	dirProvider boshdir.Provider,
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 ) (inf wardenInfrastructure) {

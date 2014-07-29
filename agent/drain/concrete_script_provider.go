@@ -7,24 +7,24 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
-type ConcreteDrainScriptProvider struct {
+type ConcreteScriptProvider struct {
 	cmdRunner   boshsys.CmdRunner
 	fs          boshsys.FileSystem
-	dirProvider boshdirs.DirectoriesProvider
+	dirProvider boshdirs.Provider
 }
 
-func NewConcreteDrainScriptProvider(
+func NewConcreteScriptProvider(
 	cmdRunner boshsys.CmdRunner,
 	fs boshsys.FileSystem,
-	dirProvider boshdirs.DirectoriesProvider,
-) (provider ConcreteDrainScriptProvider) {
+	dirProvider boshdirs.Provider,
+) (provider ConcreteScriptProvider) {
 	provider.cmdRunner = cmdRunner
 	provider.fs = fs
 	provider.dirProvider = dirProvider
 	return
 }
 
-func (p ConcreteDrainScriptProvider) NewDrainScript(templateName string) DrainScript {
+func (p ConcreteScriptProvider) NewScript(templateName string) Script {
 	scriptPath := filepath.Join(p.dirProvider.JobsDir(), templateName, "bin", "drain")
-	return NewConcreteDrainScript(p.fs, p.cmdRunner, scriptPath)
+	return NewConcreteScript(p.fs, p.cmdRunner, scriptPath)
 }
