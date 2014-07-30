@@ -1,5 +1,14 @@
 #!/bin/bash
 
+while getopts "q" OPTION
+do
+  case $OPTION in
+    q)
+      QUIET=true
+      ;;
+  esac
+done
+
 result=0
 
 bin=$(dirname $0)
@@ -15,10 +24,12 @@ echo -e "\n Testing packages..."
 $bin/env ginkgo -r $race $bin/..
 let "result+=$?"
 
-if [ $result -eq 0 ]; then
-  echo -e "\n\033[0;32mSUITE SUCCESS\033[0m"
-else
-  echo -e "\n\033[0;31mSUITE FAILURE\033[0m"
+if [ ! $QUIET ]; then
+  if [ $result -eq 0 ]; then
+    echo -e "\n\033[0;32mSUITE SUCCESS\033[0m"
+  else
+    echo -e "\n\033[0;31mSUITE FAILURE\033[0m"
+  fi
 fi
 
 exit $result

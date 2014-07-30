@@ -8,7 +8,7 @@ echo -e "\n Formatting packages..."
 $bin/go fmt github.com/cloudfoundry/bosh-agent/...
 let "result+=$?"
 
-$bin/test-unit
+$bin/test-unit -q
 let "result+=$?"
 
 echo -e "\n Vetting packages for potential issues..."
