@@ -23,9 +23,6 @@ echo -e "\n Running build script to confirm everything compiles..."
 $bin/build
 let "result+=$?"
 
-$bin/test-integration
-let "result+=$?"
-
 if [ $result -eq 0 ]; then
 	echo -e "\nSUITE SUCCESS"
 else
