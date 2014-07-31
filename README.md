@@ -41,10 +41,15 @@ A full call might look like:
 
 Note: This guide assumes a few things:
 
-- You are working out of your $HOME/workspace directory.
-- You have git
 - You have gcc (or an equivalent)
 - You can install packages (brew, apt-get, or equivalent)
+
+Get Golang and its dependencies (Mac example, replace with your package manager of choice):
+
+- `brew update`
+- `brew install go`
+- `brew install git` (Go needs git for the `go get` command)
+- `brew install hg` (Go needs mercurial for the `go get` command)
 
 Clone and set up the BOSH Agent repository:
 
@@ -55,16 +60,10 @@ Clone and set up the BOSH Agent repository:
 
 From here on out we assume you're working in `$GOPATH/src/github.com/cloudfoundry/bosh-agent`
 
-Get Golang and its dependencies (Mac example, replace with your package manager of choice):
-
-- `brew update`
-- `brew install go`
-- `brew install hg` (Go needs mercurial for the `go get` command)
-
 Install tools used by the BOSH Agent test suite:
 
-- `go get code.google.com/p/go.tools/cmd/vet`
-- `go get github.com/golang/lint/golint`
+- `bin/go get code.google.com/p/go.tools/cmd/vet`
+- `bin/go get github.com/golang/lint/golint`
 
 ## Running tests
 
