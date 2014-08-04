@@ -22,6 +22,49 @@ type argsType struct {
 	ID       int    `json:"id"`
 }
 
+type argumentWithTypes struct {
+	IntType   int   `json:"int_type"`
+	Int32Type int32 `json:"int32_type"`
+	Int64Type int64 `json:"int64_type"`
+
+	Float32Type float32 `json:"float32_type"`
+	Float64Type float64 `json:"float64_type"`
+
+	UintType uint `json:"uint_type"`
+
+	StringType string `json:"string_type"`
+
+	BoolType bool `json:"bool_type"`
+}
+
+type actionWithTypes struct {
+	Value valueType
+	Err   error
+
+	Arg argumentWithTypes
+}
+
+func (a *actionWithTypes) IsAsynchronous() bool {
+	return false
+}
+
+func (a *actionWithTypes) IsPersistent() bool {
+	return false
+}
+
+func (a *actionWithTypes) Run(arg argumentWithTypes) (valueType, error) {
+	a.Arg = arg
+	return a.Value, a.Err
+}
+
+func (a *actionWithTypes) Resume() (interface{}, error) {
+	return nil, nil
+}
+
+func (a *actionWithTypes) Cancel() error {
+	return nil
+}
+
 type actionWithGoodRunMethod struct {
 	Value valueType
 	Err   error
@@ -202,6 +245,36 @@ func init() {
 
 			_, err := runner.Run(action, []byte(payload))
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("extracts argument types correctly", func() {
+			runner := NewRunner()
+
+			action := &actionWithTypes{}
+
+			payload := `{
+				"arguments":[{
+					"int_type":-1024000,
+					"int32_type":-1024000,
+					"int64_type":-1024000,
+					"float32_type":1e2,
+					"float64_type":1.024e+06,
+					"uint_type":1024000,
+					"string_type":"fake-string",
+					"bool_type":false
+				}]
+			}`
+			_, err := runner.Run(action, []byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(action.Arg.IntType).To(Equal(int(-1024000)))
+			Expect(action.Arg.Int32Type).To(Equal(int32(-1024000)))
+			Expect(action.Arg.Int64Type).To(Equal(int64(-1024000)))
+			Expect(action.Arg.Float32Type).To(Equal(float32(100)))
+			Expect(action.Arg.Float64Type).To(Equal(float64(1.024e+06)))
+			Expect(action.Arg.UintType).To(Equal(uint(1024000)))
+			Expect(action.Arg.StringType).To(Equal("fake-string"))
+			Expect(action.Arg.BoolType).To(Equal(false))
 		})
 
 		It("runner handles optional arguments being passed in", func() {

@@ -1,6 +1,7 @@
 package action
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
 
@@ -58,7 +59,9 @@ func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (args []interf
 	}
 	payload := payloadType{}
 
-	err = json.Unmarshal(payloadBytes, &payload)
+	decoder := json.NewDecoder(bytes.NewReader(payloadBytes))
+	decoder.UseNumber()
+	err = decoder.Decode(&payload)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling payload arguments to interface{} types")
 	}
