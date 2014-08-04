@@ -1,8 +1,9 @@
-# BOSH Agent written in Go
+## BOSH Agent [![Build Status](https://travis-ci.org/cloudfoundry/bosh-agent.png?branch=master)](https://travis-ci.org/cloudfoundry/bosh-agent)
 
     PATH=.../s3cli/out:$PATH bin/run -I dummy -P ubuntu
 
-## Running locally
+
+### Running locally
 
 To start server locally:
 
@@ -17,7 +18,8 @@ To publish:
 
     nats-pub agent.123-456-789 '{"method":"apply","arguments":[{"packages":[{"name":"package-name", "version":"package-version"}]}]}' -s nats://localhost:4222
 
-## Blobstores
+
+### Blobstores
 
 The Go Agent ships with 4 default blobstores:
 
@@ -37,7 +39,8 @@ A full call might look like:
 
     bosh-blobstore-custom -c /var/vcap/bosh/etc/blobstore-custom.json get 2340958ddfg /tmp/my-cool-file
 
-# Set up a workstation for development
+
+### Set up a workstation for development
 
 Note: This guide assumes a few things:
 
@@ -65,7 +68,7 @@ Install tools used by the BOSH Agent test suite:
 - `bin/go get code.google.com/p/go.tools/cmd/vet`
 - `bin/go get github.com/golang/lint/golint`
 
-## Running tests
+#### Running tests
 
 Each package in the agent has its own unit tests. You can run all unit tests with `bin/test-unit`.
 
@@ -76,7 +79,7 @@ BOSH uses Ruby for its tests, so you will also need to have that available.
 
 You can run all the tests by running `bin/test`.
 
-## Using IntelliJ with Go and the BOSH Agent
+#### Using IntelliJ with Go and the BOSH Agent
 
 - Install [IntelliJ 13](http://www.jetbrains.com/idea/download/index.html) (we are using 13.0.1 Build 133.331)
 - Set up the latest Google Go plugin for IntelliJ by following [Ross Hale's blog post](http://pivotallabs.com/setting-google-go-plugin-intellij-idea-13-os-x-10-8-5/) (the plugin found in IntelliJ's repository is dated)
