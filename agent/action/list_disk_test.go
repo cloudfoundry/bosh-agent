@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -49,7 +48,11 @@ func init() {
 
 			value, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJSONString(GinkgoT(), value, `["volume-2","volume-3"]`)
+			values, ok := value.([]string)
+			Expect(ok).To(BeTrue())
+			Expect(values).To(ContainElement("volume-2"))
+			Expect(values).To(ContainElement("volume-3"))
+			Expect(len(values)).To(Equal(2))
 		})
 	})
 }
