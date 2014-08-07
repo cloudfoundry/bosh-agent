@@ -79,7 +79,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	})
 
 	if err != nil {
-		h.logger.Error(natsHandlerLogTag, bosherr.WrapError(err, "Subscribing to %s", subject).Error())
+		return bosherr.WrapError(err, "Subscribing to %s", subject)
 	}
 
 	return nil

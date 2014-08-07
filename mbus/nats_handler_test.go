@@ -47,14 +47,14 @@ func init() {
 				})
 				defer handler.Stop()
 
-				Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
+				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 
-				Expect(len(client.Subscriptions)).To(Equal(1))
-				subscriptions := client.Subscriptions["agent.my-agent-id"]
+				Expect(client.SubscriptionCount()).To(Equal(1))
+				subscriptions := client.Subscriptions("agent.my-agent-id")
 				Expect(len(subscriptions)).To(Equal(1))
 
 				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
-				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription := subscriptions[0]
 				subscription.Callback(&yagnats.Message{
 					Subject: "agent.my-agent-id",
 					Payload: expectedPayload,
@@ -66,8 +66,8 @@ func init() {
 					Payload: expectedPayload,
 				}))
 
-				Expect(len(client.PublishedMessages)).To(Equal(1))
-				messages := client.PublishedMessages["reply to me!"]
+				Expect(client.PublishedMessageCount()).To(Equal(1))
+				messages := client.PublishedMessages("reply to me!")
 				Expect(len(messages)).To(Equal(1))
 				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"expected value"}`)))
 			})
@@ -79,13 +79,13 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription := client.Subscriptions("agent.my-agent-id")[0]
 				subscription.Callback(&yagnats.Message{
 					Subject: "agent.my-agent-id",
 					Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 				})
 
-				Expect(len(client.PublishedMessages)).To(Equal(0))
+				Expect(client.PublishedMessageCount()).To(Equal(0))
 			})
 
 			It("responds with an error if the response is bigger than 1MB", func() {
@@ -111,7 +111,7 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription := client.Subscriptions("agent.my-agent-id")[0]
 				subscription.Callback(&yagnats.Message{
 					Subject: "agent.my-agent-id",
 					Payload: []byte(`{"method":"small","arguments":[], "reply_to": "fake-reply-to"}`),
@@ -122,8 +122,8 @@ func init() {
 					Payload: []byte(`{"method":"big","arguments":[], "reply_to": "fake-reply-to"}`),
 				})
 
-				Expect(len(client.PublishedMessages)).To(Equal(1))
-				messages := client.PublishedMessages["fake-reply-to"]
+				Expect(client.PublishedMessageCount()).To(Equal(1))
+				messages := client.PublishedMessages("fake-reply-to")
 				Expect(len(messages)).To(Equal(2))
 				Expect(messages[0].Payload).To(MatchRegexp("value"))
 				Expect(messages[1].Payload).To(Equal([]byte(
@@ -146,7 +146,7 @@ func init() {
 
 				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "fake-reply-to"}`)
 
-				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription := client.Subscriptions("agent.my-agent-id")[0]
 				subscription.Callback(&yagnats.Message{
 					Subject: "agent.my-agent-id",
 					Payload: expectedPayload,
@@ -166,8 +166,8 @@ func init() {
 				}))
 
 				// Bosh handler responses were sent
-				Expect(len(client.PublishedMessages)).To(Equal(1))
-				messages := client.PublishedMessages["fake-reply-to"]
+				Expect(client.PublishedMessageCount()).To(Equal(1))
+				messages := client.PublishedMessages("fake-reply-to")
 				Expect(len(messages)).To(Equal(2))
 				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"first-handler-resp"}`)))
 				Expect(messages[1].Payload).To(Equal([]byte(`{"value":"second-handler-resp"}`)))
@@ -178,7 +178,7 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				Expect(client.ConnectedConnectionProvider).To(Equal(&yagnats.ConnectionInfo{
+				Expect(client.ConnectedConnectionProvider()).To(Equal(&yagnats.ConnectionInfo{
 					Addr:     "127.0.0.1:1234",
 					Username: "fake-username",
 					Password: "fake-password",
@@ -222,9 +222,8 @@ func init() {
 				}
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(len(client.PublishedMessages)).To(Equal(1))
-				messages := client.PublishedMessages["hm.agent.heartbeat.my-agent-id"]
-
+				Expect(client.PublishedMessageCount()).To(Equal(1))
+				messages := client.PublishedMessages("hm.agent.heartbeat.my-agent-id")
 				Expect(len(messages)).To(Equal(1))
 				message := messages[0]
 

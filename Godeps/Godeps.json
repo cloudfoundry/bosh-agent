@@ -26,7 +26,7 @@
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/yagnats",
-			"Rev": "87cbe0c1388214bc2b13e1352cf89e78b82d483e"
+			"Rev": "07171a8863c377fb14a44dee402dff9e1282bc49"
 		},
 		{
 			"ImportPath": "github.com/jeromer/syslogparser",
