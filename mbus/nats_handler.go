@@ -70,7 +70,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 
 	subject := fmt.Sprintf("agent.%s", settings.AgentID)
 
-	h.logger.Error(natsHandlerLogTag, "Subscribing to %s", subject)
+	h.logger.Info(natsHandlerLogTag, "Subscribing to %s", subject)
 
 	_, err = h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
 		for _, handlerFunc := range h.handlerFuncs {
