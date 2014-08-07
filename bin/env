@@ -8,4 +8,9 @@ base_gopath=$( cd $base/../../../.. && pwd )
 export GOPATH=$base_gopath:$base/Godeps/_workspace GOBIN=$base_gopath/gobin
 export PATH=$PATH:$GOBIN
 
+#Travis only has 2 'boosted' cores, recommends 4-6 threads max
+if [ "$TRAVIS" == "true" ]; then
+  export GOMAXPROCS=4
+fi
+
 exec $@

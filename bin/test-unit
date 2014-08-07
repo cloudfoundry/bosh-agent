@@ -36,7 +36,7 @@ if [ ! $QUIET ]; then
   if [ $result -eq 0 ]; then
     echo -e "\n\033[0;32mSUITE SUCCESS\033[0m"
   else
-    echo -e "\n\033[0;31mSUITE FAILURE\033[0m"
+    echo -e "\n\033[0;31mSUITE FAILURE (exit code: $result)\033[0m"
   fi
 fi
 
