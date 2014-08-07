@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/cloudfoundry/bosh-agent/matchers"
 )
 
 func init() {
@@ -77,7 +78,7 @@ func init() {
 
 				ip, found := networks.DefaultIP()
 				Expect(found).To(BeTrue())
-				Expect(ip).To(Equal("xx.xx.xx.xx"))
+				Expect(ip).To(MatchOneOf(Equal("xx.xx.xx.xx"), Equal("aa.aa.aa.aa")))
 			})
 
 			It("with two networks only with defaults", func() {
