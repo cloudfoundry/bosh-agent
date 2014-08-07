@@ -40,19 +40,12 @@ var _ = Describe("Server", func() {
 		return uint16(port)
 	}
 
-	captureMsgs := func(doneCh chan struct{}) func(msg Msg) {
+	captureNMsgs := func(doneCh chan struct{}, maxMsgs int) func(msg Msg) {
 		return func(msg Msg) {
 			msgs.Add(msg)
-			if len(msgs.Msgs()) == 4 {
+			if len(msgs.Msgs()) == maxMsgs {
 				doneCh <- struct{}{}
 			}
-		}
-	}
-
-	captureOneMsg := func(doneCh chan struct{}) func(msg Msg) {
-		return func(msg Msg) {
-			msgs.Add(msg)
-			doneCh <- struct{}{}
 		}
 	}
 
@@ -80,7 +73,7 @@ var _ = Describe("Server", func() {
 
 		go func() {
 			defer GinkgoRecover()
-			startErrCh <- server.Start(captureMsgs(doneCh))
+			startErrCh <- server.Start(captureNMsgs(doneCh, 4))
 		}()
 
 		conn, err := waitToDial()
@@ -115,7 +108,7 @@ var _ = Describe("Server", func() {
 
 	It("it can accept multiple connections at once", func() {
 		doneCh := make(chan struct{})
-		go server.Start(captureMsgs(doneCh))
+		go server.Start(captureNMsgs(doneCh, 4))
 
 		conn1, err := waitToDial()
 		Expect(err).ToNot(HaveOccurred())
@@ -159,7 +152,7 @@ var _ = Describe("Server", func() {
 		server = NewServer(serverPort, logger)
 
 		doneCh := make(chan struct{})
-		go server.Start(captureOneMsg(doneCh))
+		go server.Start(captureNMsgs(doneCh, 2))
 
 		conn, err := waitToDial()
 		Expect(err).ToNot(HaveOccurred())
