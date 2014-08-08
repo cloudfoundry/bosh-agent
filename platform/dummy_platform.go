@@ -159,8 +159,8 @@ func (p dummyPlatform) IsMountPoint(path string) (result bool, err error) {
 	return
 }
 
-func (p dummyPlatform) IsPersistentDiskMounted(path string) (result bool, err error) {
-	return
+func (p dummyPlatform) IsPersistentDiskMounted(path string) (bool, error) {
+	return true, nil
 }
 
 func (p dummyPlatform) StartMonit() (err error) {
