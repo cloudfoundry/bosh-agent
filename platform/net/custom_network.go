@@ -17,6 +17,12 @@ type customNetwork struct {
 	HasDefaultGateway bool
 }
 
+type networkInterfaceConfigArg struct {
+	DNSServers        []string
+	Networks          []customNetwork
+	HasDNSNameServers bool
+}
+
 func (c customNetwork) ToInterfaceAddress() boship.InterfaceAddress {
 	return boship.NewSimpleInterfaceAddress(c.Interface, c.IP)
 }
