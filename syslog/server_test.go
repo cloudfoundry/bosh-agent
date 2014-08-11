@@ -98,6 +98,7 @@ var _ = Describe("Server", func() {
 
 		err = <-startErrCh
 		Expect(err).To(HaveOccurred())
+		Expect(err).To(BeAssignableToTypeOf(&net.OpError{}))
 		Expect(err.(*net.OpError).Op).To(Equal("accept"))
 
 		// Make sure server was stopped
