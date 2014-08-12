@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/settings"
 	. "github.com/cloudfoundry/bosh-agent/matchers"
+	. "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 func init() {
