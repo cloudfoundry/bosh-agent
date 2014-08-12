@@ -6,8 +6,8 @@ import (
 
 	"fmt"
 
-	"github.com/onsi/gomega/types"
 	"github.com/onsi/gomega/internal/fakematcher"
+	"github.com/onsi/gomega/types"
 
 	. "github.com/cloudfoundry/bosh-agent/matchers"
 )
@@ -19,11 +19,11 @@ var _ = Describe("matchers", func() {
 		Context("when no sub-matchers match", func() {
 			var fakematcher1 = &fakematcher.FakeMatcher{
 				MatchesToReturn: false,
-				ErrToReturn: nil,
+				ErrToReturn:     nil,
 			}
 			var fakematcher2 = &fakematcher.FakeMatcher{
 				MatchesToReturn: false,
-				ErrToReturn: nil,
+				ErrToReturn:     nil,
 			}
 			var matchers = []types.GomegaMatcher{fakematcher1, fakematcher2}
 			var oneOf = OneOfMatcher{Matchers: matchers}
@@ -42,15 +42,15 @@ var _ = Describe("matchers", func() {
 		Context("when at least one sub-matcher matches", func() {
 			var fakematcher1 = &fakematcher.FakeMatcher{
 				MatchesToReturn: false,
-				ErrToReturn: nil,
+				ErrToReturn:     nil,
 			}
 			var fakematcher2 = &fakematcher.FakeMatcher{
 				MatchesToReturn: true,
-				ErrToReturn: nil,
+				ErrToReturn:     nil,
 			}
 			var fakematcher3 = &fakematcher.FakeMatcher{
 				MatchesToReturn: false,
-				ErrToReturn: nil,
+				ErrToReturn:     nil,
 			}
 			var matchers = []types.GomegaMatcher{fakematcher1, fakematcher2, fakematcher3}
 			var oneOf = OneOfMatcher{Matchers: matchers}
@@ -71,15 +71,15 @@ var _ = Describe("matchers", func() {
 			var error = fmt.Errorf("Fake Error")
 			var fakematcher1 = &fakematcher.FakeMatcher{
 				MatchesToReturn: false,
-				ErrToReturn: nil,
+				ErrToReturn:     nil,
 			}
 			var fakematcher2 = &fakematcher.FakeMatcher{
 				MatchesToReturn: false,
-				ErrToReturn: error,
+				ErrToReturn:     error,
 			}
 			var fakematcher3 = &fakematcher.FakeMatcher{
 				MatchesToReturn: true,
-				ErrToReturn: nil,
+				ErrToReturn:     nil,
 			}
 			var matchers = []types.GomegaMatcher{fakematcher1, fakematcher2, fakematcher3}
 			var oneOf = OneOfMatcher{Matchers: matchers}
@@ -100,7 +100,7 @@ var _ = Describe("matchers", func() {
 	var _ = Describe("FailureMessage", func() {
 		var fakematcher = &fakematcher.FakeMatcher{
 			MatchesToReturn: false,
-			ErrToReturn: nil,
+			ErrToReturn:     nil,
 		}
 		var matchers = []types.GomegaMatcher{fakematcher, fakematcher}
 		var oneOf = OneOfMatcher{Matchers: matchers}
@@ -117,7 +117,7 @@ var _ = Describe("matchers", func() {
 	var _ = Describe("NegatedFailureMessage", func() {
 		var fakematcher = &fakematcher.FakeMatcher{
 			MatchesToReturn: false,
-			ErrToReturn: nil,
+			ErrToReturn:     nil,
 		}
 		var matchers = []types.GomegaMatcher{fakematcher, fakematcher}
 		var oneOf = OneOfMatcher{Matchers: matchers}

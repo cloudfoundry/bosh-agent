@@ -9,17 +9,17 @@ import (
 
 var _ = Describe("MatchesOneOf", func() {
 	It("requires at least two matchers", func() {
-		Expect(func(){
+		Expect(func() {
 			MatchOneOf()
 		}).To(Panic())
 
 		matcher1 := BeTrue()
-		Expect(func(){
+		Expect(func() {
 			MatchOneOf(matcher1)
 		}).To(Panic())
 
 		matcher2 := BeFalse()
-		Expect(func(){
+		Expect(func() {
 			MatchOneOf(matcher1, matcher2)
 		}).ToNot(Panic())
 	})
