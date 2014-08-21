@@ -98,8 +98,6 @@ var _ = Describe("Server", func() {
 
 		err = <-startErrCh
 		Expect(err).To(HaveOccurred())
-		Expect(err).To(BeAssignableToTypeOf(&net.OpError{}))
-		Expect(err.(*net.OpError).Op).To(Equal("accept"))
 
 		// Make sure server was stopped
 		_, err = net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(int(serverPort)))
