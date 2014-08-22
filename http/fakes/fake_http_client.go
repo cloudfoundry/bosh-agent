@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-type FakeHTTPClient struct {
+type FakeClient struct {
 	StatusCode        int
 	CallCount         int
 	Error             error
@@ -40,20 +40,20 @@ func (s *stringReadCloser) Read(p []byte) (n int, err error) {
 	return s.reader.Read(p)
 }
 
-func NewFakeHTTPClient() (fakeHTTPClient *FakeHTTPClient) {
-	fakeHTTPClient = &FakeHTTPClient{}
+func NewFakeClient() (fakeClient *FakeClient) {
+	fakeClient = &FakeClient{}
 	return
 }
 
-func (c *FakeHTTPClient) SetMessage(message string) {
+func (c *FakeClient) SetMessage(message string) {
 	c.responseMessage = message
 }
 
-func (c *FakeHTTPClient) SetNilResponse() {
+func (c *FakeClient) SetNilResponse() {
 	c.returnNilResponse = true
 }
 
-func (c *FakeHTTPClient) Do(req *http.Request) (resp *http.Response, err error) {
+func (c *FakeClient) Do(req *http.Request) (resp *http.Response, err error) {
 	c.CallCount++
 
 	if !c.returnNilResponse {
@@ -62,9 +62,11 @@ func (c *FakeHTTPClient) Do(req *http.Request) (resp *http.Response, err error) 
 	}
 	err = c.Error
 
-	buf := make([]byte, 1024)
-	n, _ := req.Body.Read(buf)
-	c.RequestBodies = append(c.RequestBodies, string(buf[0:n]))
+	if req.Body != nil {
+		buf := make([]byte, 1024)
+		n, _ := req.Body.Read(buf)
+		c.RequestBodies = append(c.RequestBodies, string(buf[0:n]))
+	}
 
 	return
 }

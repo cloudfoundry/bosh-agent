@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
 
 	davclient "github.com/cloudfoundry/bosh-agent/davcli/client"
 	davconf "github.com/cloudfoundry/bosh-agent/davcli/config"
@@ -30,7 +31,7 @@ func (f *factory) Create(name string) (cmd Cmd, err error) {
 }
 
 func (f *factory) SetConfig(config davconf.Config) {
-	client := davclient.NewClient(config)
+	client := davclient.NewClient(config, http.DefaultClient)
 
 	f.cmds = map[string]Cmd{
 		"put": newPutCmd(client),

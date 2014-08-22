@@ -3,12 +3,14 @@ package client
 import (
 	"crypto/sha1"
 	"fmt"
-	davconf "github.com/cloudfoundry/bosh-agent/davcli/config"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+
+	davconf "github.com/cloudfoundry/bosh-agent/davcli/config"
+	boshhttp "github.com/cloudfoundry/bosh-agent/http"
 )
 
 type Client interface {
@@ -16,16 +18,16 @@ type Client interface {
 	Put(path string, content io.ReadCloser) (err error)
 }
 
-func NewClient(config davconf.Config) (c Client) {
+func NewClient(config davconf.Config, httpClient boshhttp.Client) (c Client) {
 	return client{
 		config:     config,
-		httpClient: http.DefaultClient,
+		httpClient: httpClient,
 	}
 }
 
 type client struct {
 	config     davconf.Config
-	httpClient *http.Client
+	httpClient boshhttp.Client
 }
 
 func (c client) Get(path string) (content io.ReadCloser, err error) {

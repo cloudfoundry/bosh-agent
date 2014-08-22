@@ -14,8 +14,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	fakehttp "github.com/cloudfoundry/bosh-agent/http/fakes"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 )
 
@@ -54,7 +54,7 @@ func init() {
 			})
 
 			It("start service retries when non200 response", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.StatusCode = 500
 				fakeHTTPClient.SetMessage("fake error message")
 
@@ -66,7 +66,7 @@ func init() {
 			})
 
 			It("start service retries when connection refused", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.SetNilResponse()
 				fakeHTTPClient.Error = errors.New("some error")
 
@@ -103,7 +103,7 @@ func init() {
 			})
 
 			It("stop service retries when non200 response", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.StatusCode = 500
 				fakeHTTPClient.SetMessage("fake error message")
 
@@ -116,7 +116,7 @@ func init() {
 			})
 
 			It("stop service retries when connection refused", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.SetNilResponse()
 				fakeHTTPClient.Error = errors.New("some error")
 
@@ -155,7 +155,7 @@ func init() {
 			})
 
 			It("retries when non200 response", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.StatusCode = 500
 				fakeHTTPClient.SetMessage("fake-http-response-message")
 
@@ -169,7 +169,7 @@ func init() {
 			})
 
 			It("retries when connection refused", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.SetNilResponse()
 				fakeHTTPClient.Error = errors.New("fake-http-error")
 
@@ -236,7 +236,7 @@ func init() {
 			})
 
 			It("status retries when non200 response", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.StatusCode = 500
 				fakeHTTPClient.SetMessage("fake error message")
 
@@ -249,7 +249,7 @@ func init() {
 			})
 
 			It("status retries when connection refused", func() {
-				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient := fakehttp.NewFakeClient()
 				fakeHTTPClient.SetNilResponse()
 				fakeHTTPClient.Error = errors.New("some error")
 
