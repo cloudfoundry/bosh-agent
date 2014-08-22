@@ -46,6 +46,7 @@ var _ = Describe("Client", func() {
 				responseBody, err := client.Get("/")
 				Expect(responseBody).To(BeNil())
 				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Getting dav blob /"))
 			})
 		})
 
@@ -96,6 +97,7 @@ var _ = Describe("Client", func() {
 				body := ioutil.NopCloser(strings.NewReader("content"))
 				err := client.Put("/", body, int64(7))
 				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Putting dav blob /"))
 			})
 		})
 

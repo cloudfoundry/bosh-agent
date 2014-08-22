@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	davconf "github.com/cloudfoundry/bosh-agent/davcli/config"
+	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshhttp "github.com/cloudfoundry/bosh-agent/http"
 )
 
@@ -38,17 +39,12 @@ func (c client) Get(path string) (content io.ReadCloser, err error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		err = bosherr.WrapError(err, "Getting dav blob %s", path)
 		return
 	}
 
 	if resp.StatusCode != 200 {
-		body := ""
-		if resp.Body != nil {
-			buf := make([]byte, 1024)
-			n, _ := resp.Body.Read(buf)
-			body = string(buf[0:n])
-		}
-		err = fmt.Errorf("Getting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, body)
+		err = fmt.Errorf("Getting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, c.readAndTruncateBody(resp))
 		return
 	}
 
@@ -66,17 +62,12 @@ func (c client) Put(path string, content io.ReadCloser, contentLength int64) (er
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		err = bosherr.WrapError(err, "Putting dav blob %s", path)
 		return
 	}
 
 	if resp.StatusCode != 201 && resp.StatusCode != 204 {
-		body := ""
-		if resp.Body != nil {
-			buf := make([]byte, 1024)
-			n, _ := resp.Body.Read(buf)
-			body = string(buf[0:n])
-		}
-		err = fmt.Errorf("Putting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, body)
+		err = fmt.Errorf("Putting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, c.readAndTruncateBody(resp))
 		return
 	}
 
@@ -107,4 +98,16 @@ func (c client) createReq(method, blobID string, body io.Reader) (req *http.Requ
 
 	req.SetBasicAuth(c.config.User, c.config.Password)
 	return
+}
+
+func (c client) readAndTruncateBody(resp *http.Response) string {
+	body := ""
+	if resp.Body != nil {
+		buf := make([]byte, 1024)
+		n, err := resp.Body.Read(buf)
+		if err == io.EOF || err == nil {
+			body = string(buf[0:n])
+		}
+	}
+	return body
 }
