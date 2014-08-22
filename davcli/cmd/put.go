@@ -26,5 +26,10 @@ func (cmd PutCmd) Run(args []string) error {
 		return err
 	}
 
-	return cmd.client.Put(args[1], file)
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	return cmd.client.Put(args[1], file, fileInfo.Size())
 }
