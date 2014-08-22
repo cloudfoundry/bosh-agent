@@ -13,6 +13,7 @@ import (
 	_ "code.google.com/p/go-charset/data" // translations between char sets
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	boshhttp "github.com/cloudfoundry/bosh-agent/http"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 )
 
@@ -22,13 +23,13 @@ type httpClient struct {
 	password            string
 	retryAttempts       int
 	delayBetweenRetries time.Duration
-	client              HTTPClient
+	client              boshhttp.Client
 	logger              boshlog.Logger
 }
 
 func NewHTTPClient(
 	host, username, password string,
-	client HTTPClient,
+	client boshhttp.Client,
 	delayBetweenRetries time.Duration,
 	logger boshlog.Logger,
 ) httpClient {
