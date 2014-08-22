@@ -37,7 +37,7 @@ func fileBytes(path string) []byte {
 
 var _ = Describe("PutCmd", func() {
 	Describe("Run", func() {
-		It("with valid args", func() {
+		It("uploads the blob with valid args", func() {
 			pwd, err := os.Getwd()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -46,6 +46,7 @@ var _ = Describe("PutCmd", func() {
 			serverWasHit := false
 
 			handler := func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
 				serverWasHit = true
 				req := testcmd.NewHTTPRequest(r)
 
@@ -53,6 +54,7 @@ var _ = Describe("PutCmd", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(req.URL.Path).To(Equal("/d1/" + targetBlob))
 				Expect(req.Method).To(Equal("PUT"))
+				Expect(req.ContentLength).To(Equal(int64(1718186)))
 				Expect(username).To(Equal("some user"))
 				Expect(password).To(Equal("some pwd"))
 
@@ -77,7 +79,7 @@ var _ = Describe("PutCmd", func() {
 			Expect(serverWasHit).To(BeTrue())
 		})
 
-		It("with incorrect arg count", func() {
+		It("returns err with incorrect arg count", func() {
 			err := runPut(davconf.Config{}, []string{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Incorrect usage"))

@@ -94,7 +94,7 @@ var _ = Describe("Client", func() {
 
 			It("returns err", func() {
 				body := ioutil.NopCloser(strings.NewReader("content"))
-				err := client.Put("/", body)
+				err := client.Put("/", body, int64(7))
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -107,7 +107,7 @@ var _ = Describe("Client", func() {
 
 			It("returns err", func() {
 				body := ioutil.NopCloser(strings.NewReader("content"))
-				err := client.Put("/", body)
+				err := client.Put("/", body, int64(7))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Putting dav blob /: Wrong response code: 300; body: response"))
 			})

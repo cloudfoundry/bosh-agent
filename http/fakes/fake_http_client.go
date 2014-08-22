@@ -13,6 +13,7 @@ type FakeClient struct {
 	Error             error
 	returnNilResponse bool
 	RequestBodies     []string
+	Requests          []*http.Request
 	responseMessage   string
 }
 
@@ -67,6 +68,7 @@ func (c *FakeClient) Do(req *http.Request) (resp *http.Response, err error) {
 		n, _ := req.Body.Read(buf)
 		c.RequestBodies = append(c.RequestBodies, string(buf[0:n]))
 	}
+	c.Requests = append(c.Requests, req)
 
 	return
 }

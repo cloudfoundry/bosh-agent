@@ -15,7 +15,7 @@ import (
 
 type Client interface {
 	Get(path string) (content io.ReadCloser, err error)
-	Put(path string, content io.ReadCloser) (err error)
+	Put(path string, content io.ReadCloser, contentLength int64) (err error)
 }
 
 func NewClient(config davconf.Config, httpClient boshhttp.Client) (c Client) {
@@ -56,12 +56,14 @@ func (c client) Get(path string) (content io.ReadCloser, err error) {
 	return
 }
 
-func (c client) Put(path string, content io.ReadCloser) (err error) {
+func (c client) Put(path string, content io.ReadCloser, contentLength int64) (err error) {
 	req, err := c.createReq("PUT", path, content)
 	if err != nil {
 		return
 	}
 	defer content.Close()
+	req.ContentLength = contentLength
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return
