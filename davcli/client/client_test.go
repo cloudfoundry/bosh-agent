@@ -27,6 +27,7 @@ var _ = Describe("Client", func() {
 
 	Describe("Get", func() {
 		It("returns the response body from the given path", func() {
+			fakeHTTPClient.StatusCode = 200
 			fakeHTTPClient.SetMessage("response")
 
 			responseBody, err := client.Get("/")
@@ -37,29 +38,78 @@ var _ = Describe("Client", func() {
 		})
 
 		Context("when the http request fails", func() {
-			It("returns err", func() {
+			BeforeEach(func() {
 				fakeHTTPClient.Error = errors.New("")
+			})
+
+			It("returns err", func() {
 				responseBody, err := client.Get("/")
 				Expect(responseBody).To(BeNil())
 				Expect(err).To(HaveOccurred())
 			})
 		})
+
+		Context("when the http response code is not 200", func() {
+			BeforeEach(func() {
+				fakeHTTPClient.StatusCode = 300
+				fakeHTTPClient.SetMessage("response")
+			})
+
+			It("returns err", func() {
+				responseBody, err := client.Get("/")
+				Expect(responseBody).To(BeNil())
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Getting dav blob /: Wrong response code: 300; body: response"))
+			})
+		})
 	})
 
 	Describe("Put", func() {
-		It("uploads the given content", func() {
-			body := ioutil.NopCloser(strings.NewReader("content"))
-			err := client.Put("/", body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeHTTPClient.RequestBodies).To(Equal([]string{"content"}))
+		Context("When the put request succeeds", func() {
+			itUploadsABlob := func() {
+				body := ioutil.NopCloser(strings.NewReader("content"))
+				err := client.Put("/", body, int64(7))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(fakeHTTPClient.Requests)).To(Equal(1))
+				req := fakeHTTPClient.Requests[0]
+				Expect(req.ContentLength).To(Equal(int64(7)))
+				Expect(fakeHTTPClient.RequestBodies).To(Equal([]string{"content"}))
+			}
+
+			It("uploads the given content if the blob does not exist", func() {
+				fakeHTTPClient.StatusCode = 201
+				itUploadsABlob()
+			})
+
+			It("uploads the given content if the blob exists", func() {
+				fakeHTTPClient.StatusCode = 204
+				itUploadsABlob()
+			})
 		})
 
 		Context("when the http request fails", func() {
-			It("returns err", func() {
+			BeforeEach(func() {
 				fakeHTTPClient.Error = errors.New("")
+			})
+
+			It("returns err", func() {
 				body := ioutil.NopCloser(strings.NewReader("content"))
 				err := client.Put("/", body)
 				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when the http response code is not 201 or 204", func() {
+			BeforeEach(func() {
+				fakeHTTPClient.StatusCode = 300
+				fakeHTTPClient.SetMessage("response")
+			})
+
+			It("returns err", func() {
+				body := ioutil.NopCloser(strings.NewReader("content"))
+				err := client.Put("/", body)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Putting dav blob /: Wrong response code: 300; body: response"))
 			})
 		})
 	})
