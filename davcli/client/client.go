@@ -41,6 +41,17 @@ func (c client) Get(path string) (content io.ReadCloser, err error) {
 		return
 	}
 
+	if resp.StatusCode != 200 {
+		body := ""
+		if resp.Body != nil {
+			buf := make([]byte, 1024)
+			n, _ := resp.Body.Read(buf)
+			body = string(buf[0:n])
+		}
+		err = fmt.Errorf("Getting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, body)
+		return
+	}
+
 	content = resp.Body
 	return
 }
@@ -51,8 +62,22 @@ func (c client) Put(path string, content io.ReadCloser) (err error) {
 		return
 	}
 	defer content.Close()
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return
+	}
 
-	_, err = c.httpClient.Do(req)
+	if resp.StatusCode != 201 && resp.StatusCode != 204 {
+		body := ""
+		if resp.Body != nil {
+			buf := make([]byte, 1024)
+			n, _ := resp.Body.Read(buf)
+			body = string(buf[0:n])
+		}
+		err = fmt.Errorf("Putting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, body)
+		return
+	}
+
 	return
 }
 

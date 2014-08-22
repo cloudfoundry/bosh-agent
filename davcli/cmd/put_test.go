@@ -60,7 +60,7 @@ var _ = Describe("PutCmd", func() {
 				actualBytes, _ := ioutil.ReadAll(r.Body)
 				Expect(expectedBytes).To(Equal(actualBytes))
 
-				w.WriteHeader(200)
+				w.WriteHeader(201)
 			}
 
 			ts := httptest.NewServer(http.HandlerFunc(handler))
