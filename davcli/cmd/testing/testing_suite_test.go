@@ -9,5 +9,5 @@ import (
 
 func TestTesting(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Testing Suite")
+	RunSpecs(t, "Davcli Testing Suite")
 }
