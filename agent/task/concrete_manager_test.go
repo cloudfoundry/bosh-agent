@@ -73,7 +73,7 @@ func init() {
 
 				taskInfos, err := reloadedManager.GetInfos()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(taskInfos).To(Equal([]boshtask.Info{
+				Expect(taskInfos).To(ConsistOf([]boshtask.Info{
 					boshtask.Info{
 						TaskID:  "fake-task-id-1",
 						Method:  "fake-method-1",
