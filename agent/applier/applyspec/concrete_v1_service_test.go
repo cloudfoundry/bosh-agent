@@ -190,7 +190,8 @@ func init() {
 				Context("when associated network cannot be found in settings", func() {
 					It("returns error", func() {
 						spec, err := service.PopulateDynamicNetworks(unresolvedSpec, boshsettings.Settings{})
-						Expect(err).To(Equal(errors.New("Network fake-net2 is not found in settings")))
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(MatchRegexp("Network fake-net\\d is not found in settings"))
 						Expect(spec).To(Equal(V1ApplySpec{}))
 					})
 				})
