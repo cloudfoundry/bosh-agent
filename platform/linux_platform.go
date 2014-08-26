@@ -36,6 +36,11 @@ type LinuxOptions struct {
 
 	// When set to true persistent disk will be mounted as a bind-mount
 	BindMountPersistentDisk bool
+
+	// When set to true and no ephemeral disk is mounted, the agent will create
+	// a partition on the same device as the root partition to use as the
+	// ephemeral disk
+	CreatePartitionIfNoEphemeralDisk bool
 }
 
 type linux struct {
