@@ -17,3 +17,11 @@ type Partitioner interface {
 	Partition(devicePath string, partitions []Partition) (err error)
 	GetDeviceSizeInMb(devicePath string) (size uint64, err error)
 }
+
+type RootDevicePartition struct {
+	SizeInBytes uint64
+}
+
+type RootDevicePartitioner interface {
+	PartitionAfterFirstPartition(devicePath string, partitions []RootDevicePartition) error
+}
