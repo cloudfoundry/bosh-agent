@@ -257,4 +257,63 @@ var _ = Describe("partedPartitioner", func() {
 			})
 		})
 	})
+
+	Describe("GetRemainingSizeInMb", func() {
+		Context("when getting disk partition information succeeds", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/sda unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: `BYT;
+/dev/sda:33554560B:virtblk:512:512:msdos:Virtio Block Device;
+1:1B:16777215B:16777216B:ext4::;
+2:16777216B:33554432B:16777216B:ext4::;
+`,
+					},
+				)
+			})
+
+			It("returns the size of the device", func() {
+				size, err := partitioner.GetRemainingSizeInMb("/dev/sda")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(size).To(Equal(uint64(16)))
+			})
+		})
+
+		Context("when getting disk partition information fails", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/sda unit B print",
+					fakesys.FakeCmdResult{
+						Error: errors.New("fake-parted-error"),
+					},
+				)
+			})
+
+			It("returns an error", func() {
+				size, err := partitioner.GetRemainingSizeInMb("/dev/sda")
+				Expect(err).To(HaveOccurred())
+				Expect(size).To(Equal(uint64(0)))
+				Expect(err.Error()).To(ContainSubstring("fake-parted-error"))
+			})
+		})
+
+		Context("when parsing parted result fails", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/sda unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: ``,
+					},
+				)
+			})
+
+			It("returns an error", func() {
+				size, err := partitioner.GetRemainingSizeInMb("/dev/sda")
+				Expect(err).To(HaveOccurred())
+				Expect(size).To(Equal(uint64(0)))
+				Expect(err.Error()).To(ContainSubstring("Getting remaining size of `/dev/sda'"))
+			})
+		})
+	})
 })

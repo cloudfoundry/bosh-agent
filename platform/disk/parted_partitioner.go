@@ -85,6 +85,38 @@ func (p partedPartitioner) PartitionAfterFirstPartition(devicePath string, parti
 	return nil
 }
 
+func (p partedPartitioner) GetRemainingSizeInMb(devicePath string) (uint64, error) {
+	p.logger.Debug(p.logTag, "Getting size of disk remaining after first partition")
+
+	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Getting remaining size of `%s'", devicePath)
+	}
+
+	allLines := strings.Split(stdout, "\n")
+	if len(allLines) < 3 {
+		return 0, bosherr.New("Getting remaining size of `%s'", devicePath)
+	}
+
+	partitionInfoLines := allLines[1:3]
+	deviceInfo := strings.Split(partitionInfoLines[0], ":")
+	deviceFullSizeInBytes, err := strconv.Atoi(strings.TrimRight(deviceInfo[1], "B"))
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Getting remaining size of `%s'", devicePath)
+	}
+
+	firstPartitionInfo := strings.Split(partitionInfoLines[1], ":")
+	firstPartitionSizeInBytes, err := strconv.Atoi(strings.TrimRight(firstPartitionInfo[3], "B"))
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Getting remaining size of `%s'", devicePath)
+	}
+
+	remainingSizeInBytes := deviceFullSizeInBytes - firstPartitionSizeInBytes
+	remainingSizeInMb := uint64(remainingSizeInBytes) / uint64(1024*1024)
+
+	return remainingSizeInMb, nil
+}
+
 func (p partedPartitioner) getPartitions(devicePath string) ([]existingPartition, error) {
 	partitions := []existingPartition{}
 

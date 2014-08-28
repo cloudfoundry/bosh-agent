@@ -24,4 +24,5 @@ type RootDevicePartition struct {
 
 type RootDevicePartitioner interface {
 	PartitionAfterFirstPartition(devicePath string, partitions []RootDevicePartition) error
+	GetRemainingSizeInMb(devicePath string) (size uint64, err error)
 }
