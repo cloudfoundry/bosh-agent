@@ -42,9 +42,7 @@ func (i *FakeInfrastructure) SetupNetworking(networks boshsettings.Networks) (er
 	return
 }
 
-func (i *FakeInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+func (i *FakeInfrastructure) GetEphemeralDiskPath(devicePath string) string {
 	i.GetEphemeralDiskPathDevicePath = devicePath
-	realPath = i.GetEphemeralDiskPathRealPath
-	found = i.GetEphemeralDiskPathFound
-	return
+	return i.GetEphemeralDiskPathRealPath
 }

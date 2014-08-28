@@ -921,19 +921,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		Context("when real device path was resolved without an error", func() {
 			It("returns real device path and true", func() {
 				devicePathResolver.RegisterRealDevicePath("fake-device-path", "fake-real-device-path")
-				realDevicePath, found := platform.NormalizeDiskPath("fake-device-path")
-				Expect(realDevicePath).To(Equal("fake-real-device-path"))
-				Expect(found).To(BeTrue())
+				Expect(platform.NormalizeDiskPath("fake-device-path")).To(Equal("fake-real-device-path"))
 			})
 		})
 
 		Context("when real device path was not resolved without an error", func() {
 			It("returns real device path and true", func() {
 				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
-
-				realDevicePath, found := platform.NormalizeDiskPath("fake-device-path")
-				Expect(realDevicePath).To(Equal(""))
-				Expect(found).To(BeFalse())
+				Expect(platform.NormalizeDiskPath("fake-device-path")).To(Equal(""))
 			})
 		})
 	})

@@ -29,7 +29,6 @@ func init() {
 
 			BeforeEach(func() {
 				inf = &fakeinf.FakeInfrastructure{
-					GetEphemeralDiskPathFound:    true,
 					GetEphemeralDiskPathRealPath: "/dev/sdz",
 				}
 				platform = fakeplatform.NewFakePlatform()
@@ -110,7 +109,6 @@ func init() {
 				}
 
 				inf.GetEphemeralDiskPathRealPath = "/dev/sda"
-				inf.GetEphemeralDiskPathFound = true
 
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())

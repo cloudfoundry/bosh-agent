@@ -58,6 +58,6 @@ func (inf wardenInfrastructure) SetupNetworking(networks boshsettings.Networks) 
 	return nil
 }
 
-func (inf wardenInfrastructure) GetEphemeralDiskPath(devicePath string) (string, bool) {
+func (inf wardenInfrastructure) GetEphemeralDiskPath(devicePath string) string {
 	return inf.platform.NormalizeDiskPath(devicePath)
 }

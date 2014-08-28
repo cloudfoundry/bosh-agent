@@ -59,10 +59,10 @@ func (inf awsInfrastructure) SetupNetworking(networks boshsettings.Networks) (er
 	return inf.platform.SetupDhcp(networks)
 }
 
-func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string) string {
 	if devicePath == "" {
 		inf.logger.Info(awsInfrastructureLogTag, "Ephemeral disk path is empty")
-		return "", false
+		return ""
 	}
 
 	return inf.platform.NormalizeDiskPath(devicePath)

@@ -9,6 +9,6 @@ type Infrastructure interface {
 	SetupSSH(username string) (err error)
 	GetSettings() (settings boshsettings.Settings, err error)
 	SetupNetworking(networks boshsettings.Networks) (err error)
-	GetEphemeralDiskPath(devicePath string) (realPath string, found bool)
+	GetEphemeralDiskPath(devicePath string) string
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
 }

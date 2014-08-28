@@ -53,10 +53,7 @@ var _ = Describe("vSphere Infrastructure", func() {
 
 	Describe("GetEphemeralDiskPath", func() {
 		It("vsphere get ephemeral disk path", func() {
-			realPath, found := vsphere.GetEphemeralDiskPath("does not matter")
-			Expect(found).To(Equal(true))
-
-			Expect(realPath).To(Equal("/dev/sdb"))
+			Expect(vsphere.GetEphemeralDiskPath("does not matter")).To(Equal("/dev/sdb"))
 		})
 	})
 })
