@@ -30,8 +30,14 @@ type FakeRootDevicePartitioner struct {
 	PartitionAfterFirstPartitionErr error
 
 	GetRemainingSizeInMbDevicePath string
-	GetRemainingSizeInMbSize       uint64
+	GetRemainingSizeInBytesSizes   map[string]uint64
 	GetRemainingSizeInMbErr        error
+}
+
+func NewFakeRootDevicePartitioner() *FakeRootDevicePartitioner {
+	return &FakeRootDevicePartitioner{
+		GetRemainingSizeInBytesSizes: make(map[string]uint64),
+	}
 }
 
 func (p *FakeRootDevicePartitioner) PartitionAfterFirstPartition(devicePath string, partitions []boshdisk.RootDevicePartition) error {
@@ -40,7 +46,7 @@ func (p *FakeRootDevicePartitioner) PartitionAfterFirstPartition(devicePath stri
 	return p.PartitionAfterFirstPartitionErr
 }
 
-func (p *FakeRootDevicePartitioner) GetRemainingSizeInMb(devicePath string) (uint64, error) {
+func (p *FakeRootDevicePartitioner) GetRemainingSizeInBytes(devicePath string) (uint64, error) {
 	p.GetRemainingSizeInMbDevicePath = devicePath
-	return p.GetRemainingSizeInMbSize, p.GetRemainingSizeInMbErr
+	return p.GetRemainingSizeInBytesSizes[devicePath], p.GetRemainingSizeInMbErr
 }

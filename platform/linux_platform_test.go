@@ -345,12 +345,10 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 
 			It("calculates ephemeral disk partition sizes when disk is bigger than twice the memory", func() {
-				totalMemInMb := uint64(1024)
-				diskSizeInMb := totalMemInMb*2 + 64
-				expectedSwap := totalMemInMb
+				totalMemInBytes := uint64(1024 * 1024 * 1024)
+				collector.MemStats.Total = totalMemInBytes
 
-				collector.MemStats.Total = totalMemInMb * uint64(1024*1024)
-
+				diskSizeInMb := uint64(2*1024 + 64)
 				fakePartitioner := diskManager.FakePartitioner
 				fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
 					"/dev/xvda": diskSizeInMb,
@@ -360,18 +358,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInMb: expectedSwap, Type: boshdisk.PartitionTypeSwap},
-					{SizeInMb: diskSizeInMb - expectedSwap, Type: boshdisk.PartitionTypeLinux},
+					{SizeInMb: uint64(1024), Type: boshdisk.PartitionTypeSwap},
+					{SizeInMb: uint64(1024 + 64), Type: boshdisk.PartitionTypeLinux},
 				}))
 			})
 
 			It("calculates ephemeral disk partition sizes when disk twice the memory or smaller", func() {
-				totalMemInMb := uint64(1024)
-				diskSizeInMb := totalMemInMb*2 - 64
-				expectedSwap := diskSizeInMb / 2
+				totalMemInBytes := uint64(1024 * 1024 * 1024)
+				collector.MemStats.Total = totalMemInBytes
 
-				collector.MemStats.Total = totalMemInMb * uint64(1024*1024)
-
+				diskSizeInMb := uint64(2*1024 - 64)
 				fakePartitioner := diskManager.FakePartitioner
 				fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
 					"/dev/xvda": diskSizeInMb,
@@ -381,8 +377,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInMb: expectedSwap, Type: boshdisk.PartitionTypeSwap},
-					{SizeInMb: diskSizeInMb - expectedSwap, Type: boshdisk.PartitionTypeLinux},
+					{SizeInMb: uint64(1024 - 32), Type: boshdisk.PartitionTypeSwap},
+					{SizeInMb: uint64(1024 - 32), Type: boshdisk.PartitionTypeLinux},
 				}))
 			})
 		})
@@ -407,22 +403,158 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
 			})
 
-			It("does not try to partition anything", func() {
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(diskManager.FakePartitioner.PartitionPartitions)).To(Equal(0))
+			Context("when agent should partition ephemeral disk on root disk", func() {
+				BeforeEach(func() {
+					options.CreatePartitionIfNoEphemeralDisk = true
+				})
+
+				It("partitions root disk after first partition", func() {
+
+				})
+
+				Context("when root device fails to be determined", func() {
+					BeforeEach(func() {
+						diskManager.FakeMountsSearcher.SearchMountsErr = errors.New("fake-mounts-searcher-error")
+					})
+
+					It("returns an error", func() {
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Finding root partition device"))
+					})
+				})
+
+				Context("when root partition is not the first partition", func() {
+					BeforeEach(func() {
+						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+							{MountPoint: "/", PartitionPath: "/dev/vda2"},
+						}
+					})
+
+					It("returns an error", func() {
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Root partition is not the first partition"))
+					})
+				})
+
+				Context("when root device is determined", func() {
+					BeforeEach(func() {
+						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+							{MountPoint: "/", PartitionPath: "/dev/vda1"},
+						}
+					})
+
+					Context("when getting absolute path fails", func() {
+						BeforeEach(func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda1",
+								fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
+							)
+						})
+
+						It("returns an error", func() {
+							err := act()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("fake-readlink-error"))
+						})
+					})
+
+					Context("when getting absolute path suceeds", func() {
+						BeforeEach(func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda1",
+								fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
+							)
+						})
+
+						Context("when getting root device remaining size succeeds", func() {
+							BeforeEach(func() {
+								diskManager.FakeRootDevicePartitioner.GetRemainingSizeInBytesSizes["/dev/vda"] = 32
+								collector.MemStats.Total = 8
+							})
+
+							It("returns err when mem stats are unavailable", func() {
+								collector.MemStatsErr = errors.New("fake-memstats-error")
+								err := act()
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(ContainSubstring("Calculating ephemeral partition size"))
+								Expect(err.Error()).To(ContainSubstring("fake-memstats-error"))
+							})
+
+							It("returns an error when paritioning fails", func() {
+								diskManager.FakeRootDevicePartitioner.PartitionAfterFirstPartitionErr = errors.New("fake-partition-error")
+								err := act()
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(ContainSubstring("Partitioning root device"))
+								Expect(err.Error()).To(ContainSubstring("fake-partition-error"))
+							})
+
+							It("parititons after first partition", func() {
+								err := act()
+								Expect(err).ToNot(HaveOccurred())
+								Expect(diskManager.FakeRootDevicePartitioner.DevicePathCalled).To(Equal("/dev/vda"))
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionsCalled).To(ContainElement(
+									boshdisk.RootDevicePartition{
+										SizeInBytes: 24,
+									}),
+								)
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionsCalled).To(ContainElement(
+									boshdisk.RootDevicePartition{
+										SizeInBytes: 8,
+									}),
+								)
+							})
+						})
+
+						Context("when getting root device remaining size fails", func() {
+							BeforeEach(func() {
+								diskManager.FakeRootDevicePartitioner.GetRemainingSizeInMbErr = errors.New("fake-get-remaining-size-error")
+							})
+
+							It("returns an error", func() {
+								err := act()
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(ContainSubstring("Getting root device remaining size"))
+								Expect(err.Error()).To(ContainSubstring("fake-get-remaining-size-error"))
+							})
+						})
+					})
+				})
+
+				Context("when partitioning after first partition fails", func() {
+					BeforeEach(func() {
+						diskManager.FakeRootDevicePartitioner.PartitionAfterFirstPartitionErr = errors.New("fake-partition-error")
+					})
+
+					It("returns an error", func() {
+
+					})
+				})
 			})
 
-			It("does not try to format anything", func() {
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(diskManager.FakeFormatter.FormatPartitionPaths)).To(Equal(0))
-			})
+			Context("when agent should not partition ephemeral disk on root disk", func() {
+				BeforeEach(func() {
+					options.CreatePartitionIfNoEphemeralDisk = false
+				})
 
-			It("does not try to mount anything", func() {
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(diskManager.FakeMounter.MountMountPoints)).To(Equal(0))
+				It("does not try to partition anything", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(diskManager.FakePartitioner.PartitionPartitions)).To(Equal(0))
+				})
+
+				It("does not try to format anything", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(diskManager.FakeFormatter.FormatPartitionPaths)).To(Equal(0))
+				})
+
+				It("does not try to mount anything", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(diskManager.FakeMounter.MountMountPoints)).To(Equal(0))
+				})
 			})
 		})
 	})

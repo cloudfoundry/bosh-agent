@@ -258,25 +258,25 @@ var _ = Describe("partedPartitioner", func() {
 		})
 	})
 
-	Describe("GetRemainingSizeInMb", func() {
+	Describe("GetRemainingSizeInBytes", func() {
 		Context("when getting disk partition information succeeds", func() {
 			BeforeEach(func() {
 				fakeCmdRunner.AddCmdResult(
 					"parted -m /dev/sda unit B print",
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
-/dev/sda:33554560B:virtblk:512:512:msdos:Virtio Block Device;
-1:1B:16777215B:16777216B:ext4::;
-2:16777216B:33554432B:16777216B:ext4::;
+/dev/sda:129B:virtblk:512:512:msdos:Virtio Block Device;
+1:15B:32B:17B:ext4::;
+2:32B:55B:23B:ext4::;
 `,
 					},
 				)
 			})
 
 			It("returns the size of the device", func() {
-				size, err := partitioner.GetRemainingSizeInMb("/dev/sda")
+				size, err := partitioner.GetRemainingSizeInBytes("/dev/sda")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(size).To(Equal(uint64(16)))
+				Expect(size).To(Equal(uint64(97)))
 			})
 		})
 
@@ -291,7 +291,7 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns an error", func() {
-				size, err := partitioner.GetRemainingSizeInMb("/dev/sda")
+				size, err := partitioner.GetRemainingSizeInBytes("/dev/sda")
 				Expect(err).To(HaveOccurred())
 				Expect(size).To(Equal(uint64(0)))
 				Expect(err.Error()).To(ContainSubstring("fake-parted-error"))
@@ -309,7 +309,7 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns an error", func() {
-				size, err := partitioner.GetRemainingSizeInMb("/dev/sda")
+				size, err := partitioner.GetRemainingSizeInBytes("/dev/sda")
 				Expect(err).To(HaveOccurred())
 				Expect(size).To(Equal(uint64(0)))
 				Expect(err.Error()).To(ContainSubstring("Getting remaining size of `/dev/sda'"))
