@@ -345,40 +345,40 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 
 			It("calculates ephemeral disk partition sizes when disk is bigger than twice the memory", func() {
-				totalMemInBytes := uint64(1024 * 1024 * 1024)
+				totalMemInBytes := uint64(1024)
 				collector.MemStats.Total = totalMemInBytes
 
-				diskSizeInMb := uint64(2*1024 + 64)
+				diskSizeInBytes := uint64(2*1024 + 64)
 				fakePartitioner := diskManager.FakePartitioner
-				fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
-					"/dev/xvda": diskSizeInMb,
+				fakePartitioner.GetDeviceSizeInBytesSizes = map[string]uint64{
+					"/dev/xvda": diskSizeInBytes,
 				}
 
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInMb: uint64(1024), Type: boshdisk.PartitionTypeSwap},
-					{SizeInMb: uint64(1024 + 64), Type: boshdisk.PartitionTypeLinux},
+					{SizeInBytes: uint64(1024), Type: boshdisk.PartitionTypeSwap},
+					{SizeInBytes: uint64(1024 + 64), Type: boshdisk.PartitionTypeLinux},
 				}))
 			})
 
 			It("calculates ephemeral disk partition sizes when disk twice the memory or smaller", func() {
-				totalMemInBytes := uint64(1024 * 1024 * 1024)
+				totalMemInBytes := uint64(1024)
 				collector.MemStats.Total = totalMemInBytes
 
-				diskSizeInMb := uint64(2*1024 - 64)
+				diskSizeInBytes := uint64(2*1024 - 64)
 				fakePartitioner := diskManager.FakePartitioner
-				fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
-					"/dev/xvda": diskSizeInMb,
+				fakePartitioner.GetDeviceSizeInBytesSizes = map[string]uint64{
+					"/dev/xvda": diskSizeInBytes,
 				}
 
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInMb: uint64(1024 - 32), Type: boshdisk.PartitionTypeSwap},
-					{SizeInMb: uint64(1024 - 32), Type: boshdisk.PartitionTypeLinux},
+					{SizeInBytes: uint64(1024 - 32), Type: boshdisk.PartitionTypeSwap},
+					{SizeInBytes: uint64(1024 - 32), Type: boshdisk.PartitionTypeLinux},
 				}))
 			})
 		})

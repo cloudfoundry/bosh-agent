@@ -769,23 +769,20 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 
 func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 	p.logger.Debug(logTag, "Getting device size of `%s'", realPath)
-	diskSizeInMb, err := p.diskManager.GetPartitioner().GetDeviceSizeInMb(realPath)
+	diskSizeInBytes, err := p.diskManager.GetPartitioner().GetDeviceSizeInBytes(realPath)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Getting device size")
 	}
 
-	p.logger.Debug(logTag, "Calculating ephemeral disk partition sizes of `%s' with total disk size %dMB", realPath, diskSizeInMb)
-	diskSizeInBytes := diskSizeInMb * 1024 * 1024
+	p.logger.Debug(logTag, "Calculating ephemeral disk partition sizes of `%s' with total disk size %dB", realPath, diskSizeInBytes)
 	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(diskSizeInBytes)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
 	}
 
-	swapSizeInMb := swapSizeInBytes / (1024 * 1024)
-	linuxSizeInMb := linuxSizeInBytes / (1024 * 1024)
 	partitions := []boshdisk.Partition{
-		{SizeInMb: swapSizeInMb, Type: boshdisk.PartitionTypeSwap},
-		{SizeInMb: linuxSizeInMb, Type: boshdisk.PartitionTypeLinux},
+		{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
+		{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 	}
 
 	p.logger.Debug(logTag, "Partitioning `%s' with %#v", realPath, partitions)
