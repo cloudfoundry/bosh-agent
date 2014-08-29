@@ -11,7 +11,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
-var _ = Describe("partedPartitioner", func() {
+var _ = Describe("rootDevicePartitioner", func() {
 	var (
 		fakeCmdRunner *fakesys.FakeCmdRunner
 		partitioner   Partitioner
@@ -20,10 +20,10 @@ var _ = Describe("partedPartitioner", func() {
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fakeCmdRunner = fakesys.NewFakeCmdRunner()
-		partitioner = NewPartedPartitioner(logger, fakeCmdRunner, 1)
+		partitioner = NewRootDevicePartitioner(logger, fakeCmdRunner, 1)
 	})
 
-	Describe("CreatePartitions", func() {
+	Describe("Partition", func() {
 		Context("when the desired partitions do not exist", func() {
 			BeforeEach(func() {
 				fakeCmdRunner.AddCmdResult(

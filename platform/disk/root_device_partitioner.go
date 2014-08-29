@@ -10,19 +10,19 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
-type partedPartitioner struct {
+type rootDevicePartitioner struct {
 	logger       boshlog.Logger
 	cmdRunner    boshsys.CmdRunner
 	deltaInBytes uint64
 	logTag       string
 }
 
-func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, deltaInBytes uint64) partedPartitioner {
-	return partedPartitioner{
+func NewRootDevicePartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, deltaInBytes uint64) rootDevicePartitioner {
+	return rootDevicePartitioner{
 		logger:       logger,
 		cmdRunner:    cmdRunner,
 		deltaInBytes: deltaInBytes,
-		logTag:       "PartedPartitioner",
+		logTag:       "RootDevicePartitioner",
 	}
 }
 
@@ -33,7 +33,7 @@ type existingPartition struct {
 	EndInBytes   uint64
 }
 
-func (p partedPartitioner) Partition(devicePath string, partitions []Partition) error {
+func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, err := p.getPartitions(devicePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Partitioning disk `%s'", devicePath)
@@ -87,7 +87,7 @@ func (p partedPartitioner) Partition(devicePath string, partitions []Partition) 
 	return nil
 }
 
-func (p partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
+func (p rootDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
 	p.logger.Debug(p.logTag, "Getting size of disk remaining after first partition")
 
 	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
@@ -118,7 +118,7 @@ func (p partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, erro
 	return remainingSizeInBytes, nil
 }
 
-func (p partedPartitioner) getPartitions(devicePath string) ([]existingPartition, error) {
+func (p rootDevicePartitioner) getPartitions(devicePath string) ([]existingPartition, error) {
 	partitions := []existingPartition{}
 
 	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
@@ -171,7 +171,7 @@ func (p partedPartitioner) getPartitions(devicePath string) ([]existingPartition
 	return partitions, nil
 }
 
-func (p partedPartitioner) removePartitions(devicePath string, partitions []existingPartition) error {
+func (p rootDevicePartitioner) removePartitions(devicePath string, partitions []existingPartition) error {
 	for _, partition := range partitions {
 		p.logger.Info(p.logTag, "Removing partition %d", partition.Index)
 

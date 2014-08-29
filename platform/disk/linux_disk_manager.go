@@ -44,7 +44,7 @@ func NewLinuxDiskManager(
 
 	return linuxDiskManager{
 		partitioner:           NewSfdiskPartitioner(logger, runner),
-		rootDevicePartitioner: NewPartedPartitioner(logger, runner, uint64(20*1024*1024)),
+		rootDevicePartitioner: NewRootDevicePartitioner(logger, runner, uint64(20*1024*1024)),
 		formatter:             NewLinuxFormatter(runner, fs),
 		mounter:               mounter,
 		mountsSearcher:        mountsSearcher,
