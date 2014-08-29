@@ -9,7 +9,7 @@ import (
 
 type linuxDiskManager struct {
 	partitioner           Partitioner
-	rootDevicePartitioner RootDevicePartitioner
+	rootDevicePartitioner Partitioner
 	formatter             Formatter
 	mounter               Mounter
 	mountsSearcher        MountsSearcher
@@ -53,7 +53,7 @@ func NewLinuxDiskManager(
 
 func (m linuxDiskManager) GetPartitioner() Partitioner { return m.partitioner }
 
-func (m linuxDiskManager) GetRootDevicePartitioner() RootDevicePartitioner {
+func (m linuxDiskManager) GetRootDevicePartitioner() Partitioner {
 	return m.rootDevicePartitioner
 }
 

@@ -8,45 +8,27 @@ type FakePartitioner struct {
 	PartitionCalled     bool
 	PartitionDevicePath string
 	PartitionPartitions []boshdisk.Partition
+	PartitionErr        error
 
-	GetDeviceSizeInBytesSizes map[string]uint64
+	GetDeviceSizeInBytesDevicePath string
+	GetDeviceSizeInBytesSizes      map[string]uint64
+	GetDeviceSizeInBytesErr        error
 }
 
-func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) (err error) {
-	p.PartitionCalled = true
-	p.PartitionDevicePath = devicePath
-	p.PartitionPartitions = partitions
-	return
-}
-
-func (p *FakePartitioner) GetDeviceSizeInBytes(devicePath string) (size uint64, err error) {
-	size = p.GetDeviceSizeInBytesSizes[devicePath]
-	return
-}
-
-type FakeRootDevicePartitioner struct {
-	DevicePathCalled                string
-	PartitionsCalled                []boshdisk.RootDevicePartition
-	PartitionAfterFirstPartitionErr error
-
-	GetRemainingSizeInMbDevicePath string
-	GetRemainingSizeInBytesSizes   map[string]uint64
-	GetRemainingSizeInMbErr        error
-}
-
-func NewFakeRootDevicePartitioner() *FakeRootDevicePartitioner {
-	return &FakeRootDevicePartitioner{
-		GetRemainingSizeInBytesSizes: make(map[string]uint64),
+func NewFakePartitioner() *FakePartitioner {
+	return &FakePartitioner{
+		GetDeviceSizeInBytesSizes: make(map[string]uint64),
 	}
 }
 
-func (p *FakeRootDevicePartitioner) PartitionAfterFirstPartition(devicePath string, partitions []boshdisk.RootDevicePartition) error {
-	p.DevicePathCalled = devicePath
-	p.PartitionsCalled = partitions
-	return p.PartitionAfterFirstPartitionErr
+func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) error {
+	p.PartitionCalled = true
+	p.PartitionDevicePath = devicePath
+	p.PartitionPartitions = partitions
+	return p.PartitionErr
 }
 
-func (p *FakeRootDevicePartitioner) GetRemainingSizeInBytes(devicePath string) (uint64, error) {
-	p.GetRemainingSizeInMbDevicePath = devicePath
-	return p.GetRemainingSizeInBytesSizes[devicePath], p.GetRemainingSizeInMbErr
+func (p *FakePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
+	p.GetDeviceSizeInBytesDevicePath = devicePath
+	return p.GetDeviceSizeInBytesSizes[devicePath], p.GetDeviceSizeInBytesErr
 }

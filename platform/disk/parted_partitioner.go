@@ -33,7 +33,7 @@ type existingPartition struct {
 	EndInBytes   uint64
 }
 
-func (p partedPartitioner) PartitionAfterFirstPartition(devicePath string, partitions []RootDevicePartition) error {
+func (p partedPartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, err := p.getPartitions(devicePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Partitioning disk `%s'", devicePath)
@@ -87,7 +87,7 @@ func (p partedPartitioner) PartitionAfterFirstPartition(devicePath string, parti
 	return nil
 }
 
-func (p partedPartitioner) GetRemainingSizeInBytes(devicePath string) (uint64, error) {
+func (p partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
 	p.logger.Debug(p.logTag, "Getting size of disk remaining after first partition")
 
 	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")

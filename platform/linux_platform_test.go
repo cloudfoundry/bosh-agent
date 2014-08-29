@@ -350,9 +350,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				diskSizeInBytes := uint64(2*1024 + 64)
 				fakePartitioner := diskManager.FakePartitioner
-				fakePartitioner.GetDeviceSizeInBytesSizes = map[string]uint64{
-					"/dev/xvda": diskSizeInBytes,
-				}
+				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
 
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
@@ -369,9 +367,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				diskSizeInBytes := uint64(2*1024 - 64)
 				fakePartitioner := diskManager.FakePartitioner
-				fakePartitioner.GetDeviceSizeInBytesSizes = map[string]uint64{
-					"/dev/xvda": diskSizeInBytes,
-				}
+				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
 
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
@@ -470,7 +466,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 						Context("when getting root device remaining size succeeds", func() {
 							BeforeEach(func() {
-								diskManager.FakeRootDevicePartitioner.GetRemainingSizeInBytesSizes["/dev/vda"] = 32
+								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 32
 								collector.MemStats.Total = 8
 							})
 
@@ -483,7 +479,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 							})
 
 							It("returns an error when paritioning fails", func() {
-								diskManager.FakeRootDevicePartitioner.PartitionAfterFirstPartitionErr = errors.New("fake-partition-error")
+								diskManager.FakeRootDevicePartitioner.PartitionErr = errors.New("fake-partition-error")
 								err := act()
 								Expect(err).To(HaveOccurred())
 								Expect(err.Error()).To(ContainSubstring("Partitioning root device"))
@@ -493,14 +489,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 							It("parititons after first partition", func() {
 								err := act()
 								Expect(err).ToNot(HaveOccurred())
-								Expect(diskManager.FakeRootDevicePartitioner.DevicePathCalled).To(Equal("/dev/vda"))
-								Expect(diskManager.FakeRootDevicePartitioner.PartitionsCalled).To(ContainElement(
-									boshdisk.RootDevicePartition{
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionDevicePath).To(Equal("/dev/vda"))
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
 										SizeInBytes: 24,
 									}),
 								)
-								Expect(diskManager.FakeRootDevicePartitioner.PartitionsCalled).To(ContainElement(
-									boshdisk.RootDevicePartition{
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
 										SizeInBytes: 8,
 									}),
 								)
@@ -509,7 +505,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 						Context("when getting root device remaining size fails", func() {
 							BeforeEach(func() {
-								diskManager.FakeRootDevicePartitioner.GetRemainingSizeInMbErr = errors.New("fake-get-remaining-size-error")
+								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesErr = errors.New("fake-get-remaining-size-error")
 							})
 
 							It("returns an error", func() {
@@ -524,7 +520,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				Context("when partitioning after first partition fails", func() {
 					BeforeEach(func() {
-						diskManager.FakeRootDevicePartitioner.PartitionAfterFirstPartitionErr = errors.New("fake-partition-error")
+						diskManager.FakeRootDevicePartitioner.PartitionErr = errors.New("fake-partition-error")
 					})
 
 					It("returns an error", func() {

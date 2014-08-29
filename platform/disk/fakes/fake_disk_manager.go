@@ -9,16 +9,16 @@ type FakeDiskManager struct {
 	FakeFormatter             *FakeFormatter
 	FakeMounter               *FakeMounter
 	FakeMountsSearcher        *FakeMountsSearcher
-	FakeRootDevicePartitioner *FakeRootDevicePartitioner
+	FakeRootDevicePartitioner *FakePartitioner
 }
 
 func NewFakeDiskManager() (manager *FakeDiskManager) {
 	manager = &FakeDiskManager{}
-	manager.FakePartitioner = &FakePartitioner{}
+	manager.FakePartitioner = NewFakePartitioner()
 	manager.FakeFormatter = &FakeFormatter{}
 	manager.FakeMounter = &FakeMounter{}
 	manager.FakeMountsSearcher = &FakeMountsSearcher{}
-	manager.FakeRootDevicePartitioner = NewFakeRootDevicePartitioner()
+	manager.FakeRootDevicePartitioner = NewFakePartitioner()
 	return
 }
 
@@ -26,7 +26,7 @@ func (m FakeDiskManager) GetPartitioner() boshdisk.Partitioner {
 	return m.FakePartitioner
 }
 
-func (m FakeDiskManager) GetRootDevicePartitioner() boshdisk.RootDevicePartitioner {
+func (m FakeDiskManager) GetRootDevicePartitioner() boshdisk.Partitioner {
 	return m.FakeRootDevicePartitioner
 }
 

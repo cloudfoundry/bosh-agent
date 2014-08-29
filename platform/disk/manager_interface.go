@@ -2,7 +2,7 @@ package disk
 
 type Manager interface {
 	GetPartitioner() Partitioner
-	GetRootDevicePartitioner() RootDevicePartitioner
+	GetRootDevicePartitioner() Partitioner
 	GetFormatter() Formatter
 	GetMounter() Mounter
 	GetMountsSearcher() MountsSearcher

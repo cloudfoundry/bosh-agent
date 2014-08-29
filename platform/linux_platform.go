@@ -741,7 +741,7 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	p.logger.Debug(logTag, "Found root device `%s'", rootDevicePath)
 
 	p.logger.Debug(logTag, "Getting remaining size of `%s'", rootDevicePath)
-	remainingSizeInBytes, err := p.diskManager.GetRootDevicePartitioner().GetRemainingSizeInBytes(rootDevicePath)
+	remainingSizeInBytes, err := p.diskManager.GetRootDevicePartitioner().GetDeviceSizeInBytes(rootDevicePath)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Getting root device remaining size")
 	}
@@ -752,12 +752,12 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 		return "", "", bosherr.WrapError(err, "Calculating ephemeral partition size")
 	}
 
-	partitions := []boshdisk.RootDevicePartition{
+	partitions := []boshdisk.Partition{
 		{SizeInBytes: swapSize},
 		{SizeInBytes: linuxSize},
 	}
 	p.logger.Debug(logTag, "Partitioning `%s' with: %#v", rootDevicePath, partitions)
-	err = p.diskManager.GetRootDevicePartitioner().PartitionAfterFirstPartition(rootDevicePath, partitions)
+	err = p.diskManager.GetRootDevicePartitioner().Partition(rootDevicePath, partitions)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Partitioning root device")
 	}

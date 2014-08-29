@@ -14,7 +14,7 @@ import (
 var _ = Describe("partedPartitioner", func() {
 	var (
 		fakeCmdRunner *fakesys.FakeCmdRunner
-		partitioner   RootDevicePartitioner
+		partitioner   Partitioner
 	)
 
 	BeforeEach(func() {
@@ -38,12 +38,12 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("creates partitions using parted", func() {
-				partitions := []RootDevicePartition{
+				partitions := []Partition{
 					{SizeInBytes: 32},
 					{SizeInBytes: 64},
 				}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(3))
@@ -61,11 +61,11 @@ var _ = Describe("partedPartitioner", func() {
 				})
 
 				It("returns error", func() {
-					partitions := []RootDevicePartition{
+					partitions := []Partition{
 						{SizeInBytes: 32},
 					}
 
-					err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+					err := partitioner.Partition("/dev/sda", partitions)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Partitioning disk `/dev/sda'"))
 					Expect(err.Error()).To(ContainSubstring("fake-parted-error"))
@@ -82,11 +82,11 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns error", func() {
-				partitions := []RootDevicePartition{
+				partitions := []Partition{
 					{SizeInBytes: 32},
 				}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Partitioning disk `/dev/sda'"))
 				Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda'"))
@@ -109,9 +109,9 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("does not partition", func() {
-				partitions := []RootDevicePartition{{SizeInBytes: 32}}
+				partitions := []Partition{{SizeInBytes: 32}}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
@@ -133,9 +133,9 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("does not partition", func() {
-				partitions := []RootDevicePartition{{SizeInBytes: 32}}
+				partitions := []Partition{{SizeInBytes: 32}}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
@@ -160,13 +160,13 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("recreates partitions starting from middle partition", func() {
-				partitions := []RootDevicePartition{
+				partitions := []Partition{
 					{SizeInBytes: 16},
 					{SizeInBytes: 16},
 					{SizeInBytes: 32},
 				}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(6))
 				Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
@@ -188,13 +188,13 @@ var _ = Describe("partedPartitioner", func() {
 				})
 
 				It("returns an error", func() {
-					partitions := []RootDevicePartition{
+					partitions := []Partition{
 						{SizeInBytes: 16},
 						{SizeInBytes: 16},
 						{SizeInBytes: 32},
 					}
 
-					err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+					err := partitioner.Partition("/dev/sda", partitions)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Removing partition from `/dev/sda'"))
 					Expect(err.Error()).To(ContainSubstring("Partitioning disk `/dev/sda'"))
@@ -219,11 +219,11 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns an error", func() {
-				partitions := []RootDevicePartition{
+				partitions := []Partition{
 					{SizeInBytes: 32},
 				}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Missing first partition on `/dev/sda'"))
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
@@ -242,11 +242,11 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns an error", func() {
-				partitions := []RootDevicePartition{
+				partitions := []Partition{
 					{SizeInBytes: 32},
 				}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Parsing existing partitions of `/dev/sda'"))
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
@@ -269,11 +269,11 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns an error", func() {
-				partitions := []RootDevicePartition{
+				partitions := []Partition{
 					{SizeInBytes: 32},
 				}
 
-				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Parsing existing partitions of `/dev/sda'"))
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
@@ -282,7 +282,7 @@ var _ = Describe("partedPartitioner", func() {
 		})
 	})
 
-	Describe("GetRemainingSizeInBytes", func() {
+	Describe("GetDeviceSizeInBytes", func() {
 		Context("when getting disk partition information succeeds", func() {
 			BeforeEach(func() {
 				fakeCmdRunner.AddCmdResult(
@@ -298,7 +298,7 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns the size of the device", func() {
-				size, err := partitioner.GetRemainingSizeInBytes("/dev/sda")
+				size, err := partitioner.GetDeviceSizeInBytes("/dev/sda")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(size).To(Equal(uint64(97)))
 			})
@@ -315,7 +315,7 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns an error", func() {
-				size, err := partitioner.GetRemainingSizeInBytes("/dev/sda")
+				size, err := partitioner.GetDeviceSizeInBytes("/dev/sda")
 				Expect(err).To(HaveOccurred())
 				Expect(size).To(Equal(uint64(0)))
 				Expect(err.Error()).To(ContainSubstring("fake-parted-error"))
@@ -333,7 +333,7 @@ var _ = Describe("partedPartitioner", func() {
 			})
 
 			It("returns an error", func() {
-				size, err := partitioner.GetRemainingSizeInBytes("/dev/sda")
+				size, err := partitioner.GetDeviceSizeInBytes("/dev/sda")
 				Expect(err).To(HaveOccurred())
 				Expect(size).To(Equal(uint64(0)))
 				Expect(err.Error()).To(ContainSubstring("Getting remaining size of `/dev/sda'"))
