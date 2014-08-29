@@ -36,33 +36,30 @@ type existingPartition struct {
 func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, err := p.getPartitions(devicePath)
 	if err != nil {
-		return bosherr.WrapError(err, "Partitioning disk `%s'", devicePath)
+		return bosherr.WrapError(err, "Getting existing partitions of `%s'", devicePath)
 	}
+	p.logger.Debug(p.logTag, "Current partitions: %#v", existingPartitions)
 
 	if len(existingPartitions) == 0 {
 		return bosherr.New("Missing first partition on `%s'", devicePath)
 	}
 
+	if p.partitionsMatch(existingPartitions[1:], partitions) {
+		p.logger.Info(p.logTag, "Partitions already match, skipping partitioning")
+		return nil
+	}
+
 	partitionStart := existingPartitions[0].EndInBytes + 1
+
+	if len(existingPartitions) > 1 {
+		err = p.removePartitions(devicePath, existingPartitions[1:])
+		if err != nil {
+			return bosherr.WrapError(err, "Removing partitions from `%s'", devicePath)
+		}
+	}
 
 	for index, partition := range partitions {
 		partitionEnd := partitionStart + partition.SizeInBytes - 1
-
-		if len(existingPartitions) > index+1 {
-			existingPartition := existingPartitions[index+1]
-
-			if withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.deltaInBytes) {
-				partitionStart = existingPartition.EndInBytes + 1
-				p.logger.Info(p.logTag, "Skipping partition %d because it already exists", index)
-				continue
-			} else {
-				err = p.removePartitions(devicePath, existingPartitions[index+1:])
-				if err != nil {
-					return bosherr.WrapError(err, "Partitioning disk `%s'", devicePath)
-				}
-				existingPartitions = existingPartitions[:index+1]
-			}
-		}
 
 		p.logger.Info(p.logTag, "Creating partition %d with start %d and end %d", index, partitionStart, partitionEnd)
 
@@ -123,7 +120,7 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) ([]existingParti
 
 	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
 	if err != nil {
-		return partitions, bosherr.WrapError(err, "Getting existing partitions of `%s'", devicePath)
+		return partitions, bosherr.WrapError(err, "Running parted print on `%s'", devicePath)
 	}
 
 	p.logger.Debug(p.logTag, "Found partitions %s", stdout)
@@ -178,9 +175,25 @@ func (p rootDevicePartitioner) removePartitions(devicePath string, partitions []
 		_, _, _, err := p.cmdRunner.RunCommand("parted", "-s", devicePath, "rm", fmt.Sprintf("%d", partition.Index))
 
 		if err != nil {
-			return bosherr.WrapError(err, "Removing partition from `%s'", devicePath)
+			return bosherr.WrapError(err, "Removing partition %d from `%s'", partition.Index, devicePath)
 		}
 	}
 
 	return nil
+}
+
+func (p rootDevicePartitioner) partitionsMatch(existingPartitions []existingPartition, partitions []Partition) bool {
+	if len(existingPartitions) != len(partitions) {
+		return false
+	}
+
+	for index, partition := range partitions {
+		existingPartition := existingPartitions[index]
+
+		if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.deltaInBytes) {
+			return false
+		}
+	}
+
+	return true
 }
