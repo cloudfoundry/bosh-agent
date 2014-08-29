@@ -361,62 +361,15 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 			return nil
 		}
 
-		rootDevicePath, err := p.findRootDevicePath()
+		swapPartitionPath, dataPartitionPath, err = p.createEphemeralPartitionsOnRootDevice()
 		if err != nil {
-			return bosherr.WrapError(err, "Finding root partition device")
+			return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
 		}
-
-		remainingSizeInBytes, err := p.diskManager.GetRootDevicePartitioner().GetRemainingSizeInBytes(rootDevicePath)
-		if err != nil {
-			return bosherr.WrapError(err, "Getting root device remaining size")
-		}
-
-		swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes)
-
-		if err != nil {
-			return bosherr.WrapError(err, "Calculating ephemeral partition size")
-		}
-
-		err = p.diskManager.GetRootDevicePartitioner().PartitionAfterFirstPartition(
-			rootDevicePath,
-			[]boshdisk.RootDevicePartition{
-				{SizeInBytes: swapSize},
-				{SizeInBytes: linuxSize},
-			},
-		)
-
-		if err != nil {
-			return bosherr.WrapError(err, "Partitioning root device")
-		}
-
-		swapPartitionPath = rootDevicePath + "2"
-		dataPartitionPath = rootDevicePath + "3"
 	} else {
-		diskSizeInMb, err := p.diskManager.GetPartitioner().GetDeviceSizeInMb(realPath)
+		swapPartitionPath, dataPartitionPath, err = p.partitionEphemeralDisk(realPath)
 		if err != nil {
-			return bosherr.WrapError(err, "Getting device size")
+			return bosherr.WrapError(err, "Partitioning ephemeral disk")
 		}
-
-		diskSizeInBytes := diskSizeInMb * 1024 * 1024
-		swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(diskSizeInBytes)
-		if err != nil {
-			return bosherr.WrapError(err, "Calculating partition sizes")
-		}
-
-		swapSizeInMb := swapSizeInBytes / (1024 * 1024)
-		linuxSizeInMb := linuxSizeInBytes / (1024 * 1024)
-		partitions := []boshdisk.Partition{
-			{SizeInMb: swapSizeInMb, Type: boshdisk.PartitionTypeSwap},
-			{SizeInMb: linuxSizeInMb, Type: boshdisk.PartitionTypeLinux},
-		}
-
-		err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
-		if err != nil {
-			return bosherr.WrapError(err, "Partitioning disk")
-		}
-
-		swapPartitionPath = realPath + "1"
-		dataPartitionPath = realPath + "2"
 	}
 
 	err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
@@ -770,4 +723,65 @@ func (p linux) findRootDevicePath() (string, error) {
 	}
 
 	return "", bosherr.New("Getting root partition device")
+}
+
+func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
+	rootDevicePath, err := p.findRootDevicePath()
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Finding root partition device")
+	}
+
+	remainingSizeInBytes, err := p.diskManager.GetRootDevicePartitioner().GetRemainingSizeInBytes(rootDevicePath)
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Getting root device remaining size")
+	}
+
+	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes)
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Calculating ephemeral partition size")
+	}
+
+	err = p.diskManager.GetRootDevicePartitioner().PartitionAfterFirstPartition(
+		rootDevicePath,
+		[]boshdisk.RootDevicePartition{
+			{SizeInBytes: swapSize},
+			{SizeInBytes: linuxSize},
+		},
+	)
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Partitioning root device")
+	}
+
+	swapPartitionPath := rootDevicePath + "2"
+	dataPartitionPath := rootDevicePath + "3"
+	return swapPartitionPath, dataPartitionPath, nil
+}
+
+func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
+	diskSizeInMb, err := p.diskManager.GetPartitioner().GetDeviceSizeInMb(realPath)
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Getting device size")
+	}
+
+	diskSizeInBytes := diskSizeInMb * 1024 * 1024
+	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(diskSizeInBytes)
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
+	}
+
+	swapSizeInMb := swapSizeInBytes / (1024 * 1024)
+	linuxSizeInMb := linuxSizeInBytes / (1024 * 1024)
+	partitions := []boshdisk.Partition{
+		{SizeInMb: swapSizeInMb, Type: boshdisk.PartitionTypeSwap},
+		{SizeInMb: linuxSizeInMb, Type: boshdisk.PartitionTypeLinux},
+	}
+
+	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Partitioning disk")
+	}
+
+	swapPartitionPath := realPath + "1"
+	dataPartitionPath := realPath + "2"
+	return swapPartitionPath, dataPartitionPath, nil
 }
