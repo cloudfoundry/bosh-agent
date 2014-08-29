@@ -11,16 +11,18 @@ import (
 )
 
 type partedPartitioner struct {
-	logger    boshlog.Logger
-	cmdRunner boshsys.CmdRunner
-	logTag    string
+	logger       boshlog.Logger
+	cmdRunner    boshsys.CmdRunner
+	deltaInBytes uint64
+	logTag       string
 }
 
-func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner) partedPartitioner {
+func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, deltaInBytes uint64) partedPartitioner {
 	return partedPartitioner{
-		logger:    logger,
-		cmdRunner: cmdRunner,
-		logTag:    "PartedPartitioner",
+		logger:       logger,
+		cmdRunner:    cmdRunner,
+		deltaInBytes: deltaInBytes,
+		logTag:       "PartedPartitioner",
 	}
 }
 
@@ -49,7 +51,7 @@ func (p partedPartitioner) PartitionAfterFirstPartition(devicePath string, parti
 		if len(existingPartitions) > index+1 {
 			existingPartition := existingPartitions[index+1]
 
-			if partition.SizeInBytes == existingPartition.SizeInBytes {
+			if withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.deltaInBytes) {
 				partitionStart = partitionEnd
 				p.logger.Info(p.logTag, "Skipping partition %d because it already exists", index)
 				continue

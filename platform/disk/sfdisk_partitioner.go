@@ -96,23 +96,13 @@ func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsTo
 		switch {
 		case existingPartition.Type != partitionToMatch.Type:
 			return
-		case notWithinDelta(existingPartition.SizeInMb, partitionToMatch.SizeInMb, 20):
+		case !withinDelta(existingPartition.SizeInMb, partitionToMatch.SizeInMb, 20):
 			return
 		}
 
 		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInMb
 	}
 
-	return true
-}
-
-func notWithinDelta(left, right, delta uint64) bool {
-	switch {
-	case left-delta > right:
-		return false
-	case right-delta < left:
-		return false
-	}
 	return true
 }
 

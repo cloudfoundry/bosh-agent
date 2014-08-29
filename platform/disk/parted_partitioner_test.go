@@ -20,7 +20,7 @@ var _ = Describe("partedPartitioner", func() {
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fakeCmdRunner = fakesys.NewFakeCmdRunner()
-		partitioner = NewPartedPartitioner(logger, fakeCmdRunner)
+		partitioner = NewPartedPartitioner(logger, fakeCmdRunner, 1)
 	})
 
 	Describe("CreatePartitions", func() {
@@ -118,6 +118,30 @@ var _ = Describe("partedPartitioner", func() {
 			})
 		})
 
+		Context("when partitions are within delta", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/sda unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: `BYT;
+/dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
+1:1B:32B:31B:ext4::;
+2:32B:65B:33B:ext4::;
+`,
+					},
+				)
+			})
+
+			It("does not partition", func() {
+				partitions := []RootDevicePartition{{SizeInBytes: 32}}
+
+				err := partitioner.PartitionAfterFirstPartition("/dev/sda", partitions)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
+				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
+			})
+		})
+
 		Context("when partition in the middle does not match", func() {
 			BeforeEach(func() {
 				fakeCmdRunner.AddCmdResult(
@@ -126,10 +150,10 @@ var _ = Describe("partedPartitioner", func() {
 						Stdout: `BYT;
 /dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
 1:1B:33B:32B:ext4::;
-2:33B:49B:16B:ext4::;
-3:49B:81B:32B:ext4::;
-4:81B:113B:32B:ext4::;
-5:113B:121B:8B:ext4::;
+2:33B:48B:15B:ext4::;
+3:48B:80B:32B:ext4::;
+4:80B:112B:32B:ext4::;
+5:112B:120B:8B:ext4::;
 `,
 					},
 				)
