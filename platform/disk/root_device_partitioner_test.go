@@ -30,8 +30,8 @@ var _ = Describe("rootDevicePartitioner", func() {
 					"parted -m /dev/sda unit B print",
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
-/dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
-1:1B:33B:32B:ext4::;
+/dev/sda:129B:virtblk:512:512:msdos:Virtio Block Device;
+1:1B:32B:32B:ext4::;
 `,
 					},
 				)
@@ -48,14 +48,14 @@ var _ = Describe("rootDevicePartitioner", func() {
 
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(3))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "33", "65"}))
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "65", "129"}))
+				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "33", "64"}))
+				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "65", "128"}))
 			})
 
 			Context("when partitioning fails", func() {
 				BeforeEach(func() {
 					fakeCmdRunner.AddCmdResult(
-						"parted -s /dev/sda unit B mkpart primary 33 65",
+						"parted -s /dev/sda unit B mkpart primary 33 64",
 						fakesys.FakeCmdResult{Error: errors.New("fake-parted-error")},
 					)
 				})
@@ -101,8 +101,8 @@ var _ = Describe("rootDevicePartitioner", func() {
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
 /dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
-1:1B:33B:32B:ext4::;
-2:33B:65B:32B:ext4::;
+1:1B:32B:32B:ext4::;
+2:33B:64B:32B:ext4::;
 `,
 					},
 				)
@@ -125,8 +125,8 @@ var _ = Describe("rootDevicePartitioner", func() {
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
 /dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
-1:1B:32B:31B:ext4::;
-2:32B:65B:33B:ext4::;
+1:1B:31B:31B:ext4::;
+2:32B:64B:33B:ext4::;
 `,
 					},
 				)
@@ -149,11 +149,11 @@ var _ = Describe("rootDevicePartitioner", func() {
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
 /dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
-1:1B:33B:32B:ext4::;
-2:33B:48B:15B:ext4::;
-3:48B:80B:32B:ext4::;
-4:80B:112B:32B:ext4::;
-5:112B:120B:8B:ext4::;
+1:1B:32B:32B:ext4::;
+2:33B:47B:15B:ext4::;
+3:48B:79B:32B:ext4::;
+4:80B:111B:32B:ext4::;
+5:112B:119B:8B:ext4::;
 `,
 					},
 				)
@@ -175,8 +175,8 @@ var _ = Describe("rootDevicePartitioner", func() {
 				Expect(fakeCmdRunner.RunCommands[2]).To(Equal([]string{"parted", "-s", "/dev/sda", "rm", "4"}))
 				Expect(fakeCmdRunner.RunCommands[3]).To(Equal([]string{"parted", "-s", "/dev/sda", "rm", "5"}))
 
-				Expect(fakeCmdRunner.RunCommands[4]).To(Equal([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "49", "65"}))
-				Expect(fakeCmdRunner.RunCommands[5]).To(Equal([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "65", "97"}))
+				Expect(fakeCmdRunner.RunCommands[4]).To(Equal([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "48", "63"}))
+				Expect(fakeCmdRunner.RunCommands[5]).To(Equal([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "64", "95"}))
 			})
 
 			Context("when removing existing partition fails", func() {
@@ -261,7 +261,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
 /dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
-1:1B:33B:32B:ext4::;
+1:1B:32B:32B:ext4::;
 2:0.2B:65B:32B:ext4::;
 `,
 					},
@@ -289,9 +289,9 @@ var _ = Describe("rootDevicePartitioner", func() {
 					"parted -m /dev/sda unit B print",
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
-/dev/sda:129B:virtblk:512:512:msdos:Virtio Block Device;
-1:15B:32B:17B:ext4::;
-2:32B:55B:23B:ext4::;
+/dev/sda:128B:virtblk:512:512:msdos:Virtio Block Device;
+1:15B:31B:17B:ext4::;
+2:32B:54B:23B:ext4::;
 `,
 					},
 				)
@@ -300,7 +300,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 			It("returns the size of the device", func() {
 				size, err := partitioner.GetDeviceSizeInBytes("/dev/sda")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(size).To(Equal(uint64(97)))
+				Expect(size).To(Equal(uint64(96)))
 			})
 		})
 

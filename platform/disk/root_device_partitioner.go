@@ -43,16 +43,16 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 		return bosherr.New("Missing first partition on `%s'", devicePath)
 	}
 
-	partitionStart := existingPartitions[0].EndInBytes
+	partitionStart := existingPartitions[0].EndInBytes + 1
 
 	for index, partition := range partitions {
-		partitionEnd := partitionStart + partition.SizeInBytes
+		partitionEnd := partitionStart + partition.SizeInBytes - 1
 
 		if len(existingPartitions) > index+1 {
 			existingPartition := existingPartitions[index+1]
 
 			if withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.deltaInBytes) {
-				partitionStart = partitionEnd
+				partitionStart = existingPartition.EndInBytes + 1
 				p.logger.Info(p.logTag, "Skipping partition %d because it already exists", index)
 				continue
 			} else {
@@ -82,7 +82,7 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 			return bosherr.WrapError(err, "Partitioning disk `%s'", devicePath)
 		}
 
-		partitionStart = partitionEnd
+		partitionStart = partitionEnd + 1
 	}
 	return nil
 }
@@ -113,7 +113,7 @@ func (p rootDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, 
 		return 0, bosherr.WrapError(err, "Getting remaining size of `%s'", devicePath)
 	}
 
-	remainingSizeInBytes := deviceFullSizeInBytes - firstPartitionEndInBytes
+	remainingSizeInBytes := deviceFullSizeInBytes - firstPartitionEndInBytes - 1
 
 	return remainingSizeInBytes, nil
 }
