@@ -711,15 +711,17 @@ func (p linux) findRootDevicePath() (string, error) {
 	}
 
 	for _, mount := range mounts {
-		if mount.MountPoint == "/" {
+		if mount.MountPoint == "/" && strings.HasPrefix(mount.PartitionPath, "/dev/") {
+			p.logger.Debug(logTag, "Found root partition: `%s'", mount.PartitionPath)
+
 			stdout, _, _, err := p.cmdRunner.RunCommand("readlink", "-f", mount.PartitionPath)
 			if err != nil {
 				return "", bosherr.WrapError(err, "Shelling out to readlink")
 			}
-
 			rootPartition := strings.Trim(stdout, "\n")
-			validRootPartition := regexp.MustCompile(`^/dev/[a-z]+1$`)
+			p.logger.Debug(logTag, "Symlink is: `%s'", rootPartition)
 
+			validRootPartition := regexp.MustCompile(`^/dev/[a-z]+1$`)
 			if !validRootPartition.MatchString(rootPartition) {
 				return "", bosherr.New("Root partition is not the first partition")
 			}

@@ -437,6 +437,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Context("when root device is determined", func() {
 					BeforeEach(func() {
 						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+							{MountPoint: "/", PartitionPath: "rootfs"},
 							{MountPoint: "/", PartitionPath: "/dev/vda1"},
 						}
 					})
