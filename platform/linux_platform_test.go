@@ -296,12 +296,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Ephemeral disk mount point `/fake-dir/data' is not empty"))
 			})
-		}
-
-		Context("when ephemeral disk path is provided", func() {
-			act := func() error { return platform.SetupEphemeralDiskWithPath("/dev/xvda") }
-
-			itSetsUpEphemeralDisk(act)
 
 			It("returns error if creating data dir fails", func() {
 				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
@@ -319,21 +313,39 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
 			})
+		}
 
-			It("partitions ephemeral disk into swap and data", func() {
-				fakePartitioner := diskManager.FakePartitioner
-
+		itCalculatesEphemeralPartitionSizes := func(
+			act func() error,
+			partitioner func() *fakedisk.FakePartitioner,
+		) {
+			It("returns err when mem stats are unavailable", func() {
+				collector.MemStatsErr = errors.New("fake-memstats-error")
 				err := act()
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Calculating partition sizes"))
+				Expect(err.Error()).To(ContainSubstring("fake-memstats-error"))
+				Expect(partitioner().PartitionCalled).To(BeFalse())
+				Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+				Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
+			})
+		}
 
-				Expect(fakePartitioner.PartitionDevicePath).To(Equal("/dev/xvda"))
-				Expect(len(fakePartitioner.PartitionPartitions)).To(Equal(2))
+		Context("when ephemeral disk path is provided", func() {
+			act := func() error { return platform.SetupEphemeralDiskWithPath("/dev/xvda") }
+			partitioner := func() *fakedisk.FakePartitioner { return diskManager.FakePartitioner }
 
-				swapPartition := fakePartitioner.PartitionPartitions[0]
-				ext4Partition := fakePartitioner.PartitionPartitions[1]
+			itSetsUpEphemeralDisk(act)
+			itCalculatesEphemeralPartitionSizes(act, partitioner)
 
-				Expect(swapPartition.Type).To(Equal(boshdisk.PartitionTypeSwap))
-				Expect(ext4Partition.Type).To(Equal(boshdisk.PartitionTypeLinux))
+			It("returns an error when partitioning fails", func() {
+				diskManager.FakePartitioner.PartitionErr = errors.New("fake-partition-error")
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Partitioning ephemeral disk `/dev/xvda'"))
+				Expect(err.Error()).To(ContainSubstring("fake-partition-error"))
+				Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+				Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 			})
 
 			It("formats swap and data partitions", func() {
@@ -366,62 +378,42 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(fakeMounter.SwapOnPartitionPaths[0]).To(Equal("/dev/xvda1"))
 			})
 
-			It("calculates ephemeral disk partition sizes when disk is bigger than twice the memory", func() {
-				totalMemInBytes := uint64(1024)
-				collector.MemStats.Total = totalMemInBytes
-
-				diskSizeInBytes := uint64(2*1024 + 64)
+			It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
+				memSizeInBytes := uint64(1024 * 1024 * 1024)
+				diskSizeInBytes := 2*memSizeInBytes + 64
 				fakePartitioner := diskManager.FakePartitioner
 				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
+				collector.MemStats.Total = memSizeInBytes
 
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
-
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInBytes: uint64(1024), Type: boshdisk.PartitionTypeSwap},
-					{SizeInBytes: uint64(1024 + 64), Type: boshdisk.PartitionTypeLinux},
+					{SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
+					{SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 				}))
 			})
 
-			It("calculates ephemeral disk partition sizes when disk twice the memory or smaller", func() {
-				totalMemInBytes := uint64(1024)
-				collector.MemStats.Total = totalMemInBytes
-
-				diskSizeInBytes := uint64(2*1024 - 64)
+			It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
+				memSizeInBytes := uint64(1024 * 1024 * 1024)
+				diskSizeInBytes := 2*memSizeInBytes - 64
 				fakePartitioner := diskManager.FakePartitioner
 				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
+				collector.MemStats.Total = memSizeInBytes
 
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
-
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInBytes: uint64(1024 - 32), Type: boshdisk.PartitionTypeSwap},
-					{SizeInBytes: uint64(1024 - 32), Type: boshdisk.PartitionTypeLinux},
+					{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+					{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 				}))
 			})
 		})
 
 		Context("when ephemeral disk path is not provided", func() {
 			act := func() error { return platform.SetupEphemeralDiskWithPath("") }
+			partitioner := func() *fakedisk.FakePartitioner { return diskManager.FakeRootDevicePartitioner }
 
 			itSetsUpEphemeralDisk(act)
-
-			It("sets up ephemeral disk with path", func() {
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-
-				dataDir := fs.GetFileTestStat("/fake-dir/data")
-				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
-			})
-
-			It("returns error if creating data dir fails", func() {
-				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
-			})
 
 			Context("when agent should partition ephemeral disk on root disk", func() {
 				BeforeEach(func() {
@@ -515,40 +507,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								collector.MemStats.Total = 256 * 1024 * 1024
 							})
 
-							It("returns err when mem stats are unavailable", func() {
-								collector.MemStatsErr = errors.New("fake-memstats-error")
-								err := act()
-								Expect(err).To(HaveOccurred())
-								Expect(err.Error()).To(ContainSubstring("Calculating ephemeral partition size"))
-								Expect(err.Error()).To(ContainSubstring("fake-memstats-error"))
-								Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
-								Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
-							})
+							itCalculatesEphemeralPartitionSizes(act, partitioner)
 
 							It("returns an error when partitioning fails", func() {
 								diskManager.FakeRootDevicePartitioner.PartitionErr = errors.New("fake-partition-error")
 								err := act()
 								Expect(err).To(HaveOccurred())
-								Expect(err.Error()).To(ContainSubstring("Partitioning root device"))
+								Expect(err.Error()).To(ContainSubstring("Partitioning root device `/dev/vda'"))
 								Expect(err.Error()).To(ContainSubstring("fake-partition-error"))
 								Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
 								Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
-							})
-
-							It("creates swap and data partitions", func() {
-								err := act()
-								Expect(err).ToNot(HaveOccurred())
-								Expect(diskManager.FakeRootDevicePartitioner.PartitionDevicePath).To(Equal("/dev/vda"))
-								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
-									boshdisk.Partition{
-										SizeInBytes: (1024 - 256) * 1024 * 1024,
-									}),
-								)
-								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
-									boshdisk.Partition{
-										SizeInBytes: 256 * 1024 * 1024,
-									}),
-								)
 							})
 
 							It("formats swap and data partitions", func() {
@@ -579,6 +547,48 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 								Expect(len(fakeMounter.SwapOnPartitionPaths)).To(Equal(1))
 								Expect(fakeMounter.SwapOnPartitionPaths[0]).To(Equal("/dev/vda2"))
+							})
+
+							It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
+								memSizeInBytes := uint64(1024 * 1024 * 1024)
+								diskSizeInBytes := 2*memSizeInBytes + 64
+								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
+								collector.MemStats.Total = memSizeInBytes
+
+								err := act()
+								Expect(err).ToNot(HaveOccurred())
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionDevicePath).To(Equal("/dev/vda"))
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: diskSizeInBytes - memSizeInBytes,
+									}),
+								)
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: memSizeInBytes,
+									}),
+								)
+							})
+
+							It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
+								memSizeInBytes := uint64(1024 * 1024 * 1024)
+								diskSizeInBytes := 2*memSizeInBytes - 64
+								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
+								collector.MemStats.Total = memSizeInBytes
+
+								err := act()
+								Expect(err).ToNot(HaveOccurred())
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionDevicePath).To(Equal("/dev/vda"))
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: diskSizeInBytes / 2,
+									}),
+								)
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: diskSizeInBytes / 2,
+									}),
+								)
 							})
 						})
 
