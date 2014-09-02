@@ -3,6 +3,7 @@ package platform_test
 import (
 	"errors"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -278,8 +279,37 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	})
 
 	Describe("SetupEphemeralDiskWithPath", func() {
+		itSetsUpEphemeralDisk := func(act func() error) {
+			It("returns err when the data directory cannot be globbed", func() {
+				fs.GlobErr = errors.New("fake-glob-err")
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Globbing ephemeral disk mount point `/fake-dir/data/*'"))
+				Expect(err.Error()).To(ContainSubstring("fake-glob-err"))
+			})
+
+			It("returns err when the data directory is not empty", func() {
+				fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Ephemeral disk mount point `/fake-dir/data' is not empty"))
+			})
+		}
+
 		Context("when ephemeral disk path is provided", func() {
 			act := func() error { return platform.SetupEphemeralDiskWithPath("/dev/xvda") }
+
+			itSetsUpEphemeralDisk(act)
+
+			It("returns error if creating data dir fails", func() {
+				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+			})
 
 			It("sets up ephemeral disk with path", func() {
 				err := act()
@@ -288,14 +318,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
 				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
-			})
-
-			It("returns error if creating data dir fails", func() {
-				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
 			})
 
 			It("partitions ephemeral disk into swap and data", func() {
@@ -382,7 +404,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		Context("when ephemeral disk path is not provided", func() {
 			act := func() error { return platform.SetupEphemeralDiskWithPath("") }
 
-			It("creates data directory on a root partition (without swap)", func() {
+			itSetsUpEphemeralDisk(act)
+
+			It("sets up ephemeral disk with path", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
@@ -470,7 +494,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 							)
 						})
 
-						Context("when root device is insufficient for ephemeral partitions", func() {
+						Context("when root device has insufficient space for ephemeral partitions", func() {
 							BeforeEach(func() {
 								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024*1024*1024 - 1
 								collector.MemStats.Total = 8
@@ -485,7 +509,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 							})
 						})
 
-						Context("when root device is sufficient for ephemeral partitions", func() {
+						Context("when root device has sufficient space for ephemeral partitions", func() {
 							BeforeEach(func() {
 								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
 								collector.MemStats.Total = 256 * 1024 * 1024
@@ -511,7 +535,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 							})
 
-							It("partitions after first partition", func() {
+							It("creates swap and data partitions", func() {
 								err := act()
 								Expect(err).ToNot(HaveOccurred())
 								Expect(diskManager.FakeRootDevicePartitioner.PartitionDevicePath).To(Equal("/dev/vda"))

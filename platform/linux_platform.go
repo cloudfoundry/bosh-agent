@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -366,7 +367,16 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	mountPoint := p.dirProvider.DataDir()
 
-	err := p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
+	mountPointGlob := path.Join(mountPoint, "*")
+	contents, err := p.fs.Glob(mountPointGlob)
+	if err != nil {
+		return bosherr.WrapError(err, "Globbing ephemeral disk mount point `%s'", mountPointGlob)
+	}
+	if contents != nil && len(contents) > 0 {
+		return bosherr.New("Ephemeral disk mount point `%s' is not empty", mountPoint)
+	}
+
+	err = p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating data dir")
 	}
