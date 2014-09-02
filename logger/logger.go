@@ -42,6 +42,7 @@ func (l Logger) Debug(tag, msg string, args ...interface{}) {
 	}
 
 	msg = fmt.Sprintf("DEBUG - %s", msg)
+	msg, args = l.formatError(msg, args)
 	l.getOutLogger(tag).Printf(msg, args...)
 }
 
@@ -58,6 +59,7 @@ func (l Logger) Info(tag, msg string, args ...interface{}) {
 	}
 
 	msg = fmt.Sprintf("INFO - %s", msg)
+	msg, args = l.formatError(msg, args)
 	l.getOutLogger(tag).Printf(msg, args...)
 }
 
@@ -67,6 +69,7 @@ func (l Logger) Warn(tag, msg string, args ...interface{}) {
 	}
 
 	msg = fmt.Sprintf("WARN - %s", msg)
+	msg, args = l.formatError(msg, args)
 	l.getErrLogger(tag).Printf(msg, args...)
 }
 
@@ -76,6 +79,7 @@ func (l Logger) Error(tag, msg string, args ...interface{}) {
 	}
 
 	msg = fmt.Sprintf("ERROR - %s", msg)
+	msg, args = l.formatError(msg, args)
 	l.getErrLogger(tag).Printf(msg, args...)
 }
 
@@ -120,4 +124,17 @@ func (l Logger) updateLogger(logger *log.Logger, tag string) *log.Logger {
 	prefix := fmt.Sprintf("[%s] ", tag)
 	logger.SetPrefix(prefix)
 	return logger
+}
+
+func (l Logger) formatError(msg string, args []interface{}) (string, []interface{}) {
+	numArgs := len(args)
+	if numArgs > 0 {
+		lastArg := args[numArgs-1]
+		argErr, ok := lastArg.(error)
+		if ok {
+			msg = msg + " - %s"
+			args[numArgs-1] = argErr.Error()
+		}
+	}
+	return msg, args
 }
