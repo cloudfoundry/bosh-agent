@@ -52,6 +52,7 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 	partitionStart := existingPartitions[0].EndInBytes + 1
 
 	if len(existingPartitions) > 1 {
+		p.logger.Warn(p.logTag, "Found %d unexpected partitions on `%s', removing them", len(existingPartitions)-1, devicePath)
 		err = p.removePartitions(devicePath, existingPartitions[1:])
 		if err != nil {
 			return bosherr.WrapError(err, "Removing partitions from `%s'", devicePath)
@@ -61,7 +62,7 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 	for index, partition := range partitions {
 		partitionEnd := partitionStart + partition.SizeInBytes - 1
 
-		p.logger.Info(p.logTag, "Creating partition %d with start %d and end %d", index, partitionStart, partitionEnd)
+		p.logger.Info(p.logTag, "Creating partition %d with start %dB and end %dB", index, partitionStart, partitionEnd)
 
 		_, _, _, err := p.cmdRunner.RunCommand(
 			"parted",
@@ -169,8 +170,10 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) ([]existingParti
 }
 
 func (p rootDevicePartitioner) removePartitions(devicePath string, partitions []existingPartition) error {
+	p.logger.Debug(p.logTag, "Removing partitions: %#v from `%s'", partitions, devicePath)
+
 	for _, partition := range partitions {
-		p.logger.Info(p.logTag, "Removing partition %d", partition.Index)
+		p.logger.Info(p.logTag, "Removing partition %d from `%s'", partition.Index, devicePath)
 
 		_, _, _, err := p.cmdRunner.RunCommand("parted", "-s", devicePath, "rm", fmt.Sprintf("%d", partition.Index))
 
