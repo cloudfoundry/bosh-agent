@@ -404,10 +404,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					options.CreatePartitionIfNoEphemeralDisk = true
 				})
 
-				It("partitions root disk after first partition", func() {
-
-				})
-
 				Context("when root device fails to be determined", func() {
 					BeforeEach(func() {
 						diskManager.FakeMountsSearcher.SearchMountsErr = errors.New("fake-mounts-searcher-error")
@@ -417,6 +413,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 						err := act()
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("Finding root partition device"))
+						Expect(diskManager.FakeRootDevicePartitioner.PartitionCalled).To(BeFalse())
+						Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+						Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 					})
 				})
 
@@ -431,6 +430,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 						err := act()
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("Root partition is not the first partition"))
+						Expect(diskManager.FakeRootDevicePartitioner.PartitionCalled).To(BeFalse())
+						Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+						Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 					})
 				})
 
@@ -454,6 +456,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 							err := act()
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("fake-readlink-error"))
+							Expect(diskManager.FakeRootDevicePartitioner.PartitionCalled).To(BeFalse())
+							Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+							Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 						})
 					})
 
@@ -465,10 +470,25 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 							)
 						})
 
-						Context("when getting root device remaining size succeeds", func() {
+						Context("when root device is insufficient for ephemeral partitions", func() {
 							BeforeEach(func() {
-								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 32
+								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024*1024*1024 - 1
 								collector.MemStats.Total = 8
+							})
+
+							It("does not partition", func() {
+								err := act()
+								Expect(err).ToNot(HaveOccurred())
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionCalled).To(BeFalse())
+								Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+								Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
+							})
+						})
+
+						Context("when root device is sufficient for ephemeral partitions", func() {
+							BeforeEach(func() {
+								diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
+								collector.MemStats.Total = 256 * 1024 * 1024
 							})
 
 							It("returns err when mem stats are unavailable", func() {
@@ -477,30 +497,64 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(err).To(HaveOccurred())
 								Expect(err.Error()).To(ContainSubstring("Calculating ephemeral partition size"))
 								Expect(err.Error()).To(ContainSubstring("fake-memstats-error"))
+								Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+								Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 							})
 
-							It("returns an error when paritioning fails", func() {
+							It("returns an error when partitioning fails", func() {
 								diskManager.FakeRootDevicePartitioner.PartitionErr = errors.New("fake-partition-error")
 								err := act()
 								Expect(err).To(HaveOccurred())
 								Expect(err.Error()).To(ContainSubstring("Partitioning root device"))
 								Expect(err.Error()).To(ContainSubstring("fake-partition-error"))
+								Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+								Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 							})
 
-							It("parititons after first partition", func() {
+							It("partitions after first partition", func() {
 								err := act()
 								Expect(err).ToNot(HaveOccurred())
 								Expect(diskManager.FakeRootDevicePartitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										SizeInBytes: 24,
+										SizeInBytes: (1024 - 256) * 1024 * 1024,
 									}),
 								)
 								Expect(diskManager.FakeRootDevicePartitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										SizeInBytes: 8,
+										SizeInBytes: 256 * 1024 * 1024,
 									}),
 								)
+							})
+
+							It("formats swap and data partitions", func() {
+								fakeFormatter := diskManager.FakeFormatter
+
+								err := act()
+								Expect(err).NotTo(HaveOccurred())
+
+								Expect(len(fakeFormatter.FormatPartitionPaths)).To(Equal(2))
+								Expect(fakeFormatter.FormatPartitionPaths[0]).To(Equal("/dev/vda2"))
+								Expect(fakeFormatter.FormatPartitionPaths[1]).To(Equal("/dev/vda3"))
+
+								Expect(len(fakeFormatter.FormatFsTypes)).To(Equal(2))
+								Expect(fakeFormatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemSwap))
+								Expect(fakeFormatter.FormatFsTypes[1]).To(Equal(boshdisk.FileSystemExt4))
+							})
+
+							It("mounts swap and data partitions", func() {
+								fakeMounter := diskManager.FakeMounter
+
+								err := act()
+								Expect(err).NotTo(HaveOccurred())
+
+								Expect(len(fakeMounter.MountMountPoints)).To(Equal(1))
+								Expect(fakeMounter.MountMountPoints[0]).To(Equal("/fake-dir/data"))
+								Expect(len(fakeMounter.MountPartitionPaths)).To(Equal(1))
+								Expect(fakeMounter.MountPartitionPaths[0]).To(Equal("/dev/vda3"))
+
+								Expect(len(fakeMounter.SwapOnPartitionPaths)).To(Equal(1))
+								Expect(fakeMounter.SwapOnPartitionPaths[0]).To(Equal("/dev/vda2"))
 							})
 						})
 
@@ -514,18 +568,11 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(err).To(HaveOccurred())
 								Expect(err.Error()).To(ContainSubstring("Getting root device remaining size"))
 								Expect(err.Error()).To(ContainSubstring("fake-get-remaining-size-error"))
+								Expect(diskManager.FakeRootDevicePartitioner.PartitionCalled).To(BeFalse())
+								Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+								Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 							})
 						})
-					})
-				})
-
-				Context("when partitioning after first partition fails", func() {
-					BeforeEach(func() {
-						diskManager.FakeRootDevicePartitioner.PartitionErr = errors.New("fake-partition-error")
-					})
-
-					It("returns an error", func() {
-
 					})
 				})
 			})
@@ -538,19 +585,19 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				It("does not try to partition anything", func() {
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(diskManager.FakePartitioner.PartitionPartitions)).To(Equal(0))
+					Expect(diskManager.FakePartitioner.PartitionCalled).To(BeFalse())
 				})
 
 				It("does not try to format anything", func() {
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(diskManager.FakeFormatter.FormatPartitionPaths)).To(Equal(0))
+					Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
 				})
 
 				It("does not try to mount anything", func() {
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(diskManager.FakeMounter.MountMountPoints)).To(Equal(0))
+					Expect(diskManager.FakeMounter.MountCalled).To(BeFalse())
 				})
 			})
 		})

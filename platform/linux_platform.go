@@ -36,6 +36,8 @@ const (
 
 	sshDirPermissions          = os.FileMode(0700)
 	sshAuthKeysFilePermissions = os.FileMode(0600)
+
+	minRootEphemeralSpaceInBytes = uint64(1024 * 1024 * 1024)
 )
 
 type LinuxOptions struct {
@@ -372,13 +374,19 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	var swapPartitionPath, dataPartitionPath string
 	if realPath == "" {
 		if !p.options.CreatePartitionIfNoEphemeralDisk {
-			p.logger.Debug(logTag, "platform", "Using root disk as ephemeral disk")
+			p.logger.Info(logTag, "No ephemeral disk found, using root partition as ephemeral disk")
 			return nil
 		}
 
 		swapPartitionPath, dataPartitionPath, err = p.createEphemeralPartitionsOnRootDevice()
 		if err != nil {
-			return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
+			_, isInsufficentSpaceError := err.(insufficientSpaceError)
+			if isInsufficentSpaceError {
+				p.logger.Warn(logTag, "No partitions created on root device, using root partition as ephemeral disk", err)
+				return nil
+			} else {
+				return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
+			}
 		}
 	} else {
 		swapPartitionPath, dataPartitionPath, err = p.partitionEphemeralDisk(realPath)
@@ -531,7 +539,7 @@ func (p linux) changeTmpDirPermissions(path string) error {
 }
 
 func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
-	p.logger.Debug(logTag, "platform", "Mounting persistent disk %s at %s", devicePath, mountPoint)
+	p.logger.Debug(logTag, "Mounting persistent disk %s at %s", devicePath, mountPoint)
 
 	err := p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
 	if err != nil {
@@ -572,7 +580,7 @@ func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
 }
 
 func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
-	p.logger.Debug(logTag, "platform", "Unmounting persistent disk %s", devicePath)
+	p.logger.Debug(logTag, "Unmounting persistent disk %s", devicePath)
 
 	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
@@ -600,7 +608,7 @@ func (p linux) IsMountPoint(path string) (bool, error) {
 }
 
 func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
-	p.logger.Debug(logTag, "platform", "Migrating persistent disk %v to %v", fromMountPoint, toMountPoint)
+	p.logger.Debug(logTag, "Migrating persistent disk %v to %v", fromMountPoint, toMountPoint)
 
 	err = p.diskManager.GetMounter().RemountAsReadonly(fromMountPoint)
 	if err != nil {
@@ -760,6 +768,10 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 		return "", "", bosherr.WrapError(err, "Getting root device remaining size")
 	}
 
+	if remainingSizeInBytes < minRootEphemeralSpaceInBytes {
+		return "", "", newInsufficientSpaceError(remainingSizeInBytes, minRootEphemeralSpaceInBytes)
+	}
+
 	p.logger.Debug(logTag, "Calculating partition sizes of `%s', remaining size: %dB", rootDevicePath, remainingSizeInBytes)
 	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes)
 	if err != nil {
@@ -808,4 +820,20 @@ func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 	swapPartitionPath := realPath + "1"
 	dataPartitionPath := realPath + "2"
 	return swapPartitionPath, dataPartitionPath, nil
+}
+
+type insufficientSpaceError struct {
+	spaceFound    uint64
+	spaceRequired uint64
+}
+
+func newInsufficientSpaceError(spaceFound, spaceRequired uint64) insufficientSpaceError {
+	return insufficientSpaceError{
+		spaceFound:    spaceFound,
+		spaceRequired: spaceRequired,
+	}
+}
+
+func (i insufficientSpaceError) Error() string {
+	return fmt.Sprintf("Insufficient remaining disk space (%dB) for ephemeral partition (min: %dB)", i.spaceFound, i.spaceRequired)
 }
