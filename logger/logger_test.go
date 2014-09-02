@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -59,58 +58,77 @@ func captureOutputs(f func()) (stdout, stderr []byte) {
 }
 
 var _ = Describe("Logger", func() {
-	It("info", func() {
-		stdout, _ := captureOutputs(func() {
-			logger := NewLogger(LevelInfo)
-			logger.Info("TAG", "some %s info to log", "awesome")
-		})
+	Describe("Debug", func() {
+		It("logs the formatted message to Logger.out at the debug level", func() {
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LevelDebug)
+				logger.Debug("TAG", "some %s info to log", "awesome")
+			})
 
-		matcher, _ := regexp.Compile(expectedLogFormat("TAG", "INFO - some awesome info to log"))
-		Expect(matcher.Match(stdout)).To(BeTrue())
+			expectedContent := expectedLogFormat("TAG", "DEBUG - some awesome info to log")
+			Expect(stdout).To(MatchRegexp(expectedContent))
+			Expect(stderr).ToNot(MatchRegexp(expectedContent))
+		})
 	})
 
-	It("debug", func() {
-		stdout, _ := captureOutputs(func() {
-			logger := NewLogger(LevelDebug)
-			logger.Debug("TAG", "some %s info to log", "awesome")
-		})
+	Describe("DebugWithDetails", func() {
+		It("logs the message to Logger.out at the debug level with specially formatted arguments", func() {
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LevelDebug)
+				logger.DebugWithDetails("TAG", "some info to log", "awesome")
+			})
 
-		matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some awesome info to log"))
-		Expect(matcher.Match(stdout)).To(BeTrue())
+			expectedContent := expectedLogFormat("TAG", "DEBUG - some info to log")
+			Expect(stdout).To(MatchRegexp(expectedContent))
+			Expect(stderr).ToNot(MatchRegexp(expectedContent))
+
+			expectedDetails := "\n********************\nawesome\n********************"
+			Expect(stdout).To(ContainSubstring(expectedDetails))
+			Expect(stderr).ToNot(ContainSubstring(expectedDetails))
+		})
 	})
 
-	It("debug with details", func() {
-		stdout, _ := captureOutputs(func() {
-			logger := NewLogger(LevelDebug)
-			logger.DebugWithDetails("TAG", "some info to log", "awesome")
+	Describe("Info", func() {
+		It("logs the formatted message to Logger.out at the info level", func() {
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LevelInfo)
+				logger.Info("TAG", "some %s info to log", "awesome")
+			})
+
+			expectedContent := expectedLogFormat("TAG", "INFO - some awesome info to log")
+			Expect(stdout).To(MatchRegexp(expectedContent))
+			Expect(stderr).ToNot(MatchRegexp(expectedContent))
 		})
-
-		matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some info to log"))
-		Expect(matcher.Match(stdout)).To(BeTrue())
-
-		assert.Contains(GinkgoT(), string(stdout), "\n********************\nawesome\n********************")
 	})
 
-	It("error", func() {
-		_, stderr := captureOutputs(func() {
-			logger := NewLogger(LevelError)
-			logger.Error("TAG", "some %s info to log", "awesome")
-		})
+	Describe("Error", func() {
+		It("logs the formatted message to Logger.err at the error level", func() {
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LevelError)
+				logger.Error("TAG", "some %s info to log", "awesome")
+			})
 
-		matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some awesome info to log"))
-		Expect(matcher.Match(stderr)).To(BeTrue())
+			expectedContent := expectedLogFormat("TAG", "ERROR - some awesome info to log")
+			Expect(stdout).ToNot(MatchRegexp(expectedContent))
+			Expect(stderr).To(MatchRegexp(expectedContent))
+		})
 	})
 
-	It("error with details", func() {
-		_, stderr := captureOutputs(func() {
-			logger := NewLogger(LevelError)
-			logger.ErrorWithDetails("TAG", "some error to log", "awesome")
+	Describe("ErrorWithDetails", func() {
+		It("logs the message to Logger.err at the error level with specially formatted arguments", func() {
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LevelError)
+				logger.ErrorWithDetails("TAG", "some error to log", "awesome")
+			})
+
+			expectedContent := expectedLogFormat("TAG", "ERROR - some error to log")
+			Expect(stdout).ToNot(MatchRegexp(expectedContent))
+			Expect(stderr).To(MatchRegexp(expectedContent))
+
+			expectedDetails := "\n********************\nawesome\n********************"
+			Expect(stdout).ToNot(ContainSubstring(expectedDetails))
+			Expect(stderr).To(ContainSubstring(expectedDetails))
 		})
-
-		matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some error to log"))
-		Expect(matcher.Match(stderr)).To(BeTrue())
-
-		assert.Contains(GinkgoT(), string(stderr), "\n********************\nawesome\n********************")
 	})
 
 	It("log level debug", func() {
