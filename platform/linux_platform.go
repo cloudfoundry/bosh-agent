@@ -25,6 +25,19 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
+const (
+	ephemeralDiskPermissions  = os.FileMode(0750)
+	persistentDiskPermissions = os.FileMode(0700)
+
+	logDirPermissions      = os.FileMode(0750)
+	runDirPermissions      = os.FileMode(0750)
+	userBaseDirPermissions = os.FileMode(0755)
+	tmpDirPermissions      = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
+
+	sshDirPermissions          = os.FileMode(0700)
+	sshAuthKeysFilePermissions = os.FileMode(0600)
+)
+
 type LinuxOptions struct {
 	// When set to true loop back device
 	// is not going to be overlayed over /tmp to limit /tmp dir size
@@ -149,7 +162,7 @@ func (p linux) SetupRuntimeConfiguration() (err error) {
 }
 
 func (p linux) CreateUser(username, password, basePath string) (err error) {
-	p.fs.MkdirAll(basePath, os.FileMode(0755))
+	p.fs.MkdirAll(basePath, userBaseDirPermissions)
 	if err != nil {
 		err = bosherr.WrapError(err, "Making user base path")
 		return
@@ -230,7 +243,7 @@ func (p linux) SetupSSH(publicKey, username string) (err error) {
 	}
 
 	sshPath := filepath.Join(homeDir, ".ssh")
-	p.fs.MkdirAll(sshPath, os.FileMode(0700))
+	p.fs.MkdirAll(sshPath, sshDirPermissions)
 	p.fs.Chown(sshPath, username)
 
 	authKeysPath := filepath.Join(sshPath, "authorized_keys")
@@ -241,7 +254,7 @@ func (p linux) SetupSSH(publicKey, username string) (err error) {
 	}
 
 	p.fs.Chown(authKeysPath, username)
-	p.fs.Chmod(authKeysPath, os.FileMode(0600))
+	p.fs.Chmod(authKeysPath, sshAuthKeysFilePermissions)
 
 	return
 }
@@ -351,7 +364,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	mountPoint := p.dirProvider.DataDir()
 
-	err := p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+	err := p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating data dir")
 	}
@@ -407,7 +420,7 @@ func (p linux) SetupDataDir() error {
 	sysDir := filepath.Join(dataDir, "sys")
 
 	logDir := filepath.Join(sysDir, "log")
-	err := p.fs.MkdirAll(logDir, os.FileMode(0750))
+	err := p.fs.MkdirAll(logDir, logDirPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Making %s dir", logDir)
 	}
@@ -423,7 +436,7 @@ func (p linux) SetupDataDir() error {
 	}
 
 	runDir := filepath.Join(sysDir, "run")
-	err = p.fs.MkdirAll(runDir, os.FileMode(0750))
+	err = p.fs.MkdirAll(runDir, runDirPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Making %s dir", runDir)
 	}
@@ -441,8 +454,7 @@ func (p linux) SetupTmpDir() error {
 	boshTmpDir := p.dirProvider.TmpDir()
 	boshRootTmpPath := filepath.Join(p.dirProvider.DataDir(), "root_tmp")
 
-	// 0755 to make sure that vcap user can use new temp dir
-	err := p.fs.MkdirAll(boshTmpDir, os.FileMode(0755))
+	err := p.fs.MkdirAll(boshTmpDir, tmpDirPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating temp dir")
 	}
@@ -521,7 +533,7 @@ func (p linux) changeTmpDirPermissions(path string) error {
 func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
 	p.logger.Debug(logTag, "platform", "Mounting persistent disk %s at %s", devicePath, mountPoint)
 
-	err := p.fs.MkdirAll(mountPoint, os.FileMode(0700))
+	err := p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating directory %s", mountPoint)
 	}
