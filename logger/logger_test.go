@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "github.com/cloudfoundry/bosh-agent/logger"
 )
@@ -101,6 +100,19 @@ var _ = Describe("Logger", func() {
 		})
 	})
 
+	Describe("Warn", func() {
+		It("logs the formatted message to Logger.err at the warn level", func() {
+			stdout, stderr := captureOutputs(func() {
+				logger := NewLogger(LevelWarn)
+				logger.Warn("TAG", "some %s info to log", "awesome")
+			})
+
+			expectedContent := expectedLogFormat("TAG", "WARN - some awesome info to log")
+			Expect(stdout).ToNot(MatchRegexp(expectedContent))
+			Expect(stderr).To(MatchRegexp(expectedContent))
+		})
+	})
+
 	Describe("Error", func() {
 		It("logs the formatted message to Logger.err at the error level", func() {
 			stdout, stderr := captureOutputs(func() {
@@ -136,12 +148,14 @@ var _ = Describe("Logger", func() {
 			logger := NewLogger(LevelDebug)
 			logger.Debug("DEBUG", "some debug log")
 			logger.Info("INFO", "some info log")
+			logger.Warn("WARN", "some warn log")
 			logger.Error("ERROR", "some error log")
 		})
 
-		assert.Contains(GinkgoT(), string(stdout), "DEBUG")
-		assert.Contains(GinkgoT(), string(stdout), "INFO")
-		assert.Contains(GinkgoT(), string(stderr), "ERROR")
+		Expect(stdout).To(ContainSubstring("DEBUG"))
+		Expect(stdout).To(ContainSubstring("INFO"))
+		Expect(stderr).To(ContainSubstring("WARN"))
+		Expect(stderr).To(ContainSubstring("ERROR"))
 	})
 
 	It("log level info", func() {
@@ -149,12 +163,29 @@ var _ = Describe("Logger", func() {
 			logger := NewLogger(LevelInfo)
 			logger.Debug("DEBUG", "some debug log")
 			logger.Info("INFO", "some info log")
+			logger.Warn("WARN", "some warn log")
 			logger.Error("ERROR", "some error log")
 		})
 
-		assert.NotContains(GinkgoT(), string(stdout), "DEBUG")
-		assert.Contains(GinkgoT(), string(stdout), "INFO")
-		assert.Contains(GinkgoT(), string(stderr), "ERROR")
+		Expect(stdout).ToNot(ContainSubstring("DEBUG"))
+		Expect(stdout).To(ContainSubstring("INFO"))
+		Expect(stderr).To(ContainSubstring("WARN"))
+		Expect(stderr).To(ContainSubstring("ERROR"))
+	})
+
+	It("log level warn", func() {
+		stdout, stderr := captureOutputs(func() {
+			logger := NewLogger(LevelWarn)
+			logger.Debug("DEBUG", "some debug log")
+			logger.Info("INFO", "some info log")
+			logger.Warn("WARN", "some warn log")
+			logger.Error("ERROR", "some error log")
+		})
+
+		Expect(stdout).ToNot(ContainSubstring("DEBUG"))
+		Expect(stdout).ToNot(ContainSubstring("INFO"))
+		Expect(stderr).To(ContainSubstring("WARN"))
+		Expect(stderr).To(ContainSubstring("ERROR"))
 	})
 
 	It("log level error", func() {
@@ -162,11 +193,13 @@ var _ = Describe("Logger", func() {
 			logger := NewLogger(LevelError)
 			logger.Debug("DEBUG", "some debug log")
 			logger.Info("INFO", "some info log")
+			logger.Warn("WARN", "some warn log")
 			logger.Error("ERROR", "some error log")
 		})
 
-		assert.NotContains(GinkgoT(), string(stdout), "DEBUG")
-		assert.NotContains(GinkgoT(), string(stdout), "INFO")
-		assert.Contains(GinkgoT(), string(stderr), "ERROR")
+		Expect(stdout).ToNot(ContainSubstring("DEBUG"))
+		Expect(stdout).ToNot(ContainSubstring("INFO"))
+		Expect(stderr).ToNot(ContainSubstring("WARN"))
+		Expect(stderr).To(ContainSubstring("ERROR"))
 	})
 })

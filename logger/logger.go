@@ -11,10 +11,11 @@ import (
 type LogLevel int
 
 const (
-	LevelDebug LogLevel = 0
-	LevelInfo  LogLevel = 1
-	LevelError LogLevel = 2
-	LevelNone  LogLevel = 99
+	LevelDebug LogLevel = iota
+	LevelInfo
+	LevelWarn
+	LevelError
+	LevelNone LogLevel = 99
 )
 
 type Logger struct {
@@ -58,6 +59,15 @@ func (l Logger) Info(tag, msg string, args ...interface{}) {
 
 	msg = fmt.Sprintf("INFO - %s", msg)
 	l.getOutLogger(tag).Printf(msg, args...)
+}
+
+func (l Logger) Warn(tag, msg string, args ...interface{}) {
+	if l.level > LevelWarn {
+		return
+	}
+
+	msg = fmt.Sprintf("WARN - %s", msg)
+	l.getErrLogger(tag).Printf(msg, args...)
 }
 
 func (l Logger) Error(tag, msg string, args ...interface{}) {
