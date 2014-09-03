@@ -329,12 +329,11 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(mounter.MountCalled).To(BeFalse())
 			})
 
-			It("returns err when the data directory is not empty", func() {
+			It("does not create new partitions when the data directory is not empty", func() {
 				fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
 
 				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Ephemeral disk mount point `/fake-dir/data' is not empty"))
+				Expect(err).ToNot(HaveOccurred())
 				Expect(partitioner.PartitionCalled).To(BeFalse())
 				Expect(formatter.FormatCalled).To(BeFalse())
 				Expect(mounter.MountCalled).To(BeFalse())
@@ -457,12 +456,11 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(mounter.MountCalled).To(BeFalse())
 			})
 
-			It("returns err when the data directory is not empty", func() {
+			It("does not create new partitions when the data directory is not empty", func() {
 				fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
 
 				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Ephemeral disk mount point `/fake-dir/data' is not empty"))
+				Expect(err).ToNot(HaveOccurred())
 				Expect(partitioner.PartitionCalled).To(BeFalse())
 				Expect(formatter.FormatCalled).To(BeFalse())
 				Expect(mounter.MountCalled).To(BeFalse())

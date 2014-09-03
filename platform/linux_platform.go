@@ -373,7 +373,8 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 		return bosherr.WrapError(err, "Globbing ephemeral disk mount point `%s'", mountPointGlob)
 	}
 	if contents != nil && len(contents) > 0 {
-		return bosherr.New("Ephemeral disk mount point `%s' is not empty", mountPoint)
+		p.logger.Info(logTag, "Existing ephemeral mount `%s' is not empty, using existing mount", mountPoint)
+		return nil
 	}
 
 	err = p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
