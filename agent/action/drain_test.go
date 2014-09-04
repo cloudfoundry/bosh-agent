@@ -12,6 +12,7 @@ import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	fakedrain "github.com/cloudfoundry/bosh-agent/agent/drain/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 )
 
@@ -23,14 +24,16 @@ func init() {
 			drainScriptProvider *fakedrain.FakeScriptProvider
 			jobSupervisor       *fakejobsuper.FakeJobSupervisor
 			action              DrainAction
+			logger              boshlog.Logger
 		)
 
 		BeforeEach(func() {
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 			notifier = fakenotif.NewFakeNotifier()
 			specService = fakeas.NewFakeV1Service()
 			drainScriptProvider = fakedrain.NewFakeScriptProvider()
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-			action = NewDrain(notifier, specService, drainScriptProvider, jobSupervisor)
+			action = NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger)
 		})
 
 		BeforeEach(func() {

@@ -14,6 +14,10 @@ import (
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 )
 
+const (
+	agentLogTag = "agent"
+)
+
 type Agent struct {
 	logger            boshlog.Logger
 	mbusHandler       boshhandler.Handler
@@ -50,6 +54,7 @@ func New(
 }
 
 func (a Agent) Run() error {
+	a.logger.Debug(agentLogTag, "Starting monit")
 	err := a.platform.StartMonit()
 	if err != nil {
 		return bosherr.WrapError(err, "Starting Monit")
@@ -85,6 +90,7 @@ func (a Agent) subscribeActionDispatcher(errCh chan error) {
 }
 
 func (a Agent) generateHeartbeats(errCh chan error) {
+	a.logger.Debug(agentLogTag, "Generating heartbeat")
 	defer a.logger.HandlePanic("Agent Generate Heartbeats")
 
 	// Send initial heartbeat
@@ -116,6 +122,7 @@ func (a Agent) sendHeartbeat(errCh chan error) {
 }
 
 func (a Agent) getHeartbeat() (boshmbus.Heartbeat, error) {
+	a.logger.Debug(agentLogTag, "Building heartbeat")
 	vitalsService := a.platform.GetVitalsService()
 
 	vitals, err := vitalsService.Get()

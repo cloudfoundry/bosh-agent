@@ -78,7 +78,7 @@ var _ = Describe("concreteFactory", func() {
 	It("drain", func() {
 		action, err := factory.Create("drain")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewDrain(notifier, specService, drainScriptProvider, jobSupervisor)))
+		Expect(action).To(Equal(NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger)))
 	})
 
 	It("fetch_logs", func() {

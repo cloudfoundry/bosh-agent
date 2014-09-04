@@ -40,7 +40,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger = boshlog.NewLogger(boshlog.LevelDebug)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 			handler = &fakembus.FakeHandler{}
 			platform = fakeplatform.NewFakePlatform()
 			actionDispatcher = &fakeagent.FakeActionDispatcher{}

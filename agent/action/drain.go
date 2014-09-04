@@ -7,7 +7,12 @@ import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
+)
+
+const (
+	drainActionLogTag = "Drain Action"
 )
 
 type DrainAction struct {
@@ -15,6 +20,7 @@ type DrainAction struct {
 	notifier            boshnotif.Notifier
 	specService         boshas.V1Service
 	jobSupervisor       boshjobsuper.JobSupervisor
+	logger              boshlog.Logger
 }
 
 func NewDrain(
@@ -22,11 +28,13 @@ func NewDrain(
 	specService boshas.V1Service,
 	drainScriptProvider boshdrain.ScriptProvider,
 	jobSupervisor boshjobsuper.JobSupervisor,
+	logger boshlog.Logger,
 ) (drain DrainAction) {
 	drain.notifier = notifier
 	drain.specService = specService
 	drain.drainScriptProvider = drainScriptProvider
 	drain.jobSupervisor = jobSupervisor
+	drain.logger = logger
 	return
 }
 
@@ -47,6 +55,7 @@ const (
 )
 
 func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (int, error) {
+	a.logger.Debug(drainActionLogTag, "Running drain action with drain type %s", drainType)
 	currentSpec, err := a.specService.Get()
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Getting current spec")
@@ -59,6 +68,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		return 0, nil
 	}
 
+	a.logger.Debug(drainActionLogTag, "Unmonitoring")
 	err = a.jobSupervisor.Unmonitor()
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Unmonitoring services")

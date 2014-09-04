@@ -116,11 +116,11 @@ func (m monitJobSupervisor) Start() error {
 	}
 
 	for _, service := range services {
+		m.logger.Debug(monitJobSupervisorLogTag, "Starting service %s", service)
 		err = m.client.StartService(service)
 		if err != nil {
 			return bosherr.WrapError(err, "Starting service %s", service)
 		}
-		m.logger.Debug(monitJobSupervisorLogTag, "Starting service %s", service)
 	}
 
 	return nil
@@ -133,11 +133,11 @@ func (m monitJobSupervisor) Stop() error {
 	}
 
 	for _, service := range services {
+		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service %s", service)
 		err = m.client.StopService(service)
 		if err != nil {
 			return bosherr.WrapError(err, "Stopping service %s", service)
 		}
-		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service %s", service)
 	}
 
 	return nil
@@ -150,11 +150,11 @@ func (m monitJobSupervisor) Unmonitor() error {
 	}
 
 	for _, service := range services {
+		m.logger.Debug(monitJobSupervisorLogTag, "Unmonitoring service %s", service)
 		err := m.client.UnmonitorService(service)
 		if err != nil {
 			return bosherr.WrapError(err, "Unmonitoring service %s", service)
 		}
-		m.logger.Debug(monitJobSupervisorLogTag, "Unmonitoring service %s", service)
 	}
 
 	return nil
@@ -162,6 +162,7 @@ func (m monitJobSupervisor) Unmonitor() error {
 
 func (m monitJobSupervisor) Status() (status string) {
 	status = "running"
+	m.logger.Debug(monitJobSupervisorLogTag, "Getting monit status")
 	monitStatus, err := m.client.Status()
 	if err != nil {
 		status = "unknown"
