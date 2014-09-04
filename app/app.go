@@ -103,7 +103,8 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting blobstore")
 	}
 
-	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger)
+	timeService := boshtime.NewConcreteService()
+	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger, timeService)
 
 	monitClient, err := monitClientProvider.Get()
 	if err != nil {
@@ -128,8 +129,6 @@ func (app *app) Setup(args []string) error {
 	applier, compiler := app.buildApplierAndCompiler(dirProvider, blobstore, jobSupervisor)
 
 	uuidGen := boshuuid.NewGenerator()
-
-	timeService := boshtime.NewConcreteService()
 
 	taskService := boshtask.NewAsyncTaskService(uuidGen, app.logger)
 

@@ -13,6 +13,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
 )
 
 var _ = Describe("status", func() {
@@ -38,13 +39,20 @@ var _ = Describe("status", func() {
 			defer ts.Close()
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
+			timeService := &faketime.FakeService{}
 			client := NewHTTPClient(
 				ts.Listener.Addr().String(),
 				"fake-user",
 				"fake-pass",
 				http.DefaultClient,
 				1*time.Millisecond,
+				2*time.Millisecond,
+				3*time.Millisecond,
+				1,
+				2,
+				3,
 				logger,
+				timeService,
 			)
 
 			status, err := client.Status()

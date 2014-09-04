@@ -8,13 +8,16 @@ import (
 )
 
 type FakeClient struct {
-	StatusCode        int
-	CallCount         int
-	Error             error
-	returnNilResponse bool
-	RequestBodies     []string
-	Requests          []*http.Request
-	responseMessage   string
+	StatusCode             int
+	RetriesBeforeChange    int
+	NewStatusCode          int
+	CallCount              int
+	Error                  error
+	returnNilResponse      bool
+	keepFlippingStatusCode bool
+	RequestBodies          []string
+	Requests               []*http.Request
+	responseMessage        string
 }
 
 type nopCloser struct {
@@ -54,13 +57,37 @@ func (c *FakeClient) SetNilResponse() {
 	c.returnNilResponse = true
 }
 
+func (c *FakeClient) KeepFlippingStatusCode(tries int, statusCode int, newStatusCode int) {
+	c.keepFlippingStatusCode = true
+	c.RetriesBeforeChange = tries
+	c.StatusCode = statusCode
+	c.NewStatusCode = newStatusCode
+}
+
+func (c *FakeClient) FlipStatusCode(tries int, statusCode int, newStatusCode int) {
+	c.keepFlippingStatusCode = false
+	c.RetriesBeforeChange = tries
+	c.StatusCode = statusCode
+	c.NewStatusCode = newStatusCode
+}
+
 func (c *FakeClient) Do(req *http.Request) (resp *http.Response, err error) {
 	c.CallCount++
 
 	if !c.returnNilResponse {
+		if c.RetriesBeforeChange != 0 && c.CallCount%c.RetriesBeforeChange == 0 {
+			if c.keepFlippingStatusCode {
+				c.flipStatus()
+			} else if c.NewStatusCode != 0 {
+				c.flipStatus()
+				c.NewStatusCode = 0
+			}
+		}
+
 		resp = &http.Response{Body: &stringReadCloser{bytes.NewBufferString(c.responseMessage), false}}
 		resp.StatusCode = c.StatusCode
 	}
+
 	err = c.Error
 
 	if req.Body != nil {
@@ -71,4 +98,10 @@ func (c *FakeClient) Do(req *http.Request) (resp *http.Response, err error) {
 	c.Requests = append(c.Requests, req)
 
 	return
+}
+
+func (c *FakeClient) flipStatus() {
+	tmp := c.StatusCode
+	c.StatusCode = c.NewStatusCode
+	c.NewStatusCode = tmp
 }
