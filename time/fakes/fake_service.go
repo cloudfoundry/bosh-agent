@@ -1,14 +1,24 @@
 package fakes
 
-import "time"
+import (
+	"time"
+)
 
 type FakeService struct {
-	NowTime       time.Time
+	NowTimes      []time.Time
 	SleepDuration time.Duration
 }
 
 func (f *FakeService) Now() time.Time {
-	return f.NowTime
+	if len(f.NowTimes) < 1 {
+		return time.Now()
+	}
+
+	time := f.NowTimes[0]
+	if len(f.NowTimes) > 0 {
+		f.NowTimes = f.NowTimes[1:]
+	}
+	return time
 }
 
 func (f *FakeService) Sleep(duration time.Duration) {

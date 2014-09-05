@@ -75,7 +75,7 @@ var _ = Describe("concreteAlertSender", func() {
 		presetNow := time.Now()
 
 		BeforeEach(func() {
-			timeService.NowTime = presetNow
+			timeService.NowTimes = []time.Time{presetNow}
 			uuidGenerator.GeneratedUuid = "fake-uuid"
 		})
 
