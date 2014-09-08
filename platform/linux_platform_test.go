@@ -615,12 +615,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										SizeInBytes: diskSizeInBytes - memSizeInBytes,
+										SizeInBytes: memSizeInBytes,
+										Type: boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										SizeInBytes: memSizeInBytes,
+										SizeInBytes: diskSizeInBytes - memSizeInBytes,
+										Type: boshdisk.PartitionTypeLinux,
 									}),
 								)
 							})
@@ -637,11 +639,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
 										SizeInBytes: diskSizeInBytes / 2,
+										Type: boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
 										SizeInBytes: diskSizeInBytes / 2,
+										Type: boshdisk.PartitionTypeLinux,
 									}),
 								)
 							})
