@@ -365,6 +365,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 }
 
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
+	p.logger.Info(logTag, "Setting up ephemeral disk...")
 	mountPoint := p.dirProvider.DataDir()
 
 	mountPointGlob := path.Join(mountPoint, "*")
@@ -373,8 +374,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 		return bosherr.WrapError(err, "Globbing ephemeral disk mount point `%s'", mountPointGlob)
 	}
 	if contents != nil && len(contents) > 0 {
-		p.logger.Info(logTag, "Existing ephemeral mount `%s' is not empty, using existing mount", mountPoint)
-		return nil
+		p.logger.Debug(logTag, "Existing ephemeral mount `%s' is not empty. Contents: %s", mountPoint, contents)
 	}
 
 	err = p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
@@ -765,6 +765,7 @@ func (p linux) findRootDevicePath() (string, error) {
 }
 
 func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
+	p.logger.Info(logTag, "Creating swap & ephemeral partitions on root disk...")
 	p.logger.Debug(logTag, "Determining root device")
 
 	rootDevicePath, err := p.findRootDevicePath()
@@ -805,6 +806,7 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 }
 
 func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
+	p.logger.Info(logTag, "Creating swap & ephemeral partitions on ephemeral disk...")
 	p.logger.Debug(logTag, "Getting device size of `%s'", realPath)
 	diskSizeInBytes, err := p.diskManager.GetPartitioner().GetDeviceSizeInBytes(realPath)
 	if err != nil {
@@ -822,7 +824,7 @@ func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 		{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 	}
 
-	p.logger.Debug(logTag, "Partitioning ephemeral disk `%s' with %#v", realPath, partitions)
+	p.logger.Debug(logTag, "Partitioning ephemeral disk `%s' with %s", realPath, partitions)
 	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Partitioning ephemeral disk `%s'", realPath)

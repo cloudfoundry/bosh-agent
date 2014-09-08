@@ -40,10 +40,11 @@ var _ = Describe("LinuxPlatform", func() {
 		vitalsService      boshvitals.Service
 		netManager         *fakenet.FakeManager
 		options            LinuxOptions
+		logger 			   boshlog.Logger
 	)
 
 	BeforeEach(func() {
-		logger := boshlog.NewLogger(boshlog.LevelNone)
+		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		collector = &fakestats.FakeCollector{}
 		fs = fakesys.NewFakeFileSystem()
@@ -70,8 +71,6 @@ var _ = Describe("LinuxPlatform", func() {
 	})
 
 	JustBeforeEach(func() {
-		logger := boshlog.NewLogger(boshlog.LevelNone)
-
 		platform = NewLinuxPlatform(
 			fs,
 			cmdRunner,
@@ -329,14 +328,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(mounter.MountCalled).To(BeFalse())
 			})
 
-			It("does not create new partitions when the data directory is not empty", func() {
+			It("create new partitions even if the data directory is not empty", func() {
 				fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(partitioner.PartitionCalled).To(BeFalse())
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
+				Expect(partitioner.PartitionCalled).To(BeTrue())
+				Expect(formatter.FormatCalled).To(BeTrue())
+				Expect(mounter.MountCalled).To(BeTrue())
 			})
 
 			It("returns err when mem stats are unavailable", func() {

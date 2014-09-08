@@ -1,5 +1,7 @@
 package disk
 
+import "fmt"
+
 type PartitionType string
 
 const (
@@ -16,4 +18,8 @@ type Partition struct {
 type Partitioner interface {
 	Partition(devicePath string, partitions []Partition) (err error)
 	GetDeviceSizeInBytes(devicePath string) (size uint64, err error)
+}
+
+func (p Partition) String() string {
+	return fmt.Sprintf("[Type: %s, SizeInBytes: %d]", p.Type, p.SizeInBytes)
 }
