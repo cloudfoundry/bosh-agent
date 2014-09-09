@@ -82,18 +82,44 @@ You can run all the tests by running `bin/test`.
 #### Using IntelliJ with Go and the BOSH Agent
 
 - Install [IntelliJ 13](http://www.jetbrains.com/idea/download/index.html) (we are using 13.0.1 Build 133.331)
-- Set up the latest Google Go plugin for IntelliJ by following [Ross Hale's blog post](http://pivotallabs.com/setting-google-go-plugin-intellij-idea-13-os-x-10-8-5/) (the plugin found in IntelliJ's repository is dated)
-- Download and use the [improved keybindings](https://github.com/Pivotal-Boulder/IDE-Preferences) for IntelliJ (optional):
+- Install the latest [Google Go plugin for IntelliJ](https://github.com/go-lang-plugin-org/go-lang-idea-plugin). You may want to grab the latest early access (EAP) build, rather than the last release.
+- (Optional) Download, Install & Select [improved keybindings](https://github.com/Pivotal-Boulder/IDE-Preferences) for IntelliJ:
     - `git clone git@github.com:Pivotal-Boulder/IDE-Preferences.git`
     - `cd ~/Library/Preferences/IntelliJIdea13/keymaps`
     - `ln -sf ~/workspace/IDE-Preferences/IntelliJKeymap.xml`
     - In IntelliJ: Preferences -> Keymap -> Pick 'Mac OS X 10.5+ Improved'
+- Clone bosh-agent into a clean go workspace (or use a [bosh](https://github.com/cloudfoundry/bosh) clone with bosh/go as the workspace root):
+    - `mkdir -p ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry`
+    - `cd ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry`
+    - `git clone https://github.com/cloudfoundry/bosh-agent`
+- Open ~/workspace/bosh-agent-workspace as a new project in IntelliJ.
+- Set the Go SDK as the Project SDK: 
+    - Open the Project Structure window: `File -> Project Structure`
+    - Select the `Project` tab in left sidebar
+    - (Optional) Add a `New` Go SDK by selecting your go root. 
+    - Select `Go SDK go1.3` under Project SDK
+- Setup module sources
+    - Open the Project Structure window: `File -> Project Structure`
+    - Select the `Modules` tab in left sidebar
+    - Select your module in the middle sidebar
+    - Select the `Sources` tab in the Module pane
+    - Select ~/workspace/bosh-agent-workspace/src and add is as a source dir
+    - Select ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry/bosh-agent/Godeps and add is as an excluded dir
+- Setup module dependencies
+    - Open the Project Structure window: `File -> Project Structure`
+    - Select the `Modules` tab in left sidebar
+    - Select your module in the middle sidebar
+    - Select the `Dependencies` tab in the Module pane
+    - Select the `+ -> Jars or directories...` to add ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry/bosh-agent/Godeps/_workspace as a `sources` dependency
+    - Rename the new dependency to `Godeps`
+    - Use the arrow buttons to move `Godeps` above `Go SDK` and below `<Module source>`
+- Set the bosh-agent dir as the Git root to enable version control
+    - Select the `-` to remove the project root
+    - Select the `+` to add the ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry/bosh-agent dir
+- Install & configure the [Grep Console](https://github.com/krasa/GrepConsole) plugin
+    - Install via `Preferences -> Plugins`
+    - Select `Preferences -> Grep COnsole -> Enable ANSI coloring` to colorize Ginkgo test output
+- Re-index your project: `File -> Invalidate Cache / Restart`
 
-Set up the Go Agent project in IntelliJ:
-
-- Open the ~/workspace/bosh-agent project in IntelliJ.
-- Set the Go SDK as the Project SDK: File -> Project Structure -> Project in left sidebar -> Set the Go SDK go1.2 SDK under Project SDK
-- Set the Go SDK as the Modules SDK: Modules in left sidebar -> Dependencies tab -> Set the Go SDK for the Module SDK -> Apply, OK
-
-You should now be able to run tests from within IntelliJ.
+You should now be able to 'go to declaration', auto-complete, and run tests from within IntelliJ.
 
