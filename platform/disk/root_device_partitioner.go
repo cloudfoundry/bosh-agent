@@ -52,11 +52,13 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 	partitionStart := existingPartitions[0].EndInBytes + 1
 
 	if len(existingPartitions) > 1 {
-		p.logger.Warn(p.logTag, "Found %d unexpected partitions on `%s', removing them", len(existingPartitions)-1, devicePath)
-		err = p.removePartitions(devicePath, existingPartitions[1:])
-		if err != nil {
-			return bosherr.WrapError(err, "Removing partitions from `%s'", devicePath)
-		}
+		p.logger.Error(p.logTag,
+			"Failed to create ephemeral partitions on root device `%s'. Expected 1 partition, found %d: %s",
+			devicePath,
+			len(existingPartitions),
+			existingPartitions,
+		)
+		return bosherr.New("Found %d unexpected partitions on `%s'",  len(existingPartitions)-1, devicePath)
 	}
 
 	for index, partition := range partitions {
@@ -167,22 +169,6 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) ([]existingParti
 	}
 
 	return partitions, nil
-}
-
-func (p rootDevicePartitioner) removePartitions(devicePath string, partitions []existingPartition) error {
-	p.logger.Debug(p.logTag, "Removing partitions: %#v from `%s'", partitions, devicePath)
-
-	for _, partition := range partitions {
-		p.logger.Info(p.logTag, "Removing partition %d from `%s'", partition.Index, devicePath)
-
-		_, _, _, err := p.cmdRunner.RunCommand("parted", "-s", devicePath, "rm", fmt.Sprintf("%d", partition.Index))
-
-		if err != nil {
-			return bosherr.WrapError(err, "Removing partition %d from `%s'", partition.Index, devicePath)
-		}
-	}
-
-	return nil
 }
 
 func (p rootDevicePartitioner) partitionsMatch(existingPartitions []existingPartition, partitions []Partition) bool {

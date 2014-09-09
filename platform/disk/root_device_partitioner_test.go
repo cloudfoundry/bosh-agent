@@ -163,7 +163,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 				)
 			})
 
-			It("recreates partitions", func() {
+			It("returns an error", func() {
 				partitions := []Partition{
 					{SizeInBytes: 16},
 					{SizeInBytes: 16},
@@ -171,46 +171,11 @@ var _ = Describe("rootDevicePartitioner", func() {
 				}
 
 				err := partitioner.Partition("/dev/sda", partitions)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(8))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Found 4 unexpected partitions on `/dev/sda'"))
 				Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
 					{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-
-					{"parted", "-s", "/dev/sda", "rm", "2"},
-					{"parted", "-s", "/dev/sda", "rm", "3"},
-					{"parted", "-s", "/dev/sda", "rm", "4"},
-					{"parted", "-s", "/dev/sda", "rm", "5"},
-
-					{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "33", "48"},
-					{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "49", "64"},
-					{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "primary", "65", "96"},
 				}))
-			})
-
-			Context("when removing existing partition fails", func() {
-				BeforeEach(func() {
-					fakeCmdRunner.AddCmdResult(
-						"parted -s /dev/sda rm 2",
-						fakesys.FakeCmdResult{Error: errors.New("fake-parted-error")},
-					)
-				})
-
-				It("returns an error", func() {
-					partitions := []Partition{
-						{SizeInBytes: 16},
-						{SizeInBytes: 16},
-						{SizeInBytes: 32},
-					}
-
-					err := partitioner.Partition("/dev/sda", partitions)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Removing partition 2 from `/dev/sda'"))
-					Expect(err.Error()).To(ContainSubstring("Removing partitions from `/dev/sda'"))
-					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(2))
-					Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
-
-					Expect(fakeCmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/sda", "rm", "2"}))
-				})
 			})
 		})
 
