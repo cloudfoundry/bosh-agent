@@ -1,47 +1,30 @@
 package fakes
 
 import (
-	"bytes"
-	"errors"
-	"io"
 	"net/http"
+
+	boshhttp "github.com/cloudfoundry/bosh-agent/http"
 )
 
+type doInput struct {
+	req *http.Request
+}
+
+type doOutput struct {
+	resp *http.Response
+	err  error
+}
+
 type FakeClient struct {
-	StatusCode             int
-	RetriesBeforeChange    int
-	NewStatusCode          int
-	CallCount              int
-	Error                  error
-	returnNilResponse      bool
-	keepFlippingStatusCode bool
-	RequestBodies          []string
-	Requests               []*http.Request
-	responseMessage        string
-}
+	StatusCode        int
+	CallCount         int
+	Error             error
+	returnNilResponse bool
+	RequestBodies     []string
+	Requests          []*http.Request
+	responseMessage   string
 
-type nopCloser struct {
-	io.Reader
-}
-
-func (nopCloser) Close() error { return nil }
-
-type stringReadCloser struct {
-	reader io.Reader
-	closed bool
-}
-
-func (s *stringReadCloser) Close() error {
-	s.closed = true
-	return nil
-}
-
-func (s *stringReadCloser) Read(p []byte) (n int, err error) {
-	if s.closed {
-		return 0, errors.New("already closed")
-	}
-
-	return s.reader.Read(p)
+	doBehavior []doOutput
 }
 
 func NewFakeClient() (fakeClient *FakeClient) {
@@ -57,51 +40,36 @@ func (c *FakeClient) SetNilResponse() {
 	c.returnNilResponse = true
 }
 
-func (c *FakeClient) KeepFlippingStatusCode(tries int, statusCode int, newStatusCode int) {
-	c.keepFlippingStatusCode = true
-	c.RetriesBeforeChange = tries
-	c.StatusCode = statusCode
-	c.NewStatusCode = newStatusCode
-}
-
-func (c *FakeClient) FlipStatusCode(tries int, statusCode int, newStatusCode int) {
-	c.keepFlippingStatusCode = false
-	c.RetriesBeforeChange = tries
-	c.StatusCode = statusCode
-	c.NewStatusCode = newStatusCode
-}
-
-func (c *FakeClient) Do(req *http.Request) (resp *http.Response, err error) {
+func (c *FakeClient) Do(req *http.Request) (*http.Response, error) {
 	c.CallCount++
 
-	if !c.returnNilResponse {
-		if c.RetriesBeforeChange != 0 && c.CallCount%c.RetriesBeforeChange == 0 {
-			if c.keepFlippingStatusCode {
-				c.flipStatus()
-			} else if c.NewStatusCode != 0 {
-				c.flipStatus()
-				c.NewStatusCode = 0
-			}
-		}
-
-		resp = &http.Response{Body: &stringReadCloser{bytes.NewBufferString(c.responseMessage), false}}
-		resp.StatusCode = c.StatusCode
-	}
-
-	err = c.Error
-
 	if req.Body != nil {
-		buf := make([]byte, 1024)
-		n, _ := req.Body.Read(buf)
-		c.RequestBodies = append(c.RequestBodies, string(buf[0:n]))
+		content, err := boshhttp.ReadAndClose(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		c.RequestBodies = append(c.RequestBodies, string(content))
 	}
 	c.Requests = append(c.Requests, req)
 
-	return
+	if len(c.doBehavior) > 0 {
+		output := c.doBehavior[0]
+		c.doBehavior = c.doBehavior[1:]
+		return output.resp, output.err
+	}
+
+	var resp *http.Response
+	if !c.returnNilResponse {
+		resp = &http.Response{
+			Body:       boshhttp.NewStringReadCloser(c.responseMessage),
+			StatusCode: c.StatusCode,
+		}
+	}
+	err := c.Error
+
+	return resp, err
 }
 
-func (c *FakeClient) flipStatus() {
-	tmp := c.StatusCode
-	c.StatusCode = c.NewStatusCode
-	c.NewStatusCode = tmp
+func (c *FakeClient) AddDoBehavior(resp *http.Response, err error) {
+	c.doBehavior = append(c.doBehavior, doOutput{resp: resp, err: err})
 }

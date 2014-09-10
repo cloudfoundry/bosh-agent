@@ -1,58 +1,43 @@
 package monit_test
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
 )
 
 var _ = Describe("status", func() {
 	Describe("ServicesInGroup", func() {
 		It("returns list of service", func() {
-			monitStatusFilePath, _ := filepath.Abs("../../Fixtures/monit_status_with_multiple_services.xml")
-			Expect(monitStatusFilePath).ToNot(BeNil())
-
-			file, err := os.Open(monitStatusFilePath)
-			Expect(err).ToNot(HaveOccurred())
-
-			defer file.Close()
-
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				io.Copy(w, file)
+				_, err := io.Copy(w, bytes.NewReader(readFixture(statusWithMultipleServiceFixturePath)))
+				Expect(err).ToNot(HaveOccurred())
 				Expect(r.Method).To(Equal("GET"))
 				Expect(r.URL.Path).To(Equal("/_status2"))
 				Expect(r.URL.Query().Get("format")).To(Equal("xml"))
 			})
 
 			ts := httptest.NewServer(handler)
-
 			defer ts.Close()
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			timeService := &faketime.FakeService{}
+
+			httpClient := http.DefaultClient
+
 			client := NewHTTPClient(
 				ts.Listener.Addr().String(),
 				"fake-user",
 				"fake-pass",
-				http.DefaultClient,
-				1*time.Millisecond,
-				2*time.Millisecond,
-				3*time.Millisecond,
-				1,
-				2,
-				3,
+				httpClient,
+				httpClient,
 				logger,
-				timeService,
 			)
 
 			status, err := client.Status()
