@@ -58,7 +58,7 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 			len(existingPartitions),
 			existingPartitions,
 		)
-		return bosherr.New("Found %d unexpected partitions on `%s'",  len(existingPartitions)-1, devicePath)
+		return bosherr.New("Found %d unexpected partitions on `%s'", len(existingPartitions)-1, devicePath)
 	}
 
 	for index, partition := range partitions {

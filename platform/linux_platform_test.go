@@ -40,7 +40,7 @@ var _ = Describe("LinuxPlatform", func() {
 		vitalsService      boshvitals.Service
 		netManager         *fakenet.FakeManager
 		options            LinuxOptions
-		logger 			   boshlog.Logger
+		logger             boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -616,13 +616,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
 										SizeInBytes: memSizeInBytes,
-										Type: boshdisk.PartitionTypeSwap,
+										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
 										SizeInBytes: diskSizeInBytes - memSizeInBytes,
-										Type: boshdisk.PartitionTypeLinux,
+										Type:        boshdisk.PartitionTypeLinux,
 									}),
 								)
 							})
@@ -639,13 +639,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
 										SizeInBytes: diskSizeInBytes / 2,
-										Type: boshdisk.PartitionTypeSwap,
+										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
 										SizeInBytes: diskSizeInBytes / 2,
-										Type: boshdisk.PartitionTypeLinux,
+										Type:        boshdisk.PartitionTypeLinux,
 									}),
 								)
 							})

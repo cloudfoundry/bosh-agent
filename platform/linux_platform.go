@@ -383,6 +383,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	}
 
 	var swapPartitionPath, dataPartitionPath string
+
 	if realPath == "" {
 		if !p.options.CreatePartitionIfNoEphemeralDisk {
 			p.logger.Info(logTag, "No ephemeral disk found, using root partition as ephemeral disk")
@@ -395,9 +396,9 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 			if isInsufficentSpaceError {
 				p.logger.Warn(logTag, "No partitions created on root device, using root partition as ephemeral disk", err)
 				return nil
-			} else {
-				return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
 			}
+
+			return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
 		}
 	} else {
 		swapPartitionPath, dataPartitionPath, err = p.partitionEphemeralDisk(realPath)
