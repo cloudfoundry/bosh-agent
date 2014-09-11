@@ -16,6 +16,10 @@ bin=$(dirname $0)
 # Travis randomly kills go builds when using -race
 race=$([ "$TRAVIS" != "true" ] && echo "-race")
 
+echo -e "\n Formatting packages..."
+$bin/go fmt github.com/cloudfoundry/bosh-agent/...
+let "result+=$?"
+
 echo -e "\n Vetting packages for potential issues..."
 $bin/go vet github.com/cloudfoundry/bosh-agent/...
 let "result+=$?"
@@ -30,6 +34,10 @@ let "result+=$?"
 
 echo -e "\n Testing packages..."
 $bin/env ginkgo -r $race $bin/..
+let "result+=$?"
+
+echo -e "\n Running build script to confirm everything compiles..."
+$bin/build
 let "result+=$?"
 
 if [ ! $QUIET ]; then

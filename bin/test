@@ -4,15 +4,7 @@ result=0
 
 bin=$(dirname $0)
 
-echo -e "\n Formatting packages..."
-$bin/go fmt github.com/cloudfoundry/bosh-agent/...
-let "result+=$?"
-
 $bin/test-unit -q
-let "result+=$?"
-
-echo -e "\n Running build script to confirm everything compiles..."
-$bin/build
 let "result+=$?"
 
 $bin/test-integration
