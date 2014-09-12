@@ -14,7 +14,7 @@ type Provider struct {
 }
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
-	metadataService := NewConcreteMetadataService(
+	metadataService := NewHTTPMetadataService(
 		"http://169.254.169.254",
 		NewDigDNSResolver(logger),
 	)

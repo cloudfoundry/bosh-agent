@@ -13,7 +13,7 @@ import (
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 )
 
-var _ = Describe("concreteMetadataService", func() {
+var _ = Describe("HTTPMetadataService", func() {
 	var (
 		dnsResolver     *fakeinf.FakeDNSResolver
 		metadataService MetadataService
@@ -21,7 +21,7 @@ var _ = Describe("concreteMetadataService", func() {
 
 	BeforeEach(func() {
 		dnsResolver = &fakeinf.FakeDNSResolver{}
-		metadataService = NewConcreteMetadataService("fake-metadata-host", dnsResolver)
+		metadataService = NewHTTPMetadataService("fake-metadata-host", dnsResolver)
 	})
 
 	Describe("GetPublicKey", func() {
@@ -41,7 +41,7 @@ var _ = Describe("concreteMetadataService", func() {
 
 			ts = httptest.NewServer(handler)
 
-			metadataService = NewConcreteMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
 		})
 
 		AfterEach(func() {
@@ -72,7 +72,7 @@ var _ = Describe("concreteMetadataService", func() {
 
 			ts = httptest.NewServer(handler)
 
-			metadataService = NewConcreteMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
 		})
 
 		AfterEach(func() {
@@ -114,7 +114,7 @@ var _ = Describe("concreteMetadataService", func() {
 
 			handler := http.HandlerFunc(handlerFunc)
 			ts = httptest.NewServer(handler)
-			metadataService = NewConcreteMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
 		})
 
 		AfterEach(func() {
@@ -181,7 +181,7 @@ var _ = Describe("concreteMetadataService", func() {
 
 			handler := http.HandlerFunc(handlerFunc)
 			ts = httptest.NewServer(handler)
-			metadataService = NewConcreteMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
 		})
 
 		AfterEach(func() {

@@ -11,7 +11,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 )
 
-type concreteMetadataService struct {
+type httpMetadataService struct {
 	metadataHost string
 	resolver     dnsResolver
 }
@@ -28,17 +28,17 @@ type userDataType struct {
 	}
 }
 
-func NewConcreteMetadataService(
+func NewHTTPMetadataService(
 	metadataHost string,
 	resolver dnsResolver,
-) concreteMetadataService {
-	return concreteMetadataService{
+) httpMetadataService {
+	return httpMetadataService{
 		metadataHost: metadataHost,
 		resolver:     resolver,
 	}
 }
 
-func (ms concreteMetadataService) GetPublicKey() (string, error) {
+func (ms httpMetadataService) GetPublicKey() (string, error) {
 	url := fmt.Sprintf("%s/latest/meta-data/public-keys/0/openssh-key", ms.metadataHost)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -55,7 +55,7 @@ func (ms concreteMetadataService) GetPublicKey() (string, error) {
 	return string(bytes), nil
 }
 
-func (ms concreteMetadataService) GetInstanceID() (string, error) {
+func (ms httpMetadataService) GetInstanceID() (string, error) {
 	url := fmt.Sprintf("%s/latest/meta-data/instance-id", ms.metadataHost)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -72,7 +72,7 @@ func (ms concreteMetadataService) GetInstanceID() (string, error) {
 	return string(bytes), nil
 }
 
-func (ms concreteMetadataService) GetServerName() (string, error) {
+func (ms httpMetadataService) GetServerName() (string, error) {
 	userData, err := ms.getUserData()
 	if err != nil {
 		return "", bosherr.WrapError(err, "Getting user data")
@@ -87,7 +87,7 @@ func (ms concreteMetadataService) GetServerName() (string, error) {
 	return serverName, nil
 }
 
-func (ms concreteMetadataService) GetRegistryEndpoint() (string, error) {
+func (ms httpMetadataService) GetRegistryEndpoint() (string, error) {
 	userData, err := ms.getUserData()
 	if err != nil {
 		return "", bosherr.WrapError(err, "Getting user data")
@@ -106,7 +106,7 @@ func (ms concreteMetadataService) GetRegistryEndpoint() (string, error) {
 	return endpoint, nil
 }
 
-func (ms concreteMetadataService) getUserData() (userDataType, error) {
+func (ms httpMetadataService) getUserData() (userDataType, error) {
 	var userData userDataType
 
 	userDataURL := fmt.Sprintf("%s/latest/user-data", ms.metadataHost)
@@ -131,7 +131,7 @@ func (ms concreteMetadataService) getUserData() (userDataType, error) {
 	return userData, nil
 }
 
-func (ms concreteMetadataService) resolveRegistryEndpoint(namedEndpoint string, nameServers []string) (string, error) {
+func (ms httpMetadataService) resolveRegistryEndpoint(namedEndpoint string, nameServers []string) (string, error) {
 	registryURL, err := url.Parse(namedEndpoint)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Parsing registry named endpoint")
