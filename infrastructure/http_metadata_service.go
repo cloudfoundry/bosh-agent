@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 )
 
 type httpMetadataService struct {
 	metadataHost string
-	resolver     dnsResolver
+	resolver     DNSResolver
 }
 
 type userDataType struct {
@@ -30,7 +28,7 @@ type userDataType struct {
 
 func NewHTTPMetadataService(
 	metadataHost string,
-	resolver dnsResolver,
+	resolver DNSResolver,
 ) httpMetadataService {
 	return httpMetadataService{
 		metadataHost: metadataHost,
@@ -97,7 +95,7 @@ func (ms httpMetadataService) GetRegistryEndpoint() (string, error) {
 	nameServers := userData.DNS.Nameserver
 
 	if len(nameServers) > 0 {
-		endpoint, err = ms.resolveRegistryEndpoint(endpoint, nameServers)
+		endpoint, err = ms.resolver.LookupHost(nameServers, endpoint)
 		if err != nil {
 			return "", bosherr.WrapError(err, "Resolving registry endpoint")
 		}
@@ -129,25 +127,4 @@ func (ms httpMetadataService) getUserData() (userDataType, error) {
 	}
 
 	return userData, nil
-}
-
-func (ms httpMetadataService) resolveRegistryEndpoint(namedEndpoint string, nameServers []string) (string, error) {
-	registryURL, err := url.Parse(namedEndpoint)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Parsing registry named endpoint")
-	}
-
-	registryHostAndPort := strings.Split(registryURL.Host, ":")
-	registryIP, err := ms.resolver.LookupHost(nameServers, registryHostAndPort[0])
-	if err != nil {
-		return "", bosherr.WrapError(err, "Looking up registry")
-	}
-
-	if len(registryHostAndPort) == 2 {
-		registryURL.Host = fmt.Sprintf("%s:%s", registryIP, registryHostAndPort[1])
-	} else {
-		registryURL.Host = registryIP
-	}
-
-	return registryURL.String(), nil
 }

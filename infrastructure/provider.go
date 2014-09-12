@@ -14,9 +14,13 @@ type Provider struct {
 }
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
+	resolver := NewRegistryEndpointResolver(
+		NewDigDNSResolver(logger),
+	)
+
 	metadataService := NewHTTPMetadataService(
 		"http://169.254.169.254",
-		NewDigDNSResolver(logger),
+		resolver,
 	)
 
 	// Currently useServerNameAsID boolean setting is hard coded below

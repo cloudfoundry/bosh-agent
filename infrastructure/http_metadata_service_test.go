@@ -198,35 +198,15 @@ var _ = Describe("HTTPMetadataService", func() {
 				BeforeEach(func() {
 					dnsResolver.RegisterRecord(fakeinf.FakeDNSRecord{
 						DNSServers: []string{"fake-dns-server-ip"},
-						Host:       "fake-registry.com",
-						IP:         "fake-registry-ip",
+						Host:       "http://fake-registry.com",
+						IP:         "http://fake-registry-ip",
 					})
 				})
 
-				Context("when registry endpoint has a port", func() {
-					BeforeEach(func() {
-						url := "http://fake-registry.com:8877"
-						registryURL = &url
-					})
-
-					It("returns the successfully resolved registry endpoint with port", func() {
-						endpoint, err := metadataService.GetRegistryEndpoint()
-						Expect(err).ToNot(HaveOccurred())
-						Expect(endpoint).To(Equal("http://fake-registry-ip:8877"))
-					})
-				})
-
-				Context("when registry endpoint does not have a port", func() {
-					BeforeEach(func() {
-						url := "http://fake-registry.com"
-						registryURL = &url
-					})
-
-					It("returns the successfully resolved registry endpoint", func() {
-						endpoint, err := metadataService.GetRegistryEndpoint()
-						Expect(err).ToNot(HaveOccurred())
-						Expect(endpoint).To(Equal("http://fake-registry-ip"))
-					})
+				It("returns the successfully resolved registry endpoint", func() {
+					endpoint, err := metadataService.GetRegistryEndpoint()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(endpoint).To(Equal("http://fake-registry-ip"))
 				})
 			})
 

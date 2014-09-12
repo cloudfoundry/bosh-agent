@@ -27,9 +27,12 @@ var _ = Describe("Provider", func() {
 
 	Describe("Get", func() {
 		It("returns aws infrastructure", func() {
+			resolver := NewRegistryEndpointResolver(
+				NewDigDNSResolver(logger),
+			)
 			metadataService := NewHTTPMetadataService(
 				"http://169.254.169.254",
-				NewDigDNSResolver(logger),
+				resolver,
 			)
 
 			registry := NewConcreteRegistry(metadataService, false)
@@ -53,9 +56,12 @@ var _ = Describe("Provider", func() {
 		})
 
 		It("returns openstack infrastructure", func() {
+			resolver := NewRegistryEndpointResolver(
+				NewDigDNSResolver(logger),
+			)
 			metadataService := NewHTTPMetadataService(
 				"http://169.254.169.254",
-				NewDigDNSResolver(logger),
+				resolver,
 			)
 
 			registry := NewConcreteRegistry(metadataService, true)
