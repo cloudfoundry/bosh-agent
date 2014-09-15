@@ -13,7 +13,11 @@ type Provider struct {
 	infrastructures map[string]Infrastructure
 }
 
-func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
+type ProviderOptions struct {
+	MetadataService MetadataServiceOptions
+}
+
+func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options ProviderOptions) (p Provider) {
 	fs := platform.GetFs()
 	dirProvider := platform.GetDirProvider()
 
@@ -37,7 +41,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 		logger,
 	)
 
-	openstackMetadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver)
+	openstackMetadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver, options.MetadataService)
 	openstackMetadataService := openstackMetadataServiceProvider.GetMetadataService()
 	openstackRegistry := NewOpenstackRegistry(openstackMetadataService)
 

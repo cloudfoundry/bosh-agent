@@ -11,7 +11,9 @@ import (
 const openstackInfrastructureLogTag = "openstackInfrastructure"
 
 type openstackInfrastructure struct {
-	resolver           DNSResolver
+	resolver               DNSResolver
+	metadataServiceOptions MetadataServiceOptions
+
 	metadataService    MetadataService
 	registry           Registry
 	platform           boshplatform.Platform
@@ -36,8 +38,11 @@ func NewOpenstackInfrastructure(
 	}
 }
 
-func NewOpenstackMetadataServiceProvider(resolver DNSResolver) openstackInfrastructure {
-	return openstackInfrastructure{resolver: resolver}
+func NewOpenstackMetadataServiceProvider(resolver DNSResolver, options MetadataServiceOptions) openstackInfrastructure {
+	return openstackInfrastructure{
+		resolver:               resolver,
+		metadataServiceOptions: options,
+	}
 }
 
 func NewOpenstackRegistry(metadataService MetadataService) openstackInfrastructure {

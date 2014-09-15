@@ -65,7 +65,7 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting platform")
 	}
 
-	infProvider := boshinf.NewProvider(app.logger, app.platform)
+	infProvider := boshinf.NewProvider(app.logger, app.platform, config.Infrastructure)
 	app.infrastructure, err = infProvider.Get(opts.InfrastructureName)
 
 	app.platform.SetDevicePathResolver(app.infrastructure.GetDevicePathResolver())

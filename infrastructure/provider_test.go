@@ -22,7 +22,14 @@ var _ = Describe("Provider", func() {
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		provider = NewProvider(logger, platform)
+
+		providerOptions := ProviderOptions{
+			MetadataService: MetadataServiceOptions{
+				UseConfigDrive: true,
+			},
+		}
+
+		provider = NewProvider(logger, platform, providerOptions)
 	})
 
 	Describe("Get", func() {
@@ -58,7 +65,11 @@ var _ = Describe("Provider", func() {
 				NewDigDNSResolver(logger),
 			)
 
-			metadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver)
+			metadataServiceOptions := MetadataServiceOptions{
+				UseConfigDrive: true,
+			}
+
+			metadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver, metadataServiceOptions)
 			metadataService := metadataServiceProvider.GetMetadataService()
 			registry := NewOpenstackRegistry(metadataService)
 

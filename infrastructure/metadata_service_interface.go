@@ -7,6 +7,10 @@ type MetadataService interface {
 	GetRegistryEndpoint() (string, error)
 }
 
+type MetadataServiceOptions struct {
+	UseConfigDrive bool
+}
+
 type MetadataServiceProvider interface {
 	GetMetadataService() MetadataService
 }

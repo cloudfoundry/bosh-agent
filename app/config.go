@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
 type Config struct {
-	Platform boshplatform.ProviderOptions
+	Platform       boshplatform.ProviderOptions
+	Infrastructure boshinf.ProviderOptions
 }
 
 func LoadConfigFromPath(fs boshsys.FileSystem, path string) (Config, error) {

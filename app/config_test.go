@@ -6,6 +6,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/app"
 
+	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
@@ -27,6 +28,11 @@ var _ = Describe("LoadConfigFromPath", func() {
 					"UsePreformattedPersistentDisk": true,
 					"BindMountPersistentDisk": true
 				}
+			},
+			"Infrastructure": {
+			  "MetadataService": {
+			    "UseConfigDrive": true
+			  }
 			}
 		}`)
 
@@ -38,6 +44,11 @@ var _ = Describe("LoadConfigFromPath", func() {
 					UseDefaultTmpDir:              true,
 					UsePreformattedPersistentDisk: true,
 					BindMountPersistentDisk:       true,
+				},
+			},
+			Infrastructure: boshinf.ProviderOptions{
+				MetadataService: boshinf.MetadataServiceOptions{
+					UseConfigDrive: true,
 				},
 			},
 		}))
