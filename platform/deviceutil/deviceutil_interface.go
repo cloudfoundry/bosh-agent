@@ -1,5 +1,5 @@
-package cdutil
+package deviceutil
 
-type CdUtil interface {
+type DeviceUtil interface {
 	GetFileContents(fileName string) (contents []byte, err error)
 }

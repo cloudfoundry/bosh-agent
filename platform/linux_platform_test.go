@@ -13,8 +13,8 @@ import (
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	. "github.com/cloudfoundry/bosh-agent/platform"
-	fakecd "github.com/cloudfoundry/bosh-agent/platform/cdutil/fakes"
 	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
+	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
@@ -34,7 +34,7 @@ var _ = Describe("LinuxPlatform", func() {
 		dirProvider        boshdirs.Provider
 		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 		platform           Platform
-		cdutil             *fakecd.FakeCdUtil
+		cdutil             *fakedevutil.FakeDeviceUtil
 		compressor         boshcmd.Compressor
 		copier             boshcmd.Copier
 		vitalsService      boshvitals.Service
@@ -51,7 +51,7 @@ var _ = Describe("LinuxPlatform", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		diskManager = fakedisk.NewFakeDiskManager()
 		dirProvider = boshdirs.NewProvider("/fake-dir")
-		cdutil = fakecd.NewFakeCdUtil()
+		cdutil = fakedevutil.NewFakeDeviceUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)

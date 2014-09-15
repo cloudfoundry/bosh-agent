@@ -1,18 +1,20 @@
-package cdutil_test
+package deviceutil_test
 
 import (
-	fakecdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom/fakes"
-	. "github.com/cloudfoundry/bosh-agent/platform/cdutil"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	fakecdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom/fakes"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 )
 
 var _ = Describe("Cdutil", func() {
 	var (
 		fs     *fakesys.FakeFileSystem
 		cdrom  *fakecdrom.FakeCdrom
-		cdutil CdUtil
+		cdutil DeviceUtil
 	)
 
 	BeforeEach(func() {

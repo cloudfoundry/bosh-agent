@@ -14,8 +14,8 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	boshcd "github.com/cloudfoundry/bosh-agent/platform/cdutil"
 	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
@@ -67,7 +67,7 @@ type linux struct {
 	copier             boshcmd.Copier
 	dirProvider        boshdirs.Provider
 	vitalsService      boshvitals.Service
-	cdutil             boshcd.CdUtil
+	cdutil             boshdevutil.DeviceUtil
 	diskManager        boshdisk.Manager
 	netManager         boshnet.Manager
 	diskScanDuration   time.Duration
@@ -84,7 +84,7 @@ func NewLinuxPlatform(
 	copier boshcmd.Copier,
 	dirProvider boshdirs.Provider,
 	vitalsService boshvitals.Service,
-	cdutil boshcd.CdUtil,
+	cdutil boshdevutil.DeviceUtil,
 	diskManager boshdisk.Manager,
 	netManager boshnet.Manager,
 	diskScanDuration time.Duration,
