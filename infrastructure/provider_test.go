@@ -30,12 +30,10 @@ var _ = Describe("Provider", func() {
 			resolver := NewRegistryEndpointResolver(
 				NewDigDNSResolver(logger),
 			)
-			metadataService := NewHTTPMetadataService(
-				"http://169.254.169.254",
-				resolver,
-			)
 
-			registry := NewConcreteRegistry(metadataService, false)
+			metadataServiceProvider := NewAwsMetadataServiceProvider(resolver)
+			metadataService := metadataServiceProvider.GetMetadataService()
+			registry := NewAwsRegistry(metadataService)
 
 			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
 				500*time.Millisecond,
@@ -59,12 +57,10 @@ var _ = Describe("Provider", func() {
 			resolver := NewRegistryEndpointResolver(
 				NewDigDNSResolver(logger),
 			)
-			metadataService := NewHTTPMetadataService(
-				"http://169.254.169.254",
-				resolver,
-			)
 
-			registry := NewConcreteRegistry(metadataService, true)
+			metadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver)
+			metadataService := metadataServiceProvider.GetMetadataService()
+			registry := NewOpenstackRegistry(metadataService)
 
 			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
 				500*time.Millisecond,

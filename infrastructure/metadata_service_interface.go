@@ -6,3 +6,7 @@ type MetadataService interface {
 	GetServerName() (string, error)
 	GetRegistryEndpoint() (string, error)
 }
+
+type MetadataServiceProvider interface {
+	GetMetadataService() MetadataService
+}

@@ -11,6 +11,7 @@ import (
 const openstackInfrastructureLogTag = "openstackInfrastructure"
 
 type openstackInfrastructure struct {
+	resolver           DNSResolver
 	metadataService    MetadataService
 	registry           Registry
 	platform           boshplatform.Platform
@@ -24,13 +25,23 @@ func NewOpenstackInfrastructure(
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
-) (inf openstackInfrastructure) {
-	inf.metadataService = metadataService
-	inf.registry = registry
-	inf.platform = platform
-	inf.devicePathResolver = devicePathResolver
-	inf.logger = logger
-	return
+) openstackInfrastructure {
+
+	return openstackInfrastructure{
+		metadataService:    metadataService,
+		registry:           registry,
+		platform:           platform,
+		devicePathResolver: devicePathResolver,
+		logger:             logger,
+	}
+}
+
+func NewOpenstackMetadataServiceProvider(resolver DNSResolver) openstackInfrastructure {
+	return openstackInfrastructure{resolver: resolver}
+}
+
+func NewOpenstackRegistry(metadataService MetadataService) openstackInfrastructure {
+	return openstackInfrastructure{metadataService: metadataService}
 }
 
 func (inf openstackInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
@@ -47,7 +58,8 @@ func (inf openstackInfrastructure) SetupSSH(username string) error {
 }
 
 func (inf openstackInfrastructure) GetSettings() (boshsettings.Settings, error) {
-	settings, err := inf.registry.GetSettings()
+	registry := inf.registry
+	settings, err := registry.GetSettings()
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting settings from registry")
 	}
@@ -66,4 +78,20 @@ func (inf openstackInfrastructure) GetEphemeralDiskPath(devicePath string) strin
 	}
 
 	return inf.platform.NormalizeDiskPath(devicePath)
+}
+
+func (inf openstackInfrastructure) GetMetadataService() MetadataService {
+	metadataService := NewHTTPMetadataService(
+		"http://169.254.169.254",
+		inf.resolver,
+	)
+
+	return metadataService
+}
+
+func (inf openstackInfrastructure) GetRegistry() Registry {
+	metadataService := inf.metadataService
+
+	registry := NewConcreteRegistry(metadataService, true)
+	return registry
 }

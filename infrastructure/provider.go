@@ -14,20 +14,6 @@ type Provider struct {
 }
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
-	resolver := NewRegistryEndpointResolver(
-		NewDigDNSResolver(logger),
-	)
-
-	metadataService := NewHTTPMetadataService(
-		"http://169.254.169.254",
-		resolver,
-	)
-
-	// Currently useServerNameAsID boolean setting is hard coded below
-	// because we do not support arbitrary infrastructure configurations
-	awsRegistry := NewConcreteRegistry(metadataService, false)
-	openstackRegistry := NewConcreteRegistry(metadataService, true)
-
 	fs := platform.GetFs()
 	dirProvider := platform.GetDirProvider()
 
@@ -35,16 +21,28 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 	vsphereDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, fs)
 	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
 
+	resolver := NewRegistryEndpointResolver(
+		NewDigDNSResolver(logger),
+	)
+
+	awsMetadataServiceProvider := NewAwsMetadataServiceProvider(resolver)
+	awsMetadataService := awsMetadataServiceProvider.GetMetadataService()
+	awsRegistry := NewAwsRegistry(awsMetadataService)
+
 	awsInfrastructure := NewAwsInfrastructure(
-		metadataService,
+		awsMetadataService,
 		awsRegistry,
 		platform,
 		mappedDevicePathResolver,
 		logger,
 	)
 
+	openstackMetadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver)
+	openstackMetadataService := openstackMetadataServiceProvider.GetMetadataService()
+	openstackRegistry := NewOpenstackRegistry(openstackMetadataService)
+
 	openstackInfrastructure := NewOpenstackInfrastructure(
-		metadataService,
+		openstackMetadataService,
 		openstackRegistry,
 		platform,
 		mappedDevicePathResolver,

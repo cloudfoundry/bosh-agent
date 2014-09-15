@@ -11,10 +11,12 @@ import (
 const awsInfrastructureLogTag = "awsInfrastructure"
 
 type awsInfrastructure struct {
+	resolver           DNSResolver
 	metadataService    MetadataService
 	registry           Registry
 	platform           boshplatform.Platform
 	devicePathResolver boshdpresolv.DevicePathResolver
+	useServerNameAsID  bool
 	logger             boshlog.Logger
 }
 
@@ -24,13 +26,23 @@ func NewAwsInfrastructure(
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
-) (inf awsInfrastructure) {
-	inf.metadataService = metadataService
-	inf.registry = registry
-	inf.platform = platform
-	inf.devicePathResolver = devicePathResolver
-	inf.logger = logger
-	return
+) awsInfrastructure {
+
+	return awsInfrastructure{
+		metadataService:    metadataService,
+		registry:           registry,
+		platform:           platform,
+		devicePathResolver: devicePathResolver,
+		logger:             logger,
+	}
+}
+
+func NewAwsMetadataServiceProvider(resolver DNSResolver) awsInfrastructure {
+	return awsInfrastructure{resolver: resolver}
+}
+
+func NewAwsRegistry(metadataService MetadataService) awsInfrastructure {
+	return awsInfrastructure{metadataService: metadataService}
 }
 
 func (inf awsInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
@@ -47,7 +59,8 @@ func (inf awsInfrastructure) SetupSSH(username string) error {
 }
 
 func (inf awsInfrastructure) GetSettings() (boshsettings.Settings, error) {
-	settings, err := inf.registry.GetSettings()
+	registry := inf.registry
+	settings, err := registry.GetSettings()
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting settings from registry")
 	}
@@ -66,4 +79,20 @@ func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string) string {
 	}
 
 	return inf.platform.NormalizeDiskPath(devicePath)
+}
+
+func (inf awsInfrastructure) GetMetadataService() MetadataService {
+	metadataService := NewHTTPMetadataService(
+		"http://169.254.169.254",
+		inf.resolver,
+	)
+
+	return metadataService
+}
+
+func (inf awsInfrastructure) GetRegistry() Registry {
+	metadataService := inf.metadataService
+
+	registry := NewConcreteRegistry(metadataService, false)
+	return registry
 }
