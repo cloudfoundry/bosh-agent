@@ -69,10 +69,10 @@ type FakePlatform struct {
 	GetFileContentsFromCDROMPath     string
 	GetFileContentsFromCDROMContents []byte
 
-	GetFileContentsFromDiskDiskPath string
-	GetFileContentsFromDiskFileName string
-	GetFileContentsFromDiskContents []byte
-	GetFileContentsFromDiskErr      error
+	GetFileContentsFromDiskDiskPaths []string
+	GetFileContentsFromDiskFileNames []string
+	GetFileContentsFromDiskContents  map[string][]byte
+	GetFileContentsFromDiskErrs      map[string]error
 
 	NormalizeDiskPathCalled   bool
 	NormalizeDiskPathPath     string
@@ -114,6 +114,10 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupSSHPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
 	platform.ScsiDiskMap = make(map[string]string)
+	platform.GetFileContentsFromDiskDiskPaths = []string{}
+	platform.GetFileContentsFromDiskFileNames = []string{}
+	platform.GetFileContentsFromDiskContents = map[string][]byte{}
+	platform.GetFileContentsFromDiskErrs = map[string]error{}
 	return
 }
 
@@ -250,9 +254,14 @@ func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, e
 }
 
 func (p *FakePlatform) GetFileContentsFromDisk(diskPath string, fileName string) ([]byte, error) {
-	p.GetFileContentsFromDiskDiskPath = diskPath
-	p.GetFileContentsFromDiskFileName = fileName
-	return p.GetFileContentsFromDiskContents, p.GetFileContentsFromDiskErr
+	p.GetFileContentsFromDiskDiskPaths = append(p.GetFileContentsFromDiskDiskPaths, diskPath)
+	p.GetFileContentsFromDiskFileNames = append(p.GetFileContentsFromDiskFileNames, fileName)
+	return p.GetFileContentsFromDiskContents[fileName], p.GetFileContentsFromDiskErrs[fileName]
+}
+
+func (p *FakePlatform) SetGetFileContentsFromDisk(fileName string, contents []byte, err error) {
+	p.GetFileContentsFromDiskContents[fileName] = contents
+	p.GetFileContentsFromDiskErrs[fileName] = err
 }
 
 func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {

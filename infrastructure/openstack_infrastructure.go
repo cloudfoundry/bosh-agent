@@ -11,9 +11,6 @@ import (
 const openstackInfrastructureLogTag = "openstackInfrastructure"
 
 type openstackInfrastructure struct {
-	resolver               DNSResolver
-	metadataServiceOptions MetadataServiceOptions
-
 	metadataService    MetadataService
 	registry           Registry
 	platform           boshplatform.Platform
@@ -38,15 +35,8 @@ func NewOpenstackInfrastructure(
 	}
 }
 
-func NewOpenstackMetadataServiceProvider(resolver DNSResolver, options MetadataServiceOptions) openstackInfrastructure {
-	return openstackInfrastructure{
-		resolver:               resolver,
-		metadataServiceOptions: options,
-	}
-}
-
-func NewOpenstackRegistry(metadataService MetadataService) openstackInfrastructure {
-	return openstackInfrastructure{metadataService: metadataService}
+func NewOpenstackRegistry(metadataService MetadataService) Registry {
+	return NewConcreteRegistry(metadataService, true)
 }
 
 func (inf openstackInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
@@ -83,20 +73,4 @@ func (inf openstackInfrastructure) GetEphemeralDiskPath(devicePath string) strin
 	}
 
 	return inf.platform.NormalizeDiskPath(devicePath)
-}
-
-func (inf openstackInfrastructure) GetMetadataService() MetadataService {
-	metadataService := NewHTTPMetadataService(
-		"http://169.254.169.254",
-		inf.resolver,
-	)
-
-	return metadataService
-}
-
-func (inf openstackInfrastructure) GetRegistry() Registry {
-	metadataService := inf.metadataService
-
-	registry := NewConcreteRegistry(metadataService, true)
-	return registry
 }

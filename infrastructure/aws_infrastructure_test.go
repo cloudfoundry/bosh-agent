@@ -33,6 +33,13 @@ func init() {
 			aws = NewAwsInfrastructure(metadataService, registry, platform, devicePathResolver, logger)
 		})
 
+		Describe("NewAwsRegistry", func() {
+			It("returns concrete registry with useServerNameAsID set to false", func() {
+				expectedRegistry := NewConcreteRegistry(metadataService, false)
+				Expect(NewAwsRegistry(metadataService)).To(Equal(expectedRegistry))
+			})
+		})
+
 		Describe("SetupSSH", func() {
 			It("gets the public key and sets up ssh via the platform", func() {
 				metadataService.PublicKey = "fake-public-key"

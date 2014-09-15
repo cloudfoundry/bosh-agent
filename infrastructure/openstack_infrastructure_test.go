@@ -6,12 +6,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
 func init() {
@@ -31,6 +32,13 @@ func init() {
 			devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			openstack = NewOpenstackInfrastructure(metadataService, registry, platform, devicePathResolver, logger)
+		})
+
+		Describe("NewOpenstackRegistry", func() {
+			It("returns concrete registry with useServerNameAsID set to true", func() {
+				expectedRegistry := NewConcreteRegistry(metadataService, true)
+				Expect(NewOpenstackRegistry(metadataService)).To(Equal(expectedRegistry))
+			})
 		})
 
 		Describe("SetupSSH", func() {

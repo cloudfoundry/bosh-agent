@@ -29,8 +29,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 		NewDigDNSResolver(logger),
 	)
 
-	awsMetadataServiceProvider := NewAwsMetadataServiceProvider(resolver)
-	awsMetadataService := awsMetadataServiceProvider.GetMetadataService()
+	awsMetadataService := NewAwsMetadataServiceProvider(resolver).Get()
 	awsRegistry := NewAwsRegistry(awsMetadataService)
 
 	awsInfrastructure := NewAwsInfrastructure(
@@ -41,8 +40,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 		logger,
 	)
 
-	openstackMetadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver, options.MetadataService)
-	openstackMetadataService := openstackMetadataServiceProvider.GetMetadataService()
+	openstackMetadataService := NewOpenstackMetadataServiceProvider(resolver, platform, options.MetadataService).Get()
 	openstackRegistry := NewOpenstackRegistry(openstackMetadataService)
 
 	openstackInfrastructure := NewOpenstackInfrastructure(

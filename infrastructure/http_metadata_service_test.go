@@ -24,6 +24,12 @@ var _ = Describe("HTTPMetadataService", func() {
 		metadataService = NewHTTPMetadataService("fake-metadata-host", dnsResolver)
 	})
 
+	Describe("Load", func() {
+		It("returns nil", func() {
+			Expect(metadataService.Load()).To(BeNil())
+		})
+	})
+
 	Describe("GetPublicKey", func() {
 		var (
 			ts *httptest.Server

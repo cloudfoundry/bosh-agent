@@ -11,7 +11,6 @@ import (
 const awsInfrastructureLogTag = "awsInfrastructure"
 
 type awsInfrastructure struct {
-	resolver           DNSResolver
 	metadataService    MetadataService
 	registry           Registry
 	platform           boshplatform.Platform
@@ -37,12 +36,8 @@ func NewAwsInfrastructure(
 	}
 }
 
-func NewAwsMetadataServiceProvider(resolver DNSResolver) awsInfrastructure {
-	return awsInfrastructure{resolver: resolver}
-}
-
-func NewAwsRegistry(metadataService MetadataService) awsInfrastructure {
-	return awsInfrastructure{metadataService: metadataService}
+func NewAwsRegistry(metadataService MetadataService) Registry {
+	return NewConcreteRegistry(metadataService, false)
 }
 
 func (inf awsInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
@@ -79,20 +74,4 @@ func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string) string {
 	}
 
 	return inf.platform.NormalizeDiskPath(devicePath)
-}
-
-func (inf awsInfrastructure) GetMetadataService() MetadataService {
-	metadataService := NewHTTPMetadataService(
-		"http://169.254.169.254",
-		inf.resolver,
-	)
-
-	return metadataService
-}
-
-func (inf awsInfrastructure) GetRegistry() Registry {
-	metadataService := inf.metadataService
-
-	registry := NewConcreteRegistry(metadataService, false)
-	return registry
 }

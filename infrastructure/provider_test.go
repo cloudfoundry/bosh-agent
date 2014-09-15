@@ -38,8 +38,7 @@ var _ = Describe("Provider", func() {
 				NewDigDNSResolver(logger),
 			)
 
-			metadataServiceProvider := NewAwsMetadataServiceProvider(resolver)
-			metadataService := metadataServiceProvider.GetMetadataService()
+			metadataService := NewAwsMetadataServiceProvider(resolver).Get()
 			registry := NewAwsRegistry(metadataService)
 
 			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
@@ -69,8 +68,7 @@ var _ = Describe("Provider", func() {
 				UseConfigDrive: true,
 			}
 
-			metadataServiceProvider := NewOpenstackMetadataServiceProvider(resolver, metadataServiceOptions)
-			metadataService := metadataServiceProvider.GetMetadataService()
+			metadataService := NewOpenstackMetadataServiceProvider(resolver, platform, metadataServiceOptions).Get()
 			registry := NewOpenstackRegistry(metadataService)
 
 			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(

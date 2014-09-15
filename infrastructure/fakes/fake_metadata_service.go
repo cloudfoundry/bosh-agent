@@ -1,6 +1,8 @@
 package fakes
 
 type FakeMetadataService struct {
+	LoadErr error
+
 	PublicKey       string
 	GetPublicKeyErr error
 
@@ -12,6 +14,10 @@ type FakeMetadataService struct {
 
 	RegistryEndpoint       string
 	GetRegistryEndpointErr error
+}
+
+func (ms FakeMetadataService) Load() error {
+	return ms.LoadErr
 }
 
 func (ms FakeMetadataService) GetPublicKey() (string, error) {

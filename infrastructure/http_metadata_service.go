@@ -14,18 +14,6 @@ type httpMetadataService struct {
 	resolver     DNSResolver
 }
 
-type userDataType struct {
-	Registry struct {
-		Endpoint string
-	}
-	Server struct {
-		Name string // Name given by CPI e.g. vm-384sd4-r7re9e...
-	}
-	DNS struct {
-		Nameserver []string
-	}
-}
-
 func NewHTTPMetadataService(
 	metadataHost string,
 	resolver DNSResolver,
@@ -34,6 +22,10 @@ func NewHTTPMetadataService(
 		metadataHost: metadataHost,
 		resolver:     resolver,
 	}
+}
+
+func (ms httpMetadataService) Load() error {
+	return nil
 }
 
 func (ms httpMetadataService) GetPublicKey() (string, error) {
@@ -104,8 +96,8 @@ func (ms httpMetadataService) GetRegistryEndpoint() (string, error) {
 	return endpoint, nil
 }
 
-func (ms httpMetadataService) getUserData() (userDataType, error) {
-	var userData userDataType
+func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
+	var userData UserDataContentsType
 
 	userDataURL := fmt.Sprintf("%s/latest/user-data", ms.metadataHost)
 
