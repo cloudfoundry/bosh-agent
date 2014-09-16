@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCdutil(t *testing.T) {
+func TestDeviceutil(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Deviceutil Suite")
 }

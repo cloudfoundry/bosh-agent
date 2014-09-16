@@ -1,28 +1,26 @@
-package deviceutil
+package cdrom
 
 import (
 	"os"
 	"path/filepath"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
-
-	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 )
 
 type cdUtil struct {
 	settingsMountPath string
 	fs                boshsys.FileSystem
-	cdrom             boshcdrom.Cdrom
+	cdrom             Cdrom
 }
 
-func NewCdUtil(settingsMountPath string, fs boshsys.FileSystem, cdrom boshcdrom.Cdrom) (util DeviceUtil) {
-	util = cdUtil{
+func NewCdUtil(settingsMountPath string, fs boshsys.FileSystem, cdrom Cdrom) boshdevutil.DeviceUtil {
+	return cdUtil{
 		settingsMountPath: settingsMountPath,
 		fs:                fs,
 		cdrom:             cdrom,
 	}
-	return
 }
 
 func (util cdUtil) GetFileContents(fileName string) (contents []byte, err error) {

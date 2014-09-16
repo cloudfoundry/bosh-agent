@@ -1,4 +1,4 @@
-package deviceutil_test
+package disk_test
 
 import (
 	"errors"
@@ -7,17 +7,18 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
+	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
 var _ = Describe("Diskutil", func() {
 	var (
-		diskUtil DeviceUtil
-		mounter *fakedisk.FakeMounter
-		fs *fakesys.FakeFileSystem
+		diskUtil boshdevutil.DeviceUtil
+		mounter  *fakedisk.FakeMounter
+		fs       *fakesys.FakeFileSystem
 	)
 
 	BeforeEach(func() {

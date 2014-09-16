@@ -10,7 +10,6 @@ import (
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/cdrom/udevdevice"
 	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
@@ -47,7 +46,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options P
 
 	udev := boshudev.NewConcreteUdevDevice(runner)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
-	linuxCdutil := boshdevutil.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
+	linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
 
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
 	copier := boshcmd.NewCpCopier(runner, fs, logger)

@@ -1,29 +1,29 @@
-package deviceutil
+package disk
 
 import (
 	"path/filepath"
 
-	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
+	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
 type diskUtil struct {
 	diskPath string
-	mounter boshdisk.Mounter
-	fs      boshsys.FileSystem
-	logger  boshlog.Logger
-	logTag string
+	mounter  Mounter
+	fs       boshsys.FileSystem
+	logger   boshlog.Logger
+	logTag   string
 }
 
-func NewDiskUtil(diskPath string, mounter boshdisk.Mounter, fs boshsys.FileSystem, logger boshlog.Logger) DeviceUtil {
+func NewDiskUtil(diskPath string, mounter Mounter, fs boshsys.FileSystem, logger boshlog.Logger) boshdevutil.DeviceUtil {
 	return diskUtil{
 		diskPath: diskPath,
-		mounter: mounter,
+		mounter:  mounter,
 		fs:       fs,
-		logger: logger,
-		logTag: "diskUtil",
+		logger:   logger,
+		logTag:   "diskUtil",
 	}
 }
 

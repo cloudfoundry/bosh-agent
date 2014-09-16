@@ -1,20 +1,20 @@
-package deviceutil_test
+package cdrom_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	fakecdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom/fakes"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
-
-	. "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 )
 
 var _ = Describe("Cdutil", func() {
 	var (
 		fs     *fakesys.FakeFileSystem
 		cdrom  *fakecdrom.FakeCdrom
-		cdutil DeviceUtil
+		cdutil boshdevutil.DeviceUtil
 	)
 
 	BeforeEach(func() {
@@ -23,7 +23,7 @@ var _ = Describe("Cdutil", func() {
 	})
 
 	JustBeforeEach(func() {
-		cdutil = NewCdUtil("/fake/settings/dir", fs, cdrom)
+		cdutil = boshcdrom.NewCdUtil("/fake/settings/dir", fs, cdrom)
 	})
 
 	It("gets file contents from CDROM", func() {
