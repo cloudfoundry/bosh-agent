@@ -69,6 +69,11 @@ type FakePlatform struct {
 	GetFileContentsFromCDROMPath     string
 	GetFileContentsFromCDROMContents []byte
 
+	GetFileContentsFromDiskDiskPath string
+	GetFileContentsFromDiskFileName string
+	GetFileContentsFromDiskContents []byte
+	GetFileContentsFromDiskErr      error
+
 	NormalizeDiskPathCalled   bool
 	NormalizeDiskPathPath     string
 	NormalizeDiskPathRealPath string
@@ -242,6 +247,12 @@ func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, e
 	p.GetFileContentsFromCDROMPath = path
 	contents = p.GetFileContentsFromCDROMContents
 	return
+}
+
+func (p *FakePlatform) GetFileContentsFromDisk(diskPath string, fileName string) ([]byte, error) {
+	p.GetFileContentsFromDiskDiskPath = diskPath
+	p.GetFileContentsFromDiskFileName = fileName
+	return p.GetFileContentsFromDiskContents, p.GetFileContentsFromDiskErr
 }
 
 func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {

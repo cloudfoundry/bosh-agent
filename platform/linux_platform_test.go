@@ -1087,6 +1087,17 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
+	Describe("GetFileContentsFromDisk", func() {
+		It("delegates to diskutil", func() {
+			diskManager.FakeDiskUtil.GetFileContentsContents = []byte("fake-contents")
+			contents, err := platform.GetFileContentsFromDisk("fake-disk-path", "fake-file-path")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diskManager.DiskUtilDiskPath).To(Equal("fake-disk-path"))
+			Expect(diskManager.FakeDiskUtil.GetFileContentsFilename).To(Equal("fake-file-path"))
+			Expect(contents).To(Equal([]byte("fake-contents")))
+		})
+	})
+
 	Describe("NormalizeDiskPath", func() {
 		Context("when real device path was resolved without an error", func() {
 			It("returns real device path and true", func() {

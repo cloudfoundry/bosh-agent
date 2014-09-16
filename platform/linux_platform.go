@@ -139,6 +139,10 @@ func (p linux) GetFileContentsFromCDROM(fileName string) (contents []byte, err e
 	return p.cdutil.GetFileContents(fileName)
 }
 
+func (p linux) GetFileContentsFromDisk(diskPath string, fileName string) (contents []byte, err error) {
+	return p.diskManager.GetDiskUtil(diskPath).GetFileContents(fileName)
+}
+
 func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.devicePathResolver
 }
