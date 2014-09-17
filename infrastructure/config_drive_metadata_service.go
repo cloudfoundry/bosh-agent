@@ -21,8 +21,8 @@ func NewConfigDriveMetadataService(
 	diskPaths []string,
 ) *configDriveMetadataService {
 	return &configDriveMetadataService{
-		resolver: resolver,
-		platform: platform,
+		resolver:  resolver,
+		platform:  platform,
 		diskPaths: diskPaths,
 	}
 }
@@ -72,7 +72,18 @@ func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
 
 	}
 
-	return ms.userdataContents.Registry.Endpoint, nil
+	endpoint := ms.userdataContents.Registry.Endpoint
+	nameServers := ms.userdataContents.DNS.Nameserver
+
+	if len(nameServers) > 0 {
+		var err error
+		endpoint, err = ms.resolver.LookupHost(nameServers, endpoint)
+		if err != nil {
+			return "", bosherr.WrapError(err, "Resolving registry endpoint")
+		}
+	}
+
+	return endpoint, nil
 }
 
 func (ms *configDriveMetadataService) loadFromDiskPath(diskPath string) error {

@@ -16,9 +16,9 @@ import (
 
 var _ = Describe("ConfigDriveMetadataService", func() {
 	var (
-		configDriveMetadataService MetadataService
-		resolver                   *fakeinf.FakeDNSResolver
-		platform                   *fakeplatform.FakePlatform
+		metadataService MetadataService
+		resolver        *fakeinf.FakeDNSResolver
+		platform        *fakeplatform.FakePlatform
 	)
 
 	updateMetadata := func(metadataContents MetadataContentsType) {
@@ -26,14 +26,14 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		Expect(err).ToNot(HaveOccurred())
 		platform.SetGetFileContentsFromDisk("ec2/latest/meta-data.json", metadataJSON, nil)
 
-		err = configDriveMetadataService.Load()
+		err = metadataService.Load()
 		Expect(err).ToNot(HaveOccurred())
 	}
 
 	updateUserdata := func(userdataContents string) {
 		platform.SetGetFileContentsFromDisk("ec2/latest/user-data", []byte(userdataContents), nil)
 
-		err := configDriveMetadataService.Load()
+		err := metadataService.Load()
 		Expect(err).ToNot(HaveOccurred())
 	}
 
@@ -44,7 +44,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 			"fake-disk-path-1",
 			"fake-disk-path-2",
 		}
-		configDriveMetadataService = NewConfigDriveMetadataService(resolver, platform, diskPaths)
+		metadataService = NewConfigDriveMetadataService(resolver, platform, diskPaths)
 
 		userdataContents := fmt.Sprintf(`{"server":{"name":"fake-server-name"},"registry":{"endpoint":"fake-registry-endpoint"}}`)
 		platform.SetGetFileContentsFromDisk("ec2/latest/user-data", []byte(userdataContents), nil)
@@ -63,14 +63,14 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 	Describe("Load", func() {
 		It("returns an error if it fails to read meta-data.json from disk", func() {
 			platform.SetGetFileContentsFromDisk("ec2/latest/meta-data.json", []byte{}, errors.New("fake-read-disk-error"))
-			err := configDriveMetadataService.Load()
+			err := metadataService.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
 		})
 
 		It("tries to load meta-data.json from potential disk locations", func() {
 			platform.SetGetFileContentsFromDisk("ec2/latest/meta-data.json", []byte{}, errors.New("fake-read-disk-error"))
-			err := configDriveMetadataService.Load()
+			err := metadataService.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
 
@@ -80,21 +80,21 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 
 		It("returns an error if it fails to parse meta-data.json contents", func() {
 			platform.SetGetFileContentsFromDisk("ec2/latest/meta-data.json", []byte("broken"), nil)
-			err := configDriveMetadataService.Load()
+			err := metadataService.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Parsing config drive metadata from meta_data.json"))
 		})
 
 		It("returns an error if it fails to read user_data from disk", func() {
 			platform.SetGetFileContentsFromDisk("ec2/latest/user-data", []byte{}, errors.New("fake-read-disk-error"))
-			err := configDriveMetadataService.Load()
+			err := metadataService.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
 		})
 
 		It("returns an error if it fails to parse user_data contents", func() {
 			platform.SetGetFileContentsFromDisk("ec2/latest/user-data", []byte("broken"), nil)
-			err := configDriveMetadataService.Load()
+			err := metadataService.Load()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Parsing config drive metadata from user_data"))
 		})
@@ -102,7 +102,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 
 	Describe("GetPublicKey", func() {
 		It("returns public key", func() {
-			value, err := configDriveMetadataService.GetPublicKey()
+			value, err := metadataService.GetPublicKey()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(value).To(Equal("fake-openssh-key"))
 		})
@@ -110,7 +110,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		It("returns an error if it fails to get ssh key", func() {
 			updateMetadata(MetadataContentsType{})
 
-			value, err := configDriveMetadataService.GetPublicKey()
+			value, err := metadataService.GetPublicKey()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Failed to load openssh-key from config drive metadata service"))
 
@@ -120,7 +120,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 
 	Describe("GetInstanceID", func() {
 		It("returns instance id", func() {
-			value, err := configDriveMetadataService.GetInstanceID()
+			value, err := metadataService.GetInstanceID()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(value).To(Equal("fake-instance-id"))
 		})
@@ -128,7 +128,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		It("returns an error if it fails to get instance id", func() {
 			updateMetadata(MetadataContentsType{})
 
-			value, err := configDriveMetadataService.GetInstanceID()
+			value, err := metadataService.GetInstanceID()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Failed to load instance-id from config drive metadata service"))
 
@@ -138,7 +138,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 
 	Describe("GetServerName", func() {
 		It("returns server name", func() {
-			value, err := configDriveMetadataService.GetServerName()
+			value, err := metadataService.GetServerName()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(value).To(Equal("fake-server-name"))
 		})
@@ -146,7 +146,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		It("returns an error if it fails to get server name", func() {
 			updateUserdata("{}")
 
-			value, err := configDriveMetadataService.GetServerName()
+			value, err := metadataService.GetServerName()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Failed to load server name from config drive metadata service"))
 
@@ -155,20 +155,63 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 	})
 
 	Describe("GetRegistryEndpoint", func() {
-		It("returns registry endpoint", func() {
-			value, err := configDriveMetadataService.GetRegistryEndpoint()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(value).To(Equal("fake-registry-endpoint"))
-		})
-
 		It("returns an error if it fails to get registry endpoint", func() {
 			updateUserdata("{}")
 
-			value, err := configDriveMetadataService.GetRegistryEndpoint()
+			value, err := metadataService.GetRegistryEndpoint()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Failed to load registry endpoint from config drive metadata service"))
 
 			Expect(value).To(Equal(""))
+		})
+
+		Context("when user_data does not contain a dns server", func() {
+			It("returns registry endpoint", func() {
+				value, err := metadataService.GetRegistryEndpoint()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(value).To(Equal("fake-registry-endpoint"))
+			})
+		})
+
+		Context("when user_data contains a dns server", func() {
+			BeforeEach(func() {
+				userdataContents := fmt.Sprintf(
+					`{"server":{"name":"%s"},"registry":{"endpoint":"%s"},"dns":{"nameserver":["%s"]}}`,
+					"fake-server-name",
+					"http://fake-registry.com",
+					"fake-dns-server-ip",
+				)
+				updateUserdata(userdataContents)
+			})
+
+			Context("when registry endpoint is successfully resolved", func() {
+				BeforeEach(func() {
+					resolver.RegisterRecord(fakeinf.FakeDNSRecord{
+						DNSServers: []string{"fake-dns-server-ip"},
+						Host:       "http://fake-registry.com",
+						IP:         "http://fake-registry-ip",
+					})
+				})
+
+				It("returns the successfully resolved registry endpoint", func() {
+					endpoint, err := metadataService.GetRegistryEndpoint()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(endpoint).To(Equal("http://fake-registry-ip"))
+				})
+			})
+
+			Context("when registry endpoint is not successfully resolved", func() {
+				BeforeEach(func() {
+					resolver.LookupHostErr = errors.New("fake-lookup-host-err")
+				})
+
+				It("returns error because it failed to resolve registry endpoint", func() {
+					endpoint, err := metadataService.GetRegistryEndpoint()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-lookup-host-err"))
+					Expect(endpoint).To(BeEmpty())
+				})
+			})
 		})
 	})
 })
