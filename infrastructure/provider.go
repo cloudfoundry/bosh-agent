@@ -40,7 +40,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 		logger,
 	)
 
-	openstackMetadataService := NewOpenstackMetadataServiceProvider(resolver, platform, options.MetadataService).Get()
+	openstackMetadataService := NewOpenstackMetadataServiceProvider(resolver, platform, options.MetadataService, logger).Get()
 	openstackRegistry := NewOpenstackRegistry(openstackMetadataService)
 
 	openstackInfrastructure := NewOpenstackInfrastructure(

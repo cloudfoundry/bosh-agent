@@ -68,7 +68,7 @@ var _ = Describe("Provider", func() {
 				UseConfigDrive: true,
 			}
 
-			metadataService := NewOpenstackMetadataServiceProvider(resolver, platform, metadataServiceOptions).Get()
+			metadataService := NewOpenstackMetadataServiceProvider(resolver, platform, metadataServiceOptions, logger).Get()
 			registry := NewOpenstackRegistry(metadataService)
 
 			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(

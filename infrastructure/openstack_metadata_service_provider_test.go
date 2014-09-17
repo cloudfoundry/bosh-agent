@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
@@ -18,15 +19,18 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 		openstackMetadataServiceProvider MetadataServiceProvider
 		fakeresolver                     *fakeinf.FakeDNSResolver
 		platform                         *fakeplatform.FakePlatform
+		logger                           boshlog.Logger
 	)
 
 	BeforeEach(func() {
 		fakeresolver = &fakeinf.FakeDNSResolver{}
 		platform = fakeplatform.NewFakePlatform()
+		logger = boshlog.NewLogger(boshlog.LevelNone)
 		openstackMetadataServiceProvider = NewOpenstackMetadataServiceProvider(
 			fakeresolver,
 			platform,
 			MetadataServiceOptions{UseConfigDrive: true},
+			logger,
 		)
 	})
 
@@ -53,6 +57,7 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 						configDriveDiskPaths,
 						"ec2/latest/meta-data.json",
 						"ec2/latest/user-data",
+						logger,
 					)
 					Expect(openstackMetadataServiceProvider.Get()).To(Equal(expectedMetadataService))
 				})
@@ -76,6 +81,7 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 					fakeresolver,
 					platform,
 					MetadataServiceOptions{UseConfigDrive: false},
+					logger,
 				)
 			})
 

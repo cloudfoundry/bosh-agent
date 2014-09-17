@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
@@ -40,6 +41,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 	BeforeEach(func() {
 		resolver = &fakeinf.FakeDNSResolver{}
 		platform = fakeplatform.NewFakePlatform()
+		logger := boshlog.NewLogger(boshlog.LevelNone)
 		diskPaths := []string{
 			"fake-disk-path-1",
 			"fake-disk-path-2",
@@ -50,6 +52,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 			diskPaths,
 			"fake-metadata-path",
 			"fake-userdata-path",
+			logger,
 		)
 
 		userdataContents := fmt.Sprintf(`{"server":{"name":"fake-server-name"},"registry":{"endpoint":"fake-registry-endpoint"}}`)
