@@ -29,7 +29,13 @@ func (inf openstackServiceProvider) Get() MetadataService {
 			"/dev/disk/by-label/config-2",
 		}
 
-		metadataService := NewConfigDriveMetadataService(inf.resolver, inf.platform, configDriveDiskPaths)
+		metadataService := NewConfigDriveMetadataService(
+			inf.resolver,
+			inf.platform,
+			configDriveDiskPaths,
+			"ec2/latest/meta-data.json",
+			"ec2/latest/user-data",
+		)
 		err := metadataService.Load()
 		if err == nil {
 			return metadataService

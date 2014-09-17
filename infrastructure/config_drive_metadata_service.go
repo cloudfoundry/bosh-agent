@@ -13,17 +13,23 @@ type configDriveMetadataService struct {
 	resolver         DNSResolver
 	platform         boshplatform.Platform
 	diskPaths        []string
+	metadataFilePath string
+	userdataFilePath string
 }
 
 func NewConfigDriveMetadataService(
 	resolver DNSResolver,
 	platform boshplatform.Platform,
 	diskPaths []string,
+	metadataFilePath string,
+	userdataFilePath string,
 ) *configDriveMetadataService {
 	return &configDriveMetadataService{
-		resolver:  resolver,
-		platform:  platform,
-		diskPaths: diskPaths,
+		resolver:         resolver,
+		platform:         platform,
+		diskPaths:        diskPaths,
+		metadataFilePath: metadataFilePath,
+		userdataFilePath: userdataFilePath,
 	}
 }
 
@@ -87,7 +93,7 @@ func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
 }
 
 func (ms *configDriveMetadataService) loadFromDiskPath(diskPath string) error {
-	contents, err := ms.platform.GetFileContentsFromDisk(diskPath, "ec2/latest/meta-data.json")
+	contents, err := ms.platform.GetFileContentsFromDisk(diskPath, ms.metadataFilePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Reading contents of meta_data.json on config drive")
 	}
@@ -99,7 +105,7 @@ func (ms *configDriveMetadataService) loadFromDiskPath(diskPath string) error {
 	}
 	ms.metadataContents = metadata
 
-	contents, err = ms.platform.GetFileContentsFromDisk(diskPath, "ec2/latest/user-data")
+	contents, err = ms.platform.GetFileContentsFromDisk(diskPath, ms.userdataFilePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Reading contents of user_data on config drive")
 	}

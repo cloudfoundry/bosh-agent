@@ -47,7 +47,13 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 						"/dev/disk/by-label/config-2",
 					}
 
-					expectedMetadataService := NewConfigDriveMetadataService(fakeresolver, platform, configDriveDiskPaths)
+					expectedMetadataService := NewConfigDriveMetadataService(
+						fakeresolver,
+						platform,
+						configDriveDiskPaths,
+						"ec2/latest/meta-data.json",
+						"ec2/latest/user-data",
+					)
 					Expect(openstackMetadataServiceProvider.Get()).To(Equal(expectedMetadataService))
 				})
 			})
