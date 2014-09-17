@@ -558,7 +558,7 @@ func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
 		return bosherr.WrapError(err, "Creating directory %s", mountPoint)
 	}
 
-	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
+	realPath, _, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting real device path")
 	}
@@ -594,7 +594,10 @@ func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
 func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
 	p.logger.Debug(logTag, "Unmounting persistent disk %s", devicePath)
 
-	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
+	realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(devicePath)
+	if timedOut {
+		return false, nil
+	}
 	if err != nil {
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}
@@ -607,7 +610,7 @@ func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
 }
 
 func (p linux) NormalizeDiskPath(devicePath string) string {
-	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
+	realPath, _, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
 		return ""
 	}
@@ -651,7 +654,12 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 }
 
 func (p linux) IsPersistentDiskMounted(path string) (bool, error) {
-	realPath, err := p.devicePathResolver.GetRealDevicePath(path)
+	p.logger.Debug(logTag, "Checking whether persistent disk %s is mounted", path)
+	realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(path)
+	if timedOut {
+		p.logger.Debug(logTag, "Timed out resolving device path %s, ignoring", path)
+		return false, nil
+	}
 	if err != nil {
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}

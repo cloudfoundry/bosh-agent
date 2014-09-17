@@ -1048,16 +1048,30 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 		})
 
-		Context("when device path can be resolved", func() {
+		Context("when device path cannot be resolved", func() {
 			BeforeEach(func() {
 				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+				devicePathResolver.GetRealDevicePathTimedOut = false
 			})
 
 			It("returns error", func() {
-				didUnmount, err := act()
+				isMounted, err := act()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
-				Expect(didUnmount).To(BeFalse())
+				Expect(isMounted).To(BeFalse())
+			})
+		})
+
+		Context("when device path cannot be resolved due to timeout", func() {
+			BeforeEach(func() {
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+				devicePathResolver.GetRealDevicePathTimedOut = true
+			})
+
+			It("does not return error", func() {
+				isMounted, err := act()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isMounted).To(BeFalse())
 			})
 		})
 	})
@@ -1171,15 +1185,29 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 		})
 
-		Context("when device path can be resolved", func() {
+		Context("when device path cannot be resolved", func() {
 			BeforeEach(func() {
 				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+				devicePathResolver.GetRealDevicePathTimedOut = false
 			})
 
 			It("returns error", func() {
 				isMounted, err := act()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
+				Expect(isMounted).To(BeFalse())
+			})
+		})
+
+		Context("when device path cannot be resolved due to timeout", func() {
+			BeforeEach(func() {
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+				devicePathResolver.GetRealDevicePathTimedOut = true
+			})
+
+			It("does not return error", func() {
+				isMounted, err := act()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(isMounted).To(BeFalse())
 			})
 		})
