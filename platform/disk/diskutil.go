@@ -28,6 +28,10 @@ func NewDiskUtil(diskPath string, mounter Mounter, fs boshsys.FileSystem, logger
 }
 
 func (util diskUtil) GetFileContents(fileName string) ([]byte, error) {
+	if !util.fs.FileExists(util.diskPath) {
+		return []byte{}, bosherr.New("Failed to get file contents, disk path '%s' does not exist", util.diskPath)
+	}
+
 	tempDir, err := util.fs.TempDir("diskutil")
 	if err != nil {
 		return []byte{}, bosherr.WrapError(err, "Creating temporary disk mount point")

@@ -29,68 +29,79 @@ var _ = Describe("Diskutil", func() {
 	})
 
 	Describe("GetFileContents", func() {
-		BeforeEach(func() {
-			fs.TempDirDir = "fake-tempdir"
-			fs.WriteFileString("fake-tempdir/fake-file-path", "fake-contents")
+		Context("when disk path does not exist", func() {
+			It("returns an error if diskpath does not exist", func() {
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("disk path 'fake-disk-path' does not exist"))
+			})
 		})
 
-		It("mounts disk path to temporary directory", func() {
-			_, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).ToNot(HaveOccurred())
+		Context("when disk path does not exist", func() {
+			BeforeEach(func() {
+				fs.MkdirAll("fake-disk-path", 0700)
+				fs.TempDirDir = "fake-tempdir"
+				fs.WriteFileString("fake-tempdir/fake-file-path", "fake-contents")
+			})
 
-			Expect(mounter.MountPartitionPaths).To(ContainElement("fake-disk-path"))
-			Expect(mounter.MountMountPoints).To(ContainElement("fake-tempdir"))
-		})
+			It("mounts disk path to temporary directory", func() {
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).ToNot(HaveOccurred())
 
-		It("returns contents of file on a disk", func() {
-			contents, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(string(contents)).To(Equal("fake-contents"))
-		})
+				Expect(mounter.MountPartitionPaths).To(ContainElement("fake-disk-path"))
+				Expect(mounter.MountMountPoints).To(ContainElement("fake-tempdir"))
+			})
 
-		It("unmount disk path", func() {
-			_, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).ToNot(HaveOccurred())
+			It("returns contents of file on a disk", func() {
+				contents, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(contents)).To(Equal("fake-contents"))
+			})
 
-			Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("fake-disk-path"))
-		})
+			It("unmount disk path", func() {
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).ToNot(HaveOccurred())
 
-		It("cleans up temporary directory after reading settings", func() {
-			_, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).ToNot(HaveOccurred())
+				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("fake-disk-path"))
+			})
 
-			Expect(fs.FileExists("fake-tempdir")).To(BeFalse())
-		})
+			It("cleans up temporary directory after reading settings", func() {
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).ToNot(HaveOccurred())
 
-		It("returns error if it fails to create temporary mount directory", func() {
-			fs.TempDirError = errors.New("fake-tempdir-error")
+				Expect(fs.FileExists("fake-tempdir")).To(BeFalse())
+			})
 
-			_, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-tempdir-error"))
-		})
+			It("returns error if it fails to create temporary mount directory", func() {
+				fs.TempDirError = errors.New("fake-tempdir-error")
 
-		It("returns error if it fails to mount disk path", func() {
-			mounter.MountErr = errors.New("fake-mount-error")
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-tempdir-error"))
+			})
 
-			_, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
-		})
+			It("returns error if it fails to mount disk path", func() {
+				mounter.MountErr = errors.New("fake-mount-error")
 
-		It("returns an error if it fails to read the file", func() {
-			fs.ReadFileError = errors.New("fake-read-error")
-			_, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-read-error"))
-		})
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
+			})
 
-		It("returns error if it fails to unmount disk path", func() {
-			mounter.UnmountErr = errors.New("fake-unmount-error")
+			It("returns an error if it fails to read the file", func() {
+				fs.ReadFileError = errors.New("fake-read-error")
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-read-error"))
+			})
 
-			_, err := diskUtil.GetFileContents("fake-file-path")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-unmount-error"))
+			It("returns error if it fails to unmount disk path", func() {
+				mounter.UnmountErr = errors.New("fake-unmount-error")
+
+				_, err := diskUtil.GetFileContents("fake-file-path")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-unmount-error"))
+			})
 		})
 	})
 })
