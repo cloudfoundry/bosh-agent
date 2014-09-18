@@ -23,44 +23,42 @@ func NewCdUtil(settingsMountPath string, fs boshsys.FileSystem, cdrom Cdrom) bos
 	}
 }
 
-func (util cdUtil) GetFileContents(fileName string) (contents []byte, err error) {
-	err = util.cdrom.WaitForMedia()
+func (util cdUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
+	err := util.cdrom.WaitForMedia()
 	if err != nil {
-		err = bosherr.WrapError(err, "Waiting for CDROM to be ready")
-		return
+		return [][]byte{}, bosherr.WrapError(err, "Waiting for CDROM to be ready")
 	}
 
 	err = util.fs.MkdirAll(util.settingsMountPath, os.FileMode(0700))
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating CDROM mount point")
-		return
+		return [][]byte{}, bosherr.WrapError(err, "Creating CDROM mount point")
 	}
 
 	err = util.cdrom.Mount(util.settingsMountPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Mounting CDROM")
-		return
+		return [][]byte{}, bosherr.WrapError(err, "Mounting CDROM")
 	}
 
-	settingsPath := filepath.Join(util.settingsMountPath, fileName)
-	stringContents, err := util.fs.ReadFile(settingsPath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Reading from CDROM")
-		return
+	contents := [][]byte{}
+	for _, fileName := range fileNames {
+		settingsPath := filepath.Join(util.settingsMountPath, fileName)
+		stringContents, err := util.fs.ReadFile(settingsPath)
+		if err != nil {
+			return [][]byte{}, bosherr.WrapError(err, "Reading from CDROM")
+		}
+
+		contents = append(contents, []byte(stringContents))
 	}
 
 	err = util.cdrom.Unmount()
 	if err != nil {
-		err = bosherr.WrapError(err, "Unmounting CDROM")
-		return
+		return [][]byte{}, bosherr.WrapError(err, "Unmounting CDROM")
 	}
 
 	err = util.cdrom.Eject()
 	if err != nil {
-		err = bosherr.WrapError(err, "Ejecting CDROM")
-		return
+		return [][]byte{}, bosherr.WrapError(err, "Ejecting CDROM")
 	}
 
-	contents = []byte(stringContents)
-	return
+	return contents, nil
 }

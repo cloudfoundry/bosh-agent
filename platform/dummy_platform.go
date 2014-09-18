@@ -151,7 +151,7 @@ func (p dummyPlatform) GetFileContentsFromCDROM(filePath string) (contents []byt
 	return
 }
 
-func (p dummyPlatform) GetFileContentsFromDisk(diskPath string, fileName string) (contents []byte, err error) {
+func (p dummyPlatform) GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error) {
 	return
 }
 

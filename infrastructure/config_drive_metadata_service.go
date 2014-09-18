@@ -107,27 +107,23 @@ func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
 }
 
 func (ms *configDriveMetadataService) loadFromDiskPath(diskPath string) error {
-	contents, err := ms.platform.GetFileContentsFromDisk(diskPath, ms.metadataFilePath)
+	contents, err := ms.platform.GetFilesContentsFromDisk(
+		diskPath,
+		[]string{ms.metadataFilePath, ms.userdataFilePath},
+	)
 	if err != nil {
-		return bosherr.WrapError(err, "Reading contents of meta_data.json on config drive")
+		return bosherr.WrapError(err, "Reading files on config drive")
 	}
-	ms.logger.Debug(ms.logTag, "Metadata file contents: %s", contents)
 
 	var metadata MetadataContentsType
-	err = json.Unmarshal(contents, &metadata)
+	err = json.Unmarshal(contents[0], &metadata)
 	if err != nil {
 		return bosherr.WrapError(err, "Parsing config drive metadata from meta_data.json")
 	}
 	ms.metadataContents = metadata
 
-	contents, err = ms.platform.GetFileContentsFromDisk(diskPath, ms.userdataFilePath)
-	if err != nil {
-		return bosherr.WrapError(err, "Reading contents of user_data on config drive")
-	}
-	ms.logger.Debug(ms.logTag, "Userdata file contents: %s", contents)
-
 	var userdata UserDataContentsType
-	err = json.Unmarshal(contents, &userdata)
+	err = json.Unmarshal(contents[1], &userdata)
 	if err != nil {
 		return bosherr.WrapError(err, "Parsing config drive metadata from user_data")
 	}

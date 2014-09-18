@@ -41,8 +41,8 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 					metadataContents, err := json.Marshal(MetadataContentsType{})
 					Expect(err).ToNot(HaveOccurred())
 
-					platform.SetGetFileContentsFromDisk("ec2/latest/meta-data.json", metadataContents, nil)
-					platform.SetGetFileContentsFromDisk("ec2/latest/user-data", []byte("{}"), nil)
+					platform.SetGetFilesContentsFromDisk("ec2/latest/meta-data.json", metadataContents, nil)
+					platform.SetGetFilesContentsFromDisk("ec2/latest/user-data", []byte("{}"), nil)
 				})
 
 				It("returns config drive metadata service", func() {
@@ -65,7 +65,7 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 
 			Context("when config drive metadata service fails to load", func() {
 				BeforeEach(func() {
-					platform.SetGetFileContentsFromDisk("meta_data.json", []byte{}, errors.New("fake-read-disk-error"))
+					platform.SetGetFilesContentsFromDisk("meta_data.json", []byte{}, errors.New("fake-read-disk-error"))
 				})
 
 				It("returns http metadata service", func() {

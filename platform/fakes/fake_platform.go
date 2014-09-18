@@ -70,7 +70,7 @@ type FakePlatform struct {
 	GetFileContentsFromCDROMContents []byte
 
 	GetFileContentsFromDiskDiskPaths []string
-	GetFileContentsFromDiskFileNames []string
+	GetFileContentsFromDiskFileNames [][]string
 	GetFileContentsFromDiskContents  map[string][]byte
 	GetFileContentsFromDiskErrs      map[string]error
 
@@ -115,7 +115,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.UserPasswords = make(map[string]string)
 	platform.ScsiDiskMap = make(map[string]string)
 	platform.GetFileContentsFromDiskDiskPaths = []string{}
-	platform.GetFileContentsFromDiskFileNames = []string{}
+	platform.GetFileContentsFromDiskFileNames = [][]string{}
 	platform.GetFileContentsFromDiskContents = map[string][]byte{}
 	platform.GetFileContentsFromDiskErrs = map[string]error{}
 	return
@@ -253,13 +253,24 @@ func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, e
 	return
 }
 
-func (p *FakePlatform) GetFileContentsFromDisk(diskPath string, fileName string) ([]byte, error) {
+func (p *FakePlatform) GetFilesContentsFromDisk(diskPath string, fileNames []string) ([][]byte, error) {
 	p.GetFileContentsFromDiskDiskPaths = append(p.GetFileContentsFromDiskDiskPaths, diskPath)
-	p.GetFileContentsFromDiskFileNames = append(p.GetFileContentsFromDiskFileNames, fileName)
-	return p.GetFileContentsFromDiskContents[fileName], p.GetFileContentsFromDiskErrs[fileName]
+	p.GetFileContentsFromDiskFileNames = append(p.GetFileContentsFromDiskFileNames, fileNames)
+
+	result := [][]byte{}
+	for _, fileName := range fileNames {
+		err := p.GetFileContentsFromDiskErrs[fileName]
+		if err != nil {
+			return [][]byte{}, err
+		}
+
+		result = append(result, p.GetFileContentsFromDiskContents[fileName])
+	}
+
+	return result, nil
 }
 
-func (p *FakePlatform) SetGetFileContentsFromDisk(fileName string, contents []byte, err error) {
+func (p *FakePlatform) SetGetFilesContentsFromDisk(fileName string, contents []byte, err error) {
 	p.GetFileContentsFromDiskContents[fileName] = contents
 	p.GetFileContentsFromDiskErrs[fileName] = err
 }

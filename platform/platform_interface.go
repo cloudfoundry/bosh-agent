@@ -49,7 +49,7 @@ type Platform interface {
 	IsPersistentDiskMounted(path string) (result bool, err error)
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
-	GetFileContentsFromDisk(diskPath, filePath string) (contents []byte, err error)
+	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)
 
 	// Network misc
 	PrepareForNetworkingChange() error

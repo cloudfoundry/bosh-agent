@@ -27,7 +27,7 @@ var _ = Describe("Cdutil", func() {
 	})
 
 	It("gets file contents from CDROM", func() {
-		contents, err := cdutil.GetFileContents("env")
+		contents, err := cdutil.GetFilesContents([]string{"env"})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(cdrom.Mounted).To(Equal(false))
@@ -35,7 +35,8 @@ var _ = Describe("Cdutil", func() {
 		Expect(fs.FileExists("/fake/settings/dir")).To(Equal(true))
 		Expect(cdrom.MountMountPath).To(Equal("/fake/settings/dir"))
 
-		Expect(contents).To(Equal([]byte("fake env contents")))
+		Expect(len(contents)).To(Equal(1))
+		Expect(contents[0]).To(Equal([]byte("fake env contents")))
 	})
 
 })

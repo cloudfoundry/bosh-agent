@@ -1078,23 +1078,35 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 	Describe("GetFileContentsFromCDROM", func() {
 		It("delegates to cdutil", func() {
-			cdutil.GetFileContentsContents = []byte("fake-contents")
+			cdutil.GetFilesContentsContents = [][]byte{[]byte("fake-contents")}
 			filename := "fake-env"
 			contents, err := platform.GetFileContentsFromCDROM(filename)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cdutil.GetFileContentsFilename).To(Equal(filename))
-			Expect(contents).To(Equal(cdutil.GetFileContentsContents))
+			Expect(cdutil.GetFilesContentsFileNames[0]).To(Equal(filename))
+			Expect(contents).To(Equal([]byte("fake-contents")))
 		})
 	})
 
-	Describe("GetFileContentsFromDisk", func() {
+	Describe("GetFilesContentsFromDisk", func() {
 		It("delegates to diskutil", func() {
-			diskManager.FakeDiskUtil.GetFileContentsContents = []byte("fake-contents")
-			contents, err := platform.GetFileContentsFromDisk("fake-disk-path", "fake-file-path")
+			diskManager.FakeDiskUtil.GetFilesContentsContents = [][]byte{
+				[]byte("fake-contents-1"),
+				[]byte("fake-contents-2"),
+			}
+			contents, err := platform.GetFilesContentsFromDisk(
+				"fake-disk-path",
+				[]string{"fake-file-path-1", "fake-file-path-2"},
+			)
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(diskManager.DiskUtilDiskPath).To(Equal("fake-disk-path"))
-			Expect(diskManager.FakeDiskUtil.GetFileContentsFilename).To(Equal("fake-file-path"))
-			Expect(contents).To(Equal([]byte("fake-contents")))
+			Expect(diskManager.FakeDiskUtil.GetFilesContentsFileNames).To(Equal(
+				[]string{"fake-file-path-1", "fake-file-path-2"},
+			))
+			Expect(contents).To(Equal([][]byte{
+				[]byte("fake-contents-1"),
+				[]byte("fake-contents-2"),
+			}))
 		})
 	})
 

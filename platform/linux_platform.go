@@ -135,12 +135,17 @@ func (p linux) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
 }
 
-func (p linux) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
-	return p.cdutil.GetFileContents(fileName)
+func (p linux) GetFileContentsFromCDROM(fileName string) (content []byte, err error) {
+	contents, err := p.cdutil.GetFilesContents([]string{fileName})
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return contents[0], nil
 }
 
-func (p linux) GetFileContentsFromDisk(diskPath string, fileName string) (contents []byte, err error) {
-	return p.diskManager.GetDiskUtil(diskPath).GetFileContents(fileName)
+func (p linux) GetFilesContentsFromDisk(diskPath string, fileNames []string) ([][]byte, error) {
+	return p.diskManager.GetDiskUtil(diskPath).GetFilesContents(fileNames)
 }
 
 func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {

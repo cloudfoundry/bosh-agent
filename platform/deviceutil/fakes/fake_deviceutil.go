@@ -1,9 +1,9 @@
 package fakes
 
 type FakeDeviceUtil struct {
-	GetFileContentsFilename string
-	GetFileContentsError    error
-	GetFileContentsContents []byte
+	GetFilesContentsFileNames []string
+	GetFilesContentsError     error
+	GetFilesContentsContents  [][]byte
 }
 
 func NewFakeDeviceUtil() (util *FakeDeviceUtil) {
@@ -11,7 +11,7 @@ func NewFakeDeviceUtil() (util *FakeDeviceUtil) {
 	return
 }
 
-func (util *FakeDeviceUtil) GetFileContents(fileName string) ([]byte, error) {
-	util.GetFileContentsFilename = fileName
-	return util.GetFileContentsContents, util.GetFileContentsError
+func (util *FakeDeviceUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
+	util.GetFilesContentsFileNames = fileNames
+	return util.GetFilesContentsContents, util.GetFilesContentsError
 }

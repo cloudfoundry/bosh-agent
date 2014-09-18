@@ -1,5 +1,5 @@
 package deviceutil
 
 type DeviceUtil interface {
-	GetFileContents(fileName string) (contents []byte, err error)
+	GetFilesContents(fileNames []string) (contents [][]byte, err error)
 }
