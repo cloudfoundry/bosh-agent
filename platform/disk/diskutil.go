@@ -56,10 +56,10 @@ func (util diskUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
 		contents = append(contents, content)
 	}
 
-	_, err = util.mounter.Unmount(util.diskPath)
-	util.logger.Debug(util.logTag, "Unmounting disk path", util.diskPath)
+	_, err = util.mounter.Unmount(tempDir)
+	util.logger.Debug(util.logTag, "Unmounting disk path %s", tempDir)
 	if err != nil {
-		return [][]byte{}, bosherr.WrapError(err, "Unmounting path %s", util.diskPath)
+		return [][]byte{}, bosherr.WrapError(err, "Unmounting path %s", tempDir)
 	}
 
 	return contents, nil

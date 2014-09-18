@@ -65,7 +65,7 @@ var _ = Describe("Diskutil", func() {
 				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("fake-disk-path"))
+				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("fake-tempdir"))
 			})
 
 			It("cleans up temporary directory after reading settings", func() {
