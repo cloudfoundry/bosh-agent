@@ -152,7 +152,7 @@ func init() {
 				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
 
 				// Wait for some time fixing default SHA1 check to stay backwards compatible
-				fixDeadline := time.Date(2014, time.September, 22, 6, 0, 0, 0, time.UTC)
+				fixDeadline := time.Date(2014, time.November, 13, 6, 0, 0, 0, time.UTC)
 
 				if time.Now().After(fixDeadline) {
 					Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
