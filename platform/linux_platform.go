@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
+	"runtime"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -681,7 +682,18 @@ func (p linux) IsPersistentDiskMounted(path string) (bool, error) {
 }
 
 func (p linux) StartMonit() error {
-	_, _, _, err := p.cmdRunner.RunCommand("sv", "up", "monit")
+	var err error
+	if runtime.GOARCH == "ppc64" {
+		if _, err :=  os.Stat("/etc/service/monit"); err == nil {
+			// Need to make sure that runsv has been invoked before 
+			//sv up monit inside chroot while building a stemcell
+			cmd := boshsys.Command{Name:"runsv", 
+				Args:[]string{"/etc/service/monit/"}}
+                       _, err = p.cmdRunner.RunComplexCommandAsync(cmd)
+		}
+	}
+	_, _, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
+
 	if err != nil {
 		return bosherr.WrapError(err, "Shelling out to sv")
 	}

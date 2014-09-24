@@ -32,6 +32,12 @@ func ParseOptions(args []string) (options, error) {
 
 	var noAlerts bool
 	flagSet.BoolVar(&noAlerts, "no-alerts", false, "don't process alerts (ignored by go agent)")
+        // cannot call flagSet.Parse in the return statement due to gccgo
+        // execution order issues: https://code.google.com/p/go/issues/detail?id=8698&thanks=8698&ts=1410376474
+        err := flagSet.Parse(args[1:])
 
-	return opts, flagSet.Parse(args[1:])
+
+        return opts, err
+
+
 }
