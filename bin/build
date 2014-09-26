@@ -3,12 +3,9 @@
 set -e
 
 if [ "`uname -m`" == "ppc64le" ]; then
-
-export PATH=/usr/local/gccgo/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/gccgo/lib64
-
+  export PATH=/usr/local/gccgo/bin:$PATH
+  export LD_LIBRARY_PATH=/usr/local/gccgo/lib64
 fi
-
 
 bin=$(dirname $0)
 
