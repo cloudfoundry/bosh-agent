@@ -101,7 +101,7 @@ func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 
 	defer s.blobstore.CleanUp(file)
 
-	err = s.compressor.DecompressFileToDir(file, tmpDir)
+	err = s.compressor.DecompressFileToDir(file, tmpDir, boshcmd.CompressorOptions{})
 	if err != nil {
 		return bosherr.WrapError(err, "Decompressing package files")
 	}

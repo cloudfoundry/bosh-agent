@@ -178,7 +178,7 @@ func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) 
 		}
 	}
 
-	err := c.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
+	err := c.compressor.DecompressFileToDir(archivePath, tmpInstallPath, boshcmd.CompressorOptions{})
 	if err != nil {
 		return bosherr.WrapError(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
 	}

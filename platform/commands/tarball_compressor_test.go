@@ -116,7 +116,7 @@ var _ = Describe("tarballCompressor", func() {
 
 	Describe("DecompressFileToDir", func() {
 		It("decompresses the file to the given directory", func() {
-			err := compressor.DecompressFileToDir(fixtureSrcTgz(), dstDir)
+			err := compressor.DecompressFileToDir(fixtureSrcTgz(), dstDir, CompressorOptions{})
 			Expect(err).ToNot(HaveOccurred())
 
 			content, err := fs.ReadFileString(dstDir + "/not-nested-file")
@@ -138,7 +138,7 @@ var _ = Describe("tarballCompressor", func() {
 		It("returns error if the destination does not exist", func() {
 			fs.RemoveAll(dstDir)
 
-			err := compressor.DecompressFileToDir(fixtureSrcTgz(), dstDir)
+			err := compressor.DecompressFileToDir(fixtureSrcTgz(), dstDir, CompressorOptions{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(dstDir))
 		})
@@ -148,13 +148,35 @@ var _ = Describe("tarballCompressor", func() {
 			compressor := NewTarballCompressor(cmdRunner, fs)
 
 			tarballPath := fixtureSrcTgz()
-			err := compressor.DecompressFileToDir(tarballPath, dstDir)
+			err := compressor.DecompressFileToDir(tarballPath, dstDir, CompressorOptions{})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(1).To(Equal(len(cmdRunner.RunCommands)))
 			Expect(cmdRunner.RunCommands[0]).To(Equal(
 				[]string{
 					"tar", "--no-same-owner",
+					"-xzvf", tarballPath,
+					"-C", dstDir,
+				},
+			))
+		})
+
+		It("uses same owner option", func() {
+			cmdRunner := fakesys.NewFakeCmdRunner()
+			compressor := NewTarballCompressor(cmdRunner, fs)
+
+			tarballPath := fixtureSrcTgz()
+			err := compressor.DecompressFileToDir(
+				tarballPath,
+				dstDir,
+				CompressorOptions{SameOwner: true},
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(1).To(Equal(len(cmdRunner.RunCommands)))
+			Expect(cmdRunner.RunCommands[0]).To(Equal(
+				[]string{
+					"tar", "--same-owner",
 					"-xzvf", tarballPath,
 					"-C", dstDir,
 				},

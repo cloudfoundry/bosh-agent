@@ -108,7 +108,7 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 
 	defer s.blobstore.CleanUp(file)
 
-	err = s.compressor.DecompressFileToDir(file, tmpDir)
+	err = s.compressor.DecompressFileToDir(file, tmpDir, boshcmd.CompressorOptions{})
 	if err != nil {
 		return bosherr.WrapError(err, "Decompressing files to temp dir")
 	}
