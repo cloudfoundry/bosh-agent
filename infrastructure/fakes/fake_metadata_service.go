@@ -14,6 +14,8 @@ type FakeMetadataService struct {
 
 	RegistryEndpoint       string
 	GetRegistryEndpointErr error
+
+	Available bool
 }
 
 func (ms FakeMetadataService) Load() error {
@@ -34,4 +36,8 @@ func (ms FakeMetadataService) GetServerName() (string, error) {
 
 func (ms FakeMetadataService) GetRegistryEndpoint() (string, error) {
 	return ms.RegistryEndpoint, ms.GetRegistryEndpointErr
+}
+
+func (ms FakeMetadataService) IsAvailable() bool {
+	return ms.Available
 }

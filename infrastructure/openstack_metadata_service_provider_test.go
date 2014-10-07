@@ -2,7 +2,6 @@ package infrastructure_test
 
 import (
 	"encoding/json"
-	"errors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -45,13 +44,13 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 					platform.SetGetFilesContentsFromDisk("ec2/latest/user-data", []byte("{}"), nil)
 				})
 
-				It("returns config drive metadata service", func() {
+				It("returns a multi source metadata service", func() {
 					configDriveDiskPaths := []string{
 						"/dev/disk/by-label/CONFIG-2",
 						"/dev/disk/by-label/config-2",
 					}
 
-					expectedMetadataService := NewConfigDriveMetadataService(
+					configDriveMetadataService := NewConfigDriveMetadataService(
 						fakeresolver,
 						platform,
 						configDriveDiskPaths,
@@ -59,18 +58,15 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 						"ec2/latest/user-data",
 						logger,
 					)
-					Expect(openstackMetadataServiceProvider.Get()).To(Equal(expectedMetadataService))
-				})
-			})
 
-			Context("when config drive metadata service fails to load", func() {
-				BeforeEach(func() {
-					platform.SetGetFilesContentsFromDisk("meta_data.json", []byte{}, errors.New("fake-read-disk-error"))
-				})
+					httpMetadataService := NewHTTPMetadataService("http://169.254.169.254", fakeresolver)
 
-				It("returns http metadata service", func() {
-					expectedMetadataService := NewHTTPMetadataService("http://169.254.169.254", fakeresolver)
-					Expect(openstackMetadataServiceProvider.Get()).To(Equal(expectedMetadataService))
+					metadataService := openstackMetadataServiceProvider.Get()
+					multiSourceService, ok := metadataService.(*MultiSourceMetadataService)
+					Expect(ok).To(BeTrue())
+
+					Expect(multiSourceService.Services[0]).To(Equal(configDriveMetadataService))
+					Expect(multiSourceService.Services[1]).To(Equal(httpMetadataService))
 				})
 			})
 		})

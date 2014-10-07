@@ -29,14 +29,18 @@ func NewOpenstackMetadataServiceProvider(
 }
 
 func (inf openstackServiceProvider) Get() MetadataService {
+	httpMetadataService := NewHTTPMetadataService(
+		"http://169.254.169.254",
+		inf.resolver,
+	)
+
 	if inf.metadataServiceOptions.UseConfigDrive {
-		inf.logger.Debug(inf.logTag, "Loading config drive metadata service")
 		configDriveDiskPaths := []string{
 			"/dev/disk/by-label/CONFIG-2",
 			"/dev/disk/by-label/config-2",
 		}
 
-		metadataService := NewConfigDriveMetadataService(
+		confDriveMetadataService := NewConfigDriveMetadataService(
 			inf.resolver,
 			inf.platform,
 			configDriveDiskPaths,
@@ -44,17 +48,14 @@ func (inf openstackServiceProvider) Get() MetadataService {
 			"ec2/latest/user-data",
 			inf.logger,
 		)
-		err := metadataService.Load()
-		if err == nil {
-			return metadataService
-		}
 
-		inf.logger.Warn(inf.logTag, "Failed to load config drive metadata service", err)
+		metadataService := NewMultiSourceMetadataService(
+			confDriveMetadataService,
+			httpMetadataService,
+		)
+
+		return metadataService
 	}
 
-	inf.logger.Debug(inf.logTag, "Using http metadata service")
-	return NewHTTPMetadataService(
-		"http://169.254.169.254",
-		inf.resolver,
-	)
+	return httpMetadataService
 }

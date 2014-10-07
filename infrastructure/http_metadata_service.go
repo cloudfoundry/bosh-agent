@@ -96,6 +96,10 @@ func (ms httpMetadataService) GetRegistryEndpoint() (string, error) {
 	return endpoint, nil
 }
 
+func (ms httpMetadataService) IsAvailable() bool {
+	return true
+}
+
 func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 	var userData UserDataContentsType
 

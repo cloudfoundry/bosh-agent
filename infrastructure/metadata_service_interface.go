@@ -1,7 +1,7 @@
 package infrastructure
 
 type MetadataService interface {
-	Load() error
+	IsAvailable() bool
 	GetPublicKey() (string, error)
 	GetInstanceID() (string, error)
 	GetServerName() (string, error)

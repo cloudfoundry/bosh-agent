@@ -27,15 +27,13 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		Expect(err).ToNot(HaveOccurred())
 		platform.SetGetFilesContentsFromDisk("fake-metadata-path", metadataJSON, nil)
 
-		err = metadataService.Load()
-		Expect(err).ToNot(HaveOccurred())
+		Expect(metadataService.IsAvailable()).To(BeTrue())
 	}
 
 	updateUserdata := func(userdataContents string) {
 		platform.SetGetFilesContentsFromDisk("fake-userdata-path", []byte(userdataContents), nil)
 
-		err := metadataService.Load()
-		Expect(err).ToNot(HaveOccurred())
+		Expect(metadataService.IsAvailable()).To(BeTrue())
 	}
 
 	BeforeEach(func() {
@@ -69,19 +67,19 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		updateMetadata(metadata)
 	})
 
-	Describe("Load", func() {
+	Describe("IsAvailable", func() {
+		It("return true when it can load successfully", func() {
+			Expect(metadataService.IsAvailable()).To(BeTrue())
+		})
+
 		It("returns an error if it fails to read meta-data.json from disk", func() {
 			platform.SetGetFilesContentsFromDisk("fake-metadata-path", []byte{}, errors.New("fake-read-disk-error"))
-			err := metadataService.Load()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
+			Expect(metadataService.IsAvailable()).To(BeFalse())
 		})
 
 		It("tries to load meta-data.json from potential disk locations", func() {
 			platform.SetGetFilesContentsFromDisk("fake-metadata-path", []byte{}, errors.New("fake-read-disk-error"))
-			err := metadataService.Load()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
+			Expect(metadataService.IsAvailable()).To(BeFalse())
 
 			Expect(platform.GetFileContentsFromDiskDiskPaths).To(ContainElement("fake-disk-path-1"))
 			Expect(platform.GetFileContentsFromDiskDiskPaths).To(ContainElement("fake-disk-path-2"))
@@ -89,23 +87,17 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 
 		It("returns an error if it fails to parse meta-data.json contents", func() {
 			platform.SetGetFilesContentsFromDisk("fake-metadata-path", []byte("broken"), nil)
-			err := metadataService.Load()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Parsing config drive metadata from meta_data.json"))
+			Expect(metadataService.IsAvailable()).To(BeFalse())
 		})
 
 		It("returns an error if it fails to read user_data from disk", func() {
 			platform.SetGetFilesContentsFromDisk("fake-userdata-path", []byte{}, errors.New("fake-read-disk-error"))
-			err := metadataService.Load()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
+			Expect(metadataService.IsAvailable()).To(BeFalse())
 		})
 
 		It("returns an error if it fails to parse user_data contents", func() {
 			platform.SetGetFilesContentsFromDisk("fake-userdata-path", []byte("broken"), nil)
-			err := metadataService.Load()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Parsing config drive metadata from user_data"))
+			Expect(metadataService.IsAvailable()).To(BeFalse())
 		})
 	})
 

@@ -39,23 +39,6 @@ func NewConfigDriveMetadataService(
 	}
 }
 
-func (ms *configDriveMetadataService) Load() error {
-	ms.logger.Debug(ms.logTag, "Loading config drive metadata service")
-	var err error
-
-	for _, diskPath := range ms.diskPaths {
-		err = ms.loadFromDiskPath(diskPath)
-		if err == nil {
-			ms.logger.Debug(ms.logTag, "Successfully loaded config from %s", diskPath)
-			return nil
-		}
-
-		ms.logger.Warn(ms.logTag, "Failed to load config from %s", diskPath, err)
-	}
-
-	return err
-}
-
 func (ms *configDriveMetadataService) GetPublicKey() (string, error) {
 	if firstPublicKey, ok := ms.metadataContents.PublicKeys["0"]; ok {
 		if openSSHKey, ok := firstPublicKey["openssh-key"]; ok {
@@ -104,6 +87,27 @@ func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
 
 	ms.logger.Debug(ms.logTag, "Registry endpoint %s was resolved to %s", endpoint, resolvedEndpoint)
 	return resolvedEndpoint, nil
+}
+
+func (ms *configDriveMetadataService) IsAvailable() bool {
+	return ms.load() == nil
+}
+
+func (ms *configDriveMetadataService) load() error {
+	ms.logger.Debug(ms.logTag, "Loading config drive metadata service")
+	var err error
+
+	for _, diskPath := range ms.diskPaths {
+		err = ms.loadFromDiskPath(diskPath)
+		if err == nil {
+			ms.logger.Debug(ms.logTag, "Successfully loaded config from %s", diskPath)
+			return nil
+		}
+
+		ms.logger.Warn(ms.logTag, "Failed to load config from %s", diskPath, err)
+	}
+
+	return err
 }
 
 func (ms *configDriveMetadataService) loadFromDiskPath(diskPath string) error {
