@@ -1,4 +1,4 @@
-package mbus
+package agent
 
 import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"

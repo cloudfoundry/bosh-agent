@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/cloudfoundry/yagnats"
 	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/cloudfoundry/yagnats"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
@@ -17,7 +18,6 @@ import (
 )
 
 const (
-	natsHandlerLogTag = "NATS Handler"
 	responseMaxLength = 1024 * 1024
 )
 
@@ -26,6 +26,7 @@ type natsHandler struct {
 	client          yagnats.NATSClient
 	logger          boshlog.Logger
 	handlerFuncs    []boshhandler.Func
+	logTag          string
 }
 
 func NewNatsHandler(
@@ -37,6 +38,7 @@ func NewNatsHandler(
 		settingsService: settingsService,
 		client:          client,
 		logger:          logger,
+		logTag:          "NATS Handler",
 	}
 }
 
@@ -70,7 +72,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 
 	subject := fmt.Sprintf("agent.%s", settings.AgentID)
 
-	h.logger.Info(natsHandlerLogTag, "Subscribing to %s", subject)
+	h.logger.Info(h.logTag, "Subscribing to %s", subject)
 
 	_, err = h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
 		for _, handlerFunc := range h.handlerFuncs {
@@ -91,24 +93,19 @@ func (h *natsHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
 	h.handlerFuncs = append(h.handlerFuncs, handlerFunc)
 }
 
-func (h natsHandler) SendToHealthManager(topic string, payload interface{}) error {
-	msgBytes := []byte("")
-
-	if payload != nil {
-		var err error
-		msgBytes, err = json.Marshal(payload)
-		if err != nil {
-			return bosherr.WrapError(err, "Marshalling HM message payload")
-		}
+func (h natsHandler) Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error {
+	bytes, err := json.Marshal(message)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling message (target=%s, topic=%s): %#v", message)
 	}
 
-	h.logger.Info(natsHandlerLogTag, "Sending HM message '%s'", topic)
-	h.logger.DebugWithDetails(natsHandlerLogTag, "Payload", msgBytes)
+	h.logger.Info(h.logTag, "Sending %s message '%s'", target, topic)
+	h.logger.DebugWithDetails(h.logTag, "Message Payload", string(bytes))
 
 	settings := h.settingsService.GetSettings()
 
-	subject := fmt.Sprintf("hm.agent.%s.%s", topic, settings.AgentID)
-	return h.client.Publish(subject, msgBytes)
+	subject := fmt.Sprintf("%s.agent.%s.%s", target, topic, settings.AgentID)
+	return h.client.Publish(subject, bytes)
 }
 
 func (h natsHandler) Stop() {
@@ -123,7 +120,7 @@ func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhan
 		h.logger,
 	)
 	if err != nil {
-		h.logger.Error(natsHandlerLogTag, "Running handler: %s", err)
+		h.logger.Error(h.logTag, "Running handler: %s", err)
 		return
 	}
 

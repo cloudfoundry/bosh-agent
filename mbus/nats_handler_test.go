@@ -1,8 +1,6 @@
 package mbus_test
 
 import (
-	"encoding/json"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -204,16 +202,14 @@ func init() {
 			})
 		})
 
-		Describe("SendToHealthManager", func() {
-			It("sends periodic heartbeats", func() {
+		Describe("Send", func() {
+			It("sends the message over nats to a subject that includes the target and topic", func() {
 				errCh := make(chan error, 1)
 
-				jobName := "foo"
-				jobIndex := 0
-				expectedHeartbeat := Heartbeat{Job: &jobName, Index: &jobIndex}
+				payload := map[string]string{"key1": "value1", "keyA": "valueA"}
 
 				go func() {
-					errCh <- handler.SendToHealthManager("heartbeat", expectedHeartbeat)
+					errCh <- handler.Send(boshhandler.HealthMonitor, boshhandler.Heartbeat, payload)
 				}()
 
 				var err error
@@ -224,11 +220,10 @@ func init() {
 
 				Expect(client.PublishedMessageCount()).To(Equal(1))
 				messages := client.PublishedMessages("hm.agent.heartbeat.my-agent-id")
-				Expect(len(messages)).To(Equal(1))
-				message := messages[0]
-
-				expectedJSON, _ := json.Marshal(expectedHeartbeat)
-				Expect(string(expectedJSON)).To(Equal(string(message.Payload)))
+				Expect(messages).To(HaveLen(1))
+				Expect(messages[0].Payload).To(Equal(
+					[]byte("{\"key1\":\"value1\",\"keyA\":\"valueA\"}"),
+				))
 			})
 		})
 	})

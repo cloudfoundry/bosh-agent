@@ -16,22 +16,23 @@ type FakeHandler struct {
 	ReceivedStop  bool
 
 	// Keeps list of all receivd health manager requests
-	hmRequestsLock sync.Mutex
-	hmRequests     []HMRequest
+	sendLock   sync.Mutex
+	sendInputs []SendInput
 
 	RegisteredAdditionalFunc boshhandler.Func
 
-	SendToHealthManagerCallBack func(HMRequest)
-	SendToHealthManagerErr      error
+	SendCallback func(SendInput)
+	SendErr      error
 }
 
-type HMRequest struct {
-	Topic   string
-	Payload interface{}
+type SendInput struct {
+	Target  boshhandler.Target
+	Topic   boshhandler.Topic
+	Message interface{}
 }
 
 func NewFakeHandler() *FakeHandler {
-	return &FakeHandler{hmRequests: []HMRequest{}}
+	return &FakeHandler{sendInputs: []SendInput{}}
 }
 
 func (h *FakeHandler) Run(handlerFunc boshhandler.Func) error {
@@ -64,23 +65,27 @@ func (h *FakeHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
 	h.RegisteredAdditionalFunc = handlerFunc
 }
 
-func (h *FakeHandler) SendToHealthManager(topic string, payload interface{}) error {
-	h.hmRequestsLock.Lock()
-	defer h.hmRequestsLock.Unlock()
+func (h *FakeHandler) Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error {
+	h.sendLock.Lock()
+	defer h.sendLock.Unlock()
 
-	hmRequest := HMRequest{topic, payload}
-	h.hmRequests = append(h.hmRequests, hmRequest)
+	sendInput := SendInput{
+		Target:  target,
+		Topic:   topic,
+		Message: message,
+	}
+	h.sendInputs = append(h.sendInputs, sendInput)
 
-	if h.SendToHealthManagerCallBack != nil {
-		h.SendToHealthManagerCallBack(hmRequest)
+	if h.SendCallback != nil {
+		h.SendCallback(sendInput)
 	}
 
-	return h.SendToHealthManagerErr
+	return h.SendErr
 }
 
-func (h *FakeHandler) HMRequests() []HMRequest {
-	h.hmRequestsLock.Lock()
-	defer h.hmRequestsLock.Unlock()
+func (h *FakeHandler) SendInputs() []SendInput {
+	h.sendLock.Lock()
+	defer h.sendLock.Unlock()
 
-	return h.hmRequests
+	return h.sendInputs
 }

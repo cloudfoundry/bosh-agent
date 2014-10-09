@@ -61,7 +61,7 @@ func (h HTTPSHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
 	panic("HTTPSHandler does not support registering additional handler funcs")
 }
 
-func (h HTTPSHandler) SendToHealthManager(topic string, payload interface{}) error {
+func (h HTTPSHandler) Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error {
 	return nil
 }
 

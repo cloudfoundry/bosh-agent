@@ -8,20 +8,22 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	fakealert "github.com/cloudfoundry/bosh-agent/agent/alert/fakes"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeagent "github.com/cloudfoundry/bosh-agent/agent/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
+	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
+	fakeuuid "github.com/cloudfoundry/bosh-agent/uuid/fakes"
 )
 
 func init() {
@@ -31,11 +33,12 @@ func init() {
 			handler          *fakembus.FakeHandler
 			platform         *fakeplatform.FakePlatform
 			actionDispatcher *fakeagent.FakeActionDispatcher
-			alertBuilder     *fakealert.FakeAlertBuilder
-			alertSender      *fakeagent.FakeAlertSender
 			jobSupervisor    *fakejobsuper.FakeJobSupervisor
 			specService      *fakeas.FakeV1Service
 			syslogServer     *fakesyslog.FakeServer
+			settingsService  *fakesettings.FakeSettingsService
+			uuidGenerator    *fakeuuid.FakeGenerator
+			timeService      *faketime.FakeService
 			agent            Agent
 		)
 
@@ -44,21 +47,24 @@ func init() {
 			handler = &fakembus.FakeHandler{}
 			platform = fakeplatform.NewFakePlatform()
 			actionDispatcher = &fakeagent.FakeActionDispatcher{}
-			alertBuilder = fakealert.NewFakeAlertBuilder()
-			alertSender = &fakeagent.FakeAlertSender{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			specService = fakeas.NewFakeV1Service()
 			syslogServer = &fakesyslog.FakeServer{}
+			settingsService = &fakesettings.FakeSettingsService{}
+			uuidGenerator = &fakeuuid.FakeGenerator{}
+			timeService = &faketime.FakeService{}
 			agent = New(
 				logger,
 				handler,
 				platform,
 				actionDispatcher,
-				alertSender,
 				jobSupervisor,
 				specService,
 				syslogServer,
 				5*time.Millisecond,
+				settingsService,
+				uuidGenerator,
+				timeService,
 			)
 		})
 
@@ -110,7 +116,7 @@ func init() {
 
 				expectedJobName := "fake-job"
 				expectedJobIndex := 1
-				expectedHb := boshmbus.Heartbeat{
+				expectedHb := Heartbeat{
 					Job:      &expectedJobName,
 					Index:    &expectedJobIndex,
 					JobState: "fake-state",
@@ -125,31 +131,37 @@ func init() {
 						handler,
 						platform,
 						actionDispatcher,
-						alertSender,
 						jobSupervisor,
 						specService,
 						syslogServer,
 						5*time.Hour,
+						settingsService,
+						uuidGenerator,
+						timeService,
 					)
 
 					// Immediately exit after sending initial heartbeat
-					handler.SendToHealthManagerErr = errors.New("stop")
+					handler.SendErr = errors.New("stop")
 
 					err := agent.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("stop"))
 
-					Expect(handler.HMRequests()).To(Equal([]fakembus.HMRequest{
-						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
+					Expect(handler.SendInputs()).To(Equal([]fakembus.SendInput{
+						{
+							Target:  boshhandler.HealthMonitor,
+							Topic:   boshhandler.Heartbeat,
+							Message: expectedHb,
+						},
 					}))
 				})
 
 				It("sends periodic heartbeats", func() {
 					sentRequests := 0
-					handler.SendToHealthManagerCallBack = func(_ fakembus.HMRequest) {
+					handler.SendCallback = func(_ fakembus.SendInput) {
 						sentRequests++
 						if sentRequests == 3 {
-							handler.SendToHealthManagerErr = errors.New("stop")
+							handler.SendErr = errors.New("stop")
 						}
 					}
 
@@ -157,10 +169,22 @@ func init() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("stop"))
 
-					Expect(handler.HMRequests()).To(Equal([]fakembus.HMRequest{
-						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
-						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
-						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
+					Expect(handler.SendInputs()).To(Equal([]fakembus.SendInput{
+						{
+							Target:  boshhandler.HealthMonitor,
+							Topic:   boshhandler.Heartbeat,
+							Message: expectedHb,
+						},
+						{
+							Target:  boshhandler.HealthMonitor,
+							Topic:   boshhandler.Heartbeat,
+							Message: expectedHb,
+						},
+						{
+							Target:  boshhandler.HealthMonitor,
+							Topic:   boshhandler.Heartbeat,
+							Message: expectedHb,
+						},
 					}))
 				})
 			})
@@ -194,33 +218,76 @@ func init() {
 			It("sends job monitoring alerts to health manager", func() {
 				handler.KeepOnRunning()
 
-				monitAlert := boshalert.MonitAlert{ID: "fake-monit-alert"}
+				monitAlert := boshalert.MonitAlert{
+					ID:          "fake-monit-alert",
+					Service:     "fake-service",
+					Event:       "fake-event",
+					Action:      "fake-action",
+					Date:        "Sun, 22 May 2011 20:07:41 +0500",
+					Description: "fake-description",
+				}
 				jobSupervisor.JobFailureAlert = &monitAlert
 
-				// Immediately exit from Run() after alert is sent
-				alertSender.SendAlertErr = errors.New("stop")
+				// Fail the first time handler.Send is called for an alert (ignore heartbeats)
+				handler.SendCallback = func(input fakembus.SendInput) {
+					if input.Topic == boshhandler.Alert {
+						handler.SendErr = errors.New("stop")
+					}
+				}
 
 				err := agent.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("stop"))
 
-				Expect(alertSender.SendAlertMonitAlert).To(Equal(monitAlert))
+				expectedAlert := boshalert.Alert{
+					ID:        "fake-monit-alert",
+					Severity:  boshalert.SeverityDefault,
+					Title:     "fake-service - fake-event - fake-action",
+					Summary:   "fake-description",
+					CreatedAt: int64(1306076861),
+				}
+
+				Expect(handler.SendInputs()).To(ContainElement(fakembus.SendInput{
+					Target:  boshhandler.HealthMonitor,
+					Topic:   boshhandler.Alert,
+					Message: expectedAlert,
+				}))
 			})
 
 			It("sends ssh alerts to health manager", func() {
 				handler.KeepOnRunning()
 
-				syslogMsg := boshsyslog.Msg{Content: "fake-content"}
+				syslogMsg := boshsyslog.Msg{Content: "disconnected by user"}
 				syslogServer.StartFirstSyslogMsg = &syslogMsg
 
-				// Immediately exit from Run() after alert is sent
-				alertSender.SendSSHAlertErr = errors.New("stop")
+				uuidGenerator.GeneratedUuid = "fake-uuid"
+				expectedTime := time.Now()
+				timeService.NowTimes = []time.Time{expectedTime}
+
+				// Fail the first time handler.Send is called for an alert (ignore heartbeats)
+				handler.SendCallback = func(input fakembus.SendInput) {
+					if input.Topic == boshhandler.Alert {
+						handler.SendErr = errors.New("stop")
+					}
+				}
 
 				err := agent.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("stop"))
 
-				Expect(alertSender.SendSSHAlertMsg).To(Equal(syslogMsg))
+				expectedAlert := boshalert.Alert{
+					ID:        "fake-uuid",
+					Severity:  boshalert.SeverityWarning,
+					Title:     "SSH Logout",
+					Summary:   "disconnected by user",
+					CreatedAt: expectedTime.Unix(),
+				}
+
+				Expect(handler.SendInputs()).To(ContainElement(fakembus.SendInput{
+					Target:  boshhandler.HealthMonitor,
+					Topic:   boshhandler.Alert,
+					Message: expectedAlert,
+				}))
 			})
 		})
 	})

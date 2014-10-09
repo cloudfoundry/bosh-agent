@@ -1,4 +1,4 @@
-package mbus_test
+package agent_test
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/mbus"
+	. "github.com/cloudfoundry/bosh-agent/agent"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 )
 

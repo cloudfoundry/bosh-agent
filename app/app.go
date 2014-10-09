@@ -6,7 +6,6 @@ import (
 
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
@@ -174,15 +173,6 @@ func (app *app) Setup(args []string) error {
 		actionRunner,
 	)
 
-	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
-
-	alertSender := boshagent.NewConcreteAlertSender(
-		mbusHandler,
-		alertBuilder,
-		uuidGen,
-		timeService,
-	)
-
 	syslogServer := boshsyslog.NewServer(33331, app.logger)
 
 	app.agent = boshagent.New(
@@ -190,11 +180,13 @@ func (app *app) Setup(args []string) error {
 		mbusHandler,
 		app.platform,
 		actionDispatcher,
-		alertSender,
 		jobSupervisor,
 		specService,
 		syslogServer,
 		time.Minute,
+		settingsService,
+		uuidGen,
+		timeService,
 	)
 
 	return nil

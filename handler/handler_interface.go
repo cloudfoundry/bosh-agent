@@ -9,5 +9,5 @@ type Handler interface {
 
 	RegisterAdditionalFunc(handlerFunc Func)
 
-	SendToHealthManager(topic string, payload interface{}) error
+	Send(target Target, topic Topic, message interface{}) error
 }

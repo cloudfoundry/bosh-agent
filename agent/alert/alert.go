@@ -19,11 +19,7 @@ type Alert struct {
 	CreatedAt int64         `json:"created_at"`
 }
 
-type MonitAlert struct {
-	ID          string
-	Service     string
-	Event       string
-	Action      string
-	Date        string
-	Description string
+type Adapter interface {
+	Alert() (Alert, error)
+	IsIgnorable() bool
 }

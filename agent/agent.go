@@ -9,9 +9,11 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
+	boshtime "github.com/cloudfoundry/bosh-agent/time"
+	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
 )
 
 const (
@@ -24,10 +26,12 @@ type Agent struct {
 	platform          boshplatform.Platform
 	actionDispatcher  ActionDispatcher
 	heartbeatInterval time.Duration
-	alertSender       AlertSender
 	jobSupervisor     boshjobsuper.JobSupervisor
 	specService       boshas.V1Service
 	syslogServer      boshsyslog.Server
+	settingsService   boshsettings.Service
+	uuidGenerator     boshuuid.Generator
+	timeService       boshtime.Service
 }
 
 func New(
@@ -35,22 +39,27 @@ func New(
 	mbusHandler boshhandler.Handler,
 	platform boshplatform.Platform,
 	actionDispatcher ActionDispatcher,
-	alertSender AlertSender,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
 	syslogServer boshsyslog.Server,
 	heartbeatInterval time.Duration,
-) (a Agent) {
-	a.logger = logger
-	a.mbusHandler = mbusHandler
-	a.platform = platform
-	a.actionDispatcher = actionDispatcher
-	a.heartbeatInterval = heartbeatInterval
-	a.alertSender = alertSender
-	a.jobSupervisor = jobSupervisor
-	a.specService = specService
-	a.syslogServer = syslogServer
-	return
+	settingsService boshsettings.Service,
+	uuidGenerator boshuuid.Generator,
+	timeService boshtime.Service,
+) Agent {
+	return Agent{
+		logger:            logger,
+		mbusHandler:       mbusHandler,
+		platform:          platform,
+		actionDispatcher:  actionDispatcher,
+		heartbeatInterval: heartbeatInterval,
+		jobSupervisor:     jobSupervisor,
+		specService:       specService,
+		syslogServer:      syslogServer,
+		settingsService:   settingsService,
+		uuidGenerator:     uuidGenerator,
+		timeService:       timeService,
+	}
 }
 
 func (a Agent) Run() error {
@@ -114,28 +123,28 @@ func (a Agent) sendHeartbeat(errCh chan error) {
 		return
 	}
 
-	err = a.mbusHandler.SendToHealthManager("heartbeat", heartbeat)
+	err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Heartbeat, heartbeat)
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending heartbeat")
 		errCh <- err
 	}
 }
 
-func (a Agent) getHeartbeat() (boshmbus.Heartbeat, error) {
+func (a Agent) getHeartbeat() (Heartbeat, error) {
 	a.logger.Debug(agentLogTag, "Building heartbeat")
 	vitalsService := a.platform.GetVitalsService()
 
 	vitals, err := vitalsService.Get()
 	if err != nil {
-		return boshmbus.Heartbeat{}, bosherr.WrapError(err, "Getting job vitals")
+		return Heartbeat{}, bosherr.WrapError(err, "Getting job vitals")
 	}
 
 	spec, err := a.specService.Get()
 	if err != nil {
-		return boshmbus.Heartbeat{}, bosherr.WrapError(err, "Getting job spec")
+		return Heartbeat{}, bosherr.WrapError(err, "Getting job spec")
 	}
 
-	hb := boshmbus.Heartbeat{
+	hb := Heartbeat{
 		Job:      spec.JobSpec.Name,
 		Index:    spec.Index,
 		JobState: a.jobSupervisor.Status(),
@@ -146,9 +155,25 @@ func (a Agent) getHeartbeat() (boshmbus.Heartbeat, error) {
 
 func (a Agent) handleJobFailure(errCh chan error) boshjobsuper.JobFailureHandler {
 	return func(monitAlert boshalert.MonitAlert) error {
-		err := a.alertSender.SendAlert(monitAlert)
+		alertAdapter := boshalert.NewMonitAdapter(monitAlert, a.settingsService, a.timeService)
+		if alertAdapter.IsIgnorable() {
+			a.logger.Debug(agentLogTag, "Ignored monit event: ", monitAlert.Event)
+			return nil
+		}
+
+		severity, found := alertAdapter.Severity()
+		if !found {
+			a.logger.Error(agentLogTag, "Unknown monit event name `%s', using default severity %d", monitAlert.Event, severity)
+		}
+
+		alert, err := alertAdapter.Alert()
 		if err != nil {
-			errCh <- bosherr.WrapError(err, "Sending alert")
+			errCh <- bosherr.WrapError(err, "Adapting monit alert")
+		}
+
+		err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Alert, alert)
+		if err != nil {
+			errCh <- bosherr.WrapError(err, "Sending monit alert")
 		}
 
 		return nil
@@ -157,7 +182,24 @@ func (a Agent) handleJobFailure(errCh chan error) boshjobsuper.JobFailureHandler
 
 func (a Agent) handleSyslogMsg(errCh chan error) boshsyslog.CallbackFunc {
 	return func(msg boshsyslog.Msg) {
-		err := a.alertSender.SendSSHAlert(msg)
+		alertAdapter := boshalert.NewSSHAdapter(
+			msg,
+			a.settingsService,
+			a.uuidGenerator,
+			a.timeService,
+			a.logger,
+		)
+		if alertAdapter.IsIgnorable() {
+			a.logger.Debug(agentLogTag, "Ignored ssh event: ", msg.Content)
+			return
+		}
+
+		alert, err := alertAdapter.Alert()
+		if err != nil {
+			errCh <- bosherr.WrapError(err, "Adapting SSH alert")
+		}
+
+		err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Alert, alert)
 		if err != nil {
 			errCh <- bosherr.WrapError(err, "Sending SSH alert")
 		}

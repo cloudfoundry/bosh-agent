@@ -6,63 +6,70 @@ import (
 	"strings"
 	"time"
 
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshtime "github.com/cloudfoundry/bosh-agent/time"
 )
 
-type concreteBuilder struct {
+type monitAdapter struct {
+	monitAlert      MonitAlert
 	settingsService boshsettings.Service
-	logger          boshlog.Logger
+	timeService     boshtime.Service
 }
 
-func NewBuilder(settingsService boshsettings.Service, logger boshlog.Logger) Builder {
-	return concreteBuilder{
+func NewMonitAdapter(monitAlert MonitAlert, settingsService boshsettings.Service, timeService boshtime.Service) *monitAdapter {
+	return &monitAdapter{
+		monitAlert:      monitAlert,
 		settingsService: settingsService,
-		logger:          logger,
+		timeService:     timeService,
 	}
 }
 
-func (b concreteBuilder) Build(input MonitAlert) (alert Alert, err error) {
-	alert.ID = input.ID
-	alert.Severity = b.getSeverity(input)
-	alert.Title = b.getTitle(input)
-	alert.Summary = input.Description
-	alert.CreatedAt = b.getCreatedAt(input)
-	return
+func (m *monitAdapter) IsIgnorable() bool {
+	severity, _ := m.Severity()
+	return severity == SeverityIgnored
 }
 
-func (b concreteBuilder) getSeverity(input MonitAlert) SeverityLevel {
-	severity, severityFound := eventToSeverity[strings.ToLower(input.Event)]
-	if !severityFound {
-		b.logger.Error("Agent", "Unknown monit event name `%s', using default severity %d", input.Event, SeverityDefault)
-		return SeverityDefault
-	}
-
-	return severity
+func (m *monitAdapter) Alert() (Alert, error) {
+	severity, _ := m.Severity()
+	return Alert{
+		ID:        m.monitAlert.ID,
+		Severity:  severity,
+		Title:     m.title(),
+		Summary:   m.monitAlert.Description,
+		CreatedAt: m.createdAt(),
+	}, nil
 }
 
-func (b concreteBuilder) getTitle(input MonitAlert) string {
-	settings := b.settingsService.GetSettings()
+func (m *monitAdapter) title() string {
+	settings := m.settingsService.GetSettings()
 
 	ips := settings.Networks.IPs()
 	sort.Strings(ips)
 
-	service := input.Service
+	service := m.monitAlert.Service
 
 	if len(ips) > 0 {
 		service = fmt.Sprintf("%s (%s)", service, strings.Join(ips, ", "))
 	}
 
-	return fmt.Sprintf("%s - %s - %s", service, input.Event, input.Action)
+	return fmt.Sprintf("%s - %s - %s", service, m.monitAlert.Event, m.monitAlert.Action)
 }
 
-func (b concreteBuilder) getCreatedAt(input MonitAlert) int64 {
-	createdAt, timeParseErr := time.Parse(time.RFC1123Z, input.Date)
+func (m *monitAdapter) createdAt() int64 {
+	createdAt, timeParseErr := time.Parse(time.RFC1123Z, m.monitAlert.Date)
 	if timeParseErr != nil {
-		createdAt = time.Now()
+		createdAt = m.timeService.Now()
 	}
 
 	return createdAt.Unix()
+}
+
+func (m *monitAdapter) Severity() (severity SeverityLevel, found bool) {
+	severity, found = eventToSeverity[strings.ToLower(m.monitAlert.Event)]
+	if !found {
+		severity = SeverityDefault
+	}
+	return severity, found
 }
 
 var eventToSeverity = map[string]SeverityLevel{
