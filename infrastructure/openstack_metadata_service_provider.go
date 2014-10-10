@@ -38,6 +38,7 @@ func (inf openstackServiceProvider) Get() MetadataService {
 		configDriveDiskPaths := []string{
 			"/dev/disk/by-label/CONFIG-2",
 			"/dev/disk/by-label/config-2",
+			"/dev/disk/by-label/METADATA",
 		}
 
 		confDriveMetadataService := NewConfigDriveMetadataService(
