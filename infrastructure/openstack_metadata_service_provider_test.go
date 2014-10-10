@@ -48,6 +48,7 @@ var _ = Describe("OpenstackMetadataServiceProvider", func() {
 					configDriveDiskPaths := []string{
 						"/dev/disk/by-label/CONFIG-2",
 						"/dev/disk/by-label/config-2",
+						"/dev/disk/by-label/METADATA",
 					}
 
 					configDriveMetadataService := NewConfigDriveMetadataService(
