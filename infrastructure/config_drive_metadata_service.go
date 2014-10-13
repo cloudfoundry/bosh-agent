@@ -104,7 +104,7 @@ func (ms *configDriveMetadataService) load() error {
 			return nil
 		}
 
-		ms.logger.Warn(ms.logTag, "Failed to load config from %s", diskPath, err)
+		ms.logger.Warn(ms.logTag, "Failed to load config from %s - %s", diskPath, err.Error())
 	}
 
 	return err
