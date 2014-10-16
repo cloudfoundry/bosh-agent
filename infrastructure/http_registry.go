@@ -10,16 +10,16 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
-type concreteRegistry struct {
+type httpRegistry struct {
 	metadataService   MetadataService
 	useServerNameAsID bool
 }
 
-func NewConcreteRegistry(
+func NewHTTPRegistry(
 	metadataService MetadataService,
 	useServerNameAsID bool,
-) concreteRegistry {
-	return concreteRegistry{
+) httpRegistry {
+	return httpRegistry{
 		metadataService:   metadataService,
 		useServerNameAsID: useServerNameAsID,
 	}
@@ -29,7 +29,7 @@ type settingsWrapperType struct {
 	Settings string
 }
 
-func (r concreteRegistry) GetSettings() (boshsettings.Settings, error) {
+func (r httpRegistry) GetSettings() (boshsettings.Settings, error) {
 	var settings boshsettings.Settings
 
 	var identifier string

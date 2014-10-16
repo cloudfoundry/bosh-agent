@@ -36,7 +36,7 @@ func NewOpenstackInfrastructure(
 }
 
 func NewOpenstackRegistry(metadataService MetadataService) Registry {
-	return NewConcreteRegistry(metadataService, true)
+	return NewHTTPRegistry(metadataService, true)
 }
 
 func (inf openstackInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {

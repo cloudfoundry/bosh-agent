@@ -37,7 +37,7 @@ func NewAwsInfrastructure(
 }
 
 func NewAwsRegistry(metadataService MetadataService) Registry {
-	return NewConcreteRegistry(metadataService, false)
+	return NewHTTPRegistry(metadataService, false)
 }
 
 func (inf awsInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
