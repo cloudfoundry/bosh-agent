@@ -19,7 +19,7 @@ import (
 type HTTPSHandler struct {
 	parsedURL   *url.URL
 	logger      boshlog.Logger
-	dispatcher  boshdispatcher.HTTPSDispatcher
+	dispatcher  *boshdispatcher.HTTPSDispatcher
 	fs          boshsys.FileSystem
 	dirProvider boshdir.Provider
 }
