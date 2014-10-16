@@ -36,7 +36,7 @@ func init() {
 
 		Describe("NewOpenstackRegistry", func() {
 			It("returns concrete registry with useServerNameAsID set to true", func() {
-				expectedRegistry := NewConcreteRegistry(metadataService, true)
+				expectedRegistry := NewHTTPRegistry(metadataService, true)
 				Expect(NewOpenstackRegistry(metadataService)).To(Equal(expectedRegistry))
 			})
 		})

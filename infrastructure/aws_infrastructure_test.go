@@ -35,7 +35,7 @@ func init() {
 
 		Describe("NewAwsRegistry", func() {
 			It("returns concrete registry with useServerNameAsID set to false", func() {
-				expectedRegistry := NewConcreteRegistry(metadataService, false)
+				expectedRegistry := NewHTTPRegistry(metadataService, false)
 				Expect(NewAwsRegistry(metadataService)).To(Equal(expectedRegistry))
 			})
 		})

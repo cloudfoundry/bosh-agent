@@ -15,7 +15,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
-var _ = Describe("concreteRegistry", func() {
+var _ = Describe("httpRegistry", func() {
 	var (
 		metadataService *fakeinf.FakeMetadataService
 		registry        Registry
@@ -23,7 +23,7 @@ var _ = Describe("concreteRegistry", func() {
 
 	BeforeEach(func() {
 		metadataService = &fakeinf.FakeMetadataService{}
-		registry = NewConcreteRegistry(metadataService, false)
+		registry = NewHTTPRegistry(metadataService, false)
 	})
 
 	Describe("GetSettings", func() {
@@ -51,7 +51,7 @@ var _ = Describe("concreteRegistry", func() {
 
 		Context("when registry is configured to not use server name as id", func() {
 			BeforeEach(func() {
-				registry = NewConcreteRegistry(metadataService, false)
+				registry = NewHTTPRegistry(metadataService, false)
 				metadataService.InstanceID = "fake-identifier"
 				metadataService.RegistryEndpoint = ts.URL
 			})
@@ -213,7 +213,7 @@ var _ = Describe("concreteRegistry", func() {
 
 		Context("when registry is configured to use server name as id", func() {
 			BeforeEach(func() {
-				registry = NewConcreteRegistry(metadataService, true)
+				registry = NewHTTPRegistry(metadataService, true)
 				metadataService.ServerName = "fake-identifier"
 				metadataService.RegistryEndpoint = ts.URL
 			})
