@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"path/filepath"
 	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
@@ -51,11 +52,16 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 		logger,
 	)
 
+	wardenUserDataFilePath := filepath.Join(dirProvider.BoshDir(), "warden-cpi-user-data.json")
+	wardenFallbackFileRegistryPath := filepath.Join(dirProvider.BoshDir(), "warden-cpi-agent-env.json")
+	wardenMetadataService := NewFileMetadataService(wardenUserDataFilePath, fs, logger)
+	wardenRegistryProvider := NewRegistryProvider(wardenMetadataService, wardenFallbackFileRegistryPath, fs)
+
 	p.infrastructures = map[string]Infrastructure{
 		"aws":       awsInfrastructure,
 		"openstack": openstackInfrastructure,
 		"dummy":     NewDummyInfrastructure(fs, dirProvider, platform, dummyDevicePathResolver),
-		"warden":    NewWardenInfrastructure(dirProvider, platform, dummyDevicePathResolver),
+		"warden":    NewWardenInfrastructure(platform, dummyDevicePathResolver, wardenRegistryProvider),
 		"vsphere":   NewVsphereInfrastructure(platform, vsphereDevicePathResolver, logger),
 	}
 	return
