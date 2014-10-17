@@ -1,6 +1,7 @@
 package infrastructure_test
 
 import (
+	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -119,11 +120,24 @@ var _ = Describe("Provider", func() {
 
 		It("returns warden infrastructure", func() {
 			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
+			fs := platform.GetFs()
+			boshDir := platform.GetDirProvider().BoshDir()
+
+			wardenMetadataService := NewFileMetadataService(
+				filepath.Join(boshDir, "warden-cpi-user-data.json"),
+				fs,
+				logger,
+			)
+			expectedRegistryProvider := NewRegistryProvider(
+				wardenMetadataService,
+				filepath.Join(boshDir, "warden-cpi-agent-env.json"),
+				fs,
+			)
 
 			expectedInf := NewWardenInfrastructure(
-				platform.GetDirProvider(),
 				platform,
 				expectedDevicePathResolver,
+				expectedRegistryProvider,
 			)
 
 			inf, err := provider.Get("warden")

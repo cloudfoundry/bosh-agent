@@ -7,7 +7,3 @@ import (
 type Registry interface {
 	GetSettings() (boshsettings.Settings, error)
 }
-
-type RegistryProvider interface {
-	GetRegistry(useServerNameAsID bool) Registry
-}
