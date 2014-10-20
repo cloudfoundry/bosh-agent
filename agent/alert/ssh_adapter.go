@@ -1,7 +1,6 @@
 package alert
 
 import (
-	"fmt"
 	"regexp"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
@@ -12,12 +11,12 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
 )
 
-var syslogMessagePatterns = map[string]string{
-	"disconnected by user":                  "SSH Logout",
-	"Accepted publickey for":                "SSH Login",
-	"Accepted password for":                 "SSH Login",
-	"Failed password for":                   "SSH Access Denied",
-	"Connection closed by .* \\[preauth\\]": "SSH Access Denied",
+var syslogMessageExpressions = map[*regexp.Regexp]string{
+	regexp.MustCompile("disconnected by user"):                  "SSH Logout",
+	regexp.MustCompile("Accepted publickey for"):                "SSH Login",
+	regexp.MustCompile("Accepted password for"):                 "SSH Login",
+	regexp.MustCompile("Failed password for"):                   "SSH Access Denied",
+	regexp.MustCompile("Connection closed by .* \\[preauth\\]"): "SSH Access Denied",
 }
 
 type sshAdapter struct {
@@ -70,13 +69,8 @@ func (m *sshAdapter) Alert() (Alert, error) {
 }
 
 func (m *sshAdapter) title() (title string, found bool) {
-	for pattern, title := range syslogMessagePatterns {
-		matched, err := regexp.MatchString(pattern, m.message.Content)
-		if err != nil {
-			// Pattern failed to compile...
-			fmt.Errorf("Failed matching syslog message: %s", err.Error())
-		}
-		if matched {
+	for expression, title := range syslogMessageExpressions {
+		if expression.MatchString(m.message.Content) {
 			return title, true
 		}
 	}
