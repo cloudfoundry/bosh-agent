@@ -104,24 +104,57 @@ var _ = Describe("retryableBlobstore", func() {
 	})
 
 	Describe("Create", func() {
-		It("delegates to inner blobstore to create blob", func() {
-			innerBlobstore.CreateBlobID = "fake-blob-id"
-			innerBlobstore.CreateFingerprint = "fake-fingerprint"
+		Context("when inner blobstore succeeds before maximum number of create tries (first time)", func() {
+			It("returns blobID and fingerprint without an error", func() {
+				innerBlobstore.CreateBlobID = "fake-blob-id"
+				innerBlobstore.CreateFingerprint = "fake-fingerprint"
 
-			blobID, sha1, err := retryableBlobstore.Create("fake-blob-path")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(blobID).To(Equal("fake-blob-id"))
-			Expect(sha1).To(Equal("fake-fingerprint"))
+				blobID, fingerprint, err := retryableBlobstore.Create("fake-file-name")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(blobID).To(Equal("fake-blob-id"))
+				Expect(fingerprint).To(Equal("fake-fingerprint"))
 
-			Expect(innerBlobstore.CreateFileName).To(Equal("fake-blob-path"))
+				Expect(innerBlobstore.CreateFileNames).To(Equal([]string{"fake-file-name"}))
+			})
 		})
 
-		It("returns error if inner blobstore blob creation fails", func() {
-			innerBlobstore.CreateErr = errors.New("fake-create-error")
+		Context("when inner blobstore succeed exactly at maximum number of create tries", func() {
+			It("returns blobID and fingerprint without an error", func() {
+				innerBlobstore.CreateBlobIDs = []string{"", "", "fake-last-blob-id"}
+				innerBlobstore.CreateFingerprints = []string{"", "", "fake-last-fingerprint"}
+				innerBlobstore.CreateErrs = []error{
+					errors.New("fake-create-err-1"),
+					errors.New("fake-create-err-2"),
+					nil,
+				}
 
-			_, _, err := retryableBlobstore.Create("fake-blob-path")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-create-error"))
+				blobID, fingerprint, err := retryableBlobstore.Create("fake-file-name")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(blobID).To(Equal("fake-last-blob-id"))
+				Expect(fingerprint).To(Equal("fake-last-fingerprint"))
+
+				Expect(innerBlobstore.CreateFileNames).To(Equal(
+					[]string{"fake-file-name", "fake-file-name", "fake-file-name"},
+				))
+			})
+		})
+
+		Context("when inner blobstore does not succeed before maximum number of create tries", func() {
+			It("returns last try error from inner blobstore", func() {
+				innerBlobstore.CreateErrs = []error{
+					errors.New("fake-create-err-1"),
+					errors.New("fake-create-err-2"),
+					errors.New("fake-last-create-err"),
+				}
+
+				_, _, err := retryableBlobstore.Create("fake-blob-id")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-last-create-err"))
+
+				Expect(innerBlobstore.CreateFileNames).To(Equal(
+					[]string{"fake-blob-id", "fake-blob-id", "fake-blob-id"},
+				))
+			})
 		})
 	})
 

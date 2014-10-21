@@ -43,7 +43,21 @@ func (b retryableBlobstore) CleanUp(fileName string) error {
 }
 
 func (b retryableBlobstore) Create(fileName string) (string, string, error) {
-	return b.blobstore.Create(fileName)
+	var blobID string
+	var fingerprint string
+	var lastErr error
+
+	for i := 0; i < b.maxTries; i++ {
+		blobID, fingerprint, lastErr = b.blobstore.Create(fileName)
+		if lastErr == nil {
+			return blobID, fingerprint, nil
+		}
+
+		b.logger.Info(retryableBlobstoreLogTag,
+			"Failed to create blob with error %s, attempt %d", lastErr.Error(), i)
+	}
+
+	return "", "", bosherr.WrapError(lastErr, "Creating blob in inner blobstore")
 }
 
 func (b retryableBlobstore) Validate() error {
