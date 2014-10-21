@@ -9,6 +9,8 @@ import (
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
@@ -22,7 +24,8 @@ var _ = Describe("RegistryProvider", func() {
 	BeforeEach(func() {
 		metadataService = &fakeinf.FakeMetadataService{}
 		fs = fakesys.NewFakeFileSystem()
-		registryProvider = NewRegistryProvider(metadataService, "fake-fallback-file-registry-path", fs)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		registryProvider = NewRegistryProvider(metadataService, "fake-fallback-file-registry-path", fs, logger)
 	})
 
 	Describe("GetRegistry", func() {

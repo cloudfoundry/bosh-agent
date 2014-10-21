@@ -132,6 +132,7 @@ var _ = Describe("Provider", func() {
 				wardenMetadataService,
 				filepath.Join(boshDir, "warden-cpi-agent-env.json"),
 				fs,
+				logger,
 			)
 
 			expectedInf := NewWardenInfrastructure(

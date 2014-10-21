@@ -55,7 +55,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 	wardenUserDataFilePath := filepath.Join(dirProvider.BoshDir(), "warden-cpi-user-data.json")
 	wardenFallbackFileRegistryPath := filepath.Join(dirProvider.BoshDir(), "warden-cpi-agent-env.json")
 	wardenMetadataService := NewFileMetadataService(wardenUserDataFilePath, fs, logger)
-	wardenRegistryProvider := NewRegistryProvider(wardenMetadataService, wardenFallbackFileRegistryPath, fs)
+	wardenRegistryProvider := NewRegistryProvider(wardenMetadataService, wardenFallbackFileRegistryPath, fs, logger)
 
 	p.infrastructures = map[string]Infrastructure{
 		"aws":       awsInfrastructure,
