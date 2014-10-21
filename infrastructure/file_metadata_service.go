@@ -9,6 +9,7 @@ import (
 
 type fileMetadataService struct {
 	userDataFilePath string
+	metadataFilePath string
 	fs               boshsys.FileSystem
 	logger           boshlog.Logger
 	logTag           string
@@ -16,11 +17,13 @@ type fileMetadataService struct {
 
 func NewFileMetadataService(
 	userDataFilePath string,
+	metadataFilePath string,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) fileMetadataService {
 	return fileMetadataService{
 		userDataFilePath: userDataFilePath,
+		metadataFilePath: metadataFilePath,
 		fs:               fs,
 		logger:           logger,
 		logTag:           "fileMetadataService",
@@ -36,7 +39,21 @@ func (ms fileMetadataService) GetPublicKey() (string, error) {
 }
 
 func (ms fileMetadataService) GetInstanceID() (string, error) {
-	return "", nil
+	var metadata MetadataContentsType
+
+	contents, err := ms.fs.ReadFile(ms.metadataFilePath)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Reading metadata file")
+	}
+
+	err = json.Unmarshal([]byte(contents), &metadata)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Unmarshalling metadata")
+	}
+
+	ms.logger.Debug(ms.logTag, "Read metadata %#v", metadata)
+
+	return metadata.InstanceID, nil
 }
 
 func (ms fileMetadataService) GetServerName() (string, error) {

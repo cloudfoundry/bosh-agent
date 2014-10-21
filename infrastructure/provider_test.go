@@ -125,6 +125,7 @@ var _ = Describe("Provider", func() {
 
 			wardenMetadataService := NewFileMetadataService(
 				filepath.Join(boshDir, "warden-cpi-user-data.json"),
+				filepath.Join(boshDir, "warden-cpi-metadata.json"),
 				fs,
 				logger,
 			)

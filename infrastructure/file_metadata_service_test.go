@@ -20,7 +20,29 @@ var _ = Describe("FileMetadataService", func() {
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		metadataService = NewFileMetadataService("fake-userdata-file-path", fs, logger)
+		metadataService = NewFileMetadataService("fake-userdata-file-path", "fake-metadata-file-path", fs, logger)
+	})
+
+	Describe("GetInstanceID", func() {
+		Context("when metadata service file exists", func() {
+			BeforeEach(func() {
+				metadataContents := `{"instance-id":"fake-instance-id"}`
+				fs.WriteFileString("fake-metadata-file-path", metadataContents)
+			})
+
+			It("returns instance id", func() {
+				instanceID, err := metadataService.GetInstanceID()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(instanceID).To(Equal("fake-instance-id"))
+			})
+		})
+
+		Context("when metadata service file does not exist", func() {
+			It("returns an error", func() {
+				_, err := metadataService.GetInstanceID()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 	})
 
 	Describe("GetRegistryEndpoint", func() {
