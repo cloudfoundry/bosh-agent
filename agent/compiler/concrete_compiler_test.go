@@ -275,7 +275,7 @@ func init() {
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(blobstore.CreateFileName).To(Equal("/tmp/compressed-compiled-package"))
+				Expect(blobstore.CreateFileNames[0]).To(Equal("/tmp/compressed-compiled-package"))
 			})
 
 			It("returs error if uploading compressed package fails", func() {

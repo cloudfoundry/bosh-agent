@@ -61,7 +61,7 @@ var _ = Describe("FetchLogsAction", func() {
 			Expect(copier.FilteredCopyToTempTempDir).To(Equal(compressor.CompressFilesInDirDir))
 			Expect(copier.CleanUpTempDir).To(Equal(compressor.CompressFilesInDirDir))
 
-			Expect(compressor.CompressFilesInDirTarballPath).To(Equal(blobstore.CreateFileName))
+			Expect(compressor.CompressFilesInDirTarballPath).To(Equal(blobstore.CreateFileNames[0]))
 
 			boshassert.MatchesJSONString(GinkgoT(), logs, `{"blobstore_id":"my-blob-id"}`)
 		}
