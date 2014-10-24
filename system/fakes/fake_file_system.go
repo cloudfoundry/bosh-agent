@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -65,6 +66,8 @@ type FakeFileSystem struct {
 
 	GlobErr  error
 	globsMap map[string][][]string
+
+	WalkErr error
 }
 
 type FakeFileStats struct {
@@ -91,9 +94,15 @@ func (fi FakeFileInfo) Size() int64 {
 	return int64(len(fi.file.Contents))
 }
 
+func (fi FakeFileInfo) IsDir() bool {
+	return fi.file.Stats.FileType == FakeFileTypeDir
+}
+
 type FakeFile struct {
 	path string
 	fs   *FakeFileSystem
+
+	Stats *FakeFileStats
 
 	WriteErr error
 	Contents []byte
@@ -507,6 +516,29 @@ func (fs *FakeFileSystem) Glob(pattern string) (matches []string, err error) {
 		matches = []string{}
 	}
 	return matches, fs.GlobErr
+}
+
+func (fs *FakeFileSystem) Walk(root string, walkFunc filepath.WalkFunc) error {
+	var paths []string
+	for path := range fs.files {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+
+	for _, path := range paths {
+		fileStats := fs.files[path]
+		if strings.HasPrefix(path, root) {
+			fakeFile := NewFakeFile(fs)
+			fakeFile.Stats = fileStats
+			fileInfo, _ := fakeFile.Stat()
+			err := walkFunc(path, fileInfo, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return fs.WalkErr
 }
 
 func (fs *FakeFileSystem) SetGlob(pattern string, matches ...[]string) {
