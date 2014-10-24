@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,6 +100,7 @@ type FakeFile struct {
 
 	ReadErr   error
 	ReadAtErr error
+	readIndex int64
 
 	CloseErr error
 
@@ -124,8 +126,12 @@ func (f *FakeFile) Write(contents []byte) (int, error) {
 	return len(contents), nil
 }
 
-func (f *FakeFile) Read(p []byte) (int, error) {
-	copy(p, f.Contents)
+func (f *FakeFile) Read(b []byte) (int, error) {
+	if f.readIndex >= int64(len(f.Contents)) {
+		return 0, io.EOF
+	}
+	copy(b, f.Contents)
+	f.readIndex = int64(len(f.Contents))
 	return len(f.Contents), f.ReadErr
 }
 
@@ -484,7 +490,6 @@ func (fs *FakeFileSystem) removeAll(path string) error {
 			filesToRemove = append(filesToRemove, name)
 		}
 	}
-
 	for _, name := range filesToRemove {
 		delete(fs.files, name)
 	}
