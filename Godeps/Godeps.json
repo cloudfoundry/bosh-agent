@@ -21,8 +21,8 @@
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gosigar",
-			"Comment": "scotty_09012012-20-ga4cb008",
-			"Rev": "a4cb00834887e549c46e58cb5d5f4e53bd492f32"
+			"Comment": "scotty_09012012-23-gacc4d26",
+			"Rev": "acc4d267f2f48a898e2ce37091f1b66ff767b99b"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/yagnats",
