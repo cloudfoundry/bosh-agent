@@ -3,18 +3,20 @@ package micro_test
 import (
 	"crypto/tls"
 	"errors"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	. "github.com/cloudfoundry/bosh-agent/micro"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	. "github.com/cloudfoundry/bosh-agent/micro"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("HTTPSHandler", func() {
@@ -57,12 +59,12 @@ var _ = Describe("HTTPSHandler", func() {
 			for err != nil {
 				httpResponse, err = httpClient.Post(serverURL+"/agent", "application/json", postPayload)
 			}
+
 			defer httpResponse.Body.Close()
 
 			Expect(receivedRequest.ReplyTo).To(Equal("reply to me!"))
 			Expect(receivedRequest.Method).To(Equal("ping"))
-			expectedPayload := []byte(postBody)
-			Expect(receivedRequest.GetPayload()).To(Equal(expectedPayload))
+			Expect(receivedRequest.GetPayload()).To(Equal([]byte(postBody)))
 
 			httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
 			Expect(readErr).ToNot(HaveOccurred())
@@ -74,7 +76,6 @@ var _ = Describe("HTTPSHandler", func() {
 				waitForServerToStart(serverURL, "agent", httpClient)
 
 				httpResponse, err := httpClient.Get(serverURL + "/agent")
-
 				Expect(err).ToNot(HaveOccurred())
 				Expect(httpResponse.StatusCode).To(Equal(404))
 			})
@@ -89,6 +90,7 @@ var _ = Describe("HTTPSHandler", func() {
 			for err != nil {
 				httpResponse, err = httpClient.Get(serverURL + "/blobs/a5/123-456-789")
 			}
+
 			defer httpResponse.Body.Close()
 
 			httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
@@ -105,9 +107,10 @@ var _ = Describe("HTTPSHandler", func() {
 				postPayload := strings.NewReader(postBody)
 
 				httpResponse, err := httpClient.Post(serverURL+"/blobs/123", "application/json", postPayload)
+				Expect(err).ToNot(HaveOccurred())
+
 				defer httpResponse.Body.Close()
 
-				Expect(err).ToNot(HaveOccurred())
 				Expect(httpResponse.StatusCode).To(Equal(404))
 			})
 		})
@@ -117,9 +120,9 @@ var _ = Describe("HTTPSHandler", func() {
 				waitForServerToStart(serverURL, "blobs", httpClient)
 
 				httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
-				defer httpResponse.Body.Close()
-
 				Expect(err).ToNot(HaveOccurred())
+
+				defer httpResponse.Body.Close()
 				Expect(httpResponse.StatusCode).To(Equal(404))
 			})
 		})
@@ -138,10 +141,11 @@ var _ = Describe("HTTPSHandler", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			httpResponse, err := httpClient.Do(request)
-			defer httpResponse.Body.Close()
-
 			Expect(err).ToNot(HaveOccurred())
+
+			defer httpResponse.Body.Close()
 			Expect(httpResponse.StatusCode).To(Equal(201))
+
 			contents, err := fs.ReadFileString("/var/vcap/micro_bosh/data/cache/123-456-789")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(contents).To(Equal("Updated data"))
@@ -160,6 +164,8 @@ var _ = Describe("HTTPSHandler", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				httpResponse, err := httpClient.Do(request)
+				Expect(err).ToNot(HaveOccurred())
+
 				defer httpResponse.Body.Close()
 				Expect(httpResponse.StatusCode).To(Equal(500))
 
@@ -206,6 +212,8 @@ func waitForServerToStart(serverURL string, endpoint string, httpClient http.Cli
 	for err != nil {
 		httpResponse, err = httpClient.Post(serverURL+"/"+endpoint, "application/json", postPayload)
 	}
+
 	defer httpResponse.Body.Close()
+
 	return
 }
