@@ -2,6 +2,7 @@ package udevdevice
 
 import (
 	"os"
+	"runtime"
 	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
@@ -62,6 +63,7 @@ func (udev ConcreteUdevDevice) EnsureDeviceReadable(filePath string) error {
 		}
 
 		udev.logger.Debug(udev.logtag, "Going to sleep")
+		runtime.Gosched()
 		time.Sleep(time.Second)
 		udev.logger.Debug(udev.logtag, "Done sleeping")
 	}
