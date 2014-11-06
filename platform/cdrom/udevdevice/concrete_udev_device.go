@@ -61,7 +61,9 @@ func (udev ConcreteUdevDevice) EnsureDeviceReadable(filePath string) error {
 			udev.logger.Debug(udev.logtag, "Ignorable error from readByte: %s", err.Error())
 		}
 
-		time.Sleep(time.Second / 2)
+		udev.logger.Debug(udev.logtag, "Going to sleep")
+		time.Sleep(time.Second)
+		udev.logger.Debug(udev.logtag, "Done sleeping")
 	}
 
 	err := udev.readByte(filePath)
