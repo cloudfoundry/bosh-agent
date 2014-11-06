@@ -20,6 +20,9 @@ func main() {
 	logger := boshlog.NewLogger(boshlog.LevelDebug)
 	defer logger.HandlePanic("Main")
 
+	runtime.GOMAXPROCS(2)
+	logger.Debug(mainLogTag, "GOMAXPROCS set to 2")
+
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
