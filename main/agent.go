@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	boshapp "github.com/cloudfoundry/bosh-agent/app"
@@ -12,6 +15,9 @@ const mainLogTag = "main"
 func main() {
 	logger := boshlog.NewLogger(boshlog.LevelDebug)
 	defer logger.HandlePanic("Main")
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	logger.Debug(mainLogTag, "Starting agent")
 
@@ -28,4 +34,5 @@ func main() {
 		logger.Error(mainLogTag, "App run %s", err.Error())
 		os.Exit(1)
 	}
+
 }
