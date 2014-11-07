@@ -81,19 +81,19 @@ func (udev ConcreteUdevDevice) readByte(filePath string) error {
 	if err != nil {
 		return err
 	}
-	defer device.Close()
 	udev.logger.Debug(udev.logtag, "Successfully open file: %s", filePath)
 
 	bytes := make([]byte, 1, 1)
 	read, err := device.Read(bytes)
 	if err != nil {
+		device.Close()
 		return err
 	}
 	udev.logger.Debug(udev.logtag, "Successfully read %d bytes from file: %s", read, filePath)
-
 	if read != 1 {
 		return bosherr.New("Device readable but zero length")
 	}
+	device.Close()
 
 	return nil
 }
