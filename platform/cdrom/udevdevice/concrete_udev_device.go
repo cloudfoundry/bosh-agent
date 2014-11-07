@@ -2,7 +2,7 @@ package udevdevice
 
 import (
 	"os"
-	"time"
+	"runtime"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
@@ -31,7 +31,8 @@ func (udev ConcreteUdevDevice) KickDevice(filePath string) {
 		if err == nil {
 			break
 		}
-		time.Sleep(time.Second / 2)
+		runtime.Gosched()
+		//time.Sleep(time.Second / 2)
 	}
 
 	udev.readByte(filePath)
@@ -63,7 +64,8 @@ func (udev ConcreteUdevDevice) EnsureDeviceReadable(filePath string) error {
 		}
 
 		udev.logger.Debug(udev.logtag, "Going to sleep")
-		time.Sleep(time.Second)
+		runtime.Gosched()
+		//time.Sleep(time.Second)
 		udev.logger.Debug(udev.logtag, "Done sleeping")
 	}
 
