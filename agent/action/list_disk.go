@@ -50,7 +50,7 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 		if isMounted {
 			volumeIDs = append(volumeIDs, volumeID)
 		} else {
-			a.logger.Debug("list-disk-action", "Not mounted", volumeID)
+			a.logger.Debug("list-disk-action", "Volume '%s' not mounted", volumeID)
 		}
 	}
 
