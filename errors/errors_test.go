@@ -89,4 +89,13 @@ var _ = Describe("WrapComplexError", func() {
 		typedErr := err.(ShortenableError)
 		Expect(typedErr.ShortError()).To(Equal("delegate-short1: cause-short1"))
 	})
+
+	It("handles errors with nil cause", func() {
+		delegate := &testShortError{fullMsg: "delegate-full", shortMsg: "delegate-short1"}
+		err := WrapComplexError(nil, delegate)
+		Expect(err).To(MatchError("delegate-full: <nil cause>"))
+
+		shortErr := err.(ShortenableError)
+		Expect(shortErr.ShortError()).To(Equal("delegate-short1: <nil cause>"))
+	})
 })

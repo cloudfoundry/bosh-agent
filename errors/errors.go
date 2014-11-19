@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -45,6 +46,10 @@ func WrapError(cause error, msg string, args ...interface{}) error {
 }
 
 func WrapComplexError(cause, delegate error) error {
+	if cause == nil {
+		cause = errors.New("<nil cause>")
+	}
+
 	return complexError{
 		delegate: delegate,
 		cause:    cause,
