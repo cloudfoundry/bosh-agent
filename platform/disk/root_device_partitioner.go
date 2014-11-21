@@ -34,7 +34,7 @@ type existingPartition struct {
 }
 
 func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
-	existingPartitions, err := p.getPartitions(devicePath)
+	existingPartitions, deviceFullSizeInBytes, err := p.getPartitions(devicePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting existing partitions of `%s'", devicePath)
 	}
@@ -49,8 +49,6 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 		return nil
 	}
 
-	partitionStart := existingPartitions[0].EndInBytes + 1
-
 	if len(existingPartitions) > 1 {
 		p.logger.Error(p.logTag,
 			"Failed to create ephemeral partitions on root device `%s'. Expected 1 partition, found %d: %s",
@@ -61,8 +59,17 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 		return bosherr.New("Found %d unexpected partitions on `%s'", len(existingPartitions)-1, devicePath)
 	}
 
+	// To support optimal reads on HDDs and optimal erasure on SSD: use 1MiB partition alignments.
+	alignmentInBytes := uint64(1048576)
+
+	partitionStart := p.roundUp(existingPartitions[0].EndInBytes+1, alignmentInBytes)
+
 	for index, partition := range partitions {
-		partitionEnd := partitionStart + partition.SizeInBytes - 1
+		partitionEnd := partitionStart + partition.SizeInBytes
+		if partitionEnd >= deviceFullSizeInBytes {
+			partitionEnd = deviceFullSizeInBytes - 1
+			p.logger.Info(p.logTag, "Partition %d would be larger than remaining space. Reducing size to %dB", index, partitionEnd-partitionStart)
+		}
 
 		p.logger.Info(p.logTag, "Creating partition %d with start %dB and end %dB", index, partitionStart, partitionEnd)
 
@@ -82,7 +89,7 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 			return bosherr.WrapError(err, "Partitioning disk `%s'", devicePath)
 		}
 
-		partitionStart = partitionEnd + 1
+		partitionStart = p.roundUp(partitionEnd+1, alignmentInBytes)
 	}
 	return nil
 }
@@ -118,19 +125,28 @@ func (p rootDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, 
 	return remainingSizeInBytes, nil
 }
 
-func (p rootDevicePartitioner) getPartitions(devicePath string) ([]existingPartition, error) {
-	partitions := []existingPartition{}
-
+func (p rootDevicePartitioner) getPartitions(devicePath string) (
+	partitions []existingPartition,
+	deviceFullSizeInBytes uint64,
+	err error,
+) {
 	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
 	if err != nil {
-		return partitions, bosherr.WrapError(err, "Running parted print on `%s'", devicePath)
+		return partitions, deviceFullSizeInBytes, bosherr.WrapError(err, "Running parted print on `%s'", devicePath)
 	}
 
 	p.logger.Debug(p.logTag, "Found partitions %s", stdout)
 
 	allLines := strings.Split(stdout, "\n")
 	if len(allLines) < 3 {
-		return partitions, bosherr.New("Parsing existing partitions of `%s'", devicePath)
+		return partitions, deviceFullSizeInBytes, bosherr.New("Parsing existing partitions of `%s'", devicePath)
+	}
+
+	partitionInfoLines := allLines[1:3]
+	deviceInfo := strings.Split(partitionInfoLines[0], ":")
+	deviceFullSizeInBytes, err = strconv.ParseUint(strings.TrimRight(deviceInfo[1], "B"), 10, 64)
+	if err != nil {
+		return partitions, deviceFullSizeInBytes, bosherr.WrapError(err, "Parsing device size `%s'", deviceInfo[1])
 	}
 
 	partitionLines := allLines[2 : len(allLines)-1]
@@ -139,22 +155,22 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) ([]existingParti
 		partitionInfo := strings.Split(partitionLine, ":")
 		partitionIndex, err := strconv.Atoi(partitionInfo[0])
 		if err != nil {
-			return partitions, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
+			return partitions, deviceFullSizeInBytes, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
 		}
 
 		partitionStartInBytes, err := strconv.Atoi(strings.TrimRight(partitionInfo[1], "B"))
 		if err != nil {
-			return partitions, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
+			return partitions, deviceFullSizeInBytes, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
 		}
 
 		partitionEndInBytes, err := strconv.Atoi(strings.TrimRight(partitionInfo[2], "B"))
 		if err != nil {
-			return partitions, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
+			return partitions, deviceFullSizeInBytes, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
 		}
 
 		partitionSizeInBytes, err := strconv.Atoi(strings.TrimRight(partitionInfo[3], "B"))
 		if err != nil {
-			return partitions, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
+			return partitions, deviceFullSizeInBytes, bosherr.WrapError(err, "Parsing existing partitions of `%s'", devicePath)
 		}
 
 		partitions = append(
@@ -168,7 +184,7 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) ([]existingParti
 		)
 	}
 
-	return partitions, nil
+	return partitions, deviceFullSizeInBytes, nil
 }
 
 func (p rootDevicePartitioner) partitionsMatch(existingPartitions []existingPartition, partitions []Partition) bool {
@@ -185,4 +201,26 @@ func (p rootDevicePartitioner) partitionsMatch(existingPartitions []existingPart
 	}
 
 	return true
+}
+
+func (p rootDevicePartitioner) roundUp(numToRound, multiple uint64) uint64 {
+	if multiple == 0 {
+		return numToRound
+	}
+	remainder := numToRound % multiple
+	if remainder == 0 {
+		return numToRound
+	}
+	return numToRound + multiple - remainder
+}
+
+func (p rootDevicePartitioner) roundDown(numToRound, multiple uint64) uint64 {
+	if multiple == 0 {
+		return numToRound
+	}
+	remainder := numToRound % multiple
+	if remainder == 0 {
+		return numToRound
+	}
+	return numToRound - remainder
 }
