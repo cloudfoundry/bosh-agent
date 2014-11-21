@@ -65,7 +65,7 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 	partitionStart := p.roundUp(existingPartitions[0].EndInBytes+1, alignmentInBytes)
 
 	for index, partition := range partitions {
-		partitionEnd := partitionStart + partition.SizeInBytes
+		partitionEnd := partitionStart + partition.SizeInBytes - 1
 		if partitionEnd >= deviceFullSizeInBytes {
 			partitionEnd = deviceFullSizeInBytes - 1
 			p.logger.Info(p.logTag, "Partition %d would be larger than remaining space. Reducing size to %dB", index, partitionEnd-partitionStart)
