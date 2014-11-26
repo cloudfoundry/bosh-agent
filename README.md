@@ -1,7 +1,15 @@
 ## BOSH Agent [![Build Status](https://travis-ci.org/cloudfoundry/bosh-agent.png?branch=master)](https://travis-ci.org/cloudfoundry/bosh-agent)
 
-    PATH=.../s3cli/out:$PATH bin/run -I dummy -P ubuntu
+* Documentation: [docs.cloudfoundry.org/bosh](http://docs.cloudfoundry.org/bosh)
+* IRC: `#bosh` on freenode
+* Google groups:
+  [bosh-users](https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics) &
+  [bosh-dev](https://groups.google.com/a/cloudfoundry.org/group/bosh-dev/topics) &
+  [vcap-dev](https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics) (for CF)
 
+```
+PATH=.../s3cli/out:$PATH bin/run -I dummy -P ubuntu
+```
 
 ### Running locally
 
@@ -24,9 +32,9 @@ To publish:
 The Go Agent ships with 4 default blobstores:
 
 - Local filesystem
-- Dummy (for testing)
 - S3
 - DAV
+- Dummy (for testing)
 
 You can, however, use custom blobstores by implementing a simple interface. For example, if you want to use a blobstore named "custom" you need to create an executable named `bosh-blobstore-custom` somewhere in `PATH`. This executable must conform to the following command line interface:
 
