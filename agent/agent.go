@@ -63,12 +63,6 @@ func New(
 }
 
 func (a Agent) Run() error {
-	a.logger.Debug(agentLogTag, "Starting monit")
-	err := a.platform.StartMonit()
-	if err != nil {
-		return bosherr.WrapError(err, "Starting Monit")
-	}
-
 	errCh := make(chan error, 1)
 
 	a.actionDispatcher.ResumePreviouslyDispatchedTasks()
@@ -82,7 +76,7 @@ func (a Agent) Run() error {
 	go a.syslogServer.Start(a.handleSyslogMsg(errCh))
 
 	select {
-	case err = <-errCh:
+	case err := <-errCh:
 		return err
 	}
 }
