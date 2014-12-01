@@ -681,7 +681,12 @@ func (p linux) IsPersistentDiskMounted(path string) (bool, error) {
 }
 
 func (p linux) StartMonit() error {
-	_, _, _, err := p.cmdRunner.RunCommand("sv", "up", "monit")
+	err := p.fs.Symlink(filepath.Join("/etc", "sv", "monit"), filepath.Join("/etc", "service", "monit"))
+	if err != nil {
+		return bosherr.WrapError(err, "Symlinking /etc/service/monit to /etc/sv/monit")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("sv", "start", "monit")
 	if err != nil {
 		return bosherr.WrapError(err, "Shelling out to sv")
 	}

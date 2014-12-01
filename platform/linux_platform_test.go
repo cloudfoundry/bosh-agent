@@ -1237,11 +1237,18 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	})
 
 	Describe("StartMonit", func() {
-		It("start monit", func() {
+		It("creates a symlink between /etc/service/monit and /etc/sv/monit", func() {
+			err := platform.StartMonit()
+			Expect(err).NotTo(HaveOccurred())
+			target, _ := fs.ReadLink(filepath.Join("/etc", "service", "monit"))
+			Expect(target).To(Equal(filepath.Join("/etc", "sv", "monit")))
+		})
+
+		It("starts monit", func() {
 			err := platform.StartMonit()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sv", "up", "monit"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sv", "start", "monit"}))
 		})
 	})
 
