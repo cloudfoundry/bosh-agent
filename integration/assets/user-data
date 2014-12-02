@@ -1,0 +1,8 @@
+{
+  "server": {
+    "name": "instance-id"
+  },
+  "registry": {
+    "endpoint": "http://user:pass@localhost:9090"
+  }
+}
