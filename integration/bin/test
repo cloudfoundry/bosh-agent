@@ -13,6 +13,7 @@ if [ ! -d $base/tmp ]; then
   mkdir -p $base/tmp
 fi
 
+cd $base
 echo -e "\n Running agent integration tests..."
 vagrant up $@
 

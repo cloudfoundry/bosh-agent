@@ -20,7 +20,14 @@ Vagrant.configure('2') do |config|
 
     # To turn off CF port forwarding, uncomment this line:
     # override.vm.provision :shell, id: "port_forwarding", run: "always", inline: "/bin/true"
+    v.tags = {
+      'PipelineName' => 'bosh-agent'
+    }
   end
 
   config.vm.synced_folder '.', '/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent'
+
+#  config.vm.synced_folder Dir.pwd, '/vagrant', disabled: true
+  config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"
+  config.vm.provision :shell, inline: "chmod 777 /var/vcap/sys/log/cpi"
 end
