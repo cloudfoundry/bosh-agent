@@ -8,7 +8,7 @@ if [ ! -d $base/tmp ]; then
 fi
 
 cleanup() {
-  (cd $base && vagrant destroy -f)
+  #(cd $base && vagrant destroy -f)
 
   if [ ! -z "$OLD_BOSH_LITE_PRIVATE_KEY" ]; then
     export BOSH_LITE_PRIVATE_KEY=$OLD_BOSH_LITE_PRIVATE_KEY
@@ -48,6 +48,8 @@ if [ "$result" != "1" ]; then
   echo "failure: agent_id not set as expected"
   exit 1
 fi
+
+vagrant ssh -c "sudo mount"
 
 # check that agent unmounted disk
 result=`vagrant ssh -c "sudo mount | grep -c /dev/loop2" | head -c 1`
