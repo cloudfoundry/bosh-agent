@@ -2,15 +2,31 @@
 
 set +ex
 
+base=$( cd $(dirname $0)/../.. && pwd )
+if [ ! -d $base/tmp ]; then
+  mkdir -p $base/tmp
+fi
+
 cleanup() {
-  vagrant destroy -f
+  (cd $base && vagrant destroy -f)
+
+  if [ ! -z "$OLD_BOSH_LITE_PRIVATE_KEY" ]; then
+    export BOSH_LITE_PRIVATE_KEY=$OLD_BOSH_LITE_PRIVATE_KEY
+  fi
+
+  if [ -f "$tmpfile" ]; then
+    rm -rf $tmpfile
+  fi
 }
 
 trap cleanup EXIT
 
-base=$( cd $(dirname $0)/../.. && pwd )
-if [ ! -d $base/tmp ]; then
-  mkdir -p $base/tmp
+# Vagrant needs ubuntu to own the private key if aws provider
+if [ ! -z "$BOSH_LITE_PRIVATE_KEY" ]; then
+  tmpfile=`mktemp -t bosh-agent-tests-XXXXXXXX`
+  cat $BOSH_LITE_PRIVATE_KEY > $tmpfile
+  export OLD_BOSH_LITE_PRIVATE_KEY=$BOSH_LITE_PRIVATE_KEY
+  export BOSH_LITE_PRIVATE_KEY=$tmpfile
 fi
 
 cd $base
