@@ -20,10 +20,10 @@ sudo dd if=/dev/zero of=/virtualfs bs=1024 count=1024
 sudo losetup /dev/loop2 /virtualfs
 sudo mkfs -t ext3 -m 1 -v /dev/loop2
 sudo e2label /dev/loop2 config-2
-mkdir /tmp/config-drive
+sudo mkdir /tmp/config-drive
 sudo mount /dev/disk/by-label/config-2 /tmp/config-drive
 sudo chown vagrant:vagrant /tmp/config-drive
-mkdir -p /tmp/config-drive/ec2/latest
+sudo mkdir -p /tmp/config-drive/ec2/latest
 cp $assets_dir/meta-data.json /tmp/config-drive/ec2/latest/meta-data.json
 cp $assets_dir/user-data /tmp/config-drive/ec2/latest
 sudo umount /tmp/config-drive
