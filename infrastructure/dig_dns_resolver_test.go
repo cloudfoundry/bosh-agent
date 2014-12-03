@@ -32,6 +32,12 @@ var _ = Describe("DigDNSResolver", func() {
 		})
 
 		Context("when host is not an ip", func() {
+			It("returns 127.0.0.1 for 'localhost'", func() {
+				ip, err := resolver.LookupHost([]string{"8.8.8.8"}, "localhost")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(ip).To(Equal("127.0.0.1"))
+			})
+
 			It("returns ip for resolved host", func() {
 				digResult := fakesys.FakeCmdResult{
 					Stdout: "74.125.19.99",

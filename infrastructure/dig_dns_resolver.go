@@ -26,6 +26,10 @@ func NewDigDNSResolver(runner boshsys.CmdRunner, logger boshlog.Logger) DigDNSRe
 }
 
 func (res DigDNSResolver) LookupHost(dnsServers []string, host string) (string, error) {
+	if host == "localhost" {
+		return "127.0.0.1", nil
+	}
+
 	ip := net.ParseIP(host)
 	if ip != nil {
 		return host, nil
