@@ -35,6 +35,8 @@ vagrant up $@
 
 vagrant ssh-config > $base/tmp/vagrant-config
 
+cat $base/tmp/vagrant-config
+
 srcdir="/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent"
 script="$srcdir/integration/assets/configure-environment.sh"
 ssh -F $base/tmp/vagrant-config default "chmod +x $script && sh -c $script"
