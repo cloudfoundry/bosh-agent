@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set +ex
+set -e -x
 
 base=$( cd $(dirname $0)/../.. && pwd )
 if [ ! -d $base/tmp ]; then
@@ -8,6 +8,8 @@ if [ ! -d $base/tmp ]; then
 fi
 
 cleanup() {
+	echo "Cleaning up"
+
   (cd $base && vagrant destroy -f)
 
   if [ ! -z "$OLD_BOSH_LITE_PRIVATE_KEY" ]; then
@@ -39,9 +41,6 @@ srcdir="/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent"
 script="$srcdir/integration/assets/configure-environment.sh"
 ssh -F $base/tmp/vagrant-config default "chmod +x $script && sh -c $script"
 
-# sleep for a few seconds
-sleep 3
-
 # check that agent id has been set as expected
 result=`vagrant ssh -c "grep -c the_agent_id /var/vcap/bosh/settings.json" | head -c 1`
 if [ "$result" != "1" ]; then
@@ -51,10 +50,18 @@ fi
 
 # check that agent unmounted disk
 result=`vagrant ssh -c "sudo mount | grep -c /dev/loop2" | head -c 1`
-if [ "$result" == "0" ]; then
-  echo "success :)"
-  exit 0
-else
-  echo "failure: config drive still mounted"
-  exit 1
-fi
+COUNTER=0
+
+while [ "$result" != "0" ];
+do
+  if [ "$COUNTER" -gt 5 ]; then
+  	echo "FAILURE: Drive not unmounted after five seconds"
+  	exit 1
+  fi
+  COUNTER=$((COUNTER+1))
+  sleep 1
+done
+
+echo "SUCCESS: Drive unmounted"
+
+exit 0

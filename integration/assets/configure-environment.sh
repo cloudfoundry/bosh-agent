@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set +xe
+# Assume to be running on bosh lite
+set -x -e
 
 export GOPATH=/home/vagrant/go
 export GOROOT=/usr/local/go
@@ -36,23 +37,21 @@ echo 'openstack' | sudo tee /var/vcap/bosh/etc/infrastructure
 sudo cp $assets_dir/agent.json /var/vcap/bosh/agent.json
 
 pushd $agent_dir
+	# install golang
+	sudo $agent_dir/integration/assets/install-go.sh
 
-# install golang
-sudo $agent_dir/integration/assets/install-go.sh
+	# build fake registry
+	./integration/bin/build
 
-# build fake registry
-./integration/bin/build
+	# start registry and seed it with a new agent_id
+	nohup tmp/fake-registry -user user -password pass -host localhost -port 9090 -instance instance-id -settings "{\"agent_id\":\"the_agent_id\"}" &> /dev/null &
 
-# start registry and seed it with a new agent_id
-nohup tmp/fake-registry -user user -password pass -host localhost -port 9090 -instance instance-id -settings "{\"agent_id\":\"the_agent_id\"}" &> /dev/null &
+	# build agent
+	bin/build
 
-# build agent
-bin/build
+	# install new agent
+	sudo cp out/bosh-agent /var/vcap/bosh/bin/bosh-agent
 
-# install new agent
-sudo cp out/bosh-agent /var/vcap/bosh/bin/bosh-agent
-
-# start agent
-sudo sv start agent
-
+	# start agent
+	sudo sv start agent
 popd
