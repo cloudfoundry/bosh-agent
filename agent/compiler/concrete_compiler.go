@@ -56,14 +56,14 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 	for _, dep := range deps {
 		err := c.packageApplier.Apply(dep)
 		if err != nil {
-			return "", "", bosherr.WrapError(err, "Installing dependent package: '%s'", dep.Name)
+			return "", "", bosherr.WrapErrorf(err, "Installing dependent package: '%s'", dep.Name)
 		}
 	}
 
 	compilePath := filepath.Join(c.compileDirProvider.CompileDir(), pkg.Name)
 	err = c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Fetching package %s", pkg.Name)
+		return "", "", bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
 	}
 
 	compiledPkg := boshmodels.Package{
@@ -140,12 +140,12 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) erro
 	// (Ruby agent mistakenly never checked SHA1.)
 	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, "")
 	if err != nil {
-		return bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreID)
+		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}
 
 	err = c.atomicDecompress(depFilePath, targetDir)
 	if err != nil {
-		return bosherr.WrapError(err, "Uncompressing package %s", pkg.Name)
+		return bosherr.WrapErrorf(err, "Uncompressing package %s", pkg.Name)
 	}
 
 	return nil
@@ -157,35 +157,35 @@ func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) 
 	{
 		err := c.fs.RemoveAll(finalDir)
 		if err != nil {
-			return bosherr.WrapError(err, "Removing install path %s", finalDir)
+			return bosherr.WrapErrorf(err, "Removing install path %s", finalDir)
 		}
 
 		err = c.fs.MkdirAll(finalDir, os.FileMode(0755))
 		if err != nil {
-			return bosherr.WrapError(err, "Creating install path %s", finalDir)
+			return bosherr.WrapErrorf(err, "Creating install path %s", finalDir)
 		}
 	}
 
 	{
 		err := c.fs.RemoveAll(tmpInstallPath)
 		if err != nil {
-			return bosherr.WrapError(err, "Removing temporary compile directory %s", tmpInstallPath)
+			return bosherr.WrapErrorf(err, "Removing temporary compile directory %s", tmpInstallPath)
 		}
 
 		err = c.fs.MkdirAll(tmpInstallPath, os.FileMode(0755))
 		if err != nil {
-			return bosherr.WrapError(err, "Creating temporary compile directory %s", tmpInstallPath)
+			return bosherr.WrapErrorf(err, "Creating temporary compile directory %s", tmpInstallPath)
 		}
 	}
 
 	err := c.compressor.DecompressFileToDir(archivePath, tmpInstallPath, boshcmd.CompressorOptions{})
 	if err != nil {
-		return bosherr.WrapError(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
+		return bosherr.WrapErrorf(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
 	}
 
 	err = c.fs.Rename(tmpInstallPath, finalDir)
 	if err != nil {
-		return bosherr.WrapError(err, "Moving temporary directory %s to final destination %s", tmpInstallPath, finalDir)
+		return bosherr.WrapErrorf(err, "Moving temporary directory %s to final destination %s", tmpInstallPath, finalDir)
 	}
 
 	return nil

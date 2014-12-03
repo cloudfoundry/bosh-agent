@@ -34,7 +34,7 @@ func (s *concreteServer) Start(callback CallbackFunc) error {
 	s.l, err = net.Listen("tcp", ":"+strconv.Itoa(int(s.port)))
 	if err != nil {
 		s.ll.Unlock()
-		return bosherr.WrapError(err, "Listening on port %d", s.port)
+		return bosherr.WrapErrorf(err, "Listening on port %d", s.port)
 	}
 
 	// Should not defer unlock since there is a long-running loop

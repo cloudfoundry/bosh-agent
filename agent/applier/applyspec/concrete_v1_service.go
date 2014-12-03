@@ -59,7 +59,7 @@ func (s concreteV1Service) PopulateDynamicNetworks(spec V1ApplySpec, settings bo
 
 		network, ok := settings.Networks[networkName]
 		if !ok {
-			return V1ApplySpec{}, bosherr.New("Network %s is not found in settings", networkName)
+			return V1ApplySpec{}, bosherr.Errorf("Network %s is not found in settings", networkName)
 		}
 
 		spec.NetworkSpecs[networkName] = networkSpec.PopulateIPInfo(

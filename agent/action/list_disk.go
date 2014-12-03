@@ -43,7 +43,7 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 
 		isMounted, err = a.platform.IsPersistentDiskMounted(devicePath)
 		if err != nil {
-			bosherr.WrapError(err, "Checking whether device %s is mounted", devicePath)
+			bosherr.WrapErrorf(err, "Checking whether device %s is mounted", devicePath)
 			return
 		}
 

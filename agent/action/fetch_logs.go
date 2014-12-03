@@ -53,7 +53,7 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 		}
 		logsDir = filepath.Join(a.settingsDir.BaseDir(), "bosh", "log")
 	default:
-		err = bosherr.New("Invalid log type")
+		err = bosherr.Error("Invalid log type")
 		return
 	}
 

@@ -46,12 +46,12 @@ func (ms *configDriveMetadataService) GetPublicKey() (string, error) {
 		}
 	}
 
-	return "", bosherr.New("Failed to load openssh-key from config drive metadata service")
+	return "", bosherr.Error("Failed to load openssh-key from config drive metadata service")
 }
 
 func (ms *configDriveMetadataService) GetInstanceID() (string, error) {
 	if ms.metadataContents.InstanceID == "" {
-		return "", bosherr.New("Failed to load instance-id from config drive metadata service")
+		return "", bosherr.Error("Failed to load instance-id from config drive metadata service")
 	}
 
 	ms.logger.Debug(ms.logTag, "Getting instance id: %s", ms.metadataContents.InstanceID)
@@ -60,7 +60,7 @@ func (ms *configDriveMetadataService) GetInstanceID() (string, error) {
 
 func (ms *configDriveMetadataService) GetServerName() (string, error) {
 	if ms.userdataContents.Server.Name == "" {
-		return "", bosherr.New("Failed to load server name from config drive metadata service")
+		return "", bosherr.Error("Failed to load server name from config drive metadata service")
 	}
 
 	ms.logger.Debug(ms.logTag, "Getting server name: %s", ms.userdataContents.Server.Name)
@@ -69,7 +69,7 @@ func (ms *configDriveMetadataService) GetServerName() (string, error) {
 
 func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
 	if ms.userdataContents.Registry.Endpoint == "" {
-		return "", bosherr.New("Failed to load registry endpoint from config drive metadata service")
+		return "", bosherr.Error("Failed to load registry endpoint from config drive metadata service")
 	}
 
 	endpoint := ms.userdataContents.Registry.Endpoint

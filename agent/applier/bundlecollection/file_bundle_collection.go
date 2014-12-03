@@ -61,11 +61,11 @@ func NewFileBundleCollection(
 
 func (bc FileBundleCollection) Get(definition BundleDefinition) (Bundle, error) {
 	if len(definition.BundleName()) == 0 {
-		return nil, bosherr.New("Missing bundle name")
+		return nil, bosherr.Error("Missing bundle name")
 	}
 
 	if len(definition.BundleVersion()) == 0 {
-		return nil, bosherr.New("Missing bundle version")
+		return nil, bosherr.Error("Missing bundle version")
 	}
 
 	installPath := filepath.Join(bc.installPath, bc.name, definition.BundleName(), definition.BundleVersion())

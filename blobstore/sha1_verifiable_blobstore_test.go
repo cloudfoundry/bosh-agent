@@ -110,7 +110,7 @@ var _ = Describe("sha1VerifiableBlobstore", func() {
 		})
 
 		It("returns error if inner blobstore validation fails", func() {
-			innerBlobstore.ValidateError = bosherr.New("fake-validate-error")
+			innerBlobstore.ValidateError = bosherr.Error("fake-validate-error")
 
 			err := sha1VerifiableBlobstore.Validate()
 			Expect(err).To(HaveOccurred())

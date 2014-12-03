@@ -38,14 +38,14 @@ func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
 	for _, job := range desiredApplySpec.Jobs() {
 		err := a.jobApplier.Prepare(job)
 		if err != nil {
-			return bosherr.WrapError(err, "Preparing job %s", job.Name)
+			return bosherr.WrapErrorf(err, "Preparing job %s", job.Name)
 		}
 	}
 
 	for _, pkg := range desiredApplySpec.Packages() {
 		err := a.packageApplier.Prepare(pkg)
 		if err != nil {
-			return bosherr.WrapError(err, "Preparing package %s", pkg.Name)
+			return bosherr.WrapErrorf(err, "Preparing package %s", pkg.Name)
 		}
 	}
 
@@ -62,7 +62,7 @@ func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec)
 	for _, job := range jobs {
 		err = a.jobApplier.Apply(job)
 		if err != nil {
-			return bosherr.WrapError(err, "Applying job %s", job.Name)
+			return bosherr.WrapErrorf(err, "Applying job %s", job.Name)
 		}
 	}
 
@@ -74,7 +74,7 @@ func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec)
 	for _, pkg := range desiredApplySpec.Packages() {
 		err = a.packageApplier.Apply(pkg)
 		if err != nil {
-			return bosherr.WrapError(err, "Applying package %s", pkg.Name)
+			return bosherr.WrapErrorf(err, "Applying package %s", pkg.Name)
 		}
 	}
 
@@ -88,7 +88,7 @@ func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec)
 
 		err = a.jobApplier.Configure(job, i)
 		if err != nil {
-			return bosherr.WrapError(err, "Configuring job %s", job.Name)
+			return bosherr.WrapErrorf(err, "Configuring job %s", job.Name)
 		}
 	}
 

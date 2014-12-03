@@ -71,7 +71,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 func (p Provider) Get(name string) (Infrastructure, error) {
 	inf, found := p.infrastructures[name]
 	if !found {
-		return nil, bosherr.New("Infrastructure %s could not be found", name)
+		return nil, bosherr.Errorf("Infrastructure %s could not be found", name)
 	}
 	return inf, nil
 }

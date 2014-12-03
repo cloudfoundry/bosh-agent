@@ -50,7 +50,7 @@ func (p HandlerProvider) Get(
 	case "https":
 		handler = boshmicro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider)
 	default:
-		err = bosherr.New("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
+		err = bosherr.Errorf("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
 	}
 
 	p.handler = handler

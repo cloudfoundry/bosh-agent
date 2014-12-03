@@ -66,12 +66,12 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 
 	err := f.fs.RemoveAll(logsDir)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Removing log dir for job %s", jobName)
+		return nil, bosherr.WrapErrorf(err, "Removing log dir for job %s", jobName)
 	}
 
 	err = f.fs.MkdirAll(logsDir, os.FileMode(0750))
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Creating log dir for job %s", jobName)
+		return nil, bosherr.WrapErrorf(err, "Creating log dir for job %s", jobName)
 	}
 
 	stdoutPath := filepath.Join(logsDir, fmt.Sprintf("%s.stdout.log", taskName))
@@ -79,7 +79,7 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 
 	stdoutFile, err := f.fs.OpenFile(stdoutPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Opening stdout for task %s", taskName)
+		return nil, bosherr.WrapErrorf(err, "Opening stdout for task %s", taskName)
 	}
 	defer stdoutFile.Close()
 
@@ -87,7 +87,7 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 
 	stderrFile, err := f.fs.OpenFile(stderrPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Opening stderr for task %s", taskName)
+		return nil, bosherr.WrapErrorf(err, "Opening stderr for task %s", taskName)
 	}
 	defer stderrFile.Close()
 
@@ -98,12 +98,12 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 
 	stdout, isStdoutTruncated, err := f.getTruncatedOutput(stdoutFile, f.truncateLength)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Truncating stdout for task %s", taskName)
+		return nil, bosherr.WrapErrorf(err, "Truncating stdout for task %s", taskName)
 	}
 
 	stderr, isStderrTruncated, err := f.getTruncatedOutput(stderrFile, f.truncateLength)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Truncating stderr for task %s", taskName)
+		return nil, bosherr.WrapErrorf(err, "Truncating stderr for task %s", taskName)
 	}
 
 	result := &CmdResult{

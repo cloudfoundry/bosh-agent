@@ -29,13 +29,13 @@ func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface
 	actionValue := reflect.ValueOf(action)
 	runMethodValue := actionValue.MethodByName("Run")
 	if runMethodValue.Kind() != reflect.Func {
-		err = bosherr.New("Run method not found")
+		err = bosherr.Error("Run method not found")
 		return
 	}
 
 	runMethodType := runMethodValue.Type()
 	if r.invalidReturnTypes(runMethodType) {
-		err = bosherr.New("Run method should return a value and an error")
+		err = bosherr.Error("Run method should return a value and an error")
 		return
 	}
 
@@ -79,7 +79,7 @@ func (r concreteRunner) invalidReturnTypes(methodType reflect.Type) (valid bool)
 		return true
 	}
 
-	errorType := reflect.TypeOf(bosherr.New(""))
+	errorType := reflect.TypeOf(bosherr.Error(""))
 	secondReturnIsError := errorType.Implements(secondReturnType)
 	if !secondReturnIsError {
 		return true
@@ -97,7 +97,7 @@ func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, args []int
 	}
 
 	if len(args) < numberOfReqArgs {
-		err = bosherr.New("Not enough arguments, expected %d, got %d", numberOfReqArgs, len(args))
+		err = bosherr.Errorf("Not enough arguments, expected %d, got %d", numberOfReqArgs, len(args))
 		return
 	}
 
@@ -148,7 +148,7 @@ func (r concreteRunner) extractReturns(values []reflect.Value) (value interface{
 	errValue := values[1]
 	if !errValue.IsNil() {
 		errorValues := errValue.MethodByName("Error").Call([]reflect.Value{})
-		err = bosherr.New(errorValues[0].String())
+		err = bosherr.Error(errorValues[0].String())
 	}
 
 	value = values[0].Interface()

@@ -103,7 +103,7 @@ func (m monitJobSupervisor) Reload() error {
 		}
 	}
 
-	return bosherr.New(
+	return bosherr.Errorf(
 		"Failed to reload monit: before=%d after=%d",
 		oldIncarnation, currentIncarnation,
 	)
@@ -119,7 +119,7 @@ func (m monitJobSupervisor) Start() error {
 		m.logger.Debug(monitJobSupervisorLogTag, "Starting service %s", service)
 		err = m.client.StartService(service)
 		if err != nil {
-			return bosherr.WrapError(err, "Starting service %s", service)
+			return bosherr.WrapErrorf(err, "Starting service %s", service)
 		}
 	}
 
@@ -136,7 +136,7 @@ func (m monitJobSupervisor) Stop() error {
 		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service %s", service)
 		err = m.client.StopService(service)
 		if err != nil {
-			return bosherr.WrapError(err, "Stopping service %s", service)
+			return bosherr.WrapErrorf(err, "Stopping service %s", service)
 		}
 	}
 
@@ -153,7 +153,7 @@ func (m monitJobSupervisor) Unmonitor() error {
 		m.logger.Debug(monitJobSupervisorLogTag, "Unmonitoring service %s", service)
 		err := m.client.UnmonitorService(service)
 		if err != nil {
-			return bosherr.WrapError(err, "Unmonitoring service %s", service)
+			return bosherr.WrapErrorf(err, "Unmonitoring service %s", service)
 		}
 	}
 

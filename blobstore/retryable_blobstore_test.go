@@ -175,7 +175,7 @@ var _ = Describe("retryableBlobstore", func() {
 		})
 
 		It("returns error if inner blobstore validation fails", func() {
-			innerBlobstore.ValidateError = bosherr.New("fake-validate-error")
+			innerBlobstore.ValidateError = bosherr.Error("fake-validate-error")
 
 			err := retryableBlobstore.Validate()
 			Expect(err).To(HaveOccurred())

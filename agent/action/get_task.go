@@ -27,7 +27,7 @@ func (a GetTaskAction) IsPersistent() bool {
 func (a GetTaskAction) Run(taskID string) (interface{}, error) {
 	task, found := a.taskService.FindTaskWithID(taskID)
 	if !found {
-		return nil, bosherr.New("Task with id %s could not be found", taskID)
+		return nil, bosherr.Errorf("Task with id %s could not be found", taskID)
 	}
 
 	if task.State == boshtask.StateRunning {
@@ -38,7 +38,7 @@ func (a GetTaskAction) Run(taskID string) (interface{}, error) {
 	}
 
 	if task.Error != nil {
-		return task.Value, bosherr.WrapError(task.Error, "Task %s result", taskID)
+		return task.Value, bosherr.WrapErrorf(task.Error, "Task %s result", taskID)
 	}
 
 	return task.Value, nil

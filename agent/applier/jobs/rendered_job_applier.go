@@ -121,7 +121,7 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 	for _, f := range files {
 		err = s.fs.Chmod(f, os.FileMode(0755))
 		if err != nil {
-			return bosherr.WrapError(err, "Making %s executable", f)
+			return bosherr.WrapErrorf(err, "Making %s executable", f)
 		}
 	}
 
@@ -141,13 +141,13 @@ func (s *renderedJobApplier) applyPackages(job models.Job) error {
 	for _, pkg := range job.Packages {
 		err := packageApplier.Apply(pkg)
 		if err != nil {
-			return bosherr.WrapError(err, "Applying package %s for job %s", pkg.Name, job.Name)
+			return bosherr.WrapErrorf(err, "Applying package %s for job %s", pkg.Name, job.Name)
 		}
 	}
 
 	err := packageApplier.KeepOnly(job.Packages)
 	if err != nil {
-		return bosherr.WrapError(err, "Keeping only needed packages for job %s", job.Name)
+		return bosherr.WrapErrorf(err, "Keeping only needed packages for job %s", job.Name)
 	}
 
 	return nil
@@ -189,7 +189,7 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 
 		err = s.jobSupervisor.AddJob(subJobName, jobIndex, monitFilePath)
 		if err != nil {
-			err = bosherr.WrapError(err, "Adding additional monit configuration %s", label)
+			err = bosherr.WrapErrorf(err, "Adding additional monit configuration %s", label)
 			return
 		}
 	}

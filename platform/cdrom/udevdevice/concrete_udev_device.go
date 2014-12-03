@@ -47,7 +47,7 @@ func (udev ConcreteUdevDevice) Settle() (err error) {
 	case udev.runner.CommandExists("udevsettle"):
 		_, _, _, err = udev.runner.RunCommand("udevsettle")
 	default:
-		err = bosherr.New("can not find udevadm or udevsettle commands")
+		err = bosherr.Error("can not find udevadm or udevsettle commands")
 	}
 	return
 }
@@ -89,7 +89,7 @@ func (udev ConcreteUdevDevice) readByte(filePath string) error {
 	udev.logger.Debug(udev.logtag, "Successfully read %d bytes from file: %s", read, filePath)
 
 	if read != 1 {
-		return bosherr.New("Device readable but zero length")
+		return bosherr.Error("Device readable but zero length")
 	}
 
 	return nil

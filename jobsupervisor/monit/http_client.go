@@ -73,7 +73,7 @@ func (c httpClient) StartService(serviceName string) (err error) {
 
 	err = c.validateResponse(response)
 	if err != nil {
-		return bosherr.WrapError(err, "Starting Monit service %s", serviceName)
+		return bosherr.WrapErrorf(err, "Starting Monit service %s", serviceName)
 	}
 
 	return nil
@@ -89,7 +89,7 @@ func (c httpClient) StopService(serviceName string) error {
 
 	err = c.validateResponse(response)
 	if err != nil {
-		return bosherr.WrapError(err, "Stopping Monit service %s", serviceName)
+		return bosherr.WrapErrorf(err, "Stopping Monit service %s", serviceName)
 	}
 
 	return nil
@@ -105,7 +105,7 @@ func (c httpClient) UnmonitorService(serviceName string) error {
 
 	err = c.validateResponse(response)
 	if err != nil {
-		return bosherr.WrapError(err, "Unmonitoring Monit service %s", serviceName)
+		return bosherr.WrapErrorf(err, "Unmonitoring Monit service %s", serviceName)
 	}
 
 	return nil
@@ -165,7 +165,7 @@ func (c httpClient) validateResponse(response *http.Response) error {
 
 	c.logger.Debug("http-client", "Request failed with %s: %s", response.Status, string(body))
 
-	return bosherr.New("Request failed with %s: %s", response.Status, string(body))
+	return bosherr.Errorf("Request failed with %s: %s", response.Status, string(body))
 }
 
 func (c httpClient) makeRequest(client boshhttp.Client, target url.URL, method, requestBody string) (*http.Response, error) {

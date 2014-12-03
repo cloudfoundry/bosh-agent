@@ -63,7 +63,7 @@ func (b retryableBlobstore) Create(fileName string) (string, string, error) {
 
 func (b retryableBlobstore) Validate() error {
 	if b.maxTries < 1 {
-		return bosherr.New("Max tries must be > 0")
+		return bosherr.Error("Max tries must be > 0")
 	}
 
 	return b.blobstore.Validate()

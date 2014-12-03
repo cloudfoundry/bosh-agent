@@ -76,7 +76,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 	action, err := dispatcher.actionFactory.Create(req.Method)
 	if err != nil {
 		dispatcher.logger.Error(actionDispatcherLogTag, "Unknown action %s", req.Method)
-		return boshhandler.NewExceptionResponse(bosherr.New("unknown message %s", req.Method))
+		return boshhandler.NewExceptionResponse(bosherr.Errorf("unknown message %s", req.Method))
 	}
 
 	if action.IsAsynchronous() {
@@ -108,7 +108,7 @@ func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(
 		dispatcher.logger.Info(actionDispatcherLogTag, "Running persistent action %s", req.Method)
 		task, err = dispatcher.taskService.CreateTask(runTask, cancelTask, dispatcher.removeInfo)
 		if err != nil {
-			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
+			err = bosherr.WrapErrorf(err, "Create Task Failed %s", req.Method)
 			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
 			return boshhandler.NewExceptionResponse(err)
 		}
@@ -121,14 +121,14 @@ func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(
 
 		err = dispatcher.taskManager.AddInfo(taskInfo)
 		if err != nil {
-			err = bosherr.WrapError(err, "Action Failed %s", req.Method)
+			err = bosherr.WrapErrorf(err, "Action Failed %s", req.Method)
 			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
 			return boshhandler.NewExceptionResponse(err)
 		}
 	} else {
 		task, err = dispatcher.taskService.CreateTask(runTask, cancelTask, nil)
 		if err != nil {
-			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
+			err = bosherr.WrapErrorf(err, "Create Task Failed %s", req.Method)
 			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
 			return boshhandler.NewExceptionResponse(err)
 		}
@@ -150,7 +150,7 @@ func (dispatcher concreteActionDispatcher) dispatchSynchronousAction(
 
 	value, err := dispatcher.actionRunner.Run(action, req.GetPayload())
 	if err != nil {
-		err = bosherr.WrapError(err, "Action Failed %s", req.Method)
+		err = bosherr.WrapErrorf(err, "Action Failed %s", req.Method)
 		dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
 		return boshhandler.NewExceptionResponse(err)
 	}

@@ -54,7 +54,7 @@ func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 
 	devicePath, found := settings.Disks.Persistent[diskCid]
 	if !found {
-		return nil, bosherr.New("Persistent disk with volume id '%s' could not be found", diskCid)
+		return nil, bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskCid)
 	}
 
 	mountPoint := a.dirProvider.StoreDir()

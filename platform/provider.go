@@ -110,7 +110,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options P
 func (p provider) Get(name string) (Platform, error) {
 	plat, found := p.platforms[name]
 	if !found {
-		return nil, bosherror.New("Platform %s could not be found", name)
+		return nil, bosherror.Errorf("Platform %s could not be found", name)
 	}
 	return plat, nil
 }

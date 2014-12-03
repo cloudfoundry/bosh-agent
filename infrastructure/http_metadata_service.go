@@ -71,7 +71,7 @@ func (ms httpMetadataService) GetServerName() (string, error) {
 	serverName := userData.Server.Name
 
 	if len(serverName) == 0 {
-		return "", bosherr.New("Empty server name")
+		return "", bosherr.Error("Empty server name")
 	}
 
 	return serverName, nil

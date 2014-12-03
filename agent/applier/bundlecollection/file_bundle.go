@@ -74,7 +74,7 @@ func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error)
 func (b FileBundle) GetInstallPath() (boshsys.FileSystem, string, error) {
 	path := b.installPath
 	if !b.fs.FileExists(path) {
-		return nil, "", bosherr.New("install dir does not exist")
+		return nil, "", bosherr.Error("install dir does not exist")
 	}
 
 	return b.fs, path, nil
@@ -88,7 +88,7 @@ func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {
 	b.logger.Debug(fileBundleLogTag, "Enabling %v", b)
 
 	if !b.fs.FileExists(b.installPath) {
-		return nil, "", bosherr.New("bundle must be installed")
+		return nil, "", bosherr.Error("bundle must be installed")
 	}
 
 	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), enableDirPerms)

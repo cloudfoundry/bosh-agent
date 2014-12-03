@@ -36,7 +36,7 @@ func (a UnmountDiskAction) Run(volumeID string) (value interface{}, err error) {
 
 	devicePath, found := settings.Disks.Persistent[volumeID]
 	if !found {
-		err = bosherr.New("Persistent disk with volume id '%s' could not be found", volumeID)
+		err = bosherr.Errorf("Persistent disk with volume id '%s' could not be found", volumeID)
 		return
 	}
 

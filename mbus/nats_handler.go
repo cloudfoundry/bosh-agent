@@ -81,7 +81,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	})
 
 	if err != nil {
-		return bosherr.WrapError(err, "Subscribing to %s", subject)
+		return bosherr.WrapErrorf(err, "Subscribing to %s", subject)
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func (h *natsHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
 func (h natsHandler) Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error {
 	bytes, err := json.Marshal(message)
 	if err != nil {
-		return bosherr.WrapError(err, "Marshalling message (target=%s, topic=%s): %#v", message)
+		return bosherr.WrapErrorf(err, "Marshalling message (target=%s, topic=%s): %#v", message)
 	}
 
 	h.logger.Info(h.logTag, "Sending %s message '%s'", target, topic)

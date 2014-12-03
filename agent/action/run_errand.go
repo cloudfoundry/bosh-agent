@@ -61,7 +61,7 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 	}
 
 	if len(currentSpec.JobSpec.Template) == 0 {
-		return ErrandResult{}, bosherr.New("At least one job template is required to run an errand")
+		return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
 	}
 
 	command := boshsys.Command{

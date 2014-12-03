@@ -44,7 +44,7 @@ func PerformHandlerWithJSON(rawJSON []byte, handler Func, maxResponseLength int,
 }
 
 func BuildErrorWithJSON(msg string, logger boshlog.Logger) ([]byte, error) {
-	response := NewExceptionResponse(bosherr.New(msg))
+	response := NewExceptionResponse(bosherr.Error(msg))
 
 	respJSON, err := json.Marshal(response)
 	if err != nil {

@@ -63,7 +63,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 
 	if len(currentSpec.JobSpec.Template) == 0 {
 		if drainType == DrainTypeStatus {
-			return 0, bosherr.New("Check Status on Drain action requires job spec")
+			return 0, bosherr.Error("Check Status on Drain action requires job spec")
 		}
 		return 0, nil
 	}
@@ -86,7 +86,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 	switch drainType {
 	case DrainTypeUpdate:
 		if newSpec == nil {
-			return 0, bosherr.New("Drain update requires new spec")
+			return 0, bosherr.Error("Drain update requires new spec")
 		}
 
 		params = boshdrain.NewUpdateParams(currentSpec, *newSpec)
@@ -105,7 +105,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 
 	if !drainScript.Exists() {
 		if drainType == DrainTypeStatus {
-			return 0, bosherr.New("Check Status on Drain action requires a valid drain script")
+			return 0, bosherr.Error("Check Status on Drain action requires a valid drain script")
 		}
 		return 0, nil
 	}

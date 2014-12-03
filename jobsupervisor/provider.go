@@ -48,7 +48,7 @@ func NewProvider(
 func (p Provider) Get(name string) (supervisor JobSupervisor, err error) {
 	supervisor, found := p.supervisors[name]
 	if !found {
-		err = bosherr.New("JobSupervisor %s could not be found", name)
+		err = bosherr.Errorf("JobSupervisor %s could not be found", name)
 	}
 	return
 }
