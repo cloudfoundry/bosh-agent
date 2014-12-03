@@ -20,7 +20,8 @@ type V1ApplySpec struct {
 	// (json.Marshal will result in null instead of 0).
 	Index *int `json:"index"`
 
-	PersistentDisk int `json:"persistent_disk"`
+	PersistentDisk     int         `json:"persistent_disk"`
+	PersistentDiskPool interface{} `json:"persistent_disk_pool"`
 
 	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }
