@@ -11,17 +11,20 @@ import (
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("Provider", func() {
 	var (
 		logger   boshlog.Logger
 		platform *fakeplatform.FakePlatform
+		runner   *fakesys.FakeCmdRunner
 		provider Provider
 	)
 
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
+		runner = fakesys.NewFakeCmdRunner()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		providerOptions := ProviderOptions{
@@ -36,7 +39,7 @@ var _ = Describe("Provider", func() {
 	Describe("Get", func() {
 		It("returns aws infrastructure", func() {
 			resolver := NewRegistryEndpointResolver(
-				NewDigDNSResolver(logger),
+				NewDigDNSResolver(runner, logger),
 			)
 
 			metadataService := NewAwsMetadataServiceProvider(resolver).Get()
@@ -62,7 +65,7 @@ var _ = Describe("Provider", func() {
 
 		It("returns openstack infrastructure", func() {
 			resolver := NewRegistryEndpointResolver(
-				NewDigDNSResolver(logger),
+				NewDigDNSResolver(runner, logger),
 			)
 
 			metadataServiceOptions := MetadataServiceOptions{
