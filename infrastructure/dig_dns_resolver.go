@@ -1,28 +1,35 @@
 package infrastructure
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net"
-	"os/exec"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
 const digDNSResolverLogTag = "Dig DNS Resolver"
 
 type DigDNSResolver struct {
+	runner boshsys.CmdRunner
 	logger boshlog.Logger
 }
 
-func NewDigDNSResolver(logger boshlog.Logger) DigDNSResolver {
-	return DigDNSResolver{logger: logger}
+func NewDigDNSResolver(runner boshsys.CmdRunner, logger boshlog.Logger) DigDNSResolver {
+	return DigDNSResolver{
+		runner: runner,
+		logger: logger,
+	}
 }
 
 func (res DigDNSResolver) LookupHost(dnsServers []string, host string) (string, error) {
+	if host == "localhost" {
+		return "127.0.0.1", nil
+	}
+
 	ip := net.ParseIP(host)
 	if ip != nil {
 		return host, nil
@@ -46,13 +53,14 @@ func (res DigDNSResolver) LookupHost(dnsServers []string, host string) (string, 
 }
 
 func (res DigDNSResolver) lookupHostWithDNSServer(dnsServer string, host string) (ipString string, err error) {
-	stdout, _, err := res.runCommand(
+	stdout, _, _, err := res.runner.RunCommand(
 		"dig",
 		fmt.Sprintf("@%s", dnsServer),
 		host,
 		"+short",
 		"+time=1",
 	)
+
 	if err != nil {
 		return "", bosherr.WrapError(err, "Shelling out to dig")
 	}
@@ -64,35 +72,4 @@ func (res DigDNSResolver) lookupHostWithDNSServer(dnsServer string, host string)
 	}
 
 	return ipString, nil
-}
-
-func (res DigDNSResolver) runCommand(cmdName string, args ...string) (string, string, error) {
-	res.logger.Debug(digDNSResolverLogTag, "Running command: %s %s", cmdName, strings.Join(args, " "))
-	cmd := exec.Command(cmdName, args...)
-
-	stdoutWriter := bytes.NewBufferString("")
-	stderrWriter := bytes.NewBufferString("")
-	cmd.Stdout = stdoutWriter
-	cmd.Stderr = stderrWriter
-
-	err := cmd.Start()
-	if err != nil {
-		return "", "", bosherr.WrapError(err, "Starting dig command")
-	}
-
-	err = cmd.Wait()
-
-	stdout := string(stdoutWriter.Bytes())
-	res.logger.Debug(digDNSResolverLogTag, "Stdout: %s", stdout)
-
-	stderr := string(stderrWriter.Bytes())
-	res.logger.Debug(digDNSResolverLogTag, "Stderr: %s", stderr)
-
-	res.logger.Debug(digDNSResolverLogTag, "Successful: %t", err == nil)
-
-	if err != nil {
-		return "", "", bosherr.WrapError(err, "Waiting for dig command")
-	}
-
-	return stdout, stderr, nil
 }

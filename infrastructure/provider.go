@@ -20,6 +20,7 @@ type ProviderOptions struct {
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options ProviderOptions) (p Provider) {
 	fs := platform.GetFs()
+	runner := platform.GetRunner()
 	dirProvider := platform.GetDirProvider()
 
 	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
@@ -27,7 +28,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
 
 	resolver := NewRegistryEndpointResolver(
-		NewDigDNSResolver(logger),
+		NewDigDNSResolver(runner, logger),
 	)
 
 	awsMetadataService := NewAwsMetadataServiceProvider(resolver).Get()
