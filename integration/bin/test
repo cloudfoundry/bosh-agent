@@ -60,6 +60,7 @@ do
   fi
   COUNTER=$((COUNTER+1))
   sleep 1
+  result=`vagrant ssh -c "sudo mount | grep -c /dev/loop2" | head -c 1`
 done
 
 echo "SUCCESS: Drive unmounted"
