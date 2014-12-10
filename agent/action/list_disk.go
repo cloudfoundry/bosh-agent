@@ -34,17 +34,16 @@ func (a ListDiskAction) IsPersistent() bool {
 	return false
 }
 
-func (a ListDiskAction) Run() (value interface{}, err error) {
+func (a ListDiskAction) Run() (interface{}, error) {
 	settings := a.settingsService.GetSettings()
 	volumeIDs := []string{}
 
 	for volumeID, devicePath := range settings.Disks.Persistent {
 		var isMounted bool
 
-		isMounted, err = a.platform.IsPersistentDiskMounted(devicePath)
+		isMounted, err := a.platform.IsPersistentDiskMounted(devicePath)
 		if err != nil {
-			bosherr.WrapErrorf(err, "Checking whether device %s is mounted", devicePath)
-			return
+			return nil, bosherr.WrapErrorf(err, "Checking whether device %s is mounted", devicePath)
 		}
 
 		if isMounted {
@@ -54,8 +53,7 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 		}
 	}
 
-	value = volumeIDs
-	return
+	return volumeIDs, nil
 }
 
 func (a ListDiskAction) Resume() (interface{}, error) {
