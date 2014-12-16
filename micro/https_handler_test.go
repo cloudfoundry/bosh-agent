@@ -182,9 +182,10 @@ var _ = Describe("HTTPSHandler", func() {
 				postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 				postPayload := strings.NewReader(postBody)
 				httpResponse, err := httpClient.Post(serverURL+"/bad_url", "application/json", postPayload)
+				Expect(err).ToNot(HaveOccurred())
+
 				defer httpResponse.Body.Close()
 
-				Expect(err).ToNot(HaveOccurred())
 				Expect(httpResponse.StatusCode).To(Equal(404))
 			})
 		})
@@ -193,10 +194,12 @@ var _ = Describe("HTTPSHandler", func() {
 			It("returns a 401", func() {
 				postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 				postPayload := strings.NewReader(postBody)
+
 				httpResponse, err := httpClient.Post(strings.Replace(serverURL, "pass", "wrong", -1)+"/agent", "application/json", postPayload)
+				Expect(err).ToNot(HaveOccurred())
+
 				defer httpResponse.Body.Close()
 
-				Expect(err).ToNot(HaveOccurred())
 				Expect(httpResponse.StatusCode).To(Equal(401))
 				Expect(httpResponse.Header.Get("WWW-Authenticate")).To(Equal(`Basic realm=""`))
 			})
