@@ -123,7 +123,7 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 	return result, nil
 }
 
-func (f FileLoggingCmdRunner) getTruncatedOutput(file boshsys.ReadWriteCloseStater, truncateLength int64) ([]byte, bool, error) {
+func (f FileLoggingCmdRunner) getTruncatedOutput(file boshsys.File, truncateLength int64) ([]byte, bool, error) {
 	isTruncated := false
 
 	stat, err := file.Stat()
