@@ -1,7 +1,7 @@
 package udevdevice_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/platform/cdrom/udevdevice"
+	. "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
