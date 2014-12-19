@@ -23,7 +23,7 @@ var _ = Describe("VSphere Path Resolver", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		resolver = NewVsphereDevicePathResolver(sleepInterval, fs)
+		resolver = NewScsiDevicePathResolver(sleepInterval, fs)
 
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
 			"/sys/bus/scsi/devices/0:0:0:0/block/sr0",

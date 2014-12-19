@@ -96,7 +96,7 @@ var _ = Describe("Provider", func() {
 		})
 
 		It("returns vsphere infrastructure", func() {
-			expectedDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(
+			expectedDevicePathResolver := boshdpresolv.NewScsiDevicePathResolver(
 				500*time.Millisecond,
 				platform.GetFs(),
 			)

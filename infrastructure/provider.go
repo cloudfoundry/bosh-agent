@@ -29,7 +29,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
 	virtioDevicePathResolver := boshdpresolv.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
 
-	vsphereDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, fs)
+	scsiDevicePathResolver := boshdpresolv.NewScsiDevicePathResolver(500*time.Millisecond, fs)
 	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
 
 	resolver := NewRegistryEndpointResolver(
@@ -69,7 +69,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 		"openstack": openstackInfrastructure,
 		"dummy":     NewDummyInfrastructure(fs, dirProvider, platform, dummyDevicePathResolver),
 		"warden":    NewWardenInfrastructure(platform, dummyDevicePathResolver, wardenRegistryProvider),
-		"vsphere":   NewVsphereInfrastructure(platform, vsphereDevicePathResolver, logger),
+		"vsphere":   NewVsphereInfrastructure(platform, scsiDevicePathResolver, logger),
 	}
 	return
 }
