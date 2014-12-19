@@ -62,4 +62,40 @@ var _ = Describe("ConcreteUdevDevice", func() {
 			})
 		})
 	})
+
+	Describe("#Trigger", func() {
+		Context("if `udevadm` is a runnable command", func() {
+			BeforeEach(func() {
+				cmdRunner.AvailableCommands["udevadm"] = true
+			})
+
+			It("runs `udevadm trigger`", func() {
+				err := udev.Trigger()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"udevadm", "trigger"}))
+			})
+		})
+
+		Context("if `udevtrigger` is a runnable command", func() {
+			BeforeEach(func() {
+				cmdRunner.AvailableCommands["udevtrigger"] = true
+			})
+
+			It("runs `udevtrigger`", func() {
+				err := udev.Trigger()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"udevtrigger"}))
+			})
+		})
+
+		Context("if neither `udevadm` nor `udevtrigger` exist", func() {
+			It("errors", func() {
+				err := udev.Trigger()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("can not find udevadm or udevtrigger commands"))
+			})
+		})
+	})
 })
