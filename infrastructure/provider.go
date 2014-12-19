@@ -23,7 +23,10 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 	runner := platform.GetRunner()
 	dirProvider := platform.GetDirProvider()
 
+	idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, runner, fs)
 	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
+	virtioDevicePathResolver := boshdpresolv.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
+
 	vsphereDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, fs)
 	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
 
@@ -38,7 +41,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 		awsMetadataService,
 		awsRegistry,
 		platform,
-		mappedDevicePathResolver,
+		virtioDevicePathResolver,
 		logger,
 	)
 
@@ -49,7 +52,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 		openstackMetadataService,
 		openstackRegistry,
 		platform,
-		mappedDevicePathResolver,
+		virtioDevicePathResolver,
 		logger,
 	)
 

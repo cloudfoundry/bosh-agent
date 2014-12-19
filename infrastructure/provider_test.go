@@ -45,9 +45,12 @@ var _ = Describe("Provider", func() {
 			metadataService := NewAwsMetadataServiceProvider(resolver).Get()
 			registry := NewAwsRegistry(metadataService)
 
-			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
-				500*time.Millisecond,
-				platform.GetFs(),
+			idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, runner, platform.GetFs())
+			mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, platform.GetFs())
+			expectedDevicePathResolver := boshdpresolv.NewVirtioDevicePathResolver(
+				idDevicePathResolver,
+				mappedDevicePathResolver,
+				logger,
 			)
 
 			expectedInf := NewAwsInfrastructure(
@@ -75,9 +78,12 @@ var _ = Describe("Provider", func() {
 			metadataService := NewOpenstackMetadataServiceProvider(resolver, platform, metadataServiceOptions, logger).Get()
 			registry := NewOpenstackRegistry(metadataService)
 
-			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
-				500*time.Millisecond,
-				platform.GetFs(),
+			idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, runner, platform.GetFs())
+			mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, platform.GetFs())
+			expectedDevicePathResolver := boshdpresolv.NewVirtioDevicePathResolver(
+				idDevicePathResolver,
+				mappedDevicePathResolver,
+				logger,
 			)
 
 			expectedInf := NewOpenstackInfrastructure(
