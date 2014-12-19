@@ -7,24 +7,25 @@ import (
 	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
 type idDevicePathResolver struct {
 	diskWaitTimeout time.Duration
-	cmdRunner       boshsys.CmdRunner
+	udev            boshudev.UdevDevice
 	fs              boshsys.FileSystem
 }
 
 func NewIDDevicePathResolver(
 	diskWaitTimeout time.Duration,
-	cmdRunner boshsys.CmdRunner,
+	udev boshudev.UdevDevice,
 	fs boshsys.FileSystem,
 ) idDevicePathResolver {
 	return idDevicePathResolver{
 		diskWaitTimeout: diskWaitTimeout,
-		cmdRunner:       cmdRunner,
+		udev:            udev,
 		fs:              fs,
 	}
 }
@@ -34,7 +35,7 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 		return "", false, bosherr.Errorf("Disk ID is not set")
 	}
 
-	_, _, _, err := idpr.cmdRunner.RunCommand("udevadm", "trigger")
+	err := idpr.udev.Settle()
 	if err != nil {
 		return "", false, bosherr.WrapError(err, "Running udevadm trigger")
 	}

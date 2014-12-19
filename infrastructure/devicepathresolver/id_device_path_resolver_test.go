@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	fakeudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 
@@ -17,15 +18,15 @@ import (
 var _ = Describe("IDDevicePathResolver", func() {
 	var (
 		fs           *fakesys.FakeFileSystem
-		cmdRunner    *fakesys.FakeCmdRunner
+		udev         *fakeudev.FakeUdevDevice
 		diskSettings boshsettings.DiskSettings
 		pathResolver DevicePathResolver
 	)
 
 	BeforeEach(func() {
+		udev = fakeudev.NewFakeUdevDevice()
 		fs = fakesys.NewFakeFileSystem()
-		cmdRunner = fakesys.NewFakeCmdRunner()
-		pathResolver = NewIDDevicePathResolver(time.Second, cmdRunner, fs)
+		pathResolver = NewIDDevicePathResolver(500*time.Millisecond, udev, fs)
 		diskSettings = boshsettings.DiskSettings{
 			ID: "fake-disk-id-include-truncate",
 		}
@@ -34,7 +35,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 	Describe("GetRealDevicePath", func() {
 		It("refreshes udev", func() {
 			pathResolver.GetRealDevicePath(diskSettings)
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"udevadm", "trigger"}))
+			Expect(udev.Settled).To(Equal(true))
 		})
 
 		Context("when path exists", func() {
@@ -77,7 +78,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 		Context("when no matching device is found the first time", func() {
 			Context("when the timeout has not expired", func() {
 				BeforeEach(func() {
-					time.AfterFunc(500*time.Millisecond, func() {
+					time.AfterFunc(100*time.Millisecond, func() {
 						err := fs.MkdirAll("fake-device-path", os.FileMode(0750))
 						Expect(err).ToNot(HaveOccurred())
 
@@ -98,15 +99,13 @@ var _ = Describe("IDDevicePathResolver", func() {
 
 		Context("when refreshing udev fails", func() {
 			BeforeEach(func() {
-				cmdRunner.AddCmdResult("udevadm trigger", fakesys.FakeCmdResult{
-					Error: errors.New("fake-udevadm-error"),
-				})
+				udev.SettleErr = errors.New("fake-udev-error")
 			})
 
 			It("returns an error", func() {
 				_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-udevadm-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-udev-error"))
 				Expect(timeout).To(BeFalse())
 			})
 		})

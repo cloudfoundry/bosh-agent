@@ -8,6 +8,7 @@ import (
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 )
 
 type Provider struct {
@@ -23,7 +24,8 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform, options 
 	runner := platform.GetRunner()
 	dirProvider := platform.GetDirProvider()
 
-	idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, runner, fs)
+	udev := boshudev.NewConcreteUdevDevice(runner, logger)
+	idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, udev, fs)
 	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
 	virtioDevicePathResolver := boshdpresolv.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
 

@@ -4,22 +4,25 @@ import (
 	"path/filepath"
 	"time"
 
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("Provider", func() {
 	var (
-		logger   boshlog.Logger
-		platform *fakeplatform.FakePlatform
-		runner   *fakesys.FakeCmdRunner
-		provider Provider
+		logger                     boshlog.Logger
+		platform                   *fakeplatform.FakePlatform
+		runner                     *fakesys.FakeCmdRunner
+		expectedVirtioPathResolver boshdpresolv.DevicePathResolver
+		provider                   Provider
 	)
 
 	BeforeEach(func() {
@@ -34,6 +37,15 @@ var _ = Describe("Provider", func() {
 		}
 
 		provider = NewProvider(logger, platform, providerOptions)
+
+		udev := boshudev.NewConcreteUdevDevice(runner, logger)
+		idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, udev, platform.GetFs())
+		mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, platform.GetFs())
+		expectedVirtioPathResolver = boshdpresolv.NewVirtioDevicePathResolver(
+			idDevicePathResolver,
+			mappedDevicePathResolver,
+			logger,
+		)
 	})
 
 	Describe("Get", func() {
@@ -45,19 +57,11 @@ var _ = Describe("Provider", func() {
 			metadataService := NewAwsMetadataServiceProvider(resolver).Get()
 			registry := NewAwsRegistry(metadataService)
 
-			idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, runner, platform.GetFs())
-			mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, platform.GetFs())
-			expectedDevicePathResolver := boshdpresolv.NewVirtioDevicePathResolver(
-				idDevicePathResolver,
-				mappedDevicePathResolver,
-				logger,
-			)
-
 			expectedInf := NewAwsInfrastructure(
 				metadataService,
 				registry,
 				platform,
-				expectedDevicePathResolver,
+				expectedVirtioPathResolver,
 				logger,
 			)
 
@@ -78,19 +82,11 @@ var _ = Describe("Provider", func() {
 			metadataService := NewOpenstackMetadataServiceProvider(resolver, platform, metadataServiceOptions, logger).Get()
 			registry := NewOpenstackRegistry(metadataService)
 
-			idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, runner, platform.GetFs())
-			mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, platform.GetFs())
-			expectedDevicePathResolver := boshdpresolv.NewVirtioDevicePathResolver(
-				idDevicePathResolver,
-				mappedDevicePathResolver,
-				logger,
-			)
-
 			expectedInf := NewOpenstackInfrastructure(
 				metadataService,
 				registry,
 				platform,
-				expectedDevicePathResolver,
+				expectedVirtioPathResolver,
 				logger,
 			)
 
