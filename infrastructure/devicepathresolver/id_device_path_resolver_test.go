@@ -35,6 +35,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 	Describe("GetRealDevicePath", func() {
 		It("refreshes udev", func() {
 			pathResolver.GetRealDevicePath(diskSettings)
+			Expect(udev.Triggered).To(Equal(true))
 			Expect(udev.Settled).To(Equal(true))
 		})
 
@@ -97,15 +98,28 @@ var _ = Describe("IDDevicePathResolver", func() {
 			})
 		})
 
-		Context("when refreshing udev fails", func() {
+		Context("when triggering udev fails", func() {
 			BeforeEach(func() {
-				udev.SettleErr = errors.New("fake-udev-error")
+				udev.TriggerErr = errors.New("fake-udev-trigger-error")
 			})
 
 			It("returns an error", func() {
 				_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-udev-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-udev-trigger-error"))
+				Expect(timeout).To(BeFalse())
+			})
+		})
+
+		Context("when settling udev fails", func() {
+			BeforeEach(func() {
+				udev.SettleErr = errors.New("fake-udev-settle-error")
+			})
+
+			It("returns an error", func() {
+				_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-udev-settle-error"))
 				Expect(timeout).To(BeFalse())
 			})
 		})
