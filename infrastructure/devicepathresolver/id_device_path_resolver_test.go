@@ -135,5 +135,19 @@ var _ = Describe("IDDevicePathResolver", func() {
 				Expect(timeout).To(BeFalse())
 			})
 		})
+
+		Context("when id is not the correct format", func() {
+			BeforeEach(func() {
+				diskSettings = boshsettings.DiskSettings{
+					ID: "too-short",
+				}
+			})
+
+			It("returns an error", func() {
+				_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).To(HaveOccurred())
+				Expect(timeout).To(BeFalse())
+			})
+		})
 	})
 })

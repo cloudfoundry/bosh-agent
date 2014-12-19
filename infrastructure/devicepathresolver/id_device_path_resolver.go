@@ -35,6 +35,10 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 		return "", false, bosherr.Errorf("Disk ID is not set")
 	}
 
+	if len(diskSettings.ID) < 20 {
+		return "", false, bosherr.Errorf("Disk ID is not the correct format")
+	}
+
 	err := idpr.udev.Trigger()
 	if err != nil {
 		return "", false, bosherr.WrapError(err, "Running udevadm trigger")
