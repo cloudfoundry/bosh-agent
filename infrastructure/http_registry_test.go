@@ -173,7 +173,7 @@ var _ = Describe("httpRegistry", func() {
 						},
 						Disks: boshsettings.Disks{
 							Ephemeral:  "/dev/sdb",
-							Persistent: map[string]string{"vol-xxxxxx": "/dev/sdf"},
+							Persistent: map[string]interface{}{"vol-xxxxxx": "/dev/sdf"},
 							System:     "/dev/sda1",
 						},
 						Env: boshsettings.Env{

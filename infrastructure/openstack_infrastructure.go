@@ -66,11 +66,11 @@ func (inf openstackInfrastructure) SetupNetworking(networks boshsettings.Network
 	return inf.platform.SetupDhcp(networks)
 }
 
-func (inf openstackInfrastructure) GetEphemeralDiskPath(devicePath string) string {
-	if devicePath == "" {
+func (inf openstackInfrastructure) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
+	if diskSettings.Path == "" {
 		inf.logger.Info(openstackInfrastructureLogTag, "Ephemeral disk path is empty")
 		return ""
 	}
 
-	return inf.platform.NormalizeDiskPath(devicePath)
+	return inf.platform.NormalizeDiskPath(diskSettings)
 }

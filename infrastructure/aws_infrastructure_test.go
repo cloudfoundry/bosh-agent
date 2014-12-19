@@ -114,24 +114,25 @@ func init() {
 		Describe("GetEphemeralDiskPath", func() {
 			It("returns the real disk path given an AWS EBS hint", func() {
 				platform.NormalizeDiskPathRealPath = "/dev/xvdb"
-
-				realPath := aws.GetEphemeralDiskPath("/dev/sdb")
+				diskSettings := boshsettings.DiskSettings{Path: "/dev/sdb"}
+				realPath := aws.GetEphemeralDiskPath(diskSettings)
 				Expect(realPath).To(Equal("/dev/xvdb"))
 
-				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+				Expect(platform.NormalizeDiskPathSettings).To(Equal(diskSettings))
 			})
 
 			It("returns false if path cannot be normalized", func() {
 				platform.NormalizeDiskPathRealPath = ""
 
-				realPath := aws.GetEphemeralDiskPath("/dev/sdb")
+				diskSettings := boshsettings.DiskSettings{Path: "/dev/sdb"}
+				realPath := aws.GetEphemeralDiskPath(diskSettings)
 				Expect(realPath).To(Equal(""))
 
-				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+				Expect(platform.NormalizeDiskPathSettings).To(Equal(diskSettings))
 			})
 
 			It("returns false if device path is empty because ephemeral storage should not be on root partition", func() {
-				realPath := aws.GetEphemeralDiskPath("")
+				realPath := aws.GetEphemeralDiskPath(boshsettings.DiskSettings{})
 				Expect(realPath).To(BeEmpty())
 
 				Expect(platform.NormalizeDiskPathCalled).To(BeFalse())

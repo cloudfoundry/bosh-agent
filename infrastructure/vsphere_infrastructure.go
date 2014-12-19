@@ -61,6 +61,6 @@ func (inf vsphereInfrastructure) SetupNetworking(networks boshsettings.Networks)
 	return inf.platform.SetupManualNetworking(networks)
 }
 
-func (inf vsphereInfrastructure) GetEphemeralDiskPath(string) string {
+func (inf vsphereInfrastructure) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
 	return "/dev/sdb"
 }

@@ -10,9 +10,9 @@ type FakeInfrastructure struct {
 	SetupSSHUsername        string
 	SetupNetworkingNetworks boshsettings.Networks
 
-	GetEphemeralDiskPathDevicePath string
-	GetEphemeralDiskPathFound      bool
-	GetEphemeralDiskPathRealPath   string
+	GetEphemeralDiskSettings     boshsettings.DiskSettings
+	GetEphemeralDiskPathFound    bool
+	GetEphemeralDiskPathRealPath string
 
 	DevicePathResolver boshdpresolv.DevicePathResolver
 }
@@ -42,7 +42,7 @@ func (i *FakeInfrastructure) SetupNetworking(networks boshsettings.Networks) (er
 	return
 }
 
-func (i *FakeInfrastructure) GetEphemeralDiskPath(devicePath string) string {
-	i.GetEphemeralDiskPathDevicePath = devicePath
+func (i *FakeInfrastructure) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
+	i.GetEphemeralDiskSettings = diskSettings
 	return i.GetEphemeralDiskPathRealPath
 }

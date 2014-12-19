@@ -1,73 +1,79 @@
 package action_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 )
 
-func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk UnmountDiskAction) {
-	settingsService := &fakesettings.FakeSettingsService{
-		Settings: boshsettings.Settings{
-			Disks: boshsettings.Disks{
-				Persistent: map[string]string{"vol-123": "/dev/sdf"},
+var _ = Describe("UnmountDiskAction", func() {
+	var (
+		platform *fakeplatform.FakePlatform
+		action   UnmountDiskAction
+
+		expectedDiskSettings boshsettings.DiskSettings
+	)
+
+	BeforeEach(func() {
+		platform = fakeplatform.NewFakePlatform()
+
+		settingsService := &fakesettings.FakeSettingsService{
+			Settings: boshsettings.Settings{
+				Disks: boshsettings.Disks{
+					Persistent: map[string]interface{}{
+						"vol-123": map[string]interface{}{
+							"volume_id": "2",
+							"path":      "/dev/sdf",
+						},
+					},
+				},
 			},
-		},
-	}
-	return NewUnmountDisk(settingsService, platform)
-}
+		}
+		action = NewUnmountDisk(settingsService, platform)
 
-func init() {
-	Describe("UnmountDiskAction", func() {
-		It("is asynchronous", func() {
-			platform := fakeplatform.NewFakePlatform()
-			action := buildUnmountDiskAction(platform)
-			Expect(action.IsAsynchronous()).To(BeTrue())
-		})
-
-		It("is not persistent", func() {
-			platform := fakeplatform.NewFakePlatform()
-			action := buildUnmountDiskAction(platform)
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
-
-		It("unmount disk when the disk is mounted", func() {
-			platform := fakeplatform.NewFakePlatform()
-			platform.UnmountPersistentDiskDidUnmount = true
-
-			unmountDisk := buildUnmountDiskAction(platform)
-
-			result, err := unmountDisk.Run("vol-123")
-			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of /dev/sdf"}`)
-
-			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
-		})
-
-		It("unmount disk when the disk is not mounted", func() {
-			platform := fakeplatform.NewFakePlatform()
-			platform.UnmountPersistentDiskDidUnmount = false
-
-			mountDisk := buildUnmountDiskAction(platform)
-
-			result, err := mountDisk.Run("vol-123")
-			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of /dev/sdf is not mounted"}`)
-
-			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
-		})
-
-		It("unmount disk when device path not found", func() {
-			platform := fakeplatform.NewFakePlatform()
-			mountDisk := buildUnmountDiskAction(platform)
-
-			_, err := mountDisk.Run("vol-456")
-			Expect(err).To(HaveOccurred())
-		})
+		expectedDiskSettings = boshsettings.DiskSettings{
+			ID:       "vol-123",
+			VolumeID: "2",
+			Path:     "/dev/sdf",
+		}
 	})
-}
+
+	It("is asynchronous", func() {
+		Expect(action.IsAsynchronous()).To(BeTrue())
+	})
+
+	It("is not persistent", func() {
+		Expect(action.IsPersistent()).To(BeFalse())
+	})
+
+	It("unmount disk when the disk is mounted", func() {
+		platform.UnmountPersistentDiskDidUnmount = true
+
+		result, err := action.Run("vol-123")
+		Expect(err).ToNot(HaveOccurred())
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of /dev/sdf"}`)
+
+		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
+	})
+
+	It("unmount disk when the disk is not mounted", func() {
+		platform.UnmountPersistentDiskDidUnmount = false
+
+		result, err := action.Run("vol-123")
+		Expect(err).ToNot(HaveOccurred())
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of /dev/sdf is not mounted"}`)
+
+		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
+	})
+
+	It("unmount disk when device path not found", func() {
+		_, err := action.Run("vol-456")
+		Expect(err).To(HaveOccurred())
+	})
+})

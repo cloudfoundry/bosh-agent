@@ -113,7 +113,10 @@ func init() {
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupEphemeralDiskWithPathDevicePath).To(Equal("/dev/sda"))
-				Expect(inf.GetEphemeralDiskPathDevicePath).To(Equal("fake-ephemeral-disk-setting"))
+				Expect(inf.GetEphemeralDiskSettings).To(Equal(boshsettings.DiskSettings{
+					VolumeID: "fake-ephemeral-disk-setting",
+					Path:     "fake-ephemeral-disk-setting",
+				}))
 			})
 
 			It("returns error if setting ephemeral disk fails", func() {
@@ -151,18 +154,27 @@ func init() {
 
 			It("mounts persistent disk", func() {
 				settingsService.Settings.Disks = boshsettings.Disks{
-					Persistent: map[string]string{"vol-123": "/dev/sdb"},
+					Persistent: map[string]interface{}{
+						"vol-123": map[string]interface{}{
+							"volume_id": "2",
+							"path":      "/dev/sdb",
+						},
+					},
 				}
 
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.MountPersistentDiskDevicePath).To(Equal("/dev/sdb"))
+				Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+					ID:       "vol-123",
+					VolumeID: "2",
+					Path:     "/dev/sdb",
+				}))
 				Expect(platform.MountPersistentDiskMountPoint).To(Equal(dirProvider.StoreDir()))
 			})
 
 			It("errors if there is more than one persistent disk", func() {
 				settingsService.Settings.Disks = boshsettings.Disks{
-					Persistent: map[string]string{
+					Persistent: map[string]interface{}{
 						"vol-123": "/dev/sdb",
 						"vol-456": "/dev/sdc",
 					},
@@ -174,12 +186,12 @@ func init() {
 
 			It("does not try to mount when no persistent disk", func() {
 				settingsService.Settings.Disks = boshsettings.Disks{
-					Persistent: map[string]string{},
+					Persistent: map[string]interface{}{},
 				}
 
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.MountPersistentDiskDevicePath).To(Equal(""))
+				Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{}))
 				Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
 			})
 

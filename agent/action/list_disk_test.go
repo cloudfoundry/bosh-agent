@@ -39,7 +39,7 @@ func init() {
 			platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
 
 			settingsService.Settings.Disks = boshsettings.Disks{
-				Persistent: map[string]string{
+				Persistent: map[string]interface{}{
 					"volume-1": "/dev/sda",
 					"volume-2": "/dev/sdb",
 					"volume-3": "/dev/sdc",

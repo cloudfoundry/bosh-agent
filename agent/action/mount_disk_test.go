@@ -8,6 +8,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 )
@@ -38,8 +39,11 @@ var _ = Describe("MountDiskAction", func() {
 		Context("when settings can be loaded", func() {
 			Context("when disk cid can be resolved to a device path from infrastructure settings", func() {
 				BeforeEach(func() {
-					settingsService.Settings.Disks.Persistent = map[string]string{
-						"fake-disk-cid": "fake-device-path",
+					settingsService.Settings.Disks.Persistent = map[string]interface{}{
+						"fake-disk-cid": map[string]interface{}{
+							"path":      "fake-device-path",
+							"volume_id": "fake-volume-id",
+						},
 					}
 				})
 
@@ -60,7 +64,11 @@ var _ = Describe("MountDiskAction", func() {
 							Expect(err).NotTo(HaveOccurred())
 							Expect(result).To(Equal(map[string]string{}))
 
-							Expect(platform.MountPersistentDiskDevicePath).To(Equal("fake-device-path"))
+							Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+								ID:       "fake-disk-cid",
+								VolumeID: "fake-volume-id",
+								Path:     "fake-device-path",
+							}))
 							Expect(platform.MountPersistentDiskMountPoint).To(Equal("/fake-base-dir/store"))
 						})
 					})
@@ -87,7 +95,11 @@ var _ = Describe("MountDiskAction", func() {
 							Expect(err).NotTo(HaveOccurred())
 							Expect(result).To(Equal(map[string]string{}))
 
-							Expect(platform.MountPersistentDiskDevicePath).To(Equal("fake-device-path"))
+							Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+								ID:       "fake-disk-cid",
+								VolumeID: "fake-volume-id",
+								Path:     "fake-device-path",
+							}))
 							Expect(platform.MountPersistentDiskMountPoint).To(Equal("/fake-base-dir/store_migration_target"))
 						})
 					})
@@ -124,7 +136,7 @@ var _ = Describe("MountDiskAction", func() {
 
 			Context("when disk cid cannot be resolved to a device path from infrastructure settings", func() {
 				BeforeEach(func() {
-					settingsService.Settings.Disks.Persistent = map[string]string{
+					settingsService.Settings.Disks.Persistent = map[string]interface{}{
 						"fake-known-disk-cid": "/dev/sdf",
 					}
 				})

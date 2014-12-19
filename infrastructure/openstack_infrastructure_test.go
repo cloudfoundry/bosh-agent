@@ -115,18 +115,23 @@ func init() {
 		Describe("GetEphemeralDiskPath", func() {
 			It("returns the real disk path given an openstack hint", func() {
 				platform.NormalizeDiskPathRealPath = "/dev/xvdb"
-				Expect(openstack.GetEphemeralDiskPath("/dev/sdb")).To(Equal("/dev/xvdb"))
-				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+				diskSettings := boshsettings.DiskSettings{Path: "/dev/sdb"}
+				realPath := openstack.GetEphemeralDiskPath(diskSettings)
+				Expect(realPath).To(Equal("/dev/xvdb"))
+				Expect(platform.NormalizeDiskPathSettings).To(Equal(diskSettings))
 			})
 
 			It("returns false if path cannot be normalized", func() {
 				platform.NormalizeDiskPathRealPath = ""
-				Expect(openstack.GetEphemeralDiskPath("/dev/sdb")).To(Equal(""))
-				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+				diskSettings := boshsettings.DiskSettings{Path: "/dev/sdb"}
+				realPath := openstack.GetEphemeralDiskPath(diskSettings)
+				Expect(realPath).To(Equal(""))
+				Expect(platform.NormalizeDiskPathSettings).To(Equal(diskSettings))
 			})
 
 			It("returns an empty string to indicated that there is no ephemeral disk path if device path is empty", func() {
-				Expect(openstack.GetEphemeralDiskPath("")).To(BeEmpty())
+				realPath := openstack.GetEphemeralDiskPath(boshsettings.DiskSettings{})
+				Expect(realPath).To(BeEmpty())
 				Expect(platform.NormalizeDiskPathCalled).To(BeFalse())
 			})
 		})

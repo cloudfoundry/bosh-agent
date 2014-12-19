@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
@@ -25,13 +26,15 @@ func NewVsphereDevicePathResolver(
 	return
 }
 
-func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(volumeID string) (realPath string, timedOut bool, err error) {
+func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (realPath string, timedOut bool, err error) {
 	devicePaths, err := devicePathResolver.fs.Glob("/sys/bus/scsi/devices/*:0:0:0/block/*")
 	if err != nil {
 		return
 	}
 
 	var hostID string
+
+	volumeID := diskSettings.VolumeID
 
 	for _, rootDevicePath := range devicePaths {
 		if path.Base(rootDevicePath) == "sda" {

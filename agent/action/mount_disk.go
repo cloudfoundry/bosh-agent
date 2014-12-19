@@ -9,7 +9,7 @@ import (
 )
 
 type diskMounter interface {
-	MountPersistentDisk(volumeID, mountPoint string) error
+	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
 }
 
 type mountPoints interface {
@@ -52,7 +52,7 @@ func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 
 	settings := a.settingsService.GetSettings()
 
-	devicePath, found := settings.Disks.Persistent[diskCid]
+	diskSettings, found := settings.PersistentDiskSettings(diskCid)
 	if !found {
 		return nil, bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskCid)
 	}
@@ -67,7 +67,7 @@ func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 		mountPoint = a.dirProvider.StoreMigrationDir()
 	}
 
-	err = a.diskMounter.MountPersistentDisk(devicePath, mountPoint)
+	err = a.diskMounter.MountPersistentDisk(diskSettings, mountPoint)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Mounting persistent disk")
 	}

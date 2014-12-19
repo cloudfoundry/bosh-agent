@@ -1,14 +1,15 @@
 package infrastructure_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
 var _ = Describe("vSphere Infrastructure", func() {
@@ -53,7 +54,8 @@ var _ = Describe("vSphere Infrastructure", func() {
 
 	Describe("GetEphemeralDiskPath", func() {
 		It("vsphere get ephemeral disk path", func() {
-			Expect(vsphere.GetEphemeralDiskPath("does not matter")).To(Equal("/dev/sdb"))
+			realPath := vsphere.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "does not matter"})
+			Expect(realPath).To(Equal("/dev/sdb"))
 		})
 	})
 })
