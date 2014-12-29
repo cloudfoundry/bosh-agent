@@ -43,6 +43,8 @@ var _ = Describe("HTTPSHandler", func() {
 
 		httpTransport := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 		httpClient = http.Client{Transport: httpTransport}
+
+		waitForServerToStart(serverURL, httpClient)
 	})
 
 	AfterEach(func() {
@@ -73,8 +75,6 @@ var _ = Describe("HTTPSHandler", func() {
 
 		Context("when incorrect http method is used", func() {
 			It("returns a 404", func() {
-				waitForServerToStart(serverURL, "agent", httpClient)
-
 				httpResponse, err := httpClient.Get(serverURL + "/agent")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(httpResponse.StatusCode).To(Equal(404))
@@ -101,8 +101,6 @@ var _ = Describe("HTTPSHandler", func() {
 
 		Context("when incorrect http method is used", func() {
 			It("returns a 404", func() {
-				waitForServerToStart(serverURL, "blobs", httpClient)
-
 				postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 				postPayload := strings.NewReader(postBody)
 
@@ -117,8 +115,6 @@ var _ = Describe("HTTPSHandler", func() {
 
 		Context("when file does not exist", func() {
 			It("returns a 404", func() {
-				waitForServerToStart(serverURL, "blobs", httpClient)
-
 				httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
 				Expect(err).ToNot(HaveOccurred())
 
@@ -134,8 +130,6 @@ var _ = Describe("HTTPSHandler", func() {
 
 			putBody := `Updated data`
 			putPayload := strings.NewReader(putBody)
-
-			waitForServerToStart(serverURL, "blobs", httpClient)
 
 			request, err := http.NewRequest("PUT", serverURL+"/blobs/a5/123-456-789", putPayload)
 			Expect(err).ToNot(HaveOccurred())
@@ -157,8 +151,6 @@ var _ = Describe("HTTPSHandler", func() {
 
 				putBody := `Updated data`
 				putPayload := strings.NewReader(putBody)
-
-				waitForServerToStart(serverURL, "blobs", httpClient)
 
 				request, err := http.NewRequest("PUT", serverURL+"/blobs/a5/123-456-789", putPayload)
 				Expect(err).ToNot(HaveOccurred())
@@ -207,16 +199,10 @@ var _ = Describe("HTTPSHandler", func() {
 	})
 })
 
-func waitForServerToStart(serverURL string, endpoint string, httpClient http.Client) (httpResponse *http.Response) {
-	postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
-	postPayload := strings.NewReader(postBody)
-
-	httpResponse, err := httpClient.Post(serverURL+"/"+endpoint, "application/json", postPayload)
+func waitForServerToStart(serverURL string, httpClient http.Client) {
+	httpResponse, err := httpClient.Get(serverURL + "/healthz")
 	for err != nil {
-		httpResponse, err = httpClient.Post(serverURL+"/"+endpoint, "application/json", postPayload)
+		httpResponse, err = httpClient.Get(serverURL + "/healthz")
 	}
-
 	defer httpResponse.Body.Close()
-
-	return
 }
