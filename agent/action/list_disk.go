@@ -38,7 +38,7 @@ func (a ListDiskAction) Run() (interface{}, error) {
 	settings := a.settingsService.GetSettings()
 	diskIDs := []string{}
 
-	for diskID, _ := range settings.Disks.Persistent {
+	for diskID := range settings.Disks.Persistent {
 		var isMounted bool
 
 		diskSettings, _ := settings.PersistentDiskSettings(diskID)

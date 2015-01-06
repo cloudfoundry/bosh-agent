@@ -114,7 +114,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	for diskID, _ := range settings.Disks.Persistent {
+	for diskID := range settings.Disks.Persistent {
 		diskSettings, _ := settings.PersistentDiskSettings(diskID)
 		err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir())
 		if err != nil {
