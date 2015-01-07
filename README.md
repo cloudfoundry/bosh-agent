@@ -81,7 +81,7 @@ Install tools used by the BOSH Agent test suite:
 Each package in the agent has its own unit tests. You can run all unit tests with `bin/test-unit`.
 
 Additionally, [BOSH](https://github.com/cloudfoundry/bosh) includes integration tests that use this agent.
-Run `bin/test-integration` to run those.
+Run `bin/test-bosh-integration` to run those with your local agent changes.
 However, in order to run the BOSH integrations tests, you will need a copy of the BOSH repo, which this script will do in `./tmp`.
 BOSH uses Ruby for its tests, so you will also need to have that available.
 
