@@ -384,6 +384,11 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	}
 	if contents != nil && len(contents) > 0 {
 		p.logger.Debug(logTag, "Existing ephemeral mount `%s' is not empty. Contents: %s", mountPoint, contents)
+
+		if realPath == "" {
+			p.logger.Debug(logTag, "Skipping partitioning root disk with non-empty ephemeral mount")
+			return nil
+		}
 	}
 
 	err = p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
@@ -395,8 +400,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 
 	if realPath == "" {
 		if !p.options.CreatePartitionIfNoEphemeralDisk {
-			p.logger.Info(logTag, "No ephemeral disk found, using root partition as ephemeral disk")
-			return nil
+			return bosherr.Error("No ephemeral disk found, cannot use root partition as ephemeral disk")
 		}
 
 		swapPartitionPath, dataPartitionPath, err = p.createEphemeralPartitionsOnRootDevice()

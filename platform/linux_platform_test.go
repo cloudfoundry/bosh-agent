@@ -430,41 +430,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				mounter = diskManager.FakeMounter
 			})
 
-			itSetsUpEphemeralDisk(act)
-
-			It("returns error if creating data dir fails", func() {
-				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
-				Expect(partitioner.PartitionCalled).To(BeFalse())
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
-			It("returns err when the data directory cannot be globbed", func() {
-				fs.GlobErr = errors.New("fake-glob-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Globbing ephemeral disk mount point `/fake-dir/data/*'"))
-				Expect(err.Error()).To(ContainSubstring("fake-glob-err"))
-				Expect(partitioner.PartitionCalled).To(BeFalse())
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
-			It("does not create new partitions when the data directory is not empty", func() {
-				fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
-
-				err := act()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(partitioner.PartitionCalled).To(BeFalse())
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
 			Context("when agent should partition ephemeral disk on root disk", func() {
 				BeforeEach(func() {
 					options.CreatePartitionIfNoEphemeralDisk = true
@@ -535,6 +500,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
 							)
 						})
+
+						itSetsUpEphemeralDisk(act)
 
 						Context("when root device has insufficient space for ephemeral partitions", func() {
 							BeforeEach(func() {
@@ -668,6 +635,39 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 						})
 					})
 				})
+
+				It("returns error if creating data dir fails", func() {
+					fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+					Expect(partitioner.PartitionCalled).To(BeFalse())
+					Expect(formatter.FormatCalled).To(BeFalse())
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+
+				It("returns err when the data directory cannot be globbed", func() {
+					fs.GlobErr = errors.New("fake-glob-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Globbing ephemeral disk mount point `/fake-dir/data/*'"))
+					Expect(err.Error()).To(ContainSubstring("fake-glob-err"))
+					Expect(partitioner.PartitionCalled).To(BeFalse())
+					Expect(formatter.FormatCalled).To(BeFalse())
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+
+				It("does not create new partitions when the data directory is not empty", func() {
+					fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
+
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(partitioner.PartitionCalled).To(BeFalse())
+					Expect(formatter.FormatCalled).To(BeFalse())
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
 			})
 
 			Context("when agent should not partition ephemeral disk on root disk", func() {
@@ -675,21 +675,27 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					options.CreatePartitionIfNoEphemeralDisk = false
 				})
 
+				It("returns an error", func() {
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("cannot use root partition as ephemeral disk"))
+				})
+
 				It("does not try to partition anything", func() {
 					err := act()
-					Expect(err).NotTo(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 					Expect(partitioner.PartitionCalled).To(BeFalse())
 				})
 
 				It("does not try to format anything", func() {
 					err := act()
-					Expect(err).NotTo(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 					Expect(formatter.FormatCalled).To(BeFalse())
 				})
 
 				It("does not try to mount anything", func() {
 					err := act()
-					Expect(err).NotTo(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 					Expect(mounter.MountCalled).To(BeFalse())
 				})
 			})
