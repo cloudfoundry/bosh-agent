@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	bmregistry "github.com/cloudfoundry/bosh-micro-cli/deployer/registry"
+	bmregistry "github.com/cloudfoundry/bosh-micro-cli/registry"
 	"net/http"
 	"strings"
 )
@@ -20,20 +20,14 @@ func main() {
 	flag.Parse()
 
 	logger := boshlog.NewLogger(boshlog.LevelDebug)
-	server := bmregistry.NewServer(logger)
-	readyErrCh := make(chan error)
+	serverManager := bmregistry.NewServerManager(logger)
 
 	go func() {
-		err := server.Start(*user, *password, *host, *port, readyErrCh)
+		_, err := serverManager.Start(*user, *password, *host, *port)
 		if err != nil {
 			panic("Error starting registry")
 		}
 	}()
-
-	err := <-readyErrCh
-	if err != nil {
-		panic("Registry error occurred")
-	}
 
 	if *instance != "" && *settings != "" {
 		request, err := http.NewRequest(
