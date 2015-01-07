@@ -501,17 +501,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 							)
 						})
 
-						itSetsUpEphemeralDisk(act)
-
 						Context("when root device has insufficient space for ephemeral partitions", func() {
 							BeforeEach(func() {
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024*1024*1024 - 1
 								collector.MemStats.Total = 8
 							})
 
-							It("does not partition", func() {
+							It("returns an error", func() {
 								err := act()
-								Expect(err).ToNot(HaveOccurred())
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(ContainSubstring("Insufficient remaining disk"))
 								Expect(partitioner.PartitionCalled).To(BeFalse())
 								Expect(formatter.FormatCalled).To(BeFalse())
 								Expect(mounter.MountCalled).To(BeFalse())
@@ -523,6 +522,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
 								collector.MemStats.Total = 256 * 1024 * 1024
 							})
+
+							itSetsUpEphemeralDisk(act)
 
 							It("returns err when mem stats are unavailable", func() {
 								collector.MemStatsErr = errors.New("fake-memstats-error")

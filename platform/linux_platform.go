@@ -405,12 +405,6 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 
 		swapPartitionPath, dataPartitionPath, err = p.createEphemeralPartitionsOnRootDevice()
 		if err != nil {
-			_, isInsufficentSpaceError := err.(insufficientSpaceError)
-			if isInsufficentSpaceError {
-				p.logger.Warn(logTag, "No partitions created on root device, using root partition as ephemeral disk - %s", err.Error())
-				return nil
-			}
-
 			return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
 		}
 	} else {
