@@ -23,7 +23,7 @@ DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/micro}
 # To push to the Pivotal GoCD Docker Registry (behind firewall):
 # DOCKER_IMAGE=docker.gocd.cf-app.com:5000/bosh-container
 
-SRC_DIR=$(cd $(dirname $0)/../.. && pwd)
+SRC_DIR=$(cd $(dirname $0)/.. && pwd)
 chmod -R o+w $SRC_DIR
 
 echo "Running '$@' in docker container '$DOCKER_IMAGE'..."
