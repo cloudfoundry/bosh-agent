@@ -1,10 +1,16 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
+
+type RegistrySettings struct {
+	AgentID string `json:"agent_id"`
+}
 
 type TestEnvironment struct {
 	cmdRunner boshsys.CmdRunner
@@ -33,6 +39,7 @@ sudo dd if=/dev/zero of=/virtualfs bs=1024 count=1024
 sudo losetup /dev/loop2 /virtualfs
 sudo mkfs -t ext3 -m 1 -v /dev/loop2
 sudo e2label /dev/loop2 config-2
+sudo rm -rf /tmp/config-drive
 sudo mkdir /tmp/config-drive
 sudo mount /dev/disk/by-label/config-2 /tmp/config-drive
 sudo chown vagrant:vagrant /tmp/config-drive
@@ -64,17 +71,26 @@ func (t TestEnvironment) UpdateAgentConfig(configFile string) error {
 }
 
 func (t TestEnvironment) RestartAgent() error {
-	_, err := t.RunCommand("sudo sv stop agent && sudo sv start agent")
+	_, err := t.RunCommand("nohup sudo sv stop agent &")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("nohup sudo sv start agent &")
 	return err
 }
 
-func (t TestEnvironment) StartRegistry(settings string) error {
+func (t TestEnvironment) StartRegistry(settings RegistrySettings) error {
+	settingsJSON, err := json.Marshal(settings)
+	if err != nil {
+		return err
+	}
 
-	_, err := t.RunCommand(
+	_, err = t.RunCommand(
 		fmt.Sprintf(
-			`nohup %s/tmp/fake-registry -user user -password pass -host localhost -port 9090 -instance instance-id -settings "%s" &> /dev/null &`,
+			`nohup %s/tmp/fake-registry -user user -password pass -host localhost -port 9090 -instance instance-id -settings %s &> /dev/null &`,
 			t.agentDir(),
-			settings,
+			strconv.Quote(string(settingsJSON)),
 		),
 	)
 	return err

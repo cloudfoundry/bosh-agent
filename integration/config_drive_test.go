@@ -35,7 +35,11 @@ var _ = Describe("ConfigDrive", func() {
 				err = testEnvironment.RemoveAgentSettings()
 				Expect(err).ToNot(HaveOccurred())
 
-				err = testEnvironment.StartRegistry(`"{\"agent_id\":\"fake-agent-id\"}"`)
+				registrySettings := RegistrySettings{
+					AgentID: "fake-agent-id",
+				}
+
+				err = testEnvironment.StartRegistry(registrySettings)
 				Expect(err).ToNot(HaveOccurred())
 
 				err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
