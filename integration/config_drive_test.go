@@ -1,6 +1,9 @@
 package integration_test
 
 import (
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -53,6 +56,13 @@ var _ = Describe("ConfigDrive", func() {
 				settingsJSON, err := testEnvironment.GetFileContents("/var/vcap/bosh/settings.json")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(settingsJSON).To(ContainSubstring("fake-agent-id"))
+			})
+
+			It("config drive is being unmounted", func() {
+				Eventually(func() string {
+					result, _ := testEnvironment.RunCommand("sudo mount | grep -c /dev/loop2")
+					return strings.TrimSpace(result)
+				}, 5*time.Second, 1*time.Second).Should(Equal("0"))
 			})
 		})
 	})

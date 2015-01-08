@@ -46,21 +46,4 @@ $bin/go install github.com/onsi/ginkgo/ginkgo
 echo -e "\n Running tests..."
 $bin/env ginkgo -race -trace integration
 
-# check that agent unmounted disk
-result=`vagrant ssh -c "sudo mount | grep -c /dev/loop2" | head -c 1`
-COUNTER=0
-
-while [ "$result" != "0" ];
-do
-  if [ "$COUNTER" -gt 5 ]; then
-  	echo "FAILURE: Drive not unmounted after five seconds"
-  	exit 1
-  fi
-  COUNTER=$((COUNTER+1))
-  sleep 1
-  result=`vagrant ssh -c "sudo mount | grep -c /dev/loop2" | head -c 1`
-done
-
-echo "SUCCESS: Drive unmounted"
-
 exit 0
