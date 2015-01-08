@@ -2,7 +2,7 @@
 
 set -ex
 
-echo "Running integration/bin/run-test-with-vm-in-container.sh"
+echo "Running bin/run-gocd-integration-test"
 echo "ENV:"
 echo `env`
 
@@ -43,7 +43,7 @@ docker run \
   -v $SRC_DIR:$BOSH_AGENT_DIR \
   -v $PRIVATE_KEY_DIR:$BOSH_MICRO_PRIVATE_KEY_DIR \
   $DOCKER_IMAGE \
-  $BOSH_AGENT_DIR/integration/bin/test --provider=aws \
+  $BOSH_AGENT_DIR/bin/test-integration --provider=aws \
   &
 
 SUBPROC="$!"

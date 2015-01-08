@@ -25,9 +25,15 @@ Vagrant.configure('2') do |config|
     }
   end
 
-  config.vm.synced_folder '.', '/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent'
+  agent_dir = '/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent'
+
+  config.vm.synced_folder '.', agent_dir
 
 #  config.vm.synced_folder Dir.pwd, '/vagrant', disabled: true
   config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"
   config.vm.provision :shell, inline: "chmod 777 /var/vcap/sys/log/cpi"
+
+  config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-go.sh"
+  config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-agent.sh"
+  config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-fake-registry.sh"
 end

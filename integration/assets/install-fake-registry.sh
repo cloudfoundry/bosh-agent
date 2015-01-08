@@ -1,7 +1,10 @@
-#!/bin/bash 
+#!/usr/bin/env bash
 
-set -e
+set -ex
 
+GOPATH=/home/vagrant/go
+export GOROOT=/usr/local/go
+export PATH=$GOROOT/bin:$PATH
 
 base=$( cd $(dirname $0)/../.. && pwd )
 bin=$base/bin

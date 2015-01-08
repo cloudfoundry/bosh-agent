@@ -1,8 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e -x
 
-base=$( cd $(dirname $0)/../.. && pwd )
+bin=$(dirname $0)
+
+base=$( cd ${bin}/.. && pwd )
 if [ ! -d $base/tmp ]; then
   mkdir -p $base/tmp
 fi
@@ -33,20 +35,16 @@ fi
 
 cd $base
 echo -e "\n Running agent integration tests..."
+$bin/env go clean -r github.com/cloudfoundry/bosh-agent/
 vagrant up $@
 
 vagrant ssh-config > $base/tmp/vagrant-config
 
-srcdir="/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent"
-script="$srcdir/integration/assets/configure-environment.sh"
-ssh -F $base/tmp/vagrant-config default "chmod +x $script && sh -c $script"
+echo -e "\n Installing ginkgo..."
+$bin/go install github.com/onsi/ginkgo/ginkgo
 
-# check that agent id has been set as expected
-result=`vagrant ssh -c "grep -c the_agent_id /var/vcap/bosh/settings.json" | head -c 1`
-if [ "$result" != "1" ]; then
-  echo "failure: agent_id not set as expected"
-  exit 1
-fi
+echo -e "\n Running tests..."
+$bin/env ginkgo -race -trace integration
 
 # check that agent unmounted disk
 result=`vagrant ssh -c "sudo mount | grep -c /dev/loop2" | head -c 1`
