@@ -27,7 +27,7 @@ Vagrant.configure('2') do |config|
 
   agent_dir = '/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent'
 
-  config.vm.synced_folder '.', agent_dir
+  config.vm.synced_folder '.', agent_dir, type: "rsync"
 
 #  config.vm.synced_folder Dir.pwd, '/vagrant', disabled: true
   config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"
