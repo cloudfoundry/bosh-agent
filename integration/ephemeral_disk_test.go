@@ -38,7 +38,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 		registrySettings = boshsettings.Settings{
 			AgentID: "fake-agent-id",
-			Mbus:    "https://localhost:6868",
+			Mbus:    "https://127.0.0.1:6868",
 			Blobstore: boshsettings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -76,7 +76,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 			It("agent is running", func() {
 				Eventually(func() error {
-					_, err := testEnvironment.RunCommand("netcat -z -v localhost 6868")
+					_, err := testEnvironment.RunCommand("netcat -z -v 127.0.0.1 6868")
 					return err
 				}, 2*time.Minute, 1*time.Second).ShouldNot(HaveOccurred())
 			})

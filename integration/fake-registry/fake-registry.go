@@ -12,7 +12,7 @@ import (
 func main() {
 	user := flag.String("user", "user", "User")
 	password := flag.String("password", "password", "Password")
-	host := flag.String("host", "localhost", "Host")
+	host := flag.String("host", "127.0.0.1", "Host")
 	port := flag.Int("port", 8080, "Port")
 	instance := flag.String("instance", "", "Instance ID")
 	settings := flag.String("settings", "", "Instance Settings")

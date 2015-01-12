@@ -196,7 +196,7 @@ func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
 
 	_, err = t.RunCommand(
 		fmt.Sprintf(
-			`nohup %s/tmp/fake-registry -user user -password pass -host localhost -port 9090 -instance instance-id -settings %s &> /dev/null &`,
+			`nohup %s/tmp/fake-registry -user user -password pass -host 127.0.0.1 -port 9090 -instance instance-id -settings %s &> /dev/null &`,
 			t.agentDir(),
 			strconv.Quote(string(settingsJSON)),
 		),
