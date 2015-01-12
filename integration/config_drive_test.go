@@ -7,23 +7,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
-
-	. "github.com/cloudfoundry/bosh-agent/integration"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 var _ = Describe("ConfigDrive", func() {
-	var (
-		testEnvironment TestEnvironment
-	)
-
-	BeforeEach(func() {
-		logger := boshlog.NewLogger(boshlog.LevelDebug)
-		cmdRunner := boshsys.NewExecCmdRunner(logger)
-		testEnvironment = NewTestEnvironment(cmdRunner)
-	})
-
 	Context("when infrastructure is openstack", func() {
 		BeforeEach(func() {
 			err := testEnvironment.SetInfrastructure("openstack")
@@ -32,13 +19,13 @@ var _ = Describe("ConfigDrive", func() {
 
 		Context("when vm is using config drive", func() {
 			BeforeEach(func() {
-				err := testEnvironment.SetupConfigDrive()
+				err := testEnvironment.StopAgent()
 				Expect(err).ToNot(HaveOccurred())
 
-				err = testEnvironment.RemoveAgentSettings()
+				err = testEnvironment.SetupConfigDrive()
 				Expect(err).ToNot(HaveOccurred())
 
-				registrySettings := RegistrySettings{
+				registrySettings := boshsettings.Settings{
 					AgentID: "fake-agent-id",
 				}
 
@@ -48,7 +35,7 @@ var _ = Describe("ConfigDrive", func() {
 				err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
 				Expect(err).ToNot(HaveOccurred())
 
-				err = testEnvironment.RestartAgent()
+				err = testEnvironment.StartAgent()
 				Expect(err).ToNot(HaveOccurred())
 			})
 
