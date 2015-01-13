@@ -59,18 +59,18 @@ var _ = Describe("EphemeralDisk", func() {
 	Context("when ephemeral disk is provided in settings", func() {
 		BeforeEach(func() {
 			registrySettings.Disks = boshsettings.Disks{
-				Ephemeral: "/dev/sdb",
+				Ephemeral: "/dev/sdh",
 			}
 		})
 
 		Context("when ephemeral disk exists", func() {
 			BeforeEach(func() {
-				err := testEnvironment.AttachDevice("/dev/sdb", 128, 2)
+				err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			AfterEach(func() {
-				err := testEnvironment.DetachDevice("/dev/sdb")
+				err := testEnvironment.DetachDevice("/dev/sdh")
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -83,7 +83,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 			It("it is being mounted", func() {
 				Eventually(func() string {
-					result, _ := testEnvironment.RunCommand("sudo mount | grep /dev/sdb | grep -c /var/vcap/data")
+					result, _ := testEnvironment.RunCommand("sudo mount | grep /dev/sdh | grep -c /var/vcap/data")
 					return strings.TrimSpace(result)
 				}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 			})
@@ -91,7 +91,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 		Context("when ephemeral disk does not exist", func() {
 			BeforeEach(func() {
-				testEnvironment.DetachDevice("/dev/sdb")
+				testEnvironment.DetachDevice("/dev/sdh")
 			})
 
 			It("agent fails with error", func() {
