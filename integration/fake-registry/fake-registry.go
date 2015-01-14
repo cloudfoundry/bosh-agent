@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	bmregistry "github.com/cloudfoundry/bosh-micro-cli/registry"
 	"net/http"
 	"strings"
+
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	bmregistry "github.com/cloudfoundry/bosh-micro-cli/registry"
 )
 
 func main() {
@@ -22,12 +23,10 @@ func main() {
 	logger := boshlog.NewLogger(boshlog.LevelDebug)
 	serverManager := bmregistry.NewServerManager(logger)
 
-	go func() {
-		_, err := serverManager.Start(*user, *password, *host, *port)
-		if err != nil {
-			panic("Error starting registry")
-		}
-	}()
+	_, err := serverManager.Start(*user, *password, *host, *port)
+	if err != nil {
+		panic("Error starting registry")
+	}
 
 	if *instance != "" && *settings != "" {
 		request, err := http.NewRequest(
