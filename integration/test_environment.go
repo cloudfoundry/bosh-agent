@@ -141,7 +141,7 @@ sudo losetup %s /virtualfs-%d
 		return 0, err
 	}
 
-	t.currentDeviceNum += 1
+	t.currentDeviceNum++
 
 	return loopDeviceNum, nil
 }
