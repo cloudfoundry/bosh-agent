@@ -382,13 +382,14 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Globbing ephemeral disk mount point `%s'", mountPointGlob)
 	}
-	if contents != nil && len(contents) > 0 {
-		p.logger.Debug(logTag, "Existing ephemeral mount `%s' is not empty. Contents: %s", mountPoint, contents)
 
-		if realPath == "" {
-			p.logger.Debug(logTag, "Skipping partitioning root disk with non-empty ephemeral mount")
-			return nil
-		}
+	if contents != nil && len(contents) > 0 {
+		// When agent bootstraps for the first time data directory should be empty.
+		// It might be non-empty on subsequent agent restarts. The ephemeral disk setup
+		// should be idempotent and partitioning will be skipped if disk is already
+		// partitioned as needed. If disk is not partitioned as needed we still want to
+		// partition it even if data directory is not empty.
+		p.logger.Debug(logTag, "Existing ephemeral mount `%s' is not empty. Contents: %s", mountPoint, contents)
 	}
 
 	err = p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
@@ -398,8 +399,13 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 
 	var swapPartitionPath, dataPartitionPath string
 
+	// Agent can only setup ephemeral data directory either on ephemeral device
+	// or on separate root partition.
+	// The real path can be empty if CPI did not provide ephemeral disk
+	// or if the provided disk was not found.
 	if realPath == "" {
 		if !p.options.CreatePartitionIfNoEphemeralDisk {
+			// Agent can not use root partition for ephemeral data directory.
 			return bosherr.Error("No ephemeral disk found, cannot use root partition as ephemeral disk")
 		}
 
@@ -841,6 +847,7 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	for _, partition := range partitions {
 		p.logger.Info(logTag, "Partitioning root device `%s': %s", rootDevicePath, partition)
 	}
+
 	err = p.diskManager.GetRootDevicePartitioner().Partition(rootDevicePath, partitions)
 	if err != nil {
 		return "", "", bosherr.WrapErrorf(err, "Partitioning root device `%s'", rootDevicePath)

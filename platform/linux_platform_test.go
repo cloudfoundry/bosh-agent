@@ -278,6 +278,18 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	})
 
 	Describe("SetupEphemeralDiskWithPath", func() {
+		var (
+			partitioner *fakedisk.FakePartitioner
+			formatter   *fakedisk.FakeFormatter
+			mounter     *fakedisk.FakeMounter
+		)
+
+		BeforeEach(func() {
+			partitioner = diskManager.FakePartitioner
+			formatter = diskManager.FakeFormatter
+			mounter = diskManager.FakeMounter
+		})
+
 		itSetsUpEphemeralDisk := func(act func() error) {
 			It("sets up ephemeral disk with path", func() {
 				err := act()
@@ -287,21 +299,20 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
 			})
+
+			It("creates new partition even if the data directory is not empty", func() {
+				fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
+
+				err := act()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(partitioner.PartitionCalled).To(BeTrue())
+				Expect(formatter.FormatCalled).To(BeTrue())
+				Expect(mounter.MountCalled).To(BeTrue())
+			})
 		}
 
 		Context("when ephemeral disk path is provided", func() {
 			act := func() error { return platform.SetupEphemeralDiskWithPath("/dev/xvda") }
-
-			var (
-				partitioner *fakedisk.FakePartitioner
-				formatter   *fakedisk.FakeFormatter
-				mounter     *fakedisk.FakeMounter
-			)
-			BeforeEach(func() {
-				partitioner = diskManager.FakePartitioner
-				formatter = diskManager.FakeFormatter
-				mounter = diskManager.FakeMounter
-			})
 
 			itSetsUpEphemeralDisk(act)
 
@@ -326,16 +337,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(partitioner.PartitionCalled).To(BeFalse())
 				Expect(formatter.FormatCalled).To(BeFalse())
 				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
-			It("create new partitions even if the data directory is not empty", func() {
-				fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
-
-				err := act()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(partitioner.PartitionCalled).To(BeTrue())
-				Expect(formatter.FormatCalled).To(BeTrue())
-				Expect(mounter.MountCalled).To(BeTrue())
 			})
 
 			It("returns err when mem stats are unavailable", func() {
@@ -419,19 +420,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		Context("when ephemeral disk path is not provided", func() {
 			act := func() error { return platform.SetupEphemeralDiskWithPath("") }
 
-			var (
-				partitioner *fakedisk.FakePartitioner
-				formatter   *fakedisk.FakeFormatter
-				mounter     *fakedisk.FakeMounter
-			)
-			BeforeEach(func() {
-				partitioner = diskManager.FakeRootDevicePartitioner
-				formatter = diskManager.FakeFormatter
-				mounter = diskManager.FakeMounter
-			})
-
 			Context("when agent should partition ephemeral disk on root disk", func() {
 				BeforeEach(func() {
+					partitioner = diskManager.FakeRootDevicePartitioner
 					options.CreatePartitionIfNoEphemeralDisk = true
 				})
 
@@ -655,16 +646,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Globbing ephemeral disk mount point `/fake-dir/data/*'"))
 					Expect(err.Error()).To(ContainSubstring("fake-glob-err"))
-					Expect(partitioner.PartitionCalled).To(BeFalse())
-					Expect(formatter.FormatCalled).To(BeFalse())
-					Expect(mounter.MountCalled).To(BeFalse())
-				})
-
-				It("does not create new partitions when the data directory is not empty", func() {
-					fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"something"})
-
-					err := act()
-					Expect(err).ToNot(HaveOccurred())
 					Expect(partitioner.PartitionCalled).To(BeFalse())
 					Expect(formatter.FormatCalled).To(BeFalse())
 					Expect(mounter.MountCalled).To(BeFalse())
