@@ -103,6 +103,42 @@ var _ = Describe("EphemeralDisk", func() {
 	})
 
 	Context("when ephemeral disk is not provided in settings", func() {
+		Context("when root disk can be used as ephemeral", func() {
+			var (
+				rootLink      string
+				oldRootDevice string
+			)
+
+			BeforeEach(func() {
+				err := testEnvironment.UpdateAgentConfig("root-partition-agent.json")
+				Expect(err).ToNot(HaveOccurred())
+
+				oldRootDevice, rootLink, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 2048, 128)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := testEnvironment.SwitchRootDevice(oldRootDevice, rootLink)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("partitions root disk", func() {
+				Eventually(func() string {
+					ephemeralDataDevice, err := testEnvironment.RunCommand(`sudo mount | grep "on /var/vcap/data " | cut -d' ' -f1`)
+					Expect(err).ToNot(HaveOccurred())
+
+					return strings.TrimSpace(ephemeralDataDevice)
+				}, 2*time.Minute, 1*time.Second).Should(Equal("/dev/sdz3"))
+
+				partitionTable, err := testEnvironment.RunCommand("sudo sfdisk -d /dev/sdz")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(partitionTable).To(ContainSubstring("/dev/sdz1"))
+				Expect(partitionTable).To(ContainSubstring("/dev/sdz2"))
+				Expect(partitionTable).To(ContainSubstring("/dev/sdz3"))
+			})
+		})
+
 		Context("when root disk can not be used as ephemeral", func() {
 			It("agent fails with error", func() {
 				Eventually(func() bool {

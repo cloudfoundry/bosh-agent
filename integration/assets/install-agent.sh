@@ -24,7 +24,4 @@ pushd $agent_dir
 
 	# install new agent
 	sudo cp out/bosh-agent /var/vcap/bosh/bin/bosh-agent
-
-	# start agent
-	sudo sv start agent
 popd

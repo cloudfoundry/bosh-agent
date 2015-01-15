@@ -1,0 +1,15 @@
+{
+    "Platform": {
+        "Linux": {
+            "UseDefaultTmpDir": true,
+            "UsePreformattedPersistentDisk": true,
+            "BindMountPersistentDisk": false,
+            "CreatePartitionIfNoEphemeralDisk": true
+        }
+    },
+    "Infrastructure": {
+        "MetadataService": {
+            "UseConfigDrive": true
+        }
+    }
+}

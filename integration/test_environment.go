@@ -103,6 +103,73 @@ func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPart
 	return nil
 }
 
+func (t *TestEnvironment) AttachPartitionedRootDevice(devicePath string, sizeInMB, rootPartitionSizeInMB int) (string, string, error) {
+	// Partitioner requires fs backed device
+	_, err := t.RunCommand(fmt.Sprintf("sudo mknod %s b 7 99", devicePath))
+	if err != nil {
+		return "", "", err
+	}
+
+	attachDeviceTemplate := `
+sudo rm -rf /virtual-root-fs
+sudo dd if=/dev/zero of=/virtual-root-fs bs=1M count=%d
+sudo losetup %s /virtual-root-fs
+`
+	attachDeviceScript := fmt.Sprintf(attachDeviceTemplate, sizeInMB, devicePath)
+	_, err = t.RunCommand(attachDeviceScript)
+	if err != nil {
+		return "", "", err
+	}
+
+	err = t.AttachDevice(devicePath, sizeInMB, 3)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Create only first partition, agent will partition the rest for ephemeral disk
+	partitionTemplate := `
+echo ',%d,L,' | sudo sfdisk -uM %s
+`
+	partitionScript := fmt.Sprintf(partitionTemplate, rootPartitionSizeInMB, devicePath)
+	_, err = t.RunCommand(partitionScript)
+	if err != nil {
+		return "", "", err
+	}
+
+	rootLink, err := t.RunCommand("df / | grep /dev/ | cut -d' ' -f1")
+	if err != nil {
+		return "", "", err
+	}
+
+	oldRootDevice, err := t.RunCommand(fmt.Sprintf("readlink -f %s", rootLink))
+	if err != nil {
+		return "", "", err
+	}
+
+	// Agent reads the symlink to get root device
+	// Replace the symlink with our fake device
+	err = t.SwitchRootDevice(devicePath, rootLink)
+	if err != nil {
+		return "", "", err
+	}
+
+	return strings.TrimSpace(oldRootDevice), strings.TrimSpace(rootLink), nil
+}
+
+func (t *TestEnvironment) SwitchRootDevice(devicePath, rootLink string) error {
+	_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", rootLink))
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand(fmt.Sprintf("sudo ln -s %s1 %s", devicePath, rootLink))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (t *TestEnvironment) DetachDevice(devicePath string) error {
 	mountPoint, err := t.RunCommand(fmt.Sprintf("sudo mount | grep %s | cut -d ' ' -f 3", devicePath))
 	if err != nil {
