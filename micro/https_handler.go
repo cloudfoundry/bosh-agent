@@ -49,8 +49,8 @@ func (h HTTPSHandler) Run(handlerFunc boshhandler.Func) error {
 func (h HTTPSHandler) Start(handlerFunc boshhandler.Func) error {
 	h.dispatcher.AddRoute("/agent", h.agentHandler(handlerFunc))
 	h.dispatcher.AddRoute("/blobs/", h.blobsHandler())
-	h.dispatcher.Start()
-	return nil
+	err := h.dispatcher.Start()
+	return err
 }
 
 func (h HTTPSHandler) Stop() {
