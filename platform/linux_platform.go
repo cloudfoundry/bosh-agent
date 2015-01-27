@@ -20,6 +20,7 @@ import (
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -70,6 +71,7 @@ type linux struct {
 	cdutil             boshdevutil.DeviceUtil
 	diskManager        boshdisk.Manager
 	netManager         boshnet.Manager
+	monitRetryStrategy boshretry.RetryStrategy
 	diskScanDuration   time.Duration
 	devicePathResolver boshdpresolv.DevicePathResolver
 	options            LinuxOptions
@@ -87,24 +89,26 @@ func NewLinuxPlatform(
 	cdutil boshdevutil.DeviceUtil,
 	diskManager boshdisk.Manager,
 	netManager boshnet.Manager,
+	monitRetryStrategy boshretry.RetryStrategy,
 	diskScanDuration time.Duration,
 	options LinuxOptions,
 	logger boshlog.Logger,
 ) (platform *linux) {
 	platform = &linux{
-		fs:               fs,
-		cmdRunner:        cmdRunner,
-		collector:        collector,
-		compressor:       compressor,
-		copier:           copier,
-		dirProvider:      dirProvider,
-		vitalsService:    vitalsService,
-		cdutil:           cdutil,
-		diskManager:      diskManager,
-		netManager:       netManager,
-		diskScanDuration: diskScanDuration,
-		options:          options,
-		logger:           logger,
+		fs:                 fs,
+		cmdRunner:          cmdRunner,
+		collector:          collector,
+		compressor:         compressor,
+		copier:             copier,
+		dirProvider:        dirProvider,
+		vitalsService:      vitalsService,
+		cdutil:             cdutil,
+		diskManager:        diskManager,
+		netManager:         netManager,
+		monitRetryStrategy: monitRetryStrategy,
+		diskScanDuration:   diskScanDuration,
+		options:            options,
+		logger:             logger,
 	}
 	return
 }
@@ -718,9 +722,9 @@ func (p linux) StartMonit() error {
 		return bosherr.WrapError(err, "Symlinking /etc/service/monit to /etc/sv/monit")
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("sv", "start", "monit")
+	err = p.monitRetryStrategy.Try()
 	if err != nil {
-		return bosherr.WrapError(err, "Shelling out to sv")
+		return bosherr.WrapError(err, "Retrying to start monit")
 	}
 
 	return nil

@@ -20,6 +20,7 @@ import (
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	fakeretry "github.com/cloudfoundry/bosh-agent/retrystrategy/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
@@ -39,8 +40,10 @@ var _ = Describe("LinuxPlatform", func() {
 		copier             boshcmd.Copier
 		vitalsService      boshvitals.Service
 		netManager         *fakenet.FakeManager
-		options            LinuxOptions
-		logger             boshlog.Logger
+		monitRetryStrategy *fakeretry.FakeRetryStrategy
+
+		options LinuxOptions
+		logger  boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -56,6 +59,7 @@ var _ = Describe("LinuxPlatform", func() {
 		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
 		netManager = &fakenet.FakeManager{}
+		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		options = LinuxOptions{}
 
@@ -82,6 +86,7 @@ var _ = Describe("LinuxPlatform", func() {
 			cdutil,
 			diskManager,
 			netManager,
+			monitRetryStrategy,
 			5*time.Millisecond,
 			options,
 			logger,
@@ -1337,11 +1342,18 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			Expect(target).To(Equal(filepath.Join("/etc", "sv", "monit")))
 		})
 
-		It("starts monit", func() {
+		It("retries to start monit", func() {
 			err := platform.StartMonit()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sv", "start", "monit"}))
+			Expect(monitRetryStrategy.TryCalled).To(BeTrue())
+		})
+
+		It("returns error if retrying to start monit fails", func() {
+			monitRetryStrategy.TryErr = errors.New("fake-retry-monit-error")
+
+			err := platform.StartMonit()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-retry-monit-error"))
 		})
 	})
 
