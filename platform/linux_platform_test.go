@@ -707,6 +707,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
 			})
 
+			It("creates symlink from sys to data/sys", func() {
+				err := platform.SetupDataDir()
+				Expect(err).NotTo(HaveOccurred())
+
+				sysStats := fs.GetFileTestStat("/fake-dir/sys")
+				Expect(sysStats).ToNot(BeNil())
+				Expect(sysStats.FileType).To(Equal(fakesys.FakeFileTypeSymlink))
+				Expect(sysStats.SymlinkTarget).To(Equal("/fake-dir/data/sys"))
+			})
+
 			It("does not create new sys/run dir", func() {
 				err := platform.SetupDataDir()
 				Expect(err).NotTo(HaveOccurred())
@@ -737,6 +747,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
 				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
+			})
+
+			It("creates symlink from sys to data/sys", func() {
+				err := platform.SetupDataDir()
+				Expect(err).NotTo(HaveOccurred())
+
+				sysStats := fs.GetFileTestStat("/fake-dir/sys")
+				Expect(sysStats).ToNot(BeNil())
+				Expect(sysStats.FileType).To(Equal(fakesys.FakeFileTypeSymlink))
+				Expect(sysStats.SymlinkTarget).To(Equal("/fake-dir/data/sys"))
 			})
 
 			It("creates new sys/run dir", func() {

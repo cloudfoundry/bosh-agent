@@ -450,17 +450,17 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 func (p linux) SetupDataDir() error {
 	dataDir := p.dirProvider.DataDir()
 
-	sysDir := filepath.Join(dataDir, "sys")
+	sysDataDir := filepath.Join(dataDir, "sys")
 
-	logDir := filepath.Join(sysDir, "log")
+	logDir := filepath.Join(sysDataDir, "log")
 	err := p.fs.MkdirAll(logDir, logDirPermissions)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Making %s dir", logDir)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysDir)
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysDataDir)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "chown %s", sysDir)
+		return bosherr.WrapErrorf(err, "chown %s", sysDataDir)
 	}
 
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", logDir)
@@ -468,9 +468,15 @@ func (p linux) SetupDataDir() error {
 		return bosherr.WrapErrorf(err, "chown %s", logDir)
 	}
 
-	err = p.setupRunDir(sysDir)
+	err = p.setupRunDir(sysDataDir)
 	if err != nil {
 		return err
+	}
+
+	sysDir := filepath.Join(filepath.Dir(dataDir), "sys")
+	err = p.fs.Symlink(sysDataDir, sysDir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", sysDir, sysDataDir)
 	}
 
 	return nil
