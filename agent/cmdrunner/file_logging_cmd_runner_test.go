@@ -265,10 +265,11 @@ var _ = Describe("FileLoggingCmdRunner", func() {
 			})
 
 			It("return an error if it fails to read from saved stdout file", func() {
-				file := fakesys.NewFakeFile(fs)
+				filePath := "/fake-base-dir/fake-log-dir-name/fake-log-file-name.stdout.log"
+				file := fakesys.NewFakeFile(filePath, fs)
 				file.ReadAtErr = errors.New("fake-read-at-err")
 
-				fs.RegisterOpenFile("/fake-base-dir/fake-log-dir-name/fake-log-file-name.stdout.log", file)
+				fs.RegisterOpenFile(filePath, file)
 
 				result, err := runner.RunCommand("fake-log-dir-name", "fake-log-file-name", cmd)
 				Expect(err).To(HaveOccurred())
@@ -277,10 +278,11 @@ var _ = Describe("FileLoggingCmdRunner", func() {
 			})
 
 			It("return an error if it fails to read from saved stderr file", func() {
-				file := fakesys.NewFakeFile(fs)
+				filePath := "/fake-base-dir/fake-log-dir-name/fake-log-file-name.stderr.log"
+				file := fakesys.NewFakeFile(filePath, fs)
 				file.ReadAtErr = errors.New("fake-read-at-err")
 
-				fs.RegisterOpenFile("/fake-base-dir/fake-log-dir-name/fake-log-file-name.stderr.log", file)
+				fs.RegisterOpenFile(filePath, file)
 
 				result, err := runner.RunCommand("fake-log-dir-name", "fake-log-file-name", cmd)
 				Expect(err).To(HaveOccurred())
