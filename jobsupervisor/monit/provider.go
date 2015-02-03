@@ -28,11 +28,20 @@ type clientProvider struct {
 func NewProvider(platform boshplatform.Platform, logger boshlog.Logger, timeService boshtime.Service) clientProvider {
 	httpClient := http.DefaultClient
 
-	shortRetryStrategy := boshhttp.NewAttemptRetryStrategy(shortRetryStrategyAttempts)
-	shortHTTPClient := boshhttp.NewRetryClient(httpClient, shortRetryStrategy, retryDelay, timeService, logger)
+	shortHTTPClient := boshhttp.NewRetryClient(
+		httpClient,
+		shortRetryStrategyAttempts,
+		retryDelay,
+		logger,
+	)
 
-	longRetryStrategy := NewMonitRetryStrategy(longRetryStrategyAttempts, shortRetryStrategyAttempts)
-	longHTTPClient := boshhttp.NewRetryClient(httpClient, longRetryStrategy, retryDelay, timeService, logger)
+	longHTTPClient := NewMonitRetryClient(
+		httpClient,
+		longRetryStrategyAttempts,
+		shortRetryStrategyAttempts,
+		retryDelay,
+		logger,
+	)
 
 	return clientProvider{
 		platform:        platform,

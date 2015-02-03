@@ -2,50 +2,71 @@ package monit
 
 import (
 	"net/http"
+	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-agent/http"
+	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
+	boshtime "github.com/cloudfoundry/bosh-agent/time"
 )
 
-type monitRetryStrategy struct {
-	maxUnavailableAttempts uint
-	maxOtherAttempts       uint
+type monitRetryable interface {
+	Attempt() (bool, error)
+	Response() *http.Response
 }
 
-func NewMonitRetryStrategy(maxUnavailableAttempts, maxOtherAttempts uint) boshhttp.RetryStrategy {
+type monitRetryStrategy struct {
+	retryable monitRetryable
+
+	maxUnavailableAttempts uint
+	maxOtherAttempts       uint
+
+	delay       time.Duration
+	timeService boshtime.Service
+
+	unavailableAttempts uint
+	otherAttempts       uint
+}
+
+func NewMonitRetryStrategy(
+	retryable monitRetryable,
+	maxUnavailableAttempts uint,
+	maxOtherAttempts uint,
+	delay time.Duration,
+	timeService boshtime.Service,
+) boshretry.RetryStrategy {
 	return &monitRetryStrategy{
+		retryable:              retryable,
 		maxUnavailableAttempts: maxUnavailableAttempts,
 		maxOtherAttempts:       maxOtherAttempts,
-	}
-}
-
-func (m *monitRetryStrategy) NewRetryHandler() boshhttp.RetryHandler {
-	return NewMonitRetryHandler(m.maxUnavailableAttempts, m.maxOtherAttempts)
-}
-
-type monitRetryHandler struct {
-	unavailableAttempts    uint
-	otherAttempts          uint
-	maxUnavailableAttempts uint
-	maxOtherAttempts       uint
-}
-
-func NewMonitRetryHandler(maxUnavailableAttempts, maxOtherAttempts uint) boshhttp.RetryHandler {
-	return &monitRetryHandler{
 		unavailableAttempts:    0,
 		otherAttempts:          0,
-		maxUnavailableAttempts: maxUnavailableAttempts,
-		maxOtherAttempts:       maxOtherAttempts,
+		delay:                  delay,
+		timeService:            timeService,
 	}
 }
 
-func (m *monitRetryHandler) IsRetryable(_ *http.Request, resp *http.Response, err error) bool {
-	if err == nil && resp.StatusCode == 503 && m.unavailableAttempts < m.maxUnavailableAttempts {
-		m.unavailableAttempts = m.unavailableAttempts + 1
-	} else {
-		// once a non-503 error is received, all errors count as 'other' errors
-		m.unavailableAttempts = m.maxUnavailableAttempts + 1
-		m.otherAttempts = m.otherAttempts + 1
+func (m *monitRetryStrategy) Try() error {
+	var err error
+
+	for m.isRetryable() {
+		isRetryable, err := m.retryable.Attempt()
+		if !isRetryable {
+			return err
+		}
+
+		if err == nil && m.retryable.Response().StatusCode == 503 && m.unavailableAttempts < m.maxUnavailableAttempts {
+			m.unavailableAttempts = m.unavailableAttempts + 1
+		} else {
+			// once a non-503 error is received, all errors count as 'other' errors
+			m.unavailableAttempts = m.maxUnavailableAttempts + 1
+			m.otherAttempts = m.otherAttempts + 1
+		}
+
+		m.timeService.Sleep(m.delay)
 	}
 
-	return m.unavailableAttempts <= m.maxUnavailableAttempts || m.otherAttempts <= m.maxOtherAttempts
+	return err
+}
+
+func (m *monitRetryStrategy) isRetryable() bool {
+	return m.unavailableAttempts < m.maxUnavailableAttempts || m.otherAttempts < m.maxOtherAttempts
 }
