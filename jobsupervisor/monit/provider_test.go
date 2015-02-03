@@ -8,10 +8,11 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshhttp "github.com/cloudfoundry/bosh-agent/http"
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 )
 
 var _ = Describe("clientProvider", func() {
@@ -28,11 +29,8 @@ var _ = Describe("clientProvider", func() {
 
 		httpClient := http.DefaultClient
 
-		shortRetryStrategy := boshhttp.NewAttemptRetryStrategy(20)
-		shortHTTPClient := boshhttp.NewRetryClient(httpClient, shortRetryStrategy, 1*time.Second, timeService, logger)
-
-		longRetryStrategy := NewMonitRetryStrategy(300, 20)
-		longHTTPClient := boshhttp.NewRetryClient(httpClient, longRetryStrategy, 1*time.Second, timeService, logger)
+		shortHTTPClient := boshhttp.NewRetryClient(httpClient, 20, 1*time.Second, logger)
+		longHTTPClient := NewMonitRetryClient(httpClient, 300, 20, 1*time.Second, logger)
 
 		expectedClient := NewHTTPClient(
 			"127.0.0.1:2822",
