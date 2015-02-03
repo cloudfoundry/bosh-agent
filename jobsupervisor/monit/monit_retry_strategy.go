@@ -1,20 +1,15 @@
 package monit
 
 import (
-	"net/http"
 	"time"
 
+	boshhttp "github.com/cloudfoundry/bosh-agent/http"
 	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
 	boshtime "github.com/cloudfoundry/bosh-agent/time"
 )
 
-type monitRetryable interface {
-	Attempt() (bool, error)
-	Response() *http.Response
-}
-
 type monitRetryStrategy struct {
-	retryable monitRetryable
+	retryable boshhttp.RequestRetryable
 
 	maxUnavailableAttempts uint
 	maxOtherAttempts       uint
@@ -27,7 +22,7 @@ type monitRetryStrategy struct {
 }
 
 func NewMonitRetryStrategy(
-	retryable monitRetryable,
+	retryable boshhttp.RequestRetryable,
 	maxUnavailableAttempts uint,
 	maxOtherAttempts uint,
 	delay time.Duration,
@@ -46,14 +41,15 @@ func NewMonitRetryStrategy(
 
 func (m *monitRetryStrategy) Try() error {
 	var err error
+	var isRetryable bool
 
-	for m.isRetryable() {
-		isRetryable, err := m.retryable.Attempt()
+	for m.hasMoreAttempts() {
+		isRetryable, err = m.retryable.Attempt()
 		if !isRetryable {
 			return err
 		}
 
-		if err == nil && m.retryable.Response().StatusCode == 503 && m.unavailableAttempts < m.maxUnavailableAttempts {
+		if m.retryable.Response() != nil && m.retryable.Response().StatusCode == 503 && m.unavailableAttempts < m.maxUnavailableAttempts {
 			m.unavailableAttempts = m.unavailableAttempts + 1
 		} else {
 			// once a non-503 error is received, all errors count as 'other' errors
@@ -67,6 +63,6 @@ func (m *monitRetryStrategy) Try() error {
 	return err
 }
 
-func (m *monitRetryStrategy) isRetryable() bool {
+func (m *monitRetryStrategy) hasMoreAttempts() bool {
 	return m.unavailableAttempts < m.maxUnavailableAttempts || m.otherAttempts < m.maxOtherAttempts
 }

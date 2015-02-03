@@ -11,7 +11,12 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
 )
 
-type RequestRetryable struct {
+type RequestRetryable interface {
+	Attempt() (bool, error)
+	Response() *http.Response
+}
+
+type requestRetryable struct {
 	request   *http.Request
 	requestID string
 	delegate  Client
@@ -30,8 +35,8 @@ func NewRequestRetryable(
 	request *http.Request,
 	delegate Client,
 	logger boshlog.Logger,
-) *RequestRetryable {
-	return &RequestRetryable{
+) RequestRetryable {
+	return &requestRetryable{
 		request:       request,
 		delegate:      delegate,
 		attempt:       0,
@@ -41,7 +46,7 @@ func NewRequestRetryable(
 	}
 }
 
-func (r *RequestRetryable) Attempt() (bool, error) {
+func (r *requestRetryable) Attempt() (bool, error) {
 	var err error
 
 	if r.requestID == "" {
@@ -81,15 +86,15 @@ func (r *RequestRetryable) Attempt() (bool, error) {
 	return true, bosherr.Errorf("Request failed, response: %s", r.formatResponse(r.response))
 }
 
-func (r *RequestRetryable) Response() *http.Response {
+func (r *requestRetryable) Response() *http.Response {
 	return r.response
 }
 
-func (r *RequestRetryable) wasSuccessful(resp *http.Response) bool {
+func (r *requestRetryable) wasSuccessful(resp *http.Response) bool {
 	return resp.StatusCode >= 200 && resp.StatusCode < 300
 }
 
-func (r *RequestRetryable) formatRequest(req *http.Request) string {
+func (r *requestRetryable) formatRequest(req *http.Request) string {
 	if req == nil {
 		return "Request(nil)"
 	}
@@ -97,7 +102,7 @@ func (r *RequestRetryable) formatRequest(req *http.Request) string {
 	return fmt.Sprintf("Request{ Method: '%s', URL: '%s' }", req.Method, req.URL)
 }
 
-func (r *RequestRetryable) formatResponse(resp *http.Response) string {
+func (r *requestRetryable) formatResponse(resp *http.Response) string {
 	if resp == nil {
 		return "Response(nil)"
 	}

@@ -21,7 +21,7 @@ import (
 var _ = Describe("RequestRetryable", func() {
 	Describe("Attempt", func() {
 		var (
-			requestRetryable *RequestRetryable
+			requestRetryable RequestRetryable
 			request          *http.Request
 			fakeClient       *fakehttp.FakeClient
 			fakeStrategy     *fakeretry.FakeRetryStrategy
