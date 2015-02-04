@@ -53,8 +53,11 @@ type FakePlatform struct {
 	SetupTmpDirCalled bool
 	SetupTmpDirErr    error
 
+	SetupManualNetworkingCalled   bool
 	SetupManualNetworkingNetworks boshsettings.Networks
+	SetupManualNetworkingErr      error
 
+	SetupDhcpCalled   bool
 	SetupDhcpNetworks boshsettings.Networks
 	SetupDhcpErr      error
 
@@ -66,13 +69,16 @@ type FakePlatform struct {
 	UnmountPersistentDiskDidUnmount bool
 	UnmountPersistentDiskSettings   boshsettings.DiskSettings
 
-	GetFileContentsFromCDROMPath     string
-	GetFileContentsFromCDROMContents []byte
+	GetFileContentsFromCDROMPath        string
+	GetFileContentsFromCDROMContents    []byte
+	GetFileContentsFromCDROMErr         error
+	GetFileContentsFromCDROMCalledTimes int
 
-	GetFileContentsFromDiskDiskPaths []string
-	GetFileContentsFromDiskFileNames [][]string
-	GetFileContentsFromDiskContents  map[string][]byte
-	GetFileContentsFromDiskErrs      map[string]error
+	GetFileContentsFromDiskDiskPaths   []string
+	GetFileContentsFromDiskFileNames   [][]string
+	GetFileContentsFromDiskContents    map[string][]byte
+	GetFileContentsFromDiskErrs        map[string]error
+	GetFileContentsFromDiskCalledTimes int
 
 	NormalizeDiskPathCalled   bool
 	NormalizeDiskPathSettings boshsettings.DiskSettings
@@ -194,14 +200,16 @@ func (p *FakePlatform) SetupHostname(hostname string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
+func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) error {
+	p.SetupDhcpCalled = true
 	p.SetupDhcpNetworks = networks
 	return p.SetupDhcpErr
 }
 
-func (p *FakePlatform) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+func (p *FakePlatform) SetupManualNetworking(networks boshsettings.Networks) error {
+	p.SetupManualNetworkingCalled = true
 	p.SetupManualNetworkingNetworks = networks
-	return
+	return p.SetupManualNetworkingErr
 }
 
 func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
@@ -247,13 +255,15 @@ func (p *FakePlatform) NormalizeDiskPath(diskSettings boshsettings.DiskSettings)
 	return p.NormalizeDiskPathRealPath
 }
 
-func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, err error) {
+func (p *FakePlatform) GetFileContentsFromCDROM(path string) ([]byte, error) {
+	p.GetFileContentsFromCDROMCalledTimes++
 	p.GetFileContentsFromCDROMPath = path
-	contents = p.GetFileContentsFromCDROMContents
-	return
+	return p.GetFileContentsFromCDROMContents, p.GetFileContentsFromCDROMErr
 }
 
 func (p *FakePlatform) GetFilesContentsFromDisk(diskPath string, fileNames []string) ([][]byte, error) {
+	p.GetFileContentsFromDiskCalledTimes++
+
 	p.GetFileContentsFromDiskDiskPaths = append(p.GetFileContentsFromDiskDiskPaths, diskPath)
 	p.GetFileContentsFromDiskFileNames = append(p.GetFileContentsFromDiskFileNames, fileNames)
 

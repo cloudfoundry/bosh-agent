@@ -26,7 +26,6 @@ func NewAwsInfrastructure(
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
 ) awsInfrastructure {
-
 	return awsInfrastructure{
 		metadataService:    metadataService,
 		registry:           registry,
