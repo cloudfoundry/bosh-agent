@@ -4,11 +4,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
-
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("FileMetadataService", func() {
@@ -20,7 +18,13 @@ var _ = Describe("FileMetadataService", func() {
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		metadataService = NewFileMetadataService("fake-userdata-file-path", "fake-metadata-file-path", fs, logger)
+		metadataService = NewFileMetadataService(
+			"fake-metadata-file-path",
+			"fake-userdata-file-path",
+			"fake-settings-file-path",
+			fs,
+			logger,
+		)
 	})
 
 	Describe("GetInstanceID", func() {
@@ -60,9 +64,10 @@ var _ = Describe("FileMetadataService", func() {
 		})
 
 		Context("when metadata service file does not exist", func() {
-			It("returns an error", func() {
-				_, err := metadataService.GetRegistryEndpoint()
-				Expect(err).To(HaveOccurred())
+			It("returns registry endpoint pointing to a settings file", func() {
+				registryEndpoint, err := metadataService.GetRegistryEndpoint()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(registryEndpoint).To(Equal("fake-settings-file-path"))
 			})
 		})
 	})

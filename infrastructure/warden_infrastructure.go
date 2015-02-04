@@ -33,7 +33,7 @@ func (inf wardenInfrastructure) SetupSSH(username string) error {
 }
 
 func (inf wardenInfrastructure) GetSettings() (boshsettings.Settings, error) {
-	registry := inf.registryProvider.GetRegistry()
+	registry, _ := inf.registryProvider.GetRegistry() // todo
 	return registry.GetSettings()
 }
 

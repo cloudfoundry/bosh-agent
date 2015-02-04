@@ -64,14 +64,14 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting platform")
 	}
 
-	infProvider := boshinf.NewProvider(app.logger, app.platform, config.Infrastructure)
-	app.infrastructure, err = infProvider.Get(opts.InfrastructureName)
+	infProvider := boshinf.NewProvider(app.platform, config.Infrastructure, app.logger)
 
-	app.platform.SetDevicePathResolver(app.infrastructure.GetDevicePathResolver())
-
+	app.infrastructure, err = infProvider.Get()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting infrastructure")
 	}
+
+	app.platform.SetDevicePathResolver(app.infrastructure.GetDevicePathResolver())
 
 	settingsServiceProvider := boshsettings.NewServiceProvider()
 
