@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/cloudfoundry/bosh-agent",
-	"GoVersion": "go1.2.2",
+	"GoVersion": "go1.3.3",
 	"Packages": [
 		"github.com/cloudfoundry/bosh-agent/..."
 	],
@@ -14,6 +14,10 @@
 			"ImportPath": "code.google.com/p/go-charset/data",
 			"Comment": "null-32",
 			"Rev": "ebbeafdc430eb6c7e44e9a730a38eaff4c56ba3a"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-micro-cli/registry",
+			"Rev": "7447496844439a35e7056abe32457df6de4b47f7"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gofileutils/glob",
@@ -31,6 +35,10 @@
 		{
 			"ImportPath": "github.com/jeromer/syslogparser",
 			"Rev": "812866d0389ae7e1f5a0110d47dea20224fc776f"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "442e588f213303bec7936deba67901f8fc8f18b1"
 		},
 		{
 			"ImportPath": "github.com/nu7hatch/gouuid",
