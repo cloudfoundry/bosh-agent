@@ -19,7 +19,6 @@ func ParseOptions(args []string) (options, error) {
 	flagSet := flag.NewFlagSet("bosh-agent-args", flag.ContinueOnError)
 	flagSet.SetOutput(ioutil.Discard)
 
-	flagSet.StringVar(&opts.InfrastructureName, "I", "", "Set Infrastructure")
 	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
 
 	flagSet.StringVar(&opts.ConfigPath, "C", "", "Config path")

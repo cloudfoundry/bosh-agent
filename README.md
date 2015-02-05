@@ -8,7 +8,7 @@
   [vcap-dev](https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics) (for CF)
 
 ```
-PATH=.../s3cli/out:$PATH bin/run -I dummy -P ubuntu
+PATH=.../s3cli/out:$PATH bin/run -P ubuntu -C path_to_config.json
 ```
 
 ### Running locally

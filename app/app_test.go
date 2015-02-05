@@ -112,7 +112,6 @@ func init() {
 
 			err := app.Setup([]string{
 				"bosh-agent",
-				"-I", "dummy",
 				"-P", "dummy",
 				"-C", agentConfPath,
 				"-b", baseDir,
