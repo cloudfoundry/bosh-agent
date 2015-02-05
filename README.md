@@ -1,6 +1,6 @@
 ## BOSH Agent [![Build Status](https://travis-ci.org/cloudfoundry/bosh-agent.png?branch=master)](https://travis-ci.org/cloudfoundry/bosh-agent)
 
-* Documentation: [bosh.io/docs](https://bosh.io/bosh)
+* Documentation: [bosh.io/docs](https://bosh.io/docs)
 * IRC: `#bosh` on freenode
 * Google groups:
   [bosh-users](https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics) &
