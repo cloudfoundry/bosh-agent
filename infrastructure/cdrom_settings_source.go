@@ -12,12 +12,6 @@ import (
 type CDROMSettingsSource struct {
 	settingsFileName string
 
-	loaded  bool
-	loadErr error
-
-	// Loaded state
-	settings boshsettings.Settings
-
 	platform boshplatform.Platform
 
 	logTag string
@@ -44,30 +38,18 @@ func (s CDROMSettingsSource) PublicSSHKeyForUsername(string) (string, error) {
 }
 
 func (s *CDROMSettingsSource) Settings() (boshsettings.Settings, error) {
-	err := s.loadIfNecessary()
-	return s.settings, err
-}
+	var settings boshsettings.Settings
 
-func (s *CDROMSettingsSource) loadIfNecessary() error {
-	if !s.loaded {
-		s.loaded = true
-		s.loadErr = s.load()
-	}
-
-	return s.loadErr
-}
-
-func (s *CDROMSettingsSource) load() error {
 	contents, err := s.platform.GetFileContentsFromCDROM(s.settingsFileName)
 	if err != nil {
-		return bosherr.WrapError(err, "Reading files from CDROM")
+		return settings, bosherr.WrapError(err, "Reading files from CDROM")
 	}
 
-	err = json.Unmarshal(contents, &s.settings)
+	err = json.Unmarshal(contents, &settings)
 	if err != nil {
-		return bosherr.WrapErrorf(
+		return settings, bosherr.WrapErrorf(
 			err, "Parsing CDROM settings from '%s'", s.settingsFileName)
 	}
 
-	return nil
+	return settings, nil
 }

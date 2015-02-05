@@ -50,19 +50,5 @@ var _ = Describe("ConfigDriveSettingsSource", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
 		})
-
-		It("does not try to read settings from the CDROM more than once", func() {
-			platform.GetFileContentsFromCDROMContents = []byte(`{"agent_id": "123"}`)
-
-			settings, err := source.Settings()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(settings.AgentID).To(Equal("123"))
-
-			settings, err = source.Settings()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(settings.AgentID).To(Equal("123"))
-
-			Expect(platform.GetFileContentsFromCDROMCalledTimes).To(Equal(1))
-		})
 	})
 })

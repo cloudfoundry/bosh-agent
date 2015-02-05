@@ -120,6 +120,7 @@ var _ = Describe("ConfigDriveSettingsSource", func() {
 			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
 		})
 
+<<<<<<< HEAD
 		It("does not try to read settings from the config drive more than once", func() {
 			platform.SetGetFilesContentsFromDisk(
 				"fake-settings-path", []byte(`{"agent_id": "123"}`), nil)

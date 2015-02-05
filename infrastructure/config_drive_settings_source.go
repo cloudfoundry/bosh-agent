@@ -21,13 +21,6 @@ type ConfigDriveSettingsSource struct {
 	metadataPath string
 	settingsPath string
 
-	loaded  bool
-	loadErr error
-
-	// Loaded state
-	metadata MetadataContentsType
-	settings boshsettings.Settings
-
 	platform boshplatform.Platform
 
 	logTag string
@@ -69,38 +62,27 @@ func (s *ConfigDriveSettingsSource) PublicSSHKeyForUsername(string) (string, err
 }
 
 func (s *ConfigDriveSettingsSource) Settings() (boshsettings.Settings, error) {
-	err := s.loadIfNecessary()
-	return s.settings, err
-}
+	var settings boshsettings.Settings
 
-func (s *ConfigDriveSettingsSource) loadIfNecessary() error {
-	if !s.loaded {
-		s.loaded = true
-		s.loadErr = s.load()
-	}
-
-	return s.loadErr
-}
-
-func (s *ConfigDriveSettingsSource) load() error {
 	contents, err := s.platform.GetFilesContentsFromDisk(
 		s.diskPaths[0], // todo
 		[]string{s.metadataPath, s.settingsPath},
 	)
 	if err != nil {
-		return bosherr.WrapError(err, "Reading files on config drive")
+		return settings, bosherr.WrapError(err, "Reading files on config drive")
 	}
 
-	err = json.Unmarshal(contents[0], &s.metadata)
+	err = json.Unmarshal(contents[1], &settings)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Parsing config drive metadata from '%s'", s.metadataPath)
-	}
-
-	err = json.Unmarshal(contents[1], &s.settings)
-	if err != nil {
-		return bosherr.WrapErrorf(
+		return settings, bosherr.WrapErrorf(
 			err, "Parsing config drive settings from '%s'", s.settingsPath)
 	}
 
-	return nil
+	var metadata MetadataContentsType
+	err = json.Unmarshal(contents[0], &metadata)
+	if err != nil {
+		return settings, bosherr.WrapErrorf(err, "Parsing config drive metadata from '%s'", s.metadataPath)
+	}
+
+	return settings, nil
 }
