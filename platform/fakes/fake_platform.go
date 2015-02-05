@@ -1,6 +1,8 @@
 package fakes
 
 import (
+	"path/filepath"
+
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
@@ -269,12 +271,13 @@ func (p *FakePlatform) GetFilesContentsFromDisk(diskPath string, fileNames []str
 
 	result := [][]byte{}
 	for _, fileName := range fileNames {
-		err := p.GetFileContentsFromDiskErrs[fileName]
+		fileDiskPath := filepath.Join(diskPath, fileName)
+		err := p.GetFileContentsFromDiskErrs[fileDiskPath]
 		if err != nil {
 			return [][]byte{}, err
 		}
 
-		result = append(result, p.GetFileContentsFromDiskContents[fileName])
+		result = append(result, p.GetFileContentsFromDiskContents[fileDiskPath])
 	}
 
 	return result, nil

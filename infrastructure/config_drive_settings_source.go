@@ -47,12 +47,18 @@ func NewConfigDriveSettingsSource(
 }
 
 func (s *ConfigDriveSettingsSource) PublicSSHKeyForUsername(string) (string, error) {
-	err := s.loadIfNecessary()
+	metadataContent, err := s.loadFileFromConfigDrive(s.metadataPath)
 	if err != nil {
 		return "", err
 	}
 
-	if firstPublicKey, ok := s.metadata.PublicKeys["0"]; ok {
+	var metadata MetadataContentsType
+	err = json.Unmarshal(metadataContent, &metadata)
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "Parsing config drive metadata from '%s'", s.metadataPath)
+	}
+
+	if firstPublicKey, ok := metadata.PublicKeys["0"]; ok {
 		if openSSHKey, ok := firstPublicKey["openssh-key"]; ok {
 			return openSSHKey, nil
 		}
@@ -62,27 +68,35 @@ func (s *ConfigDriveSettingsSource) PublicSSHKeyForUsername(string) (string, err
 }
 
 func (s *ConfigDriveSettingsSource) Settings() (boshsettings.Settings, error) {
-	var settings boshsettings.Settings
-
-	contents, err := s.platform.GetFilesContentsFromDisk(
-		s.diskPaths[0], // todo
-		[]string{s.metadataPath, s.settingsPath},
-	)
+	settingsContent, err := s.loadFileFromConfigDrive(s.settingsPath)
 	if err != nil {
-		return settings, bosherr.WrapError(err, "Reading files on config drive")
+		return boshsettings.Settings{}, err
 	}
 
-	err = json.Unmarshal(contents[1], &settings)
+	var settings boshsettings.Settings
+	err = json.Unmarshal(settingsContent, &settings)
 	if err != nil {
-		return settings, bosherr.WrapErrorf(
+		return boshsettings.Settings{}, bosherr.WrapErrorf(
 			err, "Parsing config drive settings from '%s'", s.settingsPath)
 	}
 
-	var metadata MetadataContentsType
-	err = json.Unmarshal(contents[0], &metadata)
-	if err != nil {
-		return settings, bosherr.WrapErrorf(err, "Parsing config drive metadata from '%s'", s.metadataPath)
+	return settings, err
+}
+
+func (s *ConfigDriveSettingsSource) loadFileFromConfigDrive(contentPath string) ([]byte, error) {
+	var err error
+	var contents [][]byte
+
+	for _, diskPath := range s.diskPaths {
+		contents, err = s.platform.GetFilesContentsFromDisk(diskPath, []string{contentPath})
+
+		if err == nil {
+			s.logger.Debug(s.logTag, "Successfully loaded file '%s' from config drive: '%s'", contentPath, diskPath)
+			return contents[0], nil
+		} else {
+			s.logger.Warn(s.logTag, "Failed to load config from %s - %s", diskPath, err.Error())
+		}
 	}
 
-	return settings, nil
+	return []byte{}, bosherr.WrapErrorf(err, "Loading file '%s' from config drive", contentPath)
 }

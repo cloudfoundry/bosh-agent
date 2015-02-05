@@ -19,7 +19,7 @@ var _ = Describe("ConfigDriveSettingsSource", func() {
 	)
 
 	BeforeEach(func() {
-		diskPaths := []string{"/fake-disk-path"}
+		diskPaths := []string{"/fake-disk-path-1", "/fake-disk-path-2"}
 		metadataPath := "fake-metadata-path"
 		settingsPath := "fake-settings-path"
 		platform = fakeplatform.NewFakePlatform()
@@ -29,8 +29,8 @@ var _ = Describe("ConfigDriveSettingsSource", func() {
 
 	BeforeEach(func() {
 		// Set up default settings and metadata
-		platform.SetGetFilesContentsFromDisk("fake-metadata-path", []byte(`{}`), nil)
-		platform.SetGetFilesContentsFromDisk("fake-settings-path", []byte(`{}`), nil)
+		platform.SetGetFilesContentsFromDisk("/fake-disk-path-1/fake-metadata-path", []byte(`{}`), nil)
+		platform.SetGetFilesContentsFromDisk("/fake-disk-path-1/fake-settings-path", []byte(`{}`), nil)
 	})
 
 	Describe("PublicSSHKeyForUsername", func() {
@@ -47,7 +47,7 @@ var _ = Describe("ConfigDriveSettingsSource", func() {
 				metadataBytes, err := json.Marshal(metadata)
 				Expect(err).ToNot(HaveOccurred())
 
-				platform.SetGetFilesContentsFromDisk("fake-metadata-path", metadataBytes, nil)
+				platform.SetGetFilesContentsFromDisk("/fake-disk-path-1/fake-metadata-path", metadataBytes, nil)
 
 				publicKey, err := source.PublicSSHKeyForUsername("fake-username")
 				Expect(err).ToNot(HaveOccurred())
@@ -56,30 +56,15 @@ var _ = Describe("ConfigDriveSettingsSource", func() {
 
 			It("returns an error if getting public SSH key fails", func() {
 				platform.SetGetFilesContentsFromDisk(
-					"fake-metadata-path", []byte{}, errors.New("fake-read-disk-error"))
+					"/fake-disk-path-1/fake-metadata-path", []byte{}, errors.New("fake-read-disk-error-1"))
+				platform.SetGetFilesContentsFromDisk(
+					"/fake-disk-path-2/fake-metadata-path", []byte{}, errors.New("fake-read-disk-error-2"))
 
 				publicKey, err := source.PublicSSHKeyForUsername("fake-username")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-read-disk-error-2"))
 
 				Expect(publicKey).To(Equal(""))
-			})
-
-			It("does not try to read settings from the config drive more than once", func() {
-				metadataBytes, err := json.Marshal(metadata)
-				Expect(err).ToNot(HaveOccurred())
-
-				platform.SetGetFilesContentsFromDisk("fake-metadata-path", metadataBytes, nil)
-
-				publicKey, err := source.PublicSSHKeyForUsername("fake-username")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(publicKey).To(Equal("fake-openssh-key"))
-
-				publicKey, err = source.PublicSSHKeyForUsername("fake-username")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(publicKey).To(Equal("fake-openssh-key"))
-
-				Expect(platform.GetFileContentsFromDiskCalledTimes).To(Equal(1))
 			})
 		})
 
@@ -102,38 +87,42 @@ var _ = Describe("ConfigDriveSettingsSource", func() {
 	Describe("Settings", func() {
 		It("returns settings read from the config drive", func() {
 			platform.SetGetFilesContentsFromDisk(
-				"fake-settings-path", []byte(`{"agent_id": "123"}`), nil)
+				"/fake-disk-path-1/fake-settings-path", []byte(`{"agent_id": "123"}`), nil)
 
 			settings, err := source.Settings()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(platform.GetFileContentsFromDiskDiskPaths).To(Equal([]string{"/fake-disk-path"}))
+			Expect(platform.GetFileContentsFromDiskDiskPaths).To(Equal([]string{"/fake-disk-path-1"}))
 			Expect(settings.AgentID).To(Equal("123"))
 		})
 
-		It("returns an error if reading from the config drive fails", func() {
+		It("tries to load settings from potential disk locations", func() {
 			platform.SetGetFilesContentsFromDisk(
-				"fake-settings-path", []byte{}, errors.New("fake-read-disk-error"))
+				"/fake-disk-path-1/fake-settings-path",
+				[]byte{},
+				errors.New("fake-read-disk-error"),
+			)
+
+			platform.SetGetFilesContentsFromDisk(
+				"/fake-disk-path-2/fake-settings-path", []byte(`{"agent_id": "123"}`), nil)
+
+			settings, err := source.Settings()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(settings.AgentID).To(Equal("123"))
+
+			Expect(platform.GetFileContentsFromDiskDiskPaths).To(ContainElement("/fake-disk-path-1"))
+			Expect(platform.GetFileContentsFromDiskDiskPaths).To(ContainElement("/fake-disk-path-2"))
+		})
+
+		It("returns an error if reading from potential disk paths for config drive", func() {
+			platform.SetGetFilesContentsFromDisk(
+				"/fake-disk-path-1/fake-settings-path", []byte{}, errors.New("fake-read-disk-error-1"))
+			platform.SetGetFilesContentsFromDisk(
+				"/fake-disk-path-2/fake-settings-path", []byte{}, errors.New("fake-read-disk-error-2"))
 
 			_, err := source.Settings()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error"))
-		})
-
-<<<<<<< HEAD
-		It("does not try to read settings from the config drive more than once", func() {
-			platform.SetGetFilesContentsFromDisk(
-				"fake-settings-path", []byte(`{"agent_id": "123"}`), nil)
-
-			settings, err := source.Settings()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(settings.AgentID).To(Equal("123"))
-
-			settings, err = source.Settings()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(settings.AgentID).To(Equal("123"))
-
-			Expect(platform.GetFileContentsFromDiskCalledTimes).To(Equal(1))
+			Expect(err.Error()).To(ContainSubstring("fake-read-disk-error-2"))
 		})
 	})
 })
