@@ -27,10 +27,3 @@ type UserDataContentsType struct {
 		Nameserver []string
 	}
 }
-
-type PublicKeyType map[string]string
-
-type MetadataContentsType struct {
-	PublicKeys map[string]PublicKeyType `json:"public-keys"`
-	InstanceID string                   `json:"instance-id"`
-}

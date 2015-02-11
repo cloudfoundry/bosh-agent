@@ -6,26 +6,29 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
-
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("RegistryProvider", func() {
 	var (
 		metadataService  *fakeinf.FakeMetadataService
+		useServerName    bool
 		fs               *fakesys.FakeFileSystem
 		registryProvider RegistryProvider
 	)
 
 	BeforeEach(func() {
 		metadataService = &fakeinf.FakeMetadataService{}
+		useServerName = false
 		fs = fakesys.NewFakeFileSystem()
+	})
+
+	JustBeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		registryProvider = NewRegistryProvider(metadataService, "fake-fallback-file-registry-path", fs, logger)
+		registryProvider = NewRegistryProvider(metadataService, useServerName, fs, logger)
 	})
 
 	Describe("GetRegistry", func() {
@@ -34,9 +37,24 @@ var _ = Describe("RegistryProvider", func() {
 				metadataService.RegistryEndpoint = "http://registry-endpoint"
 			})
 
-			It("returns an http registry", func() {
-				expectedRegistry := NewHTTPRegistry(metadataService, false)
-				Expect(registryProvider.GetRegistry()).To(Equal(expectedRegistry))
+			Context("when registry is configured to not use server name as id", func() {
+				BeforeEach(func() { useServerName = false })
+
+				It("returns an http registry that does not use server name as id", func() {
+					registry, err := registryProvider.GetRegistry()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(registry).To(Equal(NewHTTPRegistry(metadataService, false)))
+				})
+			})
+
+			Context("when registry is configured to use server name as id", func() {
+				BeforeEach(func() { useServerName = true })
+
+				It("returns an http registry that uses server name as id", func() {
+					registry, err := registryProvider.GetRegistry()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(registry).To(Equal(NewHTTPRegistry(metadataService, true)))
+				})
 			})
 		})
 
@@ -46,8 +64,9 @@ var _ = Describe("RegistryProvider", func() {
 			})
 
 			It("returns a file registry", func() {
-				expectedRegistry := NewFileRegistry("/tmp/registry-endpoint", fs)
-				Expect(registryProvider.GetRegistry()).To(Equal(expectedRegistry))
+				registry, err := registryProvider.GetRegistry()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(registry).To(Equal(NewFileRegistry("/tmp/registry-endpoint", fs)))
 			})
 		})
 
@@ -56,9 +75,10 @@ var _ = Describe("RegistryProvider", func() {
 				metadataService.GetRegistryEndpointErr = errors.New("fake-get-registry-endpoint-error")
 			})
 
-			It("returns file registry with fallback path", func() {
-				expectedRegistry := NewFileRegistry("fake-fallback-file-registry-path", fs)
-				Expect(registryProvider.GetRegistry()).To(Equal(expectedRegistry))
+			It("returns error", func() {
+				_, err := registryProvider.GetRegistry()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-get-registry-endpoint-error"))
 			})
 		})
 	})

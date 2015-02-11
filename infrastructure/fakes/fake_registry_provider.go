@@ -6,8 +6,9 @@ import (
 
 type FakeRegistryProvider struct {
 	GetRegistryRegistry boshinf.Registry
+	GetRegistryErr      error
 }
 
-func (p *FakeRegistryProvider) GetRegistry() boshinf.Registry {
-	return p.GetRegistryRegistry
+func (p *FakeRegistryProvider) GetRegistry() (boshinf.Registry, error) {
+	return p.GetRegistryRegistry, p.GetRegistryErr
 }

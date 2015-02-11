@@ -1,0 +1,120 @@
+bosh-agent -I aws
+bosh-agent -I openstack
+bosh-agent -I vsphere
+------- bosh-agent -I softlayer
+
+bosh-agent -c agent.json
+
+- implement softlayer compat config config_drive
+- change stemcell to configure agent
+- check for todos
+- run bats for at least one infrastructure (warden)
+
+---
+AWS:       Metadata(http)              -> RegistryProvider(http)      -> Registry -> Settings
+OpenStack: Metadata(http,config_drive) -> RegistryProvider(http)      -> Registry -> Settings
+Warden:    Metadata(file)              -> RegistryProvider(file|http) -> Registry -> Settings
+
+vSphere:   Metadata(cdrom)                               -> Settings
+SL:        Metadata(config_drive)                        -> Settings
+
+http,config_drive,file,cdrom
+
+RemoteSettings      -> Get() -> (metadata_service_provider, registry_provider) -> Get()
+CDRomSettings       -> Get()
+ConfigDriveSettings -> Get()
+
+---
+func (f SettingsSourceFactory) New() {
+  if UseRegistry {
+    ComplexSettingsSource(
+      MultiSource[MetadataService[HTTPMetadataService()]
+      RegistryProvider(metadataService)
+    )
+    ComplexSettingsSource(
+      MultiSource[MetadataService[ConfigDriveMetadataService(),  HTTPMetadataService()]
+      RegistryProvider(metadataService)
+    )
+    ComplexSettingsSource(
+      metadataService=MultiSource[MetadataService[FileMetadataService(fs)]
+      RegistryProvider(metadataService)
+    )
+  } else {
+    FileSettingsSource()
+    ConfigDriveSettingsSource()
+    CDROMSettingsSource(platform)
+  }
+
+  settingsSource
+}
+
+SettingsSourceFactory(options).New() -> SettingsSource
+
+SettingsSource.Get() -> Settings
+
+---
+AWS: 
+
+  Infrastructure:
+    Settings:
+      Sources: [{
+        Type: "HTTP"
+        URI: "http://169.254.169.254",
+      }]
+      UseServerName: true
+      UseRegistry: true
+
+OpenStack: 
+
+  Infrastructure:
+    Settings:
+      Sources: [
+        {
+          "Type": "ConfigDrive",
+          "Paths": [
+            "/dev/disk/by-label/CONFIG-2",
+            "/dev/disk/by-label/config-2",
+          ],
+          "MetaDataPath": "ec2/latest/meta-data.json",
+          "UserDataPath": "ec2/latest/user-data.json",
+        }, 
+        {
+          "Type": "HTTP",
+          URI: "http://169.254.169.254",
+        }
+      ]
+      UseRegistry: true
+
+Warden: 
+
+  Infrastructure:
+    Settings:
+      Sources: [{
+        "Type": "File",
+        "MetaDataPath": "/var/vcap/bosh/warden-cpi-metadata.json",
+        "UserDataPath": "/var/vcap/bosh/warden-cpi-user-data.json",
+        "SettingsPath": "/var/vcap/bosh/warden-cpi-agent-env.json",
+      }]
+      UseRegistry: true
+
+vSphere: 
+
+  Infrastructure:
+    Settings:
+      Sources: [{
+        "Type": "CDROM",
+        "FileName": "env"
+      }]
+
+SoftLayer: 
+
+  Infrastructure:
+    Settings:
+      Sources: [{
+        "Type": "ConfigDrive",
+        "Paths": [
+          "/dev/disk/by-label/METADATA",
+        ],
+        "MetaDataPath": "openstack/latest/meta-data.json",
+        "UserDataPath": "openstack/latest/user-data.json",
+      }]

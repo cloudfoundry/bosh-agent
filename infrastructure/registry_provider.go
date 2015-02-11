@@ -3,49 +3,53 @@ package infrastructure
 import (
 	"strings"
 
+	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
 type RegistryProvider interface {
-	GetRegistry() Registry
+	GetRegistry() (Registry, error)
 }
 
 type registryProvider struct {
-	metadataService          MetadataService
-	fallbackFileRegistryPath string
-	fs                       boshsys.FileSystem
-	logger                   boshlog.Logger
-	logTag                   string
+	metadataService MetadataService
+	useServerName   bool
+
+	fs boshsys.FileSystem
+
+	logTag string
+	logger boshlog.Logger
 }
 
 func NewRegistryProvider(
 	metadataService MetadataService,
-	fallbackFileRegistryPath string,
+	useServerName bool,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) RegistryProvider {
 	return &registryProvider{
-		metadataService:          metadataService,
-		fallbackFileRegistryPath: fallbackFileRegistryPath,
-		fs:     fs,
-		logger: logger,
+		metadataService: metadataService,
+		useServerName:   useServerName,
+
+		fs: fs,
+
 		logTag: "registryProvider",
+		logger: logger,
 	}
 }
 
-func (p *registryProvider) GetRegistry() Registry {
+func (p *registryProvider) GetRegistry() (Registry, error) {
 	registryEndpoint, err := p.metadataService.GetRegistryEndpoint()
 	if err != nil {
-		p.logger.Debug(p.logTag, "Using fallback file registry %s", p.fallbackFileRegistryPath)
-		return NewFileRegistry(p.fallbackFileRegistryPath, p.fs)
+		return nil, bosherr.WrapError(err, "Getting registry endpoint")
 	}
 
 	if strings.HasPrefix(registryEndpoint, "http") {
 		p.logger.Debug(p.logTag, "Using http registry at %s", registryEndpoint)
-		return NewHTTPRegistry(p.metadataService, false)
+		return NewHTTPRegistry(p.metadataService, p.useServerName), nil
 	}
 
 	p.logger.Debug(p.logTag, "Using file registry at %s", registryEndpoint)
-	return NewFileRegistry(registryEndpoint, p.fs)
+	return NewFileRegistry(registryEndpoint, p.fs), nil
 }
