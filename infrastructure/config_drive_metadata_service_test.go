@@ -20,6 +20,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		metadataService MetadataService
 		resolver        *fakeinf.FakeDNSResolver
 		platform        *fakeplatform.FakePlatform
+		logger          boshlog.Logger
 	)
 
 	updateMetadata := func(metadataContents MetadataContentsType) {
@@ -39,7 +40,7 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 	BeforeEach(func() {
 		resolver = &fakeinf.FakeDNSResolver{}
 		platform = fakeplatform.NewFakePlatform()
-		logger := boshlog.NewLogger(boshlog.LevelNone)
+		logger = boshlog.NewLogger(boshlog.LevelNone)
 		diskPaths := []string{
 			"/fake-disk-path-1",
 			"/fake-disk-path-2",
@@ -98,6 +99,20 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 		It("returns an error if it fails to parse user_data contents", func() {
 			platform.SetGetFilesContentsFromDisk("/fake-disk-path-1/fake-userdata-path", []byte("broken"), nil)
 			Expect(metadataService.IsAvailable()).To(BeFalse())
+		})
+
+		Context("when disk paths are not given", func() {
+			It("returns false", func() {
+				metadataService = NewConfigDriveMetadataService(
+					resolver,
+					platform,
+					[]string{},
+					"fake-metadata-path",
+					"fake-userdata-path",
+					logger,
+				)
+				Expect(metadataService.IsAvailable()).To(BeFalse())
+			})
 		})
 	})
 

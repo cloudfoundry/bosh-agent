@@ -96,6 +96,11 @@ func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
 }
 
 func (ms *configDriveMetadataService) IsAvailable() bool {
+	if len(ms.diskPaths) == 0 {
+		ms.logger.Warn(ms.logTag, "Disk paths are not given")
+		return false
+	}
+
 	return ms.load() == nil
 }
 
