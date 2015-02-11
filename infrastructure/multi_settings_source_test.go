@@ -54,13 +54,12 @@ var _ = Describe("MultiSettingsSource", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		Context("when the first source returns settings", func() {
-			BeforeEach(func() {
-				source1.PublicKeyErr = nil
-				source1.SettingsErr = nil
-			})
+		Describe("PublicSSHKeyForUsername", func() {
+			Context("when the first source returns public key", func() {
+				BeforeEach(func() {
+					source1.PublicKeyErr = nil
+				})
 
-			Describe("PublicSSHKeyForUsername", func() {
 				It("returns public key and public key error from the first source", func() {
 					publicKey, err := source.PublicSSHKeyForUsername("fake-username")
 					Expect(err).ToNot(HaveOccurred())
@@ -68,52 +67,57 @@ var _ = Describe("MultiSettingsSource", func() {
 				})
 			})
 
-			Describe("Settings", func() {
-				It("returns settings from the first source", func() {
-					settings, err := source.Settings()
-					Expect(err).ToNot(HaveOccurred())
-					Expect(settings).To(Equal(boshsettings.Settings{AgentID: "fake-settings-1"}))
+			Context("when the second source returns public key", func() {
+				BeforeEach(func() {
+					source2.PublicKeyErr = nil
 				})
-			})
-		})
 
-		Context("when the second source returns settings", func() {
-			BeforeEach(func() {
-				source2.PublicKeyErr = nil
-				source2.SettingsErr = nil
-			})
-
-			Describe("PublicSSHKeyForUsername", func() {
-				It("returns public key from the available service", func() {
+				It("returns public key from the second source", func() {
 					publicKey, err := source.PublicSSHKeyForUsername("fake-username")
 					Expect(err).ToNot(HaveOccurred())
 					Expect(publicKey).To(Equal("fake-public-key-2"))
 				})
 			})
 
-			Describe("Settings", func() {
-				It("returns settings from the second source", func() {
-					settings, err := source.Settings()
-					Expect(err).ToNot(HaveOccurred())
-					Expect(settings).To(Equal(boshsettings.Settings{AgentID: "fake-settings-2"}))
+			Context("when both sources fail to get ssh key", func() {
+				It("returns error from the second source", func() {
+					_, err := source.PublicSSHKeyForUsername("fake-username")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-public-key-err-2"))
 				})
 			})
 		})
 
-		Context("when both sources do not have settings", func() {
-			Describe("PublicSSHKeyForUsername", func() {
-				It("returns error from the first source", func() {
-					_, err := source.PublicSSHKeyForUsername("fake-username")
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-public-key-err-1"))
+		Describe("Settings", func() {
+			Context("when the first source returns settings", func() {
+				BeforeEach(func() {
+					source1.SettingsErr = nil
+				})
+
+				It("returns settings from the first source", func() {
+					settings, err := source.Settings()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(settings).To(Equal(boshsettings.Settings{AgentID: "fake-settings-1"}))
 				})
 			})
 
-			Describe("Settings", func() {
-				It("returns error from the first source", func() {
+			Context("when both sources do not have settings", func() {
+				It("returns error from the second source", func() {
 					_, err := source.Settings()
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-settings-err-1"))
+					Expect(err.Error()).To(ContainSubstring("fake-settings-err-2"))
+				})
+			})
+
+			Context("when the second source returns settings", func() {
+				BeforeEach(func() {
+					source2.SettingsErr = nil
+				})
+
+				It("returns settings from the second source", func() {
+					settings, err := source.Settings()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(settings).To(Equal(boshsettings.Settings{AgentID: "fake-settings-2"}))
 				})
 			})
 		})
