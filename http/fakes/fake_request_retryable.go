@@ -24,7 +24,7 @@ func NewFakeRequestRetryable() *FakeRequestRetryable {
 }
 
 func (r *FakeRequestRetryable) Attempt() (bool, error) {
-	r.AttemptCalled += 1
+	r.AttemptCalled++
 
 	currentAttempt := r.attemptOutputs[0]
 	r.attemptOutputs = r.attemptOutputs[1:]

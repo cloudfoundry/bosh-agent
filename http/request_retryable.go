@@ -68,7 +68,7 @@ func (r *requestRetryable) Attempt() (bool, error) {
 		r.request.Body = ioutil.NopCloser(bytes.NewReader(r.bodyBytes))
 	}
 
-	r.attempt += 1
+	r.attempt++
 
 	r.logger.Debug(r.logTag, "[requestID=%s] Requesting (attempt=%d): %s", r.requestID, r.attempt, r.formatRequest(r.request))
 	r.response, err = r.delegate.Do(r.request)

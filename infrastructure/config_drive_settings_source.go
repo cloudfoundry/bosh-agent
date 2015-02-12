@@ -93,9 +93,8 @@ func (s *ConfigDriveSettingsSource) loadFileFromConfigDrive(contentPath string) 
 		if err == nil {
 			s.logger.Debug(s.logTag, "Successfully loaded file '%s' from config drive: '%s'", contentPath, diskPath)
 			return contents[0], nil
-		} else {
-			s.logger.Warn(s.logTag, "Failed to load config from %s - %s", diskPath, err.Error())
 		}
+		s.logger.Warn(s.logTag, "Failed to load config from %s - %s", diskPath, err.Error())
 	}
 
 	return []byte{}, bosherr.WrapErrorf(err, "Loading file '%s' from config drive", contentPath)
