@@ -10,28 +10,28 @@ type ShortenableError interface {
 	ShortError() string
 }
 
-type complexError struct {
-	delegate error
-	cause    error
+type ComplexError struct {
+	Delegate error
+	Cause    error
 }
 
-func (e complexError) Error() string {
-	return fmt.Sprintf("%s: %s", e.delegate.Error(), e.cause.Error())
+func (e ComplexError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Delegate.Error(), e.Cause.Error())
 }
 
-func (e complexError) ShortError() string {
+func (e ComplexError) ShortError() string {
 	var delegateMessage string
-	if typedDelegate, ok := e.delegate.(ShortenableError); ok {
+	if typedDelegate, ok := e.Delegate.(ShortenableError); ok {
 		delegateMessage = typedDelegate.ShortError()
 	} else {
-		delegateMessage = e.delegate.Error()
+		delegateMessage = e.Delegate.Error()
 	}
 
 	var causeMessage string
-	if typedCause, ok := e.cause.(ShortenableError); ok {
+	if typedCause, ok := e.Cause.(ShortenableError); ok {
 		causeMessage = typedCause.ShortError()
 	} else {
-		causeMessage = e.cause.Error()
+		causeMessage = e.Cause.Error()
 	}
 
 	return fmt.Sprintf("%s: %s", delegateMessage, causeMessage)
@@ -58,8 +58,8 @@ func WrapComplexError(cause, delegate error) error {
 		cause = Error("<nil cause>")
 	}
 
-	return complexError{
-		delegate: delegate,
-		cause:    cause,
+	return ComplexError{
+		Delegate: delegate,
+		Cause:    cause,
 	}
 }
