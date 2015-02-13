@@ -169,6 +169,12 @@ func (net ubuntuNetManager) writeNetworkInterfaces(networks boshsettings.Network
 		return modifiedNetworks, false, bosherr.WrapError(err, "Detecting mac addresses")
 	}
 
+	gatewayNetwork, gatewayNetworkFound := networks.DefaultNetworkFor("gateway")
+
+	if !gatewayNetworkFound {
+		return modifiedNetworks, false, bosherr.WrapError(err, "Finding network for default gateway")
+	}
+
 	for _, aNet := range networks {
 		network, broadcast, err := boshsys.CalculateNetworkAndBroadcast(aNet.IP, aNet.Netmask)
 		if err != nil {
@@ -180,7 +186,7 @@ func (net ubuntuNetManager) writeNetworkInterfaces(networks boshsettings.Network
 			macAddresses[aNet.Mac],
 			network,
 			broadcast,
-			true,
+			aNet.IP == gatewayNetwork.IP,
 		}
 		modifiedNetworks = append(modifiedNetworks, newNet)
 	}
