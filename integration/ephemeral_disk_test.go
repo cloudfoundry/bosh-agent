@@ -25,11 +25,6 @@ var _ = Describe("EphemeralDisk", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		// Using openstack to set registry URL in config-drive
-		// instead of http metadata service
-		err = testEnvironment.SetInfrastructure("openstack")
-		Expect(err).ToNot(HaveOccurred())
-
 		err = testEnvironment.SetupConfigDrive()
 		Expect(err).ToNot(HaveOccurred())
 

@@ -23,6 +23,8 @@ func TestIntegration(t *testing.T) {
 		logger := boshlog.NewLogger(boshlog.LevelDebug)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		testEnvironment = NewTestEnvironment(cmdRunner)
+		err := testEnvironment.ConfigureAgentForGenericInfrastructure()
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	RunSpecs(t, "Integration Suite")

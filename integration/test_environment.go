@@ -24,11 +24,6 @@ func NewTestEnvironment(
 	}
 }
 
-func (t *TestEnvironment) SetInfrastructure(name string) error {
-	_, err := t.RunCommand(fmt.Sprintf("echo '%s' | sudo tee /var/vcap/bosh/etc/infrastructure", name))
-	return err
-}
-
 func (t *TestEnvironment) SetupConfigDrive() error {
 	loopDeviceNum, err := t.AttachLoopDevice(10)
 	if err != nil {
@@ -44,7 +39,7 @@ sudo mount /dev/disk/by-label/config-2 /tmp/config-drive
 sudo chown vagrant:vagrant /tmp/config-drive
 sudo mkdir -p /tmp/config-drive/ec2/latest
 sudo cp %s/meta-data.json /tmp/config-drive/ec2/latest/meta-data.json
-sudo cp %s/user-data /tmp/config-drive/ec2/latest
+sudo cp %s/user-data.json /tmp/config-drive/ec2/latest/user-data.json
 sudo umount /tmp/config-drive
 `
 	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, loopDeviceNum, loopDeviceNum, t.assetsDir(), t.assetsDir())
@@ -68,6 +63,17 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	}
 
 	_, err = t.RunCommand("sudo rm -rf /var/vcap/data")
+	return err
+}
+
+// Until bosh-lite is released with new agent
+func (t *TestEnvironment) ConfigureAgentForGenericInfrastructure() error {
+	_, err := t.RunCommand(
+		fmt.Sprintf(
+			"sudo cp %s/agent_runit.sh /etc/service/agent/run",
+			t.assetsDir(),
+		),
+	)
 	return err
 }
 

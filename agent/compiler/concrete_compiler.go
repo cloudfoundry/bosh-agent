@@ -133,7 +133,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 
 	err = c.packageApplier.KeepOnly([]boshmodels.Package{})
 	if err != nil {
-    return "", "", bosherr.WrapError(err, "Removing packages")
+		return "", "", bosherr.WrapError(err, "Removing packages")
 	}
 
 	return uploadedBlobID, sha1, nil
