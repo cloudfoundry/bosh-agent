@@ -1,10 +1,8 @@
-package app_test
+package app
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	. "github.com/cloudfoundry/bosh-agent/app"
 
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -26,11 +24,11 @@ var _ = Describe("LoadConfigFromPath", func() {
 				"Linux": {
 					"UseDefaultTmpDir": true,
 					"UsePreformattedPersistentDisk": true,
-					"BindMountPersistentDisk": true
+					"BindMountPersistentDisk": true,
+					"DevicePathResolutionType": "virtio"
 				}
 			},
 			"Infrastructure": {
-				"DevicePathResolutionType": "virtio",
 				"NetworkingType":           "dhcp",
 				"StaticEphemeralDiskPath":  "/dev/sdb",
 
@@ -67,17 +65,17 @@ var _ = Describe("LoadConfigFromPath", func() {
 		config, err := LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(config).To(Equal(Config{
-			Platform: boshplatform.ProviderOptions{
+			Platform: boshplatform.PlatformOptions{
 				Linux: boshplatform.LinuxOptions{
 					UseDefaultTmpDir:              true,
 					UsePreformattedPersistentDisk: true,
 					BindMountPersistentDisk:       true,
+					DevicePathResolutionType:      "virtio",
 				},
 			},
 			Infrastructure: boshinf.InfrastructureOptions{
-				DevicePathResolutionType: "virtio",
-				NetworkingType:           "dhcp",
-				StaticEphemeralDiskPath:  "/dev/sdb",
+				NetworkingType:          "dhcp",
+				StaticEphemeralDiskPath: "/dev/sdb",
 
 				Settings: boshinf.SettingsOptions{
 					Sources: []boshinf.SourceOptions{

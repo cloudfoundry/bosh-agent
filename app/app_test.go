@@ -35,15 +35,8 @@ func init() {
 			agentConfPath = filepath.Join(baseDir, "bosh", "agent.json")
 
 			agentConfJSON = `{
-				"Infrastructure": {
-				  "Settings": {
-					  "Sources": [{
-					  	"Type": "CDROM",
-					  	"FileName": "/fake-file-name"
-					  }]
-					}
-				}
-			}`
+					"Infrastructure": { "Settings": { "Sources": [{ "Type": "CDROM", "FileName": "/fake-file-name" }] } }
+				}`
 
 			settingsPath := filepath.Join(baseDir, "bosh", "settings.json")
 
@@ -121,11 +114,8 @@ func init() {
 		Context("when DevicePathResolutionType is 'virtio'", func() {
 			BeforeEach(func() {
 				agentConfJSON = `{
-					"Infrastructure": {
-						"DevicePathResolutionType": "virtio",
-						"Settings": { "Sources": [{ "Type": "CDROM", "FileName": "/fake-file-name" }]
-						}
-					}
+					"Platform": { "Linux": { "DevicePathResolutionType": "virtio" } },
+					"Infrastructure": { "Settings": { "Sources": [{ "Type": "CDROM", "FileName": "/fake-file-name" }] } }
 				}`
 			})
 
@@ -141,11 +131,8 @@ func init() {
 		Context("when DevicePathResolutionType is 'scsi'", func() {
 			BeforeEach(func() {
 				agentConfJSON = `{
-					"Infrastructure": {
-						"DevicePathResolutionType": "scsi",
-						"Settings": { "Sources": [{ "Type": "CDROM", "FileName": "/fake-file-name" }]
-						}
-					}
+					"Platform": { "Linux": { "DevicePathResolutionType": "scsi" } },
+					"Infrastructure": { "Settings": { "Sources": [{ "Type": "CDROM", "FileName": "/fake-file-name" }] } }
 				}`
 			})
 

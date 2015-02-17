@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Platform       boshplatform.ProviderOptions
+	Platform       boshplatform.PlatformOptions
 	Infrastructure boshinf.InfrastructureOptions
 }
 

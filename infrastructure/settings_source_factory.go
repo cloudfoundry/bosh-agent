@@ -8,13 +8,9 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
 type InfrastructureOptions struct {
-	// e.g. possible values: vsphere, mapped, ''
-	DevicePathResolutionType string
-
 	// e.g. possible values: dhcp, manual, ''
 	NetworkingType string
 
@@ -70,20 +66,17 @@ func (o CDROMSourceOptions) sourceOptionsInterface() {}
 
 type SettingsSourceFactory struct {
 	options  SettingsOptions
-	fs       boshsys.FileSystem
 	platform boshplat.Platform
 	logger   boshlog.Logger
 }
 
 func NewSettingsSourceFactory(
 	options SettingsOptions,
-	fs boshsys.FileSystem,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
 ) SettingsSourceFactory {
 	return SettingsSourceFactory{
 		options:  options,
-		fs:       fs,
 		platform: platform,
 		logger:   logger,
 	}
@@ -125,7 +118,7 @@ func (f SettingsSourceFactory) buildWithRegistry() (SettingsSource, error) {
 				typedOpts.MetaDataPath,
 				typedOpts.UserDataPath,
 				typedOpts.SettingsPath,
-				f.fs,
+				f.platform.GetFs(),
 				f.logger,
 			)
 
@@ -137,7 +130,7 @@ func (f SettingsSourceFactory) buildWithRegistry() (SettingsSource, error) {
 	}
 
 	metadataService := NewMultiSourceMetadataService(metadataServices...)
-	registryProvider := NewRegistryProvider(metadataService, f.options.UseServerName, f.fs, f.logger)
+	registryProvider := NewRegistryProvider(metadataService, f.options.UseServerName, f.platform.GetFs(), f.logger)
 	settingsSource := NewComplexSettingsSource(metadataService, registryProvider, f.logger)
 
 	return settingsSource, nil

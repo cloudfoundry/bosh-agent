@@ -1,10 +1,8 @@
-package app_test
+package app
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	. "github.com/cloudfoundry/bosh-agent/app"
 )
 
 var _ = Describe("ParseOptions", func() {

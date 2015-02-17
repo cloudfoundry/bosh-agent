@@ -19,14 +19,12 @@ import (
 	boshboot "github.com/cloudfoundry/bosh-agent/bootstrap"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
@@ -60,17 +58,12 @@ func (app *app) Setup(args []string) error {
 	dirProvider := boshdirs.NewProvider(opts.BaseDirectory)
 
 	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, config.Platform)
-
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
 	}
 
-	options := config.Infrastructure
-	fs := app.platform.GetFs()
-
-	settingsSourceFactory := boshinf.NewSettingsSourceFactory(options.Settings, fs, app.platform, app.logger)
-
+	settingsSourceFactory := boshinf.NewSettingsSourceFactory(config.Infrastructure.Settings, app.platform, app.logger)
 	settingsSource, err := settingsSourceFactory.New()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting Settings Source")
@@ -79,34 +72,16 @@ func (app *app) Setup(args []string) error {
 	app.infrastructure = boshinf.NewGenericInfrastructure(
 		app.platform,
 		settingsSource,
-
-		options.NetworkingType,
-		options.StaticEphemeralDiskPath,
-
+		config.Infrastructure.NetworkingType,
+		config.Infrastructure.StaticEphemeralDiskPath,
 		app.logger,
 	)
-
-	var devicePathResolver boshdpresolv.DevicePathResolver
-	switch options.DevicePathResolutionType {
-	case "virtio":
-		udev := boshudev.NewConcreteUdevDevice(app.platform.GetRunner(), app.logger)
-		idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, udev, fs)
-		mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
-		devicePathResolver = boshdpresolv.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, app.logger)
-	case "scsi":
-		devicePathResolver = boshdpresolv.NewScsiDevicePathResolver(500*time.Millisecond, fs)
-	default:
-		devicePathResolver = boshdpresolv.NewIdentityDevicePathResolver()
-	}
-	app.platform.SetDevicePathResolver(devicePathResolver)
-
-	settingsServiceProvider := boshsettings.NewServiceProvider()
 
 	boot := boshboot.New(
 		app.infrastructure,
 		app.platform,
 		dirProvider,
-		settingsServiceProvider,
+		boshsettings.NewServiceProvider(),
 		app.logger,
 	)
 

@@ -7,14 +7,12 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("SettingsSourceFactory", func() {
 	Describe("New", func() {
 		var (
 			options  SettingsOptions
-			fs       *fakesys.FakeFileSystem
 			platform *fakeplat.FakePlatform
 			logger   boshlog.Logger
 			factory  SettingsSourceFactory
@@ -22,13 +20,12 @@ var _ = Describe("SettingsSourceFactory", func() {
 
 		BeforeEach(func() {
 			options = SettingsOptions{}
-			fs = fakesys.NewFakeFileSystem()
 			platform = fakeplat.NewFakePlatform()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
 		})
 
 		JustBeforeEach(func() {
-			factory = NewSettingsSourceFactory(options, fs, platform, logger)
+			factory = NewSettingsSourceFactory(options, platform, logger)
 		})
 
 		Context("when UseRegistry is set to true", func() {
@@ -48,7 +45,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 						resolver := NewRegistryEndpointResolver(NewDigDNSResolver(platform.GetRunner(), logger))
 						httpMetadataService := NewHTTPMetadataService("http://fake-url", resolver)
 						multiSourceMetadataService := NewMultiSourceMetadataService(httpMetadataService)
-						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, fs, logger)
+						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, platform.GetFs(), logger)
 						httpSettingsSource := NewComplexSettingsSource(multiSourceMetadataService, registryProvider, logger)
 
 						settingsSource, err := factory.New()
@@ -82,7 +79,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 							logger,
 						)
 						multiSourceMetadataService := NewMultiSourceMetadataService(configDriveMetadataService)
-						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, fs, logger)
+						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, platform.GetFs(), logger)
 						configDriveSettingsSource := NewComplexSettingsSource(multiSourceMetadataService, registryProvider, logger)
 
 						settingsSource, err := factory.New()
@@ -108,11 +105,11 @@ var _ = Describe("SettingsSourceFactory", func() {
 							"fake-meta-data-path",
 							"fake-user-data-path",
 							"fake-settings-path",
-							fs,
+							platform.GetFs(),
 							logger,
 						)
 						multiSourceMetadataService := NewMultiSourceMetadataService(fileMetadataService)
-						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, fs, logger)
+						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, platform.GetFs(), logger)
 						fileSettingsSource := NewComplexSettingsSource(multiSourceMetadataService, registryProvider, logger)
 
 						settingsSource, err := factory.New()
