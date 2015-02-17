@@ -10,3 +10,4 @@ gobin/*
 *.sw*
 
 /.idea
+/.vagrant
