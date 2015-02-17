@@ -23,6 +23,7 @@ func init() {
 				platform    *fakeplatform.FakePlatform
 				dirProvider boshdir.Provider
 
+				settingsSource          *fakeinf.FakeSettingsSource
 				settingsServiceProvider *fakesettings.FakeSettingsServiceProvider
 				settingsService         *fakesettings.FakeSettingsService
 			)
@@ -34,13 +35,14 @@ func init() {
 				platform = fakeplatform.NewFakePlatform()
 				dirProvider = boshdir.NewProvider("/var/vcap")
 
+				settingsSource = &fakeinf.FakeSettingsSource{}
 				settingsServiceProvider = fakesettings.NewServiceProvider()
 				settingsService = settingsServiceProvider.NewServiceSettingsService
 			})
 
 			bootstrap := func() (boshsettings.Service, error) {
 				logger := boshlog.NewLogger(boshlog.LevelNone)
-				return New(inf, platform, dirProvider, settingsServiceProvider, logger).Run()
+				return New(inf, platform, dirProvider, settingsSource, settingsServiceProvider, logger).Run()
 			}
 
 			It("sets up runtime configuration", func() {
@@ -49,10 +51,51 @@ func init() {
 				Expect(platform.SetupRuntimeConfigurationWasInvoked).To(BeTrue())
 			})
 
-			It("sets up ssh", func() {
-				_, err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(inf.SetupSSHUsername).To(Equal("vcap"))
+			Describe("SSH tunnel setup for registry", func() {
+				It("returns error without configuring ssh on the platform if getting public key fails", func() {
+					settingsSource.PublicKeyErr = errors.New("fake-get-public-key-err")
+
+					_, err := bootstrap()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-public-key-err"))
+
+					Expect(platform.SetupSSHCalled).To(BeFalse())
+				})
+
+				Context("when public key is not empty", func() {
+					BeforeEach(func() {
+						settingsSource.PublicKey = "fake-public-key"
+					})
+
+					It("gets the public key and sets up ssh via the platform", func() {
+						_, err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(platform.SetupSSHPublicKey).To(Equal("fake-public-key"))
+						Expect(platform.SetupSSHUsername).To(Equal("vcap"))
+					})
+
+					It("returns error if configuring ssh on the platform fails", func() {
+						platform.SetupSSHErr = errors.New("fake-setup-ssh-err")
+
+						_, err := bootstrap()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-setup-ssh-err"))
+					})
+				})
+
+				Context("when public key key is empty", func() {
+					BeforeEach(func() {
+						settingsSource.PublicKey = ""
+					})
+
+					It("gets the public key and does not setup SSH", func() {
+						_, err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(platform.SetupSSHCalled).To(BeFalse())
+					})
+				})
 			})
 
 			It("sets up hostname", func() {

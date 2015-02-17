@@ -71,7 +71,6 @@ func (app *app) Setup(args []string) error {
 
 	app.infrastructure = boshinf.NewGenericInfrastructure(
 		app.platform,
-		settingsSource,
 		config.Infrastructure.NetworkingType,
 		config.Infrastructure.StaticEphemeralDiskPath,
 		app.logger,
@@ -81,6 +80,7 @@ func (app *app) Setup(args []string) error {
 		app.infrastructure,
 		app.platform,
 		dirProvider,
+		settingsSource,
 		boshsettings.NewServiceProvider(),
 		app.logger,
 	)

@@ -9,7 +9,6 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -17,9 +16,8 @@ import (
 
 var _ = Describe("genericInfrastructure", func() {
 	var (
-		inf            Infrastructure
-		platform       *fakeplatform.FakePlatform
-		settingsSource *fakeinf.FakeSettingsSource
+		inf      Infrastructure
+		platform *fakeplatform.FakePlatform
 
 		firstDevicePathResolver   *fakedpresolv.FakeDevicePathResolver
 		secondDevicePathResolver  *fakedpresolv.FakeDevicePathResolver
@@ -34,7 +32,6 @@ var _ = Describe("genericInfrastructure", func() {
 
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
-		settingsSource = &fakeinf.FakeSettingsSource{}
 		firstDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		secondDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		defaultDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
@@ -47,66 +44,10 @@ var _ = Describe("genericInfrastructure", func() {
 	JustBeforeEach(func() {
 		inf = NewGenericInfrastructure(
 			platform,
-			settingsSource,
 			networkingType,
 			staticEphemeralDiskPath,
 			logger,
 		)
-	})
-
-	Describe("SetupSSH", func() {
-		It("returns error without configuring ssh on the platform if getting public key fails", func() {
-			settingsSource.PublicKeyErr = errors.New("fake-get-public-key-err")
-
-			err := inf.SetupSSH("vcap")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-get-public-key-err"))
-
-			Expect(platform.SetupSSHCalled).To(BeFalse())
-		})
-
-		Context("when public key is not empty", func() {
-			BeforeEach(func() {
-				settingsSource.PublicKey = "fake-public-key"
-			})
-
-			It("gets the public key and sets up ssh via the platform", func() {
-				err := inf.SetupSSH("vcap")
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(platform.SetupSSHPublicKey).To(Equal("fake-public-key"))
-				Expect(platform.SetupSSHUsername).To(Equal("vcap"))
-			})
-
-			It("returns error if configuring ssh on the platform fails", func() {
-				platform.SetupSSHErr = errors.New("fake-setup-ssh-err")
-
-				err := inf.SetupSSH("vcap")
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-setup-ssh-err"))
-			})
-		})
-
-		Context("when public key key is empty", func() {
-			BeforeEach(func() {
-				settingsSource.PublicKey = ""
-			})
-
-			It("gets the public key and does not setup SSH", func() {
-				err := inf.SetupSSH("vcap")
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(platform.SetupSSHCalled).To(BeFalse())
-			})
-		})
-	})
-
-	Describe("GetSettings", func() {
-		It("returns settings from settings source", func() {
-			settings := boshsettings.Settings{AgentID: "fake-agent-id"}
-			settingsSource.SettingsValue = settings
-			Expect(inf.GetSettings()).To(Equal(settings))
-		})
 	})
 
 	Describe("SetupNetworking", func() {

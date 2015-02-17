@@ -6,7 +6,6 @@ import (
 
 type FakeInfrastructure struct {
 	Settings                boshsettings.Settings
-	SetupSSHUsername        string
 	SetupNetworkingNetworks boshsettings.Networks
 
 	GetEphemeralDiskSettings     boshsettings.DiskSettings
@@ -17,16 +16,6 @@ type FakeInfrastructure struct {
 func NewFakeInfrastructure() (infrastructure *FakeInfrastructure) {
 	infrastructure = &FakeInfrastructure{}
 	infrastructure.Settings = boshsettings.Settings{}
-	return
-}
-
-func (i *FakeInfrastructure) SetupSSH(username string) (err error) {
-	i.SetupSSHUsername = username
-	return
-}
-
-func (i *FakeInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
-	settings = i.Settings
 	return
 }
 

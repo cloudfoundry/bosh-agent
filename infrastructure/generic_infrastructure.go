@@ -1,15 +1,13 @@
 package infrastructure
 
 import (
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type genericInfrastructure struct {
-	platform       boshplatform.Platform
-	settingsSource SettingsSource
+	platform boshplatform.Platform
 
 	networkingType          string
 	staticEphemeralDiskPath string
@@ -25,14 +23,12 @@ const (
 
 func NewGenericInfrastructure(
 	platform boshplatform.Platform,
-	settingsSource SettingsSource,
 	networkingType string,
 	staticEphemeralDiskPath string,
 	logger boshlog.Logger,
 ) genericInfrastructure {
 	return genericInfrastructure{
-		platform:       platform,
-		settingsSource: settingsSource,
+		platform: platform,
 
 		networkingType:          networkingType,
 		staticEphemeralDiskPath: staticEphemeralDiskPath,
@@ -40,23 +36,6 @@ func NewGenericInfrastructure(
 		logTag: "genericInfrastructure",
 		logger: logger,
 	}
-}
-
-func (inf genericInfrastructure) SetupSSH(username string) error {
-	publicKey, err := inf.settingsSource.PublicSSHKeyForUsername(username)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting public key")
-	}
-
-	if len(publicKey) > 0 {
-		return inf.platform.SetupSSH(publicKey, username)
-	}
-
-	return nil
-}
-
-func (inf genericInfrastructure) GetSettings() (boshsettings.Settings, error) {
-	return inf.settingsSource.Settings()
 }
 
 // Existing examples:
