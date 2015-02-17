@@ -1,7 +1,6 @@
 package fakes
 
 import (
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
@@ -13,18 +12,12 @@ type FakeInfrastructure struct {
 	GetEphemeralDiskSettings     boshsettings.DiskSettings
 	GetEphemeralDiskPathFound    bool
 	GetEphemeralDiskPathRealPath string
-
-	DevicePathResolver boshdpresolv.DevicePathResolver
 }
 
 func NewFakeInfrastructure() (infrastructure *FakeInfrastructure) {
 	infrastructure = &FakeInfrastructure{}
 	infrastructure.Settings = boshsettings.Settings{}
 	return
-}
-
-func (i *FakeInfrastructure) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
-	return i.DevicePathResolver
 }
 
 func (i *FakeInfrastructure) SetupSSH(username string) (err error) {

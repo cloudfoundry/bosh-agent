@@ -1,4 +1,4 @@
-package app_test
+package app
 
 import (
 	"io/ioutil"
@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshapp "github.com/cloudfoundry/bosh-agent/app"
+	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 )
 
@@ -17,6 +17,8 @@ func init() {
 		var (
 			baseDir       string
 			agentConfPath string
+			agentConfJSON string
+			app           app
 		)
 
 		BeforeEach(func() {
@@ -32,7 +34,7 @@ func init() {
 		BeforeEach(func() {
 			agentConfPath = filepath.Join(baseDir, "bosh", "agent.json")
 
-			agentConfJSON := `{
+			agentConfJSON = `{
 				"Infrastructure": {
 				  "Settings": {
 					  "Sources": [{
@@ -43,11 +45,6 @@ func init() {
 				}
 			}`
 
-			err := ioutil.WriteFile(agentConfPath, []byte(agentConfJSON), 0640)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		BeforeEach(func() {
 			settingsPath := filepath.Join(baseDir, "bosh", "settings.json")
 
 			settingsJSON := `{
@@ -102,24 +99,63 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		JustBeforeEach(func() {
+			err := ioutil.WriteFile(agentConfPath, []byte(agentConfJSON), 0640)
+			Expect(err).ToNot(HaveOccurred())
+
+			logger := boshlog.NewLogger(boshlog.LevelNone)
+			app = New(logger)
+		})
+
 		AfterEach(func() {
 			os.RemoveAll(baseDir)
 		})
 
 		It("Sets up device path resolver on platform specific to infrastructure", func() {
-			logger := boshlog.NewLogger(boshlog.LevelNone)
-			app := boshapp.New(logger)
-
-			err := app.Setup([]string{
-				"bosh-agent",
-				"-P", "dummy",
-				"-C", agentConfPath,
-				"-b", baseDir,
-			})
-
+			err := app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(app.GetPlatform().GetDevicePathResolver()).To(Equal(app.GetInfrastructure().GetDevicePathResolver()))
+			Expect(app.GetPlatform().GetDevicePathResolver()).To(Equal(devicepathresolver.NewIdentityDevicePathResolver()))
+		})
+
+		Context("when DevicePathResolutionType is 'virtio'", func() {
+			BeforeEach(func() {
+				agentConfJSON = `{
+					"Infrastructure": {
+						"DevicePathResolutionType": "virtio",
+						"Settings": { "Sources": [{ "Type": "CDROM", "FileName": "/fake-file-name" }]
+						}
+					}
+				}`
+			})
+
+			It("uses a VirtioDevicePathResolver", func() {
+				err := app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(app.GetPlatform().GetDevicePathResolver()).To(
+					BeAssignableToTypeOf(devicepathresolver.NewVirtioDevicePathResolver(nil, nil, boshlog.Logger{})))
+			})
+		})
+
+		Context("when DevicePathResolutionType is 'scsi'", func() {
+			BeforeEach(func() {
+				agentConfJSON = `{
+					"Infrastructure": {
+						"DevicePathResolutionType": "scsi",
+						"Settings": { "Sources": [{ "Type": "CDROM", "FileName": "/fake-file-name" }]
+						}
+					}
+				}`
+			})
+
+			It("uses a VirtioDevicePathResolver", func() {
+				err := app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(app.GetPlatform().GetDevicePathResolver()).To(
+					BeAssignableToTypeOf(devicepathresolver.NewScsiDevicePathResolver(0, nil)))
+			})
 		})
 	})
 }

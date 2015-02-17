@@ -2,7 +2,6 @@ package infrastructure
 
 import (
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -12,21 +11,12 @@ type genericInfrastructure struct {
 	platform       boshplatform.Platform
 	settingsSource SettingsSource
 
-	devicePathResolvers       map[string]boshdpresolv.DevicePathResolver
-	defaultDevicePathResolver boshdpresolv.DevicePathResolver
-
-	devicePathResolutionType string
-	networkingType           string
-	staticEphemeralDiskPath  string
+	networkingType          string
+	staticEphemeralDiskPath string
 
 	logTag string
 	logger boshlog.Logger
 }
-
-const (
-	DevicePathResolutionTypeVsphere = "vsphere"
-	DevicePathResolutionTypeMapped  = "mapped"
-)
 
 const (
 	NetworkingTypeDHCP   = "dhcp"
@@ -36,9 +26,6 @@ const (
 func NewGenericInfrastructure(
 	platform boshplatform.Platform,
 	settingsSource SettingsSource,
-	devicePathResolvers map[string]boshdpresolv.DevicePathResolver,
-	defaultDevicePathResolver boshdpresolv.DevicePathResolver,
-	devicePathResolutionType string,
 	networkingType string,
 	staticEphemeralDiskPath string,
 	logger boshlog.Logger,
@@ -47,29 +34,12 @@ func NewGenericInfrastructure(
 		platform:       platform,
 		settingsSource: settingsSource,
 
-		devicePathResolvers:       devicePathResolvers,
-		defaultDevicePathResolver: defaultDevicePathResolver,
-
-		devicePathResolutionType: devicePathResolutionType,
-		networkingType:           networkingType,
-		staticEphemeralDiskPath:  staticEphemeralDiskPath,
+		networkingType:          networkingType,
+		staticEphemeralDiskPath: staticEphemeralDiskPath,
 
 		logTag: "genericInfrastructure",
 		logger: logger,
 	}
-}
-
-// Existing examples:
-// - vSphere: vsphere
-// - AWS, Openstack: mapped
-// - Warden, Dummy: ''
-func (inf genericInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
-	dpr, found := inf.devicePathResolvers[inf.devicePathResolutionType]
-	if found {
-		return dpr
-	}
-
-	return inf.defaultDevicePathResolver
 }
 
 func (inf genericInfrastructure) SetupSSH(username string) error {

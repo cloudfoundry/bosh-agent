@@ -8,7 +8,6 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
@@ -49,32 +48,10 @@ var _ = Describe("genericInfrastructure", func() {
 		inf = NewGenericInfrastructure(
 			platform,
 			settingsSource,
-			map[string]boshdpresolv.DevicePathResolver{
-				"fake-dpr1": firstDevicePathResolver,
-				"fake-dpr2": secondDevicePathResolver,
-			},
-			defaultDevicePathResolver,
-			devicePathResolutionType,
 			networkingType,
 			staticEphemeralDiskPath,
 			logger,
 		)
-	})
-
-	Describe("GetDevicePathResolver", func() {
-		Context("when infrastructure is configured with known device path resolver", func() {
-			BeforeEach(func() { devicePathResolutionType = "fake-dpr2" })
-
-			It("returns matching device path resolver", func() {
-				Expect(inf.GetDevicePathResolver()).To(Equal(secondDevicePathResolver))
-			})
-		})
-
-		Context("when infrastructure is configured with unknown device path resolved", func() {
-			It("returns default device path resolver", func() {
-				Expect(inf.GetDevicePathResolver()).To(Equal(defaultDevicePathResolver))
-			})
-		})
 	})
 
 	Describe("SetupSSH", func() {

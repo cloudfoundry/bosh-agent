@@ -30,7 +30,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			},
 			"Infrastructure": {
-				"DevicePathResolutionType": "vsphere",
+				"DevicePathResolutionType": "virtio",
 				"NetworkingType":           "dhcp",
 				"StaticEphemeralDiskPath":  "/dev/sdb",
 
@@ -75,7 +75,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 				},
 			},
 			Infrastructure: boshinf.InfrastructureOptions{
-				DevicePathResolutionType: "vsphere",
+				DevicePathResolutionType: "virtio",
 				NetworkingType:           "dhcp",
 				StaticEphemeralDiskPath:  "/dev/sdb",
 

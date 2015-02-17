@@ -90,17 +90,18 @@ func (app *app) Setup(args []string) error {
 	app.infrastructure = boshinf.NewGenericInfrastructure(
 		app.platform,
 		settingsSource,
-		devicePathResolvers,
-		defaultDevicePathResolver,
 
-		options.DevicePathResolutionType,
 		options.NetworkingType,
 		options.StaticEphemeralDiskPath,
 
 		app.logger,
 	)
 
-	app.platform.SetDevicePathResolver(app.infrastructure.GetDevicePathResolver())
+	devicePathResolver, found := devicePathResolvers[options.DevicePathResolutionType]
+	if !found {
+		devicePathResolver = defaultDevicePathResolver
+	}
+	app.platform.SetDevicePathResolver(devicePathResolver)
 
 	settingsServiceProvider := boshsettings.NewServiceProvider()
 
