@@ -76,17 +76,6 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting Settings Source")
 	}
 
-	udev := boshudev.NewConcreteUdevDevice(app.platform.GetRunner(), app.logger)
-	idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, udev, fs)
-	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
-
-	devicePathResolvers := map[string]boshdpresolv.DevicePathResolver{
-		"virtio": boshdpresolv.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, app.logger),
-		"scsi":   boshdpresolv.NewScsiDevicePathResolver(500*time.Millisecond, fs),
-	}
-
-	defaultDevicePathResolver := boshdpresolv.NewIdentityDevicePathResolver()
-
 	app.infrastructure = boshinf.NewGenericInfrastructure(
 		app.platform,
 		settingsSource,
@@ -97,9 +86,17 @@ func (app *app) Setup(args []string) error {
 		app.logger,
 	)
 
-	devicePathResolver, found := devicePathResolvers[options.DevicePathResolutionType]
-	if !found {
-		devicePathResolver = defaultDevicePathResolver
+	var devicePathResolver boshdpresolv.DevicePathResolver
+	switch options.DevicePathResolutionType {
+	case "virtio":
+		udev := boshudev.NewConcreteUdevDevice(app.platform.GetRunner(), app.logger)
+		idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, udev, fs)
+		mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
+		devicePathResolver = boshdpresolv.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, app.logger)
+	case "scsi":
+		devicePathResolver = boshdpresolv.NewScsiDevicePathResolver(500*time.Millisecond, fs)
+	default:
+		devicePathResolver = boshdpresolv.NewIdentityDevicePathResolver()
 	}
 	app.platform.SetDevicePathResolver(devicePathResolver)
 
