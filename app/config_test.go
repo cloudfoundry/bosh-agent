@@ -74,7 +74,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 					BindMountPersistentDisk:       true,
 				},
 			},
-			Infrastructure: boshinf.ProviderOptions{
+			Infrastructure: boshinf.InfrastructureOptions{
 				DevicePathResolutionType: "vsphere",
 				NetworkingType:           "dhcp",
 				StaticEphemeralDiskPath:  "/dev/sdb",
@@ -166,7 +166,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 		config, err := LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(config).To(Equal(Config{
-			Infrastructure: boshinf.ProviderOptions{
+			Infrastructure: boshinf.InfrastructureOptions{
 				Settings: boshinf.SettingsOptions{},
 			},
 		}))

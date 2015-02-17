@@ -19,12 +19,14 @@ import (
 	boshboot "github.com/cloudfoundry/bosh-agent/bootstrap"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
@@ -64,12 +66,39 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting platform")
 	}
 
-	infProvider := boshinf.NewProvider(app.platform, config.Infrastructure, app.logger)
+	options := config.Infrastructure
+	fs := app.platform.GetFs()
 
-	app.infrastructure, err = infProvider.Get()
+	settingsSourceFactory := boshinf.NewSettingsSourceFactory(options.Settings, fs, app.platform, app.logger)
+
+	settingsSource, err := settingsSourceFactory.New()
 	if err != nil {
-		return bosherr.WrapError(err, "Getting infrastructure")
+		return bosherr.WrapError(err, "Getting Settings Source")
 	}
+
+	udev := boshudev.NewConcreteUdevDevice(app.platform.GetRunner(), app.logger)
+	idDevicePathResolver := boshdpresolv.NewIDDevicePathResolver(500*time.Millisecond, udev, fs)
+	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, fs)
+
+	devicePathResolvers := map[string]boshdpresolv.DevicePathResolver{
+		"virtio": boshdpresolv.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, app.logger),
+		"scsi":   boshdpresolv.NewScsiDevicePathResolver(500*time.Millisecond, fs),
+	}
+
+	defaultDevicePathResolver := boshdpresolv.NewIdentityDevicePathResolver()
+
+	app.infrastructure = boshinf.NewGenericInfrastructure(
+		app.platform,
+		settingsSource,
+		devicePathResolvers,
+		defaultDevicePathResolver,
+
+		options.DevicePathResolutionType,
+		options.NetworkingType,
+		options.StaticEphemeralDiskPath,
+
+		app.logger,
+	)
 
 	app.platform.SetDevicePathResolver(app.infrastructure.GetDevicePathResolver())
 

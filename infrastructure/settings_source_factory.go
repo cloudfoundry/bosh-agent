@@ -11,6 +11,18 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
+type InfrastructureOptions struct {
+	// e.g. possible values: vsphere, mapped, ''
+	DevicePathResolutionType string
+
+	// e.g. possible values: dhcp, manual, ''
+	NetworkingType string
+
+	StaticEphemeralDiskPath string
+
+	Settings SettingsOptions
+}
+
 type SettingsOptions struct {
 	Sources       SourceOptionsSlice
 	UseServerName bool
