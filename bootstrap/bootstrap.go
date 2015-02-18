@@ -17,7 +17,7 @@ type bootstrap struct {
 	infrastructure  boshinf.Infrastructure
 	platform        boshplatform.Platform
 	dirProvider     boshdir.Provider
-	settingsSource  boshinf.SettingsSource
+	settingsSource  boshsettings.SettingsSource
 	settingsService boshsettings.Service
 	logger          boshlog.Logger
 }
@@ -26,7 +26,7 @@ func New(
 	inf boshinf.Infrastructure,
 	platform boshplatform.Platform,
 	dirProvider boshdir.Provider,
-	settingsSource boshinf.SettingsSource,
+	settingsSource boshsettings.SettingsSource,
 	settingsService boshsettings.Service,
 	logger boshlog.Logger,
 ) (b bootstrap) {

@@ -13,12 +13,12 @@ import (
 
 var _ = Describe("MultiSettingsSource", func() {
 	var (
-		source SettingsSource
+		source boshsettings.SettingsSource
 	)
 
 	Context("when there are no sources", func() {
 		It("returns an error when there are no sources", func() {
-			_, err := NewMultiSettingsSource([]SettingsSource{}...)
+			_, err := NewMultiSettingsSource([]boshsettings.SettingsSource{}...)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("MultiSettingsSource requires to have at least one source"))
 		})

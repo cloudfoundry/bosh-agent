@@ -8,6 +8,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type InfrastructureOptions struct {
@@ -82,7 +83,7 @@ func NewSettingsSourceFactory(
 	}
 }
 
-func (f SettingsSourceFactory) New() (SettingsSource, error) {
+func (f SettingsSourceFactory) New() (boshsettings.SettingsSource, error) {
 	if f.options.UseRegistry {
 		return f.buildWithRegistry()
 	}
@@ -90,7 +91,7 @@ func (f SettingsSourceFactory) New() (SettingsSource, error) {
 	return f.buildWithoutRegistry()
 }
 
-func (f SettingsSourceFactory) buildWithRegistry() (SettingsSource, error) {
+func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.SettingsSource, error) {
 	var metadataServices []MetadataService
 
 	digDNSResolver := NewDigDNSResolver(f.platform.GetRunner(), f.logger)
@@ -136,11 +137,11 @@ func (f SettingsSourceFactory) buildWithRegistry() (SettingsSource, error) {
 	return settingsSource, nil
 }
 
-func (f SettingsSourceFactory) buildWithoutRegistry() (SettingsSource, error) {
-	var settingsSources []SettingsSource
+func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.SettingsSource, error) {
+	var settingsSources []boshsettings.SettingsSource
 
 	for _, opts := range f.options.Sources {
-		var settingsSource SettingsSource
+		var settingsSource boshsettings.SettingsSource
 
 		switch typedOpts := opts.(type) {
 		case HTTPSourceOptions:

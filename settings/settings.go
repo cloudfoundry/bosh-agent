@@ -18,6 +18,11 @@ type Settings struct {
 	VM        VM        `json:"vm"`
 }
 
+type SettingsSource interface {
+	PublicSSHKeyForUsername(string) (string, error)
+	Settings() (Settings, error)
+}
+
 const (
 	BlobstoreTypeDummy = "dummy"
 	BlobstoreTypeLocal = "local"
