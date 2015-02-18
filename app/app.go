@@ -76,17 +76,23 @@ func (app *app) Setup(args []string) error {
 		app.logger,
 	)
 
+	settingsService := boshsettings.NewService(
+		app.platform.GetFs(),
+		filepath.Join(dirProvider.BoshDir(), "settings.json"),
+		settingsSource.Settings,
+		app.platform,
+		app.logger,
+	)
 	boot := boshboot.New(
 		app.infrastructure,
 		app.platform,
 		dirProvider,
 		settingsSource,
-		boshsettings.NewServiceProvider(),
+		settingsService,
 		app.logger,
 	)
 
-	settingsService, err := boot.Run()
-	if err != nil {
+	if err = boot.Run(); err != nil {
 		return bosherr.WrapError(err, "Running bootstrap")
 	}
 

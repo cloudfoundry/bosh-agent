@@ -23,9 +23,8 @@ func init() {
 				platform    *fakeplatform.FakePlatform
 				dirProvider boshdir.Provider
 
-				settingsSource          *fakeinf.FakeSettingsSource
-				settingsServiceProvider *fakesettings.FakeSettingsServiceProvider
-				settingsService         *fakesettings.FakeSettingsService
+				settingsSource  *fakeinf.FakeSettingsSource
+				settingsService *fakesettings.FakeSettingsService
 			)
 
 			BeforeEach(func() {
@@ -36,17 +35,16 @@ func init() {
 				dirProvider = boshdir.NewProvider("/var/vcap")
 
 				settingsSource = &fakeinf.FakeSettingsSource{}
-				settingsServiceProvider = fakesettings.NewServiceProvider()
-				settingsService = settingsServiceProvider.NewServiceSettingsService
+				settingsService = &fakesettings.FakeSettingsService{}
 			})
 
-			bootstrap := func() (boshsettings.Service, error) {
+			bootstrap := func() error {
 				logger := boshlog.NewLogger(boshlog.LevelNone)
-				return New(inf, platform, dirProvider, settingsSource, settingsServiceProvider, logger).Run()
+				return New(inf, platform, dirProvider, settingsSource, settingsService, logger).Run()
 			}
 
 			It("sets up runtime configuration", func() {
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupRuntimeConfigurationWasInvoked).To(BeTrue())
 			})
@@ -55,7 +53,7 @@ func init() {
 				It("returns error without configuring ssh on the platform if getting public key fails", func() {
 					settingsSource.PublicKeyErr = errors.New("fake-get-public-key-err")
 
-					_, err := bootstrap()
+					err := bootstrap()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-get-public-key-err"))
 
@@ -68,7 +66,7 @@ func init() {
 					})
 
 					It("gets the public key and sets up ssh via the platform", func() {
-						_, err := bootstrap()
+						err := bootstrap()
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(platform.SetupSSHPublicKey).To(Equal("fake-public-key"))
@@ -78,7 +76,7 @@ func init() {
 					It("returns error if configuring ssh on the platform fails", func() {
 						platform.SetupSSHErr = errors.New("fake-setup-ssh-err")
 
-						_, err := bootstrap()
+						err := bootstrap()
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-setup-ssh-err"))
 					})
@@ -90,7 +88,7 @@ func init() {
 					})
 
 					It("gets the public key and does not setup SSH", func() {
-						_, err := bootstrap()
+						err := bootstrap()
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(platform.SetupSSHCalled).To(BeFalse())
@@ -101,28 +99,13 @@ func init() {
 			It("sets up hostname", func() {
 				settingsService.Settings.AgentID = "foo-bar-baz-123"
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupHostnameHostname).To(Equal("foo-bar-baz-123"))
 			})
 
-			It("returns the settings service", func() {
-				result, err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(settingsService))
-
-				Expect(settingsServiceProvider.NewServiceFs).To(Equal(platform.GetFs()))
-				Expect(settingsServiceProvider.NewServiceDir).To(Equal(dirProvider.BoshDir()))
-				Expect(settingsServiceProvider.NewDefaultNetworkResolver).To(Equal(platform))
-
-				// cannot compare NewServiceFetcher so call it to see that it returns inf settings
-				fetchedSettings, err := settingsServiceProvider.NewServiceFetcher()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fetchedSettings).To(Equal(inf.Settings))
-			})
-
 			It("fetches initial settings", func() {
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(settingsService.SettingsWereLoaded).To(BeTrue())
 			})
@@ -130,7 +113,7 @@ func init() {
 			It("returns error from loading initial settings", func() {
 				settingsService.LoadSettingsError = errors.New("fake-load-error")
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-load-error"))
 			})
@@ -141,7 +124,7 @@ func init() {
 				}
 				settingsService.Settings.Networks = networks
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(inf.SetupNetworkingNetworks).To(Equal(networks))
 			})
@@ -153,7 +136,7 @@ func init() {
 
 				inf.GetEphemeralDiskPathRealPath = "/dev/sda"
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupEphemeralDiskWithPathDevicePath).To(Equal("/dev/sda"))
 				Expect(inf.GetEphemeralDiskSettings).To(Equal(boshsettings.DiskSettings{
@@ -164,33 +147,33 @@ func init() {
 
 			It("returns error if setting ephemeral disk fails", func() {
 				platform.SetupEphemeralDiskWithPathErr = errors.New("fake-setup-ephemeral-disk-err")
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-setup-ephemeral-disk-err"))
 			})
 
 			It("sets up data dir", func() {
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupDataDirCalled).To(BeTrue())
 			})
 
 			It("returns error if set up of data dir fails", func() {
 				platform.SetupDataDirErr = errors.New("fake-setup-data-dir-err")
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-setup-data-dir-err"))
 			})
 
 			It("sets up tmp dir", func() {
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupTmpDirCalled).To(BeTrue())
 			})
 
 			It("returns error if set up of tmp dir fails", func() {
 				platform.SetupTmpDirErr = errors.New("fake-setup-tmp-dir-err")
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-setup-tmp-dir-err"))
 			})
@@ -205,7 +188,7 @@ func init() {
 					},
 				}
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
 					ID:       "vol-123",
@@ -223,7 +206,7 @@ func init() {
 					},
 				}
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 			})
 
@@ -232,7 +215,7 @@ func init() {
 					Persistent: map[string]interface{}{},
 				}
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{}))
 				Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
@@ -241,7 +224,7 @@ func init() {
 			It("sets root and vcap passwords", func() {
 				settingsService.Settings.Env.Bosh.Password = "some-encrypted-password"
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(2).To(Equal(len(platform.UserPasswords)))
 				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["root"]))
@@ -249,7 +232,7 @@ func init() {
 			})
 
 			It("does not set password if not provided", func() {
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(0).To(Equal(len(platform.UserPasswords)))
 			})
@@ -260,7 +243,7 @@ func init() {
 					"1.north-america.pool.ntp.org",
 				}
 
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(2).To(Equal(len(platform.SetTimeWithNtpServersServers)))
 				Expect("0.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[0]))
@@ -268,13 +251,13 @@ func init() {
 			})
 
 			It("setups up monit user", func() {
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupMonitUserSetup).To(BeTrue())
 			})
 
 			It("starts monit", func() {
-				_, err := bootstrap()
+				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.StartMonitStarted).To(BeTrue())
 			})

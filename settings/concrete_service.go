@@ -2,7 +2,6 @@ package settings
 
 import (
 	"encoding/json"
-	"path/filepath"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
@@ -12,28 +11,6 @@ import (
 const concreteServiceLogTag = "concreteService"
 
 type Fetcher func() (Settings, error)
-
-type concreteServiceProvider struct{}
-
-func NewServiceProvider() concreteServiceProvider {
-	return concreteServiceProvider{}
-}
-
-func (provider concreteServiceProvider) NewService(
-	fs boshsys.FileSystem,
-	dir string,
-	fetcher Fetcher,
-	defaultNetworkDelegate DefaultNetworkDelegate,
-	logger boshlog.Logger,
-) Service {
-	return NewService(
-		fs,
-		filepath.Join(dir, "settings.json"),
-		fetcher,
-		defaultNetworkDelegate,
-		logger,
-	)
-}
 
 type concreteService struct {
 	fs                     boshsys.FileSystem

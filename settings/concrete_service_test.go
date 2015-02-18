@@ -14,22 +14,6 @@ import (
 )
 
 func init() {
-	Describe("concreteServiceProvider", func() {
-		var (
-			platform *fakeplatform.FakePlatform
-		)
-
-		Describe("NewService", func() {
-			It("returns service with settings.json as its settings path", func() {
-				// Cannot compare fetcher functions since function comparison is problematic
-				fs := fakesys.NewFakeFileSystem()
-				logger := boshlog.NewLogger(boshlog.LevelNone)
-				service := NewServiceProvider().NewService(fs, "/setting/path", nil, platform, logger)
-				Expect(service).To(Equal(NewService(fs, "/setting/path/settings.json", nil, platform, logger)))
-			})
-		})
-	})
-
 	Describe("concreteService", func() {
 		var (
 			fs       *fakesys.FakeFileSystem

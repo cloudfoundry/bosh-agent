@@ -13,13 +13,13 @@ import (
 )
 
 type bootstrap struct {
-	fs                      boshsys.FileSystem
-	infrastructure          boshinf.Infrastructure
-	platform                boshplatform.Platform
-	dirProvider             boshdir.Provider
-	settingsSource          boshinf.SettingsSource
-	settingsServiceProvider boshsettings.ServiceProvider
-	logger                  boshlog.Logger
+	fs              boshsys.FileSystem
+	infrastructure  boshinf.Infrastructure
+	platform        boshplatform.Platform
+	dirProvider     boshdir.Provider
+	settingsSource  boshinf.SettingsSource
+	settingsService boshsettings.Service
+	logger          boshlog.Logger
 }
 
 func New(
@@ -27,7 +27,7 @@ func New(
 	platform boshplatform.Platform,
 	dirProvider boshdir.Provider,
 	settingsSource boshinf.SettingsSource,
-	settingsServiceProvider boshsettings.ServiceProvider,
+	settingsService boshsettings.Service,
 	logger boshlog.Logger,
 ) (b bootstrap) {
 	b.fs = platform.GetFs()
@@ -35,116 +35,82 @@ func New(
 	b.platform = platform
 	b.dirProvider = dirProvider
 	b.settingsSource = settingsSource
-	b.settingsServiceProvider = settingsServiceProvider
+	b.settingsService = settingsService
 	b.logger = logger
 	return
 }
 
-func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
-	err = boot.platform.SetupRuntimeConfiguration()
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up runtime configuration")
-		return
+func (boot bootstrap) Run() (err error) {
+	if err = boot.platform.SetupRuntimeConfiguration(); err != nil {
+		return bosherr.WrapError(err, "Setting up runtime configuration")
 	}
 
 	publicKey, err := boot.settingsSource.PublicSSHKeyForUsername(boshsettings.VCAPUsername)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Setting up ssh: Getting public key")
+		return bosherr.WrapError(err, "Setting up ssh: Getting public key")
 	}
 
 	if len(publicKey) > 0 {
-		err = boot.platform.SetupSSH(publicKey, boshsettings.VCAPUsername)
-		if err != nil {
-			return nil, bosherr.WrapError(err, "Setting up ssh")
+		if err = boot.platform.SetupSSH(publicKey, boshsettings.VCAPUsername); err != nil {
+			return bosherr.WrapError(err, "Setting up ssh")
 		}
 	}
 
-	settingsService = boot.settingsServiceProvider.NewService(
-		boot.fs,
-		boot.dirProvider.BoshDir(),
-		boot.settingsSource.Settings,
-		boot.platform,
-		boot.logger,
-	)
-
-	err = settingsService.LoadSettings()
-	if err != nil {
-		err = bosherr.WrapError(err, "Fetching settings")
-		return
+	if err = boot.settingsService.LoadSettings(); err != nil {
+		return bosherr.WrapError(err, "Fetching settings")
 	}
 
-	settings := settingsService.GetSettings()
+	settings := boot.settingsService.GetSettings()
 
-	err = boot.setUserPasswords(settings.Env)
-	if err != nil {
-		err = bosherr.WrapError(err, "Settings user password")
-		return
+	if err = boot.setUserPasswords(settings.Env); err != nil {
+		return bosherr.WrapError(err, "Settings user password")
 	}
 
-	err = boot.platform.SetupHostname(settings.AgentID)
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up hostname")
-		return
+	if err = boot.platform.SetupHostname(settings.AgentID); err != nil {
+		return bosherr.WrapError(err, "Setting up hostname")
 	}
 
-	err = boot.infrastructure.SetupNetworking(settings.Networks)
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up networking")
-		return
+	if err = boot.infrastructure.SetupNetworking(settings.Networks); err != nil {
+		return bosherr.WrapError(err, "Setting up networking")
 	}
 
-	err = boot.platform.SetTimeWithNtpServers(settings.Ntp)
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up NTP servers")
-		return
+	if err = boot.platform.SetTimeWithNtpServers(settings.Ntp); err != nil {
+		return bosherr.WrapError(err, "Setting up NTP servers")
 	}
 
 	ephemeralDiskPath := boot.infrastructure.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
-	err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up ephemeral disk")
-		return
+	if err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath); err != nil {
+		return bosherr.WrapError(err, "Setting up ephemeral disk")
 	}
 
-	err = boot.platform.SetupDataDir()
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up data dir")
-		return
+	if err = boot.platform.SetupDataDir(); err != nil {
+		return bosherr.WrapError(err, "Setting up data dir")
 	}
 
-	err = boot.platform.SetupTmpDir()
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up tmp dir")
-		return
+	if err = boot.platform.SetupTmpDir(); err != nil {
+		return bosherr.WrapError(err, "Setting up tmp dir")
 	}
 
 	if len(settings.Disks.Persistent) > 1 {
-		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
-		return
+		return errors.New("Error mounting persistent disk, there is more than one persistent disk")
 	}
 
 	for diskID := range settings.Disks.Persistent {
 		diskSettings, _ := settings.PersistentDiskSettings(diskID)
-		err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir())
-		if err != nil {
-			err = bosherr.WrapError(err, "Mounting persistent disk")
-			return
+		if boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
+			return bosherr.WrapError(err, "Mounting persistent disk")
 		}
 	}
 
-	err = boot.platform.SetupMonitUser()
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up monit user")
-		return
+	if err = boot.platform.SetupMonitUser(); err != nil {
+		return bosherr.WrapError(err, "Setting up monit user")
 	}
 
-	err = boot.platform.StartMonit()
-	if err != nil {
-		err = bosherr.WrapError(err, "Starting monit")
-		return
+	if err = boot.platform.StartMonit(); err != nil {
+		return bosherr.WrapError(err, "Starting monit")
 	}
 
-	return
+	return nil
 }
 
 func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
