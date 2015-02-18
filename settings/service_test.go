@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	Describe("concreteService", func() {
+	Describe("settingsService", func() {
 		var (
 			fs                 *fakesys.FakeFileSystem
 			platform           *fakeplatform.FakePlatform
