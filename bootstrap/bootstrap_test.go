@@ -40,7 +40,7 @@ func init() {
 
 			bootstrap := func() error {
 				logger := boshlog.NewLogger(boshlog.LevelNone)
-				return New(inf, platform, dirProvider, settingsSource, settingsService, logger).Run()
+				return New(inf, platform, dirProvider, settingsService, logger).Run()
 			}
 
 			It("sets up runtime configuration", func() {
@@ -51,7 +51,7 @@ func init() {
 
 			Describe("SSH tunnel setup for registry", func() {
 				It("returns error without configuring ssh on the platform if getting public key fails", func() {
-					settingsSource.PublicKeyErr = errors.New("fake-get-public-key-err")
+					settingsService.PublicKeyErr = errors.New("fake-get-public-key-err")
 
 					err := bootstrap()
 					Expect(err).To(HaveOccurred())
@@ -62,7 +62,7 @@ func init() {
 
 				Context("when public key is not empty", func() {
 					BeforeEach(func() {
-						settingsSource.PublicKey = "fake-public-key"
+						settingsService.PublicKey = "fake-public-key"
 					})
 
 					It("gets the public key and sets up ssh via the platform", func() {

@@ -10,13 +10,11 @@ import (
 
 const concreteServiceLogTag = "concreteService"
 
-type Fetcher func() (Settings, error)
-
 type concreteService struct {
 	fs                     boshsys.FileSystem
 	settingsPath           string
 	settings               Settings
-	settingsFetcher        Fetcher
+	settingsSource         SettingsSource
 	defaultNetworkDelegate DefaultNetworkDelegate
 	logger                 boshlog.Logger
 }
@@ -24,7 +22,7 @@ type concreteService struct {
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
-	settingsFetcher Fetcher,
+	settingsSource SettingsSource,
 	defaultNetworkDelegate DefaultNetworkDelegate,
 	logger boshlog.Logger,
 ) (service Service) {
@@ -32,16 +30,20 @@ func NewService(
 		fs:                     fs,
 		settingsPath:           settingsPath,
 		settings:               Settings{},
-		settingsFetcher:        settingsFetcher,
+		settingsSource:         settingsSource,
 		defaultNetworkDelegate: defaultNetworkDelegate,
 		logger:                 logger,
 	}
 }
 
+func (s *concreteService) PublicSSHKeyForUsername(username string) (string, error) {
+	return s.settingsSource.PublicSSHKeyForUsername(username)
+}
+
 func (s *concreteService) LoadSettings() error {
 	s.logger.Debug(concreteServiceLogTag, "Loading settings from fetcher")
 
-	newSettings, fetchErr := s.settingsFetcher()
+	newSettings, fetchErr := s.settingsSource.Settings()
 	if fetchErr != nil {
 		s.logger.Error(concreteServiceLogTag, "Failed loading settings via fetcher: %v", fetchErr)
 

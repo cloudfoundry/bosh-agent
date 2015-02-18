@@ -17,7 +17,6 @@ type bootstrap struct {
 	infrastructure  boshinf.Infrastructure
 	platform        boshplatform.Platform
 	dirProvider     boshdir.Provider
-	settingsSource  boshsettings.SettingsSource
 	settingsService boshsettings.Service
 	logger          boshlog.Logger
 }
@@ -26,7 +25,6 @@ func New(
 	inf boshinf.Infrastructure,
 	platform boshplatform.Platform,
 	dirProvider boshdir.Provider,
-	settingsSource boshsettings.SettingsSource,
 	settingsService boshsettings.Service,
 	logger boshlog.Logger,
 ) (b bootstrap) {
@@ -34,7 +32,6 @@ func New(
 	b.infrastructure = inf
 	b.platform = platform
 	b.dirProvider = dirProvider
-	b.settingsSource = settingsSource
 	b.settingsService = settingsService
 	b.logger = logger
 	return
@@ -45,7 +42,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up runtime configuration")
 	}
 
-	publicKey, err := boot.settingsSource.PublicSSHKeyForUsername(boshsettings.VCAPUsername)
+	publicKey, err := boot.settingsService.PublicSSHKeyForUsername(boshsettings.VCAPUsername)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting up ssh: Getting public key")
 	}

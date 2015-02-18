@@ -79,7 +79,7 @@ func (app *app) Setup(args []string) error {
 	settingsService := boshsettings.NewService(
 		app.platform.GetFs(),
 		filepath.Join(dirProvider.BoshDir(), "settings.json"),
-		settingsSource.Settings,
+		settingsSource,
 		app.platform,
 		app.logger,
 	)
@@ -87,7 +87,6 @@ func (app *app) Setup(args []string) error {
 		app.infrastructure,
 		app.platform,
 		dirProvider,
-		settingsSource,
 		settingsService,
 		app.logger,
 	)
