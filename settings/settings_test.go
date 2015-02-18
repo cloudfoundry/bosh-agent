@@ -100,55 +100,86 @@ func init() {
 		})
 
 		Describe("DefaultNetworkFor", func() {
-			It("when networks is empty", func() {
-				networks := Networks{}
-				_, found := networks.DefaultNetworkFor("dns")
-				Expect(found).To(BeFalse())
+			Context("when networks is empty", func() {
+				It("returns found=false", func() {
+					networks := Networks{}
+					_, found := networks.DefaultNetworkFor("dns")
+					Expect(found).To(BeFalse())
+				})
 			})
 
-			It("with single network", func() {
-				networks := Networks{
-					"bosh": Network{
-						DNS: []string{"xx.xx.xx.xx"},
-					},
-				}
+			Context("with a single network", func() {
+				It("returns that network (found=true)", func() {
+					networks := Networks{
+						"first": Network{
+							DNS: []string{"xx.xx.xx.xx"},
+						},
+					}
 
-				settings, found := networks.DefaultNetworkFor("dns")
-				Expect(found).To(BeTrue())
-				Expect(settings).To(Equal(networks["bosh"]))
+					network, found := networks.DefaultNetworkFor("dns")
+					Expect(found).To(BeTrue())
+					Expect(network).To(Equal(networks["first"]))
+				})
 			})
 
-			It("with multiple networks and default is found for dns", func() {
-				networks := Networks{
-					"bosh": Network{
-						Default: []string{"dns"},
-						DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-					},
-					"vip": Network{
-						Default: []string{},
-						DNS:     []string{"aa.aa.aa.aa"},
-					},
-				}
+			Context("with multiple networks and default is found for dns", func() {
+				It("returns the network marked default (found=true)", func() {
+					networks := Networks{
+						"first": Network{
+							Default: []string{},
+							DNS:     []string{"aa.aa.aa.aa"},
+						},
+						"second": Network{
+							Default: []string{"something-else", "dns"},
+							DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						},
+						"third": Network{
+							Default: []string{},
+							DNS:     []string{"aa.aa.aa.aa"},
+						},
+					}
 
-				settings, found := networks.DefaultNetworkFor("dns")
-				Expect(found).To(BeTrue())
-				Expect(settings).To(Equal(networks["bosh"]))
+					settings, found := networks.DefaultNetworkFor("dns")
+					Expect(found).To(BeTrue())
+					Expect(settings).To(Equal(networks["second"]))
+				})
 			})
 
-			It("with multiple networks and default is not found", func() {
-				networks := Networks{
-					"bosh": Network{
-						Default: []string{"foo"},
-						DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-					},
-					"vip": Network{
-						Default: []string{},
-						DNS:     []string{"aa.aa.aa.aa"},
-					},
-				}
+			Context("with multiple networks and default is not found", func() {
+				It("returns found=false", func() {
+					networks := Networks{
+						"first": Network{
+							Default: []string{"foo"},
+							DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						},
+						"second": Network{
+							Default: []string{},
+							DNS:     []string{"aa.aa.aa.aa"},
+						},
+					}
 
-				_, found := networks.DefaultNetworkFor("dns")
-				Expect(found).To(BeFalse())
+					_, found := networks.DefaultNetworkFor("dns")
+					Expect(found).To(BeFalse())
+				})
+			})
+
+			Context("with multiple networks marked as default", func() {
+				It("returns the first one", func() {
+					networks := Networks{
+						"first": Network{
+							Default: []string{"dns"},
+							DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						},
+						"second": Network{
+							Default: []string{"dns"},
+							DNS:     []string{"aa.aa.aa.aa"},
+						},
+					}
+
+					settings, found := networks.DefaultNetworkFor("dns")
+					Expect(found).To(BeTrue())
+					Expect(settings).To(Equal(networks["first"]))
+				})
 			})
 		})
 
