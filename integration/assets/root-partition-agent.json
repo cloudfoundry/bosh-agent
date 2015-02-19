@@ -4,11 +4,11 @@
       "UseDefaultTmpDir": true,
       "UsePreformattedPersistentDisk": true,
       "BindMountPersistentDisk": false,
-      "CreatePartitionIfNoEphemeralDisk": true
+      "CreatePartitionIfNoEphemeralDisk": true,
+      "DevicePathResolutionType": "virtio"
     }
   },
   "Infrastructure": {
-    "DevicePathResolutionType": "virtio",
     "Settings": {
       "Sources": [
       {

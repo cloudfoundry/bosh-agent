@@ -3,11 +3,11 @@
     "Linux": {
       "UseDefaultTmpDir": true,
       "UsePreformattedPersistentDisk": true,
-      "BindMountPersistentDisk": false
+      "BindMountPersistentDisk": false,
+      "DevicePathResolutionType": "virtio"
     }
   },
   "Infrastructure": {
-    "DevicePathResolutionType": "virtio",
     "Settings": {
       "Sources": [
         {
