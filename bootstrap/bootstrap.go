@@ -12,6 +12,10 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
+type Bootstrap interface {
+	Run() error
+}
+
 type bootstrap struct {
 	fs              boshsys.FileSystem
 	infrastructure  boshinf.Infrastructure
@@ -27,14 +31,15 @@ func New(
 	dirProvider boshdir.Provider,
 	settingsService boshsettings.Service,
 	logger boshlog.Logger,
-) (b bootstrap) {
-	b.fs = platform.GetFs()
-	b.infrastructure = inf
-	b.platform = platform
-	b.dirProvider = dirProvider
-	b.settingsService = settingsService
-	b.logger = logger
-	return
+) Bootstrap {
+	return bootstrap{
+		fs:              platform.GetFs(),
+		infrastructure:  inf,
+		platform:        platform,
+		dirProvider:     dirProvider,
+		settingsService: settingsService,
+		logger:          logger,
+	}
 }
 
 func (boot bootstrap) Run() (err error) {

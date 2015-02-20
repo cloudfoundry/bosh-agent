@@ -28,7 +28,7 @@ func NewCompiledPackageApplierProvider(
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
-) compiledPackageApplierProvider {
+) ApplierProvider {
 	return compiledPackageApplierProvider{
 		installPath:           installPath,
 		rootEnablePath:        rootEnablePath,

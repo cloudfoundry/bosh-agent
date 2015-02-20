@@ -18,7 +18,7 @@ type httpRegistry struct {
 func NewHTTPRegistry(
 	metadataService MetadataService,
 	useServerNameAsID bool,
-) httpRegistry {
+) Registry {
 	return httpRegistry{
 		metadataService:   metadataService,
 		useServerNameAsID: useServerNameAsID,

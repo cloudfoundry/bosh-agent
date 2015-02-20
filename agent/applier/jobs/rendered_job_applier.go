@@ -37,7 +37,7 @@ func NewRenderedJobApplier(
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
-) *renderedJobApplier {
+) Applier {
 	return &renderedJobApplier{
 		jobsBc:                 jobsBc,
 		jobSupervisor:          jobSupervisor,

@@ -164,7 +164,7 @@ func init() {
 			})
 
 			Context("with multiple networks marked as default", func() {
-				It("returns the first one", func() {
+				It("returns one of them", func() {
 					networks := Networks{
 						"first": Network{
 							Default: []string{"dns"},
@@ -174,11 +174,16 @@ func init() {
 							Default: []string{"dns"},
 							DNS:     []string{"aa.aa.aa.aa"},
 						},
+						"third": Network{
+							DNS: []string{"bb.bb.bb.bb"},
+						},
 					}
 
-					settings, found := networks.DefaultNetworkFor("dns")
-					Expect(found).To(BeTrue())
-					Expect(settings).To(Equal(networks["first"]))
+					for i := 0; i < 100; i++ {
+						settings, found := networks.DefaultNetworkFor("dns")
+						Expect(found).To(BeTrue())
+						Expect(settings).Should(MatchOneOf(networks["first"], networks["second"]))
+					}
 				})
 			})
 		})
@@ -196,7 +201,7 @@ func init() {
 
 				ip, found := networks.DefaultIP()
 				Expect(found).To(BeTrue())
-				Expect(ip).To(MatchOneOf(Equal("xx.xx.xx.xx"), Equal("aa.aa.aa.aa")))
+				Expect(ip).To(MatchOneOf("xx.xx.xx.xx", "aa.aa.aa.aa"))
 			})
 
 			It("with two networks only with defaults", func() {

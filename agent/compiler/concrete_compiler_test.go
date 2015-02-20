@@ -271,8 +271,8 @@ func init() {
 				Expect(fs.RenameNewPaths[0]).To(Equal("/fake-compile-dir/pkg_name"))
 
 				// install path, presumably with your packaged code, was compressed
-				install_path := "/fake-dir/data/packages/pkg_name/pkg_version"
-				Expect(compressor.CompressFilesInDirDir).To(Equal(install_path))
+				installPath := "/fake-dir/data/packages/pkg_name/pkg_version"
+				Expect(compressor.CompressFilesInDirDir).To(Equal(installPath))
 			})
 
 			It("uploads compressed package to blobstore", func() {

@@ -16,7 +16,7 @@ type staticParams struct {
 func NewShutdownParams(
 	oldSpec boshas.V1ApplySpec,
 	newSpec *boshas.V1ApplySpec,
-) staticParams {
+) ScriptParams {
 	return staticParams{
 		jobChange:       "job_shutdown",
 		hashChange:      "hash_unchanged",
@@ -29,7 +29,7 @@ func NewShutdownParams(
 func NewStatusParams(
 	oldSpec boshas.V1ApplySpec,
 	newSpec *boshas.V1ApplySpec,
-) staticParams {
+) ScriptParams {
 	return staticParams{
 		jobChange:       "job_check_status",
 		hashChange:      "hash_unchanged",

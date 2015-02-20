@@ -21,6 +21,14 @@ const (
 	responseMaxLength = 1024 * 1024
 )
 
+type Handler interface {
+	Run(boshhandler.Func) error
+	Start(boshhandler.Func) error
+	RegisterAdditionalFunc(boshhandler.Func)
+	Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error
+	Stop()
+}
+
 type natsHandler struct {
 	settingsService boshsettings.Service
 	client          yagnats.NATSClient
@@ -33,7 +41,7 @@ func NewNatsHandler(
 	settingsService boshsettings.Service,
 	client yagnats.NATSClient,
 	logger boshlog.Logger,
-) *natsHandler {
+) Handler {
 	return &natsHandler{
 		settingsService: settingsService,
 		client:          client,

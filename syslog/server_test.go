@@ -146,7 +146,7 @@ var _ = Describe("Server", func() {
 
 	It("logs parsing error to error log if parsing syslog message fails", func() {
 		outBuf := bytes.NewBufferString("")
-		errBuf := NewLockedWriter(bytes.NewBufferString(""))
+		errBuf := newLockedWriter(bytes.NewBufferString(""))
 		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf, errBuf)
 		server = NewServer(serverPort, logger)
 
@@ -179,7 +179,7 @@ var _ = Describe("Server", func() {
 		writeCh := make(chan struct{}, 1)
 
 		outBuf := bytes.NewBufferString("")
-		errBuf := NewNotifyingWriter(NewLockedWriter(bytes.NewBufferString("")), writeCh)
+		errBuf := newNotifyingWriter(newLockedWriter(bytes.NewBufferString("")), writeCh)
 		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf, errBuf)
 		server = NewServer(serverPort, logger)
 
@@ -227,7 +227,7 @@ type lockedWriter struct {
 	lock sync.Mutex
 }
 
-func NewLockedWriter(writer writableBuffer) *lockedWriter {
+func newLockedWriter(writer writableBuffer) *lockedWriter {
 	return &lockedWriter{writableBuffer: writer}
 }
 
@@ -248,7 +248,7 @@ type notifyingWriter struct {
 	wroteCh chan struct{}
 }
 
-func NewNotifyingWriter(writer writableBuffer, wroteCh chan struct{}) *notifyingWriter {
+func newNotifyingWriter(writer writableBuffer, wroteCh chan struct{}) *notifyingWriter {
 	return &notifyingWriter{writableBuffer: writer, wroteCh: wroteCh}
 }
 

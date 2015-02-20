@@ -6,12 +6,12 @@ import (
 )
 
 type MultiSettingsSource struct {
-	sources                []boshsettings.SettingsSource
-	selectedSSHKeySource   boshsettings.SettingsSource
-	selectedSettingsSource boshsettings.SettingsSource
+	sources                []boshsettings.Source
+	selectedSSHKeySource   boshsettings.Source
+	selectedSettingsSource boshsettings.Source
 }
 
-func NewMultiSettingsSource(sources ...boshsettings.SettingsSource) (boshsettings.SettingsSource, error) {
+func NewMultiSettingsSource(sources ...boshsettings.Source) (boshsettings.Source, error) {
 	var err error
 
 	if len(sources) == 0 {

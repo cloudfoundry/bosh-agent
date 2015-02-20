@@ -26,7 +26,7 @@ func NewGenericInfrastructure(
 	networkingType string,
 	staticEphemeralDiskPath string,
 	logger boshlog.Logger,
-) genericInfrastructure {
+) Infrastructure {
 	return genericInfrastructure{
 		platform: platform,
 

@@ -31,7 +31,7 @@ func NewCompiledPackageApplier(
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
-) *compiledPackageApplier {
+) Applier {
 	return &compiledPackageApplier{
 		packagesBc:      packagesBc,
 		packagesBcOwner: packagesBcOwner,

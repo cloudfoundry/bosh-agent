@@ -2,15 +2,13 @@ package matchers
 
 import (
 	"fmt"
-
-	"github.com/onsi/gomega/types"
 )
 
-func MatchOneOf(matchers ...types.GomegaMatcher) *OneOfMatcher {
-	if len(matchers) < 2 {
-		panic(fmt.Sprintf("MatchOneOf requires at least two matchers. Got: %s", matchers))
+func MatchOneOf(elements ...interface{}) *OneOfMatcher {
+	if len(elements) < 2 {
+		panic(fmt.Sprintf("MatchOneOf requires at least two elements. Got: %s", elements))
 	}
 	return &OneOfMatcher{
-		Matchers: matchers,
+		Elements: elements,
 	}
 }

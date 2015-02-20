@@ -36,15 +36,16 @@ func NewConcreteCompiler(
 	compileDirProvider CompileDirProvider,
 	packageApplier packages.Applier,
 	packagesBc boshbc.BundleCollection,
-) (c concreteCompiler) {
-	c.compressor = compressor
-	c.blobstore = blobstore
-	c.fs = fs
-	c.runner = runner
-	c.compileDirProvider = compileDirProvider
-	c.packageApplier = packageApplier
-	c.packagesBc = packagesBc
-	return
+) Compiler {
+	return concreteCompiler{
+		compressor:         compressor,
+		blobstore:          blobstore,
+		fs:                 fs,
+		runner:             runner,
+		compileDirProvider: compileDirProvider,
+		packageApplier:     packageApplier,
+		packagesBc:         packagesBc,
+	}
 }
 
 func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (string, string, error) {

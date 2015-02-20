@@ -18,7 +18,7 @@ func init() {
 			baseDir       string
 			agentConfPath string
 			agentConfJSON string
-			app           app
+			app           App
 		)
 
 		BeforeEach(func() {

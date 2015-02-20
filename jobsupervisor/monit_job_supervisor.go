@@ -49,7 +49,7 @@ func NewMonitJobSupervisor(
 	dirProvider boshdir.Provider,
 	jobFailuresServerPort int,
 	reloadOptions MonitReloadOptions,
-) (m monitJobSupervisor) {
+) JobSupervisor {
 	return monitJobSupervisor{
 		fs:          fs,
 		runner:      runner,

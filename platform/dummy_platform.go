@@ -35,7 +35,7 @@ func NewDummyPlatform(
 	dirProvider boshdirs.Provider,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
-) *dummyPlatform {
+) Platform {
 	return &dummyPlatform{
 		fs:                 fs,
 		cmdRunner:          cmdRunner,

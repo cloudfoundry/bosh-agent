@@ -11,7 +11,7 @@ import (
 
 type concreteManagerProvider struct{}
 
-func NewManagerProvider() concreteManagerProvider {
+func NewManagerProvider() ManagerProvider {
 	return concreteManagerProvider{}
 }
 

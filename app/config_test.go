@@ -65,7 +65,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 		config, err := LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(config).To(Equal(Config{
-			Platform: boshplatform.PlatformOptions{
+			Platform: boshplatform.Options{
 				Linux: boshplatform.LinuxOptions{
 					UseDefaultTmpDir:              true,
 					UsePreformattedPersistentDisk: true,
@@ -73,7 +73,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 					DevicePathResolutionType:      "virtio",
 				},
 			},
-			Infrastructure: boshinf.InfrastructureOptions{
+			Infrastructure: boshinf.Options{
 				NetworkingType:          "dhcp",
 				StaticEphemeralDiskPath: "/dev/sdb",
 
@@ -164,7 +164,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 		config, err := LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(config).To(Equal(Config{
-			Infrastructure: boshinf.InfrastructureOptions{
+			Infrastructure: boshinf.Options{
 				Settings: boshinf.SettingsOptions{},
 			},
 		}))

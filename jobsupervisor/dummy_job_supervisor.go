@@ -4,7 +4,7 @@ type dummyJobSupervisor struct {
 	status string
 }
 
-func NewDummyJobSupervisor() *dummyJobSupervisor {
+func NewDummyJobSupervisor() JobSupervisor {
 	return &dummyJobSupervisor{status: "unknown"}
 }
 

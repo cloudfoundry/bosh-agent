@@ -23,6 +23,9 @@ func TestIntegration(t *testing.T) {
 		logger := boshlog.NewLogger(boshlog.LevelDebug)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		testEnvironment = NewTestEnvironment(cmdRunner)
+
+		// Required for reverse-compatibility with older bosh-lite
+		// (remove once a new warden stemcell is built).
 		err := testEnvironment.ConfigureAgentForGenericInfrastructure()
 		Expect(err).ToNot(HaveOccurred())
 	})

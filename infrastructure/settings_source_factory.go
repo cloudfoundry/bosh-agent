@@ -11,7 +11,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
-type InfrastructureOptions struct {
+type Options struct {
 	// e.g. possible values: dhcp, manual, ''
 	NetworkingType string
 
@@ -83,7 +83,7 @@ func NewSettingsSourceFactory(
 	}
 }
 
-func (f SettingsSourceFactory) New() (boshsettings.SettingsSource, error) {
+func (f SettingsSourceFactory) New() (boshsettings.Source, error) {
 	if f.options.UseRegistry {
 		return f.buildWithRegistry()
 	}
@@ -91,7 +91,7 @@ func (f SettingsSourceFactory) New() (boshsettings.SettingsSource, error) {
 	return f.buildWithoutRegistry()
 }
 
-func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.SettingsSource, error) {
+func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) {
 	var metadataServices []MetadataService
 
 	digDNSResolver := NewDigDNSResolver(f.platform.GetRunner(), f.logger)
@@ -137,11 +137,11 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.SettingsSource,
 	return settingsSource, nil
 }
 
-func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.SettingsSource, error) {
-	var settingsSources []boshsettings.SettingsSource
+func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, error) {
+	var settingsSources []boshsettings.Source
 
 	for _, opts := range f.options.Sources {
-		var settingsSource boshsettings.SettingsSource
+		var settingsSource boshsettings.Source
 
 		switch typedOpts := opts.(type) {
 		case HTTPSourceOptions:

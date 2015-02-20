@@ -25,7 +25,7 @@ type settingsService struct {
 	fs                     boshsys.FileSystem
 	settingsPath           string
 	settings               Settings
-	settingsSource         SettingsSource
+	settingsSource         Source
 	defaultNetworkDelegate DefaultNetworkDelegate
 	logger                 boshlog.Logger
 }
@@ -33,7 +33,7 @@ type settingsService struct {
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
-	settingsSource SettingsSource,
+	settingsSource Source,
 	defaultNetworkDelegate DefaultNetworkDelegate,
 	logger boshlog.Logger,
 ) (service Service) {

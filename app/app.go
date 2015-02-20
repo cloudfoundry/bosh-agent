@@ -33,6 +33,12 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
 )
 
+type App interface {
+	Setup(args []string) error
+	Run() error
+	GetPlatform() boshplatform.Platform
+}
+
 type app struct {
 	logger         boshlog.Logger
 	agent          boshagent.Agent
@@ -40,8 +46,8 @@ type app struct {
 	infrastructure boshinf.Infrastructure
 }
 
-func New(logger boshlog.Logger) app {
-	return app{logger: logger}
+func New(logger boshlog.Logger) App {
+	return &app{logger: logger}
 }
 
 func (app *app) Setup(args []string) error {
@@ -109,8 +115,7 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting blobstore")
 	}
 
-	timeService := boshtime.NewConcreteService()
-	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger, timeService)
+	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger)
 
 	monitClient, err := monitClientProvider.Get()
 	if err != nil {
@@ -182,6 +187,8 @@ func (app *app) Setup(args []string) error {
 
 	syslogServer := boshsyslog.NewServer(33331, app.logger)
 
+	timeService := boshtime.NewConcreteService()
+
 	app.agent = boshagent.New(
 		app.logger,
 		mbusHandler,
@@ -209,10 +216,6 @@ func (app *app) Run() error {
 
 func (app *app) GetPlatform() boshplatform.Platform {
 	return app.platform
-}
-
-func (app *app) GetInfrastructure() boshinf.Infrastructure {
-	return app.infrastructure
 }
 
 func (app *app) buildApplierAndCompiler(

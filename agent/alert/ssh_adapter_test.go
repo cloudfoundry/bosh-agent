@@ -93,7 +93,7 @@ var _ = Describe("sshAdapter", func() {
 				logger,
 			)
 
-			uuidGenerator.GeneratedUuid = "fake-uuid"
+			uuidGenerator.GeneratedUUID = "fake-uuid"
 
 			expectedTime := time.Now()
 			timeService.NowTimes = []time.Time{expectedTime}

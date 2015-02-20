@@ -12,7 +12,7 @@ type registryEndpointResolver struct {
 	delegate DNSResolver
 }
 
-func NewRegistryEndpointResolver(resolver DNSResolver) registryEndpointResolver {
+func NewRegistryEndpointResolver(resolver DNSResolver) DNSResolver {
 	return registryEndpointResolver{
 		delegate: resolver,
 	}

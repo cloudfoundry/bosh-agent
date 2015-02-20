@@ -66,7 +66,9 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	return err
 }
 
-// Until bosh-lite is released with new agent
+// ConfigureAgentForGenericInfrastructure executes the agent_runit.sh asset.
+// Required for reverse-compatibility with older bosh-lite
+// (remove once a new warden stemcell is built).
 func (t *TestEnvironment) ConfigureAgentForGenericInfrastructure() error {
 	_, err := t.RunCommand(
 		fmt.Sprintf(

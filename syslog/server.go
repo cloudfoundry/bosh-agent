@@ -22,7 +22,7 @@ type concreteServer struct {
 	ll sync.Mutex
 }
 
-func NewServer(port uint16, logger boshlog.Logger) *concreteServer {
+func NewServer(port uint16, logger boshlog.Logger) Server {
 	return &concreteServer{port: port, logger: logger}
 }
 

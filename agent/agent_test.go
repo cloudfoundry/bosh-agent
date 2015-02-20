@@ -260,7 +260,7 @@ func init() {
 				syslogMsg := boshsyslog.Msg{Content: "disconnected by user"}
 				syslogServer.StartFirstSyslogMsg = &syslogMsg
 
-				uuidGenerator.GeneratedUuid = "fake-uuid"
+				uuidGenerator.GeneratedUUID = "fake-uuid"
 				expectedTime := time.Now()
 				timeService.NowTimes = []time.Time{expectedTime}
 

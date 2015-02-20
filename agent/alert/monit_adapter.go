@@ -10,13 +10,19 @@ import (
 	boshtime "github.com/cloudfoundry/bosh-agent/time"
 )
 
+type MonitAdapter interface {
+	IsIgnorable() bool
+	Alert() (Alert, error)
+	Severity() (severity SeverityLevel, found bool)
+}
+
 type monitAdapter struct {
 	monitAlert      MonitAlert
 	settingsService boshsettings.Service
 	timeService     boshtime.Service
 }
 
-func NewMonitAdapter(monitAlert MonitAlert, settingsService boshsettings.Service, timeService boshtime.Service) *monitAdapter {
+func NewMonitAdapter(monitAlert MonitAlert, settingsService boshsettings.Service, timeService boshtime.Service) MonitAdapter {
 	return &monitAdapter{
 		monitAlert:      monitAlert,
 		settingsService: settingsService,

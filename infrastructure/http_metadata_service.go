@@ -17,7 +17,7 @@ type httpMetadataService struct {
 func NewHTTPMetadataService(
 	metadataHost string,
 	resolver DNSResolver,
-) httpMetadataService {
+) MetadataService {
 	return httpMetadataService{
 		metadataHost: metadataHost,
 		resolver:     resolver,

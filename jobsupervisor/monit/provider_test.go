@@ -10,7 +10,6 @@ import (
 	boshhttp "github.com/cloudfoundry/bosh-agent/http"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 )
@@ -19,12 +18,11 @@ var _ = Describe("clientProvider", func() {
 	It("Get", func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		platform := fakeplatform.NewFakePlatform()
-		timeService := &faketime.FakeService{}
 
 		platform.GetMonitCredentialsUsername = "fake-user"
 		platform.GetMonitCredentialsPassword = "fake-pass"
 
-		client, err := NewProvider(platform, logger, timeService).Get()
+		client, err := NewProvider(platform, logger).Get()
 		Expect(err).ToNot(HaveOccurred())
 
 		httpClient := http.DefaultClient

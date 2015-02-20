@@ -98,8 +98,8 @@ func NewLinuxPlatform(
 	diskScanDuration time.Duration,
 	options LinuxOptions,
 	logger boshlog.Logger,
-) (platform *linux) {
-	platform = &linux{
+) Platform {
+	return &linux{
 		fs:                 fs,
 		cmdRunner:          cmdRunner,
 		collector:          collector,
@@ -116,7 +116,6 @@ func NewLinuxPlatform(
 		options:            options,
 		logger:             logger,
 	}
-	return
 }
 
 const logTag = "linuxPlatform"

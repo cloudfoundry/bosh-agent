@@ -24,7 +24,7 @@ func NewConcreteApplier(
 	logrotateDelegate LogrotateDelegate,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	dirProvider boshdirs.Provider,
-) *concreteApplier {
+) Applier {
 	return &concreteApplier{
 		jobApplier:        jobApplier,
 		packageApplier:    packageApplier,

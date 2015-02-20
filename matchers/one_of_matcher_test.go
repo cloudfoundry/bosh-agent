@@ -4,12 +4,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	. "github.com/cloudfoundry/bosh-agent/matchers"
+
 	"fmt"
 
 	"github.com/onsi/gomega/internal/fakematcher"
-	"github.com/onsi/gomega/types"
-
-	. "github.com/cloudfoundry/bosh-agent/matchers"
 )
 
 var _ = Describe("matchers", func() {
@@ -25,8 +24,7 @@ var _ = Describe("matchers", func() {
 				MatchesToReturn: false,
 				ErrToReturn:     nil,
 			}
-			var matchers = []types.GomegaMatcher{fakematcher1, fakematcher2}
-			var oneOf = OneOfMatcher{Matchers: matchers}
+			var oneOf = MatchOneOf(fakematcher1, fakematcher2)
 
 			It("calls Match on each sub-matcher", func() {
 				success, err := oneOf.Match("Fake Test Value")
@@ -52,8 +50,7 @@ var _ = Describe("matchers", func() {
 				MatchesToReturn: false,
 				ErrToReturn:     nil,
 			}
-			var matchers = []types.GomegaMatcher{fakematcher1, fakematcher2, fakematcher3}
-			var oneOf = OneOfMatcher{Matchers: matchers}
+			var oneOf = MatchOneOf(fakematcher1, fakematcher2, fakematcher3)
 
 			It("calls Match on each sub-matcher until a match is found", func() {
 				success, err := oneOf.Match("Fake Test Value")
@@ -81,8 +78,7 @@ var _ = Describe("matchers", func() {
 				MatchesToReturn: true,
 				ErrToReturn:     nil,
 			}
-			var matchers = []types.GomegaMatcher{fakematcher1, fakematcher2, fakematcher3}
-			var oneOf = OneOfMatcher{Matchers: matchers}
+			var oneOf = MatchOneOf(fakematcher1, fakematcher2, fakematcher3)
 
 			It("calls Match on each sub-matcher until an error is returned", func() {
 				success, err := oneOf.Match("Fake Test Value")
@@ -95,39 +91,63 @@ var _ = Describe("matchers", func() {
 				Expect(fakematcher3.ReceivedActual).To(BeNil())
 			})
 		})
+
+		Context("when an element is not a matcher", func() {
+			var oneOf = MatchOneOf("abc", 123, []string{"x", "y", "z"}, Equal("foo"))
+
+			It("uses an Equal matcher", func() {
+				success, err := oneOf.Match("abc")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
+
+				success, err = oneOf.Match(123)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
+
+				success, err = oneOf.Match([]string{"x", "y", "z"})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
+			})
+
+			It("matchers still work", func() {
+				success, err := oneOf.Match("foo")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(success).To(BeTrue())
+			})
+		})
 	})
 
 	var _ = Describe("FailureMessage", func() {
-		var fakematcher = &fakematcher.FakeMatcher{
-			MatchesToReturn: false,
-			ErrToReturn:     nil,
-		}
-		var matchers = []types.GomegaMatcher{fakematcher, fakematcher}
-		var oneOf = OneOfMatcher{Matchers: matchers}
+		var oneOf = MatchOneOf(Equal("a"), BeNumerically(">", 1))
 
 		It("concatonates the failure message of all matchers", func() {
-			expectedMessage := "positive: Fake Test Value\n --OR-- \npositive: Fake Test Value"
-
 			msg := oneOf.FailureMessage("Fake Test Value")
 
-			Expect(msg).To(Equal(expectedMessage))
+			expectedMessagePattern := `Expected
+		<string>: Fake Test Value
+to match one of
+		<\*matchers.EqualMatcher | 0x[[:xdigit:]]+>: {Expected: "a"}
+or
+		<\*matchers.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[1\]}`
+
+			Expect(msg).To(MatchRegexp(expectedMessagePattern))
 		})
 	})
 
 	var _ = Describe("NegatedFailureMessage", func() {
-		var fakematcher = &fakematcher.FakeMatcher{
-			MatchesToReturn: false,
-			ErrToReturn:     nil,
-		}
-		var matchers = []types.GomegaMatcher{fakematcher, fakematcher}
-		var oneOf = OneOfMatcher{Matchers: matchers}
+		var oneOf = MatchOneOf("a", BeNumerically(">", 1))
 
 		It("concatonates the failure message of all matchers", func() {
-			expectedMessage := "negative: Fake Test Value\n --OR-- \nnegative: Fake Test Value"
-
 			msg := oneOf.NegatedFailureMessage("Fake Test Value")
 
-			Expect(msg).To(Equal(expectedMessage))
+			expectedMessagePattern := `Expected
+		<string>: Fake Test Value
+not to match one of
+		<string>: a
+or
+		<\*matchers\.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[1\]}`
+
+			Expect(msg).To(MatchRegexp(expectedMessagePattern))
 		})
 	})
 })

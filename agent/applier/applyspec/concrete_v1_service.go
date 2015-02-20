@@ -13,10 +13,11 @@ type concreteV1Service struct {
 	specFilePath string
 }
 
-func NewConcreteV1Service(fs boshsys.FileSystem, specFilePath string) concreteV1Service {
+func NewConcreteV1Service(fs boshsys.FileSystem, specFilePath string) V1Service {
 	return concreteV1Service{fs: fs, specFilePath: specFilePath}
 }
 
+// Get reads and marshals the file contents.
 func (s concreteV1Service) Get() (V1ApplySpec, error) {
 	var spec V1ApplySpec
 
@@ -37,6 +38,7 @@ func (s concreteV1Service) Get() (V1ApplySpec, error) {
 	return spec, nil
 }
 
+// Set unmarshals and writes to the file.
 func (s concreteV1Service) Set(spec V1ApplySpec) error {
 	specBytes, err := json.Marshal(spec)
 	if err != nil {

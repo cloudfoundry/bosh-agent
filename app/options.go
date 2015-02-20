@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 )
 
-type options struct {
+type Options struct {
 	InfrastructureName string
 	PlatformName       string
 	BaseDirectory      string
@@ -13,8 +13,8 @@ type options struct {
 	ConfigPath         string
 }
 
-func ParseOptions(args []string) (options, error) {
-	var opts options
+func ParseOptions(args []string) (Options, error) {
+	var opts Options
 
 	flagSet := flag.NewFlagSet("bosh-agent-args", flag.ContinueOnError)
 	flagSet.SetOutput(ioutil.Discard)

@@ -13,7 +13,7 @@ type dummyNatsJobSupervisor struct {
 	jobFailureHandler JobFailureHandler
 }
 
-func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) *dummyNatsJobSupervisor {
+func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
 	return &dummyNatsJobSupervisor{
 		mbusHandler: mbusHandler,
 		status:      "running",

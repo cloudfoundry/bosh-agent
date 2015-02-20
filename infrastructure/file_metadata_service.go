@@ -24,7 +24,7 @@ func NewFileMetadataService(
 	settingsFilePath string,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
-) fileMetadataService {
+) MetadataService {
 	return fileMetadataService{
 		metaDataFilePath: metaDataFilePath,
 		userDataFilePath: userDataFilePath,

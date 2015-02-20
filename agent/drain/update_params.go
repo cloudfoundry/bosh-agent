@@ -9,7 +9,7 @@ type updateParams struct {
 	newSpec boshas.V1ApplySpec
 }
 
-func NewUpdateParams(oldSpec, newSpec boshas.V1ApplySpec) updateParams {
+func NewUpdateParams(oldSpec, newSpec boshas.V1ApplySpec) ScriptParams {
 	return updateParams{
 		oldSpec: oldSpec,
 		newSpec: newSpec,

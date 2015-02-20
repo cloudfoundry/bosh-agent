@@ -31,7 +31,7 @@ func NewConfigDriveMetadataService(
 	metaDataFilePath string,
 	userDataFilePath string,
 	logger boshlog.Logger,
-) *configDriveMetadataService {
+) MetadataService {
 	return &configDriveMetadataService{
 		resolver: resolver,
 		platform: platform,

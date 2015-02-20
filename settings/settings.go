@@ -18,7 +18,7 @@ type Settings struct {
 	VM        VM        `json:"vm"`
 }
 
-type SettingsSource interface {
+type Source interface {
 	PublicSSHKeyForUsername(string) (string, error)
 	Settings() (Settings, error)
 }
@@ -101,8 +101,6 @@ type BoshEnv struct {
 	Password string `json:"password"`
 }
 
-type Networks map[string]Network
-
 type NetworkType string
 
 const (
@@ -121,6 +119,8 @@ type Network struct {
 
 	Mac string `json:"mac"`
 }
+
+type Networks map[string]Network
 
 func (n Networks) DefaultNetworkFor(category string) (Network, bool) {
 	if len(n) == 1 {

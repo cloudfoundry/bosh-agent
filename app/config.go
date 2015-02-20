@@ -10,8 +10,8 @@ import (
 )
 
 type Config struct {
-	Platform       boshplatform.PlatformOptions
-	Infrastructure boshinf.InfrastructureOptions
+	Platform       boshplatform.Options
+	Infrastructure boshinf.Options
 }
 
 func LoadConfigFromPath(fs boshsys.FileSystem, path string) (Config, error) {

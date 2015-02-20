@@ -1,6 +1,7 @@
 package task
 
 import (
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
@@ -11,7 +12,7 @@ type Info struct {
 }
 
 type ManagerProvider interface {
-	NewManager(boshsys.FileSystem, string) Manager
+	NewManager(boshlog.Logger, boshsys.FileSystem, string) Manager
 }
 
 type Manager interface {

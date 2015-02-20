@@ -36,7 +36,7 @@ func NewHTTPClient(
 	shortClient boshhttp.Client,
 	longClient boshhttp.Client,
 	logger boshlog.Logger,
-) httpClient {
+) Client {
 	return httpClient{
 		host:            host,
 		username:        username,

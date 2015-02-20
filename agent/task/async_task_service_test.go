@@ -130,7 +130,7 @@ func init() {
 				ids := []string{}
 				for id := 1; id < 200; id++ {
 					idStr := fmt.Sprintf("%d", id)
-					uuidGen.GeneratedUuid = idStr
+					uuidGen.GeneratedUUID = idStr
 					ids = append(ids, idStr)
 
 					task, err := service.CreateTask(taskFunc, nil, nil)
@@ -158,7 +158,7 @@ func init() {
 
 		Describe("CreateTask", func() {
 			It("creates a task with auto-assigned id", func() {
-				uuidGen.GeneratedUuid = "fake-uuid"
+				uuidGen.GeneratedUUID = "fake-uuid"
 
 				runFuncCalled := false
 				runFunc := func() (interface{}, error) {

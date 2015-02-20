@@ -32,15 +32,19 @@ const (
 	SigarStatsCollectionInterval = 10 * time.Second
 )
 
+type Provider interface {
+	Get(name string) (Platform, error)
+}
+
 type provider struct {
 	platforms map[string]Platform
 }
 
-type PlatformOptions struct {
+type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options PlatformOptions) (p provider) {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options Options) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
 	fs := boshsys.NewOsFileSystem(logger)
 
@@ -121,12 +125,13 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options P
 		logger,
 	)
 
-	p.platforms = map[string]Platform{
-		"ubuntu": ubuntu,
-		"centos": centos,
-		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, devicePathResolver, logger),
+	return provider{
+		platforms: map[string]Platform{
+			"ubuntu": ubuntu,
+			"centos": centos,
+			"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, devicePathResolver, logger),
+		},
 	}
-	return
 }
 
 func (p provider) Get(name string) (Platform, error) {
