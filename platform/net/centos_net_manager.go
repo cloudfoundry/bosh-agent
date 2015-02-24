@@ -135,6 +135,12 @@ func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]custo
 		return modifiedNetworks, bosherr.WrapError(err, "Detecting mac addresses")
 	}
 
+	gatewayNetwork, gatewayNetworkFound := networks.DefaultNetworkFor("gateway")
+
+	if !gatewayNetworkFound {
+		return modifiedNetworks, bosherr.WrapError(err, "Finding network for default gateway")
+	}
+
 	for _, aNet := range networks {
 		var network, broadcast string
 		network, broadcast, err = boshsys.CalculateNetworkAndBroadcast(aNet.IP, aNet.Netmask)
@@ -147,7 +153,7 @@ func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]custo
 			macAddresses[aNet.Mac],
 			network,
 			broadcast,
-			true,
+			aNet.IP == gatewayNetwork.IP,
 		}
 		modifiedNetworks = append(modifiedNetworks, newNet)
 

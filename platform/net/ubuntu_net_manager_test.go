@@ -2,6 +2,7 @@ package net_test
 
 import (
 	"errors"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -338,6 +339,64 @@ nameserver 10.80.130.1
 				networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
 				Expect(networkConfig).ToNot(BeNil())
 				Expect(networkConfig.StringContents()).To(Equal(expectedNetworkInterfaces))
+			})
+
+			Context("when there are multiple networks", func() {
+				BeforeEach(func() {
+					fs.WriteFile("/sys/class/net/eth1", []byte{})
+					fs.WriteFileString("/sys/class/net/eth1/address", "22:00:0a:1f:ac:2b\n")
+					fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0", "/sys/class/net/eth1"})
+				})
+				Context("when one network's gateway is the default gateway", func() {
+
+					multipleNetworks := boshsettings.Networks{
+						"bosh": boshsettings.Network{
+							Default: []string{"dns", "gateway"},
+							IP:      "192.168.195.6",
+							Netmask: "255.255.255.0",
+							Gateway: "192.168.195.1",
+							Mac:     "22:00:0a:1f:ac:2a",
+							DNS:     []string{"10.80.130.2", "10.80.130.1"},
+						},
+						"bosh2": boshsettings.Network{
+							IP:      "192.168.196.6",
+							Netmask: "255.255.255.0",
+							Mac:     "22:00:0a:1f:ac:2b",
+						}}
+					It("includes only one gateway", func() {
+						err := netManager.SetupManualNetworking(multipleNetworks, nil)
+						Expect(err).ToNot(HaveOccurred())
+
+						networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
+						Expect(networkConfig).ToNot(BeNil())
+						Expect(networkConfig.StringContents()).To(ContainSubstring("gateway 192.168.195.1"))
+						Expect(strings.Count(networkConfig.StringContents(), "gateway")).To(Equal(1))
+					})
+				})
+
+				Context("when there are multiple networks but no default gateway", func() {
+
+					multipleNetworks := boshsettings.Networks{
+						"bosh": boshsettings.Network{
+							Default: []string{"dns"},
+							IP:      "192.168.195.6",
+							Netmask: "255.255.255.0",
+							Gateway: "192.168.195.1",
+							Mac:     "22:00:0a:1f:ac:2a",
+							DNS:     []string{"10.80.130.2", "10.80.130.1"},
+						},
+						"bosh2": boshsettings.Network{
+							IP:      "192.168.196.6",
+							Netmask: "255.255.255.0",
+							Mac:     "22:00:0a:1f:ac:2b",
+						}}
+
+					It("returns error", func() {
+						err := netManager.SetupManualNetworking(multipleNetworks, nil)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Finding network for default gateway"))
+					})
+				})
 			})
 		}
 

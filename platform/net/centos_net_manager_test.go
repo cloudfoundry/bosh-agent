@@ -270,5 +270,87 @@ nameserver 10.80.130.1
 				boship.NewSimpleInterfaceAddress("eth0", "192.168.195.6"),
 			}))
 		})
+
+		Context("when there are multiple networks", func() {
+			BeforeEach(func() {
+				fs.WriteFileString("/sys/class/net/eth1/address", "22:00:0a:1f:ac:2b\n")
+				fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0", "/sys/class/net/eth1"})
+			})
+			Context("when one network's gateway is the default gateway", func() {
+
+				multipleNetworks := boshsettings.Networks{
+					"bosh": boshsettings.Network{
+						Default: []string{"dns", "gateway"},
+						IP:      "192.168.195.6",
+						Netmask: "255.255.255.0",
+						Gateway: "192.168.195.1",
+						Mac:     "22:00:0a:1f:ac:2a",
+						DNS:     []string{"10.80.130.2", "10.80.130.1"},
+					},
+					"bosh2": boshsettings.Network{
+						IP:      "192.168.196.6",
+						Netmask: "255.255.255.0",
+						Mac:     "22:00:0a:1f:ac:2b",
+					}}
+
+				It("sets up centos expected ifconfig for eth0", func() {
+					err := netManager.SetupManualNetworking(multipleNetworks, nil)
+					Expect(err).ToNot(HaveOccurred())
+
+					networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+					Expect(networkConfig).ToNot(BeNil())
+
+					expectedIfcfg := `DEVICE=eth0
+BOOTPROTO=static
+IPADDR=192.168.195.6
+NETMASK=255.255.255.0
+BROADCAST=192.168.195.255
+GATEWAY=192.168.195.1
+ONBOOT=yes`
+					Expect(networkConfig.StringContents()).To(Equal(expectedIfcfg))
+				})
+
+				It("sets up centos expected ifconfig for eth1", func() {
+					err := netManager.SetupManualNetworking(multipleNetworks, nil)
+					Expect(err).ToNot(HaveOccurred())
+
+					networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth1")
+					Expect(networkConfig).ToNot(BeNil())
+
+					expectedIfcfg := `DEVICE=eth1
+BOOTPROTO=static
+IPADDR=192.168.196.6
+NETMASK=255.255.255.0
+BROADCAST=192.168.196.255
+
+ONBOOT=yes`
+					Expect(networkConfig.StringContents()).To(Equal(expectedIfcfg))
+				})
+
+			})
+			Context("when there are multiple networks but no default gateway", func() {
+				multipleNetworks := boshsettings.Networks{
+					"bosh": boshsettings.Network{
+						Default: []string{"dns"},
+						IP:      "192.168.195.6",
+						Netmask: "255.255.255.0",
+						Gateway: "192.168.195.1",
+						Mac:     "22:00:0a:1f:ac:2a",
+						DNS:     []string{"10.80.130.2", "10.80.130.1"},
+					},
+					"bosh2": boshsettings.Network{
+						IP:      "192.168.196.6",
+						Netmask: "255.255.255.0",
+						Mac:     "22:00:0a:1f:ac:2b",
+					}}
+
+				It("sets up centos expected ifconfig for eth0", func() {
+					err := netManager.SetupManualNetworking(multipleNetworks, nil)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Finding network for default gateway"))
+				})
+
+			})
+		})
 	})
 })
