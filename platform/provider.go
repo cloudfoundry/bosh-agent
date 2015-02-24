@@ -67,9 +67,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options O
 	ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
 
 	arping := bosharp.NewArping(runner, fs, logger, ArpIterations, ArpIterationDelay, ArpInterfaceCheckDelay)
+	interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator()
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, arping, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, arping, logger)
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
 
 	monitRetryable := NewMonitRetryable(runner)
 	monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)

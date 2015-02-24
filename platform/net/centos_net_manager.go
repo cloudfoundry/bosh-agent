@@ -17,27 +17,30 @@ import (
 const centosNetManagerLogTag = "centosNetManager"
 
 type centosNetManager struct {
-	fs                 boshsys.FileSystem
-	cmdRunner          boshsys.CmdRunner
-	routesSearcher     RoutesSearcher
-	ipResolver         boship.Resolver
-	addressBroadcaster bosharp.AddressBroadcaster
-	logger             boshlog.Logger
+	fs                            boshsys.FileSystem
+	cmdRunner                     boshsys.CmdRunner
+	routesSearcher                RoutesSearcher
+	ipResolver                    boship.Resolver
+	interfaceConfigurationCreator InterfaceConfigurationCreator
+	addressBroadcaster            bosharp.AddressBroadcaster
+	logger                        boshlog.Logger
 }
 
 func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	ipResolver boship.Resolver,
+	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
 	return centosNetManager{
-		fs:                 fs,
-		cmdRunner:          cmdRunner,
-		ipResolver:         ipResolver,
-		addressBroadcaster: addressBroadcaster,
-		logger:             logger,
+		fs:                            fs,
+		cmdRunner:                     cmdRunner,
+		ipResolver:                    ipResolver,
+		interfaceConfigurationCreator: interfaceConfigurationCreator,
+		addressBroadcaster:            addressBroadcaster,
+		logger:                        logger,
 	}
 }
 
@@ -65,7 +68,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		nonVipNetworks[networkName] = networkSettings
 	}
 
-	staticInterfaces, dhcpInterfaces, err := net.buildInterfaces(nonVipNetworks)
+	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.buildInterfaces(nonVipNetworks)
 	if err != nil {
 		return err
 	}
@@ -73,13 +76,13 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
 
-	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaces, staticInterfaces, dnsServers)
+	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network configuration")
 	}
 
 	dhcpChanged := false
-	if len(dhcpInterfaces) > 0 {
+	if len(dhcpInterfaceConfigurations) > 0 {
 		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers)
 		if err != nil {
 			return err
@@ -90,7 +93,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		net.restartNetworkingInterfaces()
 	}
 
-	net.broadcastIps(staticInterfaces, dhcpInterfaces, errCh)
+	net.broadcastIps(staticInterfaceConfigurations, dhcpInterfaceConfigurations, errCh)
 
 	return nil
 }
@@ -103,9 +106,9 @@ BROADCAST={{ .Broadcast }}
 GATEWAY={{ .Gateway }}
 ONBOOT=yes`
 
-func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaces []dhcpInterface, staticInterfaces []staticInterface, dnsServers []string) (bool, error) {
+func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
 	var anyInterfaceChanged bool
-	for _, iface := range staticInterfaces {
+	for _, iface := range staticInterfaceConfigurations {
 		buffer := bytes.NewBuffer([]byte{})
 		t := template.Must(template.New("ifcfg").Parse(centosIfcgfTemplate))
 
@@ -130,48 +133,27 @@ func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaces []dhcpInterfac
 	return anyInterfaceChanged, nil
 }
 
-func (net centosNetManager) buildInterfaces(networks boshsettings.Networks) ([]staticInterface, []dhcpInterface, error) {
-	var (
-		staticInterfaces []staticInterface
-		dhcpInterfaces   []dhcpInterface
-	)
+func (net centosNetManager) buildInterfaces(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	interfacesByMacAddress, err := net.detectMacAddresses()
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
 	}
 
-	for _, network := range networks {
-		if network.IsDynamic() {
-			dhcpInterfaces = append(dhcpInterfaces, dhcpInterface{
-				Name: interfacesByMacAddress[network.Mac],
-			})
-		} else {
-			networkAddress, broadcastAddress, err := boshsys.CalculateNetworkAndBroadcast(network.IP, network.Netmask)
-			if err != nil {
-				return nil, nil, bosherr.WrapError(err, "Calculating Network and Broadcast")
-			}
-			staticInterfaces = append(staticInterfaces, staticInterface{
-				Name:      interfacesByMacAddress[network.Mac],
-				Address:   network.IP,
-				Netmask:   network.Netmask,
-				Network:   networkAddress,
-				Broadcast: broadcastAddress,
-				Mac:       network.Mac,
-				Gateway:   network.Gateway,
-			})
-		}
+	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMacAddress)
+
+	if err != nil {
+		return nil, nil, bosherr.WrapError(err, "Creating interface configurations")
 	}
 
-	return staticInterfaces, dhcpInterfaces, nil
-
+	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
 }
 
-func (net centosNetManager) broadcastIps(staticInterfaces []staticInterface, dhcpInterfaces []dhcpInterface, errCh chan error) {
+func (net centosNetManager) broadcastIps(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, errCh chan error) {
 	addresses := []boship.InterfaceAddress{}
-	for _, iface := range staticInterfaces {
+	for _, iface := range staticInterfaceConfigurations {
 		addresses = append(addresses, boship.NewSimpleInterfaceAddress(iface.Name, iface.Address))
 	}
-	for _, iface := range dhcpInterfaces {
+	for _, iface := range dhcpInterfaceConfigurations {
 		addresses = append(addresses, boship.NewResolvingInterfaceAddress(iface.Name, net.ipResolver))
 	}
 

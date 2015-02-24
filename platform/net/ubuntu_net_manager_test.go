@@ -20,23 +20,26 @@ var _ = Describe("ubuntuNetManager", describeUbuntuNetManager)
 
 func describeUbuntuNetManager() {
 	var (
-		fs                 *fakesys.FakeFileSystem
-		cmdRunner          *fakesys.FakeCmdRunner
-		ipResolver         *fakeip.FakeResolver
-		addressBroadcaster *fakearp.FakeAddressBroadcaster
-		netManager         Manager
+		fs                            *fakesys.FakeFileSystem
+		cmdRunner                     *fakesys.FakeCmdRunner
+		ipResolver                    *fakeip.FakeResolver
+		addressBroadcaster            *fakearp.FakeAddressBroadcaster
+		netManager                    Manager
+		interfaceConfigurationCreator InterfaceConfigurationCreator
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		ipResolver = &fakeip.FakeResolver{}
+		interfaceConfigurationCreator = NewInterfaceConfigurationCreator()
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		netManager = NewUbuntuNetManager(
 			fs,
 			cmdRunner,
 			ipResolver,
+			interfaceConfigurationCreator,
 			addressBroadcaster,
 			logger,
 		)
@@ -149,11 +152,11 @@ iface ethstatic inet static
 			Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
 		})
 
-		It("returns errors when it can't calculate network and broadcast addresses", func() {
-			staticNetwork.Netmask = "not an ip"
+		It("returns errors when it can't creating network interface configurations", func() {
+			staticNetwork.Netmask = "not an ip" //will cause InterfaceConfigurationCreator to fail
 			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, nil)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Invalid ip or netmask"))
+			Expect(err.Error()).To(ContainSubstring("Creating interface configurations"))
 		})
 
 		It("wrtites a dhcp configuration if there are dhcp networks", func() {

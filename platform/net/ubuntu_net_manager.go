@@ -17,26 +17,29 @@ import (
 const ubuntuNetManagerLogTag = "ubuntuNetManager"
 
 type ubuntuNetManager struct {
-	cmdRunner          boshsys.CmdRunner
-	fs                 boshsys.FileSystem
-	ipResolver         boship.Resolver
-	addressBroadcaster bosharp.AddressBroadcaster
-	logger             boshlog.Logger
+	cmdRunner                     boshsys.CmdRunner
+	fs                            boshsys.FileSystem
+	ipResolver                    boship.Resolver
+	interfaceConfigurationCreator InterfaceConfigurationCreator
+	addressBroadcaster            bosharp.AddressBroadcaster
+	logger                        boshlog.Logger
 }
 
 func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	ipResolver boship.Resolver,
+	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
 	return ubuntuNetManager{
-		cmdRunner:          cmdRunner,
-		fs:                 fs,
-		ipResolver:         ipResolver,
-		addressBroadcaster: addressBroadcaster,
-		logger:             logger,
+		cmdRunner:                     cmdRunner,
+		fs:                            fs,
+		ipResolver:                    ipResolver,
+		interfaceConfigurationCreator: interfaceConfigurationCreator,
+		addressBroadcaster:            addressBroadcaster,
+		logger:                        logger,
 	}
 }
 
@@ -56,20 +59,6 @@ request subnet-mask, broadcast-address, time-offset, routers,
 prepend domain-name-servers {{ . }};{{ end }}
 `
 
-type staticInterface struct {
-	Name      string
-	Address   string
-	Netmask   string
-	Network   string
-	Broadcast string
-	Mac       string
-	Gateway   string
-}
-
-type dhcpInterface struct {
-	Name string
-}
-
 func (net ubuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 	nonVipNetworks := boshsettings.Networks{}
 	for networkName, networkSettings := range networks {
@@ -79,7 +68,7 @@ func (net ubuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		nonVipNetworks[networkName] = networkSettings
 	}
 
-	staticInterfaces, dhcpInterfaces, err := net.buildInterfaces(nonVipNetworks)
+	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.buildInterfaces(nonVipNetworks)
 	if err != nil {
 		return err
 	}
@@ -87,13 +76,13 @@ func (net ubuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
 
-	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaces, staticInterfaces, dnsServers)
+	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network configuration")
 	}
 
 	dhcpChanged := false
-	if len(dhcpInterfaces) > 0 {
+	if len(dhcpInterfaceConfigurations) > 0 {
 		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers)
 		if err != nil {
 			return err
@@ -104,53 +93,32 @@ func (net ubuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		net.restartNetworkingInterfaces()
 	}
 
-	net.broadcastIps(staticInterfaces, dhcpInterfaces, errCh)
+	net.broadcastIps(staticInterfaceConfigurations, dhcpInterfaceConfigurations, errCh)
 
 	return nil
 }
 
-func (net ubuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]staticInterface, []dhcpInterface, error) {
-	var (
-		staticInterfaces []staticInterface
-		dhcpInterfaces   []dhcpInterface
-	)
+func (net ubuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	interfacesByMacAddress, err := net.detectMacAddresses()
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
 	}
 
-	for _, network := range networks {
-		if network.IsDynamic() {
-			dhcpInterfaces = append(dhcpInterfaces, dhcpInterface{
-				Name: interfacesByMacAddress[network.Mac],
-			})
-		} else {
-			networkAddress, broadcastAddress, err := boshsys.CalculateNetworkAndBroadcast(network.IP, network.Netmask)
-			if err != nil {
-				return nil, nil, bosherr.WrapError(err, "Calculating Network and Broadcast")
-			}
-			staticInterfaces = append(staticInterfaces, staticInterface{
-				Name:      interfacesByMacAddress[network.Mac],
-				Address:   network.IP,
-				Netmask:   network.Netmask,
-				Network:   networkAddress,
-				Broadcast: broadcastAddress,
-				Mac:       network.Mac,
-				Gateway:   network.Gateway,
-			})
-		}
+	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMacAddress)
+
+	if err != nil {
+		return nil, nil, bosherr.WrapError(err, "Creating interface configurations")
 	}
 
-	return staticInterfaces, dhcpInterfaces, nil
-
+	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
 }
 
-func (net ubuntuNetManager) broadcastIps(staticInterfaces []staticInterface, dhcpInterfaces []dhcpInterface, errCh chan error) {
+func (net ubuntuNetManager) broadcastIps(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, errCh chan error) {
 	addresses := []boship.InterfaceAddress{}
-	for _, iface := range staticInterfaces {
+	for _, iface := range staticInterfaceConfigurations {
 		addresses = append(addresses, boship.NewSimpleInterfaceAddress(iface.Name, iface.Address))
 	}
-	for _, iface := range dhcpInterfaces {
+	for _, iface := range dhcpInterfaceConfigurations {
 		addresses = append(addresses, boship.NewResolvingInterfaceAddress(iface.Name, net.ipResolver))
 	}
 
@@ -198,18 +166,18 @@ func (net ubuntuNetManager) writeDHCPConfiguration(dnsServers []string) (bool, e
 }
 
 type networkInterfaceConfig struct {
-	DNSServers        []string
-	StaticInterfaces  []staticInterface
-	DhcpInterfaces    []dhcpInterface
-	HasDNSNameServers bool
+	DNSServers                    []string
+	StaticInterfaceConfigurations []StaticInterfaceConfiguration
+	DHCPInterfaceConfigurations   []DHCPInterfaceConfiguration
+	HasDNSNameServers             bool
 }
 
-func (net ubuntuNetManager) writeNetworkInterfaces(dhcpInterfaces []dhcpInterface, staticInterfaces []staticInterface, dnsServers []string) (bool, error) {
+func (net ubuntuNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
 	networkInterfaceValues := networkInterfaceConfig{
-		StaticInterfaces:  staticInterfaces,
-		DhcpInterfaces:    dhcpInterfaces,
-		HasDNSNameServers: true,
-		DNSServers:        dnsServers,
+		StaticInterfaceConfigurations: staticInterfaceConfigurations,
+		DHCPInterfaceConfigurations:   dhcpInterfaceConfigurations,
+		HasDNSNameServers:             true,
+		DNSServers:                    dnsServers,
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -232,9 +200,9 @@ func (net ubuntuNetManager) writeNetworkInterfaces(dhcpInterfaces []dhcpInterfac
 const networkInterfacesTemplate = `# Generated by bosh-agent
 auto lo
 iface lo inet loopback
-{{ range .DhcpInterfaces }}auto {{ .Name }}
+{{ range .DHCPInterfaceConfigurations }}auto {{ .Name }}
 iface {{ .Name }} inet dhcp{{ end }}
-{{ range .StaticInterfaces }}auto {{ .Name }}
+{{ range .StaticInterfaceConfigurations }}auto {{ .Name }}
 iface {{ .Name }} inet static
     address {{ .Address }}
     network {{ .Network }}
