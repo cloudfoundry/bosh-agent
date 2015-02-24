@@ -26,7 +26,9 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
-var _ = Describe("LinuxPlatform", func() {
+var _ = Describe("LinuxPlatform", describeLinuxPlatform)
+
+func describeLinuxPlatform() {
 	var (
 		collector          *fakestats.FakeCollector
 		fs                 *fakesys.FakeFileSystem
@@ -1444,4 +1446,15 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			Expect(network).To(Equal(boshsettings.Network{}))
 		})
 	})
-})
+
+	Describe("SetupNetworking", func() {
+		It("delegates to the NetManager", func() {
+			networks := boshsettings.Networks{}
+
+			err := platform.SetupNetworking(networks)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(netManager.SetupNetworkingNetworks).To(Equal(networks))
+		})
+	})
+}

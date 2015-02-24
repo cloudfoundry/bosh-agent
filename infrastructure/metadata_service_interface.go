@@ -1,11 +1,16 @@
 package infrastructure
 
+import (
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+)
+
 type MetadataService interface {
 	IsAvailable() bool
 	GetPublicKey() (string, error)
 	GetInstanceID() (string, error)
 	GetServerName() (string, error)
 	GetRegistryEndpoint() (string, error)
+	GetNetworks() (boshsettings.Networks, error)
 }
 
 type MetadataServiceOptions struct {
@@ -26,4 +31,5 @@ type UserDataContentsType struct {
 	DNS struct {
 		Nameserver []string
 	}
+	Networks boshsettings.Networks
 }

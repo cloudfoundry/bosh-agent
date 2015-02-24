@@ -12,18 +12,23 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
+	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
-var _ = Describe("httpRegistry", func() {
+var _ = Describe("httpRegistry", describeHTTPRegistry)
+
+func describeHTTPRegistry() {
 	var (
 		metadataService *fakeinf.FakeMetadataService
 		registry        Registry
+		platform        *fakeplat.FakePlatform
 	)
 
 	BeforeEach(func() {
 		metadataService = &fakeinf.FakeMetadataService{}
-		registry = NewHTTPRegistry(metadataService, false)
+		platform = &fakeplat.FakePlatform{}
+		registry = NewHTTPRegistry(metadataService, platform, false)
 	})
 
 	Describe("GetSettings", func() {
@@ -49,9 +54,73 @@ var _ = Describe("httpRegistry", func() {
 			ts.Close()
 		})
 
+		Describe("Network bootstrapping", func() {
+			BeforeEach(func() {
+				settingsJSON = `{"settings": "{\"agent_id\":\"my-agent-id\"}"}`
+				metadataService.InstanceID = "fake-identifier"
+				metadataService.RegistryEndpoint = ts.URL
+				registry = NewHTTPRegistry(metadataService, platform, false)
+			})
+
+			Context("when the metadata has Networks information", func() {
+				It("configures the network with those settings before hitting the registry", func() {
+					networkSettings := boshsettings.Networks{
+						"net1": boshsettings.Network{IP: "1.2.3.4"},
+						"net2": boshsettings.Network{IP: "2.3.4.5"},
+					}
+					metadataService.Networks = networkSettings
+
+					_, err := registry.GetSettings()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(platform.SetupNetworkingCalled).To(BeTrue())
+					Expect(platform.SetupNetworkingNetworks).To(Equal(networkSettings))
+				})
+			})
+
+			Context("when the metadata has no Networks information", func() {
+				It("does no network configuration for now (the stemcell set up dhcp already)", func() {
+					metadataService.Networks = boshsettings.Networks{}
+
+					_, err := registry.GetSettings()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(platform.SetupNetworkingCalled).To(BeFalse())
+				})
+			})
+
+			Context("when the metadata service fails to get Networks information", func() {
+				It("wraps the error", func() {
+					metadataService.Networks = boshsettings.Networks{}
+					metadataService.NetworksErr = errors.New("fake-get-networks-err")
+
+					_, err := registry.GetSettings()
+					Expect(err).To(HaveOccurred())
+
+					Expect(err.Error()).To(Equal("Getting networks: fake-get-networks-err"))
+				})
+			})
+
+			Context("when the SetupNetworking fails", func() {
+				It("wraps the error", func() {
+					networkSettings := boshsettings.Networks{
+						"net1": boshsettings.Network{IP: "1.2.3.4"},
+						"net2": boshsettings.Network{IP: "2.3.4.5"},
+					}
+					metadataService.Networks = networkSettings
+					platform.SetupNetworkingErr = errors.New("fake-setup-networking-error")
+
+					_, err := registry.GetSettings()
+					Expect(err).To(HaveOccurred())
+
+					Expect(err.Error()).To(Equal("Setting up networks: fake-setup-networking-error"))
+				})
+			})
+		})
+
 		Context("when registry is configured to not use server name as id", func() {
 			BeforeEach(func() {
-				registry = NewHTTPRegistry(metadataService, false)
+				registry = NewHTTPRegistry(metadataService, platform, false)
 				metadataService.InstanceID = "fake-identifier"
 				metadataService.RegistryEndpoint = ts.URL
 			})
@@ -213,7 +282,7 @@ var _ = Describe("httpRegistry", func() {
 
 		Context("when registry is configured to use server name as id", func() {
 			BeforeEach(func() {
-				registry = NewHTTPRegistry(metadataService, true)
+				registry = NewHTTPRegistry(metadataService, platform, true)
 				metadataService.ServerName = "fake-identifier"
 				metadataService.RegistryEndpoint = ts.URL
 			})
@@ -267,4 +336,4 @@ var _ = Describe("httpRegistry", func() {
 			})
 		})
 	})
-})
+}

@@ -1,8 +1,6 @@
 package infrastructure_test
 
 import (
-	"errors"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -53,67 +51,11 @@ var _ = Describe("genericInfrastructure", func() {
 	Describe("SetupNetworking", func() {
 		networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
-		Context("when infrastructure is configured with 'dhcp'", func() {
-			BeforeEach(func() { networkingType = "dhcp" })
+		It("delegates to the platform", func() {
+			err := inf.SetupNetworking(networks)
+			Expect(err).ToNot(HaveOccurred())
 
-			It("sets up DHCP networking on the platform", func() {
-				err := inf.SetupNetworking(networks)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(platform.SetupDhcpNetworks).To(Equal(networks))
-			})
-
-			It("returns error if configuring DHCP fails", func() {
-				platform.SetupDhcpErr = errors.New("fake-setup-dhcp-err")
-
-				err := inf.SetupNetworking(networks)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-setup-dhcp-err"))
-			})
-
-			It("does not set up manual networking on the platform", func() {
-				err := inf.SetupNetworking(networks)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(platform.SetupManualNetworkingCalled).To(BeFalse())
-			})
-		})
-
-		Context("when infrastructure is configured with 'manual'", func() {
-			BeforeEach(func() { networkingType = "manual" })
-
-			It("sets up manual networking on the platform", func() {
-				err := inf.SetupNetworking(networks)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(platform.SetupManualNetworkingNetworks).To(Equal(networks))
-			})
-
-			It("returns error if configuring manual networking fails", func() {
-				platform.SetupManualNetworkingErr = errors.New("fake-setup-manual-err")
-
-				err := inf.SetupNetworking(networks)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-setup-manual-err"))
-			})
-
-			It("does not set up DHCP networking on the platform", func() {
-				err := inf.SetupNetworking(networks)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(platform.SetupDhcpCalled).To(BeFalse())
-			})
-		})
-
-		Context("when infrastructure is not configured", func() {
-			It("does not set up DHCP networking on the platform", func() {
-				err := inf.SetupNetworking(networks)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(platform.SetupDhcpCalled).To(BeFalse())
-			})
-
-			It("does not set up manual networking on the platform", func() {
-				err := inf.SetupNetworking(networks)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(platform.SetupManualNetworkingCalled).To(BeFalse())
-			})
+			Expect(platform.SetupNetworkingNetworks).To(Equal(networks))
 		})
 	})
 

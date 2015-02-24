@@ -45,7 +45,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 						resolver := NewRegistryEndpointResolver(NewDigDNSResolver(platform.GetRunner(), logger))
 						httpMetadataService := NewHTTPMetadataService("http://fake-url", resolver)
 						multiSourceMetadataService := NewMultiSourceMetadataService(httpMetadataService)
-						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, platform.GetFs(), logger)
+						registryProvider := NewRegistryProvider(multiSourceMetadataService, platform, useServerName, platform.GetFs(), logger)
 						httpSettingsSource := NewComplexSettingsSource(multiSourceMetadataService, registryProvider, logger)
 
 						settingsSource, err := factory.New()
@@ -79,7 +79,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 							logger,
 						)
 						multiSourceMetadataService := NewMultiSourceMetadataService(configDriveMetadataService)
-						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, platform.GetFs(), logger)
+						registryProvider := NewRegistryProvider(multiSourceMetadataService, platform, useServerName, platform.GetFs(), logger)
 						configDriveSettingsSource := NewComplexSettingsSource(multiSourceMetadataService, registryProvider, logger)
 
 						settingsSource, err := factory.New()
@@ -109,7 +109,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 							logger,
 						)
 						multiSourceMetadataService := NewMultiSourceMetadataService(fileMetadataService)
-						registryProvider := NewRegistryProvider(multiSourceMetadataService, useServerName, platform.GetFs(), logger)
+						registryProvider := NewRegistryProvider(multiSourceMetadataService, platform, useServerName, platform.GetFs(), logger)
 						fileSettingsSource := NewComplexSettingsSource(multiSourceMetadataService, registryProvider, logger)
 
 						settingsSource, err := factory.New()

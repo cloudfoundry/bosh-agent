@@ -9,12 +9,14 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("RegistryProvider", func() {
 	var (
 		metadataService  *fakeinf.FakeMetadataService
+		platform         *fakeplat.FakePlatform
 		useServerName    bool
 		fs               *fakesys.FakeFileSystem
 		registryProvider RegistryProvider
@@ -22,13 +24,14 @@ var _ = Describe("RegistryProvider", func() {
 
 	BeforeEach(func() {
 		metadataService = &fakeinf.FakeMetadataService{}
+		platform = &fakeplat.FakePlatform{}
 		useServerName = false
 		fs = fakesys.NewFakeFileSystem()
 	})
 
 	JustBeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		registryProvider = NewRegistryProvider(metadataService, useServerName, fs, logger)
+		registryProvider = NewRegistryProvider(metadataService, platform, useServerName, fs, logger)
 	})
 
 	Describe("GetRegistry", func() {
@@ -43,7 +46,7 @@ var _ = Describe("RegistryProvider", func() {
 				It("returns an http registry that does not use server name as id", func() {
 					registry, err := registryProvider.GetRegistry()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(registry).To(Equal(NewHTTPRegistry(metadataService, false)))
+					Expect(registry).To(Equal(NewHTTPRegistry(metadataService, platform, false)))
 				})
 			})
 
@@ -53,7 +56,7 @@ var _ = Describe("RegistryProvider", func() {
 				It("returns an http registry that uses server name as id", func() {
 					registry, err := registryProvider.GetRegistry()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(registry).To(Equal(NewHTTPRegistry(metadataService, true)))
+					Expect(registry).To(Equal(NewHTTPRegistry(metadataService, platform, true)))
 				})
 			})
 		})

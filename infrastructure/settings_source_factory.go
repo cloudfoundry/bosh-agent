@@ -131,7 +131,7 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 	}
 
 	metadataService := NewMultiSourceMetadataService(metadataServices...)
-	registryProvider := NewRegistryProvider(metadataService, f.options.UseServerName, f.platform.GetFs(), f.logger)
+	registryProvider := NewRegistryProvider(metadataService, f.platform, f.options.UseServerName, f.platform.GetFs(), f.logger)
 	settingsSource := NewComplexSettingsSource(metadataService, registryProvider, f.logger)
 
 	return settingsSource, nil

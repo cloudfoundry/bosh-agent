@@ -55,13 +55,9 @@ type FakePlatform struct {
 	SetupTmpDirCalled bool
 	SetupTmpDirErr    error
 
-	SetupManualNetworkingCalled   bool
-	SetupManualNetworkingNetworks boshsettings.Networks
-	SetupManualNetworkingErr      error
-
-	SetupDhcpCalled   bool
-	SetupDhcpNetworks boshsettings.Networks
-	SetupDhcpErr      error
+	SetupNetworkingCalled   bool
+	SetupNetworkingNetworks boshsettings.Networks
+	SetupNetworkingErr      error
 
 	MountPersistentDiskCalled     bool
 	MountPersistentDiskSettings   boshsettings.DiskSettings
@@ -197,16 +193,10 @@ func (p *FakePlatform) SetupHostname(hostname string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) error {
-	p.SetupDhcpCalled = true
-	p.SetupDhcpNetworks = networks
-	return p.SetupDhcpErr
-}
-
-func (p *FakePlatform) SetupManualNetworking(networks boshsettings.Networks) error {
-	p.SetupManualNetworkingCalled = true
-	p.SetupManualNetworkingNetworks = networks
-	return p.SetupManualNetworkingErr
+func (p *FakePlatform) SetupNetworking(networks boshsettings.Networks) error {
+	p.SetupNetworkingCalled = true
+	p.SetupNetworkingNetworks = networks
+	return p.SetupNetworkingErr
 }
 
 func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {

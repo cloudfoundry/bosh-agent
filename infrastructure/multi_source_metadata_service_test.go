@@ -6,9 +6,12 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
-var _ = Describe("MultiSourceMetadataService", func() {
+var _ = Describe("MultiSourceMetadataService", describeMultiSourceMetadataService)
+
+func describeMultiSourceMetadataService() {
 	var (
 		metadataService MetadataService
 		service1        fakeinf.FakeMetadataService
@@ -22,6 +25,7 @@ var _ = Describe("MultiSourceMetadataService", func() {
 			InstanceID:       "fake-instance-id-1",
 			ServerName:       "fake-server-name-1",
 			RegistryEndpoint: "fake-registry-endpoint-1",
+			Networks:         boshsettings.Networks{"net-1": boshsettings.Network{}},
 		}
 
 		service2 = fakeinf.FakeMetadataService{
@@ -30,6 +34,7 @@ var _ = Describe("MultiSourceMetadataService", func() {
 			InstanceID:       "fake-instance-id-2",
 			ServerName:       "fake-server-name-2",
 			RegistryEndpoint: "fake-registry-endpoint-2",
+			Networks:         boshsettings.Networks{"net-2": boshsettings.Network{}},
 		}
 	})
 
@@ -68,6 +73,14 @@ var _ = Describe("MultiSourceMetadataService", func() {
 				registryEndpoint, err := metadataService.GetRegistryEndpoint()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(registryEndpoint).To(Equal("fake-registry-endpoint-1"))
+			})
+		})
+
+		Describe("GetNetworks", func() {
+			It("returns network settings from the available service", func() {
+				networks, err := metadataService.GetNetworks()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(networks).To(Equal(boshsettings.Networks{"net-1": boshsettings.Network{}}))
 			})
 		})
 	})
@@ -110,5 +123,13 @@ var _ = Describe("MultiSourceMetadataService", func() {
 				Expect(registryEndpoint).To(Equal("fake-registry-endpoint-2"))
 			})
 		})
+
+		Describe("GetNetworks", func() {
+			It("returns network settings from the available service", func() {
+				networks, err := metadataService.GetNetworks()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(networks).To(Equal(boshsettings.Networks{"net-2": boshsettings.Network{}}))
+			})
+		})
 	})
-})
+}

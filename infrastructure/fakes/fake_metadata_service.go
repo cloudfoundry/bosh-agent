@@ -1,5 +1,9 @@
 package fakes
 
+import (
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+)
+
 type FakeMetadataService struct {
 	LoadErr error
 
@@ -14,6 +18,9 @@ type FakeMetadataService struct {
 
 	RegistryEndpoint       string
 	GetRegistryEndpointErr error
+
+	Networks    boshsettings.Networks
+	NetworksErr error
 
 	Available bool
 }
@@ -36,6 +43,10 @@ func (ms FakeMetadataService) GetServerName() (string, error) {
 
 func (ms FakeMetadataService) GetRegistryEndpoint() (string, error) {
 	return ms.RegistryEndpoint, ms.GetRegistryEndpointErr
+}
+
+func (ms FakeMetadataService) GetNetworks() (boshsettings.Networks, error) {
+	return ms.Networks, ms.NetworksErr
 }
 
 func (ms FakeMetadataService) IsAvailable() bool {

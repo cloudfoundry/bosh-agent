@@ -6,6 +6,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type configDriveMetadataService struct {
@@ -93,6 +94,10 @@ func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
 
 	ms.logger.Debug(ms.logTag, "Registry endpoint %s was resolved to %s", endpoint, resolvedEndpoint)
 	return resolvedEndpoint, nil
+}
+
+func (ms *configDriveMetadataService) GetNetworks() (boshsettings.Networks, error) {
+	return ms.userDataContents.Networks, nil
 }
 
 func (ms *configDriveMetadataService) IsAvailable() bool {

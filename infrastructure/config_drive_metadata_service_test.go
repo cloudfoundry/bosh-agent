@@ -11,11 +11,14 @@ import (
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
-var _ = Describe("ConfigDriveMetadataService", func() {
+var _ = Describe("ConfigDriveMetadataService", describeConfigDriveMetadataService)
+
+func describeConfigDriveMetadataService() {
 	var (
 		metadataService MetadataService
 		resolver        *fakeinf.FakeDNSResolver
@@ -66,6 +69,48 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 			InstanceID: "fake-instance-id",
 		}
 		updateMetadata(metadata)
+	})
+
+	Describe("GetNetworks", func() {
+		It("returns the network settings", func() {
+			userdataContents := `
+				{
+					"networks": {
+						"network_1": {"type": "manual", "ip": "1.2.3.4", "netmask": "2.3.4.5", "gateway": "3.4.5.6", "default": ["dns"], "dns": ["8.8.8.8"], "mac": "fake-mac-address-1"},
+						"network_2": {"type": "dynamic", "default": ["dns"], "dns": ["8.8.8.8"], "mac": "fake-mac-address-2"}
+					}
+				}`
+			updateUserdata(userdataContents)
+
+			networks, err := metadataService.GetNetworks()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(networks).To(Equal(boshsettings.Networks{
+				"network_1": boshsettings.Network{
+					Type:    "manual",
+					IP:      "1.2.3.4",
+					Netmask: "2.3.4.5",
+					Gateway: "3.4.5.6",
+					Default: []string{"dns"},
+					DNS:     []string{"8.8.8.8"},
+					Mac:     "fake-mac-address-1",
+				},
+				"network_2": boshsettings.Network{
+					Type:    "dynamic",
+					Default: []string{"dns"},
+					DNS:     []string{"8.8.8.8"},
+					Mac:     "fake-mac-address-2",
+				},
+			}))
+		})
+
+		It("returns a nil Networks if the settings are missing (from an old CPI version)", func() {
+			userdataContents := `{}`
+			updateUserdata(userdataContents)
+
+			networks, err := metadataService.GetNetworks()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(networks).To(BeNil())
+		})
 	})
 
 	Describe("IsAvailable", func() {
@@ -230,4 +275,4 @@ var _ = Describe("ConfigDriveMetadataService", func() {
 			})
 		})
 	})
-})
+}

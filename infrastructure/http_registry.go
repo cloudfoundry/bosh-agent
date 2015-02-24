@@ -7,20 +7,24 @@ import (
 	"net/http"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type httpRegistry struct {
 	metadataService   MetadataService
+	platform          boshplat.Platform
 	useServerNameAsID bool
 }
 
 func NewHTTPRegistry(
 	metadataService MetadataService,
+	platform boshplat.Platform,
 	useServerNameAsID bool,
 ) Registry {
 	return httpRegistry{
 		metadataService:   metadataService,
+		platform:          platform,
 		useServerNameAsID: useServerNameAsID,
 	}
 }
@@ -50,6 +54,18 @@ func (r httpRegistry) GetSettings() (boshsettings.Settings, error) {
 	registryEndpoint, err := r.metadataService.GetRegistryEndpoint()
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting registry endpoint")
+	}
+
+	networks, err := r.metadataService.GetNetworks()
+	if err != nil {
+		return settings, bosherr.WrapError(err, "Getting networks")
+	}
+
+	if len(networks) > 0 {
+		err = r.platform.SetupNetworking(networks)
+		if err != nil {
+			return settings, bosherr.WrapError(err, "Setting up networks")
+		}
 	}
 
 	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, identifier)

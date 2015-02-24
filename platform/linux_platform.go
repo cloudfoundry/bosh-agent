@@ -161,14 +161,9 @@ func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePa
 	return p.devicePathResolver
 }
 
-func (p linux) SetupManualNetworking(networks boshsettings.Networks) (err error) {
-	return p.netManager.SetupManualNetworking(networks, nil)
+func (p linux) SetupNetworking(networks boshsettings.Networks) (err error) {
+	return p.netManager.SetupNetworking(networks, nil)
 }
-
-func (p linux) SetupDhcp(networks boshsettings.Networks) (err error) {
-	return p.netManager.SetupDhcp(networks, nil)
-}
-
 func (p linux) SetupRuntimeConfiguration() (err error) {
 	_, _, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
 	if err != nil {

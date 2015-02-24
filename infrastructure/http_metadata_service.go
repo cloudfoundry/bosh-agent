@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type httpMetadataService struct {
@@ -94,6 +95,10 @@ func (ms httpMetadataService) GetRegistryEndpoint() (string, error) {
 	}
 
 	return endpoint, nil
+}
+
+func (ms httpMetadataService) GetNetworks() (boshsettings.Networks, error) {
+	return nil, nil
 }
 
 func (ms httpMetadataService) IsAvailable() bool { return true }

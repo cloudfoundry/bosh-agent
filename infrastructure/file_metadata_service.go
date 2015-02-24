@@ -5,6 +5,7 @@ import (
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
@@ -84,6 +85,24 @@ func (ms fileMetadataService) GetRegistryEndpoint() (string, error) {
 	ms.logger.Debug(ms.logTag, "Read user data '%#v'", userData)
 
 	return userData.Registry.Endpoint, nil
+}
+
+func (ms fileMetadataService) GetNetworks() (boshsettings.Networks, error) {
+	var userData UserDataContentsType
+
+	contents, err := ms.fs.ReadFile(ms.userDataFilePath)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Reading user data")
+	}
+
+	err = json.Unmarshal([]byte(contents), &userData)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Unmarshalling user data")
+	}
+
+	ms.logger.Debug(ms.logTag, "Read user data '%#v'", userData)
+
+	return userData.Networks, nil
 }
 
 func (ms fileMetadataService) IsAvailable() bool { return true }

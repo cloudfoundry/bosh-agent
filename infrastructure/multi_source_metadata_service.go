@@ -1,5 +1,9 @@
 package infrastructure
 
+import (
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+)
+
 type MultiSourceMetadataService struct {
 	Services        []MetadataService
 	selectedService MetadataService
@@ -23,6 +27,10 @@ func (ms *MultiSourceMetadataService) GetServerName() (string, error) {
 
 func (ms *MultiSourceMetadataService) GetRegistryEndpoint() (string, error) {
 	return ms.getSelectedService().GetRegistryEndpoint()
+}
+
+func (ms *MultiSourceMetadataService) GetNetworks() (boshsettings.Networks, error) {
+	return ms.getSelectedService().GetNetworks()
 }
 
 func (ms *MultiSourceMetadataService) IsAvailable() bool {

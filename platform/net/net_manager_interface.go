@@ -11,15 +11,10 @@ type DefaultNetworkResolver interface {
 }
 
 type Manager interface {
-	// SetupManualNetworking configures network interfaces with a static ip.
+	// SetupNetworking configures network interfaces with either a static ip or dhcp.
 	// If errCh is provided, nil or an error will be sent
 	// upon completion of background network reconfiguration (e.g. arping).
-	SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error
-
-	// SetupDhcp configures network interfaces using DHCP.
-	// If errCh is provided, nil or an error will be sent
-	// upon completion of background network reconfiguration (e.g. arping).
-	SetupDhcp(networks boshsettings.Networks, errCh chan error) error
+	SetupNetworking(networks boshsettings.Networks, errCh chan error) error
 
 	DefaultNetworkResolver
 }

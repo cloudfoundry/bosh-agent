@@ -38,21 +38,8 @@ func NewGenericInfrastructure(
 	}
 }
 
-// Existing examples:
-// - vSphere: manual
-// - AWS, Openstack: dhcp
-// - Warden, Dummy: empty
 func (inf genericInfrastructure) SetupNetworking(networks boshsettings.Networks) error {
-	switch {
-	case inf.networkingType == NetworkingTypeDHCP:
-		return inf.platform.SetupDhcp(networks)
-
-	case inf.networkingType == NetworkingTypeManual:
-		return inf.platform.SetupManualNetworking(networks)
-
-	default:
-		return nil
-	}
+	return inf.platform.SetupNetworking(networks)
 }
 
 // Existing examples:

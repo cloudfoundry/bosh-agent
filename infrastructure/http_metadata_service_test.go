@@ -13,7 +13,9 @@ import (
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 )
 
-var _ = Describe("HTTPMetadataService", func() {
+var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)
+
+func describeHTTPMetadataService() {
 	var (
 		dnsResolver     *fakeinf.FakeDNSResolver
 		metadataService MetadataService
@@ -238,4 +240,10 @@ var _ = Describe("HTTPMetadataService", func() {
 			})
 		})
 	})
-})
+
+	Describe("GetNetworks", func() {
+		It("returns nil networks, since you don't need them for bootstrapping since your network must be set up before you can get the metadata", func() {
+			Expect(metadataService.GetNetworks()).To(BeNil())
+		})
+	})
+}

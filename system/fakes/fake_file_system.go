@@ -38,8 +38,9 @@ type FakeFileSystem struct {
 	ReadFileError       error
 	readFileErrorByPath map[string]error
 
-	WriteToFileError error
-	SymlinkError     error
+	WriteToFileError  error
+	WriteToFileErrors map[string]error
+	SymlinkError      error
 
 	MkdirAllError       error
 	mkdirAllErrorByPath map[string]error
@@ -175,6 +176,7 @@ func NewFakeFileSystem() *FakeFileSystem {
 		readFileErrorByPath:  map[string]error{},
 		removeAllErrorByPath: map[string]error{},
 		mkdirAllErrorByPath:  map[string]error{},
+		WriteToFileErrors:    map[string]error{},
 	}
 }
 
@@ -300,8 +302,12 @@ func (fs *FakeFileSystem) WriteFile(path string, content []byte) (err error) {
 	fs.filesLock.Lock()
 	defer fs.filesLock.Unlock()
 
-	if fs.WriteToFileError != nil {
-		return fs.WriteToFileError
+	if error := fs.WriteToFileError; error != nil {
+		return error
+	}
+
+	if error := fs.WriteToFileErrors[path]; error != nil {
+		return error
 	}
 
 	path = filepath.Join(path)
@@ -318,6 +324,10 @@ func (fs *FakeFileSystem) ConvergeFileContents(path string, content []byte) (boo
 
 	if fs.WriteToFileError != nil {
 		return false, fs.WriteToFileError
+	}
+
+	if error := fs.WriteToFileErrors[path]; error != nil {
+		return false, error
 	}
 
 	stats := fs.getOrCreateFile(path)

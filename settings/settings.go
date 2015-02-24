@@ -105,6 +105,7 @@ type NetworkType string
 
 const (
 	NetworkTypeDynamic NetworkType = "dynamic"
+	NetworkTypeVIP     NetworkType = "vip"
 )
 
 type Network struct {
@@ -174,6 +175,10 @@ func (n Networks) IPs() (ips []string) {
 
 func (n Network) IsDynamic() bool {
 	return n.Type == NetworkTypeDynamic
+}
+
+func (n Network) IsVIP() bool {
+	return n.Type == NetworkTypeVIP
 }
 
 //{
