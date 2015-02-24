@@ -100,10 +100,6 @@ type FakePlatform struct {
 
 	PrepareForNetworkingChangeCalled bool
 	PrepareForNetworkingChangeErr    error
-
-	GetDefaultNetworkCalled  bool
-	GetDefaultNetworkNetwork boshsettings.Network
-	GetDefaultNetworkErr     error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -312,9 +308,4 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 func (p *FakePlatform) PrepareForNetworkingChange() error {
 	p.PrepareForNetworkingChangeCalled = true
 	return p.PrepareForNetworkingChangeErr
-}
-
-func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
-	p.GetDefaultNetworkCalled = true
-	return p.GetDefaultNetworkNetwork, p.GetDefaultNetworkErr
 }

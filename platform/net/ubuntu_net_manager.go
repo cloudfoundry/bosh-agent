@@ -17,8 +17,6 @@ import (
 const ubuntuNetManagerLogTag = "ubuntuNetManager"
 
 type ubuntuNetManager struct {
-	DefaultNetworkResolver
-
 	cmdRunner          boshsys.CmdRunner
 	fs                 boshsys.FileSystem
 	ipResolver         boship.Resolver
@@ -29,18 +27,16 @@ type ubuntuNetManager struct {
 func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
-	defaultNetworkResolver DefaultNetworkResolver,
 	ipResolver boship.Resolver,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
 	return ubuntuNetManager{
-		DefaultNetworkResolver: defaultNetworkResolver,
-		cmdRunner:              cmdRunner,
-		fs:                     fs,
-		ipResolver:             ipResolver,
-		addressBroadcaster:     addressBroadcaster,
-		logger:                 logger,
+		cmdRunner:          cmdRunner,
+		fs:                 fs,
+		ipResolver:         ipResolver,
+		addressBroadcaster: addressBroadcaster,
+		logger:             logger,
 	}
 }
 

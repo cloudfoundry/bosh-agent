@@ -765,10 +765,6 @@ func (p linux) PrepareForNetworkingChange() error {
 	return nil
 }
 
-func (p linux) GetDefaultNetwork() (boshsettings.Network, error) {
-	return p.netManager.GetDefaultNetwork()
-}
-
 func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uint64, uint64, error) {
 	memStats, err := p.collector.GetMemStats()
 	if err != nil {

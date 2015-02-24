@@ -25,6 +25,8 @@ import (
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
+	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
@@ -82,11 +84,15 @@ func (app *app) Setup(args []string) error {
 		app.logger,
 	)
 
+	routesSearcher := boshnet.NewCmdRoutesSearcher(app.platform.GetRunner())
+	ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
+	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+
 	settingsService := boshsettings.NewService(
 		app.platform.GetFs(),
 		filepath.Join(dirProvider.BoshDir(), "settings.json"),
 		settingsSource,
-		app.platform,
+		defaultNetworkResolver,
 		app.logger,
 	)
 	boot := boshboot.New(

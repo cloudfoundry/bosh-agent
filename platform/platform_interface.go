@@ -51,7 +51,6 @@ type Platform interface {
 
 	// Network misc
 	PrepareForNetworkingChange() error
-	GetDefaultNetwork() (boshsettings.Network, error)
 
 	// Additional monit management
 	GetMonitCredentials() (username, password string, err error)

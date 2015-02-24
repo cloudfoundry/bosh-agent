@@ -1,10 +1,6 @@
 package platform
 
 import (
-	"encoding/json"
-	"path/filepath"
-
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
@@ -174,21 +170,4 @@ func (p dummyPlatform) GetMonitCredentials() (username, password string, err err
 
 func (p dummyPlatform) PrepareForNetworkingChange() error {
 	return nil
-}
-
-func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
-	var network boshsettings.Network
-
-	networkPath := filepath.Join(p.dirProvider.BoshDir(), "dummy-default-network-settings.json")
-	contents, err := p.fs.ReadFile(networkPath)
-	if err != nil {
-		return network, nil
-	}
-
-	err = json.Unmarshal([]byte(contents), &network)
-	if err != nil {
-		return network, bosherr.WrapError(err, "Unmarshal json settings")
-	}
-
-	return network, nil
 }

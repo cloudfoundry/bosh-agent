@@ -17,8 +17,6 @@ import (
 const centosNetManagerLogTag = "centosNetManager"
 
 type centosNetManager struct {
-	DefaultNetworkResolver
-
 	fs                 boshsys.FileSystem
 	cmdRunner          boshsys.CmdRunner
 	routesSearcher     RoutesSearcher
@@ -30,13 +28,11 @@ type centosNetManager struct {
 func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
-	defaultNetworkResolver DefaultNetworkResolver,
 	ipResolver boship.Resolver,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
 	return centosNetManager{
-		DefaultNetworkResolver: defaultNetworkResolver,
 		fs:                 fs,
 		cmdRunner:          cmdRunner,
 		ipResolver:         ipResolver,

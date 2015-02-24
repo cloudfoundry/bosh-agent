@@ -10,7 +10,6 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
-	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -21,25 +20,22 @@ var _ = Describe("ubuntuNetManager", describeUbuntuNetManager)
 
 func describeUbuntuNetManager() {
 	var (
-		fs                     *fakesys.FakeFileSystem
-		cmdRunner              *fakesys.FakeCmdRunner
-		defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
-		ipResolver             *fakeip.FakeResolver
-		addressBroadcaster     *fakearp.FakeAddressBroadcaster
-		netManager             Manager
+		fs                 *fakesys.FakeFileSystem
+		cmdRunner          *fakesys.FakeCmdRunner
+		ipResolver         *fakeip.FakeResolver
+		addressBroadcaster *fakearp.FakeAddressBroadcaster
+		netManager         Manager
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
-		defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		ipResolver = &fakeip.FakeResolver{}
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		netManager = NewUbuntuNetManager(
 			fs,
 			cmdRunner,
-			defaultNetworkResolver,
 			ipResolver,
 			addressBroadcaster,
 			logger,

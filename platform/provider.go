@@ -64,14 +64,12 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options O
 
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
-	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
 	ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
 
-	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 	arping := bosharp.NewArping(runner, fs, logger, ArpIterations, ArpIterationDelay, ArpInterfaceCheckDelay)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, defaultNetworkResolver, ipResolver, arping, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, defaultNetworkResolver, ipResolver, arping, logger)
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, arping, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, arping, logger)
 
 	monitRetryable := NewMonitRetryable(runner)
 	monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)

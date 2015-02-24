@@ -1428,25 +1428,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
-	Describe("GetDefaultNetwork", func() {
-		It("returns default network according to net manager", func() {
-			netManager.GetDefaultNetworkNetwork = boshsettings.Network{IP: "fake-ip"}
-
-			network, err := platform.GetDefaultNetwork()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(network).To(Equal(boshsettings.Network{IP: "fake-ip"}))
-		})
-
-		It("returns error if net manager fails to retrieve default network", func() {
-			netManager.GetDefaultNetworkErr = errors.New("fake-get-default-network-err")
-
-			network, err := platform.GetDefaultNetwork()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-get-default-network-err"))
-			Expect(network).To(Equal(boshsettings.Network{}))
-		})
-	})
-
 	Describe("SetupNetworking", func() {
 		It("delegates to the NetManager", func() {
 			networks := boshsettings.Networks{}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	. "github.com/cloudfoundry/bosh-agent/settings"
 	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
@@ -17,20 +17,20 @@ import (
 func init() {
 	Describe("settingsService", func() {
 		var (
-			fs                 *fakesys.FakeFileSystem
-			platform           *fakeplatform.FakePlatform
-			fakeSettingsSource *fakes.FakeSettingsSource
+			fs                         *fakesys.FakeFileSystem
+			fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			fakeSettingsSource         *fakes.FakeSettingsSource
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
-			platform = fakeplatform.NewFakePlatform()
+			fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 			fakeSettingsSource = &fakes.FakeSettingsSource{}
 		})
 
 		buildService := func() (Service, *fakesys.FakeFileSystem) {
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			service := NewService(fs, "/setting/path.json", fakeSettingsSource, platform, logger)
+			service := NewService(fs, "/setting/path.json", fakeSettingsSource, fakeDefaultNetworkResolver, logger)
 			return service, fs
 		}
 
@@ -228,7 +228,7 @@ func init() {
 
 				It("does not try to determine default network", func() {
 					_ = service.GetSettings()
-					Expect(platform.GetDefaultNetworkCalled).To(BeFalse())
+					Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalled).To(BeFalse())
 				})
 			})
 
@@ -254,7 +254,7 @@ func init() {
 
 				Context("when default network can be retrieved", func() {
 					BeforeEach(func() {
-						platform.GetDefaultNetworkNetwork = Network{
+						fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = Network{
 							IP:      "fake-resolved-ip",
 							Netmask: "fake-resolved-netmask",
 							Gateway: "fake-resolved-gateway",
@@ -284,7 +284,7 @@ func init() {
 
 				Context("when default network fails to be retrieved", func() {
 					BeforeEach(func() {
-						platform.GetDefaultNetworkErr = errors.New("fake-get-default-network-err")
+						fakeDefaultNetworkResolver.GetDefaultNetworkErr = errors.New("fake-get-default-network-err")
 					})
 
 					It("returns error", func() {

@@ -26,15 +26,21 @@ type settingsService struct {
 	settingsPath           string
 	settings               Settings
 	settingsSource         Source
-	defaultNetworkDelegate DefaultNetworkDelegate
+	defaultNetworkResolver DefaultNetworkResolver
 	logger                 boshlog.Logger
+}
+
+type DefaultNetworkResolver interface {
+	// Ideally we would find a network based on a MAC address
+	// but current CPI implementations do not include it
+	GetDefaultNetwork() (Network, error)
 }
 
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
 	settingsSource Source,
-	defaultNetworkDelegate DefaultNetworkDelegate,
+	defaultNetworkResolver DefaultNetworkResolver,
 	logger boshlog.Logger,
 ) (service Service) {
 	return &settingsService{
@@ -42,7 +48,7 @@ func NewService(
 		settingsPath:           settingsPath,
 		settings:               Settings{},
 		settingsSource:         settingsSource,
-		defaultNetworkDelegate: defaultNetworkDelegate,
+		defaultNetworkResolver: defaultNetworkResolver,
 		logger:                 logger,
 	}
 }
@@ -129,7 +135,7 @@ func (s *settingsService) GetSettings() Settings {
 		}
 
 		// Ideally this would be GetNetworkByMACAddress(mac string)
-		resolvedNetwork, err := s.defaultNetworkDelegate.GetDefaultNetwork()
+		resolvedNetwork, err := s.defaultNetworkResolver.GetDefaultNetwork()
 		if err != nil {
 			s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())
 			break
