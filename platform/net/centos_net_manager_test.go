@@ -75,15 +75,33 @@ GATEWAY=3.4.5.6
 ONBOOT=yes`
 		})
 
-		stubInterfaces := func(interfaces map[string]boshsettings.Network) {
-			interfacePaths := []string{}
-			for iface, networkSettings := range interfaces {
-				interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
-				fs.WriteFile(interfacePath, []byte{})
-				fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", networkSettings.Mac))
-				interfacePaths = append(interfacePaths, interfacePath)
+		writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
+			interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
+			fs.WriteFile(interfacePath, []byte{})
+			if isPhysical {
+				fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
 			}
+			fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
+
+			return interfacePath
+		}
+
+		stubInterfacesWithVirtual := func(physicalInterfaces map[string]boshsettings.Network, virtualInterfaces []string) {
+			interfacePaths := []string{}
+
+			for iface, networkSettings := range physicalInterfaces {
+				interfacePaths = append(interfacePaths, writeNetworkDevice(iface, networkSettings.Mac, true))
+			}
+
+			for _, iface := range virtualInterfaces {
+				interfacePaths = append(interfacePaths, writeNetworkDevice(iface, "virtual", false))
+			}
+
 			fs.SetGlob("/sys/class/net/*", interfacePaths)
+		}
+
+		stubInterfaces := func(physicalInterfaces map[string]boshsettings.Network) {
+			stubInterfacesWithVirtual(physicalInterfaces, nil)
 		}
 
 		It("writes a network script for static interfaces", func() {
@@ -385,6 +403,76 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
 			Expect(networkConfig).ToNot(BeNil())
 			Expect(networkConfig.StringContents()).To(Equal(expectedNetworkConfigurationForStatic))
+		})
+
+		Context("when no MAC address is provided in the settings", func() {
+			It("configures network for single device", func() {
+				staticNetworkWithoutMAC := boshsettings.Network{
+					Type:    "manual",
+					IP:      "2.2.2.2",
+					Netmask: "255.255.255.0",
+					Gateway: "3.4.5.6",
+				}
+
+				stubInterfaces(
+					map[string]boshsettings.Network{
+						"ethstatic": staticNetwork,
+					},
+				)
+
+				err := netManager.SetupNetworking(boshsettings.Networks{
+					"static-network": staticNetworkWithoutMAC,
+				}, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				expectedNetworkConfiguration := `DEVICE=ethstatic
+BOOTPROTO=static
+IPADDR=2.2.2.2
+NETMASK=255.255.255.0
+BROADCAST=2.2.2.255
+GATEWAY=3.4.5.6
+ONBOOT=yes`
+
+				networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
+				Expect(networkConfig).ToNot(BeNil())
+				Expect(networkConfig.StringContents()).To(Equal(expectedNetworkConfiguration))
+			})
+
+			It("configures network for single device, when a virtual device is also present", func() {
+				staticNetworkWithoutMAC := boshsettings.Network{
+					Type:    "manual",
+					IP:      "2.2.2.2",
+					Netmask: "255.255.255.0",
+					Gateway: "3.4.5.6",
+				}
+
+				stubInterfacesWithVirtual(
+					map[string]boshsettings.Network{
+						"ethstatic": staticNetwork,
+					},
+					[]string{"virtual"},
+				)
+
+				err := netManager.SetupNetworking(boshsettings.Networks{
+					"static-network": staticNetworkWithoutMAC,
+				}, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				expectedNetworkConfiguration := `DEVICE=ethstatic
+BOOTPROTO=static
+IPADDR=2.2.2.2
+NETMASK=255.255.255.0
+BROADCAST=2.2.2.255
+GATEWAY=3.4.5.6
+ONBOOT=yes`
+
+				physicalNetworkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
+				Expect(physicalNetworkConfig).ToNot(BeNil())
+				Expect(physicalNetworkConfig.StringContents()).To(Equal(expectedNetworkConfiguration))
+
+				virtualNetworkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-virtual")
+				Expect(virtualNetworkConfig).To(BeNil())
+			})
 		})
 	})
 }

@@ -226,15 +226,19 @@ func (net centosNetManager) detectMacAddresses() (map[string]string, error) {
 
 	var macAddress string
 	for _, filePath := range filePaths {
-		macAddress, err = net.fs.ReadFileString(filepath.Join(filePath, "address"))
-		if err != nil {
-			return addresses, bosherr.WrapError(err, "Reading mac address from file")
+		isPhysicalDevice := net.fs.FileExists(filepath.Join(filePath, "device"))
+
+		if isPhysicalDevice {
+			macAddress, err = net.fs.ReadFileString(filepath.Join(filePath, "address"))
+			if err != nil {
+				return addresses, bosherr.WrapError(err, "Reading mac address from file")
+			}
+
+			macAddress = strings.Trim(macAddress, "\n")
+
+			interfaceName := filepath.Base(filePath)
+			addresses[macAddress] = interfaceName
 		}
-
-		macAddress = strings.Trim(macAddress, "\n")
-
-		interfaceName := filepath.Base(filePath)
-		addresses[macAddress] = interfaceName
 	}
 
 	return addresses, nil
