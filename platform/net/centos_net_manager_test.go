@@ -144,6 +144,10 @@ nameserver 9.9.9.9
 		})
 
 		It("returns errors from writing the network configuration", func() {
+			stubInterfaces(map[string]boshsettings.Network{
+				"dhcp":   dhcpNetwork,
+				"static": staticNetwork,
+			})
 			fs.WriteToFileError = errors.New("fs-write-file-error")
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).To(HaveOccurred())
