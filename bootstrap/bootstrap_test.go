@@ -1,7 +1,11 @@
 package bootstrap_test
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,6 +17,27 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+
+	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	sigar "github.com/cloudfoundry/gosigar"
+
+	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+
+	boshboot "github.com/cloudfoundry/bosh-agent/bootstrap"
+	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
+	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
+	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
+	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
+	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
+	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
+	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
+	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
+	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
+	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
+	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 func init() {
@@ -260,6 +285,413 @@ func init() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.StartMonitStarted).To(BeTrue())
+			})
+		})
+
+		Describe("Network setup exercised by Run", func() {
+			var (
+				settingsJSON string
+
+				fs                     *fakesys.FakeFileSystem
+				platform               boshplatform.Platform
+				boot                   boshboot.Bootstrap
+				defaultNetworkResolver boshsettings.DefaultNetworkResolver
+				logger                 boshlog.Logger
+				infrastructure         boshinf.Infrastructure
+				dirProvider            boshdirs.Provider
+			)
+
+			writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
+				interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
+				fs.WriteFile(interfacePath, []byte{})
+				if isPhysical {
+					fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
+				}
+				fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
+
+				return interfacePath
+			}
+
+			stubInterfaces := func(interfaces [][]string) {
+				var interfacePaths []string
+
+				for _, iface := range interfaces {
+					interfaceName := iface[0]
+					interfaceMAC := iface[1]
+					interfaceType := iface[2]
+					isPhysical := interfaceType == "physical"
+					interfacePaths = append(interfacePaths, writeNetworkDevice(interfaceName, interfaceMAC, isPhysical))
+				}
+
+				fs.SetGlob("/sys/class/net/*", interfacePaths)
+			}
+
+			BeforeEach(func() {
+				fs = fakesys.NewFakeFileSystem()
+				runner := fakesys.NewFakeCmdRunner()
+				dirProvider = boshdirs.NewProvider("/var/vcap/bosh")
+
+				linuxOptions := boshplatform.LinuxOptions{
+					CreatePartitionIfNoEphemeralDisk: true,
+				}
+
+				logger = boshlog.NewLogger(boshlog.LevelNone)
+
+				diskManager := fakedisk.NewFakeDiskManager()
+				diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+					{MountPoint: "/", PartitionPath: "rootfs"},
+					{MountPoint: "/", PartitionPath: "/dev/vda1"},
+				}
+
+				runner.AddCmdResult(
+					"readlink -f /dev/vda1",
+					fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
+				)
+
+				diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
+
+				udev := boshudev.NewConcreteUdevDevice(runner, logger)
+				linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
+				linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
+
+				compressor := boshcmd.NewTarballCompressor(runner, fs)
+				copier := boshcmd.NewCpCopier(runner, fs, logger)
+
+				sigarCollector := boshstats.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+
+				vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
+
+				ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
+
+				arping := bosharp.NewArping(runner, fs, logger, boshplatform.ArpIterations, boshplatform.ArpIterationDelay, boshplatform.ArpInterfaceCheckDelay)
+				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator()
+
+				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
+
+				monitRetryable := boshplatform.NewMonitRetryable(runner)
+				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
+
+				devicePathResolver := devicepathresolver.NewIdentityDevicePathResolver()
+
+				platform = boshplatform.NewLinuxPlatform(
+					fs,
+					runner,
+					sigarCollector,
+					compressor,
+					copier,
+					dirProvider,
+					vitalsService,
+					linuxCdutil,
+					diskManager,
+					ubuntuNetManager,
+					monitRetryStrategy,
+					devicePathResolver,
+					500*time.Millisecond,
+					linuxOptions,
+					logger,
+				)
+
+				sourceOptions := []boshinf.SourceOptions{
+					boshinf.HTTPSourceOptions{
+						URI: "http://something",
+					},
+				}
+
+				infraSettings := boshinf.SettingsOptions{
+					Sources:       sourceOptions,
+					UseServerName: false,
+					UseRegistry:   false,
+				}
+
+				infraOptions := boshinf.Options{
+					NetworkingType:          "manual",
+					StaticEphemeralDiskPath: "/var/vcap/tmp",
+					Settings:                infraSettings,
+				}
+
+				infrastructure = boshinf.NewGenericInfrastructure(
+					platform,
+					infraOptions.NetworkingType,
+					infraOptions.StaticEphemeralDiskPath,
+					logger,
+				)
+
+				routesSearcher := boshnet.NewCmdRoutesSearcher(platform.GetRunner())
+				defaultNetworkResolver = boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+			})
+
+			JustBeforeEach(func() {
+				settingsPath := filepath.Join("bosh", "settings.json")
+
+				var settings boshsettings.Settings
+				json.Unmarshal([]byte(settingsJSON), &settings)
+
+				settingsSource := fakeinf.FakeSettingsSource{
+					PublicKey:     "123",
+					SettingsValue: settings,
+				}
+
+				settingsService := boshsettings.NewService(
+					platform.GetFs(),
+					settingsPath,
+					settingsSource,
+					defaultNetworkResolver,
+					logger,
+				)
+
+				boot = boshboot.New(
+					infrastructure,
+					platform,
+					dirProvider,
+					settingsService,
+					logger,
+				)
+			})
+
+			Context("when a single network configuration is provided, with a MAC address", func() {
+				BeforeEach(func() {
+					settingsJSON = `{
+					"networks": {
+						"netA": {
+							"default": ["dns", "gateway"],
+							"ip": "2.2.2.2",
+							"dns": [
+								"8.8.8.8",
+								"4.4.4.4"
+							],
+							"netmask": "255.255.255.0",
+							"gateway": "2.2.2.0",
+							"mac": "aa:bb:cc"
+						}
+					}
+				}`
+				})
+
+				Context("and no physical network interfaces exist", func() {
+					Context("and a single virtual network interface exists", func() {
+						BeforeEach(func() {
+							stubInterfaces([][]string{[]string{"lo", "aa:bb:cc", "virtual"}})
+						})
+
+						It("raises an error", func() {
+							err := boot.Run()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("No interface exists with MAC address 'aa:bb:cc'"))
+						})
+					})
+				})
+
+				Context("and a single physical network interface exists", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}})
+					})
+
+					It("succeeds", func() {
+						err := boot.Run()
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					Context("and a single virtual network interface exists", func() {
+						BeforeEach(func() {
+							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
+						})
+
+						It("succeeds", func() {
+							err := boot.Run()
+							Expect(err).NotTo(HaveOccurred())
+						})
+					})
+				})
+
+				Context("and two physical network interfaces exist", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+					})
+
+					It("succeeds", func() {
+						err := boot.Run()
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					Context("and a single virtual network interface exists", func() {
+						BeforeEach(func() {
+							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}, []string{"lo", "aa:bb:ee", "virtual"}})
+						})
+
+						It("succeeds", func() {
+							err := boot.Run()
+							Expect(err).ToNot(HaveOccurred())
+						})
+					})
+				})
+			})
+
+			Context("when a single network configuration is provided, without a MAC address", func() {
+				BeforeEach(func() {
+					settingsJSON = `{
+					"networks": {
+						"netA": {
+							"default": ["dns", "gateway"],
+							"ip": "2.2.2.2",
+							"dns": [
+								"8.8.8.8",
+								"4.4.4.4"
+							],
+							"netmask": "255.255.255.0",
+							"gateway": "2.2.2.0"
+						}
+					}
+				}`
+				})
+
+				Context("and no physical network interfaces exist", func() {
+					Context("and a single virtual network interface exists", func() {
+						BeforeEach(func() {
+							stubInterfaces([][]string{[]string{"lo", "aa:bb:cc", "virtual"}})
+						})
+
+						It("raises an error", func() {
+							err := boot.Run()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("Network 'netA' doesn't specify a MAC address"))
+						})
+					})
+				})
+
+				Context("and a single physical network interface exists", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}})
+					})
+
+					It("succeeds", func() {
+						err := boot.Run()
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					Context("and a single virtual network interface exists", func() {
+						BeforeEach(func() {
+							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
+						})
+
+						It("succeeds", func() {
+							err := boot.Run()
+							Expect(err).NotTo(HaveOccurred())
+						})
+					})
+				})
+
+				Context("and two physical network interfaces exist", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+					})
+
+					It("raises an error", func() {
+						err := boot.Run()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Network 'netA' doesn't specify a MAC address"))
+					})
+
+					Context("and a single virtual network interface exists", func() {
+						BeforeEach(func() {
+							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
+						})
+
+						It("raises an error", func() {
+							err := boot.Run()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("Network 'netA' doesn't specify a MAC address"))
+						})
+					})
+				})
+			})
+
+			Context("when two network configurations are provided, with a MAC address", func() {
+				BeforeEach(func() {
+					settingsJSON = `{
+					"networks": {
+						"netA": {
+							"default": ["dns", "gateway"],
+							"ip": "2.2.2.2",
+							"dns": [
+								"8.8.8.8",
+								"4.4.4.4"
+							],
+							"netmask": "255.255.255.0",
+							"gateway": "2.2.2.0",
+							"mac": "aa:bb:cc"
+						},
+						"netB": {
+							"default": ["dns", "gateway"],
+							"ip": "3.3.3.3",
+							"dns": [
+								"8.8.8.8",
+								"4.4.4.4"
+							],
+							"netmask": "255.255.255.0",
+							"gateway": "3.3.3.0",
+							"mac": "aa:bb:dd"
+						}
+					}
+				}`
+				})
+
+				Context("and a single physical network interface exists", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}})
+					})
+
+					It("raises an error", func() {
+						err := boot.Run()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("No interface exists with MAC address 'aa:bb:dd'"))
+					})
+				})
+
+				Context("and two physical network interfaces exist", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+					})
+
+					It("succeeds", func() {
+						err := boot.Run()
+						Expect(err).ToNot(HaveOccurred())
+					})
+				})
+			})
+
+			Context("when multiple network configurations are provided, without a MAC address", func() {
+				BeforeEach(func() {
+					settingsJSON = `{
+					"networks": {
+						"netA": {
+							"default": ["dns", "gateway"],
+							"ip": "2.2.2.2",
+							"dns": [
+								"8.8.8.8",
+								"4.4.4.4"
+							],
+							"netmask": "255.255.255.0",
+							"gateway": "2.2.2.0"
+						},
+						"netB": {
+							"default": ["dns", "gateway"],
+							"ip": "3.3.3.3",
+							"dns": [
+								"8.8.8.8",
+								"4.4.4.4"
+							],
+							"netmask": "255.255.255.0",
+							"gateway": "3.3.3.0"
+						}
+					}
+				}`
+				})
+
+				It("raises an error", func() {
+					err := boot.Run()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("doesn't specify a MAC address"))
+				})
 			})
 		})
 	})
