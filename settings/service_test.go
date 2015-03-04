@@ -83,7 +83,7 @@ func init() {
 					})
 
 					It("returns any error from writing to the setting file", func() {
-						fs.WriteToFileError = errors.New("fs-write-file-error")
+						fs.WriteFileError = errors.New("fs-write-file-error")
 
 						err := service.LoadSettings()
 						Expect(err).To(HaveOccurred())

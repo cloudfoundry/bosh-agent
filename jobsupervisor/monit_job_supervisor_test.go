@@ -296,7 +296,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 			Context("when writing job configuration fails", func() {
 				It("returns error", func() {
-					fs.WriteToFileError = errors.New("fake-write-error")
+					fs.WriteFileError = errors.New("fake-write-error")
 
 					err := monit.AddJob("router", 0, "/some/config/path")
 					Expect(err).To(HaveOccurred())

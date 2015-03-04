@@ -147,7 +147,7 @@ func init() {
 			})
 
 			It("returns an error when failing to save task", func() {
-				fs.WriteToFileError = errors.New("fake-write-error")
+				fs.WriteFileError = errors.New("fake-write-error")
 
 				err := manager.AddInfo(boshtask.Info{
 					TaskID:  "fake-task-id",
@@ -202,7 +202,7 @@ func init() {
 			})
 
 			It("returns an error when failing to remove task", func() {
-				fs.WriteToFileError = errors.New("fake-write-error")
+				fs.WriteFileError = errors.New("fake-write-error")
 
 				err := manager.RemoveInfo("fake-task-id")
 				Expect(err).To(HaveOccurred())

@@ -166,7 +166,7 @@ nameserver 9.9.9.9
 				"dhcp":   dhcpNetwork,
 				"static": staticNetwork,
 			})
-			fs.WriteToFileError = errors.New("fs-write-file-error")
+			fs.WriteFileError = errors.New("fs-write-file-error")
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
@@ -242,7 +242,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				"ethstatic": staticNetwork,
 			})
 
-			fs.WriteToFileErrors["/etc/dhcp/dhclient.conf"] = errors.New("dhclient.conf-write-error")
+			fs.WriteFileErrors["/etc/dhcp/dhclient.conf"] = errors.New("dhclient.conf-write-error")
 
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).To(HaveOccurred())

@@ -69,7 +69,7 @@ func init() {
 			})
 
 			It("returns error if writing spec to filesystem errs", func() {
-				fs.WriteToFileError = errors.New("fake-write-error")
+				fs.WriteFileError = errors.New("fake-write-error")
 
 				err := service.Set(newSpec)
 				Expect(err).To(HaveOccurred())

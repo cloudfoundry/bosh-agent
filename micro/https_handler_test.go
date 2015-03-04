@@ -147,7 +147,7 @@ var _ = Describe("HTTPSHandler", func() {
 
 		Context("when manager errors", func() {
 			It("returns a 500", func() {
-				fs.WriteToFileError = errors.New("oops")
+				fs.WriteFileError = errors.New("oops")
 
 				putBody := `Updated data`
 				putPayload := strings.NewReader(putBody)
