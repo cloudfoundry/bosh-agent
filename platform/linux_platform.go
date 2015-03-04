@@ -164,6 +164,7 @@ func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePa
 func (p linux) SetupNetworking(networks boshsettings.Networks) (err error) {
 	return p.netManager.SetupNetworking(networks, nil)
 }
+
 func (p linux) SetupRuntimeConfiguration() (err error) {
 	_, _, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
 	if err != nil {
@@ -649,7 +650,11 @@ func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bo
 	return p.diskManager.GetMounter().Unmount(realPath)
 }
 
-func (p linux) NormalizeDiskPath(diskSettings boshsettings.DiskSettings) string {
+func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
+	if len(diskSettings.Path) == 0 {
+		return ""
+	}
+
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
 		return ""

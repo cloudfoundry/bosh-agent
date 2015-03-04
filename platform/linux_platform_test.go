@@ -1205,11 +1205,23 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
-	Describe("NormalizeDiskPath", func() {
+	Describe("GetEphemeralDiskPath", func() {
+		Context("when device path is an empty string", func() {
+			It("returns an empty string", func() {
+				devicePathResolver.RealDevicePath = "non-desired-device-path"
+				diskSettings := boshsettings.DiskSettings{
+					ID:       "fake-id",
+					VolumeID: "fake-volume-id",
+					Path:     "",
+				}
+				Expect(platform.GetEphemeralDiskPath(diskSettings)).To(BeEmpty())
+			})
+		})
+
 		Context("when real device path was resolved without an error", func() {
 			It("returns real device path and true", func() {
 				devicePathResolver.RealDevicePath = "fake-real-device-path"
-				realPath := platform.NormalizeDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"})
+				realPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"})
 				Expect(realPath).To(Equal("fake-real-device-path"))
 			})
 		})
@@ -1217,7 +1229,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		Context("when real device path was not resolved without an error", func() {
 			It("returns real device path and true", func() {
 				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
-				realPath := platform.NormalizeDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"})
+				realPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"})
 				Expect(realPath).To(Equal(""))
 			})
 		})

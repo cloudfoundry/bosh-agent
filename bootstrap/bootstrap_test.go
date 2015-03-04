@@ -25,7 +25,6 @@ import (
 	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 
 	boshboot "github.com/cloudfoundry/bosh-agent/bootstrap"
-	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
@@ -44,7 +43,6 @@ func init() {
 	Describe("bootstrap", func() {
 		Describe("Run", func() {
 			var (
-				inf         *fakeinf.FakeInfrastructure
 				platform    *fakeplatform.FakePlatform
 				dirProvider boshdir.Provider
 
@@ -53,9 +51,6 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				inf = &fakeinf.FakeInfrastructure{
-					GetEphemeralDiskPathRealPath: "/dev/sdz",
-				}
 				platform = fakeplatform.NewFakePlatform()
 				dirProvider = boshdir.NewProvider("/var/vcap")
 
@@ -65,7 +60,7 @@ func init() {
 
 			bootstrap := func() error {
 				logger := boshlog.NewLogger(boshlog.LevelNone)
-				return New(inf, platform, dirProvider, settingsService, logger).Run()
+				return New(platform, dirProvider, settingsService, logger).Run()
 			}
 
 			It("sets up runtime configuration", func() {
@@ -151,7 +146,7 @@ func init() {
 
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(inf.SetupNetworkingNetworks).To(Equal(networks))
+				Expect(platform.SetupNetworkingNetworks).To(Equal(networks))
 			})
 
 			It("sets up ephemeral disk", func() {
@@ -159,12 +154,12 @@ func init() {
 					Ephemeral: "fake-ephemeral-disk-setting",
 				}
 
-				inf.GetEphemeralDiskPathRealPath = "/dev/sda"
+				platform.GetEphemeralDiskPathRealPath = "/dev/sda"
 
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupEphemeralDiskWithPathDevicePath).To(Equal("/dev/sda"))
-				Expect(inf.GetEphemeralDiskSettings).To(Equal(boshsettings.DiskSettings{
+				Expect(platform.GetEphemeralDiskPathSettings).To(Equal(boshsettings.DiskSettings{
 					VolumeID: "fake-ephemeral-disk-setting",
 					Path:     "fake-ephemeral-disk-setting",
 				}))
@@ -297,7 +292,6 @@ func init() {
 				boot                   boshboot.Bootstrap
 				defaultNetworkResolver boshsettings.DefaultNetworkResolver
 				logger                 boshlog.Logger
-				infrastructure         boshinf.Infrastructure
 				dirProvider            boshdirs.Provider
 			)
 
@@ -391,31 +385,6 @@ func init() {
 					logger,
 				)
 
-				sourceOptions := []boshinf.SourceOptions{
-					boshinf.HTTPSourceOptions{
-						URI: "http://something",
-					},
-				}
-
-				infraSettings := boshinf.SettingsOptions{
-					Sources:       sourceOptions,
-					UseServerName: false,
-					UseRegistry:   false,
-				}
-
-				infraOptions := boshinf.Options{
-					NetworkingType:          "manual",
-					StaticEphemeralDiskPath: "/var/vcap/tmp",
-					Settings:                infraSettings,
-				}
-
-				infrastructure = boshinf.NewGenericInfrastructure(
-					platform,
-					infraOptions.NetworkingType,
-					infraOptions.StaticEphemeralDiskPath,
-					logger,
-				)
-
 				routesSearcher := boshnet.NewCmdRoutesSearcher(platform.GetRunner())
 				defaultNetworkResolver = boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 			})
@@ -440,7 +409,6 @@ func init() {
 				)
 
 				boot = boshboot.New(
-					infrastructure,
 					platform,
 					dirProvider,
 					settingsService,

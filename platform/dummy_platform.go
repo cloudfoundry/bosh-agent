@@ -132,7 +132,7 @@ func (p dummyPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSetti
 	return
 }
 
-func (p dummyPlatform) NormalizeDiskPath(diskSettings boshsettings.DiskSettings) string {
+func (p dummyPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
 	return "/dev/sdb"
 }
 

@@ -78,9 +78,9 @@ type FakePlatform struct {
 	GetFileContentsFromDiskErrs        map[string]error
 	GetFileContentsFromDiskCalledTimes int
 
-	NormalizeDiskPathCalled   bool
-	NormalizeDiskPathSettings boshsettings.DiskSettings
-	NormalizeDiskPathRealPath string
+	GetEphemeralDiskPathCalled   bool
+	GetEphemeralDiskPathSettings boshsettings.DiskSettings
+	GetEphemeralDiskPathRealPath string
 
 	ScsiDiskMap map[string]string
 
@@ -232,10 +232,10 @@ func (p *FakePlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSetti
 	return
 }
 
-func (p *FakePlatform) NormalizeDiskPath(diskSettings boshsettings.DiskSettings) string {
-	p.NormalizeDiskPathCalled = true
-	p.NormalizeDiskPathSettings = diskSettings
-	return p.NormalizeDiskPathRealPath
+func (p *FakePlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
+	p.GetEphemeralDiskPathCalled = true
+	p.GetEphemeralDiskPathSettings = diskSettings
+	return p.GetEphemeralDiskPathRealPath
 }
 
 func (p *FakePlatform) GetFileContentsFromCDROM(path string) ([]byte, error) {

@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
-	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -18,7 +17,6 @@ type Bootstrap interface {
 
 type bootstrap struct {
 	fs              boshsys.FileSystem
-	infrastructure  boshinf.Infrastructure
 	platform        boshplatform.Platform
 	dirProvider     boshdir.Provider
 	settingsService boshsettings.Service
@@ -26,7 +24,6 @@ type bootstrap struct {
 }
 
 func New(
-	inf boshinf.Infrastructure,
 	platform boshplatform.Platform,
 	dirProvider boshdir.Provider,
 	settingsService boshsettings.Service,
@@ -34,7 +31,6 @@ func New(
 ) Bootstrap {
 	return bootstrap{
 		fs:              platform.GetFs(),
-		infrastructure:  inf,
 		platform:        platform,
 		dirProvider:     dirProvider,
 		settingsService: settingsService,
@@ -72,7 +68,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up hostname")
 	}
 
-	if err = boot.infrastructure.SetupNetworking(settings.Networks); err != nil {
+	if err = boot.platform.SetupNetworking(settings.Networks); err != nil {
 		return bosherr.WrapError(err, "Setting up networking")
 	}
 
@@ -80,7 +76,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up NTP servers")
 	}
 
-	ephemeralDiskPath := boot.infrastructure.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
+	ephemeralDiskPath := boot.platform.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
 	if err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath); err != nil {
 		return bosherr.WrapError(err, "Setting up ephemeral disk")
 	}

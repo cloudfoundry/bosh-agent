@@ -42,10 +42,9 @@ type App interface {
 }
 
 type app struct {
-	logger         boshlog.Logger
-	agent          boshagent.Agent
-	platform       boshplatform.Platform
-	infrastructure boshinf.Infrastructure
+	logger   boshlog.Logger
+	agent    boshagent.Agent
+	platform boshplatform.Platform
 }
 
 func New(logger boshlog.Logger) App {
@@ -77,13 +76,6 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting Settings Source")
 	}
 
-	app.infrastructure = boshinf.NewGenericInfrastructure(
-		app.platform,
-		config.Infrastructure.NetworkingType,
-		config.Infrastructure.StaticEphemeralDiskPath,
-		app.logger,
-	)
-
 	routesSearcher := boshnet.NewCmdRoutesSearcher(app.platform.GetRunner())
 	ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
@@ -96,7 +88,6 @@ func (app *app) Setup(args []string) error {
 		app.logger,
 	)
 	boot := boshboot.New(
-		app.infrastructure,
 		app.platform,
 		dirProvider,
 		settingsService,
