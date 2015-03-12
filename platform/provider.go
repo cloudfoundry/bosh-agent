@@ -72,6 +72,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options O
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
 
+	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
+	linuxDefaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+
 	monitRetryable := NewMonitRetryable(runner)
 	monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
@@ -104,6 +107,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options O
 		500*time.Millisecond,
 		options.Linux,
 		logger,
+		linuxDefaultNetworkResolver,
 	)
 
 	ubuntu := NewLinuxPlatform(
@@ -122,6 +126,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, options O
 		500*time.Millisecond,
 		options.Linux,
 		logger,
+		linuxDefaultNetworkResolver,
 	)
 
 	return provider{

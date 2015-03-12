@@ -30,19 +30,20 @@ var _ = Describe("LinuxPlatform", describeLinuxPlatform)
 
 func describeLinuxPlatform() {
 	var (
-		collector          *fakestats.FakeCollector
-		fs                 *fakesys.FakeFileSystem
-		cmdRunner          *fakesys.FakeCmdRunner
-		diskManager        *fakedisk.FakeDiskManager
-		dirProvider        boshdirs.Provider
-		devicePathResolver *fakedpresolv.FakeDevicePathResolver
-		platform           Platform
-		cdutil             *fakedevutil.FakeDeviceUtil
-		compressor         boshcmd.Compressor
-		copier             boshcmd.Copier
-		vitalsService      boshvitals.Service
-		netManager         *fakenet.FakeManager
-		monitRetryStrategy *fakeretry.FakeRetryStrategy
+		collector                  *fakestats.FakeCollector
+		fs                         *fakesys.FakeFileSystem
+		cmdRunner                  *fakesys.FakeCmdRunner
+		diskManager                *fakedisk.FakeDiskManager
+		dirProvider                boshdirs.Provider
+		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
+		platform                   Platform
+		cdutil                     *fakedevutil.FakeDeviceUtil
+		compressor                 boshcmd.Compressor
+		copier                     boshcmd.Copier
+		vitalsService              boshvitals.Service
+		netManager                 *fakenet.FakeManager
+		monitRetryStrategy         *fakeretry.FakeRetryStrategy
+		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 
 		options LinuxOptions
 		logger  boshlog.Logger
@@ -63,6 +64,7 @@ func describeLinuxPlatform() {
 		netManager = &fakenet.FakeManager{}
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
+		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		options = LinuxOptions{}
 
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
@@ -93,6 +95,7 @@ func describeLinuxPlatform() {
 			5*time.Millisecond,
 			options,
 			logger,
+			fakeDefaultNetworkResolver,
 		)
 	})
 
@@ -1448,6 +1451,18 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(netManager.SetupNetworkingNetworks).To(Equal(networks))
+		})
+	})
+
+	Describe("GetDefaultNetwork", func() {
+		It("delegates to the defaultNetworkResolver", func() {
+			defaultNetwork := boshsettings.Network{IP: "1.2.3.4"}
+			fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
+
+			network, err := platform.GetDefaultNetwork()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(network).To(Equal(defaultNetwork))
 		})
 	})
 }

@@ -367,6 +367,9 @@ func init() {
 
 				devicePathResolver := devicepathresolver.NewIdentityDevicePathResolver()
 
+				routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
+				defaultNetworkResolver = boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+
 				platform = boshplatform.NewLinuxPlatform(
 					fs,
 					runner,
@@ -383,10 +386,8 @@ func init() {
 					500*time.Millisecond,
 					linuxOptions,
 					logger,
+					defaultNetworkResolver,
 				)
-
-				routesSearcher := boshnet.NewCmdRoutesSearcher(platform.GetRunner())
-				defaultNetworkResolver = boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 			})
 
 			JustBeforeEach(func() {
@@ -404,7 +405,7 @@ func init() {
 					platform.GetFs(),
 					settingsPath,
 					settingsSource,
-					defaultNetworkResolver,
+					platform,
 					logger,
 				)
 

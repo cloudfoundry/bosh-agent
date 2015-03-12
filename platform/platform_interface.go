@@ -50,6 +50,7 @@ type Platform interface {
 	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)
 
 	// Network misc
+	GetDefaultNetwork() (boshsettings.Network, error)
 	PrepareForNetworkingChange() error
 
 	// Additional monit management

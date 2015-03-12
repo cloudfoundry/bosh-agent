@@ -65,21 +65,22 @@ type LinuxOptions struct {
 }
 
 type linux struct {
-	fs                 boshsys.FileSystem
-	cmdRunner          boshsys.CmdRunner
-	collector          boshstats.Collector
-	compressor         boshcmd.Compressor
-	copier             boshcmd.Copier
-	dirProvider        boshdirs.Provider
-	vitalsService      boshvitals.Service
-	cdutil             boshdevutil.DeviceUtil
-	diskManager        boshdisk.Manager
-	netManager         boshnet.Manager
-	monitRetryStrategy boshretry.RetryStrategy
-	devicePathResolver boshdpresolv.DevicePathResolver
-	diskScanDuration   time.Duration
-	options            LinuxOptions
-	logger             boshlog.Logger
+	fs                     boshsys.FileSystem
+	cmdRunner              boshsys.CmdRunner
+	collector              boshstats.Collector
+	compressor             boshcmd.Compressor
+	copier                 boshcmd.Copier
+	dirProvider            boshdirs.Provider
+	vitalsService          boshvitals.Service
+	cdutil                 boshdevutil.DeviceUtil
+	diskManager            boshdisk.Manager
+	netManager             boshnet.Manager
+	monitRetryStrategy     boshretry.RetryStrategy
+	devicePathResolver     boshdpresolv.DevicePathResolver
+	diskScanDuration       time.Duration
+	options                LinuxOptions
+	logger                 boshlog.Logger
+	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 }
 
 func NewLinuxPlatform(
@@ -98,23 +99,25 @@ func NewLinuxPlatform(
 	diskScanDuration time.Duration,
 	options LinuxOptions,
 	logger boshlog.Logger,
+	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
 ) Platform {
 	return &linux{
-		fs:                 fs,
-		cmdRunner:          cmdRunner,
-		collector:          collector,
-		compressor:         compressor,
-		copier:             copier,
-		dirProvider:        dirProvider,
-		vitalsService:      vitalsService,
-		cdutil:             cdutil,
-		diskManager:        diskManager,
-		netManager:         netManager,
-		monitRetryStrategy: monitRetryStrategy,
-		devicePathResolver: devicePathResolver,
-		diskScanDuration:   diskScanDuration,
-		options:            options,
-		logger:             logger,
+		fs:                     fs,
+		cmdRunner:              cmdRunner,
+		collector:              collector,
+		compressor:             compressor,
+		copier:                 copier,
+		dirProvider:            dirProvider,
+		vitalsService:          vitalsService,
+		cdutil:                 cdutil,
+		diskManager:            diskManager,
+		netManager:             netManager,
+		monitRetryStrategy:     monitRetryStrategy,
+		devicePathResolver:     devicePathResolver,
+		diskScanDuration:       diskScanDuration,
+		options:                options,
+		logger:                 logger,
+		defaultNetworkResolver: defaultNetworkResolver,
 	}
 }
 
@@ -768,6 +771,10 @@ func (p linux) PrepareForNetworkingChange() error {
 	}
 
 	return nil
+}
+
+func (p linux) GetDefaultNetwork() (boshsettings.Network, error) {
+	return p.defaultNetworkResolver.GetDefaultNetwork()
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uint64, uint64, error) {
