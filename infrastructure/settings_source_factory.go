@@ -12,12 +12,8 @@ import (
 )
 
 type Options struct {
-	// e.g. possible values: dhcp, manual, ''
-	NetworkingType string
-
 	StaticEphemeralDiskPath string
-
-	Settings SettingsOptions
+	Settings                SettingsOptions
 }
 
 type SettingsOptions struct {

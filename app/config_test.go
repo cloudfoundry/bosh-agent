@@ -29,7 +29,6 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			},
 			"Infrastructure": {
-				"NetworkingType":           "dhcp",
 				"StaticEphemeralDiskPath":  "/dev/sdb",
 
 			  "Settings": {
@@ -74,7 +73,6 @@ var _ = Describe("LoadConfigFromPath", func() {
 				},
 			},
 			Infrastructure: boshinf.Options{
-				NetworkingType:          "dhcp",
 				StaticEphemeralDiskPath: "/dev/sdb",
 
 				Settings: boshinf.SettingsOptions{
