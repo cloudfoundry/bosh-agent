@@ -358,7 +358,7 @@ func init() {
 				ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
 
 				arping := bosharp.NewArping(runner, fs, logger, boshplatform.ArpIterations, boshplatform.ArpIterationDelay, boshplatform.ArpInterfaceCheckDelay)
-				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator()
+				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
 				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
 

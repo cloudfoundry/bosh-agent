@@ -32,9 +32,9 @@ func describeCentosNetManager() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		ipResolver = &fakeip.FakeResolver{}
-		interfaceConfigurationCreator = NewInterfaceConfigurationCreator()
-		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
+		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
+		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		netManager = NewCentosNetManager(
 			fs,
 			cmdRunner,

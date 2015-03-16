@@ -6,6 +6,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
@@ -19,15 +20,14 @@ func describeInterfaceConfigurationCreator() {
 	)
 
 	BeforeEach(func() {
-		interfaceConfigurationCreator = NewInterfaceConfigurationCreator()
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		dhcpNetwork = boshsettings.Network{
-			Type:    "dynamic",
 			Default: []string{"dns"},
 			DNS:     []string{"8.8.8.8", "9.9.9.9"},
 			Mac:     "fake-dhcp-mac-address",
 		}
 		staticNetwork = boshsettings.Network{
-			Type:    "manual",
 			IP:      "1.2.3.4",
 			Netmask: "255.255.255.0",
 			Gateway: "3.4.5.6",
@@ -213,9 +213,10 @@ func describeInterfaceConfigurationCreator() {
 
 	It("wraps errors calculating Network and Broadcast addresses", func() {
 		invalidNetwork := boshsettings.Network{
-			Type: "manual",
-			IP:   "not an ip",
-			Mac:  "invalid-network-mac-address",
+			Type:    "manual",
+			IP:      "not an ip",
+			Netmask: "not a valid mask",
+			Mac:     "invalid-network-mac-address",
 		}
 		interfacesByMAC := map[string]string{
 			"invalid-network-mac-address": "static-interface-name",
