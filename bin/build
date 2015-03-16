@@ -15,3 +15,4 @@ fi
 
 $bin/go build -o $bin/../out/bosh-agent github.com/cloudfoundry/bosh-agent/main
 $bin/go build -o $bin/../out/dav-cli    github.com/cloudfoundry/bosh-agent/davcli/main
+$bin/go build -o $bin/../out/bosh-kickstarter github.com/cloudfoundry/bosh-agent/kickstarter/main
