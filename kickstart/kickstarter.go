@@ -4,14 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/cloudfoundry/bosh-agent/errors"
-	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
-	"os/exec"
 	"sync"
+
+	"github.com/cloudfoundry/bosh-agent/errors"
+	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
 type Kickstart struct {
@@ -23,15 +22,17 @@ type Kickstart struct {
 	wg     sync.WaitGroup
 }
 
-const INSTALL_SCRIPT_NAME = "install.sh"
+const InstallScriptName = "install.sh"
 
 func (k *Kickstart) Listen(port int) error {
 	serveMux := http.NewServeMux()
-	serveMux.HandleFunc("/", rootHander)
+	serveMux.Handle("/self-update", &SelfUpdateHandler{
+		Logger: logger.New(logger.LevelDebug, k.Logger, k.Logger),
+	})
 
 	server := &http.Server{
 		Handler:  serveMux,
-		ErrorLog: k.Logger, // comment this out for debugging
+		ErrorLog: k.Logger,
 	}
 
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{Port: port})
@@ -67,39 +68,4 @@ func (k *Kickstart) run(server *http.Server, tlsListener net.Listener) {
 
 func (k *Kickstart) WaitForServerToExit() {
 	k.wg.Wait()
-}
-
-func rootHander(rw http.ResponseWriter, req *http.Request) {
-	tmpDir, err := ioutil.TempDir("", "test-tmp")
-	tarCommand := exec.Command("tar", "xvfz", "-")
-	tarCommand.Dir = tmpDir
-
-	stdInPipe, err := tarCommand.StdinPipe()
-	tarCommand.Start()
-	_, err = io.Copy(stdInPipe, req.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-	req.Body.Close()
-	stdInPipe.Close()
-	err = tarCommand.Wait()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	execCommand := exec.Command(fmt.Sprintf("./%s", INSTALL_SCRIPT_NAME))
-	execCommand.Dir = tmpDir
-	err = execCommand.Start()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	err = execCommand.Wait()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	rw.Write(([]byte)(fmt.Sprintf("Your tarball was installed to %s", tmpDir)))
 }

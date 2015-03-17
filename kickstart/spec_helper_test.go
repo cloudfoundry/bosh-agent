@@ -3,14 +3,53 @@ package kickstart_test
 import (
 	. "github.com/onsi/gomega"
 
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	http "net/http"
 	os "os"
+	"regexp"
 )
+
+type mutableWriter struct {
+	out      io.Writer
+	patterns []*regexp.Regexp
+	captured bytes.Buffer
+}
+
+func (mw *mutableWriter) Write(p []byte) (n int, err error) {
+	for _, pattern := range mw.patterns {
+		if pattern.Match(p) {
+			return mw.captured.Write(p)
+		}
+	}
+
+	n, err = mw.out.Write(p)
+	return
+}
+
+func (mw *mutableWriter) Capture(pattern string) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		panic(err)
+	}
+	mw.patterns = append(mw.patterns, re)
+}
+
+func (mw *mutableWriter) Captured() string {
+	return mw.captured.String()
+}
+
+func fileExists(name string) bool {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
 
 func fixtureData(name string) []byte {
 	bytes, err := ioutil.ReadFile(fixtureFilename(name))
@@ -39,15 +78,11 @@ func certFor(certName string) *tls.Certificate {
 	return &cert
 }
 
-func httpPut(url, uploadFile string, clientCert *tls.Certificate) (*http.Response, error) {
-	reader, err := os.Open(uploadFile)
-	Expect(err).ToNot(HaveOccurred())
-	req, err := http.NewRequest("PUT", url, reader)
-	Expect(err).ToNot(HaveOccurred())
-
+func httpClient(clientCert *tls.Certificate) *http.Client {
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(([]byte)(fixtureData("certs/rootCA.pem"))) {
 		fmt.Println("Wha? cert failed")
+		Expect(true).To(Equal(false))
 	}
 
 	tr := &http.Transport{
@@ -60,6 +95,19 @@ func httpPut(url, uploadFile string, clientCert *tls.Certificate) (*http.Respons
 		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCert}
 	}
 
-	client := &http.Client{Transport: tr}
-	return client.Do(req)
+	return &http.Client{Transport: tr}
+}
+
+func httpDo(method, url string, clientCert *tls.Certificate) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, nil)
+	Expect(err).ToNot(HaveOccurred())
+	return httpClient(clientCert).Do(req)
+}
+
+func httpPut(url, uploadFile string, clientCert *tls.Certificate) (*http.Response, error) {
+	reader, err := os.Open(uploadFile)
+	Expect(err).ToNot(HaveOccurred())
+	req, err := http.NewRequest("PUT", url, reader)
+	Expect(err).ToNot(HaveOccurred())
+	return httpClient(clientCert).Do(req)
 }
