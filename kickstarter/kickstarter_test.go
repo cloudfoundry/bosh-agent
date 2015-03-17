@@ -34,8 +34,8 @@ func mainDesc() {
 		Expect(err).ToNot(HaveOccurred())
 
 		k = &Kickstarter{
-			CertFile:  fixtureFilename("cert.pem"),
-			KeyFile:   fixtureFilename("key.pem"),
+			CertFile:  fixtureFilename("certs/kickstart.crt"),
+			KeyFile:   fixtureFilename("certs/kickstart.key"),
 			CACertPem: (string)(fixtureData("certs/rootCA.pem")),
 			Logger:    log.New(&bytes.Buffer{}, "", 0),
 		}
@@ -69,6 +69,15 @@ func mainDesc() {
 			resp, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"), directorCert)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		})
+
+		It("identifies itself with the provided key", func() {
+			err := k.Listen(port)
+			Expect(err).ToNot(HaveOccurred())
+			url := fmt.Sprintf("https://localhost:%d/self-update", port)
+			resp, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"), directorCert)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.TLS.PeerCertificates[0].Subject.Organization[0]).To(Equal("bosh.kickstart"))
 		})
 	})
 
