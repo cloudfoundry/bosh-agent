@@ -1,4 +1,4 @@
-package kickstarter_test
+package kickstart_test
 
 import (
 	. "github.com/onsi/gomega"

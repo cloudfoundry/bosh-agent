@@ -1,9 +1,10 @@
-package kickstarter
+package kickstart
 
 import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/cloudfoundry/bosh-agent/errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,7 +14,7 @@ import (
 	"sync"
 )
 
-type Kickstarter struct {
+type Kickstart struct {
 	CertFile  string
 	KeyFile   string
 	CACertPem string
@@ -24,7 +25,7 @@ type Kickstarter struct {
 
 const INSTALL_SCRIPT_NAME = "install.sh"
 
-func (k *Kickstarter) Listen(port int) error {
+func (k *Kickstart) Listen(port int) error {
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", rootHander)
 
@@ -41,7 +42,7 @@ func (k *Kickstarter) Listen(port int) error {
 	serverCert, _ := tls.LoadX509KeyPair(k.CertFile, k.KeyFile)
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(([]byte)(k.CACertPem)) {
-		fmt.Println("Wha? cert failed")
+		return errors.Errorf("Huh? root PEM looks weird!\n%s\n", k.CACertPem)
 	}
 	config := &tls.Config{
 		NextProtos:   []string{"http/1.1"},
@@ -56,7 +57,7 @@ func (k *Kickstarter) Listen(port int) error {
 	return nil
 }
 
-func (k *Kickstarter) run(server *http.Server, tlsListener net.Listener) {
+func (k *Kickstart) run(server *http.Server, tlsListener net.Listener) {
 	defer k.wg.Done()
 	err := server.Serve(tlsListener)
 	if err != nil {
@@ -64,7 +65,7 @@ func (k *Kickstarter) run(server *http.Server, tlsListener net.Listener) {
 	}
 }
 
-func (k *Kickstarter) WaitForServerToExit() {
+func (k *Kickstart) WaitForServerToExit() {
 	k.wg.Wait()
 }
 
@@ -91,10 +92,14 @@ func rootHander(rw http.ResponseWriter, req *http.Request) {
 	err = execCommand.Start()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	err = execCommand.Wait()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
+
+	rw.Write(([]byte)(fmt.Sprintf("Your tarball was installed to %s", tmpDir)))
 }

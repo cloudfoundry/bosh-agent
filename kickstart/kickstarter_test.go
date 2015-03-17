@@ -1,4 +1,4 @@
-package kickstarter_test
+package kickstart_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -14,15 +14,15 @@ import (
 	"path"
 
 	"bytes"
-	. "github.com/cloudfoundry/bosh-agent/kickstarter"
+	. "github.com/cloudfoundry/bosh-agent/kickstart"
 )
 
-var _ = Describe("kickstarter", mainDesc)
+var _ = Describe("kickstart", mainDesc)
 
 func mainDesc() {
 	var (
 		tmpDir string
-		k      *Kickstarter
+		k      *Kickstart
 		port   int
 	)
 
@@ -33,7 +33,7 @@ func mainDesc() {
 		tmpDir, err = ioutil.TempDir("", "test-tmp")
 		Expect(err).ToNot(HaveOccurred())
 
-		k = &Kickstarter{
+		k = &Kickstart{
 			CertFile:  fixtureFilename("certs/kickstart.crt"),
 			KeyFile:   fixtureFilename("certs/kickstart.key"),
 			CACertPem: (string)(fixtureData("certs/rootCA.pem")),

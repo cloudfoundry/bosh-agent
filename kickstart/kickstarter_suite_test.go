@@ -1,4 +1,4 @@
-package kickstarter_test
+package kickstart_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestKickstarter(t *testing.T) {
+func TestKickstart(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Kickstarter Suite")
+	RunSpecs(t, "Kickstart Suite")
 }
