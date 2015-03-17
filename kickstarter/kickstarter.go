@@ -2,9 +2,11 @@ package kickstarter
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os/exec"
@@ -12,9 +14,12 @@ import (
 )
 
 type Kickstarter struct {
-	CertFile string
-	KeyFile  string
-	wg       sync.WaitGroup
+	CertFile  string
+	KeyFile   string
+	CACertPem string
+
+	Logger *log.Logger
+	wg     sync.WaitGroup
 }
 
 const INSTALL_SCRIPT_NAME = "install.sh"
@@ -23,10 +28,9 @@ func (k *Kickstarter) Listen(port int) error {
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", rootHander)
 
-	server := &http.Server{Handler: serveMux}
-
-	config := &tls.Config{
-		NextProtos: []string{"http/1.1"},
+	server := &http.Server{
+		Handler:  serveMux,
+		ErrorLog: k.Logger, // comment this out for debugging
 	}
 
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{Port: port})
@@ -34,8 +38,17 @@ func (k *Kickstarter) Listen(port int) error {
 		return err
 	}
 
-	config.Certificates = make([]tls.Certificate, 1)
-	config.Certificates[0], _ = tls.LoadX509KeyPair(k.CertFile, k.KeyFile)
+	serverCert, _ := tls.LoadX509KeyPair(k.CertFile, k.KeyFile)
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(([]byte)(k.CACertPem)) {
+		fmt.Println("Wha? cert failed")
+	}
+	config := &tls.Config{
+		NextProtos:   []string{"http/1.1"},
+		Certificates: []tls.Certificate{serverCert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    certPool,
+	}
 	tlsListener := tls.NewListener(listener, config)
 
 	k.wg.Add(1)

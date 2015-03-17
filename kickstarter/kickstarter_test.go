@@ -6,12 +6,14 @@ import (
 
 	fmt "fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	http "net/http"
 	os "os"
 	"os/exec"
 	"path"
 
+	"bytes"
 	. "github.com/cloudfoundry/bosh-agent/kickstarter"
 )
 
@@ -24,15 +26,18 @@ func mainDesc() {
 		port   int
 	)
 
+	directorCert := certFor("director")
+
 	BeforeEach(func() {
 		var err error
-
 		tmpDir, err = ioutil.TempDir("", "test-tmp")
 		Expect(err).ToNot(HaveOccurred())
 
 		k = &Kickstarter{
-			CertFile: "spec/support/cert.pem",
-			KeyFile:  "spec/support/key.pem",
+			CertFile:  fixtureFilename("cert.pem"),
+			KeyFile:   fixtureFilename("key.pem"),
+			CACertPem: (string)(fixtureData("certs/rootCA.pem")),
+			Logger:    log.New(&bytes.Buffer{}, "", 0),
 		}
 
 		installScript := fmt.Sprintf("#!/bin/bash\necho hiya > %s/install.log\n", tmpDir)
@@ -61,7 +66,7 @@ func mainDesc() {
 			err := k.Listen(port)
 			Expect(err).ToNot(HaveOccurred())
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)
-			resp, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"))
+			resp, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"), directorCert)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		})
@@ -72,10 +77,25 @@ func mainDesc() {
 
 		It("expands uploaded tarball and runs install.sh", func() {
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)
-			_, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"))
+
+			_, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"), directorCert)
 			Expect(err).ToNot(HaveOccurred())
 			installLog, err := ioutil.ReadFile(path.Join(tmpDir, "install.log"))
 			Expect((string)(installLog)).To(Equal("hiya\n"))
+		})
+
+		It("rejects requests without a client certificate", func() {
+			url := fmt.Sprintf("https://localhost:%d/self-update", port)
+			_, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"), nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("bad certificate"))
+		})
+
+		It("rejects requests when the client certificate isn't signed by the given CA", func() {
+			url := fmt.Sprintf("https://localhost:%d/self-update", port)
+			_, err := httpPut(url, path.Join(tmpDir, "tarball.tgz"), certFor("directorWithWrongCA"))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("bad certificate"))
 		})
 	})
 }
