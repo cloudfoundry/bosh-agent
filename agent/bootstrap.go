@@ -1,4 +1,4 @@
-package bootstrap
+package agent
 
 import (
 	"errors"
@@ -23,7 +23,7 @@ type bootstrap struct {
 	logger          boshlog.Logger
 }
 
-func New(
+func NewBootstrap(
 	platform boshplatform.Platform,
 	dirProvider boshdir.Provider,
 	settingsService boshsettings.Service,

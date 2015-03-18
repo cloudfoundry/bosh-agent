@@ -1,4 +1,4 @@
-package bootstrap_test
+package agent_test
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/bootstrap"
+	. "github.com/cloudfoundry/bosh-agent/agent"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -24,7 +24,6 @@ import (
 
 	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 
-	boshboot "github.com/cloudfoundry/bosh-agent/bootstrap"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
@@ -60,7 +59,7 @@ func init() {
 
 			bootstrap := func() error {
 				logger := boshlog.NewLogger(boshlog.LevelNone)
-				return New(platform, dirProvider, settingsService, logger).Run()
+				return NewBootstrap(platform, dirProvider, settingsService, logger).Run()
 			}
 
 			It("sets up runtime configuration", func() {
@@ -289,7 +288,7 @@ func init() {
 
 				fs                     *fakesys.FakeFileSystem
 				platform               boshplatform.Platform
-				boot                   boshboot.Bootstrap
+				boot                   Bootstrap
 				defaultNetworkResolver boshsettings.DefaultNetworkResolver
 				logger                 boshlog.Logger
 				dirProvider            boshdirs.Provider
@@ -409,7 +408,7 @@ func init() {
 					logger,
 				)
 
-				boot = boshboot.New(
+				boot = NewBootstrap(
 					platform,
 					dirProvider,
 					settingsService,

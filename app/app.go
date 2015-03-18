@@ -16,7 +16,6 @@ import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshblob "github.com/cloudfoundry/bosh-agent/blobstore"
-	boshboot "github.com/cloudfoundry/bosh-agent/bootstrap"
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
@@ -81,7 +80,7 @@ func (app *app) Setup(args []string) error {
 		app.platform,
 		app.logger,
 	)
-	boot := boshboot.New(
+	boot := boshagent.NewBootstrap(
 		app.platform,
 		dirProvider,
 		settingsService,
