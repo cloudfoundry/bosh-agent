@@ -14,10 +14,14 @@ distinguished_name = req_distinguished_name
 
 [ req_distinguished_name ]
 organizationName = ${organizationName}
-commonName = localhost
 
 [ my-extensions ]
 extendedKeyUsage = clientAuth,serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = *
+
 EOF
 }
 
