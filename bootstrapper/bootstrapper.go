@@ -28,6 +28,7 @@ type Bootstrapper struct {
 	wg       sync.WaitGroup
 }
 
+const StatusUnprocessableEntity = 422
 const InstallScriptName = "install.sh"
 
 func (b *Bootstrapper) Listen(port int) error {
@@ -61,18 +62,17 @@ func (b *Bootstrapper) Listen(port int) error {
 	}
 	b.listener = tls.NewListener(listener, config)
 
-	b.wg.Add(1)
-	go b.run()
-	return nil
-}
-
-func (b *Bootstrapper) run() {
-	defer b.wg.Done()
 	b.started = true
-	err := b.server.Serve(b.listener)
-	if err != nil && !b.closing {
-		fmt.Printf("run(): %s\n", err)
-	}
+	b.wg.Add(1)
+	go func() {
+		defer b.wg.Done()
+		err := b.server.Serve(b.listener)
+		if err != nil && !b.closing {
+			fmt.Printf("run(): %s\n", err)
+		}
+	}()
+
+	return nil
 }
 
 func (b *Bootstrapper) WaitForServerToExit() {
@@ -81,6 +81,5 @@ func (b *Bootstrapper) WaitForServerToExit() {
 		b.listener.Close()
 		b.started = false
 	}
-
 	b.wg.Wait()
 }

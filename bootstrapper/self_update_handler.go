@@ -16,70 +16,53 @@ type SelfUpdateHandler struct {
 }
 
 func (h *SelfUpdateHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	defer func() { // catch panics
+		panicValue := recover()
+		if panicValue != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			if err, ok := panicValue.(error); ok {
+				h.Logger.Error("SelfUpdateHandler", "failed: %s", err.Error())
+			} else {
+				h.Logger.Error("SelfUpdateHandler", "failed but no idea why, sorry!", panicValue)
+			}
+		}
+	}()
+
 	if req.Method != "PUT" {
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	tmpDir, err := ioutil.TempDir("", "test-tmp")
-	if err != nil {
-		panic(err)
-	}
+	tmpDir, err := ioutil.TempDir("", "work-tmp")
+	panicIfError(err)
 
 	tarCommand := exec.Command("tar", "xvfz", "-")
 	tarCommand.Dir = tmpDir
 
 	stdInPipe, err := tarCommand.StdinPipe()
-	if err != nil {
-		rw.WriteHeader(http.StatusBadRequest)
-		h.Logger.Error("SelfUpdateHandler", "tar failed: %s", err.Error())
-		return
-	}
+	panicIfError(err)
 
-	err = tarCommand.Start()
-	if err != nil {
-		rw.WriteHeader(http.StatusBadRequest)
-		h.Logger.Error("SelfUpdateHandler", "tar failed: %s", err.Error())
-		return
-	}
+	panicIfError(tarCommand.Start())
 
 	_, err = io.Copy(stdInPipe, req.Body)
-	if err != nil {
-		rw.WriteHeader(http.StatusBadRequest)
-		h.Logger.Error("SelfUpdateHandler", "tar failed: %s", err.Error())
-		return
-	}
-
-	req.Body.Close()
-	stdInPipe.Close()
+	panicIfError(err)
+	panicIfError(req.Body.Close())
+	panicIfError(stdInPipe.Close())
 
 	exitStatus := getExitStatus(tarCommand.Wait())
-
 	if exitStatus != 0 {
 		rw.WriteHeader(http.StatusBadRequest)
 		h.Logger.Error("SelfUpdateHandler", "`%s` exited with %d", strings.Join(tarCommand.Args, " "), exitStatus)
 		return
 	}
 
-	//	_, err := tarCommand.CombinedOutput()
-	//	if err != nil {
-	//		rw.WriteHeader(http.StatusBadRequest)
-	//		h.Logger.Error("SelfUpdateHandler", "tar failed: %s", err.Error())
-	//		return
-	//	}
-
-	execCommand := exec.Command(fmt.Sprintf("./%s", InstallScriptName))
-	execCommand.Dir = tmpDir
-	err = execCommand.Start()
-	if err != nil {
-		rw.WriteHeader(http.StatusBadRequest)
-		h.Logger.Error("SelfUpdateHandler", "`%s` exited with %d", strings.Join(tarCommand.Args, " "), exitStatus)
-		return
-	}
-
-	err = execCommand.Wait()
-	if err != nil {
-		fmt.Println(err)
+	installShCommand := exec.Command(fmt.Sprintf("./%s", InstallScriptName))
+	installShCommand.Dir = tmpDir
+	panicIfError(installShCommand.Start())
+	exitStatus = getExitStatus(installShCommand.Wait())
+	if exitStatus != 0 {
+		rw.WriteHeader(StatusUnprocessableEntity)
+		h.Logger.Error("SelfUpdateHandler", "`%s` exited with %d", strings.Join(installShCommand.Args, " "), exitStatus)
 		return
 	}
 

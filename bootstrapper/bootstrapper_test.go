@@ -33,11 +33,7 @@ func mainDesc() {
 	port := getFreePort()
 	directorCert := certFor("director")
 
-	BeforeEach(func() {
-		tmpDir, err = ioutil.TempDir("", "test-tmp")
-		Expect(err).ToNot(HaveOccurred())
-
-		installScript := fmt.Sprintf("#!/bin/bash\necho hiya > %s/install.log\n", tmpDir)
+	createTarball := func(installScript string) (tarballPath string) {
 		ioutil.WriteFile(path.Join(tmpDir, InstallScriptName), ([]byte)(installScript), 0755)
 		tarCmd := exec.Command("tar", "cfz", "tarball.tgz", InstallScriptName)
 		tarCmd.Dir = tmpDir
@@ -45,6 +41,16 @@ func mainDesc() {
 		Expect(err).ToNot(HaveOccurred())
 
 		tarballPath = path.Join(tmpDir, "tarball.tgz")
+		return
+	}
+
+	BeforeEach(func() {
+		tmpDir, err = ioutil.TempDir("", "test-tmp")
+		Expect(err).ToNot(HaveOccurred())
+
+		installScript := fmt.Sprintf("#!/bin/bash\necho hiya > %s/install.log\n", tmpDir)
+		tarballPath = createTarball(installScript)
+
 		allowedNames = []string{"*"}
 	})
 
@@ -151,8 +157,9 @@ func mainDesc() {
 		})
 
 		It("expands uploaded tarball and runs install.sh", func() {
-			_, err = httpPut(url, tarballPath, directorCert)
+			resp, err := httpPut(url, tarballPath, directorCert)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 			installLog, err := ioutil.ReadFile(path.Join(tmpDir, "install.log"))
 			Expect(err).ToNot(HaveOccurred())
@@ -188,7 +195,7 @@ func mainDesc() {
 		})
 
 		It("returns an error when the tarball is corrupt", func() {
-			logWriter.Capture("SelfUpdateHandler.*ERROR.*exited with 1")
+			logWriter.Capture("SelfUpdateHandler")
 
 			req, err := http.NewRequest("PUT", url, strings.NewReader("busted tar"))
 			Expect(err).ToNot(HaveOccurred())
@@ -197,6 +204,16 @@ func mainDesc() {
 
 			Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 			Expect(logWriter.Captured()).To(ContainSubstring("ERROR - `tar xvfz -` exited with 1"))
+		})
+
+		It("notifies of a problem when the install.sh script exits with non-zero", func() {
+			logWriter.Capture("SelfUpdateHandler")
+
+			createTarball("#!/bin/bash\nexit 123")
+			resp, err := httpPut(url, tarballPath, directorCert)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(StatusUnprocessableEntity))
+			Expect(logWriter.Captured()).To(ContainSubstring("ERROR - `./install.sh` exited with 123"))
 		})
 	})
 }
