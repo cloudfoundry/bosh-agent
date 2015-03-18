@@ -1,4 +1,4 @@
-package kickstart_test
+package bootstrapper_test
 
 import (
 	. "github.com/onsi/gomega"

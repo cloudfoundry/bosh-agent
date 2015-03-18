@@ -1,4 +1,4 @@
-package kickstart_test
+package bootstrapper_test
 
 import (
 	"crypto/tls"
@@ -6,13 +6,13 @@ import (
 	"crypto/x509/pkix"
 	"net/http"
 
-	. "github.com/cloudfoundry/bosh-agent/kickstart"
+	. "github.com/cloudfoundry/bosh-agent/bootstrapper"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("kickstart auth", authDesc)
+var _ = Describe("bootstrapper auth", authDesc)
 
 func authDesc() {
 	Describe(".ParseDistinguishedName", func() {

@@ -1,4 +1,4 @@
-package kickstart
+package bootstrapper
 
 import (
 	"crypto/tls"
@@ -13,7 +13,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
-type Kickstart struct {
+type Bootstrapper struct {
 	CertFile   string
 	KeyFile    string
 	CACertPem  string
@@ -30,28 +30,28 @@ type Kickstart struct {
 
 const InstallScriptName = "install.sh"
 
-func (k *Kickstart) Listen(port int) error {
-	certAuthHandler, err := ParseDistinguishedNames(k.AllowedDNs)
+func (b *Bootstrapper) Listen(port int) error {
+	certAuthHandler, err := ParseDistinguishedNames(b.AllowedDNs)
 	if err != nil {
 		return err
 	}
 
 	serveMux := http.NewServeMux()
-	logger := logger.New(logger.LevelDebug, k.Logger, k.Logger)
+	logger := logger.New(logger.LevelDebug, b.Logger, b.Logger)
 	serveMux.Handle("/self-update", certAuthHandler.WrapHandler(logger, &SelfUpdateHandler{Logger: logger}))
 
-	k.server.Handler = serveMux
-	k.server.ErrorLog = k.Logger
+	b.server.Handler = serveMux
+	b.server.ErrorLog = b.Logger
 
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{Port: port})
 	if err != nil {
 		return err
 	}
 
-	serverCert, _ := tls.LoadX509KeyPair(k.CertFile, k.KeyFile)
+	serverCert, _ := tls.LoadX509KeyPair(b.CertFile, b.KeyFile)
 	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(([]byte)(k.CACertPem)) {
-		return errors.Errorf("Huh? root PEM looks weird!\n%s\n", k.CACertPem)
+	if !certPool.AppendCertsFromPEM(([]byte)(b.CACertPem)) {
+		return errors.Errorf("Huh? root PEM looks weird!\n%s\n", b.CACertPem)
 	}
 	config := &tls.Config{
 		NextProtos:   []string{"http/1.1"},
@@ -59,28 +59,28 @@ func (k *Kickstart) Listen(port int) error {
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		ClientCAs:    certPool,
 	}
-	k.listener = tls.NewListener(listener, config)
+	b.listener = tls.NewListener(listener, config)
 
-	k.wg.Add(1)
-	go k.run()
+	b.wg.Add(1)
+	go b.run()
 	return nil
 }
 
-func (k *Kickstart) run() {
-	defer k.wg.Done()
-	k.started = true
-	err := k.server.Serve(k.listener)
-	if err != nil && !k.closing {
+func (b *Bootstrapper) run() {
+	defer b.wg.Done()
+	b.started = true
+	err := b.server.Serve(b.listener)
+	if err != nil && !b.closing {
 		fmt.Printf("run(): %s\n", err)
 	}
 }
 
-func (k *Kickstart) WaitForServerToExit() {
-	if k.started {
-		k.closing = true
-		k.listener.Close()
-		k.started = false
+func (b *Bootstrapper) WaitForServerToExit() {
+	if b.started {
+		b.closing = true
+		b.listener.Close()
+		b.started = false
 	}
 
-	k.wg.Wait()
+	b.wg.Wait()
 }

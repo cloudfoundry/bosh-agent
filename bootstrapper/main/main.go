@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/bosh-agent/kickstart"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper"
 	"io/ioutil"
 	"os"
 )
 
 func main() {
 	if len(os.Args) != 4 {
-		argv0 := "kickstart"
+		argv0 := "bootstrapper"
 		fmt.Printf("usage: %s <certFile> <keyFile> <caPEM>\n", argv0)
 		fmt.Println()
-		fmt.Printf("try this: %s kickstart/spec/support/certs/kickstart.crt kickstart/spec/support/certs/kickstart.key kickstart/spec/support/certs/rootCA.pem\n", argv0)
+		fmt.Printf("try this: %s bootstrapper/spec/support/certs/bootstrapper.crt bootstrapper/spec/support/certs/bootstrapper.key bootstrapper/spec/support/certs/rootCA.pem\n", argv0)
 		os.Exit(1)
 	}
 
@@ -22,7 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	k := &kickstart.Kickstart{
+	k := &bootstrapper.Bootstrapper{
 		CertFile:  os.Args[1],
 		KeyFile:   os.Args[2],
 		CACertPem: (string)(pem),

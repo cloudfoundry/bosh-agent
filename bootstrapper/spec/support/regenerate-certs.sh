@@ -50,7 +50,7 @@ echo "Generating CA..."
 openssl genrsa -out rootCA.key 1024
 yes "" | openssl req -x509 -new -nodes -key rootCA.key -days 99999 -out rootCA.pem
 
-createCertWithCA kickstart bosh.kickstart
+createCertWithCA bootstrapper bosh.bootstrapper
 createCertWithCA director bosh.director
 createSelfSignedCert directorWithWrongCA bosh.director
 

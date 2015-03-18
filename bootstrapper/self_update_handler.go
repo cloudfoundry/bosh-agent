@@ -1,4 +1,4 @@
-package kickstart
+package bootstrapper
 
 import (
 	"fmt"

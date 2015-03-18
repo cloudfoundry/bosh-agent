@@ -1,4 +1,4 @@
-package kickstart_test
+package bootstrapper_test
 
 import (
 	fmt "fmt"
@@ -11,18 +11,18 @@ import (
 	"path"
 	"strings"
 
-	. "github.com/cloudfoundry/bosh-agent/kickstart"
+	. "github.com/cloudfoundry/bosh-agent/bootstrapper"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("kickstart", mainDesc)
+var _ = Describe("bootstrapper", mainDesc)
 
 func mainDesc() {
 	var (
 		err         error
-		k           *Kickstart
+		k           *Bootstrapper
 		tmpDir      string
 		tarballPath string
 
@@ -50,9 +50,9 @@ func mainDesc() {
 
 	JustBeforeEach(func() {
 		logWriter = &mutableWriter{out: os.Stderr}
-		k = &Kickstart{
-			CertFile:   fixtureFilename("certs/kickstart.crt"),
-			KeyFile:    fixtureFilename("certs/kickstart.key"),
+		k = &Bootstrapper{
+			CertFile:   fixtureFilename("certs/bootstrapper.crt"),
+			KeyFile:    fixtureFilename("certs/bootstrapper.key"),
 			CACertPem:  (string)(fixtureData("certs/rootCA.pem")),
 			AllowedDNs: allowedDNs,
 			Logger:     log.New(logWriter, "", 0),
@@ -88,7 +88,7 @@ func mainDesc() {
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)
 			resp, err := httpPut(url, tarballPath, directorCert)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.TLS.PeerCertificates[0].Subject.Organization[0]).To(Equal("bosh.kickstart"))
+			Expect(resp.TLS.PeerCertificates[0].Subject.Organization[0]).To(Equal("bosh.bootstrapper"))
 		})
 
 		Context("with a malformed AllowedDNs list", func() {
