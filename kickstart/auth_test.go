@@ -84,7 +84,7 @@ func authDesc() {
 		})
 	})
 
-	Describe("DNPatterns", func() {
+	Describe("CertAuthHandler", func() {
 		Describe(".Verify", func() {
 			It("returns an error if no certificate was provided", func() {
 				patterns, err := ParseDistinguishedNames([]string{"o=nonmatch", "o=match", "o=noway"})

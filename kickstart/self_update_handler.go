@@ -8,26 +8,16 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-agent/errors"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
 type SelfUpdateHandler struct {
-	AllowedDNs *DNPatterns
-
 	Logger logger.Logger
 }
 
 func (h *SelfUpdateHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if req.Method != "PUT" {
 		rw.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	err := h.AllowedDNs.Verify(req)
-	if err != nil {
-		rw.WriteHeader(http.StatusUnauthorized)
-		h.Logger.Error("SelfUpdateHandler", errors.WrapError(err, "Unauthorized access").Error())
 		return
 	}
 

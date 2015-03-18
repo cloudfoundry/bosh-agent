@@ -31,16 +31,14 @@ type Kickstart struct {
 const InstallScriptName = "install.sh"
 
 func (k *Kickstart) Listen(port int) error {
-	dnPatterns, err := ParseDistinguishedNames(k.AllowedDNs)
+	certAuthHandler, err := ParseDistinguishedNames(k.AllowedDNs)
 	if err != nil {
 		return err
 	}
 
 	serveMux := http.NewServeMux()
-	serveMux.Handle("/self-update", &SelfUpdateHandler{
-		AllowedDNs: dnPatterns,
-		Logger:     logger.New(logger.LevelDebug, k.Logger, k.Logger),
-	})
+	logger := logger.New(logger.LevelDebug, k.Logger, k.Logger)
+	serveMux.Handle("/self-update", certAuthHandler.WrapHandler(logger, &SelfUpdateHandler{Logger: logger}))
 
 	k.server.Handler = serveMux
 	k.server.ErrorLog = k.Logger

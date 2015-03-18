@@ -3,17 +3,44 @@ package kickstart
 import (
 	"bytes"
 	"crypto/x509/pkix"
-	"github.com/cloudfoundry/bosh-agent/errors"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-agent/errors"
+	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
-type DNPatterns struct {
+type handlerWrapper struct {
+	Handler         http.Handler
+	Logger          logger.Logger
+	CertAuthHandler CertAuthHandler
+}
+
+func (h *handlerWrapper) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	err := h.CertAuthHandler.Verify(req)
+	if err != nil {
+		rw.WriteHeader(http.StatusUnauthorized)
+		h.Logger.Error("CertAuthHandler", errors.WrapError(err, "Unauthorized access").Error())
+		return
+	}
+
+	h.Handler.ServeHTTP(rw, req)
+}
+
+type CertAuthHandler struct {
 	Patterns []pkix.Name
 }
 
-func (p *DNPatterns) Verify(req *http.Request) error {
+func (p *CertAuthHandler) WrapHandler(logger logger.Logger, h http.Handler) http.Handler {
+	return &handlerWrapper{
+		Handler:         h,
+		Logger:          logger,
+		CertAuthHandler: *p,
+	}
+}
+
+func (p *CertAuthHandler) Verify(req *http.Request) error {
 	if req.TLS == nil || len(req.TLS.PeerCertificates) < 1 {
 		return errors.Error("No peer certificates provided by client")
 	}
@@ -87,7 +114,7 @@ func MatchName(pattern, name *pkix.Name) (matched bool, err error) {
 	return true, nil
 }
 
-func ParseDistinguishedNames(names []string) (*DNPatterns, error) {
+func ParseDistinguishedNames(names []string) (*CertAuthHandler, error) {
 	var pkixNames []pkix.Name
 
 	for _, dn := range names {
@@ -106,7 +133,7 @@ func ParseDistinguishedNames(names []string) (*DNPatterns, error) {
 		return nil, errors.Error("AllowedDNs must be specified")
 	}
 
-	return &DNPatterns{Patterns: pkixNames}, nil
+	return &CertAuthHandler{Patterns: pkixNames}, nil
 }
 
 func ParseDistinguishedName(dn string) (*pkix.Name, error) {
