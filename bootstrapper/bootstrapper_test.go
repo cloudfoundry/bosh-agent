@@ -67,6 +67,7 @@ func mainDesc() {
 
 	AfterEach(func() {
 		os.RemoveAll(tmpDir)
+		k.StopListening()
 		k.WaitForServerToExit()
 	})
 

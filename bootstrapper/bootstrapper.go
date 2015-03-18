@@ -49,7 +49,11 @@ func (b *Bootstrapper) Listen(port int) error {
 		return err
 	}
 
-	serverCert, _ := tls.LoadX509KeyPair(b.CertFile, b.KeyFile)
+	serverCert, err := tls.LoadX509KeyPair(b.CertFile, b.KeyFile)
+	if err != nil {
+		return err
+	}
+
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(([]byte)(b.CACertPem)) {
 		return errors.Errorf("Huh? root PEM looks weird!\n%s\n", b.CACertPem)
@@ -75,11 +79,14 @@ func (b *Bootstrapper) Listen(port int) error {
 	return nil
 }
 
-func (b *Bootstrapper) WaitForServerToExit() {
+func (b *Bootstrapper) StopListening() {
 	if b.started {
 		b.closing = true
 		b.listener.Close()
 		b.started = false
 	}
+}
+
+func (b *Bootstrapper) WaitForServerToExit() {
 	b.wg.Wait()
 }
