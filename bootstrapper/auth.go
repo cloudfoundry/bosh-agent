@@ -11,36 +11,44 @@ import (
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
+type CertAuthRules struct {
+	Patterns []pkix.Name
+}
+
+func NewCertAuthRules(names []string) (*CertAuthRules, error) {
+	pkixNames, err := parseDistinguishedNames(names)
+	if err != nil {
+		return nil, err
+	}
+	return &CertAuthRules{Patterns: pkixNames}, nil
+}
+
+func (p *CertAuthRules) Wrap(logger logger.Logger, h http.Handler) http.Handler {
+	return &handlerWrapper{
+		Handler:       h,
+		Logger:        logger,
+		CertAuthRules: *p,
+	}
+}
+
 type handlerWrapper struct {
-	Handler         http.Handler
-	Logger          logger.Logger
-	CertAuthHandler CertAuthHandler
+	Handler       http.Handler
+	Logger        logger.Logger
+	CertAuthRules CertAuthRules
 }
 
 func (h *handlerWrapper) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	err := h.CertAuthHandler.Verify(req)
+	err := h.CertAuthRules.Verify(req)
 	if err != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
-		h.Logger.Error("CertAuthHandler", errors.WrapError(err, "Unauthorized access").Error())
+		h.Logger.Error("CertAuthRules", errors.WrapError(err, "Unauthorized access").Error())
 		return
 	}
 
 	h.Handler.ServeHTTP(rw, req)
 }
 
-type CertAuthHandler struct {
-	Patterns []pkix.Name
-}
-
-func (p *CertAuthHandler) WrapHandler(logger logger.Logger, h http.Handler) http.Handler {
-	return &handlerWrapper{
-		Handler:         h,
-		Logger:          logger,
-		CertAuthHandler: *p,
-	}
-}
-
-func (p *CertAuthHandler) Verify(req *http.Request) error {
+func (p *CertAuthRules) Verify(req *http.Request) error {
 	if req.TLS == nil || len(req.TLS.PeerCertificates) < 1 {
 		return errors.Error("No peer certificates provided by client")
 	}
@@ -54,7 +62,7 @@ func (p *CertAuthHandler) Verify(req *http.Request) error {
 			return nil
 		}
 	}
-	return errors.Errorf("Subject (%#v) didn't match allowed DNs", subject)
+	return errors.Errorf("Subject (%#v) didn't match allowed distinguished names", subject)
 }
 
 func compareStr(pattern, name string) (bool, error) {
@@ -114,7 +122,7 @@ func MatchName(pattern, name *pkix.Name) (matched bool, err error) {
 	return true, nil
 }
 
-func ParseDistinguishedNames(names []string) (*CertAuthHandler, error) {
+func parseDistinguishedNames(names []string) ([]pkix.Name, error) {
 	var pkixNames []pkix.Name
 
 	for _, dn := range names {
@@ -123,17 +131,17 @@ func ParseDistinguishedNames(names []string) (*CertAuthHandler, error) {
 		} else {
 			pkixName, err := ParseDistinguishedName(dn)
 			if err != nil {
-				return nil, errors.WrapError(err, "Invalid AllowedDNs")
+				return nil, errors.WrapError(err, "Invalid AllowedNames")
 			}
 			pkixNames = append(pkixNames, *pkixName)
 		}
 	}
 
 	if len(pkixNames) == 0 {
-		return nil, errors.Error("AllowedDNs must be specified")
+		return nil, errors.Error("AllowedNames must be specified")
 	}
 
-	return &CertAuthHandler{Patterns: pkixNames}, nil
+	return pkixNames, nil
 }
 
 func ParseDistinguishedName(dn string) (*pkix.Name, error) {

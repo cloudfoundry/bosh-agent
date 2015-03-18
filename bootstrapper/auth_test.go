@@ -84,10 +84,10 @@ func authDesc() {
 		})
 	})
 
-	Describe("CertAuthHandler", func() {
+	Describe("CertAuthRules", func() {
 		Describe(".Verify", func() {
 			It("returns an error if no certificate was provided", func() {
-				patterns, err := ParseDistinguishedNames([]string{"o=nonmatch", "o=match", "o=noway"})
+				patterns, err := NewCertAuthRules([]string{"o=nonmatch", "o=match", "o=noway"})
 				Expect(err).ToNot(HaveOccurred())
 				err = patterns.Verify(&http.Request{})
 				Expect(err).To(HaveOccurred())
@@ -96,7 +96,7 @@ func authDesc() {
 			})
 
 			It("returns no error if the subject of the certificate matches in the list of distinguished names", func() {
-				patterns, err := ParseDistinguishedNames([]string{"o=nonmatch", "o=match", "o=noway"})
+				patterns, err := NewCertAuthRules([]string{"o=nonmatch", "o=match", "o=noway"})
 				Expect(err).ToNot(HaveOccurred())
 				err = patterns.Verify(&http.Request{
 					TLS: &tls.ConnectionState{
@@ -109,7 +109,7 @@ func authDesc() {
 			})
 
 			It("returns an error if the subject doesn't match any of the allowed DNs", func() {
-				patterns, err := ParseDistinguishedNames([]string{"o=nonmatch", "o=noway"})
+				patterns, err := NewCertAuthRules([]string{"o=nonmatch", "o=noway"})
 				Expect(err).ToNot(HaveOccurred())
 				err = patterns.Verify(&http.Request{
 					TLS: &tls.ConnectionState{
@@ -122,7 +122,7 @@ func authDesc() {
 			})
 
 			It("returns no error if configured to match all DNs", func() {
-				patterns, err := ParseDistinguishedNames([]string{"o=nonmatch", "*"})
+				patterns, err := NewCertAuthRules([]string{"o=nonmatch", "*"})
 				Expect(err).ToNot(HaveOccurred())
 				err = patterns.Verify(&http.Request{
 					TLS: &tls.ConnectionState{

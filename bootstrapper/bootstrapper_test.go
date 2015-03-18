@@ -26,8 +26,8 @@ func mainDesc() {
 		tmpDir      string
 		tarballPath string
 
-		logWriter  *mutableWriter
-		allowedDNs []string
+		logWriter    *mutableWriter
+		allowedNames []string
 	)
 
 	port := getFreePort()
@@ -45,17 +45,17 @@ func mainDesc() {
 		Expect(err).ToNot(HaveOccurred())
 
 		tarballPath = path.Join(tmpDir, "tarball.tgz")
-		allowedDNs = []string{"*"}
+		allowedNames = []string{"*"}
 	})
 
 	JustBeforeEach(func() {
 		logWriter = &mutableWriter{out: os.Stderr}
 		k = &Bootstrapper{
-			CertFile:   fixtureFilename("certs/bootstrapper.crt"),
-			KeyFile:    fixtureFilename("certs/bootstrapper.key"),
-			CACertPem:  (string)(fixtureData("certs/rootCA.pem")),
-			AllowedDNs: allowedDNs,
-			Logger:     log.New(logWriter, "", 0),
+			CertFile:     fixtureFilename("certs/bootstrapper.crt"),
+			KeyFile:      fixtureFilename("certs/bootstrapper.key"),
+			CACertPem:    (string)(fixtureData("certs/rootCA.pem")),
+			AllowedNames: allowedNames,
+			Logger:       log.New(logWriter, "", 0),
 		}
 	})
 
@@ -91,21 +91,21 @@ func mainDesc() {
 			Expect(resp.TLS.PeerCertificates[0].Subject.Organization[0]).To(Equal("bosh.bootstrapper"))
 		})
 
-		Context("with a malformed AllowedDNs list", func() {
-			BeforeEach(func() { allowedDNs = []string{"invalid=value"} })
+		Context("with a malformed AllowedNames list", func() {
+			BeforeEach(func() { allowedNames = []string{"invalid=value"} })
 			It("returns an error", func() {
 				err = k.Listen(port)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Invalid AllowedDNs: Unknown field 'invalid'"))
+				Expect(err.Error()).To(Equal("Invalid AllowedNames: Unknown field 'invalid'"))
 			})
 		})
 
-		Context("with an empty AllowedDNs list", func() {
-			BeforeEach(func() { allowedDNs = []string{} })
+		Context("with an empty AllowedNames list", func() {
+			BeforeEach(func() { allowedNames = []string{} })
 			It("returns an error", func() {
 				err = k.Listen(port)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("AllowedDNs must be specified"))
+				Expect(err.Error()).To(Equal("AllowedNames must be specified"))
 			})
 		})
 	})
@@ -176,7 +176,7 @@ func mainDesc() {
 		})
 
 		Context("when the client cert's distinguished name is not permitted", func() {
-			BeforeEach(func() { allowedDNs = []string{"o=bosh.not-director"} })
+			BeforeEach(func() { allowedNames = []string{"o=bosh.not-director"} })
 			It("rejects the request", func() {
 				logWriter.Capture("Unauthorized")
 				resp, err := httpPut(url, tarballPath, directorCert)

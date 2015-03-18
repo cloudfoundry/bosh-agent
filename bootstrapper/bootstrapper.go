@@ -14,10 +14,10 @@ import (
 )
 
 type Bootstrapper struct {
-	CertFile   string
-	KeyFile    string
-	CACertPem  string
-	AllowedDNs []string
+	CertFile     string
+	KeyFile      string
+	CACertPem    string
+	AllowedNames []string
 
 	Logger *log.Logger
 
@@ -31,14 +31,14 @@ type Bootstrapper struct {
 const InstallScriptName = "install.sh"
 
 func (b *Bootstrapper) Listen(port int) error {
-	certAuthHandler, err := ParseDistinguishedNames(b.AllowedDNs)
+	certAuthRules, err := NewCertAuthRules(b.AllowedNames)
 	if err != nil {
 		return err
 	}
 
 	serveMux := http.NewServeMux()
 	logger := logger.New(logger.LevelDebug, b.Logger, b.Logger)
-	serveMux.Handle("/self-update", certAuthHandler.WrapHandler(logger, &SelfUpdateHandler{Logger: logger}))
+	serveMux.Handle("/self-update", certAuthRules.Wrap(logger, &SelfUpdateHandler{Logger: logger}))
 
 	b.server.Handler = serveMux
 	b.server.ErrorLog = b.Logger
