@@ -14,26 +14,36 @@ import (
 )
 
 type Kickstart struct {
-	CertFile  string
-	KeyFile   string
-	CACertPem string
+	CertFile   string
+	KeyFile    string
+	CACertPem  string
+	AllowedDNs []string
 
 	Logger *log.Logger
-	wg     sync.WaitGroup
+
+	server   http.Server
+	listener net.Listener
+	started  bool
+	closing  bool
+	wg       sync.WaitGroup
 }
 
 const InstallScriptName = "install.sh"
 
 func (k *Kickstart) Listen(port int) error {
+	dnPatterns, err := ParseDistinguishedNames(k.AllowedDNs)
+	if err != nil {
+		return err
+	}
+
 	serveMux := http.NewServeMux()
 	serveMux.Handle("/self-update", &SelfUpdateHandler{
-		Logger: logger.New(logger.LevelDebug, k.Logger, k.Logger),
+		AllowedDNs: dnPatterns,
+		Logger:     logger.New(logger.LevelDebug, k.Logger, k.Logger),
 	})
 
-	server := &http.Server{
-		Handler:  serveMux,
-		ErrorLog: k.Logger,
-	}
+	k.server.Handler = serveMux
+	k.server.ErrorLog = k.Logger
 
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{Port: port})
 	if err != nil {
@@ -51,21 +61,28 @@ func (k *Kickstart) Listen(port int) error {
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		ClientCAs:    certPool,
 	}
-	tlsListener := tls.NewListener(listener, config)
+	k.listener = tls.NewListener(listener, config)
 
 	k.wg.Add(1)
-	go k.run(server, tlsListener)
+	go k.run()
 	return nil
 }
 
-func (k *Kickstart) run(server *http.Server, tlsListener net.Listener) {
+func (k *Kickstart) run() {
 	defer k.wg.Done()
-	err := server.Serve(tlsListener)
-	if err != nil {
+	k.started = true
+	err := k.server.Serve(k.listener)
+	if err != nil && !k.closing {
 		fmt.Printf("run(): %s\n", err)
 	}
 }
 
 func (k *Kickstart) WaitForServerToExit() {
+	if k.started {
+		k.closing = true
+		k.listener.Close()
+		k.started = false
+	}
+
 	k.wg.Wait()
 }
