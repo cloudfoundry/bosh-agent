@@ -204,7 +204,7 @@ func mainDesc() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
-			Expect(logWriter.Captured()).To(ContainSubstring("ERROR - `tar xvfz -` exited with 1"))
+			Expect(logWriter.Captured()).To(ContainSubstring("ERROR - `tar xvfz -` exited with"))
 		})
 
 		It("notifies of a problem when the install.sh script exits with non-zero", func() {
