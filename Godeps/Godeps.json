@@ -46,12 +46,13 @@
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
-			"Comment": "v1.0.0-26-g34294d5",
-			"Rev": "34294d53b098180c6e983307c0439a6b30a16b43"
+			"Comment": "v1.1.0-41-g38caab9",
+			"Rev": "38caab951a9ff39f0e61294a1dbaaa074a39228b"
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Rev": "28e5ce936abc528d8c6b5eb3dd5689e7e81e9272"
+			"Comment": "v1.0-33-ge7b2cd9",
+			"Rev": "e7b2cd96b5633fbc5f0c221159a5c1e85323f770"
 		},
 		{
 			"ImportPath": "github.com/pivotal/go-smtpd/smtpd",
