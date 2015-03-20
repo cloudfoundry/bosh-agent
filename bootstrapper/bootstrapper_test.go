@@ -13,6 +13,8 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/bootstrapper"
 
+	"crypto/tls"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec/support"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -21,17 +23,16 @@ var _ = Describe("bootstrapper", mainDesc)
 
 func mainDesc() {
 	var (
-		err         error
-		k           *Bootstrapper
-		tmpDir      string
-		tarballPath string
+		err          error
+		bootstrapper *Bootstrapper
+		tmpDir       string
+		tarballPath  string
 
-		logWriter    *mutableWriter
+		logWriter    support.CapturableWriter
 		allowedNames []string
+		port         int
+		directorCert *tls.Certificate
 	)
-
-	port := getFreePort()
-	directorCert := certFor("director")
 
 	createTarball := func(installScript string) (tarballPath string) {
 		ioutil.WriteFile(path.Join(tmpDir, InstallScriptName), ([]byte)(installScript), 0755)
@@ -45,6 +46,9 @@ func mainDesc() {
 	}
 
 	BeforeEach(func() {
+		logWriter = support.NewCapturableWriter(os.Stderr)
+		directorCert = certFor("director")
+		port = getFreePort()
 		tmpDir, err = ioutil.TempDir("", "test-tmp")
 		Expect(err).ToNot(HaveOccurred())
 
@@ -55,8 +59,7 @@ func mainDesc() {
 	})
 
 	JustBeforeEach(func() {
-		logWriter = &mutableWriter{out: os.Stderr}
-		k = &Bootstrapper{
+		bootstrapper = &Bootstrapper{
 			CertFile:     fixtureFilename("certs/bootstrapper.crt"),
 			KeyFile:      fixtureFilename("certs/bootstrapper.key"),
 			CACertPem:    (string)(fixtureData("certs/rootCA.pem")),
@@ -67,21 +70,23 @@ func mainDesc() {
 
 	AfterEach(func() {
 		os.RemoveAll(tmpDir)
-		k.StopListening()
-		k.WaitForServerToExit()
+		bootstrapper.StopListening()
+		bootstrapper.WaitForServerToExit()
 	})
+
+	// remember to clean up after ourselves when install.sh finishes?
 
 	Describe("#Listen", func() {
 		It("returns an error when the port is already taken", func() {
 			port := getFreePort()
 			_, err = net.ListenTCP("tcp", &net.TCPAddr{Port: port})
 			Expect(err).ToNot(HaveOccurred())
-			err = k.Listen(port)
+			err = bootstrapper.Listen(port)
 			Expect(err.Error()).To(ContainSubstring("address already in use"))
 		})
 
 		It("listens on a given port", func() {
-			err = k.Listen(port)
+			err = bootstrapper.Listen(port)
 			Expect(err).ToNot(HaveOccurred())
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)
 			resp, err := httpPut(url, tarballPath, directorCert)
@@ -90,7 +95,7 @@ func mainDesc() {
 		})
 
 		It("identifies itself with the provided key", func() {
-			err = k.Listen(port)
+			err = bootstrapper.Listen(port)
 			Expect(err).ToNot(HaveOccurred())
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)
 			resp, err := httpPut(url, tarballPath, directorCert)
@@ -101,7 +106,7 @@ func mainDesc() {
 		Context("with a malformed AllowedNames list", func() {
 			BeforeEach(func() { allowedNames = []string{"invalid=value"} })
 			It("returns an error", func() {
-				err = k.Listen(port)
+				err = bootstrapper.Listen(port)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("Invalid AllowedNames: Unknown field 'invalid'"))
 			})
@@ -110,7 +115,7 @@ func mainDesc() {
 		Context("with an empty AllowedNames list", func() {
 			BeforeEach(func() { allowedNames = []string{} })
 			It("returns an error", func() {
-				err = k.Listen(port)
+				err = bootstrapper.Listen(port)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("AllowedNames must be specified"))
 			})
@@ -118,7 +123,7 @@ func mainDesc() {
 	})
 
 	Describe("for other endpoints", func() {
-		JustBeforeEach(func() { Expect(k.Listen(port)).ToNot(HaveOccurred()) })
+		JustBeforeEach(func() { Expect(bootstrapper.Listen(port)).ToNot(HaveOccurred()) })
 
 		It("returns 404 for GET /self-update", func() {
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)
@@ -152,9 +157,12 @@ func mainDesc() {
 	Describe("PUT /self-update", func() {
 		var url string
 
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			url = fmt.Sprintf("https://localhost:%d/self-update", port)
-			k.Listen(port)
+		})
+
+		JustBeforeEach(func() {
+			bootstrapper.Listen(port)
 		})
 
 		It("expands uploaded tarball and runs install.sh", func() {
@@ -168,7 +176,7 @@ func mainDesc() {
 		})
 
 		It("rejects requests without a client certificate", func() {
-			logWriter.Capture("client didn't provide a certificate")
+			logWriter.Ignore("client didn't provide a certificate")
 			_, err = httpPut(url, tarballPath, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("bad certificate"))
@@ -176,7 +184,7 @@ func mainDesc() {
 		})
 
 		It("rejects requests when the client certificate isn't signed by the given CA", func() {
-			logWriter.Capture("client didn't provide a certificate")
+			logWriter.Ignore("client didn't provide a certificate")
 			_, err = httpPut(url, tarballPath, certFor("directorWithWrongCA"))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("bad certificate"))

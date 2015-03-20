@@ -3,46 +3,14 @@ package bootstrapper_test
 import (
 	. "github.com/onsi/gomega"
 
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	http "net/http"
 	os "os"
-	"regexp"
 )
-
-type mutableWriter struct {
-	out      io.Writer
-	patterns []*regexp.Regexp
-	captured bytes.Buffer
-}
-
-func (mw *mutableWriter) Write(p []byte) (n int, err error) {
-	for _, pattern := range mw.patterns {
-		if pattern.Match(p) {
-			return mw.captured.Write(p)
-		}
-	}
-
-	n, err = mw.out.Write(p)
-	return
-}
-
-func (mw *mutableWriter) Capture(pattern string) {
-	re, err := regexp.Compile(pattern)
-	if err != nil {
-		panic(err)
-	}
-	mw.patterns = append(mw.patterns, re)
-}
-
-func (mw *mutableWriter) Captured() string {
-	return mw.captured.String()
-}
 
 func fileExists(name string) bool {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
@@ -78,12 +46,17 @@ func certFor(certName string) *tls.Certificate {
 	return &cert
 }
 
-func httpClient(clientCert *tls.Certificate) *http.Client {
+func certPool() *x509.CertPool {
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(([]byte)(fixtureData("certs/rootCA.pem"))) {
 		fmt.Println("Wha? cert failed")
 		Expect(true).To(Equal(false))
 	}
+	return certPool
+}
+
+func httpClient(clientCert *tls.Certificate) *http.Client {
+	certPool := certPool()
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{

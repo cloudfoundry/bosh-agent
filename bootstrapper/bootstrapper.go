@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"sync"
 
+	"crypto/x509/pkix"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/errors"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
@@ -32,10 +34,12 @@ const StatusUnprocessableEntity = 422
 const InstallScriptName = "install.sh"
 
 func (b *Bootstrapper) Listen(port int) error {
-	certAuthRules, err := NewCertAuthRules(b.AllowedNames)
+	pkixNames, err := b.parseNames()
 	if err != nil {
 		return err
 	}
+
+	certAuthRules := auth.CertificateVerifier{AllowedNames: pkixNames}
 
 	serveMux := http.NewServeMux()
 	logger := logger.New(logger.LevelDebug, b.Logger, b.Logger)
@@ -89,4 +93,22 @@ func (b *Bootstrapper) StopListening() {
 
 func (b *Bootstrapper) WaitForServerToExit() {
 	b.wg.Wait()
+}
+
+func (b *Bootstrapper) parseNames() ([]pkix.Name, error) {
+	if len(b.AllowedNames) == 0 {
+		return nil, errors.Error("AllowedNames must be specified")
+	}
+
+	var pkixNames []pkix.Name
+	parser := auth.NewDistinguishedNamesParser()
+	for _, dn := range b.AllowedNames {
+		pkixName, err := parser.Parse(dn)
+		if err != nil {
+			return nil, errors.WrapError(err, "Invalid AllowedNames")
+		}
+		pkixNames = append(pkixNames, *pkixName)
+	}
+
+	return pkixNames, nil
 }
