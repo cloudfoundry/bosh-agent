@@ -9,7 +9,7 @@ import (
 type CapturableWriter interface {
 	Write(p []byte) (int, error)
 	Suppress(pattern string, block func())
-	Ignore(pattern string)
+	Ignore(pattern string) *regexp.Regexp
 	Capture(pattern string)
 	Captured() string
 }
@@ -44,24 +44,21 @@ func (writer *capturableWriter) Write(p []byte) (int, error) {
 }
 
 func (writer *capturableWriter) Suppress(pattern string, block func()) {
-	writer.Ignore(pattern)
+	regexp := writer.Ignore(pattern)
 	block()
-	writer.unIgnore(pattern)
+	writer.unIgnore(regexp)
 }
 
-func (writer *capturableWriter) Ignore(pattern string) {
+func (writer *capturableWriter) Ignore(pattern string) *regexp.Regexp {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
 		panic(err)
 	}
 	writer.ignorePatterns = append(writer.ignorePatterns, re)
+	return re
 }
 
-func (writer *capturableWriter) unIgnore(pattern string) {
-	re, err := regexp.Compile(pattern)
-	if err != nil {
-		panic(err)
-	}
+func (writer *capturableWriter) unIgnore(re *regexp.Regexp) {
 	newIgnorePatterns := []*regexp.Regexp{}
 	for _, existing := range writer.ignorePatterns {
 		if existing != re {
