@@ -3,6 +3,7 @@ package system
 import (
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -12,6 +13,7 @@ type System interface {
 	Untar(tarball io.Reader, targetDir string) (CommandResult, error)
 	RunScript(scriptPath string, workingDir string) (CommandResult, error)
 	TempDir(string, string) (string, error)
+	FileExists(string) bool
 }
 
 type CommandResult struct {
@@ -75,6 +77,11 @@ func (system *osSystem) Untar(tarball io.Reader, targetDir string) (CommandResul
 		ExitStatus: exitStatus,
 		CommandRun: strings.Join(tarCommand.Args, " "),
 	}, nil
+}
+
+func (system *osSystem) FileExists(filepath string) bool {
+	_, err := os.Stat(filepath)
+	return err == nil
 }
 
 func getExitStatus(err error) int {

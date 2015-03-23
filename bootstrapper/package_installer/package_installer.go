@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 )
@@ -35,6 +36,10 @@ func (packageInstaller *packageInstaller) Install(reader io.Reader) PackageInsta
 	if result.ExitStatus != 0 {
 		errorMessage := fmt.Sprintf("`%s` exited with %d", result.CommandRun, result.ExitStatus)
 		return packageInstaller.userError(errorMessage)
+	}
+
+	if !packageInstaller.system.FileExists(path.Join(tmpDir, InstallScriptName)) {
+		return packageInstaller.userError(fmt.Sprintf("No '%s' script found", InstallScriptName))
 	}
 
 	result, err = packageInstaller.system.RunScript(fmt.Sprintf("./%s", InstallScriptName), tmpDir)

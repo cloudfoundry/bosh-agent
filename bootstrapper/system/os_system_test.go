@@ -18,13 +18,13 @@ import (
 var _ = Describe("osSystem", func() {
 	var (
 		system System
+		err    error
 	)
 
 	Describe("Untar", func() {
 		var (
 			tmpDir    string
 			targetDir string
-			err       error
 		)
 
 		BeforeEach(func() {
@@ -104,7 +104,6 @@ var _ = Describe("osSystem", func() {
 	Describe("RunScript", func() {
 		var (
 			tmpDir string
-			err    error
 		)
 
 		BeforeEach(func() {
@@ -168,6 +167,24 @@ var _ = Describe("osSystem", func() {
 			_, err := system.RunScript("./not-the-script.sh", tmpDir)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no such file or directory"))
+		})
+	})
+
+	Describe("FileExists", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			tmpDir, err = ioutil.TempDir("", "test-tmp")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("returns whether or not the file exists", func() {
+			filePath := path.Join(tmpDir, "test.file")
+			err = ioutil.WriteFile(filePath, ([]byte)(""), 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(system.FileExists(filePath)).To(BeTrue())
+			Expect(system.FileExists(path.Join(tmpDir, "nonexistant.file"))).To(BeFalse())
 		})
 	})
 })

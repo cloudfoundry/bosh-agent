@@ -35,6 +35,7 @@ func mainDesc() {
 			RunScriptError:      nil,
 			TempDirTempDir:      tmpDir,
 			TempDirError:        nil,
+			FileExistsBool:      true,
 		}
 	})
 
@@ -82,6 +83,19 @@ func mainDesc() {
 			})
 		})
 
+		Context("when the install script is not present", func() {
+			It("returns a user error", func() {
+				system.FileExistsBool = false
+
+				packageInstaller = New(system)
+				installError := packageInstaller.Install(tarball)
+
+				Expect(installError).To(HaveOccurred())
+				Expect(installError.Error()).To(Equal("No 'install.sh' script found"))
+				Expect(installError.SystemError()).To(BeFalse())
+			})
+		})
+
 		Context("when the system has errors", func() {
 			It("returns a system error when we fail to run the tar command", func() {
 				system.UntarError = errors.New("something went terribly wrong while untarring")
@@ -125,6 +139,8 @@ type fakeSystem struct {
 
 	TempDirTempDir string
 	TempDirError   error
+
+	FileExistsBool bool
 }
 
 func (fake *fakeSystem) Untar(tarball io.Reader, targetDir string) (system.CommandResult, error) {
@@ -137,6 +153,10 @@ func (fake *fakeSystem) RunScript(scriptPath string, workingDir string) (system.
 	fake.RunScriptScript = scriptPath
 	fake.RunScriptWorkingDir = workingDir
 	return system.CommandResult{ExitStatus: fake.RunScriptExitStatus, CommandRun: fake.RunScriptCommandRun}, fake.RunScriptError
+}
+
+func (fake *fakeSystem) FileExists(filePath string) bool {
+	return fake.FileExistsBool
 }
 
 func (fake *fakeSystem) TempDir(dir string, prefix string) (string, error) {
