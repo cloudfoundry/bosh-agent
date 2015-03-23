@@ -1,20 +1,23 @@
 package bootstrapper_test
 
 import (
-	fmt "fmt"
+	"crypto/tls"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
-	http "net/http"
-	os "os"
+	"net/http"
+	"os"
 	"os/exec"
 	"path"
 	"strings"
 
-	. "github.com/cloudfoundry/bosh-agent/bootstrapper"
-
-	"crypto/tls"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec/support"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
+
+	. "github.com/cloudfoundry/bosh-agent/bootstrapper"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -28,15 +31,16 @@ func mainDesc() {
 		tmpDir       string
 		tarballPath  string
 
-		logWriter    support.CapturableWriter
-		allowedNames []string
-		port         int
-		directorCert *tls.Certificate
+		logWriter        support.CapturableWriter
+		allowedNames     []string
+		port             int
+		directorCert     *tls.Certificate
+		packageInstaller package_installer.PackageInstaller
 	)
 
 	createTarball := func(installScript string) (tarballPath string) {
-		ioutil.WriteFile(path.Join(tmpDir, InstallScriptName), ([]byte)(installScript), 0755)
-		tarCmd := exec.Command("tar", "cfz", "tarball.tgz", InstallScriptName)
+		ioutil.WriteFile(path.Join(tmpDir, package_installer.InstallScriptName), ([]byte)(installScript), 0755)
+		tarCmd := exec.Command("tar", "cfz", "tarball.tgz", package_installer.InstallScriptName)
 		tarCmd.Dir = tmpDir
 		_, err = tarCmd.CombinedOutput()
 		Expect(err).ToNot(HaveOccurred())
@@ -56,15 +60,18 @@ func mainDesc() {
 		tarballPath = createTarball(installScript)
 
 		allowedNames = []string{"*"}
+		system := system.NewOsSystem()
+		packageInstaller = package_installer.New(system)
 	})
 
 	JustBeforeEach(func() {
 		bootstrapper = &Bootstrapper{
-			CertFile:     fixtureFilename("certs/bootstrapper.crt"),
-			KeyFile:      fixtureFilename("certs/bootstrapper.key"),
-			CACertPem:    (string)(fixtureData("certs/rootCA.pem")),
-			AllowedNames: allowedNames,
-			Logger:       log.New(logWriter, "", 0),
+			CertFile:         fixtureFilename("certs/bootstrapper.crt"),
+			KeyFile:          fixtureFilename("certs/bootstrapper.key"),
+			CACertPem:        (string)(fixtureData("certs/rootCA.pem")),
+			AllowedNames:     allowedNames,
+			Logger:           log.New(logWriter, "", 0),
+			PackageInstaller: packageInstaller,
 		}
 	})
 
@@ -94,15 +101,6 @@ func mainDesc() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		})
 
-		It("identifies itself with the provided key", func() {
-			err = bootstrapper.Listen(port)
-			Expect(err).ToNot(HaveOccurred())
-			url := fmt.Sprintf("https://localhost:%d/self-update", port)
-			resp, err := httpPut(url, tarballPath, directorCert)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.TLS.PeerCertificates[0].Subject.Organization[0]).To(Equal("bosh.bootstrapper"))
-		})
-
 		Context("with a malformed AllowedNames list", func() {
 			BeforeEach(func() { allowedNames = []string{"invalid=value"} })
 			It("returns an error", func() {
@@ -120,109 +118,164 @@ func mainDesc() {
 				Expect(err.Error()).To(Equal("AllowedNames must be specified"))
 			})
 		})
-	})
 
-	Describe("for other endpoints", func() {
-		JustBeforeEach(func() { Expect(bootstrapper.Listen(port)).ToNot(HaveOccurred()) })
+		Describe("TLS handshaking", func() {
+			var url string
 
-		It("returns 404 for GET /self-update", func() {
-			url := fmt.Sprintf("https://localhost:%d/self-update", port)
-			response, err := httpDo("GET", url, directorCert)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
-		})
+			BeforeEach(func() {
+				url = fmt.Sprintf("https://localhost:%d/self-update", port)
+			})
 
-		It("returns 404 for POST /self-update", func() {
-			url := fmt.Sprintf("https://localhost:%d/self-update", port)
-			response, err := httpDo("POST", url, directorCert)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
-		})
+			JustBeforeEach(func() {
+				bootstrapper.Listen(port)
+			})
 
-		It("returns 404 for DELETE /self-update", func() {
-			url := fmt.Sprintf("https://localhost:%d/self-update", port)
-			response, err := httpDo("DELETE", url, directorCert)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
-		})
-
-		It("returns 404 for GET /foo", func() {
-			url := fmt.Sprintf("https://localhost:%d/foo", port)
-			response, err := httpDo("GET", url, directorCert)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(response.StatusCode).To(Equal(http.StatusNotFound))
-		})
-	})
-
-	Describe("PUT /self-update", func() {
-		var url string
-
-		BeforeEach(func() {
-			url = fmt.Sprintf("https://localhost:%d/self-update", port)
-		})
-
-		JustBeforeEach(func() {
-			bootstrapper.Listen(port)
-		})
-
-		It("expands uploaded tarball and runs install.sh", func() {
-			resp, err := httpPut(url, tarballPath, directorCert)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-
-			installLog, err := ioutil.ReadFile(path.Join(tmpDir, "install.log"))
-			Expect(err).ToNot(HaveOccurred())
-			Expect((string)(installLog)).To(Equal("hiya\n"))
-		})
-
-		It("rejects requests without a client certificate", func() {
-			logWriter.Ignore("client didn't provide a certificate")
-			_, err = httpPut(url, tarballPath, nil)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("bad certificate"))
-			Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
-		})
-
-		It("rejects requests when the client certificate isn't signed by the given CA", func() {
-			logWriter.Ignore("client didn't provide a certificate")
-			_, err = httpPut(url, tarballPath, certFor("directorWithWrongCA"))
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("bad certificate"))
-			Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
-		})
-
-		Context("when the client cert's distinguished name is not permitted", func() {
-			BeforeEach(func() { allowedNames = []string{"o=bosh.not-director"} })
-			It("rejects the request", func() {
-				logWriter.Capture("Unauthorized")
+			It("identifies itself with the provided key", func() {
+				Expect(err).ToNot(HaveOccurred())
 				resp, err := httpPut(url, tarballPath, directorCert)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
+				Expect(resp.TLS.PeerCertificates[0].Subject.Organization[0]).To(Equal("bosh.bootstrapper"))
+			})
+
+			It("rejects requests without a client certificate", func() {
+				logWriter.Ignore("client didn't provide a certificate")
+				_, err = httpPut(url, tarballPath, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("bad certificate"))
 				Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
-				Expect(logWriter.Captured()).To(ContainSubstring("ERROR - Unauthorized access: Subject"))
+			})
+
+			It("rejects requests when the client certificate isn't signed by the given CA", func() {
+				logWriter.Ignore("client didn't provide a certificate")
+				_, err = httpPut(url, tarballPath, certFor("directorWithWrongCA"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("bad certificate"))
+				Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
+			})
+
+			Context("when the client cert's distinguished name is not permitted", func() {
+				BeforeEach(func() { allowedNames = []string{"o=bosh.not-director"} })
+				It("rejects the request", func() {
+					logWriter.Capture("Unauthorized")
+					resp, err := httpPut(url, tarballPath, directorCert)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
+					Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
+					Expect(logWriter.Captured()).To(ContainSubstring("ERROR - Unauthorized access: Subject"))
+				})
+			})
+
+		})
+
+		Describe("PUT /self-update", func() {
+			var url string
+
+			BeforeEach(func() {
+				url = fmt.Sprintf("https://localhost:%d/self-update", port)
+			})
+
+			JustBeforeEach(func() {
+				bootstrapper.Listen(port)
+			})
+
+			It("expands uploaded tarball and runs install.sh", func() {
+				resp, err := httpPut(url, tarballPath, directorCert)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				installLog, err := ioutil.ReadFile(path.Join(tmpDir, "install.log"))
+				Expect(err).ToNot(HaveOccurred())
+				Expect((string)(installLog)).To(Equal("hiya\n"))
+			})
+
+			It("returns an UnproccessableEntity when there are problems with the payload", func() {
+				logWriter.Capture("SelfUpdateHandler")
+
+				req, err := http.NewRequest("PUT", url, strings.NewReader("busted tar"))
+				Expect(err).ToNot(HaveOccurred())
+				resp, err := httpClient(directorCert).Do(req)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(resp.StatusCode).To(Equal(StatusUnprocessableEntity))
+
+				contents, err := ioutil.ReadAll(resp.Body)
+				Expect(err).ToNot(HaveOccurred())
+				expectedError := "`tar xvfz -` exited with"
+				Expect(string(contents)).To(ContainSubstring(expectedError))
+				Expect(logWriter.Captured()).To(ContainSubstring(expectedError))
+			})
+
+			Context("when the system has errors", func() {
+				BeforeEach(func() {
+					packageInstaller = erroringPackageInstaller{message: "Ahhhhhhh!!!"}
+				})
+
+				It("returns an InternalServerError when appropriate", func() {
+					logWriter.Capture("SelfUpdateHandler")
+					resp, err := httpPut(url, tarballPath, directorCert)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+					contents, err := ioutil.ReadAll(resp.Body)
+					Expect(err).ToNot(HaveOccurred())
+
+					expectedError := "Ahhhhhhh!!!"
+					Expect(string(contents)).To(ContainSubstring(expectedError))
+					Expect(logWriter.Captured()).To(ContainSubstring(expectedError))
+				})
 			})
 		})
 
-		It("returns an error when the tarball is corrupt", func() {
-			logWriter.Capture("SelfUpdateHandler")
+		Describe("for other endpoints", func() {
+			JustBeforeEach(func() { Expect(bootstrapper.Listen(port)).ToNot(HaveOccurred()) })
 
-			req, err := http.NewRequest("PUT", url, strings.NewReader("busted tar"))
-			Expect(err).ToNot(HaveOccurred())
-			resp, err := httpClient(directorCert).Do(req)
-			Expect(err).ToNot(HaveOccurred())
+			It("returns 404 for GET /self-update", func() {
+				url := fmt.Sprintf("https://localhost:%d/self-update", port)
+				response, err := httpDo("GET", url, directorCert)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
+			})
 
-			Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
-			Expect(logWriter.Captured()).To(ContainSubstring("ERROR - `tar xvfz -` exited with"))
-		})
+			It("returns 404 for POST /self-update", func() {
+				url := fmt.Sprintf("https://localhost:%d/self-update", port)
+				response, err := httpDo("POST", url, directorCert)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
+			})
 
-		It("notifies of a problem when the install.sh script exits with non-zero", func() {
-			logWriter.Capture("SelfUpdateHandler")
+			It("returns 404 for DELETE /self-update", func() {
+				url := fmt.Sprintf("https://localhost:%d/self-update", port)
+				response, err := httpDo("DELETE", url, directorCert)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
+			})
 
-			createTarball("#!/bin/bash\nexit 123")
-			resp, err := httpPut(url, tarballPath, directorCert)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resp.StatusCode).To(Equal(StatusUnprocessableEntity))
-			Expect(logWriter.Captured()).To(ContainSubstring("ERROR - `./install.sh` exited with 123"))
+			It("returns 404 for GET /foo", func() {
+				url := fmt.Sprintf("https://localhost:%d/foo", port)
+				response, err := httpDo("GET", url, directorCert)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response.StatusCode).To(Equal(http.StatusNotFound))
+			})
 		})
 	})
+}
+
+type erroringPackageInstaller struct {
+	message string
+}
+
+type erroringPackageInstallerError struct {
+	message string
+}
+
+func (erroringPackageInstallerError erroringPackageInstallerError) Error() string {
+	return erroringPackageInstallerError.message
+}
+
+func (erroringPackageInstallerError erroringPackageInstallerError) SystemError() bool {
+	return true
+}
+
+func (erroringPackageInstaller erroringPackageInstaller) Install(reader io.Reader) package_installer.PackageInstallerError {
+	return erroringPackageInstallerError{message: erroringPackageInstaller.message}
 }

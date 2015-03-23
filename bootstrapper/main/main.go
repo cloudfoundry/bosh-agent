@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 )
 
 func main() {
@@ -35,19 +37,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	k := &bootstrapper.Bootstrapper{
+	bootstrapperInstance := &bootstrapper.Bootstrapper{
 		CertFile:     certFile,
 		KeyFile:      keyFile,
 		CACertPem:    (string)(pem),
 		AllowedNames: []string{allowedName},
 
-		Logger: log.New(os.Stderr, "", log.LstdFlags),
+		Logger:           log.New(os.Stderr, "", log.LstdFlags),
+		PackageInstaller: package_installer.New(system.NewOsSystem()),
 	}
 
-	err = k.Listen(4443)
+	err = bootstrapperInstance.Listen(4443)
 	if err != nil {
 		fmt.Printf("main(): %s\n", err)
 		os.Exit(1)
 	}
-	k.WaitForServerToExit()
+	bootstrapperInstance.WaitForServerToExit()
 }

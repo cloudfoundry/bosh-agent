@@ -3,14 +3,15 @@ package bootstrapper
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"sync"
 
-	"crypto/x509/pkix"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/errors"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
@@ -23,15 +24,15 @@ type Bootstrapper struct {
 
 	Logger *log.Logger
 
-	server   http.Server
-	listener net.Listener
-	started  bool
-	closing  bool
-	wg       sync.WaitGroup
+	server           http.Server
+	listener         net.Listener
+	started          bool
+	closing          bool
+	wg               sync.WaitGroup
+	PackageInstaller package_installer.PackageInstaller
 }
 
 const StatusUnprocessableEntity = 422
-const InstallScriptName = "install.sh"
 
 func (b *Bootstrapper) Listen(port int) error {
 	pkixNames, err := b.parseNames()
@@ -43,7 +44,7 @@ func (b *Bootstrapper) Listen(port int) error {
 
 	serveMux := http.NewServeMux()
 	logger := logger.New(logger.LevelDebug, b.Logger, b.Logger)
-	serveMux.Handle("/self-update", certAuthRules.Wrap(logger, &SelfUpdateHandler{Logger: logger}))
+	serveMux.Handle("/self-update", certAuthRules.Wrap(logger, &SelfUpdateHandler{Logger: logger, packageInstaller: b.PackageInstaller}))
 
 	b.server.Handler = serveMux
 	b.server.ErrorLog = b.Logger
