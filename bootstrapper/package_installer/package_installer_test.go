@@ -27,15 +27,16 @@ func mainDesc() {
 		tmpDir = "fake/tmp/dir"
 		tarball = strings.NewReader("fake tarball")
 		system = &fakeSystem{
-			UntarExitStatus:     0,
-			UntarCommandRun:     "the-untar-command",
-			UntarError:          nil,
-			RunScriptExitStatus: 0,
-			RunScriptCommandRun: "the-install-script-command",
-			RunScriptError:      nil,
-			TempDirTempDir:      tmpDir,
-			TempDirError:        nil,
-			FileExistsBool:      true,
+			UntarExitStatus:      0,
+			UntarCommandRun:      "the-untar-command",
+			UntarError:           nil,
+			RunScriptExitStatus:  0,
+			RunScriptCommandRun:  "the-install-script-command",
+			RunScriptError:       nil,
+			TempDirTempDir:       tmpDir,
+			TempDirError:         nil,
+			FileExistsBool:       true,
+			FileIsExecutableBool: true,
 		}
 	})
 
@@ -80,6 +81,33 @@ func mainDesc() {
 				expectedError := "`the-failing-install-command` exited with 100"
 				Expect(installError.Error()).To(Equal(expectedError))
 				Expect(installError.SystemError()).To(BeFalse())
+			})
+		})
+
+		Context("when the install script is not executable", func() {
+			It("returns a non-system error with info", func() {
+				system.FileIsExecutableBool = false
+
+				packageInstaller = New(system)
+
+				installError := packageInstaller.Install(tarball)
+
+				Expect(installError).To(HaveOccurred())
+				Expect(installError.Error()).To(Equal("'install.sh' is not executable"))
+				Expect(installError.SystemError()).To(BeFalse())
+			})
+
+			It("returns a system error if we can't figure it out", func() {
+				system.FileIsExecutableBool = true
+				system.FileIsExecutableError = errors.New("something went wrong")
+
+				packageInstaller = New(system)
+
+				installError := packageInstaller.Install(tarball)
+
+				Expect(installError).To(HaveOccurred())
+				Expect(installError.Error()).To(Equal("something went wrong"))
+				Expect(installError.SystemError()).To(BeTrue())
 			})
 		})
 
@@ -141,6 +169,9 @@ type fakeSystem struct {
 	TempDirError   error
 
 	FileExistsBool bool
+
+	FileIsExecutableBool  bool
+	FileIsExecutableError error
 }
 
 func (fake *fakeSystem) Untar(tarball io.Reader, targetDir string) (system.CommandResult, error) {
@@ -157,6 +188,10 @@ func (fake *fakeSystem) RunScript(scriptPath string, workingDir string) (system.
 
 func (fake *fakeSystem) FileExists(filePath string) bool {
 	return fake.FileExistsBool
+}
+
+func (fake *fakeSystem) FileIsExecutable(filePath string) (bool, error) {
+	return fake.FileIsExecutableBool, fake.FileIsExecutableError
 }
 
 func (fake *fakeSystem) TempDir(dir string, prefix string) (string, error) {

@@ -42,6 +42,14 @@ func (packageInstaller *packageInstaller) Install(reader io.Reader) PackageInsta
 		return packageInstaller.userError(fmt.Sprintf("No '%s' script found", InstallScriptName))
 	}
 
+	isExecutable, err := packageInstaller.system.FileIsExecutable(path.Join(tmpDir, InstallScriptName))
+	if err != nil {
+		return packageInstaller.systemError(err)
+	}
+	if !isExecutable {
+		return packageInstaller.userError(fmt.Sprintf("'%s' is not executable", InstallScriptName))
+	}
+
 	result, err = packageInstaller.system.RunScript(fmt.Sprintf("./%s", InstallScriptName), tmpDir)
 	if err != nil {
 		return packageInstaller.systemError(err)

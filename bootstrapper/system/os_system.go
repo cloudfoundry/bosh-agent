@@ -14,6 +14,7 @@ type System interface {
 	RunScript(scriptPath string, workingDir string) (CommandResult, error)
 	TempDir(string, string) (string, error)
 	FileExists(string) bool
+	FileIsExecutable(string) (bool, error)
 }
 
 type CommandResult struct {
@@ -82,6 +83,16 @@ func (system *osSystem) Untar(tarball io.Reader, targetDir string) (CommandResul
 func (system *osSystem) FileExists(filepath string) bool {
 	_, err := os.Stat(filepath)
 	return err == nil
+}
+
+func (system *osSystem) FileIsExecutable(filepath string) (bool, error) {
+	fileInfo, err := os.Stat(filepath)
+	if err != nil {
+		return false, err
+	}
+
+	executableMask := os.FileMode(0100)
+	return (fileInfo.Mode().Perm() & executableMask) > 0, nil
 }
 
 func getExitStatus(err error) int {

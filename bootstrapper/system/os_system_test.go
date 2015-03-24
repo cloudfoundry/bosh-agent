@@ -187,4 +187,26 @@ var _ = Describe("osSystem", func() {
 			Expect(system.FileExists(path.Join(tmpDir, "nonexistant.file"))).To(BeFalse())
 		})
 	})
+
+	Describe("FileIsExecutable", func() {
+		var tmpDir string
+
+		BeforeEach(func() {
+			tmpDir, err = ioutil.TempDir("", "test-tmp")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("returns whether or not the file is executable", func() {
+			executableFilePath := path.Join(tmpDir, "executable.file")
+			err = ioutil.WriteFile(executableFilePath, ([]byte)(""), 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			nonExecutableFilePath := path.Join(tmpDir, "non_executable.file")
+			err = ioutil.WriteFile(nonExecutableFilePath, ([]byte)(""), 0655)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(system.FileIsExecutable(executableFilePath)).To(BeTrue())
+			Expect(system.FileIsExecutable(nonExecutableFilePath)).To(BeFalse())
+		})
+	})
 })
