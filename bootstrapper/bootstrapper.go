@@ -34,6 +34,71 @@ type Bootstrapper struct {
 
 const StatusUnprocessableEntity = 422
 
+func (b *Bootstrapper) httpClient() (*http.Client, error) {
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(([]byte)(b.CACertPem)) {
+		return nil, errors.Error("Failed to load CA cert")
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs:    certPool,
+			ClientAuth: tls.RequireAndVerifyClientCert,
+		},
+	}
+
+	return &http.Client{Transport: tr}, nil
+}
+
+func (b *Bootstrapper) Download(url string) error {
+	pkixNames, err := b.parseNames()
+	if err != nil {
+		return err
+	}
+
+	logger := logger.New(logger.LevelDebug, b.Logger, b.Logger)
+	logger.Info("Download", "Downloading %s...", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logger.Error("Download", "Couldn't make the request to %s: %s", url, err.Error())
+		return err
+	}
+
+	client, err := b.httpClient()
+	if err != nil {
+		logger.Error("Download", "Couldn't make the http client %s", err.Error())
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Download", "Couldn't do the request (%s): %s", req, err.Error())
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		err := fmt.Errorf("Download failed, bad response: %s", resp.Status)
+		logger.Error("Download", err.Error())
+		return err
+	}
+
+	certificateVerifier := auth.CertificateVerifier{AllowedNames: pkixNames}
+
+	err = certificateVerifier.Verify(resp.TLS.PeerCertificates)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Download", "Downloading complete. Installing...")
+	err = b.PackageInstaller.Install(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Download", "Download succeeded")
+	return nil
+}
+
 func (b *Bootstrapper) Listen(port int) error {
 	pkixNames, err := b.parseNames()
 	if err != nil {

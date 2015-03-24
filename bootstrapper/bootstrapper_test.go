@@ -9,12 +9,11 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec/support"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 
 	. "github.com/cloudfoundry/bosh-agent/bootstrapper"
@@ -31,48 +30,26 @@ func mainDesc() {
 		tmpDir       string
 		tarballPath  string
 
-		logWriter        support.CapturableWriter
+		logWriter        spec.CapturableWriter
 		allowedNames     []string
 		port             int
 		directorCert     *tls.Certificate
 		packageInstaller package_installer.PackageInstaller
 	)
 
-	createTarball := func(installScript string) (tarballPath string) {
-		ioutil.WriteFile(path.Join(tmpDir, package_installer.InstallScriptName), ([]byte)(installScript), 0755)
-		tarCmd := exec.Command("tar", "cfz", "tarball.tgz", package_installer.InstallScriptName)
-		tarCmd.Dir = tmpDir
-		_, err = tarCmd.CombinedOutput()
-		Expect(err).ToNot(HaveOccurred())
-
-		tarballPath = path.Join(tmpDir, "tarball.tgz")
-		return
-	}
-
 	BeforeEach(func() {
-		logWriter = support.NewCapturableWriter(os.Stderr)
-		directorCert = certFor("director")
-		port = getFreePort()
+		logWriter = spec.NewCapturableWriter(GinkgoWriter)
+		directorCert = spec.CertFor("director")
+		port = spec.GetFreePort()
 		tmpDir, err = ioutil.TempDir("", "test-tmp")
 		Expect(err).ToNot(HaveOccurred())
 
 		installScript := fmt.Sprintf("#!/bin/bash\necho hiya > %s/install.log\n", tmpDir)
-		tarballPath = createTarball(installScript)
+		tarballPath = spec.CreateTarball(installScript)
 
 		allowedNames = []string{"*"}
 		system := system.NewOsSystem()
 		packageInstaller = package_installer.New(system)
-	})
-
-	JustBeforeEach(func() {
-		bootstrapper = &Bootstrapper{
-			CertFile:         fixtureFilename("certs/bootstrapper.crt"),
-			KeyFile:          fixtureFilename("certs/bootstrapper.key"),
-			CACertPem:        (string)(fixtureData("certs/rootCA.pem")),
-			AllowedNames:     allowedNames,
-			Logger:           log.New(logWriter, "", 0),
-			PackageInstaller: packageInstaller,
-		}
 	})
 
 	AfterEach(func() {
@@ -83,9 +60,108 @@ func mainDesc() {
 
 	// remember to clean up after ourselves when install.sh finishes?
 
+	Describe("#Download", func() {
+		var (
+			tarballURL string
+			listener   net.Listener
+		)
+
+		JustBeforeEach(func() {
+			listener = spec.StartDownloadServer(port, tarballPath, directorCert)
+			tarballURL = fmt.Sprintf("https://localhost:%d/tarball.tgz", port)
+
+			bootstrapper = &Bootstrapper{
+				CertFile:         spec.FixtureFilename("certs/bootstrapper.crt"),
+				KeyFile:          spec.FixtureFilename("certs/bootstrapper.key"),
+				CACertPem:        (string)(spec.FixtureData("certs/rootCA.pem")),
+				AllowedNames:     allowedNames,
+				Logger:           log.New(logWriter, "", 0),
+				PackageInstaller: packageInstaller,
+			}
+		})
+
+		AfterEach(func() {
+			if listener != nil {
+				listener.Close()
+			}
+		})
+
+		It("GETs the given URL, opens the tarball, and runs install.sh", func() {
+			err := bootstrapper.Download(tarballURL)
+			Expect(err).ToNot(HaveOccurred())
+			installLog, err := ioutil.ReadFile(path.Join(tmpDir, "install.log"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect((string)(installLog)).To(Equal("hiya\n"))
+		})
+
+		Context("when the download url is bad", func() {
+			It("returns an http error", func() {
+				err := bootstrapper.Download(fmt.Sprintf("https://localhost:%d/foobar", port))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Not Found"))
+			})
+		})
+
+		Context("when the downloaded file is bad", func() {
+			BeforeEach(func() {
+				tarballPath = spec.CreateTarball("foooooooooooooooooooo")
+			})
+			It("returns a file error", func() {
+				err := bootstrapper.Download(tarballURL)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("install.sh"))
+			})
+		})
+
+		Context("when server cert doesn't match client cert rules", func() {
+			BeforeEach(func() {
+				allowedNames = []string{"o=not.bosh.director"}
+			})
+
+			It("rejects the request", func() {
+				logWriter.Capture("Fake Bosh Server")
+				err := bootstrapper.Download(tarballURL)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("didn't match allowed distinguished names"))
+				_, err = os.Stat(path.Join(tmpDir, "install.log"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("no such file"))
+			})
+		})
+
+		Context("with a malformed AllowedNames list", func() {
+			BeforeEach(func() { allowedNames = []string{"invalid=value"} })
+			It("returns an error", func() {
+				err := bootstrapper.Download(tarballURL)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Invalid AllowedNames: Unknown field 'invalid'"))
+			})
+		})
+
+		Context("with an empty AllowedNames list", func() {
+			BeforeEach(func() { allowedNames = []string{} })
+			It("returns an error", func() {
+				err := bootstrapper.Download(tarballURL)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("AllowedNames must be specified"))
+			})
+		})
+	})
+
 	Describe("#Listen", func() {
+		JustBeforeEach(func() {
+			bootstrapper = &Bootstrapper{
+				CertFile:         spec.FixtureFilename("certs/bootstrapper.crt"),
+				KeyFile:          spec.FixtureFilename("certs/bootstrapper.key"),
+				CACertPem:        (string)(spec.FixtureData("certs/rootCA.pem")),
+				AllowedNames:     allowedNames,
+				Logger:           log.New(logWriter, "", 0),
+				PackageInstaller: packageInstaller,
+			}
+		})
+
 		It("returns an error when the port is already taken", func() {
-			port := getFreePort()
+			port := spec.GetFreePort()
 			_, err = net.ListenTCP("tcp", &net.TCPAddr{Port: port})
 			Expect(err).ToNot(HaveOccurred())
 			err = bootstrapper.Listen(port)
@@ -142,15 +218,15 @@ func mainDesc() {
 				_, err = httpPut(url, tarballPath, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bad certificate"))
-				Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
+				Expect(spec.FileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
 			})
 
 			It("rejects requests when the client certificate isn't signed by the given CA", func() {
 				logWriter.Ignore("client didn't provide a certificate")
-				_, err = httpPut(url, tarballPath, certFor("directorWithWrongCA"))
+				_, err = httpPut(url, tarballPath, spec.CertFor("directorWithWrongCA"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bad certificate"))
-				Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
+				Expect(spec.FileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
 			})
 
 			Context("when the client cert's distinguished name is not permitted", func() {
@@ -160,7 +236,7 @@ func mainDesc() {
 					resp, err := httpPut(url, tarballPath, directorCert)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
-					Expect(fileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
+					Expect(spec.FileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
 					Expect(logWriter.Captured()).To(ContainSubstring("ERROR - Unauthorized access: Subject"))
 				})
 			})
@@ -258,6 +334,34 @@ func mainDesc() {
 			})
 		})
 	})
+}
+
+func httpClient(clientCert *tls.Certificate) *http.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs: spec.CertPool(),
+		},
+	}
+
+	if clientCert != nil {
+		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCert}
+	}
+
+	return &http.Client{Transport: tr}
+}
+
+func httpDo(method, url string, clientCert *tls.Certificate) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, nil)
+	Expect(err).ToNot(HaveOccurred())
+	return httpClient(clientCert).Do(req)
+}
+
+func httpPut(url, uploadFile string, clientCert *tls.Certificate) (*http.Response, error) {
+	reader, err := os.Open(uploadFile)
+	Expect(err).ToNot(HaveOccurred())
+	req, err := http.NewRequest("PUT", url, reader)
+	Expect(err).ToNot(HaveOccurred())
+	return httpClient(clientCert).Do(req)
 }
 
 type erroringPackageInstaller struct {
