@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,115 +11,55 @@ import (
 	"github.com/cloudfoundry/bosh-agent/bootstrapper"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
+	"github.com/cloudfoundry/bosh-agent/logger"
+)
+
+var (
+	flags       = flag.NewFlagSet("flags", flag.ExitOnError)
+	certFile    = flags.String("certFile", "", "path to certificate")
+	keyFile     = flags.String("keyFile", "", "path to certificate key")
+	caPemFile   = flags.String("caPemFile", "", "path to CA PEM")
+	allowedName = flags.String("allowedName", "", "distiguished name to allow")
 )
 
 func usage() {
 	argv0 := os.Args[0]
-	fmt.Printf("usage: %s <subcommand> <options>\n\n", argv0)
-	fmt.Printf("       %s listen <certFile> <keyFile> <caPEM> <allowed distinguished names>\n", argv0)
-	fmt.Printf("       %s download <url> <certFile> <keyFile> <caPEM> <allowed distinguished names>\n", argv0)
-	// bootstrapper find-metadata
-	// bootstrapper do-it-all
-
-	os.Exit(1)
-}
-
-func listenUsage() {
-	argv0 := os.Args[0]
-	fmt.Printf("ERROR - Wrong number of arguments\n\n")
-	fmt.Printf("usage: %s listen <port> <certFile> <keyFile> <caPEM> <allowed distinguished names>\n", argv0)
-	fmt.Println()
-	fmt.Printf("try this:\n")
-	fmt.Printf("%s listen \\\n", argv0)
-	fmt.Printf("   bootstrapper/spec/support/certs/bootstrapper.crt       \\\n")
-	fmt.Printf("   bootstrapper/spec/support/certs/bootstrapper.key       \\\n")
-	fmt.Printf("   bootstrapper/spec/support/certs/rootCA.pem             \\\n")
-	fmt.Printf("   o=bosh.director\n")
-	os.Exit(1)
-}
-
-func downloadUsage() {
-	argv0 := os.Args[0]
-	fmt.Printf("ERROR - Wrong number of arguments\n\n")
-	fmt.Printf("usage: %s download <url> <certFile> <keyFile> <caPEM> <allowed distinguished names>\n", argv0)
-	fmt.Println()
-	fmt.Printf("try this:\n")
-	fmt.Printf("%s download https://example.com/something.tgz \\\n", argv0)
-	fmt.Printf("   bootstrapper/spec/support/certs/bootstrapper.crt       \\\n")
-	fmt.Printf("   bootstrapper/spec/support/certs/bootstrapper.key       \\\n")
-	fmt.Printf("   bootstrapper/spec/support/certs/rootCA.pem             \\\n")
-	fmt.Printf("   o=bosh.director\n")
+	fmt.Printf("bootstrapper usage:\n")
+	fmt.Printf("%s listen port <options>\n", argv0)
+	fmt.Printf("%s download url <options>\n", argv0)
+	fmt.Printf("\noptions:\n")
+	flags.PrintDefaults()
 	os.Exit(1)
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-	}
-	logger := log.New(os.Stdout, "", log.LstdFlags)
-	subcommand := os.Args[1]
-	switch subcommand {
+	logger := newLogger()
+	parseFlags(logger)
+	installer := package_installer.New(system.NewOsSystem())
+	config := newSSLConfig(logger)
+
+	switch os.Args[1] {
 	case "listen":
-		if len(os.Args) != 7 {
-			listenUsage()
-		}
-
-		portString, certFile, keyFile, pemFile, allowedName := os.Args[2], os.Args[3], os.Args[4], os.Args[5], os.Args[6]
-
-		pem, err := ioutil.ReadFile(pemFile)
-		if err != nil {
-			log.Println("failed to read pemFile: ", err)
-			os.Exit(1)
-		}
-
-		k := &bootstrapper.Bootstrapper{
-			CertFile:     certFile,
-			KeyFile:      keyFile,
-			CACertPem:    (string)(pem),
-			AllowedNames: []string{allowedName},
-
-			Logger:           logger,
-			PackageInstaller: package_installer.New(system.NewOsSystem()),
-		}
-
+		portString := os.Args[2]
 		port, err := strconv.Atoi(portString)
 		if err != nil {
 			log.Println("failed to parse port '", portString, "' :", err)
 			os.Exit(1)
 		}
-		err = k.Listen(port)
+
+		l := bootstrapper.NewListener(config, installer)
+		err = l.ListenAndServe(logger, port)
 		if err != nil {
-			log.Println("failed to start http server: ", err)
 			os.Exit(1)
 		}
-		k.WaitForServerToExit()
+		l.WaitForServerToExit()
 
 	case "download":
-		if len(os.Args) != 7 {
-			downloadUsage()
-		}
+		url := os.Args[2]
 
-		url, certFile, keyFile, pemFile, allowedName := os.Args[2], os.Args[3], os.Args[4], os.Args[5], os.Args[6]
-
-		pem, err := ioutil.ReadFile(pemFile)
+		d := bootstrapper.NewDownloader(config, installer)
+		err := d.Download(logger, url)
 		if err != nil {
-			fmt.Printf("main(): %s\n", err)
-			os.Exit(1)
-		}
-
-		k := &bootstrapper.Bootstrapper{
-			CertFile:     certFile,
-			KeyFile:      keyFile,
-			CACertPem:    (string)(pem),
-			AllowedNames: []string{allowedName},
-
-			Logger:           logger,
-			PackageInstaller: package_installer.New(system.NewOsSystem()),
-		}
-
-		err = k.Download(url)
-		if err != nil {
-			fmt.Printf("main(): %s\n", err)
 			os.Exit(1)
 		}
 
@@ -127,4 +68,38 @@ func main() {
 	}
 
 	os.Exit(0)
+}
+
+func parseFlags(logger logger.Logger) {
+	err := flags.Parse(os.Args[3:])
+	if err != nil {
+		usage()
+	}
+	flags.VisitAll(func(f *flag.Flag) {
+		if f.Value.String() == "" {
+			logger.Error("flags", "%s is a required flag", f.Name)
+			usage()
+		}
+	})
+}
+
+func newLogger() logger.Logger {
+	log.SetOutput(os.Stdout)
+	sysLog := log.New(os.Stdout, "", log.LstdFlags)
+	return logger.New(logger.LevelDebug, sysLog, sysLog)
+}
+
+func newSSLConfig(logger logger.Logger) bootstrapper.SSLConfig {
+	pem, err := ioutil.ReadFile(*caPemFile)
+	if err != nil {
+		logger.Error("CaPEMFile", "failed to read pemFile: ", err)
+		os.Exit(1)
+	}
+
+	config, err := bootstrapper.NewSSLConfig(*certFile, *keyFile, string(pem), []string{*allowedName})
+	if err != nil {
+		logger.Error("Config", "Unable to create SSL config", err)
+		os.Exit(1)
+	}
+	return config
 }

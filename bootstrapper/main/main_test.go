@@ -53,10 +53,10 @@ var _ = Describe("Main", func() {
 				bin,
 				"download",
 				url,
-				spec.FixtureFilename("certs/bootstrapper.crt"),
-				spec.FixtureFilename("certs/bootstrapper.key"),
-				spec.FixtureFilename("certs/rootCA.pem"),
-				"*",
+				"-certFile", spec.FixtureFilename("certs/bootstrapper.crt"),
+				"-keyFile", spec.FixtureFilename("certs/bootstrapper.key"),
+				"-caPemFile", spec.FixtureFilename("certs/rootCA.pem"),
+				"-allowedName", "*",
 			)
 			var startErr error
 			session, startErr = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
@@ -77,10 +77,10 @@ var _ = Describe("Main", func() {
 				bin,
 				"listen",
 				strconv.Itoa(port),
-				spec.FixtureFilename("certs/bootstrapper.crt"),
-				spec.FixtureFilename("certs/bootstrapper.key"),
-				spec.FixtureFilename("certs/rootCA.pem"),
-				"*",
+				"-certFile", spec.FixtureFilename("certs/bootstrapper.crt"),
+				"-keyFile", spec.FixtureFilename("certs/bootstrapper.key"),
+				"-caPemFile", spec.FixtureFilename("certs/rootCA.pem"),
+				"-allowedName", "*",
 			)
 			var err error
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)

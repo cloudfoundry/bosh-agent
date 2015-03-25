@@ -7,6 +7,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
+const StatusUnprocessableEntity = 422
+
 type SelfUpdateHandler struct {
 	Logger           logger.Logger
 	packageInstaller package_installer.PackageInstaller
@@ -28,7 +30,7 @@ func (h *SelfUpdateHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 			rw.WriteHeader(StatusUnprocessableEntity)
 		}
 		rw.Write([]byte(err.Error()))
-		h.Logger.Error("SelfUpdateHandler", "failed to install package: ", err.Error())
+		h.Logger.Error("SelfUpdateHandler", "failed to install package: %s", err.Error())
 		return
 	}
 

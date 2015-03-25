@@ -7,6 +7,7 @@ import (
 
 	"crypto/x509"
 	"fmt"
+
 	"github.com/cloudfoundry/bosh-agent/errors"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
