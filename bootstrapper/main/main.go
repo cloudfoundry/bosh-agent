@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
@@ -25,7 +26,7 @@ func usage() {
 func listenUsage() {
 	argv0 := os.Args[0]
 	fmt.Printf("ERROR - Wrong number of arguments\n\n")
-	fmt.Printf("usage: %s listen <certFile> <keyFile> <caPEM> <allowed distinguished names>\n", argv0)
+	fmt.Printf("usage: %s listen <port> <certFile> <keyFile> <caPEM> <allowed distinguished names>\n", argv0)
 	fmt.Println()
 	fmt.Printf("try this:\n")
 	fmt.Printf("%s listen \\\n", argv0)
@@ -54,19 +55,19 @@ func main() {
 	if len(os.Args) < 2 {
 		usage()
 	}
-
+	logger := log.New(os.Stdout, "", log.LstdFlags)
 	subcommand := os.Args[1]
 	switch subcommand {
 	case "listen":
-		if len(os.Args) != 6 {
+		if len(os.Args) != 7 {
 			listenUsage()
 		}
 
-		certFile, keyFile, pemFile, allowedName := os.Args[2], os.Args[3], os.Args[4], os.Args[5]
+		portString, certFile, keyFile, pemFile, allowedName := os.Args[2], os.Args[3], os.Args[4], os.Args[5], os.Args[6]
 
 		pem, err := ioutil.ReadFile(pemFile)
 		if err != nil {
-			fmt.Printf("main(): %s\n", err)
+			log.Println("failed to read pemFile: ", err)
 			os.Exit(1)
 		}
 
@@ -76,13 +77,18 @@ func main() {
 			CACertPem:    (string)(pem),
 			AllowedNames: []string{allowedName},
 
-			Logger:           log.New(os.Stdout, "", log.LstdFlags),
+			Logger:           logger,
 			PackageInstaller: package_installer.New(system.NewOsSystem()),
 		}
 
-		err = k.Listen(4443)
+		port, err := strconv.Atoi(portString)
 		if err != nil {
-			fmt.Printf("main(): %s\n", err)
+			log.Println("failed to parse port '", portString, "' :", err)
+			os.Exit(1)
+		}
+		err = k.Listen(port)
+		if err != nil {
+			log.Println("failed to start http server: ", err)
 			os.Exit(1)
 		}
 		k.WaitForServerToExit()
@@ -106,7 +112,7 @@ func main() {
 			CACertPem:    (string)(pem),
 			AllowedNames: []string{allowedName},
 
-			Logger:           log.New(os.Stdout, "", log.LstdFlags),
+			Logger:           logger,
 			PackageInstaller: package_installer.New(system.NewOsSystem()),
 		}
 

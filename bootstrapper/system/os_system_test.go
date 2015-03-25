@@ -16,10 +16,11 @@ import (
 )
 
 var _ = Describe("osSystem", func() {
-	var (
-		system System
-		err    error
-	)
+	var system System
+
+	BeforeEach(func() {
+		system = NewOsSystem()
+	})
 
 	Describe("Untar", func() {
 		var (
@@ -28,6 +29,7 @@ var _ = Describe("osSystem", func() {
 		)
 
 		BeforeEach(func() {
+			var err error
 			tmpDir, err = ioutil.TempDir("", "test-tmp")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -55,7 +57,7 @@ var _ = Describe("osSystem", func() {
 
 			system = NewOsSystem()
 
-			_, err = system.Untar(tarball, targetDir)
+			_, err := system.Untar(tarball, targetDir)
 			Expect(err).ToNot(HaveOccurred())
 
 			files, err := ioutil.ReadDir(targetDir)
@@ -95,25 +97,24 @@ var _ = Describe("osSystem", func() {
 
 			system = NewOsSystem()
 
-			_, err = system.Untar(tarball, "invalid-target-dir")
+			_, err := system.Untar(tarball, "invalid-target-dir")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no such file or directory"))
 		})
 	})
 
 	Describe("RunScript", func() {
-		var (
-			tmpDir string
-		)
+		var tmpDir string
 
 		BeforeEach(func() {
+			var err error
 			tmpDir, err = ioutil.TempDir("", "test-tmp")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		writeScript := func(scriptContents, dir string) string {
 			scriptPath := path.Join(dir, "test_script.sh")
-			err = ioutil.WriteFile(scriptPath, ([]byte)(scriptContents), 0755)
+			err := ioutil.WriteFile(scriptPath, ([]byte)(scriptContents), 0755)
 			Expect(err).ToNot(HaveOccurred())
 			return scriptPath
 		}
@@ -124,7 +125,7 @@ var _ = Describe("osSystem", func() {
 			`, tmpDir)
 			scriptPath := writeScript(scriptContents, tmpDir)
 
-			_, err = system.RunScript(scriptPath, tmpDir)
+			_, err := system.RunScript(scriptPath, tmpDir)
 			Expect(err).ToNot(HaveOccurred())
 
 			contents, err := ioutil.ReadFile(path.Join(tmpDir, "working_dir.txt"))
@@ -174,13 +175,14 @@ var _ = Describe("osSystem", func() {
 		var tmpDir string
 
 		BeforeEach(func() {
+			var err error
 			tmpDir, err = ioutil.TempDir("", "test-tmp")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("returns whether or not the file exists", func() {
 			filePath := path.Join(tmpDir, "test.file")
-			err = ioutil.WriteFile(filePath, ([]byte)(""), 0755)
+			err := ioutil.WriteFile(filePath, ([]byte)(""), 0755)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(system.FileExists(filePath)).To(BeTrue())
@@ -192,13 +194,14 @@ var _ = Describe("osSystem", func() {
 		var tmpDir string
 
 		BeforeEach(func() {
+			var err error
 			tmpDir, err = ioutil.TempDir("", "test-tmp")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("returns whether or not the file is executable", func() {
 			executableFilePath := path.Join(tmpDir, "executable.file")
-			err = ioutil.WriteFile(executableFilePath, ([]byte)(""), 0755)
+			err := ioutil.WriteFile(executableFilePath, ([]byte)(""), 0755)
 			Expect(err).ToNot(HaveOccurred())
 
 			nonExecutableFilePath := path.Join(tmpDir, "non_executable.file")

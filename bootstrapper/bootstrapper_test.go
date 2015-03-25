@@ -172,7 +172,7 @@ func mainDesc() {
 			err = bootstrapper.Listen(port)
 			Expect(err).ToNot(HaveOccurred())
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)
-			resp, err := httpPut(url, tarballPath, directorCert)
+			resp, err := spec.HttpPut(url, tarballPath, directorCert)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		})
@@ -208,14 +208,14 @@ func mainDesc() {
 
 			It("identifies itself with the provided key", func() {
 				Expect(err).ToNot(HaveOccurred())
-				resp, err := httpPut(url, tarballPath, directorCert)
+				resp, err := spec.HttpPut(url, tarballPath, directorCert)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.TLS.PeerCertificates[0].Subject.Organization[0]).To(Equal("bosh.bootstrapper"))
 			})
 
 			It("rejects requests without a client certificate", func() {
 				logWriter.Ignore("client didn't provide a certificate")
-				_, err = httpPut(url, tarballPath, nil)
+				_, err = spec.HttpPut(url, tarballPath, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bad certificate"))
 				Expect(spec.FileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
@@ -223,7 +223,7 @@ func mainDesc() {
 
 			It("rejects requests when the client certificate isn't signed by the given CA", func() {
 				logWriter.Ignore("client didn't provide a certificate")
-				_, err = httpPut(url, tarballPath, spec.CertFor("directorWithWrongCA"))
+				_, err = spec.HttpPut(url, tarballPath, spec.CertFor("directorWithWrongCA"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bad certificate"))
 				Expect(spec.FileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
@@ -233,7 +233,7 @@ func mainDesc() {
 				BeforeEach(func() { allowedNames = []string{"o=bosh.not-director"} })
 				It("rejects the request", func() {
 					logWriter.Capture("Unauthorized")
-					resp, err := httpPut(url, tarballPath, directorCert)
+					resp, err := spec.HttpPut(url, tarballPath, directorCert)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
 					Expect(spec.FileExists(path.Join(tmpDir, "install.log"))).To(BeFalse())
@@ -255,7 +255,7 @@ func mainDesc() {
 			})
 
 			It("expands uploaded tarball and runs install.sh", func() {
-				resp, err := httpPut(url, tarballPath, directorCert)
+				resp, err := spec.HttpPut(url, tarballPath, directorCert)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
@@ -269,7 +269,7 @@ func mainDesc() {
 
 				req, err := http.NewRequest("PUT", url, strings.NewReader("busted tar"))
 				Expect(err).ToNot(HaveOccurred())
-				resp, err := httpClient(directorCert).Do(req)
+				resp, err := spec.HttpClient(directorCert).Do(req)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(resp.StatusCode).To(Equal(StatusUnprocessableEntity))
@@ -288,7 +288,7 @@ func mainDesc() {
 
 				It("returns an InternalServerError when appropriate", func() {
 					logWriter.Capture("SelfUpdateHandler")
-					resp, err := httpPut(url, tarballPath, directorCert)
+					resp, err := spec.HttpPut(url, tarballPath, directorCert)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
@@ -307,61 +307,33 @@ func mainDesc() {
 
 			It("returns 404 for GET /self-update", func() {
 				url := fmt.Sprintf("https://localhost:%d/self-update", port)
-				response, err := httpDo("GET", url, directorCert)
+				response, err := spec.HttpDo("GET", url, directorCert)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
 			})
 
 			It("returns 404 for POST /self-update", func() {
 				url := fmt.Sprintf("https://localhost:%d/self-update", port)
-				response, err := httpDo("POST", url, directorCert)
+				response, err := spec.HttpDo("POST", url, directorCert)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
 			})
 
 			It("returns 404 for DELETE /self-update", func() {
 				url := fmt.Sprintf("https://localhost:%d/self-update", port)
-				response, err := httpDo("DELETE", url, directorCert)
+				response, err := spec.HttpDo("DELETE", url, directorCert)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(response.StatusCode).To(Equal(http.StatusMethodNotAllowed))
 			})
 
 			It("returns 404 for GET /foo", func() {
 				url := fmt.Sprintf("https://localhost:%d/foo", port)
-				response, err := httpDo("GET", url, directorCert)
+				response, err := spec.HttpDo("GET", url, directorCert)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(response.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 	})
-}
-
-func httpClient(clientCert *tls.Certificate) *http.Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			RootCAs: spec.CertPool(),
-		},
-	}
-
-	if clientCert != nil {
-		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCert}
-	}
-
-	return &http.Client{Transport: tr}
-}
-
-func httpDo(method, url string, clientCert *tls.Certificate) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, nil)
-	Expect(err).ToNot(HaveOccurred())
-	return httpClient(clientCert).Do(req)
-}
-
-func httpPut(url, uploadFile string, clientCert *tls.Certificate) (*http.Response, error) {
-	reader, err := os.Open(uploadFile)
-	Expect(err).ToNot(HaveOccurred())
-	req, err := http.NewRequest("PUT", url, reader)
-	Expect(err).ToNot(HaveOccurred())
-	return httpClient(clientCert).Do(req)
 }
 
 type erroringPackageInstaller struct {

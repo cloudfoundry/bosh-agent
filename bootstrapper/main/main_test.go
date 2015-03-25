@@ -1,8 +1,11 @@
 package main_test
 
 import (
+	"fmt"
 	"net"
+	"net/http"
 	"os/exec"
+	"strconv"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	. "github.com/onsi/ginkgo"
@@ -27,7 +30,6 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 
 var _ = Describe("Main", func() {
 	var session *gexec.Session
-	var startErr error
 
 	Describe("download", func() {
 		var listener net.Listener
@@ -56,6 +58,7 @@ var _ = Describe("Main", func() {
 				spec.FixtureFilename("certs/rootCA.pem"),
 				"*",
 			)
+			var startErr error
 			session, startErr = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(startErr).ToNot(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
@@ -64,5 +67,40 @@ var _ = Describe("Main", func() {
 		})
 	})
 
-	XDescribe("listen", func() {})
+	Describe("listen", func() {
+		var session *gexec.Session
+		var port = 4443 + GinkgoParallelNode()
+		var url = fmt.Sprintf("https://localhost:%d/self-update", port)
+
+		BeforeEach(func() {
+			cmd := exec.Command(
+				bin,
+				"listen",
+				strconv.Itoa(port),
+				spec.FixtureFilename("certs/bootstrapper.crt"),
+				spec.FixtureFilename("certs/bootstrapper.key"),
+				spec.FixtureFilename("certs/rootCA.pem"),
+				"*",
+			)
+			var err error
+			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			session.Kill()
+			Eventually(session).Should(gexec.Exit())
+		})
+
+		It("accepts PUT requests and runs the installer", func() {
+			installScript := "#!/bin/bash\necho hello from install script \n"
+			tarballPath := spec.CreateTarball(installScript)
+			resp, err := spec.HttpPut(url, tarballPath, spec.CertFor("director"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+			Expect(session.Out).To(gbytes.Say("hello from install script"))
+			Expect(session.Out).To(gbytes.Say("successfully installed package"))
+		})
+	})
 })

@@ -28,14 +28,9 @@ func (h *SelfUpdateHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 			rw.WriteHeader(StatusUnprocessableEntity)
 		}
 		rw.Write([]byte(err.Error()))
-		h.Logger.Error("SelfUpdateHandler", err.Error())
+		h.Logger.Error("SelfUpdateHandler", "failed to install package: ", err.Error())
 		return
 	}
 
-	rw.Write(([]byte)("Your tarball was installed."))
-}
-
-func (h *SelfUpdateHandler) internalServerError(err error, rw http.ResponseWriter) {
-	rw.WriteHeader(http.StatusInternalServerError)
-	h.Logger.Error("SelfUpdateHandler", "failed: %s", err.Error())
+	h.Logger.Info("SelfUpdateHandler", "successfully installed package")
 }
