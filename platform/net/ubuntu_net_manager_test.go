@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/factory"
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
@@ -24,9 +25,38 @@ func describeUbuntuNetManager() {
 		cmdRunner                     *fakesys.FakeCmdRunner
 		ipResolver                    *fakeip.FakeResolver
 		addressBroadcaster            *fakearp.FakeAddressBroadcaster
-		netManager                    Manager
+		netManager                    UbuntuNetManager
 		interfaceConfigurationCreator InterfaceConfigurationCreator
 	)
+
+	writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
+		interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
+		fs.WriteFile(interfacePath, []byte{})
+		if isPhysical {
+			fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
+		}
+		fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
+
+		return interfacePath
+	}
+
+	stubInterfacesWithVirtual := func(physicalInterfaces map[string]boshsettings.Network, virtualInterfaces []string) {
+		interfacePaths := []string{}
+
+		for iface, networkSettings := range physicalInterfaces {
+			interfacePaths = append(interfacePaths, writeNetworkDevice(iface, networkSettings.Mac, true))
+		}
+
+		for _, iface := range virtualInterfaces {
+			interfacePaths = append(interfacePaths, writeNetworkDevice(iface, "virtual", false))
+		}
+
+		fs.SetGlob("/sys/class/net/*", interfacePaths)
+	}
+
+	stubInterfaces := func(physicalInterfaces map[string]boshsettings.Network) {
+		stubInterfacesWithVirtual(physicalInterfaces, nil)
+	}
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
@@ -42,7 +72,77 @@ func describeUbuntuNetManager() {
 			interfaceConfigurationCreator,
 			addressBroadcaster,
 			logger,
-		)
+		).(UbuntuNetManager)
+	})
+
+	Describe("ComputeNetworkConfig", func() {
+		Context("when there is one manual network and neither is marked as default for DNS", func() {
+			It("should use the manual network for DNS", func() {
+				networks := boshsettings.Networks{
+					"manual": factory.Network{DNS: &[]string{"8.8.8.8"}}.Build(),
+				}
+				stubInterfaces(networks)
+				_, _, dnsServers, err := netManager.ComputeNetworkConfig(networks)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(dnsServers).To(Equal([]string{"8.8.8.8"}))
+			})
+		})
+
+		Context("when there is a vip network and a manual network and neither is marked as default for DNS", func() {
+			It("should use the manual network for DNS", func() {
+				networks := boshsettings.Networks{
+					"vip":    boshsettings.Network{Type: "vip"},
+					"manual": factory.Network{Type: "manual", DNS: &[]string{"8.8.8.8"}}.Build(),
+				}
+				stubInterfaces(networks)
+				_, _, dnsServers, err := netManager.ComputeNetworkConfig(networks)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(dnsServers).To(Equal([]string{"8.8.8.8"}))
+			})
+		})
+		Context("when there is a vip network and a manual network and the manual network is marked as default for DNS", func() {
+			It("should use the manual network for DNS", func() {
+				networks := boshsettings.Networks{
+					"vip":    boshsettings.Network{Type: "vip"},
+					"manual": factory.Network{Type: "manual", DNS: &[]string{"8.8.8.8"}, Default: []string{"dns"}}.Build(),
+				}
+				stubInterfaces(networks)
+				_, _, dnsServers, err := netManager.ComputeNetworkConfig(networks)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(dnsServers).To(Equal([]string{"8.8.8.8"}))
+			})
+		})
+
+		Context("when specified more than one DNS", func() {
+			It("extracts all DNS servers from the network configured as default DNS", func() {
+				networks := boshsettings.Networks{
+					"default": factory.Network{
+						IP:      "10.10.0.32",
+						Netmask: "255.255.255.0",
+						Default: []string{"dns", "gateway"},
+						DNS:     &[]string{"54.209.78.6", "127.0.0.5"},
+						Gateway: "10.10.0.1",
+					}.Build(),
+				}
+				stubInterfaces(networks)
+				staticInterfaceConfigurations, dhcpInterfaceConfigurations, dnsServers, err := netManager.ComputeNetworkConfig(networks)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
+					{
+						Name:      "default",
+						Address:   "10.10.0.32",
+						Netmask:   "255.255.255.0",
+						Network:   "10.10.0.0",
+						Broadcast: "10.10.0.255",
+						Mac:       "",
+						Gateway:   "10.10.0.1",
+					},
+				}))
+				Expect(dhcpInterfaceConfigurations).To(BeEmpty())
+				Expect(dnsServers).To(Equal([]string{"54.209.78.6", "127.0.0.5"}))
+			})
+		})
 	})
 
 	Describe("SetupNetworking", func() {
@@ -80,35 +180,6 @@ iface ethstatic inet static
     gateway 3.4.5.6
 dns-nameservers 8.8.8.8 9.9.9.9`
 		})
-
-		writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
-			interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
-			fs.WriteFile(interfacePath, []byte{})
-			if isPhysical {
-				fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
-			}
-			fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
-
-			return interfacePath
-		}
-
-		stubInterfacesWithVirtual := func(physicalInterfaces map[string]boshsettings.Network, virtualInterfaces []string) {
-			interfacePaths := []string{}
-
-			for iface, networkSettings := range physicalInterfaces {
-				interfacePaths = append(interfacePaths, writeNetworkDevice(iface, networkSettings.Mac, true))
-			}
-
-			for _, iface := range virtualInterfaces {
-				interfacePaths = append(interfacePaths, writeNetworkDevice(iface, "virtual", false))
-			}
-
-			fs.SetGlob("/sys/class/net/*", interfacePaths)
-		}
-
-		stubInterfaces := func(physicalInterfaces map[string]boshsettings.Network) {
-			stubInterfacesWithVirtual(physicalInterfaces, nil)
-		}
 
 		It("writes /etc/network/interfaces", func() {
 			stubInterfaces(map[string]boshsettings.Network{
@@ -175,6 +246,10 @@ iface ethstatic inet static
 		})
 
 		It("returns errors when it can't creating network interface configurations", func() {
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethdhcp":   dhcpNetwork,
+				"ethstatic": staticNetwork,
+			})
 			staticNetwork.Netmask = "not an ip" //will cause InterfaceConfigurationCreator to fail
 			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, nil)
 			Expect(err).To(HaveOccurred())

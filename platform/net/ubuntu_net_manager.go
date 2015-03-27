@@ -14,9 +14,9 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
-const ubuntuNetManagerLogTag = "ubuntuNetManager"
+const UbuntuNetManagerLogTag = "UbuntuNetManager"
 
-type ubuntuNetManager struct {
+type UbuntuNetManager struct {
 	cmdRunner                     boshsys.CmdRunner
 	fs                            boshsys.FileSystem
 	ipResolver                    boship.Resolver
@@ -33,7 +33,7 @@ func NewUbuntuNetManager(
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
-	return ubuntuNetManager{
+	return UbuntuNetManager{
 		cmdRunner:                     cmdRunner,
 		fs:                            fs,
 		ipResolver:                    ipResolver,
@@ -59,7 +59,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 prepend domain-name-servers {{ . }};{{ end }}
 `
 
-func (net ubuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
+func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, []string, error) {
 	nonVipNetworks := boshsettings.Networks{}
 	for networkName, networkSettings := range networks {
 		if networkSettings.IsVIP() {
@@ -70,11 +70,19 @@ func (net ubuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 
 	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.buildInterfaces(nonVipNetworks)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 
-	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
+	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, dnsServers, nil
+}
+
+func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
+	staticInterfaceConfigurations, dhcpInterfaceConfigurations, dnsServers, err := net.ComputeNetworkConfig(networks)
+	if err != nil {
+		return bosherr.WrapError(err, "Computing network configuration")
+	}
 
 	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)
 	if err != nil {
@@ -98,7 +106,7 @@ func (net ubuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	return nil
 }
 
-func (net ubuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
+func (net UbuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	interfacesByMacAddress, err := net.detectMacAddresses()
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
@@ -113,7 +121,7 @@ func (net ubuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]S
 	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
 }
 
-func (net ubuntuNetManager) broadcastIps(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, errCh chan error) {
+func (net UbuntuNetManager) broadcastIps(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, errCh chan error) {
 	addresses := []boship.InterfaceAddress{}
 	for _, iface := range staticInterfaceConfigurations {
 		addresses = append(addresses, boship.NewSimpleInterfaceAddress(iface.Name, iface.Address))
@@ -130,21 +138,21 @@ func (net ubuntuNetManager) broadcastIps(staticInterfaceConfigurations []StaticI
 	}()
 }
 
-func (net ubuntuNetManager) restartNetworkingInterfaces() {
-	net.logger.Debug(ubuntuNetManagerLogTag, "Restarting network interfaces")
+func (net UbuntuNetManager) restartNetworkingInterfaces() {
+	net.logger.Debug(UbuntuNetManagerLogTag, "Restarting network interfaces")
 
 	_, _, _, err := net.cmdRunner.RunCommand("ifdown", "-a", "--no-loopback")
 	if err != nil {
-		net.logger.Error(ubuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err.Error())
+		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err.Error())
 	}
 
 	_, _, _, err = net.cmdRunner.RunCommand("ifup", "-a", "--no-loopback")
 	if err != nil {
-		net.logger.Error(ubuntuNetManagerLogTag, "Ignoring ifup failure: %s", err.Error())
+		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifup failure: %s", err.Error())
 	}
 }
 
-func (net ubuntuNetManager) writeDHCPConfiguration(dnsServers []string) (bool, error) {
+func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string) (bool, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(ubuntuDHCPConfigTemplate))
 
@@ -172,7 +180,7 @@ type networkInterfaceConfig struct {
 	HasDNSNameServers             bool
 }
 
-func (net ubuntuNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
+func (net UbuntuNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
 	networkInterfaceValues := networkInterfaceConfig{
 		StaticInterfaceConfigurations: staticInterfaceConfigurations,
 		DHCPInterfaceConfigurations:   dhcpInterfaceConfigurations,
@@ -211,12 +219,16 @@ iface {{ .Name }} inet static
     gateway {{ .Gateway }}{{ end }}
 {{ if .DNSServers }}dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
 
-func (net ubuntuNetManager) detectMacAddresses() (map[string]string, error) {
+func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 	addresses := map[string]string{}
 
 	filePaths, err := net.fs.Glob("/sys/class/net/*")
 	if err != nil {
 		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
+	}
+
+	if len(filePaths) == 0 {
+		return addresses, bosherr.Error("No network interfaces found")
 	}
 
 	var macAddress string
