@@ -1,4 +1,4 @@
-package bootstrapper_test
+package downloader_test
 
 import (
 	"crypto/tls"
@@ -10,6 +10,7 @@ import (
 	"path"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/downloader"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
@@ -21,7 +22,7 @@ import (
 
 var _ = Describe("Downloader", func() {
 	var (
-		downloader       *bootstrapper.Downloader
+		dl               *downloader.Downloader
 		tarballURL       string
 		listener         net.Listener
 		logWriter        spec.CapturableWriter
@@ -63,7 +64,7 @@ var _ = Describe("Downloader", func() {
 			allowedNames,
 		)
 		Expect(err).ToNot(HaveOccurred())
-		downloader = bootstrapper.NewDownloader(config, packageInstaller)
+		dl = downloader.NewDownloader(config, packageInstaller)
 	})
 
 	AfterEach(func() {
@@ -73,7 +74,7 @@ var _ = Describe("Downloader", func() {
 	})
 
 	It("GETs the given URL, opens the tarball, and runs install.sh", func() {
-		err := downloader.Download(logger, tarballURL)
+		err := dl.Download(logger, tarballURL)
 		Expect(err).ToNot(HaveOccurred())
 		installLog, err := ioutil.ReadFile(path.Join(tmpDir, "install.log"))
 		Expect(err).ToNot(HaveOccurred())
@@ -82,7 +83,7 @@ var _ = Describe("Downloader", func() {
 
 	Context("when the download url is bad", func() {
 		It("returns an http error", func() {
-			err := downloader.Download(logger, fmt.Sprintf("https://localhost:%d/foobar", port))
+			err := dl.Download(logger, fmt.Sprintf("https://localhost:%d/foobar", port))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Not Found"))
 		})
@@ -93,7 +94,7 @@ var _ = Describe("Downloader", func() {
 			tarballPath = spec.CreateTarball("foooooooooooooooooooo")
 		})
 		It("returns a file error", func() {
-			err := downloader.Download(logger, tarballURL)
+			err := dl.Download(logger, tarballURL)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("install.sh"))
 		})
@@ -106,7 +107,7 @@ var _ = Describe("Downloader", func() {
 
 		It("rejects the request", func() {
 			logWriter.Capture("Fake Bosh Server")
-			err := downloader.Download(logger, tarballURL)
+			err := dl.Download(logger, tarballURL)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("didn't match allowed distinguished names"))
 			_, err = os.Stat(path.Join(tmpDir, "install.log"))

@@ -1,4 +1,4 @@
-package bootstrapper_test
+package listener_test
 
 import (
 	"crypto/tls"
@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
@@ -23,7 +24,7 @@ import (
 
 var _ = Describe("Listener", func() {
 	var (
-		listener         *bootstrapper.Listener
+		l                *listener.Listener
 		logWriter        spec.CapturableWriter
 		logger           boshlogger.Logger
 		allowedNames     []string
@@ -60,12 +61,12 @@ var _ = Describe("Listener", func() {
 		)
 		Expect(err).ToNot(HaveOccurred())
 
-		listener = bootstrapper.NewListener(config, packageInstaller)
+		l = listener.NewListener(config, packageInstaller)
 	})
 
 	AfterEach(func() {
-		if listener != nil {
-			listener.Close()
+		if l != nil {
+			l.Close()
 		}
 	})
 
@@ -83,14 +84,14 @@ var _ = Describe("Listener", func() {
 		})
 
 		It("returns an error when the port is already taken", func() {
-			err := listener.ListenAndServe(logger, port)
+			err := l.ListenAndServe(logger, port)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("address already in use"))
 		})
 	})
 
 	It("listens on a given port", func() {
-		err := listener.ListenAndServe(logger, port)
+		err := l.ListenAndServe(logger, port)
 		Expect(err).ToNot(HaveOccurred())
 		url := fmt.Sprintf("https://localhost:%d/self-update", port)
 		resp, err := spec.HttpPut(url, tarballPath, directorCert)
@@ -106,7 +107,7 @@ var _ = Describe("Listener", func() {
 		})
 
 		JustBeforeEach(func() {
-			err := listener.ListenAndServe(logger, port)
+			err := l.ListenAndServe(logger, port)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -154,7 +155,7 @@ var _ = Describe("Listener", func() {
 		})
 
 		JustBeforeEach(func() {
-			listener.ListenAndServe(logger, port)
+			l.ListenAndServe(logger, port)
 		})
 
 		It("expands uploaded tarball and runs install.sh", func() {
@@ -175,7 +176,7 @@ var _ = Describe("Listener", func() {
 			resp, err := spec.HttpClient(directorCert).Do(req)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(resp.StatusCode).To(Equal(bootstrapper.StatusUnprocessableEntity))
+			Expect(resp.StatusCode).To(Equal(listener.StatusUnprocessableEntity))
 
 			contents, err := ioutil.ReadAll(resp.Body)
 			Expect(err).ToNot(HaveOccurred())
@@ -206,7 +207,7 @@ var _ = Describe("Listener", func() {
 	})
 
 	Describe("for other endpoints", func() {
-		JustBeforeEach(func() { Expect(listener.ListenAndServe(logger, port)).ToNot(HaveOccurred()) })
+		JustBeforeEach(func() { Expect(l.ListenAndServe(logger, port)).ToNot(HaveOccurred()) })
 
 		It("returns 404 for GET /self-update", func() {
 			url := fmt.Sprintf("https://localhost:%d/self-update", port)

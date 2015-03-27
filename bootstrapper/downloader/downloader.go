@@ -1,4 +1,4 @@
-package bootstrapper
+package downloader
 
 import (
 	"crypto/tls"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cloudfoundry/bosh-agent/bootstrapper"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/errors"
@@ -13,11 +14,11 @@ import (
 )
 
 type Downloader struct {
-	config    SSLConfig
+	config    bootstrapper.SSLConfig
 	installer package_installer.PackageInstaller
 }
 
-func NewDownloader(config SSLConfig, installer package_installer.PackageInstaller) *Downloader {
+func NewDownloader(config bootstrapper.SSLConfig, installer package_installer.PackageInstaller) *Downloader {
 	return &Downloader{
 		config:    config,
 		installer: installer,

@@ -9,6 +9,8 @@ import (
 	"strconv"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/downloader"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 	"github.com/cloudfoundry/bosh-agent/logger"
@@ -47,7 +49,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		l := bootstrapper.NewListener(config, installer)
+		l := listener.NewListener(config, installer)
 		err = l.ListenAndServe(logger, port)
 		if err != nil {
 			os.Exit(1)
@@ -57,7 +59,7 @@ func main() {
 	case "download":
 		url := os.Args[2]
 
-		d := bootstrapper.NewDownloader(config, installer)
+		d := downloader.NewDownloader(config, installer)
 		err := d.Download(logger, url)
 		if err != nil {
 			os.Exit(1)
