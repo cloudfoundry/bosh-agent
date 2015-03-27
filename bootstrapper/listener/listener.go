@@ -31,10 +31,12 @@ func NewListener(config auth.SSLConfig, installer package_installer.PackageInsta
 }
 
 func (l *Listener) ListenAndServe(logger logger.Logger, port int) error {
-	certAuthRules := auth.CertificateVerifier{AllowedNames: l.config.PkixNames}
+	certificateVerifier := &auth.CertificateVerifier{AllowedNames: l.config.PkixNames}
 
 	serveMux := http.NewServeMux()
-	serveMux.Handle("/self-update", certAuthRules.Wrap(logger, &SelfUpdateHandler{Logger: logger, packageInstaller: l.installer}))
+	updateHandler := &SelfUpdateHandler{Logger: logger, packageInstaller: l.installer}
+	sslUpdateHandler := NewSSLHandler(logger, updateHandler, certificateVerifier)
+	serveMux.Handle("/self-update", sslUpdateHandler)
 
 	l.server.Handler = serveMux
 

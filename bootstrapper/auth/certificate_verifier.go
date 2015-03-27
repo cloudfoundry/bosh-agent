@@ -2,14 +2,11 @@ package auth
 
 import (
 	"crypto/x509/pkix"
-	"net/http"
 	"path/filepath"
 
 	"crypto/x509"
-	"fmt"
 
 	"github.com/cloudfoundry/bosh-agent/errors"
-	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
 type CertificateVerifier struct {
@@ -31,39 +28,6 @@ func (p *CertificateVerifier) Verify(peerCertificates []*x509.Certificate) error
 		}
 	}
 	return errors.Errorf("Subject (%#v) didn't match allowed distinguished names", subject)
-}
-
-func (p *CertificateVerifier) Wrap(logger logger.Logger, h http.Handler) http.Handler {
-	return &handlerWrapper{
-		Handler:             h,
-		Logger:              logger,
-		CertificateVerifier: *p,
-	}
-}
-
-type handlerWrapper struct {
-	Handler             http.Handler
-	Logger              logger.Logger
-	CertificateVerifier CertificateVerifier
-}
-
-func (h *handlerWrapper) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	var err error
-	if req.TLS == nil {
-		err = errors.Error("Not SSL")
-	}
-
-	if err == nil {
-		err = h.CertificateVerifier.Verify(req.TLS.PeerCertificates)
-	}
-
-	if err != nil {
-		rw.WriteHeader(http.StatusUnauthorized)
-		h.Logger.Error(fmt.Sprintf("%T", h), errors.WrapError(err, "Unauthorized access").Error())
-		return
-	}
-
-	h.Handler.ServeHTTP(rw, req)
 }
 
 func compareStr(pattern, name string) (bool, error) {
