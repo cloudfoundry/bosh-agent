@@ -1,7 +1,7 @@
-package bootstrapper_test
+package auth_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 
 	. "github.com/onsi/ginkgo"
@@ -11,7 +11,7 @@ import (
 var _ = Describe("ssl config construction", func() {
 	It("parses valid allowed names", func() {
 		allowedNames := []string{"o=bosh.director"}
-		_, err := bootstrapper.NewSSLConfig(
+		_, err := auth.NewSSLConfig(
 			spec.FixtureFilename("certs/bootstrapper.crt"),
 			spec.FixtureFilename("certs/bootstrapper.key"),
 			(string)(spec.FixtureData("certs/rootCA.pem")),
@@ -22,7 +22,7 @@ var _ = Describe("ssl config construction", func() {
 
 	It("errors on malformed allowed names", func() {
 		allowedNames := []string{"invalid=value"}
-		_, err := bootstrapper.NewSSLConfig(
+		_, err := auth.NewSSLConfig(
 			spec.FixtureFilename("certs/bootstrapper.crt"),
 			spec.FixtureFilename("certs/bootstrapper.key"),
 			(string)(spec.FixtureData("certs/rootCA.pem")),
@@ -34,7 +34,7 @@ var _ = Describe("ssl config construction", func() {
 
 	It("errors on empty allowed names", func() {
 		allowedNames := []string{}
-		_, err := bootstrapper.NewSSLConfig(
+		_, err := auth.NewSSLConfig(
 			spec.FixtureFilename("certs/bootstrapper.crt"),
 			spec.FixtureFilename("certs/bootstrapper.key"),
 			(string)(spec.FixtureData("certs/rootCA.pem")),

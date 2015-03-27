@@ -1,9 +1,8 @@
-package bootstrapper
+package auth
 
 import (
 	"crypto/x509/pkix"
 
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/errors"
 )
 
@@ -34,7 +33,7 @@ func parseNames(allowedNames []string) ([]pkix.Name, error) {
 	}
 
 	var pkixNames []pkix.Name
-	parser := auth.NewDistinguishedNamesParser()
+	parser := NewDistinguishedNamesParser()
 	for _, dn := range allowedNames {
 		pkixName, err := parser.Parse(dn)
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/downloader"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
@@ -91,14 +91,14 @@ func newLogger() logger.Logger {
 	return logger.New(logger.LevelDebug, sysLog, sysLog)
 }
 
-func newSSLConfig(logger logger.Logger) bootstrapper.SSLConfig {
+func newSSLConfig(logger logger.Logger) auth.SSLConfig {
 	pem, err := ioutil.ReadFile(*caPemFile)
 	if err != nil {
 		logger.Error("CaPEMFile", "failed to read pemFile: ", err)
 		os.Exit(1)
 	}
 
-	config, err := bootstrapper.NewSSLConfig(*certFile, *keyFile, string(pem), []string{*allowedName})
+	config, err := auth.NewSSLConfig(*certFile, *keyFile, string(pem), []string{*allowedName})
 	if err != nil {
 		logger.Error("Config", "Unable to create SSL config", err)
 		os.Exit(1)

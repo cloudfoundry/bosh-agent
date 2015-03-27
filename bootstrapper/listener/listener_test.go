@@ -11,7 +11,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
@@ -53,7 +53,7 @@ var _ = Describe("Listener", func() {
 	})
 
 	JustBeforeEach(func() {
-		config, err := bootstrapper.NewSSLConfig(
+		config, err := auth.NewSSLConfig(
 			spec.FixtureFilename("certs/bootstrapper.crt"),
 			spec.FixtureFilename("certs/bootstrapper.key"),
 			(string)(spec.FixtureData("certs/rootCA.pem")),

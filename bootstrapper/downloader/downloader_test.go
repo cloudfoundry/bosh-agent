@@ -9,7 +9,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/cloudfoundry/bosh-agent/bootstrapper"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/downloader"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
@@ -57,7 +57,7 @@ var _ = Describe("Downloader", func() {
 		listener = spec.StartDownloadServer(port, tarballPath, directorCert)
 		tarballURL = fmt.Sprintf("https://localhost:%d/tarball.tgz", port)
 
-		config, err := bootstrapper.NewSSLConfig(
+		config, err := auth.NewSSLConfig(
 			spec.FixtureFilename("certs/bootstrapper.crt"),
 			spec.FixtureFilename("certs/bootstrapper.key"),
 			(string)(spec.FixtureData("certs/rootCA.pem")),

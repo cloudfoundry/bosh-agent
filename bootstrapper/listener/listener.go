@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/bootstrapper"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/errors"
@@ -15,7 +14,7 @@ import (
 )
 
 type Listener struct {
-	config    bootstrapper.SSLConfig
+	config    auth.SSLConfig
 	installer package_installer.PackageInstaller
 	server    http.Server
 	listener  net.Listener
@@ -24,7 +23,7 @@ type Listener struct {
 	wg        sync.WaitGroup
 }
 
-func NewListener(config bootstrapper.SSLConfig, installer package_installer.PackageInstaller) *Listener {
+func NewListener(config auth.SSLConfig, installer package_installer.PackageInstaller) *Listener {
 	return &Listener{
 		config:    config,
 		installer: installer,
