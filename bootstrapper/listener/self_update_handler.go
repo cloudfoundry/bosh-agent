@@ -3,15 +3,15 @@ package listener
 import (
 	"net/http"
 
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
 const StatusUnprocessableEntity = 422
 
 type SelfUpdateHandler struct {
-	Logger           logger.Logger
-	packageInstaller package_installer.PackageInstaller
+	Logger    logger.Logger
+	installer installer.Installer
 }
 
 func (h *SelfUpdateHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -20,9 +20,9 @@ func (h *SelfUpdateHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	var err package_installer.PackageInstallerError
+	var err installer.Error
 
-	err = h.packageInstaller.Install(req.Body)
+	err = h.installer.Install(req.Body)
 	if err != nil {
 		if err.SystemError() {
 			rw.WriteHeader(http.StatusInternalServerError)

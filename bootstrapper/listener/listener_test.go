@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 	boshlogger "github.com/cloudfoundry/bosh-agent/logger"
@@ -24,15 +24,15 @@ import (
 
 var _ = Describe("Listener", func() {
 	var (
-		l                *listener.Listener
-		logWriter        spec.CapturableWriter
-		logger           boshlogger.Logger
-		allowedNames     []string
-		port             int
-		directorCert     *tls.Certificate
-		packageInstaller package_installer.PackageInstaller
-		tmpDir           string
-		tarballPath      string
+		l            *listener.Listener
+		logWriter    spec.CapturableWriter
+		logger       boshlogger.Logger
+		allowedNames []string
+		port         int
+		directorCert *tls.Certificate
+		i            installer.Installer
+		tmpDir       string
+		tarballPath  string
 	)
 
 	BeforeEach(func() {
@@ -48,7 +48,7 @@ var _ = Describe("Listener", func() {
 		tarballPath = spec.CreateTarball(installScript)
 		allowedNames = []string{"*"}
 		system := system.NewOsSystem()
-		packageInstaller = package_installer.New(system)
+		i = installer.New(system)
 		port = spec.GetFreePort()
 	})
 
@@ -61,7 +61,7 @@ var _ = Describe("Listener", func() {
 		)
 		Expect(err).ToNot(HaveOccurred())
 
-		l = listener.NewListener(config, packageInstaller)
+		l = listener.NewListener(config, i)
 	})
 
 	AfterEach(func() {
@@ -187,7 +187,7 @@ var _ = Describe("Listener", func() {
 
 		Context("when the system has errors", func() {
 			BeforeEach(func() {
-				packageInstaller = erroringPackageInstaller{message: "Ahhhhhhh!!!"}
+				i = erroringInstaller{message: "Ahhhhhhh!!!"}
 			})
 
 			It("returns an InternalServerError when appropriate", func() {
@@ -239,22 +239,22 @@ var _ = Describe("Listener", func() {
 	})
 })
 
-type erroringPackageInstaller struct {
+type erroringInstaller struct {
 	message string
 }
 
-type erroringPackageInstallerError struct {
+type erroringInstallerError struct {
 	message string
 }
 
-func (erroringPackageInstallerError erroringPackageInstallerError) Error() string {
-	return erroringPackageInstallerError.message
+func (erroringInstallerError erroringInstallerError) Error() string {
+	return erroringInstallerError.message
 }
 
-func (erroringPackageInstallerError erroringPackageInstallerError) SystemError() bool {
+func (erroringInstallerError erroringInstallerError) SystemError() bool {
 	return true
 }
 
-func (erroringPackageInstaller erroringPackageInstaller) Install(reader io.Reader) package_installer.PackageInstallerError {
-	return erroringPackageInstallerError{message: erroringPackageInstaller.message}
+func (erroringInstaller erroringInstaller) Install(reader io.Reader) installer.Error {
+	return erroringInstallerError{message: erroringInstaller.message}
 }

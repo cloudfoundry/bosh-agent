@@ -8,14 +8,14 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/errors"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
 type Listener struct {
 	config    auth.SSLConfig
-	installer package_installer.PackageInstaller
+	installer installer.Installer
 	server    http.Server
 	listener  net.Listener
 	started   bool
@@ -23,7 +23,7 @@ type Listener struct {
 	wg        sync.WaitGroup
 }
 
-func NewListener(config auth.SSLConfig, installer package_installer.PackageInstaller) *Listener {
+func NewListener(config auth.SSLConfig, installer installer.Installer) *Listener {
 	return &Listener{
 		config:    config,
 		installer: installer,
@@ -34,7 +34,7 @@ func (l *Listener) ListenAndServe(logger logger.Logger, port int) error {
 	certificateVerifier := &auth.CertificateVerifier{AllowedNames: l.config.PkixNames}
 
 	serveMux := http.NewServeMux()
-	updateHandler := &SelfUpdateHandler{Logger: logger, packageInstaller: l.installer}
+	updateHandler := &SelfUpdateHandler{Logger: logger, installer: l.installer}
 	sslUpdateHandler := NewSSLHandler(logger, updateHandler, certificateVerifier)
 	serveMux.Handle("/self-update", sslUpdateHandler)
 

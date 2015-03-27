@@ -7,17 +7,17 @@ import (
 	"net/http"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/errors"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
 
 type Downloader struct {
 	config    auth.SSLConfig
-	installer package_installer.PackageInstaller
+	installer installer.Installer
 }
 
-func NewDownloader(config auth.SSLConfig, installer package_installer.PackageInstaller) *Downloader {
+func NewDownloader(config auth.SSLConfig, installer installer.Installer) *Downloader {
 	return &Downloader{
 		config:    config,
 		installer: installer,

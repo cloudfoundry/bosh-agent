@@ -1,4 +1,4 @@
-package package_installer_test
+package installer_test
 
 import (
 	"errors"
@@ -8,19 +8,19 @@ import (
 	"io"
 	"strings"
 
-	. "github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
+	. "github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("package_installer", mainDesc)
+var _ = Describe("installer", mainDesc)
 
 func mainDesc() {
 	var (
-		tmpDir           string
-		tarball          io.Reader
-		system           *fakeSystem
-		packageInstaller PackageInstaller
+		tmpDir    string
+		tarball   io.Reader
+		system    *fakeSystem
+		installer Installer
 	)
 
 	BeforeEach(func() {
@@ -42,8 +42,8 @@ func mainDesc() {
 
 	Describe("#Install", func() {
 		It("expands tarball from given stream into a temp dir and runs install.sh", func() {
-			packageInstaller = New(system)
-			installError := packageInstaller.Install(tarball)
+			installer = New(system)
+			installError := installer.Install(tarball)
 			Expect(installError).ToNot(HaveOccurred())
 
 			Expect(system.UntarTarball).To(Equal(tarball))
@@ -57,9 +57,9 @@ func mainDesc() {
 				system.UntarExitStatus = 100
 				system.UntarCommandRun = "the-failing-untar-command"
 
-				packageInstaller = New(system)
+				installer = New(system)
 
-				installError := packageInstaller.Install(tarball)
+				installError := installer.Install(tarball)
 
 				Expect(installError).To(HaveOccurred())
 				expectedError := "`the-failing-untar-command` exited with 100"
@@ -73,9 +73,9 @@ func mainDesc() {
 				system.RunScriptExitStatus = 100
 				system.RunScriptCommandRun = "the-failing-install-command"
 
-				packageInstaller = New(system)
+				installer = New(system)
 
-				installError := packageInstaller.Install(tarball)
+				installError := installer.Install(tarball)
 
 				Expect(installError).To(HaveOccurred())
 				expectedError := "`the-failing-install-command` exited with 100"
@@ -88,9 +88,9 @@ func mainDesc() {
 			It("returns a non-system error with info", func() {
 				system.FileIsExecutableBool = false
 
-				packageInstaller = New(system)
+				installer = New(system)
 
-				installError := packageInstaller.Install(tarball)
+				installError := installer.Install(tarball)
 
 				Expect(installError).To(HaveOccurred())
 				Expect(installError.Error()).To(Equal("'install.sh' is not executable"))
@@ -101,9 +101,9 @@ func mainDesc() {
 				system.FileIsExecutableBool = true
 				system.FileIsExecutableError = errors.New("something went wrong")
 
-				packageInstaller = New(system)
+				installer = New(system)
 
-				installError := packageInstaller.Install(tarball)
+				installError := installer.Install(tarball)
 
 				Expect(installError).To(HaveOccurred())
 				Expect(installError.Error()).To(Equal("something went wrong"))
@@ -115,8 +115,8 @@ func mainDesc() {
 			It("returns a user error", func() {
 				system.FileExistsBool = false
 
-				packageInstaller = New(system)
-				installError := packageInstaller.Install(tarball)
+				installer = New(system)
+				installError := installer.Install(tarball)
 
 				Expect(installError).To(HaveOccurred())
 				Expect(installError.Error()).To(Equal("No 'install.sh' script found"))
@@ -128,9 +128,9 @@ func mainDesc() {
 			It("returns a system error when we fail to run the tar command", func() {
 				system.UntarError = errors.New("something went terribly wrong while untarring")
 
-				packageInstaller = New(system)
+				installer = New(system)
 
-				installError := packageInstaller.Install(tarball)
+				installError := installer.Install(tarball)
 
 				Expect(installError).To(HaveOccurred())
 				Expect(installError.Error()).To(Equal("something went terribly wrong while untarring"))
@@ -140,9 +140,9 @@ func mainDesc() {
 			It("returns a system error when we fail to run the install script", func() {
 				system.RunScriptError = errors.New("something went terribly wrong while installing")
 
-				packageInstaller = New(system)
+				installer = New(system)
 
-				installError := packageInstaller.Install(tarball)
+				installError := installer.Install(tarball)
 
 				Expect(installError).To(HaveOccurred())
 				Expect(installError.Error()).To(Equal("something went terribly wrong while installing"))

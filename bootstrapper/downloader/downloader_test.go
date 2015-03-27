@@ -11,7 +11,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/downloader"
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 	boshlogger "github.com/cloudfoundry/bosh-agent/logger"
@@ -22,17 +22,17 @@ import (
 
 var _ = Describe("Downloader", func() {
 	var (
-		dl               *downloader.Downloader
-		tarballURL       string
-		listener         net.Listener
-		logWriter        spec.CapturableWriter
-		logger           boshlogger.Logger
-		allowedNames     []string
-		port             int
-		directorCert     *tls.Certificate
-		packageInstaller package_installer.PackageInstaller
-		tmpDir           string
-		tarballPath      string
+		dl           *downloader.Downloader
+		tarballURL   string
+		listener     net.Listener
+		logWriter    spec.CapturableWriter
+		logger       boshlogger.Logger
+		allowedNames []string
+		port         int
+		directorCert *tls.Certificate
+		i            installer.Installer
+		tmpDir       string
+		tarballPath  string
 	)
 
 	BeforeEach(func() {
@@ -50,7 +50,7 @@ var _ = Describe("Downloader", func() {
 
 		allowedNames = []string{"*"}
 		system := system.NewOsSystem()
-		packageInstaller = package_installer.New(system)
+		i = installer.New(system)
 	})
 
 	JustBeforeEach(func() {
@@ -64,7 +64,7 @@ var _ = Describe("Downloader", func() {
 			allowedNames,
 		)
 		Expect(err).ToNot(HaveOccurred())
-		dl = downloader.NewDownloader(config, packageInstaller)
+		dl = downloader.NewDownloader(config, i)
 	})
 
 	AfterEach(func() {

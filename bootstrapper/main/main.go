@@ -10,8 +10,8 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/downloader"
+	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
-	"github.com/cloudfoundry/bosh-agent/bootstrapper/package_installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 	"github.com/cloudfoundry/bosh-agent/logger"
 )
@@ -37,7 +37,7 @@ func usage() {
 func main() {
 	logger := newLogger()
 	parseFlags(logger)
-	installer := package_installer.New(system.NewOsSystem())
+	installer := installer.New(system.NewOsSystem())
 	config := newSSLConfig(logger)
 
 	switch os.Args[1] {
