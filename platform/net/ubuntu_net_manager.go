@@ -98,10 +98,35 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	}
 
 	if interfacesChanged || dhcpChanged {
+		err = net.removeDhcpDnsConfiguration()
+		if err != nil {
+			return err
+		}
 		net.restartNetworkingInterfaces()
 	}
 
 	net.broadcastIps(staticInterfaceConfigurations, dhcpInterfaceConfigurations, errCh)
+
+	return nil
+}
+
+func (net UbuntuNetManager) removeDhcpDnsConfiguration() error {
+	_, _, _, err := net.cmdRunner.RunCommand("pkill", "dhclient")
+	if err != nil {
+		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'pkill dhclient': %s", err)
+	}
+
+	interfacesByMacAddress, err := net.detectMacAddresses()
+	if err != nil {
+		return err
+	}
+
+	for _, ifaceName := range interfacesByMacAddress {
+		_, _, _, err = net.cmdRunner.RunCommand("resolvconf", "-d", ifaceName+".dhclient")
+		if err != nil {
+			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'resolvconf -d %s.dhclient': %s", ifaceName, err)
+		}
+	}
 
 	return nil
 }
@@ -113,7 +138,6 @@ func (net UbuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]S
 	}
 
 	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMacAddress)
-
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Creating interface configurations")
 	}

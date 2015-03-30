@@ -363,9 +363,12 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"ifdown", "-a", "--no-loopback"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"ifup", "-a", "--no-loopback"}))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(5))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
+			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
+			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "-a", "--no-loopback"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "-a", "--no-loopback"}))
 		})
 
 		It("doesn't restart the networks if /etc/network/interfaces and /etc/dhcp/dhclient.conf don't change", func() {
@@ -415,9 +418,12 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
 			Expect(networkConfig.StringContents()).To(Equal(expectedNetworkConfigurationForStaticAndDhcp))
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"ifdown", "-a", "--no-loopback"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"ifup", "-a", "--no-loopback"}))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(5))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
+			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
+			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "-a", "--no-loopback"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "-a", "--no-loopback"}))
 		})
 
 		It("broadcasts MAC addresses for all interfaces", func() {
