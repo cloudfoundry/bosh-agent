@@ -653,6 +653,11 @@ func init() {
 						}
 					}
 				}`
+					stubInterfaces(
+						[][]string{
+							[]string{"netA", "aa:bb:cc", "physical"},
+							[]string{"netB", "dd:ee:ff", "physical"},
+						})
 				})
 
 				It("raises an error", func() {
