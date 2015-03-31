@@ -78,21 +78,10 @@ func (s *settingsService) LoadSettings() error {
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
 		}
 
-		err = s.checkAtMostOneDynamicNetwork(s.settings)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	}
 
 	s.logger.Debug(settingsServiceLogTag, "Successfully received settings from fetcher")
-
-	err := s.checkAtMostOneDynamicNetwork(newSettings)
-	if err != nil {
-		return err
-	}
-
 	s.settings = newSettings
 
 	newSettingsJSON, err := json.Marshal(newSettings)
@@ -103,25 +92,6 @@ func (s *settingsService) LoadSettings() error {
 	err = s.fs.WriteFile(s.settingsPath, newSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing setting json")
-	}
-
-	return nil
-}
-
-func (s settingsService) checkAtMostOneDynamicNetwork(settings Settings) error {
-	var foundOneDynamicNetwork bool
-
-	for _, network := range settings.Networks {
-		// Currently proper support for multiple dynamic networks is not possible
-		// because CPIs (e.g. AWS and OpenStack) do not include MAC address
-		// for dynamic networks and that is the only way to reliably determine
-		// network to interface to IP mapping
-		if network.IsDynamic() {
-			if foundOneDynamicNetwork {
-				return bosherr.Error("Multiple dynamic networks are not supported")
-			}
-			foundOneDynamicNetwork = true
-		}
 	}
 
 	return nil
@@ -156,6 +126,8 @@ func (s *settingsService) InvalidateSettings() error {
 
 func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	// Ideally this would be GetNetworkByMACAddress(mac string)
+	// Currently, we are relying that if the default network does not contain
+	// the MAC adddress the InterfaceConfigurationCreator will fail.
 	resolvedNetwork, err := s.defaultNetworkResolver.GetDefaultNetwork()
 	if err != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())

@@ -90,21 +90,6 @@ func init() {
 						Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
 					})
 				})
-
-				Context("when settings contain multiple dynamic networks", func() {
-					BeforeEach(func() {
-						fetchedSettings.Networks = Networks{
-							"fake-net-1": Network{Type: NetworkTypeDynamic},
-							"fake-net-2": Network{Type: NetworkTypeDynamic},
-						}
-					})
-
-					It("returns error because multiple dynamic networks are not supported", func() {
-						err := service.LoadSettings()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Multiple dynamic networks are not supported"))
-					})
-				})
 			})
 
 			Context("when settings fetcher fails fetching settings", func() {
@@ -142,24 +127,6 @@ func init() {
 									},
 								},
 							}))
-						})
-					})
-
-					Context("when settings contain multiple dynamic networks", func() {
-						BeforeEach(func() {
-							fs.WriteFile("/setting/path.json", []byte(`{
-								"agent_id":"some-agent-id",
-								"networks": {
-									"fake-net-1": {"type": "dynamic"},
-									"fake-net-2": {"type": "dynamic"}
-								}
-							}`))
-						})
-
-						It("returns error because multiple dynamic networks are not supported", func() {
-							err := service.LoadSettings()
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Multiple dynamic networks are not supported"))
 						})
 					})
 				})
