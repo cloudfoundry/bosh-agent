@@ -286,24 +286,6 @@ var _ = Describe("V1ApplySpec", func() {
 })
 
 var _ = Describe("NetworkSpec", func() {
-	Describe("IsDynamic", func() {
-		It("returns true if type is 'dynamic'", func() {
-			networkSpec := NetworkSpec{
-				Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
-			}
-			Expect(networkSpec.IsDynamic()).To(BeTrue())
-		})
-
-		It("returns false if type is not 'dynamic'", func() {
-			Expect(NetworkSpec{}.IsDynamic()).To(BeFalse())
-
-			networkSpec := NetworkSpec{
-				Fields: map[string]interface{}{"type": "vip"},
-			}
-			Expect(networkSpec.IsDynamic()).To(BeFalse())
-		})
-	})
-
 	Describe("PopulateIPInfo", func() {
 		It("populates network spec with ip, netmask and gateway addressess", func() {
 			networkSpec := NetworkSpec{}

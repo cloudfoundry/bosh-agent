@@ -77,10 +77,6 @@ func (s V1ApplySpec) MaxLogFileSize() string {
 	return "50M"
 }
 
-func (s NetworkSpec) IsDynamic() bool {
-	return s.Fields["type"] == NetworkSpecTypeDynamic
-}
-
 func (s NetworkSpec) PopulateIPInfo(ip, netmask, gateway string) NetworkSpec {
 	if s.Fields == nil {
 		s.Fields = map[string]interface{}{}

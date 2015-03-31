@@ -179,7 +179,7 @@ func (n Network) IsDHCP() bool {
 		return false
 	}
 
-	if n.IsDynamic() {
+	if n.isDynamic() {
 		return true
 	}
 
@@ -190,7 +190,7 @@ func (n Network) IsDHCP() bool {
 	return n.Resolved || !isStatic
 }
 
-func (n Network) IsDynamic() bool {
+func (n Network) isDynamic() bool {
 	return n.Type == NetworkTypeDynamic
 }
 
