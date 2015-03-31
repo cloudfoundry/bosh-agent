@@ -130,23 +130,16 @@ func (s settingsService) checkAtMostOneDynamicNetwork(settings Settings) error {
 // GetSettings returns setting even if it fails to resolve IPs for dynamic networks.
 func (s *settingsService) GetSettings() Settings {
 	for networkName, network := range s.settings.Networks {
-		if !network.IsDynamic() {
+		if !network.IsDHCP() {
 			continue
 		}
 
-		// Ideally this would be GetNetworkByMACAddress(mac string)
-		resolvedNetwork, err := s.defaultNetworkResolver.GetDefaultNetwork()
+		resolvedNetwork, err := s.resolveNetwork(network)
 		if err != nil {
-			s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())
 			break
 		}
 
-		// resolvedNetwork does not have all information for a network
-		network.IP = resolvedNetwork.IP
-		network.Netmask = resolvedNetwork.Netmask
-		network.Gateway = resolvedNetwork.Gateway
-
-		s.settings.Networks[networkName] = network
+		s.settings.Networks[networkName] = resolvedNetwork
 	}
 
 	return s.settings
@@ -159,4 +152,21 @@ func (s *settingsService) InvalidateSettings() error {
 	}
 
 	return nil
+}
+
+func (s *settingsService) resolveNetwork(network Network) (Network, error) {
+	// Ideally this would be GetNetworkByMACAddress(mac string)
+	resolvedNetwork, err := s.defaultNetworkResolver.GetDefaultNetwork()
+	if err != nil {
+		s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())
+		return Network{}, bosherr.WrapError(err, "Failed retrieving default network")
+	}
+
+	// resolvedNetwork does not have all information for a network
+	network.IP = resolvedNetwork.IP
+	network.Netmask = resolvedNetwork.Netmask
+	network.Gateway = resolvedNetwork.Gateway
+	network.Resolved = true
+
+	return network, nil
 }

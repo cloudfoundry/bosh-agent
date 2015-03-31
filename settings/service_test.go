@@ -119,15 +119,27 @@ func init() {
 								"agent_id":"some-agent-id",
 								"networks": {"fake-net-1": {"type": "dynamic"}}
 							}`))
+
+							fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = Network{
+								IP:      "fake-resolved-ip",
+								Netmask: "fake-resolved-netmask",
+								Gateway: "fake-resolved-gateway",
+							}
 						})
 
-						It("returns settings from the settings file", func() {
+						It("returns settings from the settings file with resolved network", func() {
 							err := service.LoadSettings()
 							Expect(err).ToNot(HaveOccurred())
 							Expect(service.GetSettings()).To(Equal(Settings{
 								AgentID: "some-agent-id",
 								Networks: Networks{
-									"fake-net-1": Network{Type: NetworkTypeDynamic},
+									"fake-net-1": Network{
+										Type:     NetworkTypeDynamic,
+										IP:       "fake-resolved-ip",
+										Netmask:  "fake-resolved-netmask",
+										Gateway:  "fake-resolved-gateway",
+										Resolved: true,
+									},
 								},
 							}))
 						})
@@ -232,7 +244,7 @@ func init() {
 				})
 			})
 
-			Context("when there is one dynamic network", func() {
+			Context("when there is network that needs to be resolved (ip and netmask are not set)", func() {
 				BeforeEach(func() {
 					loadedSettings = Settings{
 						Networks: map[string]Network{
@@ -242,9 +254,6 @@ func init() {
 								Gateway: "fake-net1-gateway",
 							},
 							"fake-net2": Network{
-								Type:    "dynamic",
-								IP:      "fake-net2-ip",
-								Netmask: "fake-net2-netmask",
 								Gateway: "fake-net2-gateway",
 								DNS:     []string{"fake-net2-dns"},
 							},
@@ -271,11 +280,11 @@ func init() {
 									Gateway: "fake-net1-gateway",
 								},
 								"fake-net2": Network{
-									Type:    "dynamic",
-									IP:      "fake-resolved-ip",
-									Netmask: "fake-resolved-netmask",
-									Gateway: "fake-resolved-gateway",
-									DNS:     []string{"fake-net2-dns"},
+									IP:       "fake-resolved-ip",
+									Netmask:  "fake-resolved-netmask",
+									Gateway:  "fake-resolved-gateway",
+									DNS:      []string{"fake-net2-dns"},
+									Resolved: true,
 								},
 							},
 						}))

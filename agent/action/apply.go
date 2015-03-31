@@ -37,7 +37,7 @@ func (a ApplyAction) IsPersistent() bool {
 func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
 	settings := a.settingsService.GetSettings()
 
-	resolvedDesiredSpec, err := a.specService.PopulateDynamicNetworks(desiredSpec, settings)
+	resolvedDesiredSpec, err := a.specService.PopulateDHCPNetworks(desiredSpec, settings)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Resolving dynamic networks")
 	}

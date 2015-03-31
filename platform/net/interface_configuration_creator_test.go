@@ -23,6 +23,7 @@ func describeInterfaceConfigurationCreator() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		dhcpNetwork = boshsettings.Network{
+			Type:    "dynamic",
 			Default: []string{"dns"},
 			DNS:     []string{"8.8.8.8", "9.9.9.9"},
 			Mac:     "fake-dhcp-mac-address",

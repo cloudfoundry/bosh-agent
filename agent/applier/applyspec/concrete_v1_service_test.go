@@ -77,33 +77,11 @@ func init() {
 			})
 		})
 
-		Describe("PopulateDynamicNetworks", func() {
-			Context("when there are no dynamic networks", func() {
-				unresolvedSpec := V1ApplySpec{
-					Deployment: "fake-deployment",
-					NetworkSpecs: map[string]NetworkSpec{
-						"fake-net": NetworkSpec{
-							Fields: map[string]interface{}{"ip": "fake-net-ip"},
-						},
-					},
-				}
+		Describe("PopulateDHCPNetworks", func() {
+			var unresolvedSpec V1ApplySpec
 
-				It("returns spec without modifying any networks", func() {
-					spec, err := service.PopulateDynamicNetworks(unresolvedSpec, boshsettings.Settings{})
-					Expect(err).ToNot(HaveOccurred())
-					Expect(spec).To(Equal(V1ApplySpec{
-						Deployment: "fake-deployment",
-						NetworkSpecs: map[string]NetworkSpec{
-							"fake-net": NetworkSpec{
-								Fields: map[string]interface{}{"ip": "fake-net-ip"},
-							},
-						},
-					}))
-				})
-			})
-
-			Context("when there are dynamic networks", func() {
-				unresolvedSpec := V1ApplySpec{
+			BeforeEach(func() {
+				unresolvedSpec = V1ApplySpec{
 					Deployment: "fake-deployment",
 					NetworkSpecs: map[string]NetworkSpec{
 						"fake-net1": NetworkSpec{
@@ -131,30 +109,75 @@ func init() {
 						},
 					},
 				}
+			})
 
-				Context("when associated network is in settings", func() {
-					settings := boshsettings.Settings{
-						Networks: boshsettings.Networks{
-							"fake-net1": boshsettings.Network{
-								IP:      "fake-resolved1-ip",
-								Netmask: "fake-resolved1-netmask",
-								Gateway: "fake-resolved1-gateway",
-							},
-							"fake-net2": boshsettings.Network{
-								IP:      "fake-resolved2-ip",
-								Netmask: "fake-resolved2-netmask",
-								Gateway: "fake-resolved2-gateway",
-							},
-							"fake-net3": boshsettings.Network{
-								IP:      "fake-resolved3-ip",
-								Netmask: "fake-resolved3-netmask",
-								Gateway: "fake-resolved3-gateway",
-							},
-						},
-					}
+			Context("when associated network is in settings", func() {
+				var settings boshsettings.Settings
 
-					It("returns spec with modified dynamic networks and keeping everything else the same", func() {
-						spec, err := service.PopulateDynamicNetworks(unresolvedSpec, settings)
+				Context("when there are no networks configured with DHCP", func() {
+					BeforeEach(func() {
+						unresolvedSpec = V1ApplySpec{
+							Deployment: "fake-deployment",
+							NetworkSpecs: map[string]NetworkSpec{
+								"fake-net": NetworkSpec{
+									Fields: map[string]interface{}{"ip": "fake-net-ip"},
+								},
+							},
+						}
+
+						settings = boshsettings.Settings{
+							Networks: boshsettings.Networks{
+								"fake-net": boshsettings.Network{
+									Type:    "manual",
+									IP:      "fake-ip",
+									Netmask: "fake-netmask",
+									Gateway: "fake-gateway",
+								},
+							},
+						}
+					})
+
+					It("returns spec without modifying any networks", func() {
+						spec, err := service.PopulateDHCPNetworks(unresolvedSpec, settings)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(spec).To(Equal(V1ApplySpec{
+							Deployment: "fake-deployment",
+							NetworkSpecs: map[string]NetworkSpec{
+								"fake-net": NetworkSpec{
+									Fields: map[string]interface{}{"ip": "fake-net-ip"},
+								},
+							},
+						}))
+					})
+				})
+
+				Context("when there are networks configured with DHCP", func() {
+					BeforeEach(func() {
+						settings = boshsettings.Settings{
+							Networks: boshsettings.Networks{
+								"fake-net1": boshsettings.Network{
+									IP:      "fake-unresolved2-ip",
+									Netmask: "fake-unresolved2-netmask",
+									Gateway: "fake-unresolved2-gateway",
+								},
+								"fake-net2": boshsettings.Network{
+									Type:    "dynamic",
+									IP:      "fake-resolved2-ip",
+									Netmask: "fake-resolved2-netmask",
+									Gateway: "fake-resolved2-gateway",
+								},
+								"fake-net3": boshsettings.Network{
+									Type:    "dynamic",
+									IP:      "fake-resolved3-ip",
+									Netmask: "fake-resolved3-netmask",
+									Gateway: "fake-resolved3-gateway",
+								},
+							},
+						}
+					})
+
+					It("returns spec with networks modified via DHCP and keeps everything else the same", func() {
+						spec, err := service.PopulateDHCPNetworks(unresolvedSpec, settings)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(spec).To(Equal(V1ApplySpec{
 							Deployment: "fake-deployment",
@@ -186,14 +209,14 @@ func init() {
 						}))
 					})
 				})
+			})
 
-				Context("when associated network cannot be found in settings", func() {
-					It("returns error", func() {
-						spec, err := service.PopulateDynamicNetworks(unresolvedSpec, boshsettings.Settings{})
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(MatchRegexp("Network fake-net\\d is not found in settings"))
-						Expect(spec).To(Equal(V1ApplySpec{}))
-					})
+			Context("when associated network cannot be found in settings", func() {
+				It("returns error", func() {
+					spec, err := service.PopulateDHCPNetworks(unresolvedSpec, boshsettings.Settings{})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(MatchRegexp("Network fake-net\\d is not found in settings"))
+					Expect(spec).To(Equal(V1ApplySpec{}))
 				})
 			})
 		})

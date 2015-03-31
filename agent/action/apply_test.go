@@ -60,13 +60,13 @@ func init() {
 					It("populates dynamic networks in desired spec", func() {
 						_, err := action.Run(desiredApplySpec)
 						Expect(err).ToNot(HaveOccurred())
-						Expect(specService.PopulateDynamicNetworksSpec).To(Equal(desiredApplySpec))
-						Expect(specService.PopulateDynamicNetworksSettings).To(Equal(settings))
+						Expect(specService.PopulateDHCPNetworksSpec).To(Equal(desiredApplySpec))
+						Expect(specService.PopulateDHCPNetworksSettings).To(Equal(settings))
 					})
 
 					Context("when resolving dynamic networks succeeds", func() {
 						BeforeEach(func() {
-							specService.PopulateDynamicNetworksResultSpec = populatedDesiredApplySpec
+							specService.PopulateDHCPNetworksResultSpec = populatedDesiredApplySpec
 						})
 
 						It("runs applier with populated desired spec", func() {
@@ -120,7 +120,7 @@ func init() {
 
 					Context("when resolving dynamic networks fails", func() {
 						BeforeEach(func() {
-							specService.PopulateDynamicNetworksErr = errors.New("fake-populate-dynamic-networks-err")
+							specService.PopulateDHCPNetworksErr = errors.New("fake-populate-dynamic-networks-err")
 						})
 
 						It("returns error", func() {
@@ -185,13 +185,13 @@ func init() {
 				It("populates dynamic networks in desired spec", func() {
 					_, err := action.Run(desiredApplySpec)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(specService.PopulateDynamicNetworksSpec).To(Equal(desiredApplySpec))
-					Expect(specService.PopulateDynamicNetworksSettings).To(Equal(settings))
+					Expect(specService.PopulateDHCPNetworksSpec).To(Equal(desiredApplySpec))
+					Expect(specService.PopulateDHCPNetworksSettings).To(Equal(settings))
 				})
 
 				Context("when resolving dynamic networks succeeds", func() {
 					BeforeEach(func() {
-						specService.PopulateDynamicNetworksResultSpec = populatedDesiredApplySpec
+						specService.PopulateDHCPNetworksResultSpec = populatedDesiredApplySpec
 					})
 
 					Context("when saving desires spec as current spec succeeds", func() {
@@ -231,7 +231,7 @@ func init() {
 
 				Context("when resolving dynamic networks fails", func() {
 					BeforeEach(func() {
-						specService.PopulateDynamicNetworksErr = errors.New("fake-populate-dynamic-networks-err")
+						specService.PopulateDHCPNetworksErr = errors.New("fake-populate-dynamic-networks-err")
 					})
 
 					It("returns error", func() {

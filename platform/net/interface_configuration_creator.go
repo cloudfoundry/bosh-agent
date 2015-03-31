@@ -40,7 +40,12 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, ifaceName string, networkMACAddress string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	creator.logger.Debug(creator.logTag, "Creating network configuration with IP: '%s', netmask: '%s'", networkSettings.IP, networkSettings.Netmask)
 
-	if networkSettings.IP != "" && networkSettings.Netmask != "" {
+	if networkSettings.IsDHCP() {
+		creator.logger.Debug(creator.logTag, "Using dhcp networking")
+		dhcpInterfaceConfigurations = append(dhcpInterfaceConfigurations, DHCPInterfaceConfiguration{
+			Name: ifaceName,
+		})
+	} else {
 		creator.logger.Debug(creator.logTag, "Using static networking")
 		networkAddress, broadcastAddress, err := boshsys.CalculateNetworkAndBroadcast(networkSettings.IP, networkSettings.Netmask)
 		if err != nil {
@@ -54,11 +59,6 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 			Broadcast: broadcastAddress,
 			Mac:       networkMACAddress,
 			Gateway:   networkSettings.Gateway,
-		})
-	} else {
-		creator.logger.Debug(creator.logTag, "Using dhcp networking")
-		dhcpInterfaceConfigurations = append(dhcpInterfaceConfigurations, DHCPInterfaceConfiguration{
-			Name: ifaceName,
 		})
 	}
 	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil

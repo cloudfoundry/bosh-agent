@@ -111,9 +111,10 @@ const (
 type Network struct {
 	Type NetworkType `json:"type"`
 
-	IP      string `json:"ip"`
-	Netmask string `json:"netmask"`
-	Gateway string `json:"gateway"`
+	IP       string `json:"ip"`
+	Netmask  string `json:"netmask"`
+	Gateway  string `json:"gateway"`
+	Resolved bool   `json:"resolved"` // was resolved via DHCP
 
 	Default []string `json:"default"`
 	DNS     []string `json:"dns"`
@@ -171,6 +172,22 @@ func (n Networks) IPs() (ips []string) {
 		}
 	}
 	return
+}
+
+func (n Network) IsDHCP() bool {
+	if n.IsVIP() {
+		return false
+	}
+
+	if n.IsDynamic() {
+		return true
+	}
+
+	// If manual network does not have IP and Netmask it cannot be statically
+	// configured. We want to keep track how originally the network was resolved.
+	// Otherwise it will be considered as static on subsequent checks.
+	isStatic := (n.IP != "" && n.Netmask != "")
+	return n.Resolved || !isStatic
 }
 
 func (n Network) IsDynamic() bool {

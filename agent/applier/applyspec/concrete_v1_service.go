@@ -53,15 +53,15 @@ func (s concreteV1Service) Set(spec V1ApplySpec) error {
 	return nil
 }
 
-func (s concreteV1Service) PopulateDynamicNetworks(spec V1ApplySpec, settings boshsettings.Settings) (V1ApplySpec, error) {
+func (s concreteV1Service) PopulateDHCPNetworks(spec V1ApplySpec, settings boshsettings.Settings) (V1ApplySpec, error) {
 	for networkName, networkSpec := range spec.NetworkSpecs {
-		if !networkSpec.IsDynamic() {
-			continue
-		}
-
 		network, ok := settings.Networks[networkName]
 		if !ok {
 			return V1ApplySpec{}, bosherr.Errorf("Network %s is not found in settings", networkName)
+		}
+
+		if !network.IsDHCP() {
+			continue
 		}
 
 		spec.NetworkSpecs[networkName] = networkSpec.PopulateIPInfo(
