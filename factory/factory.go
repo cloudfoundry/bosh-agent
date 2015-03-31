@@ -39,7 +39,7 @@ func (n Network) Build() settings.Network {
 func defaultString(s string, defaultValue string) string {
 	if s == "" {
 		return defaultValue
-	} else {
-		return s
 	}
+
+	return s
 }

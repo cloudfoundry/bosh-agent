@@ -98,7 +98,7 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	}
 
 	if interfacesChanged || dhcpChanged {
-		err = net.removeDhcpDnsConfiguration()
+		err = net.removeDhcpDNSConfiguration()
 		if err != nil {
 			return err
 		}
@@ -110,7 +110,7 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	return nil
 }
 
-func (net UbuntuNetManager) removeDhcpDnsConfiguration() error {
+func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
 	_, _, _, err := net.cmdRunner.RunCommand("pkill", "dhclient")
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'pkill dhclient': %s", err)
