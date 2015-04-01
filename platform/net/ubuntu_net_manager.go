@@ -111,6 +111,9 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 }
 
 func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
+	// Removing dhcp configuration from /etc/network/interfaces
+	// and restarting network does not stop dhclient if dhcp
+	// is no longer needed. See https://bugs.launchpad.net/ubuntu/+source/dhcp3/+bug/38140
 	_, _, _, err := net.cmdRunner.RunCommand("pkill", "dhclient")
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'pkill dhclient': %s", err)
@@ -122,6 +125,9 @@ func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
 	}
 
 	for _, ifaceName := range interfacesByMacAddress {
+		// Explicitly delete the resolvconf record about given iface
+		// It seems to hold on to old dhclient records after dhcp configuration
+		// is removed from /etc/network/interfaces.
 		_, _, _, err = net.cmdRunner.RunCommand("resolvconf", "-d", ifaceName+".dhclient")
 		if err != nil {
 			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'resolvconf -d %s.dhclient': %s", ifaceName, err)
