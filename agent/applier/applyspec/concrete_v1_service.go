@@ -55,9 +55,16 @@ func (s concreteV1Service) Set(spec V1ApplySpec) error {
 
 func (s concreteV1Service) PopulateDHCPNetworks(spec V1ApplySpec, settings boshsettings.Settings) (V1ApplySpec, error) {
 	for networkName, networkSpec := range spec.NetworkSpecs {
+		// Skip 'local' network since for vsphere/vcloud networks
+		// are generated incorrectly by the bosh_cli_plugin_micro/bosh-release;
+		// can be removed with new bosh micro CLI
+		if networkName == "local" && networkSpec.Fields["ip"] == "127.0.0.1" {
+			continue
+		}
+
 		network, ok := settings.Networks[networkName]
 		if !ok {
-			return V1ApplySpec{}, bosherr.Errorf("Network %s is not found in settings", networkName)
+			return V1ApplySpec{}, bosherr.Errorf("Network '%s' is not found in settings", networkName)
 		}
 
 		if !network.IsDHCP() {

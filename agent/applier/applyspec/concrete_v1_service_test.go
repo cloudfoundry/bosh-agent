@@ -151,6 +151,32 @@ func init() {
 					})
 				})
 
+				Context("when there is network with name 'local' and ip 127.0.0.1", func() {
+					BeforeEach(func() {
+						unresolvedSpec = V1ApplySpec{
+							Deployment: "fake-deployment",
+							NetworkSpecs: map[string]NetworkSpec{
+								"local": NetworkSpec{
+									Fields: map[string]interface{}{"ip": "127.0.0.1"},
+								},
+							},
+						}
+					})
+
+					It("returns spec without modifying any networks", func() {
+						spec, err := service.PopulateDHCPNetworks(unresolvedSpec, settings)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(spec).To(Equal(V1ApplySpec{
+							Deployment: "fake-deployment",
+							NetworkSpecs: map[string]NetworkSpec{
+								"local": NetworkSpec{
+									Fields: map[string]interface{}{"ip": "127.0.0.1"},
+								},
+							},
+						}))
+					})
+				})
+
 				Context("when there are networks configured with DHCP", func() {
 					BeforeEach(func() {
 						settings = boshsettings.Settings{
