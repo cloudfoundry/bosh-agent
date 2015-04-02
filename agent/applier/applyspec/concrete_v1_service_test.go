@@ -241,7 +241,7 @@ func init() {
 				It("returns error", func() {
 					spec, err := service.PopulateDHCPNetworks(unresolvedSpec, boshsettings.Settings{})
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(MatchRegexp("Network fake-net\\d is not found in settings"))
+					Expect(err.Error()).To(MatchRegexp("Network 'fake-net\\d' is not found in settings"))
 					Expect(spec).To(Equal(V1ApplySpec{}))
 				})
 			})
