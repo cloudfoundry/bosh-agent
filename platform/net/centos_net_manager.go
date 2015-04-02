@@ -104,7 +104,8 @@ IPADDR={{ .Address }}
 NETMASK={{ .Netmask }}
 BROADCAST={{ .Broadcast }}
 GATEWAY={{ .Gateway }}
-ONBOOT=yes`
+ONBOOT=yes
+NM_CONTROLLED=no`
 
 func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
 	var anyInterfaceChanged bool

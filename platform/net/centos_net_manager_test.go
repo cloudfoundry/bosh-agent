@@ -72,7 +72,8 @@ IPADDR=1.2.3.4
 NETMASK=255.255.255.0
 BROADCAST=1.2.3.255
 GATEWAY=3.4.5.6
-ONBOOT=yes`
+ONBOOT=yes
+NM_CONTROLLED=no`
 		})
 
 		writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
@@ -431,7 +432,8 @@ IPADDR=2.2.2.2
 NETMASK=255.255.255.0
 BROADCAST=2.2.2.255
 GATEWAY=3.4.5.6
-ONBOOT=yes`
+ONBOOT=yes
+NM_CONTROLLED=no`
 
 				networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
 				Expect(networkConfig).ToNot(BeNil())
@@ -464,7 +466,8 @@ IPADDR=2.2.2.2
 NETMASK=255.255.255.0
 BROADCAST=2.2.2.255
 GATEWAY=3.4.5.6
-ONBOOT=yes`
+ONBOOT=yes
+NM_CONTROLLED=no`
 
 				physicalNetworkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
 				Expect(physicalNetworkConfig).ToNot(BeNil())
