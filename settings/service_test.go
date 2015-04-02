@@ -211,13 +211,14 @@ func init() {
 				})
 			})
 
-			Context("when there is network that needs to be resolved (ip and netmask are not set)", func() {
+			Context("when there is network that needs to be resolved (ip, netmask, or mac are not set)", func() {
 				BeforeEach(func() {
 					loadedSettings = Settings{
 						Networks: map[string]Network{
 							"fake-net1": Network{
 								IP:      "fake-net1-ip",
 								Netmask: "fake-net1-netmask",
+								Mac:     "fake-net1-mac",
 								Gateway: "fake-net1-gateway",
 							},
 							"fake-net2": Network{
@@ -244,6 +245,7 @@ func init() {
 								"fake-net1": Network{
 									IP:      "fake-net1-ip",
 									Netmask: "fake-net1-netmask",
+									Mac:     "fake-net1-mac",
 									Gateway: "fake-net1-gateway",
 								},
 								"fake-net2": Network{

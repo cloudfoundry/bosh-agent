@@ -301,19 +301,47 @@ func init() {
 				})
 			})
 
-			Context("when IP and Netmask are not set", func() {
+			Context("when IP is not set", func() {
+				BeforeEach(func() {
+					network.Netmask = "255.255.255.0"
+					network.Mac = "aa::bb::cc"
+				})
+
 				It("returns true", func() {
 					Expect(network.IsDHCP()).To(BeTrue())
 				})
 			})
 
-			Context("when IP and Netmask are set", func() {
+			Context("when Netmask is not set", func() {
+				BeforeEach(func() {
+					network.IP = "127.0.0.5"
+					network.Mac = "aa::bb::cc"
+				})
+
+				It("returns true", func() {
+					Expect(network.IsDHCP()).To(BeTrue())
+				})
+			})
+
+			Context("when Mac is not set", func() {
 				BeforeEach(func() {
 					network.IP = "127.0.0.5"
 					network.Netmask = "255.255.255.0"
 				})
 
 				It("returns true", func() {
+					Expect(network.IsDHCP()).To(BeTrue())
+				})
+			})
+
+			Context("when IP and Netmask and Mac are set", func() {
+				BeforeEach(func() {
+					network.IP = "127.0.0.5"
+					network.Netmask = "255.255.255.0"
+					network.Mac = "aa::bb::cc"
+				})
+
+				It("returns false", func() {
 					Expect(network.IsDHCP()).To(BeFalse())
 				})
 			})

@@ -186,7 +186,7 @@ func (n Network) IsDHCP() bool {
 	// If manual network does not have IP and Netmask it cannot be statically
 	// configured. We want to keep track how originally the network was resolved.
 	// Otherwise it will be considered as static on subsequent checks.
-	isStatic := (n.IP != "" && n.Netmask != "")
+	isStatic := (n.Mac != "" && n.IP != "" && n.Netmask != "")
 	return n.Resolved || !isStatic
 }
 

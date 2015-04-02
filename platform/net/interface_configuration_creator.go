@@ -37,7 +37,7 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 	}
 }
 
-func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, ifaceName string, networkMACAddress string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
+func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, ifaceName string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	creator.logger.Debug(creator.logTag, "Creating network configuration with IP: '%s', netmask: '%s'", networkSettings.IP, networkSettings.Netmask)
 
 	if networkSettings.IsDHCP() {
@@ -57,7 +57,7 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 			Netmask:   networkSettings.Netmask,
 			Network:   networkAddress,
 			Broadcast: broadcastAddress,
-			Mac:       networkMACAddress,
+			Mac:       networkSettings.Mac,
 			Gateway:   networkSettings.Gateway,
 		})
 	}
@@ -76,8 +76,9 @@ func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(netwo
 	if len(networks) == 1 {
 		_, networkSettings := creator.getTheOnlyNetwork(networks)
 		if networkSettings.Mac == "" && len(interfacesByMAC) == 1 {
-			networkMACAddress, ifaceName := creator.getTheOnlyInterface(interfacesByMAC)
-			staticInterfaceConfigurations, dhcpInterfaceConfigurations, err = creator.createInterfaceConfiguration(staticInterfaceConfigurations, dhcpInterfaceConfigurations, ifaceName, networkMACAddress, networkSettings)
+			var ifaceName string
+			networkSettings.Mac, ifaceName = creator.getTheOnlyInterface(interfacesByMAC)
+			staticInterfaceConfigurations, dhcpInterfaceConfigurations, err = creator.createInterfaceConfiguration(staticInterfaceConfigurations, dhcpInterfaceConfigurations, ifaceName, networkSettings)
 			if err != nil {
 				return nil, nil, bosherr.WrapError(err, "Creating interface configuration")
 			}
@@ -96,7 +97,7 @@ func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(netwo
 			return nil, nil, bosherr.Errorf("No interface exists with MAC address '%s'", networkSettings.Mac)
 		}
 
-		staticInterfaceConfigurations, dhcpInterfaceConfigurations, err = creator.createInterfaceConfiguration(staticInterfaceConfigurations, dhcpInterfaceConfigurations, ifaceName, networkSettings.Mac, networkSettings)
+		staticInterfaceConfigurations, dhcpInterfaceConfigurations, err = creator.createInterfaceConfiguration(staticInterfaceConfigurations, dhcpInterfaceConfigurations, ifaceName, networkSettings)
 		if err != nil {
 			return nil, nil, bosherr.WrapError(err, "Creating interface configuration")
 		}
@@ -105,15 +106,15 @@ func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(netwo
 }
 
 func (creator interfaceConfigurationCreator) getTheOnlyNetwork(networks boshsettings.Networks) (string, boshsettings.Network) {
-	for networkName, networkSettings := range networks {
-		return networkName, networkSettings
+	for networkName := range networks {
+		return networkName, networks[networkName]
 	}
 	return "", boshsettings.Network{}
 }
 
 func (creator interfaceConfigurationCreator) getTheOnlyInterface(interfacesByMAC map[string]string) (string, string) {
-	for mac, iface := range interfacesByMAC {
-		return mac, iface
+	for mac := range interfacesByMAC {
+		return mac, interfacesByMAC[mac]
 	}
 	return "", ""
 }

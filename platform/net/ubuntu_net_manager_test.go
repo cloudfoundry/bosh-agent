@@ -119,6 +119,7 @@ func describeUbuntuNetManager() {
 					"default": factory.Network{
 						IP:      "10.10.0.32",
 						Netmask: "255.255.255.0",
+						Mac:     "aa::bb::cc",
 						Default: []string{"dns", "gateway"},
 						DNS:     &[]string{"54.209.78.6", "127.0.0.5"},
 						Gateway: "10.10.0.1",
@@ -135,7 +136,7 @@ func describeUbuntuNetManager() {
 						Netmask:   "255.255.255.0",
 						Network:   "10.10.0.0",
 						Broadcast: "10.10.0.255",
-						Mac:       "",
+						Mac:       "aa::bb::cc",
 						Gateway:   "10.10.0.1",
 					},
 				}))
