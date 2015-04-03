@@ -86,7 +86,8 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 const centosDHCPIfcgfTemplate = `DEVICE={{ .Name }}
 BOOTPROTO=dhcp
 ONBOOT=yes
-PEERDNS=yes`
+PEERDNS=yes
+`
 
 const centosStaticIfcgfTemplate = `DEVICE={{ .Name }}
 BOOTPROTO=static
@@ -96,7 +97,8 @@ BROADCAST={{ .Broadcast }}
 GATEWAY={{ .Gateway }}
 ONBOOT=yes
 PEERDNS=no{{ range .DNSServers }}
-DNS{{ .Index }}={{ .Address }}{{ end }}`
+DNS{{ .Index }}={{ .Address }}{{ end }}
+`
 
 type centosStaticIfcg struct {
 	*StaticInterfaceConfiguration
