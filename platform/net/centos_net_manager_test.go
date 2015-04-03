@@ -189,6 +189,9 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			Expect(dhcpConfig).ToNot(BeNil())
 			Expect(dhcpConfig.StringContents()).To(Equal(expectedDhclientConfiguration))
 
+			dhcpConfigSymlink := fs.GetFileTestStat("/etc/dhcp/dhclient-ethdhcp.conf")
+			Expect(dhcpConfigSymlink).ToNot(BeNil())
+			Expect(dhcpConfigSymlink.SymlinkTarget).To(Equal("/etc/dhcp/dhclient.conf"))
 		})
 
 		It("writes a dhcp configuration without prepended dns servers if there are no dns servers specified", func() {
@@ -218,7 +221,9 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	rfc3442-classless-static-routes, ntp-servers;
 
 `))
-
+			dhcpConfigSymlink := fs.GetFileTestStat("/etc/dhcp/dhclient-ethdhcp.conf")
+			Expect(dhcpConfigSymlink).ToNot(BeNil())
+			Expect(dhcpConfigSymlink.SymlinkTarget).To(Equal("/etc/dhcp/dhclient.conf"))
 		})
 
 		It("returns an error if it can't write a dhcp configuration", func() {
@@ -234,7 +239,20 @@ request subnet-mask, broadcast-address, time-offset, routers,
 			Expect(err.Error()).To(ContainSubstring("dhclient.conf-write-error"))
 		})
 
-		It("doesn't wrtite a dhcp configuration if there are no dhcp networks", func() {
+		It("returns an error if it can't symlink a dhcp configuration", func() {
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethdhcp":   dhcpNetwork,
+				"ethstatic": staticNetwork,
+			})
+
+			fs.SymlinkError = errors.New("dhclient-ethdhcp.conf-symlink-error")
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("dhclient-ethdhcp.conf-symlink-error"))
+		})
+
+		It("doesn't write a dhcp configuration if there are no dhcp networks", func() {
 			stubInterfaces(map[string]boshsettings.Network{
 				"ethstatic": staticNetwork,
 			})
@@ -242,7 +260,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient-ethdhcp.conf")
 			Expect(dhcpConfig).To(BeNil())
 		})
 

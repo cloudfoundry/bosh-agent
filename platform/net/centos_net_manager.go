@@ -68,7 +68,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 
 	dhcpChanged := false
 	if len(dhcpInterfaceConfigurations) > 0 {
-		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers)
+		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers, dhcpInterfaceConfigurations)
 		if err != nil {
 			return err
 		}
@@ -223,7 +223,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 prepend domain-name-servers {{ . }};{{ end }}
 `
 
-func (net centosNetManager) writeDHCPConfiguration(dnsServers []string) (bool, error) {
+func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration) (bool, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
@@ -239,6 +239,15 @@ func (net centosNetManager) writeDHCPConfiguration(dnsServers []string) (bool, e
 
 	if err != nil {
 		return changed, bosherr.WrapErrorf(err, "Writing to %s", dhclientConfigFile)
+	}
+
+	for i := range dhcpInterfaceConfigurations {
+		name := dhcpInterfaceConfigurations[i].Name
+		interfaceDhclientConfigFile := filepath.Join("/etc/dhcp/", "dhclient-"+name+".conf")
+		err = net.fs.Symlink(dhclientConfigFile, interfaceDhclientConfigFile)
+		if err != nil {
+			return changed, bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", interfaceDhclientConfigFile, dhclientConfigFile)
+		}
 	}
 
 	return changed, nil
