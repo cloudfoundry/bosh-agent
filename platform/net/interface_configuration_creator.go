@@ -17,8 +17,36 @@ type StaticInterfaceConfiguration struct {
 	Gateway   string
 }
 
+type StaticInterfaceConfigurations []StaticInterfaceConfiguration
+
+func (configs StaticInterfaceConfigurations) Len() int {
+	return len(configs)
+}
+
+func (configs StaticInterfaceConfigurations) Less(i, j int) bool {
+	return configs[i].Name < configs[j].Name
+}
+
+func (configs StaticInterfaceConfigurations) Swap(i, j int) {
+	configs[i], configs[j] = configs[j], configs[i]
+}
+
 type DHCPInterfaceConfiguration struct {
 	Name string
+}
+
+type DHCPInterfaceConfigurations []DHCPInterfaceConfiguration
+
+func (configs DHCPInterfaceConfigurations) Len() int {
+	return len(configs)
+}
+
+func (configs DHCPInterfaceConfigurations) Less(i, j int) bool {
+	return configs[i].Name < configs[j].Name
+}
+
+func (configs DHCPInterfaceConfigurations) Swap(i, j int) {
+	configs[i], configs[j] = configs[j], configs[i]
 }
 
 type InterfaceConfigurationCreator interface {
@@ -81,7 +109,7 @@ func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(netwo
 
 func (creator interfaceConfigurationCreator) createMultipleInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	if len(interfacesByMAC) != len(networks) {
-		return nil, nil, bosherr.Error("Number of networks doesn't match number of network devices")
+		return nil, nil, bosherr.Errorf("Number of networks '%d' doesn't match number of network devices '%d'", len(networks), len(interfacesByMAC))
 	}
 
 	for name := range networks {

@@ -137,7 +137,7 @@ func describeInterfaceConfigurationCreator() {
 					It("retuns an error", func() {
 						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of networks doesn't match"))
+						Expect(err.Error()).To(ContainSubstring("Number of networks '1' doesn't match number of network devices '0'"))
 					})
 				})
 			})
