@@ -444,7 +444,7 @@ func init() {
 						It("raises an error", func() {
 							err := boot.Run()
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("No interface exists with MAC address 'aa:bb:cc'"))
+							Expect(err.Error()).To(ContainSubstring("Number of networks doesn't match number of network devices"))
 						})
 					})
 				})
@@ -458,38 +458,28 @@ func init() {
 						err := boot.Run()
 						Expect(err).NotTo(HaveOccurred())
 					})
+				})
 
-					Context("and a single virtual network interface exists", func() {
-						BeforeEach(func() {
-							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
-						})
+				Context("and extra physical network interfaces exist", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+					})
 
-						It("succeeds", func() {
-							err := boot.Run()
-							Expect(err).NotTo(HaveOccurred())
-						})
+					It("raises an error", func() {
+						err := boot.Run()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Number of networks doesn't match number of network devices"))
 					})
 				})
 
-				Context("and two physical network interfaces exist", func() {
+				Context("and extra virtual network interfaces exist", func() {
 					BeforeEach(func() {
-						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:ee", "virtual"}})
 					})
 
 					It("succeeds", func() {
 						err := boot.Run()
 						Expect(err).ToNot(HaveOccurred())
-					})
-
-					Context("and a single virtual network interface exists", func() {
-						BeforeEach(func() {
-							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}, []string{"lo", "aa:bb:ee", "virtual"}})
-						})
-
-						It("succeeds", func() {
-							err := boot.Run()
-							Expect(err).ToNot(HaveOccurred())
-						})
 					})
 				})
 			})
@@ -521,7 +511,7 @@ func init() {
 						It("raises an error", func() {
 							err := boot.Run()
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Network 'netA' doesn't specify a MAC address"))
+							Expect(err.Error()).To(ContainSubstring("Number of networks doesn't match number of network devices"))
 						})
 					})
 				})
@@ -535,20 +525,9 @@ func init() {
 						err := boot.Run()
 						Expect(err).NotTo(HaveOccurred())
 					})
-
-					Context("and a single virtual network interface exists", func() {
-						BeforeEach(func() {
-							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
-						})
-
-						It("succeeds", func() {
-							err := boot.Run()
-							Expect(err).NotTo(HaveOccurred())
-						})
-					})
 				})
 
-				Context("and two physical network interfaces exist", func() {
+				Context("and extra physical network interfaces exist", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
 					})
@@ -556,24 +535,23 @@ func init() {
 					It("raises an error", func() {
 						err := boot.Run()
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Network 'netA' doesn't specify a MAC address"))
+						Expect(err.Error()).To(ContainSubstring("Number of networks doesn't match number of network devices"))
+					})
+				})
+
+				Context("and an extra virtual network interface exists", func() {
+					BeforeEach(func() {
+						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
 					})
 
-					Context("and a single virtual network interface exists", func() {
-						BeforeEach(func() {
-							stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
-						})
-
-						It("raises an error", func() {
-							err := boot.Run()
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Network 'netA' doesn't specify a MAC address"))
-						})
+					It("succeeds", func() {
+						err := boot.Run()
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 			})
 
-			Context("when two network configurations are provided, with a MAC address", func() {
+			Context("when two network configurations are provided", func() {
 				BeforeEach(func() {
 					settingsJSON = `{
 					"networks": {
@@ -597,7 +575,7 @@ func init() {
 							],
 							"netmask": "255.255.255.0",
 							"gateway": "3.3.3.0",
-							"mac": "aa:bb:dd"
+							"mac": ""
 						}
 					}
 				}`
@@ -611,11 +589,11 @@ func init() {
 					It("raises an error", func() {
 						err := boot.Run()
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("No interface exists with MAC address 'aa:bb:dd'"))
+						Expect(err.Error()).To(ContainSubstring("Number of networks doesn't match number of network devices"))
 					})
 				})
 
-				Context("and two physical network interfaces exist", func() {
+				Context("and two physical network interfaces with matching MAC addresses exist", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
 					})
@@ -624,46 +602,6 @@ func init() {
 						err := boot.Run()
 						Expect(err).ToNot(HaveOccurred())
 					})
-				})
-			})
-
-			Context("when multiple network configurations are provided, without a MAC address", func() {
-				BeforeEach(func() {
-					settingsJSON = `{
-					"networks": {
-						"netA": {
-							"default": ["dns", "gateway"],
-							"ip": "2.2.2.2",
-							"dns": [
-								"8.8.8.8",
-								"4.4.4.4"
-							],
-							"netmask": "255.255.255.0",
-							"gateway": "2.2.2.0"
-						},
-						"netB": {
-							"default": ["dns", "gateway"],
-							"ip": "3.3.3.3",
-							"dns": [
-								"8.8.8.8",
-								"4.4.4.4"
-							],
-							"netmask": "255.255.255.0",
-							"gateway": "3.3.3.0"
-						}
-					}
-				}`
-					stubInterfaces(
-						[][]string{
-							[]string{"netA", "aa:bb:cc", "physical"},
-							[]string{"netB", "dd:ee:ff", "physical"},
-						})
-				})
-
-				It("raises an error", func() {
-					err := boot.Run()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("doesn't specify a MAC address"))
 				})
 			})
 		})

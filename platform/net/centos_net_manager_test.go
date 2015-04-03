@@ -173,7 +173,11 @@ nameserver 9.9.9.9
 			Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
 		})
 
-		It("returns errors when it can't creating network interface configurations", func() {
+		It("returns errors when it can't create network interface configurations", func() {
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethstatic": staticNetwork,
+			})
+
 			staticNetwork.Netmask = "not an ip" //will cause InterfaceConfigurationCreator to fail
 			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, nil)
 			Expect(err).To(HaveOccurred())

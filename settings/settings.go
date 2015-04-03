@@ -124,6 +124,16 @@ type Network struct {
 
 type Networks map[string]Network
 
+func (n Networks) NetworkForMac(mac string) (Network, bool) {
+	for i := range n {
+		if n[i].Mac == mac {
+			return n[i], true
+		}
+	}
+
+	return Network{}, false
+}
+
 func (n Networks) DefaultNetworkFor(category string) (Network, bool) {
 	if len(n) == 1 {
 		for _, net := range n {

@@ -37,12 +37,12 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 	}
 }
 
-func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticInterfaceConfigurations []StaticInterfaceConfiguration, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, ifaceName string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
+func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration, ifaceName string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	creator.logger.Debug(creator.logTag, "Creating network configuration with IP: '%s', netmask: '%s'", networkSettings.IP, networkSettings.Netmask)
 
 	if networkSettings.IsDHCP() {
 		creator.logger.Debug(creator.logTag, "Using dhcp networking")
-		dhcpInterfaceConfigurations = append(dhcpInterfaceConfigurations, DHCPInterfaceConfiguration{
+		dhcpConfigs = append(dhcpConfigs, DHCPInterfaceConfiguration{
 			Name: ifaceName,
 		})
 	} else {
@@ -51,7 +51,7 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 		if err != nil {
 			return nil, nil, bosherr.WrapError(err, "Calculating Network and Broadcast")
 		}
-		staticInterfaceConfigurations = append(staticInterfaceConfigurations, StaticInterfaceConfiguration{
+		staticConfigs = append(staticConfigs, StaticInterfaceConfiguration{
 			Name:      ifaceName,
 			Address:   networkSettings.IP,
 			Netmask:   networkSettings.Netmask,
@@ -61,58 +61,63 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 			Gateway:   networkSettings.Gateway,
 		})
 	}
-	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
+	return staticConfigs, dhcpConfigs, nil
 }
 
 func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
-	var (
-		staticInterfaceConfigurations []StaticInterfaceConfiguration
-		dhcpInterfaceConfigurations   []DHCPInterfaceConfiguration
-		err                           error
-	)
-
 	// In cases where we only have one network and it has no MAC address (either because the IAAS doesn't give us one or
 	// it's an old CPI), if we only have one interface, we should map them
-	if len(networks) == 1 {
-		_, networkSettings := creator.getTheOnlyNetwork(networks)
-		if networkSettings.Mac == "" && len(interfacesByMAC) == 1 {
+	if len(networks) == 1 && len(interfacesByMAC) == 1 {
+		networkSettings := creator.getFirstNetwork(networks)
+		if networkSettings.Mac == "" {
 			var ifaceName string
-			networkSettings.Mac, ifaceName = creator.getTheOnlyInterface(interfacesByMAC)
-			staticInterfaceConfigurations, dhcpInterfaceConfigurations, err = creator.createInterfaceConfiguration(staticInterfaceConfigurations, dhcpInterfaceConfigurations, ifaceName, networkSettings)
-			if err != nil {
-				return nil, nil, bosherr.WrapError(err, "Creating interface configuration")
-			}
-			return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
+			networkSettings.Mac, ifaceName = creator.getFirstInterface(interfacesByMAC)
+			return creator.createInterfaceConfiguration([]StaticInterfaceConfiguration{}, []DHCPInterfaceConfiguration{}, ifaceName, networkSettings)
 		}
 	}
 
-	// otherwise map all the networks by MAC address
-	for networkName, networkSettings := range networks {
-		if networkSettings.Mac == "" {
-			return nil, nil, bosherr.Errorf("Network '%s' doesn't specify a MAC address", networkName)
-		}
+	return creator.createMultipleInterfaceConfigurations(networks, interfacesByMAC)
+}
 
-		ifaceName, found := interfacesByMAC[networkSettings.Mac]
-		if !found {
-			return nil, nil, bosherr.Errorf("No interface exists with MAC address '%s'", networkSettings.Mac)
-		}
+func (creator interfaceConfigurationCreator) createMultipleInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
+	if len(interfacesByMAC) != len(networks) {
+		return nil, nil, bosherr.Error("Number of networks doesn't match number of network devices")
+	}
 
-		staticInterfaceConfigurations, dhcpInterfaceConfigurations, err = creator.createInterfaceConfiguration(staticInterfaceConfigurations, dhcpInterfaceConfigurations, ifaceName, networkSettings)
+	for name := range networks {
+		if mac := networks[name].Mac; mac != "" {
+			if _, ok := interfacesByMAC[mac]; !ok {
+				return nil, nil, bosherr.Errorf("No device found for network '%s' with MAC address '%s'", name, mac)
+			}
+		}
+	}
+
+	// Configure interfaces with network settings matching MAC address.
+	// If we cannot find a network setting with a matching MAC address, configure that interface as DHCP
+	var networkSettings boshsettings.Network
+	var err error
+	staticConfigs := []StaticInterfaceConfiguration{}
+	dhcpConfigs := []DHCPInterfaceConfiguration{}
+
+	for mac, ifaceName := range interfacesByMAC {
+		networkSettings, _ = networks.NetworkForMac(mac)
+		staticConfigs, dhcpConfigs, err = creator.createInterfaceConfiguration(staticConfigs, dhcpConfigs, ifaceName, networkSettings)
 		if err != nil {
 			return nil, nil, bosherr.WrapError(err, "Creating interface configuration")
 		}
 	}
-	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
+
+	return staticConfigs, dhcpConfigs, nil
 }
 
-func (creator interfaceConfigurationCreator) getTheOnlyNetwork(networks boshsettings.Networks) (string, boshsettings.Network) {
+func (creator interfaceConfigurationCreator) getFirstNetwork(networks boshsettings.Networks) boshsettings.Network {
 	for networkName := range networks {
-		return networkName, networks[networkName]
+		return networks[networkName]
 	}
-	return "", boshsettings.Network{}
+	return boshsettings.Network{}
 }
 
-func (creator interfaceConfigurationCreator) getTheOnlyInterface(interfacesByMAC map[string]string) (string, string) {
+func (creator interfaceConfigurationCreator) getFirstInterface(interfacesByMAC map[string]string) (string, string) {
 	for mac := range interfacesByMAC {
 		return mac, interfacesByMAC[mac]
 	}

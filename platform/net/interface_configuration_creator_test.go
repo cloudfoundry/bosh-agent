@@ -16,6 +16,7 @@ func describeInterfaceConfigurationCreator() {
 	var (
 		interfaceConfigurationCreator InterfaceConfigurationCreator
 		staticNetwork                 boshsettings.Network
+		staticNetworkWithoutMAC       boshsettings.Network
 		dhcpNetwork                   boshsettings.Network
 	)
 
@@ -34,180 +35,202 @@ func describeInterfaceConfigurationCreator() {
 			Gateway: "3.4.5.6",
 			Mac:     "fake-static-mac-address",
 		}
+		staticNetworkWithoutMAC = boshsettings.Network{
+			Type:    "manual",
+			IP:      "1.2.3.4",
+			Netmask: "255.255.255.0",
+			Gateway: "3.4.5.6",
+		}
 	})
 
 	Describe("CreateInterfaceConfigurations", func() {
+		var networks boshsettings.Networks
+		var interfacesByMAC map[string]string
+
+		BeforeEach(func() {
+			networks = boshsettings.Networks{}
+			interfacesByMAC = map[string]string{}
+		})
+
 		Context("One network", func() {
-			It("creates an interface configuration when matching interface exists", func() {
-				networks := boshsettings.Networks{
-					"foo": staticNetwork,
-				}
-				interfacesByMAC := map[string]string{
-					"fake-static-mac-address": "static-interface-name",
-				}
+			Context("And the network has a MAC address", func() {
+				BeforeEach(func() {
+					networks["foo"] = staticNetwork
+				})
 
-				staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+				Context("And the MAC address matches an interface", func() {
+					BeforeEach(func() {
+						interfacesByMAC[staticNetwork.Mac] = "static-interface-name"
+					})
 
-				Expect(err).ToNot(HaveOccurred())
+					It("creates an interface configuration when matching interface exists", func() {
+						staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+						Expect(err).ToNot(HaveOccurred())
 
-				Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
-					StaticInterfaceConfiguration{
-						Name:      "static-interface-name",
-						Address:   "1.2.3.4",
-						Netmask:   "255.255.255.0",
-						Network:   "1.2.3.0",
-						Broadcast: "1.2.3.255",
-						Mac:       "fake-static-mac-address",
-						Gateway:   "3.4.5.6",
-					},
-				}))
+						Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
+							StaticInterfaceConfiguration{
+								Name:      "static-interface-name",
+								Address:   "1.2.3.4",
+								Netmask:   "255.255.255.0",
+								Network:   "1.2.3.0",
+								Broadcast: "1.2.3.255",
+								Mac:       "fake-static-mac-address",
+								Gateway:   "3.4.5.6",
+							},
+						}))
 
-				Expect(len(dhcpInterfaceConfigurations)).To(Equal(0))
-			})
+						Expect(len(dhcpInterfaceConfigurations)).To(Equal(0))
+					})
+				})
 
-			It("returns an error the network doesn't have a matching interface", func() {
-				networks := boshsettings.Networks{
-					"foo": staticNetwork,
-				}
-				interfacesByMAC := map[string]string{
-					"fake-invalid-static-mac-address": "static-interface-name",
-				}
+				Context("And the MAC address has no matching an interface", func() {
+					BeforeEach(func() {
+						interfacesByMAC["some-other-mac"] = "static-interface-name"
+					})
 
-				_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
-
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("No interface exists with MAC address 'fake-static-mac-address'"))
-			})
-
-			Context("With one interface", func() {
-				It("creates an interface configuration even if no MAC address is specified for the network", func() {
-					staticNetworkWithoutMAC := boshsettings.Network{
-						Type:    "manual",
-						IP:      "1.2.3.4",
-						Netmask: "255.255.255.0",
-						Gateway: "3.4.5.6",
-					}
-					networks := boshsettings.Networks{
-						"foo": staticNetworkWithoutMAC,
-					}
-					interfacesByMAC := map[string]string{
-						"fake-static-mac-address": "static-interface-name",
-					}
-
-					staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
-
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
-						StaticInterfaceConfiguration{
-							Name:      "static-interface-name",
-							Address:   "1.2.3.4",
-							Netmask:   "255.255.255.0",
-							Network:   "1.2.3.0",
-							Broadcast: "1.2.3.255",
-							Mac:       "fake-static-mac-address",
-							Gateway:   "3.4.5.6",
-						},
-					}))
-
-					Expect(len(dhcpInterfaceConfigurations)).To(Equal(0))
+					It("retuns an error", func() {
+						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("No device found"))
+						Expect(err.Error()).To(ContainSubstring(staticNetwork.Mac))
+						Expect(err.Error()).To(ContainSubstring("foo"))
+					})
 				})
 			})
 
-			Context("With multiple interfaces", func() {
-				It("returns an error if no MAC address is specified for the network", func() {
-					staticNetworkWithoutMAC := boshsettings.Network{
-						Type:    "manual",
-						IP:      "1.2.3.4",
-						Netmask: "255.255.255.0",
-						Gateway: "3.4.5.6",
-					}
-					networks := boshsettings.Networks{
-						"foo": staticNetworkWithoutMAC,
-					}
-					interfacesByMAC := map[string]string{
-						"fake-static-mac-address":  "static-interface-name",
-						"fake-static-mac-address2": "static-interface-name2",
-					}
+			Context("Does not have a MAC address", func() {
+				BeforeEach(func() {
+					networks["foo"] = staticNetworkWithoutMAC
+				})
 
-					_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+				Context("And at least one device is available", func() {
+					BeforeEach(func() {
+						interfacesByMAC["fake-any-mac-address"] = "any-interface-name"
+					})
 
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Network 'foo' doesn't specify a MAC address"))
+					It("creates an interface configuration even with the MAC address from first interface with device", func() {
+						staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
 
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
+							StaticInterfaceConfiguration{
+								Name:      "any-interface-name",
+								Address:   "1.2.3.4",
+								Netmask:   "255.255.255.0",
+								Network:   "1.2.3.0",
+								Broadcast: "1.2.3.255",
+								Mac:       "fake-any-mac-address",
+								Gateway:   "3.4.5.6",
+							},
+						}))
+
+						Expect(len(dhcpInterfaceConfigurations)).To(Equal(0))
+					})
+				})
+
+				Context("And there are no network devices", func() {
+					BeforeEach(func() {
+						interfacesByMAC = map[string]string{}
+					})
+
+					It("retuns an error", func() {
+						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Number of networks doesn't match"))
+					})
 				})
 			})
-
 		})
 
 		Context("Multiple networks", func() {
-			It("creates interface configurations for each network when matching interfaces exist", func() {
-				networks := boshsettings.Networks{
-					"foo": staticNetwork,
-					"bar": dhcpNetwork,
-				}
-				interfacesByMAC := map[string]string{
-					"fake-dhcp-mac-address":   "dhcp-interface-name",
-					"fake-static-mac-address": "static-interface-name",
-				}
+			Context("when the number of networks matches the number of devices", func() {
+				Context("and every interface has a matching networks, by MAC address", func() {
+					BeforeEach(func() {
+						networks["foo"] = staticNetwork
+						networks["bar"] = dhcpNetwork
+						interfacesByMAC[staticNetwork.Mac] = "static-interface-name"
+						interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+					})
 
-				staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					It("creates interface configurations for each network when matching interfaces exist", func() {
+						staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+						Expect(err).ToNot(HaveOccurred())
 
-				Expect(err).ToNot(HaveOccurred())
+						Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
+							StaticInterfaceConfiguration{
+								Name:      "static-interface-name",
+								Address:   "1.2.3.4",
+								Netmask:   "255.255.255.0",
+								Network:   "1.2.3.0",
+								Broadcast: "1.2.3.255",
+								Mac:       "fake-static-mac-address",
+								Gateway:   "3.4.5.6",
+							},
+						}))
 
-				Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
-					StaticInterfaceConfiguration{
-						Name:      "static-interface-name",
-						Address:   "1.2.3.4",
-						Netmask:   "255.255.255.0",
-						Network:   "1.2.3.0",
-						Broadcast: "1.2.3.255",
-						Mac:       "fake-static-mac-address",
-						Gateway:   "3.4.5.6",
-					},
-				}))
+						Expect(dhcpInterfaceConfigurations).To(Equal([]DHCPInterfaceConfiguration{
+							DHCPInterfaceConfiguration{
+								Name: "dhcp-interface-name",
+							},
+						}))
+					})
+				})
 
-				Expect(dhcpInterfaceConfigurations).To(Equal([]DHCPInterfaceConfiguration{
-					DHCPInterfaceConfiguration{
-						Name: "dhcp-interface-name",
-					},
-				}))
+				Context("and some networks have no MAC address", func() {
+					BeforeEach(func() {
+						networks["foo"] = staticNetworkWithoutMAC
+						networks["bar"] = dhcpNetwork
+						interfacesByMAC["some-other-mac"] = "other-interface-name"
+						interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+					})
+
+					It("creates interface configurations for each network when matching interfaces exist, and sets non-matching interfaces as DHCP", func() {
+						staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(staticInterfaceConfigurations).To(BeEmpty())
+
+						Expect(dhcpInterfaceConfigurations).To(ConsistOf(
+							DHCPInterfaceConfiguration{
+								Name: "dhcp-interface-name",
+							},
+							DHCPInterfaceConfiguration{
+								Name: "other-interface-name",
+							},
+						))
+					})
+				})
+
+				Context("and some networks MAC addresses that don't match", func() {
+					BeforeEach(func() {
+						networks["foo"] = staticNetwork
+						networks["bar"] = dhcpNetwork
+						interfacesByMAC["some-other-mac"] = "static-interface-name"
+						interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+					})
+
+					It("retuns an error", func() {
+						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+						Expect(err).To(HaveOccurred())
+					})
+				})
+			})
+		})
+
+		Context("when the number of networks does not match the number of devices", func() {
+			BeforeEach(func() {
+				networks["foo"] = staticNetwork
+				networks["bar"] = dhcpNetwork
+				networks["baz"] = staticNetworkWithoutMAC
+
+				interfacesByMAC["some-other-mac"] = "static-interface-name"
+				interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
 			})
 
-			It("returns an error if any network doesn't have a matching interface", func() {
-				networks := boshsettings.Networks{
-					"foo": staticNetwork,
-					"bar": dhcpNetwork,
-				}
-				interfacesByMAC := map[string]string{
-					"fake-dhcp-mac-address": "dhcp-interface-name",
-				}
-
+			It("retuns an error", func() {
 				_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
-
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("No interface exists with MAC address 'fake-static-mac-address'"))
-			})
-
-			It("returns an error if any network doesn't specify a MAC address", func() {
-				staticNetworkWithoutMAC := boshsettings.Network{
-					Type:    "manual",
-					IP:      "1.2.3.4",
-					Netmask: "255.255.255.0",
-					Gateway: "3.4.5.6",
-				}
-				networks := boshsettings.Networks{
-					"foo": staticNetworkWithoutMAC,
-					"bar": dhcpNetwork,
-				}
-				interfacesByMAC := map[string]string{
-					"fake-dhcp-mac-address": "dhcp-interface-name",
-				}
-
-				_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
-
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Network 'foo' doesn't specify a MAC address"))
 			})
 		})
 	})

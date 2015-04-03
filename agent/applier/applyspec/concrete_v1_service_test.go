@@ -78,131 +78,90 @@ func init() {
 		})
 
 		Describe("PopulateDHCPNetworks", func() {
+			var settings boshsettings.Settings
 			var unresolvedSpec V1ApplySpec
+			var staticSpec NetworkSpec
+			var dhcpSpec NetworkSpec
+			var manualSetting boshsettings.Network
+			var dynamicSetting boshsettings.Network
 
 			BeforeEach(func() {
+				settings = boshsettings.Settings{
+					Networks: boshsettings.Networks{},
+				}
+				manualSetting = boshsettings.Network{
+					Type:    "manual",
+					IP:      "fake-manual-ip",
+					Netmask: "fake-manual-netmask",
+					Gateway: "fake-manual-gateway",
+					Mac:     "fake-manual-mac",
+				}
+				dynamicSetting = boshsettings.Network{
+					Type:    "dynamic",
+					IP:      "fake-dynamic-ip",
+					Netmask: "fake-dynamic-netmask",
+					Gateway: "fake-dynamic-gateway",
+				}
+
 				unresolvedSpec = V1ApplySpec{
-					Deployment: "fake-deployment",
-					NetworkSpecs: map[string]NetworkSpec{
-						"static-net1": NetworkSpec{
-							Fields: map[string]interface{}{
-								"ip":      "fake-net1-ip",
-								"netmask": "fake-net1-netmask",
-								"gateway": "fake-net1-gateway",
-								"mac":     "fake-net1-mac",
-							},
-						},
-						"dhcp-net2": NetworkSpec{
-							Fields: map[string]interface{}{
-								"type":    NetworkSpecTypeDynamic,
-								"ip":      "fake-net2-ip",
-								"netmask": "fake-net2-netmask",
-								"gateway": "fake-net2-gateway",
-							},
-						},
-						"dhcp-net3": NetworkSpec{
-							Fields: map[string]interface{}{
-								"type":    NetworkSpecTypeDynamic,
-								"ip":      "fake-net3-ip",
-								"netmask": "fake-net3-netmask",
-								"gateway": "fake-net3-gateway",
-							},
-						},
+					Deployment:   "fake-deployment",
+					NetworkSpecs: map[string]NetworkSpec{},
+				}
+				staticSpec = NetworkSpec{
+					Fields: map[string]interface{}{
+						"ip":      "fake-net1-ip",
+						"netmask": "fake-net1-netmask",
+						"gateway": "fake-net1-gateway",
+						"mac":     "fake-net1-mac",
 					},
 				}
+				dhcpSpec = NetworkSpec{
+					Fields: map[string]interface{}{
+						"type":    NetworkSpecTypeDynamic,
+						"ip":      "fake-net2-ip",
+						"netmask": "fake-net2-netmask",
+						"gateway": "fake-net2-gateway",
+					},
+				}
+
 			})
 
 			Context("when associated network is in settings", func() {
-				var settings boshsettings.Settings
-
 				Context("when there are no networks configured with DHCP", func() {
 					BeforeEach(func() {
-						unresolvedSpec = V1ApplySpec{
-							Deployment: "fake-deployment",
-							NetworkSpecs: map[string]NetworkSpec{
-								"fake-net": NetworkSpec{
-									Fields: map[string]interface{}{"ip": "fake-net-ip"},
-								},
-							},
-						}
+						settings.Networks["fake-net"] = manualSetting
 
-						settings = boshsettings.Settings{
-							Networks: boshsettings.Networks{
-								"fake-net": boshsettings.Network{
-									Type:    "manual",
-									IP:      "fake-ip",
-									Netmask: "fake-netmask",
-									Gateway: "fake-gateway",
-									Mac:     "fake-mac",
-								},
-							},
-						}
+						unresolvedSpec.NetworkSpecs["fake-net"] = staticSpec
 					})
 
 					It("returns spec without modifying any networks", func() {
 						spec, err := service.PopulateDHCPNetworks(unresolvedSpec, settings)
 						Expect(err).ToNot(HaveOccurred())
-						Expect(spec).To(Equal(V1ApplySpec{
-							Deployment: "fake-deployment",
-							NetworkSpecs: map[string]NetworkSpec{
-								"fake-net": NetworkSpec{
-									Fields: map[string]interface{}{"ip": "fake-net-ip"},
-								},
-							},
-						}))
+						Expect(spec).To(Equal(unresolvedSpec))
 					})
 				})
 
 				Context("when there is network with name 'local' and ip 127.0.0.1", func() {
 					BeforeEach(func() {
-						unresolvedSpec = V1ApplySpec{
-							Deployment: "fake-deployment",
-							NetworkSpecs: map[string]NetworkSpec{
-								"local": NetworkSpec{
-									Fields: map[string]interface{}{"ip": "127.0.0.1"},
-								},
-							},
+						unresolvedSpec.NetworkSpecs["local"] = NetworkSpec{
+							Fields: map[string]interface{}{"ip": "127.0.0.1"},
 						}
 					})
 
 					It("returns spec without modifying any networks", func() {
 						spec, err := service.PopulateDHCPNetworks(unresolvedSpec, settings)
 						Expect(err).ToNot(HaveOccurred())
-						Expect(spec).To(Equal(V1ApplySpec{
-							Deployment: "fake-deployment",
-							NetworkSpecs: map[string]NetworkSpec{
-								"local": NetworkSpec{
-									Fields: map[string]interface{}{"ip": "127.0.0.1"},
-								},
-							},
-						}))
+						Expect(spec).To(Equal(unresolvedSpec))
 					})
 				})
 
 				Context("when there are networks configured with DHCP", func() {
 					BeforeEach(func() {
-						settings = boshsettings.Settings{
-							Networks: boshsettings.Networks{
-								"static-net1": boshsettings.Network{
-									IP:      "fake-unresolved1-ip",
-									Netmask: "fake-unresolved1-netmask",
-									Gateway: "fake-unresolved1-gateway",
-									Mac:     "fake-unresolved1-mac",
-								},
-								"dhcp-net2": boshsettings.Network{
-									Type:    "dynamic",
-									IP:      "fake-resolved2-ip",
-									Netmask: "fake-resolved2-netmask",
-									Gateway: "fake-resolved2-gateway",
-								},
-								"dhcp-net3": boshsettings.Network{
-									Type:    "dynamic",
-									IP:      "fake-resolved3-ip",
-									Netmask: "fake-resolved3-netmask",
-									Gateway: "fake-resolved3-gateway",
-								},
-							},
-						}
+						settings.Networks["static-net1"] = manualSetting
+						settings.Networks["dhcp-net2"] = dynamicSetting
+
+						unresolvedSpec.NetworkSpecs["static-net1"] = staticSpec
+						unresolvedSpec.NetworkSpecs["dhcp-net2"] = dhcpSpec
 					})
 
 					It("returns spec with networks modified via DHCP and keeps everything else the same", func() {
@@ -211,28 +170,13 @@ func init() {
 						Expect(spec).To(Equal(V1ApplySpec{
 							Deployment: "fake-deployment",
 							NetworkSpecs: map[string]NetworkSpec{
-								"static-net1": NetworkSpec{
-									Fields: map[string]interface{}{ // ip info not replaced
-										"ip":      "fake-net1-ip",
-										"netmask": "fake-net1-netmask",
-										"gateway": "fake-net1-gateway",
-										"mac":     "fake-net1-mac",
-									},
-								},
+								"static-net1": staticSpec,
 								"dhcp-net2": NetworkSpec{
 									Fields: map[string]interface{}{
 										"type":    NetworkSpecTypeDynamic,
-										"ip":      "fake-resolved2-ip",
-										"netmask": "fake-resolved2-netmask",
-										"gateway": "fake-resolved2-gateway",
-									},
-								},
-								"dhcp-net3": NetworkSpec{
-									Fields: map[string]interface{}{
-										"type":    NetworkSpecTypeDynamic,
-										"ip":      "fake-resolved3-ip",
-										"netmask": "fake-resolved3-netmask",
-										"gateway": "fake-resolved3-gateway",
+										"ip":      dynamicSetting.IP,
+										"netmask": dynamicSetting.Netmask,
+										"gateway": dynamicSetting.Gateway,
 									},
 								},
 							},
@@ -242,10 +186,17 @@ func init() {
 			})
 
 			Context("when associated network cannot be found in settings", func() {
+				BeforeEach(func() {
+					settings.Networks["net-present-in-settings"] = manualSetting
+
+					unresolvedSpec.NetworkSpecs["net-present-in-settings"] = staticSpec
+					unresolvedSpec.NetworkSpecs["net-not-present-in-settings"] = dhcpSpec
+				})
+
 				It("returns error", func() {
-					spec, err := service.PopulateDHCPNetworks(unresolvedSpec, boshsettings.Settings{})
+					spec, err := service.PopulateDHCPNetworks(unresolvedSpec, settings)
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(MatchRegexp("Network 'static-net\\d' is not found in settings"))
+					Expect(err.Error()).To(ContainSubstring("Network 'net-not-present-in-settings' is not found in settings"))
 					Expect(spec).To(Equal(V1ApplySpec{}))
 				})
 			})
