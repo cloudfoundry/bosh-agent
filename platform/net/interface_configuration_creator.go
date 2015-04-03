@@ -66,9 +66,9 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 }
 
 func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration, ifaceName string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
-	creator.logger.Debug(creator.logTag, "Creating network configuration with IP: '%s', netmask: '%s'", networkSettings.IP, networkSettings.Netmask)
+	creator.logger.Debug(creator.logTag, "Creating network configuration with settings: %s", networkSettings)
 
-	if networkSettings.IsDHCP() {
+	if networkSettings.IsDHCP() || networkSettings.Mac == "" {
 		creator.logger.Debug(creator.logTag, "Using dhcp networking")
 		dhcpConfigs = append(dhcpConfigs, DHCPInterfaceConfiguration{
 			Name: ifaceName,
