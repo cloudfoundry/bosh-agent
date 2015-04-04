@@ -1,5 +1,9 @@
 package settings
 
+import (
+	"fmt"
+)
+
 const (
 	RootUsername        = "root"
 	VCAPUsername        = "vcap"
