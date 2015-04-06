@@ -83,13 +83,13 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	return nil
 }
 
-const centosDHCPIfcgfTemplate = `DEVICE={{ .Name }}
+const centosDHCPIfcfgTemplate = `DEVICE={{ .Name }}
 BOOTPROTO=dhcp
 ONBOOT=yes
 PEERDNS=yes
 `
 
-const centosStaticIfcgfTemplate = `DEVICE={{ .Name }}
+const centosStaticIfcfgTemplate = `DEVICE={{ .Name }}
 BOOTPROTO=static
 IPADDR={{ .Address }}
 NETMASK={{ .Netmask }}
@@ -100,7 +100,7 @@ PEERDNS=no{{ range .DNSServers }}
 DNS{{ .Index }}={{ .Address }}{{ end }}
 `
 
-type centosStaticIfcg struct {
+type centosStaticIfcfg struct {
 	*StaticInterfaceConfiguration
 	DNSServers []dnsConfig
 }
@@ -138,9 +138,9 @@ func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, co
 func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
 	anyInterfaceChanged := false
 
-	staticConfig := centosStaticIfcg{}
+	staticConfig := centosStaticIfcfg{}
 	staticConfig.DNSServers = newDNSConfigs(dnsServers)
-	staticTemplate := template.Must(template.New("ifcfg").Parse(centosStaticIfcgfTemplate))
+	staticTemplate := template.Must(template.New("ifcfg").Parse(centosStaticIfcfgTemplate))
 
 	for i := range staticInterfaceConfigurations {
 		staticConfig.StaticInterfaceConfiguration = &staticInterfaceConfigurations[i]
@@ -153,7 +153,7 @@ func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations [
 		anyInterfaceChanged = anyInterfaceChanged || changed
 	}
 
-	dhcpTemplate := template.Must(template.New("ifcfg").Parse(centosDHCPIfcgfTemplate))
+	dhcpTemplate := template.Must(template.New("ifcfg").Parse(centosDHCPIfcfgTemplate))
 
 	for i := range dhcpInterfaceConfigurations {
 		config := &dhcpInterfaceConfigurations[i]
