@@ -96,7 +96,6 @@ NETMASK={{ .Netmask }}
 BROADCAST={{ .Broadcast }}
 GATEWAY={{ .Gateway }}
 ONBOOT=yes
-NM_CONTROLLED=no
 PEERDNS=no{{ range .DNSServers }}
 DNS{{ .Index }}={{ .Address }}{{ end }}
 `
