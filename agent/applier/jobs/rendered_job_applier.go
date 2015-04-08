@@ -113,16 +113,24 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		return bosherr.WrapError(err, "Decompressing files to temp dir")
 	}
 
-	files, err := s.fs.Glob(filepath.Join(tmpDir, job.Source.PathInArchive, "bin", "*"))
+	err = s.fs.Chmod(filepath.Join(tmpDir, job.Source.PathInArchive, "bin"), os.FileMode(0755))
 	if err != nil {
-		return bosherr.WrapError(err, "Finding job binary files")
+		return bosherr.WrapError(err, "Making bin dir execuatble")
 	}
 
-	for _, f := range files {
-		err = s.fs.Chmod(f, os.FileMode(0755))
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Making %s executable", f)
-		}
+	err = s.fs.Chmod(filepath.Join(tmpDir, job.Source.PathInArchive, "config"), os.FileMode(0755))
+	if err != nil {
+		return bosherr.WrapError(err, "Making config dir execuatble")
+	}
+
+	err = s.setPermissionOnGlob(filepath.Join(tmpDir, job.Source.PathInArchive, "bin", "*"), os.FileMode(0755))
+	if err != nil {
+		return err
+	}
+
+	err = s.setPermissionOnGlob(filepath.Join(tmpDir, job.Source.PathInArchive, "config", "*"), os.FileMode(0644))
+	if err != nil {
+		return err
 	}
 
 	_, _, err = jobBundle.Install(filepath.Join(tmpDir, job.Source.PathInArchive))
@@ -130,6 +138,21 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		return bosherr.WrapError(err, "Installing job bundle")
 	}
 
+	return nil
+}
+
+func (s *renderedJobApplier) setPermissionOnGlob(path string, mode os.FileMode) error {
+	files, err := s.fs.Glob(path)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Finding %s files", path)
+	}
+
+	for _, f := range files {
+		err = s.fs.Chmod(f, mode)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Making %s to permissions %s", f, mode)
+		}
+	}
 	return nil
 }
 
