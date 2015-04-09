@@ -279,6 +279,36 @@ func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
 	return err
 }
 
+func (t *TestEnvironment) GetVMNetworks() (boshsettings.Networks, error) {
+	stdout, _, _, err := t.cmdRunner.RunCommand("vagrant", "status")
+	if err != nil {
+		return boshsettings.Networks{}, err
+	}
+
+	if strings.Contains(stdout, "virtualbox") {
+		return boshsettings.Networks{
+			"eth0": {
+				Type: "dynamic",
+			},
+			"eth1": {
+				Type:    "manual",
+				IP:      "192.168.50.4",
+				Netmask: "255.255.255.0",
+			},
+		}, nil
+	}
+
+	if strings.Contains(stdout, "aws") {
+		return boshsettings.Networks{
+			"eth0": {
+				Type: "dynamic",
+			},
+		}, nil
+	}
+
+	return boshsettings.Networks{}, nil
+}
+
 func (t *TestEnvironment) GetFileContents(filePath string) (string, error) {
 	return t.RunCommand(
 		fmt.Sprintf(

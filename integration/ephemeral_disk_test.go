@@ -31,6 +31,9 @@ var _ = Describe("EphemeralDisk", func() {
 		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
+		networks, err := testEnvironment.GetVMNetworks()
+		Expect(err).ToNot(HaveOccurred())
+
 		registrySettings = boshsettings.Settings{
 			AgentID: "fake-agent-id",
 			Mbus:    "https://127.0.0.1:6868",
@@ -40,16 +43,7 @@ var _ = Describe("EphemeralDisk", func() {
 					"blobstore_path": "/var/vcap/data",
 				},
 			},
-			Networks: map[string]boshsettings.Network{
-				"eth0": {
-					Type: "dynamic",
-				},
-				"eth1": {
-					Type:    "manual",
-					IP:      "192.168.50.4",
-					Netmask: "255.255.255.0",
-				},
-			},
+			Networks: networks,
 		}
 	})
 
