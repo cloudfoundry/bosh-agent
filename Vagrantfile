@@ -29,6 +29,7 @@ Vagrant.configure('2') do |config|
 
   config.vm.synced_folder '.', agent_dir, type: "rsync"
 
+  config.vm.provision :shell, inline: "cat /etc/network/interfaces"
 #  config.vm.synced_folder Dir.pwd, '/vagrant', disabled: true
   config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"
   config.vm.provision :shell, inline: "chmod 777 /var/vcap/sys/log/cpi"
