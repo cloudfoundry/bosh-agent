@@ -44,11 +44,6 @@ var _ = Describe("EphemeralDisk", func() {
 				"eth0": {
 					Type: "dynamic",
 				},
-				"eth1": {
-					Type:    "manual",
-					IP:      "192.168.50.4",
-					Netmask: "255.255.255.0",
-				},
 			},
 		}
 	})
