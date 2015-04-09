@@ -9,8 +9,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
 var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)
@@ -18,12 +22,16 @@ var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)
 func describeHTTPMetadataService() {
 	var (
 		dnsResolver     *fakeinf.FakeDNSResolver
+		platform        *fakeplat.FakePlatform
+		logger          boshlog.Logger
 		metadataService MetadataService
 	)
 
 	BeforeEach(func() {
 		dnsResolver = &fakeinf.FakeDNSResolver{}
-		metadataService = NewHTTPMetadataService("fake-metadata-host", dnsResolver)
+		platform = fakeplat.NewFakePlatform()
+		logger = boshlog.NewLogger(boshlog.LevelNone)
+		metadataService = NewHTTPMetadataService("fake-metadata-host", dnsResolver, platform, logger)
 	})
 
 	Describe("IsAvailable", func() {
@@ -49,7 +57,7 @@ func describeHTTPMetadataService() {
 
 			ts = httptest.NewServer(handler)
 
-			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver, platform, logger)
 		})
 
 		AfterEach(func() {
@@ -80,7 +88,7 @@ func describeHTTPMetadataService() {
 
 			ts = httptest.NewServer(handler)
 
-			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver, platform, logger)
 		})
 
 		AfterEach(func() {
@@ -122,7 +130,7 @@ func describeHTTPMetadataService() {
 
 			handler := http.HandlerFunc(handlerFunc)
 			ts = httptest.NewServer(handler)
-			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver, platform, logger)
 		})
 
 		AfterEach(func() {
@@ -139,6 +147,36 @@ func describeHTTPMetadataService() {
 				name, err := metadataService.GetServerName()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(name).To(Equal("fake-server-name"))
+			})
+
+			Context("when no networks are configured", func() {
+				BeforeEach(func() {
+					platform.GetConfiguredNetworkInterfacesInterfaces = []string{}
+				})
+
+				It("sets up DHCP network", func() {
+					_, err := metadataService.GetServerName()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(platform.SetupNetworkingCalled).To(BeTrue())
+					Expect(platform.SetupNetworkingNetworks).To(Equal(boshsettings.Networks{
+						"eth0": boshsettings.Network{
+							Type: "dynamic",
+						},
+					}))
+				})
+
+				Context("when setting up DHCP fails", func() {
+					BeforeEach(func() {
+						platform.SetupNetworkingErr = errors.New("fake-network-error")
+					})
+
+					It("returns an error", func() {
+						_, err := metadataService.GetServerName()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-network-error"))
+					})
+				})
 			})
 		})
 
@@ -189,7 +227,7 @@ func describeHTTPMetadataService() {
 
 			handler := http.HandlerFunc(handlerFunc)
 			ts = httptest.NewServer(handler)
-			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver)
+			metadataService = NewHTTPMetadataService(ts.URL, dnsResolver, platform, logger)
 		})
 
 		AfterEach(func() {

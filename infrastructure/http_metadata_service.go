@@ -7,21 +7,31 @@ import (
 	"net/http"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type httpMetadataService struct {
 	metadataHost string
 	resolver     DNSResolver
+	platform     boshplat.Platform
+	logTag       string
+	logger       boshlog.Logger
 }
 
 func NewHTTPMetadataService(
 	metadataHost string,
 	resolver DNSResolver,
+	platform boshplat.Platform,
+	logger boshlog.Logger,
 ) MetadataService {
 	return httpMetadataService{
 		metadataHost: metadataHost,
 		resolver:     resolver,
+		platform:     platform,
+		logTag:       "httpMetadataService",
+		logger:       logger,
 	}
 }
 
@@ -106,8 +116,12 @@ func (ms httpMetadataService) IsAvailable() bool { return true }
 func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 	var userData UserDataContentsType
 
-	userDataURL := fmt.Sprintf("%s/latest/user-data", ms.metadataHost)
+	err := ms.ensureMinimalNetworkSetup()
+	if err != nil {
+		return userData, err
+	}
 
+	userDataURL := fmt.Sprintf("%s/latest/user-data", ms.metadataHost)
 	userDataResp, err := http.Get(userDataURL)
 	if err != nil {
 		return userData, bosherr.WrapError(err, "Getting user data from url")
@@ -126,4 +140,25 @@ func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 	}
 
 	return userData, nil
+}
+
+func (ms httpMetadataService) ensureMinimalNetworkSetup() error {
+	configuredInterfaces, err := ms.platform.GetConfiguredNetworkInterfaces()
+	if err != nil {
+		return bosherr.WrapError(err, "Getting configured network interfaces")
+	}
+
+	if len(configuredInterfaces) == 0 {
+		ms.logger.Debug(ms.logTag, "No configured networks found, setting up DHCP network")
+		err = ms.platform.SetupNetworking(boshsettings.Networks{
+			"eth0": {
+				Type: boshsettings.NetworkTypeDynamic,
+			},
+		})
+		if err != nil {
+			return bosherr.WrapError(err, "Setting up initial DHCP network")
+		}
+	}
+
+	return nil
 }

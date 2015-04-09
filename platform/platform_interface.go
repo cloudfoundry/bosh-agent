@@ -51,6 +51,7 @@ type Platform interface {
 
 	// Network misc
 	GetDefaultNetwork() (boshsettings.Network, error)
+	GetConfiguredNetworkInterfaces() ([]string, error)
 	PrepareForNetworkingChange() error
 
 	// Additional monit management

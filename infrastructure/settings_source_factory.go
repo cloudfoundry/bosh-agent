@@ -98,7 +98,7 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 
 		switch typedOpts := opts.(type) {
 		case HTTPSourceOptions:
-			metadataService = NewHTTPMetadataService(typedOpts.URI, resolver)
+			metadataService = NewHTTPMetadataService(typedOpts.URI, resolver, f.platform, f.logger)
 
 		case ConfigDriveSourceOptions:
 			metadataService = NewConfigDriveMetadataService(

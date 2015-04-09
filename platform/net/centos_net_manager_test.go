@@ -45,6 +45,17 @@ func describeCentosNetManager() {
 		)
 	})
 
+	writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
+		interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
+		fs.WriteFile(interfacePath, []byte{})
+		if isPhysical {
+			fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
+		}
+		fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
+
+		return interfacePath
+	}
+
 	Describe("SetupNetworking", func() {
 		var (
 			dhcpNetwork                           boshsettings.Network
@@ -101,17 +112,6 @@ request subnet-mask, broadcast-address, time-offset, routers,
 prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 `
 		})
-
-		writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
-			interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
-			fs.WriteFile(interfacePath, []byte{})
-			if isPhysical {
-				fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
-			}
-			fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
-
-			return interfacePath
-		}
 
 		stubInterfacesWithVirtual := func(physicalInterfaces map[string]boshsettings.Network, virtualInterfaces []string) {
 			interfacePaths := []string{}
@@ -434,6 +434,40 @@ request subnet-mask, broadcast-address, time-offset, routers,
 
 				virtualNetworkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-virtual")
 				Expect(virtualNetworkConfig).To(BeNil())
+			})
+		})
+	})
+
+	Describe("GetConfiguredNetworkInterfaces", func() {
+		Context("when there are network devices", func() {
+			BeforeEach(func() {
+				interfacePaths := []string{}
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth0", "aa:bb", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth1", "cc:dd", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth2", "ee:ff", true))
+				fs.SetGlob("/sys/class/net/*", interfacePaths)
+			})
+
+			writeIfcgfFile := func(iface string) {
+				fs.WriteFileString(fmt.Sprintf("/etc/sysconfig/network-scripts/ifcfg-%s", iface), "fake-config")
+			}
+
+			It("returns networks that have ifcfg config present", func() {
+				writeIfcgfFile("fake-eth0")
+				writeIfcgfFile("fake-eth2")
+
+				interfaces, err := netManager.GetConfiguredNetworkInterfaces()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(interfaces).To(ConsistOf("fake-eth0", "fake-eth2"))
+			})
+		})
+
+		Context("when there are no network devices", func() {
+			It("returns empty list", func() {
+				interfaces, err := netManager.GetConfiguredNetworkInterfaces()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(interfaces).To(Equal([]string{}))
 			})
 		})
 	})

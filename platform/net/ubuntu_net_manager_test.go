@@ -587,4 +587,49 @@ iface ethstatic inet static
 			})
 		})
 	})
+
+	Describe("GetConfiguredNetworkInterfaces", func() {
+		Context("when there are network devices", func() {
+			BeforeEach(func() {
+				interfacePaths := []string{}
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth0", "aa:bb", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth1", "cc:dd", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth2", "ee:ff", true))
+				fs.SetGlob("/sys/class/net/*", interfacePaths)
+			})
+
+			It("returns networks that are defined in /etc/network/interfaces", func() {
+				cmdRunner.AddCmdResult("ifup --no-act fake-eth0", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "ifup: interface fake-eth0 already configured",
+					ExitStatus: 0,
+				})
+
+				cmdRunner.AddCmdResult("ifup --no-act fake-eth1", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "Ignoring unknown interface fake-eth1=fake-eth1.",
+					ExitStatus: 0,
+				})
+
+				cmdRunner.AddCmdResult("ifup --no-act fake-eth2", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "ifup: interface fake-eth2 already configured",
+					ExitStatus: 0,
+				})
+
+				interfaces, err := netManager.GetConfiguredNetworkInterfaces()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(interfaces).To(ConsistOf("fake-eth0", "fake-eth2"))
+			})
+		})
+
+		Context("when there are no network devices", func() {
+			It("returns empty list", func() {
+				interfaces, err := netManager.GetConfiguredNetworkInterfaces()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(interfaces).To(Equal([]string{}))
+			})
+		})
+	})
 }

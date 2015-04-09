@@ -83,6 +83,23 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	return nil
 }
 
+func (net centosNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
+	interfaces := []string{}
+
+	interfacesByMacAddress, err := net.detectMacAddresses()
+	if err != nil {
+		return interfaces, bosherr.WrapError(err, "Getting network interfaces")
+	}
+
+	for _, iface := range interfacesByMacAddress {
+		if net.fs.FileExists(ifcfgFilePath(iface)) {
+			interfaces = append(interfaces, iface)
+		}
+	}
+
+	return interfaces, nil
+}
+
 const centosDHCPIfcfgTemplate = `DEVICE={{ .Name }}
 BOOTPROTO=dhcp
 ONBOOT=yes
@@ -118,6 +135,10 @@ func newDNSConfigs(dnsServers []string) []dnsConfig {
 	return dnsConfigs
 }
 
+func ifcfgFilePath(name string) string {
+	return filepath.Join("/etc/sysconfig/network-scripts", "ifcfg-"+name)
+}
+
 func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, config interface{}) (bool, error) {
 	buffer := bytes.NewBuffer([]byte{})
 
@@ -126,7 +147,7 @@ func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, co
 		return false, bosherr.WrapErrorf(err, "Generating '%s' config from template", name)
 	}
 
-	filePath := filepath.Join("/etc/sysconfig/network-scripts", "ifcfg-"+name)
+	filePath := ifcfgFilePath(name)
 	changed, err := net.fs.ConvergeFileContents(filePath, buffer.Bytes())
 	if err != nil {
 		return false, bosherr.WrapErrorf(err, "Writing config to '%s'", filePath)

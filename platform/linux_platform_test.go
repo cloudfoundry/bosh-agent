@@ -1454,6 +1454,17 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
+	Describe("GetConfiguredNetworkInterfaces", func() {
+		It("delegates to the NetManager", func() {
+			netmanagerInterfaces := []string{"fake-eth0", "fake-eth1"}
+			netManager.GetConfiguredNetworkInterfacesInterfaces = netmanagerInterfaces
+
+			interfaces, err := platform.GetConfiguredNetworkInterfaces()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(interfaces).To(Equal(netmanagerInterfaces))
+		})
+	})
+
 	Describe("GetDefaultNetwork", func() {
 		It("delegates to the defaultNetworkResolver", func() {
 			defaultNetwork := boshsettings.Network{IP: "1.2.3.4"}

@@ -108,6 +108,10 @@ func (p dummyPlatform) SetupNetworking(networks boshsettings.Networks) (err erro
 	return
 }
 
+func (p dummyPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, err error) {
+	return
+}
+
 func (p dummyPlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
 	return
 }

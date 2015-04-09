@@ -111,6 +111,28 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	return nil
 }
 
+func (net UbuntuNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
+	interfaces := []string{}
+
+	interfacesByMacAddress, err := net.detectMacAddresses()
+	if err != nil {
+		return interfaces, bosherr.WrapError(err, "Getting network interfaces")
+	}
+
+	for _, iface := range interfacesByMacAddress {
+		_, stderr, _, err := net.cmdRunner.RunCommand("ifup", "--no-act", iface)
+		if err != nil {
+			return interfaces, bosherr.WrapErrorf(err, "Getting interface status: '%s'", stderr)
+		}
+
+		if !strings.Contains(stderr, "unknown interface") {
+			interfaces = append(interfaces, iface)
+		}
+	}
+
+	return interfaces, nil
+}
+
 func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
 	// Removing dhcp configuration from /etc/network/interfaces
 	// and restarting network does not stop dhclient if dhcp
@@ -143,6 +165,10 @@ func (net UbuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]S
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
 	}
+
+	// if len(interfacesByMacAddress) == 0 {
+	// 	return nil, nil, bosherr.Error("No network interfaces found")
+	// }
 
 	staticConfigs, dhcpConfigs, err := net.interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMacAddress)
 	if err != nil {
@@ -262,10 +288,6 @@ func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 	filePaths, err := net.fs.Glob("/sys/class/net/*")
 	if err != nil {
 		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
-	}
-
-	if len(filePaths) == 0 {
-		return addresses, bosherr.Error("No network interfaces found")
 	}
 
 	var macAddress string

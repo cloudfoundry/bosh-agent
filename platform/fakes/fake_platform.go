@@ -103,6 +103,9 @@ type FakePlatform struct {
 
 	GetDefaultNetworkNetwork boshsettings.Network
 	GetDefaultNetworkErr     error
+
+	GetConfiguredNetworkInterfacesInterfaces []string
+	GetConfiguredNetworkInterfacesErr        error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -196,6 +199,10 @@ func (p *FakePlatform) SetupNetworking(networks boshsettings.Networks) error {
 	p.SetupNetworkingCalled = true
 	p.SetupNetworkingNetworks = networks
 	return p.SetupNetworkingErr
+}
+
+func (p *FakePlatform) GetConfiguredNetworkInterfaces() ([]string, error) {
+	return p.GetConfiguredNetworkInterfacesInterfaces, p.GetConfiguredNetworkInterfacesErr
 }
 
 func (p *FakePlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
