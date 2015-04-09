@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	bmregistry "github.com/cloudfoundry/bosh-micro-cli/registry"
+	bmregistry "github.com/cloudfoundry/bosh-init/registry"
 )
 
 func main() {
