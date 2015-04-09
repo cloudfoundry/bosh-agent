@@ -40,6 +40,11 @@ func (ms httpMetadataService) Load() error {
 }
 
 func (ms httpMetadataService) GetPublicKey() (string, error) {
+	err := ms.ensureMinimalNetworkSetup()
+	if err != nil {
+		return "", err
+	}
+
 	url := fmt.Sprintf("%s/latest/meta-data/public-keys/0/openssh-key", ms.metadataHost)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -57,6 +62,11 @@ func (ms httpMetadataService) GetPublicKey() (string, error) {
 }
 
 func (ms httpMetadataService) GetInstanceID() (string, error) {
+	err := ms.ensureMinimalNetworkSetup()
+	if err != nil {
+		return "", err
+	}
+
 	url := fmt.Sprintf("%s/latest/meta-data/instance-id", ms.metadataHost)
 	resp, err := http.Get(url)
 	if err != nil {

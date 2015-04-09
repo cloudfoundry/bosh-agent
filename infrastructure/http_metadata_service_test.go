@@ -34,6 +34,38 @@ func describeHTTPMetadataService() {
 		metadataService = NewHTTPMetadataService("fake-metadata-host", dnsResolver, platform, logger)
 	})
 
+	ItEnsuresMinimalNetworkSetup := func(subject func() (string, error)) {
+		Context("when no networks are configured", func() {
+			BeforeEach(func() {
+				platform.GetConfiguredNetworkInterfacesInterfaces = []string{}
+			})
+
+			It("sets up DHCP network", func() {
+				_, err := subject()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(platform.SetupNetworkingCalled).To(BeTrue())
+				Expect(platform.SetupNetworkingNetworks).To(Equal(boshsettings.Networks{
+					"eth0": boshsettings.Network{
+						Type: "dynamic",
+					},
+				}))
+			})
+
+			Context("when setting up DHCP fails", func() {
+				BeforeEach(func() {
+					platform.SetupNetworkingErr = errors.New("fake-network-error")
+				})
+
+				It("returns an error", func() {
+					_, err := subject()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-network-error"))
+				})
+			})
+		})
+	}
+
 	Describe("IsAvailable", func() {
 		It("returns true", func() {
 			Expect(metadataService.IsAvailable()).To(BeTrue())
@@ -62,6 +94,10 @@ func describeHTTPMetadataService() {
 
 		AfterEach(func() {
 			ts.Close()
+		})
+
+		ItEnsuresMinimalNetworkSetup(func() (string, error) {
+			return metadataService.GetPublicKey()
 		})
 
 		It("returns fetched public key", func() {
@@ -93,6 +129,10 @@ func describeHTTPMetadataService() {
 
 		AfterEach(func() {
 			ts.Close()
+		})
+
+		ItEnsuresMinimalNetworkSetup(func() (string, error) {
+			return metadataService.GetInstanceID()
 		})
 
 		It("returns fetched instance id", func() {
@@ -149,34 +189,8 @@ func describeHTTPMetadataService() {
 				Expect(name).To(Equal("fake-server-name"))
 			})
 
-			Context("when no networks are configured", func() {
-				BeforeEach(func() {
-					platform.GetConfiguredNetworkInterfacesInterfaces = []string{}
-				})
-
-				It("sets up DHCP network", func() {
-					_, err := metadataService.GetServerName()
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(platform.SetupNetworkingCalled).To(BeTrue())
-					Expect(platform.SetupNetworkingNetworks).To(Equal(boshsettings.Networks{
-						"eth0": boshsettings.Network{
-							Type: "dynamic",
-						},
-					}))
-				})
-
-				Context("when setting up DHCP fails", func() {
-					BeforeEach(func() {
-						platform.SetupNetworkingErr = errors.New("fake-network-error")
-					})
-
-					It("returns an error", func() {
-						_, err := metadataService.GetServerName()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("fake-network-error"))
-					})
-				})
+			ItEnsuresMinimalNetworkSetup(func() (string, error) {
+				return metadataService.GetServerName()
 			})
 		})
 
@@ -232,6 +246,10 @@ func describeHTTPMetadataService() {
 
 		AfterEach(func() {
 			ts.Close()
+		})
+
+		ItEnsuresMinimalNetworkSetup(func() (string, error) {
+			return metadataService.GetRegistryEndpoint()
 		})
 
 		Context("when metadata contains a dns server", func() {
