@@ -2,7 +2,7 @@
 	"ImportPath": "github.com/cloudfoundry/bosh-agent",
 	"GoVersion": "go1.3.3",
 	"Packages": [
-		"github.com/cloudfoundry/bosh-agent/..."
+		"./..."
 	],
 	"Deps": [
 		{
@@ -16,8 +16,8 @@
 			"Rev": "ebbeafdc430eb6c7e44e9a730a38eaff4c56ba3a"
 		},
 		{
-			"ImportPath": "github.com/cloudfoundry/bosh-micro-cli/registry",
-			"Rev": "7447496844439a35e7056abe32457df6de4b47f7"
+			"ImportPath": "github.com/cloudfoundry/bosh-init/registry",
+			"Rev": "2ce54328c68c5af01d3cdfae5a352d9b5b2a4f1c"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gofileutils/glob",
