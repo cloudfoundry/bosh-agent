@@ -108,8 +108,8 @@ func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(netwo
 }
 
 func (creator interfaceConfigurationCreator) createMultipleInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
-	if len(interfacesByMAC) != len(networks) {
-		return nil, nil, bosherr.Errorf("Number of networks '%d' doesn't match number of network devices '%d'", len(networks), len(interfacesByMAC))
+	if len(interfacesByMAC) < len(networks) {
+		return nil, nil, bosherr.Errorf("Number of network settings '%d' is greater than the number of network devices '%d'", len(networks), len(interfacesByMAC))
 	}
 
 	for name := range networks {

@@ -444,7 +444,7 @@ func init() {
 						It("raises an error", func() {
 							err := boot.Run()
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Number of networks '1' doesn't match number of network devices '0"))
+							Expect(err.Error()).To(ContainSubstring("Number of network settings '1' is greater than the number of network devices '0"))
 						})
 					})
 				})
@@ -465,10 +465,9 @@ func init() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
 					})
 
-					It("raises an error", func() {
+					It("succeeds", func() {
 						err := boot.Run()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of networks '1' doesn't match number of network devices '2"))
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 
@@ -511,7 +510,7 @@ func init() {
 						It("raises an error", func() {
 							err := boot.Run()
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Number of networks '1' doesn't match number of network devices '0"))
+							Expect(err.Error()).To(ContainSubstring("Number of network settings '1' is greater than the number of network devices '0"))
 						})
 					})
 				})
@@ -532,10 +531,9 @@ func init() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
 					})
 
-					It("raises an error", func() {
+					It("succeeds", func() {
 						err := boot.Run()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of networks '1' doesn't match number of network devices '2"))
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 
@@ -589,7 +587,7 @@ func init() {
 					It("raises an error", func() {
 						err := boot.Run()
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of networks '2' doesn't match number of network devices '1"))
+						Expect(err.Error()).To(ContainSubstring("Number of network settings '2' is greater than the number of network devices '1"))
 					})
 				})
 
