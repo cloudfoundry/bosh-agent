@@ -153,6 +153,9 @@ func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 }
 
 func (ms httpMetadataService) ensureMinimalNetworkSetup() error {
+	// We check for configuration presence instead of verifying
+	// that network is reachable because we want to preserve
+	// network configuration that was passed to agent.
 	configuredInterfaces, err := ms.platform.GetConfiguredNetworkInterfaces()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting configured network interfaces")
