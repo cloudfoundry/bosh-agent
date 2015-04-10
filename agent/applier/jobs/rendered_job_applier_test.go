@@ -104,10 +104,6 @@ func init() {
 			ItInstallsJob := func(act func() error) {
 				BeforeEach(func() {
 					fs.TempDirDir = "/fake-tmp-dir"
-					compressor.DecompressFileToDirCallBack = func() {
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin", []byte{})
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config", []byte{})
-					}
 				})
 
 				It("returns error when installing job fails", func() {
@@ -176,32 +172,18 @@ func init() {
 					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
 				})
 
-				It("returns error when getting the list of bin files fails", func() {
-					fs.GlobErr = errors.New("fake-glob-error")
+				It("returns error when walking the tree of files fails", func() {
+					fs.WalkErr = errors.New("fake-walk-error")
 
 					err := act()
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-glob-error"))
-				})
-
-				It("returns error when changing permissions on bin files fails", func() {
-					fs.SetGlob("/fake-tmp-dir/fake-path-in-archive/bin/*", []string{
-						"/fake-tmp-dir/fake-path-in-archive/bin/test",
-					})
-
-					fs.ChmodErr = errors.New("fake-chmod-error")
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-chmod-error"))
+					Expect(err.Error()).To(ContainSubstring("fake-walk-error"))
 				})
 
 				It("installs bundle from decompressed tmp path of a job template", func() {
 					var installedBeforeDecompression bool
 
 					compressor.DecompressFileToDirCallBack = func() {
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin", []byte{})
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config", []byte{})
 						installedBeforeDecompression = bundle.Installed
 					}
 
@@ -217,6 +199,10 @@ func init() {
 
 				It("sets executable bit for the bin and config directories", func() {
 					var binDirStats, configDirStats *fakesys.FakeFileStats
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/blarg", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/blarg.yml", []byte{})
+					}
 
 					bundle.InstallCallBack = func() {
 						binDirStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin")
@@ -228,17 +214,13 @@ func init() {
 
 					Expect(int(binDirStats.FileMode)).To(Equal(0755))
 					Expect(int(configDirStats.FileMode)).To(Equal(0755))
-
 				})
 
 				It("sets executable bit for files in bin", func() {
 					compressor.DecompressFileToDirCallBack = func() {
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin", []byte{})
 						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test1", []byte{})
 						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test2", []byte{})
 						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/test", []byte{})
-
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config", []byte{})
 					}
 
 					fs.SetGlob("/fake-tmp-dir/fake-path-in-archive/bin/*", []string{
@@ -267,9 +249,6 @@ func init() {
 
 				It("sets 644 permissions for files in config", func() {
 					compressor.DecompressFileToDirCallBack = func() {
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin", []byte{})
-						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config", []byte{})
-
 						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/config1", []byte{})
 						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/config2", []byte{})
 					}
