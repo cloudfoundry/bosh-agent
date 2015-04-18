@@ -200,6 +200,10 @@ func (fs *FakeFileSystem) HomeDir(username string) (string, error) {
 
 func (fs *FakeFileSystem) ExpandPath(path string) (string, error) {
 	fs.ExpandPathPath = path
+	if fs.ExpandPathExpanded == "" {
+		return fs.ExpandPathPath, fs.ExpandPathErr
+	}
+
 	return fs.ExpandPathExpanded, fs.ExpandPathErr
 }
 
