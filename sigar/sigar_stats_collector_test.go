@@ -1,4 +1,4 @@
-package stats_test
+package sigar_test
 
 import (
 	"time"

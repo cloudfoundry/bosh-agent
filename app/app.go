@@ -26,9 +26,9 @@ import (
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 	boshtime "github.com/cloudfoundry/bosh-agent/time"
@@ -66,7 +66,7 @@ func (app *app) Setup(args []string) error {
 
 	// Pulled outside of the platform provider so bosh-init will not pull in
 	// sigar when cross compiling linux -> darwin
-	sigarCollector := boshstats.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+	sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
 	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, sigarCollector, config.Platform)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
