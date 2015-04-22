@@ -1,9 +1,5 @@
 #!/bin/bash 
 
-if [[ $OSTYPE == darwin* ]]; then
-  echo "WARNING!!! Cross-compilation from Mac OS will result in a broken binary for AWS. The source looks up the user home dir, which requires native libraries (Cgo)."
-fi
-
 set -e
 
 export GOARCH=amd64
