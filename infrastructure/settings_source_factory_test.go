@@ -208,7 +208,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 					}
 				})
 
-				It("returns error because it is not supported", func() {
+				It("returns a settings source that uses a file to fetch settings", func() {
 					fileSettingsSource := NewFileSettingsSource(
 						"fake-meta-data-path",
 						"fake-user-data-path",
