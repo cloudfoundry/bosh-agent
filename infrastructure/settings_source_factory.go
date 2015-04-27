@@ -153,8 +153,6 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 
 		case FileSourceOptions:
 			settingsSource = NewFileSettingsSource(
-				typedOpts.MetaDataPath,
-				typedOpts.UserDataPath,
 				typedOpts.SettingsPath,
 				f.platform.GetFs(),
 				f.logger,

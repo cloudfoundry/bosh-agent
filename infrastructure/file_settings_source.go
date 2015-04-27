@@ -10,8 +10,6 @@ import (
 )
 
 type FileSettingsSource struct {
-	metaDataFilePath string
-	userDataFilePath string
 	settingsFilePath string
 
 	fs boshsys.FileSystem
@@ -21,15 +19,11 @@ type FileSettingsSource struct {
 }
 
 func NewFileSettingsSource(
-	metaDataFilePath string,
-	userDataFilePath string,
 	settingsFilePath string,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) *FileSettingsSource {
 	return &FileSettingsSource{
-		metaDataFilePath: metaDataFilePath,
-		userDataFilePath: userDataFilePath,
 		settingsFilePath: settingsFilePath,
 
 		fs: fs,
