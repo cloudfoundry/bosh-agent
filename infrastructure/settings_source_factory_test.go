@@ -210,8 +210,6 @@ var _ = Describe("SettingsSourceFactory", func() {
 
 				It("returns a settings source that uses a file to fetch settings", func() {
 					fileSettingsSource := NewFileSettingsSource(
-						"fake-meta-data-path",
-						"fake-user-data-path",
 						"fake-settings-path",
 						platform.GetFs(),
 						logger,

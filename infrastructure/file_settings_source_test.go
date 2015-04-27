@@ -49,8 +49,6 @@ var _ = Describe("FileSettingsSource", func() {
 				fs.WriteFile(settingsFileName, settingsJSON)
 
 				source = NewFileSettingsSource(
-					"/fake-settings-file-path",
-					"/fake-userdata-file-path",
 					settingsFileName,
 					fs, logger)
 			})
@@ -66,8 +64,6 @@ var _ = Describe("FileSettingsSource", func() {
 
 			BeforeEach(func() {
 				source = NewFileSettingsSource(
-					"/fake-settings-file-path",
-					"/fake-userdata-file-path",
 					"/missing-settings-file-path",
 					fs, logger)
 			})
