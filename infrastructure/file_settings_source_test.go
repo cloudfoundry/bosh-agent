@@ -35,29 +35,45 @@ var _ = Describe("FileSettingsSource", func() {
 	Describe("Settings", func() {
 		Context("when the settings file exists", func() {
 			var (
-				expectedSettings boshsettings.Settings
+				settingsFileName string
 			)
-
 			BeforeEach(func() {
-				settingsFileName := "/fake-settings-file-path"
-				expectedSettings = boshsettings.Settings{
-					AgentID: "fake-agent-id",
-				}
-
-				settingsJSON, err := json.Marshal(expectedSettings)
-				Expect(err).ToNot(HaveOccurred())
-				fs.WriteFile(settingsFileName, settingsJSON)
-
-				source = NewFileSettingsSource(
-					settingsFileName,
-					fs, logger)
+				settingsFileName = "/fake-settings-file-path"
+				source = NewFileSettingsSource(settingsFileName, fs, logger)
 			})
 
-			It("returns settings read from the file", func() {
-				settings, err := source.Settings()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(settings).To(Equal(expectedSettings))
+			Context("settings have valid format", func() {
+				var (
+					expectedSettings boshsettings.Settings
+				)
+
+				BeforeEach(func() {
+					expectedSettings = boshsettings.Settings{
+						AgentID: "fake-agent-id",
+					}
+
+					settingsJSON, err := json.Marshal(expectedSettings)
+					Expect(err).ToNot(HaveOccurred())
+					fs.WriteFile(settingsFileName, settingsJSON)
+				})
+
+				It("returns settings read from the file", func() {
+					settings, err := source.Settings()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(settings).To(Equal(expectedSettings))
+				})
 			})
+
+			Context("settings have invalid format", func() {
+				BeforeEach(func() {
+					fs.WriteFile(settingsFileName, []byte("very-bad-json"))
+				})
+				It("returns settings read from the file", func() {
+					_, err := source.Settings()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
 		})
 
 		Context("when the registry file does not exist", func() {
