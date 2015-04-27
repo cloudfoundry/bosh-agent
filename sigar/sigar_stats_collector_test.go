@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/stats"
+	. "github.com/cloudfoundry/bosh-agent/sigar"
 	sigar "github.com/cloudfoundry/gosigar"
 	fakesigar "github.com/cloudfoundry/gosigar/fakes"
 )

@@ -31,11 +31,11 @@ import (
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 )
 
 func init() {
@@ -350,7 +350,7 @@ func init() {
 				compressor := boshcmd.NewTarballCompressor(runner, fs)
 				copier := boshcmd.NewCpCopier(runner, fs, logger)
 
-				sigarCollector := boshstats.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+				sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
 				vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
