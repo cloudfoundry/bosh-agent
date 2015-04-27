@@ -198,17 +198,31 @@ var _ = Describe("SettingsSourceFactory", func() {
 
 			Context("when using File source", func() {
 				BeforeEach(func() {
-					options = SettingsOptions{
-						Sources: []SourceOptions{
-							FileSourceOptions{},
+					options.Sources = []SourceOptions{
+						FileSourceOptions{
+							MetaDataPath: "fake-meta-data-path",
+							UserDataPath: "fake-user-data-path",
+
+							SettingsPath: "fake-settings-path",
 						},
 					}
 				})
 
 				It("returns error because it is not supported", func() {
-					_, err := factory.New()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("File source is not supported without registry"))
+					fileSettingsSource := NewFileSettingsSource(
+						"fake-meta-data-path",
+						"fake-user-data-path",
+						"fake-settings-path",
+						platform.GetFs(),
+						logger,
+					)
+
+					multiSettingsSource, err := NewMultiSettingsSource(fileSettingsSource)
+					Expect(err).ToNot(HaveOccurred())
+
+					settingsSource, err := factory.New()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(settingsSource).To(Equal(multiSettingsSource))
 				})
 			})
 
