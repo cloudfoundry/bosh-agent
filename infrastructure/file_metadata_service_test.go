@@ -48,6 +48,17 @@ var _ = Describe("FileMetadataService", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
+
+		Context("when metadata service file has invalid format", func() {
+			BeforeEach(func() {
+				fs.WriteFileString("fake-metadata-file-path", "bad-json")
+			})
+
+			It("returns an error", func() {
+				_, err := metadataService.GetInstanceID()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 	})
 
 	Describe("GetServerName", func() {

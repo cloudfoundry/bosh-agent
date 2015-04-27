@@ -66,7 +66,7 @@ var _ = Describe("FileSettingsSource", func() {
 
 			Context("settings have invalid format", func() {
 				BeforeEach(func() {
-					fs.WriteFile(settingsFileName, []byte("very-bad-json"))
+					fs.WriteFileString(settingsFileName, "bad-json")
 				})
 				It("returns settings read from the file", func() {
 					_, err := source.Settings()
