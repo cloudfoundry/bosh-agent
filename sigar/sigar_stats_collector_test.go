@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/stats"
+	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	sigar "github.com/cloudfoundry/gosigar"
 	fakesigar "github.com/cloudfoundry/gosigar/fakes"
 )
@@ -20,7 +21,7 @@ var _ = Describe("sigarStatsCollector", func() {
 
 	BeforeEach(func() {
 		fakeSigar = fakesigar.NewFakeSigar()
-		collector = NewSigarStatsCollector(fakeSigar)
+		collector = boshsigar.NewSigarStatsCollector(fakeSigar)
 		doneCh = make(chan struct{})
 	})
 
