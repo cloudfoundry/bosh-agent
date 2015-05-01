@@ -28,43 +28,52 @@ func NewCpCopier(
 }
 
 func (c cpCopier) FilteredCopyToTemp(dir string, filters []string) (string, error) {
+	dirGlob := glob.NewDir(dir)
+	filesToCopy, err := dirGlob.Glob(filters...)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Finding files matching filters")
+	}
+
+	return c.tryInTempDir(func(tempDir string) error {
+		for _, relativePath := range filesToCopy {
+			src := filepath.Join(dir, relativePath)
+			dst := filepath.Join(tempDir, relativePath)
+
+			fileInfo, err := os.Stat(src)
+			if err != nil {
+				return bosherr.WrapErrorf(err, "Getting file info for '%s'", src)
+			}
+
+			if fileInfo.IsDir() {
+				err = c.cpDir(src, dst, tempDir)
+			} else {
+				err = c.cpFile(src, dst, tempDir)
+			}
+
+			if err != nil {
+				return err
+			}
+		}
+
+		err = c.fs.Chmod(tempDir, os.FileMode(0755))
+		if err != nil {
+			bosherr.WrapError(err, "Fixing permissions on temp dir")
+		}
+
+		return nil
+	})
+}
+
+func (c cpCopier) tryInTempDir(fn func(string) error) (string, error) {
 	tempDir, err := c.fs.TempDir("bosh-platform-commands-cpCopier-FilteredCopyToTemp")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary directory")
 	}
 
-	dirGlob := glob.NewDir(dir)
-	filesToCopy, err := dirGlob.Glob(filters...)
+	err = fn(tempDir)
 	if err != nil {
 		c.CleanUp(tempDir)
-		return "", bosherr.WrapError(err, "Finding files matching filters")
-	}
-
-	for _, relativePath := range filesToCopy {
-		src := filepath.Join(dir, relativePath)
-		dst := filepath.Join(tempDir, relativePath)
-
-		fileInfo, err := os.Stat(src)
-		if err != nil {
-			return "", bosherr.WrapErrorf(err, "Getting file info for '%s'", src)
-		}
-
-		if fileInfo.IsDir() {
-			err = c.cpDir(src, dst, tempDir)
-		} else {
-			err = c.cpFile(src, dst, tempDir)
-		}
-
-		if err != nil {
-			c.CleanUp(tempDir)
-			return "", err
-		}
-	}
-
-	err = c.fs.Chmod(tempDir, os.FileMode(0755))
-	if err != nil {
-		c.CleanUp(tempDir)
-		return "", bosherr.WrapError(err, "Fixing permissions on temp dir")
+		return "", err
 	}
 
 	return tempDir, nil
