@@ -33,6 +33,22 @@ var _ = Describe("cpCopier", func() {
 			Expect(err).ToNot(HaveOccurred())
 			return filepath.Join(pwd, "..", "..", "Fixtures", "test_filtered_copy_to_temp")
 		}
+		filesInDir := func(dir string) []string {
+			copiedFiles := []string{}
+			err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					copiedFiles = append(copiedFiles, path)
+				}
+				return nil
+			})
+
+			Expect(err).ToNot(HaveOccurred())
+
+			return copiedFiles
+		}
 
 		It("filtered copy to temp", func() {
 			srcDir := copierFixtureSrcDir()
@@ -48,27 +64,15 @@ var _ = Describe("cpCopier", func() {
 
 			defer os.RemoveAll(dstDir)
 
-			copiedFiles := []string{}
-			err = filepath.Walk(dstDir, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				copiedFiles = append(copiedFiles, path)
-				return nil
-			})
+			copiedFiles := filesInDir(dstDir)
+
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(copiedFiles).To(Equal([]string{
-				dstDir,
 				dstDir + "/app.stderr.log",
 				dstDir + "/app.stdout.log",
-				dstDir + "/other_logs",
-				dstDir + "/other_logs/more_logs",
 				dstDir + "/other_logs/more_logs/more.stdout.log",
 				dstDir + "/other_logs/other_app.stdout.log",
-				dstDir + "/some_directory",
-				dstDir + "/some_directory/sub_dir",
-				dstDir + "/some_directory/sub_dir/other_sub_dir",
 				dstDir + "/some_directory/sub_dir/other_sub_dir/.keep",
 			}))
 
@@ -101,6 +105,24 @@ var _ = Describe("cpCopier", func() {
 
 			_, err = fs.ReadFile(dstDir + "/../some.config")
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("copies the content of directories when specified as a filter", func() {
+			srcDir := copierFixtureSrcDir()
+			filters := []string{
+				"some_directory",
+			}
+
+			dstDir, err := cpCopier.FilteredCopyToTemp(srcDir, filters)
+			Expect(err).ToNot(HaveOccurred())
+
+			defer os.RemoveAll(dstDir)
+
+			copiedFiles := filesInDir(dstDir)
+
+			Expect(copiedFiles).To(Equal([]string{
+				dstDir + "/some_directory/sub_dir/other_sub_dir/.keep",
+			}))
 		})
 	})
 
