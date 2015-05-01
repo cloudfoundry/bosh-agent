@@ -44,7 +44,7 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 	switch logType {
 	case "job":
 		if len(filters) == 0 {
-			filters = []string{"**/*.log"}
+			filters = []string{"**/*"}
 		}
 		logsDir = filepath.Join(a.settingsDir.BaseDir(), "sys", "log")
 	case "agent":

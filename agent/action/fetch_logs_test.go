@@ -85,7 +85,7 @@ var _ = Describe("FetchLogsAction", func() {
 
 		It("job logs without filters", func() {
 			filters := []string{}
-			expectedFilters := []string{"**/*.log"}
+			expectedFilters := []string{"**/*"}
 			testLogs("job", filters, expectedFilters)
 		})
 

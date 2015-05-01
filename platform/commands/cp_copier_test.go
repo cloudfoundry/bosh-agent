@@ -36,15 +36,41 @@ var _ = Describe("cpCopier", func() {
 
 		It("filtered copy to temp", func() {
 			srcDir := copierFixtureSrcDir()
-			dstDir, err := cpCopier.FilteredCopyToTemp(srcDir, []string{
+			filters := []string{
 				"**/*.stdout.log",
 				"*.stderr.log",
 				"../some.config",
 				"some_directory/**/*",
-			})
+			}
+
+			dstDir, err := cpCopier.FilteredCopyToTemp(srcDir, filters)
 			Expect(err).ToNot(HaveOccurred())
 
 			defer os.RemoveAll(dstDir)
+
+			copiedFiles := []string{}
+			err = filepath.Walk(dstDir, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				copiedFiles = append(copiedFiles, path)
+				return nil
+			})
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(copiedFiles).To(Equal([]string{
+				dstDir,
+				dstDir + "/app.stderr.log",
+				dstDir + "/app.stdout.log",
+				dstDir + "/other_logs",
+				dstDir + "/other_logs/more_logs",
+				dstDir + "/other_logs/more_logs/more.stdout.log",
+				dstDir + "/other_logs/other_app.stdout.log",
+				dstDir + "/some_directory",
+				dstDir + "/some_directory/sub_dir",
+				dstDir + "/some_directory/sub_dir/other_sub_dir",
+				dstDir + "/some_directory/sub_dir/other_sub_dir/.keep",
+			}))
 
 			tarDirStat, err := os.Stat(dstDir)
 			Expect(err).ToNot(HaveOccurred())
