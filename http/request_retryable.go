@@ -68,6 +68,11 @@ func (r *requestRetryable) Attempt() (bool, error) {
 		r.request.Body = ioutil.NopCloser(bytes.NewReader(r.bodyBytes))
 	}
 
+	// close previous attempt's response body to prevent HTTP client resource leaks
+	if r.response != nil {
+		r.response.Body.Close()
+	}
+
 	r.attempt++
 
 	r.logger.Debug(r.logTag, "[requestID=%s] Requesting (attempt=%d): %s", r.requestID, r.attempt, r.formatRequest(r.request))

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	boshhttp "github.com/cloudfoundry/bosh-agent/http"
 	fakehttp "github.com/cloudfoundry/bosh-agent/http/fakes"
 	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
 	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
@@ -13,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	"io"
 )
 
 var _ = Describe("MonitRetryStrategy", func() {
@@ -55,8 +57,8 @@ var _ = Describe("MonitRetryStrategy", func() {
 			response = nil
 			lastError = errors.New("last-error")
 			err = nil
-			unavailable = &http.Response{StatusCode: 503}
-			notFound = &http.Response{StatusCode: 404}
+			unavailable = &http.Response{StatusCode: 503, Body: boshhttp.NewStringReadCloser("")}
+			notFound = &http.Response{StatusCode: 404, Body: boshhttp.NewStringReadCloser("")}
 		})
 
 		Context("when all responses are only 503s", func() {
@@ -138,6 +140,23 @@ var _ = Describe("MonitRetryStrategy", func() {
 					Expect(err).To(Equal(lastError))
 
 					Expect(retryable.AttemptCalled).To(Equal(maxOtherAttempts))
+				})
+
+				It("closes the response body", func() {
+					type ClosedChecker interface {
+						io.ReadCloser
+						Closed() bool
+					}
+					for i := 0; i < maxOtherAttempts-2; i++ {
+						retryable.AddAttemptBehavior(unavailable, true, errors.New("unavailable-error"))
+					}
+					retryable.AddAttemptBehavior(unavailable, true, lastError)
+
+					err := monitRetryStrategy.Try()
+					Expect(err).To(Equal(lastError))
+
+					Expect(retryable.AttemptCalled).To(Equal(maxOtherAttempts))
+					Expect(retryable.Response().Body.(ClosedChecker).Closed()).To(BeTrue())
 				})
 			})
 		})

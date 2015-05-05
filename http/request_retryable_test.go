@@ -97,6 +97,22 @@ var _ = Describe("RequestRetryable", func() {
 				Expect(fakeClient.RequestBodies[0]).To(Equal("fake-request-body"))
 				Expect(fakeClient.RequestBodies[1]).To(Equal("fake-request-body"))
 			})
+
+			It("closes the previous response body on subsequent attempts", func() {
+				type ClosedChecker interface {
+					io.ReadCloser
+					Closed() bool
+				}
+				_, err := requestRetryable.Attempt()
+				Expect(err).To(HaveOccurred())
+				originalResp := requestRetryable.Response()
+				Expect(originalResp.Body.(ClosedChecker).Closed()).To(BeFalse())
+
+				_, err = requestRetryable.Attempt()
+				Expect(err).To(HaveOccurred())
+				Expect(originalResp.Body.(ClosedChecker).Closed()).To(BeTrue())
+				Expect(requestRetryable.Response().Body.(ClosedChecker).Closed()).To(BeFalse())
+			})
 		})
 	})
 })

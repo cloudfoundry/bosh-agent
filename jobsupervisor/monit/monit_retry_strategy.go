@@ -60,6 +60,10 @@ func (m *monitRetryStrategy) Try() error {
 		m.timeService.Sleep(m.delay)
 	}
 
+	if err != nil && m.retryable.Response() != nil {
+		m.retryable.Response().Body.Close()
+	}
+
 	return err
 }
 
