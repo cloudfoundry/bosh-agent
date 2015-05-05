@@ -10,6 +10,7 @@ GO_ARCHIVE=$GOPATH/src/github.com/cloudfoundry/bosh-agent/tmp/$(basename $GO_ARC
 
 echo "Downloading go..."
 mkdir -p $(dirname $GOROOT)
+mkdir -p $GOPATH/src/github.com/cloudfoundry/bosh-agent/tmp
 wget -q $GO_ARCHIVE_URL -O $GO_ARCHIVE
 tar xf $GO_ARCHIVE -C $(dirname $GOROOT)
 chmod -R a+w $GOROOT
