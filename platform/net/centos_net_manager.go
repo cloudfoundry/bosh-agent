@@ -58,7 +58,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return err
 	}
 
-	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
 
 	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)

@@ -367,7 +367,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 			vipNetwork := boshsettings.Network{
 				Type:    "vip",
 				Default: []string{"dns"},
-				DNS:     []string{"8.8.8.8", "9.9.9.9"},
+				DNS:     []string{"4.4.4.4", "5.5.5.5"},
 				Mac:     "fake-vip-mac-address",
 				IP:      "9.8.7.6",
 			}
@@ -383,6 +383,31 @@ request subnet-mask, broadcast-address, time-offset, routers,
 			Expect(networkConfig).ToNot(BeNil())
 			Expect(networkConfig.StringContents()).To(Equal(expectedNetworkConfigurationForStatic))
 		})
+
+        It("doesn't use vip networks dns", func() {
+            stubInterfaces(map[string]boshsettings.Network{
+                "ethstatic": staticNetwork,
+            })
+
+            vipNetwork := boshsettings.Network{
+                Type:    "vip",
+                Default: []string{"dns"},
+                DNS:     []string{"4.4.4.4", "5.5.5.5"},
+                Mac:     "fake-vip-mac-address",
+                IP:      "9.8.7.6",
+            }
+
+            err := netManager.SetupNetworking(boshsettings.Networks{
+                "vip-network":    vipNetwork,
+                "static-network": staticNetwork,
+            }, nil)
+            Expect(err).ToNot(HaveOccurred())
+
+            networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
+            Expect(networkConfig).ToNot(BeNil())
+            Expect(networkConfig.StringContents()).ToNot(ContainSubstring("4.4.4.4"))
+            Expect(networkConfig.StringContents()).ToNot(ContainSubstring("5.5.5.5"))
+        })
 
 		Context("when no MAC address is provided in the settings", func() {
 			var staticNetworkWithoutMAC boshsettings.Network
