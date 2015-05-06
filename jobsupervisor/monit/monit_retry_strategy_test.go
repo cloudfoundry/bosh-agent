@@ -27,6 +27,11 @@ var _ = Describe("MonitRetryStrategy", func() {
 		delay                  time.Duration
 	)
 
+    type ClosedChecker interface {
+        io.ReadCloser
+        Closed() bool
+    }
+
 	BeforeEach(func() {
 		maxUnavailableAttempts = 6
 		maxOtherAttempts = 7
@@ -143,10 +148,6 @@ var _ = Describe("MonitRetryStrategy", func() {
 				})
 
 				It("closes the response body", func() {
-					type ClosedChecker interface {
-						io.ReadCloser
-						Closed() bool
-					}
 					for i := 0; i < maxOtherAttempts-2; i++ {
 						retryable.AddAttemptBehavior(unavailable, true, errors.New("unavailable-error"))
 					}
@@ -195,6 +196,14 @@ var _ = Describe("MonitRetryStrategy", func() {
 
 				Expect(retryable.AttemptCalled).To(Equal(1))
 			})
+
+            It("closes the response body", func(){
+                retryable.AddAttemptBehavior(unavailable, false, lastError)
+                err := monitRetryStrategy.Try()
+                Expect(err).To(Equal(lastError))
+
+                Expect(retryable.Response().Body.(ClosedChecker).Closed()).To(BeTrue())
+            })
 		})
 	})
 })

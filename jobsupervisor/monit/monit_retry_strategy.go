@@ -46,7 +46,7 @@ func (m *monitRetryStrategy) Try() error {
 	for m.hasMoreAttempts() {
 		isRetryable, err = m.retryable.Attempt()
 		if !isRetryable {
-			return err
+			break
 		}
 
 		if m.retryable.Response() != nil && m.retryable.Response().StatusCode == 503 && m.unavailableAttempts < m.maxUnavailableAttempts {
