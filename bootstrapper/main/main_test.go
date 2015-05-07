@@ -99,8 +99,10 @@ var _ = Describe("Main", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-			Expect(session.Out).To(gbytes.Say("hello from install script"))
-			Expect(session.Out).To(gbytes.Say("successfully installed package"))
+			session.Kill()
+			outContents := session.Wait().Out.Contents()
+			Expect(outContents).To(ContainSubstring("hello from install script"))
+			Expect(outContents).To(ContainSubstring("successfully installed package"))
 		})
 	})
 })
