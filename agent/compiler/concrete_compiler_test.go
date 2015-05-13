@@ -3,7 +3,6 @@ package compiler_test
 import (
 	"errors"
 	"os"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -145,18 +144,12 @@ func init() {
 				Expect(blobstore.GetFingerprints[0]).To(Equal(""))
 			})
 
-			It("fetches source package from blobstore and checks SHA1 by default in future", func() {
+			PIt("(Pending Tracker Story: <https://www.pivotaltracker.com/story/show/94524232>) fetches source package from blobstore and checks SHA1 by default in future", func() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-
-				// Do not implement SHA1 check in order to not break deployments for current users
-				fixDeadline := time.Date(2015, time.May, 13, 6, 0, 0, 0, time.UTC)
-
-				if time.Now().After(fixDeadline) {
-					Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
-				}
+				Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
 			})
 
 			It("returns an error if removing compile target directory during uncompression fails", func() {
