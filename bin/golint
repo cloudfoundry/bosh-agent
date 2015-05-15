@@ -10,7 +10,8 @@ errors=$(
     | grep -v '/mocks/'                                     \
     | grep -v 'should not be capitalized'                   \
     | grep -v 'underscore in package name'                  \
-    | grep -v 'bootstrapper/spec/'
+    | grep -v 'bootstrapper/spec/'                          \
+    | grep -v 'platform/cert/fakes/fake_manager.go'
 )
 
 if [ "$(echo -n "$errors")" != "" ]; then

@@ -2,6 +2,7 @@ package cdrom_test
 
 import (
 	"errors"
+
 	. "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	fakeudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"

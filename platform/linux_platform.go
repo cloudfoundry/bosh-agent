@@ -12,6 +12,7 @@ import (
 	"time"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
@@ -75,6 +76,7 @@ type linux struct {
 	cdutil                 boshdevutil.DeviceUtil
 	diskManager            boshdisk.Manager
 	netManager             boshnet.Manager
+	certManager            boshcert.Manager
 	monitRetryStrategy     boshretry.RetryStrategy
 	devicePathResolver     boshdpresolv.DevicePathResolver
 	diskScanDuration       time.Duration
@@ -94,6 +96,7 @@ func NewLinuxPlatform(
 	cdutil boshdevutil.DeviceUtil,
 	diskManager boshdisk.Manager,
 	netManager boshnet.Manager,
+	certManager boshcert.Manager,
 	monitRetryStrategy boshretry.RetryStrategy,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	diskScanDuration time.Duration,
@@ -112,6 +115,7 @@ func NewLinuxPlatform(
 		cdutil:                 cdutil,
 		diskManager:            diskManager,
 		netManager:             netManager,
+		certManager:            certManager,
 		monitRetryStrategy:     monitRetryStrategy,
 		devicePathResolver:     devicePathResolver,
 		diskScanDuration:       diskScanDuration,
@@ -170,6 +174,10 @@ func (p linux) SetupNetworking(networks boshsettings.Networks) (err error) {
 
 func (p linux) GetConfiguredNetworkInterfaces() ([]string, error) {
 	return p.netManager.GetConfiguredNetworkInterfaces()
+}
+
+func (p linux) GetCertManager() boshcert.Manager {
+	return p.certManager
 }
 
 func (p linux) SetupRuntimeConfiguration() (err error) {

@@ -2,11 +2,12 @@ package disk
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"strconv"
-	"strings"
 )
 
 type sfdiskPartitioner struct {

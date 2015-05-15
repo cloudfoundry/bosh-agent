@@ -2,6 +2,7 @@ package vitals
 
 import (
 	"fmt"
+
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"

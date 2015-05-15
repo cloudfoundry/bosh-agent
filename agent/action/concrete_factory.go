@@ -37,6 +37,7 @@ func NewFactory(
 	copier := platform.GetCopier()
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
+	certManager := platform.GetCertManager()
 	ntpService := boshntp.NewConcreteService(platform.GetFs(), dirProvider)
 
 	factory = concreteFactory{
@@ -47,8 +48,9 @@ func NewFactory(
 			"cancel_task": NewCancelTask(taskService),
 
 			// VM admin
-			"ssh":        NewSSH(settingsService, platform, dirProvider),
-			"fetch_logs": NewFetchLogs(compressor, copier, blobstore, dirProvider),
+			"ssh":             NewSSH(settingsService, platform, dirProvider),
+			"fetch_logs":      NewFetchLogs(compressor, copier, blobstore, dirProvider),
+			"update_settings": NewUpdateSettings(certManager, logger),
 
 			// Job management
 			"prepare":    NewPrepare(applier),

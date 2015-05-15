@@ -2,9 +2,10 @@ package disk
 
 import (
 	"fmt"
+	"strings"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"strings"
 )
 
 type linuxFormatter struct {

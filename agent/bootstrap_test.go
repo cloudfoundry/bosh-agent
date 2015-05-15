@@ -26,6 +26,7 @@ import (
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
+	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
@@ -361,6 +362,8 @@ func init() {
 
 				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
 
+				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
+
 				monitRetryable := boshplatform.NewMonitRetryable(runner)
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
@@ -380,6 +383,7 @@ func init() {
 					linuxCdutil,
 					diskManager,
 					ubuntuNetManager,
+					ubuntuCertManager,
 					monitRetryStrategy,
 					devicePathResolver,
 					500*time.Millisecond,

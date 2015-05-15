@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -109,6 +110,10 @@ func (p dummyPlatform) SetupNetworking(networks boshsettings.Networks) (err erro
 }
 
 func (p dummyPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, err error) {
+	return
+}
+
+func (p dummyPlatform) GetCertManager() (certManager boshcert.Manager) {
 	return
 }
 
