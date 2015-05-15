@@ -7,13 +7,13 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/cloudfoundry/bosh-agent/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	"github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type HTTPSHandler struct {
@@ -126,7 +126,7 @@ func (h HTTPSHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *ht
 
 func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
-	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
+	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider.MicroStore())
 
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -147,7 +147,7 @@ func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 
 func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
-	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
+	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider.MicroStore())
 
 	blobBytes, err := blobManager.Fetch(blobID)
 

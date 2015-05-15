@@ -4,7 +4,7 @@ import (
 	"errors"
 	"path/filepath"
 
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type FakeCdrom struct {

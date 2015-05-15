@@ -5,8 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	. "github.com/cloudfoundry/bosh-agent/handler"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 type testShortError struct {

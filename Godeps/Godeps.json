@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/cloudfoundry/bosh-agent",
-	"GoVersion": "go1.3.3",
+	"GoVersion": "go1.4.2",
 	"Packages": [
 		"./..."
 	],
@@ -16,12 +16,54 @@
 			"Rev": "ebbeafdc430eb6c7e44e9a730a38eaff4c56ba3a"
 		},
 		{
+			"ImportPath": "github.com/apcera/nats",
+			"Comment": "v1.0.6-17-gd19a6ce",
+			"Rev": "d19a6cec4083353ca586e7052a89e0f719946ee5"
+		},
+		{
 			"ImportPath": "github.com/cloudfoundry/bosh-init/registry",
-			"Rev": "2ce54328c68c5af01d3cdfae5a352d9b5b2a4f1c"
+			"Comment": "v0.0.31-2-ge2103d4",
+			"Rev": "e2103d41c65b1fb7178075663de73b1232075586"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/assert",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/blobstore",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/errors",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/fileutil",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/http",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/logger",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/retrystrategy",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/system",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/uuid",
+			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gofileutils/glob",
-			"Rev": "a4a0cae5ff8a342ba01fce700b9e41c6942c0e5e"
+			"Rev": "74388e8083dc77ebfba108a8dd3e3af92b76ee04"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gosigar",
@@ -30,7 +72,7 @@
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/yagnats",
-			"Rev": "07171a8863c377fb14a44dee402dff9e1282bc49"
+			"Rev": "7025c6846809817ab52c641b5353edd7cd8db7db"
 		},
 		{
 			"ImportPath": "github.com/jeromer/syslogparser",
@@ -38,7 +80,7 @@
 		},
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
-			"Rev": "442e588f213303bec7936deba67901f8fc8f18b1"
+			"Rev": "f7d28d5aeab42b9b95d2e6d6b956f73a290077fc"
 		},
 		{
 			"ImportPath": "github.com/nu7hatch/gouuid",
@@ -46,13 +88,17 @@
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
-			"Comment": "v1.1.0-41-g38caab9",
-			"Rev": "38caab951a9ff39f0e61294a1dbaaa074a39228b"
+			"Comment": "v1.2.0-beta-9-gfbb6632",
+			"Rev": "fbb663242655b700c623e9629d7781db98957501"
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Comment": "v1.0-33-ge7b2cd9",
-			"Rev": "e7b2cd96b5633fbc5f0c221159a5c1e85323f770"
+			"Comment": "v1.0-45-g9bd4a3a",
+			"Rev": "9bd4a3a0727d3d69afa7203546c07c3057740aa5"
+		},
+		{
+			"ImportPath": "github.com/pivotal-golang/clock",
+			"Rev": "270608bba0223b4ee5e0ac06f85e7964378f57a3"
 		},
 		{
 			"ImportPath": "github.com/pivotal/go-smtpd/smtpd",
@@ -60,7 +106,7 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Rev": "ed6ea184117f7ae3168d1c05dbdbde1a86e2be68"
+			"Rev": "dab07ac62d4905d3e48d17dc549c684ac3b7c15a"
 		}
 	]
 }

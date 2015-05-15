@@ -2,10 +2,13 @@ package assert
 
 import "time"
 
+// Assertions provides assertion methods around the
+// TestingT interface.
 type Assertions struct {
 	t TestingT
 }
 
+// New makes a new Assertions object for the specified TestingT.
 func New(t TestingT) *Assertions {
 	return &Assertions{
 		t: t,
@@ -36,6 +39,16 @@ func (a *Assertions) IsType(expectedType interface{}, object interface{}, msgAnd
 // Returns whether the assertion was successful (true) or not (false).
 func (a *Assertions) Equal(expected, actual interface{}, msgAndArgs ...interface{}) bool {
 	return Equal(a.t, expected, actual, msgAndArgs...)
+}
+
+// EqualValues asserts that two objects are equal or convertable to the same types
+// and equal.
+//
+//    assert.EqualValues(uint32(123), int32(123), "123 and 123 should be equal")
+//
+// Returns whether the assertion was successful (true) or not (false).
+func (a *Assertions) EqualValues(expected, actual interface{}, msgAndArgs ...interface{}) bool {
+	return EqualValues(a.t, expected, actual, msgAndArgs...)
 }
 
 // Exactly asserts that two objects are equal is value and type.
@@ -75,7 +88,7 @@ func (a *Assertions) Empty(object interface{}, msgAndArgs ...interface{}) bool {
 	return Empty(a.t, object, msgAndArgs...)
 }
 
-// Empty asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or a
+// NotEmpty asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or a
 // slice with len == 0.
 //
 // if assert.NotEmpty(obj) {
@@ -129,7 +142,7 @@ func (a *Assertions) NotEqual(expected, actual interface{}, msgAndArgs ...interf
 //    assert.Contains("Hello World", "World", "But 'Hello World' does contain 'World'")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func (a *Assertions) Contains(s, contains string, msgAndArgs ...interface{}) bool {
+func (a *Assertions) Contains(s, contains interface{}, msgAndArgs ...interface{}) bool {
 	return Contains(a.t, s, contains, msgAndArgs...)
 }
 
@@ -138,11 +151,11 @@ func (a *Assertions) Contains(s, contains string, msgAndArgs ...interface{}) boo
 //    assert.NotContains("Hello World", "Earth", "But 'Hello World' does NOT contain 'Earth'")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func (a *Assertions) NotContains(s, contains string, msgAndArgs ...interface{}) bool {
+func (a *Assertions) NotContains(s, contains interface{}, msgAndArgs ...interface{}) bool {
 	return NotContains(a.t, s, contains, msgAndArgs...)
 }
 
-// Uses a Comparison to assert a complex condition.
+// Condition uses a Comparison to assert a complex condition.
 func (a *Assertions) Condition(comp Comparison, msgAndArgs ...interface{}) bool {
 	return Condition(a.t, comp, msgAndArgs...)
 }
@@ -183,14 +196,14 @@ func (a *Assertions) WithinDuration(expected, actual time.Time, delta time.Durat
 // 	 assert.InDelta(t, math.Pi, (22 / 7.0), 0.01)
 //
 // Returns whether the assertion was successful (true) or not (false).
-func (a *Assertions) InDelta(t TestingT, expected, actual interface{}, delta float64, msgAndArgs ...interface{}) bool {
+func (a *Assertions) InDelta(expected, actual interface{}, delta float64, msgAndArgs ...interface{}) bool {
 	return InDelta(a.t, expected, actual, delta, msgAndArgs...)
 }
 
 // InEpsilon asserts that expected and actual have a relative error less than epsilon
 //
 // Returns whether the assertion was successful (true) or not (false).
-func (a *Assertions) InEpsilon(t TestingT, expected, actual interface{}, epsilon float64, msgAndArgs ...interface{}) bool {
+func (a *Assertions) InEpsilon(expected, actual interface{}, epsilon float64, msgAndArgs ...interface{}) bool {
 	return InEpsilon(a.t, expected, actual, epsilon, msgAndArgs...)
 }
 
@@ -229,4 +242,24 @@ func (a *Assertions) Error(theError error, msgAndArgs ...interface{}) bool {
 // Returns whether the assertion was successful (true) or not (false).
 func (a *Assertions) EqualError(theError error, errString string, msgAndArgs ...interface{}) bool {
 	return EqualError(a.t, theError, errString, msgAndArgs...)
+}
+
+// Regexp asserts that a specified regexp matches a string.
+//
+//  assert.Regexp(t, regexp.MustCompile("start"), "it's starting")
+//  assert.Regexp(t, "start...$", "it's not starting")
+//
+// Returns whether the assertion was successful (true) or not (false).
+func (a *Assertions) Regexp(rx interface{}, str interface{}, msgAndArgs ...interface{}) bool {
+	return Regexp(a.t, rx, str, msgAndArgs...)
+}
+
+// NotRegexp asserts that a specified regexp does not match a string.
+//
+//  assert.NotRegexp(t, regexp.MustCompile("starts"), "it's starting")
+//  assert.NotRegexp(t, "^start", "it's not starting")
+//
+// Returns whether the assertion was successful (true) or not (false).
+func (a *Assertions) NotRegexp(rx interface{}, str interface{}, msgAndArgs ...interface{}) bool {
+	return NotRegexp(a.t, rx, str, msgAndArgs...)
 }

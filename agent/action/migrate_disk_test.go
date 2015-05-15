@@ -5,9 +5,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action MigrateDiskAction) {

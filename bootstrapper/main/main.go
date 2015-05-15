@@ -13,7 +13,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
-	"github.com/cloudfoundry/bosh-agent/logger"
+	"github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var (

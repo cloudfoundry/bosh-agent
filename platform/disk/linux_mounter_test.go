@@ -9,7 +9,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type changingMountsSearcher struct {

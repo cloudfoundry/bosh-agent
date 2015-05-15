@@ -1,4 +1,4 @@
-// A set of comprehensive testing tools for use with the normal Go testing system.
+// Package assert provides a set of comprehensive testing tools for use with the normal Go testing system.
 //
 // Example Usage
 //
@@ -45,7 +45,9 @@
 //
 // Here is an overview of the assert functions:
 //
-//    assert.Equal(t, expected, actual [, message [, format-args])
+//    assert.Equal(t, expected, actual [, message [, format-args]])
+//
+//    assert.EqualValues(t, expected, actual [, message [, format-args]])
 //
 //    assert.NotEqual(t, notExpected, actual [, message [, format-args]])
 //
@@ -73,9 +75,9 @@
 //
 //    assert.IsType(t, expectedObject, actualObject [, message [, format-args]])
 //
-//    assert.Contains(t, string, substring [, message [, format-args]])
+//    assert.Contains(t, stringOrSlice, substringOrElement [, message [, format-args]])
 //
-//    assert.NotContains(t, string, substring [, message [, format-args]])
+//    assert.NotContains(t, stringOrSlice, substringOrElement [, message [, format-args]])
 //
 //    assert.Panics(t, func(){
 //
@@ -98,7 +100,9 @@
 // assert package contains Assertions object. it has assertion methods.
 //
 // Here is an overview of the assert functions:
-//    assert.Equal(expected, actual [, message [, format-args])
+//    assert.Equal(expected, actual [, message [, format-args]])
+//
+//    assert.EqualValues(expected, actual [, message [, format-args]])
 //
 //    assert.NotEqual(notExpected, actual [, message [, format-args]])
 //
@@ -126,9 +130,9 @@
 //
 //    assert.IsType(expectedObject, actualObject [, message [, format-args]])
 //
-//    assert.Contains(string, substring [, message [, format-args]])
+//    assert.Contains(stringOrSlice, substringOrElement [, message [, format-args]])
 //
-//    assert.NotContains(string, substring [, message [, format-args]])
+//    assert.NotContains(stringOrSlice, substringOrElement [, message [, format-args]])
 //
 //    assert.Panics(func(){
 //

@@ -3,9 +3,9 @@ package monit
 import (
 	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-agent/http"
-	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
-	boshtime "github.com/cloudfoundry/bosh-agent/time"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	"github.com/pivotal-golang/clock"
 )
 
 type monitRetryStrategy struct {
@@ -15,7 +15,7 @@ type monitRetryStrategy struct {
 	maxOtherAttempts       uint
 
 	delay       time.Duration
-	timeService boshtime.Service
+	timeService clock.Clock
 
 	unavailableAttempts uint
 	otherAttempts       uint
@@ -26,7 +26,7 @@ func NewMonitRetryStrategy(
 	maxUnavailableAttempts uint,
 	maxOtherAttempts uint,
 	delay time.Duration,
-	timeService boshtime.Service,
+	timeService clock.Clock,
 ) boshretry.RetryStrategy {
 	return &monitRetryStrategy{
 		retryable:              retryable,

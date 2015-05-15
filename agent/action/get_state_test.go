@@ -9,7 +9,6 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	fakentp "github.com/cloudfoundry/bosh-agent/platform/ntp/fakes"
@@ -17,6 +16,7 @@ import (
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("GetState", func() {

@@ -8,8 +8,8 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
-	"github.com/cloudfoundry/bosh-agent/errors"
-	"github.com/cloudfoundry/bosh-agent/logger"
+	"github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type Downloader struct {

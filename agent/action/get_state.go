@@ -4,11 +4,11 @@ import (
 	"errors"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type GetStateAction struct {

@@ -11,9 +11,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakehttp "github.com/cloudfoundry/bosh-agent/http/fakes"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	fakehttp "github.com/cloudfoundry/bosh-utils/http/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("httpClient", func() {

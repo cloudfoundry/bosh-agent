@@ -1,9 +1,9 @@
 package platform
 
 import (
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
-	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type monitRetryable struct {

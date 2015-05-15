@@ -11,19 +11,19 @@ import (
 	. "github.com/onsi/gomega"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	. "github.com/cloudfoundry/bosh-agent/platform"
-	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
 	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	fakeretry "github.com/cloudfoundry/bosh-agent/retrystrategy/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("LinuxPlatform", describeLinuxPlatform)

@@ -15,15 +15,15 @@ import (
 	fakeagent "github.com/cloudfoundry/bosh-agent/agent/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
-	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
-	fakeuuid "github.com/cloudfoundry/bosh-agent/uuid/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	"github.com/pivotal-golang/clock/fakeclock"
 )
 
 func init() {
@@ -38,7 +38,7 @@ func init() {
 			syslogServer     *fakesyslog.FakeServer
 			settingsService  *fakesettings.FakeSettingsService
 			uuidGenerator    *fakeuuid.FakeGenerator
-			timeService      *faketime.FakeService
+			timeService      *fakeclock.FakeClock
 			agent            Agent
 		)
 
@@ -52,7 +52,7 @@ func init() {
 			syslogServer = &fakesyslog.FakeServer{}
 			settingsService = &fakesettings.FakeSettingsService{}
 			uuidGenerator = &fakeuuid.FakeGenerator{}
-			timeService = &faketime.FakeService{}
+			timeService = fakeclock.NewFakeClock(time.Now())
 			agent = New(
 				logger,
 				handler,
@@ -261,8 +261,6 @@ func init() {
 				syslogServer.StartFirstSyslogMsg = &syslogMsg
 
 				uuidGenerator.GeneratedUUID = "fake-uuid"
-				expectedTime := time.Now()
-				timeService.NowTimes = []time.Time{expectedTime}
 
 				// Fail the first time handler.Send is called for an alert (ignore heartbeats)
 				handler.SendCallback = func(input fakembus.SendInput) {
@@ -280,7 +278,7 @@ func init() {
 					Severity:  boshalert.SeverityWarning,
 					Title:     "SSH Logout",
 					Summary:   "disconnected by user",
-					CreatedAt: expectedTime.Unix(),
+					CreatedAt: timeService.Now().Unix(),
 				}
 
 				Expect(handler.SendInputs()).To(ContainElement(fakembus.SendInput{

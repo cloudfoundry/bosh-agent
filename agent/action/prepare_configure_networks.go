@@ -3,9 +3,9 @@ package action
 import (
 	"errors"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type PrepareConfigureNetworksAction struct {

@@ -17,12 +17,9 @@ import (
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
-	boshblob "github.com/cloudfoundry/bosh-agent/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -30,9 +27,12 @@ import (
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
-	boshtime "github.com/cloudfoundry/bosh-agent/time"
-	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"github.com/pivotal-golang/clock"
 )
 
 type App interface {
@@ -105,9 +105,10 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting mbus handler")
 	}
 
-	blobstoreProvider := boshblob.NewProvider(app.platform, dirProvider, app.logger)
+	blobstoreProvider := boshblob.NewProvider(app.platform.GetFs(), app.platform.GetRunner(), dirProvider.EtcDir(), app.logger)
 
-	blobstore, err := blobstoreProvider.Get(settingsService.GetSettings().Blobstore)
+	blobsettings := settingsService.GetSettings().Blobstore
+	blobstore, err := blobstoreProvider.Get(blobsettings.Type, blobsettings.Options)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting blobstore")
 	}
@@ -184,7 +185,7 @@ func (app *app) Setup(args []string) error {
 
 	syslogServer := boshsyslog.NewServer(33331, app.logger)
 
-	timeService := boshtime.NewConcreteService()
+	timeService := clock.NewClock()
 
 	app.agent = boshagent.New(
 		app.logger,

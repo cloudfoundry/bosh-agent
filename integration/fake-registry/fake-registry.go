@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	bmregistry "github.com/cloudfoundry/bosh-init/registry"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func main() {

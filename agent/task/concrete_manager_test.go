@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 func init() {

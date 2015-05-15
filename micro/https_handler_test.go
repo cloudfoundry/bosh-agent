@@ -14,9 +14,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("HTTPSHandler", func() {

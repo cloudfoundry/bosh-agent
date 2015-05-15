@@ -12,8 +12,8 @@ import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	fakedrain "github.com/cloudfoundry/bosh-agent/agent/drain/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {

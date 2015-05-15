@@ -7,7 +7,7 @@ import (
 
 	fakeudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

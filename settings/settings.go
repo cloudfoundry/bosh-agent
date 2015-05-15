@@ -27,11 +27,6 @@ type Source interface {
 	Settings() (Settings, error)
 }
 
-const (
-	BlobstoreTypeDummy = "dummy"
-	BlobstoreTypeLocal = "local"
-)
-
 type Blobstore struct {
 	Type    string                 `json:"provider"`
 	Options map[string]interface{} `json:"options"`

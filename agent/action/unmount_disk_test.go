@@ -1,10 +1,10 @@
 package action_test
 
 import (
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

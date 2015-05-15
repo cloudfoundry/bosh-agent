@@ -3,9 +3,9 @@ package infrastructure
 import (
 	"encoding/json"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type fileRegistry struct {

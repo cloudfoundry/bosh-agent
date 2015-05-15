@@ -6,7 +6,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakefs "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakefs "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("concreteService", func() {

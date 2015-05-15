@@ -8,10 +8,10 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {

@@ -16,7 +16,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
-	boshlogger "github.com/cloudfoundry/bosh-agent/logger"
+	boshlogger "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

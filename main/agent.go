@@ -4,7 +4,7 @@ import (
 	"os"
 
 	boshapp "github.com/cloudfoundry/bosh-agent/app"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const mainLogTag = "main"

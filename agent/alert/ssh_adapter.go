@@ -3,12 +3,12 @@ package alert
 import (
 	"regexp"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
-	boshtime "github.com/cloudfoundry/bosh-agent/time"
-	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"github.com/pivotal-golang/clock"
 )
 
 var syslogMessageExpressions = map[*regexp.Regexp]string{
@@ -23,7 +23,7 @@ type sshAdapter struct {
 	message         boshsyslog.Msg
 	settingsService boshsettings.Service
 	uuidGenerator   boshuuid.Generator
-	timeService     boshtime.Service
+	timeService     clock.Clock
 	logger          boshlog.Logger
 }
 
@@ -31,7 +31,7 @@ func NewSSHAdapter(
 	message boshsyslog.Msg,
 	settingsService boshsettings.Service,
 	uuidGenerator boshuuid.Generator,
-	timeService boshtime.Service,
+	timeService clock.Clock,
 	logger boshlog.Logger,
 ) Adapter {
 	return &sshAdapter{

@@ -12,9 +12,9 @@ import (
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {

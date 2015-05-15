@@ -1,8 +1,8 @@
 package task
 
 import (
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 // Access to the currentTasks map should always be performed in the semaphore

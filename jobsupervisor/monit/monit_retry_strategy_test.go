@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-agent/http"
-	fakehttp "github.com/cloudfoundry/bosh-agent/http/fakes"
-	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
-	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	fakehttp "github.com/cloudfoundry/bosh-utils/http/fakes"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	"github.com/pivotal-golang/clock/fakeclock"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,7 +23,7 @@ var _ = Describe("MonitRetryStrategy", func() {
 		monitRetryStrategy     boshretry.RetryStrategy
 		maxUnavailableAttempts int
 		maxOtherAttempts       int
-		timeService            *faketime.FakeService
+		timeService            *fakeclock.FakeClock
 		delay                  time.Duration
 	)
 
@@ -36,7 +36,7 @@ var _ = Describe("MonitRetryStrategy", func() {
 		maxUnavailableAttempts = 6
 		maxOtherAttempts = 7
 		retryable = fakehttp.NewFakeRequestRetryable()
-		timeService = &faketime.FakeService{}
+		timeService = fakeclock.NewFakeClock(time.Now())
 		delay = 10 * time.Millisecond
 		monitRetryStrategy = NewMonitRetryStrategy(
 			retryable,
@@ -49,19 +49,13 @@ var _ = Describe("MonitRetryStrategy", func() {
 
 	Describe("Try", func() {
 		var (
-			request     *http.Request
-			response    *http.Response
 			lastError   error
-			err         error
 			unavailable *http.Response
 			notFound    *http.Response
 		)
 
 		BeforeEach(func() {
-			request = &http.Request{}
-			response = nil
 			lastError = errors.New("last-error")
-			err = nil
 			unavailable = &http.Response{StatusCode: 503, Body: boshhttp.NewStringReadCloser("")}
 			notFound = &http.Response{StatusCode: 404, Body: boshhttp.NewStringReadCloser("")}
 		})
@@ -73,46 +67,55 @@ var _ = Describe("MonitRetryStrategy", func() {
 				}
 				retryable.AddAttemptBehavior(unavailable, true, lastError)
 
-				err := monitRetryStrategy.Try()
-				Expect(err).To(Equal(lastError))
+				errChan := tryInBackground(monitRetryStrategy)
 
+				sleepForIncrements(timeService, maxUnavailableAttempts+maxOtherAttempts, delay)
+
+				Eventually(errChan).Should(Receive(Equal(lastError)))
 				Expect(retryable.AttemptCalled).To(Equal(maxUnavailableAttempts + maxOtherAttempts))
 			})
 		})
 
 		Context("when there are < maxUnavailableAttempts initial 503s", func() {
+			var expectedAttempts int
+
 			BeforeEach(func() {
+				expectedAttempts = maxUnavailableAttempts + maxOtherAttempts - 1
 				for i := 0; i < maxUnavailableAttempts-1; i++ {
 					retryable.AddAttemptBehavior(unavailable, true, errors.New("unavailable-error"))
 				}
 			})
 
 			Context("when maxOtherAttempts non-503 errors", func() {
-				It("retries the unavailable then until maxOtherAttempts are exhasted", func() {
+				It("retries the unavailable then until maxOtherAttempts are exhausted", func() {
 					for i := 0; i < maxOtherAttempts-1; i++ {
 						retryable.AddAttemptBehavior(notFound, true, errors.New("not-found-error"))
 					}
 					retryable.AddAttemptBehavior(notFound, true, lastError)
 
-					err := monitRetryStrategy.Try()
-					Expect(err).To(Equal(lastError))
+					errChan := tryInBackground(monitRetryStrategy)
 
-					Expect(retryable.AttemptCalled).To(Equal(maxUnavailableAttempts + maxOtherAttempts - 1))
+					sleepForIncrements(timeService, expectedAttempts, delay)
+
+					Eventually(errChan).Should(Receive(Equal(lastError)))
+					Expect(retryable.AttemptCalled).To(Equal(expectedAttempts))
 				})
 			})
 
 			Context("when maxOtherAttempts include 503s after non-503", func() {
-				It("retries the unavailable then until maxOtherAttempts are exhasted", func() {
+				It("retries the unavailable then until maxOtherAttempts are exhausted", func() {
 					retryable.AddAttemptBehavior(notFound, true, errors.New("not-found-error"))
 					for i := 0; i < maxOtherAttempts-2; i++ {
 						retryable.AddAttemptBehavior(unavailable, true, errors.New("unavailable-error"))
 					}
 					retryable.AddAttemptBehavior(unavailable, true, lastError)
 
-					err := monitRetryStrategy.Try()
-					Expect(err).To(Equal(lastError))
+					errChan := tryInBackground(monitRetryStrategy)
 
-					Expect(retryable.AttemptCalled).To(Equal(maxUnavailableAttempts + maxOtherAttempts - 1))
+					sleepForIncrements(timeService, expectedAttempts, delay)
+
+					Eventually(errChan).Should(Receive(Equal(lastError)))
+					Expect(retryable.AttemptCalled).To(Equal(expectedAttempts))
 				})
 			})
 		})
@@ -128,9 +131,11 @@ var _ = Describe("MonitRetryStrategy", func() {
 				}
 				retryable.AddAttemptBehavior(notFound, true, lastError)
 
-				err := monitRetryStrategy.Try()
-				Expect(err).To(Equal(lastError))
+				errChan := tryInBackground(monitRetryStrategy)
 
+				sleepForIncrements(timeService, maxOtherAttempts, delay)
+
+				Eventually(errChan).Should(Receive(Equal(lastError)))
 				Expect(retryable.AttemptCalled).To(Equal(maxOtherAttempts))
 			})
 
@@ -141,9 +146,11 @@ var _ = Describe("MonitRetryStrategy", func() {
 					}
 					retryable.AddAttemptBehavior(unavailable, true, lastError)
 
-					err := monitRetryStrategy.Try()
-					Expect(err).To(Equal(lastError))
+					errChan := tryInBackground(monitRetryStrategy)
 
+					sleepForIncrements(timeService, maxOtherAttempts, delay)
+
+					Eventually(errChan).Should(Receive(Equal(lastError)))
 					Expect(retryable.AttemptCalled).To(Equal(maxOtherAttempts))
 				})
 
@@ -153,10 +160,11 @@ var _ = Describe("MonitRetryStrategy", func() {
 					}
 					retryable.AddAttemptBehavior(unavailable, true, lastError)
 
-					err := monitRetryStrategy.Try()
-					Expect(err).To(Equal(lastError))
+					errChan := tryInBackground(monitRetryStrategy)
 
-					Expect(retryable.AttemptCalled).To(Equal(maxOtherAttempts))
+					sleepForIncrements(timeService, maxOtherAttempts, delay)
+
+					Eventually(errChan).Should(Receive(Equal(lastError)))
 					Expect(retryable.Response().Body.(ClosedChecker).Closed()).To(BeTrue())
 				})
 			})
@@ -167,10 +175,15 @@ var _ = Describe("MonitRetryStrategy", func() {
 				retryable.AddAttemptBehavior(unavailable, true, nil)
 			}
 
-			monitRetryStrategy.Try()
+			go func() {
+				monitRetryStrategy.Try()
+			}()
 
-			Expect(len(timeService.SleepInputs)).To(Equal(maxUnavailableAttempts + maxOtherAttempts))
-			Expect(timeService.SleepInputs[0]).To(Equal(delay))
+			Eventually(retryable.Attempts).Should(Equal(1))
+			timeService.Increment(delay - time.Millisecond)
+			Consistently(retryable.Attempts).Should(Equal(1))
+			timeService.Increment(2 * time.Millisecond)
+			Eventually(retryable.Attempts).Should(Equal(2))
 		})
 
 		Context("when error is not due to failed response", func() {
@@ -180,10 +193,12 @@ var _ = Describe("MonitRetryStrategy", func() {
 				}
 				retryable.AddAttemptBehavior(nil, true, lastError)
 
-				err := monitRetryStrategy.Try()
-				Expect(err).To(Equal(lastError))
+				errChan := tryInBackground(monitRetryStrategy)
 
-				Expect(retryable.AttemptCalled).To(Equal(maxOtherAttempts))
+				sleepForIncrements(timeService, maxOtherAttempts, delay)
+
+				Eventually(errChan).Should(Receive(Equal(lastError)))
+				Expect(retryable.Attempts()).To(Equal(maxOtherAttempts))
 			})
 		})
 
@@ -207,3 +222,19 @@ var _ = Describe("MonitRetryStrategy", func() {
 		})
 	})
 })
+
+func tryInBackground(monitRetryStrategy boshretry.RetryStrategy) chan error {
+	errChan := make(chan error)
+	go func() {
+		errChan <- monitRetryStrategy.Try()
+	}()
+	return errChan
+}
+
+func sleepForIncrements(timeService *fakeclock.FakeClock, attempts int, delay time.Duration) {
+	for i := 0; i < attempts; i++ {
+		Eventually(timeService.WatcherCount).Should(Equal(1))
+		timeService.Increment(delay)
+		Eventually(timeService.WatcherCount).Should(Equal(0))
+	}
+}
