@@ -6,7 +6,7 @@ import (
 
 	"crypto/x509"
 
-	"github.com/cloudfoundry/bosh-agent/errors"
+	"github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type CertificateVerifier struct {

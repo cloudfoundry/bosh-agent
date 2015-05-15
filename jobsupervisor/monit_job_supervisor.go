@@ -8,11 +8,11 @@ import (
 	"github.com/pivotal/go-smtpd/smtpd"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const monitJobSupervisorLogTag = "monitJobSupervisor"

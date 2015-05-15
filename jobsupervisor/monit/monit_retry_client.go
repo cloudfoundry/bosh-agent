@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-agent/http"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	boshtime "github.com/cloudfoundry/bosh-agent/time"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/pivotal-golang/clock"
 )
 
 type monitRetryClient struct {
@@ -35,7 +35,7 @@ func NewMonitRetryClient(
 
 func (r *monitRetryClient) Do(req *http.Request) (*http.Response, error) {
 	requestRetryable := boshhttp.NewRequestRetryable(req, r.delegate, r.logger)
-	timeService := boshtime.NewConcreteService()
+	timeService := clock.NewClock()
 	retryStrategy := NewMonitRetryStrategy(
 		requestRetryable,
 		r.maxUnavailableAttempts,

@@ -12,30 +12,30 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	sigar "github.com/cloudfoundry/gosigar"
 
 	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
-	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
 func init() {

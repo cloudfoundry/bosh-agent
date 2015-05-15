@@ -14,9 +14,9 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("monitJobSupervisor", func() {

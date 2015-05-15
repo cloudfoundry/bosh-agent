@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	statusWithMultipleServiceFixturePath = "../../Fixtures/monit_status_with_multiple_services.xml"
-	statusFixturePath                    = "../../Fixtures/monit_status.xml"
+	statusWithMultipleServiceFixturePath = "test_assets/monit_status_with_multiple_services.xml"
+	statusFixturePath                    = "test_assets/monit_status.xml"
 )
 
 func readFixture(relativePath string) []byte {

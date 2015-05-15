@@ -5,15 +5,15 @@ import (
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
-	fakecmd "github.com/cloudfoundry/bosh-agent/platform/commands/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type FakePlatform struct {

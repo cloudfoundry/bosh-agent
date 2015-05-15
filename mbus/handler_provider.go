@@ -5,13 +5,13 @@ import (
 
 	"github.com/cloudfoundry/yagnats"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshmicro "github.com/cloudfoundry/bosh-agent/micro"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type HandlerProvider struct {

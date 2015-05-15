@@ -9,8 +9,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/task"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakeuuid "github.com/cloudfoundry/bosh-agent/uuid/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
 func init() {

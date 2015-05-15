@@ -9,24 +9,24 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/alert"
 
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
-	fakeuuid "github.com/cloudfoundry/bosh-agent/uuid/fakes"
+	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	"github.com/pivotal-golang/clock/fakeclock"
 
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("sshAdapter", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
-		timeService     *faketime.FakeService
+		timeService     *fakeclock.FakeClock
 		logger          boshlog.Logger
 		uuidGenerator   *fakeuuid.FakeGenerator
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		timeService = &faketime.FakeService{}
+		timeService = fakeclock.NewFakeClock(time.Now())
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		uuidGenerator = &fakeuuid.FakeGenerator{}
 	})
@@ -95,16 +95,13 @@ var _ = Describe("sshAdapter", func() {
 
 			uuidGenerator.GeneratedUUID = "fake-uuid"
 
-			expectedTime := time.Now()
-			timeService.NowTimes = []time.Time{expectedTime}
-
 			builtAlert, err := sshAdapter.Alert()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(builtAlert.Title).To(Equal(expectedTitle))
 			Expect(builtAlert.ID).To(Equal("fake-uuid"))
 			Expect(builtAlert.Severity).To(Equal(SeverityWarning))
 			Expect(builtAlert.Summary).To(Equal(msgContent))
-			Expect(builtAlert.CreatedAt).To(Equal(expectedTime.Unix()))
+			Expect(builtAlert.CreatedAt).To(Equal(timeService.Now().Unix()))
 		}
 
 		It("Returns logout when the user disconnects", func() {
@@ -155,13 +152,10 @@ var _ = Describe("sshAdapter", func() {
 				logger,
 			)
 
-			expectedTime := time.Now()
-			timeService.NowTimes = []time.Time{expectedTime}
-
 			builtAlert, err := sshAdapter.Alert()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(builtAlert.CreatedAt).To(Equal(expectedTime.Unix()))
+			Expect(builtAlert.CreatedAt).To(Equal(timeService.Now().Unix()))
 		})
 
 		It("Sets the summary to the content of the message", func() {

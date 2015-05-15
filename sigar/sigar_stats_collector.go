@@ -6,8 +6,8 @@ import (
 
 	sigar "github.com/cloudfoundry/gosigar"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type sigarStatsCollector struct {

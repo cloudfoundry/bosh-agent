@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 )

@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
-	boshhttp "github.com/cloudfoundry/bosh-agent/http"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const (

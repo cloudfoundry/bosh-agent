@@ -8,10 +8,10 @@ import (
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshcmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
-	boshblob "github.com/cloudfoundry/bosh-agent/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
-	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type CompileDirProvider interface {

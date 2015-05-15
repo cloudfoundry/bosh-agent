@@ -3,11 +3,8 @@ package platform
 import (
 	"time"
 
-	bosherror "github.com/cloudfoundry/bosh-agent/errors"
 	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
-	boshcmd "github.com/cloudfoundry/bosh-agent/platform/commands"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
@@ -15,9 +12,12 @@ import (
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	boshretry "github.com/cloudfoundry/bosh-agent/retrystrategy"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	bosherror "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const (

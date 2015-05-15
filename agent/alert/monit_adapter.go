@@ -7,7 +7,7 @@ import (
 	"time"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshtime "github.com/cloudfoundry/bosh-agent/time"
+	"github.com/pivotal-golang/clock"
 )
 
 type MonitAdapter interface {
@@ -19,10 +19,10 @@ type MonitAdapter interface {
 type monitAdapter struct {
 	monitAlert      MonitAlert
 	settingsService boshsettings.Service
-	timeService     boshtime.Service
+	timeService     clock.Clock
 }
 
-func NewMonitAdapter(monitAlert MonitAlert, settingsService boshsettings.Service, timeService boshtime.Service) MonitAdapter {
+func NewMonitAdapter(monitAlert MonitAlert, settingsService boshsettings.Service, timeService clock.Clock) MonitAdapter {
 	return &monitAdapter{
 		monitAlert:      monitAlert,
 		settingsService: settingsService,

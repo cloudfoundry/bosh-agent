@@ -11,12 +11,12 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
-	fakeblob "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakecmd "github.com/cloudfoundry/bosh-agent/platform/commands/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
-	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
+	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) {

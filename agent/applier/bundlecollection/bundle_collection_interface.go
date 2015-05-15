@@ -1,7 +1,7 @@
 package bundlecollection
 
 import (
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 // BundleDefinition uniquely identifies an asset within a BundleCollection (e.g. Job, Package)

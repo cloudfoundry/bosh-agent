@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type ReleaseApplySpecAction struct {

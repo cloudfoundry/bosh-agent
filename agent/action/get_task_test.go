@@ -9,7 +9,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("GetTask", func() {

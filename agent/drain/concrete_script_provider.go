@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type ConcreteScriptProvider struct {

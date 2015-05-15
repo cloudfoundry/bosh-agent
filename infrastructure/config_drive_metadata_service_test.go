@@ -9,9 +9,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )

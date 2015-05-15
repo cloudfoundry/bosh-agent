@@ -7,9 +7,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshhttp "github.com/cloudfoundry/bosh-agent/http"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 )

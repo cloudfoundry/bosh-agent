@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakes "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakes "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("ConcreteUdevDevice", func() {

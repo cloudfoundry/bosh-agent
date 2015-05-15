@@ -6,7 +6,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/drain"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 func init() {

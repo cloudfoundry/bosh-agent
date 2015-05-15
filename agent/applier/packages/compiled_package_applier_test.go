@@ -10,11 +10,11 @@ import (
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	fakeblob "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakecmd "github.com/cloudfoundry/bosh-agent/platform/commands/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
-	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
+	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBundle) {

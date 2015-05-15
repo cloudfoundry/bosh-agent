@@ -7,9 +7,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	boshassert "github.com/cloudfoundry/bosh-agent/assert"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 func init() {

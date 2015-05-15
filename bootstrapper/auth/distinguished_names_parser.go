@@ -3,7 +3,7 @@ package auth
 import (
 	"bytes"
 	"crypto/x509/pkix"
-	"github.com/cloudfoundry/bosh-agent/errors"
+	"github.com/cloudfoundry/bosh-utils/errors"
 	"strings"
 )
 

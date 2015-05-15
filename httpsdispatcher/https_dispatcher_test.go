@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("HTTPSDispatcher", func() {

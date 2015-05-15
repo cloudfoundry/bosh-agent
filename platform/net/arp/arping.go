@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const arpingLogTag = "arping"

@@ -6,8 +6,8 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("InterfaceConfigurationCreator", describeInterfaceConfigurationCreator)

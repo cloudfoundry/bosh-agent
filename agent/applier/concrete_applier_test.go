@@ -15,7 +15,7 @@ import (
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 type FakeLogRotateDelegate struct {

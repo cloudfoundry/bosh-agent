@@ -8,7 +8,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/alert"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	faketime "github.com/cloudfoundry/bosh-agent/time/fakes"
+	"github.com/pivotal-golang/clock/fakeclock"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
@@ -27,12 +27,12 @@ func buildMonitAlert() MonitAlert {
 var _ = Describe("monitAdapter", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
-		timeService     *faketime.FakeService
+		timeService     *fakeclock.FakeClock
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		timeService = &faketime.FakeService{}
+		timeService = fakeclock.NewFakeClock(time.Now())
 	})
 
 	Describe("IsIgnorable", func() {
@@ -118,13 +118,10 @@ var _ = Describe("monitAdapter", func() {
 			monitAlert := buildMonitAlert()
 			monitAlert.Date = "Thu, 02 May 2013 20:07:0"
 
-			expectedTime := time.Now()
-			timeService.NowTimes = []time.Time{expectedTime}
-
 			monitAdapter := NewMonitAdapter(monitAlert, settingsService, timeService)
 			builtAlert, err := monitAdapter.Alert()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(builtAlert.CreatedAt).To(Equal(expectedTime.Unix()))
+			Expect(builtAlert.CreatedAt).To(Equal(timeService.Now().Unix()))
 		})
 
 		It("sets the title with ips", func() {

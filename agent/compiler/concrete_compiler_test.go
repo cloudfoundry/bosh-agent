@@ -12,10 +12,10 @@ import (
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakecmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	fakeblobstore "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
-	fakecmd "github.com/cloudfoundry/bosh-agent/platform/commands/fakes"
-	boshsys "github.com/cloudfoundry/bosh-agent/system"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type FakeCompileDirProvider struct {

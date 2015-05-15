@@ -4,7 +4,7 @@ import (
 	"errors"
 	. "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	fakeudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

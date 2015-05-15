@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type registryEndpointResolver struct {

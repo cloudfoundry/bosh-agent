@@ -5,10 +5,10 @@ import (
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const (

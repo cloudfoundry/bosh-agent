@@ -3,17 +3,18 @@ package agent
 import (
 	"time"
 
+	"github.com/pivotal-golang/clock"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	bosherr "github.com/cloudfoundry/bosh-agent/errors"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
-	boshtime "github.com/cloudfoundry/bosh-agent/time"
-	boshuuid "github.com/cloudfoundry/bosh-agent/uuid"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (
@@ -31,7 +32,7 @@ type Agent struct {
 	syslogServer      boshsyslog.Server
 	settingsService   boshsettings.Service
 	uuidGenerator     boshuuid.Generator
-	timeService       boshtime.Service
+	timeService       clock.Clock
 }
 
 func New(
@@ -45,7 +46,7 @@ func New(
 	heartbeatInterval time.Duration,
 	settingsService boshsettings.Service,
 	uuidGenerator boshuuid.Generator,
-	timeService boshtime.Service,
+	timeService clock.Clock,
 ) Agent {
 	return Agent{
 		logger:            logger,

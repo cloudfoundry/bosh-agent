@@ -16,13 +16,11 @@ var _ = Describe("sigarStatsCollector", func() {
 	var (
 		collector Collector
 		fakeSigar *fakesigar.FakeSigar
-		doneCh    chan struct{}
 	)
 
 	BeforeEach(func() {
 		fakeSigar = fakesigar.NewFakeSigar()
 		collector = boshsigar.NewSigarStatsCollector(fakeSigar)
-		doneCh = make(chan struct{})
 	})
 
 	Describe("GetCPULoad", func() {

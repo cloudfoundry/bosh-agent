@@ -6,10 +6,10 @@ import (
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	fakeblob "github.com/cloudfoundry/bosh-agent/blobstore/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
-	fakecmd "github.com/cloudfoundry/bosh-agent/platform/commands/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
+	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("compiledPackageApplierProvider", func() {
