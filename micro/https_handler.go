@@ -16,6 +16,8 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-agent/system"
 )
 
+const httpsHandlerLogTag = "Https Handler"
+
 type HTTPSHandler struct {
 	parsedURL   *url.URL
 	logger      boshlog.Logger
@@ -62,6 +64,7 @@ func (h HTTPSHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
 }
 
 func (h HTTPSHandler) Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error {
+	h.logger.Warn(httpsHandlerLogTag, "HTTPSHandler does not support send")
 	return nil
 }
 
