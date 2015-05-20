@@ -2,9 +2,9 @@ package cert
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -38,6 +38,7 @@ type certManager struct {
 	path          string
 	updateCmdPath string
 	logger        logger.Logger
+	logTag        string
 }
 
 func NewUbuntuCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, logger logger.Logger) Manager {
@@ -47,16 +48,15 @@ func NewUbuntuCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, logge
 		path:          "/usr/local/share/ca-certificates/",
 		updateCmdPath: "/usr/sbin/update-ca-certificates",
 		logger:        logger,
+		logTag:        "UbuntuCertManager",
 	}
 }
 
 func (c certManager) UpdateCertificates(certs string) error {
-	c.logger.Info("cert-manager", "Running Update Certificate command")
+	c.logger.Info(c.logTag, "Running Update Certificate command")
 
-	//TODO: should we backup files to be able to restore state?
-
-	deletedFilesCount, err := deleteFiles(c.fs, c.path, "bosh-trusted-cert")
-	c.logger.DebugWithDetails("cert-manager", "Deleted %d existing certificate files", deletedFilesCount)
+	deletedFilesCount, err := deleteFiles(c.fs, c.path, "bosh-trusted-cert-")
+	c.logger.Debug(c.logTag, "Deleted %d existing certificate files", deletedFilesCount)
 	if err != nil {
 		return err
 	}
@@ -68,17 +68,13 @@ func (c certManager) UpdateCertificates(certs string) error {
 			return err
 		}
 	}
-	c.logger.DebugWithDetails("cert-manager", "Wrote %d new certificate files", len(slicedCerts))
+	c.logger.Debug(c.logTag, "Wrote %d new certificate files", len(slicedCerts))
 
-	_, _, exitStatus, err := c.runner.RunCommand(c.updateCmdPath)
+	stdout, stderr, _, err := c.runner.RunCommand(c.updateCmdPath)
 	if err != nil {
-		return err
-	}
-	if exitStatus != 0 {
-		return fmt.Errorf("%s failed with exit status %d", c.updateCmdPath, exitStatus)
+		return bosherr.WrapError(err, fmt.Sprintf("%s failed to update certificates.\nstdout:\n%s\nstderr:\n%s\n", c.updateCmdPath, stdout, stderr))
 	}
 	return nil
-
 }
 
 // SplitCerts returns a slice containing each PEM certificate in the given string.
@@ -99,18 +95,16 @@ func splitCerts(certs string) []string {
 
 func deleteFiles(fs boshsys.FileSystem, path string, filenamePrefix string) (int, error) {
 	var deletedFilesCount int
-	fullyQualifiedPrefix := fmt.Sprintf("%s%s", path, filenamePrefix)
-	err := fs.Walk(path, func(fname string, info os.FileInfo, walkError error) (err error) {
-		if walkError != nil {
-			return walkError
+	files, err := fs.Glob(fmt.Sprintf("%s%s*", path, filenamePrefix))
+	if err != nil {
+		return deletedFilesCount, bosherr.WrapError(err, "Glob command failed")
+	}
+	for _, file := range files {
+		err = fs.RemoveAll(file)
+		if err != nil {
+			return deletedFilesCount, bosherr.WrapError(err, fmt.Sprintf("deleting %s failed", file))
 		}
-		if strings.HasPrefix(fname, fullyQualifiedPrefix) {
-			err = fs.RemoveAll(fname)
-			if err == nil {
-				deletedFilesCount++
-			}
-		}
-		return err
-	})
+		deletedFilesCount++
+	}
 	return deletedFilesCount, err
 }

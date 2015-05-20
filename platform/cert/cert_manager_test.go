@@ -1,13 +1,12 @@
 package cert_test
 
 import (
+	"errors"
 	"fmt"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"errors"
-	"os"
 
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 	"github.com/cloudfoundry/bosh-utils/logger"
@@ -22,7 +21,7 @@ qokoSBXzJCJTt2P681gyqBDr/hUYzqpoXUsOTRisScbEbaSv8hTiTeFJUMyNQAqn
 DtmvI8bXKxU=
 -----END CERTIFICATE-----`
 
-func init() {
+var _ = Describe("Certificate Manager", func() {
 	var log logger.Logger
 	BeforeEach(func() {
 		log = logger.NewLogger(logger.LevelNone)
@@ -65,11 +64,9 @@ func init() {
 		})
 
 		It("handles 1 certificate without trailing newline", func() {
-
 			result := cert.SplitCerts(cert1)
 			Expect(result[0]).To(Equal(cert1))
 			Expect(len(result)).To(Equal(1))
-
 		})
 
 		It("ignores junk before the first certicate", func() {
@@ -100,6 +97,7 @@ func init() {
 			Expect(len(result)).To(Equal(0))
 		})
 	})
+
 	Describe("DeleteFile()", func() {
 		var (
 			fakeFs *fakesys.FakeFileSystem
@@ -113,6 +111,10 @@ func init() {
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.foo", "goodbye")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/different_file_1.bar", "goodbye")
+			fakeFs.SetGlob("/path/to/delete/stuff/in/delete_me_*", []string{
+				"/path/to/delete/stuff/in/delete_me_1.foo",
+				"/path/to/delete/stuff/in/delete_me_2.foo",
+			})
 			count, err := cert.DeleteFiles(fakeFs, "/path/to/delete/stuff/in/", "delete_me_")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(2))
@@ -123,6 +125,10 @@ func init() {
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.foo", "goodbye")
 			fakeFs.WriteFileString("/path/to/other/things/in/delete_me_3.foo", "goodbye")
+			fakeFs.SetGlob("/path/to/delete/stuff/in/delete_me_*", []string{
+				"/path/to/delete/stuff/in/delete_me_1.foo",
+				"/path/to/delete/stuff/in/delete_me_2.foo",
+			})
 			count, err := cert.DeleteFiles(fakeFs, "/path/to/delete/stuff/in/", "delete_me_")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(2))
@@ -130,12 +136,12 @@ func init() {
 			Expect(countFiles(fakeFs, "/path/to/other/things/in/")).To(Equal(1))
 		})
 
-		It("returns an error when walk fails", func() {
-			fakeFs.WalkErr = errors.New("couldn't walk")
+		It("returns an error when glob fails", func() {
+			fakeFs.GlobErr = errors.New("couldn't walk")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.bar", "goodbye")
 			count, err := cert.DeleteFiles(fakeFs, "/path/to/delete/stuff/in/", "delete_me_")
-			Expect(err).To(Equal(fakeFs.WalkErr))
+			Expect(err).To(HaveOccurred())
 			Expect(count).To(Equal(0))
 		})
 
@@ -143,12 +149,16 @@ func init() {
 			fakeFs.RemoveAllError = errors.New("couldn't delete")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.bar", "goodbye")
+			fakeFs.SetGlob("/path/to/delete/stuff/in/delete_me_*", []string{
+				"/path/to/delete/stuff/in/delete_me_1.foo",
+				"/path/to/delete/stuff/in/delete_me_2.bar",
+			})
 			count, err := cert.DeleteFiles(fakeFs, "/path/to/delete/stuff/in/", "delete_me_")
-			Expect(err).To(Equal(fakeFs.RemoveAllError))
+			Expect(err).To(HaveOccurred())
 			Expect(count).To(Equal(0))
 		})
-
 	})
+
 	Describe("UbuntuCertManager", func() {
 		var (
 			fakeFs  *fakesys.FakeFileSystem
@@ -195,6 +205,10 @@ func init() {
 			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-2.crt")).To(BeTrue())
 			Expect(countFiles(fakeFs, "/usr/local/share/ca-certificates")).To(Equal(2))
 
+			fakeFs.SetGlob("/usr/local/share/ca-certificates/bosh-trusted-cert-*", []string{
+				"/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt",
+				"/usr/local/share/ca-certificates/bosh-trusted-cert-2.crt",
+			})
 			ubuntuCertManager.UpdateCertificates(cert1)
 			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt")).To(BeTrue())
 			Expect(countFiles(fakeFs, "/usr/local/share/ca-certificates")).To(Equal(1))
@@ -203,11 +217,13 @@ func init() {
 		It("returns an error when deleting old certs fails", func() {
 			fakeFs.RemoveAllError = errors.New("NOT ALLOW")
 			fakeFs.WriteFileString("/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt", "goodbye")
+			fakeFs.SetGlob("/usr/local/share/ca-certificates/bosh-trusted-cert-*", []string{
+				"/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt",
+			})
 
 			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
 
 			err := ubuntuCertManager.UpdateCertificates("")
-			Expect(err).To(Equal(fakeFs.RemoveAllError))
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -225,14 +241,15 @@ func init() {
 				Stdout:     "",
 				Stderr:     "",
 				ExitStatus: 2,
+				Error:      errors.New("command failed"),
 			})
 
 			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
 			err := ubuntuCertManager.UpdateCertificates(cert1)
-			Expect(err).To(Equal(errors.New("/usr/sbin/update-ca-certificates failed with exit status 2")))
+			Expect(err).To(HaveOccurred())
 		})
 	})
-}
+})
 
 func countFiles(fs system.FileSystem, dir string) (count int) {
 	fs.Walk(dir, func(path string, info os.FileInfo, err error) error {
