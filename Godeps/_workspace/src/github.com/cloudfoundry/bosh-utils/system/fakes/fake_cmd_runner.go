@@ -76,12 +76,6 @@ func NewFakeCmdRunner() *FakeCmdRunner {
 	}
 }
 
-func (r *FakeCmdRunner) Clear() {
-	r.AvailableCommands = map[string]bool{}
-	r.commandResults = map[string][]FakeCmdResult{}
-	r.processes = map[string][]*FakeProcess{}
-}
-
 func (r *FakeCmdRunner) RunComplexCommand(cmd boshsys.Command) (string, string, int, error) {
 	r.commandResultsLock.Lock()
 	defer r.commandResultsLock.Unlock()

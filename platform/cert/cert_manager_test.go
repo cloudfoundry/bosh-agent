@@ -217,19 +217,6 @@ var _ = Describe("Certificate Management", func() {
 				err := certManager.UpdateCertificates("")
 				Expect(err).To(HaveOccurred())
 			})
-
-			It("executes update cert command", func() {
-				fakeCmd.Clear()
-				fakeCmd.AddCmdResult(certUpdateProgram, fakesys.FakeCmdResult{
-					Stdout:     "",
-					Stderr:     "",
-					ExitStatus: 2,
-					Error:      errors.New("command failed"),
-				})
-
-				err := certManager.UpdateCertificates(cert1)
-				Expect(err).To(HaveOccurred())
-			})
 		}
 
 		Context("Ubuntu", func() {
@@ -246,6 +233,21 @@ var _ = Describe("Certificate Management", func() {
 			})
 
 			SharedLinuxCertManagerExamples("/usr/local/share/ca-certificates", "/usr/sbin/update-ca-certificates")
+
+			// TODO this test can be shared if there is a way to update existing FakeCmdRunner command specs
+			It("executes update cert command", func() {
+				fakeCmd = fakesys.NewFakeCmdRunner()
+				fakeCmd.AddCmdResult("/usr/sbin/update-ca-certificates", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "",
+					ExitStatus: 2,
+					Error:      errors.New("command failed"),
+				})
+				certManager = cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
+
+				err := certManager.UpdateCertificates(cert1)
+				Expect(err).To(HaveOccurred())
+			})
 		})
 
 		Context("CentOS", func() {
@@ -262,6 +264,21 @@ var _ = Describe("Certificate Management", func() {
 			})
 
 			SharedLinuxCertManagerExamples("/etc/pki/ca-trust/source/anchors", "/usr/bin/update-ca-trust")
+
+			// see message above about the shareability of this test
+			It("executes update cert command", func() {
+				fakeCmd = fakesys.NewFakeCmdRunner()
+				fakeCmd.AddCmdResult("/usr/bin/update-ca-trust", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "",
+					ExitStatus: 2,
+					Error:      errors.New("command failed"),
+				})
+				certManager = cert.NewCentOSCertManager(fakeFs, fakeCmd, log)
+
+				err := certManager.UpdateCertificates(cert1)
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 })
