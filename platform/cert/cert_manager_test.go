@@ -171,7 +171,6 @@ var _ = Describe("Certificate Management", func() {
 				err := certManager.UpdateCertificates(cert1)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeTrue())
-
 			})
 
 			It("writes each cert to its own file", func() {
@@ -182,6 +181,16 @@ var _ = Describe("Certificate Management", func() {
 				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeTrue())
 				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-2.crt", certBasePath))).To(BeTrue())
 				Expect(countFiles(fakeFs, certBasePath)).To(Equal(2))
+			})
+
+			It("deletes all certs when passed an empty string", func() {
+				fakeFs.WriteFileString(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath), "goodbye")
+				fakeFs.SetGlob(fmt.Sprintf("%s/bosh-trusted-cert-*", certBasePath), []string{
+					fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath),
+				})
+				err := certManager.UpdateCertificates("")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeFalse())
 			})
 
 			It("deletes exisitng cert files before writing new ones", func() {
