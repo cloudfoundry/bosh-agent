@@ -21,7 +21,7 @@ qokoSBXzJCJTt2P681gyqBDr/hUYzqpoXUsOTRisScbEbaSv8hTiTeFJUMyNQAqn
 DtmvI8bXKxU=
 -----END CERTIFICATE-----`
 
-var _ = Describe("Certificate Manager", func() {
+var _ = Describe("Certificate Management", func() {
 	var log logger.Logger
 	BeforeEach(func() {
 		log = logger.NewLogger(logger.LevelNone)
@@ -159,94 +159,109 @@ var _ = Describe("Certificate Manager", func() {
 		})
 	})
 
-	Describe("UbuntuCertManager", func() {
+	Describe("cert.Manager implementations", func() {
 		var (
-			fakeFs  *fakesys.FakeFileSystem
-			fakeCmd *fakesys.FakeCmdRunner
+			fakeFs      *fakesys.FakeFileSystem
+			fakeCmd     *fakesys.FakeCmdRunner
+			certManager cert.Manager
 		)
 
-		BeforeEach(func() {
-			fakeFs = fakesys.NewFakeFileSystem()
-			fakeCmd = fakesys.NewFakeCmdRunner()
-			fakeCmd.AddCmdResult("/usr/sbin/update-ca-certificates", fakesys.FakeCmdResult{
-				Stdout:     "",
-				Stderr:     "",
-				ExitStatus: 0,
-				Sticky:     true,
-			})
-		})
+		SharedLinuxCertManagerExamples := func(certBasePath, certUpdateProgram string) {
+			It("writes 1 cert to a file", func() {
+				err := certManager.UpdateCertificates(cert1)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeTrue())
 
-		It("writes 1 cert to a file", func() {
-			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
-			err := ubuntuCertManager.UpdateCertificates(cert1)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt")).To(BeTrue())
-
-		})
-
-		It("writes each cert to its own file", func() {
-			certs := fmt.Sprintf("%s\n%s\n", cert1, cert1)
-
-			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
-			err := ubuntuCertManager.UpdateCertificates(certs)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt")).To(BeTrue())
-			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-2.crt")).To(BeTrue())
-			Expect(countFiles(fakeFs, "/usr/local/share/ca-certificates")).To(Equal(2))
-		})
-
-		It("deletes exisitng cert files before writing new ones", func() {
-			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
-
-			certs := fmt.Sprintf("%s\n%s\n", cert1, cert1)
-			err := ubuntuCertManager.UpdateCertificates(certs)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt")).To(BeTrue())
-			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-2.crt")).To(BeTrue())
-			Expect(countFiles(fakeFs, "/usr/local/share/ca-certificates")).To(Equal(2))
-
-			fakeFs.SetGlob("/usr/local/share/ca-certificates/bosh-trusted-cert-*", []string{
-				"/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt",
-				"/usr/local/share/ca-certificates/bosh-trusted-cert-2.crt",
-			})
-			ubuntuCertManager.UpdateCertificates(cert1)
-			Expect(fakeFs.FileExists("/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt")).To(BeTrue())
-			Expect(countFiles(fakeFs, "/usr/local/share/ca-certificates")).To(Equal(1))
-		})
-
-		It("returns an error when deleting old certs fails", func() {
-			fakeFs.RemoveAllError = errors.New("NOT ALLOW")
-			fakeFs.WriteFileString("/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt", "goodbye")
-			fakeFs.SetGlob("/usr/local/share/ca-certificates/bosh-trusted-cert-*", []string{
-				"/usr/local/share/ca-certificates/bosh-trusted-cert-1.crt",
 			})
 
-			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
+			It("writes each cert to its own file", func() {
+				certs := fmt.Sprintf("%s\n%s\n", cert1, cert1)
 
-			err := ubuntuCertManager.UpdateCertificates("")
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("returns an error when writing new cert files fails", func() {
-			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
-
-			fakeFs.WriteFileError = errors.New("NOT ALLOW")
-			err := ubuntuCertManager.UpdateCertificates(cert1)
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("executes update cert command", func() {
-			fakeCmd = fakesys.NewFakeCmdRunner()
-			fakeCmd.AddCmdResult("/usr/sbin/update-ca-certificates", fakesys.FakeCmdResult{
-				Stdout:     "",
-				Stderr:     "",
-				ExitStatus: 2,
-				Error:      errors.New("command failed"),
+				err := certManager.UpdateCertificates(certs)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeTrue())
+				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-2.crt", certBasePath))).To(BeTrue())
+				Expect(countFiles(fakeFs, certBasePath)).To(Equal(2))
 			})
 
-			ubuntuCertManager := cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
-			err := ubuntuCertManager.UpdateCertificates(cert1)
-			Expect(err).To(HaveOccurred())
+			It("deletes exisitng cert files before writing new ones", func() {
+				certs := fmt.Sprintf("%s\n%s\n", cert1, cert1)
+				err := certManager.UpdateCertificates(certs)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeTrue())
+				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-2.crt", certBasePath))).To(BeTrue())
+				Expect(countFiles(fakeFs, certBasePath)).To(Equal(2))
+
+				fakeFs.SetGlob(fmt.Sprintf("%s/bosh-trusted-cert-*", certBasePath), []string{
+					fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath),
+					fmt.Sprintf("%s/bosh-trusted-cert-2.crt", certBasePath),
+				})
+				certManager.UpdateCertificates(cert1)
+				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeTrue())
+				Expect(countFiles(fakeFs, certBasePath)).To(Equal(1))
+			})
+
+			It("returns an error when writing new cert files fails", func() {
+				fakeFs.WriteFileError = errors.New("NOT ALLOW")
+				err := certManager.UpdateCertificates(cert1)
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("returns an error when deleting old certs fails", func() {
+				fakeFs.RemoveAllError = errors.New("NOT ALLOW")
+				fakeFs.WriteFileString(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath), "goodbye")
+				fakeFs.SetGlob(fmt.Sprintf("%s/bosh-trusted-cert-*", certBasePath), []string{
+					fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath),
+				})
+
+				err := certManager.UpdateCertificates("")
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("executes update cert command", func() {
+				fakeCmd.Clear()
+				fakeCmd.AddCmdResult(certUpdateProgram, fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "",
+					ExitStatus: 2,
+					Error:      errors.New("command failed"),
+				})
+
+				err := certManager.UpdateCertificates(cert1)
+				Expect(err).To(HaveOccurred())
+			})
+		}
+
+		Context("Ubuntu", func() {
+			BeforeEach(func() {
+				fakeFs = fakesys.NewFakeFileSystem()
+				fakeCmd = fakesys.NewFakeCmdRunner()
+				fakeCmd.AddCmdResult("/usr/sbin/update-ca-certificates", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "",
+					ExitStatus: 0,
+					Sticky:     true,
+				})
+				certManager = cert.NewUbuntuCertManager(fakeFs, fakeCmd, log)
+			})
+
+			SharedLinuxCertManagerExamples("/usr/local/share/ca-certificates", "/usr/sbin/update-ca-certificates")
+		})
+
+		Context("CentOS", func() {
+			BeforeEach(func() {
+				fakeFs = fakesys.NewFakeFileSystem()
+				fakeCmd = fakesys.NewFakeCmdRunner()
+				fakeCmd.AddCmdResult("/usr/bin/update-ca-trust", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "",
+					ExitStatus: 0,
+					Sticky:     true,
+				})
+				certManager = cert.NewCentOSCertManager(fakeFs, fakeCmd, log)
+			})
+
+			SharedLinuxCertManagerExamples("/etc/pki/ca-trust/source/anchors", "/usr/bin/update-ca-trust")
 		})
 	})
 })

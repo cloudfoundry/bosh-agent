@@ -42,7 +42,7 @@ type certManager struct {
 }
 
 func NewUbuntuCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, logger logger.Logger) Manager {
-	return certManager{
+	return &certManager{
 		fs:            fs,
 		runner:        runner,
 		path:          "/usr/local/share/ca-certificates/",
@@ -52,7 +52,18 @@ func NewUbuntuCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, logge
 	}
 }
 
-func (c certManager) UpdateCertificates(certs string) error {
+func NewCentOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, logger logger.Logger) Manager {
+	return &certManager{
+		fs:            fs,
+		runner:        runner,
+		path:          "/etc/pki/ca-trust/source/anchors/",
+		updateCmdPath: "/usr/bin/update-ca-trust",
+		logger:        logger,
+		logTag:        "CentOSCertManager",
+	}
+}
+
+func (c *certManager) UpdateCertificates(certs string) error {
 	c.logger.Info(c.logTag, "Running Update Certificate command")
 
 	deletedFilesCount, err := deleteFiles(c.fs, c.path, "bosh-trusted-cert-")
