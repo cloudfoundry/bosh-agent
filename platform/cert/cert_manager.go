@@ -81,9 +81,9 @@ func (c *certManager) UpdateCertificates(certs string) error {
 	}
 	c.logger.Debug(c.logTag, "Wrote %d new certificate files", len(slicedCerts))
 
-	stdout, stderr, _, err := c.runner.RunCommand(c.updateCmdPath)
+	_, _, _, err = c.runner.RunCommand(c.updateCmdPath)
 	if err != nil {
-		return bosherr.WrapError(err, fmt.Sprintf("%s failed to update certificates.\nstdout:\n%s\nstderr:\n%s\n", c.updateCmdPath, stdout, stderr))
+		return bosherr.WrapError(err, "Updating certificates")
 	}
 	return nil
 }
@@ -113,7 +113,7 @@ func deleteFiles(fs boshsys.FileSystem, path string, filenamePrefix string) (int
 	for _, file := range files {
 		err = fs.RemoveAll(file)
 		if err != nil {
-			return deletedFilesCount, bosherr.WrapError(err, fmt.Sprintf("deleting %s failed", file))
+			return deletedFilesCount, bosherr.WrapErrorf(err, "deleting %s failed", file)
 		}
 		deletedFilesCount++
 	}
