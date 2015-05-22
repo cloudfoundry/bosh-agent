@@ -1,0 +1,15 @@
+---
+jobs:
+  - name: test-unit
+    public: true
+    plan:
+      - get: bosh-agent
+      - task: test-unit
+        file: bosh-agent/ci/concourse/tasks/test-unit.yml
+
+resources:
+  - name: bosh-agent
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-agent
+      branch: master
