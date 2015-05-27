@@ -7,9 +7,5 @@ inputs:
 - name: bosh-agent
   path: gopath/src/github.com/cloudfoundry/bosh-agent
 
-params:
-  BOX_TYPE: virtualbox
-  PROVIDER: virtualbox
-
 run:
   path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/concourse/tasks/test-unit.sh
