@@ -4,6 +4,7 @@ jobs:
     public: true
     plan:
       - get: bosh-agent
+        trigger: true
       - task: test-unit
         file: bosh-agent/ci/concourse/tasks/test-unit.yml
 
