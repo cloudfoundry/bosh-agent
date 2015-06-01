@@ -25,7 +25,7 @@ var _ = Describe("UpdateSettings", func() {
 		updateAction = action.NewUpdateSettings(certManager, log)
 	})
 
-	It("is synchronous", func() {
+	It("is asynchronous", func() {
 		Expect(updateAction.IsAsynchronous()).To(BeTrue())
 	})
 
