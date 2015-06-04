@@ -27,6 +27,7 @@ type dummyPlatform struct {
 	vitalsService      boshvitals.Service
 	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
+	certManager        boshcert.Manager
 }
 
 func NewDummyPlatform(
@@ -46,6 +47,7 @@ func NewDummyPlatform(
 		dirProvider:        dirProvider,
 		devicePathResolver: devicePathResolver,
 		vitalsService:      boshvitals.NewService(collector, dirProvider),
+		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, logger),
 	}
 }
 
@@ -114,7 +116,7 @@ func (p dummyPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, er
 }
 
 func (p dummyPlatform) GetCertManager() (certManager boshcert.Manager) {
-	return
+	return p.certManager
 }
 
 func (p dummyPlatform) SetupLogrotate(groupName, basePath, size string) (err error) {

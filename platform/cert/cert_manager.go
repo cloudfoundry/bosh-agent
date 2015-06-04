@@ -63,8 +63,23 @@ func NewCentOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, logge
 	}
 }
 
+func NewDummyCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, logger logger.Logger) Manager {
+	return &certManager{
+		fs:            fs,
+		runner:        runner,
+		path:          "dummy",
+		updateCmdPath: "dummy",
+		logger:        logger,
+		logTag:        "DummyCertManager",
+	}
+}
+
 func (c *certManager) UpdateCertificates(certs string) error {
 	c.logger.Info(c.logTag, "Running Update Certificate command")
+
+	if c.updateCmdPath == "dummy" {
+		return nil
+	}
 
 	deletedFilesCount, err := deleteFiles(c.fs, c.path, "bosh-trusted-cert-")
 	c.logger.Debug(c.logTag, "Deleted %d existing certificate files", deletedFilesCount)

@@ -59,4 +59,12 @@ func describeDummyPlatform() {
 			Expect(network.IP).To(Equal("1.2.3.4"))
 		})
 	})
+
+	Describe("GetCertManager", func() {
+		It("returs a dummy cert manager", func() {
+			certManager := platform.GetCertManager()
+
+			Expect(certManager.UpdateCertificates("")).Should(BeNil())
+		})
+	})
 }
