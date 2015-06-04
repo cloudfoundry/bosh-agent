@@ -40,7 +40,7 @@ func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, erro
 
 	err := b.fs.Chmod(sourcePath, installDirsPerms)
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Settting permissions on source directory")
+		return nil, "", bosherr.WrapError(err, "Setting permissions on source directory")
 	}
 
 	err = b.fs.MkdirAll(filepath.Dir(b.installPath), installDirsPerms)
