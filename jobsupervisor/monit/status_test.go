@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("status", func() {
 	Describe("ServicesInGroup", func() {
-		It("returns list of service", func() {
+		It("returns a list of services", func() {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_, err := io.Copy(w, bytes.NewReader(readFixture(statusWithMultipleServiceFixturePath)))
 				Expect(err).ToNot(HaveOccurred())
@@ -44,10 +44,10 @@ var _ = Describe("status", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedServices := []Service{
-				Service{Monitored: true, Status: "running"},
-				Service{Monitored: false, Status: "unknown"},
-				Service{Monitored: true, Status: "starting"},
-				Service{Monitored: true, Status: "failing"},
+				Service{Name: "running-service", Monitored: true, Status: "running"},
+				Service{Name: "unmonitored-service", Monitored: false, Status: "unknown"},
+				Service{Name: "starting-service", Monitored: true, Status: "starting"},
+				Service{Name: "failing-service", Monitored: true, Status: "failing"},
 			}
 
 			services := status.ServicesInGroup("vcap")

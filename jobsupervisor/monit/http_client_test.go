@@ -65,19 +65,61 @@ var _ = Describe("httpClient", func() {
 	})
 
 	Describe("StopService", func() {
-		It("stop service", func() {
-			var calledMonit bool
+		It("uses the longClient to send the unmonitor/stop requests, shortClient to send a status request", func() {
+			shortClient := fakehttp.NewFakeClient()
+			longClient := fakehttp.NewFakeClient()
+			client := newFakeClient(shortClient, longClient)
+
+			longClient.StatusCode = 200
+
+			client.StopService("test-service")
+
+			Expect(longClient.CallCount).To(Equal(2))
+			Expect(longClient.RequestBodies[0]).To(Equal("action=unmonitor"))
+			Expect(longClient.RequestBodies[1]).To(Equal("action=stop"))
+
+			Expect(shortClient.CallCount).To(Equal(1))
+			Expect(shortClient.Requests[0].URL.Path).To(Equal("/_status2"))
+		})
+
+		It("waits for the monit status to indicate the service has stopped", func() {
+			tries := 0
+			httpCalls := []map[string]string{}
 
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				calledMonit = true
-				Expect(r.Method).To(Equal("POST"))
-				Expect(r.URL.Path).To(Equal("/test-service"))
-				Expect(r.PostFormValue("action")).To(Equal("stop"))
-				Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
+				var resBody []byte
+
+				requestData := make(map[string]string)
+
+				if r.URL.Path == "/_status2" {
+					Expect(r.Method).To(Equal("GET"))
+
+					tries++
+					requestData["action"] = "status"
+
+					switch {
+					case tries == 1:
+						resBody = readFixture("test_assets/monit_status_running.xml")
+					case tries == 2:
+						resBody = readFixture("test_assets/monit_status_stopping.xml")
+					case tries == 3:
+						resBody = readFixture("test_assets/monit_status_stopped.xml")
+					}
+					w.Write(resBody)
+				} else {
+					Expect(r.Method).To(Equal("POST"))
+					requestData["action"] = r.PostFormValue("action")
+				}
+
+				requestData["url"] = r.URL.Path
 
 				expectedAuthEncoded := base64.URLEncoding.EncodeToString([]byte("fake-user:fake-pass"))
 				Expect(r.Header.Get("Authorization")).To(Equal(fmt.Sprintf("Basic %s", expectedAuthEncoded)))
+				Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
+
+				httpCalls = append(httpCalls, requestData)
 			})
+
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
@@ -85,29 +127,23 @@ var _ = Describe("httpClient", func() {
 
 			err := client.StopService("test-service")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(calledMonit).To(BeTrue())
-		})
 
-		It("uses the longClient to send a stop request", func() {
-			shortClient := fakehttp.NewFakeClient()
-			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient)
+			Expect(httpCalls[0]["url"]).To(Equal("/test-service"))
+			Expect(httpCalls[0]["action"]).To(Equal("unmonitor"))
 
-			longClient.StatusCode = 200
+			Expect(httpCalls[1]["url"]).To(Equal("/test-service"))
+			Expect(httpCalls[1]["action"]).To(Equal("stop"))
 
-			err := client.StopService("test-service")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(httpCalls[2]["url"]).To(Equal("/_status2"))
+			Expect(httpCalls[2]["action"]).To(Equal("status"))
 
-			Expect(shortClient.CallCount).To(Equal(0))
-			Expect(longClient.CallCount).To(Equal(1))
+			Expect(httpCalls[3]["url"]).To(Equal("/_status2"))
+			Expect(httpCalls[3]["action"]).To(Equal("status"))
 
-			req := longClient.Requests[0]
-			Expect(req.URL.Host).To(Equal("agent.example.com"))
-			Expect(req.URL.Path).To(Equal("/test-service"))
-			Expect(req.Method).To(Equal("POST"))
+			Expect(httpCalls[4]["url"]).To(Equal("/_status2"))
+			Expect(httpCalls[4]["action"]).To(Equal("status"))
 
-			content := longClient.RequestBodies[0]
-			Expect(content).To(Equal("action=stop"))
+			Expect(len(httpCalls)).To(Equal(5))
 		})
 	})
 

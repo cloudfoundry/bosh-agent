@@ -1,11 +1,22 @@
 package monit
 
+const (
+	StatusUnknown  = "unknown"
+	StatusStarting = "starting"
+	StatusRunning  = "running"
+	StatusFailing  = "failing"
+)
+
 type Status interface {
 	GetIncarnation() (int, error)
 	ServicesInGroup(name string) (services []Service)
 }
 
 type Service struct {
-	Monitored bool
-	Status    string
+	Name          string
+	Monitored     bool
+	Errored       bool
+	Pending       bool
+	Status        string
+	StatusMessage string
 }

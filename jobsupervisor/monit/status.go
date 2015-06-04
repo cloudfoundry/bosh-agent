@@ -21,10 +21,12 @@ type servicesTag struct {
 }
 
 type serviceTag struct {
-	XMLName xml.Name `xml:"service"`
-	Name    string   `xml:"name,attr"`
-	Status  int      `xml:"status"`
-	Monitor int      `xml:"monitor"`
+	XMLName       xml.Name `xml:"service"`
+	Name          string   `xml:"name,attr"`
+	Monitor       int      `xml:"monitor"`
+	Pending       int      `xml:"pendingaction"`
+	Status        int      `xml:"status"`
+	StatusMessage string   `xml:"status_message"`
 }
 
 type serviceGroupsTag struct {
@@ -39,18 +41,17 @@ type serviceGroupTag struct {
 	Services []string `xml:"service"`
 }
 
-func (s serviceTag) StatusString() (status string) {
+func (s serviceTag) StatusString() string {
 	switch {
 	case s.Monitor == 0:
-		status = "unknown"
+		return StatusUnknown
 	case s.Monitor == 2:
-		status = "starting"
+		return StatusStarting
 	case s.Status == 0:
-		status = "running"
+		return StatusRunning
 	default:
-		status = "failing"
+		return StatusFailing
 	}
-	return
 }
 
 func (t serviceGroupsTag) Get(name string) (group serviceGroupTag, found bool) {
@@ -84,8 +85,11 @@ func (status status) ServicesInGroup(name string) (services []Service) {
 	for _, serviceTag := range status.Services.Services {
 		if serviceGroupTag.Contains(serviceTag.Name) {
 			service := Service{
+				Name:      serviceTag.Name,
 				Monitored: serviceTag.Monitor > 0,
+				Pending:   serviceTag.Pending > 0,
 				Status:    serviceTag.StatusString(),
+				Errored:   serviceTag.Status > 0 && serviceTag.StatusMessage != "", // review this
 			}
 
 			services = append(services, service)
