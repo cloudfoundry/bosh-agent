@@ -44,6 +44,10 @@ echo -e "\n Installing ginkgo..."
 $bin/go install github.com/onsi/ginkgo/ginkgo
 
 echo -e "\n Running tests..."
-$bin/env ginkgo -race -trace integration
+focus=""
+if [ ! -z "$BOSH_AGENT_INTEGRATION_FOCUS" ]; then
+  focus="-focus=$BOSH_AGENT_INTEGRATION_FOCUS"
+fi
+$bin/env ginkgo "$focus" -race -trace integration
 
 exit 0
