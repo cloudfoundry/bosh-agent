@@ -7,12 +7,20 @@ import (
 	"strings"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/deployment/agentclient"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-agent/deployment/agentclient/http"
+	"time"
+	"github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-agent/deployment/httpclient"
 )
 
 type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
 	currentDeviceNum int
+	natsTunnelProc   boshsys.Process
+	logger logger.Logger
+	agentClient agentclient.AgentClient
 }
 
 func NewTestEnvironment(
@@ -21,6 +29,7 @@ func NewTestEnvironment(
 	return &TestEnvironment{
 		cmdRunner:        cmdRunner,
 		currentDeviceNum: 2,
+		logger: logger.NewLogger(logger.LevelDebug),
 	}
 }
 
@@ -254,6 +263,55 @@ func (t *TestEnvironment) StopAgent() error {
 func (t *TestEnvironment) StartAgent() error {
 	_, err := t.RunCommand("nohup sudo sv start agent &")
 	return err
+}
+
+type emptyReader struct {}
+func (er emptyReader) Read(p []byte) (int, error) {
+	time.Sleep(1 * time.Second)
+	return 0, nil
+}
+
+func (t *TestEnvironment) StartAgentTunnel(agentHttpUrl string) (agentclient.AgentClient, error) {
+	if t.natsTunnelProc != nil {
+		return nil, fmt.Errorf("Already running")
+	}
+
+	sshCmd := boshsys.Command{
+		Name: "vagrant",
+		Args: []string{
+			"ssh",
+			"--",
+			fmt.Sprintf("-L16868:127.0.0.1:%d", 6868 /* FIXME */),
+		},
+		Stdin: emptyReader{},
+	}
+	natsTunnelProc, err := t.cmdRunner.RunComplexCommandAsync(sshCmd)
+	if err != nil {
+		return nil, err
+	}
+	t.natsTunnelProc = natsTunnelProc
+
+	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
+	client := http.NewAgentClient("https://mbus-user:mbus-pass@localhost:16868", "fake-director-uuid", 1 * time.Second, httpClient, t.logger)
+
+	for i := 1; i < 1000000; i++ {
+		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
+		time.Sleep(1 * time.Second)
+		_, err := client.Ping()
+		if err == nil {
+			break
+		}
+		t.logger.Debug("test environment", err.Error())
+	}
+	return client, nil
+}
+
+func (t *TestEnvironment) StopAgentTunnel() error {
+	if t.natsTunnelProc == nil {
+		return fmt.Errorf("Not running")
+	}
+	t.natsTunnelProc.Wait()
+	return nil
 }
 
 func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
