@@ -5,6 +5,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
+//go:generate mockgen -source=agent_client_interface.go -package=mocks -destination=mocks/mocks.go
+
 type AgentClient interface {
 	Ping() (string, error)
 	Stop() error

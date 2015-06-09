@@ -8,7 +8,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	fakehttpclient "github.com/cloudfoundry/bosh-agent/deployment/httpclient/fakes"
+	fakehttpclient "github.com/cloudfoundry/bosh-utils/httpclient/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

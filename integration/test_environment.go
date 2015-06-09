@@ -6,21 +6,21 @@ import (
 	"strconv"
 	"strings"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
-	"time"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	"github.com/cloudfoundry/bosh-utils/logger"
-	"github.com/cloudfoundry/bosh-agent/deployment/httpclient"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"time"
 )
 
 type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
 	currentDeviceNum int
-	sshTunnelProc   boshsys.Process
-	logger logger.Logger
-	agentClient agentclient.AgentClient
+	sshTunnelProc    boshsys.Process
+	logger           logger.Logger
+	agentClient      agentclient.AgentClient
 }
 
 func NewTestEnvironment(
@@ -29,7 +29,7 @@ func NewTestEnvironment(
 	return &TestEnvironment{
 		cmdRunner:        cmdRunner,
 		currentDeviceNum: 2,
-		logger: logger.NewLogger(logger.LevelDebug),
+		logger:           logger.NewLogger(logger.LevelDebug),
 	}
 }
 
@@ -265,7 +265,8 @@ func (t *TestEnvironment) StartAgent() error {
 	return err
 }
 
-type emptyReader struct {}
+type emptyReader struct{}
+
 func (er emptyReader) Read(p []byte) (int, error) {
 	time.Sleep(1 * time.Second)
 	return 0, nil
@@ -292,8 +293,8 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 	t.sshTunnelProc = newTunnelProc
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
-	mbusUrl := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
-	client := http.NewAgentClient(mbusUrl, "fake-director-uuid", 1 * time.Second, httpClient, t.logger)
+	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
+	client := http.NewAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, httpClient, t.logger)
 
 	for i := 1; i < 1000000; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")

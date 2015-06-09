@@ -3,6 +3,7 @@ package fakes
 import (
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
+	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type FakeAgentClient struct {
@@ -33,6 +34,9 @@ type FakeAgentClient struct {
 
 	MigrateDiskCalledTimes int
 	migrateDiskErr         error
+
+	UpdateSettingsCalledTimes int
+	updateSettingsErr         error
 }
 
 type pingResponse struct {
@@ -114,6 +118,11 @@ func (c *FakeAgentClient) MigrateDisk() error {
 	return c.migrateDiskErr
 }
 
+func (c *FakeAgentClient) UpdateSettings(settings settings.Settings) error {
+	c.UpdateSettingsCalledTimes++
+	return c.updateSettingsErr
+}
+
 func (c *FakeAgentClient) CompilePackage(
 	packageSource agentclient.BlobRef,
 	compiledPackageDependencies []agentclient.BlobRef,
@@ -156,6 +165,10 @@ func (c *FakeAgentClient) SetUnmountDiskBehavior(err error) {
 
 func (c *FakeAgentClient) SetMigrateDiskBehavior(err error) {
 	c.migrateDiskErr = err
+}
+
+func (c *FakeAgentClient) SetUpdateSettingsBehavior(err error) {
+	c.updateSettingsErr = err
 }
 
 func (c *FakeAgentClient) SetListDiskBehavior(disks []string, err error) {

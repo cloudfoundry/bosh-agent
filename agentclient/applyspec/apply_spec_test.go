@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	biproperty "github.com/cloudfoundry/bosh-agent/deployment/property"
+	biproperty "github.com/cloudfoundry/bosh-utils/property"
 )
 
 var _ = Describe("ApplySpec", func() {

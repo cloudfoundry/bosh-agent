@@ -6,11 +6,11 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	"github.com/cloudfoundry/bosh-agent/deployment/httpclient"
+	"github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type agentClient struct {

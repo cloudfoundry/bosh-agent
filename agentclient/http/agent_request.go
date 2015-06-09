@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	bihttpclient "github.com/cloudfoundry/bosh-agent/deployment/httpclient"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 )
 
 type AgentRequestMessage struct {
@@ -18,7 +18,7 @@ type AgentRequestMessage struct {
 type agentRequest struct {
 	directorID string
 	endpoint   string
-	httpClient bihttpclient.HTTPClient
+	httpClient httpclient.HTTPClient
 }
 
 func (r agentRequest) Send(method string, arguments []interface{}, response Response) error {

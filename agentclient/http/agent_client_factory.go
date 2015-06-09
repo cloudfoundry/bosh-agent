@@ -1,10 +1,12 @@
 package http
 
+//go:generate mockgen -source=agent_client_factory.go -package=mocks -destination=mocks/mocks.go
+
 import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
-	"github.com/cloudfoundry/bosh-agent/deployment/httpclient"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
