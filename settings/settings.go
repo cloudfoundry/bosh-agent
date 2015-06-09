@@ -12,15 +12,15 @@ const (
 )
 
 type Settings struct {
-	AgentID   string    `json:"agent_id"`
-	Blobstore Blobstore `json:"blobstore"`
-	Disks     Disks     `json:"disks"`
-	Env       Env       `json:"env"`
-	Networks  Networks  `json:"networks"`
-	Ntp       []string  `json:"ntp"`
-	Mbus      string    `json:"mbus"`
-	VM        VM        `json:"vm"`
-	Cert      string    `json:"cert"`
+	AgentID      string    `json:"agent_id"`
+	Blobstore    Blobstore `json:"blobstore"`
+	Disks        Disks     `json:"disks"`
+	Env          Env       `json:"env"`
+	Networks     Networks  `json:"networks"`
+	Ntp          []string  `json:"ntp"`
+	Mbus         string    `json:"mbus"`
+	VM           VM        `json:"vm"`
+	TrustedCerts string    `json:"trusted_certs"`
 }
 
 type Source interface {
@@ -232,7 +232,7 @@ func (n Network) IsVIP() bool {
 //			"password": null
 //		}
 //	},
-//  "cert": "very\nlong\nmultiline\nstring"
+//  "trusted_certs": "very\nlong\nmultiline\nstring"
 //	"mbus": "https://vcap:b00tstrap@0.0.0.0:6868",
 //	"networks": {
 //		"bosh": {

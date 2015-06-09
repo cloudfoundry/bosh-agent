@@ -31,7 +31,7 @@ func (a UpdateSettingsAction) IsPersistent() bool {
 func (a UpdateSettingsAction) Run(newSettings boshsettings.Settings) (string, error) {
 	a.logger.Info("update-settings-action", "Running Update Settings command")
 
-	err := a.trustedCertManager.UpdateCertificates(newSettings.Cert)
+	err := a.trustedCertManager.UpdateCertificates(newSettings.TrustedCerts)
 	if err != nil {
 		return "", err
 	}

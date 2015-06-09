@@ -27,7 +27,7 @@ var _ = Describe("CertManager", func() {
 
 	It("adds and registers new certs on a fresh machine", func() {
 		var cert string = "This certificate is the first one. It's more awesome than the other one.\n-----BEGIN CERTIFICATE-----\nMIIEJDCCAwygAwIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV\nBAYTAkNBMRMwEQYDVQQIEwpTb21lLVN0YXRlMSIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV\nBAYTAkNBMRMwEQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJbnRlcm5ldCBX\naWRnaXRzIFB0eSBMdGQxIjAgBgNVBAMTGWR4MTkwLnRvci5waXZvdGFsbGFicy5EwHwYDVQQKExhJbnRlcm5ldCBX\naWRnaXRzIFB0eSBMdGQxIjAgBgNVBAMTGWR4MTkwLnRvci5waXZvdGFsbGFicy5j\nb20wHhcNMTUwNTEzMTM1NjA2WhcNMjUwNTEwMTM1NjA2WjBpMQswCQYDVQQGEwJD\nQTETMBEGA1UECBMKU29tZGackAF\nqokoSBXzJCJTt2P681gyqBDr/hUYzqpoXUsOTRisScbEbaSv8hTiTeFJUMyNQAqn\nDtmvI8bXKxU=\n-----END CERTIFICATE-----\n"
-		settings := settings.Settings{Cert: cert}
+		settings := settings.Settings{TrustedCerts: cert}
 
 		err := agentClient.UpdateSettings(settings)
 		Expect(err).NotTo(HaveOccurred())
