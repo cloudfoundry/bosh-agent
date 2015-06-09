@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-agent/deployment/agentclient"
+	"github.com/cloudfoundry/bosh-agent/agentclient"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"github.com/cloudfoundry/bosh-agent/deployment/agentclient/http"
+	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	"time"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-agent/deployment/httpclient"
@@ -18,7 +18,7 @@ import (
 type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
 	currentDeviceNum int
-	natsTunnelProc   boshsys.Process
+	sshTunnelProc   boshsys.Process
 	logger logger.Logger
 	agentClient agentclient.AgentClient
 }
@@ -271,8 +271,8 @@ func (er emptyReader) Read(p []byte) (int, error) {
 	return 0, nil
 }
 
-func (t *TestEnvironment) StartAgentTunnel(agentHttpUrl string) (agentclient.AgentClient, error) {
-	if t.natsTunnelProc != nil {
+func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort int) (agentclient.AgentClient, error) {
+	if t.sshTunnelProc != nil {
 		return nil, fmt.Errorf("Already running")
 	}
 
@@ -281,18 +281,19 @@ func (t *TestEnvironment) StartAgentTunnel(agentHttpUrl string) (agentclient.Age
 		Args: []string{
 			"ssh",
 			"--",
-			fmt.Sprintf("-L16868:127.0.0.1:%d", 6868 /* FIXME */),
+			fmt.Sprintf("-L16868:127.0.0.1:%d", mbusPort),
 		},
 		Stdin: emptyReader{},
 	}
-	natsTunnelProc, err := t.cmdRunner.RunComplexCommandAsync(sshCmd)
+	newTunnelProc, err := t.cmdRunner.RunComplexCommandAsync(sshCmd)
 	if err != nil {
 		return nil, err
 	}
-	t.natsTunnelProc = natsTunnelProc
+	t.sshTunnelProc = newTunnelProc
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
-	client := http.NewAgentClient("https://mbus-user:mbus-pass@localhost:16868", "fake-director-uuid", 1 * time.Second, httpClient, t.logger)
+	mbusUrl := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
+	client := http.NewAgentClient(mbusUrl, "fake-director-uuid", 1 * time.Second, httpClient, t.logger)
 
 	for i := 1; i < 1000000; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
@@ -307,10 +308,11 @@ func (t *TestEnvironment) StartAgentTunnel(agentHttpUrl string) (agentclient.Age
 }
 
 func (t *TestEnvironment) StopAgentTunnel() error {
-	if t.natsTunnelProc == nil {
+	if t.sshTunnelProc == nil {
 		return fmt.Errorf("Not running")
 	}
-	t.natsTunnelProc.Wait()
+	t.sshTunnelProc.Wait()
+	t.sshTunnelProc = nil
 	return nil
 }
 

@@ -1,10 +1,7 @@
 package integration_test
 
 import (
-    "fmt"
-
-    biagentclient "github.com/cloudfoundry/bosh-agent/deployment/agentclient"
-    bias "github.com/cloudfoundry/bosh-agent/deployment/applyspec"
+    "github.com/cloudfoundry/bosh-agent/agentclient"
     "github.com/cloudfoundry/bosh-agent/settings"
 
     . "github.com/onsi/ginkgo"
@@ -12,8 +9,8 @@ import (
 )
 
 var _ = Describe("CertManager", func() {
-    var agentClient biagentclient.AgentClient
     var (
+        agentClient agentclient.AgentClient
         registrySettings settings.Settings
     )
 
@@ -33,9 +30,6 @@ var _ = Describe("CertManager", func() {
         err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
         Expect(err).ToNot(HaveOccurred())
 
-        networks, err := testEnvironment.GetVMNetworks()
-        Expect(err).ToNot(HaveOccurred())
-
         registrySettings = settings.Settings{
             AgentID: "fake-agent-id",
 
@@ -48,72 +42,64 @@ var _ = Describe("CertManager", func() {
                     "blobstore_path": "/var/vcap/data",
                 },
             },
-            Networks: networks,
+
+            Disks: settings.Disks{
+                Ephemeral: "/dev/sdh",
+            },
         }
 
-        err = testEnvironment.UpdateAgentConfig("root-partition-agent.json")
-        Expect(err).ToNot(HaveOccurred())
-
-        _, _, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 2048, 128)
+        err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
         Expect(err).ToNot(HaveOccurred())
 
         err = testEnvironment.StartRegistry(registrySettings)
         Expect(err).ToNot(HaveOccurred())
+    })
 
-        err = testEnvironment.StartAgent()
+    JustBeforeEach(func() {
+        err := testEnvironment.StartAgent()
         Expect(err).ToNot(HaveOccurred())
 
-        agentClient, err = testEnvironment.StartAgentTunnel(registrySettings.Mbus)
+        agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
         Expect(err).NotTo(HaveOccurred())
     })
+
     AfterEach(func() {
         err := testEnvironment.StopAgentTunnel()
         Expect(err).NotTo(HaveOccurred())
 
         err = testEnvironment.StopAgent()
         Expect(err).NotTo(HaveOccurred())
+
+        err = testEnvironment.DetachDevice("/dev/sdh")
+        Expect(err).ToNot(HaveOccurred())
     })
 
     Context("on ubuntu", func() {
         It("adds and registers new certs on a fresh machine", func() {
-            var cert string = "This certificate is the first one. It's more awesome than the other one.\n-----BEGIN CERTIFICATE-----\nMIIEJDCCAwygAwIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV\nBAYTAkNBMRMwEQYDVQQIEwpTb21lLVN0YXRlMSIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV\nBAYTAkNBMRMwEQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJbnRlcm5ldCBX\naWRnaXRzIFB0eSBMdGQxIjAgBgNVBAMTGWR4MTkwLnRvci5waXZvdGFsbGFicy5EwHwYDVQQKExhJbnRlcm5ldCBX\naWRnaXRzIFB0eSBMdGQxIjAgBgNVBAMTGWR4MTkwLnRvci5waXZvdGFsbGFicy5j\nb20wHhcNMTUwNTEzMTM1NjA2WhcNMjUwNTEwMTM1NjA2WjBpMQswCQYDVQQGEwJD\nQTETMBEGA1UECBMKU29tZGackAF\nqokoSBXzJCJTt2P681gyqBDr/hUYzqpoXUsOTRisScbEbaSv8hTiTeFJUMyNQAqn\nDtmvI8bXKxU=\n-----END CERTIFICATE-----\n"
+            var cert string = `This certificate is the first one. It's more awesome than the other one.
+-----BEGIN CERTIFICATE-----
+MIIEJDCCAwygAwIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV
+aWRnaXRzIFB0eSBMdGQxIjAgBgNVBAMTGWR4MTkwLnRvci5waXZvdGFsbGFicy5j
+DtmvI8bXKxU=
+-----END CERTIFICATE-----
+Junk between the certs!
+-----BEGIN CERTIFICATE-----
+MIIEJDCCaWRnaXRzIFB0eSBMdGQxIjAgBgNVBAMTGWR4MTkwLnRvci5waXZvdGFs
+b20wHhcNMTUwNTEzMTM1NjA2WhcNMjUwNTEwMTM1NjA2WjBpMQswCQYDVQQGEwJD
+QTETMBEGA1U=
+-----END CERTIFICATE-----`
             settings := settings.Settings{Cert: cert}
 
-            response, err := agentClient.UpdateSettings(settings)
+            err := agentClient.UpdateSettings(settings)
 
             Expect(err).NotTo(HaveOccurred())
-            fmt.Println("Response is:", response)
-        })
-    })
 
-//    Context("on centos", func(){
-//        BeforeEach(func() {
-//
-//        })
-//
-//        It("adds and registers new certs on a fresh machine", func() {
-//
-//        })
-//
-//    })
+            individualCerts, err := testEnvironment.RunCommand("ls /usr/local/share/ca-certificates/")
+            Expect(err).NotTo(HaveOccurred())
+            Expect(individualCerts).To(Equal("bosh-trusted-cert-1.crt\nbosh-trusted-cert-2.crt\n"))
 
-    Describe("Apply", func() {
-        var (
-            spec     bias.ApplySpec
-        )
-
-        BeforeEach(func() {
-            spec = bias.ApplySpec{
-                Deployment: "fake-deployment-name",
-            }
-        })
-
-        Context("when agent responds with a value", func() {
-
-            It("makes a POST request to the endpoint", func() {
-                err := agentClient.Apply(spec)
-                Expect(err).ToNot(HaveOccurred())
-            })
+            processedCerts, err := testEnvironment.RunCommand("grep MIIEJDCCAwygAwIBAgIJAO\\+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV /etc/ssl/certs/ca-certificates.crt")
+            Expect(processedCerts).To(Equal("MIIEJDCCAwygAwIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV\n"))
         })
     })
 })
