@@ -3,7 +3,7 @@ package applyspec_test
 import (
 	"encoding/json"
 
-	. "github.com/cloudfoundry/bosh-agent/deployment/applyspec"
+	. "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	. "github.com/cloudfoundry/bosh-agent/deployment/agentclient/http"
+	. "github.com/cloudfoundry/bosh-agent/agentclient/http"
 
-	biagentclient "github.com/cloudfoundry/bosh-agent/deployment/agentclient"
-	bias "github.com/cloudfoundry/bosh-agent/deployment/applyspec"
-	fakebihttpclient "github.com/cloudfoundry/bosh-agent/deployment/httpclient/fakes"
+	"github.com/cloudfoundry/bosh-agent/agentclient"
+	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
+	fakehttpclient "github.com/cloudfoundry/bosh-agent/deployment/httpclient/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,13 +16,13 @@ import (
 
 var _ = Describe("AgentClient", func() {
 	var (
-		fakeHTTPClient *fakebihttpclient.FakeHTTPClient
-		agentClient    biagentclient.AgentClient
+		fakeHTTPClient *fakehttpclient.FakeHTTPClient
+		agentClient    agentclient.AgentClient
 	)
 
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		fakeHTTPClient = fakebihttpclient.NewFakeHTTPClient()
+		fakeHTTPClient = fakehttpclient.NewFakeHTTPClient()
 		agentClient = NewAgentClient("http://localhost:6305", "fake-uuid", 0, fakeHTTPClient, logger)
 	})
 
@@ -156,11 +156,11 @@ var _ = Describe("AgentClient", func() {
 	Describe("Apply", func() {
 		var (
 			specJSON []byte
-			spec     bias.ApplySpec
+			spec     applyspec.ApplySpec
 		)
 
 		BeforeEach(func() {
-			spec = bias.ApplySpec{
+			spec = applyspec.ApplySpec{
 				Deployment: "fake-deployment-name",
 			}
 			var err error
@@ -301,7 +301,7 @@ var _ = Describe("AgentClient", func() {
 			It("makes a POST request to the endpoint", func() {
 				stateResponse, err := agentClient.GetState()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(stateResponse).To(Equal(biagentclient.AgentState{JobState: "running"}))
+				Expect(stateResponse).To(Equal(agentclient.AgentState{JobState: "running"}))
 
 				Expect(fakeHTTPClient.PostInputs).To(HaveLen(1))
 				Expect(fakeHTTPClient.PostInputs[0].Endpoint).To(Equal("http://localhost:6305/agent"))
@@ -327,7 +327,7 @@ var _ = Describe("AgentClient", func() {
 				stateResponse, err := agentClient.GetState()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("status code: 500"))
-				Expect(stateResponse).To(Equal(biagentclient.AgentState{}))
+				Expect(stateResponse).To(Equal(agentclient.AgentState{}))
 			})
 		})
 
@@ -340,7 +340,7 @@ var _ = Describe("AgentClient", func() {
 				stateResponse, err := agentClient.GetState()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bad request"))
-				Expect(stateResponse).To(Equal(biagentclient.AgentState{}))
+				Expect(stateResponse).To(Equal(agentclient.AgentState{}))
 			})
 		})
 	})
@@ -583,13 +583,13 @@ var _ = Describe("AgentClient", func() {
 		})
 
 		It("makes a compile_package request and waits for the task to be done", func() {
-			packageSource := biagentclient.BlobRef{
+			packageSource := agentclient.BlobRef{
 				Name:        "fake-package-name",
 				Version:     "fake-package-version",
 				SHA1:        "fake-package-sha1",
 				BlobstoreID: "fake-package-blobstore-id",
 			}
-			dependencies := []biagentclient.BlobRef{
+			dependencies := []agentclient.BlobRef{
 				{
 					Name:        "fake-compiled-package-dep-name",
 					Version:     "fake-compiled-package-dep-version",

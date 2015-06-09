@@ -1,14 +1,14 @@
 package agentclient
 
 import (
-	bias "github.com/cloudfoundry/bosh-agent/deployment/applyspec"
+	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type AgentClient interface {
 	Ping() (string, error)
 	Stop() error
-	Apply(bias.ApplySpec) error
+	Apply(applyspec.ApplySpec) error
 	Start() error
 	GetState() (AgentState, error)
 	MountDisk(string) error
@@ -16,7 +16,7 @@ type AgentClient interface {
 	ListDisk() ([]string, error)
 	MigrateDisk() error
 	CompilePackage(packageSource BlobRef, compiledPackageDependencies []BlobRef) (compiledPackageRef BlobRef, err error)
-	UpdateSettings(settings settings.Settings) (string, error)
+	UpdateSettings(settings settings.Settings) error
 }
 
 type AgentState struct {

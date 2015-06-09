@@ -3,13 +3,13 @@ package http
 import (
 	"time"
 
-	biagentclient "github.com/cloudfoundry/bosh-agent/deployment/agentclient"
-	bihttpclient "github.com/cloudfoundry/bosh-agent/deployment/httpclient"
+	"github.com/cloudfoundry/bosh-agent/agentclient"
+	"github.com/cloudfoundry/bosh-agent/deployment/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type AgentClientFactory interface {
-	NewAgentClient(directorID, mbusURL string) biagentclient.AgentClient
+	NewAgentClient(directorID, mbusURL string) agentclient.AgentClient
 }
 
 type agentClientFactory struct {
@@ -27,7 +27,7 @@ func NewAgentClientFactory(
 	}
 }
 
-func (f *agentClientFactory) NewAgentClient(directorID, mbusURL string) biagentclient.AgentClient {
-	httpClient := bihttpclient.NewHTTPClient(bihttpclient.DefaultClient, f.logger)
+func (f *agentClientFactory) NewAgentClient(directorID, mbusURL string) agentclient.AgentClient {
+	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, f.logger)
 	return NewAgentClient(mbusURL, directorID, f.getTaskDelay, httpClient, f.logger)
 }

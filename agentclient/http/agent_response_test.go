@@ -1,7 +1,7 @@
 package http_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/deployment/agentclient/http"
+	. "github.com/cloudfoundry/bosh-agent/agentclient/http"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

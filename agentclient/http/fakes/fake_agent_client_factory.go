@@ -1,11 +1,11 @@
 package fakes
 
 import (
-	biagentclient "github.com/cloudfoundry/bosh-agent/deployment/agentclient"
+	"github.com/cloudfoundry/bosh-agent/agentclient"
 )
 
 type FakeAgentClientFactory struct {
-	CreateAgentClient biagentclient.AgentClient
+	CreateAgentClient agentclient.AgentClient
 	CreateDirectorID  string
 	CreateMbusURL     string
 }
@@ -14,7 +14,7 @@ func NewFakeAgentClientFactory() *FakeAgentClientFactory {
 	return &FakeAgentClientFactory{}
 }
 
-func (f *FakeAgentClientFactory) NewAgentClient(directorID, mbusURL string) biagentclient.AgentClient {
+func (f *FakeAgentClientFactory) NewAgentClient(directorID, mbusURL string) agentclient.AgentClient {
 	f.CreateDirectorID = directorID
 	f.CreateMbusURL = mbusURL
 	return f.CreateAgentClient
