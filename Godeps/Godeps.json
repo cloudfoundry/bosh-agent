@@ -31,43 +31,59 @@
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/assert",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/blobstore",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/errors",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/fileutil",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/http",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/httpclient",
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/internal/github.com/cloudfoundry/gofileutils/glob",
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/internal/github.com/nu7hatch/gouuid",
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/internal/github.com/stretchr/testify/assert",
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/logger",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/bosh-utils/property",
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/retrystrategy",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/system",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/bosh-utils/uuid",
-			"Rev": "860ec42f3966efe5cce25381aa4eb980b1da36b9"
-		},
-		{
-			"ImportPath": "github.com/cloudfoundry/gofileutils/glob",
-			"Rev": "74388e8083dc77ebfba108a8dd3e3af92b76ee04"
+			"Rev": "091666c15d455d50ef826625d40250bf96a83cf5"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/gosigar",
@@ -85,10 +101,6 @@
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
 			"Rev": "f7d28d5aeab42b9b95d2e6d6b956f73a290077fc"
-		},
-		{
-			"ImportPath": "github.com/nu7hatch/gouuid",
-			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
