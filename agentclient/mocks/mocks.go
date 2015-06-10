@@ -4,10 +4,10 @@
 package mocks
 
 import (
-	applyspec "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	settings "github.com/cloudfoundry/bosh-agent/settings"
 	gomock "code.google.com/p/gomock/gomock"
 	. "github.com/cloudfoundry/bosh-agent/agentclient"
+	applyspec "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
+	settings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 // Mock of AgentClient interface
