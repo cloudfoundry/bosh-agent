@@ -2,7 +2,7 @@
 
 bin=$(dirname $0)
 
-$bin/go get code.google.com/p/go.tools/cmd/vet
+$bin/go get golang.org/x/tools/cmd/vet
 $bin/go get github.com/golang/lint/golint
 
 exec $bin/test-unit
