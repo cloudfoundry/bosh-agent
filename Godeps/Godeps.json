@@ -16,10 +16,6 @@
 			"Rev": "ebbeafdc430eb6c7e44e9a730a38eaff4c56ba3a"
 		},
 		{
-			"ImportPath": "code.google.com/p/gomock/gomock",
-			"Rev": "526771f51633c1315ac61c3d832f536f479e1501"
-		},
-		{
 			"ImportPath": "github.com/apcera/nats",
 			"Comment": "v1.0.6-17-gd19a6ce",
 			"Rev": "d19a6cec4083353ca586e7052a89e0f719946ee5"
@@ -93,6 +89,10 @@
 		{
 			"ImportPath": "github.com/cloudfoundry/yagnats",
 			"Rev": "7025c6846809817ab52c641b5353edd7cd8db7db"
+		},
+		{
+			"ImportPath": "github.com/golang/mock/gomock",
+			"Rev": "15f8b22550555c0d3edf5afa97d74001bda2208b"
 		},
 		{
 			"ImportPath": "github.com/jeromer/syslogparser",
