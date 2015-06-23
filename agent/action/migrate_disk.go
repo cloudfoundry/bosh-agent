@@ -5,7 +5,7 @@ import (
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type MigrateDiskAction struct {

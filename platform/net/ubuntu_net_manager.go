@@ -10,9 +10,9 @@ import (
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 const UbuntuNetManagerLogTag = "UbuntuNetManager"

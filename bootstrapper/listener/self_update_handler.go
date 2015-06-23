@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
-	"github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const StatusUnprocessableEntity = 422

@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"path"
 
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 func StartDownloadServer(port int, tarballPath string, directorCert *tls.Certificate) net.Listener {

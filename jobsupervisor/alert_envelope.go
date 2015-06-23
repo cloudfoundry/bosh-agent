@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pivotal/go-smtpd/smtpd"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal/go-smtpd/smtpd"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 )

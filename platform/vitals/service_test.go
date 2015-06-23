@@ -3,14 +3,14 @@ package vitals_test
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
 )
 
 func buildVitalsService() (statsCollector *fakestats.FakeCollector, service Service) {

@@ -14,11 +14,11 @@ import (
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherror "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	bosherror "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 const (

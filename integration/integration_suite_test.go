@@ -3,11 +3,11 @@ package integration_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 
 	. "github.com/cloudfoundry/bosh-agent/integration"
 )

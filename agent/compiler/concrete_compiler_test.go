@@ -4,18 +4,18 @@ import (
 	"errors"
 	"os"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakecmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakecmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type FakeCompileDirProvider struct {

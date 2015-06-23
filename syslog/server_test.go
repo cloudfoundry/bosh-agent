@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/syslog"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("Server", func() {

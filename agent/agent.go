@@ -3,7 +3,7 @@ package agent
 import (
 	"time"
 
-	"github.com/pivotal-golang/clock"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
@@ -12,9 +12,9 @@ import (
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type fileMetadataService struct {

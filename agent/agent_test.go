@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
 
@@ -21,9 +21,9 @@ import (
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
-	"github.com/pivotal-golang/clock/fakeclock"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakeuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
 )
 
 func init() {

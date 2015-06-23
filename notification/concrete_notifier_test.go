@@ -3,8 +3,8 @@ package notification_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"

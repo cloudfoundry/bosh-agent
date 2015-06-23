@@ -1,7 +1,7 @@
 package handler
 
 import (
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type Response interface {

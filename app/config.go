@@ -5,8 +5,8 @@ import (
 
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type Config struct {

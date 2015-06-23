@@ -5,8 +5,8 @@ import (
 	"time"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type mappedDevicePathResolver struct {

@@ -5,7 +5,7 @@ import (
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type diskMounter interface {

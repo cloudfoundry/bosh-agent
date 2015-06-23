@@ -1,8 +1,8 @@
 package action_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -15,8 +15,8 @@ import (
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("concreteFactory", func() {

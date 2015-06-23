@@ -3,12 +3,12 @@ package infrastructure_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("ConfigDriveSettingsSource", func() {

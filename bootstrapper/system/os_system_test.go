@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	. "github.com/cloudfoundry/bosh-agent/bootstrapper/system"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 var _ = Describe("osSystem", func() {

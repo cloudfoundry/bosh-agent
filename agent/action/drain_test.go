@@ -3,8 +3,8 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
@@ -13,7 +13,7 @@ import (
 	fakedrain "github.com/cloudfoundry/bosh-agent/agent/drain/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {

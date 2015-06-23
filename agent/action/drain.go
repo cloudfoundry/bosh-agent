@@ -7,8 +7,8 @@ import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const (

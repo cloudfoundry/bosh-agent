@@ -4,10 +4,10 @@ import (
 	"path/filepath"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
+	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type compiledPackageApplierProvider struct {

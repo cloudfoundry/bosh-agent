@@ -20,10 +20,6 @@ echo -e "\n Formatting packages..."
 $bin/go fmt github.com/cloudfoundry/bosh-agent/...
 let "result+=$?"
 
-echo -e "\n Vetting packages for potential issues..."
-$bin/govet
-let "result+=$?"
-
 echo -e "\n Checking with golint..."
 $bin/golint
 let "result+=$?"
@@ -33,7 +29,7 @@ $bin/go install github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
 echo -e "\n Testing packages..."
-$bin/env ginkgo -r $race -skipPackage integration $bin/..
+$bin/env ginkgo -r $race -skipPackage="integration,internal" $bin/..
 let "result+=$?"
 
 echo -e "\n Running build script to confirm everything compiles..."

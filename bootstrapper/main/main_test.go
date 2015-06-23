@@ -8,10 +8,10 @@ import (
 	"strconv"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega/gbytes"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega/gexec"
 )
 
 var bin string

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 // presentedJobState exposes only limited subset of apply spec to drain scripts.

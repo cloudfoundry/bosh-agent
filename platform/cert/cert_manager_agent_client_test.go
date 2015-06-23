@@ -5,10 +5,10 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	fakehttpclient "github.com/cloudfoundry/bosh-utils/httpclient/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	fakehttpclient "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/httpclient/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 var _ = Describe("CertManager", func() {

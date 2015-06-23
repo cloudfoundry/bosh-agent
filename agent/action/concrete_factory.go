@@ -11,9 +11,9 @@ import (
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type concreteFactory struct {

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 var specDir string

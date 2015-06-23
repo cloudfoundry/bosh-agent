@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type cdUtil struct {

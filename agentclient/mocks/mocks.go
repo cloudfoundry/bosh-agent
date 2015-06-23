@@ -7,7 +7,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agentclient"
 	applyspec "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	settings "github.com/cloudfoundry/bosh-agent/settings"
-	gomock "github.com/golang/mock/gomock"
+	gomock "github.com/cloudfoundry/bosh-agent/internal/github.com/golang/mock/gomock"
 )
 
 // Mock of AgentClient interface

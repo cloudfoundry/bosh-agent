@@ -8,7 +8,7 @@ import (
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type GetStateAction struct {

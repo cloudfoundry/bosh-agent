@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 func HttpClient(clientCert *tls.Certificate) *http.Client {

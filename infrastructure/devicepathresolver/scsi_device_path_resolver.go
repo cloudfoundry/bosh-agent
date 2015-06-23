@@ -7,7 +7,7 @@ import (
 	"time"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 const maxScanRetries = 30

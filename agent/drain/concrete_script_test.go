@@ -3,12 +3,12 @@ package drain_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/drain"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type fakeParams struct {

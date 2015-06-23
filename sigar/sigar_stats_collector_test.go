@@ -3,13 +3,13 @@ package sigar_test
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
-	sigar "github.com/cloudfoundry/gosigar"
-	fakesigar "github.com/cloudfoundry/gosigar/fakes"
+	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
+	fakesigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar/fakes"
 )
 
 var _ = Describe("sigarStatsCollector", func() {

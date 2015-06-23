@@ -3,7 +3,7 @@ package auth
 import (
 	"crypto/x509/pkix"
 
-	"github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type SSLConfig struct {

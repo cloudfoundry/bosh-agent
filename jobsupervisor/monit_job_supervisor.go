@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/pivotal/go-smtpd/smtpd"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal/go-smtpd/smtpd"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 const monitJobSupervisorLogTag = "monitJobSupervisor"

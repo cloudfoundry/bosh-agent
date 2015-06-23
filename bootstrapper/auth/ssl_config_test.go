@@ -4,8 +4,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 var _ = Describe("ssl config construction", func() {

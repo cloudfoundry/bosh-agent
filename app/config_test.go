@@ -1,12 +1,12 @@
 package app
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("LoadConfigFromPath", func() {

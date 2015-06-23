@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
@@ -16,11 +16,11 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	sigar "github.com/cloudfoundry/gosigar"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
 
 	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 
@@ -35,8 +35,8 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
+	boshretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
 func init() {

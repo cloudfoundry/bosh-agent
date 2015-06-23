@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
 )
 
 type FetchLogsAction struct {

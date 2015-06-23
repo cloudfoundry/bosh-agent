@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
-	"github.com/cloudfoundry/bosh-utils/errors"
-	"github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type sslHandler struct {

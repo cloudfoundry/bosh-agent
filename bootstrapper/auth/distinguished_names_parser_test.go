@@ -4,8 +4,8 @@ import (
 	"crypto/x509/pkix"
 	. "github.com/cloudfoundry/bosh-agent/bootstrapper/auth"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 var _ = Describe("auth distinguishedNamesParser", dnpDesc)

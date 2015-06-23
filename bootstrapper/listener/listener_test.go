@@ -16,10 +16,10 @@ import (
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/spec"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
-	boshlogger "github.com/cloudfoundry/bosh-utils/logger"
+	boshlogger "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 )
 
 var _ = Describe("Listener", func() {

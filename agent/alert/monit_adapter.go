@@ -7,7 +7,7 @@ import (
 	"time"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/pivotal-golang/clock"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 )
 
 type MonitAdapter interface {

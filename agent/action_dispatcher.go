@@ -4,8 +4,8 @@ import (
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const actionDispatcherLogTag = "Action Dispatcher"

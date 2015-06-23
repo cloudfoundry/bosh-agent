@@ -6,7 +6,7 @@ import (
 	boshappl "github.com/cloudfoundry/bosh-agent/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type ApplyAction struct {

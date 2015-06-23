@@ -9,9 +9,9 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-utils/httpclient"
-	"github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/httpclient"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"time"
 )
 
