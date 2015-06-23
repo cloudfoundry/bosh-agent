@@ -5,8 +5,8 @@ import (
 	"syscall"
 	"time"
 
-	. "github.com/onsi/gomega/gbytes"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega/gexec"
+	. "github.com/onsi/gomega/gbytes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

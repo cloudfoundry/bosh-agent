@@ -8,13 +8,13 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/factory"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ubuntuNetManager", describeUbuntuNetManager)

@@ -1,11 +1,11 @@
 package smtpd
 
 import (
-	"testing"
 	"bytes"
 	"fmt"
-	"net/smtp"
 	"net"
+	"net/smtp"
+	"testing"
 	"time"
 )
 

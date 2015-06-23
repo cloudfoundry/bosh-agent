@@ -6,9 +6,9 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
 const devSdaSfdiskEmptyDump = `# partition table of /dev/sda

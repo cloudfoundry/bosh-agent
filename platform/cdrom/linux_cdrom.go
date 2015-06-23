@@ -1,9 +1,9 @@
 package cdrom
 
 import (
-	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 )
 
 type LinuxCdrom struct {

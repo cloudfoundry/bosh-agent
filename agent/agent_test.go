@@ -14,6 +14,9 @@ import (
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeagent "github.com/cloudfoundry/bosh-agent/agent/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakeuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -21,9 +24,6 @@ import (
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	fakeuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid/fakes"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
 )
 
 func init() {

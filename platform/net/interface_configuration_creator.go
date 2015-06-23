@@ -1,10 +1,10 @@
 package net
 
 import (
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type StaticInterfaceConfiguration struct {

@@ -10,13 +10,13 @@ import (
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
+	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("concreteFactory", func() {

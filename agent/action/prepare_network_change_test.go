@@ -7,8 +7,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 )
 
 func init() {

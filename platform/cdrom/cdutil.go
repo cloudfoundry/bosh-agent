@@ -4,10 +4,10 @@ import (
 	"os"
 	"path/filepath"
 
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 )
 
 type cdUtil struct {

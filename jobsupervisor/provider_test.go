@@ -6,12 +6,12 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {

@@ -6,14 +6,14 @@ import (
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
+	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type concreteFactory struct {

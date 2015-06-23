@@ -5,8 +5,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 )
 
 var _ = Describe("LoadConfigFromPath", func() {

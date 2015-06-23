@@ -7,8 +7,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 )
 
 var _ = Describe("ConfigDriveSettingsSource", func() {

@@ -8,12 +8,12 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/alert"
 
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid/fakes"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 
-	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 )
 
 var _ = Describe("sshAdapter", func() {

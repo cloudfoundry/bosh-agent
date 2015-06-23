@@ -1,8 +1,8 @@
 package infrastructure
 
 import (
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type ComplexSettingsSource struct {

@@ -1,9 +1,9 @@
 package devicepathresolver
 
 import (
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type virtioDevicePathResolver struct {

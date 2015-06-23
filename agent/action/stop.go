@@ -3,8 +3,8 @@ package action
 import (
 	"errors"
 
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 )
 
 type StopAction struct {

@@ -8,9 +8,9 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 )
 
 var _ = Describe("RegistryProvider", func() {

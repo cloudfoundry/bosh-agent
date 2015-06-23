@@ -3,10 +3,10 @@ package infrastructure
 import (
 	"strings"
 
-	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 )
 
 type RegistryProvider interface {

@@ -9,12 +9,12 @@ import (
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 )
 
 const logTag = "renderedJobApplier"

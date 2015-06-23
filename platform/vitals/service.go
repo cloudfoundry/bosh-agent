@@ -3,9 +3,9 @@ package vitals
 import (
 	"fmt"
 
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type Service interface {

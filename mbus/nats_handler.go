@@ -12,9 +12,9 @@ import (
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/yagnats"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 const (

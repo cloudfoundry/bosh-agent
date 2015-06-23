@@ -8,10 +8,10 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/net/arp"
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	. "github.com/cloudfoundry/bosh-agent/platform/net/arp"
+	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 )
 
 type failingInterfaceAddress struct{}

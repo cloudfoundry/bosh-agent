@@ -6,10 +6,10 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
-	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
+	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 )

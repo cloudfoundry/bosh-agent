@@ -7,10 +7,10 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
 	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakecmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 var _ = Describe("FetchLogsAction", func() {

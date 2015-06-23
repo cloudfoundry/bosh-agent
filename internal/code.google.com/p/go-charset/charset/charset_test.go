@@ -2,9 +2,9 @@ package charset_test
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/charset"
 	_ "github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/data"
-	"fmt"
 	"io"
 	"strings"
 	"testing"

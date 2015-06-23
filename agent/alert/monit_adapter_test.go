@@ -7,8 +7,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/alert"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )

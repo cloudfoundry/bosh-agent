@@ -5,8 +5,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/drain"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 func init() {

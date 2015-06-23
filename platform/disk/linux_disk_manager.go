@@ -3,9 +3,9 @@ package disk
 import (
 	"time"
 
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 )
 
 type linuxDiskManager struct {

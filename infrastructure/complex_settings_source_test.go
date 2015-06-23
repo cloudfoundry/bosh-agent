@@ -8,8 +8,8 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 var _ = Describe("ComplexSettingsSource", func() {
