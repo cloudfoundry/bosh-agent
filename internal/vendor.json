@@ -247,6 +247,55 @@
 			"revisionTime": "2015-06-09T13:44:44-04:00"
 		},
 		{
+			"canonical": "github.com/onsi/ginkgo/ginkgo",
+			"comment": "",
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/ginkgo",
+			"revision": "d981d36e9884231afa909627b9c275e4ba678f90",
+			"revisionTime": "2015-06-21T13:27:44-07:00"
+		},
+		{
+			"canonical": "github.com/onsi/ginkgo/ginkgo/convert",
+			"comment": "",
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/ginkgo/convert",
+			"revision": "d981d36e9884231afa909627b9c275e4ba678f90",
+			"revisionTime": "2015-06-21T13:27:44-07:00"
+		},
+		{
+			"canonical": "github.com/onsi/ginkgo/ginkgo/interrupthandler",
+			"comment": "",
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/ginkgo/interrupthandler",
+			"revision": "d981d36e9884231afa909627b9c275e4ba678f90",
+			"revisionTime": "2015-06-21T13:27:44-07:00"
+		},
+		{
+			"canonical": "github.com/onsi/ginkgo/ginkgo/nodot",
+			"comment": "",
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/ginkgo/nodot",
+			"revision": "d981d36e9884231afa909627b9c275e4ba678f90",
+			"revisionTime": "2015-06-21T13:27:44-07:00"
+		},
+		{
+			"canonical": "github.com/onsi/ginkgo/ginkgo/testrunner",
+			"comment": "",
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/ginkgo/testrunner",
+			"revision": "d981d36e9884231afa909627b9c275e4ba678f90",
+			"revisionTime": "2015-06-21T13:27:44-07:00"
+		},
+		{
+			"canonical": "github.com/onsi/ginkgo/ginkgo/testsuite",
+			"comment": "",
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/ginkgo/testsuite",
+			"revision": "d981d36e9884231afa909627b9c275e4ba678f90",
+			"revisionTime": "2015-06-21T13:27:44-07:00"
+		},
+		{
+			"canonical": "github.com/onsi/ginkgo/ginkgo/watch",
+			"comment": "",
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/ginkgo/watch",
+			"revision": "d981d36e9884231afa909627b9c275e4ba678f90",
+			"revisionTime": "2015-06-21T13:27:44-07:00"
+		},
+		{
 			"canonical": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/codelocation",
 			"comment": "",
 			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo/internal/codelocation",

@@ -25,7 +25,7 @@ $bin/golint
 let "result+=$?"
 
 echo -e "\n Installing ginkgo..."
-$bin/go install github.com/onsi/ginkgo/ginkgo
+$bin/go install ./internal/github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
 echo -e "\n Testing packages..."
