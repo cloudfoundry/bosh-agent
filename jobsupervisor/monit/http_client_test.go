@@ -3,6 +3,7 @@ package monit_test
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -144,6 +145,19 @@ var _ = Describe("httpClient", func() {
 			Expect(httpCalls[4]["action"]).To(Equal("status"))
 
 			Expect(len(httpCalls)).To(Equal(5))
+		})
+
+		Context("when unmonitoring the service errors", func() {
+			It("wraps the error message", func() {
+				monitorClient := fakehttp.NewFakeClient()
+				monitorClient.Error = errors.New("Error message")
+
+				client := newFakeClient(monitorClient, monitorClient)
+
+				err := client.StopService("test-service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Sending unmonitor before stop to monit: Sending unmonitor request to monit: Error message"))
+			})
 		})
 	})
 

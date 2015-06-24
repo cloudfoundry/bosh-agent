@@ -80,10 +80,14 @@ func (c httpClient) StartService(serviceName string) (err error) {
 }
 
 func (c httpClient) StopService(serviceName string) error {
-	// TODO: handle err
-	c.UnmonitorService(serviceName)
+	var response *http.Response
 
-	response, err := c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "action=stop")
+	err := c.UnmonitorService(serviceName)
+	if err != nil {
+		return bosherr.WrapError(err, "Sending unmonitor before stop to monit")
+	}
+
+	response, err = c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "action=stop")
 	if err != nil {
 		return bosherr.WrapError(err, "Sending stop request to monit")
 	}
