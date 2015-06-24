@@ -187,7 +187,6 @@ func (c httpClient) waitForServiceStop(serviceName string) error {
 	// TODO: @dk do we want a retry delay?
 	for {
 		// TODO: log these attempts
-		// TODO: handle the error
 		service, _ = c.getServiceByName(serviceName)
 		if service == nil {
 			return bosherr.Errorf("Service '%s' was not found", serviceName)

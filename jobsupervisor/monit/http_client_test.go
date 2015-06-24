@@ -148,7 +148,7 @@ var _ = Describe("httpClient", func() {
 		})
 
 		Context("when unmonitoring the service errors", func() {
-			It("wraps the error message", func() {
+			It("returns a wrapped error message", func() {
 				monitorClient := fakehttp.NewFakeClient()
 				monitorClient.Error = errors.New("Error message")
 
@@ -157,6 +157,23 @@ var _ = Describe("httpClient", func() {
 				err := client.StopService("test-service")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("Sending unmonitor before stop to monit: Sending unmonitor request to monit: Error message"))
+			})
+		})
+
+		Context("when the service is not found", func() {
+			It("returns a wrapped error message", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(`<monit></monit>`))
+				})
+
+				ts := httptest.NewServer(handler)
+				defer ts.Close()
+
+				client := newRealClient(ts.Listener.Addr().String())
+
+				err := client.StopService("test-service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Waiting for Monit service 'test-service' to stop: Service 'test-service' was not found"))
 			})
 		})
 	})
