@@ -176,6 +176,23 @@ var _ = Describe("httpClient", func() {
 				Expect(err.Error()).To(Equal("Waiting for Monit service 'test-service' to stop: Service 'test-service' was not found"))
 			})
 		})
+
+		Context("When the service has experienced an error shutting down", func() {
+			It("returns a wrapped error message", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Write(readFixture("test_assets/monit_status_errored.xml"))
+				})
+
+				ts := httptest.NewServer(handler)
+				defer ts.Close()
+
+				client := newRealClient(ts.Listener.Addr().String())
+
+				err := client.StopService("test-service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Waiting for Monit service 'test-service' to stop: Service 'test-service' errored with message: 'Oops'"))
+			})
+		})
 	})
 
 	Describe("UnmonitorService", func() {

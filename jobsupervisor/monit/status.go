@@ -85,11 +85,12 @@ func (status status) ServicesInGroup(name string) (services []Service) {
 	for _, serviceTag := range status.Services.Services {
 		if serviceGroupTag.Contains(serviceTag.Name) {
 			service := Service{
-				Name:      serviceTag.Name,
-				Monitored: serviceTag.Monitor > 0,
-				Pending:   serviceTag.Pending > 0,
-				Status:    serviceTag.StatusString(),
-				Errored:   serviceTag.Status > 0 && serviceTag.StatusMessage != "", // review this
+				Name:          serviceTag.Name,
+				Monitored:     serviceTag.Monitor > 0,
+				Pending:       serviceTag.Pending > 0,
+				Status:        serviceTag.StatusString(),
+				Errored:       serviceTag.Status > 0 && serviceTag.StatusMessage != "", // review this
+				StatusMessage: serviceTag.StatusMessage,
 			}
 
 			services = append(services, service)

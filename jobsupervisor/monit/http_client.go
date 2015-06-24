@@ -99,7 +99,6 @@ func (c httpClient) StopService(serviceName string) error {
 		return bosherr.WrapErrorf(err, "Stopping Monit service '%s'", serviceName)
 	}
 
-	// TODO: @dk should we break after waiting too long?
 	err = c.waitForServiceStop(serviceName)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Waiting for Monit service '%s' to stop", serviceName)
@@ -197,7 +196,6 @@ func (c httpClient) waitForServiceStop(serviceName string) error {
 		}
 	}
 
-	// TODO: test this
 	if service.Errored {
 		return bosherr.Errorf("Service '%s' errored with message: '%s'", serviceName, service.StatusMessage)
 	}
