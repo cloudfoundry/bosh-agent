@@ -8,6 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"time"
+
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
@@ -18,6 +22,14 @@ import (
 )
 
 var _ = Describe("httpClient", func() {
+	var (
+		timeService *fakeclock.FakeClock
+	)
+
+	BeforeEach(func() {
+		timeService = fakeclock.NewFakeClock(time.Now())
+	})
+
 	Describe("StartService", func() {
 		It("start service", func() {
 			var calledMonit bool
@@ -35,7 +47,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String())
+			client := newRealClient(ts.Listener.Addr().String(), timeService)
 
 			err := client.StartService("test-service")
 			Expect(err).ToNot(HaveOccurred())
@@ -45,7 +57,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the shortClient to send a start request", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient)
+			client := newFakeClient(shortClient, longClient, timeService)
 
 			shortClient.StatusCode = 200
 
@@ -69,7 +81,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the longClient to send the unmonitor/stop requests, shortClient to send a status request", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient)
+			client := newFakeClient(shortClient, longClient, timeService)
 
 			longClient.StatusCode = 200
 
@@ -84,6 +96,8 @@ var _ = Describe("httpClient", func() {
 		})
 
 		It("waits for the monit status to indicate the service has stopped", func() {
+			var httpMutex sync.Mutex
+
 			tries := 0
 			httpCalls := []map[string]string{}
 
@@ -118,16 +132,28 @@ var _ = Describe("httpClient", func() {
 				Expect(r.Header.Get("Authorization")).To(Equal(fmt.Sprintf("Basic %s", expectedAuthEncoded)))
 				Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
 
+				httpMutex.Lock()
+				defer httpMutex.Unlock()
 				httpCalls = append(httpCalls, requestData)
 			})
 
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String())
+			client := newRealClient(ts.Listener.Addr().String(), timeService)
 
-			err := client.StopService("test-service")
-			Expect(err).ToNot(HaveOccurred())
+			go func() {
+				client.StopService("test-service")
+			}()
+
+			callLength := func() int {
+				httpMutex.Lock()
+				defer httpMutex.Unlock()
+				return len(httpCalls)
+			}
+
+			Eventually(callLength).Should(Equal(3))
+			timeService.Increment(500 * time.Millisecond)
 
 			Expect(httpCalls[0]["url"]).To(Equal("/test-service"))
 			Expect(httpCalls[0]["action"]).To(Equal("unmonitor"))
@@ -138,13 +164,18 @@ var _ = Describe("httpClient", func() {
 			Expect(httpCalls[2]["url"]).To(Equal("/_status2"))
 			Expect(httpCalls[2]["action"]).To(Equal("status"))
 
+			Eventually(callLength).Should(Equal(4))
+			timeService.Increment(500 * time.Millisecond)
+
 			Expect(httpCalls[3]["url"]).To(Equal("/_status2"))
 			Expect(httpCalls[3]["action"]).To(Equal("status"))
+
+			Eventually(callLength).Should(Equal(5))
+			timeService.Increment(500 * time.Millisecond)
 
 			Expect(httpCalls[4]["url"]).To(Equal("/_status2"))
 			Expect(httpCalls[4]["action"]).To(Equal("status"))
 
-			Expect(len(httpCalls)).To(Equal(5))
 		})
 
 		Context("when unmonitoring the service errors", func() {
@@ -152,7 +183,7 @@ var _ = Describe("httpClient", func() {
 				monitorClient := fakehttp.NewFakeClient()
 				monitorClient.Error = errors.New("Error message")
 
-				client := newFakeClient(monitorClient, monitorClient)
+				client := newFakeClient(monitorClient, monitorClient, timeService)
 
 				err := client.StopService("test-service")
 				Expect(err).To(HaveOccurred())
@@ -169,7 +200,7 @@ var _ = Describe("httpClient", func() {
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
 
-				client := newRealClient(ts.Listener.Addr().String())
+				client := newRealClient(ts.Listener.Addr().String(), timeService)
 
 				err := client.StopService("test-service")
 				Expect(err).To(HaveOccurred())
@@ -186,7 +217,7 @@ var _ = Describe("httpClient", func() {
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
 
-				client := newRealClient(ts.Listener.Addr().String())
+				client := newRealClient(ts.Listener.Addr().String(), timeService)
 
 				err := client.StopService("test-service")
 				Expect(err).To(HaveOccurred())
@@ -213,7 +244,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String())
+			client := newRealClient(ts.Listener.Addr().String(), timeService)
 
 			err := client.UnmonitorService("test-service")
 			Expect(err).ToNot(HaveOccurred())
@@ -223,7 +254,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the longClient to send an unmonitor request", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient)
+			client := newFakeClient(shortClient, longClient, timeService)
 
 			longClient.StatusCode = 200
 
@@ -255,7 +286,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String())
+			client := newRealClient(ts.Listener.Addr().String(), timeService)
 
 			services, err := client.ServicesInGroup("vcap")
 			Expect(err).ToNot(HaveOccurred())
@@ -275,7 +306,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String())
+			client := newRealClient(ts.Listener.Addr().String(), timeService)
 
 			status, err := client.Status()
 			Expect(err).ToNot(HaveOccurred())
@@ -287,7 +318,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the shortClient to send a status request and parses the response xml", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient)
+			client := newFakeClient(shortClient, longClient, timeService)
 
 			shortClient.StatusCode = 200
 			shortClient.SetMessage(string(readFixture(statusWithMultipleServiceFixturePath)))
@@ -316,7 +347,7 @@ var _ = Describe("httpClient", func() {
 	})
 })
 
-func newRealClient(url string) Client {
+func newRealClient(url string, timeService *fakeclock.FakeClock) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 
 	return NewHTTPClient(
@@ -326,10 +357,11 @@ func newRealClient(url string) Client {
 		http.DefaultClient,
 		http.DefaultClient,
 		logger,
+		timeService,
 	)
 }
 
-func newFakeClient(shortClient, longClient *fakehttp.FakeClient) Client {
+func newFakeClient(shortClient, longClient *fakehttp.FakeClient, timeService *fakeclock.FakeClock) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 
 	return NewHTTPClient(
@@ -339,5 +371,6 @@ func newFakeClient(shortClient, longClient *fakehttp.FakeClient) Client {
 		shortClient,
 		longClient,
 		logger,
+		timeService,
 	)
 }

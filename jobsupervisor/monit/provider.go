@@ -7,6 +7,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshhttp "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/http"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 )
 
@@ -56,6 +57,7 @@ func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientPr
 
 func (p clientProvider) Get() (client Client, err error) {
 	monitUser, monitPassword, err := p.platform.GetMonitCredentials()
+	timeService := clock.NewClock()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Getting monit credentials")
 	}
@@ -67,5 +69,6 @@ func (p clientProvider) Get() (client Client, err error) {
 		p.shortHTTPClient,
 		p.longHTTPClient,
 		p.logger,
+		timeService,
 	), nil
 }

@@ -7,9 +7,11 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/charset"
 	_ "github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/data" // translations between char sets
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshhttp "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/http"
@@ -25,6 +27,7 @@ type httpClient struct {
 	username        string
 	password        string
 	logger          boshlog.Logger
+	timeService     clock.Clock
 }
 
 // NewHTTPClient creates a new monit client
@@ -36,6 +39,7 @@ func NewHTTPClient(
 	shortClient boshhttp.Client,
 	longClient boshhttp.Client,
 	logger boshlog.Logger,
+	timeService clock.Clock,
 ) Client {
 	return httpClient{
 		host:            host,
@@ -46,6 +50,7 @@ func NewHTTPClient(
 		unmonitorClient: longClient,
 		statusClient:    shortClient,
 		logger:          logger,
+		timeService:     timeService,
 	}
 }
 
@@ -183,7 +188,6 @@ func (c httpClient) validateResponse(response *http.Response) error {
 func (c httpClient) waitForServiceStop(serviceName string) error {
 	var service *Service
 
-	// TODO: @dk do we want a retry delay?
 	for {
 		service, _ = c.getServiceByName(serviceName)
 		c.logger.Debug("http-client", "Waiting for Monit service to stop: name='%s' service='%s'", serviceName, service)
@@ -194,6 +198,8 @@ func (c httpClient) waitForServiceStop(serviceName string) error {
 		if !service.Monitored && !service.Pending {
 			break
 		}
+
+		c.timeService.Sleep(500 * time.Millisecond)
 	}
 
 	if service.Errored {
