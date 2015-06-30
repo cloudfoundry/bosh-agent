@@ -294,7 +294,7 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
 	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
-	client := http.NewAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, httpClient, t.logger)
+	client := http.NewAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
 
 	for i := 1; i < 1000000; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")

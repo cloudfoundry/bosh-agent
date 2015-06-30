@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	. "github.com/cloudfoundry/bosh-agent/agentclient/http"
@@ -23,7 +24,49 @@ var _ = Describe("AgentClient", func() {
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fakeHTTPClient = fakehttpclient.NewFakeHTTPClient()
-		agentClient = NewAgentClient("http://localhost:6305", "fake-uuid", 0, fakeHTTPClient, logger)
+		errorRetryCount := 2
+		agentClient = NewAgentClient("http://localhost:6305", "fake-uuid", 0, errorRetryCount, fakeHTTPClient, logger)
+	})
+
+	Describe("get task", func() {
+		Context("when the http client errors", func() {
+			It("should retry", func() {
+				fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer"))
+				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer"))
+				fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior(`{"value":"stopped"}`, 200, nil)
+				err := agentClient.Stop()
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			Context("when the http client errors more times than the error retry count", func() {
+				It("should return the error", func() {
+					fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 1"))
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 2"))
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 3"))
+					err := agentClient.Stop()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("connection reset by peer 3"))
+				})
+			})
+
+			Context("when the https client errors, recovers, and begins erroring again", func() {
+				It("should reset the error count when a successful call goes through", func() {
+					fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 1"))
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 2"))
+					fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 3"))
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 4"))
+					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection is bad"))
+					err := agentClient.Stop()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("connection is bad"))
+				})
+			})
+		})
 	})
 
 	Describe("Ping", func() {

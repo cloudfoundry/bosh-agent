@@ -14,16 +14,18 @@ import (
 )
 
 type agentClient struct {
-	agentRequest agentRequest
-	getTaskDelay time.Duration
-	logger       boshlog.Logger
-	logTag       string
+	agentRequest    agentRequest
+	getTaskDelay    time.Duration
+	errorRetryCount int
+	logger          boshlog.Logger
+	logTag          string
 }
 
 func NewAgentClient(
 	endpoint string,
 	directorID string,
 	getTaskDelay time.Duration,
+	errorRetryCount int,
 	httpClient httpclient.HTTPClient,
 	logger boshlog.Logger,
 ) agentclient.AgentClient {
@@ -35,10 +37,11 @@ func NewAgentClient(
 		httpClient: httpClient,
 	}
 	return &agentClient{
-		agentRequest: agentRequest,
-		getTaskDelay: getTaskDelay,
-		logger:       logger,
-		logTag:       "httpAgentClient",
+		agentRequest:    agentRequest,
+		getTaskDelay:    getTaskDelay,
+		errorRetryCount: errorRetryCount,
+		logger:          logger,
+		logTag:          "httpAgentClient",
 	}
 }
 
@@ -131,12 +134,20 @@ func (c *agentClient) sendAsyncTaskMessage(method string, arguments []interface{
 		return value, bosherr.WrapError(err, "Getting agent task id")
 	}
 
+	sendErrors := 0
 	getTaskRetryable := boshretry.NewRetryable(func() (bool, error) {
 		var response TaskResponse
 		err = c.agentRequest.Send("get_task", []interface{}{agentTaskID}, &response)
 		if err != nil {
-			return false, bosherr.WrapError(err, "Sending 'get_task' to the agent")
+			shouldRetry := sendErrors < c.errorRetryCount
+			err = bosherr.WrapError(err, "Sending 'get_task' to the agent")
+			msg := fmt.Sprintf("Error occured sending get_task. Error retry %d of %d", sendErrors, c.errorRetryCount)
+			c.logger.Debug(c.logTag, msg, err)
+			sendErrors += 1
+			return shouldRetry, err
 		}
+
+		sendErrors = 0
 
 		c.logger.Debug(c.logTag, "get_task response value: %#v", response.Value)
 
