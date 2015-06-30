@@ -8,6 +8,14 @@ jobs:
       - task: test-unit
         file: bosh-agent/ci/concourse/tasks/test-unit.yml
 
+  - name: test-integration
+    public: false
+    plan:
+      - get: bosh-agent
+        trigger: true
+      - task: test-integration
+        file: bosh-agent/ci/concourse/tasks/test-integration.yml
+
 resources:
   - name: bosh-agent
     type: git

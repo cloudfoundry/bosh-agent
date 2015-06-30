@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e -x
+set -e
 
 bin=$(dirname $0)
 
@@ -28,7 +28,7 @@ trap cleanup EXIT
 # Vagrant needs ubuntu to own the private key if aws provider
 if [ ! -z "$BOSH_LITE_PRIVATE_KEY" ]; then
   tmpfile=`mktemp -t bosh-agent-tests-XXXXXXXX`
-  cat $BOSH_LITE_PRIVATE_KEY > $tmpfile
+  echo "${BOSH_LITE_PRIVATE_KEY}" > $tmpfile
   export OLD_BOSH_LITE_PRIVATE_KEY=$BOSH_LITE_PRIVATE_KEY
   export BOSH_LITE_PRIVATE_KEY=$tmpfile
 fi
