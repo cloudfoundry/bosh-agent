@@ -14,18 +14,18 @@ import (
 )
 
 type agentClient struct {
-	agentRequest    agentRequest
-	getTaskDelay    time.Duration
-	errorRetryCount int
-	logger          boshlog.Logger
-	logTag          string
+	agentRequest        agentRequest
+	getTaskDelay        time.Duration
+	toleratedErrorCount int
+	logger              boshlog.Logger
+	logTag              string
 }
 
 func NewAgentClient(
 	endpoint string,
 	directorID string,
 	getTaskDelay time.Duration,
-	errorRetryCount int,
+	toleratedErrorCount int,
 	httpClient httpclient.HTTPClient,
 	logger boshlog.Logger,
 ) agentclient.AgentClient {
@@ -37,11 +37,11 @@ func NewAgentClient(
 		httpClient: httpClient,
 	}
 	return &agentClient{
-		agentRequest:    agentRequest,
-		getTaskDelay:    getTaskDelay,
-		errorRetryCount: errorRetryCount,
-		logger:          logger,
-		logTag:          "httpAgentClient",
+		agentRequest:        agentRequest,
+		getTaskDelay:        getTaskDelay,
+		toleratedErrorCount: toleratedErrorCount,
+		logger:              logger,
+		logTag:              "httpAgentClient",
 	}
 }
 
@@ -81,7 +81,17 @@ func (c *agentClient) Start() error {
 
 func (c *agentClient) GetState() (agentclient.AgentState, error) {
 	var response StateResponse
-	err := c.agentRequest.Send("get_state", []interface{}{}, &response)
+
+	getStateRetryable := boshretry.NewRetryable(func() (bool, error) {
+		err := c.agentRequest.Send("get_state", []interface{}{}, &response)
+		if err != nil {
+			return true, bosherr.WrapError(err, "Sending get_state to the agent")
+		}
+		return false, nil
+	})
+
+	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(c.toleratedErrorCount+1, c.getTaskDelay, getStateRetryable, c.logger)
+	err := attemptRetryStrategy.Try()
 	if err != nil {
 		return agentclient.AgentState{}, bosherr.WrapError(err, "Sending get_state to the agent")
 	}
@@ -89,7 +99,8 @@ func (c *agentClient) GetState() (agentclient.AgentState, error) {
 	agentState := agentclient.AgentState{
 		JobState: response.Value.JobState,
 	}
-	return agentState, nil
+
+	return agentState, err
 }
 
 func (c *agentClient) ListDisk() ([]string, error) {
@@ -139,14 +150,13 @@ func (c *agentClient) sendAsyncTaskMessage(method string, arguments []interface{
 		var response TaskResponse
 		err = c.agentRequest.Send("get_task", []interface{}{agentTaskID}, &response)
 		if err != nil {
-			shouldRetry := sendErrors < c.errorRetryCount
-			err = bosherr.WrapError(err, "Sending 'get_task' to the agent")
-			msg := fmt.Sprintf("Error occured sending get_task. Error retry %d of %d", sendErrors, c.errorRetryCount)
-			c.logger.Debug(c.logTag, msg, err)
 			sendErrors += 1
+			shouldRetry := sendErrors <= c.toleratedErrorCount
+			err = bosherr.WrapError(err, "Sending 'get_task' to the agent")
+			msg := fmt.Sprintf("Error occured sending get_task. Error retry %d of %d", sendErrors, c.toleratedErrorCount)
+			c.logger.Debug(c.logTag, msg, err)
 			return shouldRetry, err
 		}
-
 		sendErrors = 0
 
 		c.logger.Debug(c.logTag, "get_task response value: %#v", response.Value)

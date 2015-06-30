@@ -24,11 +24,11 @@ var _ = Describe("AgentClient", func() {
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fakeHTTPClient = fakehttpclient.NewFakeHTTPClient()
-		errorRetryCount := 2
-		agentClient = NewAgentClient("http://localhost:6305", "fake-uuid", 0, errorRetryCount, fakeHTTPClient, logger)
+		toleratedErrorCount := 2
+		agentClient = NewAgentClient("http://localhost:6305", "fake-uuid", 0, toleratedErrorCount, fakeHTTPClient, logger)
 	})
 
-	Describe("get task", func() {
+	Describe("get_task", func() {
 		Context("when the http client errors", func() {
 			It("should retry", func() {
 				fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
@@ -364,6 +364,8 @@ var _ = Describe("AgentClient", func() {
 		Context("when agent does not respond with 200", func() {
 			BeforeEach(func() {
 				fakeHTTPClient.SetPostBehavior("", http.StatusInternalServerError, nil)
+				fakeHTTPClient.SetPostBehavior("", http.StatusInternalServerError, nil)
+				fakeHTTPClient.SetPostBehavior("", http.StatusInternalServerError, nil)
 			})
 
 			It("returns an error", func() {
@@ -377,6 +379,8 @@ var _ = Describe("AgentClient", func() {
 		Context("when agent responds with exception", func() {
 			BeforeEach(func() {
 				fakeHTTPClient.SetPostBehavior(`{"exception":{"message":"bad request"}}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior(`{"exception":{"message":"bad request"}}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior(`{"exception":{"message":"bad request"}}`, 200, nil)
 			})
 
 			It("returns an error", func() {
@@ -384,6 +388,34 @@ var _ = Describe("AgentClient", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bad request"))
 				Expect(stateResponse).To(Equal(agentclient.AgentState{}))
+			})
+		})
+
+		Context("when agent client errors sending the http request less times than the sendErrorCount", func() {
+			BeforeEach(func() {
+				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer"))
+				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer"))
+				fakeHTTPClient.SetPostBehavior(`{"value":{"job_state":"running"}}`, 200, nil)
+			})
+
+			It("retries the up to error count specified", func() {
+				stateResponse, err := agentClient.GetState()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(stateResponse).To(Equal(agentclient.AgentState{JobState: "running"}))
+			})
+		})
+
+		Context("when agent client errors sending the http request more times than the sendErrorCount", func() {
+			BeforeEach(func() {
+				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 1"))
+				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 2"))
+				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 3"))
+			})
+
+			It("returns the error", func() {
+				_, err := agentClient.GetState()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("connection reset by peer 3"))
 			})
 		})
 	})
