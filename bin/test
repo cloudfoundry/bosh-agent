@@ -4,6 +4,10 @@ result=0
 
 bin=$(dirname $0)
 
+set -e
+$bin/test-unhandled-errors
+set +e
+
 $bin/test-unit -q
 let "result+=$?"
 

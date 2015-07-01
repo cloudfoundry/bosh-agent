@@ -133,7 +133,10 @@ func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhan
 	}
 
 	if len(respBytes) > 0 {
-		h.client.Publish(req.ReplyTo, respBytes)
+		err = h.client.Publish(req.ReplyTo, respBytes)
+		if err != nil {
+			h.logger.Error(h.logTag, "Publishing to the client: %s", err.Error())
+		}
 	}
 }
 

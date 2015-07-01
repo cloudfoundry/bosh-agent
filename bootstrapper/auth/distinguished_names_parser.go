@@ -3,8 +3,9 @@ package auth
 import (
 	"bytes"
 	"crypto/x509/pkix"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type DistinguishedNamesParser interface {
@@ -54,7 +55,9 @@ func (parser distinguishedNamesParser) Parse(dn string) (*pkix.Name, error) {
 
 	for _, c := range dn {
 		if escape {
-			buf.WriteRune(c)
+			if _, err := buf.WriteRune(c); err != nil {
+				return nil, err
+			}
 			escape = false
 		} else if c == '=' {
 			ident = buf.String()
@@ -70,7 +73,9 @@ func (parser distinguishedNamesParser) Parse(dn string) (*pkix.Name, error) {
 		} else if c == '\\' {
 			escape = true
 		} else {
-			buf.WriteRune(c)
+			if _, err := buf.WriteRune(c); err != nil {
+				return nil, err
+			}
 		}
 	}
 

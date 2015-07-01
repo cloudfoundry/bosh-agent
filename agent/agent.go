@@ -72,9 +72,19 @@ func (a Agent) Run() error {
 
 	go a.generateHeartbeats(errCh)
 
-	go a.jobSupervisor.MonitorJobFailures(a.handleJobFailure(errCh))
+	go func() {
+		err := a.jobSupervisor.MonitorJobFailures(a.handleJobFailure(errCh))
+		if err != nil {
+			errCh <- err
+		}
+	}()
 
-	go a.syslogServer.Start(a.handleSyslogMsg(errCh))
+	go func() {
+		err := a.syslogServer.Start(a.handleSyslogMsg(errCh))
+		if err != nil {
+			errCh <- err
+		}
+	}()
 
 	select {
 	case err := <-errCh:

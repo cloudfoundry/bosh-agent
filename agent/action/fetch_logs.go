@@ -71,7 +71,9 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 		return
 	}
 
-	defer a.compressor.CleanUp(tarball)
+	defer func() {
+		_ = a.compressor.CleanUp(tarball)
+	}()
 
 	blobID, _, err := a.blobstore.Create(tarball)
 	if err != nil {

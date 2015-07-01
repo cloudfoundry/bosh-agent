@@ -51,7 +51,11 @@ func (ms httpMetadataService) GetPublicKey() (string, error) {
 		return "", bosherr.WrapError(err, "Getting open ssh key")
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			ms.logger.Warn(ms.logTag, "Failed to close response body when getting ssh key: %s", err.Error())
+		}
+	}()
 
 	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -73,7 +77,11 @@ func (ms httpMetadataService) GetInstanceID() (string, error) {
 		return "", bosherr.WrapError(err, "Getting instance id from url")
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			ms.logger.Warn(ms.logTag, "Failed to close response body when getting instance id: %s", err.Error())
+		}
+	}()
 
 	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -137,7 +145,11 @@ func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 		return userData, bosherr.WrapError(err, "Getting user data from url")
 	}
 
-	defer userDataResp.Body.Close()
+	defer func() {
+		if err := userDataResp.Body.Close(); err != nil {
+			ms.logger.Warn(ms.logTag, "Failed to close response body when getting user data: %s", err.Error())
+		}
+	}()
 
 	userDataBytes, err := ioutil.ReadAll(userDataResp.Body)
 	if err != nil {

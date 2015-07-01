@@ -81,7 +81,9 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 	if err != nil {
 		return nil, bosherr.WrapErrorf(err, "Opening stdout for task %s", taskName)
 	}
-	defer stdoutFile.Close()
+	defer func() {
+		_ = stdoutFile.Close()
+	}()
 
 	cmd.Stdout = stdoutFile
 
@@ -89,7 +91,9 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 	if err != nil {
 		return nil, bosherr.WrapErrorf(err, "Opening stderr for task %s", taskName)
 	}
-	defer stderrFile.Close()
+	defer func() {
+		_ = stderrFile.Close()
+	}()
 
 	cmd.Stderr = stderrFile
 

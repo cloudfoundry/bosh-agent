@@ -47,7 +47,10 @@ func (system *osSystem) RunScript(scriptPath string, workingDir string) (Command
 		return CommandResult{}, err
 	}
 
-	io.Copy(os.Stdout, out)
+	_, err = io.Copy(os.Stdout, out)
+	if err != nil {
+		return CommandResult{}, err
+	}
 
 	exitStatus := getExitStatus(command.Wait())
 	return CommandResult{

@@ -92,14 +92,22 @@ func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 		return bosherr.WrapError(err, "Getting temp dir")
 	}
 
-	defer s.fs.RemoveAll(tmpDir)
+	defer func() {
+		if err = s.fs.RemoveAll(tmpDir); err != nil {
+			s.logger.Warn(logTag, "Failed to clean up tmpDir: %s", err.Error())
+		}
+	}()
 
 	file, err := s.blobstore.Get(pkg.Source.BlobstoreID, pkg.Source.Sha1)
 	if err != nil {
 		return bosherr.WrapError(err, "Fetching package blob")
 	}
 
-	defer s.blobstore.CleanUp(file)
+	defer func() {
+		if err = s.blobstore.CleanUp(file); err != nil {
+			s.logger.Warn(logTag, "Failed to clean up blobstore blog: %s", err.Error())
+		}
+	}()
 
 	err = s.compressor.DecompressFileToDir(file, tmpDir, boshcmd.CompressorOptions{})
 	if err != nil {

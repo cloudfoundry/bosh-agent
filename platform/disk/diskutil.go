@@ -39,7 +39,9 @@ func (util diskUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
 		return [][]byte{}, bosherr.WrapError(err, "Creating temporary disk mount point")
 	}
 
-	defer util.fs.RemoveAll(tempDir)
+	defer func() {
+		_ = util.fs.RemoveAll(tempDir)
+	}()
 
 	err = util.mounter.Mount(util.diskPath, tempDir)
 	if err != nil {
@@ -58,7 +60,9 @@ func (util diskUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
 		content, err := util.fs.ReadFile(diskFilePath)
 		if err != nil {
 			// todo unmount before removing
-			util.unmount(tempDir)
+			if uErr := util.unmount(tempDir); uErr != nil {
+				util.logger.Warn(util.logTag, "Failed to unmount temp dir: %s", uErr.Error())
+			}
 			return [][]byte{}, bosherr.WrapErrorf(err, "Reading from disk file '%s'", diskFilePath)
 		}
 

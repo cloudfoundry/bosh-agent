@@ -79,7 +79,7 @@ func (l *Listener) ListenAndServe(logger logger.Logger, port int) error {
 func (l *Listener) Close() {
 	if l.started {
 		l.closing = true
-		l.listener.Close()
+		_ = l.listener.Close()
 		l.started = false
 	}
 }

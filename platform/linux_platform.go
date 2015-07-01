@@ -188,11 +188,10 @@ func (p linux) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p linux) CreateUser(username, password, basePath string) (err error) {
-	p.fs.MkdirAll(basePath, userBaseDirPermissions)
+func (p linux) CreateUser(username, password, basePath string) error {
+	err := p.fs.MkdirAll(basePath, userBaseDirPermissions)
 	if err != nil {
-		err = bosherr.WrapError(err, "Making user base path")
-		return
+		return bosherr.WrapError(err, "Making user base path")
 	}
 
 	args := []string{"-m", "-b", basePath, "-s", "/bin/bash"}
@@ -205,37 +204,37 @@ func (p linux) CreateUser(username, password, basePath string) (err error) {
 
 	_, _, _, err = p.cmdRunner.RunCommand("useradd", args...)
 	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to useradd")
-		return
+		return bosherr.WrapError(err, "Shelling out to useradd")
 	}
-	return
+	return nil
 }
 
-func (p linux) AddUserToGroups(username string, groups []string) (err error) {
-	_, _, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
+func (p linux) AddUserToGroups(username string, groups []string) error {
+	_, _, _, err := p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
 	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to usermod")
+		return bosherr.WrapError(err, "Shelling out to usermod")
 	}
-	return
+	return nil
 }
 
-func (p linux) DeleteEphemeralUsersMatching(reg string) (err error) {
+func (p linux) DeleteEphemeralUsersMatching(reg string) error {
 	compiledReg, err := regexp.Compile(reg)
 	if err != nil {
-		err = bosherr.WrapError(err, "Compiling regexp")
-		return
+		return bosherr.WrapError(err, "Compiling regexp")
 	}
 
 	matchingUsers, err := p.findEphemeralUsersMatching(compiledReg)
 	if err != nil {
-		err = bosherr.WrapError(err, "Finding ephemeral users")
-		return
+		return bosherr.WrapError(err, "Finding ephemeral users")
 	}
 
 	for _, user := range matchingUsers {
-		p.deleteUser(user)
+		err = p.deleteUser(user)
+		if err != nil {
+			return bosherr.WrapError(err, "Deleting user")
+		}
 	}
-	return
+	return nil
 }
 
 func (p linux) deleteUser(user string) (err error) {
@@ -262,28 +261,38 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 	return
 }
 
-func (p linux) SetupSSH(publicKey, username string) (err error) {
+func (p linux) SetupSSH(publicKey, username string) error {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {
-		err = bosherr.WrapError(err, "Finding home dir for user")
-		return
+		return bosherr.WrapError(err, "Finding home dir for user")
 	}
 
 	sshPath := filepath.Join(homeDir, ".ssh")
-	p.fs.MkdirAll(sshPath, sshDirPermissions)
-	p.fs.Chown(sshPath, username)
+	err = p.fs.MkdirAll(sshPath, sshDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Making ssh directory")
+	}
+	err = p.fs.Chown(sshPath, username)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning ssh directory")
+	}
 
 	authKeysPath := filepath.Join(sshPath, "authorized_keys")
 	err = p.fs.WriteFileString(authKeysPath, publicKey)
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating authorized_keys file")
-		return
+		return bosherr.WrapError(err, "Creating authorized_keys file")
 	}
 
-	p.fs.Chown(authKeysPath, username)
-	p.fs.Chmod(authKeysPath, sshAuthKeysFilePermissions)
+	err = p.fs.Chown(authKeysPath, username)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning key path")
+	}
+	err = p.fs.Chmod(authKeysPath, sshAuthKeysFilePermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding key path")
+	}
 
-	return
+	return nil
 }
 
 func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {

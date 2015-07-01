@@ -79,7 +79,7 @@ func (m *FakeJobSupervisor) Status() string {
 
 func (m *FakeJobSupervisor) MonitorJobFailures(handler boshjobsuper.JobFailureHandler) error {
 	if m.JobFailureAlert != nil {
-		handler(*m.JobFailureAlert)
+		return handler(*m.JobFailureAlert)
 	}
 	return nil
 }

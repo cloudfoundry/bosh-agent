@@ -38,16 +38,20 @@ func StartDownloadServer(port int, tarballPath string, directorCert *tls.Certifi
 		Expect(err).ToNot(HaveOccurred())
 		_, err = io.Copy(w, tarReader)
 		Expect(err).ToNot(HaveOccurred())
-		tarReader.Close()
+		err = tarReader.Close()
+		Expect(err).ToNot(HaveOccurred())
 	})
-	go server.Serve(tlsListener)
+	go func() {
+		_ = server.Serve(tlsListener)
+	}()
 	return tlsListener
 }
 
 func CreateTarball(installScript string) string {
 	tmpDir, err := ioutil.TempDir("", "test-tmp")
 	Expect(err).ToNot(HaveOccurred())
-	ioutil.WriteFile(path.Join(tmpDir, "install.sh"), ([]byte)(installScript), 0755)
+	err = ioutil.WriteFile(path.Join(tmpDir, "install.sh"), ([]byte)(installScript), 0755)
+	Expect(err).ToNot(HaveOccurred())
 	tarCmd := exec.Command("tar", "cfz", "tarball.tgz", "install.sh")
 	tarCmd.Dir = tmpDir
 	_, err = tarCmd.CombinedOutput()
@@ -61,6 +65,7 @@ func GetFreePort() int {
 	Expect(err).ToNot(HaveOccurred())
 
 	port := listener.Addr().(*net.TCPAddr).Port
-	listener.Close()
+	err = listener.Close()
+	Expect(err).ToNot(HaveOccurred())
 	return port
 }

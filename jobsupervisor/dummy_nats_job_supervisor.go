@@ -70,7 +70,7 @@ func (d *dummyNatsJobSupervisor) statusHandler(req boshhandler.Request) boshhand
 		d.status = body["status"]
 
 		if d.status == "failing" && d.jobFailureHandler != nil {
-			d.jobFailureHandler(boshalert.MonitAlert{
+			_ = d.jobFailureHandler(boshalert.MonitAlert{
 				ID:          "fake-monit-alert",
 				Service:     "fake-monit-service",
 				Event:       "failing",

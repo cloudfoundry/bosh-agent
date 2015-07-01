@@ -49,7 +49,10 @@ func (e *alertEnvelope) Close() error {
 	emptyAlert := boshalert.MonitAlert{}
 
 	if alertToHandle != emptyAlert {
-		e.handler(*e.alert)
+		err := e.handler(*e.alert)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

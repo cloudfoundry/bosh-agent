@@ -62,7 +62,11 @@ func (s *concreteServer) Stop() error {
 }
 
 func (s *concreteServer) handleConnection(conn net.Conn, callback CallbackFunc) {
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			s.logger.Error(concreteServerLogTag, "Failed to close connection: %s", err.Error())
+		}
+	}()
 
 	scanner := bufio.NewScanner(conn)
 

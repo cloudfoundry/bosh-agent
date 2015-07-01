@@ -67,7 +67,9 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 		return "", "", bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
 	}
 
-	defer c.fs.RemoveAll(compilePath)
+	defer func() {
+		_ = c.fs.RemoveAll(compilePath)
+	}()
 
 	compiledPkg := boshmodels.Package{
 		Name:    pkg.Name,
@@ -115,7 +117,9 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 		return "", "", bosherr.WrapError(err, "Compressing compiled package")
 	}
 
-	defer c.compressor.CleanUp(tmpPackageTar)
+	defer func() {
+		_ = c.compressor.CleanUp(tmpPackageTar)
+	}()
 
 	uploadedBlobID, sha1, err := c.blobstore.Create(tmpPackageTar)
 	if err != nil {

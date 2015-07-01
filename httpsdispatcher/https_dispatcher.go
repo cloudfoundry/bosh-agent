@@ -80,7 +80,7 @@ func (h *HTTPSDispatcher) Start() error {
 
 func (h *HTTPSDispatcher) Stop() {
 	if h.listener != nil {
-		h.listener.Close()
+		_ = h.listener.Close()
 		h.listener = nil
 	}
 }

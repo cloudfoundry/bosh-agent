@@ -54,7 +54,9 @@ func (dispatcher concreteActionDispatcher) ResumePreviouslyDispatchedTasks() {
 		action, err := dispatcher.actionFactory.Create(taskInfo.Method)
 		if err != nil {
 			dispatcher.logger.Error(actionDispatcherLogTag, "Unknown action %s", taskInfo.Method)
-			dispatcher.taskManager.RemoveInfo(taskInfo.TaskID)
+			if removeErr := dispatcher.taskManager.RemoveInfo(taskInfo.TaskID); removeErr != nil {
+				dispatcher.logger.Warn(actionDispatcherLogTag, "Failed to remove task info: %s", removeErr.Error())
+			}
 			continue
 		}
 

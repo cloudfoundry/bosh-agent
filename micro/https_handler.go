@@ -49,8 +49,7 @@ func (h HTTPSHandler) Run(handlerFunc boshhandler.Func) error {
 func (h HTTPSHandler) Start(handlerFunc boshhandler.Func) error {
 	h.dispatcher.AddRoute("/agent", h.agentHandler(handlerFunc))
 	h.dispatcher.AddRoute("/blobs/", h.blobsHandler())
-	h.dispatcher.Start()
-	return nil
+	return h.dispatcher.Start()
 }
 
 func (h HTTPSHandler) Stop() {
@@ -90,6 +89,7 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) (agentHandler f
 		rawJSONPayload, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			err = bosherr.WrapError(err, "Reading http body")
+			h.logger.Error("https_handler", err.Error())
 			return
 		}
 
@@ -101,10 +101,15 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) (agentHandler f
 		)
 		if err != nil {
 			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
+			h.logger.Error("https_handler", err.Error())
 			return
 		}
 
-		w.Write(respBytes)
+		_, err = w.Write(respBytes)
+		if err != nil {
+			err = bosherr.WrapError(err, "Writing response")
+			h.logger.Error("https_handler", err.Error())
+		}
 	}
 	return
 }
@@ -131,14 +136,19 @@ func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
+		if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
+			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
+		}
+
 		return
 	}
 
 	err = blobManager.Write(blobID, payload)
 	if err != nil {
 		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
+		if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
+			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
+		}
 		return
 	}
 
@@ -154,7 +164,9 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(404)
 	} else {
-		w.Write(blobBytes)
+		if _, wErr := w.Write(blobBytes); wErr != nil {
+			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
+		}
 	}
 }
 

@@ -29,7 +29,9 @@ func (h *SelfUpdateHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 		} else {
 			rw.WriteHeader(StatusUnprocessableEntity)
 		}
-		rw.Write([]byte(err.Error()))
+		if _, wErr := rw.Write([]byte(err.Error())); wErr != nil {
+			h.Logger.Warn("SelfUpdateHandler", "Failed to write error to buffer: %s", wErr.Error())
+		}
 		h.Logger.Error("SelfUpdateHandler", "failed to install package: %s", err.Error())
 		return
 	}
