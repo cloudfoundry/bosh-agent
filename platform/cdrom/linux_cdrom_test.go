@@ -1,4 +1,4 @@
-	package cdrom_test
+package cdrom_test
 
 import (
 	"errors"
