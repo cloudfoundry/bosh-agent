@@ -152,6 +152,8 @@ var _ = Describe("httpClient", func() {
 				return len(httpCalls)
 			}
 
+			// TODO: advanceTime
+
 			Eventually(callLength).Should(Equal(3))
 			timeService.Increment(500 * time.Millisecond)
 
@@ -171,11 +173,9 @@ var _ = Describe("httpClient", func() {
 			Expect(httpCalls[3]["action"]).To(Equal("status"))
 
 			Eventually(callLength).Should(Equal(5))
-			timeService.Increment(500 * time.Millisecond)
 
 			Expect(httpCalls[4]["url"]).To(Equal("/_status2"))
 			Expect(httpCalls[4]["action"]).To(Equal("status"))
-
 		})
 
 		Context("when unmonitoring the service errors", func() {
@@ -187,7 +187,7 @@ var _ = Describe("httpClient", func() {
 
 				err := client.StopService("test-service")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Sending unmonitor before stop to monit: Sending unmonitor request to monit: Error message"))
+				Expect(err.Error()).To(Equal("Sending unmonitor before stop for service 'test-service': Sending unmonitor request to monit: Error message"))
 			})
 		})
 
@@ -329,6 +329,7 @@ var _ = Describe("httpClient", func() {
 			expectedServices := []Service{
 				Service{Monitored: true, Status: "running"},
 				Service{Monitored: false, Status: "unknown"},
+				Service{Monitored: false, Status: "stopped"},
 				Service{Monitored: true, Status: "starting"},
 				Service{Monitored: true, Status: "failing"},
 			}

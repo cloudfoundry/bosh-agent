@@ -4,11 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/smtp"
 	"time"
 
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
+
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
@@ -28,6 +33,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		dirProvider           boshdir.Provider
 		jobFailuresServerPort int
 		monit                 JobSupervisor
+		timeService           *fakeclock.FakeClock
 	)
 
 	var jobFailureServerPort = 5000
@@ -44,6 +50,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider = boshdir.NewProvider("/var/vcap")
 		jobFailuresServerPort = getJobFailureServerPort()
+		timeService = fakeclock.NewFakeClock(time.Now())
 
 		monit = NewMonitJobSupervisor(
 			fs,
@@ -57,6 +64,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				MaxCheckTries:          10,
 				DelayBetweenCheckTries: 0 * time.Millisecond,
 			},
+			timeService,
 		)
 	})
 
@@ -168,6 +176,88 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(client.ServicesInGroupName).To(Equal("vcap"))
 			Expect(len(client.StopServiceNames)).To(Equal(1))
 			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
+		})
+
+		Context("when a stop attempt errors", func() {
+			It("exits with an error message", func() {
+				client.ServicesInGroupServices = []string{"fake-service"}
+				client.StopServiceErr = errors.New("Error message")
+
+				err := make(chan error)
+				go func() {
+					err <- monit.Stop()
+				}()
+
+				Eventually(func() string {
+					e := <-err
+					if e != nil {
+						return e.Error()
+					}
+					return ""
+				}).Should(Equal("Stopping service: Error message"))
+			})
+		})
+
+		Context("when a service takes too long to stop", func() {
+			It("exits with an error after a timeout", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requestData := make(map[string]string)
+					resBody := readFixture("monit/test_assets/monit_status_multiple.xml")
+
+					if r.URL.Path == "/_status2" {
+						w.Write(resBody)
+					} else {
+						Expect(r.Method).To(Equal("POST"))
+						requestData["action"] = r.PostFormValue("action")
+					}
+				})
+
+				ts := httptest.NewServer(handler)
+				defer ts.Close()
+
+				url := ts.Listener.Addr().String()
+				client := boshmonit.NewHTTPClient(
+					url,
+					"fake-user",
+					"fake-pass",
+					http.DefaultClient,
+					http.DefaultClient,
+					logger,
+					clock.NewClock(),
+				)
+
+				monit := NewMonitJobSupervisor(
+					fs,
+					runner,
+					client,
+					logger,
+					dirProvider,
+					jobFailuresServerPort,
+					MonitReloadOptions{
+						MaxTries:               3,
+						MaxCheckTries:          10,
+						DelayBetweenCheckTries: 0 * time.Millisecond,
+					},
+					timeService,
+				)
+
+				advanceTime := func(duration time.Duration, watcherCount int) {
+					Eventually(timeService.WatcherCount).Should(Equal(watcherCount))
+					timeService.Increment(duration)
+					Eventually(timeService.WatcherCount).Should(Equal(0))
+				}
+
+				errchan := make(chan error)
+				go func() {
+					errchan <- monit.Stop()
+				}()
+
+				failedServices := []string{"failing-service", "running-service", "starting-service"}
+				failureMessage := fmt.Sprintf("Timed out stopping services. Failures: %v", failedServices)
+
+				advanceTime(10*time.Minute, len(failedServices))
+				Eventually(errchan).Should(Receive(Equal(errors.New(failureMessage))))
+			})
 		})
 	})
 

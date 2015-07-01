@@ -89,12 +89,12 @@ func (c httpClient) StopService(serviceName string) error {
 
 	err := c.UnmonitorService(serviceName)
 	if err != nil {
-		return bosherr.WrapError(err, "Sending unmonitor before stop to monit")
+		return bosherr.WrapErrorf(err, "Sending unmonitor before stop for service '%s'", serviceName)
 	}
 
 	response, err = c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "action=stop")
 	if err != nil {
-		return bosherr.WrapError(err, "Sending stop request to monit")
+		return bosherr.WrapErrorf(err, "Sending stop request for service '%s'", serviceName)
 	}
 
 	defer response.Body.Close()

@@ -48,6 +48,7 @@ var _ = Describe("status", func() {
 			expectedServices := []Service{
 				Service{Name: "running-service", Monitored: true, Status: "running"},
 				Service{Name: "unmonitored-service", Monitored: false, Status: "unknown"},
+				Service{Name: "stopped-service", Monitored: false, Status: "unknown"},
 				Service{Name: "starting-service", Monitored: true, Status: "starting"},
 				Service{Name: "failing-service", Monitored: true, Status: "failing"},
 			}
