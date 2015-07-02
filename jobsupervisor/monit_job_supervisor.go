@@ -3,7 +3,6 @@ package jobsupervisor
 import (
 	"fmt"
 	"path/filepath"
-	"sort"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
@@ -134,7 +133,6 @@ func (m monitJobSupervisor) Stop() error {
 	if err != nil {
 		return bosherr.WrapError(err, "Getting vcap services")
 	}
-	sort.Strings(services)
 
 	success := []string{}
 	failure := []string{}
