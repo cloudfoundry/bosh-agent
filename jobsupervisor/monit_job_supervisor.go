@@ -133,7 +133,6 @@ func (m monitJobSupervisor) Stop() error {
 		return bosherr.WrapError(err, "Getting vcap services")
 	}
 
-
 	for _, serviceName := range serviceNames {
 		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service '%s'", serviceName)
 		err = m.client.StopService(serviceName)
