@@ -145,6 +145,7 @@ func (m monitJobSupervisor) Stop() error {
 	timer := m.timeService.NewTimer(10 * time.Minute)
 
 	for {
+		m.logger.Debug(monitJobSupervisorLogTag, "Waiting for services to stop")
 		select {
 		case <-timer.C():
 			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 10 minutes", strings.Join(servicesToBeStopped, ", "))
