@@ -28,6 +28,14 @@ echo -e "\n Installing ginkgo..."
 $bin/go install ./internal/github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
+echo -e "\n Govetting"
+$bin/govet
+let "result+=$?"
+
+echo -e "\n Checking for unhandled errors"
+$bin/test-unhandled-errors
+let "result+=$?"
+
 echo -e "\n Testing packages..."
 $bin/env ginkgo -r $race -skipPackage="integration,internal" $bin/..
 let "result+=$?"

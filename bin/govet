@@ -1,15 +1,11 @@
 #!/bin/bash
-# Mutate go vet commands to add -printfuncs params
 
-goVetParams=-printfuncs=WrapError:1,WrapErrorf:1
-
-result=0
+set -e
 
 bin=$(dirname $0)
 
-while IFS= read -r line ; do
-  $line
-  let "result+=$?"
-done < <($bin/go vet -n github.com/cloudfoundry/bosh-agent/... | sed -e "s/\/vet /\/vet $goVetParams /")
+go get -u golang.org/x/tools/cmd/vet
 
-exit $result
+$bin/go vet `go list ./... | grep -v "github.com/cloudfoundry/bosh-agent/internal/" | xargs`
+
+echo -e "\n All good"
