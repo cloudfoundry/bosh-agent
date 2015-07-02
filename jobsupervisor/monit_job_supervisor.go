@@ -3,6 +3,7 @@ package jobsupervisor
 import (
 	"fmt"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
@@ -128,6 +129,7 @@ func (m monitJobSupervisor) Start() error {
 
 func (m monitJobSupervisor) Stop() error {
 	defer m.logger.HandlePanic("Monit Job Supervisor Stop")
+	var group sync.WaitGroup
 
 	services, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
@@ -145,7 +147,11 @@ func (m monitJobSupervisor) Stop() error {
 	}
 
 	for _, service := range services {
+		group.Add(1)
+
 		go func(serviceName string) {
+			defer group.Done()
+
 			err = stop(serviceName)
 			if err != nil {
 				errchan <- err
@@ -169,6 +175,7 @@ func (m monitJobSupervisor) Stop() error {
 		select {
 		case s := <-stopped:
 			success = append(success, s)
+			m.logger.Debug(monitJobSupervisorLogTag, "Stopped service %s", s)
 		case e := <-errchan:
 			return bosherr.WrapErrorf(e, "Stopping service")
 		case <-m.timeService.NewTimer(10 * time.Minute).C():
@@ -182,6 +189,8 @@ func (m monitJobSupervisor) Stop() error {
 			return bosherr.Errorf("Timed out stopping services. Failures: %v", failure)
 		}
 	}
+
+	group.Wait()
 
 	return nil
 }
