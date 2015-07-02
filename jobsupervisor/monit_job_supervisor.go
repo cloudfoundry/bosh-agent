@@ -136,7 +136,6 @@ func (m monitJobSupervisor) Stop() error {
 	for _, serviceName := range serviceNames {
 		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service '%s'", serviceName)
 		err = m.client.StopService(serviceName)
-
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Stopping service '%s'", serviceName)
 		}
