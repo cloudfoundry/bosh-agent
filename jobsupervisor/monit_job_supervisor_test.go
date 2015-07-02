@@ -13,7 +13,6 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
@@ -202,7 +201,6 @@ var _ = Describe("monitJobSupervisor", func() {
 				http.DefaultClient,
 				http.DefaultClient,
 				logger,
-				clock.NewClock(),
 			)
 
 			monit := NewMonitJobSupervisor(
@@ -271,7 +269,6 @@ var _ = Describe("monitJobSupervisor", func() {
 					http.DefaultClient,
 					http.DefaultClient,
 					logger,
-					clock.NewClock(),
 				)
 
 				monit := NewMonitJobSupervisor(
@@ -320,7 +317,6 @@ var _ = Describe("monitJobSupervisor", func() {
 					http.DefaultClient,
 					http.DefaultClient,
 					logger,
-					clock.NewClock(),
 				)
 
 				monit := NewMonitJobSupervisor(

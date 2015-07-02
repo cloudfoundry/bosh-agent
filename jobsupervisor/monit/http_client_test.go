@@ -46,7 +46,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String(), timeService)
+			client := newRealClient(ts.Listener.Addr().String())
 
 			err := client.StartService("test-service")
 			Expect(err).ToNot(HaveOccurred())
@@ -56,7 +56,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the shortClient to send a start request", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient, timeService)
+			client := newFakeClient(shortClient, longClient)
 
 			shortClient.StatusCode = 200
 
@@ -80,7 +80,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the longClient to send the unmonitor/stop requests", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient, timeService)
+			client := newFakeClient(shortClient, longClient)
 
 			longClient.StatusCode = 200
 
@@ -98,7 +98,7 @@ var _ = Describe("httpClient", func() {
 				monitorClient := fakehttp.NewFakeClient()
 				monitorClient.Error = errors.New("Error message")
 
-				client := newFakeClient(monitorClient, monitorClient, timeService)
+				client := newFakeClient(monitorClient, monitorClient)
 
 				err := client.StopService("test-service")
 				Expect(err).To(HaveOccurred())
@@ -125,7 +125,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String(), timeService)
+			client := newRealClient(ts.Listener.Addr().String())
 
 			err := client.UnmonitorService("test-service")
 			Expect(err).ToNot(HaveOccurred())
@@ -135,7 +135,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the longClient to send an unmonitor request", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient, timeService)
+			client := newFakeClient(shortClient, longClient)
 
 			longClient.StatusCode = 200
 
@@ -167,7 +167,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String(), timeService)
+			client := newRealClient(ts.Listener.Addr().String())
 
 			services, err := client.ServicesInGroup("vcap")
 			Expect(err).ToNot(HaveOccurred())
@@ -187,7 +187,7 @@ var _ = Describe("httpClient", func() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := newRealClient(ts.Listener.Addr().String(), timeService)
+			client := newRealClient(ts.Listener.Addr().String())
 
 			status, err := client.Status()
 			Expect(err).ToNot(HaveOccurred())
@@ -199,7 +199,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the shortClient to send a status request and parses the response xml", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
-			client := newFakeClient(shortClient, longClient, timeService)
+			client := newFakeClient(shortClient, longClient)
 
 			shortClient.StatusCode = 200
 			shortClient.SetMessage(string(readFixture(statusWithMultipleServiceFixturePath)))
@@ -229,7 +229,7 @@ var _ = Describe("httpClient", func() {
 	})
 })
 
-func newRealClient(url string, timeService *fakeclock.FakeClock) Client {
+func newRealClient(url string) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 
 	return NewHTTPClient(
@@ -239,11 +239,10 @@ func newRealClient(url string, timeService *fakeclock.FakeClock) Client {
 		http.DefaultClient,
 		http.DefaultClient,
 		logger,
-		timeService,
 	)
 }
 
-func newFakeClient(shortClient, longClient *fakehttp.FakeClient, timeService *fakeclock.FakeClock) Client {
+func newFakeClient(shortClient, longClient *fakehttp.FakeClient) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 
 	return NewHTTPClient(
@@ -253,6 +252,5 @@ func newFakeClient(shortClient, longClient *fakehttp.FakeClient, timeService *fa
 		shortClient,
 		longClient,
 		logger,
-		timeService,
 	)
 }

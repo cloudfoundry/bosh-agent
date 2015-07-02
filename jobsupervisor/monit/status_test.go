@@ -8,7 +8,6 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
@@ -39,7 +38,6 @@ var _ = Describe("status", func() {
 				httpClient,
 				httpClient,
 				logger,
-				clock.NewClock(),
 			)
 
 			status, err := client.Status()
