@@ -176,8 +176,6 @@ func (m monitJobSupervisor) Stop() error {
 
 		m.timeService.Sleep(500 * time.Millisecond)
 	}
-
-	return nil
 }
 
 func (m monitJobSupervisor) Unmonitor() error {
