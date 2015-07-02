@@ -128,6 +128,8 @@ func (m monitJobSupervisor) Start() error {
 }
 
 func (m monitJobSupervisor) Stop() error {
+	defer m.logger.HandlePanic("Monit Job Supervisor Stop")
+
 	services, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
 		return bosherr.WrapError(err, "Getting vcap services")
