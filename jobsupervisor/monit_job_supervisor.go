@@ -165,7 +165,7 @@ func (m monitJobSupervisor) Stop() error {
 			}
 
 			if service.Errored {
-				return bosherr.Errorf("Stopping service '%s'. Status message: '%s'", service.Name, service.StatusMessage)
+				return bosherr.Errorf("Stopping service '%s' errored with message '%s'", service.Name, service.StatusMessage)
 			}
 		}
 
