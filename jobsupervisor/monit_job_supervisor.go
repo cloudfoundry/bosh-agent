@@ -152,9 +152,9 @@ func (m monitJobSupervisor) Stop() error {
 		go func(serviceName string) {
 			defer group.Done()
 
-			err = stop(serviceName)
-			if err != nil {
-				errchan <- err
+			stopErr := stop(serviceName)
+			if stopErr != nil {
+				errchan <- stopErr
 				return
 			}
 
@@ -162,7 +162,8 @@ func (m monitJobSupervisor) Stop() error {
 		}(service)
 	}
 
-	contained := func(serviceName string) bool {
+	// Locate within success slice
+	wasSuccess := func(serviceName string) bool {
 		for _, name := range success {
 			if name == serviceName {
 				return true
@@ -179,10 +180,11 @@ func (m monitJobSupervisor) Stop() error {
 		case e := <-errchan:
 			return bosherr.WrapErrorf(e, "Stopping service")
 		case <-m.timeService.NewTimer(10 * time.Minute).C():
+			// Build up failures (not found in success slice)
 			// TODO: Find a better way to do this.
 			failure = []string{}
 			for _, service := range services {
-				if !contained(service) {
+				if !wasSuccess(service) {
 					failure = append(failure, service)
 				}
 			}
