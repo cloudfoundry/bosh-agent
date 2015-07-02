@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/charset"
 	_ "github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/data" // translations between char sets
@@ -112,11 +111,6 @@ func (c httpClient) StopService(serviceName string) error {
 		return bosherr.WrapErrorf(err, "Stopping Monit service '%s'", serviceName)
 	}
 
-	err = c.waitForServiceStop(serviceName)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Waiting for Monit service '%s' to stop", serviceName)
-	}
-
 	return nil
 }
 
@@ -199,30 +193,6 @@ func (c httpClient) validateResponse(response *http.Response) error {
 	c.logger.Debug("http-client", "Request failed with %s: %s", response.Status, string(body))
 
 	return bosherr.Errorf("Request failed with %s: %s", response.Status, string(body))
-}
-
-func (c httpClient) waitForServiceStop(serviceName string) error {
-	var service *Service
-
-	for {
-		service, _ = c.getServiceByName(serviceName)
-		c.logger.Debug("http-client", "Waiting for Monit service to stop: name='%s' service='%s'", serviceName, service)
-		if service == nil {
-			return bosherr.Errorf("Service '%s' was not found", serviceName)
-		}
-
-		if !service.Monitored && !service.Pending {
-			break
-		}
-
-		c.timeService.Sleep(500 * time.Millisecond)
-	}
-
-	if service.Errored {
-		return bosherr.Errorf("Service '%s' errored with message: '%s'", serviceName, service.StatusMessage)
-	}
-
-	return nil
 }
 
 func (c httpClient) getServiceByName(serviceName string) (service *Service, err error) {

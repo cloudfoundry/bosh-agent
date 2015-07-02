@@ -178,23 +178,120 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
 		})
 
-		Context("when a stop attempt errors", func() {
+		It("stops", func() {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requestData := make(map[string]string)
+				resBody := readFixture("monit/test_assets/monit_status_stopped.xml")
+
+				if r.URL.Path == "/_status2" {
+					w.Write(resBody)
+				} else {
+					Expect(r.Method).To(Equal("POST"))
+					requestData["action"] = r.PostFormValue("action")
+				}
+			})
+
+			ts := httptest.NewServer(handler)
+			defer ts.Close()
+
+			url := ts.Listener.Addr().String()
+			client := boshmonit.NewHTTPClient(
+				url,
+				"fake-user",
+				"fake-pass",
+				http.DefaultClient,
+				http.DefaultClient,
+				logger,
+				clock.NewClock(),
+			)
+
+			monit := NewMonitJobSupervisor(
+				fs,
+				runner,
+				client,
+				logger,
+				dirProvider,
+				jobFailuresServerPort,
+				MonitReloadOptions{
+					MaxTries:               3,
+					MaxCheckTries:          10,
+					DelayBetweenCheckTries: 0 * time.Millisecond,
+				},
+				timeService,
+			)
+
+			err := monit.Stop()
+			Expect(err).To(BeNil())
+		})
+
+		Context("when a status request errors", func() {
+			It("exits with an error message", func() {
+				client.ServicesInGroupServices = []string{"fake-service"}
+				client.StatusErr = errors.New("Error message")
+
+				err := monit.Stop()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Getting monit status: Error message"))
+			})
+		})
+
+		Context("when a stop service errors", func() {
 			It("exits with an error message", func() {
 				client.ServicesInGroupServices = []string{"fake-service"}
 				client.StopServiceErr = errors.New("Error message")
 
-				err := make(chan error)
-				go func() {
-					err <- monit.Stop()
-				}()
+				err := monit.Stop()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Stopping service 'fake-service': Error message"))
+			})
+		})
 
-				Eventually(func() string {
-					e := <-err
-					if e != nil {
-						return e.Error()
+		Context("when a service is in error state", func() {
+			It("exits with an error message", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requestData := make(map[string]string)
+					resBody := readFixture("monit/test_assets/monit_status_errored.xml")
+
+					if r.URL.Path == "/_status2" {
+						w.Write(resBody)
+					} else {
+						Expect(r.Method).To(Equal("POST"))
+						requestData["action"] = r.PostFormValue("action")
 					}
-					return ""
-				}).Should(Equal("Stopping service: Error message"))
+				})
+
+				ts := httptest.NewServer(handler)
+				defer ts.Close()
+
+				url := ts.Listener.Addr().String()
+				client := boshmonit.NewHTTPClient(
+					url,
+					"fake-user",
+					"fake-pass",
+					http.DefaultClient,
+					http.DefaultClient,
+					logger,
+					clock.NewClock(),
+				)
+
+				monit := NewMonitJobSupervisor(
+					fs,
+					runner,
+					client,
+					logger,
+					dirProvider,
+					jobFailuresServerPort,
+					MonitReloadOptions{
+						MaxTries:               3,
+						MaxCheckTries:          10,
+						DelayBetweenCheckTries: 0 * time.Millisecond,
+					},
+					timeService,
+				)
+
+				err := monit.Stop()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Stopping service 'test-service'. Status message: 'Oops'"))
 			})
 		})
 
@@ -255,7 +352,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				failedServices := []string{"running-service", "starting-service", "failing-service"}
 				failureMessage := fmt.Sprintf("Timed out stopping services. Failures: %v", failedServices)
 
-				advanceTime(10*time.Minute, len(failedServices))
+				advanceTime(10*time.Minute, 2) // 2 = timer + sleep
 				Eventually(errchan).Should(Receive(Equal(errors.New(failureMessage))))
 			})
 		})
