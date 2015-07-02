@@ -141,13 +141,13 @@ func (m monitJobSupervisor) Stop() error {
 		}
 	}
 
-	pending := []string{}
+	servicesToBeStopped := []string{}
 	timer := m.timeService.NewTimer(10 * time.Minute)
 
 	for {
 		select {
 		case <-timer.C():
-			return bosherr.Errorf("Timed out stopping services. Failures: %v", pending)
+			return bosherr.Errorf("Timed out stopping services. Failures: %v", servicesToBeStopped)
 		default:
 		}
 
@@ -157,11 +157,11 @@ func (m monitJobSupervisor) Stop() error {
 		}
 
 		services := status.ServicesInGroup("vcap")
-		pending = []string{}
+		servicesToBeStopped = []string{}
 
 		for _, service := range services {
 			if service.Monitored || service.Pending {
-				pending = append(pending, service.Name)
+				servicesToBeStopped = append(servicesToBeStopped, service.Name)
 			}
 
 			if service.Errored {
@@ -169,7 +169,7 @@ func (m monitJobSupervisor) Stop() error {
 			}
 		}
 
-		if len(pending) == 0 {
+		if len(servicesToBeStopped) == 0 {
 			return nil
 		}
 
