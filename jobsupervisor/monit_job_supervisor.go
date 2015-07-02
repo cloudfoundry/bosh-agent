@@ -137,7 +137,6 @@ func (m monitJobSupervisor) Stop() error {
 	}
 
 	success := []string{}
-	failure := []string{}
 	stopped := make(chan string)
 	errchan := make(chan error)
 
@@ -182,7 +181,7 @@ func (m monitJobSupervisor) Stop() error {
 		case <-m.timeService.NewTimer(10 * time.Minute).C():
 			// Build up failures (not found in success slice)
 			// TODO: Find a better way to do this.
-			failure = []string{}
+			failure := []string{}
 			for _, service := range services {
 				if !wasSuccess(service) {
 					failure = append(failure, service)
