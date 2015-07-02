@@ -147,7 +147,7 @@ func (m monitJobSupervisor) Stop() error {
 	for {
 		select {
 		case <-timer.C():
-			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 10 minutes.", strings.Join(servicesToBeStopped, ", "))
+			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 10 minutes", strings.Join(servicesToBeStopped, ", "))
 		default:
 		}
 
