@@ -3,6 +3,7 @@ package jobsupervisor
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
@@ -147,7 +148,7 @@ func (m monitJobSupervisor) Stop() error {
 	for {
 		select {
 		case <-timer.C():
-			return bosherr.Errorf("Timed out stopping services. Failures: %v", servicesToBeStopped)
+			return bosherr.Errorf("Timed out waiting for services %s to stop after 10 minutes.", strings.Join(servicesToBeStopped, ", "))
 		default:
 		}
 
