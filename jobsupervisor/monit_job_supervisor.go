@@ -151,12 +151,12 @@ func (m monitJobSupervisor) Stop() error {
 		default:
 		}
 
-		status, err := m.client.Status()
+		monitStatus, err := m.client.Status()
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Getting monit status")
 		}
 
-		services := status.ServicesInGroup("vcap")
+		services := monitStatus.ServicesInGroup("vcap")
 		servicesToBeStopped = []string{}
 
 		for _, service := range services {
