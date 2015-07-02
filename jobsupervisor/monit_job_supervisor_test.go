@@ -349,7 +349,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					errchan <- monit.Stop()
 				}()
 
-				failureMessage := "Timed out waiting for services running-service, starting-service, failing-service to stop after 10 minutes."
+				failureMessage := "Timed out waiting for services 'running-service, starting-service, failing-service' to stop after 10 minutes."
 
 				advanceTime(10*time.Minute, 2) // 2 = timer + sleep
 				Eventually(errchan).Should(Receive(Equal(errors.New(failureMessage))))
