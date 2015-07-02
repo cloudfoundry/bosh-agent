@@ -147,20 +147,20 @@ func (m monitJobSupervisor) Stop() error {
 	}
 
 	for _, service := range services {
-		go func(service string) {
-			err := stop(service)
+		go func(serviceName string) {
+			err = stop(serviceName)
 			if err != nil {
 				errchan <- err
 				return
 			}
 
-			stopped <- service
+			stopped <- serviceName
 		}(service)
 	}
 
-	contained := func(service string) bool {
+	contained := func(serviceName string) bool {
 		for _, name := range success {
-			if name == service {
+			if name == serviceName {
 				return true
 			}
 		}
