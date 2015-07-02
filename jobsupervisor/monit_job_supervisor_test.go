@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/smtp"
-	"runtime"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
@@ -201,9 +200,6 @@ var _ = Describe("monitJobSupervisor", func() {
 
 		Context("when a service takes too long to stop", func() {
 			It("exits with an error after a timeout", func() {
-				fmt.Println("goroutines [T1]:", runtime.NumGoroutine())
-				defer fmt.Println("goroutines [T2]:", runtime.NumGoroutine())
-
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					requestData := make(map[string]string)
 					resBody := readFixture("monit/test_assets/monit_status_multiple.xml")
