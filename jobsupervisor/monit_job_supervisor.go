@@ -3,7 +3,6 @@ package jobsupervisor
 import (
 	"fmt"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
@@ -128,70 +127,59 @@ func (m monitJobSupervisor) Start() error {
 }
 
 func (m monitJobSupervisor) Stop() error {
-	defer m.logger.HandlePanic("Monit Job Supervisor Stop")
-	var group sync.WaitGroup
-
-	services, err := m.client.ServicesInGroup("vcap")
+	serviceNames, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
 		return bosherr.WrapError(err, "Getting vcap services")
 	}
 
-	success := []string{}
-	stopped := make(chan string)
-	errchan := make(chan error)
+	pending := []string{}
 
-	stop := func(service string) error {
-		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service %s", service)
-		return m.client.StopService(service)
+	stop := func(serviceName string) error {
+		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service '%s'", serviceName)
+		pending = append(pending, serviceName)
+		return m.client.StopService(serviceName)
 	}
 
-	for _, service := range services {
-		group.Add(1)
-
-		go func(serviceName string) {
-			defer group.Done()
-
-			stopErr := stop(serviceName)
-			if stopErr != nil {
-				errchan <- stopErr
-				return
-			}
-
-			stopped <- serviceName
-		}(service)
-	}
-
-	// Locate within success slice
-	wasSuccess := func(serviceName string) bool {
-		for _, name := range success {
-			if name == serviceName {
-				return true
-			}
+	for _, serviceName := range serviceNames {
+		err = stop(serviceName)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Stopping service '%s'", serviceName)
 		}
-		return false
 	}
 
-	for i := 0; i < len(services); i++ {
+	timer := m.timeService.NewTimer(10 * time.Minute)
+
+	for {
 		select {
-		case s := <-stopped:
-			success = append(success, s)
-			m.logger.Debug(monitJobSupervisorLogTag, "Stopped service %s", s)
-		case e := <-errchan:
-			return bosherr.WrapErrorf(e, "Stopping service")
-		case <-m.timeService.NewTimer(10 * time.Minute).C():
-			// Build up failures (not found in success slice)
-			// TODO: Find a better way to do this.
-			failure := []string{}
-			for _, service := range services {
-				if !wasSuccess(service) {
-					failure = append(failure, service)
-				}
-			}
-			return bosherr.Errorf("Timed out stopping services. Failures: %v", failure)
+		case <-timer.C():
+			return bosherr.Errorf("Timed out stopping services. Failures: %v", pending)
+		default:
 		}
-	}
 
-	group.Wait()
+		status, err := m.client.Status()
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Getting monit status")
+		}
+
+		services := status.ServicesInGroup("vcap")
+		pending = []string{}
+
+		for _, service := range services {
+			if service.Monitored || service.Pending {
+				pending = append(pending, service.Name)
+			}
+
+			if service.Errored {
+				return bosherr.Errorf("Stopping service '%s'. Status message: '%s'", service.Name, service.StatusMessage)
+			}
+		}
+
+		if len(pending) == 0 {
+			return nil
+		}
+
+		m.timeService.Sleep(500 * time.Millisecond)
+	}
 
 	return nil
 }
