@@ -291,7 +291,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				err := monit.Stop()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Stopping service 'test-service'. Status message: 'Oops'"))
+				Expect(err.Error()).To(Equal("Stopping service 'test-service' errored with message 'Oops'"))
 			})
 		})
 
