@@ -454,23 +454,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					})
 				})
 
-				Context("when root partition is not the first partition", func() {
-					BeforeEach(func() {
-						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
-							{MountPoint: "/", PartitionPath: "/dev/vda2"},
-						}
-					})
-
-					It("returns an error", func() {
-						err := act()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Root partition is not the first partition"))
-						Expect(partitioner.PartitionCalled).To(BeFalse())
-						Expect(formatter.FormatCalled).To(BeFalse())
-						Expect(mounter.MountCalled).To(BeFalse())
-					})
-				})
-
 				Context("when root device is determined", func() {
 					BeforeEach(func() {
 						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{

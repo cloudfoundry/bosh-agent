@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -817,41 +818,50 @@ func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uin
 	return swapSizeInBytes, linuxSizeInBytes, nil
 }
 
-func (p linux) findRootDevicePath() (string, error) {
+func (p linux) findRootDevicePath() (string, uint8, error) {
 	mounts, err := p.diskManager.GetMountsSearcher().SearchMounts()
 
 	if err != nil {
-		return "", bosherr.WrapError(err, "Searching mounts")
+		return "", 0, bosherr.WrapError(err, "Searching mounts")
 	}
+
+	var maxDevNum uint8
+	var devPath string
+	validPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
 
 	for _, mount := range mounts {
+		stdout, _, _, err := p.cmdRunner.RunCommand("readlink", "-f", mount.PartitionPath)
+		if err != nil {
+			return "", 0, bosherr.WrapError(err, "Shelling out to readlink")
+		}
+		partition := strings.Trim(stdout, "\n")
+		p.logger.Debug(logTag, "Symlink is: `%s'", partition)
+		if validPartition.MatchString(partition) {
+			devNum := partition[len(partition)-1] - 48
+			if devNum > maxDevNum {
+				maxDevNum = devNum
+			}
+		}
+
 		if mount.MountPoint == "/" && strings.HasPrefix(mount.PartitionPath, "/dev/") {
 			p.logger.Debug(logTag, "Found root partition: `%s'", mount.PartitionPath)
-
-			stdout, _, _, err := p.cmdRunner.RunCommand("readlink", "-f", mount.PartitionPath)
-			if err != nil {
-				return "", bosherr.WrapError(err, "Shelling out to readlink")
+			if !validPartition.MatchString(partition) {
+				return "", 0, bosherr.Error("Root partition has an invalid name" + partition)
 			}
-			rootPartition := strings.Trim(stdout, "\n")
-			p.logger.Debug(logTag, "Symlink is: `%s'", rootPartition)
-
-			validRootPartition := regexp.MustCompile(`^/dev/[a-z]+1$`)
-			if !validRootPartition.MatchString(rootPartition) {
-				return "", bosherr.Error("Root partition is not the first partition")
-			}
-
-			return strings.Trim(rootPartition, "1"), nil
+			devPath = partition[:len(partition)-1]
 		}
 	}
-
-	return "", bosherr.Error("Getting root partition device")
+	if devPath != "" {
+		return devPath, maxDevNum, nil
+	}
+	return "", 0, bosherr.Error("Getting root partition device")
 }
 
 func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	p.logger.Info(logTag, "Creating swap & ephemeral partitions on root disk...")
 	p.logger.Debug(logTag, "Determining root device")
 
-	rootDevicePath, err := p.findRootDevicePath()
+	rootDevicePath, rootDeviceNum, err := p.findRootDevicePath()
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Finding root partition device")
 	}
@@ -887,8 +897,8 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 		return "", "", bosherr.WrapErrorf(err, "Partitioning root device `%s'", rootDevicePath)
 	}
 
-	swapPartitionPath := rootDevicePath + "2"
-	dataPartitionPath := rootDevicePath + "3"
+	swapPartitionPath := rootDevicePath + strconv.Itoa(int(rootDeviceNum+1))
+	dataPartitionPath := rootDevicePath + strconv.Itoa(int(rootDeviceNum+2))
 	return swapPartitionPath, dataPartitionPath, nil
 }
 
