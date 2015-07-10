@@ -128,17 +128,14 @@ func (m monitJobSupervisor) Start() error {
 }
 
 func (m monitJobSupervisor) Stop() error {
-	serviceNames, err := m.client.ServicesInGroup("vcap")
-	if err != nil {
-		return bosherr.WrapError(err, "Getting vcap services")
-	}
+	// TODO: implement the following:
+	//       - a wait loop, waiting to be sure nothing is Pending
+	//       - a stop all in group: `monit stop -g vcap`
+	//       - remove the handling of "try again later" (test manually)
 
-	for _, serviceName := range serviceNames {
-		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service '%s'", serviceName)
-		err = m.client.StopService(serviceName)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Stopping service '%s'", serviceName)
-		}
+	_, _, _, err := m.runner.RunCommand("monit", "stop", "-g", "vcap")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Stop all services")
 	}
 
 	servicesToBeStopped := []string{}
@@ -158,22 +155,30 @@ func (m monitJobSupervisor) Stop() error {
 		}
 
 		services := monitStatus.ServicesInGroup("vcap")
+		serviceNames := []string{}
 		servicesToBeStopped = []string{}
 
 		for _, service := range services {
+			serviceNames = append(serviceNames, service.Name)
+
 			if service.Monitored || service.Pending {
 				servicesToBeStopped = append(servicesToBeStopped, service.Name)
+				break
 			}
 
 			if service.Errored {
 				return bosherr.Errorf("Stopping service '%s' errored with message '%s'", service.Name, service.StatusMessage)
 			}
+
+			m.logger.Debug(monitJobSupervisorLogTag, "Successfully stopped service '%s'", service.Name)
 		}
 
 		if len(servicesToBeStopped) == 0 {
+			m.logger.Debug(monitJobSupervisorLogTag, "Successfully stopped all services")
 			return nil
 		}
 
+		m.logger.Debug(monitJobSupervisorLogTag, "Waiting for '%v' to stop", serviceNames)
 		m.timeService.Sleep(500 * time.Millisecond)
 	}
 }

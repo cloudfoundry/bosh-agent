@@ -167,14 +167,11 @@ var _ = Describe("monitJobSupervisor", func() {
 
 	Describe("Stop", func() {
 		It("stop stops each monit service in group vcap", func() {
-			client.ServicesInGroupServices = []string{"fake-service"}
-
 			err := monit.Stop()
 			Expect(err).ToNot(HaveOccurred())
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "stop", "-g", "vcap"}))
 
-			Expect(client.ServicesInGroupName).To(Equal("vcap"))
-			Expect(len(client.StopServiceNames)).To(Equal(1))
-			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
 		})
 
 		It("stops", func() {
@@ -235,12 +232,15 @@ var _ = Describe("monitJobSupervisor", func() {
 
 		Context("when a stop service errors", func() {
 			It("exits with an error message", func() {
-				client.ServicesInGroupServices = []string{"fake-service"}
-				client.StopServiceErr = errors.New("Error message")
+				fakeErrorResult := fakesys.FakeCmdResult{
+					Error: errors.New("test error result"),
+				}
+
+				runner.AddCmdResult("monit stop -g vcap", fakeErrorResult)
 
 				err := monit.Stop()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Stopping service 'fake-service': Error message"))
+				Expect(err.Error()).To(Equal(fmt.Sprintf("%s%s", "Stop all services: ", fakeErrorResult.Error)))
 			})
 		})
 
@@ -293,7 +293,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		})
 
 		Context("when a service takes too long to stop", func() {
-			It("exits with an error after a timeout", func() {
+			FIt("exits with an error after a timeout", func() {
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					requestData := make(map[string]string)
 					resBody := readFixture("monit/test_assets/monit_status_multiple.xml")
@@ -326,18 +326,13 @@ var _ = Describe("monitJobSupervisor", func() {
 					logger,
 					dirProvider,
 					jobFailuresServerPort,
-					MonitReloadOptions{
-						MaxTries:               3,
-						MaxCheckTries:          10,
-						DelayBetweenCheckTries: 0 * time.Millisecond,
-					},
+					MonitReloadOptions{},
 					timeService,
 				)
 
 				advanceTime := func(duration time.Duration, watcherCount int) {
 					Eventually(timeService.WatcherCount).Should(Equal(watcherCount))
 					timeService.Increment(duration)
-					Eventually(timeService.WatcherCount).Should(Equal(0))
 				}
 
 				errchan := make(chan error)
@@ -345,9 +340,10 @@ var _ = Describe("monitJobSupervisor", func() {
 					errchan <- monit.Stop()
 				}()
 
-				failureMessage := "Timed out waiting for services 'running-service, starting-service, failing-service' to stop after 10 minutes"
+				failureMessage := "Timed out waiting for services 'unmonitored-start-pending, initializing, running, running-stop-pending, unmonitored-stop-pending, failing-service' to stop after 10 minutes"
 
-				advanceTime(10*time.Minute, 2) // 2 = timer + sleep
+				advanceTime(10*time.Minute, 2)
+				Eventually(timeService.WatcherCount).Should(Equal(0))
 				Eventually(errchan).Should(Receive(Equal(errors.New(failureMessage))))
 			})
 		})
