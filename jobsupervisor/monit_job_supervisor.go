@@ -128,52 +128,38 @@ func (m monitJobSupervisor) Start() error {
 }
 
 func (m monitJobSupervisor) Stop() error {
-	serviceNames, err := m.client.ServicesInGroup("vcap")
-	if err != nil {
-		return bosherr.WrapError(err, "Getting vcap services")
-	}
-
-	for _, serviceName := range serviceNames {
-		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service '%s'", serviceName)
-		err = m.client.StopService(serviceName)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Stopping service '%s'", serviceName)
-		}
-	}
-
-	servicesToBeStopped := []string{}
 	timer := m.timeService.NewTimer(10 * time.Minute)
 
-	for {
-		m.logger.Debug(monitJobSupervisorLogTag, "Waiting for services to stop")
-		select {
-		case <-timer.C():
-			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 10 minutes", strings.Join(servicesToBeStopped, ", "))
-		default:
-		}
+	_, _, _, err := m.runner.RunCommand("monit", "stop", "-g", "vcap")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Stop all services")
+	}
 
+	m.logger.Debug(monitJobSupervisorLogTag, "Waiting for services to stop")
+	for {
 		monitStatus, err := m.client.Status()
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Getting monit status")
 		}
-
 		services := monitStatus.ServicesInGroup("vcap")
-		servicesToBeStopped = []string{}
+		servicesToStop, servicesErrored := m.checkServices(services)
 
-		for _, service := range services {
-			if service.Monitored || service.Pending {
-				servicesToBeStopped = append(servicesToBeStopped, service.Name)
-			}
-
-			if service.Errored {
-				return bosherr.Errorf("Stopping service '%s' errored with message '%s'", service.Name, service.StatusMessage)
-			}
+		if len(servicesErrored) > 0 {
+			return bosherr.Errorf("Stopping services '%v' errored", servicesErrored)
 		}
 
-		if len(servicesToBeStopped) == 0 {
+		if len(servicesToStop) == 0 {
+			m.logger.Debug(monitJobSupervisorLogTag, "Successfully stopped all services")
 			return nil
 		}
 
+		select {
+		case <-timer.C():
+			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 10 minutes", strings.Join(servicesToStop, ", "))
+		default:
+		}
+
+		m.logger.Debug(monitJobSupervisorLogTag, "Waiting for '%v' to stop", servicesToStop)
 		m.timeService.Sleep(500 * time.Millisecond)
 	}
 }
@@ -266,4 +252,22 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 		err = bosherr.WrapError(err, "Listen for SMTP")
 	}
 	return
+}
+
+func (m monitJobSupervisor) checkServices(services []boshmonit.Service) ([]string, []string) {
+	servicesToStop := []string{}
+	servicesErrored := []string{}
+
+	for _, service := range services {
+		if service.Monitored || service.Pending {
+			servicesToStop = append(servicesToStop, service.Name)
+			continue
+		}
+
+		if service.Errored {
+			servicesErrored = append(servicesErrored, service.Name)
+		}
+	}
+
+	return servicesToStop, servicesErrored
 }
