@@ -130,6 +130,22 @@ func (m monitJobSupervisor) Start() error {
 func (m monitJobSupervisor) Stop() error {
 	timer := m.timeService.NewTimer(10 * time.Minute)
 
+	for {
+		_, pendingServices, _, _ := m.checkServices()
+
+		if len(pendingServices) == 0 {
+			break
+		}
+
+		select {
+		case <-timer.C():
+			return bosherr.Errorf("Timed out waiting for services '%s' to no longer be pending after 10 minutes", strings.Join(pendingServices, ", "))
+		default:
+		}
+
+		m.timeService.Sleep(500 * time.Millisecond)
+	}
+
 	_, _, _, err := m.runner.RunCommand("monit", "stop", "-g", "vcap")
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Stop all services")
@@ -137,15 +153,14 @@ func (m monitJobSupervisor) Stop() error {
 
 	m.logger.Debug(monitJobSupervisorLogTag, "Waiting for services to stop")
 	for {
-		monitStatus, err := m.client.Status()
+		monitoredServices, pendingServices, erroredServices, err := m.checkServices()
 		if err != nil {
-			return bosherr.WrapErrorf(err, "Getting monit status")
+			return err
 		}
-		services := monitStatus.ServicesInGroup("vcap")
-		servicesToStop, servicesErrored := m.checkServices(services)
+		servicesToStop := append(monitoredServices, pendingServices...)
 
-		if len(servicesErrored) > 0 {
-			return bosherr.Errorf("Stopping services '%v' errored", servicesErrored)
+		if len(erroredServices) > 0 {
+			return bosherr.Errorf("Stopping services '%v' errored", erroredServices)
 		}
 
 		if len(servicesToStop) == 0 {
@@ -254,20 +269,26 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 	return
 }
 
-func (m monitJobSupervisor) checkServices(services []boshmonit.Service) ([]string, []string) {
-	servicesToStop := []string{}
-	servicesErrored := []string{}
+func (m monitJobSupervisor) checkServices() ([]string, []string, []string, error) {
+	monitoredServiceNames := []string{}
+	pendingServiceNames := []string{}
+	erroredServiceNames := []string{}
+
+	monitStatus, err := m.client.Status()
+	if err != nil {
+		return []string{}, []string{}, []string{}, bosherr.WrapErrorf(err, "Getting monit status")
+	}
+	services := monitStatus.ServicesInGroup("vcap")
 
 	for _, service := range services {
-		if service.Monitored || service.Pending {
-			servicesToStop = append(servicesToStop, service.Name)
-			continue
-		}
-
-		if service.Errored {
-			servicesErrored = append(servicesErrored, service.Name)
+		if service.Monitored {
+			monitoredServiceNames = append(monitoredServiceNames, service.Name)
+		} else if service.Pending {
+			pendingServiceNames = append(pendingServiceNames, service.Name)
+		} else if service.Errored {
+			erroredServiceNames = append(erroredServiceNames, service.Name)
 		}
 	}
 
-	return servicesToStop, servicesErrored
+	return monitoredServiceNames, pendingServiceNames, erroredServiceNames, nil
 }
