@@ -148,6 +148,13 @@ func (m monitJobSupervisor) Stop() error {
 
 	_, _, _, err := m.runner.RunCommand("monit", "stop", "-g", "vcap")
 	if err != nil {
+		stdout, stderr, _, summaryError := m.runner.RunCommand("monit", "summary")
+		if summaryError != nil {
+			m.logger.Error(monitJobSupervisorLogTag, "Failed to stop jobs: %s. Also failed to get monit summary: %s", err.Error(), summaryError.Error())
+		} else {
+			m.logger.Error(monitJobSupervisorLogTag, "Failed to stop jobs: %s. Current monit summary:\nstdout:\n%sstderr:\n%s", err.Error(), stdout, stderr)
+		}
+
 		return bosherr.WrapErrorf(err, "Stop all services")
 	}
 
