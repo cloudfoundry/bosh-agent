@@ -131,7 +131,14 @@ func (m monitJobSupervisor) Stop() error {
 	timer := m.timeService.NewTimer(10 * time.Minute)
 
 	for {
-		_, pendingServices, _, _ := m.checkServices()
+		services, err := m.checkServices()
+		if err != nil {
+			return err
+		}
+
+		pendingServices := m.filterServices(services, func(service boshmonit.Service) bool {
+			return service.Pending
+		})
 
 		if len(pendingServices) == 0 {
 			break
@@ -160,11 +167,16 @@ func (m monitJobSupervisor) Stop() error {
 
 	m.logger.Debug(monitJobSupervisorLogTag, "Waiting for services to stop")
 	for {
-		monitoredServices, pendingServices, erroredServices, err := m.checkServices()
+		services, err := m.checkServices()
 		if err != nil {
 			return err
 		}
-		servicesToStop := append(monitoredServices, pendingServices...)
+		erroredServices := m.filterServices(services, func(service boshmonit.Service) bool {
+			return service.Errored
+		})
+		servicesToStop := m.filterServices(services, func(service boshmonit.Service) bool {
+			return service.Monitored || service.Pending
+		})
 
 		if len(erroredServices) > 0 {
 			return bosherr.Errorf("Stopping services '%v' errored", erroredServices)
@@ -276,26 +288,24 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 	return
 }
 
-func (m monitJobSupervisor) checkServices() ([]string, []string, []string, error) {
-	monitoredServiceNames := []string{}
-	pendingServiceNames := []string{}
-	erroredServiceNames := []string{}
-
-	monitStatus, err := m.client.Status()
-	if err != nil {
-		return []string{}, []string{}, []string{}, bosherr.WrapErrorf(err, "Getting monit status")
-	}
-	services := monitStatus.ServicesInGroup("vcap")
-
+func (m monitJobSupervisor) filterServices(services []boshmonit.Service, fn func(boshmonit.Service) bool) []string {
+	matchingServices := []string{}
 	for _, service := range services {
-		if service.Monitored {
-			monitoredServiceNames = append(monitoredServiceNames, service.Name)
-		} else if service.Pending {
-			pendingServiceNames = append(pendingServiceNames, service.Name)
-		} else if service.Errored {
-			erroredServiceNames = append(erroredServiceNames, service.Name)
+		if fn(service) {
+			matchingServices = append(matchingServices, service.Name)
 		}
 	}
 
-	return monitoredServiceNames, pendingServiceNames, erroredServiceNames, nil
+	return matchingServices
+}
+
+func (m monitJobSupervisor) checkServices() ([]boshmonit.Service, error) {
+
+	monitStatus, err := m.client.Status()
+	if err != nil {
+		return nil, bosherr.WrapErrorf(err, "Getting monit status")
+	}
+	services := monitStatus.ServicesInGroup("vcap")
+
+	return services, nil
 }
