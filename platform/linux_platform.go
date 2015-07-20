@@ -820,7 +820,6 @@ func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uin
 
 func (p linux) findRootDevicePath() (string, uint8, error) {
 	mounts, err := p.diskManager.GetMountsSearcher().SearchMounts()
-
 	if err != nil {
 		return "", 0, bosherr.WrapError(err, "Searching mounts")
 	}

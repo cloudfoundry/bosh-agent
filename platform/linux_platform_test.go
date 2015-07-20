@@ -645,7 +645,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					Expect(partitioner.PartitionCalled).To(BeFalse())
 					Expect(formatter.FormatCalled).To(BeFalse())
 					Expect(mounter.MountCalled).To(BeFalse())
-				}) //old
+				})
 
 				Context("when root device is determined and root partition is not the first one", func() {
 					BeforeEach(func() {
@@ -747,7 +747,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					})
 				})
 
-			}) // outer
+			})
 
 			Context("when agent should not partition ephemeral disk on root disk", func() {
 				BeforeEach(func() {

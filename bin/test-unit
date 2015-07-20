@@ -37,7 +37,7 @@ $bin/test-unhandled-errors
 let "result+=$?"
 
 echo -e "\n Testing packages..."
-$bin/env ginkgo -v -r $race -skipPackage="integration,internal" $bin/..
+$bin/env ginkgo -r $race -skipPackage="integration,internal" $bin/..
 let "result+=$?"
 
 echo -e "\n Running build script to confirm everything compiles..."
