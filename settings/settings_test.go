@@ -341,6 +341,18 @@ func init() {
 					Expect(network.IsDHCP()).To(BeTrue())
 				})
 			})
+
+			Context("when UseDHCP is true", func() {
+				BeforeEach(func() {
+					network.UseDHCP = true
+					network.IP = "127.0.0.5"
+					network.Netmask = "255.255.255.0"
+				})
+
+				It("returns true", func() {
+					Expect(network.IsDHCP()).To(BeTrue())
+				})
+			})
 		})
 	})
 }

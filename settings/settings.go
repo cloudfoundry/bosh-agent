@@ -115,6 +115,7 @@ type Network struct {
 	Netmask  string `json:"netmask"`
 	Gateway  string `json:"gateway"`
 	Resolved bool   `json:"resolved"` // was resolved via DHCP
+	UseDHCP  bool   `json:"use_dhcp"`
 
 	Default []string `json:"default"`
 	DNS     []string `json:"dns"`
@@ -194,6 +195,10 @@ func (n Network) IsDHCP() bool {
 	}
 
 	if n.isDynamic() {
+		return true
+	}
+
+	if n.UseDHCP {
 		return true
 	}
 
