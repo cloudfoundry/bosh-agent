@@ -3,10 +3,8 @@ package jobsupervisor
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal/go-smtpd/smtpd"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
@@ -20,14 +18,15 @@ import (
 const monitJobSupervisorLogTag = "monitJobSupervisor"
 
 type monitJobSupervisor struct {
-	fs                    boshsys.FileSystem
-	runner                boshsys.CmdRunner
-	client                boshmonit.Client
-	logger                boshlog.Logger
-	dirProvider           boshdir.Provider
+	fs          boshsys.FileSystem
+	runner      boshsys.CmdRunner
+	client      boshmonit.Client
+	logger      boshlog.Logger
+	dirProvider boshdir.Provider
+
 	jobFailuresServerPort int
-	reloadOptions         MonitReloadOptions
-	timeService           clock.Clock
+
+	reloadOptions MonitReloadOptions
 }
 
 type MonitReloadOptions struct {
@@ -50,17 +49,17 @@ func NewMonitJobSupervisor(
 	dirProvider boshdir.Provider,
 	jobFailuresServerPort int,
 	reloadOptions MonitReloadOptions,
-	timeService clock.Clock,
 ) JobSupervisor {
-	return &monitJobSupervisor{
-		fs:                    fs,
-		runner:                runner,
-		client:                client,
-		logger:                logger,
-		dirProvider:           dirProvider,
+	return monitJobSupervisor{
+		fs:          fs,
+		runner:      runner,
+		client:      client,
+		logger:      logger,
+		dirProvider: dirProvider,
+
 		jobFailuresServerPort: jobFailuresServerPort,
-		reloadOptions:         reloadOptions,
-		timeService:           timeService,
+
+		reloadOptions: reloadOptions,
 	}
 }
 
@@ -128,74 +127,20 @@ func (m monitJobSupervisor) Start() error {
 }
 
 func (m monitJobSupervisor) Stop() error {
-	timer := m.timeService.NewTimer(10 * time.Minute)
-
-	for {
-		services, err := m.checkServices()
-		if err != nil {
-			return err
-		}
-
-		pendingServices := m.filterServices(services, func(service boshmonit.Service) bool {
-			return service.Pending
-		})
-
-		if len(pendingServices) == 0 {
-			break
-		}
-
-		select {
-		case <-timer.C():
-			return bosherr.Errorf("Timed out waiting for services '%s' to no longer be pending after 10 minutes", strings.Join(pendingServices, ", "))
-		default:
-		}
-
-		m.timeService.Sleep(500 * time.Millisecond)
-	}
-
-	_, _, _, err := m.runner.RunCommand("monit", "stop", "-g", "vcap")
+	services, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
-		stdout, stderr, _, summaryError := m.runner.RunCommand("monit", "summary")
-		if summaryError != nil {
-			m.logger.Error(monitJobSupervisorLogTag, "Failed to stop jobs: %s. Also failed to get monit summary: %s", err.Error(), summaryError.Error())
-		} else {
-			m.logger.Error(monitJobSupervisorLogTag, "Failed to stop jobs: %s. Current monit summary:\nstdout:\n%sstderr:\n%s", err.Error(), stdout, stderr)
-		}
-
-		return bosherr.WrapErrorf(err, "Stop all services")
+		return bosherr.WrapError(err, "Getting vcap services")
 	}
 
-	m.logger.Debug(monitJobSupervisorLogTag, "Waiting for services to stop")
-	for {
-		services, err := m.checkServices()
+	for _, service := range services {
+		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service %s", service)
+		err = m.client.StopService(service)
 		if err != nil {
-			return err
+			return bosherr.WrapErrorf(err, "Stopping service %s", service)
 		}
-		erroredServices := m.filterServices(services, func(service boshmonit.Service) bool {
-			return service.Errored
-		})
-		servicesToStop := m.filterServices(services, func(service boshmonit.Service) bool {
-			return service.Monitored || service.Pending
-		})
-
-		if len(erroredServices) > 0 {
-			return bosherr.Errorf("Stopping services '%v' errored", erroredServices)
-		}
-
-		if len(servicesToStop) == 0 {
-			m.logger.Debug(monitJobSupervisorLogTag, "Successfully stopped all services")
-			return nil
-		}
-
-		select {
-		case <-timer.C():
-			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 10 minutes", strings.Join(servicesToStop, ", "))
-		default:
-		}
-
-		m.logger.Debug(monitJobSupervisorLogTag, "Waiting for '%v' to stop", servicesToStop)
-		m.timeService.Sleep(500 * time.Millisecond)
 	}
+
+	return nil
 }
 
 func (m monitJobSupervisor) Unmonitor() error {
@@ -286,26 +231,4 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 		err = bosherr.WrapError(err, "Listen for SMTP")
 	}
 	return
-}
-
-func (m monitJobSupervisor) filterServices(services []boshmonit.Service, fn func(boshmonit.Service) bool) []string {
-	matchingServices := []string{}
-	for _, service := range services {
-		if fn(service) {
-			matchingServices = append(matchingServices, service.Name)
-		}
-	}
-
-	return matchingServices
-}
-
-func (m monitJobSupervisor) checkServices() ([]boshmonit.Service, error) {
-
-	monitStatus, err := m.client.Status()
-	if err != nil {
-		return nil, bosherr.WrapErrorf(err, "Getting monit status")
-	}
-	services := monitStatus.ServicesInGroup("vcap")
-
-	return services, nil
 }

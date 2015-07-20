@@ -3,7 +3,6 @@ package monit_test
 import (
 	"bytes"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -66,33 +65,49 @@ var _ = Describe("httpClient", func() {
 	})
 
 	Describe("StopService", func() {
-		It("uses the longClient to send the unmonitor/stop requests", func() {
+		It("stop service", func() {
+			var calledMonit bool
+
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calledMonit = true
+				Expect(r.Method).To(Equal("POST"))
+				Expect(r.URL.Path).To(Equal("/test-service"))
+				Expect(r.PostFormValue("action")).To(Equal("stop"))
+				Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
+
+				expectedAuthEncoded := base64.URLEncoding.EncodeToString([]byte("fake-user:fake-pass"))
+				Expect(r.Header.Get("Authorization")).To(Equal(fmt.Sprintf("Basic %s", expectedAuthEncoded)))
+			})
+			ts := httptest.NewServer(handler)
+			defer ts.Close()
+
+			client := newRealClient(ts.Listener.Addr().String())
+
+			err := client.StopService("test-service")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(calledMonit).To(BeTrue())
+		})
+
+		It("uses the longClient to send a stop request", func() {
 			shortClient := fakehttp.NewFakeClient()
 			longClient := fakehttp.NewFakeClient()
 			client := newFakeClient(shortClient, longClient)
 
 			longClient.StatusCode = 200
 
-			client.StopService("test-service")
-
-			Expect(longClient.CallCount).To(Equal(2))
-			Expect(longClient.RequestBodies[0]).To(Equal("action=unmonitor"))
-			Expect(longClient.RequestBodies[1]).To(Equal("action=stop"))
+			err := client.StopService("test-service")
+			Expect(err).ToNot(HaveOccurred())
 
 			Expect(shortClient.CallCount).To(Equal(0))
-		})
+			Expect(longClient.CallCount).To(Equal(1))
 
-		Context("when unmonitoring the service errors", func() {
-			It("returns a wrapped error message", func() {
-				monitorClient := fakehttp.NewFakeClient()
-				monitorClient.Error = errors.New("Error message")
+			req := longClient.Requests[0]
+			Expect(req.URL.Host).To(Equal("agent.example.com"))
+			Expect(req.URL.Path).To(Equal("/test-service"))
+			Expect(req.Method).To(Equal("POST"))
 
-				client := newFakeClient(monitorClient, monitorClient)
-
-				err := client.StopService("test-service")
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Sending unmonitor before stop for service 'test-service': Sending unmonitor request to monit: Error message"))
-			})
+			content := longClient.RequestBodies[0]
+			Expect(content).To(Equal("action=stop"))
 		})
 	})
 
@@ -197,13 +212,9 @@ var _ = Describe("httpClient", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedServices := []Service{
-				Service{Monitored: false, Status: "unmonitored-start-pending"},
-				Service{Monitored: true, Status: "initializing"},
 				Service{Monitored: true, Status: "running"},
-				Service{Monitored: true, Status: "running-stop-pending"},
-				Service{Monitored: false, Status: "unmonitored-stop-pending"},
-				Service{Monitored: false, Status: "unmonitored"},
-				Service{Monitored: false, Status: "stopped"},
+				Service{Monitored: false, Status: "unknown"},
+				Service{Monitored: true, Status: "starting"},
 				Service{Monitored: true, Status: "failing"},
 			}
 
