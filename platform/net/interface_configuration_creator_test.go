@@ -218,7 +218,7 @@ func describeInterfaceConfigurationCreator() {
 			})
 		})
 
-		Context("when the number of networks does not match the number of devices", func() {
+		Context("when the number of networks is greater than the number of devices", func() {
 			BeforeEach(func() {
 				networks["foo"] = staticNetwork
 				networks["bar"] = dhcpNetwork
