@@ -41,6 +41,7 @@ func describeCentosNetManager() {
 			ipResolver,
 			interfaceConfigurationCreator,
 			addressBroadcaster,
+			[]string{"fake-eth3"},
 			logger,
 		)
 	})
@@ -131,10 +132,11 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			stubInterfacesWithVirtual(physicalInterfaces, nil)
 		}
 
-		It("writes a network script for static and dynamic interfaces", func() {
+		It("writes a network script for static and dynamic managed interfaces", func() {
 			stubInterfaces(map[string]boshsettings.Network{
 				"ethdhcp":   dhcpNetwork,
 				"ethstatic": staticNetwork,
+				"fake-eth3": {Mac: "gg:hh"},
 			})
 
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
@@ -147,6 +149,8 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			dhcpConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethdhcp")
 			Expect(dhcpConfig).ToNot(BeNil())
 			Expect(dhcpConfig.StringContents()).To(Equal(expectedNetworkConfigurationForDHCP))
+
+			Expect(fs.FileExists("/etc/sysconfig/network-scripts/ifcfg-fake-eth3")).ToNot(BeTrue())
 		})
 
 		It("returns errors from glob /sys/class/net/", func() {
@@ -470,6 +474,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth0", "aa:bb", true))
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth1", "cc:dd", true))
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth2", "ee:ff", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth3", "gg:hh", true))
 				fs.SetGlob("/sys/class/net/*", interfacePaths)
 			})
 
@@ -477,7 +482,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				fs.WriteFileString(fmt.Sprintf("/etc/sysconfig/network-scripts/ifcfg-%s", iface), "fake-config")
 			}
 
-			It("returns networks that have ifcfg config present", func() {
+			It("returns managed networks that have ifcfg config present", func() {
 				writeIfcgfFile("fake-eth0")
 				writeIfcgfFile("fake-eth2")
 

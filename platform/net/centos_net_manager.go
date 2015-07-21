@@ -23,6 +23,7 @@ type centosNetManager struct {
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	addressBroadcaster            bosharp.AddressBroadcaster
+	unmanagedPhysInterfaces       []string
 	logger                        boshlog.Logger
 }
 
@@ -32,6 +33,7 @@ func NewCentosNetManager(
 	ipResolver boship.Resolver,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	addressBroadcaster bosharp.AddressBroadcaster,
+	unmanagedPhysInterfaces []string,
 	logger boshlog.Logger,
 ) Manager {
 	return centosNetManager{
@@ -40,6 +42,7 @@ func NewCentosNetManager(
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		addressBroadcaster:            addressBroadcaster,
+		unmanagedPhysInterfaces:       unmanagedPhysInterfaces,
 		logger:                        logger,
 	}
 }
@@ -276,6 +279,15 @@ func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInte
 	return changed, nil
 }
 
+func (net centosNetManager) isManagedInterface(iface string) bool {
+	for _, physIface := range net.unmanagedPhysInterfaces {
+		if physIface == iface {
+			return false
+		}
+	}
+	return true
+}
+
 func (net centosNetManager) detectMacAddresses() (map[string]string, error) {
 	addresses := map[string]string{}
 
@@ -297,7 +309,9 @@ func (net centosNetManager) detectMacAddresses() (map[string]string, error) {
 			macAddress = strings.Trim(macAddress, "\n")
 
 			interfaceName := filepath.Base(filePath)
-			addresses[macAddress] = interfaceName
+			if net.isManagedInterface(interfaceName) {
+				addresses[macAddress] = interfaceName
+			}
 		}
 	}
 

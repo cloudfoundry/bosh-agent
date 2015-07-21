@@ -360,7 +360,7 @@ func init() {
 				arping := bosharp.NewArping(runner, fs, logger, boshplatform.ArpIterations, boshplatform.ArpIterationDelay, boshplatform.ArpInterfaceCheckDelay)
 				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
-				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
+				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, []string{}, logger)
 
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
 

@@ -63,6 +63,9 @@ type LinuxOptions struct {
 	// Strategy for resolving device paths;
 	// possible values: virtio, scsi, ''
 	DevicePathResolutionType string
+
+	// List of physical interfaces that shouldn't be managed by the Agent
+	UnmanagedPhysInterfaces []string
 }
 
 type linux struct {

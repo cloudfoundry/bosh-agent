@@ -71,6 +71,7 @@ func describeUbuntuNetManager() {
 			ipResolver,
 			interfaceConfigurationCreator,
 			addressBroadcaster,
+			[]string{"fake-eth3"},
 			logger,
 		).(UbuntuNetManager)
 	})
@@ -185,7 +186,7 @@ iface ethstatic inet static
 dns-nameservers 8.8.8.8 9.9.9.9`
 		})
 
-		It("writes interfaces in /etc/network/interfaces in alphabetic order", func() {
+		It("writes managed interfaces in /etc/network/interfaces in alphabetic order", func() {
 			anotherDHCPNetwork := boshsettings.Network{
 				Type:    "dynamic",
 				Default: []string{"dns"},
@@ -197,6 +198,7 @@ dns-nameservers 8.8.8.8 9.9.9.9`
 				"ethstatic": staticNetwork,
 				"ethdhcp1":  dhcpNetwork,
 				"ethdhcp0":  anotherDHCPNetwork,
+				"fake-eth3": {Mac: "gg:hh"},
 			})
 
 			err := netManager.SetupNetworking(boshsettings.Networks{
@@ -595,10 +597,11 @@ iface ethstatic inet static
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth0", "aa:bb", true))
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth1", "cc:dd", true))
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth2", "ee:ff", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth3", "gg:hh", true))
 				fs.SetGlob("/sys/class/net/*", interfacePaths)
 			})
 
-			It("returns networks that are defined in /etc/network/interfaces", func() {
+			It("returns managed networks that are defined in /etc/network/interfaces", func() {
 				cmdRunner.AddCmdResult("ifup --no-act fake-eth0", fakesys.FakeCmdResult{
 					Stdout:     "",
 					Stderr:     "ifup: interface fake-eth0 already configured",

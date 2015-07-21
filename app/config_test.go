@@ -25,7 +25,11 @@ var _ = Describe("LoadConfigFromPath", func() {
 					"UseDefaultTmpDir": true,
 					"UsePreformattedPersistentDisk": true,
 					"BindMountPersistentDisk": true,
-					"DevicePathResolutionType": "virtio"
+					"DevicePathResolutionType": "virtio",
+					"UnmanagedPhysInterfaces": [
+						"eth1",
+						"eth2"
+					]
 				}
 			},
 			"Infrastructure": {
@@ -70,6 +74,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 					UsePreformattedPersistentDisk: true,
 					BindMountPersistentDisk:       true,
 					DevicePathResolutionType:      "virtio",
+					UnmanagedPhysInterfaces:       []string{"eth1", "eth2"},
 				},
 			},
 			Infrastructure: boshinf.Options{

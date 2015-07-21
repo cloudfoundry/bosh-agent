@@ -23,6 +23,7 @@ type UbuntuNetManager struct {
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	addressBroadcaster            bosharp.AddressBroadcaster
+	unmanagedPhysInterfaces       []string
 	logger                        boshlog.Logger
 }
 
@@ -32,6 +33,7 @@ func NewUbuntuNetManager(
 	ipResolver boship.Resolver,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	addressBroadcaster bosharp.AddressBroadcaster,
+	unmanagedPhysInterfaces []string,
 	logger boshlog.Logger,
 ) Manager {
 	return UbuntuNetManager{
@@ -40,6 +42,7 @@ func NewUbuntuNetManager(
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		addressBroadcaster:            addressBroadcaster,
+		unmanagedPhysInterfaces:       unmanagedPhysInterfaces,
 		logger:                        logger,
 	}
 }
@@ -282,6 +285,15 @@ iface {{ .Name }} inet static
 {{ if .DNSServers }}
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
 
+func (net UbuntuNetManager) isManagedInterface(iface string) bool {
+	for _, physIface := range net.unmanagedPhysInterfaces {
+		if physIface == iface {
+			return false
+		}
+	}
+	return true
+}
+
 func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 	addresses := map[string]string{}
 
@@ -301,9 +313,10 @@ func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 			}
 
 			macAddress = strings.Trim(macAddress, "\n")
-
 			interfaceName := filepath.Base(filePath)
-			addresses[macAddress] = interfaceName
+			if net.isManagedInterface(interfaceName) {
+				addresses[macAddress] = interfaceName
+			}
 		}
 	}
 

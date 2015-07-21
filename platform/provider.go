@@ -66,8 +66,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	arping := bosharp.NewArping(runner, fs, logger, ArpIterations, ArpIterationDelay, ArpInterfaceCheckDelay)
 	interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, options.Linux.UnmanagedPhysInterfaces, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, options.Linux.UnmanagedPhysInterfaces, logger)
 
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
