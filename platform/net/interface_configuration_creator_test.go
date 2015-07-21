@@ -218,6 +218,23 @@ func describeInterfaceConfigurationCreator() {
 			})
 		})
 
+		Context("when the number of devices is greater than the number of networks", func() {
+			BeforeEach(func() {
+				interfacesByMAC["some-other-mac"] = "dhcp-interface-name"
+			})
+
+			It("additional devices are configured to dhcp", func() {
+				staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(staticInterfaceConfigurations).To(BeEmpty())
+				Expect(dhcpInterfaceConfigurations).To(ConsistOf(
+					DHCPInterfaceConfiguration{
+						Name: "dhcp-interface-name",
+					},
+				))
+			})
+		})
+
 		Context("when the number of networks is greater than the number of devices", func() {
 			BeforeEach(func() {
 				networks["foo"] = staticNetwork
@@ -233,6 +250,7 @@ func describeInterfaceConfigurationCreator() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
+
 	})
 
 	It("wraps errors calculating Network and Broadcast addresses", func() {
