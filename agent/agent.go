@@ -82,7 +82,7 @@ func (a Agent) Run() error {
 	go func() {
 		err := a.syslogServer.Start(a.handleSyslogMsg(errCh))
 		if err != nil {
-			errCh <- err
+			a.logger.Warn(agentLogTag, "Failed to start syslogServer: %s", err.Error())
 		}
 	}()
 
