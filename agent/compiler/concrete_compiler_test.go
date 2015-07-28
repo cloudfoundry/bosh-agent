@@ -184,6 +184,14 @@ func init() {
 				Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 			})
 
+			It("returns an error if target directory is empty during uncompression", func() {
+				pkg.BlobstoreID = ""
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Blobstore ID is empty"))
+			})
+
 			It("installs dependent packages", func() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())

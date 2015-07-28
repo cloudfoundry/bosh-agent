@@ -150,6 +150,10 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) erro
 	// This will be fixed in future by explicitly asking to verify SHA1
 	// instead of doing that by default like all other downloads.
 	// (Ruby agent mistakenly never checked SHA1.)
+	if pkg.BlobstoreID == "" {
+		return bosherr.Error("Blobstore ID is empty")
+	}
+
 	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, "")
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
