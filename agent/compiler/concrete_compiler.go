@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -145,15 +146,15 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 }
 
 func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) error {
+	if pkg.BlobstoreID == "" {
+		return bosherr.Error(fmt.Sprintf("Blobstore ID for package '%s' is empty", pkg.Name))
+	}
+
 	// Do not verify integrity of the download via SHA1
 	// because Director might have stored non-matching SHA1.
 	// This will be fixed in future by explicitly asking to verify SHA1
 	// instead of doing that by default like all other downloads.
 	// (Ruby agent mistakenly never checked SHA1.)
-	if pkg.BlobstoreID == "" {
-		return bosherr.Error("Blobstore ID is empty")
-	}
-
 	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, "")
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)

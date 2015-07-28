@@ -189,7 +189,7 @@ func init() {
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Blobstore ID is empty"))
+				Expect(err.Error()).To(ContainSubstring("Blobstore ID for package '%s' is empty", pkg.Name))
 			})
 
 			It("installs dependent packages", func() {
