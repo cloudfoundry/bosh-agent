@@ -5,6 +5,7 @@ import (
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	bosherror "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type dummyNatsJobSupervisor struct {
@@ -29,6 +30,9 @@ func (d *dummyNatsJobSupervisor) AddJob(jobName string, jobIndex int, configPath
 }
 
 func (d *dummyNatsJobSupervisor) Start() error {
+	if d.status == "fail_task" {
+		return bosherror.Error("fake-task-fail-error")
+	}
 	return nil
 }
 
@@ -81,6 +85,19 @@ func (d *dummyNatsJobSupervisor) statusHandler(req boshhandler.Request) boshhand
 		}
 
 		return boshhandler.NewValueResponse("ok")
+
+	case "set_task_fail":
+		// Do not unmarshal message until determining its method
+		var body map[string]string
+
+		err := json.Unmarshal(req.GetPayload(), &body)
+		if err != nil {
+			return boshhandler.NewExceptionResponse(err)
+		}
+
+		d.status = body["status"]
+
+		return nil
 	default:
 		return nil
 	}

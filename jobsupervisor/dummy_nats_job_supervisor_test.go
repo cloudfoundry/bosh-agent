@@ -49,4 +49,29 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 			Expect(dummyNats.Status()).To(Equal("running"))
 		})
 	})
+
+	Describe("Start", func() {
+		BeforeEach(func() {
+			dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+		})
+
+		Context("When set_task_fail flag is sent in messagae", func() {
+			It("raises an error", func() {
+				statusMessage := boshhandler.NewRequest("", "set_task_fail", []byte(`{"status":"fail_task"}`))
+				handler.RegisteredAdditionalFunc(statusMessage)
+				err := dummyNats.Start()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-task-fail-error"))
+			})
+		})
+
+		Context("when set_task_fail flag is not sent in message", func() {
+			It("raises an error", func() {
+				statusMessage := boshhandler.NewRequest("", "set_task_fail", []byte(`{"status":"something_else"}`))
+				handler.RegisteredAdditionalFunc(statusMessage)
+				err := dummyNats.Start()
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
 })
