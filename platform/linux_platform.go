@@ -639,6 +639,9 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		}
 
 		partitionPath := realPath + "1"
+		if strings.Contains(realPath, "/dev/mapper/") {
+			partitionPath = realPath + "-part1" // softlayer multipath support
+		}
 
 		err = p.diskManager.GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
 		if err != nil {
@@ -667,9 +670,11 @@ func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bo
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
-	if !p.options.UsePreformattedPersistentDisk {
+	if strings.Contains(realPath, "/dev/mapper/") {
+        realPath  = realPath + "-part1" // softlayer multipath support
+    } else {
 		realPath += "1"
-	}
+    }
 
 	return p.diskManager.GetMounter().Unmount(realPath)
 }
@@ -733,9 +738,11 @@ func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
-	if !p.options.UsePreformattedPersistentDisk {
-		realPath += "1"
-	}
+	if strings.Contains(realPath, "/dev/mapper/") {
+                    realPath  = realPath + "-part1" // softlayer multipath support
+        } else {
+                    realPath += "1"
+    }
 
 	return p.diskManager.GetMounter().IsMounted(realPath)
 }
