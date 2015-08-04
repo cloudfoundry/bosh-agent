@@ -122,9 +122,11 @@ func init() {
 			It("uses a VirtioDevicePathResolver", func() {
 				err := app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
 				Expect(err).ToNot(HaveOccurred())
+				logLevel, err := boshlog.Levelify("DEBUG")
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(app.GetPlatform().GetDevicePathResolver()).To(
-					BeAssignableToTypeOf(devicepathresolver.NewVirtioDevicePathResolver(nil, nil, boshlog.Logger{})))
+					BeAssignableToTypeOf(devicepathresolver.NewVirtioDevicePathResolver(nil, nil, boshlog.NewLogger(logLevel))))
 			})
 		})
 

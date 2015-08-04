@@ -7,7 +7,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	terminalhelpers "github.com/cloudfoundry/bosh-utils/logger/terminal_helpers"
+	terminalhelpers "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger/terminal_helpers"
 )
 
 func expectedLogFormat(tag, msg string) string {
