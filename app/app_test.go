@@ -10,6 +10,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 func init() {
@@ -97,7 +98,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			app = New(logger)
+			fakefs := boshsys.NewOsFileSystem(logger)
+			app = New(logger, fakefs)
 		})
 
 		AfterEach(func() {

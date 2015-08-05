@@ -45,10 +45,11 @@ type app struct {
 	logger   boshlog.Logger
 	agent    boshagent.Agent
 	platform boshplatform.Platform
+	fs       boshsys.FileSystem
 }
 
-func New(logger boshlog.Logger) App {
-	return &app{logger: logger}
+func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
+	return &app{logger: logger, fs: fs}
 }
 
 func (app *app) Setup(args []string) error {
@@ -68,7 +69,7 @@ func (app *app) Setup(args []string) error {
 	// sigar when cross compiling linux -> darwin
 	sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
-	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, sigarCollector, config.Platform)
+	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, sigarCollector, app.fs, config.Platform)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
