@@ -6,6 +6,7 @@ import (
 
 	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
 
+	"fmt"
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -46,10 +47,11 @@ type app struct {
 	agent    boshagent.Agent
 	platform boshplatform.Platform
 	fs       boshsys.FileSystem
+	logTag   string
 }
 
 func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
-	return &app{logger: logger, fs: fs}
+	return &app{logger: logger, fs: fs, logTag: "App"}
 }
 
 func (app *app) Setup(args []string) error {
@@ -62,6 +64,8 @@ func (app *app) Setup(args []string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Loading config")
 	}
+
+	app.logStemcellInfo()
 
 	dirProvider := boshdirs.NewProvider(opts.BaseDirectory)
 
@@ -285,4 +289,21 @@ func (app *app) loadConfig(path string) (Config, error) {
 	// Use one off copy of file system to read configuration file
 	fs := boshsys.NewOsFileSystem(app.logger)
 	return LoadConfigFromPath(fs, path)
+}
+
+func (app *app) logStemcellInfo() {
+	fs := app.fs
+	stemcellVersion, err := fs.ReadFile("/var/vcap/bosh/etc/stemcell_version")
+	if err != nil || len(stemcellVersion) == 0 {
+		stemcellVersion = []byte(`?`)
+		app.logger.Error(app.logTag, "Could not find stemcell version: ", err)
+	}
+
+	stemcellSha1, err := fs.ReadFile("/var/vcap/bosh/etc/stemcell_git_sha1")
+	if err != nil || len(stemcellSha1) == 0 {
+		stemcellSha1 = []byte(`?`)
+		app.logger.Error(app.logTag, "Could not find stemcell git sha: ", err)
+	}
+	msg := fmt.Sprintf(`Running on stemcell version '%s' (git: %s)`, stemcellVersion, stemcellSha1)
+	app.logger.Info(app.logTag, msg)
 }

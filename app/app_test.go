@@ -10,7 +10,9 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshterminal "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger/terminal_helpers"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 func init() {
@@ -146,6 +148,100 @@ func init() {
 
 				Expect(app.GetPlatform().GetDevicePathResolver()).To(
 					BeAssignableToTypeOf(devicepathresolver.NewScsiDevicePathResolver(0, nil)))
+			})
+		})
+
+		Context("logging stemcell version and git sha", func() {
+			Context("when stemcell version and sha files are present", func() {
+				It("should print out the stemcell version and sha in the logs", func() {
+					stdout, _, err := boshterminal.CaptureOutputs(func() {
+						logger := boshlog.NewLogger(boshlog.LevelInfo)
+						fakeFs := fakesys.NewFakeFileSystem()
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_version", []byte("version-blah"))
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_git_sha1", []byte("sha1-blah"))
+						app = New(logger, fakeFs)
+						app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+					})
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring("Running on stemcell version 'version-blah' (git: sha1-blah)"))
+				})
+			})
+
+			Context("when stemcell version file is NOT present", func() {
+				It("should print out the sha in the logs", func() {
+					stdout, _, err := boshterminal.CaptureOutputs(func() {
+						logger := boshlog.NewLogger(boshlog.LevelInfo)
+						fakeFs := fakesys.NewFakeFileSystem()
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_git_sha1", []byte("sha1-blah"))
+						app = New(logger, fakeFs)
+						app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+					})
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring("Running on stemcell version '?' (git: sha1-blah)"))
+				})
+			})
+
+			Context("when sha version file is NOT present", func() {
+				It("should print out the stemcell version in the logs", func() {
+					stdout, _, err := boshterminal.CaptureOutputs(func() {
+						logger := boshlog.NewLogger(boshlog.LevelInfo)
+						fakeFs := fakesys.NewFakeFileSystem()
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_version", []byte("version-blah"))
+						app = New(logger, fakeFs)
+						app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+					})
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring("Running on stemcell version 'version-blah' (git: ?)"))
+				})
+			})
+
+			Context("when stemcell version file is empty", func() {
+				It("should print out the sha in the logs", func() {
+					stdout, _, err := boshterminal.CaptureOutputs(func() {
+						logger := boshlog.NewLogger(boshlog.LevelInfo)
+						fakeFs := fakesys.NewFakeFileSystem()
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_version", []byte(""))
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_git_sha1", []byte("sha1-blah"))
+						app = New(logger, fakeFs)
+						app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+					})
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring("Running on stemcell version '?' (git: sha1-blah)"))
+				})
+			})
+
+			Context("when sha version file is empty", func() {
+				It("should print out the stemcell version in the logs", func() {
+					stdout, _, err := boshterminal.CaptureOutputs(func() {
+						logger := boshlog.NewLogger(boshlog.LevelInfo)
+						fakeFs := fakesys.NewFakeFileSystem()
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_version", []byte("version-blah"))
+						fakeFs.WriteFile("/var/vcap/bosh/etc/stemcell_git_sha1", []byte(""))
+						app = New(logger, fakeFs)
+						app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+					})
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring("Running on stemcell version 'version-blah' (git: ?)"))
+				})
+			})
+
+			Context("when stemcell version and sha files are NOT present", func() {
+				It("should print unknown version and sha in the logs", func() {
+					stdout, _, err := boshterminal.CaptureOutputs(func() {
+						logger := boshlog.NewLogger(boshlog.LevelInfo)
+						fakeFs := fakesys.NewFakeFileSystem()
+						app = New(logger, fakeFs)
+						app.Setup([]string{"bosh-agent", "-P", "dummy", "-C", agentConfPath, "-b", baseDir})
+					})
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring("Running on stemcell version '?' (git: ?)"))
+				})
 			})
 		})
 	})
