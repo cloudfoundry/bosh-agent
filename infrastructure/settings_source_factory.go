@@ -12,8 +12,7 @@ import (
 )
 
 type Options struct {
-	StaticEphemeralDiskPath string
-	Settings                SettingsOptions
+	Settings SettingsOptions
 }
 
 type SettingsOptions struct {
