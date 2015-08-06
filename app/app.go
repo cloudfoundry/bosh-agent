@@ -43,15 +43,20 @@ type App interface {
 }
 
 type app struct {
-	logger   boshlog.Logger
-	agent    boshagent.Agent
-	platform boshplatform.Platform
-	fs       boshsys.FileSystem
-	logTag   string
+	logger      boshlog.Logger
+	agent       boshagent.Agent
+	platform    boshplatform.Platform
+	fs          boshsys.FileSystem
+	logTag      string
+	dirProvider boshdirs.Provider
 }
 
 func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
-	return &app{logger: logger, fs: fs, logTag: "App"}
+	return &app{
+		logger: logger,
+		fs:     fs,
+		logTag: "App",
+	}
 }
 
 func (app *app) Setup(args []string) error {
@@ -65,15 +70,14 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Loading config")
 	}
 
+	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
-
-	dirProvider := boshdirs.NewProvider(opts.BaseDirectory)
 
 	// Pulled outside of the platform provider so bosh-init will not pull in
 	// sigar when cross compiling linux -> darwin
 	sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
-	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, sigarCollector, app.fs, config.Platform)
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, app.fs, config.Platform)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
@@ -87,14 +91,14 @@ func (app *app) Setup(args []string) error {
 
 	settingsService := boshsettings.NewService(
 		app.platform.GetFs(),
-		filepath.Join(dirProvider.BoshDir(), "settings.json"),
+		filepath.Join(app.dirProvider.BoshDir(), "settings.json"),
 		settingsSource,
 		app.platform,
 		app.logger,
 	)
 	boot := boshagent.NewBootstrap(
 		app.platform,
-		dirProvider,
+		app.dirProvider,
 		settingsService,
 		app.logger,
 	)
@@ -105,12 +109,12 @@ func (app *app) Setup(args []string) error {
 
 	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger)
 
-	mbusHandler, err := mbusHandlerProvider.Get(app.platform, dirProvider)
+	mbusHandler, err := mbusHandlerProvider.Get(app.platform, app.dirProvider)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting mbus handler")
 	}
 
-	blobstoreProvider := boshblob.NewProvider(app.platform.GetFs(), app.platform.GetRunner(), dirProvider.EtcDir(), app.logger)
+	blobstoreProvider := boshblob.NewProvider(app.platform.GetFs(), app.platform.GetRunner(), app.dirProvider.EtcDir(), app.logger)
 
 	blobsettings := settingsService.GetSettings().Blobstore
 	blobstore, err := blobstoreProvider.Get(blobsettings.Type, blobsettings.Options)
@@ -129,7 +133,7 @@ func (app *app) Setup(args []string) error {
 		app.platform,
 		monitClient,
 		app.logger,
-		dirProvider,
+		app.dirProvider,
 		mbusHandler,
 	)
 
@@ -140,7 +144,7 @@ func (app *app) Setup(args []string) error {
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
-	applier, compiler := app.buildApplierAndCompiler(dirProvider, blobstore, jobSupervisor)
+	applier, compiler := app.buildApplierAndCompiler(app.dirProvider, blobstore, jobSupervisor)
 
 	uuidGen := boshuuid.NewGenerator()
 
@@ -149,10 +153,10 @@ func (app *app) Setup(args []string) error {
 	taskManager := boshtask.NewManagerProvider().NewManager(
 		app.logger,
 		app.platform.GetFs(),
-		dirProvider.BoshDir(),
+		app.dirProvider.BoshDir(),
 	)
 
-	specFilePath := filepath.Join(dirProvider.BoshDir(), "spec.json")
+	specFilePath := filepath.Join(app.dirProvider.BoshDir(), "spec.json")
 	specService := boshas.NewConcreteV1Service(
 		app.platform.GetFs(),
 		specFilePath,
@@ -161,7 +165,7 @@ func (app *app) Setup(args []string) error {
 	drainScriptProvider := boshdrain.NewConcreteScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
-		dirProvider,
+		app.dirProvider,
 	)
 
 	actionFactory := boshaction.NewFactory(
@@ -292,18 +296,17 @@ func (app *app) loadConfig(path string) (Config, error) {
 }
 
 func (app *app) logStemcellInfo() {
-	fs := app.fs
-	stemcellVersion, err := fs.ReadFile("/var/vcap/bosh/etc/stemcell_version")
-	if err != nil || len(stemcellVersion) == 0 {
-		stemcellVersion = []byte(`?`)
-		app.logger.Error(app.logTag, "Could not find stemcell version: ", err)
-	}
-
-	stemcellSha1, err := fs.ReadFile("/var/vcap/bosh/etc/stemcell_git_sha1")
-	if err != nil || len(stemcellSha1) == 0 {
-		stemcellSha1 = []byte(`?`)
-		app.logger.Error(app.logTag, "Could not find stemcell git sha: ", err)
-	}
-	msg := fmt.Sprintf(`Running on stemcell version '%s' (git: %s)`, stemcellVersion, stemcellSha1)
+	stemcellVersionFilePath := filepath.Join(app.dirProvider.EtcDir(), "stemcell_version")
+	stemcellVersion := app.fileContents(stemcellVersionFilePath)
+	stemcellSha1 := app.fileContents(filepath.Join(app.dirProvider.EtcDir(), "stemcell_git_sha1"))
+	msg := fmt.Sprintf("Running on stemcell version '%s' (git: %s)", stemcellVersion, stemcellSha1)
 	app.logger.Info(app.logTag, msg)
+}
+
+func (app *app) fileContents(path string) string {
+	contents, err := app.fs.ReadFileString(path)
+	if err != nil || len(contents) == 0 {
+		contents = "?"
+	}
+	return contents
 }
