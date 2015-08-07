@@ -122,9 +122,15 @@ var _ = Describe("rootDevicePartitioner", func() {
 					"parted -m /dev/sda unit B print",
 					fakesys.FakeCmdResult{
 						Stdout: `BYT;
+<<<<<<< HEAD
 /dev/sda:21474836480B:virtblk:512:512:msdos:Virtio Block Device;
 1:0:0B:0B:::boot, prep;
 2:32256B:3071000063B:3070967808B:ext4::;
+=======
+/dev/vda:21474836480B:virtblk:512:512:msdos:Virtio Block Device;
+1:0:0B:0B:::boot, prep;
+1:32256B:3071000063B:3070967808B:ext4::;
+>>>>>>> 2adfc44630fab3a424bcd85971b1c7bb6ed8e544
 `,
 					},
 				)
