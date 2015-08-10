@@ -824,7 +824,7 @@ func (p linux) findRootDevicePath() (string, uint8, error) {
 		return "", 0, bosherr.WrapError(err, "Searching mounts")
 	}
 
-	var maxDevNum uint8
+	var devNum uint8
 	var devPath string
 	validPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
 
@@ -835,23 +835,16 @@ func (p linux) findRootDevicePath() (string, uint8, error) {
 		}
 		partition := strings.Trim(stdout, "\n")
 		p.logger.Debug(logTag, "Symlink is: `%s'", partition)
-		if validPartition.MatchString(partition) {
-			devNum := partition[len(partition)-1] - 48
-			if devNum > maxDevNum {
-				maxDevNum = devNum
-			}
-		}
 
 		if mount.MountPoint == "/" && strings.HasPrefix(mount.PartitionPath, "/dev/") {
 			p.logger.Debug(logTag, "Found root partition: `%s'", mount.PartitionPath)
 			if !validPartition.MatchString(partition) {
 				return "", 0, bosherr.Error("Root partition has an invalid name" + partition)
 			}
+			devNum = partition[len(partition)-1] - 48
 			devPath = partition[:len(partition)-1]
+			return devPath, devNum, nil
 		}
-	}
-	if devPath != "" {
-		return devPath, maxDevNum, nil
 	}
 	return "", 0, bosherr.Error("Getting root partition device")
 }
