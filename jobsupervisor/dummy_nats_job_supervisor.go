@@ -40,7 +40,9 @@ func (d *dummyNatsJobSupervisor) Start() error {
 }
 
 func (d *dummyNatsJobSupervisor) Stop() error {
-	d.status = "stopped"
+	if d.status != "failing" && d.status != "fail_task" {
+		d.status = "stopped"
+	}
 	return nil
 }
 
