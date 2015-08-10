@@ -33,10 +33,14 @@ func (d *dummyNatsJobSupervisor) Start() error {
 	if d.status == "fail_task" {
 		return bosherror.Error("fake-task-fail-error")
 	}
+	if d.status != "failing" {
+		d.status = "running"
+	}
 	return nil
 }
 
 func (d *dummyNatsJobSupervisor) Stop() error {
+	d.status = "stopped"
 	return nil
 }
 
