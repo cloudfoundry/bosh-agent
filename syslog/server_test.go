@@ -137,16 +137,12 @@ var _ = Describe("Server", func() {
 		Expect(contents).To(ContainElement("msg4"))
 	})
 
-	// Pending... changes to Concourse in v0.57 mean that non-privileged jobs
-	// are run as a "non-privileged root" user. that change appears to cause
-	// this test to hang indefinitely.
-	// ...
-	// It("returns error if server fails to listen", func() {
-	// 	server := NewServer(10, logger) // lower port; should fail unless running as root
-	// 	err := server.Start(nil)
-	// 	Expect(err).To(HaveOccurred())
-	// 	Expect(err.Error()).To(ContainSubstring("Listening on port 10"))
-	// })
+	It("returns error if server fails to listen", func() {
+		server := NewServer(10, logger) // lower port; should fail unless running as root
+		err := server.Start(nil)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("Listening on port 10"))
+	})
 
 	It("logs parsing error to error log if parsing syslog message fails", func() {
 		outBuf := bytes.NewBufferString("")
