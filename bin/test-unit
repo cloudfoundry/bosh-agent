@@ -16,8 +16,13 @@ bin=$(dirname $0)
 # Travis randomly kills go builds when using -race
 race=$([ "$TRAVIS" != "true" ] && echo "-race")
 
-echo -e "\n Formatting packages..."
-$bin/go fmt github.com/cloudfoundry/bosh-agent/...
+ignored=(Godeps internal)
+echo -e "\n Formatting packages, other than: ${ignored[*]}..."
+for i in `ls -1` ; do
+  if [ -d "$i" ] && [[ ! ${ignored[*]} =~ "$i" ]] ; then
+    $bin/go fmt github.com/cloudfoundry/bosh-agent/${i}/... 2> /dev/null
+  fi
+done
 let "result+=$?"
 
 echo -e "\n Checking with golint..."
