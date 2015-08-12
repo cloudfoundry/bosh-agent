@@ -53,13 +53,13 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	if err != nil {
 		return bosherr.WrapError(err, "Shelling out to sfdisk")
 	}
-	
+
 	if strings.Contains(devicePath, "/dev/mapper/") { // softlayer multipath support
 		_, _, _, err = p.cmdRunner.RunCommand("/etc/init.d/open-iscsi", "restart")
 		if err != nil {
-		return bosherr.WrapError(err, "Restarting open-iscsi")
+			return bosherr.WrapError(err, "Restarting open-iscsi")
 		}
-		time.Sleep(1*time.Second); // wait 1 s for ***-part1 partition to show up
+		time.Sleep(1 * time.Second) // wait 1 s for ***-part1 partition to show up
 	}
 
 	return nil
