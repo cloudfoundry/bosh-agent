@@ -18,30 +18,31 @@ type concreteServer struct {
 	port   uint16
 	logger boshlog.Logger
 
-	l  net.Listener
-	ll sync.Mutex
+	listener         net.Listener
+	lock             sync.Mutex
+	listenerProvider func(protocol, address string) (net.Listener, error)
 }
 
-func NewServer(port uint16, logger boshlog.Logger) Server {
-	return &concreteServer{port: port, logger: logger}
+func NewServer(port uint16, listenerProvider func(protocol, address string) (net.Listener, error), logger boshlog.Logger) Server {
+	return &concreteServer{port: port, logger: logger, listenerProvider: listenerProvider}
 }
 
 func (s *concreteServer) Start(callback CallbackFunc) error {
 	var err error
 
-	s.ll.Lock()
+	s.lock.Lock()
 
-	s.l, err = net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(int(s.port)))
+	s.listener, err = s.listenerProvider("tcp", "127.0.0.1:"+strconv.Itoa(int(s.port)))
 	if err != nil {
-		s.ll.Unlock()
+		s.lock.Unlock()
 		return bosherr.WrapErrorf(err, "Listening on port %d", s.port)
 	}
 
 	// Should not defer unlock since there is a long-running loop
-	s.ll.Unlock()
+	s.lock.Unlock()
 
 	for {
-		conn, err := s.l.Accept()
+		conn, err := s.listener.Accept()
 		if err != nil {
 			return err
 		}
@@ -51,11 +52,11 @@ func (s *concreteServer) Start(callback CallbackFunc) error {
 }
 
 func (s *concreteServer) Stop() error {
-	s.ll.Lock()
-	defer s.ll.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if s.l != nil {
-		return s.l.Close()
+	if s.listener != nil {
+		return s.listener.Close()
 	}
 
 	return nil

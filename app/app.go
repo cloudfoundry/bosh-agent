@@ -1,6 +1,7 @@
 package app
 
 import (
+	"net"
 	"path/filepath"
 	"time"
 
@@ -192,7 +193,7 @@ func (app *app) Setup(args []string) error {
 		actionRunner,
 	)
 
-	syslogServer := boshsyslog.NewServer(33331, app.logger)
+	syslogServer := boshsyslog.NewServer(33331, net.Listen, app.logger)
 
 	timeService := clock.NewClock()
 
