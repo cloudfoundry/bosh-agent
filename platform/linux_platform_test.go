@@ -984,7 +984,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 
 			Context("when UsePreformattedPersistentDisk set to false", func() {
-				//gubin
 				It("formats the disk with /dev/mapper contained in real path", func() {
 					devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
 					err := act()
@@ -992,7 +991,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
 					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
 				})
-				//~gubin
 
 				It("creates the mount directory with the correct permissions", func() {
 					err := act()
@@ -1151,7 +1149,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				ItUnmountsPersistentDisk("fake-real-device-path1") // note partition '1'
 			})
 
-			// gubin
 			Context("UsePreformattedPersistentDisk is set to false & device real path contains /dev/mapper", func() {
 				BeforeEach(func() {
 					devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
@@ -1159,7 +1156,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				ItUnmountsPersistentDisk("/dev/mapper/fake-real-device-path-part1") // note partition '-part1'
 			})
-			// ~gubin
 
 			Context("UsePreformattedPersistentDisk is set to true", func() {
 				BeforeEach(func() {
@@ -1337,14 +1333,12 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				ItChecksPersistentDiskMountPoint("fake-real-device-path1") // note partition '1'
 			})
 
-			// gubin
 			Context("UsePreformattedPersistentDisk is set to false & device real name contains /dev/mapper/", func() {
 				BeforeEach(func() {
 					devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
 				})
 				ItChecksPersistentDiskMountPoint("/dev/mapper/fake-real-device-path-part1") // note partition '-part1'
 			})
-			// ~gubin
 
 			Context("UsePreformattedPersistentDisk is set to true", func() {
 				BeforeEach(func() {
