@@ -9,6 +9,8 @@ import (
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
@@ -21,18 +23,19 @@ import (
 
 var _ = Describe("concreteFactory", func() {
 	var (
-		settingsService     *fakesettings.FakeSettingsService
-		platform            *fakeplatform.FakePlatform
-		blobstore           *fakeblobstore.FakeBlobstore
-		taskService         *faketask.FakeService
-		notifier            *fakenotif.FakeNotifier
-		applier             *fakeappl.FakeApplier
-		compiler            *fakecomp.FakeCompiler
-		jobSupervisor       *fakejobsuper.FakeJobSupervisor
-		specService         *fakeas.FakeV1Service
-		drainScriptProvider boshdrain.ScriptProvider
-		factory             Factory
-		logger              boshlog.Logger
+		settingsService       *fakesettings.FakeSettingsService
+		platform              *fakeplatform.FakePlatform
+		blobstore             *fakeblobstore.FakeBlobstore
+		taskService           *faketask.FakeService
+		notifier              *fakenotif.FakeNotifier
+		applier               *fakeappl.FakeApplier
+		compiler              *fakecomp.FakeCompiler
+		jobSupervisor         *fakejobsuper.FakeJobSupervisor
+		specService           *fakeas.FakeV1Service
+		drainScriptProvider   boshdrain.ScriptProvider
+		genericScriptProvider boshscript.ScriptProvider
+		factory               Factory
+		logger                boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -46,6 +49,7 @@ var _ = Describe("concreteFactory", func() {
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider())
+		genericScriptProvider = fakescript.NewFakeScriptProvider()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		factory = NewFactory(
@@ -59,6 +63,7 @@ var _ = Describe("concreteFactory", func() {
 			jobSupervisor,
 			specService,
 			drainScriptProvider,
+			genericScriptProvider,
 			logger,
 		)
 	})

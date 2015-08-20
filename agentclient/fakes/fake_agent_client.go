@@ -37,6 +37,9 @@ type FakeAgentClient struct {
 
 	UpdateSettingsCalledTimes int
 	updateSettingsErr         error
+
+	RunScriptCalledTimes int
+	runScriptErr         error
 }
 
 type pingResponse struct {
@@ -121,6 +124,11 @@ func (c *FakeAgentClient) MigrateDisk() error {
 func (c *FakeAgentClient) UpdateSettings(settings settings.Settings) error {
 	c.UpdateSettingsCalledTimes++
 	return c.updateSettingsErr
+}
+
+func (c *FakeAgentClient) RunScript(scriptPaths []string, options map[string]interface{}) error {
+	c.RunScriptCalledTimes++
+	return c.runScriptErr
 }
 
 func (c *FakeAgentClient) CompilePackage(

@@ -18,6 +18,7 @@ import (
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
@@ -169,6 +170,11 @@ func (app *app) Setup(args []string) error {
 		app.dirProvider,
 	)
 
+	genericScriptProvider := boshscript.NewGenericScriptProvider(
+		app.platform.GetRunner(),
+		app.platform.GetFs(),
+	)
+
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		app.platform,
@@ -180,6 +186,7 @@ func (app *app) Setup(args []string) error {
 		jobSupervisor,
 		specService,
 		drainScriptProvider,
+		genericScriptProvider,
 		app.logger,
 	)
 
