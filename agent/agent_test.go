@@ -101,10 +101,12 @@ func init() {
 
 				BeforeEach(func() {
 					jobName := "fake-job"
+					jobInstanceID := "instance-id"
 					jobIndex := 1
 					specService.Spec = boshas.V1ApplySpec{
-						JobSpec: boshas.JobSpec{Name: &jobName},
-						Index:   &jobIndex,
+						JobSpec:       boshas.JobSpec{Name: &jobName},
+						Index:         &jobIndex,
+						JobInstanceID: jobInstanceID,
 					}
 
 					jobSupervisor.StatusStatus = "fake-state"
@@ -116,11 +118,13 @@ func init() {
 
 				expectedJobName := "fake-job"
 				expectedJobIndex := 1
+				expectedJobInstanceID := "instance-id"
 				expectedHb := Heartbeat{
-					Job:      &expectedJobName,
-					Index:    &expectedJobIndex,
-					JobState: "fake-state",
-					Vitals:   boshvitals.Vitals{Load: []string{"a", "b", "c"}},
+					Job:           &expectedJobName,
+					Index:         &expectedJobIndex,
+					JobState:      "fake-state",
+					JobInstanceID: expectedJobInstanceID,
+					Vitals:        boshvitals.Vitals{Load: []string{"a", "b", "c"}},
 				}
 
 				It("sends initial heartbeat", func() {

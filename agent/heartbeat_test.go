@@ -28,9 +28,10 @@ func init() {
 							"persistent": boshvitals.SpecificDiskVitals{},
 						},
 					},
+					JobInstanceID: "instanceId",
 				}
 
-				expectedJSON := `{"job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}}}`
+				expectedJSON := `{"job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}},"id":"instanceId"}`
 
 				hbBytes, err := json.Marshal(hb)
 				Expect(err).ToNot(HaveOccurred())
@@ -49,9 +50,10 @@ func init() {
 							"persistent": boshvitals.SpecificDiskVitals{},
 						},
 					},
+					JobInstanceID: "instanceId",
 				}
 
-				expectedJSON := `{"job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}}}`
+				expectedJSON := `{"job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}},"id":"instanceId"}`
 
 				hbBytes, err := json.Marshal(hb)
 				Expect(err).ToNot(HaveOccurred())

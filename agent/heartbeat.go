@@ -5,10 +5,11 @@ import (
 )
 
 type Heartbeat struct {
-	Job      *string           `json:"job"`
-	Index    *int              `json:"index"`
-	JobState string            `json:"job_state"`
-	Vitals   boshvitals.Vitals `json:"vitals"`
+	Job           *string           `json:"job"`
+	Index         *int              `json:"index"`
+	JobState      string            `json:"job_state"`
+	Vitals        boshvitals.Vitals `json:"vitals"`
+	JobInstanceID string            `json:"id"`
 }
 
 //Heartbeat payload example:
