@@ -14,7 +14,7 @@ var _ = Describe("V1ApplySpec", func() {
 	Describe("json unmarshalling", func() {
 		It("returns parsed apply spec from json", func() {
 			specJSON := `{
-				"id": "instance-id",
+				"id": "node-id",
 				"index": 4,
 				"properties": {
 					"logging": {"max_log_file_size": "10M"}
@@ -97,8 +97,8 @@ var _ = Describe("V1ApplySpec", func() {
 			}
 			expectedIndex := 4
 			expectedSpec := V1ApplySpec{
-				Index:         &expectedIndex,
-				JobInstanceID: "instance-id",
+				Index:  &expectedIndex,
+				NodeID: "node-id",
 				PropertiesSpec: PropertiesSpec{
 					LoggingSpec: LoggingSpec{MaxLogFileSize: "10M"},
 				},

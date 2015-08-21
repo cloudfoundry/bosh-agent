@@ -150,11 +150,11 @@ func (a Agent) getHeartbeat() (Heartbeat, error) {
 	}
 
 	hb := Heartbeat{
-		Job:           spec.JobSpec.Name,
-		Index:         spec.Index,
-		JobState:      a.jobSupervisor.Status(),
-		Vitals:        vitals,
-		JobInstanceID: spec.JobInstanceID,
+		Job:      spec.JobSpec.Name,
+		Index:    spec.Index,
+		JobState: a.jobSupervisor.Status(),
+		Vitals:   vitals,
+		NodeID:   spec.NodeID,
 	}
 	return hb, nil
 }
