@@ -3,51 +3,59 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	. "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/agent/action"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("RunScript", func() {
 	var (
-		fakeScriptProvider *FakeScriptProvider
-		action             RunScriptAction
-		logger             Logger
+		runScriptAction    action.RunScriptAction
+		fakeScriptProvider *fakescript.FakeScriptProvider
+		log                logger.Logger
 		options            map[string]interface{}
 		scriptPaths        []string
 	)
 
 	BeforeEach(func() {
-		logger = NewLogger(LevelNone)
-		fakeScriptProvider = NewFakeScriptProvider()
-		action = NewRunScript(fakeScriptProvider, logger)
+		log = logger.NewLogger(logger.LevelNone)
+		fakeScriptProvider = &fakescript.FakeScriptProvider{}
+		runScriptAction = action.NewRunScript(fakeScriptProvider, log)
 		scriptPaths = []string{"run-me"}
 		options = make(map[string]interface{})
 	})
 
 	It("is synchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeTrue())
+		Expect(runScriptAction.IsAsynchronous()).To(BeTrue())
 	})
 
 	It("is not persistent", func() {
-		Expect(action.IsPersistent()).To(BeFalse())
+		Expect(runScriptAction.IsPersistent()).To(BeFalse())
 	})
 
 	Context("when script exists", func() {
+
+		var existingScript *fakescript.FakeScript
+
+		BeforeEach(func() {
+			existingScript = &fakescript.FakeScript{}
+			existingScript.ExistsReturns(true)
+			fakeScriptProvider.GetReturns(existingScript)
+		})
+
 		It("is executed", func() {
-			fakeScriptProvider.Script.ExistsBool = true
-			preStart, err := action.Run(scriptPaths, options)
+			preStart, err := runScriptAction.Run(scriptPaths, options)
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(preStart).To(Equal("executed"))
 		})
 
 		It("gives an error when script fails", func() {
-			fakeScriptProvider.Script.ExistsBool = true
-			fakeScriptProvider.Script.RunError = errors.New("fake-generic-run-script-error")
-			preStart, err := action.Run(scriptPaths, options)
+			existingScript.RunReturns("stdout from before the error", "stderr from before the error", errors.New("fake-generic-run-script-error"))
+			preStart, err := runScriptAction.Run(scriptPaths, options)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-generic-run-script-error"))
@@ -56,9 +64,17 @@ var _ = Describe("RunScript", func() {
 	})
 
 	Context("when script does not exist", func() {
+
+		var nonExistingScript *fakescript.FakeScript
+
+		BeforeEach(func() {
+			nonExistingScript = &fakescript.FakeScript{}
+			nonExistingScript.ExistsReturns(false)
+			fakeScriptProvider.GetReturns(nonExistingScript)
+		})
+
 		It("does not give an error", func() {
-			fakeScriptProvider.Script.ExistsBool = false
-			preStart, err := action.Run(scriptPaths, options)
+			preStart, err := runScriptAction.Run(scriptPaths, options)
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(preStart).To(Equal("missing"))

@@ -31,7 +31,7 @@ func (a RunScriptAction) IsPersistent() bool {
 }
 
 func (a RunScriptAction) Run(scriptPaths []string, options map[string]interface{}) (string, error) {
-	a.logger.Info("run-script-action", "Run Script command")
+	a.logger.Info("run-script-action", "Run Script command: %s", scriptPaths)
 
 	script := a.scriptProvider.Get(scriptPaths[0])
 
@@ -39,7 +39,7 @@ func (a RunScriptAction) Run(scriptPaths []string, options map[string]interface{
 		return "missing", nil
 	}
 
-	_, err := script.Run()
+	_, _, err := script.Run()
 	if err != nil {
 		return "failed", bosherr.WrapError(err, "Running Script")
 	}

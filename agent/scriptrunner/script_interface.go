@@ -1,6 +1,9 @@
 package scriptrunner
 
+//go:generate counterfeiter . Script
+
 type Script interface {
 	Exists() bool
-	Run() (value int, err error)
+	Run() (stdout string, stderr string, err error)
+	Path() string
 }

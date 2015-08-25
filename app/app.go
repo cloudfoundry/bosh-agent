@@ -173,6 +173,7 @@ func (app *app) Setup(args []string) error {
 	genericScriptProvider := boshscript.NewGenericScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
+		app.platform.GetDirProvider(),
 	)
 
 	actionFactory := boshaction.NewFactory(

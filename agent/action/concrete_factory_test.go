@@ -49,7 +49,7 @@ var _ = Describe("concreteFactory", func() {
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider())
-		genericScriptProvider = fakescript.NewFakeScriptProvider()
+		genericScriptProvider = &fakescript.FakeScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		factory = NewFactory(
