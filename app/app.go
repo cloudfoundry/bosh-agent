@@ -170,7 +170,7 @@ func (app *app) Setup(args []string) error {
 		app.dirProvider,
 	)
 
-	genericScriptProvider := boshscript.NewGenericScriptProvider(
+	jobScriptProvider := boshscript.NewJobScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		app.platform.GetDirProvider(),
@@ -187,7 +187,7 @@ func (app *app) Setup(args []string) error {
 		jobSupervisor,
 		specService,
 		drainScriptProvider,
-		genericScriptProvider,
+		jobScriptProvider,
 		app.logger,
 	)
 

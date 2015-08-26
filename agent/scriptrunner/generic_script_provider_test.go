@@ -17,10 +17,10 @@ func init() {
 			fs := fakesys.NewFakeFileSystem()
 			dirProvider := boshdir.NewProvider("/the/base/dir")
 
-			scriptProvider := scriptrunner.NewGenericScriptProvider(runner, fs, dirProvider)
-			script := scriptProvider.Get("jobs/myjob/the-best-hook-ever")
+			scriptProvider := scriptrunner.NewJobScriptProvider(runner, fs, dirProvider)
+			script := scriptProvider.Get("myjob", "the-best-hook-ever")
 
-			Expect(script.Path()).To(Equal("/the/base/dir/jobs/myjob/the-best-hook-ever"))
+			Expect(script.Path()).To(Equal("/the/base/dir/jobs/myjob/bin/the-best-hook-ever"))
 		})
 	})
 }

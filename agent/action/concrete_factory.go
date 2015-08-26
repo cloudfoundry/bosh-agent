@@ -32,7 +32,7 @@ func NewFactory(
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
 	drainScriptProvider boshdrain.ScriptProvider,
-	genericScriptProvider boshscript.ScriptProvider,
+	jobScriptProvider boshscript.JobScriptProvider,
 	logger boshlog.Logger,
 ) (factory Factory) {
 	compressor := platform.GetCompressor()
@@ -62,7 +62,7 @@ func NewFactory(
 			"drain":       NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger),
 			"get_state":   NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService),
 			"run_errand":  NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner(), logger),
-			"run_scripts": NewRunScript(genericScriptProvider, logger),
+			"run_scripts": NewRunScript(jobScriptProvider, specService, logger),
 
 			// Compilation
 			"compile_package":    NewCompilePackage(compiler),

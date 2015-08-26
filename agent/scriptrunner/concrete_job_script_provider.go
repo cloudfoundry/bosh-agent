@@ -1,27 +1,29 @@
 package scriptrunner
 
 import (
+	"path/filepath"
+
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
-type GenericScriptProvider struct {
+type ConcreteJobScriptProvider struct {
 	cmdRunner   system.CmdRunner
 	fs          system.FileSystem
 	dirProvider directories.Provider
 }
 
-func NewGenericScriptProvider(
+func NewJobScriptProvider(
 	cmdRunner system.CmdRunner,
 	fs system.FileSystem,
 	dirProvider directories.Provider,
-) (provider GenericScriptProvider) {
+) (provider ConcreteJobScriptProvider) {
 	provider.cmdRunner = cmdRunner
 	provider.fs = fs
 	provider.dirProvider = dirProvider
 	return
 }
 
-func (p GenericScriptProvider) Get(scriptPath string) (script Script) {
-	return NewScript(p.fs, p.cmdRunner, p.dirProvider, scriptPath)
+func (p ConcreteJobScriptProvider) Get(jobName string, scriptName string) (script Script) {
+	return NewScript(p.fs, p.cmdRunner, filepath.Join(p.dirProvider.JobBinDir(jobName), scriptName))
 }

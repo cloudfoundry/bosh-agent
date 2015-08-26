@@ -7,24 +7,33 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("RunScript", func() {
 	var (
-		runScriptAction    action.RunScriptAction
-		fakeScriptProvider *fakescript.FakeScriptProvider
-		log                logger.Logger
-		options            map[string]interface{}
-		scriptPaths        []string
+		runScriptAction       action.RunScriptAction
+		fakeJobScriptProvider *fakescript.FakeJobScriptProvider
+		specService           *fakeapplyspec.FakeV1Service
+		log                   logger.Logger
+		options               map[string]interface{}
+		scriptName            string
 	)
+
+	createFakeJob := func(jobName string) {
+		specService.Spec.JobSpec.JobTemplateSpecs = append(specService.Spec.JobSpec.JobTemplateSpecs, applyspec.JobTemplateSpec{Name: jobName})
+	}
 
 	BeforeEach(func() {
 		log = logger.NewLogger(logger.LevelNone)
-		fakeScriptProvider = &fakescript.FakeScriptProvider{}
-		runScriptAction = action.NewRunScript(fakeScriptProvider, log)
-		scriptPaths = []string{"run-me"}
+		fakeJobScriptProvider = &fakescript.FakeJobScriptProvider{}
+		specService = fakeapplyspec.NewFakeV1Service()
+		createFakeJob("fake_job")
+		runScriptAction = action.NewRunScript(fakeJobScriptProvider, specService, log)
+		scriptName = "run-me"
 		options = make(map[string]interface{})
 	})
 
@@ -43,23 +52,24 @@ var _ = Describe("RunScript", func() {
 		BeforeEach(func() {
 			existingScript = &fakescript.FakeScript{}
 			existingScript.ExistsReturns(true)
-			fakeScriptProvider.GetReturns(existingScript)
+			fakeJobScriptProvider.GetReturns(existingScript)
 		})
 
 		It("is executed", func() {
-			preStart, err := runScriptAction.Run(scriptPaths, options)
+			results, err := runScriptAction.Run(scriptName, options)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(preStart).To(Equal("executed"))
+			Expect(results).To(Equal(map[string]string{"fake_job": "executed"}))
 		})
 
 		It("gives an error when script fails", func() {
 			existingScript.RunReturns("stdout from before the error", "stderr from before the error", errors.New("fake-generic-run-script-error"))
-			preStart, err := runScriptAction.Run(scriptPaths, options)
+
+			results, err := runScriptAction.Run(scriptName, options)
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-generic-run-script-error"))
-			Expect(preStart).To(Equal("failed"))
+			Expect(err.Error()).To(ContainSubstring("1 of 1 run-me scripts failed. See logs for details."))
+			Expect(results).To(Equal(map[string]string{"fake_job": "failed"}))
 		})
 	})
 
@@ -70,14 +80,14 @@ var _ = Describe("RunScript", func() {
 		BeforeEach(func() {
 			nonExistingScript = &fakescript.FakeScript{}
 			nonExistingScript.ExistsReturns(false)
-			fakeScriptProvider.GetReturns(nonExistingScript)
+			fakeJobScriptProvider.GetReturns(nonExistingScript)
 		})
 
-		It("does not give an error", func() {
-			preStart, err := runScriptAction.Run(scriptPaths, options)
+		It("does not return a status for that script", func() {
+			results, err := runScriptAction.Run(scriptName, options)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(preStart).To(Equal("missing"))
+			Expect(results).To(Equal(map[string]string{}))
 		})
 	})
 })

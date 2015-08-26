@@ -1,37 +1,31 @@
 package scriptrunner
 
 import (
-	"path/filepath"
-
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 type GenericScript struct {
-	fs          system.FileSystem
-	runner      system.CmdRunner
-	dirProvider directories.Provider
-	path        string
+	fs     system.FileSystem
+	runner system.CmdRunner
+	path   string
 }
 
 func NewScript(
 	fs system.FileSystem,
 	runner system.CmdRunner,
-	dirProvider directories.Provider,
 	path string,
 ) (script GenericScript) {
 	script = GenericScript{
-		fs:          fs,
-		runner:      runner,
-		dirProvider: dirProvider,
-		path:        path,
+		fs:     fs,
+		runner: runner,
+		path:   path,
 	}
 	return
 }
 
 func (script GenericScript) Path() string {
-	return filepath.Join(script.dirProvider.BaseDir(), script.path)
+	return script.path
 }
 
 func (script GenericScript) Exists() bool {
