@@ -181,6 +181,25 @@ func (m monitJobSupervisor) Status() (status string) {
 	return
 }
 
+func (m monitJobSupervisor) Processes() (processes []Process, err error) {
+	processes = []Process{}
+
+	monitStatus, err := m.client.Status()
+	if err != nil {
+		return processes, bosherr.WrapError(err, "Getting service status")
+	}
+
+	for _, service := range monitStatus.ServicesInGroup("vcap") {
+		process := Process{
+			Name:  service.Name,
+			State: service.Status,
+		}
+		processes = append(processes, process)
+	}
+
+	return
+}
+
 func (m monitJobSupervisor) getIncarnation() (int, error) {
 	monitStatus, err := m.client.Status()
 	if err != nil {

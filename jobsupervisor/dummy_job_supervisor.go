@@ -1,7 +1,8 @@
 package jobsupervisor
 
 type dummyJobSupervisor struct {
-	status string
+	status    string
+	processes []Process
 }
 
 func NewDummyJobSupervisor() JobSupervisor {
@@ -14,6 +15,7 @@ func (s *dummyJobSupervisor) Reload() error {
 
 func (s *dummyJobSupervisor) Start() error {
 	s.status = "running"
+	s.processes = []Process{}
 	return nil
 }
 
@@ -28,6 +30,10 @@ func (s *dummyJobSupervisor) Unmonitor() error {
 
 func (s *dummyJobSupervisor) Status() (status string) {
 	return s.status
+}
+
+func (s *dummyJobSupervisor) Processes() ([]Process, error) {
+	return s.processes, nil
 }
 
 func (s *dummyJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {

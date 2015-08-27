@@ -45,12 +45,13 @@ func (a GetStateAction) IsPersistent() bool {
 type GetStateV1ApplySpec struct {
 	boshas.V1ApplySpec
 
-	AgentID      string             `json:"agent_id"`
-	BoshProtocol string             `json:"bosh_protocol"`
-	JobState     string             `json:"job_state"`
-	Vitals       *boshvitals.Vitals `json:"vitals,omitempty"`
-	VM           boshsettings.VM    `json:"vm"`
-	Ntp          boshntp.Info       `json:"ntp"`
+	AgentID      string                 `json:"agent_id"`
+	BoshProtocol string                 `json:"bosh_protocol"`
+	JobState     string                 `json:"job_state"`
+	Vitals       *boshvitals.Vitals     `json:"vitals,omitempty"`
+	Processes    []boshjobsuper.Process `json:"processes,omitempty"`
+	VM           boshsettings.VM        `json:"vm"`
+	Ntp          boshntp.Info           `json:"ntp"`
 }
 
 func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
@@ -70,6 +71,11 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 		vitalsReference = &vitals
 	}
 
+	processes, err := a.jobSupervisor.Processes()
+	if err != nil {
+		return GetStateV1ApplySpec{}, bosherr.WrapError(err, "Getting processes status")
+	}
+
 	settings := a.settingsService.GetSettings()
 
 	value := GetStateV1ApplySpec{
@@ -78,6 +84,7 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 		"1",
 		a.jobSupervisor.Status(),
 		vitalsReference,
+		processes,
 		settings.VM,
 		a.ntpService.GetInfo(),
 	}

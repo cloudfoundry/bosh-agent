@@ -4,6 +4,12 @@ import (
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 )
 
+type Process struct {
+	Name    string            `json:"name"`
+	State   string            `json:"state"`
+	Details map[string]string `json:"details,omitempty"`
+}
+
 type JobFailureHandler func(boshalert.MonitAlert) error
 
 type JobSupervisor interface {
@@ -20,7 +26,7 @@ type JobSupervisor interface {
 	Unmonitor() error
 
 	Status() string
-
+	Processes() ([]Process, error)
 	// Job management
 	AddJob(jobName string, jobIndex int, configPath string) error
 	RemoveAllJobs() error
