@@ -126,7 +126,7 @@ func (c *FakeAgentClient) UpdateSettings(settings settings.Settings) error {
 	return c.updateSettingsErr
 }
 
-func (c *FakeAgentClient) RunScript(scriptPaths []string, options map[string]interface{}) error {
+func (c *FakeAgentClient) RunScript(scriptName string, options map[string]interface{}) error {
 	c.RunScriptCalledTimes++
 	return c.runScriptErr
 }

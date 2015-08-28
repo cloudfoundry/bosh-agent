@@ -133,8 +133,8 @@ func (c *agentClient) UpdateSettings(settings settings.Settings) error {
 	return err
 }
 
-func (c *agentClient) RunScript(scriptPaths []string, options map[string]interface{}) error {
-	_, err := c.sendAsyncTaskMessage("run_script", []interface{}{scriptPaths, options})
+func (c *agentClient) RunScript(scriptName string, options map[string]interface{}) error {
+	_, err := c.sendAsyncTaskMessage("run_script", []interface{}{scriptName, options})
 	return err
 }
 

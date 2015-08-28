@@ -55,14 +55,14 @@ func NewFactory(
 			"update_settings": NewUpdateSettings(certManager, logger),
 
 			// Job management
-			"prepare":     NewPrepare(applier),
-			"apply":       NewApply(applier, specService, settingsService),
-			"start":       NewStart(jobSupervisor),
-			"stop":        NewStop(jobSupervisor),
-			"drain":       NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger),
-			"get_state":   NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService),
-			"run_errand":  NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner(), logger),
-			"run_scripts": NewRunScript(jobScriptProvider, specService, logger),
+			"prepare":    NewPrepare(applier),
+			"apply":      NewApply(applier, specService, settingsService),
+			"start":      NewStart(jobSupervisor),
+			"stop":       NewStop(jobSupervisor),
+			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger),
+			"get_state":  NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService),
+			"run_errand": NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner(), logger),
+			"run_script": NewRunScript(jobScriptProvider, specService, logger),
 
 			// Compilation
 			"compile_package":    NewCompilePackage(compiler),
