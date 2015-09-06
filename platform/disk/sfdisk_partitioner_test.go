@@ -20,15 +20,6 @@ unit: sectors
 /dev/sda4 : start=        0, size=    0, Id= 0
 `
 
-const devMapperSfdiskEmptyDump = `# partition table of /dev/mapper/xxx
-unit: sectors
-
-/dev/mapper/xxx-part1 : start=        0, size=    0, Id= 0
-/dev/mapper/xxx-part2 : start=        0, size=    0, Id= 0
-/dev/mapper/xxx-part3 : start=        0, size=    0, Id= 0
-/dev/mapper/xxx-part4 : start=        0, size=    0, Id= 0
-`
-
 const devSdaSfdiskNotableDumpStderr = `
 sfdisk: ERROR: sector 0 does not have an msdos signature
  /dev/sda: unrecognized partition table type
@@ -63,20 +54,6 @@ var _ = Describe("sfdiskPartitioner", func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 
 		partitioner = NewSfdiskPartitioner(logger, runner)
-	})
-
-	It("sfdisk partition when device path contains /dev/mapper/", func() {
-		runner.AddCmdResult("sfdisk -d /dev/mapper/xxx", fakesys.FakeCmdResult{Stdout: devMapperSfdiskEmptyDump})
-
-		partitions := []Partition{
-			{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
-			{Type: PartitionTypeLinux, SizeInBytes: 1024 * 1024 * 1024},
-			{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
-		}
-
-		partitioner.Partition("/dev/mapper/xxx", partitions)
-		Expect(3).To(Equal(len(runner.RunCommands)))
-		Expect(runner.RunCommands[2]).To(Equal([]string{"/etc/init.d/open-iscsi", "restart"}))
 	})
 
 	It("sfdisk partition", func() {

@@ -984,14 +984,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 
 			Context("when UsePreformattedPersistentDisk set to false", func() {
-				It("formats the disk with /dev/mapper contained in real path", func() {
-					devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
-					err := act()
-					Expect(err).ToNot(HaveOccurred())
-					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
-					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
-				})
-
 				It("creates the mount directory with the correct permissions", func() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
@@ -1147,14 +1139,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 			Context("UsePreformattedPersistentDisk is set to false", func() {
 				ItUnmountsPersistentDisk("fake-real-device-path1") // note partition '1'
-			})
-
-			Context("UsePreformattedPersistentDisk is set to false & device real path contains /dev/mapper", func() {
-				BeforeEach(func() {
-					devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
-				})
-
-				ItUnmountsPersistentDisk("/dev/mapper/fake-real-device-path-part1") // note partition '-part1'
 			})
 
 			Context("UsePreformattedPersistentDisk is set to true", func() {
@@ -1331,13 +1315,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 			Context("UsePreformattedPersistentDisk is set to false", func() {
 				ItChecksPersistentDiskMountPoint("fake-real-device-path1") // note partition '1'
-			})
-
-			Context("UsePreformattedPersistentDisk is set to false & device real name contains /dev/mapper/", func() {
-				BeforeEach(func() {
-					devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
-				})
-				ItChecksPersistentDiskMountPoint("/dev/mapper/fake-real-device-path-part1") // note partition '-part1'
 			})
 
 			Context("UsePreformattedPersistentDisk is set to true", func() {
