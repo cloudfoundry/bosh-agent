@@ -154,6 +154,7 @@ func (a Agent) getHeartbeat() (Heartbeat, error) {
 		Index:    spec.Index,
 		JobState: a.jobSupervisor.Status(),
 		Vitals:   vitals,
+		NodeID:   spec.NodeID,
 	}
 	return hb, nil
 }

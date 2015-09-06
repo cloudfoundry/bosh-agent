@@ -8,11 +8,6 @@ base_gopath=$( cd $base/../../../.. && pwd )
 export GOPATH=$base_gopath GOBIN=$base_gopath/gobin
 export PATH=$PATH:$GOBIN
 
-if [ "`uname -m`" == "ppc64le" ]; then
-  export PATH=/usr/local/gccgo/bin:$PATH
-  export LD_LIBRARY_PATH=/usr/local/gccgo/lib64
-fi
-
 #Travis only has 2 'boosted' cores, recommends 4-6 threads max
 if [ "$TRAVIS" == "true" ]; then
   export GOMAXPROCS=4

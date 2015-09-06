@@ -5,6 +5,7 @@ import (
 
 	boshapp "github.com/cloudfoundry/bosh-agent/app"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 const mainLogTag = "main"
@@ -15,7 +16,8 @@ func main() {
 
 	logger.Debug(mainLogTag, "Starting agent")
 
-	app := boshapp.New(logger)
+	fs := boshsys.NewOsFileSystem(logger)
+	app := boshapp.New(logger, fs)
 
 	err := app.Setup(os.Args)
 	if err != nil {

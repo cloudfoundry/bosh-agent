@@ -3,6 +3,7 @@ package syslog_test
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -19,10 +20,11 @@ import (
 
 var _ = Describe("Server", func() {
 	var (
-		serverPort uint16
-		logger     boshlog.Logger
-		server     Server
-		msgs       msgCollector
+		serverPort       uint16
+		logger           boshlog.Logger
+		server           Server
+		msgs             msgCollector
+		listenerProvider func(protocol, address string) (net.Listener, error)
 	)
 
 	grabEphemeralPort := func() uint16 {
@@ -63,7 +65,10 @@ var _ = Describe("Server", func() {
 	BeforeEach(func() {
 		serverPort = grabEphemeralPort()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		server = NewServer(serverPort, logger)
+		listenerProvider = func(protocol, Iaddr string) (net.Listener, error) {
+			return net.Listen(protocol, Iaddr)
+		}
+		server = NewServer(serverPort, listenerProvider, logger)
 		msgs = msgCollector{}
 	})
 
@@ -137,22 +142,21 @@ var _ = Describe("Server", func() {
 		Expect(contents).To(ContainElement("msg4"))
 	})
 
-	// Pending... changes to Concourse in v0.57 mean that non-privileged jobs
-	// are run as a "non-privileged root" user. that change appears to cause
-	// this test to hang indefinitely.
-	// ...
-	// It("returns error if server fails to listen", func() {
-	// 	server := NewServer(10, logger) // lower port; should fail unless running as root
-	// 	err := server.Start(nil)
-	// 	Expect(err).To(HaveOccurred())
-	// 	Expect(err.Error()).To(ContainSubstring("Listening on port 10"))
-	// })
+	It("returns error if server fails to listen", func() {
+		listenerProvider = func(protocol, Iaddr string) (net.Listener, error) {
+			return nil, errors.New("Fail!")
+		}
+		server := NewServer(10, listenerProvider, logger)
+		err := server.Start(nil)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("Fail!"))
+	})
 
 	It("logs parsing error to error log if parsing syslog message fails", func() {
 		outBuf := bytes.NewBufferString("")
 		errBuf := newLockedWriter(bytes.NewBufferString(""))
 		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf, errBuf)
-		server = NewServer(serverPort, logger)
+		server = NewServer(serverPort, listenerProvider, logger)
 
 		doneCh := make(chan struct{})
 		go server.Start(captureNMsgs(doneCh, 2))
@@ -185,7 +189,7 @@ var _ = Describe("Server", func() {
 		outBuf := bytes.NewBufferString("")
 		errBuf := newNotifyingWriter(newLockedWriter(bytes.NewBufferString("")), writeCh)
 		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf, errBuf)
-		server = NewServer(serverPort, logger)
+		server = NewServer(serverPort, listenerProvider, logger)
 
 		go server.Start(nil)
 

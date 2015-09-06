@@ -133,6 +133,11 @@ func (c *agentClient) UpdateSettings(settings settings.Settings) error {
 	return err
 }
 
+func (c *agentClient) RunScript(scriptName string, options map[string]interface{}) error {
+	_, err := c.sendAsyncTaskMessage("run_script", []interface{}{scriptName, options})
+	return err
+}
+
 func (c *agentClient) sendAsyncTaskMessage(method string, arguments []interface{}) (value map[string]interface{}, err error) {
 	var response TaskResponse
 	err = c.agentRequest.Send(method, arguments, &response)

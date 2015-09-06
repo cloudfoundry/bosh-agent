@@ -14,6 +14,8 @@ var _ = Describe("V1ApplySpec", func() {
 	Describe("json unmarshalling", func() {
 		It("returns parsed apply spec from json", func() {
 			specJSON := `{
+				"id": "node-id",
+				"index": 4,
 				"properties": {
 					"logging": {"max_log_file_size": "10M"}
 				},
@@ -60,13 +62,6 @@ var _ = Describe("V1ApplySpec", func() {
 						"type": "vip"
 					}
 				},
-				"persistent_disk_pool": {
-					"name": "fake-disk-pool-name",
-					"disk_size": 1024,
-					"cloud_properties": {
-						"type": "fake-disk-type"
-					}
-				},
 				"rendered_templates_archive": {
 					"sha1": "archive sha 1",
 					"blobstore_id": "archive-blob-id-1"
@@ -100,8 +95,10 @@ var _ = Describe("V1ApplySpec", func() {
 					},
 				},
 			}
-
+			expectedIndex := 4
 			expectedSpec := V1ApplySpec{
+				Index:  &expectedIndex,
+				NodeID: "node-id",
 				PropertiesSpec: PropertiesSpec{
 					LoggingSpec: LoggingSpec{MaxLogFileSize: "10M"},
 				},
@@ -125,13 +122,6 @@ var _ = Describe("V1ApplySpec", func() {
 					BlobstoreID: "archive-blob-id-1",
 				},
 				NetworkSpecs: expectedNetworks,
-				PersistentDiskPool: map[string]interface{}{
-					"name":      "fake-disk-pool-name",
-					"disk_size": float64(1024),
-					"cloud_properties": map[string]interface{}{
-						"type": "fake-disk-type",
-					},
-				},
 			}
 
 			Expect(spec).To(Equal(expectedSpec))

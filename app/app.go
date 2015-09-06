@@ -1,11 +1,13 @@
 package app
 
 import (
+	"net"
 	"path/filepath"
 	"time"
 
 	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
 
+	"fmt"
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -16,6 +18,7 @@ import (
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
@@ -42,13 +45,20 @@ type App interface {
 }
 
 type app struct {
-	logger   boshlog.Logger
-	agent    boshagent.Agent
-	platform boshplatform.Platform
+	logger      boshlog.Logger
+	agent       boshagent.Agent
+	platform    boshplatform.Platform
+	fs          boshsys.FileSystem
+	logTag      string
+	dirProvider boshdirs.Provider
 }
 
-func New(logger boshlog.Logger) App {
-	return &app{logger: logger}
+func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
+	return &app{
+		logger: logger,
+		fs:     fs,
+		logTag: "App",
+	}
 }
 
 func (app *app) Setup(args []string) error {
@@ -62,13 +72,14 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Loading config")
 	}
 
-	dirProvider := boshdirs.NewProvider(opts.BaseDirectory)
+	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
+	app.logStemcellInfo()
 
 	// Pulled outside of the platform provider so bosh-init will not pull in
 	// sigar when cross compiling linux -> darwin
 	sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
-	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, sigarCollector, config.Platform)
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, app.fs, config.Platform)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
@@ -82,14 +93,14 @@ func (app *app) Setup(args []string) error {
 
 	settingsService := boshsettings.NewService(
 		app.platform.GetFs(),
-		filepath.Join(dirProvider.BoshDir(), "settings.json"),
+		filepath.Join(app.dirProvider.BoshDir(), "settings.json"),
 		settingsSource,
 		app.platform,
 		app.logger,
 	)
 	boot := boshagent.NewBootstrap(
 		app.platform,
-		dirProvider,
+		app.dirProvider,
 		settingsService,
 		app.logger,
 	)
@@ -100,12 +111,12 @@ func (app *app) Setup(args []string) error {
 
 	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger)
 
-	mbusHandler, err := mbusHandlerProvider.Get(app.platform, dirProvider)
+	mbusHandler, err := mbusHandlerProvider.Get(app.platform, app.dirProvider)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting mbus handler")
 	}
 
-	blobstoreProvider := boshblob.NewProvider(app.platform.GetFs(), app.platform.GetRunner(), dirProvider.EtcDir(), app.logger)
+	blobstoreProvider := boshblob.NewProvider(app.platform.GetFs(), app.platform.GetRunner(), app.dirProvider.EtcDir(), app.logger)
 
 	blobsettings := settingsService.GetSettings().Blobstore
 	blobstore, err := blobstoreProvider.Get(blobsettings.Type, blobsettings.Options)
@@ -124,7 +135,7 @@ func (app *app) Setup(args []string) error {
 		app.platform,
 		monitClient,
 		app.logger,
-		dirProvider,
+		app.dirProvider,
 		mbusHandler,
 	)
 
@@ -135,7 +146,7 @@ func (app *app) Setup(args []string) error {
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
-	applier, compiler := app.buildApplierAndCompiler(dirProvider, blobstore, jobSupervisor)
+	applier, compiler := app.buildApplierAndCompiler(app.dirProvider, blobstore, jobSupervisor)
 
 	uuidGen := boshuuid.NewGenerator()
 
@@ -144,10 +155,10 @@ func (app *app) Setup(args []string) error {
 	taskManager := boshtask.NewManagerProvider().NewManager(
 		app.logger,
 		app.platform.GetFs(),
-		dirProvider.BoshDir(),
+		app.dirProvider.BoshDir(),
 	)
 
-	specFilePath := filepath.Join(dirProvider.BoshDir(), "spec.json")
+	specFilePath := filepath.Join(app.dirProvider.BoshDir(), "spec.json")
 	specService := boshas.NewConcreteV1Service(
 		app.platform.GetFs(),
 		specFilePath,
@@ -156,7 +167,13 @@ func (app *app) Setup(args []string) error {
 	drainScriptProvider := boshdrain.NewConcreteScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
-		dirProvider,
+		app.dirProvider,
+	)
+
+	jobScriptProvider := boshscript.NewJobScriptProvider(
+		app.platform.GetRunner(),
+		app.platform.GetFs(),
+		app.platform.GetDirProvider(),
 	)
 
 	actionFactory := boshaction.NewFactory(
@@ -170,6 +187,7 @@ func (app *app) Setup(args []string) error {
 		jobSupervisor,
 		specService,
 		drainScriptProvider,
+		jobScriptProvider,
 		app.logger,
 	)
 
@@ -183,7 +201,7 @@ func (app *app) Setup(args []string) error {
 		actionRunner,
 	)
 
-	syslogServer := boshsyslog.NewServer(33331, app.logger)
+	syslogServer := boshsyslog.NewServer(33331, net.Listen, app.logger)
 
 	timeService := clock.NewClock()
 
@@ -284,4 +302,20 @@ func (app *app) loadConfig(path string) (Config, error) {
 	// Use one off copy of file system to read configuration file
 	fs := boshsys.NewOsFileSystem(app.logger)
 	return LoadConfigFromPath(fs, path)
+}
+
+func (app *app) logStemcellInfo() {
+	stemcellVersionFilePath := filepath.Join(app.dirProvider.EtcDir(), "stemcell_version")
+	stemcellVersion := app.fileContents(stemcellVersionFilePath)
+	stemcellSha1 := app.fileContents(filepath.Join(app.dirProvider.EtcDir(), "stemcell_git_sha1"))
+	msg := fmt.Sprintf("Running on stemcell version '%s' (git: %s)", stemcellVersion, stemcellSha1)
+	app.logger.Info(app.logTag, msg)
+}
+
+func (app *app) fileContents(path string) string {
+	contents, err := app.fs.ReadFileString(path)
+	if err != nil || len(contents) == 0 {
+		contents = "?"
+	}
+	return contents
 }

@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/httpclient"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("HttpClient", func() {

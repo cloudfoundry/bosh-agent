@@ -9,6 +9,8 @@ import (
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
@@ -31,6 +33,7 @@ var _ = Describe("concreteFactory", func() {
 		jobSupervisor       *fakejobsuper.FakeJobSupervisor
 		specService         *fakeas.FakeV1Service
 		drainScriptProvider boshdrain.ScriptProvider
+		jobScriptProvider   boshscript.JobScriptProvider
 		factory             Factory
 		logger              boshlog.Logger
 	)
@@ -46,6 +49,7 @@ var _ = Describe("concreteFactory", func() {
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider())
+		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		factory = NewFactory(
@@ -59,6 +63,7 @@ var _ = Describe("concreteFactory", func() {
 			jobSupervisor,
 			specService,
 			drainScriptProvider,
+			jobScriptProvider,
 			logger,
 		)
 	})

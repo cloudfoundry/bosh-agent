@@ -9,6 +9,7 @@ type Heartbeat struct {
 	Index    *int              `json:"index"`
 	JobState string            `json:"job_state"`
 	Vitals   boshvitals.Vitals `json:"vitals"`
+	NodeID   string            `json:"node_id"`
 }
 
 //Heartbeat payload example:

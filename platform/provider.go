@@ -43,9 +43,8 @@ type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, options Options) Provider {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
-	fs := boshsys.NewOsFileSystem(logger)
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 

@@ -29,8 +29,6 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			},
 			"Infrastructure": {
-				"StaticEphemeralDiskPath":  "/dev/sdb",
-
 			  "Settings": {
 				  "Sources": [
 				  	{
@@ -73,8 +71,6 @@ var _ = Describe("LoadConfigFromPath", func() {
 				},
 			},
 			Infrastructure: boshinf.Options{
-				StaticEphemeralDiskPath: "/dev/sdb",
-
 				Settings: boshinf.SettingsOptions{
 					Sources: []boshinf.SourceOptions{
 						boshinf.HTTPSourceOptions{
