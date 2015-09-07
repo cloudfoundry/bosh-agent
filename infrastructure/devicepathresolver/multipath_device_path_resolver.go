@@ -16,6 +16,6 @@ func (r multipathDevicePathResolver) GetRealDevicePath(diskSettings boshsettings
 	if r.usePreformattedPersistentDisk {
 		return diskSettings.Path, false, nil
 	} else {
-		return diskSettings.Path + "part", false, nil
+		return diskSettings.Path + "-part", false, nil
 	}
 }
