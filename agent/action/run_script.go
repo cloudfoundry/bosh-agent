@@ -46,7 +46,6 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	a.logger.Info("run-script-action", "Attempting to run '%s' scripts in %d jobs", scriptName, len(currentSpec.JobSpec.JobTemplateSpecs))
 
 	scriptCount := 0
-	failCount := 0
 
 	errorChan := make(chan scriptrunner.RunScriptResult)
 	doneChan := make(chan scriptrunner.RunScriptResult)
@@ -65,23 +64,22 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	for i := 0; i < scriptCount; i++ {
 		select {
 		case failedScript := <-errorChan:
-			failCount++
 			result[failedScript.JobName] = "failed"
 			failedScripts = append(failedScripts, failedScript.JobName)
-			a.logger.Info("run-script-action", "'%s' script has failed hello", failedScript)
+			a.logger.Info("run-script-action", "'%s' script has failed", failedScript)
 		case passedScript := <-doneChan:
 			result[passedScript.JobName] = "executed"
 			passedScripts = append(passedScripts, passedScript.JobName)
-			a.logger.Info("run-script-action", "'%s' script has passed hello", passedScript)
+			a.logger.Info("run-script-action", "'%s' script has passed", passedScript)
 		}
 	}
 
-	if failCount > 0 {
-		msg := "Failed Jobs: " + strings.Join(failedScripts[:], ", ")
+	if len(failedScripts) > 0 {
+		msg := "Failed Jobs: " + strings.Join(failedScripts, ", ")
 		if len(passedScripts) > 0 {
-			msg += ". Successful Jobs: " + strings.Join(passedScripts[:], ", ")
+			msg += ". Successful Jobs: " + strings.Join(passedScripts, ", ")
 		}
-		return result, bosherr.Errorf("%d of %d %s scripts failed. %s.", failCount, scriptCount, scriptName, msg)
+		return result, bosherr.Errorf("%d of %d %s scripts failed. %s.", len(failedScripts), scriptCount, scriptName, msg)
 	}
 	return result, nil
 }

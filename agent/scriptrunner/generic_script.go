@@ -47,12 +47,11 @@ func (script GenericScript) Run(errorChan chan RunScriptResult, doneChan chan Ru
 		},
 	}
 
-	_, _, exitStatus, err := script.runner.RunComplexCommand(command)
-	if err != nil {
-		errorChan <- RunScriptResult{script.JobName(), script.Path()}
-	} else if exitStatus != 0 {
-		errorChan <- RunScriptResult{script.JobName(), script.Path()}
-	} else {
+	_, _, _, err := script.runner.RunComplexCommand(command)
+
+	if err == nil {
 		doneChan <- RunScriptResult{script.JobName(), script.Path()}
+	} else {
+		errorChan <- RunScriptResult{script.JobName(), script.Path()}
 	}
 }
