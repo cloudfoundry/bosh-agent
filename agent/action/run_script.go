@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	"strings"
 )
 
 type RunScriptAction struct {
@@ -47,25 +48,40 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	scriptCount := 0
 	failCount := 0
 
+	errorChan := make(chan scriptrunner.RunScriptResult)
+	doneChan := make(chan scriptrunner.RunScriptResult)
+
 	for _, jobTemplate := range currentSpec.JobSpec.JobTemplateSpecs {
 		script := a.scriptProvider.Get(jobTemplate.Name, scriptName)
-
 		if script.Exists() {
 			scriptCount++
+			go script.Run(errorChan, doneChan)
+		}
+	}
 
-			_, _, err := script.Run()
-			if err != nil {
-				// in an upcoming story, we log each job's output to separate files. TODO: record err in the log file
-				result[jobTemplate.Name] = "failed"
-				failCount++
-			} else {
-				result[jobTemplate.Name] = "executed"
-			}
+	var failedScripts []string
+	var passedScripts []string
+
+	for i := 0; i < scriptCount; i++ {
+		select {
+		case failedScript := <-errorChan:
+			failCount++
+			result[failedScript.JobName] = "failed"
+			failedScripts = append(failedScripts, failedScript.JobName)
+			a.logger.Info("run-script-action", "'%s' script has failed hello", failedScript)
+		case passedScript := <-doneChan:
+			result[passedScript.JobName] = "executed"
+			passedScripts = append(passedScripts, passedScript.JobName)
+			a.logger.Info("run-script-action", "'%s' script has passed hello", passedScript)
 		}
 	}
 
 	if failCount > 0 {
-		return result, bosherr.Errorf("%d of %d %s scripts failed. See logs for details.", failCount, scriptCount, scriptName)
+		msg := "Failed Jobs: " + strings.Join(failedScripts[:], ", ")
+		if len(passedScripts) > 0 {
+			msg += ". Successful Jobs: " + strings.Join(passedScripts[:], ", ")
+		}
+		return result, bosherr.Errorf("%d of %d %s scripts failed. %s.", failCount, scriptCount, scriptName, msg)
 	}
 	return result, nil
 }

@@ -1,25 +1,27 @@
 package scriptrunner
 
 import (
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type GenericScript struct {
-	fs     system.FileSystem
-	runner system.CmdRunner
-	path   string
+	fs      system.FileSystem
+	runner  system.CmdRunner
+	path    string
+	jobName string
 }
 
 func NewScript(
 	fs system.FileSystem,
 	runner system.CmdRunner,
 	path string,
+	jobName string,
 ) (script GenericScript) {
 	script = GenericScript{
-		fs:     fs,
-		runner: runner,
-		path:   path,
+		fs:      fs,
+		runner:  runner,
+		path:    path,
+		jobName: jobName,
 	}
 	return
 }
@@ -28,11 +30,15 @@ func (script GenericScript) Path() string {
 	return script.path
 }
 
+func (script GenericScript) JobName() string {
+	return script.jobName
+}
+
 func (script GenericScript) Exists() bool {
 	return script.fs.FileExists(script.Path())
 }
 
-func (script GenericScript) Run() (string, string, error) {
+func (script GenericScript) Run(errorChan chan RunScriptResult, doneChan chan RunScriptResult) {
 
 	command := system.Command{
 		Name: script.Path(),
@@ -41,14 +47,12 @@ func (script GenericScript) Run() (string, string, error) {
 		},
 	}
 
-	stdout, stderr, exitStatus, err := script.runner.RunComplexCommand(command)
+	_, _, exitStatus, err := script.runner.RunComplexCommand(command)
 	if err != nil {
-		return stdout, stderr, errors.WrapError(err, "Running script")
+		errorChan <- RunScriptResult{script.JobName(), script.Path()}
+	} else if exitStatus != 0 {
+		errorChan <- RunScriptResult{script.JobName(), script.Path()}
+	} else {
+		doneChan <- RunScriptResult{script.JobName(), script.Path()}
 	}
-
-	if exitStatus != 0 {
-		err = errors.WrapErrorf(err, "Script failed with status %d", exitStatus)
-	}
-
-	return stdout, stderr, err
 }

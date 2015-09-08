@@ -4,6 +4,7 @@ package scriptrunner
 
 type Script interface {
 	Exists() bool
-	Run() (stdout string, stderr string, err error)
+	Run(errorChan chan RunScriptResult, doneChan chan RunScriptResult)
 	Path() string
+	JobName() string
 }

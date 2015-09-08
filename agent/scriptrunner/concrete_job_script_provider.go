@@ -25,5 +25,10 @@ func NewJobScriptProvider(
 }
 
 func (p ConcreteJobScriptProvider) Get(jobName string, scriptName string) (script Script) {
-	return NewScript(p.fs, p.cmdRunner, filepath.Join(p.dirProvider.JobBinDir(jobName), scriptName))
+	return NewScript(
+		p.fs,
+		p.cmdRunner,
+		filepath.Join(p.dirProvider.JobBinDir(jobName), scriptName),
+		jobName,
+	)
 }
