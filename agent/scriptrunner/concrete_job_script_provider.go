@@ -29,6 +29,7 @@ func (p ConcreteJobScriptProvider) Get(jobName string, scriptName string) (scrip
 		p.fs,
 		p.cmdRunner,
 		filepath.Join(p.dirProvider.JobBinDir(jobName), scriptName),
+		filepath.Join(p.dirProvider.LogsDir(), jobName, scriptName),
 		jobName,
 	)
 }

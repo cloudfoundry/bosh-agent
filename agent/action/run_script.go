@@ -66,11 +66,11 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 		case failedScript := <-errorChan:
 			result[failedScript.JobName] = "failed"
 			failedScripts = append(failedScripts, failedScript.JobName)
-			a.logger.Info("run-script-action", "'%s' script has failed", failedScript)
+			a.logger.Error("run-script-action", "'%s' script has failed with error %s", failedScript.ScriptPath, failedScript.Error)
 		case passedScript := <-doneChan:
 			result[passedScript.JobName] = "executed"
 			passedScripts = append(passedScripts, passedScript.JobName)
-			a.logger.Info("run-script-action", "'%s' script has passed", passedScript)
+			a.logger.Info("run-script-action", "'%s' script has successfully executed", passedScript.ScriptPath)
 		}
 	}
 

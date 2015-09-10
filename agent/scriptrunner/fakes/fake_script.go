@@ -26,6 +26,12 @@ type FakeScript struct {
 	pathReturns     struct {
 		result1 string
 	}
+	LogPathStub        func() string
+	logPathMutex       sync.RWMutex
+	logPathArgsForCall []struct{}
+	logPathReturns     struct {
+		result1 string
+	}
 	JobNameStub        func() string
 	jobNameMutex       sync.RWMutex
 	jobNameArgsForCall []struct{}
@@ -102,6 +108,30 @@ func (fake *FakeScript) PathCallCount() int {
 func (fake *FakeScript) PathReturns(result1 string) {
 	fake.PathStub = nil
 	fake.pathReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakeScript) LogPath() string {
+	fake.logPathMutex.Lock()
+	fake.logPathArgsForCall = append(fake.logPathArgsForCall, struct{}{})
+	fake.logPathMutex.Unlock()
+	if fake.LogPathStub != nil {
+		return fake.LogPathStub()
+	} else {
+		return fake.logPathReturns.result1
+	}
+}
+
+func (fake *FakeScript) LogPathCallCount() int {
+	fake.logPathMutex.RLock()
+	defer fake.logPathMutex.RUnlock()
+	return len(fake.logPathArgsForCall)
+}
+
+func (fake *FakeScript) LogPathReturns(result1 string) {
+	fake.LogPathStub = nil
+	fake.logPathReturns = struct {
 		result1 string
 	}{result1}
 }
