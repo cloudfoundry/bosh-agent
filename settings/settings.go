@@ -106,9 +106,7 @@ type NetworkType string
 const (
 	NetworkTypeDynamic NetworkType = "dynamic"
 	NetworkTypeVIP     NetworkType = "vip"
-	// gubin
 	NetworkTypeSoftlayer     NetworkType = "softlayer"
-	// ~gubin
 )
 
 type Network struct {
@@ -220,11 +218,9 @@ func (n Network) IsVIP() bool {
 	return n.Type == NetworkTypeVIP
 }
 
-// gubin
 func (n Network) IsSoftlayer() bool {
 	return n.Type == NetworkTypeSoftlayer
 }
-// ~gubin
 
 //{
 //	"agent_id": "bm-xxxxxxxx",

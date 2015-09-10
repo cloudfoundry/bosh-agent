@@ -79,7 +79,6 @@ func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks)
 	return staticConfigs, dhcpConfigs, dnsServers, nil
 }
 
-// gubin
 func (net UbuntuNetManager) writeResolvConf(networks boshsettings.Networks) error {
 
    buffer := bytes.NewBuffer([]byte{})
@@ -109,10 +108,8 @@ func (net UbuntuNetManager) writeResolvConf(networks boshsettings.Networks) erro
 
    return nil
 }
-// ~gubin
 
 func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
-	// gubin
 	isSoftlayerNetworks := false
 	for _, networkSettings := range networks {
 		if networkSettings.IsSoftlayer() {
@@ -124,7 +121,6 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	if isSoftlayerNetworks {
 		return net.writeResolvConf(networks)
 	}
-	// ~gubin
 	
 	staticConfigs, dhcpConfigs, dnsServers, err := net.ComputeNetworkConfig(networks)
 	if err != nil {
