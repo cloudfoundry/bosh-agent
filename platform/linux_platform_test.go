@@ -731,7 +731,7 @@ Number  Start  End     Size    File system  Flags
 
 			cmdRunner.AddCmdResult("parted -s /dev/xvdc p", result)
 
-			err := platform.SetupRawEphemeralDisks([]string{"/dev/xvdb", "/dev/xvdc"})
+			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}})
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
@@ -739,6 +739,13 @@ Number  Start  End     Size    File system  Flags
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-0", "0", "100"}))
 			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"parted", "-s", "/dev/xvdc", "p"}))
 			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"parted", "-s", "/dev/xvdc", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-1", "0", "100"}))
+		})
+
+		It("gives an error on setup of raw ephemeral paths if path is missing", func() {
+			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: ""}, {Path: "/dev/xvdc"}})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Setting up raw ephemeral disks: Path missing"))
 		})
 
 		It("does not label the raw ephemeral paths for already partitioned disks", func() {
@@ -774,7 +781,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 			cmdRunner.AddCmdResult("parted -s /dev/xvdc p", result)
 
-			err := platform.SetupRawEphemeralDisks([]string{"/dev/xvdb", "/dev/xvdc"})
+			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}})
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(2))

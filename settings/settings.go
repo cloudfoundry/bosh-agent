@@ -48,7 +48,7 @@ type Disks struct {
 	//     {"disk-3845-43758-7243-38754" => {"volume_id" => "3"}}
 	Persistent map[string]interface{} `json:"persistent"`
 
-	RawEphemeralPaths []string `json:"raw_ephemeral"`
+	RawEphemeral []DiskSettings `json:"raw_ephemeral"`
 }
 
 type DiskSettings struct {
@@ -91,8 +91,8 @@ func (s Settings) EphemeralDiskSettings() DiskSettings {
 	}
 }
 
-func (s Settings) RawEphemeralPaths() (paths []string) {
-	return s.Disks.RawEphemeralPaths
+func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
+	return s.Disks.RawEphemeral
 }
 
 type Env struct {

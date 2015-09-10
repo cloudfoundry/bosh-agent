@@ -76,7 +76,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up NTP servers")
 	}
 
-	if err = boot.platform.SetupRawEphemeralDisks(settings.RawEphemeralPaths()); err != nil {
+	if err = boot.platform.SetupRawEphemeralDisks(settings.RawEphemeralDiskSettings()); err != nil {
 		return bosherr.WrapError(err, "Setting up raw ephemeral disk")
 	}
 

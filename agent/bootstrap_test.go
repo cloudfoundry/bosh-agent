@@ -174,15 +174,15 @@ func init() {
 
 			It("sets up raw ephemeral disks if paths exist", func() {
 				settingsService.Settings.Disks = boshsettings.Disks{
-					RawEphemeralPaths: []string{"/dev/xvdb", "/dev/xvdc"},
+					RawEphemeral: []boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}},
 				}
 
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupRawEphemeralDisksCallCount).To(Equal(1))
-				Expect(len(platform.SetupRawEphemeralDisksDevicePaths)).To(Equal(2))
-				Expect(platform.SetupRawEphemeralDisksDevicePaths[0]).To(Equal("/dev/xvdb"))
-				Expect(platform.SetupRawEphemeralDisksDevicePaths[1]).To(Equal("/dev/xvdc"))
+				Expect(len(platform.SetupRawEphemeralDisksDevices)).To(Equal(2))
+				Expect(platform.SetupRawEphemeralDisksDevices[0].Path).To(Equal("/dev/xvdb"))
+				Expect(platform.SetupRawEphemeralDisksDevices[1].Path).To(Equal("/dev/xvdc"))
 			})
 
 			It("returns error if setting raw ephemeral disks fails", func() {

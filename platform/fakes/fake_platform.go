@@ -51,9 +51,9 @@ type FakePlatform struct {
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathErr        error
 
-	SetupRawEphemeralDisksDevicePaths []string
-	SetupRawEphemeralDisksErr         error
-	SetupRawEphemeralDisksCallCount   int
+	SetupRawEphemeralDisksDevices   []boshsettings.DiskSettings
+	SetupRawEphemeralDisksErr       error
+	SetupRawEphemeralDisksCallCount int
 
 	SetupDataDirCalled bool
 	SetupDataDirErr    error
@@ -134,7 +134,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.GetFileContentsFromDiskErrs = map[string]error{}
 	platform.certManager = new(fakecert.FakeManager)
 	platform.SetupRawEphemeralDisksCallCount = 0
-	platform.SetupRawEphemeralDisksDevicePaths = nil
+	platform.SetupRawEphemeralDisksDevices = nil
 	platform.SetupRawEphemeralDisksErr = nil
 	return
 }
@@ -235,8 +235,8 @@ func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string) (err error)
 	return p.SetupEphemeralDiskWithPathErr
 }
 
-func (p *FakePlatform) SetupRawEphemeralDisks(devicePaths []string) (err error) {
-	p.SetupRawEphemeralDisksDevicePaths = devicePaths
+func (p *FakePlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error) {
+	p.SetupRawEphemeralDisksDevices = devices
 	p.SetupRawEphemeralDisksCallCount++
 	return p.SetupRawEphemeralDisksErr
 }

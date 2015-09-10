@@ -131,7 +131,7 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string) (err error)
 	return
 }
 
-func (p dummyPlatform) SetupRawEphemeralDisks(devicePaths []string) (err error) {
+func (p dummyPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error) {
 	return
 }
 
