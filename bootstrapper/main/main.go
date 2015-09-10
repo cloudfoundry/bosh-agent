@@ -12,8 +12,11 @@ import (
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/downloader"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/installer"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/listener"
+	agentlogger "github.com/cloudfoundry/bosh-agent/bootstrapper/logger"
 	"github.com/cloudfoundry/bosh-agent/bootstrapper/system"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -88,7 +91,8 @@ func parseFlags(logger logger.Logger) {
 func newLogger() logger.Logger {
 	log.SetOutput(os.Stdout)
 	sysLog := log.New(os.Stdout, "", log.LstdFlags)
-	return logger.New(logger.LevelDebug, sysLog, sysLog)
+	logger := logger.New(logger.LevelDebug, sysLog, sysLog)
+	return newSignalableLogger(logger)
 }
 
 func newSSLConfig(logger logger.Logger) auth.SSLConfig {
@@ -104,4 +108,11 @@ func newSSLConfig(logger logger.Logger) auth.SSLConfig {
 		os.Exit(1)
 	}
 	return config
+}
+
+func newSignalableLogger(logger logger.Logger) logger.Logger {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGSEGV)
+	signalableLogger, _ := agentlogger.NewSignalableLogger(logger, c)
+	return signalableLogger
 }
