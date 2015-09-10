@@ -172,6 +172,27 @@ func init() {
 				Expect(err.Error()).To(ContainSubstring("fake-setup-ephemeral-disk-err"))
 			})
 
+			It("sets up raw ephemeral disks if paths exist", func() {
+				settingsService.Settings.Disks = boshsettings.Disks{
+					RawEphemeralPaths: []string{"/dev/xvdb", "/dev/xvdc"},
+				}
+
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupRawEphemeralDisksCallCount).To(Equal(1))
+				Expect(len(platform.SetupRawEphemeralDisksDevicePaths)).To(Equal(2))
+				Expect(platform.SetupRawEphemeralDisksDevicePaths[0]).To(Equal("/dev/xvdb"))
+				Expect(platform.SetupRawEphemeralDisksDevicePaths[1]).To(Equal("/dev/xvdc"))
+			})
+
+			It("returns error if setting raw ephemeral disks fails", func() {
+				platform.SetupRawEphemeralDisksErr = errors.New("fake-setup-raw-ephemeral-disks-err")
+				err := bootstrap()
+				Expect(platform.SetupRawEphemeralDisksCallCount).To(Equal(1))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-setup-raw-ephemeral-disks-err"))
+			})
+
 			It("sets up data dir", func() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())

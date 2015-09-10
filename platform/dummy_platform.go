@@ -131,6 +131,10 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string) (err error)
 	return
 }
 
+func (p dummyPlatform) SetupRawEphemeralDisks(devicePaths []string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupDataDir() error {
 	return nil
 }

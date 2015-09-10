@@ -697,6 +697,92 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
+	Describe("SetupRawEphemeralDisks", func() {
+		It("labels the raw ephemeral paths for unpartitioned disks", func() {
+			result := fakesys.FakeCmdResult{
+				Error:      nil,
+				ExitStatus: 0,
+				Stderr:     "",
+				Stdout: `Model: Xen Virtual Block Device (xvd)
+Disk /dev/xvdb: 40.3GB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+
+Number  Start  End     Size    File system  Flags
+1      0.00B  40.3GB  40.3GB  ext3
+`,
+			}
+
+			cmdRunner.AddCmdResult("parted -s /dev/xvdb p", result)
+
+			result = fakesys.FakeCmdResult{
+				Error:      nil,
+				ExitStatus: 0,
+				Stderr:     "",
+				Stdout: `Model: Xen Virtual Block Device (xvd)
+Disk /dev/xvdc: 40.3GB
+Sector size (logical/physical): 512B/512B
+Partition Table: loop
+
+Number  Start  End     Size    File system  Flags
+1      0.00B  40.3GB  40.3GB  ext3
+`,
+			}
+
+			cmdRunner.AddCmdResult("parted -s /dev/xvdc p", result)
+
+			err := platform.SetupRawEphemeralDisks([]string{"/dev/xvdb", "/dev/xvdc"})
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "p"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-0", "0", "100"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"parted", "-s", "/dev/xvdc", "p"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"parted", "-s", "/dev/xvdc", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-1", "0", "100"}))
+		})
+
+		It("does not label the raw ephemeral paths for already partitioned disks", func() {
+			result := fakesys.FakeCmdResult{
+				Error:      nil,
+				ExitStatus: 0,
+				Stderr:     "",
+				Stdout: `Model: Xen Virtual Block Device (xvd)
+Disk /dev/xvdb: 40.3GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name             Flags
+ 1      1049kB  40.3GB  40.3GB               raw-ephemeral-0
+`,
+			}
+
+			cmdRunner.AddCmdResult("parted -s /dev/xvdb p", result)
+
+			result = fakesys.FakeCmdResult{
+				Error:      nil,
+				ExitStatus: 0,
+				Stderr:     "",
+				Stdout: `Model: Xen Virtual Block Device (xvd)
+Disk /dev/xvdc: 40.3GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name             Flags
+ 1      1049kB  40.3GB  40.3GB               raw-ephemeral-1
+`,
+			}
+
+			cmdRunner.AddCmdResult("parted -s /dev/xvdc p", result)
+
+			err := platform.SetupRawEphemeralDisks([]string{"/dev/xvdb", "/dev/xvdc"})
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "p"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/xvdc", "p"}))
+		})
+	})
+
 	Describe("SetupDataDir", func() {
 		var mounter *fakedisk.FakeMounter
 		BeforeEach(func() {

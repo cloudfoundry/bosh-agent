@@ -51,6 +51,10 @@ type FakePlatform struct {
 	SetupEphemeralDiskWithPathDevicePath string
 	SetupEphemeralDiskWithPathErr        error
 
+	SetupRawEphemeralDisksDevicePaths []string
+	SetupRawEphemeralDisksErr         error
+	SetupRawEphemeralDisksCallCount   int
+
 	SetupDataDirCalled bool
 	SetupDataDirErr    error
 
@@ -129,6 +133,9 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.GetFileContentsFromDiskContents = map[string][]byte{}
 	platform.GetFileContentsFromDiskErrs = map[string]error{}
 	platform.certManager = new(fakecert.FakeManager)
+	platform.SetupRawEphemeralDisksCallCount = 0
+	platform.SetupRawEphemeralDisksDevicePaths = nil
+	platform.SetupRawEphemeralDisksErr = nil
 	return
 }
 
@@ -226,6 +233,12 @@ func (p *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
 	return p.SetupEphemeralDiskWithPathErr
+}
+
+func (p *FakePlatform) SetupRawEphemeralDisks(devicePaths []string) (err error) {
+	p.SetupRawEphemeralDisksDevicePaths = devicePaths
+	p.SetupRawEphemeralDisksCallCount++
+	return p.SetupRawEphemeralDisksErr
 }
 
 func (p *FakePlatform) SetupDataDir() error {

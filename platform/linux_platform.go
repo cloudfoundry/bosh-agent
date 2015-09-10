@@ -472,6 +472,46 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	return nil
 }
 
+func (p linux) SetupRawEphemeralDisks(devicePaths []string) (err error) {
+	p.logger.Info(logTag, "Setting up raw ephemeral disks")
+
+	for i, devicePath := range devicePaths {
+		// check if device is already partitioned correctly
+		stdout, _, _, err := p.cmdRunner.RunCommand(
+			"parted",
+			"-s",
+			devicePath,
+			"p",
+		)
+
+		if strings.Contains(stdout, "Partition Table: gpt") && strings.Contains(stdout, "raw-ephemeral-") {
+			continue
+		}
+
+		// change to gpt partition type, change units to percentage, make partition with name and span from 0-100%
+		p.logger.Info(logTag, "Creating partition on `%s'", devicePath)
+		_, _, _, err = p.cmdRunner.RunCommand(
+			"parted",
+			"-s",
+			devicePath,
+			"mklabel",
+			"gpt",
+			"unit",
+			"%",
+			"mkpart",
+			fmt.Sprintf("raw-ephemeral-%d", i),
+			"0",
+			"100",
+		)
+
+		if err != nil {
+			return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+		}
+	}
+
+	return nil
+}
+
 func (p linux) SetupDataDir() error {
 	dataDir := p.dirProvider.DataDir()
 
