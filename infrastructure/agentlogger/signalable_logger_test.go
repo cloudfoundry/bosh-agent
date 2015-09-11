@@ -1,8 +1,8 @@
-package logger_test
+package agentlogger_test
 
 import (
 	"bytes"
-	agentlogger "github.com/cloudfoundry/bosh-agent/bootstrapper/logger"
+	"github.com/cloudfoundry/bosh-agent/infrastructure/agentlogger"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
