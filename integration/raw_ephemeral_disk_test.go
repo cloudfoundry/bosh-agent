@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"time"
-	"fmt"
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
@@ -52,11 +51,9 @@ var _ = Describe("RawEphemeralDisk", func() {
 			err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())
 
-			fmt.Println("======== attaching devices xvdb")
 			err = testEnvironment.AttachDevice("/dev/xvdb", 128, 1)
 			Expect(err).ToNot(HaveOccurred())
 
-			fmt.Println("======== attaching devices xvdc ")
 			err = testEnvironment.AttachDevice("/dev/xvdc", 128, 1)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -68,7 +65,6 @@ var _ = Describe("RawEphemeralDisk", func() {
 			err = testEnvironment.StartRegistry(registrySettings)
 			Expect(err).ToNot(HaveOccurred())
 
-			fmt.Println("======== start agent")
 			err = testEnvironment.StartAgent()
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -80,11 +76,9 @@ var _ = Describe("RawEphemeralDisk", func() {
 			err = testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 
-			fmt.Println("======== ======== detach devices xvdb")
 			err = testEnvironment.DetachDevice("/dev/xvdb")
 			Expect(err).ToNot(HaveOccurred())
 
-			fmt.Println("======== detach devices xvdc")
 			err = testEnvironment.DetachDevice("/dev/xvdc")
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -93,16 +87,13 @@ var _ = Describe("RawEphemeralDisk", func() {
 			var output string
 
 			Eventually(func() string {
-				stdout, _ := testEnvironment.RunCommand("find /dev/disk/by-partlabel")
+				stdout, _ := testEnvironment.RunCommand("find /dev/disk/by-partlabel | sort")
 
 				output = stdout
 
-//				Expect(err).ToNot(HaveOccurred())
-
 				return stdout
-			}, 2*time.Minute, 1*time.Second).Should(ContainSubstring("/dev/disk/by-partlabel/raw-ephemeral-0"))
-
-			Expect(output).To(ContainSubstring("/dev/disk/by-partlabel/raw-ephemeral-1"))
+			}, 2*time.Minute, 1*time.Second).Should(ContainSubstring(`/dev/disk/by-partlabel/raw-ephemeral-0
+/dev/disk/by-partlabel/raw-ephemeral-1`))
 		})
 	})
 
