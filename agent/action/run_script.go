@@ -47,14 +47,13 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 
 	scriptCount := 0
 
-	errorChan := make(chan scriptrunner.RunScriptResult)
-	doneChan := make(chan scriptrunner.RunScriptResult)
+	resultChannel := make(chan scriptrunner.RunScriptResult)
 
 	for _, jobTemplate := range currentSpec.JobSpec.JobTemplateSpecs {
 		script := a.scriptProvider.Get(jobTemplate.Name, scriptName)
 		if script.Exists() {
 			scriptCount++
-			go script.Run(errorChan, doneChan)
+			go script.Run(resultChannel)
 		}
 	}
 
@@ -63,14 +62,17 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 
 	for i := 0; i < scriptCount; i++ {
 		select {
-		case failedScript := <-errorChan:
-			result[failedScript.JobName] = "failed"
-			failedScripts = append(failedScripts, failedScript.JobName)
-			a.logger.Error("run-script-action", "'%s' script has failed with error %s", failedScript.ScriptPath, failedScript.Error)
-		case passedScript := <-doneChan:
-			result[passedScript.JobName] = "executed"
-			passedScripts = append(passedScripts, passedScript.JobName)
-			a.logger.Info("run-script-action", "'%s' script has successfully executed", passedScript.ScriptPath)
+		case resultScript := <-resultChannel:
+			jobName := resultScript.JobName
+			if resultScript.Error == nil {
+				passedScripts = append(passedScripts, jobName)
+				result[jobName] = "executed"
+				a.logger.Info("run-script-action", "'%s' script has successfully executed", resultScript.ScriptPath)
+			} else {
+				failedScripts = append(failedScripts, jobName)
+				result[jobName] = "failed"
+				a.logger.Error("run-script-action", "'%s' script has failed with error %s", resultScript.ScriptPath, resultScript.Error)
+			}
 		}
 	}
 

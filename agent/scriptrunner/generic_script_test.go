@@ -27,16 +27,14 @@ var _ = Describe("GenericScript", func() {
 	Describe("RunCommand", func() {
 
 		It("executes given command", func() {
-			errorChan := make(chan scriptrunner.RunScriptResult)
-			doneChan := make(chan scriptrunner.RunScriptResult)
-
-			go genericScript.Run(errorChan, doneChan)
+			resultChannel := make(chan scriptrunner.RunScriptResult)
+			go genericScript.Run(resultChannel)
 
 			var passedJobName string
 			var returnedError error
 
 			select {
-			case runScriptResult := <-doneChan:
+			case runScriptResult := <-resultChannel:
 				passedJobName = runScriptResult.JobName
 				returnedError = runScriptResult.Error
 			case <-time.After(time.Second * 2):
@@ -50,18 +48,16 @@ var _ = Describe("GenericScript", func() {
 		It("returns an error if it fails to create logs directory", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-all-error")
 
-			errorChan := make(chan scriptrunner.RunScriptResult)
-			doneChan := make(chan scriptrunner.RunScriptResult)
-
-			go genericScript.Run(errorChan, doneChan)
+			resultChannel := make(chan scriptrunner.RunScriptResult)
+			go genericScript.Run(resultChannel)
 
 			var failedJobName string
 			var returnedError error
 
 			select {
-			case failedScript := <-errorChan:
-				failedJobName = failedScript.JobName
-				returnedError = failedScript.Error
+			case runScriptResult := <-resultChannel:
+				failedJobName = runScriptResult.JobName
+				returnedError = runScriptResult.Error
 			case <-time.After(time.Second * 2):
 				//If it went here , it will fail
 			}
@@ -73,18 +69,16 @@ var _ = Describe("GenericScript", func() {
 		It("returns an error if it fails to open stdout/stderr log file", func() {
 			fs.OpenFileErr = errors.New("fake-open-file-error")
 
-			errorChan := make(chan scriptrunner.RunScriptResult)
-			doneChan := make(chan scriptrunner.RunScriptResult)
-
-			go genericScript.Run(errorChan, doneChan)
+			resultChannel := make(chan scriptrunner.RunScriptResult)
+			go genericScript.Run(resultChannel)
 
 			var failedJobName string
 			var returnedError error
 
 			select {
-			case failedScript := <-errorChan:
-				failedJobName = failedScript.JobName
-				returnedError = failedScript.Error
+			case runScriptResult := <-resultChannel:
+				failedJobName = runScriptResult.JobName
+				returnedError = runScriptResult.Error
 			case <-time.After(time.Second * 2):
 				//If it went here , it will fail
 			}
@@ -105,16 +99,14 @@ var _ = Describe("GenericScript", func() {
 			})
 
 			It("saves stdout/stderr to log file", func() {
-				errorChan := make(chan scriptrunner.RunScriptResult)
-				doneChan := make(chan scriptrunner.RunScriptResult)
-
-				go genericScript.Run(errorChan, doneChan)
+				resultChannel := make(chan scriptrunner.RunScriptResult)
+				go genericScript.Run(resultChannel)
 
 				var passedJobName string
 				var returnedError error
 
 				select {
-				case runScriptResult := <-doneChan:
+				case runScriptResult := <-resultChannel:
 					passedJobName = runScriptResult.JobName
 					returnedError = runScriptResult.Error
 				case <-time.After(time.Second * 2):
@@ -149,16 +141,14 @@ var _ = Describe("GenericScript", func() {
 			})
 
 			It("saves stdout/stderr to log file", func() {
-				errorChan := make(chan scriptrunner.RunScriptResult)
-				doneChan := make(chan scriptrunner.RunScriptResult)
-
-				go genericScript.Run(errorChan, doneChan)
+				resultChannel := make(chan scriptrunner.RunScriptResult)
+				go genericScript.Run(resultChannel)
 
 				var failedJobName string
 				var returnedError error
 
 				select {
-				case runScriptResult := <-errorChan:
+				case runScriptResult := <-resultChannel:
 					failedJobName = runScriptResult.JobName
 					returnedError = runScriptResult.Error
 				case <-time.After(time.Second * 2):

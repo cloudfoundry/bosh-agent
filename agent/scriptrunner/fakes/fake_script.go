@@ -14,11 +14,10 @@ type FakeScript struct {
 	existsReturns     struct {
 		result1 bool
 	}
-	RunStub        func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult)
+	RunStub        func(resultChannel chan scriptrunner.RunScriptResult)
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
-		errorChan chan scriptrunner.RunScriptResult
-		doneChan  chan scriptrunner.RunScriptResult
+		resultChannel chan scriptrunner.RunScriptResult
 	}
 	PathStub        func() string
 	pathMutex       sync.RWMutex
@@ -64,15 +63,14 @@ func (fake *FakeScript) ExistsReturns(result1 bool) {
 	}{result1}
 }
 
-func (fake *FakeScript) Run(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
+func (fake *FakeScript) Run(resultChannel chan scriptrunner.RunScriptResult) {
 	fake.runMutex.Lock()
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
-		errorChan chan scriptrunner.RunScriptResult
-		doneChan  chan scriptrunner.RunScriptResult
-	}{errorChan, doneChan})
+		resultChannel chan scriptrunner.RunScriptResult
+	}{resultChannel})
 	fake.runMutex.Unlock()
 	if fake.RunStub != nil {
-		fake.RunStub(errorChan, doneChan)
+		fake.RunStub(resultChannel)
 	}
 }
 
@@ -82,10 +80,10 @@ func (fake *FakeScript) RunCallCount() int {
 	return len(fake.runArgsForCall)
 }
 
-func (fake *FakeScript) RunArgsForCall(i int) (chan scriptrunner.RunScriptResult, chan scriptrunner.RunScriptResult) {
+func (fake *FakeScript) RunArgsForCall(i int) chan scriptrunner.RunScriptResult {
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
-	return fake.runArgsForCall[i].errorChan, fake.runArgsForCall[i].doneChan
+	return fake.runArgsForCall[i].resultChannel
 }
 
 func (fake *FakeScript) Path() string {

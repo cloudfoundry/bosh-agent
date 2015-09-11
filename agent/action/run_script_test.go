@@ -4,6 +4,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
+	"errors"
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -56,8 +57,8 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("is executed", func() {
-			existingScript.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				doneChan <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script"}
+			existingScript.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script1", Error: nil}
 			}
 			results, err := runScriptAction.Run(scriptName, options)
 
@@ -66,8 +67,8 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("gives an error when script fails", func() {
-			existingScript.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				errorChan <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script"}
+			existingScript.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")}
 			}
 
 			results, err := runScriptAction.Run(scriptName, options)
@@ -102,11 +103,11 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("is executed and both scripts pass", func() {
-			existingScript.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				doneChan <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script"}
+			existingScript.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script1", Error: nil}
 			}
-			existingScript2.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				doneChan <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2"}
+			existingScript2.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2", Error: nil}
 			}
 
 			results, err := runScriptAction.Run(scriptName, options)
@@ -116,11 +117,11 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("returns two failed statuses when both scripts fail", func() {
-			existingScript.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				errorChan <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script"}
+			existingScript.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")}
 			}
-			existingScript2.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				errorChan <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2"}
+			existingScript2.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2", Error: errors.New("fake-error")}
 			}
 
 			results, err := runScriptAction.Run(scriptName, options)
@@ -135,12 +136,12 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("returns one failed status when first script fail and second script pass, and when one fails continue waiting for unfinished tasks", func() {
-			existingScript.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
+			existingScript.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
 				time.Sleep(2 * time.Second)
-				errorChan <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script"}
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")}
 			}
-			existingScript2.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				doneChan <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2"}
+			existingScript2.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2", Error: nil}
 			}
 
 			results, err := runScriptAction.Run(scriptName, options)
@@ -151,11 +152,11 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("returns one failed status when first script pass and second script fail", func() {
-			existingScript.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				doneChan <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script"}
+			existingScript.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script1", Error: nil}
 			}
-			existingScript2.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				errorChan <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2"}
+			existingScript2.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2", Error: errors.New("fake-error")}
 			}
 
 			results, err := runScriptAction.Run(scriptName, options)
@@ -166,12 +167,12 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("wait for scripts to finish", func() {
-			existingScript.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
+			existingScript.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
 				time.Sleep(2 * time.Second)
-				doneChan <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script"}
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-1", ScriptPath: "path/to/script1", Error: nil}
 			}
-			existingScript2.RunStub = func(errorChan chan scriptrunner.RunScriptResult, doneChan chan scriptrunner.RunScriptResult) {
-				doneChan <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2"}
+			existingScript2.RunStub = func(resultChannel chan scriptrunner.RunScriptResult) {
+				resultChannel <- scriptrunner.RunScriptResult{JobName: "fake-job-2", ScriptPath: "path/to/script2", Error: nil}
 			}
 
 			results, err := runScriptAction.Run(scriptName, options)

@@ -53,18 +53,18 @@ func (script GenericScript) Exists() bool {
 	return script.fs.FileExists(script.Path())
 }
 
-func (script GenericScript) Run(errorChan chan RunScriptResult, doneChan chan RunScriptResult) {
+func (script GenericScript) Run(resultChannel chan RunScriptResult) {
 
 	err := script.fs.MkdirAll(script.LogPath(), os.FileMode(0750))
 	if err != nil {
-		errorChan <- RunScriptResult{script.JobName(), script.Path(), err}
+		resultChannel <- RunScriptResult{script.JobName(), script.Path(), err}
 		return
 	}
 
 	stdoutPath := fmt.Sprintf("%s.stdout.log", script.LogPath())
 	stdoutFile, err := script.fs.OpenFile(stdoutPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		errorChan <- RunScriptResult{script.JobName(), script.Path(), err}
+		resultChannel <- RunScriptResult{script.JobName(), script.Path(), err}
 		return
 	}
 	defer func() {
@@ -74,7 +74,7 @@ func (script GenericScript) Run(errorChan chan RunScriptResult, doneChan chan Ru
 	stderrPath := fmt.Sprintf("%s.stderr.log", script.LogPath())
 	stderrFile, err := script.fs.OpenFile(stderrPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		errorChan <- RunScriptResult{script.JobName(), script.Path(), err}
+		resultChannel <- RunScriptResult{script.JobName(), script.Path(), err}
 		return
 	}
 	defer func() {
@@ -91,10 +91,5 @@ func (script GenericScript) Run(errorChan chan RunScriptResult, doneChan chan Ru
 	command.Stderr = stderrFile
 
 	_, _, _, runErr := script.runner.RunComplexCommand(command)
-
-	if runErr == nil {
-		doneChan <- RunScriptResult{script.JobName(), script.Path(), nil}
-	} else {
-		errorChan <- RunScriptResult{script.JobName(), script.Path(), runErr}
-	}
+	resultChannel <- RunScriptResult{script.JobName(), script.Path(), runErr}
 }
