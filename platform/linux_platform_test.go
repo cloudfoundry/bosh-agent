@@ -731,6 +731,10 @@ Number  Start  End     Size    File system  Flags
 
 			cmdRunner.AddCmdResult("parted -s /dev/xvdc p", result)
 
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
+
 			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}})
 
 			Expect(err).ToNot(HaveOccurred())
@@ -780,6 +784,10 @@ Number  Start   End     Size    File system  Name             Flags
 			}
 
 			cmdRunner.AddCmdResult("parted -s /dev/xvdc p", result)
+
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
 
 			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}})
 

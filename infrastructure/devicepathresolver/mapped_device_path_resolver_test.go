@@ -95,14 +95,35 @@ var _ = Describe("mappedDevicePathResolver", func() {
 		})
 	})
 
-	Context("when an invalid device name is passed in", func() {
-		It("panics", func() {
-			Expect(func() {
+	Context("when a path that never needs remapping is passed in", func() {
+		Context("when path exists", func() {
+			BeforeEach(func() {
+				fs.WriteFile("/dev/xvdba", []byte{})
 				diskSettings = boshsettings.DiskSettings{
-					Path: "not even a device",
+					Path: "/dev/xvdba",
 				}
-				resolver.GetRealDevicePath(diskSettings)
-			}).To(Panic())
+			})
+
+			It("returns the path as given", func() {
+				realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+				Expect(realPath).To(Equal("/dev/xvdba"))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(timedOut).To(BeFalse())
+			})
+		})
+		Context("when path does not exist", func() {
+			BeforeEach(func() {
+				diskSettings = boshsettings.DiskSettings{
+					Path: "/dev/xvdba",
+				}
+			})
+
+			It("returns an error", func() {
+				realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+				Expect(realPath).To(Equal(""))
+				Expect(err).To(HaveOccurred())
+				Expect(timedOut).To(BeTrue())
+			})
 		})
 	})
 })

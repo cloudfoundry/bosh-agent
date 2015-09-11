@@ -481,11 +481,16 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 			return bosherr.WrapError(errors.New("Path missing"), "Setting up raw ephemeral disks")
 		}
 
+		realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
+		if err != nil {
+			return bosherr.WrapError(err, "Getting real device path")
+		}
+
 		// check if device is already partitioned correctly
 		stdout, _, _, err := p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			device.Path,
+			realPath,
 			"p",
 		)
 
@@ -494,11 +499,11 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		}
 
 		// change to gpt partition type, change units to percentage, make partition with name and span from 0-100%
-		p.logger.Info(logTag, "Creating partition on `%s'", device.Path)
+		p.logger.Info(logTag, "Creating partition on `%s'", realPath)
 		_, _, _, err = p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			device.Path,
+			realPath,
 			"mklabel",
 			"gpt",
 			"unit",
