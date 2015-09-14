@@ -48,13 +48,13 @@ var _ = Describe("RawEphemeralDisk", func() {
 
 	Context("when raw ephemeral disk is provided in settings", func() {
 		BeforeEach(func() {
-			err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+			err := testEnvironment.AttachDevice("/dev/sdh", 8, 2)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.AttachDevice("/dev/xvdb", 128, 1)
+			err = testEnvironment.AttachDevice("/dev/xvdb", 8, 1)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.AttachDevice("/dev/xvdc", 128, 1)
+			err = testEnvironment.AttachDevice("/dev/xvdc", 8, 1)
 			Expect(err).ToNot(HaveOccurred())
 
 			registrySettings.Disks = boshsettings.Disks{
@@ -84,15 +84,11 @@ var _ = Describe("RawEphemeralDisk", func() {
 		})
 
 		It("labels the raw ephemeral paths for unpartitioned disks", func() {
-			var output string
-
 			Eventually(func() string {
 				stdout, _ := testEnvironment.RunCommand("find /dev/disk/by-partlabel | sort")
 
-				output = stdout
-
 				return stdout
-			}, 2*time.Minute, 1*time.Second).Should(ContainSubstring(`/dev/disk/by-partlabel/raw-ephemeral-0
+			}, 5*time.Minute, 1*time.Second).Should(ContainSubstring(`/dev/disk/by-partlabel/raw-ephemeral-0
 /dev/disk/by-partlabel/raw-ephemeral-1`))
 		})
 	})
