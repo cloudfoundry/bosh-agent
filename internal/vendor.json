@@ -39,9 +39,9 @@
 		{
 			"canonical": "github.com/cloudfoundry/bosh-utils/blobstore",
 			"comment": "",
-			"local": "github.com/cloudfoundry/bosh-utils/blobstore",
-			"revision": "f2e1cd2009f456fe7f1a6ef06335584cc3d0d9b6",
-			"revisionTime": "2015-08-03T17:23:41-07:00"
+			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore",
+			"revision": "6afd602ab4188f5aff4a8330c222efc7620631f3",
+			"revisionTime": "2015-09-14T15:11:55-07:00"
 		},
 		{
 			"canonical": "github.com/cloudfoundry/bosh-utils/blobstore/fakes",
