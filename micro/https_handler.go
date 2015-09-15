@@ -1,7 +1,9 @@
 package micro
 
 import (
+	"bufio"
 	"encoding/base64"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -10,10 +12,10 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type HTTPSHandler struct {
@@ -159,12 +161,13 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
 	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider.MicroStore())
 
-	blobBytes, err := blobManager.Fetch(blobID)
+	file, err := blobManager.Fetch(blobID)
 
 	if err != nil {
 		w.WriteHeader(404)
 	} else {
-		if _, wErr := w.Write(blobBytes); wErr != nil {
+		reader := bufio.NewReader(file)
+		if _, wErr := io.Copy(w, reader); wErr != nil {
 			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
 		}
 	}
