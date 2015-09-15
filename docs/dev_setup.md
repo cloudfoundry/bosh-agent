@@ -67,6 +67,28 @@ Install tools used by the BOSH Agent test suite:
 - `bin/go get code.google.com/p/go.tools/cmd/vet`
 - `bin/go get github.com/golang/lint/golint`
 
+#### Setup Vendor for Go dependency management
+
+We use Govendor(Vendor) for go dependency management. However at the moment September 15, 2015 Govendor is not working for our local workstations.
+
+To get this working we are using a [older version](https://github.com/kardianos/govendor/commit/f734a974f0392535918b8d2d1f3fdcac5423830f) of Govendor before they renamed it from vendor.
+
+git clone govendor into your gopath:
+
+1. Change into govendor directory `cd ~/go/src/github.com/kardianos/govendor`
+
+1. We then reset govendor to the working version with `git reset --hard f734a974f0392535918b8d2d1f3fdcac5423830f`
+2. We then need to rename our govendor directory to vendor
+	* `cd ../`
+	* `mv govendor vendor`
+	* `cd vendor`
+3. 	Go build vendor `go build github.com/kardianos/vendor`
+4. 	Move vendor into gopath `mv vendor ~/go/bin/`
+
+An example for how to vendor a directory: `vendor update github.com/cloudfoundry/bosh-utils/...`
+
+
+
 #### Running tests
 
 Each package in the agent has its own unit tests. You can run all unit tests with `bin/test-unit`.
