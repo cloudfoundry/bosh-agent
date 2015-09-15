@@ -44,10 +44,10 @@ var _ = Describe("status", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedServices := []Service{
-				Service{Monitored: true, Status: "running"},
-				Service{Monitored: false, Status: "unknown"},
-				Service{Monitored: true, Status: "starting"},
-				Service{Monitored: true, Status: "failing"},
+				Service{Name: "running-service", Monitored: true, Status: "running"},
+				Service{Name: "unmonitored-service", Monitored: false, Status: "unknown"},
+				Service{Name: "starting-service", Monitored: true, Status: "starting"},
+				Service{Name: "failing-service", Monitored: true, Status: "failing"},
 			}
 
 			services := status.ServicesInGroup("vcap")

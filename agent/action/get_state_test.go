@@ -10,6 +10,7 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	fakentp "github.com/cloudfoundry/bosh-agent/platform/ntp/fakes"
@@ -96,6 +97,16 @@ var _ = Describe("GetState", func() {
 					settingsService.Settings.VM.Name = "vm-abc-def"
 
 					jobSupervisor.StatusStatus = "running"
+					jobSupervisor.ProcessesStatus = []boshjobsuper.Process{
+						boshjobsuper.Process{
+							Name:  "fake-process-name-1",
+							State: "running",
+						},
+						boshjobsuper.Process{
+							Name:  "fake-process-name-2",
+							State: "failing",
+						},
+					}
 
 					specService.Spec = boshas.V1ApplySpec{
 						Deployment: "fake-deployment",
@@ -104,8 +115,20 @@ var _ = Describe("GetState", func() {
 					expectedVitals := boshvitals.Vitals{
 						Load: []string{"foo", "bar", "baz"},
 					}
+
 					vitalsService.GetVitals = expectedVitals
 					expectedVM := map[string]interface{}{"name": "vm-abc-def"}
+
+					expectedProcesses := []boshjobsuper.Process{
+						boshjobsuper.Process{
+							Name:  "fake-process-name-1",
+							State: "running",
+						},
+						boshjobsuper.Process{
+							Name:  "fake-process-name-2",
+							State: "failing",
+						},
+					}
 
 					state, err := action.Run("full")
 					Expect(err).ToNot(HaveOccurred())
@@ -114,6 +137,7 @@ var _ = Describe("GetState", func() {
 					boshassert.MatchesJSONString(GinkgoT(), state.JobState, `"running"`)
 					boshassert.MatchesJSONString(GinkgoT(), state.Deployment, `"fake-deployment"`)
 					Expect(*state.Vitals).To(Equal(expectedVitals))
+					Expect(state.Processes).To(Equal(expectedProcesses))
 					boshassert.MatchesJSONMap(GinkgoT(), state.VM, expectedVM)
 				})
 

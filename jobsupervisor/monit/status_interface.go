@@ -6,6 +6,7 @@ type Status interface {
 }
 
 type Service struct {
+	Name      string
 	Monitored bool
 	Status    string
 }

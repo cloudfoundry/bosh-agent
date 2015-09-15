@@ -229,6 +229,38 @@ var _ = Describe("monitJobSupervisor", func() {
 		})
 	})
 
+	Describe("Processes", func() {
+		It("returns all processes", func() {
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{
+					boshmonit.Service{Name: "fake-service-1", Monitored: true, Status: "running"},
+					boshmonit.Service{Name: "fake-service-2", Monitored: true, Status: "failing"},
+				},
+			}
+
+			processes, err := monit.Processes()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(processes).To(Equal([]Process{
+				Process{
+					Name:  "fake-service-1",
+					State: "running",
+				},
+				Process{
+					Name:  "fake-service-2",
+					State: "failing",
+				},
+			}))
+		})
+
+		It("returns error when failing to get service status", func() {
+			client.StatusErr = errors.New("fake-monit-client-error")
+
+			processes, err := monit.Processes()
+			Expect(err).To(HaveOccurred())
+			Expect(processes).To(BeEmpty())
+		})
+	})
+
 	Describe("MonitorJobFailures", func() {
 		It("monitor job failures", func() {
 			var handledAlert boshalert.MonitAlert

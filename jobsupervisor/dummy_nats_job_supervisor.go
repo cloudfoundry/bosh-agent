@@ -11,6 +11,7 @@ import (
 type dummyNatsJobSupervisor struct {
 	mbusHandler       boshhandler.Handler
 	status            string
+	processes         []Process
 	jobFailureHandler JobFailureHandler
 }
 
@@ -18,6 +19,7 @@ func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
 	return &dummyNatsJobSupervisor{
 		mbusHandler: mbusHandler,
 		status:      "running",
+		processes:   []Process{},
 	}
 }
 
@@ -56,6 +58,10 @@ func (d *dummyNatsJobSupervisor) RemoveAllJobs() error {
 
 func (d *dummyNatsJobSupervisor) Status() string {
 	return d.status
+}
+
+func (d *dummyNatsJobSupervisor) Processes() ([]Process, error) {
+	return d.processes, nil
 }
 
 func (d *dummyNatsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
