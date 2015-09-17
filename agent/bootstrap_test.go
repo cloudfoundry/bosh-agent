@@ -264,18 +264,19 @@ func init() {
 
 			It("sets root and vcap passwords", func() {
 				settingsService.Settings.Env.Bosh.UserPassword = "some-encrypted-password"
+				settingsService.Settings.Env.Bosh.RootPassword = "some-encrypted-password"
 
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(2).To(Equal(len(platform.UserPasswords)))
-				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["root"]))
-				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["vcap"]))
+				Expect("some-encrypted-password").To(Equal(platform.UserPassword))
+				Expect("some-encrypted-password").To(Equal(platform.RootPassword))
 			})
 
 			It("does not set password if not provided", func() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(0).To(Equal(len(platform.UserPasswords)))
+				Expect("").To(Equal(platform.UserPassword))
+				Expect("").To(Equal(platform.RootPassword))
 			})
 
 			It("sets ntp", func() {
