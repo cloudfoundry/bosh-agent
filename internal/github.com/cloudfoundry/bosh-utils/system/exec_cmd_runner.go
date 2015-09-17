@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const (
@@ -114,12 +114,11 @@ func (p execProcess) wait() Result {
 	// err will be non-nil if command exits with non-0 status
 	err := p.cmd.Wait()
 
-	// we log the command path with each message so the logs are coherent even when multiple commands run concurrently
 	stdout := string(p.stdoutWriter.Bytes())
-	p.logger.Debug(execProcessLogTag, "%s Stdout: %s", p.cmd.Path, stdout)
+	p.logger.Debug(execProcessLogTag, "Stdout: %s", stdout)
 
 	stderr := string(p.stderrWriter.Bytes())
-	p.logger.Debug(execProcessLogTag, "%s Stderr: %s", p.cmd.Path, stderr)
+	p.logger.Debug(execProcessLogTag, "Stderr: %s", stderr)
 
 	exitStatus := -1
 	waitStatus := p.cmd.ProcessState.Sys().(syscall.WaitStatus)
@@ -130,7 +129,7 @@ func (p execProcess) wait() Result {
 		exitStatus = 128 + int(waitStatus.Signal())
 	}
 
-	p.logger.Debug(execProcessLogTag, "%s Successful: %t (%d)", p.cmd.Path, err == nil, exitStatus)
+	p.logger.Debug(execProcessLogTag, "Successful: %t (%d)", err == nil, exitStatus)
 
 	if err != nil {
 		cmdString := strings.Join(p.cmd.Args, " ")
