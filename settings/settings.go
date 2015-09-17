@@ -99,12 +99,17 @@ type Env struct {
 	Bosh BoshEnv `json:"bosh"`
 }
 
-func (e Env) GetPassword() string {
-	return e.Bosh.Password
+func (e Env) GetUserPassword() string {
+	return e.Bosh.UserPassword
+}
+
+func (e Env) GetRootPassword() string {
+	return e.Bosh.RootPassword
 }
 
 type BoshEnv struct {
-	Password string `json:"password"`
+	UserPassword string `json:"user_password"`
+	RootPassword string `json:"root_password"`
 }
 
 type NetworkType string

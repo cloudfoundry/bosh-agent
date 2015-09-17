@@ -64,6 +64,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Settings user password")
 	}
 
+	if err = boot.setRootPasswords(settings.Env); err != nil {
+		return bosherr.WrapError(err, "Settings root password")
+	}
+
 	if err = boot.platform.SetupHostname(settings.AgentID); err != nil {
 		return bosherr.WrapError(err, "Setting up hostname")
 	}
@@ -116,7 +120,21 @@ func (boot bootstrap) Run() (err error) {
 }
 
 func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
-	password := env.GetPassword()
+	password := env.GetUserPassword()
+	if password == "" {
+		return nil
+	}
+
+	err := boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting vcap password")
+	}
+
+	return nil
+}
+
+func (boot bootstrap) setRootPasswords(env boshsettings.Env) error {
+	password := env.GetRootPassword()
 	if password == "" {
 		return nil
 	}
@@ -124,11 +142,6 @@ func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 	err := boot.platform.SetUserPassword(boshsettings.RootUsername, password)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting root password")
-	}
-
-	err = boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting vcap password")
 	}
 
 	return nil

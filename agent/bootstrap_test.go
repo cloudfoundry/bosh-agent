@@ -263,7 +263,7 @@ func init() {
 			})
 
 			It("sets root and vcap passwords", func() {
-				settingsService.Settings.Env.Bosh.Password = "some-encrypted-password"
+				settingsService.Settings.Env.Bosh.UserPassword = "some-encrypted-password"
 
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())

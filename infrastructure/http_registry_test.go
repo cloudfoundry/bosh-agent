@@ -247,7 +247,7 @@ func describeHTTPRegistry() {
 						},
 						Env: boshsettings.Env{
 							Bosh: boshsettings.BoshEnv{
-								Password: "some encrypted password",
+								UserPassword: "some encrypted password",
 							},
 						},
 						Networks: boshsettings.Networks{
