@@ -5,25 +5,33 @@ import (
 	"path/filepath"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+)
+
+const (
+	sshActionLogTag = "SSH Action"
 )
 
 type SSHAction struct {
 	settingsService boshsettings.Service
 	platform        boshplatform.Platform
 	dirProvider     boshdirs.Provider
+	logger          boshlog.Logger
 }
 
 func NewSSH(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	dirProvider boshdirs.Provider,
+	logger boshlog.Logger,
 ) (action SSHAction) {
 	action.settingsService = settingsService
 	action.platform = platform
 	action.dirProvider = dirProvider
+	action.logger = logger
 	return
 }
 
@@ -43,9 +51,10 @@ type SSHParams struct {
 }
 
 type SSHResult struct {
-	Command string `json:"command"`
-	Status  string `json:"status"`
-	IP      string `json:"ip,omitempty"`
+	Command   string `json:"command"`
+	Status    string `json:"status"`
+	IP        string `json:"ip,omitempty"`
+	PublicKey string `json:"public_key,omitempty"`
 }
 
 func (a SSHAction) Run(cmd string, params SSHParams) (SSHResult, error) {
@@ -86,10 +95,16 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 		return result, errors.New("No default ip could be found")
 	}
 
+	publicKey, err := a.platform.GetHostPublicKey()
+	if err != nil {
+		a.logger.Warn(sshActionLogTag, err.Error())
+	}
+
 	result = SSHResult{
-		Command: "setup",
-		Status:  "success",
-		IP:      defaultIP,
+		Command:   "setup",
+		Status:    "success",
+		IP:        defaultIP,
+		PublicKey: publicKey,
 	}
 
 	return result, nil

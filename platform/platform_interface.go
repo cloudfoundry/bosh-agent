@@ -60,4 +60,6 @@ type Platform interface {
 	GetMonitCredentials() (username, password string, err error)
 
 	GetCertManager() cert.Manager
+
+	GetHostPublicKey() (string, error)
 }
