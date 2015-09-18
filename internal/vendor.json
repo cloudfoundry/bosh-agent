@@ -26,29 +26,29 @@
 			"canonical": "github.com/cloudfoundry/bosh-utils/blobstore",
 			"comment": "",
 			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore",
-			"revision": "3a53b0c78f8f7363c728a8b680fe9fbb9cbe913e",
-			"revisionTime": "2015-09-16T15:18:55-07:00"
+			"revision": "bcb196ba47141075059fc87f6eccafb3a49df1a0",
+			"revisionTime": "2015-09-21T12:11:41-07:00"
 		},
 		{
 			"canonical": "github.com/cloudfoundry/bosh-utils/blobstore/fakes",
 			"comment": "",
 			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes",
-			"revision": "3a53b0c78f8f7363c728a8b680fe9fbb9cbe913e",
-			"revisionTime": "2015-09-16T15:18:55-07:00"
+			"revision": "bcb196ba47141075059fc87f6eccafb3a49df1a0",
+			"revisionTime": "2015-09-21T12:11:41-07:00"
 		},
 		{
 			"canonical": "github.com/cloudfoundry/bosh-utils/system",
 			"comment": "",
 			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system",
-			"revision": "3a53b0c78f8f7363c728a8b680fe9fbb9cbe913e",
-			"revisionTime": "2015-09-16T15:18:55-07:00"
+			"revision": "f77da8e892b6bff1f254fbec8d1850f816da20de",
+			"revisionTime": "2015-09-21T12:11:41-07:00"
 		},
 		{
 			"canonical": "github.com/cloudfoundry/bosh-utils/system/fakes",
 			"comment": "",
 			"local": "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes",
-			"revision": "3a53b0c78f8f7363c728a8b680fe9fbb9cbe913e",
-			"revisionTime": "2015-09-16T15:18:55-07:00"
+			"revision": "f77da8e892b6bff1f254fbec8d1850f816da20de",
+			"revisionTime": "2015-09-21T12:11:41-07:00"
 		},
 		{
 			"canonical": "github.com/cloudfoundry/bosh-init/registry",

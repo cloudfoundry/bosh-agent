@@ -1,34 +1,49 @@
 package blobstore_test
 
 import (
+	"bytes"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshsysfake "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	"io"
+	"os"
+	"path/filepath"
 )
 
-func createBlobManager() (blobManager BlobManager, fs boshsys.FileSystem) {
-	logger := boshlog.NewLogger(boshlog.LevelNone)
-	fs = boshsys.NewOsFileSystem(logger)
-	blobManager = NewBlobManager(fs, "/tmp")
-	return
-}
+var _ = Describe("Blob Manager", func() {
+	var (
+		fs       boshsys.FileSystem
+		logger   boshlog.Logger
+		basePath string
+		blobPath string
+		blobId   string
+		toWrite  io.Reader
+	)
 
-func readFile(fileIO boshsys.File) (fileBytes []byte) {
-	fileStat, _ := fileIO.Stat()
-	fileBytes = make([]byte, fileStat.Size())
-	fileIO.Read(fileBytes)
-	return
-}
+	BeforeEach(func() {
+		logger = boshlog.NewLogger(boshlog.LevelNone)
+		fs = boshsys.NewOsFileSystem(logger)
+		blobId = "105d33ae-655c-493d-bf9f-1df5cf3ca847"
+		basePath = "/tmp"
+		blobPath = filepath.Join(basePath, blobId)
+		toWrite = bytes.NewReader([]byte("new data"))
+	})
 
-var _ = Describe("Testing with Ginkgo", func() {
-	It("fetch", func() {
-		blobManager, fs := createBlobManager()
-		fs.WriteFileString("/tmp/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
+	readFile := func(fileIO boshsys.File) []byte {
+		fileStat, _ := fileIO.Stat()
+		fileBytes := make([]byte, fileStat.Size())
+		fileIO.Read(fileBytes)
+		return fileBytes
+	}
 
-		readOnlyFile, err := blobManager.Fetch("105d33ae-655c-493d-bf9f-1df5cf3ca847")
+	It("fetches", func() {
+		blobManager := NewBlobManager(fs, basePath)
+		fs.WriteFileString(blobPath, "some data")
+
+		readOnlyFile, err, _ := blobManager.Fetch(blobId)
 		defer fs.RemoveAll(readOnlyFile.Name())
 
 		Expect(err).ToNot(HaveOccurred())
@@ -37,17 +52,38 @@ var _ = Describe("Testing with Ginkgo", func() {
 		Expect(string(fileBytes)).To(Equal("some data"))
 	})
 
-	It("write", func() {
+	It("writes", func() {
+		blobManager := NewBlobManager(fs, basePath)
+		fs.WriteFileString(blobPath, "some data")
+		defer fs.RemoveAll(blobPath)
 
-		blobManager, fs := createBlobManager()
-		fs.WriteFileString("/tmp/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
-		defer fs.RemoveAll("/tmp/105d33ae-655c-493d-bf9f-1df5cf3ca847")
-
-		err := blobManager.Write("105d33ae-655c-493d-bf9f-1df5cf3ca847", []byte("new data"))
+		err := blobManager.Write(blobId, toWrite)
 		Expect(err).ToNot(HaveOccurred())
 
-		contents, err := fs.ReadFileString("/tmp/105d33ae-655c-493d-bf9f-1df5cf3ca847")
+		contents, err := fs.ReadFileString(blobPath)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(contents).To(Equal("new data"))
 	})
+
+	Context("when it writes", func() {
+		It("creates and closes the file", func() {
+			fs_ := boshsysfake.NewFakeFileSystem()
+			blobManager := NewBlobManager(fs_, basePath)
+			err := blobManager.Write(blobId, toWrite)
+			Expect(err).ToNot(HaveOccurred())
+			fileStats, err := fs_.FindFileStats(blobPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fileStats.Open).To(BeFalse())
+		})
+		It("creates file with correct permissions", func() {
+			fs_ := boshsysfake.NewFakeFileSystem()
+			blobManager := NewBlobManager(fs_, basePath)
+			err := blobManager.Write(blobId, toWrite)
+			fileStats, err := fs_.FindFileStats(blobPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0666)))
+			Expect(fileStats.Flags).To(Equal(os.O_WRONLY | os.O_CREATE | os.O_TRUNC))
+		})
+	})
+
 })
