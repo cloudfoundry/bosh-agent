@@ -54,7 +54,7 @@ type SSHResult struct {
 	Command   string `json:"command"`
 	Status    string `json:"status"`
 	IP        string `json:"ip,omitempty"`
-	PublicKey string `json:"public_key,omitempty"`
+	PublicKey string `json:"host_public_key,omitempty"`
 }
 
 func (a SSHAction) Run(cmd string, params SSHParams) (SSHResult, error) {
