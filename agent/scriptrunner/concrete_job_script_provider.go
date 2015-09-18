@@ -3,6 +3,7 @@ package scriptrunner
 import (
 	"path/filepath"
 
+	"fmt"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 )
@@ -25,11 +26,14 @@ func NewJobScriptProvider(
 }
 
 func (p ConcreteJobScriptProvider) Get(jobName string, scriptName string) (script Script) {
+	stdoutLogFilename := fmt.Sprintf("%s.stdout.log", scriptName)
+	stderrLogFilename := fmt.Sprintf("%s.stderr.log", scriptName)
 	return NewScript(
+		jobName,
 		p.fs,
 		p.cmdRunner,
 		filepath.Join(p.dirProvider.JobBinDir(jobName), scriptName),
-		filepath.Join(p.dirProvider.LogsDir(), jobName, scriptName),
-		jobName,
+		filepath.Join(p.dirProvider.LogsDir(), jobName, stdoutLogFilename),
+		filepath.Join(p.dirProvider.LogsDir(), jobName, stderrLogFilename),
 	)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	Describe("GenericScriptProvider", func() {
+	Describe("JobScriptProvider", func() {
 		It("produces script paths relative to the base directory", func() {
 
 			runner := fakesys.NewFakeCmdRunner()
@@ -21,6 +21,7 @@ func init() {
 			script := scriptProvider.Get("myjob", "the-best-hook-ever")
 
 			Expect(script.Path()).To(Equal("/the/base/dir/jobs/myjob/bin/the-best-hook-ever"))
+			Expect(script.Tag()).To(Equal("myjob"))
 		})
 	})
 }

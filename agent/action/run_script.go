@@ -63,7 +63,7 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	for i := 0; i < scriptCount; i++ {
 		select {
 		case resultScript := <-resultChannel:
-			jobName := resultScript.JobName
+			jobName := resultScript.Tag
 			if resultScript.Error == nil {
 				passedScripts = append(passedScripts, jobName)
 				result[jobName] = "executed"

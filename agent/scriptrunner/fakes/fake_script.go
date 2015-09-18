@@ -8,6 +8,18 @@ import (
 )
 
 type FakeScript struct {
+	TagStub        func() string
+	tagMutex       sync.RWMutex
+	tagArgsForCall []struct{}
+	tagReturns     struct {
+		result1 string
+	}
+	PathStub        func() string
+	pathMutex       sync.RWMutex
+	pathArgsForCall []struct{}
+	pathReturns     struct {
+		result1 string
+	}
 	ExistsStub        func() bool
 	existsMutex       sync.RWMutex
 	existsArgsForCall []struct{}
@@ -19,24 +31,54 @@ type FakeScript struct {
 	runArgsForCall []struct {
 		resultChannel chan scriptrunner.RunScriptResult
 	}
-	PathStub        func() string
-	pathMutex       sync.RWMutex
-	pathArgsForCall []struct{}
-	pathReturns     struct {
-		result1 string
+}
+
+func (fake *FakeScript) Tag() string {
+	fake.tagMutex.Lock()
+	fake.tagArgsForCall = append(fake.tagArgsForCall, struct{}{})
+	fake.tagMutex.Unlock()
+	if fake.TagStub != nil {
+		return fake.TagStub()
+	} else {
+		return fake.tagReturns.result1
 	}
-	LogPathStub        func() string
-	logPathMutex       sync.RWMutex
-	logPathArgsForCall []struct{}
-	logPathReturns     struct {
+}
+
+func (fake *FakeScript) TagCallCount() int {
+	fake.tagMutex.RLock()
+	defer fake.tagMutex.RUnlock()
+	return len(fake.tagArgsForCall)
+}
+
+func (fake *FakeScript) TagReturns(result1 string) {
+	fake.TagStub = nil
+	fake.tagReturns = struct {
 		result1 string
+	}{result1}
+}
+
+func (fake *FakeScript) Path() string {
+	fake.pathMutex.Lock()
+	fake.pathArgsForCall = append(fake.pathArgsForCall, struct{}{})
+	fake.pathMutex.Unlock()
+	if fake.PathStub != nil {
+		return fake.PathStub()
+	} else {
+		return fake.pathReturns.result1
 	}
-	JobNameStub        func() string
-	jobNameMutex       sync.RWMutex
-	jobNameArgsForCall []struct{}
-	jobNameReturns     struct {
+}
+
+func (fake *FakeScript) PathCallCount() int {
+	fake.pathMutex.RLock()
+	defer fake.pathMutex.RUnlock()
+	return len(fake.pathArgsForCall)
+}
+
+func (fake *FakeScript) PathReturns(result1 string) {
+	fake.PathStub = nil
+	fake.pathReturns = struct {
 		result1 string
-	}
+	}{result1}
 }
 
 func (fake *FakeScript) Exists() bool {
@@ -84,78 +126,6 @@ func (fake *FakeScript) RunArgsForCall(i int) chan scriptrunner.RunScriptResult 
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
 	return fake.runArgsForCall[i].resultChannel
-}
-
-func (fake *FakeScript) Path() string {
-	fake.pathMutex.Lock()
-	fake.pathArgsForCall = append(fake.pathArgsForCall, struct{}{})
-	fake.pathMutex.Unlock()
-	if fake.PathStub != nil {
-		return fake.PathStub()
-	} else {
-		return fake.pathReturns.result1
-	}
-}
-
-func (fake *FakeScript) PathCallCount() int {
-	fake.pathMutex.RLock()
-	defer fake.pathMutex.RUnlock()
-	return len(fake.pathArgsForCall)
-}
-
-func (fake *FakeScript) PathReturns(result1 string) {
-	fake.PathStub = nil
-	fake.pathReturns = struct {
-		result1 string
-	}{result1}
-}
-
-func (fake *FakeScript) LogPath() string {
-	fake.logPathMutex.Lock()
-	fake.logPathArgsForCall = append(fake.logPathArgsForCall, struct{}{})
-	fake.logPathMutex.Unlock()
-	if fake.LogPathStub != nil {
-		return fake.LogPathStub()
-	} else {
-		return fake.logPathReturns.result1
-	}
-}
-
-func (fake *FakeScript) LogPathCallCount() int {
-	fake.logPathMutex.RLock()
-	defer fake.logPathMutex.RUnlock()
-	return len(fake.logPathArgsForCall)
-}
-
-func (fake *FakeScript) LogPathReturns(result1 string) {
-	fake.LogPathStub = nil
-	fake.logPathReturns = struct {
-		result1 string
-	}{result1}
-}
-
-func (fake *FakeScript) JobName() string {
-	fake.jobNameMutex.Lock()
-	fake.jobNameArgsForCall = append(fake.jobNameArgsForCall, struct{}{})
-	fake.jobNameMutex.Unlock()
-	if fake.JobNameStub != nil {
-		return fake.JobNameStub()
-	} else {
-		return fake.jobNameReturns.result1
-	}
-}
-
-func (fake *FakeScript) JobNameCallCount() int {
-	fake.jobNameMutex.RLock()
-	defer fake.jobNameMutex.RUnlock()
-	return len(fake.jobNameArgsForCall)
-}
-
-func (fake *FakeScript) JobNameReturns(result1 string) {
-	fake.JobNameStub = nil
-	fake.jobNameReturns = struct {
-		result1 string
-	}{result1}
 }
 
 var _ scriptrunner.Script = new(FakeScript)

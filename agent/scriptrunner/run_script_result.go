@@ -1,7 +1,7 @@
 package scriptrunner
 
 type RunScriptResult struct {
-	JobName    string
+	Tag        string
 	ScriptPath string
 	Error      error
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	"path/filepath"
 )
 
 var _ = Describe("GenericScript", func() {
@@ -16,12 +17,22 @@ var _ = Describe("GenericScript", func() {
 		fs            *fakesys.FakeFileSystem
 		cmdRunner     *fakesys.FakeCmdRunner
 		genericScript scriptrunner.GenericScript
+		stdoutLogPath string
+		stderrLogPath string
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
-		genericScript = scriptrunner.NewScript(fs, cmdRunner, "/path-to-script", "/fake-base-dir/fake-log-path/script-name", "fake-job-name")
+		stdoutLogPath = filepath.Join("base", "stdout", "logdir", "stdout.log")
+		stderrLogPath = filepath.Join("base", "stderr", "logdir", "stderr.log")
+		genericScript = scriptrunner.NewScript(
+			"my-tag",
+			fs,
+			cmdRunner,
+			"/path-to-script",
+			stdoutLogPath,
+			stderrLogPath)
 	})
 
 	Describe("RunCommand", func() {
@@ -30,18 +41,18 @@ var _ = Describe("GenericScript", func() {
 			resultChannel := make(chan scriptrunner.RunScriptResult)
 			go genericScript.Run(resultChannel)
 
-			var passedJobName string
+			var receivedTagName string
 			var returnedError error
 
 			select {
 			case runScriptResult := <-resultChannel:
-				passedJobName = runScriptResult.JobName
+				receivedTagName = runScriptResult.Tag
 				returnedError = runScriptResult.Error
 			case <-time.After(time.Second * 2):
 				//If it went here , it will fail
 			}
 
-			Expect(passedJobName).To(Equal("fake-job-name"))
+			Expect(receivedTagName).To(Equal("my-tag"))
 			Expect(returnedError).To(BeNil())
 		})
 
@@ -51,18 +62,18 @@ var _ = Describe("GenericScript", func() {
 			resultChannel := make(chan scriptrunner.RunScriptResult)
 			go genericScript.Run(resultChannel)
 
-			var failedJobName string
+			var receivedTagName string
 			var returnedError error
 
 			select {
 			case runScriptResult := <-resultChannel:
-				failedJobName = runScriptResult.JobName
+				receivedTagName = runScriptResult.Tag
 				returnedError = runScriptResult.Error
 			case <-time.After(time.Second * 2):
 				//If it went here , it will fail
 			}
 
-			Expect(failedJobName).To(Equal("fake-job-name"))
+			Expect(receivedTagName).To(Equal("my-tag"))
 			Expect(returnedError.Error()).To(Equal("fake-mkdir-all-error"))
 		})
 
@@ -72,18 +83,18 @@ var _ = Describe("GenericScript", func() {
 			resultChannel := make(chan scriptrunner.RunScriptResult)
 			go genericScript.Run(resultChannel)
 
-			var failedJobName string
+			var receivedTagName string
 			var returnedError error
 
 			select {
 			case runScriptResult := <-resultChannel:
-				failedJobName = runScriptResult.JobName
+				receivedTagName = runScriptResult.Tag
 				returnedError = runScriptResult.Error
 			case <-time.After(time.Second * 2):
 				//If it went here , it will fail
 			}
 
-			Expect(failedJobName).To(Equal("fake-job-name"))
+			Expect(receivedTagName).To(Equal("my-tag"))
 			Expect(returnedError.Error()).To(Equal("fake-open-file-error"))
 		})
 
@@ -102,28 +113,28 @@ var _ = Describe("GenericScript", func() {
 				resultChannel := make(chan scriptrunner.RunScriptResult)
 				go genericScript.Run(resultChannel)
 
-				var passedJobName string
+				var receivedTagName string
 				var returnedError error
 
 				select {
 				case runScriptResult := <-resultChannel:
-					passedJobName = runScriptResult.JobName
+					receivedTagName = runScriptResult.Tag
 					returnedError = runScriptResult.Error
 				case <-time.After(time.Second * 2):
 					//If it went here , it will fail
 				}
 
-				Expect(passedJobName).To(Equal("fake-job-name"))
+				Expect(receivedTagName).To(Equal("my-tag"))
 				Expect(returnedError).To(BeNil())
 
-				Expect(fs.FileExists("/fake-base-dir/fake-log-path/script-name.stdout.log")).To(BeTrue())
-				Expect(fs.FileExists("/fake-base-dir/fake-log-path/script-name.stderr.log")).To(BeTrue())
+				Expect(fs.FileExists(stdoutLogPath)).To(BeTrue())
+				Expect(fs.FileExists(stderrLogPath)).To(BeTrue())
 
-				stdout, err := fs.ReadFileString("/fake-base-dir/fake-log-path/script-name.stdout.log")
+				stdout, err := fs.ReadFileString(stdoutLogPath)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(stdout).To(Equal("fake-stdout"))
 
-				stderr, err := fs.ReadFileString("/fake-base-dir/fake-log-path/script-name.stderr.log")
+				stderr, err := fs.ReadFileString(stderrLogPath)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(stderr).To(Equal("fake-stderr"))
 			})
@@ -144,28 +155,28 @@ var _ = Describe("GenericScript", func() {
 				resultChannel := make(chan scriptrunner.RunScriptResult)
 				go genericScript.Run(resultChannel)
 
-				var failedJobName string
+				var receivedTagName string
 				var returnedError error
 
 				select {
 				case runScriptResult := <-resultChannel:
-					failedJobName = runScriptResult.JobName
+					receivedTagName = runScriptResult.Tag
 					returnedError = runScriptResult.Error
 				case <-time.After(time.Second * 2):
 					//If it went here , it will fail
 				}
 
-				Expect(failedJobName).To(Equal("fake-job-name"))
+				Expect(receivedTagName).To(Equal("my-tag"))
 				Expect(returnedError.Error()).To(Equal("fake-command-error"))
 
-				Expect(fs.FileExists("/fake-base-dir/fake-log-path/script-name.stdout.log")).To(BeTrue())
-				Expect(fs.FileExists("/fake-base-dir/fake-log-path/script-name.stderr.log")).To(BeTrue())
+				Expect(fs.FileExists(stdoutLogPath)).To(BeTrue())
+				Expect(fs.FileExists(stderrLogPath)).To(BeTrue())
 
-				stdout, err := fs.ReadFileString("/fake-base-dir/fake-log-path/script-name.stdout.log")
+				stdout, err := fs.ReadFileString(stdoutLogPath)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(stdout).To(Equal("fake-stdout"))
 
-				stderr, err := fs.ReadFileString("/fake-base-dir/fake-log-path/script-name.stderr.log")
+				stderr, err := fs.ReadFileString(stderrLogPath)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(stderr).To(Equal("fake-stderr"))
 			})
