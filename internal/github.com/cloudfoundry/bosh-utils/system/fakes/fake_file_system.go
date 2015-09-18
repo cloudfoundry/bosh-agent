@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	gouuid "github.com/cloudfoundry/bosh-utils/internal/github.com/nu7hatch/gouuid"
+	gouuid "github.com/nu7hatch/gouuid"
 
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type FakeFileType string
@@ -134,14 +134,9 @@ func NewFakeFile(path string, fs *FakeFileSystem) *FakeFile {
 		path: path,
 		fs:   fs,
 	}
-	fmt.Println("path")
-	fmt.Println(fakeFile.Contents)
 	if fs.files[path] != nil {
 		fakeFile.Contents = fs.files[path].Content
 	}
-
-	fmt.Println("path1")
-	fmt.Println(fakeFile.Contents)
 	return fakeFile
 }
 

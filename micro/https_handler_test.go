@@ -115,12 +115,23 @@ var _ = Describe("HTTPSHandler", func() {
 
 		Context("when file does not exist", func() {
 			It("returns a 404", func() {
-				fs.OpenFileErr = errors.New("file not found")
+				fs.OpenFileErr = errors.New("no such file or directory")
 				httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
 				Expect(err).ToNot(HaveOccurred())
 
 				defer httpResponse.Body.Close()
 				Expect(httpResponse.StatusCode).To(Equal(404))
+			})
+		})
+
+		Context("when file does not have correct permissions", func() {
+			It("returns a 500", func() {
+				fs.OpenFileErr = errors.New("permission denied")
+				httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
+				Expect(err).ToNot(HaveOccurred())
+
+				defer httpResponse.Body.Close()
+				Expect(httpResponse.StatusCode).To(Equal(500))
 			})
 		})
 	})
@@ -147,8 +158,8 @@ var _ = Describe("HTTPSHandler", func() {
 		})
 
 		Context("when manager errors", func() {
-			It("returns a 500", func() {
-				fs.WriteFileError = errors.New("oops")
+			It("returns a 500 because of openfile error", func() {
+				fs.OpenFileErr = errors.New("oops")
 
 				putBody := `Updated data`
 				putPayload := strings.NewReader(putBody)

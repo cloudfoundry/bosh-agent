@@ -10,6 +10,7 @@ gobin/*
 *.sw*
 
 test/bosh/*.json
+test/micro_bosh
 
 /.idea
 /.vagrant
