@@ -26,10 +26,11 @@ type FakeScript struct {
 	existsReturns     struct {
 		result1 bool
 	}
-	RunStub        func(resultChannel chan scriptrunner.RunScriptResult)
+	RunStub        func() scriptrunner.RunScriptResult
 	runMutex       sync.RWMutex
-	runArgsForCall []struct {
-		resultChannel chan scriptrunner.RunScriptResult
+	runArgsForCall []struct{}
+	runReturns     struct {
+		result1 scriptrunner.RunScriptResult
 	}
 }
 
@@ -105,14 +106,14 @@ func (fake *FakeScript) ExistsReturns(result1 bool) {
 	}{result1}
 }
 
-func (fake *FakeScript) Run(resultChannel chan scriptrunner.RunScriptResult) {
+func (fake *FakeScript) Run() scriptrunner.RunScriptResult {
 	fake.runMutex.Lock()
-	fake.runArgsForCall = append(fake.runArgsForCall, struct {
-		resultChannel chan scriptrunner.RunScriptResult
-	}{resultChannel})
+	fake.runArgsForCall = append(fake.runArgsForCall, struct{}{})
 	fake.runMutex.Unlock()
 	if fake.RunStub != nil {
-		fake.RunStub(resultChannel)
+		return fake.RunStub()
+	} else {
+		return fake.runReturns.result1
 	}
 }
 
@@ -122,10 +123,11 @@ func (fake *FakeScript) RunCallCount() int {
 	return len(fake.runArgsForCall)
 }
 
-func (fake *FakeScript) RunArgsForCall(i int) chan scriptrunner.RunScriptResult {
-	fake.runMutex.RLock()
-	defer fake.runMutex.RUnlock()
-	return fake.runArgsForCall[i].resultChannel
+func (fake *FakeScript) RunReturns(result1 scriptrunner.RunScriptResult) {
+	fake.RunStub = nil
+	fake.runReturns = struct {
+		result1 scriptrunner.RunScriptResult
+	}{result1}
 }
 
 var _ scriptrunner.Script = new(FakeScript)

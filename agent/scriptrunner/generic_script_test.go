@@ -2,7 +2,6 @@ package scriptrunner_test
 
 import (
 	"errors"
-	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
@@ -38,64 +37,28 @@ var _ = Describe("GenericScript", func() {
 	Describe("RunCommand", func() {
 
 		It("executes given command", func() {
-			resultChannel := make(chan scriptrunner.RunScriptResult)
-			go genericScript.Run(resultChannel)
+			runScriptResult := genericScript.Run()
 
-			var receivedTagName string
-			var returnedError error
-
-			select {
-			case runScriptResult := <-resultChannel:
-				receivedTagName = runScriptResult.Tag
-				returnedError = runScriptResult.Error
-			case <-time.After(time.Second * 2):
-				//If it went here , it will fail
-			}
-
-			Expect(receivedTagName).To(Equal("my-tag"))
-			Expect(returnedError).To(BeNil())
+			Expect(runScriptResult.Tag).To(Equal("my-tag"))
+			Expect(runScriptResult.Error).To(BeNil())
 		})
 
 		It("returns an error if it fails to create logs directory", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-all-error")
 
-			resultChannel := make(chan scriptrunner.RunScriptResult)
-			go genericScript.Run(resultChannel)
+			runScriptResult := genericScript.Run()
 
-			var receivedTagName string
-			var returnedError error
-
-			select {
-			case runScriptResult := <-resultChannel:
-				receivedTagName = runScriptResult.Tag
-				returnedError = runScriptResult.Error
-			case <-time.After(time.Second * 2):
-				//If it went here , it will fail
-			}
-
-			Expect(receivedTagName).To(Equal("my-tag"))
-			Expect(returnedError.Error()).To(Equal("fake-mkdir-all-error"))
+			Expect(runScriptResult.Tag).To(Equal("my-tag"))
+			Expect(runScriptResult.Error.Error()).To(Equal("fake-mkdir-all-error"))
 		})
 
 		It("returns an error if it fails to open stdout/stderr log file", func() {
 			fs.OpenFileErr = errors.New("fake-open-file-error")
 
-			resultChannel := make(chan scriptrunner.RunScriptResult)
-			go genericScript.Run(resultChannel)
+			runScriptResult := genericScript.Run()
 
-			var receivedTagName string
-			var returnedError error
-
-			select {
-			case runScriptResult := <-resultChannel:
-				receivedTagName = runScriptResult.Tag
-				returnedError = runScriptResult.Error
-			case <-time.After(time.Second * 2):
-				//If it went here , it will fail
-			}
-
-			Expect(receivedTagName).To(Equal("my-tag"))
-			Expect(returnedError.Error()).To(Equal("fake-open-file-error"))
+			Expect(runScriptResult.Tag).To(Equal("my-tag"))
+			Expect(runScriptResult.Error.Error()).To(Equal("fake-open-file-error"))
 		})
 
 		Context("when command succeeds", func() {
@@ -110,22 +73,10 @@ var _ = Describe("GenericScript", func() {
 			})
 
 			It("saves stdout/stderr to log file", func() {
-				resultChannel := make(chan scriptrunner.RunScriptResult)
-				go genericScript.Run(resultChannel)
+				runScriptResult := genericScript.Run()
 
-				var receivedTagName string
-				var returnedError error
-
-				select {
-				case runScriptResult := <-resultChannel:
-					receivedTagName = runScriptResult.Tag
-					returnedError = runScriptResult.Error
-				case <-time.After(time.Second * 2):
-					//If it went here , it will fail
-				}
-
-				Expect(receivedTagName).To(Equal("my-tag"))
-				Expect(returnedError).To(BeNil())
+				Expect(runScriptResult.Tag).To(Equal("my-tag"))
+				Expect(runScriptResult.Error).To(BeNil())
 
 				Expect(fs.FileExists(stdoutLogPath)).To(BeTrue())
 				Expect(fs.FileExists(stderrLogPath)).To(BeTrue())
@@ -152,22 +103,10 @@ var _ = Describe("GenericScript", func() {
 			})
 
 			It("saves stdout/stderr to log file", func() {
-				resultChannel := make(chan scriptrunner.RunScriptResult)
-				go genericScript.Run(resultChannel)
+				runScriptResult := genericScript.Run()
 
-				var receivedTagName string
-				var returnedError error
-
-				select {
-				case runScriptResult := <-resultChannel:
-					receivedTagName = runScriptResult.Tag
-					returnedError = runScriptResult.Error
-				case <-time.After(time.Second * 2):
-					//If it went here , it will fail
-				}
-
-				Expect(receivedTagName).To(Equal("my-tag"))
-				Expect(returnedError.Error()).To(Equal("fake-command-error"))
+				Expect(runScriptResult.Tag).To(Equal("my-tag"))
+				Expect(runScriptResult.Error.Error()).To(Equal("fake-command-error"))
 
 				Expect(fs.FileExists(stdoutLogPath)).To(BeTrue())
 				Expect(fs.FileExists(stderrLogPath)).To(BeTrue())

@@ -53,7 +53,9 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 		script := a.scriptProvider.Get(jobTemplate.Name, scriptName)
 		if script.Exists() {
 			scriptCount++
-			go script.Run(resultChannel)
+			go func() {
+				resultChannel <- script.Run()
+			}()
 		}
 	}
 

@@ -51,24 +51,21 @@ func (script GenericScript) Exists() bool {
 	return script.fs.FileExists(script.Path())
 }
 
-func (script GenericScript) Run(resultChannel chan RunScriptResult) {
+func (script GenericScript) Run() RunScriptResult {
 
 	err := ensureContainingDir(script.fs, script.stdoutLogPath)
 	if err != nil {
-		resultChannel <- RunScriptResult{script.Tag(), script.Path(), err}
-		return
+		return RunScriptResult{script.Tag(), script.Path(), err}
 	}
 
 	err = ensureContainingDir(script.fs, script.stderrLogPath)
 	if err != nil {
-		resultChannel <- RunScriptResult{script.Tag(), script.Path(), err}
-		return
+		return RunScriptResult{script.Tag(), script.Path(), err}
 	}
 
 	stdoutFile, err := script.fs.OpenFile(script.stdoutLogPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		resultChannel <- RunScriptResult{script.Tag(), script.Path(), err}
-		return
+		return RunScriptResult{script.Tag(), script.Path(), err}
 	}
 	defer func() {
 		_ = stdoutFile.Close()
@@ -76,8 +73,7 @@ func (script GenericScript) Run(resultChannel chan RunScriptResult) {
 
 	stderrFile, err := script.fs.OpenFile(script.stderrLogPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		resultChannel <- RunScriptResult{script.Tag(), script.Path(), err}
-		return
+		return RunScriptResult{script.Tag(), script.Path(), err}
 	}
 	defer func() {
 		_ = stderrFile.Close()
@@ -93,7 +89,7 @@ func (script GenericScript) Run(resultChannel chan RunScriptResult) {
 	command.Stderr = stderrFile
 
 	_, _, _, runErr := script.runner.RunComplexCommand(command)
-	resultChannel <- RunScriptResult{script.Tag(), script.Path(), runErr}
+	return RunScriptResult{script.Tag(), script.Path(), runErr}
 }
 
 func ensureContainingDir(fs system.FileSystem, fullLogFilename string) error {

@@ -6,5 +6,5 @@ type Script interface {
 	Tag() string
 	Path() string
 	Exists() bool
-	Run(resultChannel chan RunScriptResult)
+	Run() RunScriptResult
 }
