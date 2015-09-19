@@ -181,6 +181,15 @@ func (p linux) GetCertManager() boshcert.Manager {
 	return p.certManager
 }
 
+func (p linux) GetHostPublicKey() (string, error) {
+	hostPublicKeyPath := "/etc/ssh/ssh_host_rsa_key.pub"
+	hostPublicKey, err := p.GetFs().ReadFileString(hostPublicKeyPath)
+	if err != nil {
+		return "", bosherr.Errorf("Unable to read host public key file: %s", hostPublicKeyPath)
+	}
+	return hostPublicKey, nil
+}
+
 func (p linux) SetupRuntimeConfiguration() (err error) {
 	_, _, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
 	if err != nil {

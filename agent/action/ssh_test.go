@@ -6,6 +6,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -28,10 +29,13 @@ func testSSHSetupWithGivenPassword(expectedPwd string) {
 
 	response, err := action.Run("setup", params)
 	Expect(err).ToNot(HaveOccurred())
+
+	hostPublicKey, _ := platform.GetHostPublicKey()
 	Expect(response).To(Equal(SSHResult{
-		Command: "setup",
-		Status:  "success",
-		IP:      "ww.xx.yy.zz",
+		Command:   "setup",
+		Status:    "success",
+		IP:        "ww.xx.yy.zz",
+		PublicKey: hostPublicKey,
 	}))
 
 	Expect(platform.CreateUserUsername).To(Equal("fake-user"))
@@ -48,7 +52,8 @@ func testSSHSetupWithGivenPassword(expectedPwd string) {
 func buildSSHAction(settingsService boshsettings.Service) (*fakeplatform.FakePlatform, SSHAction) {
 	platform := fakeplatform.NewFakePlatform()
 	dirProvider := boshdirs.NewProvider("/foo")
-	action := NewSSH(settingsService, platform, dirProvider)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
+	action := NewSSH(settingsService, platform, dirProvider, logger)
 	return platform, action
 }
 

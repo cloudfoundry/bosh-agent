@@ -1581,4 +1581,19 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(network).To(Equal(defaultNetwork))
 		})
 	})
+
+	Describe("GetHostPublicKey", func() {
+		It("gets host public key if file exists", func() {
+			fs.WriteFileString("/etc/ssh/ssh_host_rsa_key.pub", "public-key")
+			hostPublicKey, err := platform.GetHostPublicKey()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(hostPublicKey).To(Equal("public-key"))
+		})
+
+		It("throws error if file does not exist", func() {
+			hostPublicKey, err := platform.GetHostPublicKey()
+			Expect(err).To(HaveOccurred())
+			Expect(hostPublicKey).To(Equal(""))
+		})
+	})
 }

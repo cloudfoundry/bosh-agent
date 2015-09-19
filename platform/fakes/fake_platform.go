@@ -353,3 +353,7 @@ func (p *FakePlatform) PrepareForNetworkingChange() error {
 func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 	return p.GetDefaultNetworkNetwork, p.GetDefaultNetworkErr
 }
+
+func (p *FakePlatform) GetHostPublicKey() (string, error) {
+	return "fake_public_key", nil
+}

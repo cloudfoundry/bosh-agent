@@ -207,3 +207,7 @@ func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 
 	return network, nil
 }
+
+func (p dummyPlatform) GetHostPublicKey() (string, error) {
+	return "dummy-public-key", nil
+}
