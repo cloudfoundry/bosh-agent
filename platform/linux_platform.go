@@ -183,9 +183,9 @@ func (p linux) GetCertManager() boshcert.Manager {
 
 func (p linux) GetHostPublicKey() (string, error) {
 	hostPublicKeyPath := "/etc/ssh/ssh_host_rsa_key.pub"
-	hostPublicKey, err := p.GetFs().ReadFileString(hostPublicKeyPath)
+	hostPublicKey, err := p.fs.ReadFileString(hostPublicKeyPath)
 	if err != nil {
-		return "", bosherr.Errorf("Unable to read host public key file: %s", hostPublicKeyPath)
+		return "", bosherr.WrapErrorf(err, "Unable to read host public key file: %s", hostPublicKeyPath)
 	}
 	return hostPublicKey, nil
 }

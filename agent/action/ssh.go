@@ -51,10 +51,10 @@ type SSHParams struct {
 }
 
 type SSHResult struct {
-	Command   string `json:"command"`
-	Status    string `json:"status"`
-	IP        string `json:"ip,omitempty"`
-	PublicKey string `json:"host_public_key,omitempty"`
+	Command       string `json:"command"`
+	Status        string `json:"status"`
+	IP            string `json:"ip,omitempty"`
+	HostPublicKey string `json:"host_public_key,omitempty"`
 }
 
 func (a SSHAction) Run(cmd string, params SSHParams) (SSHResult, error) {
@@ -97,14 +97,14 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 
 	publicKey, err := a.platform.GetHostPublicKey()
 	if err != nil {
-		a.logger.Warn(sshActionLogTag, err.Error())
+		return result, bosherr.WrapError(err, "Getting host public key")
 	}
 
 	result = SSHResult{
-		Command:   "setup",
-		Status:    "success",
-		IP:        defaultIP,
-		PublicKey: publicKey,
+		Command:       "setup",
+		Status:        "success",
+		IP:            defaultIP,
+		HostPublicKey: publicKey,
 	}
 
 	return result, nil

@@ -114,6 +114,9 @@ type FakePlatform struct {
 	GetConfiguredNetworkInterfacesErr        error
 
 	certManager boshcert.Manager
+
+	GetHostPublicKeyValue string
+	GetHostPublicKeyError error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -136,6 +139,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupRawEphemeralDisksCallCount = 0
 	platform.SetupRawEphemeralDisksDevices = nil
 	platform.SetupRawEphemeralDisksErr = nil
+	platform.GetHostPublicKeyError = nil
 	return
 }
 
@@ -347,5 +351,5 @@ func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 }
 
 func (p *FakePlatform) GetHostPublicKey() (string, error) {
-	return "fake_public_key", nil
+	return p.GetHostPublicKeyValue, p.GetHostPublicKeyError
 }
