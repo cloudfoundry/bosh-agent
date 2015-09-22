@@ -1,11 +1,9 @@
 package blobstore
 
 import (
-	"os"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"path/filepath"
-
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type BlobManager struct {
@@ -19,10 +17,10 @@ func NewBlobManager(fs boshsys.FileSystem, blobstorePath string) (manager BlobMa
 	return
 }
 
-func (manager BlobManager) Fetch(blobID string) (readOnlyFile boshsys.File, err error) {
+func (manager BlobManager) Fetch(blobID string) (blobBytes []byte, err error) {
 	blobPath := filepath.Join(manager.blobstorePath, blobID)
 
-	readOnlyFile, err = manager.fs.OpenFile(blobPath, os.O_RDONLY, os.ModeDir)
+	blobBytes, err = manager.fs.ReadFile(blobPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading blob")
 	}
