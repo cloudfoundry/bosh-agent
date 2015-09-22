@@ -135,7 +135,17 @@ func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
 	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider.MicroStore())
 
-	err := blobManager.Write(blobID, r.Body)
+	payload, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(500)
+		if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
+			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
+		}
+
+		return
+	}
+
+	err = blobManager.Write(blobID, payload)
 	if err != nil {
 		w.WriteHeader(500)
 		if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
@@ -151,17 +161,11 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
 	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider.MicroStore())
 
-	file, err, statusCode := blobManager.Fetch(blobID)
+	file, err := blobManager.Fetch(blobID)
 
 	if err != nil {
-		h.logger.Error("https_handler", "Failed to fetch blob: %s", err.Error())
-
-		w.WriteHeader(statusCode)
-
+		w.WriteHeader(404)
 	} else {
-		defer func() {
-			_ = file.Close()
-		}()
 		reader := bufio.NewReader(file)
 		if _, wErr := io.Copy(w, reader); wErr != nil {
 			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())

@@ -99,19 +99,6 @@ var _ = Describe("HTTPSHandler", func() {
 			Expect(httpBody).To(Equal([]byte("Some data")))
 		})
 
-		It("closes the underlying file", func() {
-			blobPath := "/var/vcap/micro_bosh/data/cache/123-456-789"
-
-			fs.WriteFileString(blobPath, "Some data")
-
-			httpResponse, err := httpClient.Get(serverURL + "/blobs/a5/123-456-789")
-
-			defer httpResponse.Body.Close()
-			fileStats, err := fs.FindFileStats(blobPath)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(fileStats.Open).To(BeFalse())
-		})
-
 		Context("when incorrect http method is used", func() {
 			It("returns a 404", func() {
 				postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
@@ -128,23 +115,12 @@ var _ = Describe("HTTPSHandler", func() {
 
 		Context("when file does not exist", func() {
 			It("returns a 404", func() {
-				fs.OpenFileErr = errors.New("no such file or directory")
+				fs.OpenFileErr = errors.New("file not found")
 				httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
 				Expect(err).ToNot(HaveOccurred())
 
 				defer httpResponse.Body.Close()
 				Expect(httpResponse.StatusCode).To(Equal(404))
-			})
-		})
-
-		Context("when file does not have correct permissions", func() {
-			It("returns a 500", func() {
-				fs.OpenFileErr = errors.New("permission denied")
-				httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
-				Expect(err).ToNot(HaveOccurred())
-
-				defer httpResponse.Body.Close()
-				Expect(httpResponse.StatusCode).To(Equal(500))
 			})
 		})
 	})
@@ -171,8 +147,8 @@ var _ = Describe("HTTPSHandler", func() {
 		})
 
 		Context("when manager errors", func() {
-			It("returns a 500 because of openfile error", func() {
-				fs.OpenFileErr = errors.New("oops")
+			It("returns a 500", func() {
+				fs.WriteFileError = errors.New("oops")
 
 				putBody := `Updated data`
 				putPayload := strings.NewReader(putBody)

@@ -1,10 +1,8 @@
 package blobstore
 
 import (
-	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
@@ -21,36 +19,22 @@ func NewBlobManager(fs boshsys.FileSystem, blobstorePath string) (manager BlobMa
 	return
 }
 
-func (manager BlobManager) Fetch(blobID string) (boshsys.File, error, int) {
+func (manager BlobManager) Fetch(blobID string) (readOnlyFile boshsys.File, err error) {
 	blobPath := filepath.Join(manager.blobstorePath, blobID)
 
-	readOnlyFile, err := manager.fs.OpenFile(blobPath, os.O_RDONLY, os.ModeDir)
+	readOnlyFile, err = manager.fs.OpenFile(blobPath, os.O_RDONLY, os.ModeDir)
 	if err != nil {
-		statusCode := 500
-		if strings.Contains(err.Error(), "no such file") {
-			statusCode = 404
-		}
-		return nil, bosherr.WrapError(err, "Reading blob"), statusCode
+		err = bosherr.WrapError(err, "Reading blob")
 	}
-
-	return readOnlyFile, nil, 200
+	return
 }
 
-func (manager BlobManager) Write(blobID string, reader io.Reader) error {
+func (manager BlobManager) Write(blobID string, blobBytes []byte) (err error) {
 	blobPath := filepath.Join(manager.blobstorePath, blobID)
 
-	writeOnlyFile, err := manager.fs.OpenFile(blobPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		err = bosherr.WrapError(err, "Opening blob store file")
-		return err
-	}
-
-	defer func() {
-		_ = writeOnlyFile.Close()
-	}()
-	_, err = io.Copy(writeOnlyFile, reader)
+	err = manager.fs.WriteFile(blobPath, blobBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Updating blob")
 	}
-	return err
+	return
 }
