@@ -3,11 +3,11 @@ package blobstore_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/gomega"
 
-	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
-	fakeblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
