@@ -8,10 +8,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
-	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	fakeuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
 var _ = Describe("externalBlobstore", func() {

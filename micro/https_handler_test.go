@@ -14,9 +14,9 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/micro"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("HTTPSHandler", func() {

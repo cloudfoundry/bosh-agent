@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"bytes"
-	. "github.com/cloudfoundry/bosh-utils/logger"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func expectedLogFormat(tag, msg string) string {
