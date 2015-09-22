@@ -9,5 +9,8 @@ gobin/*
 *.sublime-workspace
 *.sw*
 
+test/bosh/*.json
+test/micro_bosh
+
 /.idea
 /.vagrant

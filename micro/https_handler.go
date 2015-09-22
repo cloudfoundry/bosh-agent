@@ -1,7 +1,9 @@
 package micro
 
 import (
+	"bufio"
 	"encoding/base64"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -10,10 +12,10 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type HTTPSHandler struct {
@@ -133,17 +135,7 @@ func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
 	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider.MicroStore())
 
-	payload, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(500)
-		if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
-			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
-		}
-
-		return
-	}
-
-	err = blobManager.Write(blobID, payload)
+	err := blobManager.Write(blobID, r.Body)
 	if err != nil {
 		w.WriteHeader(500)
 		if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
@@ -159,12 +151,19 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
 	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider.MicroStore())
 
-	blobBytes, err := blobManager.Fetch(blobID)
+	file, err, statusCode := blobManager.Fetch(blobID)
 
 	if err != nil {
-		w.WriteHeader(404)
+		h.logger.Error("https_handler", "Failed to fetch blob: %s", err.Error())
+
+		w.WriteHeader(statusCode)
+
 	} else {
-		if _, wErr := w.Write(blobBytes); wErr != nil {
+		defer func() {
+			_ = file.Close()
+		}()
+		reader := bufio.NewReader(file)
+		if _, wErr := io.Copy(w, reader); wErr != nil {
 			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
 		}
 	}
