@@ -9,14 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/stretchr/testify/assert"
 
-	"io/ioutil"
-
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	"io/ioutil"
 )
 
 func createOsFs() (fs FileSystem, runner CmdRunner) {
@@ -99,8 +98,9 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(testPath)
 
-			err = osFs.Chown(testPath, "garbage-foo")
+			err = osFs.Chown(testPath, "root")
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not permitted"))
 		})
 
 		It("chmod", func() {
