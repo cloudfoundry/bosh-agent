@@ -14,9 +14,9 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/micro"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("HTTPSHandler", func() {
@@ -115,7 +115,6 @@ var _ = Describe("HTTPSHandler", func() {
 
 		Context("when file does not exist", func() {
 			It("returns a 404", func() {
-				fs.OpenFileErr = errors.New("file not found")
 				httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
 				Expect(err).ToNot(HaveOccurred())
 
