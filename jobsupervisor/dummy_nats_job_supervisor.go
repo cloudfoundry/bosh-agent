@@ -19,7 +19,16 @@ func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
 	return &dummyNatsJobSupervisor{
 		mbusHandler: mbusHandler,
 		status:      "running",
-		processes:   []Process{},
+		processes: []Process{
+			Process{
+				Name:  "process-1",
+				State: "running",
+			},
+			Process{
+				Name:  "process-2",
+				State: "running",
+			},
+		},
 	}
 }
 
