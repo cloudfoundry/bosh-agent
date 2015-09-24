@@ -28,6 +28,10 @@ func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
 				Name:  "process-2",
 				State: "running",
 			},
+			Process{
+				Name:  "process-3",
+				State: "failing",
+			},
 		},
 	}
 }
