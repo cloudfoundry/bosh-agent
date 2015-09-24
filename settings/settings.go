@@ -112,6 +112,7 @@ type NetworkType string
 const (
 	NetworkTypeDynamic NetworkType = "dynamic"
 	NetworkTypeVIP     NetworkType = "vip"
+	NetworkTypeSoftlayer     NetworkType = "softlayer"
 )
 
 type Network struct {
@@ -221,6 +222,10 @@ func (n Network) isDynamic() bool {
 
 func (n Network) IsVIP() bool {
 	return n.Type == NetworkTypeVIP
+}
+
+func (n Network) IsSoftlayer() bool {
+	return n.Type == NetworkTypeSoftlayer
 }
 
 //{
