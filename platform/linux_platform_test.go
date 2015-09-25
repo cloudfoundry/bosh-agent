@@ -1125,10 +1125,15 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				options.SkipDiskSetup = true
 			})
 
-			It("does nothing", func() {
-				err := platform.SetupEphemeralDiskWithPath("/dev/xvda", nil)
-
+			It("makes sure ephemeral directory is there but does nothing else", func() {
+				swapSize := uint64(0)
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda", &swapSize)
 				Expect(err).ToNot(HaveOccurred())
+
+				dataDir := fs.GetFileTestStat("/fake-dir/data")
+				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
+
 				Expect(partitioner.PartitionCalled).To(BeFalse())
 				Expect(formatter.FormatCalled).To(BeFalse())
 				Expect(mounter.MountCalled).To(BeFalse())
