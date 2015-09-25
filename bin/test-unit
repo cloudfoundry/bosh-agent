@@ -9,6 +9,9 @@ do
   esac
 done
 
+echo 'Note: if you want to quickly run tests for just one package, do it like this:'
+echo '  % ginkgo path/to/package'
+
 result=0
 
 bin=$(dirname $0)
