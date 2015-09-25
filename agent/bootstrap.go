@@ -60,10 +60,6 @@ func (boot bootstrap) Run() (err error) {
 
 	settings := boot.settingsService.GetSettings()
 
-	if err = boot.platform.GrowRootFs(); err != nil {
-		return bosherr.WrapError(err, "Grow Root Filesystem")
-	}
-
 	if err = boot.setUserPasswords(settings.Env); err != nil {
 		return bosherr.WrapError(err, "Settings user password")
 	}
@@ -87,6 +83,10 @@ func (boot bootstrap) Run() (err error) {
 	ephemeralDiskPath := boot.platform.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
 	if err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath); err != nil {
 		return bosherr.WrapError(err, "Setting up ephemeral disk")
+	}
+
+	if err = boot.platform.SetupRootDisk(ephemeralDiskPath); err != nil {
+		return bosherr.WrapError(err, "Setting up root disk")
 	}
 
 	if err = boot.platform.SetupDataDir(); err != nil {

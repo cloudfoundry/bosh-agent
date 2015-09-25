@@ -271,9 +271,17 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 	return
 }
 
-func (p linux) GrowRootFs() error {
-	if p.growpartExists() == false {
-		p.logger.Info(logTag, "GrowRootFs: The program 'growpart' is not installed, Root Filesystem cannot be grown")
+func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
+	//if there is ephemeral disk we can safely autogrow, if not we should not.
+	if (ephemeralDiskPath == "") && (p.options.CreatePartitionIfNoEphemeralDisk == true) {
+		p.logger.Info(logTag, "No Ephemeral Disk provided, Skipping growing of the Root Filesystem")
+		return nil
+	}
+
+	// in case growpart is not available for another flavour of linux, don't stop the agent from running,
+	// without this integration-test would not run since the bosh-lite vm doesn't have it
+	if p.cmdRunner.CommandExists("growpart") == false {
+		p.logger.Info(logTag, "The program 'growpart' is not installed, Root Filesystem cannot be grown")
 		return nil
 	}
 
@@ -303,19 +311,6 @@ func (p linux) GrowRootFs() error {
 	}
 
 	return nil
-}
-
-// in case growpart is not available for another flavour of linux, don't stop the agent from running,
-// without this integration-test would not run since the bosh-lite vm doesn't have it
-func (p linux) growpartExists() bool {
-	_, _, exitStatus, _ := p.cmdRunner.RunCommand(
-		"which",
-		"growpart",
-	)
-	if exitStatus == 0 {
-		return true
-	}
-	return false
 }
 
 func (p linux) SetupSSH(publicKey, username string) error {

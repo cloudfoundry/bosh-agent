@@ -26,7 +26,7 @@ type Platform interface {
 	DeleteEphemeralUsersMatching(regex string) (err error)
 
 	// Bootstrap functionality
-	GrowRootFs() (err error)
+	SetupRootDisk(ephemeralDiskPath string) (err error)
 	SetupSSH(publicKey, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
 	SetupHostname(hostname string) (err error)

@@ -95,7 +95,7 @@ func (p dummyPlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	return
 }
 
-func (p dummyPlatform) GrowRootFs() (err error) {
+func (p dummyPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
