@@ -5,6 +5,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
@@ -21,6 +22,8 @@ import (
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 )
 
+//go:generate counterfeiter -o fakes/fake_clock.go ../../internal/github.com/pivotal-golang/clock Clock
+
 var _ = Describe("concreteFactory", func() {
 	var (
 		settingsService     *fakesettings.FakeSettingsService
@@ -35,6 +38,7 @@ var _ = Describe("concreteFactory", func() {
 		drainScriptProvider boshdrain.ScriptProvider
 		jobScriptProvider   boshscript.JobScriptProvider
 		factory             Factory
+		timeService         *fakeaction.FakeClock
 		logger              boshlog.Logger
 	)
 
@@ -48,7 +52,8 @@ var _ = Describe("concreteFactory", func() {
 		compiler = fakecomp.NewFakeCompiler()
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
-		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider())
+		timeService = &fakeaction.FakeClock{}
+		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider(), timeService)
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 

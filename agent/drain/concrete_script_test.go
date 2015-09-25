@@ -6,68 +6,64 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
+	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	. "github.com/cloudfoundry/bosh-agent/agent/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/drain/fakes"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	"time"
 )
-
-type fakeParams struct {
-	jobChange       string
-	hashChange      string
-	updatedPackages []string
-
-	jobState    string
-	jobStateErr error
-
-	jobNextState    string
-	jobNextStateErr error
-}
-
-func (p fakeParams) JobChange() (change string)       { return p.jobChange }
-func (p fakeParams) HashChange() (change string)      { return p.hashChange }
-func (p fakeParams) UpdatedPackages() (pkgs []string) { return p.updatedPackages }
-
-func (p fakeParams) JobState() (string, error)     { return p.jobState, p.jobStateErr }
-func (p fakeParams) JobNextState() (string, error) { return p.jobNextState, p.jobNextStateErr }
 
 var _ = Describe("ConcreteScript", func() {
 	var (
-		runner *fakesys.FakeCmdRunner
-		fs     *fakesys.FakeFileSystem
-		script ConcreteScript
+		fs        *fakesys.FakeFileSystem
+		runner    *fakesys.FakeCmdRunner
+		fakeClock *fakeaction.FakeClock
+		script    ConcreteScript
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
-		script = NewConcreteScript(fs, runner, "/fake/script")
+		fakeClock = &fakeaction.FakeClock{}
+		script = NewConcreteScript(fs, runner, "/fake/script", fakeClock)
 	})
 
 	Describe("Run", func() {
 		var (
-			params fakeParams
+			params ScriptParams
 		)
 
 		BeforeEach(func() {
-			params = fakeParams{
-				jobChange:       "job_shutdown",
-				hashChange:      "hash_unchanged",
-				updatedPackages: []string{"foo", "bar"},
-			}
+			oldSpec := exampleSpec()
+			newSpec := exampleSpec()
+
+			s := newSpec.PackageSpecs["foo"]
+			s.Sha1 = "foo_updated_sha1"
+			newSpec.PackageSpecs["foo"] = s
+
+			s = newSpec.PackageSpecs["bar"]
+			s.Sha1 = "bar_updated_sha1"
+			newSpec.PackageSpecs["bar"] = s
+
+			params = NewUpdateParams(oldSpec, newSpec)
 		})
 
 		It("runs drain script", func() {
 			commandResult := fakesys.FakeCmdResult{Stdout: "1"}
-			runner.AddCmdResult("/fake/script job_shutdown hash_unchanged foo bar", commandResult)
+			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			_, err := script.Run(params)
+			err := script.Run(params)
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedCmd := boshsys.Command{
 				Name: "/fake/script",
-				Args: []string{"job_shutdown", "hash_unchanged", "foo", "bar"},
+				Args: []string{"job_unchanged", "hash_unchanged", "bar", "foo"},
 				Env: map[string]string{
-					"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+					"PATH":                "/usr/sbin:/usr/bin:/sbin:/bin",
+					"BOSH_JOB_STATE":      "{\"persistent_disk\":42}",
+					"BOSH_JOB_NEXT_STATE": "{\"persistent_disk\":42}",
 				},
 			}
 
@@ -75,67 +71,73 @@ var _ = Describe("ConcreteScript", func() {
 			Expect(runner.RunComplexCommands[0]).To(Equal(expectedCmd))
 		})
 
-		It("returns parsed stdout", func() {
-			commandResult := fakesys.FakeCmdResult{Stdout: "1"}
-			runner.AddCmdResult("/fake/script job_shutdown hash_unchanged foo bar", commandResult)
+		It("sleeps when script returns a positive integer", func() {
+			commandResult := fakesys.FakeCmdResult{Stdout: "12"}
+			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			value, err := script.Run(params)
+			err := script.Run(params)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(value).To(Equal(1))
+			Expect(fakeClock.SleepCallCount()).To(Equal(1))
+			Expect(fakeClock.SleepArgsForCall(0)).To(Equal(12 * time.Second))
 		})
 
-		It("returns parsed stdout after trimming", func() {
-			commandResult := fakesys.FakeCmdResult{Stdout: "-56\n"}
-			runner.AddCmdResult("/fake/script job_shutdown hash_unchanged foo bar", commandResult)
+		It("sleeps then calls the script again as long as script returns a negative integer", func() {
+			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", fakesys.FakeCmdResult{Stdout: "-5"})
+			runner.AddCmdResult("/fake/script job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "-5"})
+			runner.AddCmdResult("/fake/script job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "-5"})
+			runner.AddCmdResult("/fake/script job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "0"})
 
-			value, err := script.Run(params)
+			err := script.Run(params)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(value).To(Equal(-56))
+			Expect(fakeClock.SleepCallCount()).To(Equal(4))
+			Expect(fakeClock.SleepArgsForCall(0)).To(Equal(5 * time.Second))
+			Expect(fakeClock.SleepArgsForCall(1)).To(Equal(5 * time.Second))
+			Expect(fakeClock.SleepArgsForCall(2)).To(Equal(5 * time.Second))
+			Expect(fakeClock.SleepArgsForCall(3)).To(Equal(0 * time.Second))
+		})
+
+		It("ignores whitespace in stdout", func() {
+			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", fakesys.FakeCmdResult{Stdout: "-56\n"})
+			runner.AddCmdResult("/fake/script job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: " 0  \t\n"})
+
+			err := script.Run(params)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fakeClock.SleepCallCount()).To(Equal(2))
+			Expect(fakeClock.SleepArgsForCall(0)).To(Equal(56 * time.Second))
+			Expect(fakeClock.SleepArgsForCall(1)).To(Equal(0 * time.Second))
 		})
 
 		It("returns error with non integer stdout", func() {
 			commandResult := fakesys.FakeCmdResult{Stdout: "hello!"}
-			runner.AddCmdResult("/fake/script job_shutdown hash_unchanged foo bar", commandResult)
+			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			_, err := script.Run(params)
+			err := script.Run(params)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("returns error when running command errors", func() {
 			commandResult := fakesys.FakeCmdResult{Error: errors.New("woops")}
-			runner.AddCmdResult("/fake/script job_shutdown hash_unchanged foo bar", commandResult)
+			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			_, err := script.Run(params)
+			err := script.Run(params)
 			Expect(err).To(HaveOccurred())
 		})
 
 		Describe("job state", func() {
-			It("sets the BOSH_JOB_STATE env variable if job state is present", func() {
-				params.jobState = "fake-job-state"
-
-				_, err := script.Run(params)
-				Expect(err).To(HaveOccurred())
+			It("sets the BOSH_JOB_STATE env variable with info from current apply spec", func() {
+				script.Run(params)
 
 				Expect(len(runner.RunComplexCommands)).To(Equal(1))
 
 				env := runner.RunComplexCommands[0].Env
-				Expect(env["BOSH_JOB_STATE"]).To(Equal("fake-job-state"))
-			})
-
-			It("does not set the BOSH_JOB_STATE env variable if job state is empty", func() {
-				params.jobState = ""
-
-				_, err := script.Run(params)
-				Expect(err).To(HaveOccurred())
-
-				Expect(len(runner.RunComplexCommands)).To(Equal(1))
-				Expect(runner.RunComplexCommands[0].Env).ToNot(HaveKey("BOSH_JOB_STATE"))
+				Expect(env["BOSH_JOB_STATE"]).To(Equal("{\"persistent_disk\":42}"))
 			})
 
 			It("returns error when cannot get the job state and does not run drain script", func() {
-				params.jobStateErr = errors.New("fake-job-state-err")
+				fakeParams := &fakes.FakeScriptParams{}
+				fakeParams.JobStateReturns("", errors.New("fake-job-state-err"))
 
-				_, err := script.Run(params)
+				err := script.Run(fakeParams)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-job-state-err"))
 
@@ -145,31 +147,27 @@ var _ = Describe("ConcreteScript", func() {
 
 		Describe("job next state", func() {
 			It("sets the BOSH_JOB_NEXT_STATE env variable if job next state is present", func() {
-				params.jobNextState = "fake-job-next-state"
-
-				_, err := script.Run(params)
-				Expect(err).To(HaveOccurred())
+				script.Run(params)
 
 				Expect(len(runner.RunComplexCommands)).To(Equal(1))
 
 				env := runner.RunComplexCommands[0].Env
-				Expect(env["BOSH_JOB_NEXT_STATE"]).To(Equal("fake-job-next-state"))
+				Expect(env["BOSH_JOB_NEXT_STATE"]).To(Equal("{\"persistent_disk\":42}"))
 			})
 
 			It("does not set the BOSH_JOB_NEXT_STATE env variable if job next state is empty", func() {
-				params.jobNextState = ""
-
-				_, err := script.Run(params)
-				Expect(err).To(HaveOccurred())
+				params = NewShutdownParams(exampleSpec(), nil)
+				script.Run(params)
 
 				Expect(len(runner.RunComplexCommands)).To(Equal(1))
 				Expect(runner.RunComplexCommands[0].Env).ToNot(HaveKey("BOSH_JOB_NEXT_STATE"))
 			})
 
 			It("returns error when cannot get the job next state and does not run drain script", func() {
-				params.jobNextStateErr = errors.New("fake-job-next-state-err")
+				fakeParams := &fakes.FakeScriptParams{}
+				fakeParams.JobNextStateReturns("", errors.New("fake-job-next-state-err"))
 
-				_, err := script.Run(params)
+				err := script.Run(fakeParams)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-job-next-state-err"))
 
@@ -181,7 +179,7 @@ var _ = Describe("ConcreteScript", func() {
 	Describe("Exists", func() {
 		It("returns bool", func() {
 			commandResult := fakesys.FakeCmdResult{Stdout: "1"}
-			runner.AddCmdResult("/fake/script job_shutdown hash_unchanged foo bar", commandResult)
+			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
 			Expect(script.Exists()).To(BeFalse())
 
@@ -190,3 +188,42 @@ var _ = Describe("ConcreteScript", func() {
 		})
 	})
 })
+
+func exampleSpec() applyspec.V1ApplySpec {
+	jobName := "foojob"
+	return applyspec.V1ApplySpec{
+		Deployment:        "fake_deployment",
+		ConfigurationHash: "fake_deployment_config_hash",
+		PersistentDisk:    42,
+		JobSpec: applyspec.JobSpec{
+			Name:        &jobName,
+			Release:     "fakerelease",
+			Template:    "jobtemplate",
+			Version:     "jobtemplate_version",
+			Sha1:        "jobtemplate_sha1",
+			BlobstoreID: "jobtemplate_blobid",
+			JobTemplateSpecs: []applyspec.JobTemplateSpec{
+				applyspec.JobTemplateSpec{
+					Name:        "jobtemplate",
+					Version:     "jobtemplate_version",
+					Sha1:        "jobtemplate_sha1",
+					BlobstoreID: "jobtemplate_blobid",
+				},
+			},
+		},
+		PackageSpecs: map[string]applyspec.PackageSpec{
+			"foo": applyspec.PackageSpec{
+				Name:        "foo",
+				Version:     "foo_version",
+				Sha1:        "foo_sha1",
+				BlobstoreID: "foo_blobid",
+			},
+			"bar": applyspec.PackageSpec{
+				Name:        "bar",
+				Version:     "bar_version",
+				Sha1:        "bar_sha1",
+				BlobstoreID: "bar_blobid",
+			},
+		},
+	}
+}

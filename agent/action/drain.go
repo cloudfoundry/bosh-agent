@@ -3,6 +3,7 @@ package action
 import (
 	"errors"
 
+	"fmt"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
@@ -55,17 +56,16 @@ const (
 )
 
 func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (int, error) {
+	if drainType == DrainTypeStatus {
+		// status was used in the past when dynamic drain was implemented in director.
+		// now that we implement it in the agent, we should never get a call for this type.
+		return 0, bosherr.Error("Unexpected call with drain type 'status'")
+	}
+
 	a.logger.Debug(drainActionLogTag, "Running drain action with drain type %s", drainType)
 	currentSpec, err := a.specService.Get()
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Getting current spec")
-	}
-
-	if len(currentSpec.JobSpec.Template) == 0 {
-		if drainType == DrainTypeStatus {
-			return 0, bosherr.Error("Check Status on Drain action requires job spec")
-		}
-		return 0, nil
 	}
 
 	a.logger.Debug(drainActionLogTag, "Unmonitoring")
@@ -73,8 +73,6 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Unmonitoring services")
 	}
-
-	drainScript := a.drainScriptProvider.NewScript(currentSpec.JobSpec.Template)
 
 	var newSpec *boshas.V1ApplySpec
 	var params boshdrain.ScriptParams
@@ -98,24 +96,51 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		}
 
 		params = boshdrain.NewShutdownParams(currentSpec, newSpec)
-
-	case DrainTypeStatus:
-		params = boshdrain.NewStatusParams(currentSpec, newSpec)
 	}
 
-	if !drainScript.Exists() {
-		if drainType == DrainTypeStatus {
-			return 0, bosherr.Error("Check Status on Drain action requires a valid drain script")
+	drainScripts := a.findDrainScripts(currentSpec)
+
+	a.logger.Debug(drainActionLogTag, "Will run %d drain scripts in parallel", len(drainScripts))
+
+	resultChan := make(chan error)
+	for _, drainScript := range drainScripts {
+		drainScript := drainScript
+		go func() { resultChan <- drainScript.Run(params) }()
+	}
+
+	var errors []error
+	for i := 0; i < len(drainScripts); i++ {
+		select {
+		case err := <-resultChan:
+			if err != nil {
+				errors = append(errors, err)
+			}
 		}
-		return 0, nil
 	}
+	return summarize(errors)
+}
 
-	value, err := drainScript.Run(params)
-	if err != nil {
-		return 0, bosherr.WrapError(err, "Running Drain Script")
+func (a DrainAction) findDrainScripts(currentSpec boshas.V1ApplySpec) []boshdrain.Script {
+	var scripts []boshdrain.Script
+	for _, job := range currentSpec.Jobs() {
+		drainScript := a.drainScriptProvider.NewScript(job.BundleName())
+		if drainScript.Exists() {
+			a.logger.Debug(drainActionLogTag, "Found drain script in %s", job.BundleName())
+			scripts = append(scripts, drainScript)
+		}
 	}
+	return scripts
+}
 
-	return value, nil
+func summarize(errors []error) (int, error) {
+	if len(errors) > 0 {
+		var errorMsg string
+		for _, err := range errors {
+			errorMsg += err.Error() + "\n"
+		}
+		return 0, bosherr.Error(fmt.Sprintf("%d drain script(s) failed: %s", len(errors), errorMsg))
+	}
+	return 0, nil
 }
 
 func (a DrainAction) Resume() (interface{}, error) {

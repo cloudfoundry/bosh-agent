@@ -164,10 +164,13 @@ func (app *app) Setup(args []string) error {
 		specFilePath,
 	)
 
+	timeService := clock.NewClock()
+
 	drainScriptProvider := boshdrain.NewConcreteScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		app.dirProvider,
+		timeService,
 	)
 
 	jobScriptProvider := boshscript.NewJobScriptProvider(
@@ -202,8 +205,6 @@ func (app *app) Setup(args []string) error {
 	)
 
 	syslogServer := boshsyslog.NewServer(33331, net.Listen, app.logger)
-
-	timeService := clock.NewClock()
 
 	app.agent = boshagent.New(
 		app.logger,

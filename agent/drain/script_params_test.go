@@ -8,9 +8,57 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/drain"
 )
 
-var _ = Describe("updateParams", func() {
+var _ = Describe("NewShutdownParams", func() {
+	oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
+	newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
+
+	Describe("JobState", func() {
+		It("returns JSON serialized current spec that only includes persistent disk", func() {
+			state, err := NewShutdownParams(oldSpec, &newSpec).JobState()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state).To(Equal(`{"persistent_disk":200}`))
+		})
+	})
+
+	Describe("JobNextState", func() {
+		It("returns JSON serialized future spec that only includes persistent disk", func() {
+			state, err := NewShutdownParams(oldSpec, &newSpec).JobNextState()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state).To(Equal(`{"persistent_disk":301}`))
+		})
+
+		It("returns empty string if next state is not available", func() {
+			state, err := NewShutdownParams(oldSpec, nil).JobNextState()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state).To(Equal(""))
+		})
+	})
+})
+
+var _ = Describe("ToStatusParams", func() {
+	oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
+	newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
+
+	Describe("JobState", func() {
+		It("returns JSON serialized current spec that only includes persistent disk", func() {
+			state, err := NewUpdateParams(oldSpec, newSpec).ToStatusParams().JobState()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state).To(Equal(`{"persistent_disk":200}`))
+		})
+	})
+
+	Describe("JobNextState", func() {
+		It("returns empty string because next state is never available", func() {
+			state, err := NewUpdateParams(oldSpec, newSpec).ToStatusParams().JobNextState()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state).To(Equal(""))
+		})
+	})
+})
+
+var _ = Describe("NewUpdateParams", func() {
 	Describe("UpdatedPackages", func() {
-		It("returns list of packages that changed or got added", func() {
+		It("returns list of packages that changed or got added in lexical order", func() {
 			oldPkgs := map[string]boshas.PackageSpec{
 				"foo": boshas.PackageSpec{
 					Name: "foo",
@@ -47,8 +95,7 @@ var _ = Describe("updateParams", func() {
 
 			params := NewUpdateParams(oldSpec, newSpec)
 
-			// Use ConsistOf since packages in apply spec are in a hash (no order)
-			Expect(params.UpdatedPackages()).To(ConsistOf([]string{"foo", "baz"}))
+			Expect(params.UpdatedPackages()).To(Equal([]string{"baz", "foo"}))
 		})
 	})
 

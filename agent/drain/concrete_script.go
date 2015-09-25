@@ -6,23 +6,28 @@ import (
 
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
+	"time"
 )
 
 type ConcreteScript struct {
 	fs              boshsys.FileSystem
 	runner          boshsys.CmdRunner
 	drainScriptPath string
+	timeService     clock.Clock
 }
 
 func NewConcreteScript(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	drainScriptPath string,
+	timeService clock.Clock,
 ) (script ConcreteScript) {
 	script = ConcreteScript{
 		fs:              fs,
 		runner:          runner,
 		drainScriptPath: drainScriptPath,
+		timeService:     timeService,
 	}
 	return
 }
@@ -35,7 +40,23 @@ func (script ConcreteScript) Path() string {
 	return script.drainScriptPath
 }
 
-func (script ConcreteScript) Run(params ScriptParams) (int, error) {
+func (script ConcreteScript) Run(params ScriptParams) error {
+	for {
+		value, err := script.runOnce(params)
+
+		if err != nil {
+			return err
+		} else if value < 0 {
+			script.timeService.Sleep(time.Duration(-value) * time.Second)
+			params = params.ToStatusParams()
+		} else {
+			script.timeService.Sleep(time.Duration(value) * time.Second)
+			return nil
+		}
+	}
+}
+
+func (script ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	jobChange := params.JobChange()
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()
