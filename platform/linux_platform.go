@@ -61,6 +61,10 @@ type LinuxOptions struct {
 	// ephemeral disk
 	CreatePartitionIfNoEphemeralDisk bool
 
+	// When set to true and agent will create/use directory
+	// for ephemeral data, assuming that it was mounted somehow beforehand
+	UseDirectoryAsEphemeralDisk bool
+
 	// Strategy for resolving device paths;
 	// possible values: virtio, scsi, ''
 	DevicePathResolutionType string
@@ -454,9 +458,11 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	p.logger.Info(logTag, "Setting up ephemeral disk...")
+
 	mountPoint := p.dirProvider.DataDir()
 
 	mountPointGlob := path.Join(mountPoint, "*")
+
 	contents, err := p.fs.Glob(mountPointGlob)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Globbing ephemeral disk mount point `%s'", mountPointGlob)
@@ -476,12 +482,15 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 		return bosherr.WrapError(err, "Creating data dir")
 	}
 
+	if p.options.UseDirectoryAsEphemeralDisk {
+		return nil
+	}
+
 	var swapPartitionPath, dataPartitionPath string
 
 	// Agent can only setup ephemeral data directory either on ephemeral device
-	// or on separate root partition.
-	// The real path can be empty if CPI did not provide ephemeral disk
-	// or if the provided disk was not found.
+	// or on separate root partition. The real path can be empty if CPI did not
+	// provide ephemeral disk or if the provided disk was not found.
 	if realPath == "" {
 		if !p.options.CreatePartitionIfNoEphemeralDisk {
 			// Agent can not use root partition for ephemeral data directory.
