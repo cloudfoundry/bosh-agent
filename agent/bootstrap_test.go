@@ -265,15 +265,15 @@ func init() {
 			It("grows the root filesystem", func() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.GrowRootFsCalledTimes).To(Equal(1))
+				Expect(platform.SetupRootDiskCalledTimes).To(Equal(1))
 			})
 
 			It("returns an error if growing the root filesystem fails", func() {
-				platform.GrowRootFsError = errors.New("growfs failed")
+				platform.SetupRootDiskError = errors.New("growfs failed")
 
 				err := bootstrap()
 				Expect(err).To(HaveOccurred())
-				Expect(platform.GrowRootFsCalledTimes).To(Equal(1))
+				Expect(platform.SetupRootDiskCalledTimes).To(Equal(1))
 				Expect(err.Error()).To(ContainSubstring("growfs failed"))
 			})
 

@@ -185,7 +185,7 @@ bosh_foobar:...`
 		})
 	})
 
-	Describe("GrowRootFs", func() {
+	Describe("SetupRootDisk", func() {
 		BeforeEach(func() {
 			mountsSearcher := diskManager.FakeMountsSearcher
 
@@ -193,14 +193,16 @@ bosh_foobar:...`
 				PartitionPath: "/dev/sda1",
 				MountPoint:    "/",
 			}}
+
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
 		})
 
 		Context("when growpart is installed", func() {
 			BeforeEach(func() {
-				cmdRunner.AddCmdResult(
-					"which growpart",
-					fakesys.FakeCmdResult{Error: nil, ExitStatus: 0},
-				)
+				cmdRunner.CommandExistsValue = true
+				options.CreatePartitionIfNoEphemeralDisk = false
 			})
 
 			It("runs growpart and resize2fs", func() {
@@ -209,12 +211,12 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
 				)
 
-				err := platform.GrowRootFs()
+				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(4))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"growpart", "/dev/sda", "1"}))
-				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"resize2fs", "-f", "/dev/sda1"}))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "1"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda1"}))
 			})
 
 			It("returns error if it can't find the root device", func() {
@@ -223,10 +225,10 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
 				)
 
-				err := platform.GrowRootFs()
+				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			})
 
 			It("returns an error if growing the partiton fails", func() {
@@ -240,10 +242,10 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: errors.New("fake-growpart-error")},
 				)
 
-				err := platform.GrowRootFs()
+				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 			})
 
 			It("returns error if resizing the filesystem fails", func() {
@@ -257,26 +259,53 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: errors.New("fake-resize2fs-error")},
 				)
 
-				err := platform.GrowRootFs()
+				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+			})
+
+			It("skips growing root fs if no ephemerial disk is provided", func() {
+				var platformWithNoEphemeralDisk Platform
+
+				options.CreatePartitionIfNoEphemeralDisk = true
+				platformWithNoEphemeralDisk = NewLinuxPlatform(
+					fs,
+					cmdRunner,
+					collector,
+					compressor,
+					copier,
+					dirProvider,
+					vitalsService,
+					cdutil,
+					diskManager,
+					netManager,
+					certManager,
+					monitRetryStrategy,
+					devicePathResolver,
+					5*time.Millisecond,
+					options,
+					logger,
+					fakeDefaultNetworkResolver,
+				)
+				err := platformWithNoEphemeralDisk.SetupRootDisk("")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 			})
 		})
 
 		Context("when growpart is not installed", func() {
 			BeforeEach(func() {
-				cmdRunner.AddCmdResult(
-					"which growpart",
-					fakesys.FakeCmdResult{Error: nil, ExitStatus: 1},
-				)
+				cmdRunner.CommandExistsValue = false
+				options.CreatePartitionIfNoEphemeralDisk = false
 			})
 
 			It("does not return error if growpart is not installed and skips growing fs", func() {
-				err := platform.GrowRootFs()
+				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 			})
 		})
 
