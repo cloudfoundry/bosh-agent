@@ -525,10 +525,6 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 }
 
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
-	if p.options.SkipDiskSetup {
-		return nil
-	}
-
 	p.logger.Info(logTag, "Setting up ephemeral disk...")
 	mountPoint := p.dirProvider.DataDir()
 
@@ -550,6 +546,10 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	err = p.fs.MkdirAll(mountPoint, ephemeralDiskPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating data dir")
+	}
+
+	if p.options.SkipDiskSetup {
+		return nil
 	}
 
 	if p.options.ScrubEphemeralDisk {
