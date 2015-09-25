@@ -2,14 +2,14 @@ package infrastructure_test
 
 import (
 	"encoding/json"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
-
-	boshlog "github.com/cloudfoundry/bosh-agent/logger"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	fakesys "github.com/cloudfoundry/bosh-agent/system/fakes"
 )
 
 var _ = Describe("FileSettingsSource", func() {
@@ -77,7 +77,6 @@ var _ = Describe("FileSettingsSource", func() {
 		})
 
 		Context("when the registry file does not exist", func() {
-
 			BeforeEach(func() {
 				source = NewFileSettingsSource(
 					"/missing-settings-file-path",
@@ -89,6 +88,5 @@ var _ = Describe("FileSettingsSource", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
-
 	})
 })

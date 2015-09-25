@@ -14,18 +14,19 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-const centosNetManagerLogTag = "centosNetManager"
-
 type centosNetManager struct {
-	fs                            boshsys.FileSystem
-	cmdRunner                     boshsys.CmdRunner
+	fs        boshsys.FileSystem
+	cmdRunner boshsys.CmdRunner
+
 	routesSearcher                RoutesSearcher
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	interfaceAddressesValidator   boship.InterfaceAddressesValidator
 	dnsValidator                  DNSValidator
 	addressBroadcaster            bosharp.AddressBroadcaster
-	logger                        boshlog.Logger
+
+	logTag string
+	logger boshlog.Logger
 }
 
 func NewCentosNetManager(
@@ -39,19 +40,23 @@ func NewCentosNetManager(
 	logger boshlog.Logger,
 ) Manager {
 	return centosNetManager{
-		fs:                            fs,
-		cmdRunner:                     cmdRunner,
+		fs:        fs,
+		cmdRunner: cmdRunner,
+
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		interfaceAddressesValidator:   interfaceAddressesValidator,
 		dnsValidator:                  dnsValidator,
 		addressBroadcaster:            addressBroadcaster,
-		logger:                        logger,
+
+		logTag: "centosNetManager",
+		logger: logger,
 	}
 }
 
 func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 	nonVipNetworks := boshsettings.Networks{}
+
 	for networkName, networkSettings := range networks {
 		if networkSettings.IsVIP() {
 			continue
@@ -65,6 +70,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	}
 
 	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
+
 	dnsServers := dnsNetwork.DNS
 
 	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)
@@ -73,6 +79,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	}
 
 	dhcpChanged := false
+
 	if len(dhcpInterfaceConfigurations) > 0 {
 		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers, dhcpInterfaceConfigurations)
 		if err != nil {
@@ -147,9 +154,11 @@ type dnsConfig struct {
 
 func newDNSConfigs(dnsServers []string) []dnsConfig {
 	dnsConfigs := []dnsConfig{}
+
 	for i := range dnsServers {
 		dnsConfigs = append(dnsConfigs, dnsConfig{Index: i + 1, Address: dnsServers[i]})
 	}
+
 	return dnsConfigs
 }
 
@@ -166,6 +175,7 @@ func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, co
 	}
 
 	filePath := ifcfgFilePath(name)
+
 	changed, err := net.fs.ConvergeFileContents(filePath, buffer.Bytes())
 	if err != nil {
 		return false, bosherr.WrapErrorf(err, "Writing config to '%s'", filePath)
@@ -177,8 +187,8 @@ func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, co
 func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
 	anyInterfaceChanged := false
 
-	staticConfig := centosStaticIfcfg{}
-	staticConfig.DNSServers = newDNSConfigs(dnsServers)
+	staticConfig := centosStaticIfcfg{DNSServers: newDNSConfigs(dnsServers)}
+
 	staticTemplate := template.Must(template.New("ifcfg").Parse(centosStaticIfcfgTemplate))
 
 	for i := range staticInterfaceConfigurations {
@@ -233,11 +243,11 @@ func (net centosNetManager) broadcastIps(addresses []boship.InterfaceAddress, er
 }
 
 func (net centosNetManager) restartNetworkingInterfaces() {
-	net.logger.Debug(centosNetManagerLogTag, "Restarting network interfaces")
+	net.logger.Debug(net.logTag, "Restarting network interfaces")
 
 	_, _, _, err := net.cmdRunner.RunCommand("service", "network", "restart")
 	if err != nil {
-		net.logger.Error(centosNetManagerLogTag, "Ignoring network restart failure: %s", err.Error())
+		net.logger.Error(net.logTag, "Ignoring network restart failure: %s", err.Error())
 	}
 }
 
@@ -258,25 +268,27 @@ prepend domain-name-servers {{ . }};{{ end }}
 
 func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration) (bool, error) {
 	buffer := bytes.NewBuffer([]byte{})
+
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
 	// Keep DNS servers in the order specified by the network
 	// because they are added by a *single* DHCP's prepend command
 	dnsServersList := strings.Join(dnsServers, ", ")
+
 	err := t.Execute(buffer, dnsServersList)
 	if err != nil {
 		return false, bosherr.WrapError(err, "Generating config from template")
 	}
-	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
-	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
 
+	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
+
+	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
 	if err != nil {
 		return changed, bosherr.WrapErrorf(err, "Writing to %s", dhclientConfigFile)
 	}
 
 	for i := range dhcpInterfaceConfigurations {
-		name := dhcpInterfaceConfigurations[i].Name
-		interfaceDhclientConfigFile := path.Join("/etc/dhcp/", "dhclient-"+name+".conf")
+		interfaceDhclientConfigFile := path.Join("/etc/dhcp/", "dhclient-"+dhcpInterfaceConfigurations[i].Name+".conf")
 		err = net.fs.Symlink(dhclientConfigFile, interfaceDhclientConfigFile)
 		if err != nil {
 			return changed, bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", interfaceDhclientConfigFile, dhclientConfigFile)
@@ -294,20 +306,16 @@ func (net centosNetManager) detectMacAddresses() (map[string]string, error) {
 		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
 	}
 
-	var macAddress string
 	for _, filePath := range filePaths {
 		isPhysicalDevice := net.fs.FileExists(path.Join(filePath, "device"))
 
 		if isPhysicalDevice {
-			macAddress, err = net.fs.ReadFileString(path.Join(filePath, "address"))
+			macAddress, err := net.fs.ReadFileString(path.Join(filePath, "address"))
 			if err != nil {
 				return addresses, bosherr.WrapError(err, "Reading mac address from file")
 			}
 
-			macAddress = strings.Trim(macAddress, "\n")
-
-			interfaceName := path.Base(filePath)
-			addresses[macAddress] = interfaceName
+			addresses[strings.Trim(macAddress, "\n")] = path.Base(filePath)
 		}
 	}
 

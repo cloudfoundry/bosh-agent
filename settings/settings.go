@@ -147,11 +147,14 @@ const (
 type Network struct {
 	Type NetworkType `json:"type"`
 
-	IP       string `json:"ip"`
-	Netmask  string `json:"netmask"`
-	Gateway  string `json:"gateway"`
-	Resolved bool   `json:"resolved"` // was resolved via DHCP
-	UseDHCP  bool   `json:"use_dhcp"`
+	IP      string `json:"ip"`
+	Netmask string `json:"netmask"`
+	Gateway string `json:"gateway"`
+
+	Resolved bool `json:"resolved"` // was resolved via DHCP
+
+	Preconfigured bool `json:"preconfigured"`
+	UseDHCP       bool `json:"use_dhcp"`
 
 	Default []string `json:"default"`
 	DNS     []string `json:"dns"`
@@ -177,10 +180,10 @@ func (n Networks) NetworkForMac(mac string) (Network, bool) {
 	return Network{}, false
 }
 
-func (n Networks) DefaultNetworkFor(category string) (Network, bool) {
-	if len(n) == 1 {
-		for _, net := range n {
-			return net, true
+func (ns Networks) DefaultNetworkFor(category string) (Network, bool) {
+	if len(ns) == 1 {
+		for _, n := range ns {
+			return n, true
 		}
 	}
 
@@ -202,13 +205,13 @@ func stringArrayContains(stringArray []string, str string) bool {
 	return false
 }
 
-func (n Networks) DefaultIP() (ip string, found bool) {
-	for _, networkSettings := range n {
+func (ns Networks) DefaultIP() (ip string, found bool) {
+	for _, n := range ns {
 		if ip == "" {
-			ip = networkSettings.IP
+			ip = n.IP
 		}
-		if len(networkSettings.Default) > 0 {
-			ip = networkSettings.IP
+		if len(n.Default) > 0 {
+			ip = n.IP
 		}
 	}
 
@@ -218,10 +221,10 @@ func (n Networks) DefaultIP() (ip string, found bool) {
 	return
 }
 
-func (n Networks) IPs() (ips []string) {
-	for _, net := range n {
-		if net.IP != "" {
-			ips = append(ips, net.IP)
+func (ns Networks) IPs() (ips []string) {
+	for _, n := range ns {
+		if n.IP != "" {
+			ips = append(ips, n.IP)
 		}
 	}
 	return

@@ -15,17 +15,18 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-const UbuntuNetManagerLogTag = "UbuntuNetManager"
-
 type UbuntuNetManager struct {
-	cmdRunner                     boshsys.CmdRunner
-	fs                            boshsys.FileSystem
+	cmdRunner boshsys.CmdRunner
+	fs        boshsys.FileSystem
+
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	interfaceAddressesValidator   boship.InterfaceAddressesValidator
 	dnsValidator                  DNSValidator
 	addressBroadcaster            bosharp.AddressBroadcaster
-	logger                        boshlog.Logger
+
+	logTag string
+	logger boshlog.Logger
 }
 
 func NewUbuntuNetManager(
@@ -39,14 +40,17 @@ func NewUbuntuNetManager(
 	logger boshlog.Logger,
 ) Manager {
 	return UbuntuNetManager{
-		cmdRunner:                     cmdRunner,
-		fs:                            fs,
+		cmdRunner: cmdRunner,
+		fs:        fs,
+
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		interfaceAddressesValidator:   interfaceAddressesValidator,
 		dnsValidator:                  dnsValidator,
 		addressBroadcaster:            addressBroadcaster,
-		logger:                        logger,
+
+		logTag: "UbuntuNetManager",
+		logger: logger,
 	}
 }
 
@@ -68,10 +72,12 @@ prepend domain-name-servers {{ . }};{{ end }}
 
 func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, []string, error) {
 	nonVipNetworks := boshsettings.Networks{}
+
 	for networkName, networkSettings := range networks {
 		if networkSettings.IsVIP() {
 			continue
 		}
+
 		nonVipNetworks[networkName] = networkSettings
 	}
 
@@ -81,7 +87,9 @@ func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks)
 	}
 
 	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
+
 	dnsServers := dnsNetwork.DNS
+
 	return staticConfigs, dhcpConfigs, dnsServers, nil
 }
 
@@ -102,6 +110,7 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	}
 
 	dhcpChanged := false
+
 	if len(dhcpConfigs) > 0 {
 		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers)
 		if err != nil {
@@ -163,7 +172,7 @@ func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
 	// is no longer needed. See https://bugs.launchpad.net/ubuntu/+source/dhcp3/+bug/38140
 	_, _, _, err := net.cmdRunner.RunCommand("pkill", "dhclient")
 	if err != nil {
-		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'pkill dhclient': %s", err)
+		net.logger.Error(net.logTag, "Ignoring failure calling 'pkill dhclient': %s", err)
 	}
 
 	interfacesByMacAddress, err := net.detectMacAddresses()
@@ -177,7 +186,7 @@ func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
 		// is removed from /etc/network/interfaces.
 		_, _, _, err = net.cmdRunner.RunCommand("resolvconf", "-d", ifaceName+".dhclient")
 		if err != nil {
-			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'resolvconf -d %s.dhclient': %s", ifaceName, err)
+			net.logger.Error(net.logTag, "Ignoring failure calling 'resolvconf -d %s.dhclient': %s", ifaceName, err)
 		}
 	}
 
@@ -229,29 +238,32 @@ func (net UbuntuNetManager) restartNetworkingInterfaces(ifaceNames []string) {
 
 	_, _, _, err := net.cmdRunner.RunCommand("ifdown", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
-		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err.Error())
+		net.logger.Error(net.logTag, "Ignoring ifdown failure: %s", err.Error())
 	}
 
 	_, _, _, err = net.cmdRunner.RunCommand("ifup", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
-		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifup failure: %s", err.Error())
+		net.logger.Error(net.logTag, "Ignoring ifup failure: %s", err.Error())
 	}
 }
 
 func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string) (bool, error) {
 	buffer := bytes.NewBuffer([]byte{})
+
 	t := template.Must(template.New("dhcp-config").Parse(ubuntuDHCPConfigTemplate))
 
 	// Keep DNS servers in the order specified by the network
 	// because they are added by a *single* DHCP's prepend command
 	dnsServersList := strings.Join(dnsServers, ", ")
+
 	err := t.Execute(buffer, dnsServersList)
 	if err != nil {
 		return false, bosherr.WrapError(err, "Generating config from template")
 	}
-	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
-	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
 
+	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
+
+	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
 	if err != nil {
 		return changed, bosherr.WrapErrorf(err, "Writing to %s", dhclientConfigFile)
 	}
@@ -319,20 +331,16 @@ func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
 	}
 
-	var macAddress string
 	for _, filePath := range filePaths {
 		isPhysicalDevice := net.fs.FileExists(path.Join(filePath, "device"))
 
 		if isPhysicalDevice {
-			macAddress, err = net.fs.ReadFileString(path.Join(filePath, "address"))
+			macAddress, err := net.fs.ReadFileString(path.Join(filePath, "address"))
 			if err != nil {
 				return addresses, bosherr.WrapError(err, "Reading mac address from file")
 			}
 
-			macAddress = strings.Trim(macAddress, "\n")
-
-			interfaceName := path.Base(filePath)
-			addresses[macAddress] = interfaceName
+			addresses[strings.Trim(macAddress, "\n")] = path.Base(filePath)
 		}
 	}
 
