@@ -2,7 +2,6 @@ package action
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
@@ -14,15 +13,18 @@ type PrepareNetworkChangeAction struct {
 	fs                      boshsys.FileSystem
 	settingsService         boshsettings.Service
 	waitToKillAgentInterval time.Duration
+	agentKiller             Killer
 }
 
 func NewPrepareNetworkChange(
 	fs boshsys.FileSystem,
 	settingsService boshsettings.Service,
+	agentKiller Killer,
 ) (prepareAction PrepareNetworkChangeAction) {
 	prepareAction.fs = fs
 	prepareAction.settingsService = settingsService
 	prepareAction.waitToKillAgentInterval = 1 * time.Second
+	prepareAction.agentKiller = agentKiller
 	return
 }
 
@@ -35,6 +37,7 @@ func (a PrepareNetworkChangeAction) IsPersistent() bool {
 }
 
 func (a PrepareNetworkChangeAction) Run() (interface{}, error) {
+
 	err := a.settingsService.InvalidateSettings()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Invalidating settings")
@@ -45,19 +48,9 @@ func (a PrepareNetworkChangeAction) Run() (interface{}, error) {
 		return nil, bosherr.WrapError(err, "Removing network rules file")
 	}
 
-	go a.killAgent()
+	go a.agentKiller.KillAgent(a.waitToKillAgentInterval)
 
-	// Since this is a synchronous action API consumer
-	// expects to receive response before agent restarts itself.
 	return "ok", nil
-}
-
-func (a PrepareNetworkChangeAction) killAgent() {
-	time.Sleep(a.waitToKillAgentInterval)
-
-	os.Exit(0)
-
-	return
 }
 
 func (a PrepareNetworkChangeAction) Resume() (interface{}, error) {

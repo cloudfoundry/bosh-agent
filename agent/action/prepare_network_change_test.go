@@ -7,6 +7,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	fakeactions "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 )
@@ -14,15 +15,16 @@ import (
 func init() {
 	Describe("prepareNetworkChange", func() {
 		var (
-			action          PrepareNetworkChangeAction
-			fs              *fakesys.FakeFileSystem
+			action PrepareNetworkChangeAction
+			fs     *fakesys.FakeFileSystem
+
 			settingsService *fakesettings.FakeSettingsService
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			settingsService = &fakesettings.FakeSettingsService{}
-			action = NewPrepareNetworkChange(fs, settingsService)
+			action = NewPrepareNetworkChange(fs, settingsService, fakeactions.NewFakeAgentKiller())
 		})
 
 		It("is synchronous", func() {

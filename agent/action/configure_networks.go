@@ -2,16 +2,17 @@ package action
 
 import (
 	"errors"
-	"os"
 	"time"
 )
 
 type ConfigureNetworksAction struct {
 	waitToKillAgentInterval time.Duration
+	agentKiller             Killer
 }
 
-func NewConfigureNetworks() (prepareAction ConfigureNetworksAction) {
+func NewConfigureNetworks(agentKiller Killer) (prepareAction ConfigureNetworksAction) {
 	prepareAction.waitToKillAgentInterval = 1 * time.Second
+	prepareAction.agentKiller = agentKiller
 	return
 }
 
@@ -33,9 +34,8 @@ func (a ConfigureNetworksAction) Run() (interface{}, error) {
 
 	// Instead of waiting for some time, ideally this action would receive a signal
 	// that asynchronous task response was sent to the API consumer.
-	time.Sleep(a.waitToKillAgentInterval)
 
-	os.Exit(0)
+	go a.agentKiller.KillAgent(a.waitToKillAgentInterval)
 
 	panic("unreachable")
 }

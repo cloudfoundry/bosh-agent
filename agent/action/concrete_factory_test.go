@@ -11,6 +11,7 @@ import (
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
@@ -143,7 +144,7 @@ var _ = Describe("concreteFactory", func() {
 	It("prepare_network_change", func() {
 		action, err := factory.Create("prepare_network_change")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settingsService)))
+		Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settingsService, NewAgentKiller())))
 	})
 
 	It("prepare_configure_networks", func() {
@@ -155,7 +156,7 @@ var _ = Describe("concreteFactory", func() {
 	It("configure_networks", func() {
 		action, err := factory.Create("configure_networks")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewConfigureNetworks()))
+		Expect(action).To(Equal(NewConfigureNetworks(NewAgentKiller())))
 	})
 
 	It("ssh", func() {

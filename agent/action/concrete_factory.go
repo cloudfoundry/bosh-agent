@@ -74,10 +74,10 @@ func NewFactory(
 			"mount_disk":   NewMountDisk(settingsService, platform, platform, dirProvider),
 			"unmount_disk": NewUnmountDisk(settingsService, platform),
 
-			// Networking
-			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settingsService),
+			// Networkingconcrete_factory_test.go
+			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settingsService, NewAgentKiller()),
 			"prepare_configure_networks": NewPrepareConfigureNetworks(platform, settingsService),
-			"configure_networks":         NewConfigureNetworks(),
+			"configure_networks":         NewConfigureNetworks(NewAgentKiller()),
 		},
 	}
 	return
