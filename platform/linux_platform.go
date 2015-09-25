@@ -271,6 +271,53 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 	return
 }
 
+func (p linux) GrowRootFs() error {
+	if p.growpartExists() == false {
+		p.logger.Info(logTag, "GrowRootFs: The program 'growpart' is not installed, Root Filesystem cannot be grown")
+		return nil
+	}
+
+	rootDevice, err := p.findRootDevicePath()
+	if err != nil {
+		return bosherr.WrapError(err, "findRootDevicePath")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand(
+		"growpart",
+		rootDevice,
+		"1",
+	)
+
+	if err != nil {
+		return bosherr.WrapError(err, "growpart")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand(
+		"resize2fs",
+		"-f",
+		fmt.Sprintf("%s1", rootDevice),
+	)
+
+	if err != nil {
+		return bosherr.WrapError(err, "resize2fs")
+	}
+
+	return nil
+}
+
+// in case growpart is not available for another flavour of linux, don't stop the agent from running,
+// without this integration-test would not run since the bosh-lite vm doesn't have it
+func (p linux) growpartExists() bool {
+	_, _, exitStatus, _ := p.cmdRunner.RunCommand(
+		"which",
+		"growpart",
+	)
+	if exitStatus == 0 {
+		return true
+	}
+	return false
+}
+
 func (p linux) SetupSSH(publicKey, username string) error {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {
