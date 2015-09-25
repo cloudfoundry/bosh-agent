@@ -27,6 +27,10 @@ Vagrant.configure('2') do |config|
   config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"
   config.vm.provision :shell, inline: "chmod 777 /var/vcap/sys/log/cpi"
 
+  # disable growpart in integration tests because the bosh-lite vm used is
+  # old and not comptabile with grow root disk
+  config.vm.provision :shell, inline: "sudo mv /usr/bin/growpart /usr/bin/growpart-disabled"
+
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-go.sh"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-agent.sh"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-fake-registry.sh"

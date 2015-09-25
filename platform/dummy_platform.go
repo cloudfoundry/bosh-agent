@@ -95,6 +95,10 @@ func (p dummyPlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	return
 }
 
+func (p dummyPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupSSH(publicKey, username string) (err error) {
 	return
 }

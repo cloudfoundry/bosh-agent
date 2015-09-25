@@ -117,6 +117,9 @@ type FakePlatform struct {
 
 	GetHostPublicKeyValue string
 	GetHostPublicKeyError error
+
+	SetupRootDiskCalledTimes int
+	SetupRootDiskError       error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -140,6 +143,8 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupRawEphemeralDisksDevices = nil
 	platform.SetupRawEphemeralDisksErr = nil
 	platform.GetHostPublicKeyError = nil
+	platform.SetupRootDiskCalledTimes = 0
+	platform.SetupRootDiskError = nil
 	return
 }
 
@@ -190,6 +195,14 @@ func (p *FakePlatform) AddUserToGroups(username string, groups []string) (err er
 
 func (p *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	p.DeleteEphemeralUsersMatchingRegex = regex
+	return
+}
+
+func (p *FakePlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
+	p.SetupRootDiskCalledTimes++
+	if p.SetupRootDiskError != nil {
+		err = p.SetupRootDiskError
+	}
 	return
 }
 

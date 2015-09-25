@@ -85,6 +85,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up ephemeral disk")
 	}
 
+	if err = boot.platform.SetupRootDisk(ephemeralDiskPath); err != nil {
+		return bosherr.WrapError(err, "Setting up root disk")
+	}
+
 	if err = boot.platform.SetupDataDir(); err != nil {
 		return bosherr.WrapError(err, "Setting up data dir")
 	}
