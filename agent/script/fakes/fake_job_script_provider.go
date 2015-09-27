@@ -4,22 +4,22 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	"github.com/cloudfoundry/bosh-agent/agent/script"
 )
 
 type FakeJobScriptProvider struct {
-	GetStub        func(jobName string, relativePath string) scriptrunner.Script
+	GetStub        func(jobName string, relativePath string) script.Script
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
 		jobName      string
 		relativePath string
 	}
 	getReturns struct {
-		result1 scriptrunner.Script
+		result1 script.Script
 	}
 }
 
-func (fake *FakeJobScriptProvider) Get(jobName string, relativePath string) scriptrunner.Script {
+func (fake *FakeJobScriptProvider) Get(jobName string, relativePath string) script.Script {
 	fake.getMutex.Lock()
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
 		jobName      string
@@ -45,11 +45,11 @@ func (fake *FakeJobScriptProvider) GetArgsForCall(i int) (string, string) {
 	return fake.getArgsForCall[i].jobName, fake.getArgsForCall[i].relativePath
 }
 
-func (fake *FakeJobScriptProvider) GetReturns(result1 scriptrunner.Script) {
+func (fake *FakeJobScriptProvider) GetReturns(result1 script.Script) {
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 scriptrunner.Script
+		result1 script.Script
 	}{result1}
 }
 
-var _ scriptrunner.JobScriptProvider = new(FakeJobScriptProvider)
+var _ script.JobScriptProvider = new(FakeJobScriptProvider)

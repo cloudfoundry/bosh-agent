@@ -1,4 +1,4 @@
-package scriptrunner
+package script
 
 import (
 	"fmt"

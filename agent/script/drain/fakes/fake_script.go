@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	"github.com/cloudfoundry/bosh-agent/agent/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 type FakeScript struct {

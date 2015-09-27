@@ -1,4 +1,4 @@
-package scriptrunner_test
+package script_test
 
 import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"

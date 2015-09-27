@@ -1,4 +1,4 @@
-package scriptrunner_test
+package script_test
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -15,7 +15,7 @@ var _ = Describe("GenericScript", func() {
 	var (
 		fs            *fakesys.FakeFileSystem
 		cmdRunner     *fakesys.FakeCmdRunner
-		genericScript scriptrunner.GenericScript
+		genericScript boshscript.GenericScript
 		stdoutLogPath string
 		stderrLogPath string
 	)
@@ -25,7 +25,7 @@ var _ = Describe("GenericScript", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		stdoutLogPath = filepath.Join("base", "stdout", "logdir", "stdout.log")
 		stderrLogPath = filepath.Join("base", "stderr", "logdir", "stderr.log")
-		genericScript = scriptrunner.NewScript(
+		genericScript = boshscript.NewScript(
 			fs,
 			cmdRunner,
 			"my-tag",

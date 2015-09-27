@@ -10,9 +10,9 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
-	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("RunScript", func() {
@@ -20,7 +20,7 @@ var _ = Describe("RunScript", func() {
 		runScriptAction       action.RunScriptAction
 		fakeJobScriptProvider *fakescript.FakeJobScriptProvider
 		specService           *fakeapplyspec.FakeV1Service
-		log                   logger.Logger
+		log                   boshlog.Logger
 		options               map[string]interface{}
 		scriptName            string
 	)
@@ -31,7 +31,7 @@ var _ = Describe("RunScript", func() {
 	}
 
 	BeforeEach(func() {
-		log = logger.NewLogger(logger.LevelNone)
+		log = boshlog.NewLogger(boshlog.LevelNone)
 		fakeJobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		specService = fakeapplyspec.NewFakeV1Service()
 		createFakeJob("fake-job-1")
@@ -92,7 +92,7 @@ var _ = Describe("RunScript", func() {
 			existingScript2.PathReturns("path/to/script2")
 			existingScript2.ExistsReturns(true)
 
-			fakeJobScriptProvider.GetStub = func(jobName string, relativePath string) scriptrunner.Script {
+			fakeJobScriptProvider.GetStub = func(jobName string, relativePath string) boshscript.Script {
 				if jobName == "fake-job-1" {
 					return existingScript1
 				} else if jobName == "fake-job-2" {

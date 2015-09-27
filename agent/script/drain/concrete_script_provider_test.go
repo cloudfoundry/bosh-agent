@@ -5,8 +5,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
-	. "github.com/cloudfoundry/bosh-agent/agent/drain"
-	"github.com/cloudfoundry/bosh-agent/agent/drain/fakes"
+	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )

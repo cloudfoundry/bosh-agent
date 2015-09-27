@@ -4,32 +4,32 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	"github.com/cloudfoundry/bosh-agent/agent/script"
 )
 
 type FakeScript struct {
 	TagStub        func() string
 	tagMutex       sync.RWMutex
 	tagArgsForCall []struct{}
-	tagReturns struct {
+	tagReturns     struct {
 		result1 string
 	}
 	PathStub        func() string
 	pathMutex       sync.RWMutex
 	pathArgsForCall []struct{}
-	pathReturns struct {
+	pathReturns     struct {
 		result1 string
 	}
 	ExistsStub        func() bool
 	existsMutex       sync.RWMutex
 	existsArgsForCall []struct{}
-	existsReturns struct {
+	existsReturns     struct {
 		result1 bool
 	}
 	RunStub        func() error
 	runMutex       sync.RWMutex
 	runArgsForCall []struct{}
-	runReturns struct {
+	runReturns     struct {
 		result1 error
 	}
 }
@@ -130,4 +130,4 @@ func (fake *FakeScript) RunReturns(result1 error) {
 	}{result1}
 }
 
-var _ scriptrunner.Script = new(FakeScript)
+var _ script.Script = new(FakeScript)

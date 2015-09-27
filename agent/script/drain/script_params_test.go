@@ -5,7 +5,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	. "github.com/cloudfoundry/bosh-agent/agent/drain"
+	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 var _ = Describe("NewShutdownParams", func() {

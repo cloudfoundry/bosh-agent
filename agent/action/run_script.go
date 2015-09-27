@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type RunScriptAction struct {
-	scriptProvider scriptrunner.JobScriptProvider
+	scriptProvider boshscript.JobScriptProvider
 	specService    boshas.V1Service
 
 	logTag string
@@ -19,7 +19,7 @@ type RunScriptAction struct {
 }
 
 func NewRunScript(
-	scriptProvider scriptrunner.JobScriptProvider,
+	scriptProvider boshscript.JobScriptProvider,
 	specService boshas.V1Service,
 	logger boshlog.Logger,
 ) RunScriptAction {
@@ -53,7 +53,7 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	a.logger.Info(a.logTag, "Will run script '%s' in '%d' jobs in parallel", scriptName, len(scripts))
 
 	type scriptResult struct {
-		Script scriptrunner.Script
+		Script boshscript.Script
 		Error  error
 	}
 
@@ -87,8 +87,8 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	return result, err
 }
 
-func (a RunScriptAction) findScripts(scriptName string, currentSpec boshas.V1ApplySpec) []scriptrunner.Script {
-	var scripts []scriptrunner.Script
+func (a RunScriptAction) findScripts(scriptName string, currentSpec boshas.V1ApplySpec) []boshscript.Script {
+	var scripts []boshscript.Script
 
 	for _, job := range currentSpec.Jobs() {
 		script := a.scriptProvider.Get(job.BundleName(), scriptName)

@@ -9,8 +9,8 @@ import (
 
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	. "github.com/cloudfoundry/bosh-agent/agent/drain"
-	"github.com/cloudfoundry/bosh-agent/agent/drain/fakes"
+	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 )

@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 type FakeScriptProvider struct {

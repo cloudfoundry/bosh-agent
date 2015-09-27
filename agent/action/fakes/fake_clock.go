@@ -12,7 +12,7 @@ type FakeClock struct {
 	NowStub        func() time.Time
 	nowMutex       sync.RWMutex
 	nowArgsForCall []struct{}
-	nowReturns struct {
+	nowReturns     struct {
 		result1 time.Time
 	}
 	SleepStub        func(d time.Duration)

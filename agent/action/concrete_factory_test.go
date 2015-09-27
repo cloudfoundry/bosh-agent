@@ -9,10 +9,10 @@ import (
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 
-	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
