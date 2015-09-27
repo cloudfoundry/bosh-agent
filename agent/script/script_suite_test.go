@@ -9,5 +9,5 @@ import (
 
 func TestScriptRunner(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Scriptrunner Suite")
+	RunSpecs(t, "Script Suite")
 }

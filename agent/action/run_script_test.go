@@ -117,7 +117,7 @@ var _ = Describe("RunScript", func() {
 
 			results, err := runScriptAction.Run(scriptName, options)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).Should(ContainSubstring("2 of 2 run-me scripts failed. Failed Jobs:"))
+			Expect(err.Error()).Should(ContainSubstring("2 of 2 run-me script(s) failed. Failed Jobs:"))
 			Expect(err.Error()).Should(ContainSubstring("fake-job-1"))
 			Expect(err.Error()).Should(ContainSubstring("fake-job-2"))
 			Expect(err.Error()).ShouldNot(ContainSubstring("Successful Jobs"))
@@ -134,7 +134,7 @@ var _ = Describe("RunScript", func() {
 
 			results, err := runScriptAction.Run(scriptName, options)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("1 of 2 run-me scripts failed. Failed Jobs: fake-job-1. Successful Jobs: fake-job-2."))
+			Expect(err.Error()).To(Equal("1 of 2 run-me script(s) failed. Failed Jobs: fake-job-1. Successful Jobs: fake-job-2."))
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "failed", "fake-job-2": "executed"}))
 		})
 
@@ -144,7 +144,7 @@ var _ = Describe("RunScript", func() {
 
 			results, err := runScriptAction.Run(scriptName, options)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("1 of 2 run-me scripts failed. Failed Jobs: fake-job-2. Successful Jobs: fake-job-1."))
+			Expect(err.Error()).To(Equal("1 of 2 run-me script(s) failed. Failed Jobs: fake-job-2. Successful Jobs: fake-job-1."))
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "failed"}))
 		})
 

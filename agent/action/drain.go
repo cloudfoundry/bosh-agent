@@ -74,29 +74,18 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		return 0, bosherr.WrapError(err, "Unmonitoring services")
 	}
 
-	drainScripts := a.findDrainScripts(currentSpec, params)
+	var scripts []boshscript.Script
 
-	a.logger.Debug(a.logTag, "Will run '%d' drain scripts in parallel", len(drainScripts))
-
-	resultChan := make(chan error)
-
-	for _, drainScript := range drainScripts {
-		drainScript := drainScript
-		go func() { resultChan <- drainScript.Run() }()
+	for _, job := range currentSpec.Jobs() {
+		script := a.jobScriptProvider.NewDrainScript(job.BundleName(), params)
+		scripts = append(scripts, script)
 	}
 
-	var errs []error
+	parallelScript := boshscript.NewParallelScript("drain", scripts, a.logger)
 
-	for i := 0; i < len(drainScripts); i++ {
-		select {
-		case err := <-resultChan:
-			if err != nil {
-				errs = append(errs, err)
-			}
-		}
-	}
+	_, err = parallelScript.Run()
 
-	return a.summarizeErrs(errs)
+	return 0, err
 }
 
 func (a DrainAction) determineParams(drainType DrainType, currentSpec boshas.V1ApplySpec, newSpecs []boshas.V1ApplySpec) (boshdrain.ScriptParams, error) {
@@ -130,36 +119,6 @@ func (a DrainAction) determineParams(drainType DrainType, currentSpec boshas.V1A
 	}
 
 	return params, nil
-}
-
-func (a DrainAction) findDrainScripts(currentSpec boshas.V1ApplySpec, params boshdrain.ScriptParams) []boshscript.Script {
-	var scripts []boshscript.Script
-
-	for _, job := range currentSpec.Jobs() {
-		script := a.jobScriptProvider.NewDrainScript(job.BundleName(), params)
-		if script.Exists() {
-			a.logger.Debug(a.logTag, "Found drain script in job '%s'", job.BundleName())
-			scripts = append(scripts, script)
-		} else {
-			a.logger.Debug(a.logTag, "Did not find drain script in job '%s'", job.BundleName())
-		}
-	}
-
-	return scripts
-}
-
-func (a DrainAction) summarizeErrs(errs []error) (int, error) {
-	if len(errs) > 0 {
-		var errMsg string
-
-		for _, err := range errs {
-			errMsg += err.Error() + "\n"
-		}
-
-		return 0, bosherr.Errorf("'%d' drain script(s) failed: %s", len(errs), errMsg)
-	}
-
-	return 0, nil
 }
 
 func (a DrainAction) Resume() (interface{}, error) {

@@ -128,7 +128,7 @@ func init() {
 								It("returns error", func() {
 									value, err := act()
 									Expect(err).To(HaveOccurred())
-									Expect(err.Error()).To(ContainSubstring("fake-drain-run-error"))
+									Expect(err.Error()).To(ContainSubstring("1 of 1 drain script(s) failed. Failed Jobs: foo."))
 									Expect(value).To(Equal(0))
 								})
 							})
@@ -308,7 +308,7 @@ func init() {
 								It("returns error", func() {
 									value, err := act()
 									Expect(err).To(HaveOccurred())
-									Expect(err.Error()).To(ContainSubstring("fake-drain-run-error"))
+									Expect(err.Error()).To(ContainSubstring("1 of 1 drain script(s) failed. Failed Jobs: foo."))
 									Expect(value).To(Equal(0))
 								})
 							})
