@@ -83,9 +83,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 
 	parallelScript := boshscript.NewParallelScript("drain", scripts, a.logger)
 
-	_, err = parallelScript.Run()
-
-	return 0, err
+	return 0, parallelScript.Run()
 }
 
 func (a DrainAction) determineParams(drainType DrainType, currentSpec boshas.V1ApplySpec, newSpecs []boshas.V1ApplySpec) (boshdrain.ScriptParams, error) {

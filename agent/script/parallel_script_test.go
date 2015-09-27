@@ -28,6 +28,24 @@ var _ = Describe("ParallelScript", func() {
 		parallelScript = boshscript.NewParallelScript("run-me", scripts, logger)
 	})
 
+	Describe("Tag", func() {
+		It("returns empty string", func() {
+			Expect(parallelScript.Tag()).To(Equal(""))
+		})
+	})
+
+	Describe("Path", func() {
+		It("returns empty string", func() {
+			Expect(parallelScript.Path()).To(Equal(""))
+		})
+	})
+
+	Describe("Exists", func() {
+		It("returns true", func() {
+			Expect(parallelScript.Exists()).To(BeTrue())
+		})
+	})
+
 	Describe("Run", func() {
 		Context("when script exists", func() {
 			var existingScript *fakescript.FakeScript
@@ -43,17 +61,20 @@ var _ = Describe("ParallelScript", func() {
 			It("is executed", func() {
 				existingScript.RunReturns(nil)
 
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(results).To(Equal(map[string]string{"fake-job-1": "executed"}))
+
+				Expect(existingScript.RunCallCount()).To(Equal(1))
 			})
 
 			It("gives an error when script fails", func() {
 				existingScript.RunReturns(errors.New("fake-error"))
 
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).To(HaveOccurred())
-				Expect(results).To(Equal(map[string]string{"fake-job-1": "failed"}))
+				Expect(err.Error()).To(Equal("1 of 1 run-me script(s) failed. Failed Jobs: fake-job-1."))
+
+				Expect(existingScript.RunCallCount()).To(Equal(1))
 			})
 		})
 
@@ -67,9 +88,8 @@ var _ = Describe("ParallelScript", func() {
 			})
 
 			It("does not return a status for that script", func() {
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(results).To(Equal(map[string]string{}))
 			})
 		})
 
@@ -95,23 +115,23 @@ var _ = Describe("ParallelScript", func() {
 				existingScript1.RunReturns(nil)
 				existingScript2.RunReturns(nil)
 
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "executed"}))
+
+				Expect(existingScript1.RunCallCount()).To(Equal(1))
+				Expect(existingScript2.RunCallCount()).To(Equal(1))
 			})
 
 			It("returns two failed statuses when both scripts fail", func() {
 				existingScript1.RunReturns(errors.New("fake-error"))
 				existingScript2.RunReturns(errors.New("fake-error"))
 
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).Should(ContainSubstring("2 of 2 run-me script(s) failed. Failed Jobs:"))
-				Expect(err.Error()).Should(ContainSubstring("fake-job-1"))
-				Expect(err.Error()).Should(ContainSubstring("fake-job-2"))
-				Expect(err.Error()).ShouldNot(ContainSubstring("Successful Jobs"))
-
-				Expect(results).To(Equal(map[string]string{"fake-job-1": "failed", "fake-job-2": "failed"}))
+				Expect(err.Error()).To(ContainSubstring("2 of 2 run-me script(s) failed. Failed Jobs:"))
+				Expect(err.Error()).To(ContainSubstring("fake-job-1"))
+				Expect(err.Error()).To(ContainSubstring("fake-job-2"))
+				Expect(err.Error()).ToNot(ContainSubstring("Successful Jobs"))
 			})
 
 			It("returns one failed status when first script fail and second script pass, and when one fails continue waiting for unfinished tasks", func() {
@@ -121,20 +141,18 @@ var _ = Describe("ParallelScript", func() {
 				}
 				existingScript2.RunReturns(nil)
 
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("1 of 2 run-me script(s) failed. Failed Jobs: fake-job-1. Successful Jobs: fake-job-2."))
-				Expect(results).To(Equal(map[string]string{"fake-job-1": "failed", "fake-job-2": "executed"}))
 			})
 
 			It("returns one failed status when first script pass and second script fail", func() {
 				existingScript1.RunReturns(nil)
 				existingScript2.RunReturns(errors.New("fake-error"))
 
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("1 of 2 run-me script(s) failed. Failed Jobs: fake-job-2. Successful Jobs: fake-job-1."))
-				Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "failed"}))
 			})
 
 			It("wait for scripts to finish", func() {
@@ -144,9 +162,11 @@ var _ = Describe("ParallelScript", func() {
 				}
 				existingScript2.RunReturns(nil)
 
-				results, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "executed"}))
+
+				Expect(existingScript1.RunCallCount()).To(Equal(1))
+				Expect(existingScript2.RunCallCount()).To(Equal(1))
 			})
 
 			It("runs the scripts concurrently", func(done Done) {
@@ -162,7 +182,7 @@ var _ = Describe("ParallelScript", func() {
 				existingScript1.RunStub = deadlockUnlessConcurrent
 				existingScript2.RunStub = deadlockUnlessConcurrent
 
-				_, err := parallelScript.Run()
+				err := parallelScript.Run()
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(existingScript1.RunCallCount()).To(Equal(1))

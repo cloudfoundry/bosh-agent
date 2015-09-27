@@ -44,8 +44,7 @@ func NewConcreteScript(
 func (s ConcreteScript) Tag() string          { return s.tag }
 func (s ConcreteScript) Path() string         { return s.path }
 func (s ConcreteScript) Params() ScriptParams { return s.params }
-
-func (s ConcreteScript) Exists() bool { return s.fs.FileExists(s.path) }
+func (s ConcreteScript) Exists() bool         { return s.fs.FileExists(s.path) }
 
 func (s ConcreteScript) Run() error {
 	params := s.params

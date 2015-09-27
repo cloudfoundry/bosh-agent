@@ -170,6 +170,7 @@ func (app *app) Setup(args []string) error {
 		app.platform.GetFs(),
 		app.platform.GetDirProvider(),
 		timeService,
+		app.logger,
 	)
 
 	actionFactory := boshaction.NewFactory(

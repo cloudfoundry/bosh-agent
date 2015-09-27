@@ -7,8 +7,6 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 )
 
-// ParallelScript unfortunetly does not conform
-// to the Script interface since it returns a set of results
 type ParallelScript struct {
 	name       string
 	allScripts []Script
@@ -32,7 +30,11 @@ func NewParallelScript(name string, scripts []Script, logger boshlog.Logger) Par
 	}
 }
 
-func (s ParallelScript) Run() (map[string]string, error) {
+func (s ParallelScript) Tag() string  { return "" }
+func (s ParallelScript) Path() string { return "" }
+func (s ParallelScript) Exists() bool { return true }
+
+func (s ParallelScript) Run() error {
 	existingScripts := s.findExistingScripts(s.allScripts)
 
 	s.logger.Info(s.logTag, "Will run %d %s scripts in parallel", len(existingScripts), s.name)
@@ -46,8 +48,6 @@ func (s ParallelScript) Run() (map[string]string, error) {
 
 	var failedScripts, passedScripts []string
 
-	results := map[string]string{}
-
 	for i := 0; i < len(existingScripts); i++ {
 		select {
 		case r := <-resultsChan:
@@ -55,19 +55,15 @@ func (s ParallelScript) Run() (map[string]string, error) {
 
 			if r.Error == nil {
 				passedScripts = append(passedScripts, jobName)
-				results[jobName] = "executed"
 				s.logger.Info(s.logTag, "'%s' script has successfully executed", r.Script.Path())
 			} else {
 				failedScripts = append(failedScripts, jobName)
-				results[jobName] = "failed"
 				s.logger.Error(s.logTag, "'%s' script has failed with error: %s", r.Script.Path(), r.Error)
 			}
 		}
 	}
 
-	err := s.summarizeErrs(passedScripts, failedScripts)
-
-	return results, err
+	return s.summarizeErrs(passedScripts, failedScripts)
 }
 
 func (s ParallelScript) findExistingScripts(all []Script) []Script {

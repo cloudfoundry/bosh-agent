@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
@@ -16,6 +17,7 @@ type ConcreteJobScriptProvider struct {
 	fs          boshsys.FileSystem
 	dirProvider boshdir.Provider
 	timeService clock.Clock
+	logger      boshlog.Logger
 }
 
 func NewConcreteJobScriptProvider(
@@ -23,12 +25,14 @@ func NewConcreteJobScriptProvider(
 	fs boshsys.FileSystem,
 	dirProvider boshdir.Provider,
 	timeService clock.Clock,
+	logger boshlog.Logger,
 ) ConcreteJobScriptProvider {
 	return ConcreteJobScriptProvider{
 		cmdRunner:   cmdRunner,
 		fs:          fs,
 		dirProvider: dirProvider,
 		timeService: timeService,
+		logger:      logger,
 	}
 }
 
@@ -48,4 +52,8 @@ func (p ConcreteJobScriptProvider) NewDrainScript(jobName string, params boshdra
 	path := filepath.Join(p.dirProvider.JobsDir(), jobName, "bin", "drain")
 
 	return boshdrain.NewConcreteScript(p.fs, p.cmdRunner, jobName, path, params, p.timeService)
+}
+
+func (p ConcreteJobScriptProvider) NewParallelScript(scriptName string, scripts []Script) Script {
+	return NewParallelScript(scriptName, scripts, p.logger)
 }

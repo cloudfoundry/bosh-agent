@@ -8,12 +8,15 @@ import (
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	fakedrain "github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 var _ = Describe("ConcreteJobScriptProvider", func() {
 	var (
+		logger         boshlog.Logger
 		scriptProvider boshscript.ConcreteJobScriptProvider
 	)
 
@@ -21,7 +24,14 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 		runner := fakesys.NewFakeCmdRunner()
 		fs := fakesys.NewFakeFileSystem()
 		dirProvider := boshdir.NewProvider("/the/base/dir")
-		scriptProvider = boshscript.NewConcreteJobScriptProvider(runner, fs, dirProvider, &fakeaction.FakeClock{})
+		logger = boshlog.NewLogger(boshlog.LevelNone)
+		scriptProvider = boshscript.NewConcreteJobScriptProvider(
+			runner,
+			fs,
+			dirProvider,
+			&fakeaction.FakeClock{},
+			logger,
+		)
 	})
 
 	Describe("NewScript", func() {
@@ -39,6 +49,14 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 			Expect(script.Tag()).To(Equal("foo"))
 			Expect(script.Path()).To(Equal("/the/base/dir/jobs/foo/bin/drain"))
 			Expect(script.(boshdrain.ConcreteScript).Params()).To(Equal(params))
+		})
+	})
+
+	Describe("NewParallelScript", func() {
+		It("returns parallel script", func() {
+			scripts := []boshscript.Script{&fakescript.FakeScript{}}
+			script := scriptProvider.NewParallelScript("foo", scripts)
+			Expect(script).To(Equal(boshscript.NewParallelScript("foo", scripts, logger)))
 		})
 	})
 })

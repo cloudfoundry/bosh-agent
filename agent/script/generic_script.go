@@ -45,7 +45,6 @@ func NewScript(
 
 func (s GenericScript) Tag() string  { return s.tag }
 func (s GenericScript) Path() string { return s.path }
-
 func (s GenericScript) Exists() bool { return s.fs.FileExists(s.path) }
 
 func (s GenericScript) Run() error {

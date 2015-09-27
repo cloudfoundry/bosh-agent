@@ -40,9 +40,12 @@ func (a RunScriptAction) IsPersistent() bool {
 }
 
 func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) (map[string]string, error) {
+	// May be used in future to return more information
+	emptyResults := map[string]string{}
+
 	currentSpec, err := a.specService.Get()
 	if err != nil {
-		return map[string]string{}, bosherr.WrapError(err, "Getting current spec")
+		return emptyResults, bosherr.WrapError(err, "Getting current spec")
 	}
 
 	var scripts []boshscript.Script
@@ -52,9 +55,9 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 		scripts = append(scripts, script)
 	}
 
-	parallelScript := boshscript.NewParallelScript(scriptName, scripts, a.logger)
+	parallelScript := a.scriptProvider.NewParallelScript(scriptName, scripts)
 
-	return parallelScript.Run()
+	return emptyResults, parallelScript.Run()
 }
 
 func (a RunScriptAction) Resume() (interface{}, error) {

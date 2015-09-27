@@ -2,12 +2,11 @@ package action_test
 
 import (
 	"errors"
-	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
@@ -17,163 +16,97 @@ import (
 
 var _ = Describe("RunScript", func() {
 	var (
-		runScriptAction       action.RunScriptAction
 		fakeJobScriptProvider *fakescript.FakeJobScriptProvider
 		specService           *fakeapplyspec.FakeV1Service
-		log                   boshlog.Logger
-		options               map[string]interface{}
-		scriptName            string
+		action                RunScriptAction
 	)
 
-	createFakeJob := func(jobName string) {
-		spec := applyspec.JobTemplateSpec{Name: jobName}
-		specService.Spec.JobSpec.JobTemplateSpecs = append(specService.Spec.JobSpec.JobTemplateSpecs, spec)
-	}
-
 	BeforeEach(func() {
-		log = boshlog.NewLogger(boshlog.LevelNone)
 		fakeJobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		specService = fakeapplyspec.NewFakeV1Service()
-		createFakeJob("fake-job-1")
-		runScriptAction = action.NewRunScript(fakeJobScriptProvider, specService, log)
-		scriptName = "run-me"
-		options = make(map[string]interface{})
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		action = NewRunScript(fakeJobScriptProvider, specService, logger)
 	})
 
 	It("is asynchronous", func() {
-		Expect(runScriptAction.IsAsynchronous()).To(BeTrue())
+		Expect(action.IsAsynchronous()).To(BeTrue())
 	})
 
 	It("is not persistent", func() {
-		Expect(runScriptAction.IsPersistent()).To(BeFalse())
+		Expect(action.IsPersistent()).To(BeFalse())
 	})
 
-	Context("when script exists", func() {
-		var existingScript *fakescript.FakeScript
+	Describe("Run", func() {
+		act := func() (map[string]string, error) { return action.Run("run-me", map[string]interface{}{}) }
 
-		BeforeEach(func() {
-			existingScript = &fakescript.FakeScript{}
-			existingScript.TagReturns("fake-job-1")
-			existingScript.PathReturns("path/to/script1")
-			existingScript.ExistsReturns(true)
-			fakeJobScriptProvider.NewScriptReturns(existingScript)
-		})
+		Context("when current spec can be retrieved", func() {
+			var (
+				parallelScript *fakescript.FakeScript
+			)
 
-		It("is executed", func() {
-			existingScript.RunReturns(nil)
+			BeforeEach(func() {
+				parallelScript = &fakescript.FakeScript{}
+				fakeJobScriptProvider.NewParallelScriptReturns(parallelScript)
+			})
 
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed"}))
-		})
+			createFakeJob := func(jobName string) {
+				spec := applyspec.JobTemplateSpec{Name: jobName}
+				specService.Spec.JobSpec.JobTemplateSpecs = append(specService.Spec.JobSpec.JobTemplateSpecs, spec)
+			}
 
-		It("gives an error when script fails", func() {
-			existingScript.RunReturns(errors.New("fake-error"))
+			It("runs specified job scripts in parallel", func() {
+				createFakeJob("fake-job-1")
+				script1 := &fakescript.FakeScript{}
+				script1.TagReturns("fake-job-1")
 
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).To(HaveOccurred())
-			Expect(results).To(Equal(map[string]string{"fake-job-1": "failed"}))
-		})
-	})
+				createFakeJob("fake-job-2")
+				script2 := &fakescript.FakeScript{}
+				script2.TagReturns("fake-job-2")
 
-	Context("when running scripts concurrently", func() {
-		var existingScript1 *fakescript.FakeScript
-		var existingScript2 *fakescript.FakeScript
+				fakeJobScriptProvider.NewScriptStub = func(jobName, scriptName string) boshscript.Script {
+					Expect(scriptName).To(Equal("run-me"))
 
-		BeforeEach(func() {
-			existingScript1 = &fakescript.FakeScript{}
-			existingScript1.TagReturns("fake-job-1")
-			existingScript1.PathReturns("path/to/script1")
-			existingScript1.ExistsReturns(true)
-
-			createFakeJob("fake-job-2")
-			existingScript2 = &fakescript.FakeScript{}
-			existingScript2.TagReturns("fake-job-2")
-			existingScript2.PathReturns("path/to/script2")
-			existingScript2.ExistsReturns(true)
-
-			fakeJobScriptProvider.NewScriptStub = func(jobName string, relativePath string) boshscript.Script {
-				if jobName == "fake-job-1" {
-					return existingScript1
-				} else if jobName == "fake-job-2" {
-					return existingScript2
+					if jobName == "fake-job-1" {
+						return script1
+					} else if jobName == "fake-job-2" {
+						return script2
+					} else {
+						panic("Non-matching script created")
+					}
 				}
-				return nil
-			}
+
+				parallelScript.RunReturns(nil)
+
+				results, err := act()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(results).To(Equal(map[string]string{}))
+
+				Expect(parallelScript.RunCallCount()).To(Equal(1))
+
+				scriptName, scripts := fakeJobScriptProvider.NewParallelScriptArgsForCall(0)
+				Expect(scriptName).To(Equal("run-me"))
+				Expect(scripts).To(Equal([]boshscript.Script{script1, script2}))
+			})
+
+			It("returns an error when parallel script fails", func() {
+				parallelScript.RunReturns(errors.New("fake-error"))
+
+				results, err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-error"))
+				Expect(results).To(Equal(map[string]string{}))
+			})
 		})
 
-		It("is executed and both scripts pass", func() {
-			existingScript1.RunReturns(nil)
-			existingScript2.RunReturns(nil)
+		Context("when current spec cannot be retrieved", func() {
+			It("without current spec", func() {
+				specService.GetErr = errors.New("fake-spec-get-error")
 
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "executed"}))
-		})
-
-		It("returns two failed statuses when both scripts fail", func() {
-			existingScript1.RunReturns(errors.New("fake-error"))
-			existingScript2.RunReturns(errors.New("fake-error"))
-
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).Should(ContainSubstring("2 of 2 run-me script(s) failed. Failed Jobs:"))
-			Expect(err.Error()).Should(ContainSubstring("fake-job-1"))
-			Expect(err.Error()).Should(ContainSubstring("fake-job-2"))
-			Expect(err.Error()).ShouldNot(ContainSubstring("Successful Jobs"))
-
-			Expect(results).To(Equal(map[string]string{"fake-job-1": "failed", "fake-job-2": "failed"}))
-		})
-
-		It("returns one failed status when first script fail and second script pass, and when one fails continue waiting for unfinished tasks", func() {
-			existingScript1.RunStub = func() error {
-				time.Sleep(2 * time.Second)
-				return errors.New("fake-error")
-			}
-			existingScript2.RunReturns(nil)
-
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("1 of 2 run-me script(s) failed. Failed Jobs: fake-job-1. Successful Jobs: fake-job-2."))
-			Expect(results).To(Equal(map[string]string{"fake-job-1": "failed", "fake-job-2": "executed"}))
-		})
-
-		It("returns one failed status when first script pass and second script fail", func() {
-			existingScript1.RunReturns(nil)
-			existingScript2.RunReturns(errors.New("fake-error"))
-
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("1 of 2 run-me script(s) failed. Failed Jobs: fake-job-2. Successful Jobs: fake-job-1."))
-			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "failed"}))
-		})
-
-		It("wait for scripts to finish", func() {
-			existingScript1.RunStub = func() error {
-				time.Sleep(2 * time.Second)
-				return nil
-			}
-			existingScript2.RunReturns(nil)
-
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "executed"}))
-		})
-	})
-
-	Context("when script does not exist", func() {
-		var nonExistingScript *fakescript.FakeScript
-
-		BeforeEach(func() {
-			nonExistingScript = &fakescript.FakeScript{}
-			nonExistingScript.ExistsReturns(false)
-			fakeJobScriptProvider.NewScriptReturns(nonExistingScript)
-		})
-
-		It("does not return a status for that script", func() {
-			results, err := runScriptAction.Run(scriptName, options)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(results).To(Equal(map[string]string{}))
+				results, err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-spec-get-error"))
+				Expect(results).To(Equal(map[string]string{}))
+			})
 		})
 	})
 })

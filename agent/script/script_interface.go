@@ -9,6 +9,7 @@ import (
 type JobScriptProvider interface {
 	NewScript(jobName string, scriptName string) Script
 	NewDrainScript(jobName string, params boshdrain.ScriptParams) Script
+	NewParallelScript(scriptName string, scripts []Script) Script
 }
 
 //go:generate counterfeiter . Script
