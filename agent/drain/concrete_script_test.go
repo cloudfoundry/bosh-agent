@@ -19,6 +19,7 @@ var _ = Describe("ConcreteScript", func() {
 	var (
 		fs          *fakesys.FakeFileSystem
 		runner      *fakesys.FakeCmdRunner
+		params      ScriptParams
 		fakeClock   *fakeaction.FakeClock
 		script      ConcreteScript
 		exampleSpec func() applyspec.V1ApplySpec
@@ -27,15 +28,42 @@ var _ = Describe("ConcreteScript", func() {
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
+		params = &fakes.FakeScriptParams{}
 		fakeClock = &fakeaction.FakeClock{}
-		script = NewConcreteScript(fs, runner, "/fake/script", fakeClock)
+	})
+
+	JustBeforeEach(func() {
+		script = NewConcreteScript(fs, runner, "my-tag", "/fake/script", params, fakeClock)
+	})
+
+	Describe("Tag", func() {
+		It("returns path", func() {
+			Expect(script.Tag()).To(Equal("my-tag"))
+		})
+	})
+
+	Describe("Path", func() {
+		It("returns path", func() {
+			Expect(script.Path()).To(Equal("/fake/script"))
+		})
+	})
+
+	Describe("Params", func() {
+		It("returns params", func() {
+			Expect(script.Params()).To(Equal(params))
+		})
+	})
+
+	Describe("Exists", func() {
+		It("returns bool", func() {
+			Expect(script.Exists()).To(BeFalse())
+
+			fs.WriteFile("/fake/script", []byte{})
+			Expect(script.Exists()).To(BeTrue())
+		})
 	})
 
 	Describe("Run", func() {
-		var (
-			params ScriptParams
-		)
-
 		BeforeEach(func() {
 			oldSpec := exampleSpec()
 			newSpec := exampleSpec()
@@ -55,7 +83,7 @@ var _ = Describe("ConcreteScript", func() {
 			commandResult := fakesys.FakeCmdResult{Stdout: "1"}
 			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			err := script.Run(params)
+			err := script.Run()
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedCmd := boshsys.Command{
@@ -76,7 +104,7 @@ var _ = Describe("ConcreteScript", func() {
 			commandResult := fakesys.FakeCmdResult{Stdout: "12"}
 			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			err := script.Run(params)
+			err := script.Run()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fakeClock.SleepCallCount()).To(Equal(1))
 			Expect(fakeClock.SleepArgsForCall(0)).To(Equal(12 * time.Second))
@@ -88,7 +116,7 @@ var _ = Describe("ConcreteScript", func() {
 			runner.AddCmdResult("/fake/script job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "-5"})
 			runner.AddCmdResult("/fake/script job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: "0"})
 
-			err := script.Run(params)
+			err := script.Run()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fakeClock.SleepCallCount()).To(Equal(4))
 			Expect(fakeClock.SleepArgsForCall(0)).To(Equal(5 * time.Second))
@@ -101,7 +129,7 @@ var _ = Describe("ConcreteScript", func() {
 			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", fakesys.FakeCmdResult{Stdout: "-56\n"})
 			runner.AddCmdResult("/fake/script job_check_status hash_unchanged", fakesys.FakeCmdResult{Stdout: " 0  \t\n"})
 
-			err := script.Run(params)
+			err := script.Run()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fakeClock.SleepCallCount()).To(Equal(2))
 			Expect(fakeClock.SleepArgsForCall(0)).To(Equal(56 * time.Second))
@@ -112,7 +140,7 @@ var _ = Describe("ConcreteScript", func() {
 			commandResult := fakesys.FakeCmdResult{Stdout: "hello!"}
 			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			err := script.Run(params)
+			err := script.Run()
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -120,13 +148,19 @@ var _ = Describe("ConcreteScript", func() {
 			commandResult := fakesys.FakeCmdResult{Error: errors.New("woops")}
 			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 
-			err := script.Run(params)
+			err := script.Run()
 			Expect(err).To(HaveOccurred())
 		})
 
 		Describe("job state", func() {
+			BeforeEach(func() {
+				commandResult := fakesys.FakeCmdResult{Stdout: "1"}
+				runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
+			})
+
 			It("sets the BOSH_JOB_STATE env variable with info from current apply spec", func() {
-				script.Run(params)
+				err := script.Run()
+				Expect(err).ToNot(HaveOccurred())
 
 				Expect(len(runner.RunComplexCommands)).To(Equal(1))
 
@@ -134,58 +168,71 @@ var _ = Describe("ConcreteScript", func() {
 				Expect(env["BOSH_JOB_STATE"]).To(Equal("{\"persistent_disk\":42}"))
 			})
 
-			It("returns error when cannot get the job state and does not run drain script", func() {
-				fakeParams := &fakes.FakeScriptParams{}
-				fakeParams.JobStateReturns("", errors.New("fake-job-state-err"))
+			Context("when cannot get the job state", func() {
+				BeforeEach(func() {
+					fakeParams := &fakes.FakeScriptParams{}
+					fakeParams.JobStateReturns("", errors.New("fake-job-state-err"))
+					params = fakeParams
+				})
 
-				err := script.Run(fakeParams)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-job-state-err"))
+				It("returns error  and does not run drain script", func() {
+					err := script.Run()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-job-state-err"))
 
-				Expect(len(runner.RunComplexCommands)).To(Equal(0))
+					Expect(len(runner.RunComplexCommands)).To(Equal(0))
+				})
 			})
 		})
 
 		Describe("job next state", func() {
-			It("sets the BOSH_JOB_NEXT_STATE env variable if job next state is present", func() {
-				script.Run(params)
-
-				Expect(len(runner.RunComplexCommands)).To(Equal(1))
-
-				env := runner.RunComplexCommands[0].Env
-				Expect(env["BOSH_JOB_NEXT_STATE"]).To(Equal("{\"persistent_disk\":42}"))
+			BeforeEach(func() {
+				commandResult := fakesys.FakeCmdResult{Stdout: "1"}
+				runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 			})
 
-			It("does not set the BOSH_JOB_NEXT_STATE env variable if job next state is empty", func() {
-				params = NewShutdownParams(exampleSpec(), nil)
-				script.Run(params)
+			Context("when job next state is present", func() {
+				It("sets the BOSH_JOB_NEXT_STATE env variable", func() {
+					err := script.Run()
+					Expect(err).ToNot(HaveOccurred())
 
-				Expect(len(runner.RunComplexCommands)).To(Equal(1))
-				Expect(runner.RunComplexCommands[0].Env).ToNot(HaveKey("BOSH_JOB_NEXT_STATE"))
+					Expect(len(runner.RunComplexCommands)).To(Equal(1))
+					Expect(runner.RunComplexCommands[0].Env["BOSH_JOB_NEXT_STATE"]).To(Equal("{\"persistent_disk\":42}"))
+				})
 			})
 
-			It("returns error when cannot get the job next state and does not run drain script", func() {
-				fakeParams := &fakes.FakeScriptParams{}
-				fakeParams.JobNextStateReturns("", errors.New("fake-job-next-state-err"))
+			Context("when job next state is empty", func() {
+				BeforeEach(func() {
+					params = NewShutdownParams(exampleSpec(), nil)
 
-				err := script.Run(fakeParams)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-job-next-state-err"))
+					commandResult := fakesys.FakeCmdResult{Stdout: "1"}
+					runner.AddCmdResult("/fake/script job_shutdown hash_unchanged", commandResult)
+				})
 
-				Expect(len(runner.RunComplexCommands)).To(Equal(0))
+				It("does not set the BOSH_JOB_NEXT_STATE env variable", func() {
+					err := script.Run()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(len(runner.RunComplexCommands)).To(Equal(1))
+					Expect(runner.RunComplexCommands[0].Env).ToNot(HaveKey("BOSH_JOB_NEXT_STATE"))
+				})
 			})
-		})
-	})
 
-	Describe("Exists", func() {
-		It("returns bool", func() {
-			commandResult := fakesys.FakeCmdResult{Stdout: "1"}
-			runner.AddCmdResult("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
+			Context("when cannot get the job next state", func() {
+				BeforeEach(func() {
+					fakeParams := &fakes.FakeScriptParams{}
+					fakeParams.JobNextStateReturns("", errors.New("fake-job-next-state-err"))
+					params = fakeParams
+				})
 
-			Expect(script.Exists()).To(BeFalse())
+				It("returns error and does not run drain script", func() {
+					err := script.Run()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-job-next-state-err"))
 
-			fs.WriteFile("/fake/script", []byte{})
-			Expect(script.Exists()).To(BeTrue())
+					Expect(len(runner.RunComplexCommands)).To(Equal(0))
+				})
+			})
 		})
 	})
 

@@ -8,24 +8,26 @@ import (
 )
 
 type FakeScriptProvider struct {
-	NewScriptStub        func(templateName string) drain.Script
+	NewScriptStub        func(jobName string, params drain.ScriptParams) drain.Script
 	newScriptMutex       sync.RWMutex
 	newScriptArgsForCall []struct {
-		templateName string
+		jobName string
+		params  drain.ScriptParams
 	}
 	newScriptReturns struct {
 		result1 drain.Script
 	}
 }
 
-func (fake *FakeScriptProvider) NewScript(templateName string) drain.Script {
+func (fake *FakeScriptProvider) NewScript(jobName string, params drain.ScriptParams) drain.Script {
 	fake.newScriptMutex.Lock()
 	fake.newScriptArgsForCall = append(fake.newScriptArgsForCall, struct {
-		templateName string
-	}{templateName})
+		jobName string
+		params  drain.ScriptParams
+	}{jobName, params})
 	fake.newScriptMutex.Unlock()
 	if fake.NewScriptStub != nil {
-		return fake.NewScriptStub(templateName)
+		return fake.NewScriptStub(jobName, params)
 	} else {
 		return fake.newScriptReturns.result1
 	}
@@ -37,10 +39,10 @@ func (fake *FakeScriptProvider) NewScriptCallCount() int {
 	return len(fake.newScriptArgsForCall)
 }
 
-func (fake *FakeScriptProvider) NewScriptArgsForCall(i int) string {
+func (fake *FakeScriptProvider) NewScriptArgsForCall(i int) (string, drain.ScriptParams) {
 	fake.newScriptMutex.RLock()
 	defer fake.newScriptMutex.RUnlock()
-	return fake.newScriptArgsForCall[i].templateName
+	return fake.newScriptArgsForCall[i].jobName, fake.newScriptArgsForCall[i].params
 }
 
 func (fake *FakeScriptProvider) NewScriptReturns(result1 drain.Script) {

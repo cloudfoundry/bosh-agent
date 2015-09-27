@@ -11,31 +11,45 @@ import (
 )
 
 type ConcreteScript struct {
-	fs          boshsys.FileSystem
-	runner      boshsys.CmdRunner
-	path        string
+	fs     boshsys.FileSystem
+	runner boshsys.CmdRunner
+
+	tag    string
+	path   string
+	params ScriptParams
+
 	timeService clock.Clock
 }
 
 func NewConcreteScript(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
+	tag string,
 	path string,
+	params ScriptParams,
 	timeService clock.Clock,
 ) ConcreteScript {
 	return ConcreteScript{
-		fs:          fs,
-		runner:      runner,
-		path:        path,
+		fs:     fs,
+		runner: runner,
+
+		tag:    tag,
+		path:   path,
+		params: params,
+
 		timeService: timeService,
 	}
 }
 
-func (s ConcreteScript) Path() string { return s.path }
+func (s ConcreteScript) Tag() string          { return s.tag }
+func (s ConcreteScript) Path() string         { return s.path }
+func (s ConcreteScript) Params() ScriptParams { return s.params }
 
 func (s ConcreteScript) Exists() bool { return s.fs.FileExists(s.path) }
 
-func (s ConcreteScript) Run(params ScriptParams) error {
+func (s ConcreteScript) Run() error {
+	params := s.params
+
 	for {
 		value, err := s.runOnce(params)
 		if err != nil {

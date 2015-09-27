@@ -5,33 +5,29 @@ import (
 )
 
 type FakeScript struct {
-	Name         string
-	ExistsBool   bool
+	tag        string
+	Params     drain.ScriptParams
+	ExistsBool bool
+
 	RunCallCount int
 	DidRun       bool
 	RunError     error
-	RunStub      func(params drain.ScriptParams) error
-	RunParams    []drain.ScriptParams
+	RunStub      func() error
 }
 
-func NewFakeScript() *FakeScript {
-	return &FakeScript{ExistsBool: true}
+func NewFakeScript(tag string) *FakeScript {
+	return &FakeScript{tag: tag, ExistsBool: true}
 }
 
-func (script *FakeScript) Exists() bool {
-	return script.ExistsBool
-}
+func (s *FakeScript) Tag() string  { return s.tag }
+func (s *FakeScript) Path() string { return "/fake/path" }
+func (s *FakeScript) Exists() bool { return s.ExistsBool }
 
-func (script *FakeScript) Path() string {
-	return "/fake/path"
-}
-
-func (script *FakeScript) Run(params drain.ScriptParams) error {
-	script.DidRun = true
-	script.RunParams = append(script.RunParams, params)
-	script.RunCallCount++
-	if script.RunStub != nil {
-		return script.RunStub(params)
+func (s *FakeScript) Run() error {
+	s.DidRun = true
+	s.RunCallCount++
+	if s.RunStub != nil {
+		return s.RunStub()
 	}
-	return script.RunError
+	return s.RunError
 }

@@ -73,7 +73,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		return 0, bosherr.WrapError(err, "Unmonitoring services")
 	}
 
-	drainScripts := a.findDrainScripts(currentSpec)
+	drainScripts := a.findDrainScripts(currentSpec, params)
 
 	a.logger.Debug(a.logTag, "Will run '%d' drain scripts in parallel", len(drainScripts))
 
@@ -81,7 +81,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 
 	for _, drainScript := range drainScripts {
 		drainScript := drainScript
-		go func() { resultChan <- drainScript.Run(params) }()
+		go func() { resultChan <- drainScript.Run() }()
 	}
 
 	var errs []error
@@ -131,11 +131,11 @@ func (a DrainAction) determineParams(drainType DrainType, currentSpec boshas.V1A
 	return params, nil
 }
 
-func (a DrainAction) findDrainScripts(currentSpec boshas.V1ApplySpec) []boshdrain.Script {
+func (a DrainAction) findDrainScripts(currentSpec boshas.V1ApplySpec, params boshdrain.ScriptParams) []boshdrain.Script {
 	var scripts []boshdrain.Script
 
 	for _, job := range currentSpec.Jobs() {
-		script := a.drainScriptProvider.NewScript(job.BundleName())
+		script := a.drainScriptProvider.NewScript(job.BundleName(), params)
 		if script.Exists() {
 			a.logger.Debug(a.logTag, "Found drain script in job '%s'", job.BundleName())
 			scripts = append(scripts, script)

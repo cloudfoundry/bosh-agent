@@ -29,7 +29,7 @@ func NewConcreteScriptProvider(
 	}
 }
 
-func (p ConcreteScriptProvider) NewScript(templateName string) Script {
-	scriptPath := filepath.Join(p.dirProvider.JobsDir(), templateName, "bin", "drain")
-	return NewConcreteScript(p.fs, p.cmdRunner, scriptPath, p.timeService)
+func (p ConcreteScriptProvider) NewScript(jobName string, params ScriptParams) Script {
+	path := filepath.Join(p.dirProvider.JobsDir(), jobName, "bin", "drain")
+	return NewConcreteScript(p.fs, p.cmdRunner, jobName, path, params, p.timeService)
 }

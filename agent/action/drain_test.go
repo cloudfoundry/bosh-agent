@@ -46,13 +46,14 @@ func init() {
 		})
 
 		BeforeEach(func() {
-			drainScriptProvider.NewScriptStub = func(jobTemplate string) boshdrain.Script {
-				_, exists := fakeScripts[jobTemplate]
+			drainScriptProvider.NewScriptStub = func(jobName string, params boshdrain.ScriptParams) boshdrain.Script {
+				_, exists := fakeScripts[jobName]
 				if !exists {
-					fakeScript := fakedrain.NewFakeScript()
-					fakeScripts[jobTemplate] = fakeScript
+					fakeScript := fakedrain.NewFakeScript(jobName)
+					fakeScript.Params = params
+					fakeScripts[jobName] = fakeScript
 				}
-				return fakeScripts[jobTemplate]
+				return fakeScripts[jobName]
 			}
 		})
 
@@ -109,16 +110,15 @@ func init() {
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(0))
 
-								Expect(drainScriptProvider.NewScriptArgsForCall(0)).To(Equal("foo"))
+								jobName, params := drainScriptProvider.NewScriptArgsForCall(0)
+								Expect(jobName).To(Equal("foo"))
+								Expect(params).To(Equal(boshdrain.NewUpdateParams(currentSpec, newSpec)))
 								Expect(fakeScripts["foo"].DidRun).To(BeTrue())
-
-								params := fakeScripts["foo"].RunParams
-								Expect(params[0]).To(Equal(boshdrain.NewUpdateParams(currentSpec, newSpec)))
 							})
 
 							Context("when drain script runs and errs", func() {
 								BeforeEach(func() {
-									failingScript := fakedrain.NewFakeScript()
+									failingScript := fakedrain.NewFakeScript("foo")
 									failingScript.RunError = errors.New("fake-drain-run-error")
 									fakeScripts["foo"] = failingScript
 								})
@@ -142,26 +142,24 @@ func init() {
 								waitGroup := &sync.WaitGroup{}
 								waitGroup.Add(2)
 
-								deadlockUnlessConcurrent := func(boshdrain.ScriptParams) error {
+								deadlockUnlessConcurrent := func() error {
 									waitGroup.Done()
 									waitGroup.Wait()
 									return nil
 								}
 
-								script1 := fakedrain.NewFakeScript()
-								script1.Name = "foo"
+								script1 := fakedrain.NewFakeScript("foo")
 								script1.RunStub = deadlockUnlessConcurrent
 								fakeScripts["foo"] = script1
 
-								script2 := fakedrain.NewFakeScript()
-								script2.Name = "bar"
+								script2 := fakedrain.NewFakeScript("bar")
 								script2.RunStub = deadlockUnlessConcurrent
 								fakeScripts["bar"] = script2
 
 								value, err := act()
-
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(0))
+
 								Expect(script1.DidRun).To(BeTrue())
 								Expect(script2.DidRun).To(BeTrue())
 
@@ -169,26 +167,26 @@ func init() {
 							})
 
 							It("reports an error when any drain script fails", func() {
-								failingScript := fakedrain.NewFakeScript()
+								failingScript := fakedrain.NewFakeScript("foo")
 								failingScript.RunError = errors.New("fake-drain-run-error")
 								fakeScripts["foo"] = failingScript
 
-								workingScript := fakedrain.NewFakeScript()
+								workingScript := fakedrain.NewFakeScript("bar")
 								fakeScripts["bar"] = workingScript
 
 								value, err := act()
-
 								Expect(err).To(HaveOccurred())
 								Expect(value).To(Equal(0))
+
 								Expect(failingScript.DidRun).To(BeTrue())
 								Expect(workingScript.DidRun).To(BeTrue())
 							})
 
 							It("reports an success if all drain scripts succeed", func() {
 								value, err := act()
-
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(0))
+
 								Expect(fakeScripts["foo"].DidRun).To(BeTrue())
 								Expect(fakeScripts["bar"].DidRun).To(BeTrue())
 							})
@@ -196,7 +194,7 @@ func init() {
 
 						Context("when drain script does not exist", func() {
 							BeforeEach(func() {
-								missingScript := fakedrain.NewFakeScript()
+								missingScript := fakedrain.NewFakeScript("foo")
 								missingScript.ExistsBool = false
 								fakeScripts["foo"] = missingScript
 							})
@@ -283,9 +281,7 @@ func init() {
 								Expect(value).To(Equal(0))
 
 								Expect(fakeScripts["foo"].DidRun).To(BeTrue())
-
-								params := fakeScripts["foo"].RunParams
-								Expect(params[0]).To(Equal(boshdrain.NewShutdownParams(currentSpec, nil)))
+								Expect(fakeScripts["foo"].Params).To(Equal(boshdrain.NewShutdownParams(currentSpec, nil)))
 							})
 
 							It("runs drain script with job_shutdown param passing in first apply spec", func() {
@@ -297,14 +293,12 @@ func init() {
 								Expect(value).To(Equal(0))
 
 								Expect(fakeScripts["foo"].DidRun).To(BeTrue())
-
-								params := fakeScripts["foo"].RunParams
-								Expect(params[0]).To(Equal(boshdrain.NewShutdownParams(currentSpec, &newSpec)))
+								Expect(fakeScripts["foo"].Params).To(Equal(boshdrain.NewShutdownParams(currentSpec, &newSpec)))
 							})
 
 							Context("when drain script runs and errs", func() {
 								BeforeEach(func() {
-									failingScript := fakedrain.NewFakeScript()
+									failingScript := fakedrain.NewFakeScript("foo")
 									failingScript.RunError = errors.New("fake-drain-run-error")
 									fakeScripts["foo"] = failingScript
 								})
@@ -320,7 +314,7 @@ func init() {
 
 						Context("when drain script does not exist", func() {
 							BeforeEach(func() {
-								missingScript := fakedrain.NewFakeScript()
+								missingScript := fakedrain.NewFakeScript("foo")
 								missingScript.ExistsBool = false
 								fakeScripts["foo"] = missingScript
 							})
@@ -377,7 +371,6 @@ func init() {
 
 			It("returns an error", func() {
 				value, err := act()
-
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("Unexpected call with drain type 'status'"))
 				Expect(value).To(Equal(0))
