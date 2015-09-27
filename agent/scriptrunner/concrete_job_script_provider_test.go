@@ -9,19 +9,15 @@ import (
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
-func init() {
-	Describe("JobScriptProvider", func() {
-		It("produces script paths relative to the base directory", func() {
+var _ = Describe("ConcreteJobScriptProvider", func() {
+	It("produces script paths relative to the base directory", func() {
+		runner := fakesys.NewFakeCmdRunner()
+		fs := fakesys.NewFakeFileSystem()
+		dirProvider := boshdir.NewProvider("/the/base/dir")
 
-			runner := fakesys.NewFakeCmdRunner()
-			fs := fakesys.NewFakeFileSystem()
-			dirProvider := boshdir.NewProvider("/the/base/dir")
-
-			scriptProvider := scriptrunner.NewJobScriptProvider(runner, fs, dirProvider)
-			script := scriptProvider.Get("myjob", "the-best-hook-ever")
-
-			Expect(script.Path()).To(Equal("/the/base/dir/jobs/myjob/bin/the-best-hook-ever"))
-			Expect(script.Tag()).To(Equal("myjob"))
-		})
+		scriptProvider := scriptrunner.NewConcreteJobScriptProvider(runner, fs, dirProvider)
+		scriptResult := scriptProvider.Get("myjob", "the-best-hook-ever").Run()
+		Expect(scriptResult.Tag).To(Equal("myjob"))
+		Expect(scriptResult.ScriptPath).To(Equal("/the/base/dir/jobs/myjob/bin/the-best-hook-ever"))
 	})
-}
+})

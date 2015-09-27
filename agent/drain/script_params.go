@@ -1,8 +1,9 @@
 package drain
 
 import (
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"sort"
+
+	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 )
 
 //go:generate counterfeiter . ScriptParams

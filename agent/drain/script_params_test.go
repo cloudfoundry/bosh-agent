@@ -9,8 +9,14 @@ import (
 )
 
 var _ = Describe("NewShutdownParams", func() {
-	oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
-	newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
+	var (
+		oldSpec, newSpec boshas.V1ApplySpec
+	)
+
+	BeforeEach(func() {
+		oldSpec = boshas.V1ApplySpec{PersistentDisk: 200}
+		newSpec = boshas.V1ApplySpec{PersistentDisk: 301}
+	})
 
 	Describe("JobState", func() {
 		It("returns JSON serialized current spec that only includes persistent disk", func() {
@@ -36,8 +42,14 @@ var _ = Describe("NewShutdownParams", func() {
 })
 
 var _ = Describe("ToStatusParams", func() {
-	oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
-	newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
+	var (
+		oldSpec, newSpec boshas.V1ApplySpec
+	)
+
+	BeforeEach(func() {
+		oldSpec = boshas.V1ApplySpec{PersistentDisk: 200}
+		newSpec = boshas.V1ApplySpec{PersistentDisk: 301}
+	})
 
 	Describe("JobState", func() {
 		It("returns JSON serialized current spec that only includes persistent disk", func() {

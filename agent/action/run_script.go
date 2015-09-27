@@ -52,7 +52,7 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 
 	a.logger.Info(a.logTag, "Will run script '%s' in '%d' jobs in parallel", scriptName, len(scripts))
 
-	resultChan := make(chan scriptrunner.RunScriptResult)
+	resultChan := make(chan scriptrunner.ScriptResult)
 
 	for _, script := range scripts {
 		script := script

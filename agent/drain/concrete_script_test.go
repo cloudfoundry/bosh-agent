@@ -2,6 +2,7 @@ package drain_test
 
 import (
 	"errors"
+	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
@@ -12,15 +13,15 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/drain/fakes"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
-	"time"
 )
 
 var _ = Describe("ConcreteScript", func() {
 	var (
-		fs        *fakesys.FakeFileSystem
-		runner    *fakesys.FakeCmdRunner
-		fakeClock *fakeaction.FakeClock
-		script    ConcreteScript
+		fs          *fakesys.FakeFileSystem
+		runner      *fakesys.FakeCmdRunner
+		fakeClock   *fakeaction.FakeClock
+		script      ConcreteScript
+		exampleSpec func() applyspec.V1ApplySpec
 	)
 
 	BeforeEach(func() {
@@ -187,43 +188,43 @@ var _ = Describe("ConcreteScript", func() {
 			Expect(script.Exists()).To(BeTrue())
 		})
 	})
-})
 
-func exampleSpec() applyspec.V1ApplySpec {
-	jobName := "foojob"
-	return applyspec.V1ApplySpec{
-		Deployment:        "fake_deployment",
-		ConfigurationHash: "fake_deployment_config_hash",
-		PersistentDisk:    42,
-		JobSpec: applyspec.JobSpec{
-			Name:        &jobName,
-			Release:     "fakerelease",
-			Template:    "jobtemplate",
-			Version:     "jobtemplate_version",
-			Sha1:        "jobtemplate_sha1",
-			BlobstoreID: "jobtemplate_blobid",
-			JobTemplateSpecs: []applyspec.JobTemplateSpec{
-				applyspec.JobTemplateSpec{
-					Name:        "jobtemplate",
-					Version:     "jobtemplate_version",
-					Sha1:        "jobtemplate_sha1",
-					BlobstoreID: "jobtemplate_blobid",
+	exampleSpec = func() applyspec.V1ApplySpec {
+		jobName := "foojob"
+		return applyspec.V1ApplySpec{
+			Deployment:        "fake_deployment",
+			ConfigurationHash: "fake_deployment_config_hash",
+			PersistentDisk:    42,
+			JobSpec: applyspec.JobSpec{
+				Name:        &jobName,
+				Release:     "fakerelease",
+				Template:    "jobtemplate",
+				Version:     "jobtemplate_version",
+				Sha1:        "jobtemplate_sha1",
+				BlobstoreID: "jobtemplate_blobid",
+				JobTemplateSpecs: []applyspec.JobTemplateSpec{
+					applyspec.JobTemplateSpec{
+						Name:        "jobtemplate",
+						Version:     "jobtemplate_version",
+						Sha1:        "jobtemplate_sha1",
+						BlobstoreID: "jobtemplate_blobid",
+					},
 				},
 			},
-		},
-		PackageSpecs: map[string]applyspec.PackageSpec{
-			"foo": applyspec.PackageSpec{
-				Name:        "foo",
-				Version:     "foo_version",
-				Sha1:        "foo_sha1",
-				BlobstoreID: "foo_blobid",
+			PackageSpecs: map[string]applyspec.PackageSpec{
+				"foo": applyspec.PackageSpec{
+					Name:        "foo",
+					Version:     "foo_version",
+					Sha1:        "foo_sha1",
+					BlobstoreID: "foo_blobid",
+				},
+				"bar": applyspec.PackageSpec{
+					Name:        "bar",
+					Version:     "bar_version",
+					Sha1:        "bar_sha1",
+					BlobstoreID: "bar_blobid",
+				},
 			},
-			"bar": applyspec.PackageSpec{
-				Name:        "bar",
-				Version:     "bar_version",
-				Sha1:        "bar_sha1",
-				BlobstoreID: "bar_blobid",
-			},
-		},
+		}
 	}
-}
+})

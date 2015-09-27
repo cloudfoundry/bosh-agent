@@ -10,18 +10,14 @@ import (
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("new drain script", func() {
+var _ = Describe("Testing with Ginkgo", func() {
+	It("new drain script", func() {
+		runner := fakesys.NewFakeCmdRunner()
+		fs := fakesys.NewFakeFileSystem()
+		dirProvider := boshdir.NewProvider("/var/vcap")
 
-			runner := fakesys.NewFakeCmdRunner()
-			fs := fakesys.NewFakeFileSystem()
-			dirProvider := boshdir.NewProvider("/var/vcap")
-
-			scriptProvider := NewConcreteScriptProvider(runner, fs, dirProvider, &fakes.FakeClock{})
-			script := scriptProvider.NewScript("foo")
-
-			Expect(script.Path()).To(Equal("/var/vcap/jobs/foo/bin/drain"))
-		})
+		scriptProvider := NewConcreteScriptProvider(runner, fs, dirProvider, &fakes.FakeClock{})
+		script := scriptProvider.NewScript("foo")
+		Expect(script.Path()).To(Equal("/var/vcap/jobs/foo/bin/drain"))
 	})
-}
+})

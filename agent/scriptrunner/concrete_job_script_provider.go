@@ -1,38 +1,42 @@
 package scriptrunner
 
 import (
+	"fmt"
 	"path/filepath"
 
-	"fmt"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 type ConcreteJobScriptProvider struct {
-	cmdRunner   system.CmdRunner
-	fs          system.FileSystem
-	dirProvider directories.Provider
+	cmdRunner   boshsys.CmdRunner
+	fs          boshsys.FileSystem
+	dirProvider boshdir.Provider
 }
 
-func NewJobScriptProvider(
-	cmdRunner system.CmdRunner,
-	fs system.FileSystem,
-	dirProvider directories.Provider,
-) (provider ConcreteJobScriptProvider) {
-	provider.cmdRunner = cmdRunner
-	provider.fs = fs
-	provider.dirProvider = dirProvider
-	return
+func NewConcreteJobScriptProvider(
+	cmdRunner boshsys.CmdRunner,
+	fs boshsys.FileSystem,
+	dirProvider boshdir.Provider,
+) ConcreteJobScriptProvider {
+	return ConcreteJobScriptProvider{
+		cmdRunner:   cmdRunner,
+		fs:          fs,
+		dirProvider: dirProvider,
+	}
 }
 
-func (p ConcreteJobScriptProvider) Get(jobName string, scriptName string) (script Script) {
+func (p ConcreteJobScriptProvider) Get(jobName string, scriptName string) Script {
 	stdoutLogFilename := fmt.Sprintf("%s.stdout.log", scriptName)
 	stderrLogFilename := fmt.Sprintf("%s.stderr.log", scriptName)
+
 	return NewScript(
-		jobName,
 		p.fs,
 		p.cmdRunner,
+
+		jobName,
 		filepath.Join(p.dirProvider.JobBinDir(jobName), scriptName),
+
 		filepath.Join(p.dirProvider.LogsDir(), jobName, stdoutLogFilename),
 		filepath.Join(p.dirProvider.LogsDir(), jobName, stderrLogFilename),
 	)

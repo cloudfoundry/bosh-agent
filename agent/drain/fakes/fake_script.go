@@ -14,9 +14,8 @@ type FakeScript struct {
 	RunParams    []drain.ScriptParams
 }
 
-func NewFakeScript() (script *FakeScript) {
-	script = &FakeScript{ExistsBool: true}
-	return
+func NewFakeScript() *FakeScript {
+	return &FakeScript{ExistsBool: true}
 }
 
 func (script *FakeScript) Exists() bool {

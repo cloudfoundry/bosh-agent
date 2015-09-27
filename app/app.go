@@ -173,7 +173,7 @@ func (app *app) Setup(args []string) error {
 		timeService,
 	)
 
-	jobScriptProvider := boshscript.NewJobScriptProvider(
+	jobScriptProvider := boshscript.NewConcreteJobScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		app.platform.GetDirProvider(),

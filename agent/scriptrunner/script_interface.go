@@ -1,10 +1,21 @@
 package scriptrunner
 
+//go:generate counterfeiter . JobScriptProvider
+
+type JobScriptProvider interface {
+	Get(jobName string, relativePath string) Script
+}
+
 //go:generate counterfeiter . Script
 
 type Script interface {
-	Tag() string
-	Path() string
 	Exists() bool
-	Run() RunScriptResult
+	Run() ScriptResult
+}
+
+type ScriptResult struct {
+	Tag        string
+	ScriptPath string
+
+	Error error
 }

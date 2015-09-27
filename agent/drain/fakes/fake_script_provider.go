@@ -8,7 +8,7 @@ import (
 )
 
 type FakeScriptProvider struct {
-	NewScriptStub        func(templateName string) (drainScript drain.Script)
+	NewScriptStub        func(templateName string) drain.Script
 	newScriptMutex       sync.RWMutex
 	newScriptArgsForCall []struct {
 		templateName string
@@ -18,7 +18,7 @@ type FakeScriptProvider struct {
 	}
 }
 
-func (fake *FakeScriptProvider) NewScript(templateName string) (drainScript drain.Script) {
+func (fake *FakeScriptProvider) NewScript(templateName string) drain.Script {
 	fake.newScriptMutex.Lock()
 	fake.newScriptArgsForCall = append(fake.newScriptArgsForCall, struct {
 		templateName string

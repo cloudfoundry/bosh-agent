@@ -1,17 +1,18 @@
 package action_test
 
 import (
+	"errors"
+	"time"
+
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	"errors"
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	"time"
 )
 
 var _ = Describe("RunScript", func() {
@@ -25,7 +26,8 @@ var _ = Describe("RunScript", func() {
 	)
 
 	createFakeJob := func(jobName string) {
-		specService.Spec.JobSpec.JobTemplateSpecs = append(specService.Spec.JobSpec.JobTemplateSpecs, applyspec.JobTemplateSpec{Name: jobName})
+		spec := applyspec.JobTemplateSpec{Name: jobName}
+		specService.Spec.JobSpec.JobTemplateSpecs = append(specService.Spec.JobSpec.JobTemplateSpecs, spec)
 	}
 
 	BeforeEach(func() {
@@ -56,18 +58,17 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("is executed", func() {
-			existingScript.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil})
-			results, err := runScriptAction.Run(scriptName, options)
+			existingScript.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil})
 
+			results, err := runScriptAction.Run(scriptName, options)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed"}))
 		})
 
 		It("gives an error when script fails", func() {
-			existingScript.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")})
+			existingScript.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")})
 
 			results, err := runScriptAction.Run(scriptName, options)
-
 			Expect(err).To(HaveOccurred())
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "failed"}))
 		})
@@ -96,21 +97,19 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("is executed and both scripts pass", func() {
-			existingScript1.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil})
-			existingScript2.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: nil})
+			existingScript1.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil})
+			existingScript2.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: nil})
 
 			results, err := runScriptAction.Run(scriptName, options)
-
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "executed"}))
 		})
 
 		It("returns two failed statuses when both scripts fail", func() {
-			existingScript1.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")})
-			existingScript2.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: errors.New("fake-error")})
+			existingScript1.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")})
+			existingScript2.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: errors.New("fake-error")})
 
 			results, err := runScriptAction.Run(scriptName, options)
-
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring("2 of 2 run-me scripts failed. Failed Jobs:"))
 			Expect(err.Error()).Should(ContainSubstring("fake-job-1"))
@@ -121,39 +120,36 @@ var _ = Describe("RunScript", func() {
 		})
 
 		It("returns one failed status when first script fail and second script pass, and when one fails continue waiting for unfinished tasks", func() {
-			existingScript1.RunStub = func() scriptrunner.RunScriptResult {
+			existingScript1.RunStub = func() scriptrunner.ScriptResult {
 				time.Sleep(2 * time.Second)
-				return scriptrunner.RunScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")}
+				return scriptrunner.ScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: errors.New("fake-error")}
 			}
-			existingScript2.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: nil})
+			existingScript2.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: nil})
 
 			results, err := runScriptAction.Run(scriptName, options)
-
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("1 of 2 run-me scripts failed. Failed Jobs: fake-job-1. Successful Jobs: fake-job-2."))
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "failed", "fake-job-2": "executed"}))
 		})
 
 		It("returns one failed status when first script pass and second script fail", func() {
-			existingScript1.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil})
-			existingScript2.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: errors.New("fake-error")})
+			existingScript1.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil})
+			existingScript2.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: errors.New("fake-error")})
 
 			results, err := runScriptAction.Run(scriptName, options)
-
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("1 of 2 run-me scripts failed. Failed Jobs: fake-job-2. Successful Jobs: fake-job-1."))
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "failed"}))
 		})
 
 		It("wait for scripts to finish", func() {
-			existingScript1.RunStub = func() scriptrunner.RunScriptResult {
+			existingScript1.RunStub = func() scriptrunner.ScriptResult {
 				time.Sleep(2 * time.Second)
-				return scriptrunner.RunScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil}
+				return scriptrunner.ScriptResult{Tag: "fake-job-1", ScriptPath: "path/to/script1", Error: nil}
 			}
-			existingScript2.RunReturns(scriptrunner.RunScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: nil})
+			existingScript2.RunReturns(scriptrunner.ScriptResult{Tag: "fake-job-2", ScriptPath: "path/to/script2", Error: nil})
 
 			results, err := runScriptAction.Run(scriptName, options)
-
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "executed"}))
 		})
@@ -170,7 +166,6 @@ var _ = Describe("RunScript", func() {
 
 		It("does not return a status for that script", func() {
 			results, err := runScriptAction.Run(scriptName, options)
-
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(Equal(map[string]string{}))
 		})

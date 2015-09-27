@@ -20,12 +20,13 @@ func NewConcreteScriptProvider(
 	fs boshsys.FileSystem,
 	dirProvider boshdirs.Provider,
 	timeService clock.Clock,
-) (provider ConcreteScriptProvider) {
-	provider.cmdRunner = cmdRunner
-	provider.fs = fs
-	provider.dirProvider = dirProvider
-	provider.timeService = timeService
-	return
+) ConcreteScriptProvider {
+	return ConcreteScriptProvider{
+		cmdRunner:   cmdRunner,
+		fs:          fs,
+		dirProvider: dirProvider,
+		timeService: timeService,
+	}
 }
 
 func (p ConcreteScriptProvider) NewScript(templateName string) Script {

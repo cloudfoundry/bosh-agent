@@ -3,66 +3,60 @@ package drain
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
-	"time"
 )
 
 type ConcreteScript struct {
-	fs              boshsys.FileSystem
-	runner          boshsys.CmdRunner
-	drainScriptPath string
-	timeService     clock.Clock
+	fs          boshsys.FileSystem
+	runner      boshsys.CmdRunner
+	path        string
+	timeService clock.Clock
 }
 
 func NewConcreteScript(
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
-	drainScriptPath string,
+	path string,
 	timeService clock.Clock,
-) (script ConcreteScript) {
-	script = ConcreteScript{
-		fs:              fs,
-		runner:          runner,
-		drainScriptPath: drainScriptPath,
-		timeService:     timeService,
+) ConcreteScript {
+	return ConcreteScript{
+		fs:          fs,
+		runner:      runner,
+		path:        path,
+		timeService: timeService,
 	}
-	return
 }
 
-func (script ConcreteScript) Exists() bool {
-	return script.fs.FileExists(script.drainScriptPath)
-}
+func (s ConcreteScript) Path() string { return s.path }
 
-func (script ConcreteScript) Path() string {
-	return script.drainScriptPath
-}
+func (s ConcreteScript) Exists() bool { return s.fs.FileExists(s.path) }
 
-func (script ConcreteScript) Run(params ScriptParams) error {
+func (s ConcreteScript) Run(params ScriptParams) error {
 	for {
-		value, err := script.runOnce(params)
-
+		value, err := s.runOnce(params)
 		if err != nil {
 			return err
 		} else if value < 0 {
-			script.timeService.Sleep(time.Duration(-value) * time.Second)
+			s.timeService.Sleep(time.Duration(-value) * time.Second)
 			params = params.ToStatusParams()
 		} else {
-			script.timeService.Sleep(time.Duration(value) * time.Second)
+			s.timeService.Sleep(time.Duration(value) * time.Second)
 			return nil
 		}
 	}
 }
 
-func (script ConcreteScript) runOnce(params ScriptParams) (int, error) {
+func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	jobChange := params.JobChange()
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()
 
 	command := boshsys.Command{
-		Name: script.drainScriptPath,
+		Name: s.path,
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},
@@ -89,7 +83,7 @@ func (script ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	command.Args = append(command.Args, jobChange, hashChange)
 	command.Args = append(command.Args, updatedPkgs...)
 
-	stdout, _, _, err := script.runner.RunComplexCommand(command)
+	stdout, _, _, err := s.runner.RunComplexCommand(command)
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Running drain script")
 	}

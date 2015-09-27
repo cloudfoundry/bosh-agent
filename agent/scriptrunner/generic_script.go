@@ -2,9 +2,9 @@ package scriptrunner
 
 import (
 	"os"
-
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"path/filepath"
+
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 const (
@@ -13,86 +13,90 @@ const (
 )
 
 type GenericScript struct {
-	tag           string
-	fs            system.FileSystem
-	runner        system.CmdRunner
-	path          string
+	fs     boshsys.FileSystem
+	runner boshsys.CmdRunner
+
+	tag  string
+	path string
+
 	stdoutLogPath string
 	stderrLogPath string
 }
 
 func NewScript(
+	fs boshsys.FileSystem,
+	runner boshsys.CmdRunner,
 	tag string,
-	fs system.FileSystem,
-	runner system.CmdRunner,
 	path string,
 	stdoutLogPath string,
 	stderrLogPath string,
 ) GenericScript {
 	return GenericScript{
-		tag:           tag,
-		fs:            fs,
-		runner:        runner,
-		path:          path,
+		fs:     fs,
+		runner: runner,
+
+		tag:  tag,
+		path: path,
+
 		stdoutLogPath: stdoutLogPath,
 		stderrLogPath: stderrLogPath,
 	}
 }
 
-func (script GenericScript) Path() string {
-	return script.path
-}
+func (s GenericScript) Exists() bool { return s.fs.FileExists(s.path) }
 
-func (script GenericScript) Tag() string {
-	return script.tag
-}
-
-func (script GenericScript) Exists() bool {
-	return script.fs.FileExists(script.Path())
-}
-
-func (script GenericScript) Run() RunScriptResult {
-
-	err := ensureContainingDir(script.fs, script.stdoutLogPath)
-	if err != nil {
-		return RunScriptResult{script.Tag(), script.Path(), err}
+func (s GenericScript) Run() ScriptResult {
+	result := ScriptResult{
+		Tag:        s.tag,
+		ScriptPath: s.path,
 	}
 
-	err = ensureContainingDir(script.fs, script.stderrLogPath)
+	err := s.ensureContainingDir(s.stdoutLogPath)
 	if err != nil {
-		return RunScriptResult{script.Tag(), script.Path(), err}
+		result.Error = err
+		return result
 	}
 
-	stdoutFile, err := script.fs.OpenFile(script.stdoutLogPath, fileOpenFlag, fileOpenPerm)
+	err = s.ensureContainingDir(s.stderrLogPath)
 	if err != nil {
-		return RunScriptResult{script.Tag(), script.Path(), err}
+		result.Error = err
+		return result
+	}
+
+	stdoutFile, err := s.fs.OpenFile(s.stdoutLogPath, fileOpenFlag, fileOpenPerm)
+	if err != nil {
+		result.Error = err
+		return result
 	}
 	defer func() {
 		_ = stdoutFile.Close()
 	}()
 
-	stderrFile, err := script.fs.OpenFile(script.stderrLogPath, fileOpenFlag, fileOpenPerm)
+	stderrFile, err := s.fs.OpenFile(s.stderrLogPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		return RunScriptResult{script.Tag(), script.Path(), err}
+		result.Error = err
+		return result
 	}
 	defer func() {
 		_ = stderrFile.Close()
 	}()
 
-	command := system.Command{
-		Name: script.Path(),
+	command := boshsys.Command{
+		Name: s.path,
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},
+		Stdout: stdoutFile,
+		Stderr: stderrFile,
 	}
-	command.Stdout = stdoutFile
-	command.Stderr = stderrFile
 
-	_, _, _, runErr := script.runner.RunComplexCommand(command)
-	return RunScriptResult{script.Tag(), script.Path(), runErr}
+	_, _, _, err = s.runner.RunComplexCommand(command)
+	result.Error = err
+
+	return result
 }
 
-func ensureContainingDir(fs system.FileSystem, fullLogFilename string) error {
+func (s GenericScript) ensureContainingDir(fullLogFilename string) error {
 	dir, _ := filepath.Split(fullLogFilename)
-	return fs.MkdirAll(dir, os.FileMode(0750))
+	return s.fs.MkdirAll(dir, os.FileMode(0750))
 }

@@ -8,78 +8,18 @@ import (
 )
 
 type FakeScript struct {
-	TagStub        func() string
-	tagMutex       sync.RWMutex
-	tagArgsForCall []struct{}
-	tagReturns     struct {
-		result1 string
-	}
-	PathStub        func() string
-	pathMutex       sync.RWMutex
-	pathArgsForCall []struct{}
-	pathReturns     struct {
-		result1 string
-	}
 	ExistsStub        func() bool
 	existsMutex       sync.RWMutex
 	existsArgsForCall []struct{}
 	existsReturns     struct {
 		result1 bool
 	}
-	RunStub        func() scriptrunner.RunScriptResult
+	RunStub        func() scriptrunner.ScriptResult
 	runMutex       sync.RWMutex
 	runArgsForCall []struct{}
 	runReturns     struct {
-		result1 scriptrunner.RunScriptResult
+		result1 scriptrunner.ScriptResult
 	}
-}
-
-func (fake *FakeScript) Tag() string {
-	fake.tagMutex.Lock()
-	fake.tagArgsForCall = append(fake.tagArgsForCall, struct{}{})
-	fake.tagMutex.Unlock()
-	if fake.TagStub != nil {
-		return fake.TagStub()
-	} else {
-		return fake.tagReturns.result1
-	}
-}
-
-func (fake *FakeScript) TagCallCount() int {
-	fake.tagMutex.RLock()
-	defer fake.tagMutex.RUnlock()
-	return len(fake.tagArgsForCall)
-}
-
-func (fake *FakeScript) TagReturns(result1 string) {
-	fake.TagStub = nil
-	fake.tagReturns = struct {
-		result1 string
-	}{result1}
-}
-
-func (fake *FakeScript) Path() string {
-	fake.pathMutex.Lock()
-	fake.pathArgsForCall = append(fake.pathArgsForCall, struct{}{})
-	fake.pathMutex.Unlock()
-	if fake.PathStub != nil {
-		return fake.PathStub()
-	} else {
-		return fake.pathReturns.result1
-	}
-}
-
-func (fake *FakeScript) PathCallCount() int {
-	fake.pathMutex.RLock()
-	defer fake.pathMutex.RUnlock()
-	return len(fake.pathArgsForCall)
-}
-
-func (fake *FakeScript) PathReturns(result1 string) {
-	fake.PathStub = nil
-	fake.pathReturns = struct {
-		result1 string
-	}{result1}
 }
 
 func (fake *FakeScript) Exists() bool {
@@ -106,7 +46,7 @@ func (fake *FakeScript) ExistsReturns(result1 bool) {
 	}{result1}
 }
 
-func (fake *FakeScript) Run() scriptrunner.RunScriptResult {
+func (fake *FakeScript) Run() scriptrunner.ScriptResult {
 	fake.runMutex.Lock()
 	fake.runArgsForCall = append(fake.runArgsForCall, struct{}{})
 	fake.runMutex.Unlock()
@@ -123,10 +63,10 @@ func (fake *FakeScript) RunCallCount() int {
 	return len(fake.runArgsForCall)
 }
 
-func (fake *FakeScript) RunReturns(result1 scriptrunner.RunScriptResult) {
+func (fake *FakeScript) RunReturns(result1 scriptrunner.ScriptResult) {
 	fake.RunStub = nil
 	fake.runReturns = struct {
-		result1 scriptrunner.RunScriptResult
+		result1 scriptrunner.ScriptResult
 	}{result1}
 }
 
