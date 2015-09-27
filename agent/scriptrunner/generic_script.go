@@ -43,30 +43,25 @@ func NewScript(
 	}
 }
 
+func (s GenericScript) Tag() string  { return s.tag }
+func (s GenericScript) Path() string { return s.path }
+
 func (s GenericScript) Exists() bool { return s.fs.FileExists(s.path) }
 
-func (s GenericScript) Run() ScriptResult {
-	result := ScriptResult{
-		Tag:        s.tag,
-		ScriptPath: s.path,
-	}
-
+func (s GenericScript) Run() error {
 	err := s.ensureContainingDir(s.stdoutLogPath)
 	if err != nil {
-		result.Error = err
-		return result
+		return err
 	}
 
 	err = s.ensureContainingDir(s.stderrLogPath)
 	if err != nil {
-		result.Error = err
-		return result
+		return err
 	}
 
 	stdoutFile, err := s.fs.OpenFile(s.stdoutLogPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		result.Error = err
-		return result
+		return err
 	}
 	defer func() {
 		_ = stdoutFile.Close()
@@ -74,8 +69,7 @@ func (s GenericScript) Run() ScriptResult {
 
 	stderrFile, err := s.fs.OpenFile(s.stderrLogPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		result.Error = err
-		return result
+		return err
 	}
 	defer func() {
 		_ = stderrFile.Close()
@@ -91,9 +85,8 @@ func (s GenericScript) Run() ScriptResult {
 	}
 
 	_, _, _, err = s.runner.RunComplexCommand(command)
-	result.Error = err
 
-	return result
+	return err
 }
 
 func (s GenericScript) ensureContainingDir(fullLogFilename string) error {

@@ -11,39 +11,39 @@ type FakeScriptParams struct {
 	JobChangeStub        func() (change string)
 	jobChangeMutex       sync.RWMutex
 	jobChangeArgsForCall []struct{}
-	jobChangeReturns     struct {
+	jobChangeReturns struct {
 		result1 string
 	}
 	HashChangeStub        func() (change string)
 	hashChangeMutex       sync.RWMutex
 	hashChangeArgsForCall []struct{}
-	hashChangeReturns     struct {
+	hashChangeReturns struct {
 		result1 string
 	}
 	UpdatedPackagesStub        func() (pkgs []string)
 	updatedPackagesMutex       sync.RWMutex
 	updatedPackagesArgsForCall []struct{}
-	updatedPackagesReturns     struct {
+	updatedPackagesReturns struct {
 		result1 []string
 	}
 	JobStateStub        func() (string, error)
 	jobStateMutex       sync.RWMutex
 	jobStateArgsForCall []struct{}
-	jobStateReturns     struct {
+	jobStateReturns struct {
 		result1 string
 		result2 error
 	}
 	JobNextStateStub        func() (string, error)
 	jobNextStateMutex       sync.RWMutex
 	jobNextStateArgsForCall []struct{}
-	jobNextStateReturns     struct {
+	jobNextStateReturns struct {
 		result1 string
 		result2 error
 	}
 	ToStatusParamsStub        func() drain.ScriptParams
 	toStatusParamsMutex       sync.RWMutex
 	toStatusParamsArgsForCall []struct{}
-	toStatusParamsReturns     struct {
+	toStatusParamsReturns struct {
 		result1 drain.ScriptParams
 	}
 }

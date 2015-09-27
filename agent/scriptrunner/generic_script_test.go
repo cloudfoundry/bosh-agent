@@ -35,27 +35,47 @@ var _ = Describe("GenericScript", func() {
 		)
 	})
 
+	Describe("Tag", func() {
+		It("returns path", func() {
+			Expect(genericScript.Tag()).To(Equal("my-tag"))
+		})
+	})
+
+	Describe("Path", func() {
+		It("returns path", func() {
+			Expect(genericScript.Path()).To(Equal("/path-to-script"))
+		})
+	})
+
+	Describe("Exists", func() {
+		It("returns bool", func() {
+			Expect(genericScript.Exists()).To(BeFalse())
+
+			fs.WriteFile("/path-to-script", []byte{})
+			Expect(genericScript.Exists()).To(BeTrue())
+		})
+	})
+
 	Describe("Run", func() {
 		It("executes given command", func() {
-			result := genericScript.Run()
-			Expect(result.Tag).To(Equal("my-tag"))
-			Expect(result.Error).To(BeNil())
+			err := genericScript.Run()
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("returns an error if it fails to create logs directory", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-all-error")
 
-			result := genericScript.Run()
-			Expect(result.Tag).To(Equal("my-tag"))
-			Expect(result.Error.Error()).To(Equal("fake-mkdir-all-error"))
+			err := genericScript.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("fake-mkdir-all-error"))
 		})
 
 		It("returns an error if it fails to open stdout/stderr log file", func() {
 			fs.OpenFileErr = errors.New("fake-open-file-error")
 
-			result := genericScript.Run()
-			Expect(result.Tag).To(Equal("my-tag"))
-			Expect(result.Error.Error()).To(Equal("fake-open-file-error"))
+			err := genericScript.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("fake-open-file-error"))
 		})
 
 		Context("when command succeeds", func() {
@@ -69,9 +89,8 @@ var _ = Describe("GenericScript", func() {
 			})
 
 			It("saves stdout/stderr to log file", func() {
-				result := genericScript.Run()
-				Expect(result.Tag).To(Equal("my-tag"))
-				Expect(result.Error).To(BeNil())
+				err := genericScript.Run()
+				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fs.FileExists(stdoutLogPath)).To(BeTrue())
 				Expect(fs.FileExists(stderrLogPath)).To(BeTrue())
@@ -97,9 +116,9 @@ var _ = Describe("GenericScript", func() {
 			})
 
 			It("saves stdout/stderr to log file", func() {
-				result := genericScript.Run()
-				Expect(result.Tag).To(Equal("my-tag"))
-				Expect(result.Error.Error()).To(Equal("fake-command-error"))
+				err := genericScript.Run()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("fake-command-error"))
 
 				Expect(fs.FileExists(stdoutLogPath)).To(BeTrue())
 				Expect(fs.FileExists(stderrLogPath)).To(BeTrue())

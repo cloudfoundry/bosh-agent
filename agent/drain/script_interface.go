@@ -7,7 +7,8 @@ type ScriptProvider interface {
 }
 
 type Script interface {
+	Path() string
+
 	Exists() bool
 	Run(ScriptParams) error
-	Path() string
 }

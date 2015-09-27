@@ -16,8 +16,8 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 		dirProvider := boshdir.NewProvider("/the/base/dir")
 
 		scriptProvider := scriptrunner.NewConcreteJobScriptProvider(runner, fs, dirProvider)
-		scriptResult := scriptProvider.Get("myjob", "the-best-hook-ever").Run()
-		Expect(scriptResult.Tag).To(Equal("myjob"))
-		Expect(scriptResult.ScriptPath).To(Equal("/the/base/dir/jobs/myjob/bin/the-best-hook-ever"))
+		script := scriptProvider.Get("myjob", "the-best-hook-ever")
+		Expect(script.Tag()).To(Equal("myjob"))
+		Expect(script.Path()).To(Equal("/the/base/dir/jobs/myjob/bin/the-best-hook-ever"))
 	})
 })

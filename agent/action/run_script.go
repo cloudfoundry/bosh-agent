@@ -52,27 +52,32 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 
 	a.logger.Info(a.logTag, "Will run script '%s' in '%d' jobs in parallel", scriptName, len(scripts))
 
-	resultChan := make(chan scriptrunner.ScriptResult)
+	type scriptResult struct {
+		Script scriptrunner.Script
+		Error  error
+	}
+
+	resultChan := make(chan scriptResult)
 
 	for _, script := range scripts {
 		script := script
-		go func() { resultChan <- script.Run() }()
+		go func() { resultChan <- scriptResult{script, script.Run()} }()
 	}
 
 	var failedScripts, passedScripts []string
 
 	for i := 0; i < len(scripts); i++ {
 		select {
-		case scriptResult := <-resultChan:
-			jobName := scriptResult.Tag
-			if scriptResult.Error == nil {
+		case r := <-resultChan:
+			jobName := r.Script.Tag()
+			if r.Error == nil {
 				passedScripts = append(passedScripts, jobName)
 				result[jobName] = "executed"
-				a.logger.Info(a.logTag, "'%s' script has successfully executed", scriptResult.ScriptPath)
+				a.logger.Info(a.logTag, "'%s' script has successfully executed", r.Script.Path())
 			} else {
 				failedScripts = append(failedScripts, jobName)
 				result[jobName] = "failed"
-				a.logger.Error(a.logTag, "'%s' script has failed with error: %s", scriptResult.ScriptPath, scriptResult.Error)
+				a.logger.Error(a.logTag, "'%s' script has failed with error: %s", r.Script.Path(), r.Error)
 			}
 		}
 	}
