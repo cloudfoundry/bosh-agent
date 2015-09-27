@@ -47,6 +47,17 @@ var _ = Describe("ParallelScript", func() {
 	})
 
 	Describe("Run", func() {
+		Context("when there are no scripts", func() {
+			BeforeEach(func() {
+				scripts = []boshscript.Script{}
+			})
+
+			It("succeeds", func() {
+				err := parallelScript.Run()
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
 		Context("when script exists", func() {
 			var existingScript *fakescript.FakeScript
 
@@ -58,7 +69,7 @@ var _ = Describe("ParallelScript", func() {
 				scripts = append(scripts, existingScript)
 			})
 
-			It("is executed", func() {
+			It("executes the script and succeeds", func() {
 				existingScript.RunReturns(nil)
 
 				err := parallelScript.Run()
@@ -87,7 +98,7 @@ var _ = Describe("ParallelScript", func() {
 				scripts = append(scripts, nonExistingScript)
 			})
 
-			It("does not return a status for that script", func() {
+			It("succeeds", func() {
 				err := parallelScript.Run()
 				Expect(err).ToNot(HaveOccurred())
 			})
@@ -111,7 +122,7 @@ var _ = Describe("ParallelScript", func() {
 				scripts = append(scripts, existingScript2)
 			})
 
-			It("is executed and both scripts pass", func() {
+			It("executes the scripts and succeeds", func() {
 				existingScript1.RunReturns(nil)
 				existingScript2.RunReturns(nil)
 
@@ -155,7 +166,7 @@ var _ = Describe("ParallelScript", func() {
 				Expect(err.Error()).To(Equal("1 of 2 run-me script(s) failed. Failed Jobs: fake-job-2. Successful Jobs: fake-job-1."))
 			})
 
-			It("wait for scripts to finish", func() {
+			It("waits for scripts to finish", func() {
 				existingScript1.RunStub = func() error {
 					time.Sleep(2 * time.Second)
 					return nil

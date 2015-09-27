@@ -5,7 +5,6 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
@@ -37,7 +36,6 @@ var _ = Describe("concreteFactory", func() {
 		specService       *fakeas.FakeV1Service
 		jobScriptProvider boshscript.JobScriptProvider
 		factory           Factory
-		timeService       *fakeaction.FakeClock
 		logger            boshlog.Logger
 	)
 
@@ -51,7 +49,6 @@ var _ = Describe("concreteFactory", func() {
 		compiler = fakecomp.NewFakeCompiler()
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
-		timeService = &fakeaction.FakeClock{}
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 

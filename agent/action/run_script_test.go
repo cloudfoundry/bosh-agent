@@ -40,9 +40,7 @@ var _ = Describe("RunScript", func() {
 		act := func() (map[string]string, error) { return action.Run("run-me", map[string]interface{}{}) }
 
 		Context("when current spec can be retrieved", func() {
-			var (
-				parallelScript *fakescript.FakeScript
-			)
+			var parallelScript *fakescript.FakeScript
 
 			BeforeEach(func() {
 				parallelScript = &fakescript.FakeScript{}

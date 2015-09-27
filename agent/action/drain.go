@@ -81,7 +81,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		scripts = append(scripts, script)
 	}
 
-	parallelScript := boshscript.NewParallelScript("drain", scripts, a.logger)
+	parallelScript := a.jobScriptProvider.NewParallelScript("drain", scripts)
 
 	return 0, parallelScript.Run()
 }
