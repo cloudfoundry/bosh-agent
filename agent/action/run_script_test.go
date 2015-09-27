@@ -56,7 +56,7 @@ var _ = Describe("RunScript", func() {
 			existingScript.TagReturns("fake-job-1")
 			existingScript.PathReturns("path/to/script1")
 			existingScript.ExistsReturns(true)
-			fakeJobScriptProvider.GetReturns(existingScript)
+			fakeJobScriptProvider.NewScriptReturns(existingScript)
 		})
 
 		It("is executed", func() {
@@ -92,7 +92,7 @@ var _ = Describe("RunScript", func() {
 			existingScript2.PathReturns("path/to/script2")
 			existingScript2.ExistsReturns(true)
 
-			fakeJobScriptProvider.GetStub = func(jobName string, relativePath string) boshscript.Script {
+			fakeJobScriptProvider.NewScriptStub = func(jobName string, relativePath string) boshscript.Script {
 				if jobName == "fake-job-1" {
 					return existingScript1
 				} else if jobName == "fake-job-2" {
@@ -167,7 +167,7 @@ var _ = Describe("RunScript", func() {
 		BeforeEach(func() {
 			nonExistingScript = &fakescript.FakeScript{}
 			nonExistingScript.ExistsReturns(false)
-			fakeJobScriptProvider.GetReturns(nonExistingScript)
+			fakeJobScriptProvider.NewScriptReturns(nonExistingScript)
 		})
 
 		It("does not return a status for that script", func() {

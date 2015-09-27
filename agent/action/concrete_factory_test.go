@@ -10,7 +10,6 @@ import (
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
@@ -27,20 +26,19 @@ import (
 
 var _ = Describe("concreteFactory", func() {
 	var (
-		settingsService     *fakesettings.FakeSettingsService
-		platform            *fakeplatform.FakePlatform
-		blobstore           *fakeblobstore.FakeBlobstore
-		taskService         *faketask.FakeService
-		notifier            *fakenotif.FakeNotifier
-		applier             *fakeappl.FakeApplier
-		compiler            *fakecomp.FakeCompiler
-		jobSupervisor       *fakejobsuper.FakeJobSupervisor
-		specService         *fakeas.FakeV1Service
-		drainScriptProvider boshdrain.ScriptProvider
-		jobScriptProvider   boshscript.JobScriptProvider
-		factory             Factory
-		timeService         *fakeaction.FakeClock
-		logger              boshlog.Logger
+		settingsService   *fakesettings.FakeSettingsService
+		platform          *fakeplatform.FakePlatform
+		blobstore         *fakeblobstore.FakeBlobstore
+		taskService       *faketask.FakeService
+		notifier          *fakenotif.FakeNotifier
+		applier           *fakeappl.FakeApplier
+		compiler          *fakecomp.FakeCompiler
+		jobSupervisor     *fakejobsuper.FakeJobSupervisor
+		specService       *fakeas.FakeV1Service
+		jobScriptProvider boshscript.JobScriptProvider
+		factory           Factory
+		timeService       *fakeaction.FakeClock
+		logger            boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -54,7 +52,6 @@ var _ = Describe("concreteFactory", func() {
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		timeService = &fakeaction.FakeClock{}
-		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider(), timeService)
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
@@ -68,7 +65,6 @@ var _ = Describe("concreteFactory", func() {
 			compiler,
 			jobSupervisor,
 			specService,
-			drainScriptProvider,
 			jobScriptProvider,
 			logger,
 		)
@@ -89,7 +85,7 @@ var _ = Describe("concreteFactory", func() {
 	It("drain", func() {
 		action, err := factory.Create("drain")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger)))
+		Expect(action).To(Equal(NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)))
 	})
 
 	It("fetch_logs", func() {
@@ -195,6 +191,12 @@ var _ = Describe("concreteFactory", func() {
 
 		// Cannot do equality check since channel is used in initializer
 		Expect(action).To(BeAssignableToTypeOf(RunErrandAction{}))
+	})
+
+	It("run_script", func() {
+		action, err := factory.Create("run_script")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewRunScript(jobScriptProvider, specService, logger)))
 	})
 
 	It("prepare", func() {

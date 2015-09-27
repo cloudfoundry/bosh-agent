@@ -1,9 +1,14 @@
 package script
 
+import (
+	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+)
+
 //go:generate counterfeiter . JobScriptProvider
 
 type JobScriptProvider interface {
-	Get(jobName string, relativePath string) Script
+	NewScript(jobName string, scriptName string) Script
+	NewDrainScript(jobName string, params boshdrain.ScriptParams) Script
 }
 
 //go:generate counterfeiter . Script

@@ -5,7 +5,6 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
@@ -31,7 +30,6 @@ func NewFactory(
 	compiler boshcomp.Compiler,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
-	drainScriptProvider boshdrain.ScriptProvider,
 	jobScriptProvider boshscript.JobScriptProvider,
 	logger boshlog.Logger,
 ) (factory Factory) {
@@ -59,7 +57,7 @@ func NewFactory(
 			"apply":      NewApply(applier, specService, settingsService),
 			"start":      NewStart(jobSupervisor),
 			"stop":       NewStop(jobSupervisor),
-			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger),
+			"drain":      NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger),
 			"get_state":  NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService),
 			"run_errand": NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner(), logger),
 			"run_script": NewRunScript(jobScriptProvider, specService, logger),

@@ -5,49 +5,92 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/agent/script"
+	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 type FakeJobScriptProvider struct {
-	GetStub        func(jobName string, relativePath string) script.Script
-	getMutex       sync.RWMutex
-	getArgsForCall []struct {
-		jobName      string
-		relativePath string
+	NewScriptStub        func(jobName string, scriptName string) script.Script
+	newScriptMutex       sync.RWMutex
+	newScriptArgsForCall []struct {
+		jobName    string
+		scriptName string
 	}
-	getReturns struct {
+	newScriptReturns struct {
+		result1 script.Script
+	}
+	NewDrainScriptStub        func(jobName string, params boshdrain.ScriptParams) script.Script
+	newDrainScriptMutex       sync.RWMutex
+	newDrainScriptArgsForCall []struct {
+		jobName string
+		params  boshdrain.ScriptParams
+	}
+	newDrainScriptReturns struct {
 		result1 script.Script
 	}
 }
 
-func (fake *FakeJobScriptProvider) Get(jobName string, relativePath string) script.Script {
-	fake.getMutex.Lock()
-	fake.getArgsForCall = append(fake.getArgsForCall, struct {
-		jobName      string
-		relativePath string
-	}{jobName, relativePath})
-	fake.getMutex.Unlock()
-	if fake.GetStub != nil {
-		return fake.GetStub(jobName, relativePath)
+func (fake *FakeJobScriptProvider) NewScript(jobName string, scriptName string) script.Script {
+	fake.newScriptMutex.Lock()
+	fake.newScriptArgsForCall = append(fake.newScriptArgsForCall, struct {
+		jobName    string
+		scriptName string
+	}{jobName, scriptName})
+	fake.newScriptMutex.Unlock()
+	if fake.NewScriptStub != nil {
+		return fake.NewScriptStub(jobName, scriptName)
 	} else {
-		return fake.getReturns.result1
+		return fake.newScriptReturns.result1
 	}
 }
 
-func (fake *FakeJobScriptProvider) GetCallCount() int {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	return len(fake.getArgsForCall)
+func (fake *FakeJobScriptProvider) NewScriptCallCount() int {
+	fake.newScriptMutex.RLock()
+	defer fake.newScriptMutex.RUnlock()
+	return len(fake.newScriptArgsForCall)
 }
 
-func (fake *FakeJobScriptProvider) GetArgsForCall(i int) (string, string) {
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	return fake.getArgsForCall[i].jobName, fake.getArgsForCall[i].relativePath
+func (fake *FakeJobScriptProvider) NewScriptArgsForCall(i int) (string, string) {
+	fake.newScriptMutex.RLock()
+	defer fake.newScriptMutex.RUnlock()
+	return fake.newScriptArgsForCall[i].jobName, fake.newScriptArgsForCall[i].scriptName
 }
 
-func (fake *FakeJobScriptProvider) GetReturns(result1 script.Script) {
-	fake.GetStub = nil
-	fake.getReturns = struct {
+func (fake *FakeJobScriptProvider) NewScriptReturns(result1 script.Script) {
+	fake.NewScriptStub = nil
+	fake.newScriptReturns = struct {
+		result1 script.Script
+	}{result1}
+}
+
+func (fake *FakeJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) script.Script {
+	fake.newDrainScriptMutex.Lock()
+	fake.newDrainScriptArgsForCall = append(fake.newDrainScriptArgsForCall, struct {
+		jobName string
+		params  boshdrain.ScriptParams
+	}{jobName, params})
+	fake.newDrainScriptMutex.Unlock()
+	if fake.NewDrainScriptStub != nil {
+		return fake.NewDrainScriptStub(jobName, params)
+	} else {
+		return fake.newDrainScriptReturns.result1
+	}
+}
+
+func (fake *FakeJobScriptProvider) NewDrainScriptCallCount() int {
+	fake.newDrainScriptMutex.RLock()
+	defer fake.newDrainScriptMutex.RUnlock()
+	return len(fake.newDrainScriptArgsForCall)
+}
+
+func (fake *FakeJobScriptProvider) NewDrainScriptArgsForCall(i int) (string, boshdrain.ScriptParams) {
+	fake.newDrainScriptMutex.RLock()
+	defer fake.newDrainScriptMutex.RUnlock()
+	return fake.newDrainScriptArgsForCall[i].jobName, fake.newDrainScriptArgsForCall[i].params
+}
+
+func (fake *FakeJobScriptProvider) NewDrainScriptReturns(result1 script.Script) {
+	fake.NewDrainScriptStub = nil
+	fake.newDrainScriptReturns = struct {
 		result1 script.Script
 	}{result1}
 }

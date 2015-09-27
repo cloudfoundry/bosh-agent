@@ -91,7 +91,7 @@ func (a RunScriptAction) findScripts(scriptName string, currentSpec boshas.V1App
 	var scripts []boshscript.Script
 
 	for _, job := range currentSpec.Jobs() {
-		script := a.scriptProvider.Get(job.BundleName(), scriptName)
+		script := a.scriptProvider.NewScript(job.BundleName(), scriptName)
 		if script.Exists() {
 			a.logger.Debug(a.logTag, "Found '%s' script in job '%s'", scriptName, job.BundleName())
 			scripts = append(scripts, script)

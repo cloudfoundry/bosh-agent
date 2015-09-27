@@ -1,13 +1,13 @@
 package app
 
 import (
+	"fmt"
 	"net"
 	"path/filepath"
 	"time"
 
 	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
 
-	"fmt"
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -18,7 +18,6 @@ import (
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
@@ -166,17 +165,11 @@ func (app *app) Setup(args []string) error {
 
 	timeService := clock.NewClock()
 
-	drainScriptProvider := boshdrain.NewConcreteScriptProvider(
-		app.platform.GetRunner(),
-		app.platform.GetFs(),
-		app.dirProvider,
-		timeService,
-	)
-
 	jobScriptProvider := boshscript.NewConcreteJobScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		app.platform.GetDirProvider(),
+		timeService,
 	)
 
 	actionFactory := boshaction.NewFactory(
@@ -189,7 +182,6 @@ func (app *app) Setup(args []string) error {
 		compiler,
 		jobSupervisor,
 		specService,
-		drainScriptProvider,
 		jobScriptProvider,
 		app.logger,
 	)

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
@@ -12,10 +13,10 @@ import (
 )
 
 type DrainAction struct {
-	drainScriptProvider boshdrain.ScriptProvider
-	notifier            boshnotif.Notifier
-	specService         boshas.V1Service
-	jobSupervisor       boshjobsuper.JobSupervisor
+	jobScriptProvider boshscript.JobScriptProvider
+	notifier          boshnotif.Notifier
+	specService       boshas.V1Service
+	jobSupervisor     boshjobsuper.JobSupervisor
 
 	logTag string
 	logger boshlog.Logger
@@ -32,15 +33,15 @@ const (
 func NewDrain(
 	notifier boshnotif.Notifier,
 	specService boshas.V1Service,
-	drainScriptProvider boshdrain.ScriptProvider,
+	jobScriptProvider boshscript.JobScriptProvider,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	logger boshlog.Logger,
 ) DrainAction {
 	return DrainAction{
-		notifier:            notifier,
-		specService:         specService,
-		drainScriptProvider: drainScriptProvider,
-		jobSupervisor:       jobSupervisor,
+		notifier:          notifier,
+		specService:       specService,
+		jobScriptProvider: jobScriptProvider,
+		jobSupervisor:     jobSupervisor,
 
 		logTag: "Drain Action",
 		logger: logger,
@@ -131,11 +132,11 @@ func (a DrainAction) determineParams(drainType DrainType, currentSpec boshas.V1A
 	return params, nil
 }
 
-func (a DrainAction) findDrainScripts(currentSpec boshas.V1ApplySpec, params boshdrain.ScriptParams) []boshdrain.Script {
-	var scripts []boshdrain.Script
+func (a DrainAction) findDrainScripts(currentSpec boshas.V1ApplySpec, params boshdrain.ScriptParams) []boshscript.Script {
+	var scripts []boshscript.Script
 
 	for _, job := range currentSpec.Jobs() {
-		script := a.drainScriptProvider.NewScript(job.BundleName(), params)
+		script := a.jobScriptProvider.NewDrainScript(job.BundleName(), params)
 		if script.Exists() {
 			a.logger.Debug(a.logTag, "Found drain script in job '%s'", job.BundleName())
 			scripts = append(scripts, script)

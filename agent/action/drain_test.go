@@ -11,8 +11,10 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	fakedrain "github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
@@ -26,13 +28,13 @@ func addJobTemplate(spec *applyspec.JobSpec, name string) {
 func init() {
 	Describe("DrainAction", func() {
 		var (
-			notifier            *fakenotif.FakeNotifier
-			specService         *fakeas.FakeV1Service
-			drainScriptProvider *fakedrain.FakeScriptProvider
-			fakeScripts         map[string]*fakedrain.FakeScript
-			jobSupervisor       *fakejobsuper.FakeJobSupervisor
-			action              DrainAction
-			logger              boshlog.Logger
+			notifier          *fakenotif.FakeNotifier
+			specService       *fakeas.FakeV1Service
+			jobScriptProvider *fakescript.FakeJobScriptProvider
+			fakeScripts       map[string]*fakedrain.FakeScript
+			jobSupervisor     *fakejobsuper.FakeJobSupervisor
+			action            DrainAction
+			logger            boshlog.Logger
 		)
 
 		BeforeEach(func() {
@@ -40,13 +42,13 @@ func init() {
 			logger = boshlog.NewLogger(boshlog.LevelNone)
 			notifier = fakenotif.NewFakeNotifier()
 			specService = fakeas.NewFakeV1Service()
-			drainScriptProvider = &fakedrain.FakeScriptProvider{}
+			jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-			action = NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger)
+			action = NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)
 		})
 
 		BeforeEach(func() {
-			drainScriptProvider.NewScriptStub = func(jobName string, params boshdrain.ScriptParams) boshdrain.Script {
+			jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.Script {
 				_, exists := fakeScripts[jobName]
 				if !exists {
 					fakeScript := fakedrain.NewFakeScript(jobName)
@@ -110,7 +112,7 @@ func init() {
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(0))
 
-								jobName, params := drainScriptProvider.NewScriptArgsForCall(0)
+								jobName, params := jobScriptProvider.NewDrainScriptArgsForCall(0)
 								Expect(jobName).To(Equal("foo"))
 								Expect(params).To(Equal(boshdrain.NewUpdateParams(currentSpec, newSpec)))
 								Expect(fakeScripts["foo"].DidRun).To(BeTrue())
@@ -239,7 +241,7 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(value).To(Equal(0))
 
-					Expect(drainScriptProvider.NewScriptCallCount()).To(Equal(0))
+					Expect(jobScriptProvider.NewDrainScriptCallCount()).To(Equal(0))
 				})
 			})
 		})
@@ -361,7 +363,7 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(value).To(Equal(0))
 
-					Expect(drainScriptProvider.NewScriptCallCount()).To(Equal(0))
+					Expect(jobScriptProvider.NewDrainScriptCallCount()).To(Equal(0))
 				})
 			})
 		})
