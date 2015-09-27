@@ -47,7 +47,6 @@ var _ = Describe("RunScript", func() {
 	})
 
 	Context("when script exists", func() {
-
 		var existingScript *fakescript.FakeScript
 
 		BeforeEach(func() {
@@ -72,11 +71,9 @@ var _ = Describe("RunScript", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "failed"}))
 		})
-
 	})
 
 	Context("when running scripts concurrently", func() {
-
 		var existingScript1 *fakescript.FakeScript
 		var existingScript2 *fakescript.FakeScript
 
@@ -160,11 +157,9 @@ var _ = Describe("RunScript", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(Equal(map[string]string{"fake-job-1": "executed", "fake-job-2": "executed"}))
 		})
-
 	})
 
 	Context("when script does not exist", func() {
-
 		var nonExistingScript *fakescript.FakeScript
 
 		BeforeEach(func() {
