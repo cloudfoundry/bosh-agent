@@ -91,7 +91,7 @@ func (s ParallelScript) summarizeErrs(passedScripts, failedScripts []string) err
 
 		totalRan := len(passedScripts) + len(failedScripts)
 
-		return bosherr.Errorf("%d of %d %s script(s) failed. %s.", len(failedScripts), totalRan, s.name, errMsg)
+		return bosherr.Errorf("%d of %d %s scripts failed. %s.", len(failedScripts), totalRan, s.name, errMsg)
 	}
 
 	return nil
