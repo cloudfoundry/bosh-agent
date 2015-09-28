@@ -545,6 +545,10 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 			"p",
 		)
 
+		if err != nil {
+			return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+		}
+
 		if strings.Contains(stdout, "Partition Table: gpt") && strings.Contains(stdout, "raw-ephemeral-") {
 			continue
 		}
