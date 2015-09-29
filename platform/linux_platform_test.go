@@ -193,10 +193,6 @@ bosh_foobar:...`
 				PartitionPath: "/dev/sda1",
 				MountPoint:    "/",
 			}}
-
-			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
-				return diskSettings.Path, false, nil
-			}
 		})
 
 		Context("when growpart is installed", func() {
