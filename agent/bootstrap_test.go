@@ -262,21 +262,6 @@ func init() {
 				Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
 			})
 
-			It("grows the root filesystem", func() {
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.GrowRootFsCalledTimes).To(Equal(1))
-			})
-
-			It("returns an error if growing the root filesystem fails", func() {
-				platform.GrowRootFsError = errors.New("growfs failed")
-
-				err := bootstrap()
-				Expect(err).To(HaveOccurred())
-				Expect(platform.GrowRootFsCalledTimes).To(Equal(1))
-				Expect(err.Error()).To(ContainSubstring("growfs failed"))
-			})
-
 			It("sets root and vcap passwords", func() {
 				settingsService.Settings.Env.Bosh.Password = "some-encrypted-password"
 
@@ -373,13 +358,6 @@ func init() {
 					{MountPoint: "/", PartitionPath: "/dev/vda1"},
 				}
 
-				// for the GrowRootFS call to findRootDevicePath
-				runner.AddCmdResult(
-					"readlink -f /dev/vda1",
-					fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
-				)
-
-				// for the createEphemeralPartitionsOnRootDevice call to findRootDevicePath
 				runner.AddCmdResult(
 					"readlink -f /dev/vda1",
 					fakesys.FakeCmdResult{Stdout: "/dev/vda1"},

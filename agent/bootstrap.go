@@ -60,10 +60,6 @@ func (boot bootstrap) Run() (err error) {
 
 	settings := boot.settingsService.GetSettings()
 
-	if err = boot.platform.GrowRootFs(); err != nil {
-		return bosherr.WrapError(err, "Grow Root Filesystem")
-	}
-
 	if err = boot.setUserPasswords(settings.Env); err != nil {
 		return bosherr.WrapError(err, "Settings user password")
 	}

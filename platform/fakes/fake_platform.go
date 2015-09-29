@@ -117,9 +117,6 @@ type FakePlatform struct {
 
 	GetHostPublicKeyValue string
 	GetHostPublicKeyError error
-
-	GrowRootFsCalledTimes int
-	GrowRootFsError       error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -143,8 +140,6 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupRawEphemeralDisksDevices = nil
 	platform.SetupRawEphemeralDisksErr = nil
 	platform.GetHostPublicKeyError = nil
-	platform.GrowRootFsCalledTimes = 0
-	platform.GrowRootFsError = nil
 	return
 }
 
@@ -195,14 +190,6 @@ func (p *FakePlatform) AddUserToGroups(username string, groups []string) (err er
 
 func (p *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	p.DeleteEphemeralUsersMatchingRegex = regex
-	return
-}
-
-func (p *FakePlatform) GrowRootFs() (err error) {
-	p.GrowRootFsCalledTimes++
-	if p.GrowRootFsError != nil {
-		err = p.GrowRootFsError
-	}
 	return
 }
 
