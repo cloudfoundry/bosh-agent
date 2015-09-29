@@ -75,7 +75,7 @@ var _ = Describe("CertManager", func() {
 	})
 
 	Context("on ubuntu", func() {
-		XIt("adds and registers new certs on a fresh machine", func() {
+		It("adds and registers new certs on a fresh machine", func() {
 			var cert string = `This certificate is the first one. It's more awesome than the other one.
 -----BEGIN CERTIFICATE-----
 MIIEJDCCAwygAwIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV
