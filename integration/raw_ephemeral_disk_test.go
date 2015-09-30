@@ -83,7 +83,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		XIt("labels the raw ephemeral paths for unpartitioned disks", func() {
+		It("labels the raw ephemeral paths for unpartitioned disks", func() {
 			Eventually(func() string {
 				stdout, _ := testEnvironment.RunCommand("find /dev/disk/by-partlabel | sort")
 
