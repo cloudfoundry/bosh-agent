@@ -290,15 +290,15 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 		return bosherr.WrapError(err, "findRootDevicePath")
 	}
 
-	rootDeviceDiskSettings := boshsettings.DiskSettings{Path: rootDevice}
-	realPath, _, err := p.devicePathResolver.GetRealDevicePath(rootDeviceDiskSettings)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting real device path")
-	}
+//	rootDeviceDiskSettings := boshsettings.DiskSettings{Path: rootDevice}
+//	realPath, _, err := p.devicePathResolver.GetRealDevicePath(rootDeviceDiskSettings)
+//	if err != nil {
+//		return bosherr.WrapError(err, "Getting real device path")
+//	}
 
 	_, _, _, err = p.cmdRunner.RunCommand(
 		"growpart",
-		realPath,
+		rootDevice,
 		"1",
 	)
 
@@ -309,7 +309,7 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	_, _, _, err = p.cmdRunner.RunCommand(
 		"resize2fs",
 		"-f",
-		fmt.Sprintf("%s1", realPath),
+		fmt.Sprintf("%s1", rootDevice),
 	)
 
 	if err != nil {
