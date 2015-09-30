@@ -79,6 +79,9 @@ func describeLinuxPlatform() {
 		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*", []string{
 			"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
 		})
+
+		fs.WriteFile("/dev/sda", []byte{})
+		fs.WriteFile("/dev/vda", []byte{})
 	})
 
 	JustBeforeEach(func() {
