@@ -26,9 +26,27 @@ jobs:
             BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
             BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
 
+  - name: promote
+    public: true
+    serial: true
+    plan:
+      - trigger: true
+        passed: [test-unit, test-integration]
+        get: bosh-agent
+      - put: bosh-agent-master
+        params:
+          repository: bosh-agent
+
 resources:
   - name: bosh-agent
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
+      branch: develop
+
+  - name: bosh-agent-master
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh-agent.git
       branch: master
+      private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
