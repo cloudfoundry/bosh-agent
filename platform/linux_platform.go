@@ -546,7 +546,10 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		)
 
 		if err != nil {
-			return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+			// "unrecognised disk label" is acceptable, since the disk may not have been partitioned
+			if (strings.Contains(stdout, "unrecognised disk label") == false) {
+				return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+			}
 		}
 
 		if strings.Contains(stdout, "Partition Table: gpt") && strings.Contains(stdout, "raw-ephemeral-") {

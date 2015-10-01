@@ -59,7 +59,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 
 			registrySettings.Disks = boshsettings.Disks{
 				Ephemeral:    "/dev/sdh",
-				RawEphemeral: []boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}},
+				RawEphemeral: []boshsettings.DiskSettings{{ID: "1", Path: "/dev/xvdb"}, {ID: "2", Path: "/dev/xvdc"}},
 			}
 
 			err = testEnvironment.StartRegistry(registrySettings)
@@ -83,7 +83,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		XIt("labels the raw ephemeral paths for unpartitioned disks", func() {
+		It("labels the raw ephemeral paths for unpartitioned disks", func() {
 			Eventually(func() string {
 				stdout, _ := testEnvironment.RunCommand("find /dev/disk/by-partlabel | sort")
 
