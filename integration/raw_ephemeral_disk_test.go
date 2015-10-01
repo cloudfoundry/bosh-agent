@@ -59,7 +59,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 
 			registrySettings.Disks = boshsettings.Disks{
 				Ephemeral:    "/dev/sdh",
-				RawEphemeral: []boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}},
+				RawEphemeral: []boshsettings.DiskSettings{{ID: "1", Path: "/dev/xvdb"}, {ID: "2", Path: "/dev/xvdc"}},
 			}
 
 			err = testEnvironment.StartRegistry(registrySettings)
