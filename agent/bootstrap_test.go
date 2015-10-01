@@ -361,8 +361,6 @@ func init() {
 				runner := fakesys.NewFakeCmdRunner()
 				dirProvider = boshdirs.NewProvider("/var/vcap/bosh")
 
-				fs.WriteFile("/dev/vda", []byte{})
-
 				linuxOptions := boshplatform.LinuxOptions{
 					CreatePartitionIfNoEphemeralDisk: true,
 				}

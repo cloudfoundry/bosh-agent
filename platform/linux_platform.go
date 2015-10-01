@@ -289,11 +289,12 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "findRootDevicePath")
 	}
-	//	rootDeviceDiskSettings := boshsettings.DiskSettings{Path: rootDevice}
-	//	realPath, _, err := p.devicePathResolver.GetRealDevicePath(rootDeviceDiskSettings)
-	//	if err != nil {
-	//		return bosherr.WrapError(err, "Getting real device path")
-	//	}
+
+//	rootDeviceDiskSettings := boshsettings.DiskSettings{Path: rootDevice}
+//	realPath, _, err := p.devicePathResolver.GetRealDevicePath(rootDeviceDiskSettings)
+//	if err != nil {
+//		return bosherr.WrapError(err, "Getting real device path")
+//	}
 
 	_, _, _, err = p.cmdRunner.RunCommand(
 		"growpart",
@@ -305,16 +306,10 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 		return bosherr.WrapError(err, "growpart")
 	}
 
-	partitionNumber := "1"
-	lastCharacter := rootDevice[len(rootDevice)-1:]
-	if strings.EqualFold(lastCharacter, "1") == true {
-		partitionNumber = ""
-	}
-
 	_, _, _, err = p.cmdRunner.RunCommand(
 		"resize2fs",
 		"-f",
-		fmt.Sprintf("%s%s", rootDevice, partitionNumber),
+		fmt.Sprintf("%s1", rootDevice),
 	)
 
 	if err != nil {
@@ -957,12 +952,7 @@ func (p linux) findRootDevicePath() (string, error) {
 				return "", bosherr.Error("Root partition is not the first partition")
 			}
 
-			rootPartitionWithoutTheOne := strings.Trim(rootPartition, "1")
-			if p.fs.FileExists(rootPartitionWithoutTheOne) == true {
-				return rootPartitionWithoutTheOne, nil
-			}
-
-			return rootPartition, nil
+			return strings.Trim(rootPartition, "1"), nil
 		}
 	}
 
