@@ -31,4 +31,5 @@ Vagrant.configure('2') do |config|
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-go.sh"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-agent.sh"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-fake-registry.sh"
+  config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/disable_growpart.sh"
 end
