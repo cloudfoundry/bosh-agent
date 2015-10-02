@@ -53,7 +53,12 @@ func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
 }
 
 func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec) error {
-	err := a.jobSupervisor.RemoveAllJobs()
+	err := a.jobSupervisor.StopJobSupervisor()
+	if err != nil {
+		return bosherr.WrapError(err, "Stopping job supervisor")
+	}
+
+	err = a.jobSupervisor.RemoveAllJobs()
 	if err != nil {
 		return bosherr.WrapError(err, "Removing all jobs")
 	}
@@ -90,11 +95,6 @@ func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Configuring job %s", job.Name)
 		}
-	}
-
-	err = a.jobSupervisor.Reload()
-	if err != nil {
-		return bosherr.WrapError(err, "Reloading jobSupervisor")
 	}
 
 	return a.setUpLogrotate(desiredApplySpec)

@@ -28,6 +28,13 @@ type FakeJobSupervisor struct {
 	ProcessesError  error
 
 	JobFailureAlert *boshalert.MonitAlert
+
+	JobSupervisorStarted bool
+	StartJobSupervisorError error
+
+	JobSupervisorStopped bool
+	StopJobSupervisorError error
+
 }
 
 type AddJobArgs struct {
@@ -88,4 +95,16 @@ func (m *FakeJobSupervisor) MonitorJobFailures(handler boshjobsuper.JobFailureHa
 		return handler(*m.JobFailureAlert)
 	}
 	return nil
+}
+
+
+func(m *FakeJobSupervisor) StartJobSupervisor() error{
+	m.JobSupervisorStarted = true
+	return m.StartJobSupervisorError
+}
+
+
+func(m *FakeJobSupervisor) StopJobSupervisor() error{
+	m.JobSupervisorStopped = true
+	return m.StopJobSupervisorError
 }

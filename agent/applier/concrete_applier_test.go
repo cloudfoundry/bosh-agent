@@ -120,6 +120,13 @@ func init() {
 		})
 
 		Describe("Apply", func() {
+
+			It("stops job supervisor", func() {
+				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.JobSupervisorStopped).To(BeTrue())
+			})
+
 			It("removes all jobs from job supervisor", func() {
 				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})
 				Expect(err).ToNot(HaveOccurred())

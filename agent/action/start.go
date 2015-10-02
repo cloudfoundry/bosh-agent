@@ -27,6 +27,12 @@ func (a StartAction) IsPersistent() bool {
 }
 
 func (a StartAction) Run() (value string, err error) {
+	err = a.jobSupervisor.StartJobSupervisor()
+	if err != nil {
+		err = bosherr.WrapError(err, "Starting job supervisor")
+		return
+	}
+
 	err = a.jobSupervisor.Start()
 	if err != nil {
 		err = bosherr.WrapError(err, "Starting Monitored Services")

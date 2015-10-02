@@ -422,4 +422,46 @@ var _ = Describe("monitJobSupervisor", func() {
 			})
 		})
 	})
+
+	Describe("StartJobSupervisor", func() {
+		It("should start monit service", func() {
+
+			err := monit.StartJobSupervisor()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "start", "monit"}))
+		})
+
+		It("should return error when starting monit service fails", func() {
+			runner.AddCmdResult("service monit start", fakesys.FakeCmdResult{Error: errors.New("fake-monit-error")})
+			err := monit.StartJobSupervisor()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-monit-error"))
+
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "start", "monit"}))
+		})
+	})
+
+	Describe("StopJobSupervisor", func() {
+		It("should stop monit service", func() {
+
+			err := monit.StopJobSupervisor()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "stop", "monit"}))
+		})
+
+		It("should return error when stopping monit service fails", func() {
+			runner.AddCmdResult("service monit stop", fakesys.FakeCmdResult{Error: errors.New("fake-monit-error")})
+			err := monit.StopJobSupervisor()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-monit-error"))
+
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "stop", "monit"}))
+		})
+	})
 })

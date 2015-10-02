@@ -251,3 +251,22 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 	}
 	return
 }
+
+func(m monitJobSupervisor) StartJobSupervisor() error{
+	_, _, _, err := m.runner.RunCommand("sv", "start", "monit")
+
+	if err != nil {
+		m.logger.Error(monitJobSupervisorLogTag, "Failed to start monit %s", err.Error())
+	}
+	return nil
+}
+
+
+func(m monitJobSupervisor) StopJobSupervisor() error{
+	_, _, _, err := m.runner.RunCommand("sv", "stop", "monit")
+
+	if err != nil {
+		m.logger.Error(monitJobSupervisorLogTag, "Failed to stop monit %s", err.Error())
+	}
+	return nil
+}
