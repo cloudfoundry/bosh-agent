@@ -32,10 +32,9 @@ echo -e "\n Installing ginkgo..."
 $bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
-
-echo -e "\n Checking for unhandled errors"
-$bin/test-unhandled-errors
-let "result+=$?"
+echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk/errcheck/issues/75 is resolved"
+# $bin/test-unhandled-errors
+# let "result+=$?"
 
 echo -e "\n Testing packages..."
 $bin/env ginkgo -r $race -skipPackage="integration,vendor" $bin/..
