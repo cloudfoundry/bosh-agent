@@ -1,14 +1,14 @@
 package matchers_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/matchers"
 
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega/internal/fakematcher"
+	"github.com/onsi/gomega/internal/fakematcher"
 )
 
 var _ = Describe("matchers", func() {

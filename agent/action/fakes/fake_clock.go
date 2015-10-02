@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
+	"github.com/pivotal-golang/clock"
 )
 
 type FakeClock struct {

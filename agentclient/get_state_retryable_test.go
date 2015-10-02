@@ -5,9 +5,9 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agentclient"
 	fakeagentclient "github.com/cloudfoundry/bosh-agent/agentclient/fakes"
-	boshretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("GetStateRetryable", func() {

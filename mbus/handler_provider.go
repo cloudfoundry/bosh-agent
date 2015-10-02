@@ -3,15 +3,15 @@ package mbus
 import (
 	"net/url"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/yagnats"
+	"github.com/cloudfoundry/yagnats"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshmicro "github.com/cloudfoundry/bosh-agent/micro"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type HandlerProvider struct {

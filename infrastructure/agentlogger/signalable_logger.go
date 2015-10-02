@@ -1,9 +1,10 @@
 package agentlogger
 
 import (
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	"os"
 	"runtime"
+
+	"github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func NewSignalableLogger(writerLogger logger.Logger, signalChannel chan os.Signal) (logger.Logger, chan bool) {
