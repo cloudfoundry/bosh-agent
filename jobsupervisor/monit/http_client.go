@@ -8,12 +8,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/charset"
-	_ "github.com/cloudfoundry/bosh-agent/internal/code.google.com/p/go-charset/data" // translations between char sets
+	"code.google.com/p/go-charset/charset"
+	_ "code.google.com/p/go-charset/data" // translations between char sets
 
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshhttp "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/http"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type httpClient struct {

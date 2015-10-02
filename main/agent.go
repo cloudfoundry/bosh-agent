@@ -3,13 +3,14 @@ package main
 import (
 	"os"
 
-	boshapp "github.com/cloudfoundry/bosh-agent/app"
-	"github.com/cloudfoundry/bosh-agent/infrastructure/agentlogger"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"os/signal"
 	"syscall"
+
+	boshapp "github.com/cloudfoundry/bosh-agent/app"
+	"github.com/cloudfoundry/bosh-agent/infrastructure/agentlogger"
+	"github.com/cloudfoundry/bosh-utils/logger"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const mainLogTag = "main"

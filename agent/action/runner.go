@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type Runner interface {
