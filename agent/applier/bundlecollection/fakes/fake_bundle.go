@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 )
 
 type FakeBundleInstallCallBack func()

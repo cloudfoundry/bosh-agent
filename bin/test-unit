@@ -19,7 +19,7 @@ bin=$(dirname $0)
 # Travis randomly kills go builds when using -race
 race=$([ "$TRAVIS" != "true" ] && echo "-race")
 
-ignored=(vendor)
+ignored=(Godeps internal)
 echo -e "\n Formatting packages, other than: ${ignored[*]}..."
 for i in `ls -1` ; do
   if [ -d "$i" ] && [[ ! ${ignored[*]} =~ "$i" ]] ; then
@@ -29,16 +29,16 @@ done
 let "result+=$?"
 
 echo -e "\n Installing ginkgo..."
-$bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
+$bin/go install ./internal/github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
 
 echo -e "\n Checking for unhandled errors"
-#$bin/test-unhandled-errors
+$bin/test-unhandled-errors
 let "result+=$?"
 
 echo -e "\n Testing packages..."
-$bin/env ginkgo -r $race -skipPackage="integration,vendor" $bin/..
+$bin/env ginkgo -r $race -skipPackage="integration,internal" $bin/..
 let "result+=$?"
 
 echo -e "\n Running build script to confirm everything compiles..."

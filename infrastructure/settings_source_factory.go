@@ -3,12 +3,12 @@ package infrastructure
 import (
 	"encoding/json"
 
-	mapstruc "github.com/mitchellh/mapstructure"
+	mapstruc "github.com/cloudfoundry/bosh-agent/internal/github.com/mitchellh/mapstructure"
 
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type Options struct {

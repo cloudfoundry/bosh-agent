@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type Config struct {

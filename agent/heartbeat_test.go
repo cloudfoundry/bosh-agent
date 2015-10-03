@@ -3,8 +3,8 @@ package agent_test
 import (
 	"encoding/json"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"

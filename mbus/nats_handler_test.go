@@ -1,17 +1,17 @@
 package mbus_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/yagnats"
-	"github.com/cloudfoundry/yagnats/fakeyagnats"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/yagnats"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/yagnats/fakeyagnats"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {

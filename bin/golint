@@ -9,7 +9,7 @@ errors=$(
     | grep -v 'should have comment.* or be unexported'      \
     | grep -v '/mocks/'                                     \
     | grep -v '/fakes/'                                     \
-    | grep -v 'vendor/'                                   \
+    | grep -v 'internal/'                                   \
     | grep -v 'should not be capitalized'                   \
     | grep -v 'underscore in package name'                  \
     | grep -v 'bootstrapper/spec/'                          \

@@ -6,10 +6,10 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type DrainAction struct {

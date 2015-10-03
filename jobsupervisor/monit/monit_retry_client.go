@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-utils/http"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	"github.com/pivotal-golang/clock"
+	boshhttp "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/http"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 )
 
 type monitRetryClient struct {

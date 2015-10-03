@@ -3,8 +3,8 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
@@ -14,9 +14,9 @@ import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	fakedrain "github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("DrainAction", func() {

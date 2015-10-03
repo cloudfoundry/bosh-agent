@@ -5,17 +5,16 @@ import (
 	"net/http"
 	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-utils/http"
-	fakehttp "github.com/cloudfoundry/bosh-utils/http/fakes"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	"github.com/pivotal-golang/clock/fakeclock"
+	boshhttp "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/http"
+	fakehttp "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/http/fakes"
+	boshretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"io"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	"io"
 )
 
 var _ = Describe("MonitRetryStrategy", func() {

@@ -1,17 +1,17 @@
 package script_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	fakedrain "github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ConcreteJobScriptProvider", func() {

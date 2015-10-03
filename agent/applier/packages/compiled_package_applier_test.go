@@ -3,18 +3,18 @@ package packages_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	fakeblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakecmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBundle) {

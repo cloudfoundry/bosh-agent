@@ -2,13 +2,12 @@ package agentlogger_test
 
 import (
 	"bytes"
+	"github.com/cloudfoundry/bosh-agent/infrastructure/agentlogger"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 	"os"
 	"syscall"
-
-	"github.com/cloudfoundry/bosh-agent/infrastructure/agentlogger"
-	"github.com/cloudfoundry/bosh-utils/logger"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Signalable logger debug", func() {

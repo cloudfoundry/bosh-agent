@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"github.com/pivotal-golang/clock"
+	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 )
 
 type ConcreteScript struct {

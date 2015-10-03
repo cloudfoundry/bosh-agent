@@ -3,9 +3,9 @@ package action
 import (
 	"errors"
 
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type UpdateSettingsAction struct {
