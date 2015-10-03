@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const (

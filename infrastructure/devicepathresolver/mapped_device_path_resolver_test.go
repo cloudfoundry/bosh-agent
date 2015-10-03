@@ -3,13 +3,13 @@ package devicepathresolver_test
 import (
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("mappedDevicePathResolver", func() {

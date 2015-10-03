@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega/format"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega/types"
+	"github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
+	"github.com/onsi/gomega/types"
 )
 
 type OneOfMatcher struct {

@@ -1,12 +1,12 @@
 package ntp_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-	fakefs "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakefs "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("concreteService", func() {

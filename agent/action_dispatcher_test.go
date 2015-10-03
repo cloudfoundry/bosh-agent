@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {

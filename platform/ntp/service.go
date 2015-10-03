@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 var (

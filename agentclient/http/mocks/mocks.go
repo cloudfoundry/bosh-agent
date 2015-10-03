@@ -5,7 +5,7 @@ package mocks
 
 import (
 	agentclient "github.com/cloudfoundry/bosh-agent/agentclient"
-	gomock "github.com/cloudfoundry/bosh-agent/internal/github.com/golang/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // Mock of AgentClientFactory interface

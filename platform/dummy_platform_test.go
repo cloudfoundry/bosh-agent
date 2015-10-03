@@ -1,18 +1,18 @@
 package platform_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("DummyPlatform", describeDummyPlatform)

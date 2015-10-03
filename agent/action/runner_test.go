@@ -3,9 +3,10 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
