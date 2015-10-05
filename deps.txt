@@ -13,3 +13,4 @@ github.com/golang/mock/gomock:06883d9
 github.com/apcera/nats:ef51659
 github.com/onsi/gomega:d6dbcad
 github.com/nats-io/nats/encoders/builtin:ef51659
+github.com/cloudfoundry/bosh-init/registry:c99761b

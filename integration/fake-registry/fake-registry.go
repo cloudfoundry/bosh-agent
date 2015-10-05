@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	bmregistry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-init/registry"
+	bmregistry "github.com/cloudfoundry/bosh-init/registry"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
