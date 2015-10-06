@@ -1,19 +1,15 @@
-// Copyright 2012-2015 Apcera Inc. All rights reserved.
+// Copyright 2012-2014 Apcera Inc. All rights reserved.
 
-package builtin_test
+package nats
 
 import (
 	"bytes"
 	"testing"
 	"time"
-
-	"github.com/nats-io/nats"
-	"github.com/nats-io/nats/encoders/builtin"
-	"github.com/nats-io/nats/test"
 )
 
-func NewEConn(t *testing.T) *nats.EncodedConn {
-	ec, err := nats.NewEncodedConn(test.NewDefaultConnection(t), nats.DEFAULT_ENCODER)
+func NewEConn(t *testing.T) *EncodedConn {
+	ec, err := NewEncodedConn(newConnection(t), "default")
 	if err != nil {
 		t.Fatalf("Failed to create an encoded connection: %v\n", err)
 	}
@@ -21,20 +17,17 @@ func NewEConn(t *testing.T) *nats.EncodedConn {
 }
 
 func TestConstructorErrs(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
-	c := test.NewDefaultConnection(t)
-	_, err := nats.NewEncodedConn(nil, "default")
+	c := newConnection(t)
+	_, err := NewEncodedConn(nil, "default")
 	if err == nil {
 		t.Fatal("Expected err for nil connection")
 	}
-	_, err = nats.NewEncodedConn(c, "foo22")
+	_, err = NewEncodedConn(c, "foo22")
 	if err == nil {
 		t.Fatal("Expected err for bad encoder")
 	}
 	c.Close()
-	_, err = nats.NewEncodedConn(c, "default")
+	_, err = NewEncodedConn(c, "default")
 	if err == nil {
 		t.Fatal("Expected err for closed connection")
 	}
@@ -42,9 +35,6 @@ func TestConstructorErrs(t *testing.T) {
 }
 
 func TestMarshalString(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -58,7 +48,7 @@ func TestMarshalString(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_string", testString)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -67,9 +57,6 @@ func TestMarshalString(t *testing.T) {
 }
 
 func TestMarshalBytes(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -83,7 +70,7 @@ func TestMarshalBytes(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_bytes", testBytes)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -92,9 +79,6 @@ func TestMarshalBytes(t *testing.T) {
 }
 
 func TestMarshalInt(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -108,7 +92,7 @@ func TestMarshalInt(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_int", testN)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -117,9 +101,6 @@ func TestMarshalInt(t *testing.T) {
 }
 
 func TestMarshalInt32(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -133,7 +114,7 @@ func TestMarshalInt32(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_int", testN)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -142,9 +123,6 @@ func TestMarshalInt32(t *testing.T) {
 }
 
 func TestMarshalInt64(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -158,7 +136,7 @@ func TestMarshalInt64(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_int", testN)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -167,9 +145,6 @@ func TestMarshalInt64(t *testing.T) {
 }
 
 func TestMarshalFloat32(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -183,7 +158,7 @@ func TestMarshalFloat32(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_float", testN)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -192,9 +167,6 @@ func TestMarshalFloat32(t *testing.T) {
 }
 
 func TestMarshalFloat64(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -208,7 +180,7 @@ func TestMarshalFloat64(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_float", testN)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -217,9 +189,6 @@ func TestMarshalFloat64(t *testing.T) {
 }
 
 func TestMarshalBool(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -231,7 +200,7 @@ func TestMarshalBool(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("enc_bool", false)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -240,9 +209,6 @@ func TestMarshalBool(t *testing.T) {
 }
 
 func TestExtendedSubscribeCB(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -261,7 +227,7 @@ func TestExtendedSubscribeCB(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish(subject, testString)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -270,9 +236,6 @@ func TestExtendedSubscribeCB(t *testing.T) {
 }
 
 func TestExtendedSubscribeCB2(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -295,7 +258,7 @@ func TestExtendedSubscribeCB2(t *testing.T) {
 		ch <- true
 	})
 	ec.PublishRequest(oSubj, oReply, testString)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -304,9 +267,6 @@ func TestExtendedSubscribeCB2(t *testing.T) {
 }
 
 func TestRawMsgSubscribeCB(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -316,7 +276,7 @@ func TestRawMsgSubscribeCB(t *testing.T) {
 	oSubj := "cb_args"
 	oReply := "foobar"
 
-	ec.Subscribe(oSubj, func(m *nats.Msg) {
+	ec.Subscribe(oSubj, func(m *Msg) {
 		s := string(m.Data)
 		if s != testString {
 			t.Fatalf("Received test string of '%s', wanted '%s'\n", s, testString)
@@ -330,7 +290,7 @@ func TestRawMsgSubscribeCB(t *testing.T) {
 		ch <- true
 	})
 	ec.PublishRequest(oSubj, oReply, testString)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -339,9 +299,6 @@ func TestRawMsgSubscribeCB(t *testing.T) {
 }
 
 func TestEncRequest(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -358,9 +315,6 @@ func TestEncRequest(t *testing.T) {
 }
 
 func TestEncRequestReceivesMsg(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -368,7 +322,7 @@ func TestEncRequestReceivesMsg(t *testing.T) {
 		ec.Publish(reply, "I can help!")
 	})
 
-	var resp nats.Msg
+	var resp Msg
 
 	err := ec.Request("help", "help me", &resp, 500*time.Millisecond)
 	if err != nil {
@@ -377,9 +331,6 @@ func TestEncRequestReceivesMsg(t *testing.T) {
 }
 
 func TestAsyncMarshalErr(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -392,18 +343,18 @@ func TestAsyncMarshalErr(t *testing.T) {
 		// This will never get called.
 	})
 
-	ec.Conn.Opts.AsyncErrorCB = func(c *nats.Conn, s *nats.Subscription, err error) {
+	ec.Conn.Opts.AsyncErrorCB = func(c *Conn, s *Subscription, err error) {
 		ch <- true
 	}
 
 	ec.Publish(subject, testString)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatalf("Did not receive the message: %s", e)
 	}
 }
 
 func TestEncodeNil(t *testing.T) {
-	de := &builtin.DefaultEncoder{}
+	de := &DefaultEncoder{}
 	_, err := de.Encode("foo", nil)
 	if err != nil {
 		t.Fatalf("Expected no error encoding nil: %v", err)
@@ -411,7 +362,7 @@ func TestEncodeNil(t *testing.T) {
 }
 
 func TestDecodeDefault(t *testing.T) {
-	de := &builtin.DefaultEncoder{}
+	de := &DefaultEncoder{}
 	b, err := de.Encode("foo", 22)
 	if err != nil {
 		t.Fatalf("Expected no error encoding number: %v", err)

@@ -1,67 +1,46 @@
-package test
+package nats
 
 import (
-	"runtime"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/nats-io/nats"
 )
 
 // More advanced tests on subscriptions
 
 func TestServerAutoUnsub(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-	received := int32(0)
-	max := int32(10)
-
-	base := runtime.NumGoroutine()
-
-	sub, err := nc.Subscribe("foo", func(_ *nats.Msg) {
-		atomic.AddInt32(&received, 1)
+	received := 0
+	max := 10
+	sub, err := nc.Subscribe("foo", func(_ *Msg) {
+		received += 1
 	})
 	if err != nil {
 		t.Fatal("Failed to subscribe: ", err)
 	}
-	sub.AutoUnsubscribe(int(max))
-	total := 100
-	for i := 0; i < total; i++ {
-		nc.Publish("foo", []byte("Hello"))
-	}
-	nc.Flush()
-	time.Sleep(10 * time.Millisecond)
-
-	if atomic.LoadInt32(&received) != max {
-		t.Fatalf("Received %d msgs, wanted only %d\n", received, max)
-	}
-	if sub.IsValid() {
-		t.Fatal("Expected subscription to be invalid after hitting max")
-	}
-	delta := (runtime.NumGoroutine() - base)
-	if delta > 0 {
-		t.Fatalf("%d Go routines still exist post max subscriptions hit", delta)
-	}
-}
-
-func TestClientSyncAutoUnsub(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
-	defer nc.Close()
-	received := 0
-	max := 10
-	sub, _ := nc.SubscribeSync("foo")
 	sub.AutoUnsubscribe(max)
 	total := 100
 	for i := 0; i < total; i++ {
 		nc.Publish("foo", []byte("Hello"))
 	}
+	nc.Flush()
+	if received != max {
+		t.Fatalf("Received %d msgs, wanted only %d\n", received, max)
+	}
+}
+
+func TestClientSyncAutoUnsub(t *testing.T) {
+	nc := newConnection(t)
+	defer nc.Close()
+	received := 0
+	max := 10
+	sub, _ := nc.SubscribeSync("foo")
+	total := 100
+	for i := 0; i < total; i++ {
+		nc.Publish("foo", []byte("Hello"))
+	}
+	sub.AutoUnsubscribe(max)
 	nc.Flush()
 	for {
 		_, err := sub.NextMsg(1 * time.Millisecond)
@@ -73,43 +52,32 @@ func TestClientSyncAutoUnsub(t *testing.T) {
 	if received != max {
 		t.Fatalf("Received %d msgs, wanted only %d\n", received, max)
 	}
-	if sub.IsValid() {
-		t.Fatal("Expected subscription to be invalid after hitting max")
-	}
 }
 
 func TestClientASyncAutoUnsub(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-	received := int32(0)
-	max := int32(10)
-	sub, err := nc.Subscribe("foo", func(_ *nats.Msg) {
-		atomic.AddInt32(&received, 1)
+	received := 0
+	max := 10
+	sub, err := nc.Subscribe("foo", func(_ *Msg) {
+		received += 1
 	})
 	if err != nil {
 		t.Fatal("Failed to subscribe: ", err)
 	}
-	sub.AutoUnsubscribe(int(max))
 	total := 100
 	for i := 0; i < total; i++ {
 		nc.Publish("foo", []byte("Hello"))
 	}
+	sub.AutoUnsubscribe(max)
 	nc.Flush()
-	time.Sleep(10 * time.Millisecond)
-
-	if atomic.LoadInt32(&received) != max {
+	if received != max {
 		t.Fatalf("Received %d msgs, wanted only %d\n", received, max)
 	}
 }
 
 func TestCloseSubRelease(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	sub, _ := nc.SubscribeSync("foo")
 	start := time.Now()
 	go func() {
@@ -128,10 +96,7 @@ func TestCloseSubRelease(t *testing.T) {
 }
 
 func TestIsValidSubscriber(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
 
 	sub, err := nc.SubscribeSync("foo")
@@ -154,10 +119,7 @@ func TestIsValidSubscriber(t *testing.T) {
 }
 
 func TestSlowSubscriber(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
 
 	sub, _ := nc.SubscribeSync("foo")
@@ -179,17 +141,11 @@ func TestSlowSubscriber(t *testing.T) {
 }
 
 func TestSlowAsyncSubscriber(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
 
-	bch := make(chan bool)
-
-	nc.Subscribe("foo", func(_ *nats.Msg) {
-		// block to back us up..
-		<-bch
+	nc.Subscribe("foo", func(_ *Msg) {
+		time.Sleep(200 * time.Second)
 	})
 	for i := 0; i < (nc.Opts.SubChanLen + 100); i++ {
 		nc.Publish("foo", []byte("Hello"))
@@ -204,56 +160,29 @@ func TestSlowAsyncSubscriber(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected an error indicating slow consumer")
 	}
-	// release the sub
-	bch <- true
 }
 
 func TestAsyncErrHandler(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	// Limit internal subchan length to trip condition easier.
-	opts := nats.DefaultOptions
-	opts.SubChanLen = 10
-
-	nc, err := opts.Connect()
-	if err != nil {
-		t.Fatalf("Could not connect to server: %v\n", err)
-	}
+	nc := newConnection(t)
 	defer nc.Close()
 
+	ch := make(chan bool)
 	subj := "async_test"
-	bch := make(chan bool)
 
-	sub, err := nc.Subscribe(subj, func(_ *nats.Msg) {
-		// block to back us up..
-		<-bch
+	sub, err := nc.Subscribe(subj, func(_ *Msg) {
+		time.Sleep(200 * time.Second)
 	})
 	if err != nil {
 		t.Fatalf("Could not subscribe: %v\n", err)
 	}
 
-	ch := make(chan bool)
-
-	aeCalled := int64(0)
-
-	nc.Opts.AsyncErrorCB = func(c *nats.Conn, s *nats.Subscription, e error) {
-		// Suppress additional calls
-		if atomic.LoadInt64(&aeCalled) == 1 {
-			return
-		}
-		atomic.AddInt64(&aeCalled, 1)
-
+	nc.Opts.AsyncErrorCB = func(c *Conn, s *Subscription, e error) {
 		if s != sub {
 			t.Fatal("Did not receive proper subscription")
 		}
-		if e != nats.ErrSlowConsumer {
-			t.Fatalf("Did not receive proper error: %v vs %v\n", e, nats.ErrSlowConsumer)
+		if e != ErrSlowConsumer {
+			t.Fatalf("Did not receive proper error: %v vs %v\n", e, ErrSlowConsumer)
 		}
-		// release the sub
-		bch <- true
-
-		// release the test
 		ch <- true
 	}
 
@@ -261,9 +190,10 @@ func TestAsyncErrHandler(t *testing.T) {
 	for i := 0; i < (nc.Opts.SubChanLen + 100); i++ {
 		nc.Publish(subj, b)
 	}
+
 	nc.Flush()
 
-	if e := Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatal("Failed to call async err handler")
 	}
 }
@@ -271,24 +201,21 @@ func TestAsyncErrHandler(t *testing.T) {
 // Test to make sure that we can send and async receive messages on
 // different subjects within a callback.
 func TestAsyncSubscriberStarvation(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
 
 	// Helper
-	nc.Subscribe("helper", func(m *nats.Msg) {
+	nc.Subscribe("helper", func(m *Msg) {
 		nc.Publish(m.Reply, []byte("Hello"))
 	})
 
 	ch := make(chan bool)
 
 	// Kickoff
-	nc.Subscribe("start", func(m *nats.Msg) {
+	nc.Subscribe("start", func(m *Msg) {
 		// Helper Response
-		response := nats.NewInbox()
-		nc.Subscribe(response, func(_ *nats.Msg) {
+		response := NewInbox()
+		nc.Subscribe(response, func(_ *Msg) {
 			ch <- true
 		})
 		nc.PublishRequest("helper", response, []byte("Help Me!"))
@@ -297,23 +224,20 @@ func TestAsyncSubscriberStarvation(t *testing.T) {
 	nc.Publish("start", []byte("Begin"))
 	nc.Flush()
 
-	if e := Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatal("Was stalled inside of callback waiting on another callback")
 	}
 }
 
 func TestAsyncSubscribersOnClose(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 
 	toSend := 10
-	callbacks := int32(0)
+	callbacks := int64(0)
 	ch := make(chan bool, toSend)
 
-	nc.Subscribe("foo", func(_ *nats.Msg) {
-		atomic.AddInt32(&callbacks, 1)
+	nc.Subscribe("foo", func(_ *Msg) {
+		atomic.AddInt64(&callbacks, 1)
 		<-ch
 	})
 
@@ -321,7 +245,6 @@ func TestAsyncSubscribersOnClose(t *testing.T) {
 		nc.Publish("foo", []byte("Hello World!"))
 	}
 	nc.Flush()
-	time.Sleep(10 * time.Millisecond)
 	nc.Close()
 
 	// Release callbacks
@@ -331,19 +254,16 @@ func TestAsyncSubscribersOnClose(t *testing.T) {
 
 	// Wait for some time.
 	time.Sleep(10 * time.Millisecond)
-	seen := atomic.LoadInt32(&callbacks)
+	seen := atomic.LoadInt64(&callbacks)
 	if seen != 1 {
 		t.Fatalf("Expected only one callback, received %d callbacks\n", seen)
 	}
 }
 
 func TestNextMsgCallOnAsyncSub(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-	sub, err := nc.Subscribe("foo", func(_ *nats.Msg) {
+	sub, err := nc.Subscribe("foo", func(_ *Msg) {
 	})
 	if err != nil {
 		t.Fatal("Failed to subscribe: ", err)
@@ -352,4 +272,9 @@ func TestNextMsgCallOnAsyncSub(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected an error call NextMsg() on AsyncSubscriber")
 	}
+}
+
+// FIXME: Hack, make this better
+func TestStopServer(t *testing.T) {
+	s.stopServer()
 }

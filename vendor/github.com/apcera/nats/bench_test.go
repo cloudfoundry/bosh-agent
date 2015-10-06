@@ -1,25 +1,26 @@
-package test
+package nats
 
 import (
-	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/nats-io/nats"
 )
 
 func BenchmarkPublishSpeed(b *testing.B) {
 	b.StopTimer()
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(b)
+	server := startServer(b, DefaultPort, "")
+	defer server.stopServer()
+	nc, err := Connect(DefaultURL)
+	if err != nil {
+		b.Fatalf("Could not connect: %v\n", err)
+	}
 	defer nc.Close()
 	b.StartTimer()
 
 	msg := []byte("Hello World")
 
 	for i := 0; i < b.N; i++ {
-		if err := nc.Publish("foo", msg); err != nil {
+		err = nc.Publish("foo", msg)
+		if err != nil {
 			b.Fatalf("Error in benchmark during Publish: %v\n", err)
 		}
 	}
@@ -30,23 +31,26 @@ func BenchmarkPublishSpeed(b *testing.B) {
 
 func BenchmarkPubSubSpeed(b *testing.B) {
 	b.StopTimer()
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(b)
+	server := startServer(b, DefaultPort, "")
+	defer server.stopServer()
+	nc, err := Connect(DefaultURL)
+	if err != nil {
+		b.Fatalf("Could not connect: %v\n", err)
+	}
 	defer nc.Close()
 
 	ch := make(chan bool)
 	b.StartTimer()
 
-	nc.Opts.AsyncErrorCB = func(nc *nats.Conn, s *nats.Subscription, err error) {
+	nc.Opts.AsyncErrorCB = func(nc *Conn, s *Subscription, err error) {
 		b.Fatalf("Error : %v\n", err)
 	}
 
-	received := int32(0)
+	received := 0
 
-	nc.Subscribe("foo", func(m *nats.Msg) {
-		atomic.AddInt32(&received, 1)
-		if atomic.LoadInt32(&received) >= int32(b.N) {
+	nc.Subscribe("foo", func(m *Msg) {
+		received += 1
+		if received >= b.N {
 			ch <- true
 		}
 	})
@@ -54,20 +58,21 @@ func BenchmarkPubSubSpeed(b *testing.B) {
 	msg := []byte("Hello World")
 
 	for i := 0; i < b.N; i++ {
-		if err := nc.Publish("foo", msg); err != nil {
+		err = nc.Publish("foo", msg)
+		if err != nil {
 			b.Fatalf("Error in benchmark during Publish: %v\n", err)
 		}
-		// Don't overrun ourselves and be a slow consumer, server will cut us off
-		if int32(i)-atomic.LoadInt32(&received) > 8192 {
-			time.Sleep(100)
+		// Don't overrun ourselves and be a slow consumer
+		if i%1000 == 0 {
+			time.Sleep(10)
 		}
 	}
 
 	// Make sure they are all processed.
-	err := WaitTime(ch, 10*time.Second)
+	err = waitTime(ch, 10*time.Second)
 	if err != nil {
 		b.Fatal("Timed out waiting for messages")
-	} else if atomic.LoadInt32(&received) != int32(b.N) {
+	} else if received != b.N {
 		b.Fatal(nc.LastError())
 	}
 	b.StopTimer()

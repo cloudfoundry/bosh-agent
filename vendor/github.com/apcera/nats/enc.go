@@ -1,4 +1,4 @@
-// Copyright 2012-2015 Apcera Inc. All rights reserved.
+// Copyright 2012-2014 Apcera Inc. All rights reserved.
 
 package nats
 
@@ -8,9 +8,6 @@ import (
 	"reflect"
 	"sync"
 	"time"
-
-	// Default Encoders
-	. "github.com/nats-io/nats/encoders/builtin"
 )
 
 // Encoder interface is for all register encoders
@@ -172,9 +169,6 @@ func (c *EncodedConn) QueueSubscribe(subject, queue string, cb Handler) (*Subscr
 
 // Internal implementation that all public functions will use.
 func (c *EncodedConn) subscribe(subject, queue string, cb Handler) (*Subscription, error) {
-	if cb == nil {
-		return nil, errors.New("nats: Handler required for EncodedConn Subscription")
-	}
 	argType, numArgs := argInfo(cb)
 	cbValue := reflect.ValueOf(cb)
 	wantsRaw := (argType == emptyMsgType)
@@ -236,7 +230,7 @@ func (c *EncodedConn) Flush() error {
 }
 
 // Close will close the connection to the server. This call will release
-// all blocking calls, such as Flush(), etc.
+// all blocking calls, such as Flush() and NextMsg()
 func (c *EncodedConn) Close() {
 	c.Conn.Close()
 }

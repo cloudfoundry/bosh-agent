@@ -1,17 +1,14 @@
-// Copyright 2012-2015 Apcera Inc. All rights reserved.
+// Copyright 2012 Apcera Inc. All rights reserved.
 
-package builtin_test
+package nats
 
 import (
 	"reflect"
 	"testing"
-
-	"github.com/nats-io/nats"
-	"github.com/nats-io/nats/test"
 )
 
-func NewGobEncodedConn(t *testing.T) *nats.EncodedConn {
-	ec, err := nats.NewEncodedConn(test.NewDefaultConnection(t), nats.GOB_ENCODER)
+func NewGobEncodedConn(t *testing.T) *EncodedConn {
+	ec, err := NewEncodedConn(newConnection(t), "gob")
 	if err != nil {
 		t.Fatalf("Failed to create an encoded connection: %v\n", err)
 	}
@@ -19,9 +16,6 @@ func NewGobEncodedConn(t *testing.T) *nats.EncodedConn {
 }
 
 func TestGobMarshalString(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewGobEncodedConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -35,15 +29,12 @@ func TestGobMarshalString(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("gob_string", testString)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatal("Did not receive the message")
 	}
 }
 
 func TestGobMarshalInt(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewGobEncodedConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
@@ -57,24 +48,21 @@ func TestGobMarshalInt(t *testing.T) {
 		ch <- true
 	})
 	ec.Publish("gob_int", testN)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatal("Did not receive the message")
 	}
 }
 
 func TestGobMarshalStruct(t *testing.T) {
-	s := test.RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewGobEncodedConn(t)
 	defer ec.Close()
 	ch := make(chan bool)
 
-	me := &person{Name: "derek", Age: 22, Address: "140 New Montgomery St"}
+	me := &person{Name: "derek", Age: 22, Address: "85 Second St"}
 	me.Children = make(map[string]*person)
 
-	me.Children["sam"] = &person{Name: "sam", Age: 19, Address: "140 New Montgomery St"}
-	me.Children["meg"] = &person{Name: "meg", Age: 17, Address: "140 New Montgomery St"}
+	me.Children["sam"] = &person{Name: "sam", Age: 16, Address: "85 Second St"}
+	me.Children["meg"] = &person{Name: "meg", Age: 14, Address: "85 Second St"}
 
 	me.Assets = make(map[string]uint)
 	me.Assets["house"] = 1000
@@ -89,7 +77,7 @@ func TestGobMarshalStruct(t *testing.T) {
 	})
 
 	ec.Publish("gob_struct", me)
-	if e := test.Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatal("Did not receive the message")
 	}
 }

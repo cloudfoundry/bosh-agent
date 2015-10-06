@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	Version              = "1.1.2"
+	Version              = "1.0.8"
 	DefaultURL           = "nats://localhost:4222"
 	DefaultPort          = 4222
 	DefaultMaxReconnect  = 60
@@ -37,7 +37,6 @@ const (
 	DefaultMaxPingOut    = 2
 	DefaultMaxChanLen    = 65536
 	RequestChanLen       = 4
-	LangString           = "go"
 )
 
 // For detection and proper handling of a Stale Connection
@@ -48,7 +47,6 @@ var (
 	ErrSecureConnRequired = errors.New("nats: Secure connection required")
 	ErrSecureConnWanted   = errors.New("nats: Secure connection not available")
 	ErrBadSubscription    = errors.New("nats: Invalid Subscription")
-	ErrBadSubject         = errors.New("nats: Invalid Subject")
 	ErrSlowConsumer       = errors.New("nats: Slow Consumer, messages dropped")
 	ErrTimeout            = errors.New("nats: Timeout")
 	ErrBadTimeout         = errors.New("nats: Timeout Invalid")
@@ -57,7 +55,6 @@ var (
 	ErrJsonParse          = errors.New("nats: Connect message, json parse err")
 	ErrChanArg            = errors.New("nats: Argument needs to be a channel type")
 	ErrStaleConnection    = errors.New("nats: " + STALE_CONNECTION)
-	ErrMaxPayload         = errors.New("nats: Maximum Payload Exceeded")
 )
 
 var DefaultOptions = Options{
@@ -77,7 +74,6 @@ const (
 	CONNECTED
 	CLOSED
 	RECONNECTING
-	CONNECTING
 )
 
 // ConnHandlers are used for asynchronous events such as
@@ -145,7 +141,6 @@ type Conn struct {
 	pending *bytes.Buffer
 	fch     chan bool
 	info    serverInfo
-	_       uint32 // needed to correctly align the following ssid field on i386 systems
 	ssid    int64
 	subs    map[int64]*Subscription
 	mch     chan *Msg
@@ -225,8 +220,6 @@ type connectInfo struct {
 	Pass     string `json:"pass,omitempty"`
 	Ssl      bool   `json:"ssl_required"`
 	Name     string `json:"name"`
-	Lang     string `json:"lang"`
-	Version  string `json:"version"`
 }
 
 // MsgHandler is a callback function that processes messages delivered to
@@ -260,7 +253,6 @@ func (o Options) Connect() (*Conn, error) {
 	if nc.Opts.SubChanLen == 0 {
 		nc.Opts.SubChanLen = DefaultMaxChanLen
 	}
-
 	if err := nc.setupServerPool(); err != nil {
 		return nil, err
 	}
@@ -404,24 +396,13 @@ func (nc *Conn) setupServerPool() error {
 		s := &srv{url: u}
 		nc.srvPool = append(nc.srvPool, s)
 	}
-
-	// Place default URL if pool is empty.
-	if len(nc.srvPool) <= 0 {
-		u, err := url.Parse(DefaultURL)
-		if err != nil {
-			return err
-		}
-		s := &srv{url: u}
-		nc.srvPool = append(nc.srvPool, s)
-	}
-
 	return nc.pickServer()
 }
 
 // createConn will connect to the server and wrap the appropriate
 // bufio structures. It will do the right thing when an existing
 // connection is in place.
-func (nc *Conn) createConn() (err error) {
+func (nc *Conn) createConn() error {
 	if nc.Opts.Timeout < 0 {
 		return ErrBadTimeout
 	}
@@ -430,9 +411,9 @@ func (nc *Conn) createConn() (err error) {
 	} else {
 		cur.lastAttempt = time.Now()
 	}
-	nc.conn, err = net.DialTimeout("tcp", nc.url.Host, nc.Opts.Timeout)
-	if err != nil {
-		return err
+	nc.conn, nc.err = net.DialTimeout("tcp", nc.url.Host, nc.Opts.Timeout)
+	if nc.err != nil {
+		return nc.err
 	}
 
 	// No clue why, but this stalls and kills performance on Mac (Mavericks).
@@ -460,8 +441,6 @@ func (nc *Conn) makeTLSConn() {
 func (nc *Conn) waitForExits() {
 	// Kick old flusher forcefully.
 	nc.fch <- true
-
-	//	nc.fch <- true
 	// Wait for any previous go routines.
 	nc.wg.Wait()
 }
@@ -533,8 +512,8 @@ func (nc *Conn) processConnectInit() error {
 	nc.mu.Lock()
 	nc.setup()
 
-	// Set our status to connecting.
-	nc.status = CONNECTING
+	// Set our status to connected.
+	nc.status = CONNECTED
 
 	// Make sure to process the INFO inline here.
 	if nc.err = nc.processExpectedInfo(); nc.err != nil {
@@ -543,7 +522,7 @@ func (nc *Conn) processConnectInit() error {
 	}
 	nc.mu.Unlock()
 
-	// We need these to process the sendConnect response.
+	// We need these to process the sendConnect.
 	go nc.spinUpSocketWatchers()
 
 	return nc.sendConnect()
@@ -655,8 +634,7 @@ func (nc *Conn) connectProto() (string, error) {
 		user = u.Username()
 		pass, _ = u.Password()
 	}
-	cinfo := connectInfo{o.Verbose, o.Pedantic, user, pass,
-		o.Secure, o.Name, LangString, Version}
+	cinfo := connectInfo{o.Verbose, o.Pedantic, user, pass, o.Secure, o.Name}
 	b, err := json.Marshal(cinfo)
 	if err != nil {
 		nc.err = ErrJsonParse
@@ -669,6 +647,7 @@ func (nc *Conn) connectProto() (string, error) {
 // applicable. Will wait for a flush to return from the server for error
 // processing. The lock should not be held entering this function.
 func (nc *Conn) sendConnect() error {
+
 	nc.mu.Lock()
 	cProto, err := nc.connectProto()
 	if err != nil {
@@ -680,6 +659,7 @@ func (nc *Conn) sendConnect() error {
 	nc.sendProto(cProto)
 
 	if err := nc.FlushTimeout(DefaultTimeout); err != nil {
+		nc.err = err
 		return err
 	}
 
@@ -689,9 +669,7 @@ func (nc *Conn) sendConnect() error {
 	if nc.isClosed() {
 		return nc.err
 	}
-	// This is where we are truly connected.
 	nc.status = CONNECTED
-
 	return nil
 }
 
@@ -854,9 +832,6 @@ func (nc *Conn) doReconnect() {
 		cur.didConnect = true
 		cur.reconnects = 0
 
-		// Set our status to connecting.
-		nc.status = CONNECTING
-
 		// Process Connect logic
 		if nc.err = nc.processExpectedInfo(); nc.err == nil {
 			// Send our connect info as normal
@@ -865,13 +840,14 @@ func (nc *Conn) doReconnect() {
 				continue
 			}
 
+			// Set our status to connected.
+			nc.status = CONNECTED
+
 			nc.bw.WriteString(cProto)
 			// Send existing subscription state
 			nc.resendSubscriptions()
 			// Now send off and clear pending buffer
 			nc.flushReconnectPendingItems()
-			// This is where we are truly connected.
-			nc.status = CONNECTED
 
 			// Spin up socket watchers again
 			go nc.spinUpSocketWatchers()
@@ -913,7 +889,7 @@ func (nc *Conn) processOpErr(err error) {
 		nc.mu.Unlock()
 		return
 	}
-	allowReconnect := nc.Opts.AllowReconnect && nc.status == CONNECTED
+	allowReconnect := nc.Opts.AllowReconnect
 	nc.mu.Unlock()
 
 	if allowReconnect {
@@ -963,7 +939,6 @@ func (nc *Conn) readLoop() {
 			nc.processOpErr(err)
 			break
 		}
-
 		if err := nc.parse(b[:n]); err != nil {
 			nc.processOpErr(err)
 			break
@@ -996,23 +971,15 @@ func (nc *Conn) deliverMsgs(ch chan *Msg) {
 		s.mu.Lock()
 		conn := s.conn
 		mcb := s.mcb
-		max := s.max
 		s.mu.Unlock()
 
 		if conn == nil || mcb == nil {
 			continue
 		}
-
-		delivered := atomic.AddUint64(&s.delivered, 1)
-		if max <= 0 || delivered <= max {
+		// FIXME: race on compare?
+		atomic.AddUint64(&s.delivered, 1)
+		if s.max <= 0 || s.delivered <= s.max {
 			mcb(m)
-		}
-		// If we have hit the max for delivered msgs, remove sub.
-		if max > 0 && delivered >= max {
-			nc.mu.Lock()
-			nc.removeSub(s)
-			nc.mu.Unlock()
-			break
 		}
 	}
 }
@@ -1037,10 +1004,8 @@ func (nc *Conn) processMsg(msg []byte) {
 
 	sub.mu.Lock()
 
-	// This is a catch all for more than max messages delivered.
 	if sub.max > 0 && sub.msgs > sub.max {
 		sub.mu.Unlock()
-		nc.removeSub(sub)
 		nc.mu.Unlock()
 		return
 	}
@@ -1079,7 +1044,7 @@ func (nc *Conn) processMsg(msg []byte) {
 func (nc *Conn) processSlowConsumer(s *Subscription) {
 	nc.err = ErrSlowConsumer
 	if nc.Opts.AsyncErrorCB != nil && !s.sc {
-		go nc.Opts.AsyncErrorCB(nc, s, ErrSlowConsumer)
+		go nc.Opts.AsyncErrorCB(nc, s, nc.err)
 	}
 	s.sc = true
 }
@@ -1090,30 +1055,20 @@ func (nc *Conn) flusher() {
 	// Release the wait group
 	defer nc.wg.Done()
 
-	// snapshot the bw and conn since they can change from underneath of us.
-	nc.mu.Lock()
-	bw := nc.bw
-	conn := nc.conn
-	fch := nc.fch
-	nc.mu.Unlock()
-
-	if conn == nil || bw == nil {
-		return
-	}
-
 	for {
-		if _, ok := <-fch; !ok {
+		if _, ok := <-nc.fch; !ok {
 			return
 		}
 		nc.mu.Lock()
 
-		// Check to see if we should bail out.
-		if !nc.isConnected() || bw != nc.bw || conn != nc.conn {
+		// Check for closed or reconnecting
+		if nc.isClosed() || nc.isReconnecting() {
 			nc.mu.Unlock()
 			return
 		}
-		if bw.Buffered() > 0 {
-			nc.err = bw.Flush()
+		b := nc.bw.Buffered()
+		if b > 0 && nc.conn != nil {
+			nc.err = nc.bw.Flush()
 		}
 		nc.mu.Unlock()
 	}
@@ -1178,11 +1133,8 @@ func (nc *Conn) processErr(e string) {
 // kickFlusher will send a bool on a channel to kick the
 // flush Go routine to flush data to the server.
 func (nc *Conn) kickFlusher() {
-	if nc.bw != nil {
-		select {
-		case nc.fch <- true:
-		default:
-		}
+	if len(nc.fch) == 0 && nc.bw != nil {
+		nc.fch <- true
 	}
 }
 
@@ -1193,20 +1145,7 @@ const digits = "0123456789"
 // Sends a protocol data message by queueing into the bufio writer
 // and kicking the flush go routine. These writes should be protected.
 func (nc *Conn) publish(subj, reply string, data []byte) error {
-	if subj == "" {
-		return ErrBadSubject
-	}
 	nc.mu.Lock()
-
-	// Proactively reject payloads over the threshold set by server.
-	var msgSize int64
-	msgSize = int64(len(data))
-	if msgSize > nc.info.MaxPayload {
-		nc.err = ErrMaxPayload
-		err := nc.err
-		nc.mu.Unlock()
-		return err
-	}
 
 	if nc.isClosed() {
 		nc.mu.Unlock()
@@ -1248,21 +1187,18 @@ func (nc *Conn) publish(subj, reply string, data []byte) error {
 	msgh = append(msgh, _CRLF_...)
 
 	// FIXME, do deadlines here
-	if _, err := nc.bw.Write(msgh); err != nil {
-		defer nc.mu.Unlock()
-		nc.err = err
-		return err
+	if _, nc.err = nc.bw.Write(msgh); nc.err != nil {
+		nc.mu.Unlock()
+		return nc.err
 	}
-	if _, err := nc.bw.Write(data); err != nil {
-		defer nc.mu.Unlock()
-		nc.err = err
-		return err
+	if _, nc.err = nc.bw.Write(data); nc.err != nil {
+		nc.mu.Unlock()
+		return nc.err
 	}
 
-	if _, err := nc.bw.WriteString(_CRLF_); err != nil {
-		defer nc.mu.Unlock()
-		nc.err = err
-		return err
+	if _, nc.err = nc.bw.WriteString(_CRLF_); nc.err != nil {
+		nc.mu.Unlock()
+		return nc.err
 	}
 
 	nc.OutMsgs += 1
@@ -1406,7 +1342,15 @@ func (nc *Conn) unsubscribe(sub *Subscription, max int) error {
 		s.max = uint64(max)
 		maxStr = strconv.Itoa(max)
 	} else {
-		nc.removeSub(s)
+		delete(nc.subs, s.sid)
+		s.mu.Lock()
+		if s.mch != nil {
+			close(s.mch)
+			s.mch = nil
+		}
+		// Mark as invalid
+		s.conn = nil
+		s.mu.Unlock()
 	}
 	// We will send these for all subs when we reconnect
 	// so that we can suppress here.
@@ -1414,20 +1358,6 @@ func (nc *Conn) unsubscribe(sub *Subscription, max int) error {
 		nc.bw.WriteString(fmt.Sprintf(unsubProto, s.sid, maxStr))
 	}
 	return nil
-}
-
-// Lock for nc should be held here upon entry
-func (nc *Conn) removeSub(s *Subscription) {
-	delete(nc.subs, s.sid)
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.mch != nil {
-		// Kick out deliverMsgs Goroutine
-		close(s.mch)
-		s.mch = nil
-	}
-	// Mark as invalid
-	s.conn = nil
 }
 
 // IsValid returns a boolean indicating whether the subscription
@@ -1487,10 +1417,7 @@ func (s *Subscription) NextMsg(timeout time.Duration) (msg *Msg, err error) {
 		return nil, ErrSlowConsumer
 	}
 
-	// snapshot
-	nc := s.conn
 	mch := s.mch
-	max := s.max
 	s.mu.Unlock()
 
 	var ok bool
@@ -1502,34 +1429,14 @@ func (s *Subscription) NextMsg(timeout time.Duration) (msg *Msg, err error) {
 		if !ok {
 			return nil, ErrConnectionClosed
 		}
-		delivered := atomic.AddUint64(&s.delivered, 1)
-		if max > 0 {
-			if delivered > max {
-				return nil, errors.New("nats: Max messages delivered")
-			}
-			// Remove subscription if we have reached max.
-			if delivered == max {
-				nc.mu.Lock()
-				nc.removeSub(s)
-				nc.mu.Unlock()
-			}
+		atomic.AddUint64(&s.delivered, 1)
+		if s.max > 0 && s.delivered > s.max {
+			return nil, errors.New("nats: Max messages delivered")
 		}
-
 	case <-t.C:
 		return nil, ErrTimeout
 	}
-
 	return
-}
-
-// Queued returns the number of queued messages in the client for this subscription.
-func (s *Subscription) QueuedMsgs() (int, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.conn == nil {
-		return -1, ErrBadSubscription
-	}
-	return len(s.mch), nil
 }
 
 // FIXME: This is a hack
@@ -1555,8 +1462,7 @@ func (nc *Conn) removeFlushEntry(ch chan bool) bool {
 func (nc *Conn) sendPing(ch chan bool) {
 	nc.pongs = append(nc.pongs, ch)
 	nc.bw.WriteString(pingProto)
-	// Flush in place.
-	nc.bw.Flush()
+	nc.kickFlusher()
 }
 
 func (nc *Conn) processPingTimer() {
@@ -1624,16 +1530,6 @@ func (nc *Conn) Flush() error {
 	return nc.FlushTimeout(60 * time.Second)
 }
 
-// Buffered will return the number of bytes buffered to be sent to the server.
-func (nc *Conn) Buffered() (int, error) {
-	nc.mu.Lock()
-	defer nc.mu.Unlock()
-	if nc.isClosed() || nc.bw == nil {
-		return -1, ErrConnectionClosed
-	}
-	return nc.bw.Buffered(), nil
-}
-
 // resendSubscriptions will send our subscription state back to the
 // server. Used in reconnects
 func (nc *Conn) resendSubscriptions() {
@@ -1654,9 +1550,6 @@ func (nc *Conn) resetPendingFlush() {
 
 // This will clear any pending flush calls and release pending calls.
 func (nc *Conn) clearPendingFlushCalls() {
-	nc.mu.Lock()
-	defer nc.mu.Unlock()
-
 	// Clear any queued pongs, e.g. pending flush calls.
 	for _, ch := range nc.pongs {
 		if ch != nil {
@@ -1768,22 +1661,10 @@ func (nc *Conn) isReconnecting() bool {
 	return nc.status == RECONNECTING
 }
 
-// Test if Conn is connected or connecting.
-func (nc *Conn) isConnected() bool {
-	return nc.status == CONNECTING || nc.status == CONNECTED
-}
-
 // Stats will return a race safe copy of the Statistics section for the connection.
 func (nc *Conn) Stats() Statistics {
 	nc.mu.Lock()
 	defer nc.mu.Unlock()
 	stats := nc.Statistics
 	return stats
-}
-
-// MaxPayload returns the size limit that a message payload can have.
-func (nc *Conn) MaxPayload() int64 {
-	nc.mu.Lock()
-	defer nc.mu.Unlock()
-	return nc.info.MaxPayload
 }

@@ -1,17 +1,14 @@
-package test
+// Copyright 2013-2014 Apcera Inc. All rights reserved.
+
+package nats
 
 import (
 	"runtime"
 	"testing"
 	"time"
-
-	"github.com/nats-io/nats"
 )
 
 func TestBadChan(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -23,19 +20,16 @@ func TestBadChan(t *testing.T) {
 		t.Fatalf("Expected an Error when sending a non-channel\n")
 	}
 
-	if err := ec.BindSendChan("foo", "not a chan"); err != nats.ErrChanArg {
+	if err := ec.BindSendChan("foo", "not a chan"); err != ErrChanArg {
 		t.Fatalf("Expected an ErrChanArg when sending a non-channel\n")
 	}
 
-	if _, err := ec.BindRecvChan("foo", "not a chan"); err != nats.ErrChanArg {
+	if _, err := ec.BindRecvChan("foo", "not a chan"); err != ErrChanArg {
 		t.Fatalf("Expected an ErrChanArg when sending a non-channel\n")
 	}
 }
 
 func TestSimpleSendChan(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -58,7 +52,7 @@ func TestSimpleSendChan(t *testing.T) {
 	// Send to 'foo'
 	ch <- numSent
 
-	if e := Wait(recv); e != nil {
+	if e := wait(recv); e != nil {
 		if ec.LastError() != nil {
 			e = ec.LastError()
 		}
@@ -68,9 +62,6 @@ func TestSimpleSendChan(t *testing.T) {
 }
 
 func TestFailedChannelSend(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -78,7 +69,7 @@ func TestFailedChannelSend(t *testing.T) {
 	ch := make(chan bool)
 	wch := make(chan bool)
 
-	nc.Opts.AsyncErrorCB = func(c *nats.Conn, s *nats.Subscription, e error) {
+	nc.Opts.AsyncErrorCB = func(c *Conn, s *Subscription, e error) {
 		wch <- true
 	}
 
@@ -92,15 +83,12 @@ func TestFailedChannelSend(t *testing.T) {
 	// This should trigger an async error.
 	ch <- true
 
-	if e := Wait(wch); e != nil {
+	if e := wait(wch); e != nil {
 		t.Fatal("Failed to call async err handler")
 	}
 }
 
 func TestSimpleRecvChan(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -126,9 +114,6 @@ func TestSimpleRecvChan(t *testing.T) {
 }
 
 func TestQueueRecvChan(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -154,15 +139,12 @@ func TestQueueRecvChan(t *testing.T) {
 }
 
 func TestDecoderErrRecvChan(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 	nc := ec.Conn
 	wch := make(chan bool)
 
-	nc.Opts.AsyncErrorCB = func(c *nats.Conn, s *nats.Subscription, e error) {
+	nc.Opts.AsyncErrorCB = func(c *Conn, s *Subscription, e error) {
 		wch <- true
 	}
 
@@ -174,15 +156,12 @@ func TestDecoderErrRecvChan(t *testing.T) {
 
 	ec.Publish("foo", "Hello World")
 
-	if e := Wait(wch); e != nil {
+	if e := wait(wch); e != nil {
 		t.Fatal("Failed to call async err handler")
 	}
 }
 
 func TestRecvChanPanicOnClosedChan(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -198,9 +177,6 @@ func TestRecvChanPanicOnClosedChan(t *testing.T) {
 }
 
 func TestRecvChanAsyncLeakGoRoutines(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -215,23 +191,20 @@ func TestRecvChanAsyncLeakGoRoutines(t *testing.T) {
 	// Close the receive Channel
 	close(ch)
 
-	// The publish will trigger the close and shutdown of the Go routines
+	// The publish will trugger the close and shutdown of the Go routines
 	ec.Publish("foo", 22)
 	ec.Flush()
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 
-	delta := (runtime.NumGoroutine() - before)
+	after := runtime.NumGoroutine()
 
-	if delta > 0 {
-		t.Fatalf("Leaked Go routine(s) : %d, closing channel should have closed them\n", delta)
+	if before != after {
+		t.Fatalf("Leaked Go routine(s) : %d, closing channel should have closed them\n", after-before)
 	}
 }
 
 func TestRecvChanLeakGoRoutines(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	ec := NewEConn(t)
 	defer ec.Close()
 
@@ -244,23 +217,19 @@ func TestRecvChanLeakGoRoutines(t *testing.T) {
 		t.Fatalf("Failed to bind to a send channel: %v\n", err)
 	}
 	sub.Unsubscribe()
-
 	// Sleep a bit to wait for the Go routine to exit.
 	time.Sleep(100 * time.Millisecond)
 
-	delta := (runtime.NumGoroutine() - before)
+	after := runtime.NumGoroutine()
 
-	if delta > 0 {
-		t.Fatalf("Leaked Go routine(s) : %d, closing channel should have closed them\n", delta)
+	if before != after {
+		t.Fatalf("Leaked Go routine(s) : %d, closing channel should have closed them\n", after-before)
 	}
 }
 
 func TestRecvChanMultipleMessages(t *testing.T) {
 	// Make sure we can receive more than one message.
 	// In response to #25, which is a bug from fixing #22.
-
-	s := RunDefaultServer()
-	defer s.Shutdown()
 
 	ec := NewEConn(t)
 	defer ec.Close()
@@ -278,7 +247,6 @@ func TestRecvChanMultipleMessages(t *testing.T) {
 		ec.Publish("foo", 22)
 	}
 	ec.Flush()
-	time.Sleep(10 * time.Millisecond)
 
 	if lch := len(ch); lch != size {
 		t.Fatalf("Expected %d messages queued, got %d.", size, lch)
@@ -287,15 +255,13 @@ func TestRecvChanMultipleMessages(t *testing.T) {
 
 func BenchmarkPublishSpeedViaChan(b *testing.B) {
 	b.StopTimer()
-
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc, err := nats.Connect(nats.DefaultURL)
+	server := startServer(b, DefaultPort, "")
+	defer server.stopServer()
+	nc, err := Connect(DefaultURL)
 	if err != nil {
 		b.Fatalf("Could not connect: %v\n", err)
 	}
-	ec, err := nats.NewEncodedConn(nc, nats.DEFAULT_ENCODER)
+	ec, err := NewEncodedConn(nc, "default")
 	defer ec.Close()
 
 	ch := make(chan int32, 1024)

@@ -2,19 +2,15 @@ package nats_test
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/apcera/nats"
 	"time"
-
-	"github.com/nats-io/nats"
 )
 
 // Shows different ways to create a Conn
 func ExampleConnect() {
 
-	nc, _ := nats.Connect(nats.DefaultURL)
-	nc.Close()
-
-	nc, _ = nats.Connect("nats://derek:secretpassword@nats.apcera.com:4222")
-	nc.Close()
+	nats.Connect(nats.DefaultURL)
+	nats.Connect("nats://derek:secretpassword@nats.apcera.com:421")
 
 	opts := nats.Options{
 		AllowReconnect: true,
@@ -23,7 +19,7 @@ func ExampleConnect() {
 		Timeout:        1 * time.Second,
 	}
 
-	nc, _ = opts.Connect()
+	nc, _ := opts.Connect()
 	nc.Close()
 }
 

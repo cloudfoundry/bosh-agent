@@ -1,25 +1,33 @@
-package test
+package nats
 
 import (
 	"bytes"
+	"errors"
 	"math"
 	"regexp"
 	"runtime"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/nats-io/nats"
 )
 
+// Dumb wait program to sync on callbacks, etc... Will timeout
+func wait(ch chan bool) error {
+	return waitTime(ch, 500*time.Millisecond)
+}
+
+func waitTime(ch chan bool, timeout time.Duration) error {
+	select {
+	case <-ch:
+		return nil
+	case <-time.After(timeout):
+	}
+	return errors.New("timeout")
+}
+
 func TestCloseLeakingGoRoutines(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
 	base := runtime.NumGoroutine()
-
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	time.Sleep(10 * time.Millisecond)
 	nc.Close()
 	time.Sleep(10 * time.Millisecond)
@@ -32,35 +40,28 @@ func TestCloseLeakingGoRoutines(t *testing.T) {
 }
 
 func TestConnectedServer(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	nc := NewDefaultConnection(t)
-
+	nc := newConnection(t)
 	u := nc.ConnectedUrl()
-	if u == "" || u != nats.DefaultURL {
+	s := nc.ConnectedServerId()
+	if u == "" || u != DefaultURL {
 		t.Fatalf("Unexpected connected URL of %s\n", u)
 	}
-	srv := nc.ConnectedServerId()
-	if srv == "" {
+	if s == "" {
 		t.Fatal("Expeced a connected server id")
 	}
 	nc.Close()
 	u = nc.ConnectedUrl()
+	s = nc.ConnectedServerId()
 	if u != "" {
 		t.Fatalf("Expected a nil connected URL, got %s\n", u)
 	}
-	srv = nc.ConnectedServerId()
-	if srv != "" {
-		t.Fatalf("Expected a nil connect server, got %s\n", srv)
+	if s != "" {
+		t.Fatalf("Expected a nil connect server, got %s\n", s)
 	}
 }
 
 func TestMultipleClose(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
-
+	nc := newConnection(t)
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
@@ -73,10 +74,7 @@ func TestMultipleClose(t *testing.T) {
 }
 
 func TestBadOptionTimeoutConnect(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-
-	opts := nats.DefaultOptions
+	opts := DefaultOptions
 	opts.Timeout = -1
 	opts.Url = "nats://localhost:4222"
 
@@ -84,43 +82,34 @@ func TestBadOptionTimeoutConnect(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected an error")
 	}
-	if err != nats.ErrNoServers {
+	if err != ErrNoServers {
 		t.Fatalf("Expected a ErrNoServers error: Got %v\n", err)
 	}
 }
 
 func TestSimplePublish(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	if err := nc.Publish("foo", []byte("Hello World")); err != nil {
 		t.Fatal("Failed to publish string message: ", err)
 	}
 }
 
 func TestSimplePublishNoData(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	if err := nc.Publish("foo", nil); err != nil {
 		t.Fatal("Failed to publish empty message: ", err)
 	}
 }
 
 func TestAsyncSubscribe(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	omsg := []byte("Hello World")
 	ch := make(chan bool)
 
-	_, err := nc.Subscribe("foo", func(m *nats.Msg) {
+	_, err := nc.Subscribe("foo", func(m *Msg) {
 		if !bytes.Equal(m.Data, omsg) {
 			t.Fatal("Message received does not match")
 		}
@@ -133,51 +122,43 @@ func TestAsyncSubscribe(t *testing.T) {
 		t.Fatal("Failed to subscribe: ", err)
 	}
 	nc.Publish("foo", omsg)
-	if e := Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatal("Message not received for subscription")
 	}
 }
 
 func TestSyncSubscribe(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
-	sub, err := nc.SubscribeSync("foo")
+	s, err := nc.SubscribeSync("foo")
 	if err != nil {
 		t.Fatal("Failed to subscribe: ", err)
 	}
 	omsg := []byte("Hello World")
 	nc.Publish("foo", omsg)
-	msg, err := sub.NextMsg(1 * time.Second)
+	msg, err := s.NextMsg(1 * time.Second)
 	if err != nil || !bytes.Equal(msg.Data, omsg) {
 		t.Fatal("Message received does not match")
 	}
 }
 
 func TestPubSubWithReply(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
-	sub, err := nc.SubscribeSync("foo")
+	s, err := nc.SubscribeSync("foo")
 	if err != nil {
 		t.Fatal("Failed to subscribe: ", err)
 	}
 	omsg := []byte("Hello World")
-	nc.PublishMsg(&nats.Msg{Subject: "foo", Reply: "bar", Data: omsg})
-	msg, err := sub.NextMsg(10 * time.Second)
+	nc.PublishMsg(&Msg{Subject: "foo", Reply: "bar", Data: omsg})
+	msg, err := s.NextMsg(10 * time.Second)
 	if err != nil || !bytes.Equal(msg.Data, omsg) {
 		t.Fatal("Message received does not match")
 	}
 }
 
 func TestFlush(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
 
 	omsg := []byte("Hello World")
@@ -187,24 +168,20 @@ func TestFlush(t *testing.T) {
 	if err := nc.Flush(); err != nil {
 		t.Fatalf("Received error from flush: %s\n", err)
 	}
-	if nb, _ := nc.Buffered(); nb > 0 {
+	if nb := nc.bw.Buffered(); nb > 0 {
 		t.Fatalf("Outbound buffer not empty: %d bytes\n", nb)
 	}
 }
 
 func TestQueueSubscriber(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	s1, _ := nc.QueueSubscribeSync("foo", "bar")
 	s2, _ := nc.QueueSubscribeSync("foo", "bar")
 	omsg := []byte("Hello World")
 	nc.Publish("foo", omsg)
 	nc.Flush()
-	r1, _ := s1.QueuedMsgs()
-	r2, _ := s2.QueuedMsgs()
+	r1, r2 := len(s1.mch), len(s2.mch)
 	if (r1 + r2) != 1 {
 		t.Fatal("Received too many messages for multiple queue subscribers")
 	}
@@ -218,8 +195,7 @@ func TestQueueSubscriber(t *testing.T) {
 	}
 	nc.Flush()
 	v := uint(float32(total) * 0.15)
-	r1, _ = s1.QueuedMsgs()
-	r2, _ = s2.QueuedMsgs()
+	r1, r2 = len(s1.mch), len(s2.mch)
 	if r1+r2 != total {
 		t.Fatalf("Incorrect number of messages: %d vs %d", (r1 + r2), total)
 	}
@@ -232,37 +208,31 @@ func TestQueueSubscriber(t *testing.T) {
 }
 
 func TestReplyArg(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	ch := make(chan bool)
 	replyExpected := "bar"
 
-	nc.Subscribe("foo", func(m *nats.Msg) {
+	nc.Subscribe("foo", func(m *Msg) {
 		if m.Reply != replyExpected {
 			t.Fatalf("Did not receive correct reply arg in callback: "+
 				"('%s' vs '%s')", m.Reply, replyExpected)
 		}
 		ch <- true
 	})
-	nc.PublishMsg(&nats.Msg{Subject: "foo", Reply: replyExpected, Data: []byte("Hello")})
-	if e := Wait(ch); e != nil {
+	nc.PublishMsg(&Msg{Subject: "foo", Reply: replyExpected, Data: []byte("Hello")})
+	if e := wait(ch); e != nil {
 		t.Fatal("Did not receive callback")
 	}
 }
 
 func TestSyncReplyArg(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	replyExpected := "bar"
-	sub, _ := nc.SubscribeSync("foo")
-	nc.PublishMsg(&nats.Msg{Subject: "foo", Reply: replyExpected, Data: []byte("Hello")})
-	msg, err := sub.NextMsg(1 * time.Second)
+	s, _ := nc.SubscribeSync("foo")
+	nc.PublishMsg(&Msg{Subject: "foo", Reply: replyExpected, Data: []byte("Hello")})
+	msg, err := s.NextMsg(1 * time.Second)
 	if err != nil {
 		t.Fatal("Received an err on NextMsg()")
 	}
@@ -273,22 +243,17 @@ func TestSyncReplyArg(t *testing.T) {
 }
 
 func TestUnsubscribe(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
-	received := int32(0)
-	max := int32(10)
-	ch := make(chan bool)
-	nc.Subscribe("foo", func(m *nats.Msg) {
-		atomic.AddInt32(&received, 1)
+	received := 0
+	max := 10
+	nc.Subscribe("foo", func(m *Msg) {
+		received += 1
 		if received == max {
 			err := m.Sub.Unsubscribe()
 			if err != nil {
 				t.Fatal("Unsubscribe failed with err:", err)
 			}
-			ch <- true
 		}
 	})
 	send := 20
@@ -296,52 +261,40 @@ func TestUnsubscribe(t *testing.T) {
 		nc.Publish("foo", []byte("hello"))
 	}
 	nc.Flush()
-	<-ch
-
-	r := atomic.LoadInt32(&received)
-	if r != max {
+	if received != max {
 		t.Fatalf("Received wrong # of messages after unsubscribe: %d vs %d",
-			r, max)
+			received, max)
 	}
 }
 
 func TestDoubleUnsubscribe(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
-	sub, err := nc.SubscribeSync("foo")
+	s, err := nc.SubscribeSync("foo")
 	if err != nil {
 		t.Fatal("Failed to subscribe: ", err)
 	}
-	if err = sub.Unsubscribe(); err != nil {
+	if err = s.Unsubscribe(); err != nil {
 		t.Fatal("Unsubscribe failed with err:", err)
 	}
-	if err = sub.Unsubscribe(); err == nil {
+	if err = s.Unsubscribe(); err == nil {
 		t.Fatal("Unsubscribe should have reported an error")
 	}
 }
 
 func TestRequestTimeout(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	if _, err := nc.Request("foo", []byte("help"), 10*time.Millisecond); err == nil {
 		t.Fatalf("Expected to receive a timeout error")
 	}
 }
 
 func TestRequest(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	response := []byte("I will help you")
-	nc.Subscribe("foo", func(m *nats.Msg) {
+	nc.Subscribe("foo", func(m *Msg) {
 		nc.Publish(m.Reply, response)
 	})
 	msg, err := nc.Request("foo", []byte("help"), 50*time.Millisecond)
@@ -354,13 +307,10 @@ func TestRequest(t *testing.T) {
 }
 
 func TestRequestNoBody(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	response := []byte("I will help you")
-	nc.Subscribe("foo", func(m *nats.Msg) {
+	nc.Subscribe("foo", func(m *Msg) {
 		nc.Publish(m.Reply, response)
 	})
 	msg, err := nc.Request("foo", nil, 50*time.Millisecond)
@@ -373,28 +323,22 @@ func TestRequestNoBody(t *testing.T) {
 }
 
 func TestFlushInCB(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
-
 	ch := make(chan bool)
 
-	nc.Subscribe("foo", func(_ *nats.Msg) {
+	nc.Subscribe("foo", func(_ *Msg) {
 		nc.Flush()
 		ch <- true
 	})
 	nc.Publish("foo", []byte("Hello"))
-	if e := Wait(ch); e != nil {
+	if e := wait(ch); e != nil {
 		t.Fatal("Flush did not return properly in callback")
 	}
 }
 
 func TestReleaseFlush(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
-
+	nc := newConnection(t)
 	for i := 0; i < 1000; i++ {
 		nc.Publish("foo", []byte("Hello"))
 	}
@@ -403,16 +347,14 @@ func TestReleaseFlush(t *testing.T) {
 }
 
 func TestInbox(t *testing.T) {
-	inbox := nats.NewInbox()
+	inbox := NewInbox()
 	if matched, _ := regexp.Match(`_INBOX.\S`, []byte(inbox)); !matched {
 		t.Fatal("Bad INBOX format")
 	}
 }
 
 func TestStats(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
 
 	data := []byte("The quick brown fox jumped over the lazy dog")
@@ -434,7 +376,7 @@ func TestStats(t *testing.T) {
 	nc.OutMsgs, nc.OutBytes = 0, 0
 
 	// Test both sync and async versions of subscribe.
-	nc.Subscribe("foo", func(_ *nats.Msg) {})
+	nc.Subscribe("foo", func(_ *Msg) {})
 	nc.SubscribeSync("foo")
 
 	for i := 0; i < iter; i++ {
@@ -453,9 +395,7 @@ func TestStats(t *testing.T) {
 }
 
 func TestRaceSafeStats(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
+	nc := newConnection(t)
 	defer nc.Close()
 
 	go nc.Publish("foo", []byte("Hello World"))
@@ -465,20 +405,5 @@ func TestRaceSafeStats(t *testing.T) {
 
 	if stats.OutMsgs != uint64(1) {
 		t.Fatalf("Not properly tracking OutMsgs: received %d, wanted %d\n", nc.OutMsgs, 1)
-	}
-}
-
-func TestBadSubject(t *testing.T) {
-	s := RunDefaultServer()
-	defer s.Shutdown()
-	nc := NewDefaultConnection(t)
-	defer nc.Close()
-
-	err := nc.Publish("", []byte("Hello World"))
-	if err == nil {
-		t.Fatalf("Expected an error on bad subject to publish")
-	}
-	if err != nats.ErrBadSubject {
-		t.Fatalf("Expected a ErrBadSubject error: Got %v\n", err)
 	}
 }

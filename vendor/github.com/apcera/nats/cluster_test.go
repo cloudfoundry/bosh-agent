@@ -1,14 +1,12 @@
-package test
+package nats
 
 import (
 	"math"
+	"reflect"
 	"regexp"
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/nats-io/gnatsd/auth"
-	"github.com/nats-io/nats"
 )
 
 var testServers = []string{
@@ -21,23 +19,57 @@ var testServers = []string{
 	"nats://localhost:1228",
 }
 
+func TestServersRandomize(t *testing.T) {
+	opts := DefaultOptions
+	opts.Servers = testServers
+	nc := &Conn{Opts: opts}
+	if err := nc.setupServerPool(); err != nil {
+		t.Fatalf("Problem setting up Server Pool: %v\n", err)
+	}
+	// Build []string from srvPool
+	clientServers := []string{}
+	for _, s := range nc.srvPool {
+		clientServers = append(clientServers, s.url.String())
+	}
+	// In theory this could happen..
+	if reflect.DeepEqual(testServers, clientServers) {
+		t.Fatalf("ServerPool list not randomized\n")
+	}
+
+	// Now test that we do not randomize if proper flag is set.
+	opts = DefaultOptions
+	opts.Servers = testServers
+	opts.NoRandomize = true
+	nc = &Conn{Opts: opts}
+	if err := nc.setupServerPool(); err != nil {
+		t.Fatalf("Problem setting up Server Pool: %v\n", err)
+	}
+	// Build []string from srvPool
+	clientServers = []string{}
+	for _, s := range nc.srvPool {
+		clientServers = append(clientServers, s.url.String())
+	}
+	if !reflect.DeepEqual(testServers, clientServers) {
+		t.Fatalf("ServerPool list should not be randomized\n")
+	}
+}
+
 func TestServersOption(t *testing.T) {
-	opts := nats.DefaultOptions
+	opts := DefaultOptions
 	opts.NoRandomize = true
 
 	_, err := opts.Connect()
-	if err != nats.ErrNoServers {
+	if err != ErrNoServers {
 		t.Fatalf("Wrong error: '%s'\n", err)
 	}
 	opts.Servers = testServers
 	_, err = opts.Connect()
-	if err == nil || err != nats.ErrNoServers {
+	if err == nil || err != ErrNoServers {
 		t.Fatalf("Did not receive proper error: %v\n", err)
 	}
 
 	// Make sure we can connect to first server if running
-	s1 := RunServerOnPort(1222)
-
+	s1 := startServer(t, 1222, "")
 	nc, err := opts.Connect()
 	if err != nil {
 		t.Fatalf("Could not connect: %v\n", err)
@@ -47,10 +79,10 @@ func TestServersOption(t *testing.T) {
 			nc.ConnectedUrl())
 	}
 	nc.Close()
-	s1.Shutdown()
+	s1.stopServer()
 
 	// Make sure we can connect to a non first server if running
-	s2 := RunServerOnPort(1223)
+	s2 := startServer(t, 1223, "")
 	nc, err = opts.Connect()
 	if err != nil {
 		t.Fatalf("Could not connect: %v\n", err)
@@ -60,28 +92,22 @@ func TestServersOption(t *testing.T) {
 			nc.ConnectedUrl())
 	}
 	nc.Close()
-	s2.Shutdown()
+	s2.stopServer()
 }
 
 func TestAuthServers(t *testing.T) {
+
 	var plainServers = []string{
 		"nats://localhost:1222",
 		"nats://localhost:1224",
 	}
 
-	auth := &auth.Plain{
-		Username: "derek",
-		Password: "foo",
-	}
+	as1 := startServer(t, 1222, "--user derek --pass foo")
+	defer as1.stopServer()
+	as2 := startServer(t, 1224, "--user derek --pass foo")
+	defer as2.stopServer()
 
-	as1 := RunServerOnPort(1222)
-	as1.SetAuthMethod(auth)
-	defer as1.Shutdown()
-	as2 := RunServerOnPort(1224)
-	as2.SetAuthMethod(auth)
-	defer as2.Shutdown()
-
-	opts := nats.DefaultOptions
+	opts := DefaultOptions
 	opts.NoRandomize = true
 	opts.Servers = plainServers
 	_, err := opts.Connect()
@@ -111,24 +137,69 @@ func TestAuthServers(t *testing.T) {
 	}
 }
 
-func TestBasicClusterReconnect(t *testing.T) {
-	s1 := RunServerOnPort(1222)
-	s2 := RunServerOnPort(1224)
-	defer s2.Shutdown()
+func TestSelectNextServer(t *testing.T) {
+	opts := DefaultOptions
+	opts.Servers = testServers
+	opts.NoRandomize = true
+	nc := &Conn{Opts: opts}
+	if err := nc.setupServerPool(); err != nil {
+		t.Fatalf("Problem setting up Server Pool: %v\n", err)
+	}
+	if nc.url != nc.srvPool[0].url {
+		t.Fatalf("Wrong default selection: %v\n", nc.url)
+	}
 
-	opts := nats.DefaultOptions
+	sel, err := nc.selectNextServer()
+	if err != nil {
+		t.Fatalf("Got an err: %v\n", err)
+	}
+	// Check that we are now looking at #2, and current is now last.
+	if len(nc.srvPool) != len(testServers) {
+		t.Fatalf("List is incorrect size: %d vs %d\n", len(nc.srvPool), len(testServers))
+	}
+	if nc.url.String() != testServers[1] {
+		t.Fatalf("Selection incorrect: %v vs %v\n", nc.url, testServers[1])
+	}
+	if nc.srvPool[len(nc.srvPool)-1].url.String() != testServers[0] {
+		t.Fatalf("Did not push old to last position\n")
+	}
+	if sel != nc.srvPool[0] {
+		t.Fatalf("Did not return correct server: %v vs %v\n", sel.url, nc.srvPool[0].url)
+	}
+
+	// Test that we do not keep servers where we have tried to reconnect past our limit.
+	nc.srvPool[0].reconnects = int(opts.MaxReconnect)
+	if _, err := nc.selectNextServer(); err != nil {
+		t.Fatalf("Got an err: %v\n", err)
+	}
+	// Check that we are now looking at #3, and current is not in the list.
+	if len(nc.srvPool) != len(testServers)-1 {
+		t.Fatalf("List is incorrect size: %d vs %d\n", len(nc.srvPool), len(testServers)-1)
+	}
+	if nc.url.String() != testServers[2] {
+		t.Fatalf("Selection incorrect: %v vs %v\n", nc.url, testServers[2])
+	}
+	if nc.srvPool[len(nc.srvPool)-1].url.String() == testServers[1] {
+		t.Fatalf("Did not throw away the last server correctly\n")
+	}
+}
+
+func TestBasicClusterReconnect(t *testing.T) {
+	s1 := startServer(t, 1222, "")
+	s2 := startServer(t, 1224, "")
+	defer s2.stopServer()
+
+	opts := DefaultOptions
 	opts.Servers = testServers
 	opts.NoRandomize = true
 
 	dch := make(chan bool)
-	opts.DisconnectedCB = func(nc *nats.Conn) {
-		// Suppress any additional calls
-		nc.Opts.DisconnectedCB = nil
+	opts.DisconnectedCB = func(_ *Conn) {
 		dch <- true
 	}
 
 	rch := make(chan bool)
-	opts.ReconnectedCB = func(_ *nats.Conn) {
+	opts.ReconnectedCB = func(_ *Conn) {
 		rch <- true
 	}
 
@@ -136,19 +207,18 @@ func TestBasicClusterReconnect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected to connect, got err: %v\n", err)
 	}
-	defer nc.Close()
 
-	s1.Shutdown()
+	s1.stopServer()
 
 	// wait for disconnect
-	if e := WaitTime(dch, 2*time.Second); e != nil {
+	if e := waitTime(dch, 2*time.Second); e != nil {
 		t.Fatal("Did not receive a disconnect callback message")
 	}
 
 	reconnectTimeStart := time.Now()
 
 	// wait for reconnect
-	if e := WaitTime(rch, 2*time.Second); e != nil {
+	if e := waitTime(rch, 2*time.Second); e != nil {
 		t.Fatal("Did not receive a reconnect callback message")
 	}
 
@@ -167,18 +237,18 @@ func TestBasicClusterReconnect(t *testing.T) {
 }
 
 func TestHotSpotReconnect(t *testing.T) {
-	s1 := RunServerOnPort(1222)
+	s1 := startServer(t, 1222, "")
 
 	numClients := 100
-	clients := []*nats.Conn{}
+	clients := []*Conn{}
 
 	wg := &sync.WaitGroup{}
 	wg.Add(numClients)
 
 	for i := 0; i < numClients; i++ {
-		opts := nats.DefaultOptions
+		opts := DefaultOptions
 		opts.Servers = testServers
-		opts.ReconnectedCB = func(_ *nats.Conn) {
+		opts.ReconnectedCB = func(_ *Conn) {
 			wg.Done()
 		}
 		nc, err := opts.Connect()
@@ -191,12 +261,12 @@ func TestHotSpotReconnect(t *testing.T) {
 		clients = append(clients, nc)
 	}
 
-	s2 := RunServerOnPort(1224)
-	defer s2.Shutdown()
-	s3 := RunServerOnPort(1226)
-	defer s3.Shutdown()
+	s2 := startServer(t, 1224, "")
+	defer s2.stopServer()
+	s3 := startServer(t, 1226, "")
+	defer s3.stopServer()
 
-	s1.Shutdown()
+	s1.stopServer()
 
 	numServers := 2
 
@@ -225,23 +295,21 @@ func TestHotSpotReconnect(t *testing.T) {
 }
 
 func TestProperReconnectDelay(t *testing.T) {
-	s1 := RunServerOnPort(1222)
+	s1 := startServer(t, 1222, "")
 
-	opts := nats.DefaultOptions
+	opts := DefaultOptions
 	opts.Servers = testServers
 	opts.NoRandomize = true
 
 	dcbCalled := false
 	dch := make(chan bool)
-	opts.DisconnectedCB = func(nc *nats.Conn) {
-		// Suppress any additional calls
-		nc.Opts.DisconnectedCB = nil
+	opts.DisconnectedCB = func(_ *Conn) {
 		dcbCalled = true
 		dch <- true
 	}
 
 	closedCbCalled := false
-	opts.ClosedCB = func(_ *nats.Conn) {
+	opts.ClosedCB = func(_ *Conn) {
 		closedCbCalled = true
 	}
 
@@ -250,10 +318,10 @@ func TestProperReconnectDelay(t *testing.T) {
 		t.Fatalf("Expected to connect, got err: %v\n", err)
 	}
 
-	s1.Shutdown()
+	s1.stopServer()
 
 	// wait for disconnect
-	if e := WaitTime(dch, 2*time.Second); e != nil {
+	if e := waitTime(dch, 2*time.Second); e != nil {
 		t.Fatal("Did not receive a disconnect callback message")
 	}
 
@@ -264,23 +332,23 @@ func TestProperReconnectDelay(t *testing.T) {
 	if closedCbCalled {
 		t.Fatal("Closed CB was triggered, should not have been.")
 	}
-	if status := nc.Status(); status != nats.RECONNECTING {
-		t.Fatalf("Wrong status: %d\n", status)
+	if nc.status != RECONNECTING {
+		t.Fatalf("Wrong status: %d\n", nc.status)
 	}
 }
 
 func TestProperFalloutAfterMaxAttempts(t *testing.T) {
-	s1 := RunServerOnPort(1222)
+	s1 := startServer(t, 1222, "")
 
-	opts := nats.DefaultOptions
+	opts := DefaultOptions
 	opts.Servers = testServers
 	opts.NoRandomize = true
 	opts.MaxReconnect = 5
-	opts.ReconnectWait = (25 * time.Millisecond)
+	opts.ReconnectWait = (10 * time.Millisecond)
 
 	dcbCalled := false
 	dch := make(chan bool)
-	opts.DisconnectedCB = func(_ *nats.Conn) {
+	opts.DisconnectedCB = func(_ *Conn) {
 		dcbCalled = true
 		dch <- true
 	}
@@ -288,7 +356,7 @@ func TestProperFalloutAfterMaxAttempts(t *testing.T) {
 	closedCbCalled := false
 	cch := make(chan bool)
 
-	opts.ClosedCB = func(_ *nats.Conn) {
+	opts.ClosedCB = func(_ *Conn) {
 		closedCbCalled = true
 		cch <- true
 	}
@@ -298,15 +366,15 @@ func TestProperFalloutAfterMaxAttempts(t *testing.T) {
 		t.Fatalf("Expected to connect, got err: %v\n", err)
 	}
 
-	s1.Shutdown()
+	s1.stopServer()
 
 	// wait for disconnect
-	if e := WaitTime(dch, 2*time.Second); e != nil {
+	if e := waitTime(dch, 2*time.Second); e != nil {
 		t.Fatal("Did not receive a disconnect callback message")
 	}
 
 	// Wait for ClosedCB
-	if e := WaitTime(cch, 2*time.Second); e != nil {
+	if e := waitTime(cch, 1*time.Second); e != nil {
 		t.Fatal("Did not receive a closed callback message")
 	}
 
@@ -317,32 +385,30 @@ func TestProperFalloutAfterMaxAttempts(t *testing.T) {
 	}
 
 	if nc.IsClosed() != true {
-		t.Fatalf("Wrong status: %d\n", nc.Status())
+		t.Fatalf("Wrong status: %d\n", nc.status)
 	}
 }
 
 func TestTimeoutOnNoServers(t *testing.T) {
-	s1 := RunServerOnPort(1222)
+	s1 := startServer(t, 1222, "")
 
-	opts := nats.DefaultOptions
+	opts := DefaultOptions
 	opts.Servers = testServers
 	opts.NoRandomize = true
 
 	// 100 milliseconds total time wait
 	opts.MaxReconnect = 10
-	opts.ReconnectWait = (100 * time.Millisecond)
+	opts.ReconnectWait = (10 * time.Millisecond)
 
 	dcbCalled := false
 	dch := make(chan bool)
-	opts.DisconnectedCB = func(nc *nats.Conn) {
-		// Suppress any additional calls
-		nc.Opts.DisconnectedCB = nil
+	opts.DisconnectedCB = func(_ *Conn) {
 		dcbCalled = true
 		dch <- true
 	}
 
 	cch := make(chan bool)
-	opts.ClosedCB = func(_ *nats.Conn) {
+	opts.ClosedCB = func(_ *Conn) {
 		cch <- true
 	}
 
@@ -350,24 +416,24 @@ func TestTimeoutOnNoServers(t *testing.T) {
 		t.Fatalf("Expected to connect, got err: %v\n", err)
 	}
 
-	s1.Shutdown()
+	s1.stopServer()
 
 	// wait for disconnect
-	if e := WaitTime(dch, 2*time.Second); e != nil {
+	if e := waitTime(dch, 2*time.Second); e != nil {
 		t.Fatal("Did not receive a disconnect callback message")
 	}
 
 	startWait := time.Now()
 
 	// Wait for ClosedCB
-	if e := WaitTime(cch, 2*time.Second); e != nil {
+	if e := waitTime(cch, 1*time.Second); e != nil {
 		t.Fatal("Did not receive a closed callback message")
 	}
 
 	timeWait := time.Since(startWait)
 
-	// Use 500ms as variable time delta
-	variable := (500 * time.Millisecond)
+	// Use 50ms as variable time delta
+	variable := (50 * time.Millisecond)
 	expected := (time.Duration(opts.MaxReconnect) * opts.ReconnectWait)
 
 	if timeWait > (expected + variable) {
@@ -377,10 +443,10 @@ func TestTimeoutOnNoServers(t *testing.T) {
 
 func TestPingReconnect(t *testing.T) {
 	RECONNECTS := 4
-	s1 := RunServerOnPort(1222)
-	defer s1.Shutdown()
+	s1 := startServer(t, 1222, "")
+	defer s1.stopServer()
 
-	opts := nats.DefaultOptions
+	opts := DefaultOptions
 	opts.Servers = testServers
 	opts.NoRandomize = true
 	opts.ReconnectWait = 200 * time.Millisecond
@@ -391,16 +457,17 @@ func TestPingReconnect(t *testing.T) {
 	rch := make(chan time.Time, RECONNECTS)
 	dch := make(chan time.Time, RECONNECTS)
 
-	opts.DisconnectedCB = func(_ *nats.Conn) {
+	opts.DisconnectedCB = func(_ *Conn) {
 		d := dch
 		select {
 		case d <- time.Now():
 		default:
 			d = nil
 		}
+
 	}
 
-	opts.ReconnectedCB = func(c *nats.Conn) {
+	opts.ReconnectedCB = func(c *Conn) {
 		r := rch
 		select {
 		case r <- time.Now():
@@ -417,7 +484,7 @@ func TestPingReconnect(t *testing.T) {
 	}
 
 	<-barrier
-	s1.Shutdown()
+	s1.stopServer()
 
 	<-dch
 	for i := 0; i < RECONNECTS-1; i++ {
