@@ -3,11 +3,11 @@ package infrastructure_test
 import (
 	"encoding/json"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )

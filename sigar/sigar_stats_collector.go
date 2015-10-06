@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
+	sigar "github.com/cloudfoundry/gosigar"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type sigarStatsCollector struct {

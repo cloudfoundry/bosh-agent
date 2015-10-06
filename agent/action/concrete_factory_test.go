@@ -1,8 +1,8 @@
 package action_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -12,16 +12,16 @@ import (
 
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-//go:generate counterfeiter -o fakes/fake_clock.go ../../internal/github.com/pivotal-golang/clock Clock
+//go:generate counterfeiter -o fakes/fake_clock.go ../../vendor/github.com/pivotal-golang/clock Clock
 
 var _ = Describe("concreteFactory", func() {
 	var (

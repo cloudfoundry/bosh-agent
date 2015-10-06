@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/jeromer/syslogparser/rfc3164"
+	"github.com/jeromer/syslogparser/rfc3164"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const concreteServerLogTag = "conreteServer"

@@ -15,7 +15,7 @@ but it will be available when running go test.
 */
 
 import (
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 func SplitCerts(certs string) []string {

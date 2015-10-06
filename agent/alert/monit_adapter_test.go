@@ -3,12 +3,12 @@ package alert_test
 import (
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/alert"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	"github.com/pivotal-golang/clock/fakeclock"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )

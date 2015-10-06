@@ -4,15 +4,15 @@ import (
 	"errors"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	"github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ConcreteScript", func() {
