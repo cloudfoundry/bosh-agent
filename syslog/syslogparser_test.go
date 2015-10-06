@@ -3,10 +3,10 @@ package syslog_test
 import (
 	"fmt"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/jeromer/syslogparser/rfc3164"
+	"github.com/jeromer/syslogparser/rfc3164"
 )
 
 var _ = Describe("syslogparser", func() {

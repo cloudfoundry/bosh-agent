@@ -3,8 +3,8 @@ package settings_test
 import (
 	"encoding/json"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/matchers"
 	. "github.com/cloudfoundry/bosh-agent/settings"

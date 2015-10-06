@@ -3,10 +3,10 @@ package handler_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 
 	. "github.com/cloudfoundry/bosh-agent/handler"
-	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 type testShortError struct {

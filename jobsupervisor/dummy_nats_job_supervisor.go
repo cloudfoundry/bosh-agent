@@ -5,7 +5,7 @@ import (
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	bosherror "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	bosherror "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type dummyNatsJobSupervisor struct {

@@ -4,10 +4,10 @@ import (
 	as "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type concreteApplier struct {
