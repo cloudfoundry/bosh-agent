@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/cloudfoundry/yagnats"
@@ -32,9 +33,12 @@ type Handler interface {
 type natsHandler struct {
 	settingsService boshsettings.Service
 	client          yagnats.NATSClient
-	logger          boshlog.Logger
-	handlerFuncs    []boshhandler.Func
-	logTag          string
+
+	handlerFuncs     []boshhandler.Func
+	handlerFuncsLock sync.Mutex
+
+	logger boshlog.Logger
+	logTag string
 }
 
 func NewNatsHandler(
@@ -45,8 +49,9 @@ func NewNatsHandler(
 	return &natsHandler{
 		settingsService: settingsService,
 		client:          client,
-		logger:          logger,
-		logTag:          "NATS Handler",
+
+		logger: logger,
+		logTag: "NATS Handler",
 	}
 }
 
@@ -83,11 +88,15 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	h.logger.Info(h.logTag, "Subscribing to %s", subject)
 
 	_, err = h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
-		for _, handlerFunc := range h.handlerFuncs {
+		// Do not lock handler funcs around possible network calls!
+		h.handlerFuncsLock.Lock()
+		handlerFuncs := h.handlerFuncs
+		h.handlerFuncsLock.Unlock()
+
+		for _, handlerFunc := range handlerFuncs {
 			h.handleNatsMsg(natsMsg, handlerFunc)
 		}
 	})
-
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Subscribing to %s", subject)
 	}
@@ -98,10 +107,12 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 func (h *natsHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
 	// Currently not locking since RegisterAdditionalFunc
 	// is not a primary way of adding handlerFunc.
+	h.handlerFuncsLock.Lock()
 	h.handlerFuncs = append(h.handlerFuncs, handlerFunc)
+	h.handlerFuncsLock.Unlock()
 }
 
-func (h natsHandler) Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error {
+func (h *natsHandler) Send(target boshhandler.Target, topic boshhandler.Topic, message interface{}) error {
 	bytes, err := json.Marshal(message)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Marshalling message (target=%s, topic=%s): %#v", target, topic, message)
@@ -116,11 +127,11 @@ func (h natsHandler) Send(target boshhandler.Target, topic boshhandler.Topic, me
 	return h.client.Publish(subject, bytes)
 }
 
-func (h natsHandler) Stop() {
+func (h *natsHandler) Stop() {
 	h.client.Disconnect()
 }
 
-func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.Func) {
+func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.Func) {
 	respBytes, req, err := boshhandler.PerformHandlerWithJSON(
 		natsMsg.Payload,
 		handlerFunc,
@@ -140,7 +151,7 @@ func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhan
 	}
 }
 
-func (h natsHandler) runUntilInterrupted() {
+func (h *natsHandler) runUntilInterrupted() {
 	defer h.client.Disconnect()
 
 	keepRunning := true
@@ -156,7 +167,7 @@ func (h natsHandler) runUntilInterrupted() {
 	}
 }
 
-func (h natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
+func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 	settings := h.settingsService.GetSettings()
 
 	natsURL, err := url.Parse(settings.Mbus)
