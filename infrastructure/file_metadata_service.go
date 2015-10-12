@@ -105,4 +105,6 @@ func (ms fileMetadataService) GetNetworks() (boshsettings.Networks, error) {
 	return userData.Networks, nil
 }
 
-func (ms fileMetadataService) IsAvailable() bool { return true }
+func (ms fileMetadataService) IsAvailable() bool {
+	return ms.fs.FileExists(ms.settingsFilePath)
+}

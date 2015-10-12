@@ -123,8 +123,20 @@ var _ = Describe("FileMetadataService", func() {
 	})
 
 	Describe("IsAvailable", func() {
-		It("returns true", func() {
-			Expect(metadataService.IsAvailable()).To(BeTrue())
+		Context("when file does not exist", func() {
+			It("returns false", func() {
+				Expect(metadataService.IsAvailable()).To(BeFalse())
+			})
+		})
+
+		Context("when file exists", func() {
+			BeforeEach(func() {
+				fs.WriteFileString("fake-settings-file-path", ``)
+			})
+
+			It("returns true", func() {
+				Expect(metadataService.IsAvailable()).To(BeTrue())
+			})
 		})
 	})
 })
