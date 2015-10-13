@@ -1,10 +1,10 @@
 package integration_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TestStart", func() {

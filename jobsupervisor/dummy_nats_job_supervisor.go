@@ -124,12 +124,10 @@ func (d *dummyNatsJobSupervisor) statusHandler(req boshhandler.Request) boshhand
 	}
 }
 
-
-func(s *dummyNatsJobSupervisor) StartJobSupervisor() error{
+func (d *dummyNatsJobSupervisor) StartJobSupervisor() error {
 	return nil
 }
 
-
-func(s *dummyNatsJobSupervisor) StopJobSupervisor() error{
+func (d *dummyNatsJobSupervisor) StopJobSupervisor() error {
 	return nil
 }

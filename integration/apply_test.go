@@ -1,18 +1,18 @@
 package integration_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
+	. "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TestApply", func() {
 	var (
 		registrySettings boshsettings.Settings
 		agentClient      agentclient.AgentClient
-		applySpec ApplySpec
+		applySpec        ApplySpec
 	)
 
 	BeforeEach(func() {
@@ -64,8 +64,8 @@ var _ = Describe("TestApply", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			applySpec = ApplySpec{
-				Deployment: "fake-deployment-name",
-				Index:      0,
+				Deployment:        "fake-deployment-name",
+				Index:             0,
 				ConfigurationHash: "some-configuration-hash",
 			}
 		})

@@ -48,10 +48,10 @@ func (s *dummyJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error
 	return nil
 }
 
-func(s *dummyJobSupervisor) StartJobSupervisor() error{
+func (s *dummyJobSupervisor) StartJobSupervisor() error {
 	return nil
 }
 
-func(s *dummyJobSupervisor) StopJobSupervisor() error{
+func (s *dummyJobSupervisor) StopJobSupervisor() error {
 	return nil
 }
