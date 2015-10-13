@@ -47,3 +47,11 @@ func (s *dummyJobSupervisor) RemoveAllJobs() error {
 func (s *dummyJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	return nil
 }
+
+func (s *dummyJobSupervisor) StartJobSupervisor() error {
+	return nil
+}
+
+func (s *dummyJobSupervisor) StopJobSupervisor() error {
+	return nil
+}

@@ -121,6 +121,13 @@ func init() {
 		})
 
 		Describe("Apply", func() {
+
+			It("stops job supervisor", func() {
+				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.JobSupervisorStopped).To(BeTrue())
+			})
+
 			It("removes all jobs from job supervisor", func() {
 				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})
 				Expect(err).ToNot(HaveOccurred())
@@ -262,16 +269,7 @@ func init() {
 				Expect(jobApplier.ConfiguredJobs).To(Equal([]models.Job{job2, job1}))
 				Expect(jobApplier.ConfiguredJobIndices).To(Equal([]int{0, 1}))
 
-				Expect(jobSupervisor.Reloaded).To(BeTrue())
-			})
-
-			It("apply errs if monitor fails reload", func() {
-				jobs := []models.Job{}
-				jobSupervisor.ReloadErr = errors.New("error reloading monit")
-
-				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{JobResults: jobs})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("error reloading monit"))
+				//				Expect(jobSupervisor.Reloaded).To(BeTrue())
 			})
 
 			It("apply errs if a job fails configuring", func() {
