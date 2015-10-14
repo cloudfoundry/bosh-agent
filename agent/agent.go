@@ -170,7 +170,7 @@ func (a Agent) handleJobFailure(errCh chan error) boshjobsuper.JobFailureHandler
 
 		severity, found := alertAdapter.Severity()
 		if !found {
-			a.logger.Error(agentLogTag, "Unknown monit event name `%s', using default severity %d", monitAlert.Event, severity)
+			a.logger.Error(agentLogTag, "Unknown monit event name '%s', using default severity %d", monitAlert.Event, severity)
 		}
 
 		alert, err := alertAdapter.Alert()

@@ -109,7 +109,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 
 					err := partitioner.Partition("/dev/sda", partitions)
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Partitioning disk `/dev/sda'"))
+					Expect(err.Error()).To(ContainSubstring("Partitioning disk '/dev/sda'"))
 					Expect(err.Error()).To(ContainSubstring("fake-parted-error"))
 				})
 			})
@@ -220,8 +220,8 @@ var _ = Describe("rootDevicePartitioner", func() {
 
 				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda'"))
-				Expect(err.Error()).To(ContainSubstring("Running parted print on `/dev/sda'"))
+				Expect(err.Error()).To(ContainSubstring("Getting existing partitions of '/dev/sda'"))
+				Expect(err.Error()).To(ContainSubstring("Running parted print on '/dev/sda'"))
 				Expect(err.Error()).To(ContainSubstring("fake-parted-error"))
 			})
 		})
@@ -304,7 +304,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 
 				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Found 4 unexpected partitions on `/dev/sda'"))
+				Expect(err.Error()).To(ContainSubstring("Found 4 unexpected partitions on '/dev/sda'"))
 				Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
 					{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 				}))
@@ -330,7 +330,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 
 				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Missing first partition on `/dev/sda'"))
+				Expect(err.Error()).To(ContainSubstring("Missing first partition on '/dev/sda'"))
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 			})
@@ -353,7 +353,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 
 				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Parsing existing partitions of `/dev/sda'"))
+				Expect(err.Error()).To(ContainSubstring("Parsing existing partitions of '/dev/sda'"))
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 			})
@@ -380,7 +380,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 
 				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Parsing existing partitions of `/dev/sda'"))
+				Expect(err.Error()).To(ContainSubstring("Parsing existing partitions of '/dev/sda'"))
 				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 			})
@@ -441,7 +441,7 @@ var _ = Describe("rootDevicePartitioner", func() {
 				size, err := partitioner.GetDeviceSizeInBytes("/dev/sda")
 				Expect(err).To(HaveOccurred())
 				Expect(size).To(Equal(uint64(0)))
-				Expect(err.Error()).To(ContainSubstring("Getting remaining size of `/dev/sda'"))
+				Expect(err.Error()).To(ContainSubstring("Getting remaining size of '/dev/sda'"))
 			})
 		})
 	})

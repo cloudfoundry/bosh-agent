@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	
+
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
@@ -37,6 +37,7 @@ var _ = Describe("FileSettingsSource", func() {
 			var (
 				settingsFileName string
 			)
+
 			BeforeEach(func() {
 				settingsFileName = "/fake-settings-file-path"
 				source = NewFileSettingsSource(settingsFileName, fs, logger)
@@ -68,6 +69,7 @@ var _ = Describe("FileSettingsSource", func() {
 				BeforeEach(func() {
 					fs.WriteFileString(settingsFileName, "bad-json")
 				})
+
 				It("returns settings read from the file", func() {
 					_, err := source.Settings()
 					Expect(err).To(HaveOccurred())
@@ -78,9 +80,7 @@ var _ = Describe("FileSettingsSource", func() {
 
 		Context("when the registry file does not exist", func() {
 			BeforeEach(func() {
-				source = NewFileSettingsSource(
-					"/missing-settings-file-path",
-					fs, logger)
+				source = NewFileSettingsSource("/missing-settings-file-path", fs, logger)
 			})
 
 			It("returns an error", func() {
