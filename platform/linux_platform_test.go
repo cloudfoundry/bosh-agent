@@ -185,17 +185,34 @@ bosh_foobar:...`
 	})
 
 	Describe("SetupRootDisk", func() {
-		BeforeEach(func() {
-			mountsSearcher := diskManager.FakeMountsSearcher
+		act := func() error { return platform.SetupRootDisk("/dev/sdb") }
 
-			mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
-				PartitionPath: "/dev/sda1",
-				MountPoint:    "/",
-			}}
+		It("skips growing root fs if no ephemerial disk is provided", func() {
+			options.CreatePartitionIfNoEphemeralDisk = true
 
-			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
-				return diskSettings.Path, false, nil
-			}
+			platformWithNoEphemeralDisk := NewLinuxPlatform(
+				fs,
+				cmdRunner,
+				collector,
+				compressor,
+				copier,
+				dirProvider,
+				vitalsService,
+				cdutil,
+				diskManager,
+				netManager,
+				certManager,
+				monitRetryStrategy,
+				devicePathResolver,
+				5*time.Millisecond,
+				options,
+				logger,
+				fakeDefaultNetworkResolver,
+			)
+
+			err := platformWithNoEphemeralDisk.SetupRootDisk("")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 		})
 
 		Context("when growpart is installed", func() {
@@ -204,93 +221,135 @@ bosh_foobar:...`
 				options.CreatePartitionIfNoEphemeralDisk = false
 			})
 
-			It("runs growpart and resize2fs", func() {
-				cmdRunner.AddCmdResult(
-					"readlink -f /dev/sda1",
-					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
-				)
+			Context("when root device is determined", func() {
+				Context("when root partition is the first partition", func() {
+					BeforeEach(func() {
+						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+							{MountPoint: "/", PartitionPath: "rootfs"},
+							{MountPoint: "/", PartitionPath: "/dev/vda1"},
+						}
 
-				err := platform.SetupRootDisk("/dev/sdb")
+						devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+							return diskSettings.Path, false, nil
+						}
+					})
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "1"}))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda1"}))
+					Context("when getting absolute path of root partition suceeds", func() {
+						BeforeEach(func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda1",
+								fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
+							)
+						})
+
+						It("runs growpart and resize2fs", func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda1",
+								fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/vda1"},
+							)
+
+							err := act()
+							Expect(err).NotTo(HaveOccurred())
+							Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+							Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/vda", "1"}))
+							Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/vda1"}))
+						})
+
+						It("returns an error if growing the partiton fails", func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda1",
+								fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/vda1"},
+							)
+
+							cmdRunner.AddCmdResult(
+								"growpart /dev/vda 1",
+								fakesys.FakeCmdResult{Error: errors.New("fake-growpart-error")},
+							)
+
+							err := act()
+							Expect(err).To(HaveOccurred())
+							Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+						})
+
+						It("returns error if resizing the filesystem fails", func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda1",
+								fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/vda1"},
+							)
+
+							cmdRunner.AddCmdResult(
+								"resize2fs -f /dev/vda1",
+								fakesys.FakeCmdResult{Error: errors.New("fake-resize2fs-error")},
+							)
+
+							err := act()
+							Expect(err).To(HaveOccurred())
+							Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+						})
+					})
+
+					Context("when getting absolute path of root partition fails", func() {
+						BeforeEach(func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda1",
+								fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
+							)
+						})
+
+						It("returns an error", func() {
+							err := act()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("fake-readlink-error"))
+						})
+					})
+				})
+
+				Context("when root partition is not the first partition", func() {
+					BeforeEach(func() {
+						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+							{MountPoint: "/", PartitionPath: "/dev/vda2"},
+						}
+					})
+
+					It("returns an error", func() {
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Root partition is not the first partition"))
+					})
+				})
+
+				Context("when root partition is a loopback device", func() {
+					BeforeEach(func() {
+						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+							{MountPoint: "/", PartitionPath: "/dev/loop3"},
+						}
+
+						cmdRunner.AddCmdResult(
+							"readlink -f /dev/loop3",
+							fakesys.FakeCmdResult{Stdout: "/dev/loop3"},
+						)
+					})
+
+					It("does not try to grow loopback device", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						for _, cmd := range cmdRunner.RunCommands {
+							Expect(cmd[0]).ToNot(Equal("growpart"))
+						}
+					})
+				})
 			})
 
-			It("returns error if it can't find the root device", func() {
-				cmdRunner.AddCmdResult(
-					"readlink -f /dev/sda1",
-					fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
-				)
+			Context("when root device fails to be determined", func() {
+				BeforeEach(func() {
+					diskManager.FakeMountsSearcher.SearchMountsErr = errors.New("fake-mounts-searcher-error")
+				})
 
-				err := platform.SetupRootDisk("/dev/sdb")
-
-				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			})
-
-			It("returns an error if growing the partiton fails", func() {
-				cmdRunner.AddCmdResult(
-					"readlink -f /dev/sda1",
-					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
-				)
-
-				cmdRunner.AddCmdResult(
-					"growpart /dev/sda 1",
-					fakesys.FakeCmdResult{Error: errors.New("fake-growpart-error")},
-				)
-
-				err := platform.SetupRootDisk("/dev/sdb")
-
-				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-			})
-
-			It("returns error if resizing the filesystem fails", func() {
-				cmdRunner.AddCmdResult(
-					"readlink -f /dev/sda1",
-					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
-				)
-
-				cmdRunner.AddCmdResult(
-					"resize2fs -f /dev/sda1",
-					fakesys.FakeCmdResult{Error: errors.New("fake-resize2fs-error")},
-				)
-
-				err := platform.SetupRootDisk("/dev/sdb")
-
-				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
-			})
-
-			It("skips growing root fs if no ephemerial disk is provided", func() {
-				var platformWithNoEphemeralDisk Platform
-
-				options.CreatePartitionIfNoEphemeralDisk = true
-				platformWithNoEphemeralDisk = NewLinuxPlatform(
-					fs,
-					cmdRunner,
-					collector,
-					compressor,
-					copier,
-					dirProvider,
-					vitalsService,
-					cdutil,
-					diskManager,
-					netManager,
-					certManager,
-					monitRetryStrategy,
-					devicePathResolver,
-					5*time.Millisecond,
-					options,
-					logger,
-					fakeDefaultNetworkResolver,
-				)
-				err := platformWithNoEphemeralDisk.SetupRootDisk("")
-
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				It("returns an error", func() {
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mounts-searcher-error"))
+				})
 			})
 		})
 
@@ -301,13 +360,11 @@ bosh_foobar:...`
 			})
 
 			It("does not return error if growpart is not installed and skips growing fs", func() {
-				err := platform.SetupRootDisk("/dev/sdb")
-
+				err := act()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 			})
 		})
-
 	})
 
 	Describe("SetupSSH", func() {

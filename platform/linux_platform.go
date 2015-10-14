@@ -276,42 +276,32 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 }
 
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
-	//if there is ephemeral disk we can safely autogrow, if not we should not.
-	if (ephemeralDiskPath == "") && (p.options.CreatePartitionIfNoEphemeralDisk == true) {
-		p.logger.Info(logTag, "No Ephemeral Disk provided, Skipping growing of the Root Filesystem")
+	// if there is ephemeral disk we can safely autogrow, if not we should not.
+	if ephemeralDiskPath == "" && p.options.CreatePartitionIfNoEphemeralDisk == true {
+		p.logger.Info(logTag, "No ephemeral disk provided, skipping growing of the root filesystem")
 		return nil
 	}
 
 	// in case growpart is not available for another flavour of linux, don't stop the agent from running,
 	// without this integration-test would not run since the bosh-lite vm doesn't have it
 	if p.cmdRunner.CommandExists("growpart") == false {
-		p.logger.Info(logTag, "The program 'growpart' is not installed, Root Filesystem cannot be grown")
+		p.logger.Info(logTag, "The program 'growpart' is not installed, root filesystem cannot be grown")
 		return nil
 	}
 
 	rootDevicePath, _, err := p.findRootDevicePathAndNumber()
 	if err != nil {
-		return bosherr.WrapError(err, "findRootDevicePath")
+		return bosherr.WrapError(err, "Finding root device path")
 	}
 
-	stdout, _, _, err := p.cmdRunner.RunCommand(
-		"growpart",
-		rootDevicePath,
-		"1",
-	)
-
+	stdout, _, _, err := p.cmdRunner.RunCommand("growpart", rootDevicePath, "1")
 	if err != nil {
 		if strings.Contains(stdout, "NOCHANGE") == false {
 			return bosherr.WrapError(err, "growpart")
 		}
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand(
-		"resize2fs",
-		"-f",
-		fmt.Sprintf("%s1", rootDevicePath),
-	)
-
+	_, _, _, err = p.cmdRunner.RunCommand("resize2fs", "-f", fmt.Sprintf("%s1", rootDevicePath))
 	if err != nil {
 		return bosherr.WrapError(err, "resize2fs")
 	}
@@ -933,6 +923,7 @@ func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uin
 	}
 
 	linuxSizeInBytes := diskSizeInBytes - swapSizeInBytes
+
 	return swapSizeInBytes, linuxSizeInBytes, nil
 }
 
@@ -944,16 +935,19 @@ func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 
 	for _, mount := range mounts {
 		if mount.MountPoint == "/" && strings.HasPrefix(mount.PartitionPath, "/dev/") {
-			p.logger.Debug(logTag, "Found root partition: `%s'", mount.PartitionPath)
+			p.logger.Debug(logTag, "Found root partition path: `%s'", mount.PartitionPath)
 
 			stdout, _, _, err := p.cmdRunner.RunCommand("readlink", "-f", mount.PartitionPath)
 			if err != nil {
 				return "", 0, bosherr.WrapError(err, "Shelling out to readlink")
 			}
+
 			rootPartition := strings.Trim(stdout, "\n")
+
 			p.logger.Debug(logTag, "Symlink is: `%s'", rootPartition)
 
 			validRootPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
+
 			if !validRootPartition.MatchString(rootPartition) {
 				return "", 0, bosherr.Error("Root partition has an invalid name" + rootPartition)
 			}
@@ -968,6 +962,7 @@ func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 			return devPath, devNum, nil
 		}
 	}
+
 	return "", 0, bosherr.Error("Getting root partition device")
 }
 
@@ -979,9 +974,11 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Finding root partition device")
 	}
+
 	p.logger.Debug(logTag, "Found root device `%s'", rootDevicePath)
 
 	p.logger.Debug(logTag, "Getting remaining size of `%s'", rootDevicePath)
+
 	remainingSizeInBytes, err := p.diskManager.GetRootDevicePartitioner().GetDeviceSizeInBytes(rootDevicePath)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Getting root device remaining size")
@@ -992,6 +989,7 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	}
 
 	p.logger.Debug(logTag, "Calculating partition sizes of `%s', remaining size: %dB", rootDevicePath, remainingSizeInBytes)
+
 	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
