@@ -276,36 +276,6 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 }
 
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
-	// if there is ephemeral disk we can safely autogrow, if not we should not.
-	if ephemeralDiskPath == "" && p.options.CreatePartitionIfNoEphemeralDisk == true {
-		p.logger.Info(logTag, "No ephemeral disk provided, skipping growing of the root filesystem")
-		return nil
-	}
-
-	// in case growpart is not available for another flavour of linux, don't stop the agent from running,
-	// without this integration-test would not run since the bosh-lite vm doesn't have it
-	if p.cmdRunner.CommandExists("growpart") == false {
-		p.logger.Info(logTag, "The program 'growpart' is not installed, root filesystem cannot be grown")
-		return nil
-	}
-
-	rootDevicePath, _, err := p.findRootDevicePathAndNumber()
-	if err != nil {
-		return bosherr.WrapError(err, "Finding root device path")
-	}
-
-	stdout, _, _, err := p.cmdRunner.RunCommand("growpart", rootDevicePath, "1")
-	if err != nil {
-		if strings.Contains(stdout, "NOCHANGE") == false {
-			return bosherr.WrapError(err, "growpart")
-		}
-	}
-
-	_, _, _, err = p.cmdRunner.RunCommand("resize2fs", "-f", fmt.Sprintf("%s1", rootDevicePath))
-	if err != nil {
-		return bosherr.WrapError(err, "resize2fs")
-	}
-
 	return nil
 }
 
