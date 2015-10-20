@@ -50,6 +50,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 
 	_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
 	if err != nil {
+		p.cmdRunner.RunCommandWithInput("d\n2\nd\nw\n", "fdisk", devicePath)
 		return bosherr.WrapError(err, "Shelling out to sfdisk")
 	}
 
