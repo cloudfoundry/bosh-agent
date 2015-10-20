@@ -31,8 +31,6 @@ func init() {
 		It("returns started", func() {
 			started, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(jobSupervisor.JobSupervisorStarted).To(BeTrue())
-			Expect(jobSupervisor.Started).To(BeTrue())
 			Expect(started).To(Equal("started"))
 		})
 
