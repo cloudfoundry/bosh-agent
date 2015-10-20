@@ -8,6 +8,7 @@ const (
 	RootUsername        = "root"
 	VCAPUsername        = "vcap"
 	AdminGroup          = "admin"
+	SudoersGroup        = "bosh_sudoers"
 	EphemeralUserPrefix = "bosh_"
 )
 
