@@ -67,25 +67,27 @@ Install tools used by the BOSH Agent test suite:
 - `bin/go get code.google.com/p/go.tools/cmd/vet`
 - `bin/go get github.com/golang/lint/golint`
 
-#### Updating dependencies
+#### Setup Vendor for Go dependency management
 
-To update dependencies:
+We use Govendor(Vendor) for go dependency management. However at the moment September 15, 2015 Govendor is not working for our local workstations.
 
-```
-./update-dep github.com/cloudfoundry/bosh-utils/...
+To get this working we are using a [older version](https://github.com/kardianos/govendor/commit/f734a974f0392535918b8d2d1f3fdcac5423830f) of Govendor before they renamed it from vendor.
 
-or 
+git clone govendor into your gopath:
 
-./update-dep github.com/pivotal-golang/clock/fakeclock
-```
+1. Change into govendor directory `cd ~/go/src/github.com/kardianos/govendor`
 
-The script will pull latest package version and copy its files to vendor directory. Note, that it does not pull dependecies recursively from package unless they are vendored.
+1. We then reset govendor to the working version with `git reset --hard f734a974f0392535918b8d2d1f3fdcac5423830f`
+2. We then need to rename our govendor directory to vendor
+	* `cd ../`
+	* `mv govendor vendor`
+	* `cd vendor`
+3. 	Go build vendor `go build github.com/kardianos/vendor`
+4. 	Move vendor into gopath `mv vendor ~/go/bin/`
 
-For development purposes, delete package from vendor use it from your $GOPATH. Once everything works in other package push changes in that package to github and run ./update-dep to add latest version.
+An example for how to vendor a directory: `vendor update github.com/cloudfoundry/bosh-utils/...`
 
-Every vendored packaged is recorded in deps.txt with git/hg sha of the package for references. The known issue if subpackages are being vendored and later full package is being vendored subpackage references are not deleted in deps.txt.
 
-To delete package  `rm -rf vendor/path_to_package` and delete reference in deps.txt.
 
 #### Running tests
 

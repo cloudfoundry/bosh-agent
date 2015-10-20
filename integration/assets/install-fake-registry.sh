@@ -12,8 +12,9 @@ bin=$base/bin
 goversion=`$bin/go version | awk '{print $3}'`
 
 MINOR=`echo $goversion | cut -f2 -d.`
-if [ $MINOR -lt 5 ]; then
-  echo "Currently using go version $goversion, must be using go1.5.1 or greater"
+if [ $goversion != "go1.3.3" ] && [ $MINOR -lt 4 ]
+then
+  echo "Currently using go version $goversion, must be using go1.3.3 or greater"
   exit 1
 fi
 

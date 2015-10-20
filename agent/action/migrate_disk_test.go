@@ -1,13 +1,13 @@
 package action_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action MigrateDiskAction) {

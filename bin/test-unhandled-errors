@@ -7,7 +7,7 @@ bin=$(dirname $0)
 $bin/go get github.com/kisielk/errcheck
 
 packages_to_check=$($bin/go list ./... \
-  | grep -v "github.com/cloudfoundry/bosh-agent/vendor" \
+  | grep -v "github.com/cloudfoundry/bosh-agent/internal" \
   | grep -v "github.com/cloudfoundry/bosh-agent/integration" \
   | xargs
 )

@@ -3,17 +3,17 @@ package alert_test
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/alert"
 
+	fakeuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock/fakeclock"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
-	"github.com/pivotal-golang/clock/fakeclock"
 
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("sshAdapter", func() {

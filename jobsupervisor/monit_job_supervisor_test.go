@@ -7,16 +7,16 @@ import (
 	"net/smtp"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("monitJobSupervisor", func() {

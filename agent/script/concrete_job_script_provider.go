@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/pivotal-golang/clock"
+	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type ConcreteJobScriptProvider struct {

@@ -3,12 +3,13 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
+	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
+	boshassert "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/assert"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
@@ -17,7 +18,6 @@ import (
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("GetState", func() {
