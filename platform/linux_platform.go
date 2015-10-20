@@ -290,16 +290,14 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 		return bosherr.WrapError(err, "findRootDevicePath")
 	}
 
-	stdout, _, _, err := p.cmdRunner.RunCommand(
+	_, _, _, err = p.cmdRunner.RunCommand(
 		"growpart",
 		rootDevice,
 		"1",
 	)
 
 	if err != nil {
-		if strings.Contains(stdout, "NOCHANGE") == false {
-			return bosherr.WrapError(err, "growpart")
-		}
+		return bosherr.WrapError(err, "growpart")
 	}
 
 	_, _, _, err = p.cmdRunner.RunCommand(
