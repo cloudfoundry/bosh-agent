@@ -9,6 +9,10 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+type PublicKeyContent struct {
+	PublicKey string `json:"public_key"`
+}
+
 type fileMetadataService struct {
 	metaDataFilePath string
 	userDataFilePath string
@@ -42,7 +46,19 @@ func (ms fileMetadataService) Load() error {
 }
 
 func (ms fileMetadataService) GetPublicKey() (string, error) {
-	return "", nil
+	var p PublicKeyContent
+
+	contents, err := ms.fs.ReadFile(ms.settingsFilePath)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Reading metadata file")
+	}
+
+	err = json.Unmarshal([]byte(contents), &p)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Unmarshalling metadata")
+	}
+
+	return p.PublicKey, nil
 }
 
 func (ms fileMetadataService) GetInstanceID() (string, error) {
