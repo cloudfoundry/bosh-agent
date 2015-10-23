@@ -53,12 +53,6 @@ func init() {
 			Expect(applier.Configured).To(BeTrue())
 		})
 
-		It("reloads monit", func() {
-			_, err := action.Run()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(jobSupervisor.Reloaded).To(BeTrue())
-		})
-
 		It("apply errs if a job fails configuring", func() {
 			applier.ConfiguredError = errors.New("fake error")
 			_, err := action.Run()

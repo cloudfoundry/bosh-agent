@@ -120,6 +120,31 @@ func init() {
 			})
 		})
 
+		Describe("Configure jobs", func() {
+
+			It("reloads job supervisor", func() {
+				job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
+				job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
+				jobs := []models.Job{job1, job2}
+
+				err := applier.ConfigureJobs(&fakeas.FakeApplySpec{JobResults: jobs})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(jobSupervisor.Reloaded).To(BeTrue())
+			})
+
+			It("configures jobs", func() {
+				job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
+				job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
+				jobs := []models.Job{job1, job2}
+
+				err := applier.ConfigureJobs(&fakeas.FakeApplySpec{JobResults: jobs})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(jobApplier.ConfiguredJobs).To(ConsistOf(job1, job2))
+			})
+		})
+
 		Describe("Apply", func() {
 			It("removes all jobs from job supervisor", func() {
 				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})

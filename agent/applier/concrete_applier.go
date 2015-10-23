@@ -102,6 +102,12 @@ func (a *concreteApplier) ConfigureJobs(desiredApplySpec as.ApplySpec) error {
 			return bosherr.WrapErrorf(err, "Configuring job %s", job.Name)
 		}
 	}
+
+	err := a.jobSupervisor.Reload()
+	if err != nil {
+		return bosherr.WrapError(err, "Reloading jobSupervisor")
+	}
+
 	return nil
 }
 
