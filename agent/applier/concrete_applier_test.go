@@ -252,15 +252,14 @@ func init() {
 				Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 			})
 
-			It("apply configures jobs", func() {
+			It("apply does not configure jobs", func() {
 				job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
 				job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 				jobs := []models.Job{job1, job2}
 
 				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{JobResults: jobs})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(jobApplier.ConfiguredJobs).To(Equal([]models.Job{job2, job1}))
-				Expect(jobApplier.ConfiguredJobIndices).To(Equal([]int{0, 1}))
+				Expect(jobApplier.ConfiguredJobs).To(BeEmpty())
 
 				Expect(jobSupervisor.Reloaded).To(BeTrue())
 			})
@@ -272,19 +271,6 @@ func init() {
 				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{JobResults: jobs})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error reloading monit"))
-			})
-
-			It("apply errs if a job fails configuring", func() {
-				jobApplier.ConfigureError = errors.New("error configuring job")
-
-				job := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
-
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{},
-					&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
-				)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("error configuring job"))
 			})
 
 			It("apply sets up logrotation", func() {

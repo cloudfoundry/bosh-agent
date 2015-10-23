@@ -169,7 +169,13 @@ func (m monitJobSupervisor) Status() (status string) {
 		return
 	}
 
-	for _, service := range monitStatus.ServicesInGroup("vcap") {
+	services := monitStatus.ServicesInGroup("vcap")
+	if len(services) == 0 {
+		status = "failing"
+		return
+	}
+
+	for _, service := range services {
 		if service.Status == "starting" {
 			return "starting"
 		}

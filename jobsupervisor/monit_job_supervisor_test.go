@@ -227,6 +227,15 @@ var _ = Describe("monitJobSupervisor", func() {
 			status := monit.Status()
 			Expect("unknown").To(Equal(status))
 		})
+
+		It("returns failing if there are no vcap service", func() {
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{},
+			}
+
+			status := monit.Status()
+			Expect(status).To(Equal("failing"))
+		})
 	})
 
 	Describe("Processes", func() {

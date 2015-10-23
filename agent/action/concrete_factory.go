@@ -55,7 +55,7 @@ func NewFactory(
 			// Job management
 			"prepare":    NewPrepare(applier),
 			"apply":      NewApply(applier, specService, settingsService),
-			"start":      NewStart(jobSupervisor),
+			"start":      NewStart(jobSupervisor, applier, specService),
 			"stop":       NewStop(jobSupervisor),
 			"drain":      NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger),
 			"get_state":  NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService),
