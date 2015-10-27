@@ -8,4 +8,4 @@ inputs:
   path: gopath/src/github.com/cloudfoundry/bosh-agent
 
 run:
-  path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/concourse/tasks/test-unit.sh
+  path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/test-unit.sh

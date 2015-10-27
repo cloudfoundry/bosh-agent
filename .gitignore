@@ -1,6 +1,9 @@
 out
 pkg
 gobin/*
+.idea
+.vagrant
+
 /tmp/
 
 *\.test
@@ -11,6 +14,3 @@ gobin/*
 
 test/bosh/*.json
 test/micro_bosh
-
-/.idea
-/.vagrant
