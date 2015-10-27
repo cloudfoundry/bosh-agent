@@ -20,6 +20,9 @@
       # Configure the pipeline
       fly -t production configure -c ci/pipeline.yml \
         --vf /tmp/bosh-agent-secrets.yml bosh-agent
+
+      # Clean up secrets
+      rm /tmp/bosh-agent-secrets.yml
       ```
 
 ## Notes
