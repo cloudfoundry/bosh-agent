@@ -100,12 +100,17 @@ type Env struct {
 	Bosh BoshEnv `json:"bosh"`
 }
 
-func (e Env) GetPassword() string {
-	return e.Bosh.Password
+func (e Env) GetUserPassword() string {
+	return e.Bosh.UserPassword
+}
+
+func (e Env) GetRootPassword() string {
+	return e.Bosh.RootPassword
 }
 
 type BoshEnv struct {
-	Password string `json:"password"`
+	UserPassword string `json:"user_password"`
+	RootPassword string `json:"root_password"`
 }
 
 type NetworkType string
@@ -126,6 +131,8 @@ type Network struct {
 
 	Default []string `json:"default"`
 	DNS     []string `json:"dns"`
+	
+	Preconfigured bool `json:"preconfigured"`
 
 	Mac string `json:"mac"`
 }
@@ -193,7 +200,10 @@ func (n Networks) IPs() (ips []string) {
 }
 
 func (n Network) String() string {
-	return fmt.Sprintf("type: '%s', ip: '%s', netmask: '%s', gateway: '%s', mac: '%s', resolved: '%t'", n.Type, n.IP, n.Netmask, n.Gateway, n.Mac, n.Resolved)
+	return fmt.Sprintf(
+		"type: '%s', ip: '%s', netmask: '%s', gateway: '%s', mac: '%s', resolved: '%t', preconfigured: '%t', use_dhcp: '%t'",
+		n.Type, n.IP, n.Netmask, n.Gateway, n.Mac, n.Resolved, n.Preconfigured, n.UseDHCP,
+	)
 }
 
 func (n Network) IsDHCP() bool {
@@ -222,6 +232,21 @@ func (n Network) isDynamic() bool {
 
 func (n Network) IsVIP() bool {
 	return n.Type == NetworkTypeVIP
+}
+
+func (ns Networks) IsPreconfigured() bool {
+	for _, n := range ns {
+		if n.IsVIP() {
+			// Skip VIP networks since we do not configure interfaces for them
+			continue
+		}
+
+		if !n.Preconfigured {
+			return false
+		}
+	}
+
+	return true
 }
 
 //{

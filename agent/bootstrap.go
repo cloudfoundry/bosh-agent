@@ -42,26 +42,16 @@ func (boot bootstrap) Run() (err error) {
 	if err = boot.platform.SetupRuntimeConfiguration(); err != nil {
 		return bosherr.WrapError(err, "Setting up runtime configuration")
 	}
-
-	publicKey, err := boot.settingsService.PublicSSHKeyForUsername(boshsettings.VCAPUsername)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting up ssh: Getting public key")
-	}
-
-	if len(publicKey) > 0 {
-		if err = boot.platform.SetupSSH(publicKey, boshsettings.VCAPUsername); err != nil {
-			return bosherr.WrapError(err, "Setting up ssh")
-		}
-	}
-
-	if err = boot.settingsService.LoadSettings(); err != nil {
-		return bosherr.WrapError(err, "Fetching settings")
-	}
+        //  delete public key setting temporarily
 
 	settings := boot.settingsService.GetSettings()
 
 	if err = boot.setUserPasswords(settings.Env); err != nil {
 		return bosherr.WrapError(err, "Settings user password")
+	}
+
+	if err = boot.setRootPasswords(settings.Env); err != nil {
+		return bosherr.WrapError(err, "Settings root password")
 	}
 
 	if err = boot.platform.SetupHostname(settings.AgentID); err != nil {
@@ -120,7 +110,21 @@ func (boot bootstrap) Run() (err error) {
 }
 
 func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
-	password := env.GetPassword()
+	password := env.GetUserPassword()
+	if password == "" {
+		return nil
+	}
+
+	err := boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting vcap password")
+	}
+
+	return nil
+}
+
+func (boot bootstrap) setRootPasswords(env boshsettings.Env) error {
+	password := env.GetRootPassword()
 	if password == "" {
 		return nil
 	}
@@ -128,11 +132,6 @@ func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 	err := boot.platform.SetUserPassword(boshsettings.RootUsername, password)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting root password")
-	}
-
-	err = boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting vcap password")
 	}
 
 	return nil
