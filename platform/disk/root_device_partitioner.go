@@ -152,6 +152,10 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) (
 	partitionLines := allLines[2 : len(allLines)-1]
 
 	for _, partitionLine := range partitionLines {
+		// ignore PReP partition on ppc64le
+		if strings.Contains(partitionLine, "prep") {
+			continue
+		}
 		partitionInfo := strings.Split(partitionLine, ":")
 		partitionIndex, err := strconv.Atoi(partitionInfo[0])
 		if err != nil {
