@@ -441,7 +441,9 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	if realPath == "" {
 		if !p.options.CreatePartitionIfNoEphemeralDisk {
 			// Agent can not use root partition for ephemeral data directory.
-			return bosherr.Error("No ephemeral disk found, cannot use root partition as ephemeral disk")
+			//return bosherr.Error("No ephemeral disk found, cannot use root partition as ephemeral disk")
+			// temporary changed it to return nil because of stemcell issue
+			return nil
 		}
 
 		swapPartitionPath, dataPartitionPath, err = p.createEphemeralPartitionsOnRootDevice()
@@ -499,7 +501,7 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		stdout, _, _, err := p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			realPath,
+			realPath,SetupEphemeralDiskWithPath
 			"p",
 		)
 
