@@ -157,6 +157,16 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(len(client.StartServiceNames)).To(Equal(1))
 			Expect(client.StartServiceNames[0]).To(Equal("fake-service"))
 		})
+
+		It("deletes stopped file", func() {
+			fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
+			fs.WriteFileString("/var/vcap/monit/stopped", "")
+
+			err := monit.Start()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(fs.FileExists("/var/vcap/monit/stopped")).ToNot(BeTrue())
+		})
 	})
 
 	Describe("Stop", func() {
@@ -169,6 +179,12 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(client.ServicesInGroupName).To(Equal("vcap"))
 			Expect(len(client.StopServiceNames)).To(Equal(1))
 			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
+		})
+
+		It("creates stopped file", func() {
+			err := monit.Stop()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fs.FileExists("/var/vcap/monit/stopped")).To(BeTrue())
 		})
 	})
 

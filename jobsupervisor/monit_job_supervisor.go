@@ -123,6 +123,20 @@ func (m monitJobSupervisor) Start() error {
 		}
 	}
 
+	err = m.removeStoppedFile()
+	if err != nil {
+		return bosherr.WrapError(err, "Removing stopped File")
+	}
+
+	return nil
+}
+
+func (m monitJobSupervisor) removeStoppedFile() error {
+	stoppedFilePath := m.stoppedFilePath()
+	if m.fs.FileExists(stoppedFilePath) {
+		err := m.fs.RemoveAll(stoppedFilePath)
+		return err
+	}
 	return nil
 }
 
@@ -138,6 +152,11 @@ func (m monitJobSupervisor) Stop() error {
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Stopping service %s", service)
 		}
+	}
+
+	err = m.fs.WriteFileString(m.stoppedFilePath(), "")
+	if err != nil {
+		return bosherr.WrapError(err, "Creating stopped File")
 	}
 
 	return nil
@@ -162,6 +181,7 @@ func (m monitJobSupervisor) Unmonitor() error {
 
 func (m monitJobSupervisor) Status() (status string) {
 	status = "running"
+
 	m.logger.Debug(monitJobSupervisorLogTag, "Getting monit status")
 	monitStatus, err := m.client.Status()
 	if err != nil {
@@ -169,19 +189,18 @@ func (m monitJobSupervisor) Status() (status string) {
 		return
 	}
 
-	stoppedFile := filepath.Join(m.dirProvider.MonitDir(), "stopped")
-	if m.fs.FileExists(stoppedFile) {
+	if m.fs.FileExists(m.stoppedFilePath()) {
 		status = "stopped"
-		return
-	}
 
-	services := monitStatus.ServicesInGroup("vcap")
-	for _, service := range services {
-		if service.Status == "starting" {
-			return "starting"
-		}
-		if !service.Monitored || service.Status != "running" {
-			status = "failing"
+	} else {
+		services := monitStatus.ServicesInGroup("vcap")
+		for _, service := range services {
+			if service.Status == "starting" {
+				return "starting"
+			}
+			if !service.Monitored || service.Status != "running" {
+				status = "failing"
+			}
 		}
 	}
 
@@ -257,4 +276,8 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 		err = bosherr.WrapError(err, "Listen for SMTP")
 	}
 	return
+}
+
+func (m monitJobSupervisor) stoppedFilePath() string {
+	return filepath.Join(m.dirProvider.MonitDir(), "stopped")
 }

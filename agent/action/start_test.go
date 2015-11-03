@@ -9,9 +9,6 @@ import (
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"os"
 )
 
 func init() {
@@ -20,8 +17,6 @@ func init() {
 			jobSupervisor *fakejobsuper.FakeJobSupervisor
 			applier       *fakeappl.FakeApplier
 			specService   *fakeas.FakeV1Service
-			fs            *fakesys.FakeFileSystem
-			dirProvider   boshdir.Provider
 			action        StartAction
 		)
 
@@ -29,9 +24,7 @@ func init() {
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			applier = fakeappl.NewFakeApplier()
 			specService = fakeas.NewFakeV1Service()
-			fs = fakesys.NewFakeFileSystem()
-			dirProvider = boshdir.NewProvider("/var/vcap")
-			action = NewStart(jobSupervisor, applier, specService, fs, dirProvider)
+			action = NewStart(jobSupervisor, applier, specService)
 		})
 
 		It("is synchronous", func() {
@@ -58,16 +51,6 @@ func init() {
 			_, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(applier.Configured).To(BeTrue())
-		})
-
-		It("deletes stopped file", func() {
-			fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
-			fs.WriteFileString("/var/vcap/monit/stopped", "")
-
-			_, err := action.Run()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(fs.FileExists("/var/vcap/monit/stopped")).ToNot(BeTrue())
 		})
 
 		It("apply errs if a job fails configuring", func() {

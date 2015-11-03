@@ -6,24 +6,18 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 func init() {
 	Describe("Stop", func() {
 		var (
 			jobSupervisor *fakejobsuper.FakeJobSupervisor
-			fs            *fakesys.FakeFileSystem
-			dirProvider   boshdir.Provider
 			action        StopAction
 		)
 
 		BeforeEach(func() {
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-			fs = fakesys.NewFakeFileSystem()
-			dirProvider = boshdir.NewProvider("/var/vcap")
-			action = NewStop(jobSupervisor, fs, dirProvider)
+			action = NewStop(jobSupervisor)
 		})
 
 		It("is asynchronous", func() {
@@ -44,12 +38,6 @@ func init() {
 			_, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(jobSupervisor.Stopped).To(BeTrue())
-		})
-
-		It("creates stopped file", func() {
-			_, err := action.Run()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(fs.FileExists("/var/vcap/monit/stopped")).To(BeTrue())
 		})
 	})
 }
