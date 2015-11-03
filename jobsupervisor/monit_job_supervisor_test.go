@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/smtp"
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -228,13 +229,25 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect("unknown").To(Equal(status))
 		})
 
-		It("returns failing if there are no vcap service", func() {
+		It("returns running if there are no vcap service", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{},
 			}
 
 			status := monit.Status()
-			Expect(status).To(Equal("failing"))
+			Expect(status).To(Equal("running"))
+		})
+
+		It("returns stopped if there are stop was called before", func() {
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{},
+			}
+
+			fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
+			fs.WriteFileString("/var/vcap/monit/stopped", "")
+
+			status := monit.Status()
+			Expect(status).To(Equal("stopped"))
 		})
 	})
 

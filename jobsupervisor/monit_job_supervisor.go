@@ -169,12 +169,13 @@ func (m monitJobSupervisor) Status() (status string) {
 		return
 	}
 
-	services := monitStatus.ServicesInGroup("vcap")
-	if len(services) == 0 {
-		status = "failing"
+	stoppedFile := filepath.Join(m.dirProvider.MonitDir(), "stopped")
+	if m.fs.FileExists(stoppedFile) {
+		status = "stopped"
 		return
 	}
 
+	services := monitStatus.ServicesInGroup("vcap")
 	for _, service := range services {
 		if service.Status == "starting" {
 			return "starting"
