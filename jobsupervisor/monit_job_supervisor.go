@@ -123,20 +123,11 @@ func (m monitJobSupervisor) Start() error {
 		}
 	}
 
-	err = m.removeStoppedFile()
+	err = m.fs.RemoveAll(m.stoppedFilePath())
 	if err != nil {
 		return bosherr.WrapError(err, "Removing stopped File")
 	}
 
-	return nil
-}
-
-func (m monitJobSupervisor) removeStoppedFile() error {
-	stoppedFilePath := m.stoppedFilePath()
-	if m.fs.FileExists(stoppedFilePath) {
-		err := m.fs.RemoveAll(stoppedFilePath)
-		return err
-	}
 	return nil
 }
 

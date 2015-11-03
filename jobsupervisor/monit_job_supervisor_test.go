@@ -164,8 +164,12 @@ var _ = Describe("monitJobSupervisor", func() {
 
 			err := monit.Start()
 			Expect(err).ToNot(HaveOccurred())
-
 			Expect(fs.FileExists("/var/vcap/monit/stopped")).ToNot(BeTrue())
+		})
+
+		It("does not fail if stopped file is not present", func() {
+			err := monit.Start()
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
