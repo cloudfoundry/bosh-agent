@@ -23,14 +23,44 @@ func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
 			Process{
 				Name:  "process-1",
 				State: "running",
+				Uptime: UptimeVitals{
+					Secs: 144987,
+				},
+				Memory: MemoryVitals{
+					Kb:      100,
+					Percent: 0.1,
+				},
+				CPU: CPUVitals{
+					Total: 0.1,
+				},
 			},
 			Process{
 				Name:  "process-2",
 				State: "running",
+				Uptime: UptimeVitals{
+					Secs: 144988,
+				},
+				Memory: MemoryVitals{
+					Kb:      200,
+					Percent: 0.2,
+				},
+				CPU: CPUVitals{
+					Total: 0.2,
+				},
 			},
 			Process{
 				Name:  "process-3",
 				State: "failing",
+				Uptime: UptimeVitals{
+					Secs: 144989,
+				},
+				Memory: MemoryVitals{
+					Kb:      300,
+					Percent: 0.3,
+				},
+				CPU: CPUVitals{
+					Total: 0.3,
+				},
 			},
 		},
 	}
