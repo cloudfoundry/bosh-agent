@@ -22,6 +22,7 @@ type UbuntuNetManager struct {
 	fs                            boshsys.FileSystem
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
+	interfaceAddressesValidator   boship.InterfaceAddressesValidator
 	addressBroadcaster            bosharp.AddressBroadcaster
 	logger                        boshlog.Logger
 }
@@ -31,6 +32,7 @@ func NewUbuntuNetManager(
 	cmdRunner boshsys.CmdRunner,
 	ipResolver boship.Resolver,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
+	interfaceAddressesValidator boship.InterfaceAddressesValidator,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
@@ -39,6 +41,7 @@ func NewUbuntuNetManager(
 		fs:                            fs,
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
+		interfaceAddressesValidator:   interfaceAddressesValidator,
 		addressBroadcaster:            addressBroadcaster,
 		logger:                        logger,
 	}
@@ -107,7 +110,14 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		net.restartNetworkingInterfaces(net.ifaceNames(dhcpConfigs, staticConfigs))
 	}
 
-	net.broadcastIps(staticConfigs, dhcpConfigs, errCh)
+	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
+
+	err = net.interfaceAddressesValidator.Validate(staticAddresses)
+	if err != nil {
+		return bosherr.WrapError(err, "Validating static network configuration")
+	}
+
+	net.broadcastIps(append(staticAddresses, dynamicAddresses...), errCh)
 
 	return nil
 }
@@ -179,15 +189,20 @@ func (net UbuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]S
 	return staticConfigs, dhcpConfigs, nil
 }
 
-func (net UbuntuNetManager) broadcastIps(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration, errCh chan error) {
-	addresses := []boship.InterfaceAddress{}
+func (net UbuntuNetManager) ifaceAddresses(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration) ([]boship.InterfaceAddress, []boship.InterfaceAddress) {
+	staticAddresses := []boship.InterfaceAddress{}
 	for _, iface := range staticConfigs {
-		addresses = append(addresses, boship.NewSimpleInterfaceAddress(iface.Name, iface.Address))
+		staticAddresses = append(staticAddresses, boship.NewSimpleInterfaceAddress(iface.Name, iface.Address))
 	}
+	dynamicAddresses := []boship.InterfaceAddress{}
 	for _, iface := range dhcpConfigs {
-		addresses = append(addresses, boship.NewResolvingInterfaceAddress(iface.Name, net.ipResolver))
+		dynamicAddresses = append(dynamicAddresses, boship.NewResolvingInterfaceAddress(iface.Name, net.ipResolver))
 	}
 
+	return staticAddresses, dynamicAddresses
+}
+
+func (net UbuntuNetManager) broadcastIps(addresses []boship.InterfaceAddress, errCh chan error) {
 	go func() {
 		net.addressBroadcaster.BroadcastMACAddresses(addresses)
 		if errCh != nil {
