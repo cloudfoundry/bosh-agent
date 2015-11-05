@@ -355,4 +355,71 @@ func init() {
 			})
 		})
 	})
+
+	Describe("Networks", func() {
+		network1 := Network{}
+		network2 := Network{}
+		network3 := Network{}
+		networks := Networks{}
+
+		BeforeEach(func() {
+			network1.Type = NetworkTypeVIP
+			network2.Preconfigured = true
+			network3.Preconfigured = false
+		})
+
+		Describe("IsPreconfigured", func() {
+			Context("with VIP and all preconfigured networks", func() {
+				BeforeEach(func() {
+					networks = Networks{
+						"first":  network1,
+						"second": network2,
+					}
+				})
+
+				It("returns true", func() {
+					Expect(networks.IsPreconfigured()).To(BeTrue())
+				})
+			})
+
+			Context("with VIP and NOT all preconfigured networks", func() {
+				BeforeEach(func() {
+					networks = Networks{
+						"first":  network1,
+						"second": network2,
+						"third":  network3,
+					}
+				})
+
+				It("returns false", func() {
+					Expect(networks.IsPreconfigured()).To(BeFalse())
+				})
+			})
+
+			Context("with NO VIP and all preconfigured networks", func() {
+				BeforeEach(func() {
+					networks = Networks{
+						"first": network2,
+					}
+				})
+
+				It("returns true", func() {
+					Expect(networks.IsPreconfigured()).To(BeTrue())
+				})
+			})
+
+			Context("with NO VIP and NOT all preconfigured networks", func() {
+				BeforeEach(func() {
+					networks = Networks{
+						"first":  network2,
+						"second": network3,
+					}
+				})
+
+				It("returns false", func() {
+					Expect(networks.IsPreconfigured()).To(BeFalse())
+				})
+			})
+		})
+	})
 }
