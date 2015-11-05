@@ -277,8 +277,8 @@ iface {{ .Name }} inet static
     address {{ .Address }}
     network {{ .Network }}
     netmask {{ .Netmask }}
-    broadcast {{ .Broadcast }}
-    gateway {{ .Gateway }}{{ end }}
+{{ if .IsDefaultForGateway }}    broadcast {{ .Broadcast }}
+    gateway {{ .Gateway }}{{ end }}{{ end }}
 {{ if .DNSServers }}
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
 
