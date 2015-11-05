@@ -103,7 +103,8 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		if err != nil {
 			return err
 		}
-		net.restartNetworkingInterfaces()
+
+		net.restartNetworkingInterfaces(net.ifaceNames(dhcpConfigs, staticConfigs))
 	}
 
 	net.broadcastIps(staticConfigs, dhcpConfigs, errCh)
@@ -195,15 +196,15 @@ func (net UbuntuNetManager) broadcastIps(staticConfigs []StaticInterfaceConfigur
 	}()
 }
 
-func (net UbuntuNetManager) restartNetworkingInterfaces() {
+func (net UbuntuNetManager) restartNetworkingInterfaces(ifaceNames []string) {
 	net.logger.Debug(UbuntuNetManagerLogTag, "Restarting network interfaces")
 
-	_, _, _, err := net.cmdRunner.RunCommand("ifdown", "-a", "--no-loopback")
+	_, _, _, err := net.cmdRunner.RunCommand("ifdown", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err.Error())
 	}
 
-	_, _, _, err = net.cmdRunner.RunCommand("ifup", "-a", "--no-loopback")
+	_, _, _, err = net.cmdRunner.RunCommand("ifup", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifup failure: %s", err.Error())
 	}
@@ -308,4 +309,15 @@ func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 	}
 
 	return addresses, nil
+}
+
+func (net UbuntuNetManager) ifaceNames(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations) []string {
+	ifaceNames := []string{}
+	for _, config := range dhcpConfigs {
+		ifaceNames = append(ifaceNames, config.Name)
+	}
+	for _, config := range staticConfigs {
+		ifaceNames = append(ifaceNames, config.Name)
+	}
+	return ifaceNames
 }

@@ -459,8 +459,8 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "-a", "--no-loopback"}))
-			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "-a", "--no-loopback"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "--force", "ethdhcp", "ethstatic"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "--force", "ethdhcp", "ethstatic"}))
 		})
 
 		It("doesn't restart the networks if /etc/network/interfaces and /etc/dhcp/dhclient.conf don't change", func() {
@@ -514,8 +514,8 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "-a", "--no-loopback"}))
-			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "-a", "--no-loopback"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "--force", "ethdhcp", "ethstatic"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "--force", "ethdhcp", "ethstatic"}))
 		})
 
 		It("broadcasts MAC addresses for all interfaces", func() {
