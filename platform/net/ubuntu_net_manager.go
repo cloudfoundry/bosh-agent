@@ -23,6 +23,7 @@ type UbuntuNetManager struct {
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	interfaceAddressesValidator   boship.InterfaceAddressesValidator
+	dnsValidator                  DNSValidator
 	addressBroadcaster            bosharp.AddressBroadcaster
 	logger                        boshlog.Logger
 }
@@ -33,6 +34,7 @@ func NewUbuntuNetManager(
 	ipResolver boship.Resolver,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	interfaceAddressesValidator boship.InterfaceAddressesValidator,
+	dnsValidator DNSValidator,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
@@ -42,6 +44,7 @@ func NewUbuntuNetManager(
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		interfaceAddressesValidator:   interfaceAddressesValidator,
+		dnsValidator:                  dnsValidator,
 		addressBroadcaster:            addressBroadcaster,
 		logger:                        logger,
 	}
@@ -115,6 +118,11 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	err = net.interfaceAddressesValidator.Validate(staticAddresses)
 	if err != nil {
 		return bosherr.WrapError(err, "Validating static network configuration")
+	}
+
+	err = net.dnsValidator.Validate(dnsServers)
+	if err != nil {
+		return bosherr.WrapError(err, "Validating dns configuration")
 	}
 
 	net.broadcastIps(append(staticAddresses, dynamicAddresses...), errCh)
