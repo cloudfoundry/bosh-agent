@@ -868,11 +868,9 @@ func (p linux) StartMonit() error {
 
 func (p linux) SetupMonitUser() error {
 	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
-	if !p.fs.FileExists(monitUserFilePath) {
-		err := p.fs.WriteFileString(monitUserFilePath, "vcap:random-password")
-		if err != nil {
-			return bosherr.WrapError(err, "Writing monit user file")
-		}
+	err := p.fs.WriteFileString(monitUserFilePath, "vcap:random-password")
+	if err != nil {
+		return bosherr.WrapError(err, "Writing monit user file")
 	}
 
 	return nil

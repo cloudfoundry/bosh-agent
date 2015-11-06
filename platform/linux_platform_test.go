@@ -1688,24 +1688,13 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("SetupMonitUser", func() {
-		It("setup monit user if file does not exist", func() {
+		It("setup monit user", func() {
 			err := platform.SetupMonitUser()
 			Expect(err).NotTo(HaveOccurred())
 
 			monitUserFileStats := fs.GetFileTestStat("/fake-dir/monit/monit.user")
 			Expect(monitUserFileStats).ToNot(BeNil())
 			Expect(monitUserFileStats.StringContents()).To(Equal("vcap:random-password"))
-		})
-
-		It("setup monit user if file does exist", func() {
-			fs.WriteFileString("/fake-dir/monit/monit.user", "vcap:other-random-password")
-
-			err := platform.SetupMonitUser()
-			Expect(err).NotTo(HaveOccurred())
-
-			monitUserFileStats := fs.GetFileTestStat("/fake-dir/monit/monit.user")
-			Expect(monitUserFileStats).ToNot(BeNil())
-			Expect(monitUserFileStats.StringContents()).To(Equal("vcap:other-random-password"))
 		})
 	})
 
