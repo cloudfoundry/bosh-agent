@@ -408,7 +408,9 @@ func init() {
 
 				interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
 				interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
-				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, arping, logger)
+				dnsValidator := boshnet.NewDNSValidator(fs)
+				fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
+				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
 
