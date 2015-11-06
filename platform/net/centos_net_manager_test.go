@@ -23,6 +23,7 @@ func describeCentosNetManager() {
 		fs                            *fakesys.FakeFileSystem
 		cmdRunner                     *fakesys.FakeCmdRunner
 		ipResolver                    *fakeip.FakeResolver
+		interfaceAddrsProvider        *fakeip.FakeInterfaceAddressesProvider
 		addressBroadcaster            *fakearp.FakeAddressBroadcaster
 		netManager                    Manager
 		interfaceConfigurationCreator InterfaceConfigurationCreator
@@ -34,12 +35,17 @@ func describeCentosNetManager() {
 		ipResolver = &fakeip.FakeResolver{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
+		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
+		interfaceAddrsValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
+		dnsValidator := NewDNSValidator(fs)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		netManager = NewCentosNetManager(
 			fs,
 			cmdRunner,
 			ipResolver,
 			interfaceConfigurationCreator,
+			interfaceAddrsValidator,
+			dnsValidator,
 			addressBroadcaster,
 			logger,
 		)
@@ -79,6 +85,13 @@ func describeCentosNetManager() {
 				Gateway: "3.4.5.6",
 				Mac:     "fake-static-mac-address",
 			}
+			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
+			}
+			fs.WriteFileString("/etc/resolv.conf", `
+nameserver 8.8.8.8
+nameserver 9.9.9.9
+`)
 
 			expectedNetworkConfigurationForStatic = `DEVICE=ethstatic
 BOOTPROTO=static
@@ -280,6 +293,10 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				"ethstatic-that-changes": changingStaticNetwork,
 				"ethstatic":              staticNetwork,
 			})
+			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
+				boship.NewSimpleInterfaceAddress("ethstatic-that-changes", "1.2.3.5"),
+			}
 
 			fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethstatic", expectedNetworkConfigurationForStatic)
 			fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedDhclientConfiguration)
@@ -336,6 +353,52 @@ request subnet-mask, broadcast-address, time-offset, routers,
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+		})
+
+		Context("when manual networks were not configured with proper IP addresses", func() {
+			BeforeEach(func() {
+				interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+					boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.5"),
+				}
+			})
+
+			It("fails", func() {
+				stubInterfaces(map[string]boshsettings.Network{
+					"ethstatic": staticNetwork,
+				})
+
+				errCh := make(chan error)
+				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, errCh)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Validating static network configuration"))
+			})
+		})
+
+		Context("when dns is not properly configured", func() {
+			BeforeEach(func() {
+				fs.WriteFileString("/etc/resolv.conf", "")
+			})
+
+			It("fails", func() {
+				staticNetwork = boshsettings.Network{
+					Type:    "manual",
+					IP:      "1.2.3.4",
+					Default: []string{"dns"},
+					DNS:     []string{"8.8.8.8"},
+					Netmask: "255.255.255.0",
+					Gateway: "3.4.5.6",
+					Mac:     "fake-static-mac-address",
+				}
+
+				stubInterfaces(map[string]boshsettings.Network{
+					"ethstatic": staticNetwork,
+				})
+
+				errCh := make(chan error)
+				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, errCh)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Validating dns configuration"))
+			})
 		})
 
 		It("broadcasts MAC addresses for all interfaces", func() {
