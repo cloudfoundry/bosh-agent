@@ -1,7 +1,6 @@
 package net
 
 import (
-	"fmt"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -23,16 +22,20 @@ func NewDNSValidator(fs boshsys.FileSystem) DNSValidator {
 }
 
 func (d *dnsValidator) Validate(dnsServers []string) error {
+	if len(dnsServers) == 0 {
+		return nil
+	}
+
 	resolvConfContents, err := d.fs.ReadFileString("/etc/resolv.conf")
 	if err != nil {
 		return bosherr.WrapError(err, "Reading /etc/resolv.conf")
 	}
 
 	for _, dnsServer := range dnsServers {
-		if !strings.Contains(resolvConfContents, dnsServer) {
-			return bosherr.WrapError(err, fmt.Sprintf("Nameserver '%s' is not included in /etc/resolv.conf", dnsServer))
+		if strings.Contains(resolvConfContents, dnsServer) {
+			return nil
 		}
 	}
 
-	return nil
+	return bosherr.WrapError(err, "No specified dns servers found in /etc/resolv.conf")
 }

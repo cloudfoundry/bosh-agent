@@ -20,7 +20,7 @@ var _ = Describe("DNSValidator", func() {
 		dnsValidator = NewDNSValidator(fs)
 	})
 
-	Context("when /etc/resolv.conf contains dns servers", func() {
+	Context("when /etc/resolv.conf contains at least one dns server", func() {
 		BeforeEach(func() {
 			fs.WriteFileString("/etc/resolv.conf", `
 				nameserver 8.8.8.8
@@ -28,7 +28,7 @@ var _ = Describe("DNSValidator", func() {
 		})
 
 		It("returns nil", func() {
-			err := dnsValidator.Validate([]string{"8.8.8.8", "9.9.9.9"})
+			err := dnsValidator.Validate([]string{"8.8.8.8", "10.10.10.10"})
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -49,7 +49,7 @@ var _ = Describe("DNSValidator", func() {
 		It("returns error", func() {
 			err := dnsValidator.Validate([]string{"8.8.8.8", "9.9.9.9"})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Nameserver '8.8.8.8' is not included in /etc/resolv.conf"))
+			Expect(err.Error()).To(ContainSubstring("No specified dns servers found in /etc/resolv.conf"))
 		})
 	})
 })
