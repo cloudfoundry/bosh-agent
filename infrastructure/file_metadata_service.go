@@ -35,7 +35,6 @@ func NewFileMetadataService(
 		userDataFilePath: userDataFilePath,
 		settingsFilePath: settingsFilePath,
 		fs:               fs,
-
 		logTag: "fileMetadataService",
 		logger: logger,
 	}
@@ -80,7 +79,21 @@ func (ms fileMetadataService) GetInstanceID() (string, error) {
 }
 
 func (ms fileMetadataService) GetServerName() (string, error) {
-	return "", nil
+	var userData UserDataContentsType
+
+	contents, err := ms.fs.ReadFile(ms.userDataFilePath)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Reading user data")
+	}
+
+	err = json.Unmarshal([]byte(contents), &userData)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Unmarshalling user data")
+	}
+
+	ms.logger.Debug(ms.logTag, "Read user data '%#v'", userData)
+
+	return userData.Server.Name, nil
 }
 
 func (ms fileMetadataService) GetRegistryEndpoint() (string, error) {
