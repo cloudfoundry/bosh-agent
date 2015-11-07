@@ -64,6 +64,11 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		nonVipNetworks[networkName] = networkSettings
 	}
 
+	if nonVipNetworks.IsPreconfigured() {
+		// Note in this case IPs are not broadcasted
+		return nil
+	}
+
 	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.buildInterfaces(nonVipNetworks)
 	if err != nil {
 		return err

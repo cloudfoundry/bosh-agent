@@ -170,10 +170,10 @@ func (n Network) IsDefaultFor(category string) bool {
 	return stringArrayContains(n.Default, category)
 }
 
-func (n Networks) NetworkForMac(mac string) (Network, bool) {
-	for i := range n {
-		if n[i].Mac == mac {
-			return n[i], true
+func (ns Networks) NetworkForMac(mac string) (Network, bool) {
+	for i := range ns {
+		if ns[i].Mac == mac {
+			return ns[i], true
 		}
 	}
 
@@ -187,9 +187,9 @@ func (ns Networks) DefaultNetworkFor(category string) (Network, bool) {
 		}
 	}
 
-	for _, net := range n {
-		if net.IsDefaultFor(category) {
-			return net, true
+	for _, n := range ns {
+		if n.IsDefaultFor(category) {
+			return n, true
 		}
 	}
 
@@ -202,10 +202,13 @@ func stringArrayContains(stringArray []string, str string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
-func (ns Networks) DefaultIP() (ip string, found bool) {
+func (ns Networks) DefaultIP() (string, bool) {
+	var ip string
+
 	for _, n := range ns {
 		if ip == "" {
 			ip = n.IP
@@ -216,18 +219,22 @@ func (ns Networks) DefaultIP() (ip string, found bool) {
 	}
 
 	if ip != "" {
-		found = true
+		return ip, true
 	}
-	return
+
+	return "", false
 }
 
-func (ns Networks) IPs() (ips []string) {
+func (ns Networks) IPs() []string {
+	var ips []string
+
 	for _, n := range ns {
 		if n.IP != "" {
 			ips = append(ips, n.IP)
 		}
 	}
-	return
+
+	return ips
 }
 
 func (n Networks) IsPreconfigured() bool {

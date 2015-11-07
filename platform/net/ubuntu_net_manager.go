@@ -234,7 +234,7 @@ func (net UbuntuNetManager) broadcastIps(addresses []boship.InterfaceAddress, er
 }
 
 func (net UbuntuNetManager) restartNetworkingInterfaces(ifaceNames []string) {
-	net.logger.Debug(UbuntuNetManagerLogTag, "Restarting network interfaces")
+	net.logger.Debug(net.logTag, "Restarting network interfaces")
 
 	_, _, _, err := net.cmdRunner.RunCommand("ifdown", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
