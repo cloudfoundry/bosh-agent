@@ -109,7 +109,12 @@ func (r *FakeCmdRunner) RunComplexCommandAsync(cmd boshsys.Command) (boshsys.Pro
 		panic(fmt.Sprintf("Failed to find process for %s", fullCmd))
 	}
 
-	return results[0], nil
+	for _, proc := range results {
+		if !proc.Waited {
+			return proc, nil
+		}
+	}
+	panic(fmt.Sprintf("Failed to find available process for %s", fullCmd))
 }
 
 func (r *FakeCmdRunner) RunCommand(cmdName string, args ...string) (string, string, int, error) {

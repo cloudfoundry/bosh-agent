@@ -19,6 +19,8 @@ type ConcreteScript struct {
 	params ScriptParams
 
 	timeService clock.Clock
+
+	cancelCh chan struct{}
 }
 
 func NewConcreteScript(
@@ -38,6 +40,8 @@ func NewConcreteScript(
 		params: params,
 
 		timeService: timeService,
+
+		cancelCh: make(chan struct{}, 1),
 	}
 }
 
@@ -61,6 +65,14 @@ func (s ConcreteScript) Run() error {
 			return nil
 		}
 	}
+}
+
+func (s ConcreteScript) Cancel() error {
+	select {
+	case s.cancelCh <- struct{}{}:
+	default:
+	}
+	return nil
 }
 
 func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
@@ -96,12 +108,30 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	command.Args = append(command.Args, jobChange, hashChange)
 	command.Args = append(command.Args, updatedPkgs...)
 
-	stdout, _, _, err := s.runner.RunComplexCommand(command)
+	process, err := s.runner.RunComplexCommandAsync(command)
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Running drain script")
 	}
 
-	value, err := strconv.Atoi(strings.TrimSpace(stdout))
+	var result boshsys.Result
+
+	// Can only wait once on a process but cancelling can happen multiple times
+	for processExitedCh := process.Wait(); processExitedCh != nil; {
+		select {
+		case result = <-processExitedCh:
+			processExitedCh = nil
+		case <-s.cancelCh:
+			// Ignore possible TerminateNicely error since we cannot return it
+			process.TerminateNicely(10 * time.Second)
+			return 0, bosherr.Error("Script was cancelled by user request")
+		}
+	}
+
+	if result.Error != nil && result.ExitStatus == -1 {
+		return 0, bosherr.WrapError(result.Error, "Running drain script")
+	}
+
+	value, err := strconv.Atoi(strings.TrimSpace(result.Stdout))
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Script did not return a signed integer")
 	}

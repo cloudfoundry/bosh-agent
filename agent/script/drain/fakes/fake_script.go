@@ -13,6 +13,7 @@ type FakeScript struct {
 	DidRun       bool
 	RunError     error
 	RunStub      func() error
+	WasCanceled  bool
 }
 
 func NewFakeScript(tag string) *FakeScript {
@@ -22,6 +23,11 @@ func NewFakeScript(tag string) *FakeScript {
 func (s *FakeScript) Tag() string  { return s.tag }
 func (s *FakeScript) Path() string { return "/fake/path" }
 func (s *FakeScript) Exists() bool { return s.ExistsBool }
+
+func (s *FakeScript) Cancel() error {
+	s.WasCanceled = true
+	return nil
+}
 
 func (s *FakeScript) Run() error {
 	s.DidRun = true

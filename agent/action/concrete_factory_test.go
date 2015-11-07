@@ -37,6 +37,7 @@ var _ = Describe("concreteFactory", func() {
 		jobScriptProvider boshscript.JobScriptProvider
 		factory           Factory
 		logger            boshlog.Logger
+		cancelCh          chan struct{}
 	)
 
 	BeforeEach(func() {
@@ -51,6 +52,7 @@ var _ = Describe("concreteFactory", func() {
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
+		cancelCh = make(chan struct{}, 1)
 
 		factory = NewFactory(
 			settingsService,
@@ -82,7 +84,8 @@ var _ = Describe("concreteFactory", func() {
 	It("drain", func() {
 		action, err := factory.Create("drain")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)))
+		// Cannot do equality check since channel is used in initializer
+		Expect(action).To(BeAssignableToTypeOf(DrainAction{}))
 	})
 
 	It("fetch_logs", func() {

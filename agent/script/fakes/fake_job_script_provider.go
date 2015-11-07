@@ -18,23 +18,23 @@ type FakeJobScriptProvider struct {
 	newScriptReturns struct {
 		result1 script.Script
 	}
-	NewDrainScriptStub        func(jobName string, params boshdrain.ScriptParams) script.Script
+	NewDrainScriptStub        func(jobName string, params boshdrain.ScriptParams) script.CancellableScript
 	newDrainScriptMutex       sync.RWMutex
 	newDrainScriptArgsForCall []struct {
 		jobName string
 		params  boshdrain.ScriptParams
 	}
 	newDrainScriptReturns struct {
-		result1 script.Script
+		result1 script.CancellableScript
 	}
-	NewParallelScriptStub        func(scriptName string, scripts []script.Script) script.Script
+	NewParallelScriptStub        func(scriptName string, scripts []script.Script) script.CancellableScript
 	newParallelScriptMutex       sync.RWMutex
 	newParallelScriptArgsForCall []struct {
 		scriptName string
 		scripts    []script.Script
 	}
 	newParallelScriptReturns struct {
-		result1 script.Script
+		result1 script.CancellableScript
 	}
 }
 
@@ -71,7 +71,7 @@ func (fake *FakeJobScriptProvider) NewScriptReturns(result1 script.Script) {
 	}{result1}
 }
 
-func (fake *FakeJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) script.Script {
+func (fake *FakeJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) script.CancellableScript {
 	fake.newDrainScriptMutex.Lock()
 	fake.newDrainScriptArgsForCall = append(fake.newDrainScriptArgsForCall, struct {
 		jobName string
@@ -97,14 +97,14 @@ func (fake *FakeJobScriptProvider) NewDrainScriptArgsForCall(i int) (string, bos
 	return fake.newDrainScriptArgsForCall[i].jobName, fake.newDrainScriptArgsForCall[i].params
 }
 
-func (fake *FakeJobScriptProvider) NewDrainScriptReturns(result1 script.Script) {
+func (fake *FakeJobScriptProvider) NewDrainScriptReturns(result1 script.CancellableScript) {
 	fake.NewDrainScriptStub = nil
 	fake.newDrainScriptReturns = struct {
-		result1 script.Script
+		result1 script.CancellableScript
 	}{result1}
 }
 
-func (fake *FakeJobScriptProvider) NewParallelScript(scriptName string, scripts []script.Script) script.Script {
+func (fake *FakeJobScriptProvider) NewParallelScript(scriptName string, scripts []script.Script) script.CancellableScript {
 	fake.newParallelScriptMutex.Lock()
 	fake.newParallelScriptArgsForCall = append(fake.newParallelScriptArgsForCall, struct {
 		scriptName string
@@ -130,10 +130,10 @@ func (fake *FakeJobScriptProvider) NewParallelScriptArgsForCall(i int) (string, 
 	return fake.newParallelScriptArgsForCall[i].scriptName, fake.newParallelScriptArgsForCall[i].scripts
 }
 
-func (fake *FakeJobScriptProvider) NewParallelScriptReturns(result1 script.Script) {
+func (fake *FakeJobScriptProvider) NewParallelScriptReturns(result1 script.CancellableScript) {
 	fake.NewParallelScriptStub = nil
 	fake.newParallelScriptReturns = struct {
-		result1 script.Script
+		result1 script.CancellableScript
 	}{result1}
 }
 
