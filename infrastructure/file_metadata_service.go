@@ -35,8 +35,8 @@ func NewFileMetadataService(
 		userDataFilePath: userDataFilePath,
 		settingsFilePath: settingsFilePath,
 		fs:               fs,
-		logTag: "fileMetadataService",
-		logger: logger,
+		logTag:           "fileMetadataService",
+		logger:           logger,
 	}
 }
 
@@ -47,52 +47,30 @@ func (ms fileMetadataService) Load() error {
 func (ms fileMetadataService) GetPublicKey() (string, error) {
 	var p PublicKeyContent
 
-	contents, err := ms.fs.ReadFile(ms.settingsFilePath)
+	err := ms.unmarshallFile(ms.metaDataFilePath, &p)
 	if err != nil {
-		return "", bosherr.WrapError(err, "Reading metadata file")
+		return "", err
 	}
-
-	err = json.Unmarshal([]byte(contents), &p)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Unmarshalling metadata")
-	}
-
 	return p.PublicKey, nil
 }
 
 func (ms fileMetadataService) GetInstanceID() (string, error) {
 	var metadata MetadataContentsType
 
-	contents, err := ms.fs.ReadFile(ms.metaDataFilePath)
+	err := ms.unmarshallFile(ms.metaDataFilePath, &metadata)
 	if err != nil {
-		return "", bosherr.WrapError(err, "Reading metadata file")
+		return "", err
 	}
-
-	err = json.Unmarshal([]byte(contents), &metadata)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Unmarshalling metadata")
-	}
-
-	ms.logger.Debug(ms.logTag, "Read metadata '%#v'", metadata)
-
 	return metadata.InstanceID, nil
 }
 
 func (ms fileMetadataService) GetServerName() (string, error) {
 	var userData UserDataContentsType
 
-	contents, err := ms.fs.ReadFile(ms.userDataFilePath)
+	err := ms.unmarshallFile(ms.userDataFilePath, &userData)
 	if err != nil {
-		return "", bosherr.WrapError(err, "Reading user data")
+		return "", err
 	}
-
-	err = json.Unmarshal([]byte(contents), &userData)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Unmarshalling user data")
-	}
-
-	ms.logger.Debug(ms.logTag, "Read user data '%#v'", userData)
-
 	return userData.Server.Name, nil
 }
 
@@ -112,26 +90,33 @@ func (ms fileMetadataService) GetRegistryEndpoint() (string, error) {
 	}
 
 	ms.logger.Debug(ms.logTag, "Read user data '%#v'", userData)
-
 	return userData.Registry.Endpoint, nil
 }
 
 func (ms fileMetadataService) GetNetworks() (boshsettings.Networks, error) {
 	var userData UserDataContentsType
 
-	contents, err := ms.fs.ReadFile(ms.userDataFilePath)
+	err := ms.unmarshallFile(ms.userDataFilePath, &userData)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Reading user data")
+		return nil, err
 	}
-
-	err = json.Unmarshal([]byte(contents), &userData)
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Unmarshalling user data")
-	}
-
-	ms.logger.Debug(ms.logTag, "Read user data '%#v'", userData)
-
 	return userData.Networks, nil
+}
+
+func (ms fileMetadataService) unmarshallFile(filePath string, data interface{}) error {
+
+	contents, err := ms.fs.ReadFile(filePath)
+	if err != nil {
+		return bosherr.WrapError(err, "Reading user data: File not found ")
+	}
+
+	err = json.Unmarshal([]byte(contents), data)
+	if err != nil {
+		return bosherr.WrapError(err, "Unmarshalling user data")
+	}
+
+	ms.logger.Debug(ms.logTag, "Read user data '%#v'", data)
+	return nil
 }
 
 func (ms fileMetadataService) IsAvailable() bool {
