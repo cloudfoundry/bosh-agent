@@ -1,8 +1,6 @@
 package ip
 
 import (
-	"fmt"
-
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
@@ -30,12 +28,12 @@ func (i *interfaceAddressesValidator) Validate(desiredInterfaceAddresses []Inter
 		ifaceName := desiredInterfaceAddress.GetInterfaceName()
 		iface, found := i.findInterfaceByName(ifaceName, systemInterfaceAddresses)
 		if !found {
-			return bosherr.WrapError(err, fmt.Sprintf("Validating network interface '%s' IP addresses, no interface configured with that name", ifaceName))
+			return bosherr.WrapErrorf(err, "Validating network interface '%s' IP addresses, no interface configured with that name", ifaceName)
 		}
 		desiredIP, _ := desiredInterfaceAddress.GetIP()
 		actualIP, _ := iface.GetIP()
 		if desiredIP != actualIP {
-			return bosherr.WrapError(err, fmt.Sprintf("Validating network interface '%s' IP addresses, expected: '%s', actual: '%s'", ifaceName, desiredIP, actualIP))
+			return bosherr.WrapErrorf(err, "Validating network interface '%s' IP addresses, expected: '%s', actual: '%s'", ifaceName, desiredIP, actualIP)
 		}
 	}
 
