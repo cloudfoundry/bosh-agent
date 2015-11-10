@@ -37,7 +37,6 @@ var _ = Describe("concreteFactory", func() {
 		jobScriptProvider boshscript.JobScriptProvider
 		factory           Factory
 		logger            boshlog.Logger
-		cancelCh          chan struct{}
 	)
 
 	BeforeEach(func() {
@@ -52,7 +51,6 @@ var _ = Describe("concreteFactory", func() {
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		cancelCh = make(chan struct{}, 1)
 
 		factory = NewFactory(
 			settingsService,

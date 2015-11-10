@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	"github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -33,7 +34,8 @@ var _ = Describe("ConcreteScript", func() {
 	})
 
 	JustBeforeEach(func() {
-		script = NewConcreteScript(fs, runner, "my-tag", "/fake/script", params, fakeClock)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		script = NewConcreteScript(fs, runner, "my-tag", "/fake/script", params, fakeClock, logger)
 	})
 
 	Describe("Tag", func() {

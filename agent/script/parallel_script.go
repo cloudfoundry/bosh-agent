@@ -71,10 +71,9 @@ func (s ParallelScript) Cancel() error {
 	existingScripts := s.findExistingScripts(s.allScripts)
 	for _, script := range existingScripts {
 		if script, ok := script.(CancellableScript); ok {
-			s.logger.Debug(s.logTag, "Canceling a script")
 			err := script.Cancel()
 			if err != nil {
-				return bosherr.Errorf("Failed to cancel %s: %s", s.name, err)
+				bosherr.WrapErrorf(err, "'%s' script did not cancel", s.name)
 			}
 		} else {
 			return bosherr.Errorf("Script %s is not cancellable", s.name)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	"github.com/pivotal-golang/clock"
 )
@@ -19,6 +20,8 @@ type ConcreteScript struct {
 	params ScriptParams
 
 	timeService clock.Clock
+	logTag      string
+	logger      boshlog.Logger
 
 	cancelCh chan struct{}
 }
@@ -30,7 +33,7 @@ func NewConcreteScript(
 	path string,
 	params ScriptParams,
 	timeService clock.Clock,
-) ConcreteScript {
+	logger boshlog.Logger) ConcreteScript {
 	return ConcreteScript{
 		fs:     fs,
 		runner: runner,
@@ -40,6 +43,9 @@ func NewConcreteScript(
 		params: params,
 
 		timeService: timeService,
+
+		logTag: "DrainScript",
+		logger: logger,
 
 		cancelCh: make(chan struct{}, 1),
 	}
@@ -122,7 +128,10 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 			processExitedCh = nil
 		case <-s.cancelCh:
 			// Ignore possible TerminateNicely error since we cannot return it
-			process.TerminateNicely(10 * time.Second)
+			err := process.TerminateNicely(10 * time.Second)
+			if err != nil {
+				s.logger.Error(s.logTag, "Failed to terminate %s", err.Error())
+			}
 			return 0, bosherr.Error("Script was cancelled by user request")
 		}
 	}

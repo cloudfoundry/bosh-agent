@@ -85,10 +85,10 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 
 	script := a.jobScriptProvider.NewParallelScript("drain", scripts)
 
-	resultsChan := make(chan error)
-	go func() { resultsChan <- script.Run() }()
+	resultsCh := make(chan error, 1)
+	go func() { resultsCh <- script.Run() }()
 	select {
-	case result := <-resultsChan:
+	case result := <-resultsCh:
 		a.logger.Debug(a.logTag, "Got a result")
 		return 0, result
 	case <-a.cancelCh:

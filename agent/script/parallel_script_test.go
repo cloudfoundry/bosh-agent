@@ -27,6 +27,7 @@ var _ = Describe("ParallelScript", func() {
 	JustBeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		parallelScript = boshscript.NewParallelScript("run-me", scripts, logger)
+
 	})
 
 	Describe("Tag", func() {

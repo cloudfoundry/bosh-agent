@@ -51,7 +51,7 @@ func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string) 
 func (p ConcreteJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) CancellableScript {
 	path := filepath.Join(p.dirProvider.JobsDir(), jobName, "bin", "drain")
 
-	return boshdrain.NewConcreteScript(p.fs, p.cmdRunner, jobName, path, params, p.timeService)
+	return boshdrain.NewConcreteScript(p.fs, p.cmdRunner, jobName, path, params, p.timeService, p.logger)
 }
 
 func (p ConcreteJobScriptProvider) NewParallelScript(scriptName string, scripts []Script) CancellableScript {

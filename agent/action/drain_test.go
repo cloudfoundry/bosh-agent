@@ -342,7 +342,6 @@ var _ = Describe("DrainAction", func() {
 		)
 
 		BeforeEach(func() {
-
 			parallelScript = &fakescript.FakeCancellableScript{}
 			jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
 				return fakedrain.NewFakeScript("fake-tag")
@@ -350,12 +349,10 @@ var _ = Describe("DrainAction", func() {
 			jobScriptProvider.NewParallelScriptReturns(parallelScript)
 			currentSpec := boshas.V1ApplySpec{}
 			specService.Spec = currentSpec
-
 		})
 
 		Context("when action was not canceled yet", func() {
 			It("cancel action", func() {
-
 				_, err := action.Run(DrainTypeShutdown, newSpec)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -363,7 +360,5 @@ var _ = Describe("DrainAction", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
-
 	})
-
 })
