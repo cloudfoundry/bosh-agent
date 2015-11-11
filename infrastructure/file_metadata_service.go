@@ -35,8 +35,8 @@ func NewFileMetadataService(
 		userDataFilePath: userDataFilePath,
 		settingsFilePath: settingsFilePath,
 		fs:               fs,
-		logTag: "fileMetadataService",
-		logger: logger,
+		logTag:           "fileMetadataService",
+		logger:           logger,
 	}
 }
 
