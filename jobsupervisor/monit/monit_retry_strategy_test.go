@@ -76,6 +76,38 @@ var _ = Describe("MonitRetryStrategy", func() {
 			})
 		})
 
+		Context("when all requests cancelled", func() {
+			It("retries until maxUnavailableAttempts + maxOtherAttempts are exhausted", func() {
+				for i := 0; i < maxUnavailableAttempts+maxOtherAttempts-1; i++ {
+					retryable.AddAttemptBehavior(nil, true, errors.New("net/http: request canceled"))
+				}
+				retryable.AddAttemptBehavior(unavailable, true, lastError)
+
+				errChan := tryInBackground(monitRetryStrategy)
+
+				Eventually(errChan).Should(Receive(Equal(lastError)))
+				Expect(retryable.AttemptCalled).To(Equal(maxUnavailableAttempts + maxOtherAttempts))
+			})
+		})
+
+		Context("when there are both 503 and canceled responses", func() {
+			It("retries until maxUnavailableAttempts + maxOtherAttempts are exhausted", func() {
+				for i := 0; i < maxUnavailableAttempts+maxOtherAttempts-1; i++ {
+					if i%2 == 0 {
+						retryable.AddAttemptBehavior(nil, true, errors.New("net/http: request canceled"))
+					} else {
+						retryable.AddAttemptBehavior(unavailable, true, errors.New("fake-error"))
+					}
+				}
+				retryable.AddAttemptBehavior(unavailable, true, lastError)
+
+				errChan := tryInBackground(monitRetryStrategy)
+
+				Eventually(errChan).Should(Receive(Equal(lastError)))
+				Expect(retryable.AttemptCalled).To(Equal(maxUnavailableAttempts + maxOtherAttempts))
+			})
+		})
+
 		Context("when there are < maxUnavailableAttempts initial 503s", func() {
 			var expectedAttempts int
 
