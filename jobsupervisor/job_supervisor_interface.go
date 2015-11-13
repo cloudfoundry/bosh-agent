@@ -5,9 +5,24 @@ import (
 )
 
 type Process struct {
-	Name    string            `json:"name"`
-	State   string            `json:"state"`
-	Details map[string]string `json:"details,omitempty"`
+	Name   string       `json:"name"`
+	State  string       `json:"state"`
+	Uptime UptimeVitals `json:"uptime,omitempty"`
+	Memory MemoryVitals `json:"mem,omitempty"`
+	CPU    CPUVitals    `json:"cpu,omitempty"`
+}
+
+type UptimeVitals struct {
+	Secs int `json:"secs,omitempty"`
+}
+
+type MemoryVitals struct {
+	Kb      int     `json:"kb,omitempty"`
+	Percent float64 `json:"percent"`
+}
+
+type CPUVitals struct {
+	Total float64 `json:"total"`
 }
 
 type JobFailureHandler func(boshalert.MonitAlert) error

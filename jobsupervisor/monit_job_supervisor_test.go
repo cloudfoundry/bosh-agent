@@ -275,8 +275,24 @@ var _ = Describe("monitJobSupervisor", func() {
 		It("returns all processes", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Name: "fake-service-1", Monitored: true, Status: "running"},
-					boshmonit.Service{Name: "fake-service-2", Monitored: true, Status: "failing"},
+					boshmonit.Service{
+						Name:                 "fake-service-1",
+						Monitored:            true,
+						Status:               "running",
+						Uptime:               1234,
+						MemoryPercentTotal:   0.4,
+						MemoryKilobytesTotal: 100,
+						CPUPercentTotal:      0.5,
+					},
+					boshmonit.Service{
+						Name:                 "fake-service-2",
+						Monitored:            true,
+						Status:               "failing",
+						Uptime:               1235,
+						MemoryPercentTotal:   0.6,
+						MemoryKilobytesTotal: 200,
+						CPUPercentTotal:      0.7,
+					},
 				},
 			}
 
@@ -286,10 +302,30 @@ var _ = Describe("monitJobSupervisor", func() {
 				Process{
 					Name:  "fake-service-1",
 					State: "running",
+					Uptime: UptimeVitals{
+						Secs: 1234,
+					},
+					Memory: MemoryVitals{
+						Kb:      100,
+						Percent: 0.4,
+					},
+					CPU: CPUVitals{
+						Total: 0.5,
+					},
 				},
 				Process{
 					Name:  "fake-service-2",
 					State: "failing",
+					Uptime: UptimeVitals{
+						Secs: 1235,
+					},
+					Memory: MemoryVitals{
+						Kb:      200,
+						Percent: 0.6,
+					},
+					CPU: CPUVitals{
+						Total: 0.7,
+					},
 				},
 			}))
 		})
