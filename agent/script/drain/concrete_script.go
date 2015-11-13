@@ -46,6 +46,10 @@ func (s ConcreteScript) Path() string         { return s.path }
 func (s ConcreteScript) Params() ScriptParams { return s.params }
 func (s ConcreteScript) Exists() bool         { return s.fs.FileExists(s.path) }
 
+func (s ConcreteScript) RunAsync() (boshsys.Process, error) {
+	return nil, bosherr.Error("RunAsync not supported for drain scripts")
+}
+
 func (s ConcreteScript) Run() error {
 	params := s.params
 

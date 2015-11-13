@@ -10,6 +10,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -17,16 +18,18 @@ import (
 
 var _ = Describe("RunErrand", func() {
 	var (
-		specService *fakeas.FakeV1Service
-		cmdRunner   *fakesys.FakeCmdRunner
-		action      RunErrandAction
+		specService           *fakeas.FakeV1Service
+		action                RunErrandAction
+		fakeJobScriptProvider *fakescript.FakeJobScriptProvider
+		fakeScript            *fakescript.FakeScript
 	)
 
 	BeforeEach(func() {
+		fakeJobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		specService = fakeas.NewFakeV1Service()
-		cmdRunner = fakesys.NewFakeCmdRunner()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
+		action = NewRunErrand(fakeJobScriptProvider, specService, "/fake-jobs-dir", logger)
+		fakeScript = &fakescript.FakeScript{}
 	})
 
 	It("is asynchronous", func() {
@@ -46,15 +49,32 @@ var _ = Describe("RunErrand", func() {
 					specService.Spec = currentSpec
 				})
 
-				Context("when errand script exits with non-0 exit code (execution of script is ok)", func() {
+				Context("when RunAsync returns an error", func() {
 					BeforeEach(func() {
-						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						fakeJobScriptProvider.NewScriptReturns(fakeScript)
+						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
-								Stdout:     "fake-stdout",
-								Stderr:     "fake-stderr",
 								ExitStatus: 0,
 							},
-						})
+						}, errors.New("some-error"))
+					})
+
+					It("returns empty ErrandResult and wraps the error", func() {
+						result, err := action.Run()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("some-error"))
+						Expect(result).To(Equal(ErrandResult{}))
+					})
+				})
+
+				Context("when errand script exits with 0 exit code (execution of script is ok)", func() {
+					BeforeEach(func() {
+						fakeJobScriptProvider.NewScriptReturns(fakeScript)
+						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
+							WaitResult: boshsys.Result{
+								ExitStatus: 0,
+							},
+						}, nil)
 					})
 
 					It("returns errand result without error after running an errand", func() {
@@ -62,37 +82,22 @@ var _ = Describe("RunErrand", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
 							ErrandResult{
-								Stdout:     "fake-stdout",
-								Stderr:     "fake-stderr",
+								Stdout:     "Truncated stdout here",
+								Stderr:     "Truncated stderr here",
 								ExitStatus: 0,
 							},
 						))
-					})
-
-					It("runs errand script with properly configured environment", func() {
-						_, err := action.Run()
-						Expect(err).ToNot(HaveOccurred())
-						Expect(cmdRunner.RunComplexCommands).To(Equal([]boshsys.Command{
-							boshsys.Command{
-								Name: "/fake-jobs-dir/fake-job-name/bin/run",
-								Env: map[string]string{
-									"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
-								},
-							},
-						}))
 					})
 				})
 
 				Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
 					BeforeEach(func() {
-						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						fakeJobScriptProvider.NewScriptReturns(fakeScript)
+						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
-								Stdout:     "fake-stdout",
-								Stderr:     "fake-stderr",
 								ExitStatus: 123,
-								Error:      errors.New("fake-bosh-error"), // not used
 							},
-						})
+						}, nil)
 					})
 
 					It("returns errand result without an error", func() {
@@ -100,8 +105,8 @@ var _ = Describe("RunErrand", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
 							ErrandResult{
-								Stdout:     "fake-stdout",
-								Stderr:     "fake-stderr",
+								Stdout:     "Truncated stdout here",
+								Stderr:     "Truncated stderr here",
 								ExitStatus: 123,
 							},
 						))
@@ -109,13 +114,15 @@ var _ = Describe("RunErrand", func() {
 				})
 
 				Context("when errand script fails to execute", func() {
+
 					BeforeEach(func() {
-						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						fakeJobScriptProvider.NewScriptReturns(fakeScript)
+						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								ExitStatus: -1,
 								Error:      errors.New("fake-bosh-error"),
 							},
-						})
+						}, nil)
 					})
 
 					It("returns error because script failed to execute", func() {
@@ -141,7 +148,6 @@ var _ = Describe("RunErrand", func() {
 				It("does not run errand script", func() {
 					_, err := action.Run()
 					Expect(err).To(HaveOccurred())
-					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(0))
 				})
 			})
 		})
@@ -160,13 +166,23 @@ var _ = Describe("RunErrand", func() {
 			It("does not run errand script", func() {
 				_, err := action.Run()
 				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(0))
+			})
+		})
+	})
+
+	Describe("Resume", func() {
+		Context("When Resume is called", func() {
+			It("returns a not supported error", func() {
+				_, err := action.Resume()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("not supported"))
 			})
 		})
 	})
 
 	Describe("Cancel", func() {
 		BeforeEach(func() {
+			fakeJobScriptProvider.NewScriptReturns(fakeScript)
 			currentSpec := boshas.V1ApplySpec{}
 			currentSpec.JobSpec.Template = "fake-job-name"
 			specService.Spec = currentSpec
@@ -177,14 +193,12 @@ var _ = Describe("RunErrand", func() {
 				process := &fakesys.FakeProcess{
 					TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 						p.WaitCh <- boshsys.Result{
-							Stdout:     "fake-stdout",
-							Stderr:     "fake-stderr",
 							ExitStatus: 0,
 						}
 					},
 				}
 
-				cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", process)
+				fakeScript.RunAsyncReturns(process, nil)
 
 				err := action.Cancel()
 				Expect(err).ToNot(HaveOccurred())
@@ -197,15 +211,15 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script exits with non-0 exit code (execution of script is ok)", func() {
 				BeforeEach(func() {
-					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					process := &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
-								Stdout:     "fake-stdout",
-								Stderr:     "fake-stderr",
 								ExitStatus: 0,
 							}
 						},
-					})
+					}
+
+					fakeScript.RunAsyncReturns(process, nil)
 				})
 
 				It("returns errand result without error after running an errand", func() {
@@ -216,8 +230,8 @@ var _ = Describe("RunErrand", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
 						ErrandResult{
-							Stdout:     "fake-stdout",
-							Stderr:     "fake-stderr",
+							Stdout:     "Truncated stdout here",
+							Stderr:     "Truncated stderr here",
 							ExitStatus: 0,
 						},
 					))
@@ -226,16 +240,16 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
 				BeforeEach(func() {
-					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					process := &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
-								Stdout:     "fake-stdout",
-								Stderr:     "fake-stderr",
 								ExitStatus: 123,
 								Error:      errors.New("fake-bosh-error"), // not used
 							}
 						},
-					})
+					}
+
+					fakeScript.RunAsyncReturns(process, nil)
 				})
 
 				It("returns errand result without an error", func() {
@@ -246,24 +260,26 @@ var _ = Describe("RunErrand", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
 						ErrandResult{
-							Stdout:     "fake-stdout",
-							Stderr:     "fake-stderr",
+							Stdout:     "Truncated stdout here",
+							Stderr:     "Truncated stderr here",
 							ExitStatus: 123,
 						},
 					))
 				})
 			})
 
-			Context("when errand script fails to execute", func() {
+			Context("when errand script fails to execute (exit status of -1 and error returned)", func() {
 				BeforeEach(func() {
-					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					process := &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								ExitStatus: -1,
 								Error:      errors.New("fake-bosh-error"),
 							}
 						},
-					})
+					}
+
+					fakeScript.RunAsyncReturns(process, nil)
 				})
 
 				It("returns error because script failed to execute", func() {
@@ -280,14 +296,16 @@ var _ = Describe("RunErrand", func() {
 
 		Context("when action was cancelled already", func() {
 			BeforeEach(func() {
-				cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+				process := &fakesys.FakeProcess{
 					TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 						p.WaitCh <- boshsys.Result{
 							ExitStatus: -1,
 							Error:      errors.New("fake-bosh-error"),
 						}
 					},
-				})
+				}
+
+				fakeScript.RunAsyncReturns(process, nil)
 			})
 
 			It("allows to cancel action second time without returning an error", func() {

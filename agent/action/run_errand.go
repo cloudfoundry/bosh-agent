@@ -2,10 +2,10 @@ package action
 
 import (
 	"errors"
-	"path/filepath"
 	"time"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -14,25 +14,25 @@ import (
 const runErrandActionLogTag = "runErrandAction"
 
 type RunErrandAction struct {
-	specService boshas.V1Service
-	jobsDir     string
-	cmdRunner   boshsys.CmdRunner
-	logger      boshlog.Logger
+	jobScriptProvider boshscript.JobScriptProvider
+	specService       boshas.V1Service
+	jobsDir           string
+	logger            boshlog.Logger
 
 	cancelCh chan struct{}
 }
 
 func NewRunErrand(
+	jobScriptProvider boshscript.JobScriptProvider,
 	specService boshas.V1Service,
 	jobsDir string,
-	cmdRunner boshsys.CmdRunner,
 	logger boshlog.Logger,
 ) RunErrandAction {
 	return RunErrandAction{
-		specService: specService,
-		jobsDir:     jobsDir,
-		cmdRunner:   cmdRunner,
-		logger:      logger,
+		jobScriptProvider: jobScriptProvider,
+		specService:       specService,
+		jobsDir:           jobsDir,
+		logger:            logger,
 
 		// Initialize channel in a constructor to avoid race
 		// between initializing in Run()/Cancel()
@@ -64,14 +64,9 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 		return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
 	}
 
-	command := boshsys.Command{
-		Name: filepath.Join(a.jobsDir, currentSpec.JobSpec.Template, "bin", "run"),
-		Env: map[string]string{
-			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
-		},
-	}
+	errandScript := a.jobScriptProvider.NewScript(currentSpec.JobSpec.Template, "run")
 
-	process, err := a.cmdRunner.RunComplexCommandAsync(command)
+	process, err := errandScript.RunAsync()
 	if err != nil {
 		return ErrandResult{}, bosherr.WrapError(err, "Running errand script")
 	}
@@ -97,8 +92,8 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 	}
 
 	return ErrandResult{
-		Stdout:     result.Stdout,
-		Stderr:     result.Stderr,
+		Stdout:     "Truncated stdout here",
+		Stderr:     "Truncated stderr here",
 		ExitStatus: result.ExitStatus,
 	}, nil
 }

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/agent/script"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type FakeScript struct {
@@ -31,6 +32,13 @@ type FakeScript struct {
 	runArgsForCall []struct{}
 	runReturns     struct {
 		result1 error
+	}
+	RunAsyncStub        func() (boshsys.Process, error)
+	runAsyncMutex       sync.RWMutex
+	runAsyncArgsForCall []struct{}
+	runAsyncReturns     struct {
+		result1 boshsys.Process
+		result2 error
 	}
 }
 
@@ -128,6 +136,31 @@ func (fake *FakeScript) RunReturns(result1 error) {
 	fake.runReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeScript) RunAsync() (boshsys.Process, error) {
+	fake.runAsyncMutex.Lock()
+	fake.runAsyncArgsForCall = append(fake.runAsyncArgsForCall, struct{}{})
+	fake.runAsyncMutex.Unlock()
+	if fake.RunAsyncStub != nil {
+		return fake.RunAsyncStub()
+	} else {
+		return fake.runAsyncReturns.result1, fake.runAsyncReturns.result2
+	}
+}
+
+func (fake *FakeScript) RunAsyncCallCount() int {
+	fake.runAsyncMutex.RLock()
+	defer fake.runAsyncMutex.RUnlock()
+	return len(fake.runAsyncArgsForCall)
+}
+
+func (fake *FakeScript) RunAsyncReturns(result1 boshsys.Process, result2 error) {
+	fake.RunAsyncStub = nil
+	fake.runAsyncReturns = struct {
+		result1 boshsys.Process
+		result2 error
+	}{result1, result2}
 }
 
 var _ script.Script = new(FakeScript)

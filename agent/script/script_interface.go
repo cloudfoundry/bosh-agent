@@ -2,6 +2,7 @@ package script
 
 import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 //go:generate counterfeiter . JobScriptProvider
@@ -20,4 +21,5 @@ type Script interface {
 
 	Exists() bool
 	Run() error
+	RunAsync() (boshsys.Process, error)
 }

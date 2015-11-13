@@ -5,6 +5,7 @@ import (
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type ParallelScript struct {
@@ -33,6 +34,10 @@ func NewParallelScript(name string, scripts []Script, logger boshlog.Logger) Par
 func (s ParallelScript) Tag() string  { return "" }
 func (s ParallelScript) Path() string { return "" }
 func (s ParallelScript) Exists() bool { return true }
+
+func (s ParallelScript) RunAsync() (boshsys.Process, error) {
+	return nil, bosherr.Error("RunAsync not supported for ParallelScript")
+}
 
 func (s ParallelScript) Run() error {
 	existingScripts := s.findExistingScripts(s.allScripts)
