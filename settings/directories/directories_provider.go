@@ -48,6 +48,10 @@ func (p Provider) MonitJobsDir() string {
 	return filepath.Join(p.BaseDir(), "monit", "job")
 }
 
+func (p Provider) MonitDir() string {
+	return filepath.Join(p.BaseDir(), "monit")
+}
+
 func (p Provider) JobsDir() string {
 	return filepath.Join(p.BaseDir(), "jobs")
 }

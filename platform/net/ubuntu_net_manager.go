@@ -7,12 +7,12 @@ import (
 	"strings"
 	"text/template"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const UbuntuNetManagerLogTag = "UbuntuNetManager"
@@ -22,6 +22,8 @@ type UbuntuNetManager struct {
 	fs                            boshsys.FileSystem
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
+	interfaceAddressesValidator   boship.InterfaceAddressesValidator
+	dnsValidator                  DNSValidator
 	addressBroadcaster            bosharp.AddressBroadcaster
 	logger                        boshlog.Logger
 }
@@ -31,6 +33,8 @@ func NewUbuntuNetManager(
 	cmdRunner boshsys.CmdRunner,
 	ipResolver boship.Resolver,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
+	interfaceAddressesValidator boship.InterfaceAddressesValidator,
+	dnsValidator DNSValidator,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
@@ -39,6 +43,8 @@ func NewUbuntuNetManager(
 		fs:                            fs,
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
+		interfaceAddressesValidator:   interfaceAddressesValidator,
+		dnsValidator:                  dnsValidator,
 		addressBroadcaster:            addressBroadcaster,
 		logger:                        logger,
 	}
@@ -103,10 +109,23 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		if err != nil {
 			return err
 		}
-		net.restartNetworkingInterfaces()
+
+		net.restartNetworkingInterfaces(net.ifaceNames(dhcpConfigs, staticConfigs))
 	}
 
-	net.broadcastIps(staticConfigs, dhcpConfigs, errCh)
+	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
+
+	err = net.interfaceAddressesValidator.Validate(staticAddresses)
+	if err != nil {
+		return bosherr.WrapError(err, "Validating static network configuration")
+	}
+
+	err = net.dnsValidator.Validate(dnsServers)
+	if err != nil {
+		return bosherr.WrapError(err, "Validating dns configuration")
+	}
+
+	net.broadcastIps(append(staticAddresses, dynamicAddresses...), errCh)
 
 	return nil
 }
@@ -178,15 +197,20 @@ func (net UbuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]S
 	return staticConfigs, dhcpConfigs, nil
 }
 
-func (net UbuntuNetManager) broadcastIps(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration, errCh chan error) {
-	addresses := []boship.InterfaceAddress{}
+func (net UbuntuNetManager) ifaceAddresses(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration) ([]boship.InterfaceAddress, []boship.InterfaceAddress) {
+	staticAddresses := []boship.InterfaceAddress{}
 	for _, iface := range staticConfigs {
-		addresses = append(addresses, boship.NewSimpleInterfaceAddress(iface.Name, iface.Address))
+		staticAddresses = append(staticAddresses, boship.NewSimpleInterfaceAddress(iface.Name, iface.Address))
 	}
+	dynamicAddresses := []boship.InterfaceAddress{}
 	for _, iface := range dhcpConfigs {
-		addresses = append(addresses, boship.NewResolvingInterfaceAddress(iface.Name, net.ipResolver))
+		dynamicAddresses = append(dynamicAddresses, boship.NewResolvingInterfaceAddress(iface.Name, net.ipResolver))
 	}
 
+	return staticAddresses, dynamicAddresses
+}
+
+func (net UbuntuNetManager) broadcastIps(addresses []boship.InterfaceAddress, errCh chan error) {
 	go func() {
 		net.addressBroadcaster.BroadcastMACAddresses(addresses)
 		if errCh != nil {
@@ -195,15 +219,15 @@ func (net UbuntuNetManager) broadcastIps(staticConfigs []StaticInterfaceConfigur
 	}()
 }
 
-func (net UbuntuNetManager) restartNetworkingInterfaces() {
+func (net UbuntuNetManager) restartNetworkingInterfaces(ifaceNames []string) {
 	net.logger.Debug(UbuntuNetManagerLogTag, "Restarting network interfaces")
 
-	_, _, _, err := net.cmdRunner.RunCommand("ifdown", "-a", "--no-loopback")
+	_, _, _, err := net.cmdRunner.RunCommand("ifdown", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err.Error())
 	}
 
-	_, _, _, err = net.cmdRunner.RunCommand("ifup", "-a", "--no-loopback")
+	_, _, _, err = net.cmdRunner.RunCommand("ifup", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifup failure: %s", err.Error())
 	}
@@ -277,8 +301,8 @@ iface {{ .Name }} inet static
     address {{ .Address }}
     network {{ .Network }}
     netmask {{ .Netmask }}
-    broadcast {{ .Broadcast }}
-    gateway {{ .Gateway }}{{ end }}
+{{ if .IsDefaultForGateway }}    broadcast {{ .Broadcast }}
+    gateway {{ .Gateway }}{{ end }}{{ end }}
 {{ if .DNSServers }}
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
 
@@ -308,4 +332,15 @@ func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 	}
 
 	return addresses, nil
+}
+
+func (net UbuntuNetManager) ifaceNames(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations) []string {
+	ifaceNames := []string{}
+	for _, config := range dhcpConfigs {
+		ifaceNames = append(ifaceNames, config.Name)
+	}
+	for _, config := range staticConfigs {
+		ifaceNames = append(ifaceNames, config.Name)
+	}
+	return ifaceNames
 }

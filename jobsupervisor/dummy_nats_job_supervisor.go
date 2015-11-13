@@ -5,7 +5,7 @@ import (
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	bosherror "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
+	bosherror "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type dummyNatsJobSupervisor struct {
@@ -19,7 +19,20 @@ func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
 	return &dummyNatsJobSupervisor{
 		mbusHandler: mbusHandler,
 		status:      "running",
-		processes:   []Process{},
+		processes: []Process{
+			Process{
+				Name:  "process-1",
+				State: "running",
+			},
+			Process{
+				Name:  "process-2",
+				State: "running",
+			},
+			Process{
+				Name:  "process-3",
+				State: "failing",
+			},
+		},
 	}
 }
 

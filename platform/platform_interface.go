@@ -2,12 +2,12 @@ package platform
 
 import (
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type Platform interface {
@@ -26,6 +26,7 @@ type Platform interface {
 	DeleteEphemeralUsersMatching(regex string) (err error)
 
 	// Bootstrap functionality
+	SetupRootDisk(ephemeralDiskPath string) (err error)
 	SetupSSH(publicKey, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
 	SetupHostname(hostname string) (err error)

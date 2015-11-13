@@ -5,18 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/smtp"
+	"os"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("monitJobSupervisor", func() {
@@ -156,6 +157,20 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(len(client.StartServiceNames)).To(Equal(1))
 			Expect(client.StartServiceNames[0]).To(Equal("fake-service"))
 		})
+
+		It("deletes stopped file", func() {
+			fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
+			fs.WriteFileString("/var/vcap/monit/stopped", "")
+
+			err := monit.Start()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fs.FileExists("/var/vcap/monit/stopped")).ToNot(BeTrue())
+		})
+
+		It("does not fail if stopped file is not present", func() {
+			err := monit.Start()
+			Expect(err).ToNot(HaveOccurred())
+		})
 	})
 
 	Describe("Stop", func() {
@@ -168,6 +183,12 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(client.ServicesInGroupName).To(Equal("vcap"))
 			Expect(len(client.StopServiceNames)).To(Equal(1))
 			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
+		})
+
+		It("creates stopped file", func() {
+			err := monit.Stop()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fs.FileExists("/var/vcap/monit/stopped")).To(BeTrue())
 		})
 	})
 
@@ -226,6 +247,27 @@ var _ = Describe("monitJobSupervisor", func() {
 
 			status := monit.Status()
 			Expect("unknown").To(Equal(status))
+		})
+
+		It("returns running if there are no vcap service", func() {
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{},
+			}
+
+			status := monit.Status()
+			Expect(status).To(Equal("running"))
+		})
+
+		It("returns stopped if there are stop was called before", func() {
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{},
+			}
+
+			fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
+			fs.WriteFileString("/var/vcap/monit/stopped", "")
+
+			status := monit.Status()
+			Expect(status).To(Equal("stopped"))
 		})
 	})
 

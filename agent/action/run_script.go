@@ -2,28 +2,32 @@ package action
 
 import (
 	"errors"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	"strings"
+
+	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type RunScriptAction struct {
-	scriptProvider scriptrunner.JobScriptProvider
-	specService    applyspec.V1Service
-	logger         logger.Logger
+	scriptProvider boshscript.JobScriptProvider
+	specService    boshas.V1Service
+
+	logTag string
+	logger boshlog.Logger
 }
 
 func NewRunScript(
-	scriptProvider scriptrunner.JobScriptProvider,
-	specService applyspec.V1Service,
-	logger logger.Logger,
+	scriptProvider boshscript.JobScriptProvider,
+	specService boshas.V1Service,
+	logger boshlog.Logger,
 ) RunScriptAction {
 	return RunScriptAction{
 		scriptProvider: scriptProvider,
 		specService:    specService,
-		logger:         logger,
+
+		logTag: "RunScript Action",
+		logger: logger,
 	}
 }
 
@@ -36,54 +40,24 @@ func (a RunScriptAction) IsPersistent() bool {
 }
 
 func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) (map[string]string, error) {
-	result := map[string]string{}
+	// May be used in future to return more information
+	emptyResults := map[string]string{}
 
 	currentSpec, err := a.specService.Get()
 	if err != nil {
-		return result, bosherr.WrapError(err, "Getting current spec")
+		return emptyResults, bosherr.WrapError(err, "Getting current spec")
 	}
 
-	a.logger.Info("run-script-action", "Attempting to run '%s' scripts in %d jobs", scriptName, len(currentSpec.JobSpec.JobTemplateSpecs))
+	var scripts []boshscript.Script
 
-	scriptCount := 0
-
-	resultChannel := make(chan scriptrunner.RunScriptResult)
-
-	for _, jobTemplate := range currentSpec.JobSpec.JobTemplateSpecs {
-		script := a.scriptProvider.Get(jobTemplate.Name, scriptName)
-		if script.Exists() {
-			scriptCount++
-			go script.Run(resultChannel)
-		}
+	for _, job := range currentSpec.Jobs() {
+		script := a.scriptProvider.NewScript(job.BundleName(), scriptName)
+		scripts = append(scripts, script)
 	}
 
-	var failedScripts []string
-	var passedScripts []string
+	parallelScript := a.scriptProvider.NewParallelScript(scriptName, scripts)
 
-	for i := 0; i < scriptCount; i++ {
-		select {
-		case resultScript := <-resultChannel:
-			jobName := resultScript.JobName
-			if resultScript.Error == nil {
-				passedScripts = append(passedScripts, jobName)
-				result[jobName] = "executed"
-				a.logger.Info("run-script-action", "'%s' script has successfully executed", resultScript.ScriptPath)
-			} else {
-				failedScripts = append(failedScripts, jobName)
-				result[jobName] = "failed"
-				a.logger.Error("run-script-action", "'%s' script has failed with error %s", resultScript.ScriptPath, resultScript.Error)
-			}
-		}
-	}
-
-	if len(failedScripts) > 0 {
-		msg := "Failed Jobs: " + strings.Join(failedScripts, ", ")
-		if len(passedScripts) > 0 {
-			msg += ". Successful Jobs: " + strings.Join(passedScripts, ", ")
-		}
-		return result, bosherr.Errorf("%d of %d %s scripts failed. %s.", len(failedScripts), scriptCount, scriptName, msg)
-	}
-	return result, nil
+	return emptyResults, parallelScript.Run()
 }
 
 func (a RunScriptAction) Resume() (interface{}, error) {

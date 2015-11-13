@@ -4,46 +4,22 @@ import (
 	"errors"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
-)
-
-const (
-	drainActionLogTag = "Drain Action"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type DrainAction struct {
-	drainScriptProvider boshdrain.ScriptProvider
-	notifier            boshnotif.Notifier
-	specService         boshas.V1Service
-	jobSupervisor       boshjobsuper.JobSupervisor
-	logger              boshlog.Logger
-}
+	jobScriptProvider boshscript.JobScriptProvider
+	notifier          boshnotif.Notifier
+	specService       boshas.V1Service
+	jobSupervisor     boshjobsuper.JobSupervisor
 
-func NewDrain(
-	notifier boshnotif.Notifier,
-	specService boshas.V1Service,
-	drainScriptProvider boshdrain.ScriptProvider,
-	jobSupervisor boshjobsuper.JobSupervisor,
-	logger boshlog.Logger,
-) (drain DrainAction) {
-	drain.notifier = notifier
-	drain.specService = specService
-	drain.drainScriptProvider = drainScriptProvider
-	drain.jobSupervisor = jobSupervisor
-	drain.logger = logger
-	return
-}
-
-func (a DrainAction) IsAsynchronous() bool {
-	return true
-}
-
-func (a DrainAction) IsPersistent() bool {
-	return false
+	logTag string
+	logger boshlog.Logger
 }
 
 type DrainType string
@@ -54,28 +30,63 @@ const (
 	DrainTypeShutdown DrainType = "shutdown"
 )
 
+func NewDrain(
+	notifier boshnotif.Notifier,
+	specService boshas.V1Service,
+	jobScriptProvider boshscript.JobScriptProvider,
+	jobSupervisor boshjobsuper.JobSupervisor,
+	logger boshlog.Logger,
+) DrainAction {
+	return DrainAction{
+		notifier:          notifier,
+		specService:       specService,
+		jobScriptProvider: jobScriptProvider,
+		jobSupervisor:     jobSupervisor,
+
+		logTag: "Drain Action",
+		logger: logger,
+	}
+}
+
+func (a DrainAction) IsAsynchronous() bool {
+	return true
+}
+
+func (a DrainAction) IsPersistent() bool {
+	return false
+}
+
 func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (int, error) {
-	a.logger.Debug(drainActionLogTag, "Running drain action with drain type %s", drainType)
 	currentSpec, err := a.specService.Get()
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Getting current spec")
 	}
 
-	if len(currentSpec.JobSpec.Template) == 0 {
-		if drainType == DrainTypeStatus {
-			return 0, bosherr.Error("Check Status on Drain action requires job spec")
-		}
-		return 0, nil
+	params, err := a.determineParams(drainType, currentSpec, newSpecs)
+	if err != nil {
+		return 0, err
 	}
 
-	a.logger.Debug(drainActionLogTag, "Unmonitoring")
+	a.logger.Debug(a.logTag, "Unmonitoring")
+
 	err = a.jobSupervisor.Unmonitor()
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Unmonitoring services")
 	}
 
-	drainScript := a.drainScriptProvider.NewScript(currentSpec.JobSpec.Template)
+	var scripts []boshscript.Script
 
+	for _, job := range currentSpec.Jobs() {
+		script := a.jobScriptProvider.NewDrainScript(job.BundleName(), params)
+		scripts = append(scripts, script)
+	}
+
+	parallelScript := a.jobScriptProvider.NewParallelScript("drain", scripts)
+
+	return 0, parallelScript.Run()
+}
+
+func (a DrainAction) determineParams(drainType DrainType, currentSpec boshas.V1ApplySpec, newSpecs []boshas.V1ApplySpec) (boshdrain.ScriptParams, error) {
 	var newSpec *boshas.V1ApplySpec
 	var params boshdrain.ScriptParams
 
@@ -84,38 +95,28 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 	}
 
 	switch drainType {
+	case DrainTypeStatus:
+		// Status was used in the past when dynamic drain was implemented in the Director.
+		// Now that we implement it in the agent, we should never get a call for this type.
+		return params, bosherr.Error("Unexpected call with drain type 'status'")
+
 	case DrainTypeUpdate:
 		if newSpec == nil {
-			return 0, bosherr.Error("Drain update requires new spec")
+			return params, bosherr.Error("Drain update requires new spec")
 		}
 
 		params = boshdrain.NewUpdateParams(currentSpec, *newSpec)
 
 	case DrainTypeShutdown:
-		err = a.notifier.NotifyShutdown()
+		err := a.notifier.NotifyShutdown()
 		if err != nil {
-			return 0, bosherr.WrapError(err, "Notifying shutdown")
+			return params, bosherr.WrapError(err, "Notifying shutdown")
 		}
 
 		params = boshdrain.NewShutdownParams(currentSpec, newSpec)
-
-	case DrainTypeStatus:
-		params = boshdrain.NewStatusParams(currentSpec, newSpec)
 	}
 
-	if !drainScript.Exists() {
-		if drainType == DrainTypeStatus {
-			return 0, bosherr.Error("Check Status on Drain action requires a valid drain script")
-		}
-		return 0, nil
-	}
-
-	value, err := drainScript.Run(params)
-	if err != nil {
-		return 0, bosherr.WrapError(err, "Running Drain Script")
-	}
-
-	return value, nil
+	return params, nil
 }
 
 func (a DrainAction) Resume() (interface{}, error) {

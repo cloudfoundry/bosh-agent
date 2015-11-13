@@ -7,25 +7,24 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
-	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	sigar "github.com/cloudfoundry/gosigar"
 
 	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 
-	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
-	boshretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -37,6 +36,8 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
 func init() {
@@ -262,6 +263,21 @@ func init() {
 				Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
 			})
 
+			It("grows the root filesystem", func() {
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupRootDiskCalledTimes).To(Equal(1))
+			})
+
+			It("returns an error if growing the root filesystem fails", func() {
+				platform.SetupRootDiskError = errors.New("growfs failed")
+
+				err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(platform.SetupRootDiskCalledTimes).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring("growfs failed"))
+			})
+
 			It("sets root and vcap passwords", func() {
 				settingsService.Settings.Env.Bosh.Password = "some-encrypted-password"
 				settingsService.Settings.Env.Bosh.KeepRootPassword = false
@@ -328,6 +344,8 @@ func init() {
 				defaultNetworkResolver boshsettings.DefaultNetworkResolver
 				logger                 boshlog.Logger
 				dirProvider            boshdirs.Provider
+
+				interfaceAddrsProvider *fakeip.FakeInterfaceAddressesProvider
 			)
 
 			writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
@@ -372,6 +390,13 @@ func init() {
 					{MountPoint: "/", PartitionPath: "/dev/vda1"},
 				}
 
+				// for the GrowRootFS call to findRootDevicePath
+				runner.AddCmdResult(
+					"readlink -f /dev/vda1",
+					fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
+				)
+
+				// for the createEphemeralPartitionsOnRootDevice call to findRootDevicePath
 				runner.AddCmdResult(
 					"readlink -f /dev/vda1",
 					fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
@@ -395,7 +420,11 @@ func init() {
 				arping := bosharp.NewArping(runner, fs, logger, boshplatform.ArpIterations, boshplatform.ArpIterationDelay, boshplatform.ArpInterfaceCheckDelay)
 				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
-				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, arping, logger)
+				interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
+				interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
+				dnsValidator := boshnet.NewDNSValidator(fs)
+				fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
+				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
 
@@ -491,6 +520,9 @@ func init() {
 				Context("and a single physical network interface exists", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+						}
 					})
 
 					It("succeeds", func() {
@@ -502,6 +534,9 @@ func init() {
 				Context("and extra physical network interfaces exist", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+						}
 					})
 
 					It("succeeds", func() {
@@ -513,6 +548,9 @@ func init() {
 				Context("and extra virtual network interfaces exist", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:ee", "virtual"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+						}
 					})
 
 					It("succeeds", func() {
@@ -557,6 +595,9 @@ func init() {
 				Context("and a single physical network interface exists", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+						}
 					})
 
 					It("succeeds", func() {
@@ -568,6 +609,9 @@ func init() {
 				Context("and extra physical network interfaces exist", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+						}
 					})
 
 					It("succeeds", func() {
@@ -579,6 +623,9 @@ func init() {
 				Context("and an extra virtual network interface exists", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"lo", "aa:bb:dd", "virtual"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+						}
 					})
 
 					It("succeeds", func() {
@@ -633,6 +680,10 @@ func init() {
 				Context("and two physical network interfaces with matching MAC addresses exist", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc", "physical"}, []string{"eth1", "aa:bb:dd", "physical"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+							boship.NewSimpleInterfaceAddress("eth1", "3.3.3.3"),
+						}
 					})
 
 					It("succeeds", func() {

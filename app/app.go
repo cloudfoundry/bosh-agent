@@ -1,13 +1,13 @@
 package app
 
 import (
+	"fmt"
 	"net"
 	"path/filepath"
 	"time"
 
-	sigar "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/gosigar"
+	sigar "github.com/cloudfoundry/gosigar"
 
-	"fmt"
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -17,16 +17,9 @@ import (
 	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
-	boshblob "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
-	boshuuid "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/uuid"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
@@ -36,6 +29,12 @@ import (
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"github.com/pivotal-golang/clock"
 )
 
 type App interface {
@@ -164,16 +163,14 @@ func (app *app) Setup(args []string) error {
 		specFilePath,
 	)
 
-	drainScriptProvider := boshdrain.NewConcreteScriptProvider(
-		app.platform.GetRunner(),
-		app.platform.GetFs(),
-		app.dirProvider,
-	)
+	timeService := clock.NewClock()
 
-	jobScriptProvider := boshscript.NewJobScriptProvider(
+	jobScriptProvider := boshscript.NewConcreteJobScriptProvider(
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		app.platform.GetDirProvider(),
+		timeService,
+		app.logger,
 	)
 
 	actionFactory := boshaction.NewFactory(
@@ -186,7 +183,6 @@ func (app *app) Setup(args []string) error {
 		compiler,
 		jobSupervisor,
 		specService,
-		drainScriptProvider,
 		jobScriptProvider,
 		app.logger,
 	)
@@ -202,8 +198,6 @@ func (app *app) Setup(args []string) error {
 	)
 
 	syslogServer := boshsyslog.NewServer(33331, net.Listen, app.logger)
-
-	timeService := clock.NewClock()
 
 	app.agent = boshagent.New(
 		app.logger,

@@ -1,6 +1,9 @@
 out
 pkg
 gobin/*
+.idea
+.vagrant
+
 /tmp/
 
 *\.test
@@ -9,5 +12,5 @@ gobin/*
 *.sublime-workspace
 *.sw*
 
-/.idea
-/.vagrant
+test/bosh/*.json
+test/micro_bosh

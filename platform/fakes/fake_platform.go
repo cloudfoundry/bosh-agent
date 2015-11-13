@@ -5,17 +5,17 @@ import (
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
-	fakecmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type FakePlatform struct {
@@ -114,6 +114,12 @@ type FakePlatform struct {
 	GetConfiguredNetworkInterfacesErr        error
 
 	certManager boshcert.Manager
+
+	GetHostPublicKeyValue string
+	GetHostPublicKeyError error
+
+	SetupRootDiskCalledTimes int
+	SetupRootDiskError       error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -136,6 +142,9 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupRawEphemeralDisksCallCount = 0
 	platform.SetupRawEphemeralDisksDevices = nil
 	platform.SetupRawEphemeralDisksErr = nil
+	platform.GetHostPublicKeyError = nil
+	platform.SetupRootDiskCalledTimes = 0
+	platform.SetupRootDiskError = nil
 	return
 }
 
@@ -186,6 +195,14 @@ func (p *FakePlatform) AddUserToGroups(username string, groups []string) (err er
 
 func (p *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	p.DeleteEphemeralUsersMatchingRegex = regex
+	return
+}
+
+func (p *FakePlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
+	p.SetupRootDiskCalledTimes++
+	if p.SetupRootDiskError != nil {
+		err = p.SetupRootDiskError
+	}
 	return
 }
 
@@ -347,5 +364,5 @@ func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 }
 
 func (p *FakePlatform) GetHostPublicKey() (string, error) {
-	return "fake_public_key", nil
+	return p.GetHostPublicKeyValue, p.GetHostPublicKeyError
 }

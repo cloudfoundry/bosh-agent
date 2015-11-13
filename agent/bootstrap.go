@@ -3,12 +3,12 @@ package agent
 import (
 	"errors"
 
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type Bootstrap interface {
@@ -87,6 +87,10 @@ func (boot bootstrap) Run() (err error) {
 	ephemeralDiskPath := boot.platform.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
 	if err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath); err != nil {
 		return bosherr.WrapError(err, "Setting up ephemeral disk")
+	}
+
+	if err = boot.platform.SetupRootDisk(ephemeralDiskPath); err != nil {
+		return bosherr.WrapError(err, "Setting up root disk")
 	}
 
 	if err = boot.platform.SetupDataDir(); err != nil {

@@ -7,14 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	fakeretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
@@ -25,6 +21,10 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("LinuxPlatform", describeLinuxPlatform)
@@ -183,6 +183,132 @@ bosh_foobar:...`
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"userdel", "-r", "bosh_bar"}))
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"userdel", "-r", "bosh_foobar"}))
 		})
+	})
+
+	Describe("SetupRootDisk", func() {
+		BeforeEach(func() {
+			mountsSearcher := diskManager.FakeMountsSearcher
+
+			mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
+				PartitionPath: "/dev/sda1",
+				MountPoint:    "/",
+			}}
+
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
+		})
+
+		Context("when growpart is installed", func() {
+			BeforeEach(func() {
+				cmdRunner.CommandExistsValue = true
+				options.CreatePartitionIfNoEphemeralDisk = false
+			})
+
+			It("runs growpart and resize2fs", func() {
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda1",
+					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
+				)
+
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "1"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda1"}))
+			})
+
+			It("returns error if it can't find the root device", func() {
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda1",
+					fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
+				)
+
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).To(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+			})
+
+			It("returns an error if growing the partiton fails", func() {
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda1",
+					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
+				)
+
+				cmdRunner.AddCmdResult(
+					"growpart /dev/sda 1",
+					fakesys.FakeCmdResult{Error: errors.New("fake-growpart-error")},
+				)
+
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).To(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+			})
+
+			It("returns error if resizing the filesystem fails", func() {
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda1",
+					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
+				)
+
+				cmdRunner.AddCmdResult(
+					"resize2fs -f /dev/sda1",
+					fakesys.FakeCmdResult{Error: errors.New("fake-resize2fs-error")},
+				)
+
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).To(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+			})
+
+			It("skips growing root fs if no ephemerial disk is provided", func() {
+				var platformWithNoEphemeralDisk Platform
+
+				options.CreatePartitionIfNoEphemeralDisk = true
+				platformWithNoEphemeralDisk = NewLinuxPlatform(
+					fs,
+					cmdRunner,
+					collector,
+					compressor,
+					copier,
+					dirProvider,
+					vitalsService,
+					cdutil,
+					diskManager,
+					netManager,
+					certManager,
+					monitRetryStrategy,
+					devicePathResolver,
+					5*time.Millisecond,
+					options,
+					logger,
+					fakeDefaultNetworkResolver,
+				)
+				err := platformWithNoEphemeralDisk.SetupRootDisk("")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
+		})
+
+		Context("when growpart is not installed", func() {
+			BeforeEach(func() {
+				cmdRunner.CommandExistsValue = false
+				options.CreatePartitionIfNoEphemeralDisk = false
+			})
+
+			It("does not return error if growpart is not installed and skips growing fs", func() {
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
+		})
+
 	})
 
 	Describe("SetupSSH", func() {
@@ -454,23 +580,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					})
 				})
 
-				Context("when root partition is not the first partition", func() {
-					BeforeEach(func() {
-						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
-							{MountPoint: "/", PartitionPath: "/dev/vda2"},
-						}
-					})
-
-					It("returns an error", func() {
-						err := act()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Root partition is not the first partition"))
-						Expect(partitioner.PartitionCalled).To(BeFalse())
-						Expect(formatter.FormatCalled).To(BeFalse())
-						Expect(mounter.MountCalled).To(BeFalse())
-					})
-				})
-
 				Context("when root device is determined", func() {
 					BeforeEach(func() {
 						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
@@ -636,6 +745,106 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 								Expect(partitioner.PartitionCalled).To(BeFalse())
 								Expect(formatter.FormatCalled).To(BeFalse())
 								Expect(mounter.MountCalled).To(BeFalse())
+							})
+						})
+					})
+				})
+
+				Context("when root device is determined and root partition is not the first one", func() {
+					BeforeEach(func() {
+						diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+							{MountPoint: "/boot", PartitionPath: "/dev/vda1"},
+							{MountPoint: "/", PartitionPath: "rootfs"},
+							{MountPoint: "/", PartitionPath: "/dev/vda2"},
+						}
+					})
+
+					Context("when getting absolute path suceeds", func() {
+						BeforeEach(func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/vda2",
+								fakesys.FakeCmdResult{Stdout: "/dev/vda2"},
+							)
+						})
+
+						Context("when root device has sufficient space for ephemeral partitions", func() {
+							BeforeEach(func() {
+								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
+								collector.MemStats.Total = 256 * 1024 * 1024
+							})
+
+							itSetsUpEphemeralDisk(act)
+
+							It("formats swap and data partitions", func() {
+								err := act()
+								Expect(err).NotTo(HaveOccurred())
+
+								Expect(len(formatter.FormatPartitionPaths)).To(Equal(2))
+								Expect(formatter.FormatPartitionPaths[0]).To(Equal("/dev/vda3"))
+								Expect(formatter.FormatPartitionPaths[1]).To(Equal("/dev/vda4"))
+
+								Expect(len(formatter.FormatFsTypes)).To(Equal(2))
+								Expect(formatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemSwap))
+								Expect(formatter.FormatFsTypes[1]).To(Equal(boshdisk.FileSystemExt4))
+							})
+
+							It("mounts swap and data partitions", func() {
+								err := act()
+								Expect(err).NotTo(HaveOccurred())
+
+								Expect(len(mounter.MountMountPoints)).To(Equal(1))
+								Expect(mounter.MountMountPoints[0]).To(Equal("/fake-dir/data"))
+								Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
+								Expect(mounter.MountPartitionPaths[0]).To(Equal("/dev/vda4"))
+
+								Expect(len(mounter.SwapOnPartitionPaths)).To(Equal(1))
+								Expect(mounter.SwapOnPartitionPaths[0]).To(Equal("/dev/vda3"))
+							})
+
+							It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
+								memSizeInBytes := uint64(1024 * 1024 * 1024)
+								diskSizeInBytes := 2*memSizeInBytes + 64
+								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
+								collector.MemStats.Total = memSizeInBytes
+
+								err := act()
+								Expect(err).ToNot(HaveOccurred())
+								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
+								Expect(partitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: memSizeInBytes,
+										Type:        boshdisk.PartitionTypeSwap,
+									}),
+								)
+								Expect(partitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: diskSizeInBytes - memSizeInBytes,
+										Type:        boshdisk.PartitionTypeLinux,
+									}),
+								)
+							})
+
+							It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
+								memSizeInBytes := uint64(1024 * 1024 * 1024)
+								diskSizeInBytes := 2*memSizeInBytes - 64
+								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
+								collector.MemStats.Total = memSizeInBytes
+
+								err := act()
+								Expect(err).ToNot(HaveOccurred())
+								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
+								Expect(partitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: diskSizeInBytes / 2,
+										Type:        boshdisk.PartitionTypeSwap,
+									}),
+								)
+								Expect(partitioner.PartitionPartitions).To(ContainElement(
+									boshdisk.Partition{
+										SizeInBytes: diskSizeInBytes / 2,
+										Type:        boshdisk.PartitionTypeLinux,
+									}),
+								)
 							})
 						})
 					})
@@ -1479,24 +1688,13 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("SetupMonitUser", func() {
-		It("setup monit user if file does not exist", func() {
+		It("setup monit user", func() {
 			err := platform.SetupMonitUser()
 			Expect(err).NotTo(HaveOccurred())
 
 			monitUserFileStats := fs.GetFileTestStat("/fake-dir/monit/monit.user")
 			Expect(monitUserFileStats).ToNot(BeNil())
 			Expect(monitUserFileStats.StringContents()).To(Equal("vcap:random-password"))
-		})
-
-		It("setup monit user if file does exist", func() {
-			fs.WriteFileString("/fake-dir/monit/monit.user", "vcap:other-random-password")
-
-			err := platform.SetupMonitUser()
-			Expect(err).NotTo(HaveOccurred())
-
-			monitUserFileStats := fs.GetFileTestStat("/fake-dir/monit/monit.user")
-			Expect(monitUserFileStats).ToNot(BeNil())
-			Expect(monitUserFileStats.StringContents()).To(Equal("vcap:other-random-password"))
 		})
 	})
 

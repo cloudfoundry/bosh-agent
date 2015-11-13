@@ -8,16 +8,12 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
@@ -27,6 +23,11 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const (
@@ -183,9 +184,9 @@ func (p linux) GetCertManager() boshcert.Manager {
 
 func (p linux) GetHostPublicKey() (string, error) {
 	hostPublicKeyPath := "/etc/ssh/ssh_host_rsa_key.pub"
-	hostPublicKey, err := p.GetFs().ReadFileString(hostPublicKeyPath)
+	hostPublicKey, err := p.fs.ReadFileString(hostPublicKeyPath)
 	if err != nil {
-		return "", bosherr.Errorf("Unable to read host public key file: %s", hostPublicKeyPath)
+		return "", bosherr.WrapErrorf(err, "Unable to read host public key file: %s", hostPublicKeyPath)
 	}
 	return hostPublicKey, nil
 }
@@ -269,6 +270,50 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 		}
 	}
 	return
+}
+
+func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
+	//if there is ephemeral disk we can safely autogrow, if not we should not.
+	if (ephemeralDiskPath == "") && (p.options.CreatePartitionIfNoEphemeralDisk == true) {
+		p.logger.Info(logTag, "No Ephemeral Disk provided, Skipping growing of the Root Filesystem")
+		return nil
+	}
+
+	// in case growpart is not available for another flavour of linux, don't stop the agent from running,
+	// without this integration-test would not run since the bosh-lite vm doesn't have it
+	if p.cmdRunner.CommandExists("growpart") == false {
+		p.logger.Info(logTag, "The program 'growpart' is not installed, Root Filesystem cannot be grown")
+		return nil
+	}
+
+	rootDevicePath, _, err := p.findRootDevicePathAndNumber()
+	if err != nil {
+		return bosherr.WrapError(err, "findRootDevicePath")
+	}
+
+	stdout, _, _, err := p.cmdRunner.RunCommand(
+		"growpart",
+		rootDevicePath,
+		"1",
+	)
+
+	if err != nil {
+		if strings.Contains(stdout, "NOCHANGE") == false {
+			return bosherr.WrapError(err, "growpart")
+		}
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand(
+		"resize2fs",
+		"-f",
+		fmt.Sprintf("%s1", rootDevicePath),
+	)
+
+	if err != nil {
+		return bosherr.WrapError(err, "resize2fs")
+	}
+
+	return nil
 }
 
 func (p linux) SetupSSH(publicKey, username string) error {
@@ -502,6 +547,13 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 			realPath,
 			"p",
 		)
+
+		if err != nil {
+			// "unrecognised disk label" is acceptable, since the disk may not have been partitioned
+			if strings.Contains(stdout, "unrecognised disk label") == false {
+				return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+			}
+		}
 
 		if strings.Contains(stdout, "Partition Table: gpt") && strings.Contains(stdout, "raw-ephemeral-") {
 			continue
@@ -816,11 +868,9 @@ func (p linux) StartMonit() error {
 
 func (p linux) SetupMonitUser() error {
 	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
-	if !p.fs.FileExists(monitUserFilePath) {
-		err := p.fs.WriteFileString(monitUserFilePath, "vcap:random-password")
-		if err != nil {
-			return bosherr.WrapError(err, "Writing monit user file")
-		}
+	err := p.fs.WriteFileString(monitUserFilePath, "vcap:random-password")
+	if err != nil {
+		return bosherr.WrapError(err, "Writing monit user file")
 	}
 
 	return nil
@@ -877,11 +927,10 @@ func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uin
 	return swapSizeInBytes, linuxSizeInBytes, nil
 }
 
-func (p linux) findRootDevicePath() (string, error) {
+func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 	mounts, err := p.diskManager.GetMountsSearcher().SearchMounts()
-
 	if err != nil {
-		return "", bosherr.WrapError(err, "Searching mounts")
+		return "", 0, bosherr.WrapError(err, "Searching mounts")
 	}
 
 	for _, mount := range mounts {
@@ -890,28 +939,34 @@ func (p linux) findRootDevicePath() (string, error) {
 
 			stdout, _, _, err := p.cmdRunner.RunCommand("readlink", "-f", mount.PartitionPath)
 			if err != nil {
-				return "", bosherr.WrapError(err, "Shelling out to readlink")
+				return "", 0, bosherr.WrapError(err, "Shelling out to readlink")
 			}
 			rootPartition := strings.Trim(stdout, "\n")
 			p.logger.Debug(logTag, "Symlink is: `%s'", rootPartition)
 
-			validRootPartition := regexp.MustCompile(`^/dev/[a-z]+1$`)
+			validRootPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
 			if !validRootPartition.MatchString(rootPartition) {
-				return "", bosherr.Error("Root partition is not the first partition")
+				return "", 0, bosherr.Error("Root partition has an invalid name" + rootPartition)
 			}
 
-			return strings.Trim(rootPartition, "1"), nil
+			devNum, err := strconv.Atoi(rootPartition[len(rootPartition)-1:])
+			if err != nil {
+				return "", 0, bosherr.WrapError(err, "Parsing device number failed")
+			}
+
+			devPath := rootPartition[:len(rootPartition)-1]
+
+			return devPath, devNum, nil
 		}
 	}
-
-	return "", bosherr.Error("Getting root partition device")
+	return "", 0, bosherr.Error("Getting root partition device")
 }
 
 func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	p.logger.Info(logTag, "Creating swap & ephemeral partitions on root disk...")
 	p.logger.Debug(logTag, "Determining root device")
 
-	rootDevicePath, err := p.findRootDevicePath()
+	rootDevicePath, rootDeviceNumber, err := p.findRootDevicePathAndNumber()
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Finding root partition device")
 	}
@@ -947,8 +1002,8 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 		return "", "", bosherr.WrapErrorf(err, "Partitioning root device `%s'", rootDevicePath)
 	}
 
-	swapPartitionPath := rootDevicePath + "2"
-	dataPartitionPath := rootDevicePath + "3"
+	swapPartitionPath := rootDevicePath + strconv.Itoa(rootDeviceNumber+1)
+	dataPartitionPath := rootDevicePath + strconv.Itoa(rootDeviceNumber+2)
 	return swapPartitionPath, dataPartitionPath, nil
 }
 

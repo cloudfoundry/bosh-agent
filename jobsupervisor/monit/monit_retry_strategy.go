@@ -3,9 +3,9 @@ package monit
 import (
 	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/http"
-	boshretry "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/retrystrategy"
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal-golang/clock"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	"github.com/pivotal-golang/clock"
 )
 
 type monitRetryStrategy struct {

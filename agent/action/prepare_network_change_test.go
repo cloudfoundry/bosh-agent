@@ -3,26 +3,28 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeactions "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 func init() {
 	Describe("prepareNetworkChange", func() {
 		var (
-			action          PrepareNetworkChangeAction
-			fs              *fakesys.FakeFileSystem
+			action PrepareNetworkChangeAction
+			fs     *fakesys.FakeFileSystem
+
 			settingsService *fakesettings.FakeSettingsService
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			settingsService = &fakesettings.FakeSettingsService{}
-			action = NewPrepareNetworkChange(fs, settingsService)
+			action = NewPrepareNetworkChange(fs, settingsService, fakeactions.NewFakeAgentKiller())
 		})
 
 		It("is synchronous", func() {

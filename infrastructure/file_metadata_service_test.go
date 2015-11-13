@@ -1,13 +1,13 @@
 package infrastructure_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("FileMetadataService", func() {
@@ -46,6 +46,29 @@ var _ = Describe("FileMetadataService", func() {
 			It("returns an error", func() {
 				_, err := metadataService.GetInstanceID()
 				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("GetServerName", func() {
+		Context("when userdata file exists", func() {
+			BeforeEach(func() {
+				userDataContents := `{"server":{"name":"fake-server-name"}}`
+				fs.WriteFileString("fake-userdata-file-path", userDataContents)
+			})
+
+			It("returns server name", func() {
+				serverName, err := metadataService.GetServerName()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(serverName).To(Equal("fake-server-name"))
+			})
+		})
+
+		Context("when userdata file does not exist", func() {
+			It("returns an error", func() {
+				serverName, err := metadataService.GetServerName()
+				Expect(err).To(HaveOccurred())
+				Expect(serverName).To(BeEmpty())
 			})
 		})
 	})
@@ -123,8 +146,20 @@ var _ = Describe("FileMetadataService", func() {
 	})
 
 	Describe("IsAvailable", func() {
-		It("returns true", func() {
-			Expect(metadataService.IsAvailable()).To(BeTrue())
+		Context("when file does not exist", func() {
+			It("returns false", func() {
+				Expect(metadataService.IsAvailable()).To(BeFalse())
+			})
+		})
+
+		Context("when file exists", func() {
+			BeforeEach(func() {
+				fs.WriteFileString("fake-settings-file-path", ``)
+			})
+
+			It("returns true", func() {
+				Expect(metadataService.IsAvailable()).To(BeTrue())
+			})
 		})
 	})
 })

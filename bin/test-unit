@@ -9,6 +9,9 @@ do
   esac
 done
 
+echo 'Note: if you want to quickly run tests for just one package, do it like this:'
+echo '  % ginkgo path/to/package'
+
 result=0
 
 bin=$(dirname $0)
@@ -16,7 +19,7 @@ bin=$(dirname $0)
 # Travis randomly kills go builds when using -race
 race=$([ "$TRAVIS" != "true" ] && echo "-race")
 
-ignored=(Godeps internal)
+ignored=(vendor)
 echo -e "\n Formatting packages, other than: ${ignored[*]}..."
 for i in `ls -1` ; do
   if [ -d "$i" ] && [[ ! ${ignored[*]} =~ "$i" ]] ; then
@@ -25,24 +28,16 @@ for i in `ls -1` ; do
 done
 let "result+=$?"
 
-echo -e "\n Checking with golint..."
-$bin/golint
-let "result+=$?"
-
 echo -e "\n Installing ginkgo..."
-$bin/go install ./internal/github.com/onsi/ginkgo/ginkgo
+$bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
-echo -e "\n Govetting"
-$bin/govet
-let "result+=$?"
-
-echo -e "\n Checking for unhandled errors"
-$bin/test-unhandled-errors
-let "result+=$?"
+echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk/errcheck/issues/75 is resolved"
+# $bin/test-unhandled-errors
+# let "result+=$?"
 
 echo -e "\n Testing packages..."
-$bin/env ginkgo -r $race -skipPackage="integration,internal" $bin/..
+$bin/env ginkgo -r $race -skipPackage="integration,vendor" $bin/..
 let "result+=$?"
 
 echo -e "\n Running build script to confirm everything compiles..."
@@ -56,5 +51,14 @@ if [ ! $QUIET ]; then
     echo -e "\n\033[0;31mSUITE FAILURE (exit code: $result)\033[0m"
   fi
 fi
+
+
+echo -e "\n Checking with golint..."
+$bin/golint
+let "result+=$?"
+
+echo -e "\n Govetting"
+$bin/govet
+let "result+=$?"
 
 exit $result

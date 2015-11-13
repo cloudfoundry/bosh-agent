@@ -1,41 +1,42 @@
 package action_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/drain"
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner"
-	fakescript "github.com/cloudfoundry/bosh-agent/agent/scriptrunner/fakes"
+	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+
+	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
+
+//go:generate counterfeiter -o fakes/fake_clock.go ../../vendor/github.com/pivotal-golang/clock Clock
 
 var _ = Describe("concreteFactory", func() {
 	var (
-		settingsService     *fakesettings.FakeSettingsService
-		platform            *fakeplatform.FakePlatform
-		blobstore           *fakeblobstore.FakeBlobstore
-		taskService         *faketask.FakeService
-		notifier            *fakenotif.FakeNotifier
-		applier             *fakeappl.FakeApplier
-		compiler            *fakecomp.FakeCompiler
-		jobSupervisor       *fakejobsuper.FakeJobSupervisor
-		specService         *fakeas.FakeV1Service
-		drainScriptProvider boshdrain.ScriptProvider
-		jobScriptProvider   boshscript.JobScriptProvider
-		factory             Factory
-		logger              boshlog.Logger
+		settingsService   *fakesettings.FakeSettingsService
+		platform          *fakeplatform.FakePlatform
+		blobstore         *fakeblobstore.FakeBlobstore
+		taskService       *faketask.FakeService
+		notifier          *fakenotif.FakeNotifier
+		applier           *fakeappl.FakeApplier
+		compiler          *fakecomp.FakeCompiler
+		jobSupervisor     *fakejobsuper.FakeJobSupervisor
+		specService       *fakeas.FakeV1Service
+		jobScriptProvider boshscript.JobScriptProvider
+		factory           Factory
+		logger            boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -48,7 +49,6 @@ var _ = Describe("concreteFactory", func() {
 		compiler = fakecomp.NewFakeCompiler()
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
-		drainScriptProvider = boshdrain.NewConcreteScriptProvider(nil, nil, platform.GetDirProvider())
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
@@ -62,7 +62,6 @@ var _ = Describe("concreteFactory", func() {
 			compiler,
 			jobSupervisor,
 			specService,
-			drainScriptProvider,
 			jobScriptProvider,
 			logger,
 		)
@@ -83,7 +82,7 @@ var _ = Describe("concreteFactory", func() {
 	It("drain", func() {
 		action, err := factory.Create("drain")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewDrain(notifier, specService, drainScriptProvider, jobSupervisor, logger)))
+		Expect(action).To(Equal(NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)))
 	})
 
 	It("fetch_logs", func() {
@@ -138,7 +137,7 @@ var _ = Describe("concreteFactory", func() {
 	It("prepare_network_change", func() {
 		action, err := factory.Create("prepare_network_change")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settingsService)))
+		Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settingsService, NewAgentKiller())))
 	})
 
 	It("prepare_configure_networks", func() {
@@ -150,7 +149,7 @@ var _ = Describe("concreteFactory", func() {
 	It("configure_networks", func() {
 		action, err := factory.Create("configure_networks")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewConfigureNetworks()))
+		Expect(action).To(Equal(NewConfigureNetworks(NewAgentKiller())))
 	})
 
 	It("ssh", func() {
@@ -162,13 +161,13 @@ var _ = Describe("concreteFactory", func() {
 	It("start", func() {
 		action, err := factory.Create("start")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewStart(jobSupervisor)))
+		Expect(action).To(Equal(NewStart(jobSupervisor, applier, specService)))
 	})
 
 	It("stop", func() {
-		action, err := factory.Create("start")
+		action, err := factory.Create("stop")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewStart(jobSupervisor)))
+		Expect(action).To(Equal(NewStop(jobSupervisor)))
 	})
 
 	It("unmount_disk", func() {
@@ -189,6 +188,12 @@ var _ = Describe("concreteFactory", func() {
 
 		// Cannot do equality check since channel is used in initializer
 		Expect(action).To(BeAssignableToTypeOf(RunErrandAction{}))
+	})
+
+	It("run_script", func() {
+		action, err := factory.Create("run_script")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewRunScript(jobScriptProvider, specService, logger)))
 	})
 
 	It("prepare", func() {

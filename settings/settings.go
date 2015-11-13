@@ -8,6 +8,7 @@ const (
 	RootUsername        = "root"
 	VCAPUsername        = "vcap"
 	AdminGroup          = "admin"
+	SudoersGroup        = "bosh_sudoers"
 	EphemeralUserPrefix = "bosh_"
 )
 
@@ -136,6 +137,10 @@ type Network struct {
 
 type Networks map[string]Network
 
+func (n Network) IsDefaultFor(category string) bool {
+	return stringArrayContains(n.Default, category)
+}
+
 func (n Networks) NetworkForMac(mac string) (Network, bool) {
 	for i := range n {
 		if n[i].Mac == mac {
@@ -154,7 +159,7 @@ func (n Networks) DefaultNetworkFor(category string) (Network, bool) {
 	}
 
 	for _, net := range n {
-		if stringArrayContains(net.Default, category) {
+		if net.IsDefaultFor(category) {
 			return net, true
 		}
 	}

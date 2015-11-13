@@ -20,7 +20,7 @@ func (s *dummyJobSupervisor) Start() error {
 }
 
 func (s *dummyJobSupervisor) Stop() error {
-	s.status = "failing"
+	s.status = "stopped"
 	return nil
 }
 

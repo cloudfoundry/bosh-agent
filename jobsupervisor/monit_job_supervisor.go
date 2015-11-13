@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/internal/github.com/pivotal/go-smtpd/smtpd"
+	"github.com/pivotal/go-smtpd/smtpd"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/system"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const monitJobSupervisorLogTag = "monitJobSupervisor"
@@ -123,6 +123,11 @@ func (m monitJobSupervisor) Start() error {
 		}
 	}
 
+	err = m.fs.RemoveAll(m.stoppedFilePath())
+	if err != nil {
+		return bosherr.WrapError(err, "Removing stopped File")
+	}
+
 	return nil
 }
 
@@ -138,6 +143,11 @@ func (m monitJobSupervisor) Stop() error {
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Stopping service %s", service)
 		}
+	}
+
+	err = m.fs.WriteFileString(m.stoppedFilePath(), "")
+	if err != nil {
+		return bosherr.WrapError(err, "Creating stopped File")
 	}
 
 	return nil
@@ -162,6 +172,7 @@ func (m monitJobSupervisor) Unmonitor() error {
 
 func (m monitJobSupervisor) Status() (status string) {
 	status = "running"
+
 	m.logger.Debug(monitJobSupervisorLogTag, "Getting monit status")
 	monitStatus, err := m.client.Status()
 	if err != nil {
@@ -169,12 +180,18 @@ func (m monitJobSupervisor) Status() (status string) {
 		return
 	}
 
-	for _, service := range monitStatus.ServicesInGroup("vcap") {
-		if service.Status == "starting" {
-			return "starting"
-		}
-		if !service.Monitored || service.Status != "running" {
-			status = "failing"
+	if m.fs.FileExists(m.stoppedFilePath()) {
+		status = "stopped"
+
+	} else {
+		services := monitStatus.ServicesInGroup("vcap")
+		for _, service := range services {
+			if service.Status == "starting" {
+				return "starting"
+			}
+			if !service.Monitored || service.Status != "running" {
+				status = "failing"
+			}
 		}
 	}
 
@@ -250,4 +267,8 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 		err = bosherr.WrapError(err, "Listen for SMTP")
 	}
 	return
+}
+
+func (m monitJobSupervisor) stoppedFilePath() string {
+	return filepath.Join(m.dirProvider.MonitDir(), "stopped")
 }

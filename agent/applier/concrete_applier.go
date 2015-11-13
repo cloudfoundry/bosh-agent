@@ -4,10 +4,10 @@ import (
 	as "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	bosherr "github.com/cloudfoundry/bosh-agent/internal/github.com/cloudfoundry/bosh-utils/errors"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type concreteApplier struct {
@@ -83,21 +83,32 @@ func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec)
 		return bosherr.WrapError(err, "Keeping only needed packages")
 	}
 
-	for i := 0; i < len(jobs); i++ {
-		job := jobs[len(jobs)-1-i]
-
-		err = a.jobApplier.Configure(job, i)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Configuring job %s", job.Name)
-		}
-	}
-
 	err = a.jobSupervisor.Reload()
 	if err != nil {
 		return bosherr.WrapError(err, "Reloading jobSupervisor")
 	}
 
 	return a.setUpLogrotate(desiredApplySpec)
+}
+
+func (a *concreteApplier) ConfigureJobs(desiredApplySpec as.ApplySpec) error {
+
+	jobs := desiredApplySpec.Jobs()
+	for i := 0; i < len(jobs); i++ {
+		job := jobs[len(jobs)-1-i]
+
+		err := a.jobApplier.Configure(job, i)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Configuring job %s", job.Name)
+		}
+	}
+
+	err := a.jobSupervisor.Reload()
+	if err != nil {
+		return bosherr.WrapError(err, "Reloading jobSupervisor")
+	}
+
+	return nil
 }
 
 func (a *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) error {

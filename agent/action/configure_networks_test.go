@@ -1,10 +1,10 @@
 package action_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-agent/internal/github.com/onsi/gomega"
-
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	fakeactions "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 func init() {
@@ -14,7 +14,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			action = NewConfigureNetworks()
+			action = NewConfigureNetworks(fakeactions.NewFakeAgentKiller())
 		})
 
 		It("is asynchronous", func() {
