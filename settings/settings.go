@@ -198,14 +198,14 @@ func (n Networks) IPs() (ips []string) {
 	return
 }
 
-func (ns Networks) IsPreconfigured() bool {
-	for _, n := range ns {
-		if n.IsVIP() {
+func (n Networks) IsPreconfigured() bool {
+	for _, network := range n {
+		if network.IsVIP() {
 			// Skip VIP networks since we do not configure interfaces for them
 			continue
 		}
 
-		if !n.Preconfigured {
+		if !network.Preconfigured {
 			return false
 		}
 	}
