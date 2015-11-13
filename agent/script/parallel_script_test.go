@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+	fakedrainscript "github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -26,6 +27,7 @@ var _ = Describe("ParallelScript", func() {
 	JustBeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		parallelScript = boshscript.NewParallelScript("run-me", scripts, logger)
+
 	})
 
 	Describe("Tag", func() {
@@ -202,5 +204,74 @@ var _ = Describe("ParallelScript", func() {
 				close(done)
 			})
 		})
+	})
+
+	Describe("Cancel", func() {
+		Context("when there are no scripts", func() {
+			BeforeEach(func() {
+				scripts = []boshscript.Script{}
+			})
+
+			It("succeeds", func() {
+				err := parallelScript.Cancel()
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("when script exists and is not cancelable", func() {
+			var existingScript *fakescript.FakeScript
+
+			BeforeEach(func() {
+				existingScript = &fakescript.FakeScript{}
+				existingScript.TagReturns("fake-job-1")
+				existingScript.PathReturns("path/to/script1")
+				existingScript.ExistsReturns(true)
+				scripts = append(scripts, existingScript)
+			})
+
+			It("returns error", func() {
+				existingScript.RunReturns(nil)
+				err := parallelScript.Cancel()
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when script exists and is cancelable", func() {
+			var existingScript *fakedrainscript.FakeScript
+
+			BeforeEach(func() {
+				existingScript = fakedrainscript.NewFakeScript("fake-tag")
+				scripts = append(scripts, existingScript)
+			})
+
+			It("succeeds", func() {
+				err := parallelScript.Cancel()
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("when run cancelable scripts in parallel", func() {
+			var existingScript1 *fakedrainscript.FakeScript
+			var existingScript2 *fakedrainscript.FakeScript
+
+			BeforeEach(func() {
+				existingScript1 = fakedrainscript.NewFakeScript("fake-job1")
+				scripts = append(scripts, existingScript1)
+				existingScript2 = fakedrainscript.NewFakeScript("fake-job2")
+				scripts = append(scripts, existingScript2)
+			})
+
+			It("succeeds", func() {
+				err := parallelScript.Run()
+				Expect(err).ToNot(HaveOccurred())
+				err = parallelScript.Cancel()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(existingScript1.WasCanceled).To(BeTrue())
+				Expect(existingScript2.WasCanceled).To(BeTrue())
+
+			})
+
+		})
+
 	})
 })

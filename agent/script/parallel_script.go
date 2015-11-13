@@ -66,6 +66,22 @@ func (s ParallelScript) Run() error {
 	return s.summarizeErrs(passedScripts, failedScripts)
 }
 
+func (s ParallelScript) Cancel() error {
+	s.logger.Debug(s.logTag, "Canceling a parallel script")
+	existingScripts := s.findExistingScripts(s.allScripts)
+	for _, script := range existingScripts {
+		if script, ok := script.(CancellableScript); ok {
+			err := script.Cancel()
+			if err != nil {
+				bosherr.WrapErrorf(err, "'%s' script did not cancel", s.name)
+			}
+		} else {
+			return bosherr.Errorf("Script %s is not cancellable", s.name)
+		}
+	}
+	return nil
+}
+
 func (s ParallelScript) findExistingScripts(all []Script) []Script {
 	var existing []Script
 
