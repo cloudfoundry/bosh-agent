@@ -263,20 +263,33 @@ func init() {
 			})
 
 			It("sets root and vcap passwords", func() {
-				settingsService.Settings.Env.Bosh.UserPassword = "some-encrypted-password"
-				settingsService.Settings.Env.Bosh.RootPassword = "some-encrypted-password"
+				settingsService.Settings.Env.Bosh.Password = "some-encrypted-password"
+				settingsService.Settings.Env.Bosh.KeepRootPassword = false
 
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect("some-encrypted-password").To(Equal(platform.UserPassword))
-				Expect("some-encrypted-password").To(Equal(platform.RootPassword))
+				Expect(2).To(Equal(len(platform.UserPasswords)))
+				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["root"]))
+				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["vcap"]))
+			})
+
+			It("does not change root password if keep_root_password is set true", func() {
+				settingsService.Settings.Env.Bosh.Password = "some-encrypted-password"
+				settingsService.Settings.Env.Bosh.KeepRootPassword = true
+
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(2).To(Equal(len(platform.UserPasswords)))
+				Expect("some-encrypted-password").ToNot(Equal(platform.UserPasswords["root"]))
+				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["vcap"]))
 			})
 
 			It("does not set password if not provided", func() {
+				settingsService.Settings.Env.Bosh.KeepRootPassword = false
+
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect("").To(Equal(platform.UserPassword))
-				Expect("").To(Equal(platform.RootPassword))
+				Expect(0).To(Equal(len(platform.UserPasswords)))
 			})
 
 			It("sets ntp", func() {

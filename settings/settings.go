@@ -99,17 +99,17 @@ type Env struct {
 	Bosh BoshEnv `json:"bosh"`
 }
 
-func (e Env) GetUserPassword() string {
-	return e.Bosh.UserPassword
+func (e Env) GetPassword() string {
+	return e.Bosh.Password
 }
 
-func (e Env) GetRootPassword() string {
-	return e.Bosh.RootPassword
+func (e Env) GetKeepRootPassword() bool {
+	return e.Bosh.KeepRootPassword
 }
 
 type BoshEnv struct {
-	UserPassword string `json:"user_password"`
-	RootPassword string `json:"root_password"`
+	Password         string `json:"password"`
+	KeepRootPassword bool   `json:"keep_root_password"`
 }
 
 type NetworkType string
@@ -245,7 +245,8 @@ func (n Network) IsVIP() bool {
 //	},
 //	"env": {
 //		"bosh": {
-//			"password": null
+//			"userpassword": null,
+//          "rootpassword": null
 //		}
 //	},
 //  "trusted_certs": "very\nlong\nmultiline\nstring"

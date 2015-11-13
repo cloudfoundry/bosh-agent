@@ -43,8 +43,7 @@ type FakePlatform struct {
 	SetupSSHUsername  string
 	SetupSSHErr       error
 
-	UserPassword          string
-	RootPassword          string
+	UserPasswords         map[string]string
 	SetupHostnameHostname string
 
 	SetTimeWithNtpServersServers []string
@@ -127,8 +126,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.DevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSSHPublicKeys = make(map[string]string)
-	platform.UserPassword = ""
-	platform.RootPassword = ""
+	platform.UserPasswords = make(map[string]string)
 	platform.ScsiDiskMap = make(map[string]string)
 	platform.GetFileContentsFromDiskDiskPaths = []string{}
 	platform.GetFileContentsFromDiskFileNames = [][]string{}
@@ -199,14 +197,8 @@ func (p *FakePlatform) SetupSSH(publicKey, username string) error {
 	return p.SetupSSHErr
 }
 
-func (p *FakePlatform) SetUserPassword(user string, encryptedPwd string) (err error) {
-	if user == boshsettings.VCAPUsername {
-		p.UserPassword = encryptedPwd
-	}
-	if user == boshsettings.RootUsername {
-		p.RootPassword = encryptedPwd
-	}
-
+func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
+	p.UserPasswords[user] = encryptedPwd
 	return
 }
 

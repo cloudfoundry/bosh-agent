@@ -196,8 +196,8 @@ func describeHTTPRegistry() {
 						},
 						"env": {
 							"bosh": {
-								"user_password": "some encrypted password",
-								"root_password": "some encrypted password"
+								"password": "some encrypted password",
+								"keep_root_password": false
 							}
 						},
 						"networks": {
@@ -248,8 +248,8 @@ func describeHTTPRegistry() {
 						},
 						Env: boshsettings.Env{
 							Bosh: boshsettings.BoshEnv{
-								UserPassword: "some encrypted password",
-								RootPassword: "some encrypted password",
+								Password:         "some encrypted password",
+								KeepRootPassword: false,
 							},
 						},
 						Networks: boshsettings.Networks{
