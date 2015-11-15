@@ -270,7 +270,7 @@ func (n Network) IsVIP() bool {
 //	},
 //	"env": {
 //		"bosh": {
-//			"password": null,
+//			"password": null
 //		}
 //	},
 //  "trusted_certs": "very\nlong\nmultiline\nstring"
