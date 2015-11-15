@@ -21,10 +21,28 @@ type servicesTag struct {
 }
 
 type serviceTag struct {
-	XMLName xml.Name `xml:"service"`
-	Name    string   `xml:"name,attr"`
-	Status  int      `xml:"status"`
-	Monitor int      `xml:"monitor"`
+	XMLName  xml.Name  `xml:"service"`
+	Name     string    `xml:"name,attr"`
+	Status   int       `xml:"status"`
+	Monitor  int       `xml:"monitor"`
+	Uptime   int       `xml:"uptime"`
+	Children int       `xml:"children"`
+	Memory   memoryTag `xml:"memory"`
+	CPU      cpuTag    `xml:"cpu"`
+}
+
+type memoryTag struct {
+	XMLName       xml.Name `xml:"memory"`
+	Percent       float64  `xml:"percent"`
+	PercentTotal  float64  `xml:"percenttotal"`
+	Kilobyte      int      `xml:"kilobyte"`
+	KilobyteTotal int      `xml:"kilobytetotal"`
+}
+
+type cpuTag struct {
+	XMLName      xml.Name `xml:"cpu"`
+	Percent      float64  `xml:"percent"`
+	PercentTotal float64  `xml:"percenttotal"`
 }
 
 type serviceGroupsTag struct {
@@ -84,11 +102,14 @@ func (status status) ServicesInGroup(name string) (services []Service) {
 	for _, serviceTag := range status.Services.Services {
 		if serviceGroupTag.Contains(serviceTag.Name) {
 			service := Service{
-				Name:      serviceTag.Name,
-				Monitored: serviceTag.Monitor > 0,
-				Status:    serviceTag.StatusString(),
+				Name:                 serviceTag.Name,
+				Status:               serviceTag.StatusString(),
+				Monitored:            serviceTag.Monitor > 0,
+				Uptime:               serviceTag.Uptime,
+				MemoryPercentTotal:   serviceTag.Memory.PercentTotal,
+				MemoryKilobytesTotal: serviceTag.Memory.KilobyteTotal,
+				CPUPercentTotal:      serviceTag.CPU.PercentTotal,
 			}
-
 			services = append(services, service)
 		}
 	}
