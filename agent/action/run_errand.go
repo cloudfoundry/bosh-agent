@@ -66,10 +66,22 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 
 	errandScript := a.jobScriptProvider.NewScript(currentSpec.JobSpec.Template, "run")
 
-	process, err := errandScript.RunAsync()
+	process, stdout, stderr, err := errandScript.RunAsync()
 	if err != nil {
 		return ErrandResult{}, bosherr.WrapError(err, "Running errand script")
 	}
+
+	defer func() {
+		if stdout != nil {
+			_ = stdout.Close()
+		}
+	}()
+
+	defer func() {
+		if stderr != nil {
+			_ = stderr.Close()
+		}
+	}()
 
 	var result boshsys.Result
 

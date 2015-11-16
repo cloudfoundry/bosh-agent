@@ -33,12 +33,14 @@ type FakeScript struct {
 	runReturns     struct {
 		result1 error
 	}
-	RunAsyncStub        func() (boshsys.Process, error)
+	RunAsyncStub        func() (boshsys.Process, boshsys.File, boshsys.File, error)
 	runAsyncMutex       sync.RWMutex
 	runAsyncArgsForCall []struct{}
 	runAsyncReturns     struct {
 		result1 boshsys.Process
-		result2 error
+		result2 boshsys.File
+		result3 boshsys.File
+		result4 error
 	}
 }
 
@@ -138,14 +140,14 @@ func (fake *FakeScript) RunReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeScript) RunAsync() (boshsys.Process, error) {
+func (fake *FakeScript) RunAsync() (boshsys.Process, boshsys.File, boshsys.File, error) {
 	fake.runAsyncMutex.Lock()
 	fake.runAsyncArgsForCall = append(fake.runAsyncArgsForCall, struct{}{})
 	fake.runAsyncMutex.Unlock()
 	if fake.RunAsyncStub != nil {
 		return fake.RunAsyncStub()
 	} else {
-		return fake.runAsyncReturns.result1, fake.runAsyncReturns.result2
+		return fake.runAsyncReturns.result1, fake.runAsyncReturns.result2, fake.runAsyncReturns.result3, fake.runAsyncReturns.result4
 	}
 }
 
@@ -155,12 +157,14 @@ func (fake *FakeScript) RunAsyncCallCount() int {
 	return len(fake.runAsyncArgsForCall)
 }
 
-func (fake *FakeScript) RunAsyncReturns(result1 boshsys.Process, result2 error) {
+func (fake *FakeScript) RunAsyncReturns(result1 boshsys.Process, result2 boshsys.File, result3 boshsys.File, result4 error) {
 	fake.RunAsyncStub = nil
 	fake.runAsyncReturns = struct {
 		result1 boshsys.Process
-		result2 error
-	}{result1, result2}
+		result2 boshsys.File
+		result3 boshsys.File
+		result4 error
+	}{result1, result2, result3, result4}
 }
 
 var _ script.Script = new(FakeScript)

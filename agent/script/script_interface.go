@@ -21,5 +21,5 @@ type Script interface {
 
 	Exists() bool
 	Run() error
-	RunAsync() (boshsys.Process, error)
+	RunAsync() (boshsys.Process, boshsys.File, boshsys.File, error)
 }

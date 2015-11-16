@@ -48,53 +48,61 @@ func (s GenericScript) Path() string { return s.path }
 func (s GenericScript) Exists() bool { return s.fs.FileExists(s.path) }
 
 func (s GenericScript) Run() error {
-	command, err := s.prepareCommand()
+	command, stdout, stderr, err := s.prepareCommand()
 
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if stdout != nil {
+			_ = stdout.Close()
+		}
+	}()
+
+	defer func() {
+		if stderr != nil {
+			_ = stderr.Close()
+		}
+	}()
 
 	_, _, _, err = s.runner.RunComplexCommand(command)
 
 	return err
 }
 
-func (s GenericScript) RunAsync() (boshsys.Process, error) {
-	command, err := s.prepareCommand()
+func (s GenericScript) RunAsync() (boshsys.Process, boshsys.File, boshsys.File, error) {
+	command, stdout, stderr, err := s.prepareCommand()
 
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	return s.runner.RunComplexCommandAsync(command)
+	process, err := s.runner.RunComplexCommandAsync(command)
+
+	return process, stdout, stderr, err
 }
 
-func (s GenericScript) prepareCommand() (boshsys.Command, error) {
+func (s GenericScript) prepareCommand() (boshsys.Command, boshsys.File, boshsys.File, error) {
 	err := s.ensureContainingDir(s.stdoutLogPath)
 	if err != nil {
-		return boshsys.Command{}, err
+		return boshsys.Command{}, nil, nil, err
 	}
 
 	err = s.ensureContainingDir(s.stderrLogPath)
 	if err != nil {
-		return boshsys.Command{}, err
+		return boshsys.Command{}, nil, nil, err
 	}
 
 	stdoutFile, err := s.fs.OpenFile(s.stdoutLogPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		return boshsys.Command{}, err
+		return boshsys.Command{}, nil, nil, err
 	}
-	defer func() {
-		_ = stdoutFile.Close()
-	}()
 
 	stderrFile, err := s.fs.OpenFile(s.stderrLogPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {
-		return boshsys.Command{}, err
+		return boshsys.Command{}, nil, nil, err
 	}
-	defer func() {
-		_ = stderrFile.Close()
-	}()
 
 	command := boshsys.Command{
 		Name: s.path,
@@ -105,7 +113,7 @@ func (s GenericScript) prepareCommand() (boshsys.Command, error) {
 		Stderr: stderrFile,
 	}
 
-	return command, nil
+	return command, stdoutFile, stderrFile, nil
 }
 
 func (s GenericScript) ensureContainingDir(fullLogFilename string) error {

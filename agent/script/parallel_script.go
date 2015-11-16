@@ -35,8 +35,8 @@ func (s ParallelScript) Tag() string  { return "" }
 func (s ParallelScript) Path() string { return "" }
 func (s ParallelScript) Exists() bool { return true }
 
-func (s ParallelScript) RunAsync() (boshsys.Process, error) {
-	return nil, bosherr.Error("RunAsync not supported for ParallelScript")
+func (s ParallelScript) RunAsync() (boshsys.Process, boshsys.File, boshsys.File, error) {
+	return nil, nil, nil, bosherr.Error("RunAsync not supported for ParallelScript")
 }
 
 func (s ParallelScript) Run() error {

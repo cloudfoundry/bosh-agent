@@ -65,7 +65,7 @@ var _ = Describe("ConcreteScript", func() {
 
 	Describe("RunAsync", func() {
 		It("returns a not supported error message", func() {
-			_, err := script.RunAsync()
+			_, _, _, err := script.RunAsync()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("RunAsync not supported for drain scripts"))
 		})

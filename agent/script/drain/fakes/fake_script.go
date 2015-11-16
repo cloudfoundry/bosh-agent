@@ -3,6 +3,7 @@ package fakes
 import (
 	"github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type FakeScript struct {
@@ -38,11 +39,17 @@ func (s *FakeScript) Run() error {
 	return s.RunError
 }
 
-func (s *FakeScript) RunAsync() (boshsys.Process, error) {
+func (s *FakeScript) RunAsync() (boshsys.Process, boshsys.File, boshsys.File, error) {
 	s.DidRunAsync = true
 	s.RunAsyncCallCount++
 	if s.RunAsyncStub != nil {
-		return nil, s.RunAsyncStub()
+		return nil, &fakes.FakeFile{}, &fakes.FakeFile{}, s.RunAsyncStub()
 	}
-	return nil, s.RunAsyncError
+
+	if s.RunAsyncError != nil {
+		return nil, nil, nil, s.RunAsyncError
+	} else {
+		return nil, &fakes.FakeFile{}, &fakes.FakeFile{}, nil
+	}
+
 }

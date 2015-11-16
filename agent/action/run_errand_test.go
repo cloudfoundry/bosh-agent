@@ -56,7 +56,7 @@ var _ = Describe("RunErrand", func() {
 							WaitResult: boshsys.Result{
 								ExitStatus: 0,
 							},
-						}, errors.New("some-error"))
+						}, nil, nil, errors.New("some-error"))
 					})
 
 					It("returns empty ErrandResult and wraps the error", func() {
@@ -65,16 +65,26 @@ var _ = Describe("RunErrand", func() {
 						Expect(err.Error()).To(ContainSubstring("some-error"))
 						Expect(result).To(Equal(ErrandResult{}))
 					})
+
 				})
 
 				Context("when errand script exits with 0 exit code (execution of script is ok)", func() {
+					var stdout *fakesys.FakeFile
+					var stderr *fakesys.FakeFile
+
 					BeforeEach(func() {
+						filesystem := fakesys.NewFakeFileSystem()
+						filesystem.WriteFileString("/var/log/stdout.log", "test1")
+						filesystem.WriteFileString("/var/log/stderr.log", "test2")
+
+						stdout = fakesys.NewFakeFile("/var/log/stdout.log", filesystem)
+						stderr = fakesys.NewFakeFile("/var/log/stderr.log", filesystem)
 						fakeJobScriptProvider.NewScriptReturns(fakeScript)
 						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								ExitStatus: 0,
 							},
-						}, nil)
+						}, stdout, stderr, nil)
 					})
 
 					It("returns errand result without error after running an errand", func() {
@@ -87,17 +97,29 @@ var _ = Describe("RunErrand", func() {
 								ExitStatus: 0,
 							},
 						))
+
+						Eventually(stdout.Stats.Open).Should(BeFalse())
+						Eventually(stderr.Stats.Open).Should(BeFalse())
 					})
 				})
 
 				Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
+					var stdout *fakesys.FakeFile
+					var stderr *fakesys.FakeFile
+
 					BeforeEach(func() {
+						filesystem := fakesys.NewFakeFileSystem()
+						filesystem.WriteFileString("/var/log/stdout.log", "test1")
+						filesystem.WriteFileString("/var/log/stderr.log", "test2")
+
+						stdout = fakesys.NewFakeFile("/var/log/stdout.log", filesystem)
+						stderr = fakesys.NewFakeFile("/var/log/stderr.log", filesystem)
 						fakeJobScriptProvider.NewScriptReturns(fakeScript)
 						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								ExitStatus: 123,
 							},
-						}, nil)
+						}, stdout, stderr, nil)
 					})
 
 					It("returns errand result without an error", func() {
@@ -110,6 +132,9 @@ var _ = Describe("RunErrand", func() {
 								ExitStatus: 123,
 							},
 						))
+
+						Eventually(stdout.Stats.Open).Should(BeFalse())
+						Eventually(stderr.Stats.Open).Should(BeFalse())
 					})
 				})
 
@@ -122,7 +147,7 @@ var _ = Describe("RunErrand", func() {
 								ExitStatus: -1,
 								Error:      errors.New("fake-bosh-error"),
 							},
-						}, nil)
+						}, nil, nil, nil)
 					})
 
 					It("returns error because script failed to execute", func() {
@@ -198,7 +223,7 @@ var _ = Describe("RunErrand", func() {
 					},
 				}
 
-				fakeScript.RunAsyncReturns(process, nil)
+				fakeScript.RunAsyncReturns(process, nil, nil, nil)
 
 				err := action.Cancel()
 				Expect(err).ToNot(HaveOccurred())
@@ -219,7 +244,7 @@ var _ = Describe("RunErrand", func() {
 						},
 					}
 
-					fakeScript.RunAsyncReturns(process, nil)
+					fakeScript.RunAsyncReturns(process, nil, nil, nil)
 				})
 
 				It("returns errand result without error after running an errand", func() {
@@ -249,7 +274,7 @@ var _ = Describe("RunErrand", func() {
 						},
 					}
 
-					fakeScript.RunAsyncReturns(process, nil)
+					fakeScript.RunAsyncReturns(process, nil, nil, nil)
 				})
 
 				It("returns errand result without an error", func() {
@@ -279,7 +304,7 @@ var _ = Describe("RunErrand", func() {
 						},
 					}
 
-					fakeScript.RunAsyncReturns(process, nil)
+					fakeScript.RunAsyncReturns(process, nil, nil, nil)
 				})
 
 				It("returns error because script failed to execute", func() {
@@ -305,7 +330,7 @@ var _ = Describe("RunErrand", func() {
 					},
 				}
 
-				fakeScript.RunAsyncReturns(process, nil)
+				fakeScript.RunAsyncReturns(process, nil, nil, nil)
 			})
 
 			It("allows to cancel action second time without returning an error", func() {

@@ -48,7 +48,7 @@ var _ = Describe("ParallelScript", func() {
 
 	Describe("RunAsync", func() {
 		It("returns a not supported error message", func() {
-			_, err := parallelScript.RunAsync()
+			_, _, _, err := parallelScript.RunAsync()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("RunAsync not supported for ParallelScript"))
 		})
