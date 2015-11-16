@@ -1,6 +1,7 @@
 package monit
 
 import (
+	"strings"
 	"time"
 
 	boshhttp "github.com/cloudfoundry/bosh-utils/http"
@@ -49,7 +50,10 @@ func (m *monitRetryStrategy) Try() error {
 			break
 		}
 
-		if m.retryable.Response() != nil && m.retryable.Response().StatusCode == 503 && m.unavailableAttempts < m.maxUnavailableAttempts {
+		is503 := m.retryable.Response() != nil && m.retryable.Response().StatusCode == 503
+		isCanceled := err != nil && strings.Contains(err.Error(), "request canceled")
+
+		if (is503 || isCanceled) && m.unavailableAttempts < m.maxUnavailableAttempts {
 			m.unavailableAttempts = m.unavailableAttempts + 1
 		} else {
 			// once a non-503 error is received, all errors count as 'other' errors

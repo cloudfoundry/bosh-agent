@@ -210,6 +210,16 @@ func (m monitJobSupervisor) Processes() (processes []Process, err error) {
 		process := Process{
 			Name:  service.Name,
 			State: service.Status,
+			Uptime: UptimeVitals{
+				Secs: service.Uptime,
+			},
+			Memory: MemoryVitals{
+				Kb:      service.MemoryKilobytesTotal,
+				Percent: service.MemoryPercentTotal,
+			},
+			CPU: CPUVitals{
+				Total: service.CPUPercentTotal,
+			},
 		}
 		processes = append(processes, process)
 	}
