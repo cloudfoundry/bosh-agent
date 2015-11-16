@@ -121,6 +121,8 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 
 	var result boshsys.Result
 
+	isCanceled := false
+
 	// Can only wait once on a process but cancelling can happen multiple times
 	for processExitedCh := process.Wait(); processExitedCh != nil; {
 		select {
@@ -132,6 +134,14 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 			if err != nil {
 				s.logger.Error(s.logTag, "Failed to terminate %s", err.Error())
 			}
+			isCanceled = true
+		}
+	}
+
+	if isCanceled {
+		if result.Error != nil {
+			return 0, bosherr.WrapError(result.Error, "Script was cancelled by user request")
+		} else {
 			return 0, bosherr.Error("Script was cancelled by user request")
 		}
 	}

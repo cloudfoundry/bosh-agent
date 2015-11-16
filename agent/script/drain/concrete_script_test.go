@@ -261,19 +261,19 @@ var _ = Describe("ConcreteScript", func() {
 			params = NewUpdateParams(oldSpec, newSpec)
 		})
 
-		It("suceeds", func() {
+		It("succeeds", func() {
 			err := script.Cancel()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("doesn't block and suceeds when invoked twice", func() {
+		It("doesn't block and succeeds when invoked twice", func() {
 			err := script.Cancel()
 			Expect(err).ToNot(HaveOccurred())
 			err = script.Cancel()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("termnates script nicely", func() {
+		It("terminates script nicely", func() {
 			process := &fakesys.FakeProcess{
 				TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 					p.WaitCh <- boshsys.Result{
@@ -289,11 +289,31 @@ var _ = Describe("ConcreteScript", func() {
 			Expect(err).ToNot(HaveOccurred())
 			err = script.Run()
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Script was cancelled by user request"))
 			Expect(process.TerminatedNicely).To(BeTrue())
 			Expect(process.TerminateNicelyKillGracePeriod).To(Equal(10 * time.Second))
-
 		})
 
+		It("waits for process to exit", func() {
+			process := &fakesys.FakeProcess{
+				TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
+					p.WaitCh <- boshsys.Result{
+						Stdout:     "",
+						Stderr:     "Interrupted",
+						ExitStatus: 137,
+						Error:      errors.New("Interrupted"),
+					}
+				},
+			}
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo", process)
+
+			err := script.Cancel()
+			Expect(err).ToNot(HaveOccurred())
+			err = script.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Script was cancelled by user request"))
+			Expect(err.Error()).To(ContainSubstring("Interrupted"))
+		})
 	})
 
 	exampleSpec = func() applyspec.V1ApplySpec {
