@@ -13,6 +13,10 @@ import (
 
 const runErrandActionLogTag = "runErrandAction"
 
+// This is used for backward compatibility. If the director or CLI do not support
+// auto-display of logs, then the CLI will display this in the run errand command
+const runErrandOutputLimit = 10 * 1024 // 10 Kb
+
 type RunErrandAction struct {
 	jobScriptProvider boshscript.JobScriptProvider
 	specService       boshas.V1Service
@@ -103,9 +107,30 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 		return ErrandResult{}, bosherr.WrapError(result.Error, "Running errand script")
 	}
 
+	//Truncating std streams
+	processedStdout, isStdoutTruncated, err := a.getTruncatedOutput(stdout, runErrandOutputLimit)
+	if err != nil {
+		processedStdout = []byte("Error retrieving logs")
+		a.logger.Error(runErrandActionLogTag, "Failed to truncate errand stdout %s", err.Error())
+	}
+
+	processedStderr, isStderrTruncated, err := a.getTruncatedOutput(stderr, runErrandOutputLimit)
+	if err != nil {
+		processedStderr = []byte("Error retrieving logs")
+		a.logger.Error(runErrandActionLogTag, "Failed to truncate errand stderr %s", err.Error())
+	}
+
+	if isStdoutTruncated {
+		processedStdout = []byte("<...log truncated...>\n" + string(processedStdout))
+	}
+
+	if isStderrTruncated {
+		processedStderr = []byte("<...log truncated...>\n" + string(processedStderr))
+	}
+
 	return ErrandResult{
-		Stdout:     "Truncated stdout here",
-		Stderr:     "Truncated stderr here",
+		Stdout:     string(processedStdout),
+		Stderr:     string(processedStderr),
 		ExitStatus: result.ExitStatus,
 	}, nil
 }
@@ -132,4 +157,35 @@ func (a RunErrandAction) Cancel() error {
 		// Cancel action is already queued up
 	}
 	return nil
+}
+
+func (f RunErrandAction) getTruncatedOutput(file boshsys.File, truncateLength int64) ([]byte, bool, error) {
+	isTruncated := false
+
+	if file == nil {
+		return nil, false, bosherr.Error("Failed to redirect stdstreams")
+	}
+
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, false, err
+	}
+
+	resultSize := truncateLength
+	offset := stat.Size() - truncateLength
+
+	if offset < 0 {
+		resultSize = stat.Size()
+		offset = 0
+	} else {
+		isTruncated = true
+	}
+
+	data := make([]byte, resultSize)
+	_, err = file.ReadAt(data, offset)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return data, isTruncated, nil
 }

@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"bytes"
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -92,8 +93,8 @@ var _ = Describe("RunErrand", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
 							ErrandResult{
-								Stdout:     "Truncated stdout here",
-								Stderr:     "Truncated stderr here",
+								Stdout:     "test1",
+								Stderr:     "test2",
 								ExitStatus: 0,
 							},
 						))
@@ -101,6 +102,48 @@ var _ = Describe("RunErrand", func() {
 						Eventually(stdout.Stats.Open).Should(BeFalse())
 						Eventually(stderr.Stats.Open).Should(BeFalse())
 					})
+				})
+
+				Context("when the stdout and stderr are larger than 10KB (each)", func() {
+
+					var stdout *fakesys.FakeFile
+					var stderr *fakesys.FakeFile
+
+					BeforeEach(func() {
+						var buffer bytes.Buffer
+
+						for i := 0; i < 1300; i++ {
+							buffer.WriteString("ABCDEFGHIJ")
+						}
+						tooMuchStrings := buffer.String()
+
+						filesystem := fakesys.NewFakeFileSystem()
+						filesystem.WriteFileString("/var/log/stdout.log", "beginning of stdout"+tooMuchStrings)
+						filesystem.WriteFileString("/var/log/stderr.log", "beginning of stderr"+tooMuchStrings)
+
+						stdout = fakesys.NewFakeFile("/var/log/stdout.log", filesystem)
+						stderr = fakesys.NewFakeFile("/var/log/stderr.log", filesystem)
+						fakeJobScriptProvider.NewScriptReturns(fakeScript)
+						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
+							WaitResult: boshsys.Result{
+								ExitStatus: 0,
+							},
+						}, stdout, stderr, nil)
+					})
+
+					It("should truncate stdstreams", func() {
+						result, err := action.Run()
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(result.Stdout).To(ContainSubstring("<...log truncated...>"))
+						Expect(result.Stderr).To(ContainSubstring("<...log truncated...>"))
+
+						Expect(result.Stdout).ToNot(ContainSubstring("beginning of stdout"))
+						Expect(result.Stderr).ToNot(ContainSubstring("beginning of stderr"))
+
+						Expect(result.ExitStatus).To(Equal(0))
+					})
+
 				})
 
 				Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
@@ -127,8 +170,8 @@ var _ = Describe("RunErrand", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
 							ErrandResult{
-								Stdout:     "Truncated stdout here",
-								Stderr:     "Truncated stderr here",
+								Stdout:     "test1",
+								Stderr:     "test2",
 								ExitStatus: 123,
 							},
 						))
@@ -157,6 +200,30 @@ var _ = Describe("RunErrand", func() {
 						Expect(result).To(Equal(ErrandResult{}))
 					})
 				})
+
+				Context("when errand script stdout and stderr are nil", func() {
+					BeforeEach(func() {
+						fakeJobScriptProvider.NewScriptReturns(fakeScript)
+						fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
+							WaitResult: boshsys.Result{
+								ExitStatus: 0,
+							},
+						}, nil, nil, nil)
+					})
+
+					It("should disclose that in the error returned", func() {
+						result, err := action.Run()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(result).To(Equal(
+							ErrandResult{
+								Stdout:     "Error retrieving logs",
+								Stderr:     "Error retrieving logs",
+								ExitStatus: 0,
+							},
+						))
+					})
+				})
+
 			})
 
 			Context("when current agent spec does not have a job spec template", func() {
@@ -235,16 +302,25 @@ var _ = Describe("RunErrand", func() {
 			})
 
 			Context("when errand script exits with non-0 exit code (execution of script is ok)", func() {
+				var stdout *fakesys.FakeFile
+				var stderr *fakesys.FakeFile
+
 				BeforeEach(func() {
-					process := &fakesys.FakeProcess{
+					filesystem := fakesys.NewFakeFileSystem()
+					filesystem.WriteFileString("/var/log/stdout.log", "test1")
+					filesystem.WriteFileString("/var/log/stderr.log", "test2")
+
+					stdout = fakesys.NewFakeFile("/var/log/stdout.log", filesystem)
+					stderr = fakesys.NewFakeFile("/var/log/stderr.log", filesystem)
+					fakeJobScriptProvider.NewScriptReturns(fakeScript)
+					fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								ExitStatus: 0,
 							}
 						},
-					}
+					}, stdout, stderr, nil)
 
-					fakeScript.RunAsyncReturns(process, nil, nil, nil)
 				})
 
 				It("returns errand result without error after running an errand", func() {
@@ -255,8 +331,8 @@ var _ = Describe("RunErrand", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
 						ErrandResult{
-							Stdout:     "Truncated stdout here",
-							Stderr:     "Truncated stderr here",
+							Stdout:     "test1",
+							Stderr:     "test2",
 							ExitStatus: 0,
 						},
 					))
@@ -264,17 +340,25 @@ var _ = Describe("RunErrand", func() {
 			})
 
 			Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
+				var stdout *fakesys.FakeFile
+				var stderr *fakesys.FakeFile
+
 				BeforeEach(func() {
-					process := &fakesys.FakeProcess{
+					filesystem := fakesys.NewFakeFileSystem()
+					filesystem.WriteFileString("/var/log/stdout.log", "test1")
+					filesystem.WriteFileString("/var/log/stderr.log", "test2")
+
+					stdout = fakesys.NewFakeFile("/var/log/stdout.log", filesystem)
+					stderr = fakesys.NewFakeFile("/var/log/stderr.log", filesystem)
+					fakeJobScriptProvider.NewScriptReturns(fakeScript)
+					fakeScript.RunAsyncReturns(&fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								ExitStatus: 123,
 								Error:      errors.New("fake-bosh-error"), // not used
 							}
 						},
-					}
-
-					fakeScript.RunAsyncReturns(process, nil, nil, nil)
+					}, stdout, stderr, nil)
 				})
 
 				It("returns errand result without an error", func() {
@@ -285,8 +369,8 @@ var _ = Describe("RunErrand", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
 						ErrandResult{
-							Stdout:     "Truncated stdout here",
-							Stderr:     "Truncated stderr here",
+							Stdout:     "test1",
+							Stderr:     "test2",
 							ExitStatus: 123,
 						},
 					))
