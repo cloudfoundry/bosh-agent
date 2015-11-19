@@ -159,7 +159,7 @@ func (a RunErrandAction) Cancel() error {
 	return nil
 }
 
-func (f RunErrandAction) getTruncatedOutput(file boshsys.File, truncateLength int64) ([]byte, bool, error) {
+func (a RunErrandAction) getTruncatedOutput(file boshsys.File, truncateLength int64) ([]byte, bool, error) {
 	isTruncated := false
 
 	if file == nil {
