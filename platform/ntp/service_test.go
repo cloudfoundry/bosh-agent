@@ -5,64 +5,50 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/ntp"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakefs "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("concreteService", func() {
 	Describe("GetInfo", func() {
-		buildService := func(NTPData string) Service {
-			fs := fakefs.NewFakeFileSystem()
-			dirProvider := boshdir.NewProvider("/var/vcap")
+		var (
+			cmdRunner *fakesys.FakeCmdRunner
+			cmd       string
+			service   Service
+		)
 
-			if NTPData != "" {
-				err := fs.WriteFileString("/var/vcap/bosh/log/ntpdate.out", NTPData)
-				Expect(err).ToNot(HaveOccurred())
-			}
-
-			return NewConcreteService(fs, dirProvider)
-		}
+		BeforeEach(func() {
+			cmdRunner = fakesys.NewFakeCmdRunner()
+			service = NewConcreteService(cmdRunner)
+			cmd = "sh -c ntpq -c 'readvar 0 clock,offset'"
+		})
 
 		It("returns valid offset", func() {
-			NTPData := `server 10.16.45.209, stratum 2, offset -0.081236, delay 0.04291
-12 Oct 17:37:58 ntpdate[42757]: adjust time server 10.16.45.209 offset -0.081236 sec
-`
-			service := buildService(NTPData)
+			NTPData := "offset=1.299, clock=da015395.2ef3fae1  Thu, Nov 26 2015 17:47:01.183"
+			cmdRunner.AddCmdResult(cmd, fakesys.FakeCmdResult{Stdout: NTPData})
 
 			expectedNTPOffset := Info{
-				Timestamp: "12 Oct 17:37:58",
-				Offset:    "-0.081236",
+				Timestamp: "26 Nov 17:47:01",
+				Offset:    "1.299",
 			}
 			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
 		})
 
-		It("returns bad file message when file is bad", func() {
-			NTPData := "sdfhjsdfjghsdf\n" +
-				"dsfjhsdfhjsdfhjg\n" +
-				"dsjkfsdfkjhsdfhjk\n"
-			service := buildService(NTPData)
+		It("returns ntp is not started when ntp connection timed out", func() {
+			NTPData := "timed out"
+			cmdRunner.AddCmdResult(cmd, fakesys.FakeCmdResult{Stdout: NTPData})
 
 			expectedNTPOffset := Info{
-				Message: "bad file contents",
+				Message: "ntp service is not available",
 			}
 			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
 		})
 
-		It("returns bad ntp server message when file has bad server", func() {
-			NTPData := "13 Oct 18:00:05 ntpdate[1754]: no server suitable for synchronization found\n"
-			service := buildService(NTPData)
+		It("returns error querying time by ntpq when bad response from ntpd is received", func() {
+			NTPData := "abcdefg\n"
+			cmdRunner.AddCmdResult(cmd, fakesys.FakeCmdResult{Stdout: NTPData})
 
 			expectedNTPOffset := Info{
-				Message: "bad ntp server",
-			}
-			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
-		})
-
-		It("returns nil when file does not exist", func() {
-			service := buildService("")
-
-			expectedNTPOffset := Info{
-				Message: "file missing",
+				Message: "error querying time by ntpq",
 			}
 			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
 		})

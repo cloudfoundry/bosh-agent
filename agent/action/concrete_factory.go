@@ -38,7 +38,7 @@ func NewFactory(
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
-	ntpService := boshntp.NewConcreteService(platform.GetFs(), dirProvider)
+	ntpService := boshntp.NewConcreteService(platform.GetRunner())
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
