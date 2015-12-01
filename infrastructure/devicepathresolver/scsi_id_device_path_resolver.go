@@ -36,25 +36,19 @@ func NewScsiIDDevicePathResolver(
 
 func (idpr scsiIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
 	if diskSettings.ID == "" {
-		err := bosherr.Errorf("Disk ID is not set")
-		idpr.logger.Error(idpr.logTag, err.Error())
-		return "", false, err
+		return "", false, bosherr.WrapError("Disk ID is not set")
 	}
 
 	hostPaths, err := idpr.fs.Glob("/sys/class/scsi_host/host*/scan")
 	if err != nil {
-		err := bosherr.WrapError(err, "Could not list SCSI hosts")
-		idpr.logger.Error(idpr.logTag, err.Error())
-		return "", false, err
+		return "", false, bosherr.WrapError(err, "Could not list SCSI hosts")
 	}
 
 	for _, hostPath := range hostPaths {
 		idpr.logger.Info(idpr.logTag, "Performing SCSI rescan of "+hostPath)
 		err = idpr.fs.WriteFileString(hostPath, "- - -")
 		if err != nil {
-			err := bosherr.WrapError(err, "Starting SCSI rescan")
-			idpr.logger.Error(idpr.logTag, err.Error())
-			return "", false, err
+			return "", false, bosherr.WrapError(err, "Starting SCSI rescan")
 		}
 	}
 
@@ -67,9 +61,7 @@ func (idpr scsiIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings
 		idpr.logger.Debug(idpr.logTag, "Waiting for device to appear")
 
 		if time.Now().After(stopAfter) {
-			err := bosherr.Errorf("Timed out getting real device path for '%s'", diskSettings.ID)
-			idpr.logger.Error(idpr.logTag, err.Error())
-			return "", true, err
+			return "", true, bosherr.WrapError("Timed out getting real device path for '%s'", diskSettings.ID)
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -77,9 +69,7 @@ func (idpr scsiIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings
 		uuid := strings.Replace(diskSettings.ID, "-", "", -1)
 		disks, err := idpr.fs.Glob("/dev/disk/by-id/*-" + uuid)
 		if err != nil {
-			err := bosherr.WrapError(err, "Could not list disks by id")
-			idpr.logger.Error(idpr.logTag, err.Error())
-			return "", false, err
+			return "", false, bosherr.WrapError(err, "Could not list disks by id")
 		}
 		for _, path := range disks {
 			idpr.logger.Debug(idpr.logTag, "Reading link "+path)
