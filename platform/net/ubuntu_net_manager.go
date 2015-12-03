@@ -373,7 +373,9 @@ func (net UbuntuNetManager) writeResolvConf(networks boshsettings.Networks) erro
 	type dnsConfigArg struct {
 		DNSServers []string
 	}
+
 	dnsServersArg := dnsConfigArg{dnsNetwork.DNS}
+
 	err := t.Execute(buffer, dnsServersArg)
 	if err != nil {
 		return bosherr.WrapError(err, "Generating config from template")
@@ -382,6 +384,12 @@ func (net UbuntuNetManager) writeResolvConf(networks boshsettings.Networks) erro
 	err = net.fs.WriteFile("/etc/resolvconf/resolv.conf.d/head", buffer.Bytes())
 	if err != nil {
 		return bosherr.WrapError(err, "Writing to /etc/resolvconf/resolv.conf.d/head")
+	}
+
+	// Force /etc/resolv.conf to be a symlink as expected by resolvconf
+	err = net.fs.Symlink("/run/resolvconf/resolv.conf", "/etc/resolv.conf")
+	if err != nil {
+		return bosherr.WrapError(err, "Setting up /etc/resolv.conf symlink")
 	}
 
 	_, _, _, err = net.cmdRunner.RunCommand("resolvconf", "-u")
