@@ -160,8 +160,6 @@ type Network struct {
 	DNS     []string `json:"dns"`
 
 	Mac string `json:"mac"`
-
-	Preconfigured bool `json:"preconfigured"`
 }
 
 type Networks map[string]Network
