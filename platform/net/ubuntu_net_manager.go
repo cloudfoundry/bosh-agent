@@ -381,10 +381,28 @@ func (net UbuntuNetManager) writeResolvConf(networks boshsettings.Networks) erro
 		return bosherr.WrapError(err, "Generating DNS config from template")
 	}
 
-	// Write out base so that releases may overwrite head
-	err = net.fs.WriteFile("/etc/resolvconf/resolv.conf.d/base", buffer.Bytes())
-	if err != nil {
-		return bosherr.WrapError(err, "Writing to /etc/resolvconf/resolv.conf.d/base")
+	// Assume for now that we never want to have 0 DNS servers
+	// so dont overwrite base from possibly previosuly copied resolv.conf
+	if len(dnsNetwork.DNS) > 0 {
+		// Write out base so that releases may overwrite head
+		err = net.fs.WriteFile("/etc/resolvconf/resolv.conf.d/base", buffer.Bytes())
+		if err != nil {
+			return bosherr.WrapError(err, "Writing to /etc/resolvconf/resolv.conf.d/base")
+		}
+	} else {
+		targetPath, err := net.fs.ReadLink("/etc/resolv.conf")
+		if err != nil {
+			return bosherr.WrapError(err, "Reading /etc/resolv.conf symlink")
+		}
+
+		// For the first time before resolv.conf is symlinked to /run/...
+		// inherit possibly configured resolv.conf in case we have 0 DNS servers set
+		if targetPath == "/etc/resolv.conf" {
+			err := net.fs.CopyFile("/etc/resolv.conf", "/etc/resolvconf/resolv.conf.d/base")
+			if err != nil {
+				return bosherr.WrapError(err, "Copying /etc/resolv.conf for backwards compat")
+			}
+		}
 	}
 
 	// Force /etc/resolv.conf to be a symlink as expected by resolvconf
