@@ -38,8 +38,11 @@ type Disks struct {
 	// e.g "/dev/sda", "1"
 	System string `json:"system"`
 
+	// Older CPIs returned disk settings as string
 	// e.g "/dev/sdb", "2"
-	Ephemeral string `json:"ephemeral"`
+	// Newer CPIs will populate it in a hash
+	// e.g {"path" => "/dev/sdc", "volume_id" => "3"}
+	Ephemeral interface{} `json:"ephemeral"`
 
 	// Older CPIs returned disk settings as strings
 	// e.g {"disk-3845-43758-7243-38754" => "/dev/sdc"}
@@ -72,12 +75,12 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 			if hashSettings, ok := settings.(map[string]interface{}); ok {
 				diskSettings.Path = hashSettings["path"].(string)
 				diskSettings.VolumeID = hashSettings["volume_id"].(string)
-				diskSettings.ID = hashSettings["id"].(string)
+				diskSettings.ID = diskID
 			} else {
 				// Old CPIs return disk path (string) or volume id (string) as disk settings
 				diskSettings.Path = settings.(string)
 				diskSettings.VolumeID = settings.(string)
-				diskSettings.ID = settings.(string)
+				diskSettings.ID = diskID
 			}
 
 			return diskSettings, true
@@ -88,11 +91,20 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 }
 
 func (s Settings) EphemeralDiskSettings() DiskSettings {
-	return DiskSettings{
-		VolumeID: s.Disks.Ephemeral,
-		Path:     s.Disks.Ephemeral,
-		ID:       s.Disks.Ephemeral,
+	diskSettings := DiskSettings{}
+
+	if hashSettings, ok := s.Disks.Ephemeral.(map[string]interface{}); ok {
+		diskSettings.Path = hashSettings["path"].(string)
+		diskSettings.VolumeID = hashSettings["volume_id"].(string)
+		diskSettings.ID = ""
+	} else {
+		// Old CPIs return disk path (string) or volume id (string) as disk settings
+		diskSettings.Path = s.Disks.Ephemeral.(string)
+		diskSettings.VolumeID = s.Disks.Ephemeral.(string)
+		diskSettings.ID = ""
 	}
+
+	return diskSettings
 }
 
 func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {

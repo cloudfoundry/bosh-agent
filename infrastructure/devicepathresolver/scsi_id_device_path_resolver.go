@@ -36,7 +36,7 @@ func NewScsiIDDevicePathResolver(
 
 func (idpr scsiIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
 	if diskSettings.ID == "" {
-		return "", false, bosherr.WrapError("Disk ID is not set")
+		return "", false, bosherr.Errorf("Disk ID is not set")
 	}
 
 	hostPaths, err := idpr.fs.Glob("/sys/class/scsi_host/host*/scan")
@@ -61,7 +61,7 @@ func (idpr scsiIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings
 		idpr.logger.Debug(idpr.logTag, "Waiting for device to appear")
 
 		if time.Now().After(stopAfter) {
-			return "", true, bosherr.WrapError("Timed out getting real device path for '%s'", diskSettings.ID)
+			return "", true, bosherr.Errorf("Timed out getting real device path for '%s'", diskSettings.ID)
 		}
 
 		time.Sleep(100 * time.Millisecond)
