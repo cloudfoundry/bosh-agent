@@ -141,9 +141,9 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	if isCanceled {
 		if result.Error != nil {
 			return 0, bosherr.WrapError(result.Error, "Script was cancelled by user request")
-		} else {
-			return 0, bosherr.Error("Script was cancelled by user request")
 		}
+
+		return 0, bosherr.Error("Script was cancelled by user request")
 	}
 
 	if result.Error != nil && result.ExitStatus == -1 {
