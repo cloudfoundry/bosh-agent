@@ -541,7 +541,7 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		}
 
 		// check if device is already partitioned correctly
-		stdout, _, _, err := p.cmdRunner.RunCommand(
+		stdout, stderr, _, err := p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
 			realPath,
@@ -550,7 +550,8 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 
 		if err != nil {
 			// "unrecognised disk label" is acceptable, since the disk may not have been partitioned
-			if strings.Contains(stdout, "unrecognised disk label") == false {
+			if strings.Contains(stdout, "unrecognised disk label") == false &&
+				strings.Contains(stderr, "unrecognised disk label") == false {
 				return bosherr.WrapError(err, "Setting up raw ephemeral disks")
 			}
 		}

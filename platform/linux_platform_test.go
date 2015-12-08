@@ -1005,6 +1005,61 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "p"}))
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/xvdc", "p"}))
 		})
+
+		It("does not give an error if parted prints 'unrecognised disk label' to stdout and returns an error", func() {
+			result := fakesys.FakeCmdResult{
+				Error:      errors.New("fake-parted-error"),
+				ExitStatus: 0,
+				Stderr:     "",
+				Stdout: `Model: Xen Virtual Block Device (xvd)
+Error: /dev/xvda: unrecognised disk label
+Disk /dev/xvda: 40.3GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name             Flags
+ 1      1049kB  40.3GB  40.3GB               raw-ephemeral-0
+`,
+			}
+
+			cmdRunner.AddCmdResult("parted -s /dev/xvda p", result)
+
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
+
+			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvda"}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvda", "p"}))
+		})
+
+		It("does not give an error if parted prints 'unrecognised disk label' to stderr and returns an error", func() {
+			result := fakesys.FakeCmdResult{
+				Error:      errors.New("fake-parted-error"),
+				ExitStatus: 0,
+				Stderr:     "Error: /dev/xvda: unrecognised disk label",
+				Stdout: `Model: Xen Virtual Block Device (xvd)
+Disk /dev/xvda: 40.3GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name             Flags
+ 1      1049kB  40.3GB  40.3GB               raw-ephemeral-0
+`,
+			}
+
+			cmdRunner.AddCmdResult("parted -s /dev/xvda p", result)
+
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
+
+			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvda"}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvda", "p"}))
+		})
 	})
 
 	Describe("SetupDataDir", func() {
