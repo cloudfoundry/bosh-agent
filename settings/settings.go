@@ -75,7 +75,7 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 			if hashSettings, ok := settings.(map[string]interface{}); ok {
 				diskSettings.Path = hashSettings["path"].(string)
 				diskSettings.VolumeID = hashSettings["volume_id"].(string)
-				diskSettings.ID = diskID
+				diskSettings.ID = hashSettings["id"].(string)
 			} else {
 				// Old CPIs return disk path (string) or volume id (string) as disk settings
 				diskSettings.Path = settings.(string)
@@ -96,7 +96,7 @@ func (s Settings) EphemeralDiskSettings() DiskSettings {
 	if hashSettings, ok := s.Disks.Ephemeral.(map[string]interface{}); ok {
 		diskSettings.Path = hashSettings["path"].(string)
 		diskSettings.VolumeID = hashSettings["volume_id"].(string)
-		diskSettings.ID = ""
+		diskSettings.ID = hashSettings["id"].(string)
 	} else {
 		// Old CPIs return disk path (string) or volume id (string) as disk settings
 		diskSettings.Path = s.Disks.Ephemeral.(string)

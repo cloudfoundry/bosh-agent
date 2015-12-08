@@ -23,6 +23,7 @@ func init() {
 								"fake-disk-id": map[string]interface{}{
 									"volume_id": "fake-disk-volume-id",
 									"path":      "fake-disk-path",
+									"id":      "fake-disk-id",
 								},
 							},
 						},
@@ -105,6 +106,7 @@ func init() {
 							Ephemeral: map[string]interface{}{
 								"volume_id": "fake-disk-volume-id",
 								"path":      "fake-disk-path",
+								"id":        "fake-disk-id",
 							},
 						},
 					}
@@ -112,7 +114,7 @@ func init() {
 
 				It("converts disk settings", func() {
 					Expect(settings.EphemeralDiskSettings()).To(Equal(DiskSettings{
-						ID:       "",
+						ID:       "fake-disk-id",
 						VolumeID: "fake-disk-volume-id",
 						Path:     "fake-disk-path",
 					}))
