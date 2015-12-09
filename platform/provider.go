@@ -136,9 +136,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	return provider{
 		platforms: map[string]Platform{
-			"ubuntu": ubuntu,
-			"centos": centos,
-			"dummy":  NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
+			"ubuntu":  ubuntu,
+			"centos":  centos,
+			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
+			"windows": NewWindowsPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
 		},
 	}
 }

@@ -1,0 +1,1 @@
+{"agent_id":"anagentid","blobstore":{"provider":"","options":null},"disks":{"system":"","ephemeral":"","persistent":null,"raw_ephemeral":null},"env":{"bosh":{"password":""}},"networks":null,"ntp":null,"mbus":"","vm":{"name":"fooname"},"trusted_certs":""}

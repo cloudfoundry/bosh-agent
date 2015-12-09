@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	sigar "github.com/cloudfoundry/gosigar"
-
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -25,9 +23,9 @@ import (
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -74,9 +72,9 @@ func (app *app) Setup(args []string) error {
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
-	// Pulled outside of the platform provider so bosh-init will not pull in
-	// sigar when cross compiling linux -> darwin
-	sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+	// FIXME: needs GCC on Windows to compile go-sigar
+	// sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+	sigarCollector := stats.NewDummyStatsCollector()
 
 	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, app.fs, config.Platform)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
