@@ -104,8 +104,13 @@ func (e Env) GetPassword() string {
 	return e.Bosh.Password
 }
 
+func (e Env) GetKeepRootPassword() bool {
+	return e.Bosh.KeepRootPassword
+}
+
 type BoshEnv struct {
-	Password string `json:"password"`
+	Password         string `json:"password"`
+	KeepRootPassword bool   `json:"keep_root_password"`
 }
 
 type NetworkType string

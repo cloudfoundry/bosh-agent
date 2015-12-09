@@ -125,12 +125,14 @@ func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 		return nil
 	}
 
-	err := boot.platform.SetUserPassword(boshsettings.RootUsername, password)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting root password")
+	if !env.GetKeepRootPassword() {
+		err := boot.platform.SetUserPassword(boshsettings.RootUsername, password)
+		if err != nil {
+			return bosherr.WrapError(err, "Setting root password")
+		}
 	}
 
-	err = boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
+	err := boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting vcap password")
 	}
