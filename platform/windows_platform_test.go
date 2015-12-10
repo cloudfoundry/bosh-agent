@@ -6,7 +6,9 @@ import (
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform"
+	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -18,6 +20,7 @@ var _ = Describe("WindowsPlatform", func() {
 		fs                 *fakesys.FakeFileSystem
 		cmdRunner          *fakesys.FakeCmdRunner
 		dirProvider        boshdirs.Provider
+		netManager         *fakenet.FakeManager
 		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 		platform           Platform
 
@@ -32,6 +35,7 @@ var _ = Describe("WindowsPlatform", func() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		dirProvider = boshdirs.NewProvider("/fake-dir")
+		netManager = &fakenet.FakeManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		options = LinuxOptions{}
 	})
@@ -42,6 +46,7 @@ var _ = Describe("WindowsPlatform", func() {
 			fs,
 			cmdRunner,
 			dirProvider,
+			netManager,
 			devicePathResolver,
 			logger,
 		)
@@ -53,6 +58,17 @@ var _ = Describe("WindowsPlatform", func() {
 			contents, err := platform.GetFileContentsFromCDROM("env")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(Equal([]byte("fake-contents")))
+		})
+	})
+
+	Describe("SetupNetworking", func() {
+		It("delegates to the NetManager", func() {
+			networks := boshsettings.Networks{}
+
+			err := platform.SetupNetworking(networks)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(netManager.SetupNetworkingNetworks).To(Equal(networks))
 		})
 	})
 })

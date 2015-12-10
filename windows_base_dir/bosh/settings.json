@@ -1,1 +1,40 @@
-{"agent_id":"anagentid","blobstore":{"provider":"","options":null},"disks":{"system":"","ephemeral":"","persistent":null,"raw_ephemeral":null},"env":{"bosh":{"password":""}},"networks":null,"ntp":null,"mbus":"","vm":{"name":"fooname"},"trusted_certs":""}
+{
+  "agent_id": "anagentid",
+  "blobstore": {
+    "provider": "",
+    "options": null
+  },
+  "disks": {
+    "system": "",
+    "ephemeral": "",
+    "persistent": null,
+    "raw_ephemeral": null
+  },
+  "env": {
+    "bosh": {
+      "password": ""
+    }
+  },
+  "networks": {
+    "default": {
+      "type": "manual",
+      "ip": "10.234.228.158",
+      "netmask": "255.255.255.192",
+      "cloud_properties": {
+        "name": "3112 - preprod - back"
+      },
+      "dns": [
+        "10.234.50.180",
+        "10.234.71.124"
+      ],
+      "gateway": "10.234.228.129",
+      "mac": null
+    }
+  },
+  "ntp": null,
+  "mbus": "",
+  "vm": {
+    "name": "fooname"
+  },
+  "trusted_certs": ""
+}

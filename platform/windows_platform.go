@@ -3,6 +3,7 @@ package platform
 import (
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
+	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -21,8 +22,8 @@ type WindowsPlatform struct {
 	copier             boshcmd.Copier
 	dirProvider        boshdirs.Provider
 	vitalsService      boshvitals.Service
+	netManager         boshnet.Manager
 	devicePathResolver boshdpresolv.DevicePathResolver
-	logger             boshlog.Logger
 	certManager        boshcert.Manager
 }
 
@@ -31,6 +32,7 @@ func NewWindowsPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	dirProvider boshdirs.Provider,
+	netManager boshnet.Manager,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
 ) Platform {
@@ -41,6 +43,7 @@ func NewWindowsPlatform(
 		compressor:         boshcmd.NewTarballCompressor(cmdRunner, fs),
 		copier:             boshcmd.NewCpCopier(cmdRunner, fs, logger),
 		dirProvider:        dirProvider,
+		netManager:         netManager,
 		devicePathResolver: devicePathResolver,
 		vitalsService:      boshvitals.NewService(collector, dirProvider),
 		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, logger),
@@ -108,7 +111,7 @@ func (p WindowsPlatform) SetupHostname(hostname string) (err error) {
 }
 
 func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks) (err error) {
-	return
+	return p.netManager.SetupNetworking(networks, nil)
 }
 
 func (p WindowsPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, err error) {

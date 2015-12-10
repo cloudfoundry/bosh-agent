@@ -45,6 +45,7 @@ type Options struct {
 
 func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
+	psRunner := boshsys.NewConcretePSRunner(fs, logger)
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
@@ -71,6 +72,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
+	windowsNetManager := boshnet.NewWindowsNetManager(psRunner, logger)
 
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
@@ -139,7 +141,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			"ubuntu":  ubuntu,
 			"centos":  centos,
 			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
-			"windows": NewWindowsPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
+			"windows": NewWindowsPlatform(statsCollector, fs, runner, dirProvider, windowsNetManager, devicePathResolver, logger),
 		},
 	}
 }
