@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -51,6 +52,14 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Shelling out to sfdisk")
+	}
+
+	if strings.Contains(devicePath, "/dev/mapper/") {
+		_, _, _, err = p.cmdRunner.RunCommand("/etc/init.d/open-iscsi", "restart")
+		time.Sleep(5 * time.Second) // wait 5 s for ***-part1 partition to show up
+		if err != nil {
+			return bosherr.WrapError(err, "Shelling out to open-iscsi restart")
+		}
 	}
 
 	return nil
