@@ -2,7 +2,7 @@ package jobsupervisor
 
 import (
 	"fmt"
-	"path/filepath"
+	"path"
 	"time"
 
 	"github.com/pivotal/go-smtpd/smtpd"
@@ -238,7 +238,7 @@ func (m monitJobSupervisor) getIncarnation() (int, error) {
 
 func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
 	targetFilename := fmt.Sprintf("%04d_%s.monitrc", jobIndex, jobName)
-	targetConfigPath := filepath.Join(m.dirProvider.MonitJobsDir(), targetFilename)
+	targetConfigPath := path.Join(m.dirProvider.MonitJobsDir(), targetFilename)
 
 	configContent, err := m.fs.ReadFile(configPath)
 	if err != nil {
@@ -280,5 +280,5 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 }
 
 func (m monitJobSupervisor) stoppedFilePath() string {
-	return filepath.Join(m.dirProvider.MonitDir(), "stopped")
+	return path.Join(m.dirProvider.MonitDir(), "stopped")
 }

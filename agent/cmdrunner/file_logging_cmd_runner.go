@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
+	"path"
 	"unicode/utf8"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -62,7 +62,7 @@ func NewFileLoggingCmdRunner(
 }
 
 func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd boshsys.Command) (*CmdResult, error) {
-	logsDir := filepath.Join(f.baseDir, jobName)
+	logsDir := path.Join(f.baseDir, jobName)
 
 	err := f.fs.RemoveAll(logsDir)
 	if err != nil {
@@ -74,8 +74,8 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 		return nil, bosherr.WrapErrorf(err, "Creating log dir for job %s", jobName)
 	}
 
-	stdoutPath := filepath.Join(logsDir, fmt.Sprintf("%s.stdout.log", taskName))
-	stderrPath := filepath.Join(logsDir, fmt.Sprintf("%s.stderr.log", taskName))
+	stdoutPath := path.Join(logsDir, fmt.Sprintf("%s.stdout.log", taskName))
+	stderrPath := path.Join(logsDir, fmt.Sprintf("%s.stderr.log", taskName))
 
 	stdoutFile, err := f.fs.OpenFile(stdoutPath, fileOpenFlag, fileOpenPerm)
 	if err != nil {

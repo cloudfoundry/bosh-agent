@@ -1,7 +1,7 @@
 package disk
 
 import (
-	"path/filepath"
+	"path"
 
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -53,7 +53,7 @@ func (util diskUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
 	contents := [][]byte{}
 
 	for _, fileName := range fileNames {
-		diskFilePath := filepath.Join(tempDir, fileName)
+		diskFilePath := path.Join(tempDir, fileName)
 
 		util.logger.Debug(util.logTag, "Reading contents of '%s'", diskFilePath)
 

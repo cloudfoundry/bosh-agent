@@ -2,7 +2,7 @@ package action
 
 import (
 	"errors"
-	"path/filepath"
+	"path"
 	"time"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
@@ -65,7 +65,7 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 	}
 
 	command := boshsys.Command{
-		Name: filepath.Join(a.jobsDir, currentSpec.JobSpec.Template, "bin", "run"),
+		Name: path.Join(a.jobsDir, currentSpec.JobSpec.Template, "bin", "run"),
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},

@@ -1,7 +1,7 @@
 package ntp
 
 import (
-	"path/filepath"
+	"path"
 	"regexp"
 	"strings"
 
@@ -37,7 +37,7 @@ func NewConcreteService(fs boshsys.FileSystem, dirProvider boshdir.Provider) Ser
 }
 
 func (oc concreteService) GetInfo() Info {
-	ntpPath := filepath.Join(oc.dirProvider.BaseDir(), "/bosh/log/ntpdate.out")
+	ntpPath := path.Join(oc.dirProvider.BaseDir(), "/bosh/log/ntpdate.out")
 	content, err := oc.fs.ReadFileString(ntpPath)
 	if err != nil {
 		return Info{Message: "file missing"}

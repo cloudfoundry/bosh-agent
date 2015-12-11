@@ -3,7 +3,7 @@ package compiler
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"path"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
@@ -62,7 +62,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 		}
 	}
 
-	compilePath := filepath.Join(c.compileDirProvider.CompileDir(), pkg.Name)
+	compilePath := path.Join(c.compileDirProvider.CompileDir(), pkg.Name)
 	err = c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
 		return "", "", bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
@@ -92,7 +92,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 		return "", "", bosherr.WrapError(err, "Enabling new package bundle")
 	}
 
-	scriptPath := filepath.Join(compilePath, "packaging")
+	scriptPath := path.Join(compilePath, "packaging")
 
 	if c.fs.FileExists(scriptPath) {
 		command := boshsys.Command{

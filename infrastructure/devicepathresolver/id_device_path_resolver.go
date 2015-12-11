@@ -2,8 +2,7 @@ package devicepathresolver
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"path"
 	"time"
 
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
@@ -63,8 +62,7 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 
 		time.Sleep(100 * time.Millisecond)
 
-		deviceIDPath := filepath.Join(string(os.PathSeparator), "dev", "disk", "by-id", fmt.Sprintf("virtio-%s", diskID))
-
+		deviceIDPath := path.Join("/", "dev", "disk", "by-id", fmt.Sprintf("virtio-%s", diskID))
 		realPath, err = idpr.fs.ReadLink(deviceIDPath)
 		if err != nil {
 			continue

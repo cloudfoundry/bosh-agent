@@ -31,7 +31,7 @@ var _ = Describe("InterfaceAddressesProvider", func() {
 		}
 
 		Expect(loopBackInterface).ToNot(BeNil())
-		// lo is on linux, lo0 on mac
-		Expect([]string{"lo", "lo0"}).To(ContainElement(loopBackInterface.GetInterfaceName()))
+		// lo is on linux, lo0 on mac, Loopback Pseudo-Interface 1 windows
+		Expect([]string{"lo", "lo0", "Loopback Pseudo-Interface 1"}).To(ContainElement(loopBackInterface.GetInterfaceName()))
 	})
 })
