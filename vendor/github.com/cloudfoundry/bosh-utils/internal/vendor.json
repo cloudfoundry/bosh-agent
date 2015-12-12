@@ -16,134 +16,134 @@
 		{
 			"Vendor": "github.com/onsi/ginkgo",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/config",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/config",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/ginkgo",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo",
-			"Revision": "c5c761488350e56a28c4a91da87e5db7020bedc8",
-			"RevisionTime": "2015-05-25T12:13:08-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/ginkgo/convert",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo/convert",
-			"Revision": "c5c761488350e56a28c4a91da87e5db7020bedc8",
-			"RevisionTime": "2015-05-25T12:13:08-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/ginkgo/interrupthandler",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo/interrupthandler",
-			"Revision": "c5c761488350e56a28c4a91da87e5db7020bedc8",
-			"RevisionTime": "2015-05-25T12:13:08-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/ginkgo/nodot",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo/nodot",
-			"Revision": "c5c761488350e56a28c4a91da87e5db7020bedc8",
-			"RevisionTime": "2015-05-25T12:13:08-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/ginkgo/testrunner",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo/testrunner",
-			"Revision": "c5c761488350e56a28c4a91da87e5db7020bedc8",
-			"RevisionTime": "2015-05-25T12:13:08-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/ginkgo/testsuite",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo/testsuite",
-			"Revision": "c5c761488350e56a28c4a91da87e5db7020bedc8",
-			"RevisionTime": "2015-05-25T12:13:08-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/ginkgo/watch",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo/watch",
-			"Revision": "c5c761488350e56a28c4a91da87e5db7020bedc8",
-			"RevisionTime": "2015-05-25T12:13:08-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/codelocation",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/codelocation",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/containernode",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/containernode",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/failer",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/failer",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/leafnodes",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/leafnodes",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/remote",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/remote",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/spec",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/spec",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/specrunner",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/specrunner",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/suite",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/suite",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/testingtproxy",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/testingtproxy",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/internal/writer",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/internal/writer",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/reporters",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/reporters",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/reporters/stenographer",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/reporters/stenographer",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/ginkgo/types",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/types",
-			"Revision": "fbb663242655b700c623e9629d7781db98957501",
-			"RevisionTime": "2015-05-15T16:04:06-07:00"
+			"Revision": "7f8ab55aaf3b86885aa55b762e803744d1674700",
+			"RevisionTime": "2015-12-02T06:12:38-08:00"
 		},
 		{
 			"Vendor": "github.com/onsi/gomega",

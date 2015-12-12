@@ -9,5 +9,5 @@ import (
 
 func TestCommands(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Commands Suite")
+	RunSpecs(t, "Fileutil Suite")
 }

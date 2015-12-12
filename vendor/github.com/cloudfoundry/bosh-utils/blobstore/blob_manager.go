@@ -3,7 +3,7 @@ package blobstore
 import (
 	"io"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -22,7 +22,7 @@ func NewBlobManager(fs boshsys.FileSystem, blobstorePath string) (manager BlobMa
 }
 
 func (manager BlobManager) Fetch(blobID string) (boshsys.File, error, int) {
-	blobPath := filepath.Join(manager.blobstorePath, blobID)
+	blobPath := path.Join(manager.blobstorePath, blobID)
 
 	readOnlyFile, err := manager.fs.OpenFile(blobPath, os.O_RDONLY, os.ModeDir)
 	if err != nil {
@@ -37,7 +37,7 @@ func (manager BlobManager) Fetch(blobID string) (boshsys.File, error, int) {
 }
 
 func (manager BlobManager) Write(blobID string, reader io.Reader) error {
-	blobPath := filepath.Join(manager.blobstorePath, blobID)
+	blobPath := path.Join(manager.blobstorePath, blobID)
 
 	writeOnlyFile, err := manager.fs.OpenFile(blobPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
