@@ -105,7 +105,7 @@ var _ = Describe("concreteFactory", func() {
 	})
 
 	It("get_state", func() {
-		ntpService := boshntp.NewConcreteService(platform.GetFs(), platform.GetDirProvider())
+		ntpService := boshntp.NewConcreteService(platform.GetRunner())
 		action, err := factory.Create("get_state")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewGetState(settingsService, specService, jobSupervisor, platform.GetVitalsService(), ntpService)))

@@ -396,23 +396,23 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	})
 
 	Describe("SetTimeWithNtpServers", func() {
-		It("sets time with ntp servers", func() {
-			platform.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
+		It("sets the ntp server in ntp.conf", func() {
+			err := platform.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
 
-			ntpConfig := fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
-			Expect(ntpConfig.StringContents()).To(Equal("0.north-america.pool.ntp.org 1.north-america.pool.ntp.org"))
-			Expect(ntpConfig.FileType).To(Equal(fakesys.FakeFileTypeFile))
-
-			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"ntpdate"}))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sed", "-i", "/^server/d", "/etc/ntp.conf"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"sh", "-c", "echo -e '\\nserver 0.north-america.pool.ntp.org iburst minpoll 4 maxpoll 4\\n\\nserver 1.north-america.pool.ntp.org iburst minpoll 4 maxpoll 4\\n' >> /etc/ntp.conf"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"service", "ntp", "restart"}))
 		})
 
-		It("sets time with ntp servers is noop when no ntp server provided", func() {
-			platform.SetTimeWithNtpServers([]string{})
-			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+		It("sets empty server list in ntp.conf when no ntp server provided", func() {
+			err := platform.SetTimeWithNtpServers([]string{})
 
-			ntpConfig := fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
-			Expect(ntpConfig).To(BeNil())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sed", "-i", "/^server/d", "/etc/ntp.conf"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"service", "ntp", "restart"}))
 		})
 	})
 
