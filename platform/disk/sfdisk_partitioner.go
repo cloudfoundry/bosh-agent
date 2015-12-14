@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -46,11 +47,20 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 
 		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
 	}
-	p.logger.Info(p.logTag, "Partitioning %s with %s", devicePath, sfdiskInput)
 
-	_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
-	if err != nil {
-		return bosherr.WrapError(err, "Shelling out to sfdisk")
+	maxFormatRetries := 20
+	for i := 1; ; i++ {
+		p.logger.Info(p.logTag, "%d: Partitioning %s with %s", i, devicePath, sfdiskInput)
+		_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
+		if err == nil {
+			p.logger.Info(p.logTag, "%d: Succeed in partitioning %s with %s", i, devicePath, sfdiskInput)
+			break
+		}
+		if i == maxFormatRetries {
+			return bosherr.WrapError(err, "Shelling out to sfdisk")
+		}
+		p.logger.Error(p.logTag, "%d: Failed with an error: %s", i, err)
+		time.Sleep(3 * time.Second)
 	}
 
 	return nil
