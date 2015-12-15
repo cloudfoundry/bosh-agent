@@ -89,9 +89,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		mappedDevicePathResolver := devicepathresolver.NewMappedDevicePathResolver(500*time.Millisecond, fs)
 		devicePathResolver = devicepathresolver.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
 	case "scsi":
-		devicePathResolver = devicepathresolver.NewScsiDevicePathResolver(500*time.Millisecond, fs)
-	case "scsiid":
-		devicePathResolver = devicepathresolver.NewScsiIDDevicePathResolver(50000*time.Millisecond, fs, logger)
+		scsiID := devicepathresolver.NewSCSIIDDevicePathResolver(50000*time.Millisecond, fs, logger)
+		scsiVolumeID := devicepathresolver.NewSCSIVolumeIDDevicePathResolver(500*time.Millisecond, fs)
+		devicePathResolver = devicepathresolver.NewScsi(scsiVolumeID, scsiID)
 	default:
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}

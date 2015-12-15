@@ -12,7 +12,7 @@ import (
 
 // Resolves device path by performing a SCSI rescan then looking under
 // "/dev/disk/by-id/*uuid" where "uuid" is the cloud ID of the disk
-type scsiIDDevicePathResolver struct {
+type SCSIIDDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
 
@@ -20,12 +20,12 @@ type scsiIDDevicePathResolver struct {
 	logger	boshlog.Logger
 }
 
-func NewScsiIDDevicePathResolver(
+func NewSCSIIDDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
-) DevicePathResolver {
-	return scsiIDDevicePathResolver{
+) SCSIIDDevicePathResolver {
+	return SCSIIDDevicePathResolver{
 		diskWaitTimeout: diskWaitTimeout,
 		fs:              fs,
 
@@ -34,7 +34,7 @@ func NewScsiIDDevicePathResolver(
 	}
 }
 
-func (idpr scsiIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+func (idpr SCSIIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
 	if diskSettings.ID == "" {
 		return "", false, bosherr.Errorf("Disk ID is not set")
 	}
@@ -67,7 +67,7 @@ func (idpr scsiIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings
 		time.Sleep(100 * time.Millisecond)
 
 		uuid := strings.Replace(diskSettings.ID, "-", "", -1)
-		disks, err := idpr.fs.Glob("/dev/disk/by-id/*-" + uuid)
+		disks, err := idpr.fs.Glob("/dev/disk/by-id/*" + uuid)
 		if err != nil {
 			return "", false, bosherr.WrapError(err, "Could not list disks by id")
 		}

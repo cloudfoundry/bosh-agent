@@ -12,7 +12,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 )
 
-var _ = Describe("VSphere Path Resolver", func() {
+var _ = Describe("SCSIVolumeIDDevicePathResolver", func() {
 	var (
 		fs           *fakesys.FakeFileSystem
 		resolver     DevicePathResolver
@@ -23,7 +23,7 @@ var _ = Describe("VSphere Path Resolver", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		resolver = NewScsiDevicePathResolver(sleepInterval, fs)
+		resolver = NewSCSIVolumeIDDevicePathResolver(sleepInterval, fs)
 
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
 			"/sys/bus/scsi/devices/0:0:0:0/block/sr0",

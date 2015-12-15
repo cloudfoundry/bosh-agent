@@ -12,22 +12,22 @@ import (
 
 const maxScanRetries = 30
 
-type scsiDevicePathResolver struct {
+type SCSIVolumeIDDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
 }
 
-func NewScsiDevicePathResolver(
+func NewSCSIVolumeIDDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	fs boshsys.FileSystem,
-) DevicePathResolver {
-	return scsiDevicePathResolver{
+) SCSIVolumeIDDevicePathResolver {
+	return SCSIVolumeIDDevicePathResolver{
 		fs:              fs,
 		diskWaitTimeout: diskWaitTimeout,
 	}
 }
 
-func (devicePathResolver scsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (realPath string, timedOut bool, err error) {
+func (devicePathResolver SCSIVolumeIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (realPath string, timedOut bool, err error) {
 	devicePaths, err := devicePathResolver.fs.Glob("/sys/bus/scsi/devices/*:0:0:0/block/*")
 	if err != nil {
 		return

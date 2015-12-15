@@ -28,7 +28,7 @@ var _ = Describe("ScsiIDDevicePathResolver", func() {
 		diskCID := "ab1b46b5-bf22-4332-bddd-12a05ea1a5fc"
 		id = strings.Replace(diskCID, "-", "", -1)
 		fs = fakesys.NewFakeFileSystem()
-		pathResolver = NewScsiIDDevicePathResolver(500*time.Millisecond, fs, boshlog.NewLogger(boshlog.LevelDebug))
+		pathResolver = NewSCSIIDDevicePathResolver(500*time.Millisecond, fs, boshlog.NewLogger(boshlog.LevelDebug))
 		diskSettings = boshsettings.DiskSettings{
 			ID: diskCID,
 		}
@@ -112,20 +112,6 @@ var _ = Describe("ScsiIDDevicePathResolver", func() {
 		Context("when id is empty", func() {
 			BeforeEach(func() {
 				diskSettings = boshsettings.DiskSettings{}
-			})
-
-			It("returns an error", func() {
-				_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-				Expect(err).To(HaveOccurred())
-				Expect(timeout).To(BeFalse())
-			})
-		})
-
-		Context("when id is not the correct format", func() {
-			BeforeEach(func() {
-				diskSettings = boshsettings.DiskSettings{
-					ID: "not-a-uuid",
-				}
 			})
 
 			It("returns an error", func() {
