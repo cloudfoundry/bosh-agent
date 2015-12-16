@@ -191,7 +191,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			Expect(err.Error()).To(ContainSubstring("Creating interface configurations"))
 		})
 
-		It("wrtites a dhcp configuration if there are dhcp networks", func() {
+		It("writes a dhcp configuration if there are dhcp networks", func() {
 			stubInterfaces(map[string]boshsettings.Network{
 				"ethdhcp":   dhcpNetwork,
 				"ethstatic": staticNetwork,

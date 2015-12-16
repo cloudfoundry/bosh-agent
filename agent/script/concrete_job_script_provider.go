@@ -2,6 +2,7 @@ package script
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 
 	"github.com/pivotal-golang/clock"
@@ -37,7 +38,7 @@ func NewConcreteJobScriptProvider(
 }
 
 func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string) Script {
-	path := filepath.Join(p.dirProvider.JobBinDir(jobName), scriptName)
+	path := path.Join(p.dirProvider.JobBinDir(jobName), scriptName)
 
 	stdoutLogFilename := fmt.Sprintf("%s.stdout.log", scriptName)
 	stdoutLogPath := filepath.Join(p.dirProvider.LogsDir(), jobName, stdoutLogFilename)
@@ -49,7 +50,7 @@ func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string) 
 }
 
 func (p ConcreteJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) CancellableScript {
-	path := filepath.Join(p.dirProvider.JobsDir(), jobName, "bin", "drain")
+	path := path.Join(p.dirProvider.JobsDir(), jobName, "bin", "drain")
 
 	return boshdrain.NewConcreteScript(p.fs, p.cmdRunner, jobName, path, params, p.timeService, p.logger)
 }

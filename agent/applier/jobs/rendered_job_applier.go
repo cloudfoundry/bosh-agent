@@ -3,7 +3,7 @@ package jobs
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
@@ -121,8 +121,8 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		return bosherr.WrapError(err, "Decompressing files to temp dir")
 	}
 
-	binPath := filepath.Join(tmpDir, job.Source.PathInArchive, "bin") + "/"
-	err = s.fs.Walk(filepath.Join(tmpDir, job.Source.PathInArchive), func(path string, info os.FileInfo, err error) error {
+	binPath := path.Join(tmpDir, job.Source.PathInArchive, "bin") + "/"
+	err = s.fs.Walk(path.Join(tmpDir, job.Source.PathInArchive), func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		} else if info.IsDir() || strings.HasPrefix(path, binPath) {
@@ -135,7 +135,7 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		return bosherr.WrapError(err, "Correcting file permissions")
 	}
 
-	_, _, err = jobBundle.Install(filepath.Join(tmpDir, job.Source.PathInArchive))
+	_, _, err = jobBundle.Install(path.Join(tmpDir, job.Source.PathInArchive))
 	if err != nil {
 		return bosherr.WrapError(err, "Installing job bundle")
 	}
@@ -178,7 +178,7 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 		return
 	}
 
-	monitFilePath := filepath.Join(jobDir, "monit")
+	monitFilePath := path.Join(jobDir, "monit")
 	if fs.FileExists(monitFilePath) {
 		err = s.jobSupervisor.AddJob(job.Name, jobIndex, monitFilePath)
 		if err != nil {
@@ -187,14 +187,14 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 		}
 	}
 
-	monitFilePaths, err := fs.Glob(filepath.Join(jobDir, "*.monit"))
+	monitFilePaths, err := fs.Glob(path.Join(jobDir, "*.monit"))
 	if err != nil {
 		err = bosherr.WrapError(err, "Looking for additional monit files")
 		return
 	}
 
 	for _, monitFilePath := range monitFilePaths {
-		label := strings.Replace(filepath.Base(monitFilePath), ".monit", "", 1)
+		label := strings.Replace(path.Base(monitFilePath), ".monit", "", 1)
 		subJobName := fmt.Sprintf("%s_%s", job.Name, label)
 
 		err = s.jobSupervisor.AddJob(subJobName, jobIndex, monitFilePath)

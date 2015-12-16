@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	gopath "path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -206,7 +207,7 @@ func (fs *FakeFileSystem) GetFileTestStat(path string) *FakeFileStats {
 	fs.filesLock.Lock()
 	defer fs.filesLock.Unlock()
 
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
 	return fs.files[path]
 }
@@ -226,7 +227,7 @@ func (fs *FakeFileSystem) ExpandPath(path string) (string, error) {
 }
 
 func (fs *FakeFileSystem) RegisterMkdirAllError(path string, err error) {
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 	if _, ok := fs.mkdirAllErrorByPath[path]; ok {
 		panic(fmt.Sprintf("MkdirAll error is already set for path: %s", path))
 	}
@@ -241,7 +242,7 @@ func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) error {
 		return fs.MkdirAllError
 	}
 
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
 	if fs.mkdirAllErrorByPath[path] != nil {
 		return fs.mkdirAllErrorByPath[path]
@@ -254,7 +255,7 @@ func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) error {
 }
 
 func (fs *FakeFileSystem) RegisterOpenFile(path string, file *FakeFile) {
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 	fs.openFiles[path] = file
 }
 
@@ -273,7 +274,7 @@ func (fs *FakeFileSystem) OpenFile(path string, flag int, perm os.FileMode) (bos
 		return nil, fs.OpenFileErr
 	}
 
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
 	// Make sure to record a reference for FileExist, etc. to work
 	stats := fs.getOrCreateFile(path)
@@ -299,7 +300,7 @@ func (fs *FakeFileSystem) Chown(path, username string) error {
 		return fs.ChownErr
 	}
 
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
 	stats := fs.files[path]
 	if stats == nil {
@@ -319,7 +320,7 @@ func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) error {
 		return fs.ChmodErr
 	}
 
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
 	stats := fs.files[path]
 	if stats == nil {
@@ -346,9 +347,9 @@ func (fs *FakeFileSystem) WriteFile(path string, content []byte) (err error) {
 		return error
 	}
 
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
-	parent := filepath.Dir(path)
+	parent := gopath.Dir(path)
 	if parent != "." {
 		fs.writeDir(parent)
 	}
@@ -360,8 +361,10 @@ func (fs *FakeFileSystem) WriteFile(path string, content []byte) (err error) {
 }
 
 func (fs *FakeFileSystem) writeDir(path string) (err error) {
-	parent := filepath.Dir(path)
-	if parent != "." && parent != "/" {
+	parent := gopath.Dir(path)
+
+	grandparent := gopath.Dir(parent)
+	if grandparent != parent {
 		fs.writeDir(parent)
 	}
 
@@ -437,10 +440,10 @@ func (fs *FakeFileSystem) Rename(oldPath, newPath string) error {
 		return fs.RenameError
 	}
 
-	oldPath = filepath.Join(oldPath)
-	newPath = filepath.Join(newPath)
+	oldPath = gopath.Join(oldPath)
+	newPath = gopath.Join(newPath)
 
-	if fs.files[filepath.Dir(newPath)] == nil {
+	if fs.files[gopath.Dir(newPath)] == nil {
 		return errors.New("Parent directory does not exist")
 	}
 
@@ -484,7 +487,7 @@ func (fs *FakeFileSystem) ReadLink(symlinkPath string) (string, error) {
 		return "", fs.ReadLinkError
 	}
 
-	symlinkPath = filepath.Join(symlinkPath)
+	symlinkPath = gopath.Join(symlinkPath)
 
 	stat := fs.GetFileTestStat(symlinkPath)
 	if stat != nil {
@@ -502,8 +505,8 @@ func (fs *FakeFileSystem) CopyFile(srcPath, dstPath string) error {
 		return fs.CopyFileError
 	}
 
-	srcPath = filepath.Join(srcPath)
-	dstPath = filepath.Join(dstPath)
+	srcPath = gopath.Join(srcPath)
+	dstPath = gopath.Join(dstPath)
 
 	srcFile, found := fs.files[srcPath]
 	if !found {
@@ -522,12 +525,12 @@ func (fs *FakeFileSystem) CopyDir(srcPath, dstPath string) error {
 		return fs.CopyDirError
 	}
 
-	srcPath = filepath.Join(srcPath) + string(os.PathSeparator)
-	dstPath = filepath.Join(dstPath)
+	srcPath = gopath.Join(srcPath) + "/"
+	dstPath = gopath.Join(dstPath)
 
 	for filePath, fileStats := range fs.files {
 		if strings.HasPrefix(filePath, srcPath) {
-			dstPath := filepath.Join(dstPath, filePath[len(srcPath)-1:])
+			dstPath := gopath.Join(dstPath, filePath[len(srcPath)-1:])
 			fs.files[dstPath] = fileStats
 		}
 	}
@@ -562,9 +565,9 @@ func (fs *FakeFileSystem) TempFile(prefix string) (file boshsys.File, err error)
 	if fs.ReturnTempFile != nil {
 		file = fs.ReturnTempFile
 	} else {
-		file, err = os.Open("/dev/null")
+		file, err = os.Open(os.DevNull)
 		if err != nil {
-			err = bosherr.WrapError(err, "Opening /dev/null")
+			err = bosherr.WrapError(err, fmt.Sprintf("Opening %s", os.DevNull))
 			return
 		}
 	}
@@ -631,7 +634,7 @@ func (fs *FakeFileSystem) RemoveAll(path string) error {
 		return fs.RemoveAllError
 	}
 
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
 	if fs.removeAllErrorByPath[path] != nil {
 		return fs.removeAllErrorByPath[path]
@@ -641,7 +644,7 @@ func (fs *FakeFileSystem) RemoveAll(path string) error {
 }
 
 func (fs *FakeFileSystem) removeAll(path string) error {
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 
 	fileInfo := fs.files[path]
 	if fileInfo != nil {
@@ -652,7 +655,7 @@ func (fs *FakeFileSystem) removeAll(path string) error {
 	}
 
 	// path must be a dir
-	path = path + string(os.PathSeparator)
+	path = path + "/"
 
 	filesToRemove := []string{}
 	for name := range fs.files {
@@ -691,7 +694,7 @@ func (fs *FakeFileSystem) Walk(root string, walkFunc filepath.WalkFunc) error {
 	}
 	sort.Strings(paths)
 
-	root = filepath.Join(root) + string(os.PathSeparator)
+	root = gopath.Join(root) + "/"
 	for _, path := range paths {
 		fileStats := fs.files[path]
 		if strings.HasPrefix(path, root) {
@@ -713,7 +716,7 @@ func (fs *FakeFileSystem) SetGlob(pattern string, matches ...[]string) {
 }
 
 func (fs *FakeFileSystem) getOrCreateFile(path string) *FakeFileStats {
-	path = filepath.Join(path)
+	path = gopath.Join(path)
 	stats := fs.files[path]
 	if stats == nil {
 		stats = new(FakeFileStats)

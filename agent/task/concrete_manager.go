@@ -2,7 +2,7 @@ package task
 
 import (
 	"encoding/json"
-	"path/filepath"
+	"path"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -20,7 +20,7 @@ func (provider concreteManagerProvider) NewManager(
 	fs boshsys.FileSystem,
 	dir string,
 ) Manager {
-	return NewManager(logger, fs, filepath.Join(dir, "tasks.json"))
+	return NewManager(logger, fs, path.Join(dir, "tasks.json"))
 }
 
 type concreteManager struct {
