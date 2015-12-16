@@ -56,10 +56,11 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 
 	if strings.Contains(devicePath, "/dev/mapper/") {
 		_, _, _, err = p.cmdRunner.RunCommand("/etc/init.d/open-iscsi", "restart")
-		time.Sleep(5 * time.Second) // wait 5 s for ***-part1 partition to show up
 		if err != nil {
 			return bosherr.WrapError(err, "Shelling out to open-iscsi restart")
 		}
+
+		time.Sleep(5 * time.Second) // wait 5 s for ***-part1 partition to show up
 	}
 
 	return nil
