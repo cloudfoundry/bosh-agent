@@ -2,7 +2,7 @@ package net
 
 import (
 	"bytes"
-	"path/filepath"
+	"path"
 	"strings"
 	"text/template"
 
@@ -154,7 +154,7 @@ func newDNSConfigs(dnsServers []string) []dnsConfig {
 }
 
 func ifcfgFilePath(name string) string {
-	return filepath.Join("/etc/sysconfig/network-scripts", "ifcfg-"+name)
+	return path.Join("/etc/sysconfig/network-scripts", "ifcfg-"+name)
 }
 
 func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, config interface{}) (bool, error) {
@@ -276,7 +276,7 @@ func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInte
 
 	for i := range dhcpInterfaceConfigurations {
 		name := dhcpInterfaceConfigurations[i].Name
-		interfaceDhclientConfigFile := filepath.Join("/etc/dhcp/", "dhclient-"+name+".conf")
+		interfaceDhclientConfigFile := path.Join("/etc/dhcp/", "dhclient-"+name+".conf")
 		err = net.fs.Symlink(dhclientConfigFile, interfaceDhclientConfigFile)
 		if err != nil {
 			return changed, bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", interfaceDhclientConfigFile, dhclientConfigFile)
@@ -296,17 +296,17 @@ func (net centosNetManager) detectMacAddresses() (map[string]string, error) {
 
 	var macAddress string
 	for _, filePath := range filePaths {
-		isPhysicalDevice := net.fs.FileExists(filepath.Join(filePath, "device"))
+		isPhysicalDevice := net.fs.FileExists(path.Join(filePath, "device"))
 
 		if isPhysicalDevice {
-			macAddress, err = net.fs.ReadFileString(filepath.Join(filePath, "address"))
+			macAddress, err = net.fs.ReadFileString(path.Join(filePath, "address"))
 			if err != nil {
 				return addresses, bosherr.WrapError(err, "Reading mac address from file")
 			}
 
 			macAddress = strings.Trim(macAddress, "\n")
 
-			interfaceName := filepath.Base(filePath)
+			interfaceName := path.Base(filePath)
 			addresses[macAddress] = interfaceName
 		}
 	}

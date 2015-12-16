@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path"
-	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -327,7 +326,7 @@ bosh_foobar:...`
 			Expect(os.FileMode(0700)).To(Equal(sshDirStat.FileMode))
 			Expect("vcap").To(Equal(sshDirStat.Username))
 
-			authKeysStat := fs.GetFileTestStat(filepath.Join(sshDirPath, "authorized_keys"))
+			authKeysStat := fs.GetFileTestStat(path.Join(sshDirPath, "authorized_keys"))
 
 			Expect(authKeysStat).NotTo(BeNil())
 			Expect(fakesys.FakeFileTypeFile).To(Equal(authKeysStat.FileType))
@@ -1723,8 +1722,8 @@ Number  Start   End     Size    File system  Name             Flags
 		It("creates a symlink between /etc/service/monit and /etc/sv/monit", func() {
 			err := platform.StartMonit()
 			Expect(err).NotTo(HaveOccurred())
-			target, _ := fs.ReadLink(filepath.Join("/etc", "service", "monit"))
-			Expect(target).To(Equal(filepath.Join("/etc", "sv", "monit")))
+			target, _ := fs.ReadLink(path.Join("/etc", "service", "monit"))
+			Expect(target).To(Equal(path.Join("/etc", "sv", "monit")))
 		})
 
 		It("retries to start monit", func() {
