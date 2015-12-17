@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	fakeboshaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -47,13 +48,15 @@ var _ = Describe("sfdiskPartitioner", func() {
 	var (
 		runner      *fakesys.FakeCmdRunner
 		partitioner Partitioner
+		fakeclock   *fakeboshaction.FakeClock
 	)
 
 	BeforeEach(func() {
 		runner = fakesys.NewFakeCmdRunner()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
+		fakeclock = &fakeboshaction.FakeClock{}
 
-		partitioner = NewSfdiskPartitioner(logger, runner)
+		partitioner = NewSfdiskPartitioner(logger, runner, fakeclock)
 	})
 
 	It("sfdisk partition", func() {
@@ -144,5 +147,20 @@ var _ = Describe("sfdiskPartitioner", func() {
 		partitioner.Partition("/dev/sda", partitions)
 
 		Expect(0).To(Equal(len(runner.RunCommandsWithInput)))
+	})
+
+	It("sfdisk command is retried 20 times", func() {
+		for i := 0; i < 19; i++ {
+			testError := fmt.Errorf("test error")
+			runner.AddCmdResult(" sfdisk -uM /dev/sda", fakesys.FakeCmdResult{ExitStatus: 1, Error: testError})
+		}
+		runner.AddCmdResult(" sfdisk -uM /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
+
+		partitions := []Partition{}
+
+		err := partitioner.Partition("/dev/sda", partitions)
+		Expect(err).To(BeNil())
+		Expect(fakeclock.SleepCallCount()).To(Equal(19))
+		Expect(len(runner.RunCommandsWithInput)).To(Equal(20))
 	})
 })

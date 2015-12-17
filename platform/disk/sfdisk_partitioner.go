@@ -13,10 +13,10 @@ import (
 )
 
 type sfdiskPartitioner struct {
-	logger        boshlog.Logger
-	cmdRunner     boshsys.CmdRunner
-	logTag        string
-	timeService   clock.Clock
+	logger      boshlog.Logger
+	cmdRunner   boshsys.CmdRunner
+	logTag      string
+	timeService clock.Clock
 }
 
 func NewSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, timeService clock.Clock) Partitioner {
