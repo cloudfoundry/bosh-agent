@@ -86,6 +86,21 @@ var _ = Describe("sfdiskPartitioner", func() {
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
 	})
 
+	It("sfdisk partition for multipath", func() {
+		partitions := []Partition{
+			{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
+			{Type: PartitionTypeLinux, SizeInBytes: 1024 * 1024 * 1024},
+			{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
+		}
+
+		partitioner.Partition("/dev/mapper/xxxxxx", partitions)
+
+		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
+		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/mapper/xxxxxx"}))
+		Expect(2).To(Equal(len(runner.RunCommands)))
+		Expect(runner.RunCommands[1]).To(Equal([]string{"/etc/init.d/open-iscsi", "restart"}))
+	})
+
 	It("sfdisk get device size in mb", func() {
 		runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 40000*1024)})
 
