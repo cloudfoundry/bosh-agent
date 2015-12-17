@@ -26,8 +26,8 @@ func NewWindowsNetManager(psRunner boshsys.PSRunner, logger boshlog.Logger) Mana
 	}
 }
 
-func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
-	const setDNSTemplate = `
+const (
+	SetDNSTemplate = `
 [array]$interfaces = Get-DNSClientServerAddress
 $dns = @("%s")
 foreach($interface in $interfaces) {
@@ -35,12 +35,20 @@ foreach($interface in $interfaces) {
 }
 `
 
-	const resetDNSTemplate = `
+	ResetDNSTemplate = `
 [array]$interfaces = Get-DNSClientServerAddress
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
 }
 `
+
+	NicSettingsTemplate = `
+$connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '%s'}).netconnectionid
+netsh interface ip set address $connectionName static %s %s %s
+`
+)
+
+func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 
 	nonVipNetworks := boshsettings.Networks{}
 
@@ -51,22 +59,46 @@ foreach($interface in $interfaces) {
 		nonVipNetworks[networkName] = networkSettings
 	}
 
-	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
+	err := net.setupInterfaces(nonVipNetworks)
+	if err != nil {
+		return err
+	}
 
+	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
+	return net.setupDNS(dnsNetwork)
+}
+
+func (net WindowsNetManager) setupInterfaces(networks boshsettings.Networks) error {
+	for _, network := range networks {
+		var gateway string
+
+		if network.IsDefaultFor("gateway") || len(networks) == 1 {
+			gateway = network.Gateway
+		}
+		_, _, err := net.psRunner.RunCommand(boshsys.PSCommand{
+			Script: fmt.Sprintf(NicSettingsTemplate, network.Mac, network.IP, network.Netmask, gateway),
+		})
+		if err != nil {
+			return bosherr.WrapError(err, "Configuring interface")
+		}
+	}
+	return nil
+}
+
+func (net WindowsNetManager) setupDNS(dnsNetwork boshsettings.Network) error {
 	if len(dnsNetwork.DNS) > 0 {
 		_, _, err := net.psRunner.RunCommand(boshsys.PSCommand{
-			Script: fmt.Sprintf(setDNSTemplate, strings.Join(dnsNetwork.DNS, `","`)),
+			Script: fmt.Sprintf(SetDNSTemplate, strings.Join(dnsNetwork.DNS, `","`)),
 		})
 		if err != nil {
 			return bosherr.WrapError(err, "Configuring DNS servers")
 		}
 	} else {
-		_, _, err := net.psRunner.RunCommand(boshsys.PSCommand{Script: resetDNSTemplate})
+		_, _, err := net.psRunner.RunCommand(boshsys.PSCommand{Script: ResetDNSTemplate})
 		if err != nil {
 			return bosherr.WrapError(err, "Resetting DNS servers")
 		}
 	}
-
 	return nil
 }
 

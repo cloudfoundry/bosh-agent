@@ -1,40 +1,48 @@
 {
-  "agent_id": "anagentid",
+  "agent_id": "3477a6a8",
   "blobstore": {
-    "provider": "",
-    "options": null
+    "provider": "local",
+    "options": {
+      "blobstore_path": "/var/vcap/micro_bosh/data/cache"
+    }
   },
   "disks": {
-    "system": "",
-    "ephemeral": "",
-    "persistent": null,
+    "system": "0",
+    "ephemeral": "1",
+    "persistent": {},
     "raw_ephemeral": null
   },
   "env": {
     "bosh": {
-      "password": ""
+      "password": "bosh-pass"
     }
   },
   "networks": {
-    "default": {
+    "private": {
       "type": "manual",
-      "ip": "10.234.228.158",
-      "netmask": "255.255.255.192",
-      "cloud_properties": {
-        "name": "3112 - preprod - back"
-      },
-      "dns": [
-        "10.234.50.180",
-        "10.234.71.124"
+      "ip": "10.85.33.8",
+      "netmask": "255.255.255.0",
+      "gateway": "10.85.33.1",
+      "resolved": false,
+      "use_dhcp": false,
+      "default": [
+        "dns",
+        "gateway"
       ],
-      "gateway": "10.234.228.129",
-      "mac": null
+      "dns": [
+        "8.8.8.8"
+      ],
+      "mac": "00:0C:29:0B:69:7A",
+      "preconfigured": false
     }
   },
-  "ntp": null,
-  "mbus": "",
+  "ntp": [
+    "0.pool.ntp.org",
+    "1.pool.ntp.org"
+  ],
+  "mbus": "https://mbus:mbus-pass@0.0.0.0:6868",
   "vm": {
-    "name": "fooname"
+    "name": "vm-54d93ec0"
   },
   "trusted_certs": ""
 }

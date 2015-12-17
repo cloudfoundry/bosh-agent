@@ -2,6 +2,8 @@ package net_test
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,7 +15,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-var _ = Describe("ubuntuNetManager", func() {
+var _ = Describe("WindowsNetManager", func() {
 	var (
 		psRunner   *fakesys.FakePSRunner
 		netManager Manager
@@ -26,6 +28,82 @@ var _ = Describe("ubuntuNetManager", func() {
 	})
 
 	Describe("SetupNetworking", func() {
+
+		Describe("Setting NIC settings", func() {
+			network1 := boshsettings.Network{
+				Type:    "manual",
+				DNS:     []string{"8.8.8.8"},
+				Default: []string{"gateway", "dns"},
+				IP:      "192.168.50.50",
+				Gateway: "192.168.50.0",
+				Netmask: "255.255.255.0",
+				Mac:     "00:0C:29:0B:69:7A",
+			}
+
+			network2 := boshsettings.Network{
+				Type:    "manual",
+				DNS:     []string{"8.8.8.8"},
+				Default: []string{},
+				IP:      "192.168.20.20",
+				Gateway: "192.168.20.0",
+				Netmask: "255.255.255.0",
+				Mac:     "99:55:C3:5A:52:7A",
+			}
+
+			vip := boshsettings.Network{
+				Type: "vip",
+			}
+
+			It("sets the IP address and netmask on all interfaces, and the gateway on the default gateway interface", func() {
+				err := netManager.SetupNetworking(boshsettings.Networks{"net1": network1, "net2": network2, "vip": vip}, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
+$connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '00:0C:29:0B:69:7A'}).netconnectionid
+netsh interface ip set address $connectionName static 192.168.50.50 255.255.255.0 192.168.50.0
+`,
+				}))
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
+$connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '99:55:C3:5A:52:7A'}).netconnectionid
+netsh interface ip set address $connectionName static 192.168.20.20 255.255.255.0 
+`,
+				}))
+			})
+
+			It("sets the gateway when there is only one network and it is not the default for gateway", func() {
+				err := netManager.SetupNetworking(boshsettings.Networks{"net": network2, "vip": vip}, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
+$connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '99:55:C3:5A:52:7A'}).netconnectionid
+netsh interface ip set address $connectionName static 192.168.20.20 255.255.255.0 192.168.20.0
+`,
+				}))
+			})
+
+			It("ignores VIP networks", func() {
+				err := netManager.SetupNetworking(boshsettings.Networks{"vip": vip}, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{{
+					Script: `
+[array]$interfaces = Get-DNSClientServerAddress
+foreach($interface in $interfaces) {
+	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
+}
+`,
+				}}))
+			})
+
+			It("returns an error when configuring fails", func() {
+				psRunner.RegisterRunCommandError(fmt.Sprintf(NicSettingsTemplate, network1.Mac, network1.IP, network1.Netmask, network1.Gateway), errors.New("fake-err"))
+				err := netManager.SetupNetworking(boshsettings.Networks{"static-1": network1}, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Configuring interface: fake-err"))
+			})
+		})
+
 		Context("when there is a network marked default for DNS", func() {
 			It("configures DNS with a single DNS server", func() {
 				network := boshsettings.Network{
@@ -37,16 +115,14 @@ var _ = Describe("ubuntuNetManager", func() {
 				err := netManager.SetupNetworking(boshsettings.Networks{"net1": network}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{
-					{
-						Script: `
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
 [array]$interfaces = Get-DNSClientServerAddress
 $dns = @("8.8.8.8")
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ServerAddresses ($dns -join ",")
 }
 `,
-					},
 				}))
 			})
 
@@ -60,16 +136,14 @@ foreach($interface in $interfaces) {
 				err := netManager.SetupNetworking(boshsettings.Networks{"manual-1": network}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{
-					{
-						Script: `
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
 [array]$interfaces = Get-DNSClientServerAddress
 $dns = @("127.0.0.1","8.8.8.8")
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ServerAddresses ($dns -join ",")
 }
 `,
-					},
 				}))
 			})
 
@@ -82,15 +156,13 @@ foreach($interface in $interfaces) {
 				err := netManager.SetupNetworking(boshsettings.Networks{"static-1": network}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{
-					{
-						Script: `
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
 [array]$interfaces = Get-DNSClientServerAddress
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
 }
 `,
-					},
 				}))
 			})
 
@@ -101,21 +173,21 @@ foreach($interface in $interfaces) {
 					Default: []string{"gateway", "dns"},
 				}
 
-				psRunner.RunCommandErr = errors.New("fake-err")
+				psRunner.RegisterRunCommandError(fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`)), errors.New("fake-err"))
 
 				err := netManager.SetupNetworking(boshsettings.Networks{"static-1": network}, nil)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-err"))
+				Expect(err.Error()).To(Equal("Configuring DNS servers: fake-err"))
 			})
 
 			It("returns error if resetting DNS servers fails", func() {
 				network := boshsettings.Network{Type: "manual"}
 
-				psRunner.RunCommandErr = errors.New("fake-err")
+				psRunner.RegisterRunCommandError(ResetDNSTemplate, errors.New("fake-err"))
 
 				err := netManager.SetupNetworking(boshsettings.Networks{"static-1": network}, nil)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-err"))
+				Expect(err.Error()).To(Equal("Resetting DNS servers: fake-err"))
 			})
 		})
 
@@ -130,16 +202,14 @@ foreach($interface in $interfaces) {
 				err := netManager.SetupNetworking(boshsettings.Networks{"static-1": network}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{
-					{
-						Script: `
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
 [array]$interfaces = Get-DNSClientServerAddress
 $dns = @("127.0.0.1","8.8.8.8")
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ServerAddresses ($dns -join ",")
 }
 `,
-					},
 				}))
 			})
 
@@ -159,15 +229,13 @@ foreach($interface in $interfaces) {
 				err := netManager.SetupNetworking(boshsettings.Networks{"man-1": network1, "man-2": network2}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{
-					{
-						Script: `
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
 [array]$interfaces = Get-DNSClientServerAddress
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
 }
 `,
-					},
 				}))
 			})
 		})
@@ -188,15 +256,13 @@ foreach($interface in $interfaces) {
 				err := netManager.SetupNetworking(boshsettings.Networks{"static-1": network1, "vip-1": network2}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{
-					{
-						Script: `
+				Expect(psRunner.RunCommands).To(ContainElement(boshsys.PSCommand{
+					Script: `
 [array]$interfaces = Get-DNSClientServerAddress
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
 }
 `,
-					},
 				}))
 			})
 		})
@@ -206,16 +272,14 @@ foreach($interface in $interfaces) {
 				err := netManager.SetupNetworking(boshsettings.Networks{}, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{
-					{
-						Script: `
+				Expect(psRunner.RunCommands).To(Equal([]boshsys.PSCommand{{
+					Script: `
 [array]$interfaces = Get-DNSClientServerAddress
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
 }
 `,
-					},
-				}))
+				}}))
 			})
 		})
 	})
