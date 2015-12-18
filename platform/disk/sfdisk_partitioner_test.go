@@ -100,7 +100,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/mapper/xxxxxx"}))
-		Expect(2).To(Equal(len(runner.RunCommands)))
+		Expect(22).To(Equal(len(runner.RunCommands)))
 		Expect(runner.RunCommands[1]).To(Equal([]string{"/etc/init.d/open-iscsi", "restart"}))
 	})
 
