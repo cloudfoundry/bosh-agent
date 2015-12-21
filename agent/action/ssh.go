@@ -2,7 +2,7 @@ package action
 
 import (
 	"errors"
-	"path/filepath"
+	"path"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -71,7 +71,7 @@ func (a SSHAction) Run(cmd string, params SSHParams) (SSHResult, error) {
 func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 	var result SSHResult
 
-	boshSSHPath := filepath.Join(a.dirProvider.BaseDir(), "bosh_ssh")
+	boshSSHPath := path.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 
 	err := a.platform.CreateUser(params.User, params.Password, boshSSHPath)
 	if err != nil {

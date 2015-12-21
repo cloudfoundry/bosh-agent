@@ -6,6 +6,7 @@ import (
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/pivotal-golang/clock"
 )
 
 type linuxDiskManager struct {
@@ -46,7 +47,7 @@ func NewLinuxDiskManager(
 	}
 
 	return linuxDiskManager{
-		partitioner:           NewSfdiskPartitioner(logger, runner),
+		partitioner:           NewSfdiskPartitioner(logger, runner, clock.NewClock()),
 		rootDevicePartitioner: NewRootDevicePartitioner(logger, runner, uint64(20*1024*1024)),
 		formatter:             NewLinuxFormatter(runner, fs),
 		mounter:               mounter,

@@ -2,7 +2,7 @@ package net
 
 import (
 	"bytes"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 	"text/template"
@@ -321,17 +321,17 @@ func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
 
 	var macAddress string
 	for _, filePath := range filePaths {
-		isPhysicalDevice := net.fs.FileExists(filepath.Join(filePath, "device"))
+		isPhysicalDevice := net.fs.FileExists(path.Join(filePath, "device"))
 
 		if isPhysicalDevice {
-			macAddress, err = net.fs.ReadFileString(filepath.Join(filePath, "address"))
+			macAddress, err = net.fs.ReadFileString(path.Join(filePath, "address"))
 			if err != nil {
 				return addresses, bosherr.WrapError(err, "Reading mac address from file")
 			}
 
 			macAddress = strings.Trim(macAddress, "\n")
 
-			interfaceName := filepath.Base(filePath)
+			interfaceName := path.Base(filePath)
 			addresses[macAddress] = interfaceName
 		}
 	}

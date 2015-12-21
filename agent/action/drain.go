@@ -18,8 +18,9 @@ type DrainAction struct {
 	specService       boshas.V1Service
 	jobSupervisor     boshjobsuper.JobSupervisor
 
-	logTag string
-	logger boshlog.Logger
+	logTag   string
+	logger   boshlog.Logger
+	cancelCh chan struct{}
 }
 
 type DrainType string
@@ -43,8 +44,9 @@ func NewDrain(
 		jobScriptProvider: jobScriptProvider,
 		jobSupervisor:     jobSupervisor,
 
-		logTag: "Drain Action",
-		logger: logger,
+		logTag:   "Drain Action",
+		logger:   logger,
+		cancelCh: make(chan struct{}, 1),
 	}
 }
 
@@ -81,9 +83,18 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		scripts = append(scripts, script)
 	}
 
-	parallelScript := a.jobScriptProvider.NewParallelScript("drain", scripts)
+	script := a.jobScriptProvider.NewParallelScript("drain", scripts)
 
-	return 0, parallelScript.Run()
+	resultsCh := make(chan error, 1)
+	go func() { resultsCh <- script.Run() }()
+	select {
+	case result := <-resultsCh:
+		a.logger.Debug(a.logTag, "Got a result")
+		return 0, result
+	case <-a.cancelCh:
+		a.logger.Debug(a.logTag, "Got a cancel request")
+		return 0, script.Cancel()
+	}
 }
 
 func (a DrainAction) determineParams(drainType DrainType, currentSpec boshas.V1ApplySpec, newSpecs []boshas.V1ApplySpec) (boshdrain.ScriptParams, error) {
@@ -124,5 +135,10 @@ func (a DrainAction) Resume() (interface{}, error) {
 }
 
 func (a DrainAction) Cancel() error {
-	return errors.New("not supported")
+	a.logger.Debug(a.logTag, "Cancelling drain action")
+	select {
+	case a.cancelCh <- struct{}{}:
+	default:
+	}
+	return nil
 }

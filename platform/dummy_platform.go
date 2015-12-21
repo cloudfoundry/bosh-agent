@@ -2,7 +2,7 @@ package platform
 
 import (
 	"encoding/json"
-	"path/filepath"
+	"path"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -214,7 +214,7 @@ func (p dummyPlatform) PrepareForNetworkingChange() error {
 func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 	var network boshsettings.Network
 
-	networkPath := filepath.Join(p.dirProvider.BoshDir(), "dummy-default-network-settings.json")
+	networkPath := path.Join(p.dirProvider.BoshDir(), "dummy-default-network-settings.json")
 	contents, err := p.fs.ReadFile(networkPath)
 	if err != nil {
 		return network, nil

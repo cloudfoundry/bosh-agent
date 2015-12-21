@@ -9,8 +9,8 @@ import (
 
 type JobScriptProvider interface {
 	NewScript(jobName string, scriptName string) Script
-	NewDrainScript(jobName string, params boshdrain.ScriptParams) Script
-	NewParallelScript(scriptName string, scripts []Script) Script
+	NewDrainScript(jobName string, params boshdrain.ScriptParams) CancellableScript
+	NewParallelScript(scriptName string, scripts []Script) CancellableScript
 }
 
 //go:generate counterfeiter . Script
@@ -22,4 +22,9 @@ type Script interface {
 	Exists() bool
 	Run() error
 	RunAsync() (boshsys.Process, boshsys.File, boshsys.File, error)
+}
+
+type CancellableScript interface {
+	Script
+	Cancel() error
 }

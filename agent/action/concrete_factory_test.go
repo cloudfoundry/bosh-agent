@@ -82,7 +82,8 @@ var _ = Describe("concreteFactory", func() {
 	It("drain", func() {
 		action, err := factory.Create("drain")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)))
+		// Cannot do equality check since channel is used in initializer
+		Expect(action).To(BeAssignableToTypeOf(DrainAction{}))
 	})
 
 	It("fetch_logs", func() {

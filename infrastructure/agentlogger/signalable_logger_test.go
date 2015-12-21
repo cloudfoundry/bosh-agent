@@ -24,7 +24,7 @@ var _ = Describe("Signalable logger debug", func() {
 			<-doneChannel
 
 			Expect(errBuf).To(ContainSubstring("Dumping goroutines"))
-			Expect(errBuf).To(ContainSubstring("goroutine 5 [syscall]"))
+			Expect(errBuf).To(MatchRegexp(`goroutine (\d+) \[syscall\]`))
 		})
 	})
 })

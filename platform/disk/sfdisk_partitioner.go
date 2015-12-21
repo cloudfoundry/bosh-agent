@@ -7,20 +7,24 @@ import (
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/pivotal-golang/clock"
 )
 
 type sfdiskPartitioner struct {
-	logger    boshlog.Logger
-	cmdRunner boshsys.CmdRunner
-	logTag    string
+	logger      boshlog.Logger
+	cmdRunner   boshsys.CmdRunner
+	logTag      string
+	timeService clock.Clock
 }
 
-func NewSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner) Partitioner {
+func NewSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, timeService clock.Clock) Partitioner {
 	return sfdiskPartitioner{
-		logger:    logger,
-		cmdRunner: cmdRunner,
-		logTag:    "SfdiskPartitioner",
+		logger:      logger,
+		cmdRunner:   cmdRunner,
+		logTag:      "SfdiskPartitioner",
+		timeService: timeService,
 	}
 }
 
@@ -46,14 +50,21 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 
 		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
 	}
-	p.logger.Info(p.logTag, "Partitioning %s with %s", devicePath, sfdiskInput)
 
-	_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
-	if err != nil {
-		return bosherr.WrapError(err, "Shelling out to sfdisk")
-	}
+	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+		_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
+		if err != nil {
+			p.logger.Error(p.logTag, "Failed with an error: %s", err)
+			return true, bosherr.WrapError(err, "Shelling out to sfdisk")
+		}
+		p.logger.Info(p.logTag, "Succeeded in partitioning %s with %s", devicePath, sfdiskInput)
+		return false, nil
+	})
 
-	return nil
+	partitionRetryStrategy := NewSfdiskPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+	err := partitionRetryStrategy.Try()
+
+	return err
 }
 
 func (p sfdiskPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {

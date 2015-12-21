@@ -1,7 +1,7 @@
 package packages
 
 import (
-	"path/filepath"
+	"path"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
@@ -50,7 +50,7 @@ func (p compiledPackageApplierProvider) Root() Applier {
 // JobSpecific provides package applier that operates on job-specific packages.
 // (e.g manages /var/vcap/jobs/job-name/packages/pkg-a -> /var/vcap/data/packages/pkg-a)
 func (p compiledPackageApplierProvider) JobSpecific(jobName string) Applier {
-	enablePath := filepath.Join(p.jobSpecificEnablePath, jobName)
+	enablePath := path.Join(p.jobSpecificEnablePath, jobName)
 	packagesBc := boshbc.NewFileBundleCollection(p.installPath, enablePath, p.name, p.fs, p.logger)
 	return NewCompiledPackageApplier(packagesBc, false, p.blobstore, p.compressor, p.fs, p.logger)
 }

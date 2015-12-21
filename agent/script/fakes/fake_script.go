@@ -165,6 +165,39 @@ func (fake *FakeScript) RunAsyncReturns(result1 boshsys.Process, result2 boshsys
 		result3 boshsys.File
 		result4 error
 	}{result1, result2, result3, result4}
+type FakeCancellableScript struct {
+	FakeScript
+	CancelStub        func() error
+	cancelMutex       sync.RWMutex
+	cancelArgsForCall []struct{}
+	cancelReturns     struct {
+		result1 error
+	}
+}
+
+func (fake *FakeCancellableScript) Cancel() error {
+	fake.cancelMutex.Lock()
+	fake.cancelArgsForCall = append(fake.cancelArgsForCall, struct{}{})
+	fake.cancelMutex.Unlock()
+	if fake.CancelStub != nil {
+		return fake.CancelStub()
+	} else {
+		return fake.cancelReturns.result1
+	}
+}
+
+func (fake *FakeCancellableScript) CancelCallCount() int {
+	fake.cancelMutex.RLock()
+	defer fake.cancelMutex.RUnlock()
+	return len(fake.cancelArgsForCall)
+}
+
+func (fake *FakeCancellableScript) CancelReturns(result1 error) {
+	fake.CancelStub = nil
+	fake.cancelReturns = struct {
+		result1 error
+	}{result1}
 }
 
 var _ script.Script = new(FakeScript)
+var _ script.CancellableScript = new(FakeCancellableScript)

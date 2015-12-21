@@ -41,7 +41,7 @@ var _ = Describe("DrainAction", func() {
 	})
 
 	BeforeEach(func() {
-		jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.Script {
+		jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
 			_, exists := fakeScripts[jobName]
 			if !exists {
 				fakeScript := fakedrain.NewFakeScript(jobName)
@@ -62,11 +62,11 @@ var _ = Describe("DrainAction", func() {
 
 	Describe("Run", func() {
 		var (
-			parallelScript *fakescript.FakeScript
+			parallelScript *fakescript.FakeCancellableScript
 		)
 
 		BeforeEach(func() {
-			parallelScript = &fakescript.FakeScript{}
+			parallelScript = &fakescript.FakeCancellableScript{}
 			jobScriptProvider.NewParallelScriptReturns(parallelScript)
 		})
 
@@ -116,13 +116,13 @@ var _ = Describe("DrainAction", func() {
 
 					Context("when new apply spec is provided", func() {
 						It("runs drain script with update params in parallel", func() {
-							fooScript := &fakescript.FakeScript{}
+							fooScript := &fakescript.FakeCancellableScript{}
 							fooScript.TagReturns("foo")
 
-							barScript := &fakescript.FakeScript{}
+							barScript := &fakescript.FakeCancellableScript{}
 							barScript.TagReturns("bar")
 
-							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.Script {
+							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
 								Expect(params).To(Equal(boshdrain.NewUpdateParams(currentSpec, newSpec)))
 
 								if jobName == "foo" {
@@ -227,13 +227,13 @@ var _ = Describe("DrainAction", func() {
 
 					Context("when job shutdown notification succeeds", func() {
 						It("runs drain script with shutdown params in parallel", func() {
-							fooScript := &fakescript.FakeScript{}
+							fooScript := &fakescript.FakeCancellableScript{}
 							fooScript.TagReturns("foo")
 
-							barScript := &fakescript.FakeScript{}
+							barScript := &fakescript.FakeCancellableScript{}
 							barScript.TagReturns("bar")
 
-							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.Script {
+							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
 								Expect(params).To(Equal(boshdrain.NewShutdownParams(currentSpec, nil)))
 
 								if jobName == "foo" {
@@ -324,6 +324,40 @@ var _ = Describe("DrainAction", func() {
 			It("does not notify of job shutdown", func() {
 				_, _ = act()
 				Expect(notifier.NotifiedShutdown).To(BeFalse())
+			})
+		})
+	})
+
+	Describe("Cancel", func() {
+		var (
+			parallelScript *fakescript.FakeCancellableScript
+			newSpec        = boshas.V1ApplySpec{
+				PackageSpecs: map[string]boshas.PackageSpec{
+					"foo": boshas.PackageSpec{
+						Name: "foo",
+						Sha1: "foo-sha1-new",
+					},
+				},
+			}
+		)
+
+		BeforeEach(func() {
+			parallelScript = &fakescript.FakeCancellableScript{}
+			jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
+				return fakedrain.NewFakeScript("fake-tag")
+			}
+			jobScriptProvider.NewParallelScriptReturns(parallelScript)
+			currentSpec := boshas.V1ApplySpec{}
+			specService.Spec = currentSpec
+		})
+
+		Context("when action was not canceled yet", func() {
+			It("cancel action", func() {
+				_, err := action.Run(DrainTypeShutdown, newSpec)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = action.Cancel()
+				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 	})
