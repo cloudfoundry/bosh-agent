@@ -15,6 +15,7 @@ import (
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"path/filepath"
 )
 
 type dummyPlatform struct {

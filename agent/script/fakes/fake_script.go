@@ -165,6 +165,8 @@ func (fake *FakeScript) RunAsyncReturns(result1 boshsys.Process, result2 boshsys
 		result3 boshsys.File
 		result4 error
 	}{result1, result2, result3, result4}
+}
+
 type FakeCancellableScript struct {
 	FakeScript
 	CancelStub        func() error

@@ -21,7 +21,7 @@ type FakeScript struct {
 	RunAsyncError     error
 	RunAsyncStub      func() error
 
-	WasCanceled  bool
+	WasCanceled bool
 }
 
 func NewFakeScript(tag string) *FakeScript {
