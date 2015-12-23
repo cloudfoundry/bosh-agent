@@ -1,6 +1,8 @@
 package disk_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -70,6 +72,17 @@ func init() {
 
 			Expect(1).To(Equal(len(fakeRunner.RunCommands)))
 			Expect(fakeRunner.RunCommands[0]).To(Equal([]string{"blkid", "-p", "/dev/xvda1"}))
+		})
+		It("linux format when unable to detect partition type", func() {
+			fakeRunner := fakesys.NewFakeCmdRunner()
+			fakeFs := fakesys.NewFakeFileSystem()
+			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Error: errors.New("command not found")})
+
+			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+			err := formatter.Format("/dev/xvda1", FileSystemExt4)
+
+			Expect(err).To(HaveOccurred())
+			Expect(1).To(Equal(len(fakeRunner.RunCommands)))
 		})
 	})
 }
