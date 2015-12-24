@@ -377,6 +377,7 @@ ff02::3 ip6-allhosts
 
 fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-path/data/sys/log/*/*/*.log {
   missingok
+  notifempty
   rotate 7
   compress
   delaycompress
@@ -391,6 +392,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			logrotateFileContent, err := fs.ReadFileString("/etc/logrotate.d/fake-group-name")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logrotateFileContent).To(Equal(expectedEtcLogrotate))
+		})
+
+		It("force rotate log files", func() {
+			platform.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
+
+			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"logrotate", "--force", "/etc/logrotate.d/fake-group-name"}))
 		})
 	})
 
