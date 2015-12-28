@@ -18,9 +18,10 @@ func init() {
 				index := 0
 
 				hb := Heartbeat{
-					Job:      &name,
-					Index:    &index,
-					JobState: "running",
+					Deployment: "FakeDeployment",
+					Job:        &name,
+					Index:      &index,
+					JobState:   "running",
 					Vitals: boshvitals.Vitals{
 						Disk: boshvitals.DiskVitals{
 							"system":     boshvitals.SpecificDiskVitals{},
@@ -31,7 +32,7 @@ func init() {
 					NodeID: "node-id",
 				}
 
-				expectedJSON := `{"job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}},"node_id":"node-id"}`
+				expectedJSON := `{"deployment":"FakeDeployment","job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}},"node_id":"node-id"}`
 
 				hbBytes, err := json.Marshal(hb)
 				Expect(err).ToNot(HaveOccurred())
@@ -42,7 +43,8 @@ func init() {
 		Context("when job name, index are not available", func() {
 			It("serializes job name and index as nulls to indicate that there is no job assigned to this agent", func() {
 				hb := Heartbeat{
-					JobState: "running",
+					Deployment: "FakeDeployment",
+					JobState:   "running",
 					Vitals: boshvitals.Vitals{
 						Disk: boshvitals.DiskVitals{
 							"system":     boshvitals.SpecificDiskVitals{},
@@ -53,7 +55,7 @@ func init() {
 					NodeID: "node-id",
 				}
 
-				expectedJSON := `{"job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}},"node_id":"node-id"}`
+				expectedJSON := `{"deployment":"FakeDeployment","job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}},"node_id":"node-id"}`
 
 				hbBytes, err := json.Marshal(hb)
 				Expect(err).ToNot(HaveOccurred())

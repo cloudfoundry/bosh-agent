@@ -104,9 +104,10 @@ func init() {
 					nodeID := "node-id"
 					jobIndex := 1
 					specService.Spec = boshas.V1ApplySpec{
-						JobSpec: boshas.JobSpec{Name: &jobName},
-						Index:   &jobIndex,
-						NodeID:  nodeID,
+						Deployment: "FakeDeployment",
+						JobSpec:    boshas.JobSpec{Name: &jobName},
+						Index:      &jobIndex,
+						NodeID:     nodeID,
 					}
 
 					jobSupervisor.StatusStatus = "fake-state"
@@ -120,11 +121,12 @@ func init() {
 				expectedJobIndex := 1
 				expectedNodeID := "node-id"
 				expectedHb := Heartbeat{
-					Job:      &expectedJobName,
-					Index:    &expectedJobIndex,
-					JobState: "fake-state",
-					NodeID:   expectedNodeID,
-					Vitals:   boshvitals.Vitals{Load: []string{"a", "b", "c"}},
+					Deployment: "FakeDeployment",
+					Job:        &expectedJobName,
+					Index:      &expectedJobIndex,
+					JobState:   "fake-state",
+					NodeID:     expectedNodeID,
+					Vitals:     boshvitals.Vitals{Load: []string{"a", "b", "c"}},
 				}
 
 				It("sends initial heartbeat", func() {
