@@ -34,7 +34,11 @@ rm -rf $git_path
 hg_path=$(find vendor -name '.hg')
 rm -rf $hg_path
 
-sed -i '' "s#${package_name}:.*#$package_name:$sha#g" deps.txt
+if sed -h 2>&1 | grep -q GNU ; then
+  sed -i "s#${package_name}:.*#$package_name:$sha#g" deps.txt
+else
+  sed -i '' "s#${package_name}:.*#$package_name:$sha#g" deps.txt
+fi
 
 set +e
 grep "${package_name}:" deps.txt
