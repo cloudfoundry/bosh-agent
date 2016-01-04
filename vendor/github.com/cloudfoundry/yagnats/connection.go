@@ -191,6 +191,7 @@ func (c *Connection) receivePackets() {
 		packet, err := Parse(io)
 		if err != nil {
 			c.Logger().Errord(map[string]interface{}{"error": err.Error()}, "connection.packet.read-error")
+			c.Disconnect()
 			c.disconnected()
 			break
 		}
