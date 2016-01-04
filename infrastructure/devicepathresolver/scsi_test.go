@@ -70,7 +70,7 @@ var _ = Describe("scsi", func() {
 
 			It("returns the path using SCSIVolumeIDDevicePathResolver", func() {
 				realPath, timeout, err := scsi.GetRealDevicePath(diskSettings)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal(""))
 			})

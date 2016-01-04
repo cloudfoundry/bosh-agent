@@ -2,6 +2,7 @@ package devicepathresolver
 
 import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type scsi struct {
@@ -28,6 +29,9 @@ func (scsiResolver scsi) GetRealDevicePath(diskSettings boshsettings.DiskSetting
 		realPath, timeout, err = scsiResolver.scsiID.GetRealDevicePath(diskSettings)
 	} else if len(diskSettings.VolumeID) > 0 {
 		realPath, timeout, err = scsiResolver.scsiVolumeID.GetRealDevicePath(diskSettings)
+	} else {
+		return "", timeout, bosherr.WrapError(err, "Neither ID nor VolumeID exists.")
 	}
+
 	return realPath, timeout, err
 }
