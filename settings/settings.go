@@ -132,9 +132,14 @@ func (e Env) GetKeepRootPassword() bool {
 	return e.Bosh.KeepRootPassword
 }
 
+func (e Env) GetRemoveDevTools() bool {
+	return e.Bosh.RemoveDevTools
+}
+
 type BoshEnv struct {
 	Password         string `json:"password"`
 	KeepRootPassword bool   `json:"keep_root_password"`
+	RemoveDevTools   bool   `json:"remove_dev_tools"`
 }
 
 type NetworkType string

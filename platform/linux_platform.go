@@ -1057,6 +1057,24 @@ func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 	return swapPartitionPath, dataPartitionPath, nil
 }
 
+func (p linux) RemoveDevTools(packageFileListPath string) error {
+	content, err := p.fs.ReadFileString(packageFileListPath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Unable to read Development Tools list file: %s", packageFileListPath)
+	}
+	content = strings.TrimSpace(content)
+	pkgFileList := strings.Split(content, "\n")
+
+	for _, pkgFile := range pkgFileList {
+		_, _, _, err = p.cmdRunner.RunCommand("rm", "-f", pkgFile)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Unable to remove package file: %s", pkgFile)
+		}
+	}
+
+	return nil
+}
+
 type insufficientSpaceError struct {
 	spaceFound    uint64
 	spaceRequired uint64

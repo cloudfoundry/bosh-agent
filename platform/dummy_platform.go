@@ -215,3 +215,7 @@ func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 func (p dummyPlatform) GetHostPublicKey() (string, error) {
 	return "dummy-public-key", nil
 }
+
+func (p dummyPlatform) RemoveDevTools(packageFileListPath string) error {
+	return nil
+}
