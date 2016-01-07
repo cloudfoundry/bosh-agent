@@ -1,5 +1,8 @@
 out
 pkg
+# package is the key word for Golang, use pkg instead
+!platform/pkg
+
 gobin/*
 .idea
 .vagrant

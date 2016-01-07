@@ -17,6 +17,7 @@ import (
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
+	boshpkg "github.com/cloudfoundry/bosh-agent/platform/pkg"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -77,6 +78,7 @@ type linux struct {
 	cdutil                 boshdevutil.DeviceUtil
 	diskManager            boshdisk.Manager
 	netManager             boshnet.Manager
+	pkgManager             boshpkg.Manager
 	certManager            boshcert.Manager
 	monitRetryStrategy     boshretry.RetryStrategy
 	devicePathResolver     boshdpresolv.DevicePathResolver
@@ -98,6 +100,7 @@ func NewLinuxPlatform(
 	diskManager boshdisk.Manager,
 	netManager boshnet.Manager,
 	certManager boshcert.Manager,
+	pkgManager boshpkg.Manager,
 	monitRetryStrategy boshretry.RetryStrategy,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	diskScanDuration time.Duration,
@@ -116,6 +119,7 @@ func NewLinuxPlatform(
 		cdutil:                 cdutil,
 		diskManager:            diskManager,
 		netManager:             netManager,
+		pkgManager:             pkgManager,
 		certManager:            certManager,
 		monitRetryStrategy:     monitRetryStrategy,
 		devicePathResolver:     devicePathResolver,
@@ -1035,6 +1039,24 @@ func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 	swapPartitionPath := realPath + "1"
 	dataPartitionPath := realPath + "2"
 	return swapPartitionPath, dataPartitionPath, nil
+}
+
+func (p linux) RemoveDevTools(packageListFilePath string) error {
+	content, err := p.fs.ReadFileString(packageListFilePath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Unable to read Development Tools list file: %s", packageListFilePath)
+	}
+	content = strings.TrimSpace(content)
+	pkgList := strings.Split(content, "\n")
+
+	for _, pkg := range pkgList {
+		err = p.pkgManager.RemovePackage(pkg)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Unable to remove package: %s", pkg)
+		}
+	}
+
+	return nil
 }
 
 type insufficientSpaceError struct {

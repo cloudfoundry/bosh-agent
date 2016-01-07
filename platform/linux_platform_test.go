@@ -16,6 +16,7 @@ import (
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
+	fakepkg "github.com/cloudfoundry/bosh-agent/platform/pkg/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -43,6 +44,7 @@ func describeLinuxPlatform() {
 		vitalsService              boshvitals.Service
 		netManager                 *fakenet.FakeManager
 		certManager                *fakecert.FakeManager
+		pkgManager                 *fakepkg.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 
@@ -57,6 +59,7 @@ func describeLinuxPlatform() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		diskManager = fakedisk.NewFakeDiskManager()
+		pkgManager = fakepkg.NewFakePackageManager()
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		cdutil = fakedevutil.NewFakeDeviceUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
@@ -93,6 +96,7 @@ func describeLinuxPlatform() {
 			diskManager,
 			netManager,
 			certManager,
+			pkgManager,
 			monitRetryStrategy,
 			devicePathResolver,
 			5*time.Millisecond,
@@ -280,6 +284,7 @@ bosh_foobar:...`
 					diskManager,
 					netManager,
 					certManager,
+					pkgManager,
 					monitRetryStrategy,
 					devicePathResolver,
 					5*time.Millisecond,
@@ -1846,6 +1851,16 @@ Number  Start   End     Size    File system  Name             Flags
 			hostPublicKey, err := platform.GetHostPublicKey()
 			Expect(err).To(HaveOccurred())
 			Expect(hostPublicKey).To(Equal(""))
+		})
+	})
+
+	Describe("RemoveDevTools", func() {
+		It("removes listed packages", func() {
+			devToolsListPath := "/var/vcap/etc/dev-tools-list"
+			fs.WriteFileString(devToolsListPath, "dummy-compiler")
+			err := platform.RemoveDevTools(devToolsListPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(pkgManager.RemovedPackages)).To(Equal(1))
 		})
 	})
 }
