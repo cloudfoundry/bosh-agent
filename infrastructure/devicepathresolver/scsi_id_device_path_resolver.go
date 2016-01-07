@@ -10,14 +10,15 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-// Resolves device path by performing a SCSI rescan then looking under
-// "/dev/disk/by-id/*uuid" where "uuid" is the cloud ID of the disk
+// SCSIIDDevicePathResolver resolves device path by performing a
+// SCSI rescan then looking under "/dev/disk/by-id/*uuid"
+// where "uuid" is the cloud ID of the disk
 type SCSIIDDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
 
-	logTag	string
-	logger	boshlog.Logger
+	logTag string
+	logger boshlog.Logger
 }
 
 func NewSCSIIDDevicePathResolver(
@@ -35,8 +36,8 @@ func NewSCSIIDDevicePathResolver(
 }
 
 func (idpr SCSIIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
-	if diskSettings.ID == "" {
-		return "", false, bosherr.Errorf("Disk ID is not set")
+	if diskSettings.DeviceID == "" {
+		return "", false, bosherr.Errorf("Disk device ID is not set")
 	}
 
 	hostPaths, err := idpr.fs.Glob("/sys/class/scsi_host/host*/scan")
@@ -61,12 +62,12 @@ func (idpr SCSIIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings
 		idpr.logger.Debug(idpr.logTag, "Waiting for device to appear")
 
 		if time.Now().After(stopAfter) {
-			return "", true, bosherr.Errorf("Timed out getting real device path for '%s'", diskSettings.ID)
+			return "", true, bosherr.Errorf("Timed out getting real device path for '%s'", diskSettings.DeviceID)
 		}
 
 		time.Sleep(100 * time.Millisecond)
 
-		uuid := strings.Replace(diskSettings.ID, "-", "", -1)
+		uuid := strings.Replace(diskSettings.DeviceID, "-", "", -1)
 		disks, err := idpr.fs.Glob("/dev/disk/by-id/*" + uuid)
 		if err != nil {
 			return "", false, bosherr.WrapError(err, "Could not list disks by id")

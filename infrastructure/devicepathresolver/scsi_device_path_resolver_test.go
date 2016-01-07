@@ -8,14 +8,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-
 )
 
-var _ = Describe("scsi", func() {
+var _ = Describe("scsiDevicePathResolver", func() {
 	var (
-		scsi                            DevicePathResolver
-		scsiIDDevicePathResolver        *fakedpresolv.FakeDevicePathResolver
-		scsiVolumeIDDevicePathResolver 	*fakedpresolv.FakeDevicePathResolver
+		scsiDevicePathResolver         DevicePathResolver
+		scsiIDDevicePathResolver       *fakedpresolv.FakeDevicePathResolver
+		scsiVolumeIDDevicePathResolver *fakedpresolv.FakeDevicePathResolver
 
 		diskSettings boshsettings.DiskSettings
 	)
@@ -23,20 +22,20 @@ var _ = Describe("scsi", func() {
 	BeforeEach(func() {
 		scsiIDDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		scsiVolumeIDDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
-		scsi = NewScsi(scsiVolumeIDDevicePathResolver, scsiIDDevicePathResolver)
+		scsiDevicePathResolver = NewScsiDevicePathResolver(scsiVolumeIDDevicePathResolver, scsiIDDevicePathResolver)
 	})
 
 	Describe("GetRealDevicePath", func() {
-		Context("when diskSettings provides id", func() {
+		Context("when diskSettings provides device id", func() {
 			BeforeEach(func() {
 				diskSettings = boshsettings.DiskSettings{
-					ID: "fake-disk-id",
+					DeviceID: "fake-disk-id",
 				}
 			})
 
 			It("returns the path using SCSIIDDevicePathResolver", func() {
 				scsiIDDevicePathResolver.RealDevicePath = "fake-id-resolved-device-path"
-				realPath, timeout, err := scsi.GetRealDevicePath(diskSettings)
+				realPath, timeout, err := scsiDevicePathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal("fake-id-resolved-device-path"))
@@ -54,7 +53,7 @@ var _ = Describe("scsi", func() {
 
 			It("returns the path using SCSIVolumeIDDevicePathResolver", func() {
 				scsiVolumeIDDevicePathResolver.RealDevicePath = "fake-volume-id-resolved-device-path"
-				realPath, timeout, err := scsi.GetRealDevicePath(diskSettings)
+				realPath, timeout, err := scsiDevicePathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal("fake-volume-id-resolved-device-path"))
@@ -69,7 +68,7 @@ var _ = Describe("scsi", func() {
 			})
 
 			It("returns the path using SCSIVolumeIDDevicePathResolver", func() {
-				realPath, timeout, err := scsi.GetRealDevicePath(diskSettings)
+				realPath, timeout, err := scsiDevicePathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal(""))

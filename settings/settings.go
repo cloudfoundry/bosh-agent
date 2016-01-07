@@ -57,6 +57,7 @@ type Disks struct {
 
 type DiskSettings struct {
 	ID       string
+	DeviceID string
 	VolumeID string
 	Path     string
 }
@@ -68,19 +69,22 @@ type VM struct {
 func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 	diskSettings := DiskSettings{}
 
-	for id, settings := range s.Disks.Persistent {
-		if id == diskID {
+	for key, settings := range s.Disks.Persistent {
+		if key == diskID {
 			diskSettings.ID = diskID
 
 			if hashSettings, ok := settings.(map[string]interface{}); ok {
 				diskSettings.Path = hashSettings["path"].(string)
-				diskSettings.VolumeID = hashSettings["volume_id"].(string)
-				diskSettings.ID = hashSettings["id"].(string)
+				if volumeID, ok := hashSettings["volume_id"]; ok {
+					diskSettings.VolumeID = volumeID.(string)
+				}
+				if deviceID, ok := hashSettings["id"]; ok {
+					diskSettings.DeviceID = deviceID.(string)
+				}
 			} else {
 				// Old CPIs return disk path (string) or volume id (string) as disk settings
 				diskSettings.Path = settings.(string)
 				diskSettings.VolumeID = settings.(string)
-				diskSettings.ID = diskID
 			}
 
 			return diskSettings, true
@@ -93,15 +97,20 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 func (s Settings) EphemeralDiskSettings() DiskSettings {
 	diskSettings := DiskSettings{}
 
-	if hashSettings, ok := s.Disks.Ephemeral.(map[string]interface{}); ok {
-		diskSettings.Path = hashSettings["path"].(string)
-		diskSettings.VolumeID = hashSettings["volume_id"].(string)
-		diskSettings.ID = hashSettings["id"].(string)
-	} else {
-		// Old CPIs return disk path (string) or volume id (string) as disk settings
-		diskSettings.Path = s.Disks.Ephemeral.(string)
-		diskSettings.VolumeID = s.Disks.Ephemeral.(string)
-		diskSettings.ID = ""
+	if s.Disks.Ephemeral != nil {
+		if hashSettings, ok := s.Disks.Ephemeral.(map[string]interface{}); ok {
+			diskSettings.Path = hashSettings["path"].(string)
+			if volumeID, ok := hashSettings["volume_id"]; ok {
+				diskSettings.VolumeID = volumeID.(string)
+			}
+			if deviceID, ok := hashSettings["id"]; ok {
+				diskSettings.DeviceID = deviceID.(string)
+			}
+		} else {
+			// Old CPIs return disk path (string) or volume id (string) as disk settings
+			diskSettings.Path = s.Disks.Ephemeral.(string)
+			diskSettings.VolumeID = s.Disks.Ephemeral.(string)
+		}
 	}
 
 	return diskSettings

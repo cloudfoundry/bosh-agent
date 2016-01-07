@@ -25,12 +25,12 @@ var _ = Describe("ScsiIDDevicePathResolver", func() {
 	)
 
 	BeforeEach(func() {
-		diskCID := "ab1b46b5-bf22-4332-bddd-12a05ea1a5fc"
-		id = strings.Replace(diskCID, "-", "", -1)
+		deviceID := "ab1b46b5-bf22-4332-bddd-12a05ea1a5fc"
+		id = strings.Replace(deviceID, "-", "", -1)
 		fs = fakesys.NewFakeFileSystem()
-		pathResolver = NewSCSIIDDevicePathResolver(500*time.Millisecond, fs, boshlog.NewLogger(boshlog.LevelDebug))
+		pathResolver = NewSCSIIDDevicePathResolver(500*time.Millisecond, fs, boshlog.NewLogger(boshlog.LevelNone))
 		diskSettings = boshsettings.DiskSettings{
-			ID: diskCID,
+			DeviceID: deviceID,
 		}
 
 		hosts = []string{
