@@ -14,7 +14,7 @@ const (
 )
 
 func PerformHandlerWithJSON(rawJSON []byte, handler Func, maxResponseLength int, logger boshlog.Logger) ([]byte, Request, error) {
-	var request Request
+	request := Request{ReplyTo: "unknown-sender"}
 
 	err := json.Unmarshal(rawJSON, &request)
 	if err != nil {
