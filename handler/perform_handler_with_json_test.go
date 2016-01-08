@@ -9,20 +9,21 @@ import (
 )
 
 var _ = Describe("PerformHandlerWithJSON", func() {
-	It("defaults to an 'unknown sender' when sender is provided in the request", func() {
+	It("returns an error when the sender is NOT provided in the request", func() {
 		rawJSON := []byte(`{"method":"ping","arguments":[]}`)
 		handlerFunc := func(req boshHandler.Request) (resp boshHandler.Response) { return boshHandler.NewValueResponse("pong") }
 		responseMaxLength := 1024 * 1024
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 
-		_, request, _ := boshHandler.PerformHandlerWithJSON(
+		_, _, err := boshHandler.PerformHandlerWithJSON(
 			rawJSON,
 			handlerFunc,
 			responseMaxLength,
 			logger,
 		)
 
-		Expect(request.ReplyTo).To(Equal("unknown-sender"))
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("Unspecified sender with request"))
 	})
 
 	It("identifies the sender when the sender is provided in the request", func() {
@@ -31,13 +32,14 @@ var _ = Describe("PerformHandlerWithJSON", func() {
 		responseMaxLength := 1024 * 1024
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 
-		_, request, _ := boshHandler.PerformHandlerWithJSON(
+		_, request, err := boshHandler.PerformHandlerWithJSON(
 			rawJSON,
 			handlerFunc,
 			responseMaxLength,
 			logger,
 		)
 
+		Expect(err).To(BeNil())
 		Expect(request.ReplyTo).To(Equal("director.987-654-321"))
 	})
 })

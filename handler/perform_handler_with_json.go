@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -14,11 +15,15 @@ const (
 )
 
 func PerformHandlerWithJSON(rawJSON []byte, handler Func, maxResponseLength int, logger boshlog.Logger) ([]byte, Request, error) {
-	request := Request{ReplyTo: "unknown-sender"}
+	var request Request
 
 	err := json.Unmarshal(rawJSON, &request)
 	if err != nil {
 		return []byte{}, request, bosherr.WrapError(err, "Unmarshalling JSON payload")
+	}
+
+	if len(request.ReplyTo) == 0 {
+		return []byte{}, request, bosherr.WrapError(errors.New("Request payload missing sender attribute"), "Unspecified sender with request")
 	}
 
 	request.Payload = rawJSON
