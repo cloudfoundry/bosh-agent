@@ -9,7 +9,7 @@
       "Sources": [
         {
           "Type": "CDROM",
-          "FileName": "env.json"
+          "FileName": "settings.json"
         }
       ]
     }

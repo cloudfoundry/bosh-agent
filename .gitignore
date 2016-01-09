@@ -14,3 +14,15 @@ gobin/*
 
 test/bosh/*.json
 test/micro_bosh
+
+*.bundle
+*.iso
+*.exe
+*.ovf
+*.vmdk
+*.box
+*metadata.json
+*.log
+integration/windows/agent.json
+integration/windows/service_wrapper.xml
+integration/windows/settings.json

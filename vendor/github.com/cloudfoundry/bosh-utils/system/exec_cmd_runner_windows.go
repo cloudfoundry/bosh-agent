@@ -27,5 +27,5 @@ func (r execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string
 }
 
 func (r execCmdRunner) CommandExists(cmdName string) bool {
-	panic("Not implemented")
+	return true
 }

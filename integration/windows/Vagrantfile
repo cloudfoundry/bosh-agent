@@ -1,0 +1,14 @@
+Vagrant.configure(2) do |config|
+  config.vm.box = "greenhouse/bosh-integration"
+  config.vm.guest = :windows
+  config.vm.communicator = "winrm"
+  config.vm.provider "virtualbox"
+
+  config.vm.provision "shell", inline: <<-SHELL
+		C:\\vagrant\\service_wrapper.exe stop
+		C:\\vagrant\\service_wrapper.exe uninstall
+		C:\\vagrant\\service_wrapper.exe install
+		C:\\vagrant\\service_wrapper.exe start
+  SHELL
+
+end
