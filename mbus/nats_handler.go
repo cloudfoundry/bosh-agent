@@ -143,7 +143,9 @@ func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshha
 		return
 	}
 
-	if len(respBytes) > 0 {
+	if len(req.ReplyTo) == 0 {
+		h.logger.Error(h.logTag, "Cannot reply to unknown sender of request: %s", req)
+	} else if len(respBytes) > 0 {
 		err = h.client.Publish(req.ReplyTo, respBytes)
 		if err != nil {
 			h.logger.Error(h.logTag, "Publishing to the client: %s", err.Error())

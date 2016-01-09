@@ -86,6 +86,22 @@ func init() {
 				Expect(client.PublishedMessageCount()).To(Equal(0))
 			})
 
+			It("does not respond if the request sender is omitted", func() {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					return boshhandler.NewValueResponse("pong")
+				})
+				Expect(err).ToNot(HaveOccurred())
+				defer handler.Stop()
+
+				subscription := client.Subscriptions("agent.my-agent-id")[0]
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: []byte(`{"method":"ping","arguments":["foo","bar"]}`),
+				})
+
+				Expect(client.PublishedMessageCount()).To(Equal(0))
+			})
+
 			It("responds with an error if the response is bigger than 1MB", func() {
 				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					// gets inflated by json.Marshal when enveloping
