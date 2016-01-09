@@ -87,7 +87,6 @@ func (b externalBlobstore) Validate() error {
 	if !b.runner.CommandExists(b.executable()) {
 		return bosherr.Errorf("executable %s not found in PATH", b.executable())
 	}
-
 	return b.writeConfigFile()
 }
 

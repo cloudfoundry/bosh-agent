@@ -8,10 +8,11 @@
     "Settings": {
       "Sources": [
         {
-          "Type": "CDROM",
-          "FileName": "settings.json"
+          "Type": "File",
+          "SettingsPath": "C:\\vagrant\\settings.json"
         }
-      ]
+      ],
+      "UseRegistry" : true
     }
   }
 }
