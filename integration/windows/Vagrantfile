@@ -1,8 +1,11 @@
 Vagrant.configure(2) do |config|
-  config.vm.box = "greenhouse/bosh-integration"
+  config.vm.box = "https://s3.amazonaws.com/bosh-windows-integration/package.box"
   config.vm.guest = :windows
   config.vm.communicator = "winrm"
-  config.vm.provider "virtualbox"
+  config.vm.provider :virtualbox do |v, override|
+    override.vm.network :private_network, ip: '192.168.60.4', id: :local
+  end
+	
 
   config.vm.provision "shell", inline: <<-SHELL
 		C:\\vagrant\\service_wrapper.exe stop

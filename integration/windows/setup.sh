@@ -7,7 +7,6 @@ CONFIG_PATH=$DIR/agent.json
 SETTINGS_PATH=$DIR/settings.json
 SERVICE_CONFIG=$DIR/service_wrapper.xml
 AGENT_ID=${AGENT_ID:?"Need to set AGENT_ID"}
-HOST_IP=$(ipconfig getifaddr en0 | tr -d '\n')
 
 rm -f $OUTPUT_PATH $CONFIG_PATH $SETTINGS_PATH $SERVICE_CONFIG
 
@@ -67,7 +66,7 @@ cat > $SETTINGS_PATH <<EOF
     }
   },
   "ntp": ["0.pool.ntp.org", "1.pool.ntp.org"],
-  "mbus": "nats://$HOST_IP:4222",
+  "mbus": "nats://192.168.60.1:4222",
   "vm": {
     "name": "vm-1f1aaed4-b479-4cf5-b73e-a7cbf0abf4ae"
   },
