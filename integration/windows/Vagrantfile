@@ -1,5 +1,5 @@
 Vagrant.configure(2) do |config|
-  config.vm.box = "https://s3.amazonaws.com/bosh-windows-integration/package.box"
+  config.vm.box = "https://s3.amazonaws.com/bosh-windows-integration/bosh-agent.windows-integration.box"
   config.vm.guest = :windows
   config.vm.communicator = "winrm"
   config.vm.provider :virtualbox do |v, override|
@@ -8,8 +8,13 @@ Vagrant.configure(2) do |config|
 	
 
   config.vm.provision "shell", inline: <<-SHELL
-		C:\\vagrant\\service_wrapper.exe stop
-		C:\\vagrant\\service_wrapper.exe uninstall
+		if ($(C:\\vagrant\\service_wrapper.exe status) -ne "NonExistent") {
+			if ($(C:\\vagrant\\service_wrapper.exe status) -eq "Started") {
+				C:\\vagrant\\service_wrapper.exe stop
+			}
+
+			C:\\vagrant\\service_wrapper.exe uninstall
+		}
 		C:\\vagrant\\service_wrapper.exe install
 		C:\\vagrant\\service_wrapper.exe start
   SHELL
