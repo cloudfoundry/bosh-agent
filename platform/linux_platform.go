@@ -82,6 +82,7 @@ type linux struct {
 	devicePathResolver     boshdpresolv.DevicePathResolver
 	diskScanDuration       time.Duration
 	options                LinuxOptions
+	state                  *State
 	logger                 boshlog.Logger
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 }
@@ -101,6 +102,7 @@ func NewLinuxPlatform(
 	monitRetryStrategy boshretry.RetryStrategy,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	diskScanDuration time.Duration,
+	state *State,
 	options LinuxOptions,
 	logger boshlog.Logger,
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
@@ -120,6 +122,7 @@ func NewLinuxPlatform(
 		monitRetryStrategy:     monitRetryStrategy,
 		devicePathResolver:     devicePathResolver,
 		diskScanDuration:       diskScanDuration,
+		state:                  state,
 		options:                options,
 		logger:                 logger,
 		defaultNetworkResolver: defaultNetworkResolver,
@@ -364,10 +367,14 @@ func (p linux) SetupHostname(hostname string) (err error) {
 		return
 	}
 
-	err = p.fs.WriteFileString("/etc/hostname", hostname)
-	if err != nil {
-		err = bosherr.WrapError(err, "Writing /etc/hostname")
-		return
+	if p.state.Linux.HostnameConfigured == false {
+		err = p.fs.WriteFileString("/etc/hostname", hostname)
+		if err != nil {
+			err = bosherr.WrapError(err, "Writing /etc/hostname")
+			return
+		}
+		p.state.Linux.HostnameConfigured = true
+		p.state.SaveState()
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -379,9 +386,13 @@ func (p linux) SetupHostname(hostname string) (err error) {
 		return
 	}
 
-	err = p.fs.WriteFile("/etc/hosts", buffer.Bytes())
-	if err != nil {
-		err = bosherr.WrapError(err, "Writing to /etc/hosts")
+	if p.state.Linux.HostsConfigured == false {
+		err = p.fs.WriteFile("/etc/hosts", buffer.Bytes())
+		if err != nil {
+			err = bosherr.WrapError(err, "Writing to /etc/hosts")
+		}
+		p.state.Linux.HostsConfigured = true
+		p.state.SaveState()
 	}
 	return
 }

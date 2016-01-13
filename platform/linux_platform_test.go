@@ -46,8 +46,11 @@ func describeLinuxPlatform() {
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 
-		options LinuxOptions
-		logger  boshlog.Logger
+		state    *State
+		stateErr error
+		options  LinuxOptions
+
+		logger boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -67,6 +70,10 @@ func describeLinuxPlatform() {
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+
+		state, stateErr = NewState(fs, "/agent-state.json")
+		Expect(stateErr).NotTo(HaveOccurred())
+
 		options = LinuxOptions{}
 
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
@@ -96,6 +103,7 @@ func describeLinuxPlatform() {
 			monitRetryStrategy,
 			devicePathResolver,
 			5*time.Millisecond,
+			state,
 			options,
 			logger,
 			fakeDefaultNetworkResolver,
@@ -283,6 +291,7 @@ bosh_foobar:...`
 					monitRetryStrategy,
 					devicePathResolver,
 					5*time.Millisecond,
+					state,
 					options,
 					logger,
 					fakeDefaultNetworkResolver,
@@ -356,20 +365,39 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 `
-		It("sets up hostname", func() {
-			platform.SetupHostname("foobar.local")
-			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"hostname", "foobar.local"}))
+		Context("When host files have not yet been configured", func() {
+			It("sets up hostname", func() {
+				platform.SetupHostname("foobar.local")
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"hostname", "foobar.local"}))
 
-			hostnameFileContent, err := fs.ReadFileString("/etc/hostname")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(hostnameFileContent).To(Equal("foobar.local"))
+				hostnameFileContent, err := fs.ReadFileString("/etc/hostname")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hostnameFileContent).To(Equal("foobar.local"))
 
-			hostsFileContent, err := fs.ReadFileString("/etc/hosts")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(hostsFileContent).To(Equal(expectedEtcHosts))
+				hostsFileContent, err := fs.ReadFileString("/etc/hosts")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hostsFileContent).To(Equal(expectedEtcHosts))
+			})
 		})
 
+		Context("When host files have already been configured", func() {
+			It("skips setting up hostname to prevent overriding changes made by the release author", func() {
+				platform.SetupHostname("foobar.local")
+				platform.SetupHostname("newfoo.local")
+
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"hostname", "foobar.local"}))
+
+				hostnameFileContent, err := fs.ReadFileString("/etc/hostname")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hostnameFileContent).To(Equal("foobar.local"))
+
+				hostsFileContent, err := fs.ReadFileString("/etc/hosts")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hostsFileContent).To(Equal(expectedEtcHosts))
+			})
+		})
 	})
 
 	Describe("SetupLogrotate", func() {

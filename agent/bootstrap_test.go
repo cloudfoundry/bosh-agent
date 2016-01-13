@@ -435,6 +435,8 @@ func init() {
 
 				routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
 				defaultNetworkResolver = boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+				state, err := boshplatform.NewState(fs, "/tmp/agent_state.json")
+				Expect(err).NotTo(HaveOccurred())
 
 				platform = boshplatform.NewLinuxPlatform(
 					fs,
@@ -451,6 +453,7 @@ func init() {
 					monitRetryStrategy,
 					devicePathResolver,
 					500*time.Millisecond,
+					state,
 					linuxOptions,
 					logger,
 					defaultNetworkResolver,

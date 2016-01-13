@@ -43,7 +43,7 @@ type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options) Provider {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, state *State) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
@@ -111,6 +111,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		monitRetryStrategy,
 		devicePathResolver,
 		500*time.Millisecond,
+		state,
 		options.Linux,
 		logger,
 		linuxDefaultNetworkResolver,
@@ -131,6 +132,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		monitRetryStrategy,
 		devicePathResolver,
 		500*time.Millisecond,
+		state,
 		options.Linux,
 		logger,
 		linuxDefaultNetworkResolver,

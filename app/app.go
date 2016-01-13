@@ -74,11 +74,16 @@ func (app *app) Setup(args []string) error {
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
+	state, err := boshplatform.NewState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
+	if err != nil {
+		return bosherr.WrapError(err, "Loading state")
+	}
+
 	// Pulled outside of the platform provider so bosh-init will not pull in
 	// sigar when cross compiling linux -> darwin
 	sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
-	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, app.fs, config.Platform)
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, app.fs, config.Platform, state)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
