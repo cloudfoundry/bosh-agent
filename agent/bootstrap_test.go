@@ -426,7 +426,7 @@ func init() {
 				fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
 				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
-				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
+				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 1, logger)
 
 				monitRetryable := boshplatform.NewMonitRetryable(runner)
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
