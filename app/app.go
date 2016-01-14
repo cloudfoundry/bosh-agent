@@ -74,7 +74,7 @@ func (app *app) Setup(args []string) error {
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
-	state, err := boshplatform.NewState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
+	state, err := boshplatform.NewBootstrapState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
 	if err != nil {
 		return bosherr.WrapError(err, "Loading state")
 	}

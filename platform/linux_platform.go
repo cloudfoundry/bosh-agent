@@ -82,7 +82,7 @@ type linux struct {
 	devicePathResolver     boshdpresolv.DevicePathResolver
 	diskScanDuration       time.Duration
 	options                LinuxOptions
-	state                  *State
+	state                  *BootstrapState
 	logger                 boshlog.Logger
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 }
@@ -102,7 +102,7 @@ func NewLinuxPlatform(
 	monitRetryStrategy boshretry.RetryStrategy,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	diskScanDuration time.Duration,
-	state *State,
+	state *BootstrapState,
 	options LinuxOptions,
 	logger boshlog.Logger,
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
@@ -360,21 +360,22 @@ func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {
 	return
 }
 
-func (p linux) SetupHostname(hostname string) (err error) {
-	_, _, _, err = p.cmdRunner.RunCommand("hostname", hostname)
+func (p linux) SetupHostname(hostname string) error {
+	_, _, _, err := p.cmdRunner.RunCommand("hostname", hostname)
 	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to hostname")
-		return
+		return bosherr.WrapError(err, "Shelling out to hostname")
 	}
 
 	if p.state.Linux.HostnameConfigured == false {
 		err = p.fs.WriteFileString("/etc/hostname", hostname)
 		if err != nil {
-			err = bosherr.WrapError(err, "Writing /etc/hostname")
-			return
+			return bosherr.WrapError(err, "Writing /etc/hostname")
 		}
 		p.state.Linux.HostnameConfigured = true
 		p.state.SaveState()
+		if err != nil {
+			return bosherr.WrapError(err, "Write bootup state to file")
+		}
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -382,19 +383,22 @@ func (p linux) SetupHostname(hostname string) (err error) {
 
 	err = t.Execute(buffer, hostname)
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating config from template")
-		return
+		return bosherr.WrapError(err, "Generating config from template")
 	}
 
 	if p.state.Linux.HostsConfigured == false {
 		err = p.fs.WriteFile("/etc/hosts", buffer.Bytes())
 		if err != nil {
-			err = bosherr.WrapError(err, "Writing to /etc/hosts")
+			return bosherr.WrapError(err, "Writing to /etc/hosts")
 		}
+
 		p.state.Linux.HostsConfigured = true
-		p.state.SaveState()
+		err = p.state.SaveState()
+		if err != nil {
+			return bosherr.WrapError(err, "Write bootup state to file")
+		}
 	}
-	return
+	return nil
 }
 
 const etcHostsTemplate = `127.0.0.1 localhost {{ . }}

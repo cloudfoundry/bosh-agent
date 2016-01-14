@@ -46,7 +46,7 @@ func describeLinuxPlatform() {
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 
-		state    *State
+		state    *BootstrapState
 		stateErr error
 		options  LinuxOptions
 
@@ -71,7 +71,7 @@ func describeLinuxPlatform() {
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 
-		state, stateErr = NewState(fs, "/agent-state.json")
+		state, stateErr = NewBootstrapState(fs, "/agent-state.json")
 		Expect(stateErr).NotTo(HaveOccurred())
 
 		options = LinuxOptions{}

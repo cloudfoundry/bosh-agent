@@ -14,14 +14,14 @@ var _ = Describe("State", func() {
 	var (
 		fs   *fakesys.FakeFileSystem
 		path string
-		s    *platform.State
+		s    *platform.BootstrapState
 		err  error
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		path = "/agent_state.json"
-		s, err = platform.NewState(fs, path)
+		s, err = platform.NewBootstrapState(fs, path)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -66,7 +66,7 @@ var _ = Describe("State", func() {
 		Context("When the agent's state file cannot be found", func() {
 			It("returns state object with false properties", func() {
 				path = "/non-existent/agent_state.json"
-				s, err = platform.NewState(fs, path)
+				s, err = platform.NewBootstrapState(fs, path)
 
 				Expect(s.Linux.HostsConfigured).To(BeFalse())
 				Expect(s.Linux.HostnameConfigured).To(BeFalse())
@@ -75,7 +75,7 @@ var _ = Describe("State", func() {
 
 		Context("When the path to the agent's state is ''", func() {
 			It("returns an error and a state object with false properties", func() {
-				s, err = platform.NewState(fs, "")
+				s, err = platform.NewBootstrapState(fs, "")
 
 				Expect(s.Linux.HostsConfigured).To(BeFalse())
 				Expect(s.Linux.HostnameConfigured).To(BeFalse())
@@ -91,7 +91,7 @@ var _ = Describe("State", func() {
 
 				fs.RegisterReadFileError(path, errors.New("ENXIO: disk failed"))
 
-				_, readerr := platform.NewState(fs, path)
+				_, readerr := platform.NewBootstrapState(fs, path)
 
 				Expect(readerr.Error()).To(ContainSubstring("disk failed"))
 			})
@@ -101,7 +101,7 @@ var _ = Describe("State", func() {
 			It("returns an error and a state object with false properties", func() {
 				fs.WriteFileString(path, "malformed-JSON")
 
-				_, readerr := platform.NewState(fs, path)
+				_, readerr := platform.NewBootstrapState(fs, path)
 
 				Expect(readerr).To(HaveOccurred())
 			})

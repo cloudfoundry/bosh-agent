@@ -3,10 +3,11 @@ package platform
 import (
 	"encoding/json"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-type State struct {
+type BootstrapState struct {
 	Linux LinuxState
 	path  string
 	fs    boshsys.FileSystem
@@ -17,8 +18,8 @@ type LinuxState struct {
 	HostnameConfigured bool `json:"hostname_configured"`
 }
 
-func NewState(fs boshsys.FileSystem, path string) (*State, error) {
-	state := State{fs: fs, path: path}
+func NewBootstrapState(fs boshsys.FileSystem, path string) (*BootstrapState, error) {
+	state := BootstrapState{fs: fs, path: path}
 
 	if !fs.FileExists(path) {
 		return &state, nil
@@ -26,26 +27,26 @@ func NewState(fs boshsys.FileSystem, path string) (*State, error) {
 
 	bytes, err := fs.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, bosherr.WrapError(err, "Reading state file")
 	}
 
 	err = json.Unmarshal(bytes, &state)
 	if err != nil {
-		return nil, err
+		return nil, bosherr.WrapError(err, "Unmarshalling state file")
 	}
 
 	return &state, nil
 }
 
-func (s *State) SaveState() (err error) {
+func (s *BootstrapState) SaveState() (err error) {
 	jsonState, err := json.Marshal(*s)
 	if err != nil {
-		return
+		return bosherr.WrapError(err, "Marshalling state file")
 	}
 
 	err = s.fs.WriteFile(s.path, jsonState)
 	if err != nil {
-		return
+		return bosherr.WrapError(err, "Writing state file")
 	}
 
 	return
