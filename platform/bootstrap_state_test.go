@@ -27,13 +27,13 @@ var _ = Describe("State", func() {
 
 	Describe("SaveState", func() {
 		It("saves the state file with the appropriate properties", func() {
-			s.Linux = platform.LinuxState{HostsConfigured: true, HostnameConfigured: true}
+			s.Linux = platform.LinuxState{HostsConfigured: true}
 			s.SaveState()
 
 			contents, readerr := fs.ReadFile(path)
 
 			Expect(readerr).ToNot(HaveOccurred())
-			Expect(string(contents)).To(Equal(`{"Linux":{"hosts_configured":true,"hostname_configured":true}}`))
+			Expect(string(contents)).To(Equal(`{"Linux":{"hosts_configured":true}}`))
 		})
 
 		It("saves the state file with the properties passed in", func() {
@@ -43,7 +43,7 @@ var _ = Describe("State", func() {
 			contents, readerr := fs.ReadFile(path)
 
 			Expect(readerr).ToNot(HaveOccurred())
-			Expect(string(contents)).To(Equal(`{"Linux":{"hosts_configured":true,"hostname_configured":false}}`))
+			Expect(string(contents)).To(Equal(`{"Linux":{"hosts_configured":true}}`))
 		})
 
 		It("returns an error when it can't write the file", func() {
@@ -69,7 +69,6 @@ var _ = Describe("State", func() {
 				s, err = platform.NewBootstrapState(fs, path)
 
 				Expect(s.Linux.HostsConfigured).To(BeFalse())
-				Expect(s.Linux.HostnameConfigured).To(BeFalse())
 			})
 		})
 
@@ -78,7 +77,6 @@ var _ = Describe("State", func() {
 				s, err = platform.NewBootstrapState(fs, "")
 
 				Expect(s.Linux.HostsConfigured).To(BeFalse())
-				Expect(s.Linux.HostnameConfigured).To(BeFalse())
 			})
 		})
 

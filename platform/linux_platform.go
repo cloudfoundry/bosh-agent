@@ -366,27 +366,23 @@ func (p linux) SetupHostname(hostname string) error {
 		return bosherr.WrapError(err, "Shelling out to hostname")
 	}
 
-	if p.state.Linux.HostnameConfigured == false {
+	if !p.state.Linux.HostsConfigured {
 		err = p.fs.WriteFileString("/etc/hostname", hostname)
 		if err != nil {
 			return bosherr.WrapError(err, "Writing /etc/hostname")
 		}
-		p.state.Linux.HostnameConfigured = true
-		p.state.SaveState()
 		if err != nil {
 			return bosherr.WrapError(err, "Write bootup state to file")
 		}
-	}
 
-	buffer := bytes.NewBuffer([]byte{})
-	t := template.Must(template.New("etc-hosts").Parse(etcHostsTemplate))
+		buffer := bytes.NewBuffer([]byte{})
+		t := template.Must(template.New("etc-hosts").Parse(etcHostsTemplate))
 
-	err = t.Execute(buffer, hostname)
-	if err != nil {
-		return bosherr.WrapError(err, "Generating config from template")
-	}
+		err = t.Execute(buffer, hostname)
+		if err != nil {
+			return bosherr.WrapError(err, "Generating config from template")
+		}
 
-	if p.state.Linux.HostsConfigured == false {
 		err = p.fs.WriteFile("/etc/hosts", buffer.Bytes())
 		if err != nil {
 			return bosherr.WrapError(err, "Writing to /etc/hosts")
@@ -398,6 +394,7 @@ func (p linux) SetupHostname(hostname string) error {
 			return bosherr.WrapError(err, "Write bootup state to file")
 		}
 	}
+
 	return nil
 }
 

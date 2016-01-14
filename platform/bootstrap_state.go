@@ -14,8 +14,7 @@ type BootstrapState struct {
 }
 
 type LinuxState struct {
-	HostsConfigured    bool `json:"hosts_configured"`
-	HostnameConfigured bool `json:"hostname_configured"`
+	HostsConfigured bool `json:"hosts_configured"`
 }
 
 func NewBootstrapState(fs boshsys.FileSystem, path string) (*BootstrapState, error) {
