@@ -361,18 +361,15 @@ func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {
 }
 
 func (p linux) SetupHostname(hostname string) error {
-	_, _, _, err := p.cmdRunner.RunCommand("hostname", hostname)
-	if err != nil {
-		return bosherr.WrapError(err, "Shelling out to hostname")
-	}
-
 	if !p.state.Linux.HostsConfigured {
+		_, _, _, err := p.cmdRunner.RunCommand("hostname", hostname)
+		if err != nil {
+			return bosherr.WrapError(err, "Setting hostname")
+		}
+
 		err = p.fs.WriteFileString("/etc/hostname", hostname)
 		if err != nil {
-			return bosherr.WrapError(err, "Writing /etc/hostname")
-		}
-		if err != nil {
-			return bosherr.WrapError(err, "Write bootup state to file")
+			return bosherr.WrapError(err, "Writing to /etc/hostname")
 		}
 
 		buffer := bytes.NewBuffer([]byte{})
@@ -391,7 +388,7 @@ func (p linux) SetupHostname(hostname string) error {
 		p.state.Linux.HostsConfigured = true
 		err = p.state.SaveState()
 		if err != nil {
-			return bosherr.WrapError(err, "Write bootup state to file")
+			return bosherr.WrapError(err, "Setting up hostname")
 		}
 	}
 

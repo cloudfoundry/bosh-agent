@@ -365,6 +365,47 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
 `
+		Context("When running command to get hostname fails", func() {
+			It("returns an error", func() {
+				result := fakesys.FakeCmdResult{Error: errors.New("Oops!")}
+				cmdRunner.AddCmdResult("hostname foobar.local", result)
+
+				err := platform.SetupHostname("foobar.local")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Setting hostname: Oops!"))
+			})
+		})
+
+		Context("When writing to the /etc/hostname file fails", func() {
+			It("returns an error", func() {
+				fs.WriteFileErrors["/etc/hostname"] = errors.New("ENXIO: disk failed")
+
+				err := platform.SetupHostname("foobar.local")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Writing to /etc/hostname: ENXIO: disk failed"))
+			})
+		})
+
+		Context("When writing to /etc/hosts file fails", func() {
+			It("returns an error", func() {
+				fs.WriteFileErrors["/etc/hosts"] = errors.New("ENXIO: disk failed")
+
+				err := platform.SetupHostname("foobar.local")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Writing to /etc/hosts: ENXIO: disk failed"))
+			})
+		})
+
+		Context("When saving bootstrap state fails", func() {
+			It("returns an error", func() {
+				fs.WriteFileErrors["/agent-state.json"] = errors.New("ENXIO: disk failed")
+
+				err := platform.SetupHostname("foobar.local")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Setting up hostname: Writing bootstrap state to file: ENXIO: disk failed"))
+			})
+		})
+
 		Context("When host files have not yet been configured", func() {
 			It("sets up hostname", func() {
 				platform.SetupHostname("foobar.local")
@@ -386,7 +427,7 @@ ff02::3 ip6-allhosts
 				platform.SetupHostname("foobar.local")
 				platform.SetupHostname("newfoo.local")
 
-				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"hostname", "foobar.local"}))
 
 				hostnameFileContent, err := fs.ReadFileString("/etc/hostname")
