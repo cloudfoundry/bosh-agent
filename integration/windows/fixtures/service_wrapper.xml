@@ -1,0 +1,9 @@
+<service>
+  <id>bosh-agent</id>
+  <name>BOSH Agent</name>
+	<description>BOSH Agent</description>
+  <executable>bosh-agent.exe</executable>
+  <arguments>-P windows -C agent.json</arguments>
+	<log mode="reset"/>
+	<onfailure action="restart" delay="5 sec"/>
+</service>

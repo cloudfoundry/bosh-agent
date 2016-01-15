@@ -1,0 +1,28 @@
+---
+jobs:
+  - name: test-integration
+    public: false
+    plan:
+      - get: bosh-agent
+        trigger: true
+      - task: test-integration
+        privileged: true
+        file: bosh-agent/ci/tasks/test-integration-windows.yml
+        config:
+          params:
+            AGENT_ZIP_URL: https://s3.amazonaws.com/windows-bosh-integration/bosh-agent-windows.zip
+            AWS_ACCESS_KEY: {{AWS_ACCESS_KEY}}
+            AWS_SECRET_KEY: {{AWS_SECRET_KEY}}
+            AWS_SUBNET: subnet-110fae67
+            AWS_SSH_KEY: {{AWS_SSH_KEY}}
+            KEYPAIR_NAME: agent-integration
+            NATS_ELASTIC_IP: 52.23.114.20
+            VAGRANT_PROVIDER: aws
+            WINRM_PASSWORD: {{WINRM_PASSWORD}}
+
+resources:
+  - name: bosh-agent
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-agent.git
+      branch: windows

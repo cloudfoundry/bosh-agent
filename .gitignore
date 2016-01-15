@@ -23,6 +23,3 @@ test/micro_bosh
 *.box
 *metadata.json
 *.log
-integration/windows/agent.json
-integration/windows/service_wrapper.xml
-integration/windows/settings.json

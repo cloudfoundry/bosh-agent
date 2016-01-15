@@ -1,0 +1,18 @@
+{
+  "Platform": {
+    "Linux": {
+      "DevicePathResolutionType": "scsi"
+    }
+  },
+  "Infrastructure": {
+    "Settings": {
+      "Sources": [
+        {
+          "Type": "File",
+          "SettingsPath": "settings.json"
+        }
+      ],
+      "UseRegistry" : true
+    }
+  }
+}
