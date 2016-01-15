@@ -63,4 +63,6 @@ type Platform interface {
 	GetCertManager() cert.Manager
 
 	GetHostPublicKey() (string, error)
+
+	RemoveDevTools(packageListFilePath string) error
 }

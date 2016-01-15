@@ -10,6 +10,7 @@ import (
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
+	boshpkg "github.com/cloudfoundry/bosh-agent/platform/pkg"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
@@ -75,6 +76,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
 
+	centosPkgManager := boshpkg.NewCentosPkgManager(runner)
+	ubuntuPkgManager := boshpkg.NewUbuntuPkgManager(runner)
+
 	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
 	linuxDefaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 
@@ -108,6 +112,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		linuxDiskManager,
 		centosNetManager,
 		centosCertManager,
+		centosPkgManager,
 		monitRetryStrategy,
 		devicePathResolver,
 		500*time.Millisecond,
@@ -129,6 +134,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		linuxDiskManager,
 		ubuntuNetManager,
 		ubuntuCertManager,
+		ubuntuPkgManager,
 		monitRetryStrategy,
 		devicePathResolver,
 		500*time.Millisecond,

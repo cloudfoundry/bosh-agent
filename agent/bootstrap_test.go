@@ -32,6 +32,7 @@ import (
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
+	boshpkg "github.com/cloudfoundry/bosh-agent/platform/pkg"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -332,6 +333,23 @@ func init() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.StartMonitStarted).To(BeTrue())
 			})
+
+			Describe("RemoveDevTools", func() {
+				It("removes development tools if settings.env.bosh.remove_dev_tools is true", func() {
+					settingsService.Settings.Env.Bosh.RemoveDevTools = true
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeTrue())
+					Expect(platform.PackageListFilePath).To(Equal("/var/vcap/bosh/etc/dev_tools_list"))
+				})
+
+				It("does NOTHING if settings.env.bosh.remove_dev_tools is NOT set", func() {
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeFalse())
+				})
+			})
+
 		})
 
 		Describe("Network setup exercised by Run", func() {
@@ -428,6 +446,8 @@ func init() {
 
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
 
+				ubuntuPkgManager := boshpkg.NewUbuntuPkgManager(runner)
+
 				monitRetryable := boshplatform.NewMonitRetryable(runner)
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
@@ -450,6 +470,7 @@ func init() {
 					diskManager,
 					ubuntuNetManager,
 					ubuntuCertManager,
+					ubuntuPkgManager,
 					monitRetryStrategy,
 					devicePathResolver,
 					500*time.Millisecond,

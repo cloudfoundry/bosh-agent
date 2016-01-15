@@ -495,4 +495,17 @@ func init() {
 			})
 		})
 	})
+
+	Describe("Env", func() {
+		It("unmarshal env value correctly", func() {
+			var env Env
+			envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true}}`
+
+			err := json.Unmarshal([]byte(envJSON), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.GetPassword()).To(Equal("fake-password"))
+			Expect(env.GetKeepRootPassword()).To(BeFalse())
+			Expect(env.GetRemoveDevTools()).To(BeTrue())
+		})
+	})
 }
