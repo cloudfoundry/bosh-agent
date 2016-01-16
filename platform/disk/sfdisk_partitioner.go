@@ -72,20 +72,17 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	if strings.Contains(devicePath, "/dev/mapper/") {
 		_, _, _, err = p.cmdRunner.RunCommand("/etc/init.d/open-iscsi", "restart")
 		if err != nil {
-			p.logger.Error(p.logTag, "Failed to restart open-iscsi")
 			return bosherr.WrapError(err, "Shelling out to restart open-iscsi")
 		}
 
 		detectPartitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 			output, _, _, err := p.cmdRunner.RunCommand("dmsetup", "ls")
 			if err != nil {
-				p.logger.Error(p.logTag, "Failed with an error: %s", err)
 				return true, bosherr.WrapError(err, "Shelling out to dmsetup ls")
 			}
 
 			if strings.Contains(output, "No devices found") {
-				p.logger.Error(p.logTag, "No devices found")
-				return true, bosherr.WrapError(err, "Shelling out to dmsetup ls")
+				return true, bosherr.Errorf("No devices found")
 			}
 
 			device := strings.TrimPrefix(devicePath, "/dev/mapper/")
@@ -99,7 +96,6 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 				}
 			}
 
-			p.logger.Error(p.logTag, "Partition %s does not show up", devicePath+"-part1")
 			return true, bosherr.Errorf("Partition %s does not show up", devicePath+"-part1")
 		})
 
