@@ -72,8 +72,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
-	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, logger)
-	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
+	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, 0, logger)
+	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
 
 	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
 	linuxDefaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
