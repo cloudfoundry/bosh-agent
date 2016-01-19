@@ -74,7 +74,9 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 			diskSettings.ID = diskID
 
 			if hashSettings, ok := settings.(map[string]interface{}); ok {
-				diskSettings.Path = hashSettings["path"].(string)
+				if path, ok := hashSettings["path"]; ok {
+					diskSettings.Path = path.(string)
+				}
 				if volumeID, ok := hashSettings["volume_id"]; ok {
 					diskSettings.VolumeID = volumeID.(string)
 				}
@@ -99,7 +101,9 @@ func (s Settings) EphemeralDiskSettings() DiskSettings {
 
 	if s.Disks.Ephemeral != nil {
 		if hashSettings, ok := s.Disks.Ephemeral.(map[string]interface{}); ok {
-			diskSettings.Path = hashSettings["path"].(string)
+			if path, ok := hashSettings["path"]; ok {
+				diskSettings.Path = path.(string)
+			}
 			if volumeID, ok := hashSettings["volume_id"]; ok {
 				diskSettings.VolumeID = volumeID.(string)
 			}

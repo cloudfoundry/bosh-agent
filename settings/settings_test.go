@@ -129,10 +129,33 @@ func init() {
 					}))
 				})
 			})
+
+			Context("when path is not provided", func() {
+				BeforeEach(func() {
+					settings = Settings{
+						Disks: Disks{
+							Persistent: map[string]interface{}{
+								"fake-disk-id": map[string]interface{}{
+									"volume_id": "fake-disk-volume-id",
+								},
+							},
+						},
+					}
+				})
+
+				It("does not set path", func() {
+					diskSettings, found := settings.PersistentDiskSettings("fake-disk-id")
+					Expect(found).To(BeTrue())
+					Expect(diskSettings).To(Equal(DiskSettings{
+						ID:       "fake-disk-id",
+						VolumeID: "fake-disk-volume-id",
+					}))
+				})
+			})
 		})
 
 		Describe("EphemeralDiskSettings", func() {
-			Context("when the disk settings is a string", func() {
+			Context("when the disk settings are a string", func() {
 				BeforeEach(func() {
 					settings = Settings{
 						Disks: Disks{
@@ -149,7 +172,7 @@ func init() {
 				})
 			})
 
-			Context("when the disk settings are hash", func() {
+			Context("when the disk settings are a hash", func() {
 				BeforeEach(func() {
 					settings = Settings{
 						Disks: Disks{
@@ -167,6 +190,26 @@ func init() {
 						DeviceID: "fake-disk-device-id",
 						VolumeID: "fake-disk-volume-id",
 						Path:     "fake-disk-path",
+					}))
+				})
+			})
+
+			Context("when path is not provided", func() {
+				BeforeEach(func() {
+					settings = Settings{
+						Disks: Disks{
+							Ephemeral: map[string]interface{}{
+								"id":        "fake-disk-device-id",
+								"volume_id": "fake-disk-volume-id",
+							},
+						},
+					}
+				})
+
+				It("does not set path", func() {
+					Expect(settings.EphemeralDiskSettings()).To(Equal(DiskSettings{
+						DeviceID: "fake-disk-device-id",
+						VolumeID: "fake-disk-volume-id",
 					}))
 				})
 			})
