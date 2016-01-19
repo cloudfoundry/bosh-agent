@@ -47,7 +47,7 @@ func NewDummyPlatform(
 		dirProvider:        dirProvider,
 		devicePathResolver: devicePathResolver,
 		vitalsService:      boshvitals.NewService(collector, dirProvider),
-		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, logger),
+		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
 	}
 }
 
