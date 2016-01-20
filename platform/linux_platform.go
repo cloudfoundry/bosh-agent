@@ -815,6 +815,24 @@ func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) stri
 	return realPath
 }
 
+func (p linux) GetPartitionSize(devicePath string) (int, error) {
+	stdout, stderr, exitStatus, _ := p.cmdRunner.RunCommand("sfdisk", "-d", devicePath)
+	if exitStatus != 0 {
+		return 0, bosherr.Errorf("%s is not a valid device", devicePath)
+	}
+
+	if stderr != "" {
+		return 0, nil
+	}
+
+	lines := len(strings.Split(stdout, "\n"))
+	if lines < 4 {
+		return 0, nil
+	}
+
+	return lines - 4, nil
+}
+
 func (p linux) IsMountPoint(path string) (bool, error) {
 	return p.diskManager.GetMounter().IsMountPoint(path)
 }

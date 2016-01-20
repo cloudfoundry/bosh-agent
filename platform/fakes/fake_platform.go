@@ -93,6 +93,9 @@ type FakePlatform struct {
 	MigratePersistentDiskFromMountPoint string
 	MigratePersistentDiskToMountPoint   string
 
+	PartitionMap     map[string]int
+	PartitionSizeErr error
+
 	IsMountPointPath   string
 	IsMountPointResult bool
 	IsMountPointErr    error
@@ -145,6 +148,8 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.GetHostPublicKeyError = nil
 	platform.SetupRootDiskCalledTimes = 0
 	platform.SetupRootDiskError = nil
+	platform.PartitionMap = make(map[string]int)
+	platform.PartitionSizeErr = nil
 	return
 }
 
@@ -336,6 +341,20 @@ func (p *FakePlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSet
 		}
 	}
 	return
+}
+
+func (p *FakePlatform) SetPartitionSize(devicePath string, partitionSize int, err error) {
+	p.PartitionMap[devicePath] = partitionSize
+	p.PartitionSizeErr = err
+}
+
+func (p *FakePlatform) GetPartitionSize(devicePath string) (int, error) {
+	size, ok := p.PartitionMap[devicePath]
+	if ok {
+		return p.PartitionMap[devicePath], p.PartitionSizeErr
+	}
+
+	return size, p.PartitionSizeErr
 }
 
 func (p *FakePlatform) StartMonit() (err error) {

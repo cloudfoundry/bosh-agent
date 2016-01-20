@@ -179,6 +179,10 @@ func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSet
 	return true, nil
 }
 
+func (p dummyPlatform) GetPartitionSize(devicePath string) (int, error) {
+	return 0, nil
+}
+
 func (p dummyPlatform) StartMonit() (err error) {
 	return
 }
