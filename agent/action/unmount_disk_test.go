@@ -57,7 +57,7 @@ var _ = Describe("UnmountDiskAction", func() {
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of /dev/sdf"}`)
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of {ID:vol-123 DeviceID: VolumeID:2 Path:/dev/sdf}"}`)
 
 		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
 	})
@@ -67,7 +67,7 @@ var _ = Describe("UnmountDiskAction", func() {
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of /dev/sdf is not mounted"}`)
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of {ID:vol-123 DeviceID: VolumeID:2 Path:/dev/sdf} is not mounted"}`)
 
 		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
 	})

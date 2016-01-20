@@ -1022,13 +1022,6 @@ Number  Start  End     Size    File system  Flags
 			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"parted", "-s", "/dev/xvdc", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-1", "0", "100"}))
 		})
 
-		It("gives an error on setup of raw ephemeral paths if path is missing", func() {
-			err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: ""}, {Path: "/dev/xvdc"}})
-
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Setting up raw ephemeral disks: Path missing"))
-		})
-
 		It("does not label the raw ephemeral paths for already partitioned disks", func() {
 			result := fakesys.FakeCmdResult{
 				Error:      nil,
@@ -1737,18 +1730,6 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("GetEphemeralDiskPath", func() {
-		Context("when device path is an empty string", func() {
-			It("returns an empty string", func() {
-				devicePathResolver.RealDevicePath = "non-desired-device-path"
-				diskSettings := boshsettings.DiskSettings{
-					ID:       "fake-id",
-					VolumeID: "fake-volume-id",
-					Path:     "",
-				}
-				Expect(platform.GetEphemeralDiskPath(diskSettings)).To(BeEmpty())
-			})
-		})
-
 		Context("when real device path was resolved without an error", func() {
 			It("returns real device path and true", func() {
 				devicePathResolver.RealDevicePath = "fake-real-device-path"

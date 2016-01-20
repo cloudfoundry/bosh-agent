@@ -27,6 +27,15 @@ var _ = Describe("mappedDevicePathResolver", func() {
 		}
 	})
 
+	Context("when path is not provided", func() {
+		It("returns an error", func() {
+			diskSettings := boshsettings.DiskSettings{}
+			_, _, err := resolver.GetRealDevicePath(diskSettings)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("path is missing"))
+		})
+	})
+
 	Context("when a matching /dev/xvdX device is found", func() {
 		BeforeEach(func() {
 			fs.WriteFile("/dev/xvda", []byte{})

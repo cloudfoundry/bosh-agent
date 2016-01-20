@@ -2,7 +2,6 @@ package platform
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -539,10 +538,6 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 	p.logger.Info(logTag, "Setting up raw ephemeral disks")
 
 	for i, device := range devices {
-		if len(device.Path) == 0 {
-			return bosherr.WrapError(errors.New("Path missing"), "Setting up raw ephemeral disks")
-		}
-
 		realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
 		if err != nil {
 			return bosherr.WrapError(err, "Getting real device path")
@@ -737,7 +732,7 @@ func (p linux) changeTmpDirPermissions(path string) error {
 }
 
 func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountPoint string) error {
-	p.logger.Debug(logTag, "Mounting persistent disk %s at %s", diskSetting.Path, mountPoint)
+	p.logger.Debug(logTag, "Mounting persistent disk %+v at %s", diskSetting, mountPoint)
 
 	err := p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
 	if err != nil {
@@ -781,7 +776,7 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 }
 
 func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bool, error) {
-	p.logger.Debug(logTag, "Unmounting persistent disk %s", diskSettings.Path)
+	p.logger.Debug(logTag, "Unmounting persistent disk %+v", diskSettings)
 
 	realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if timedOut {
@@ -803,10 +798,6 @@ func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bo
 }
 
 func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
-	if len(diskSettings.Path) == 0 {
-		return ""
-	}
-
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
 		return ""
@@ -851,10 +842,10 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 }
 
 func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (bool, error) {
-	p.logger.Debug(logTag, "Checking whether persistent disk %s is mounted", diskSettings.Path)
+	p.logger.Debug(logTag, "Checking whether persistent disk %+v is mounted", diskSettings)
 	realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if timedOut {
-		p.logger.Debug(logTag, "Timed out resolving device path %s, ignoring", diskSettings.Path)
+		p.logger.Debug(logTag, "Timed out resolving device path for %+v, ignoring", diskSettings)
 		return false, nil
 	}
 	if err != nil {

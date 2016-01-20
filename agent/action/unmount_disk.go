@@ -46,10 +46,10 @@ func (a UnmountDiskAction) Run(diskID string) (value interface{}, err error) {
 		return
 	}
 
-	msg := fmt.Sprintf("Partition of %s is not mounted", diskSettings.Path)
+	msg := fmt.Sprintf("Partition of %+v is not mounted", diskSettings)
 
 	if didUnmount {
-		msg = fmt.Sprintf("Unmounted partition of %s", diskSettings.Path)
+		msg = fmt.Sprintf("Unmounted partition of %+v", diskSettings)
 	}
 
 	type valueType struct {
