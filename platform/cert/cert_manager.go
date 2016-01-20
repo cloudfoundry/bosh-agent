@@ -1,7 +1,6 @@
 package cert
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -116,11 +115,11 @@ func (c *certManager) UpdateCertificates(certs string) error {
 		}
 
 		for i := 1; i < 4; i++ {
-			c.logger.Debug(c.logTag, "Try to update new certificate files with retry, take %d", i)
+			c.logger.Debug(c.logTag, "Try to update new certificate files with retry, take %d of 3", i)
 
 			process, err := c.runner.RunComplexCommandAsync(command)
 			if err != nil {
-				return bosherr.WrapError(err, "Updating certificates")
+				return bosherr.WrapError(err, "Running command to update certificates with retries")
 			}
 
 			resultChannel := process.Wait()
@@ -129,28 +128,28 @@ func (c *certManager) UpdateCertificates(certs string) error {
 			case <-time.After(c.updateTimeout * time.Second):
 				err = process.TerminateNicely(5 * time.Second)
 				if err != nil {
-					return bosherr.WrapError(err, fmt.Sprintf("Killing update certificates cmd '%s'", c.updateCmdPath))
+					c.logger.Debug(c.logTag, "Failed to terminate update certificates cmd '%s' after %d seconds", c.updateCmdPath, c.updateTimeout)
 				}
 			case result := <-resultChannel:
 				if result.Error == nil {
-					c.logger.Debug(c.logTag, "Successfully updated new certificate files.")
+					c.logger.Debug(c.logTag, "Successfully updated new certificate files")
 					return nil
 				}
 			}
 		}
 
-		return bosherr.WrapError(errors.New("Failed to update new certificates"), "Updating certificates")
-	} else {
-		c.logger.Debug(c.logTag, "Try to update new certificate files without retry")
-
-		_, _, _, err = c.runner.RunCommand(c.updateCmdPath, c.updateCmdArgs...)
-		if err != nil {
-			return bosherr.WrapError(err, "Updating certificates")
-		}
-
-		c.logger.Debug(c.logTag, "Successfully updated new certificate files.")
-		return nil
+		return bosherr.Error("Updating certificates with retries")
 	}
+
+	c.logger.Debug(c.logTag, "Try to update new certificate files without retry")
+
+	_, _, _, err = c.runner.RunCommand(c.updateCmdPath, c.updateCmdArgs...)
+	if err != nil {
+		return bosherr.WrapError(err, "Running command to update certificates without retries")
+	}
+
+	c.logger.Debug(c.logTag, "Successfully updated new certificate files.")
+	return nil
 }
 
 // SplitCerts returns a slice containing each PEM certificate in the given string.
