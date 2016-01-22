@@ -17,6 +17,16 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+type mount struct {
+	MountDir string
+	DiskCid  string
+}
+
+type diskMigration struct {
+	FromDiskCid string
+	ToDiskCid   string
+}
+
 type dummyPlatform struct {
 	collector          boshstats.Collector
 	fs                 boshsys.FileSystem
@@ -147,8 +157,19 @@ func (p dummyPlatform) SetupTmpDir() error {
 	return nil
 }
 
-func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) (err error) {
-	return
+func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error {
+	mounts, err := p.existingMounts()
+	if err != nil {
+		return err
+	}
+
+	mounts = append(mounts, mount{MountDir: mountPoint, DiskCid: diskSettings.ID})
+	mountsJSON, err := json.Marshal(mounts)
+	if err != nil {
+		return err
+	}
+
+	return p.fs.WriteFile(p.mountsPath(), mountsJSON)
 }
 
 func (p dummyPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error) {
@@ -168,11 +189,49 @@ func (p dummyPlatform) GetFilesContentsFromDisk(diskPath string, fileNames []str
 }
 
 func (p dummyPlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
-	return
+	diskMigrationsPath := path.Join(p.dirProvider.BoshDir(), "disk_migrations.json")
+	var diskMigrations []diskMigration
+	if p.fs.FileExists(diskMigrationsPath) {
+		bytes, err := p.fs.ReadFile(diskMigrationsPath)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(bytes, &diskMigrations)
+		if err != nil {
+			return err
+		}
+	}
+
+	mounts, err := p.existingMounts()
+	if err != nil {
+		return err
+	}
+	fromDiskCid := p.getDiskCidByMountPoint(fromMountPoint, mounts)
+	toDiskCid := p.getDiskCidByMountPoint(toMountPoint, mounts)
+
+	diskMigrations = append(diskMigrations, diskMigration{FromDiskCid: fromDiskCid, ToDiskCid: toDiskCid})
+
+	diskMigrationsJSON, err := json.Marshal(diskMigrations)
+	if err != nil {
+		return err
+	}
+
+	return p.fs.WriteFile(diskMigrationsPath, diskMigrationsJSON)
 }
 
-func (p dummyPlatform) IsMountPoint(path string) (result bool, err error) {
-	return
+func (p dummyPlatform) IsMountPoint(mountPointPath string) (result bool, err error) {
+	mounts, err := p.existingMounts()
+	if err != nil {
+		return false, err
+	}
+
+	for _, mount := range mounts {
+		if mount.MountDir == mountPointPath {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (bool, error) {
@@ -218,4 +277,34 @@ func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 
 func (p dummyPlatform) GetHostPublicKey() (string, error) {
 	return "dummy-public-key", nil
+}
+
+func (p dummyPlatform) getDiskCidByMountPoint(mountPoint string, mounts []mount) string {
+	var diskCid string
+	for _, mount := range mounts {
+		if mount.MountDir == mountPoint {
+			diskCid = mount.DiskCid
+		}
+	}
+	return diskCid
+}
+
+func (p dummyPlatform) mountsPath() string {
+	return path.Join(p.dirProvider.BoshDir(), "mounts.json")
+}
+
+func (p dummyPlatform) existingMounts() ([]mount, error) {
+	mountsPath := p.mountsPath()
+	var mounts []mount
+
+	if !p.fs.FileExists(mountsPath) {
+		return mounts, nil
+	}
+
+	bytes, err := p.fs.ReadFile(mountsPath)
+	if err != nil {
+		return mounts, err
+	}
+	err = json.Unmarshal(bytes, &mounts)
+	return mounts, err
 }
