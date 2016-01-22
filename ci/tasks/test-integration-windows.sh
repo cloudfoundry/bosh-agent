@@ -2,6 +2,7 @@
 
 set -e
 
+export AGENT_ZIP_URL=$(cat bosh-agent-zip/url)
 export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
 export GOPATH=$(pwd)/gopath
 

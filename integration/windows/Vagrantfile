@@ -1,3 +1,5 @@
+nats_private_ip = "172.31.180.3"
+
 winrm_username = "vagrant"
 winrm_password = ENV.fetch "WINRM_PASSWORD" do
   puts "WINRM_PASSWORD not set, using 'vagrant'"
@@ -72,6 +74,66 @@ download_agent = <<-SHELL
   Unzip C:\\bosh\\agent.zip C:\\bosh\\
 SHELL
 
+write_agent_configs = <<-SHELL
+New-Item -ItemType file -path "C:\\bosh\\agent.json" -Value @"
+{
+  "Platform": {
+    "Linux": {
+      "DevicePathResolutionType": "scsi"
+    }
+  },
+  "Infrastructure": {
+    "Settings": {
+      "Sources": [
+        {
+          "Type": "File",
+          "SettingsPath": "C:\\\\bosh\\\\settings.json"
+        }
+      ],
+      "UseRegistry": true
+    }
+  }
+}
+"@
+
+New-Item -ItemType file -path "C:\\bosh\\settings.json" -Value @"
+{
+  "agent_id": "123-456-789",
+  "disks": {
+    "system": "/dev/xvda",
+    "ephemeral": "/dev/sdb",
+    "persistent": {},
+    "raw_ephemeral": null
+  },
+  "env": {
+    "bosh": {
+      "password": ""
+    }
+  },
+  "networks": {
+    "diego1": {
+      "type": "",
+      "ip": "10.10.10.11",
+      "netmask": "255.255.255.0",
+      "gateway": "10.10.10.1",
+      "resolved": false,
+      "use_dhcp": true,
+      "default": ["dns", "gateway"],
+      "mac": "",
+      "preconfigured": false
+    }
+  },
+  "ntp": ["0.pool.ntp.org", "1.pool.ntp.org"],
+  "mbus": "nats://#{nats_private_ip}:4222",
+  "vm": {
+    "name": "vm-1f1aaed4-b479-4cf5-b73e-a7cbf0abf4ae"
+  },
+  "trusted_certs": ""
+}
+"@
+
+SHELL
+
 copy_agent_from_vagrant = <<-SHELL
   cd C:\\vagrant\\fixtures
   cp bosh-agent.exe c:\\bosh\\
@@ -141,15 +203,14 @@ Vagrant.configure(2) do |config|
     else
       agent.vm.provision "shell", inline: copy_agent_from_vagrant
     end
+    agent.vm.provision "shell", inline: write_agent_configs
     agent.vm.provision "shell", inline: initialize_agent_service
   end
 
   config.vm.define "nats" do |nats|
-    private_ip = "172.31.180.3"
-
     nats.vm.provider :virtualbox do |v, override|
       override.vm.box = "ubuntu/trusty64"
-      override.vm.network "private_network", ip: private_ip
+      override.vm.network "private_network", ip: nats_private_ip
     end
 
     nats.vm.provider :aws do |aws, override|
@@ -160,7 +221,7 @@ Vagrant.configure(2) do |config|
       aws.keypair_name = keypair_name
       aws.subnet_id = subnet_id
       aws.elastic_ip = nats_elastic_ip
-      aws.private_ip_address = private_ip
+      aws.private_ip_address = nats_private_ip
 
       override.ssh.username = "ubuntu"
       override.ssh.private_key_path = private_key_path
