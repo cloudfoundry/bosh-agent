@@ -3,6 +3,7 @@ package net
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -65,7 +66,9 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, err
 	}
 
 	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
-	return net.setupDNS(dnsNetwork)
+	dns := net.setupDNS(dnsNetwork)
+	time.Sleep(5 * time.Second)
+	return dns
 }
 
 func (net WindowsNetManager) setupInterfaces(networks boshsettings.Networks) error {
