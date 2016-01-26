@@ -1,28 +1,143 @@
----
-jobs:
-  - name: test-integration
-    public: false
-    plan:
-      - get: bosh-agent
-        trigger: true
-      - task: test-integration
-        privileged: true
-        file: bosh-agent/ci/tasks/test-integration-windows.yml
-        config:
-          params:
-            AGENT_ZIP_URL: https://s3.amazonaws.com/windows-bosh-integration/bosh-agent-windows.zip
-            AWS_ACCESS_KEY: {{AWS_ACCESS_KEY}}
-            AWS_SECRET_KEY: {{AWS_SECRET_KEY}}
-            AWS_SUBNET: subnet-110fae67
-            AWS_SSH_KEY: {{AWS_SSH_KEY}}
-            KEYPAIR_NAME: agent-integration
-            NATS_ELASTIC_IP: 52.23.114.20
-            VAGRANT_PROVIDER: aws
-            WINRM_PASSWORD: {{WINRM_PASSWORD}}
-
 resources:
-  - name: bosh-agent
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh-agent.git
-      branch: windows
+- name: bosh-agent-windows
+  type: git
+  source:
+    branch: windows
+    uri: https://github.com/cloudfoundry/bosh-agent.git
+- name: bosh-agent-zip-version
+  type: semver
+  source:
+    bucket: windows-bosh-integration
+    key: versions/bosh-agent-version
+    access_key_id: {{AWS_ACCESS_KEY}}
+    secret_access_key: {{AWS_SECRET_KEY}}
+- name: bosh-agent-zip
+  type: s3
+  source:
+    bucket: windows-bosh-integration
+    regexp: bosh-agent-windows-v(.*).zip
+    access_key_id: {{AWS_ACCESS_KEY}}
+    secret_access_key: {{AWS_SECRET_KEY}}
+- name: bosh-vsphere-stemcell-version
+  type: semver
+  source:
+    bucket: bosh-windows-stemcells
+    key: versions/bosh-vsphere-stemcell-version
+    access_key_id: {{AWS_ACCESS_KEY}}
+    secret_access_key: {{AWS_SECRET_KEY}}
+- name: bosh-vsphere-stemcell
+  type: s3
+  source:
+    bucket: bosh-windows-stemcells
+    regexp: bosh-stemcell-(.*)-vsphere-esxi-windows2012R2-go_agent.tgz
+    access_key_id: {{AWS_ACCESS_KEY}}
+    secret_access_key: {{AWS_SECRET_KEY}}
+- name: ovftool-linux
+  type: s3
+  source:
+    bucket: bosh-windows-stemcells
+    regexp: VMware-ovftool-(.*)-lin.x86_64.bundle
+    access_key_id: {{AWS_ACCESS_KEY}}
+    secret_access_key: {{AWS_SECRET_KEY}}
+jobs:
+- name: compile-agent-and-push
+  serial: true
+  plan:
+  - put: bosh-agent-zip-version
+    params:
+      bump: patch
+  - get: bosh-agent
+    trigger: true
+    resource: bosh-agent-windows
+  - task: compile-agent
+    privileged: true
+    file: bosh-agent/ci/tasks/compile-agent-windows.yml
+  - put: bosh-agent-zip
+    params:
+      from: compile-agent/gopath/src/github.com/cloudfoundry/bosh-agent/bosh-windows-integration-v(.*).zip
+      to: /
+- name: test-integration
+  serial: true
+  plan:
+  - get: bosh-agent
+    resource: bosh-agent-windows
+  - get: bosh-agent-zip
+    passed:
+    - compile-agent-and-push
+    trigger: true
+  - task: test-integration
+    privileged: true
+    file: bosh-agent/ci/tasks/test-integration-windows.yml
+    config:
+      params:
+        AWS_ACCESS_KEY: {{AWS_ACCESS_KEY}}
+        AWS_SECRET_KEY: {{AWS_SECRET_KEY}}
+        AWS_SUBNET: subnet-110fae67
+        AWS_SSH_KEY: {{AWS_SSH_KEY}}
+        KEYPAIR_NAME: agent-integration
+        NATS_ELASTIC_IP: 52.23.114.20
+        VAGRANT_PROVIDER: aws
+        WINRM_PASSWORD: {{WINRM_PASSWORD}}
+- name: create-vsphere-stemcell-and-push
+  serial: true
+  plan:
+  - get: bosh-agent
+    resource: bosh-agent-windows
+  - get: bosh-agent-zip
+    passed:
+    - test-integration
+  - get: ovftool-linux
+  - put: bosh-vsphere-stemcell-version
+    params:
+      bump: patch
+  - task: create-vsphere-stemcell
+    privileged: true
+    file: bosh-agent/ci/tasks/create-vsphere-stemcell-windows.yml
+    tags:
+    - vsphere-v5.1
+    config:
+      params:
+        RESOURCE_POOL_NAME: stonetalon
+        TEMPLATE_NAME: stonetalon/greenhouse-stemcell
+        VCENTER_PASSWORD: {{VCENTER_PASSWORD}}
+        VCENTER_USERNAME: {{VCENTER_USERNAME}}
+        VCENTER_FINGERPRINT: {{VCENTER_FINGERPRINT}}
+        VM_BASE_PATH: stonetalon
+        VM_NAME: greenhouse-vm
+        WINRM_PASSWORD: {{WINRM_PASSWORD}}
+        WINRM_USERNAME: {{WINRM_USERNAME}}
+        VAGRANT_HOME: ./vagrant_home/.vagrant.d/
+        VAGRANT_DOTFILE_PATH: ./vagrant_home/.vagrant/
+        VAGRANT_VAGRANTFILE: ./gopath/src/github.com/cloudfoundry/bosh-agent/ci/Vagrantfile-vsphere-windows
+    ensure:
+      task: vagrant-destroy-vsphere
+      tags:
+      - vsphere-v5.1
+      config:
+        platform: linux
+        image: docker:///bosh/init
+        params:
+          RESOURCE_POOL_NAME: stonetalon
+          TEMPLATE_NAME: stonetalon/greenhouse-stemcell
+          VCENTER_PASSWORD: {{VCENTER_PASSWORD}}
+          VCENTER_USERNAME: {{VCENTER_USERNAME}}
+          VM_BASE_PATH: stonetalon
+          VM_NAME: greenhouse-vm
+          WINRM_PASSWORD: {{WINRM_PASSWORD}}
+          WINRM_USERNAME: {{WINRM_USERNAME}}
+          VAGRANT_HOME: ./vagrant_home/.vagrant.d/
+          VAGRANT_DOTFILE_PATH: ./vagrant_home/.vagrant/
+          VAGRANT_VAGRANTFILE: ./gopath/src/github.com/cloudfoundry/bosh-agent/ci/Vagrantfile-vsphere-windows
+        run:
+          path: sh
+          args:
+          - -c
+          - vagrant destroy --force
+        inputs:
+        - name: bosh-agent
+          path: gopath/src/github.com/cloudfoundry/bosh-agent
+        - name: vagrant_home
+  - put: bosh-vsphere-stemcell
+    params:
+      from: /bosh-vsphere-stemcell/bosh-stemcell-(.*)-vsphere-esxi-windows2012R2-go_agent.tgz
+      to: /
