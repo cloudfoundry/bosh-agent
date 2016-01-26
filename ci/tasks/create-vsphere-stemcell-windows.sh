@@ -26,7 +26,8 @@ AGENT_ZIP_URL=$BOSH_AGENT_ZIP_URL vagrant up --provider=vsphere
 vagrant halt
 
 ovftool --sourceSSLThumbprint=$VCENTER_FINGERPRINT vi://$VCENTER_USERNAME:$VCENTER_PASSWORD@vcenter.pizza.cf-app.com:443/pizza-boxes-dc/vm/$VM_BASE_PATH/$VM_NAME image.ova
-mv image.ova image
+gzip -9 image.ova
+mv image.ova.gz image
 
 IMAGE_SHA=$(sha1sum image | cut -d ' ' -f 1)
 cat > ./stemcell.MF <<EOF
