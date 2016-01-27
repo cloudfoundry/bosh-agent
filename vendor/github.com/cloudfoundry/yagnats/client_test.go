@@ -291,20 +291,20 @@ func (s *YSuite) TestClientReconnectCallback(c *C) {
 	waitReceive(c, "yo", connectionChannel, 500)
 }
 
-func (s *YSuite) TestClientBeforeReconnectCallback(c *C) {
+func (s *YSuite) TestClientBeforeConnectCallback(c *C) {
 	doomedNats := startNats(4213)
 	defer stopCmd(doomedNats)
 
-	connectionChannel := make(chan []byte)
-	beforeReconnectChannel := make(chan []byte)
+	channel := make(chan []byte, 1)
 
 	durableClient := NewClient()
-	durableClient.ConnectedCallback = func() {
-		connectionChannel <- []byte("yo")
+
+	durableClient.BeforeConnectCallback = func() {
+		channel <- []byte("before connect callback")
 	}
 
-	durableClient.BeforeReconnectCallback = func() {
-		beforeReconnectChannel <- []byte("hi from before reconnect callback")
+	durableClient.ConnectedCallback = func() {
+		channel <- []byte("connected callback")
 	}
 
 	durableClient.Connect(&ConnectionInfo{
@@ -313,20 +313,16 @@ func (s *YSuite) TestClientBeforeReconnectCallback(c *C) {
 		Password: "nats",
 	})
 
-	waitReceive(c, "yo", connectionChannel, 500)
+	waitReceive(c, "before connect callback", channel, 500)
+	waitReceive(c, "connected callback", channel, 500)
 
 	stopCmd(doomedNats)
 	err := waitUntilNatsDown(4213)
 	c.Assert(err, IsNil)
 
-	waitReceive(c, "hi from before reconnect callback", beforeReconnectChannel, 500)
-
 	doomedNats = startNats(4213)
 	defer stopCmd(doomedNats)
-
-	waitUntilNatsUp(4213)
-
-	waitReceive(c, "yo", connectionChannel, 500)
+	waitReceive(c, "before connect callback", channel, 500)
 }
 
 func (s *YSuite) TestClientReconnectCallbackSelfPublish(c *C) {

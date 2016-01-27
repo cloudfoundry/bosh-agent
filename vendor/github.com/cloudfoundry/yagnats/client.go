@@ -28,7 +28,7 @@ type Client struct {
 	lock                    *sync.Mutex
 
 	ConnectedCallback       func()
-	BeforeReconnectCallback func()
+	BeforeConnectCallback   func()
 
 	logger                  Logger
 	loggerMutex             *sync.RWMutex
@@ -244,6 +244,10 @@ func (c *Client) serveConnections(conn *Connection, cp ConnectionProvider) {
 }
 
 func (c *Client) connect(cp ConnectionProvider) (conn *Connection, err error) {
+	if c.BeforeConnectCallback != nil {
+		c.BeforeConnectCallback()
+	}
+
 	conn, err = cp.ProvideConnection()
 	if err != nil {
 		return
@@ -257,10 +261,6 @@ func (c *Client) connect(cp ConnectionProvider) (conn *Connection, err error) {
 }
 
 func (c *Client) reconnect(cp ConnectionProvider) {
-	if c.BeforeReconnectCallback != nil {
-		c.BeforeReconnectCallback()
-	}
-
 	// acquire new connection
 	for {
 		c.Logger().Debug("client.reconnect.starting")
