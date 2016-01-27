@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 
 	. "launchpad.net/gocheck"
 )
@@ -18,7 +18,7 @@ func (s *YSuite) TestApceraConnectWithInvalidAddress(c *C) {
 	_, err := Connect([]string{""})
 
 	c.Assert(err, Not(Equals), nil)
-	c.Assert(err.Error(), Equals, "nats: No servers available for connection")
+	c.Assert(err.Error(), Equals, nats.ErrNoServers.Error())
 }
 
 func (s *YSuite) TestApceraClientConnectWithInvalidAuth(c *C) {
@@ -62,14 +62,15 @@ func (s *YSuite) TestApceraClientReconnectCB(c *C) {
 }
 
 func (s *YSuite) TestApceraClientClosdCB(c *C) {
-	closeCalled := false
+	closeChannel := make(chan []byte)
+
 	closedClient := Must(Connect([]string{"nats://nats:nats@127.0.0.1:4223"}))
 	closedClient.AddClosedCB(func(_ *nats.Conn) {
-		closeCalled = true
+		closeChannel <- []byte("closed")
 	})
 	closedClient.Close()
 
-	c.Assert(closeCalled, Equals, true)
+	waitReceive(c, "closed", closeChannel, 500)
 }
 
 func (s *YSuite) TestApceraClientDisconnectedCB(c *C) {

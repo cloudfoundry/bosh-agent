@@ -3,7 +3,7 @@ package fakeyagnats
 import (
 	"sync"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 )
 
 type FakeNATSConn struct {

@@ -291,6 +291,44 @@ func (s *YSuite) TestClientReconnectCallback(c *C) {
 	waitReceive(c, "yo", connectionChannel, 500)
 }
 
+func (s *YSuite) TestClientBeforeReconnectCallback(c *C) {
+	doomedNats := startNats(4213)
+	defer stopCmd(doomedNats)
+
+	connectionChannel := make(chan []byte)
+	beforeReconnectChannel := make(chan []byte)
+
+	durableClient := NewClient()
+	durableClient.ConnectedCallback = func() {
+		connectionChannel <- []byte("yo")
+	}
+
+	durableClient.BeforeReconnectCallback = func() {
+		beforeReconnectChannel <- []byte("hi from before reconnect callback")
+	}
+
+	durableClient.Connect(&ConnectionInfo{
+		Addr:     "127.0.0.1:4213",
+		Username: "nats",
+		Password: "nats",
+	})
+
+	waitReceive(c, "yo", connectionChannel, 500)
+
+	stopCmd(doomedNats)
+	err := waitUntilNatsDown(4213)
+	c.Assert(err, IsNil)
+
+	waitReceive(c, "hi from before reconnect callback", beforeReconnectChannel, 500)
+
+	doomedNats = startNats(4213)
+	defer stopCmd(doomedNats)
+
+	waitUntilNatsUp(4213)
+
+	waitReceive(c, "yo", connectionChannel, 500)
+}
+
 func (s *YSuite) TestClientReconnectCallbackSelfPublish(c *C) {
 	doomedNats := startNats(4213)
 	defer stopCmd(doomedNats)
