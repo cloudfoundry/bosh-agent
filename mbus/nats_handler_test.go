@@ -88,7 +88,7 @@ func init() {
 				})
 				defer handler.Stop()
 
-				Expect(platform.CleanedIpMacAddressCache).To(Equal("127.0.0.1"))
+				Expect(platform.CleanedIPMacAddressCache).To(Equal("127.0.0.1"))
 				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
@@ -99,18 +99,18 @@ func init() {
 				})
 				defer handler.Stop()
 
-				Expect(platform.CleanedIpMacAddressCache).To(BeEmpty())
+				Expect(platform.CleanedIPMacAddressCache).To(BeEmpty())
 				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
 			It("logs error and proceeds if it fails to clean up ip-mac address cache for nats", func() {
-				platform.CleanIpMacAddressCacheErr = errors.New("failed to run")
+				platform.CleanIPMacAddressCacheErr = errors.New("failed to run")
 				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					return nil
 				})
 				defer handler.Stop()
 
-				Expect(platform.CleanedIpMacAddressCache).To(Equal("127.0.0.1"))
+				Expect(platform.CleanedIPMacAddressCache).To(Equal("127.0.0.1"))
 				Expect(loggerErrBuf).To(ContainSubstring("ERROR - Cleaning ip-mac address cache for: 127.0.0.1"))
 				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})

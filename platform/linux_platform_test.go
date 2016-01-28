@@ -2035,9 +2035,9 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
-	Describe("CleanIpMacAddressCache", func() {
+	Describe("CleanIPMacAddressCache", func() {
 		It("cleans the arp entry for the given ip", func() {
-			err := platform.CleanIpMacAddressCache("1.2.3.4")
+			err := platform.CleanIPMacAddressCache("1.2.3.4")
 			deleteArpEntry := []string{"arp", "-d", "1.2.3.4"}
 			Expect(cmdRunner.RunCommands[0]).To(Equal(deleteArpEntry))
 			Expect(err).ToNot(HaveOccurred())
@@ -2052,7 +2052,7 @@ Number  Start   End     Size    File system  Name             Flags
 			}
 			cmdRunner.AddCmdResult("arp -d 1.2.3.4", result)
 
-			err := platform.CleanIpMacAddressCache("1.2.3.4")
+			err := platform.CleanIPMacAddressCache("1.2.3.4")
 
 			Expect(err).To(HaveOccurred())
 		})

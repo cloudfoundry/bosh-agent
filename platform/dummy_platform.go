@@ -254,7 +254,7 @@ func (p dummyPlatform) PrepareForNetworkingChange() error {
 	return nil
 }
 
-func (p dummyPlatform) CleanIpMacAddressCache(ip string) error {
+func (p dummyPlatform) CleanIPMacAddressCache(ip string) error {
 	return nil
 }
 
