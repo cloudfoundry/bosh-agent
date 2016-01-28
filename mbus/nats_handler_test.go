@@ -1,6 +1,9 @@
 package mbus_test
 
 import (
+	"bytes"
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -9,6 +12,7 @@ import (
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
+	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -21,6 +25,9 @@ func init() {
 			client          *fakeyagnats.FakeYagnats
 			logger          boshlog.Logger
 			handler         boshhandler.Handler
+			platform        *fakeplatform.FakePlatform
+			loggerOutBuf    *bytes.Buffer
+			loggerErrBuf    *bytes.Buffer
 		)
 
 		BeforeEach(func() {
@@ -30,9 +37,14 @@ func init() {
 					Mbus:    "nats://fake-username:fake-password@127.0.0.1:1234",
 				},
 			}
-			logger = boshlog.NewLogger(boshlog.LevelNone)
+
+			loggerOutBuf = bytes.NewBufferString("")
+			loggerErrBuf = bytes.NewBufferString("")
+			logger = boshlog.NewWriterLogger(boshlog.LevelError, loggerOutBuf, loggerErrBuf)
+
 			client = fakeyagnats.New()
-			handler = NewNatsHandler(settingsService, client, logger)
+			platform = fakeplatform.NewFakePlatform()
+			handler = NewNatsHandler(settingsService, client, logger, platform)
 		})
 
 		Describe("Start", func() {
@@ -68,6 +80,39 @@ func init() {
 				messages := client.PublishedMessages("reply to me!")
 				Expect(len(messages)).To(Equal(1))
 				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"expected value"}`)))
+			})
+
+			It("cleans up ip-mac address cache for nats configured with ip address", func() {
+				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					return nil
+				})
+				defer handler.Stop()
+
+				Expect(platform.CleanedIpMacAddressCache).To(Equal("127.0.0.1"))
+				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
+			})
+
+			It("does not try to clean up ip-mac address cache for nats configured with hostname", func() {
+				settingsService.Settings.Mbus = "nats://fake-username:fake-password@fake-hostname.com:1234"
+				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					return nil
+				})
+				defer handler.Stop()
+
+				Expect(platform.CleanedIpMacAddressCache).To(BeEmpty())
+				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
+			})
+
+			It("logs error and proceeds if it fails to clean up ip-mac address cache for nats", func() {
+				platform.CleanIpMacAddressCacheErr = errors.New("failed to run")
+				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					return nil
+				})
+				defer handler.Stop()
+
+				Expect(platform.CleanedIpMacAddressCache).To(Equal("127.0.0.1"))
+				Expect(loggerErrBuf).To(ContainSubstring("ERROR - Cleaning ip-mac address cache for: 127.0.0.1"))
+				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
 			It("does not respond if the response is nil", func() {
@@ -185,7 +230,7 @@ func init() {
 
 			It("does not err when no username and password", func() {
 				settingsService.Settings.Mbus = "nats://127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, client, logger)
+				handler = NewNatsHandler(settingsService, client, logger, platform)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())
@@ -194,7 +239,7 @@ func init() {
 
 			It("errs when has username without password", func() {
 				settingsService.Settings.Mbus = "nats://foo@127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, client, logger)
+				handler = NewNatsHandler(settingsService, client, logger, platform)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).To(HaveOccurred())

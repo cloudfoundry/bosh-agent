@@ -2034,4 +2034,27 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(hostPublicKey).To(Equal(""))
 		})
 	})
+
+	Describe("CleanIpMacAddressCache", func() {
+		It("cleans the arp entry for the given ip", func() {
+			err := platform.CleanIpMacAddressCache("1.2.3.4")
+			deleteArpEntry := []string{"arp", "-d", "1.2.3.4"}
+			Expect(cmdRunner.RunCommands[0]).To(Equal(deleteArpEntry))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("fails if arp command fails", func() {
+			result := fakesys.FakeCmdResult{
+				Error:      errors.New("failure"),
+				ExitStatus: 1,
+				Stderr:     "",
+				Stdout:     "",
+			}
+			cmdRunner.AddCmdResult("arp -d 1.2.3.4", result)
+
+			err := platform.CleanIpMacAddressCache("1.2.3.4")
+
+			Expect(err).To(HaveOccurred())
+		})
+	})
 }

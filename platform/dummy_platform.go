@@ -254,6 +254,10 @@ func (p dummyPlatform) PrepareForNetworkingChange() error {
 	return nil
 }
 
+func (p dummyPlatform) CleanIpMacAddressCache(ip string) error {
+	return nil
+}
+
 func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 	var network boshsettings.Network
 

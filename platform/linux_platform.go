@@ -915,6 +915,15 @@ func (p linux) PrepareForNetworkingChange() error {
 	return nil
 }
 
+func (p linux) CleanIpMacAddressCache(ip string) error {
+	_, _, _, err := p.cmdRunner.RunCommand("arp", "-d", ip)
+	if err != nil {
+		return bosherr.WrapError(err, "Deleting arp entry")
+	}
+
+	return nil
+}
+
 func (p linux) GetDefaultNetwork() (boshsettings.Network, error) {
 	return p.defaultNetworkResolver.GetDefaultNetwork()
 }

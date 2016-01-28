@@ -22,6 +22,8 @@ type FakeYagnats struct {
 	whenSubscribing map[string]func(yagnats.Callback) error
 	whenPublishing  map[string]func(*yagnats.Message) error
 
+	beforeConnectCallback func()
+
 	onPing       func() bool
 	pingResponse bool
 
@@ -82,6 +84,10 @@ func (f *FakeYagnats) Connect(connectionProvider yagnats.ConnectionProvider) err
 	f.Lock()
 	defer f.Unlock()
 
+	if f.beforeConnectCallback != nil {
+		f.beforeConnectCallback()
+	}
+
 	if f.connectError != nil {
 		return f.connectError
 	}
@@ -97,6 +103,10 @@ func (f *FakeYagnats) Disconnect() {
 
 	f.connectedConnectionProvider = nil
 	return
+}
+
+func (f *FakeYagnats) BeforeConnectCallback(callback func()) {
+	f.beforeConnectCallback = callback
 }
 
 func (f *FakeYagnats) Publish(subject string, payload []byte) error {

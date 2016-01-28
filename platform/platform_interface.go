@@ -56,6 +56,7 @@ type Platform interface {
 	GetDefaultNetwork() (boshsettings.Network, error)
 	GetConfiguredNetworkInterfaces() ([]string, error)
 	PrepareForNetworkingChange() error
+	CleanIpMacAddressCache(ip string) error
 
 	// Additional monit management
 	GetMonitCredentials() (username, password string, err error)

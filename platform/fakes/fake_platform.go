@@ -113,6 +113,9 @@ type FakePlatform struct {
 	GetConfiguredNetworkInterfacesInterfaces []string
 	GetConfiguredNetworkInterfacesErr        error
 
+	CleanedIpMacAddressCache  string
+	CleanIpMacAddressCacheErr error
+
 	certManager boshcert.Manager
 
 	GetHostPublicKeyValue string
@@ -352,6 +355,11 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	username = p.GetMonitCredentialsUsername
 	password = p.GetMonitCredentialsPassword
 	return
+}
+
+func (p *FakePlatform) CleanIpMacAddressCache(ip string) error {
+	p.CleanedIpMacAddressCache = ip
+	return p.CleanIpMacAddressCacheErr
 }
 
 func (p *FakePlatform) PrepareForNetworkingChange() error {
