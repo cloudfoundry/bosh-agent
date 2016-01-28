@@ -84,5 +84,12 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("does-not-exist could not be found"))
 		})
+
+		It("provides a windows job supervisor", func() {
+			actualSupervisor, err := provider.Get("windows")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(actualSupervisor).To(Equal(NewWindowsJobSupervisor()))
+		})
 	})
 }

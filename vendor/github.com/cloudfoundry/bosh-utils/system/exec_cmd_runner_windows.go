@@ -1,6 +1,11 @@
 package system
 
-import boshlog "github.com/cloudfoundry/bosh-utils/logger"
+import (
+	"bytes"
+	"os/exec"
+
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+)
 
 type execCmdRunner struct {
 	logger boshlog.Logger
@@ -19,7 +24,23 @@ func (r execCmdRunner) RunComplexCommandAsync(cmd Command) (Process, error) {
 }
 
 func (r execCmdRunner) RunCommand(cmdName string, args ...string) (string, string, int, error) {
-	panic("Not implemented")
+	stdOut := new(bytes.Buffer)
+	stdErr := new(bytes.Buffer)
+
+	command := exec.Command(cmdName, args...)
+	command.Stderr = stdErr
+	command.Stdout = stdOut
+
+	err := command.Run()
+	if err != nil {
+		return "", "", -1, err
+	}
+
+	if err != nil {
+		return stdOut.String(), stdErr.String(), -1, err
+	}
+
+	return stdOut.String(), stdErr.String(), 0, nil
 }
 
 func (r execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (string, string, int, error) {

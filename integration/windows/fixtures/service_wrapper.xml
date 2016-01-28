@@ -3,7 +3,7 @@
   <name>BOSH Agent</name>
 	<description>BOSH Agent</description>
   <executable>bosh-agent.exe</executable>
-  <arguments>-P windows -C agent.json</arguments>
+  <arguments>-P windows -C agent.json -M windows</arguments>
 	<log mode="reset"/>
 	<onfailure action="restart" delay="5 sec"/>
 </service>

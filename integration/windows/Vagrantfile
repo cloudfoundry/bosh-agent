@@ -137,10 +137,8 @@ SHELL
 copy_agent_from_vagrant = <<-SHELL
   cd C:\\vagrant\\fixtures
   cp bosh-agent.exe c:\\bosh\\
-  cp agent.json c:\\bosh\\
   cp service_wrapper.exe c:\\bosh\\
   cp service_wrapper.xml c:\\bosh\\
-  cp settings.json c:\\bosh\\
 SHELL
 initialize_agent_service = <<-SHELL
   C:\\bosh\\service_wrapper.exe install

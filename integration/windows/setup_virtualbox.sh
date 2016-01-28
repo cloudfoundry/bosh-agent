@@ -2,7 +2,7 @@
 set -ex
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-OUTPUT_PATH=$DIR/bosh-agent.exe
+OUTPUT_PATH=$DIR/fixtures/bosh-agent.exe
 
 rm -f $OUTPUT_PATH
 
