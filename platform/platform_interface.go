@@ -48,7 +48,6 @@ type Platform interface {
 	GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string
 	IsMountPoint(path string) (result bool, err error)
 	IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error)
-	GetPartitionSize(devicePath string) (int, error)
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)

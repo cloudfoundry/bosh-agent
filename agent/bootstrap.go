@@ -103,15 +103,8 @@ func (boot bootstrap) Run() (err error) {
 
 	for diskID := range settings.Disks.Persistent {
 		diskSettings, _ := settings.PersistentDiskSettings(diskID)
-		diskPartitionSize, err := boot.platform.GetPartitionSize(diskSettings.Path)
-		if err != nil {
-			return bosherr.WrapError(err, "Getting Partition Size")
-		}
-
-		if diskPartitionSize > 0 {
-			if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
-				return bosherr.WrapError(err, "Mounting persistent disk")
-			}
+		if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
+			return bosherr.WrapError(err, "Mounting persistent disk")
 		}
 	}
 
