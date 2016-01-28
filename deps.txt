@@ -6,7 +6,7 @@ github.com/pivotal-golang/clock:f2e1cd2
 github.com/pivotal/go-smtpd/smtpd:0af6982
 github.com/cloudfoundry/gosigar:3ed7c74
 github.com/mitchellh/mapstructure:281073e
-github.com/cloudfoundry/yagnats:a737049
+github.com/cloudfoundry/yagnats:ea4caf6
 github.com/github.com/stretchr/testify/assert:2b15294
 github.com/golang/mock/gomock:06883d9
 github.com/apcera/nats:d19a6ce
