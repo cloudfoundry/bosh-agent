@@ -260,7 +260,7 @@ func (s *YSuite) TestClientConnectCallback(c *C) {
 	waitReceive(c, "yo", connectionChannel, 500)
 }
 
-func (s *YSuite) TestClientReconnectCallback(c *C) {
+func (s *YSuite) TestClientConnectCallbackOnReconnect(c *C) {
 	doomedNats := startNats(4213)
 	defer stopCmd(doomedNats)
 
@@ -299,9 +299,9 @@ func (s *YSuite) TestClientBeforeConnectCallback(c *C) {
 
 	durableClient := NewClient()
 
-	durableClient.BeforeConnectCallback = func() {
+	durableClient.BeforeConnectCallback(func() {
 		channel <- []byte("before connect callback")
-	}
+	})
 
 	durableClient.ConnectedCallback = func() {
 		channel <- []byte("connected callback")

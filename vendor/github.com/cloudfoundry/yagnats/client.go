@@ -15,6 +15,7 @@ type NATSClient interface {
 	SubscribeWithQueue(subject, queue string, callback Callback) (int64, error)
 	Unsubscribe(subscription int64) error
 	UnsubscribeAll(subject string)
+	BeforeConnectCallback(callback func())
 }
 
 type Callback func(*Message)
@@ -27,8 +28,8 @@ type Client struct {
 	disconnecting           bool
 	lock                    *sync.Mutex
 
+	beforeConnectCallback   func()
 	ConnectedCallback       func()
-	BeforeConnectCallback   func()
 
 	logger                  Logger
 	loggerMutex             *sync.RWMutex
@@ -106,6 +107,10 @@ func (c *Client) Disconnect() {
 	c.lock.Lock()
 	c.connected = false
 	c.lock.Unlock()
+}
+
+func (c *Client) BeforeConnectCallback(callback func()) {
+	c.beforeConnectCallback = callback
 }
 
 func (c *Client) Publish(subject string, payload []byte) error {
@@ -244,8 +249,8 @@ func (c *Client) serveConnections(conn *Connection, cp ConnectionProvider) {
 }
 
 func (c *Client) connect(cp ConnectionProvider) (conn *Connection, err error) {
-	if c.BeforeConnectCallback != nil {
-		c.BeforeConnectCallback()
+	if c.beforeConnectCallback != nil {
+		c.beforeConnectCallback()
 	}
 
 	conn, err = cp.ProvideConnection()
