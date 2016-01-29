@@ -69,13 +69,15 @@ Install tools used by the BOSH Agent test suite:
 
 #### Updating dependencies
 
-To update dependencies:
+All dependencies:
 
 ```
 ./update-dep github.com/cloudfoundry/bosh-utils/...
+```
 
-or 
+An example for a single depdency:
 
+```
 ./update-dep github.com/pivotal-golang/clock/fakeclock
 ```
 
@@ -102,7 +104,7 @@ There is a stand-alone _BOSH Agent_ integration test to test config-drive using 
 
 #### Using IntelliJ with Go and the BOSH Agent
 
-- Install [IntelliJ 13](http://www.jetbrains.com/idea/download/index.html) (we are using 13.0.1 Build 133.331)
+- Install [IntelliJ 15](http://www.jetbrains.com/idea/download/index.html)
 - Install the latest [Google Go plugin for IntelliJ](https://github.com/go-lang-plugin-org/go-lang-idea-plugin). You may want to grab the latest early access (EAP) build, rather than the last release.
 - (Optional) Download, Install & Select [improved keybindings](https://github.com/Pivotal-Boulder/IDE-Preferences) for IntelliJ:
     - `git clone git@github.com:Pivotal-Boulder/IDE-Preferences.git`
@@ -125,18 +127,6 @@ There is a stand-alone _BOSH Agent_ integration test to test config-drive using 
     - Select your module in the middle sidebar
     - Select the `Sources` tab in the Module pane
     - Select ~/workspace/bosh-agent-workspace/src and add is as a source dir
-    - Select ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry/bosh-agent/Godeps and add is as an excluded dir
-- Setup module dependencies
-    - Open the Project Structure window: `File -> Project Structure`
-    - Select the `Modules` tab in left sidebar
-    - Select your module in the middle sidebar
-    - Select the `Dependencies` tab in the Module pane
-    - Select the `+ -> Jars or directories...` to add ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry/bosh-agent/Godeps/_workspace as a `sources` dependency
-    - Rename the new dependency to `Godeps`
-    - Use the arrow buttons to move `Godeps` above `Go SDK` and below `<Module source>`
-- Set the bosh-agent dir as the Git root to enable version control
-    - Select the `-` to remove the project root
-    - Select the `+` to add the ~/workspace/bosh-agent-workspace/src/github.com/cloudfoundry/bosh-agent dir
 - Install & configure the [Grep Console](https://github.com/krasa/GrepConsole) plugin
     - Install via `Preferences -> Plugins`
     - Select `Preferences -> Grep COnsole -> Enable ANSI coloring` to colorize Ginkgo test output
