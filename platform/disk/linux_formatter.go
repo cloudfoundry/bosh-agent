@@ -21,7 +21,12 @@ func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) Formatte
 }
 
 func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err error) {
-	if f.partitionHasGivenType(partitionPath, fsType) {
+	hasGivenType, err := f.partitionHasGivenType(partitionPath, fsType)
+	if err != nil {
+		return bosherr.WrapError(err, "Checking partition type")
+	}
+
+	if hasGivenType {
 		return
 	}
 
@@ -45,11 +50,11 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 	return
 }
 
-func (f linuxFormatter) partitionHasGivenType(partitionPath string, fsType FileSystemType) bool {
+func (f linuxFormatter) partitionHasGivenType(partitionPath string, fsType FileSystemType) (bool, error) {
 	stdout, _, _, err := f.runner.RunCommand("blkid", "-p", partitionPath)
 	if err != nil {
-		return false
+		return false, bosherr.WrapError(err, "Shelling out to blkid")
 	}
 
-	return strings.Contains(stdout, fmt.Sprintf(` TYPE="%s"`, fsType))
+	return strings.Contains(stdout, fmt.Sprintf(` TYPE="%s"`, fsType)), nil
 }
