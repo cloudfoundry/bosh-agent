@@ -84,6 +84,7 @@ type linux struct {
 	state                  *BootstrapState
 	logger                 boshlog.Logger
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
+	persistentDiskFS       string
 }
 
 func NewLinuxPlatform(
@@ -198,6 +199,10 @@ func (p linux) SetupRuntimeConfiguration() (err error) {
 		err = bosherr.WrapError(err, "Shelling out to bosh-agent-rc")
 	}
 	return
+}
+
+func (p *linux) SetPersistentDiskFS(filesystemType string) {
+	p.persistentDiskFS = filesystemType
 }
 
 func (p linux) CreateUser(username, password, basePath string) error {
@@ -759,9 +764,13 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			partitionPath = realPath + "-part1"
 		}
 
-		err = p.diskManager.GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
+		persistentDiskFS := boshdisk.FileSystemExt4
+		if p.persistentDiskFS == "xfs" {
+			persistentDiskFS = boshdisk.FileSystemXFS
+		}
+		err = p.diskManager.GetFormatter().Format(partitionPath, persistentDiskFS)
 		if err != nil {
-			return bosherr.WrapError(err, "Formatting partition with ext4")
+			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", p.persistentDiskFS))
 		}
 
 		realPath = partitionPath

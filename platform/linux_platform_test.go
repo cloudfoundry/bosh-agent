@@ -1485,11 +1485,32 @@ Number  Start   End     Size    File system  Name             Flags
 					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
 				})
 
-				It("formats the disk", func() {
+				Context("when settings do NOT specify persistentDiskFS", func() {
+					It("formats in ext4 format", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(formatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+						Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+					})
+				})
+
+				Context("when settings specify persistentDiskFS", func() {
+					It("formats in using the given format", func() {
+						platform.SetPersistentDiskFS("xfs")
+
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemXFS}))
+					})
+				})
+
+				It("returns an error when disk could not be formatted", func() {
+					platform.SetPersistentDiskFS("xfs")
+					formatter.FormatError = errors.New("Oh noes!")
+
 					err := act()
-					Expect(err).ToNot(HaveOccurred())
-					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
-					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Formatting partition with xfs: Oh noes!"))
 				})
 
 				It("mounts the disk", func() {

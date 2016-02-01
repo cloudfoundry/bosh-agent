@@ -125,11 +125,16 @@ func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
 }
 
 type Env struct {
-	Bosh BoshEnv `json:"bosh"`
+	Bosh             BoshEnv `json:"bosh"`
+	PersistentDiskFS string  `json:"persistent_disk_fs"`
 }
 
 func (e Env) GetPassword() string {
 	return e.Bosh.Password
+}
+
+func (e Env) GetPersistentDiskFS() string {
+	return e.PersistentDiskFS
 }
 
 func (e Env) GetKeepRootPassword() bool {
@@ -299,7 +304,8 @@ func (n Network) IsVIP() bool {
 //	"env": {
 //		"bosh": {
 //			"password": null
-//		}
+//      },
+//      "persistent_disk_fs": "xfs"
 //	},
 //  "trusted_certs": "very\nlong\nmultiline\nstring"
 //	"mbus": "https://vcap:b00tstrap@0.0.0.0:6868",

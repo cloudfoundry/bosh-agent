@@ -24,6 +24,7 @@ type FakePlatform struct {
 	FakeCompressor    *fakecmd.FakeCompressor
 	FakeCopier        *fakecmd.FakeCopier
 	FakeVitalsService *fakevitals.FakeService
+	fsType            string
 	logger            boshlog.Logger
 
 	DevicePathResolver boshdpresolv.DevicePathResolver
@@ -155,6 +156,10 @@ func (p *FakePlatform) GetFs() (fs boshsys.FileSystem) {
 	return p.Fs
 }
 
+func (p *FakePlatform) GetPersistentDiskFS() (fsType string) {
+	return p.fsType
+}
+
 func (p *FakePlatform) GetRunner() (runner boshsys.CmdRunner) {
 	return p.Runner
 }
@@ -220,6 +225,10 @@ func (p *FakePlatform) SetupSSH(publicKey, username string) error {
 func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 	p.UserPasswords[user] = encryptedPwd
 	return
+}
+
+func (p *FakePlatform) SetPersistentDiskFS(fsType string) {
+	p.fsType = fsType
 }
 
 func (p *FakePlatform) SetupHostname(hostname string) (err error) {

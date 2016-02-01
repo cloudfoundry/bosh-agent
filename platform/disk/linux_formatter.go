@@ -34,12 +34,18 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 
 	case FileSystemExt4:
 		if f.fs.FileExists("/sys/fs/ext4/features/lazy_itable_init") {
-			_, _, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", partitionPath)
+			_, _, _, err = f.runner.RunCommand("mke2fs", "-t", string(fsType), "-j", "-E", "lazy_itable_init=1", partitionPath)
 		} else {
-			_, _, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", partitionPath)
+			_, _, _, err = f.runner.RunCommand("mke2fs", "-t", string(fsType), "-j", partitionPath)
 		}
 		if err != nil {
 			err = bosherr.WrapError(err, "Shelling out to mke2fs")
+		}
+
+	case FileSystemXFS:
+		_, _, _, err = f.runner.RunCommand("mkfs.xfs", partitionPath)
+		if err != nil {
+			err = bosherr.WrapError(err, "Shelling out to mkfs.xfs")
 		}
 	}
 	return

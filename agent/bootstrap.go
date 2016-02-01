@@ -97,6 +97,8 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up tmp dir")
 	}
 
+	boot.platform.SetPersistentDiskFS(settings.Env.GetPersistentDiskFS())
+
 	if len(settings.Disks.Persistent) > 1 {
 		return errors.New("Error mounting persistent disk, there is more than one persistent disk")
 	}
