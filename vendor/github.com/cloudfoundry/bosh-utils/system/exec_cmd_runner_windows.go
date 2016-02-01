@@ -3,8 +3,13 @@ package system
 import (
 	"bytes"
 	"os/exec"
+	"strings"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+)
+
+const (
+	execProcessLogTag = "Cmd Runner"
 )
 
 type execCmdRunner struct {
@@ -24,23 +29,22 @@ func (r execCmdRunner) RunComplexCommandAsync(cmd Command) (Process, error) {
 }
 
 func (r execCmdRunner) RunCommand(cmdName string, args ...string) (string, string, int, error) {
-	stdOut := new(bytes.Buffer)
-	stdErr := new(bytes.Buffer)
+	stdout := new(bytes.Buffer)
+	stderr := new(bytes.Buffer)
 
 	command := exec.Command(cmdName, args...)
-	command.Stderr = stdErr
-	command.Stdout = stdOut
+	command.Stderr = stderr
+	command.Stdout = stdout
 
+	r.logger.Debug(execProcessLogTag, "Running command: %s %s", cmdName, strings.Join(args, " "))
 	err := command.Run()
+	r.logger.Debug(execProcessLogTag, "Stdout: %s", stdout)
+	r.logger.Debug(execProcessLogTag, "Stderr: %s", stderr)
 	if err != nil {
-		return "", "", -1, err
+		return stdout.String(), stderr.String(), -1, err
 	}
 
-	if err != nil {
-		return stdOut.String(), stdErr.String(), -1, err
-	}
-
-	return stdOut.String(), stdErr.String(), 0, nil
+	return stdout.String(), stderr.String(), 0, nil
 }
 
 func (r execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (string, string, int, error) {

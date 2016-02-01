@@ -12,16 +12,9 @@ GOOS=windows \
   $OUTPUT_PATH \
   github.com/cloudfoundry/bosh-agent/main
 
-status=$(vagrant global-status | grep bosh-agent)
-if echo $status | grep running | grep aws
-then
-	echo "Vagrant is already running with a different provider"
-	exit 1
-fi
-
 if echo $status | grep agent | grep running
 then
   vagrant provision
 else
-  vagrant up --provider=virtualbox
+	vagrant up --provider=virtualbox
 fi

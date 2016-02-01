@@ -99,6 +99,12 @@ New-Item -ItemType file -path "C:\\bosh\\agent.json" -Value @"
 New-Item -ItemType file -path "C:\\bosh\\settings.json" -Value @"
 {
   "agent_id": "123-456-789",
+  "blobstore": {
+    "provider": "dav",
+    "options": {
+      "endpoint": "http://#{nats_private_ip}:25250"
+		}
+	},
   "disks": {
     "system": "/dev/xvda",
     "ephemeral": "/dev/sdb",
@@ -139,6 +145,9 @@ copy_agent_from_vagrant = <<-SHELL
   cp bosh-agent.exe c:\\bosh\\
   cp service_wrapper.exe c:\\bosh\\
   cp service_wrapper.xml c:\\bosh\\
+  cp bosh-blobstore-dav.exe c:\\bosh\\
+  cp tar.exe c:\\bosh\\
+  cp zlib1.dll c:\\bosh\\
 SHELL
 initialize_agent_service = <<-SHELL
   C:\\bosh\\service_wrapper.exe install
@@ -164,6 +173,18 @@ start_nats = <<-SHELL
   ./gnatsd -V 2> gnatsd.stderr.log 1> gnatsd.stdout.log &
 SHELL
 
+install_blobstore_server = <<-SHELL
+	if [ ! -e "/etc/init.d/nginx" ]; then
+		apt-get update && apt-get -y install nginx-full
+	fi
+SHELL
+
+start_blobstore_server = <<-SHELL
+	rm -f /etc/nginx/sites-enabled/default
+	cp /vagrant/fixtures/nginx.conf /etc/nginx/
+	cp /vagrant/fixtures/blobstore.conf /etc/nginx/sites-enabled/
+	/etc/init.d/nginx restart
+SHELL
 
 Vagrant.configure(2) do |config|
   config.vm.provider :aws do |aws, override|
@@ -226,5 +247,7 @@ Vagrant.configure(2) do |config|
     end
 
     nats.vm.provision "shell", inline: start_nats, privileged: false
+    nats.vm.provision "shell", inline: install_blobstore_server
+    nats.vm.provision "shell", inline: start_blobstore_server
   end
 end
