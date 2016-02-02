@@ -30,6 +30,11 @@ type FakeMounter struct {
 	IsMountedDevicePathOrMountPoint string
 	IsMountedResult                 bool
 	IsMountedErr                    error
+
+	FindDeviceMatchingMountPointPath   string
+	FindDeviceMatchingMountPointDevice string
+	FindDeviceMatchingMountPointResult bool
+	FindDeviceMatchingMountPointErr    error
 }
 
 func (m *FakeMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) error {
@@ -71,4 +76,9 @@ func (m *FakeMounter) IsMountPoint(path string) (result bool, err error) {
 func (m *FakeMounter) IsMounted(devicePathOrMountPoint string) (bool, error) {
 	m.IsMountedDevicePathOrMountPoint = devicePathOrMountPoint
 	return m.IsMountedResult, m.IsMountedErr
+}
+
+func (m *FakeMounter) FindDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
+	m.FindDeviceMatchingMountPointPath = mountPoint
+	return m.FindDeviceMatchingMountPointDevice, m.FindDeviceMatchingMountPointResult, m.FindDeviceMatchingMountPointErr
 }

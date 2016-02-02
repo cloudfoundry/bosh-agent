@@ -39,3 +39,7 @@ func (m linuxBindMounter) IsMountPoint(path string) (bool, error) {
 func (m linuxBindMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
 	return m.delegateMounter.IsMounted(partitionOrMountPoint)
 }
+
+func (m linuxBindMounter) FindDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
+	return m.delegateMounter.FindDeviceMatchingMountPoint(mountPoint)
+}

@@ -11,4 +11,5 @@ type Mounter interface {
 
 	IsMountPoint(path string) (result bool, err error)
 	IsMounted(devicePathOrMountPoint string) (result bool, err error)
+	FindDeviceMatchingMountPoint(string) (string, bool, error)
 }
