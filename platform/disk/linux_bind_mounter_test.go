@@ -124,4 +124,22 @@ var _ = Describe("linuxBindMounter", func() {
 			Expect(delegateMounter.IsMountedDevicePathOrMountPoint).To(Equal("fake-device-path"))
 		})
 	})
+
+	Describe("FindDeviceMatchingMountPoint", func() {
+		It("delegates to mounter", func() {
+			delegateMounter.FindDeviceMatchingMountPointDevice = "fake-device"
+			delegateMounter.FindDeviceMatchingMountPointResult = true
+			delegateMounter.FindDeviceMatchingMountPointErr = delegateErr
+
+			devicePath, isMounted, err := mounter.FindDeviceMatchingMountPoint("fake-mount-point")
+
+			// Outputs
+			Expect(devicePath).To(Equal("fake-device"))
+			Expect(isMounted).To(BeTrue())
+			Expect(err).To(Equal(delegateErr))
+
+			// Inputs
+			Expect(delegateMounter.FindDeviceMatchingMountPointPath).To(Equal("fake-mount-point"))
+		})
+	})
 })

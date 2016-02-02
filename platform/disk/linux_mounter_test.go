@@ -306,4 +306,32 @@ var _ = Describe("linuxMounter", func() {
 			Expect(err.Error()).To(ContainSubstring("fake-search-mounts-err"))
 		})
 	})
+
+	Describe("FindDeviceMatchingMountPoint", func() {
+		Context("when mount point does not exist", func() {
+			It("return empty string without error", func() {
+				mountsSearcher.SearchMountsMounts = []Mount{
+					Mount{PartitionPath: "/dev/xvdb2", MountPoint: "/var/vcap/store"},
+				}
+
+				devicePath, isMounted, err := mounter.FindDeviceMatchingMountPoint("/var/vcap/fake")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(devicePath).To(Equal(""))
+				Expect(isMounted).To(BeFalse())
+			})
+		})
+
+		Context("when mount point exists", func() {
+			It("return mounted device path", func() {
+				mountsSearcher.SearchMountsMounts = []Mount{
+					Mount{PartitionPath: "/dev/xvdb2", MountPoint: "/var/vcap/store"},
+				}
+
+				devicePath, isMounted, err := mounter.FindDeviceMatchingMountPoint("/var/vcap/store")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(devicePath).To(Equal("/dev/xvdb2"))
+				Expect(isMounted).To(BeTrue())
+			})
+		})
+	})
 })

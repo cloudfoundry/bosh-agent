@@ -100,6 +100,11 @@ type FakePlatform struct {
 	IsMountPointResult bool
 	IsMountPointErr    error
 
+	FindDeviceMatchingMountPointPath   string
+	FindDeviceMatchingMountPointDevice string
+	FindDeviceMatchingMountPointResult bool
+	FindDeviceMatchingMountPointErr    error
+
 	MountedDevicePaths []string
 
 	StartMonitStarted           bool
@@ -334,6 +339,11 @@ func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string
 func (p *FakePlatform) IsMountPoint(path string) (bool, error) {
 	p.IsMountPointPath = path
 	return p.IsMountPointResult, p.IsMountPointErr
+}
+
+func (p *FakePlatform) FindDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
+	p.FindDeviceMatchingMountPointPath = mountPoint
+	return p.FindDeviceMatchingMountPointDevice, p.FindDeviceMatchingMountPointResult, p.FindDeviceMatchingMountPointErr
 }
 
 func (p *FakePlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error) {

@@ -234,6 +234,10 @@ func (p dummyPlatform) IsMountPoint(mountPointPath string) (result bool, err err
 	return false, nil
 }
 
+func (p dummyPlatform) FindDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
+	return "", false, nil
+}
+
 func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (bool, error) {
 	return true, nil
 }

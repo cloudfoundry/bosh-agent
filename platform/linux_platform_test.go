@@ -1904,6 +1904,36 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
+	Describe("FindDeviceMatchingMountPoint", func() {
+		act := func() (string, bool, error) {
+			return platform.FindDeviceMatchingMountPoint("fake-mount-point")
+		}
+
+		var mounter *fakedisk.FakeMounter
+		BeforeEach(func() {
+			mounter = diskManager.FakeMounter
+			devicePathResolver.RealDevicePath = "fake-real-device-path"
+		})
+
+		Context("when mount point does not exist", func() {
+			It("returns empty string without error", func() {
+				devicePath, isMounted, err := act()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(devicePath).To(Equal(""))
+				Expect(isMounted).To(BeFalse())
+			})
+		})
+
+		Context("when mount point exists", func() {
+			It("returns device path", func() {
+				devicePath, isMounted, err := act()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(devicePath).To(Equal(""))
+				Expect(isMounted).To(BeFalse())
+			})
+		})
+	})
+
 	Describe("IsPersistentDiskPartitioned", func() {
 		BeforeEach(func() {
 			devicePathResolver.RealDevicePath = "/fake/device"

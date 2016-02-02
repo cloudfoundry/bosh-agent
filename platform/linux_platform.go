@@ -825,6 +825,10 @@ func (p linux) IsMountPoint(path string) (bool, error) {
 	return p.diskManager.GetMounter().IsMountPoint(path)
 }
 
+func (p linux) FindDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
+	return p.diskManager.GetMounter().FindDeviceMatchingMountPoint(mountPoint)
+}
+
 func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
 	p.logger.Debug(logTag, "Migrating persistent disk %v to %v", fromMountPoint, toMountPoint)
 
