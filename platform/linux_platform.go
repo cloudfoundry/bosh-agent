@@ -815,6 +815,21 @@ func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) stri
 	return realPath
 }
 
+func (p linux) IsPersistentDiskPartitioned(diskSettings boshsettings.DiskSettings) (bool, error) {
+	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
+	if err != nil {
+		return false, bosherr.WrapErrorf(err, "Validating path: %s", diskSettings.Path)
+	}
+
+	stdout, stderr, _, _ := p.cmdRunner.RunCommand("sfdisk", "-d", realPath)
+	if strings.Contains(stderr, "unrecognized partition table type") {
+		return false, nil
+	}
+
+	lines := len(strings.Split(stdout, "\n"))
+	return lines > 4, nil
+}
+
 func (p linux) IsMountPoint(path string) (bool, error) {
 	return p.diskManager.GetMounter().IsMountPoint(path)
 }

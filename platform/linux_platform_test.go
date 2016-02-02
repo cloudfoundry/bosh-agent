@@ -1955,6 +1955,79 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
+	Describe("IsPersistentDiskPartitioned", func() {
+		BeforeEach(func() {
+			devicePathResolver.RealDevicePath = "/fake/device"
+		})
+
+		Context("when the specified drive does not exist", func() {
+			It("returns error", func() {
+				devicePathResolver.GetRealDevicePathTimedOut = true
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-timeout-error")
+				diskSettings := boshsettings.DiskSettings{
+					Path: "/fake/device",
+				}
+
+				isMounted, err := platform.IsPersistentDiskPartitioned(diskSettings)
+				Expect(err).To(HaveOccurred())
+				Expect(isMounted).To(Equal(false))
+			})
+		})
+
+		Context("when there is no partition on drive", func() {
+			It("returns false", func() {
+				result := fakesys.FakeCmdResult{
+					Error:      nil,
+					ExitStatus: 0,
+					Stderr: `
+dfdisk: ERROR: sector 0 does not have an msdos signature
+/fake/device: unrecognized partition table type
+No partitions found
+`,
+					Stdout: "",
+				}
+
+				cmdRunner.AddCmdResult("sfdisk -d /fake/device", result)
+
+				diskSettings := boshsettings.DiskSettings{
+					Path: "/fake/device",
+				}
+
+				isMounted, err := platform.IsPersistentDiskPartitioned(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(isMounted).To(Equal(false))
+			})
+		})
+
+		Context("when drive is partitioned", func() {
+			It("returns true", func() {
+				result := fakesys.FakeCmdResult{
+					Error:      nil,
+					ExitStatus: 0,
+					Stderr:     "",
+					Stdout: `# partition table of /fake/device
+unit: sectors
+
+/fake/device1 : start=       63, size=  5997984, Id=83
+/fake/device2 : start=  5998592, size= 32691088, Id=83
+/fake/device3 : start= 38690816, size=195750832, Id=83
+/fake/device4 : start=        0, size=        0, Id= 0
+`,
+				}
+
+				cmdRunner.AddCmdResult("sfdisk -d /fake/device", result)
+
+				diskSettings := boshsettings.DiskSettings{
+					Path: "/fake/device",
+				}
+
+				isMounted, err := platform.IsPersistentDiskPartitioned(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(isMounted).To(Equal(true))
+			})
+		})
+	})
+
 	Describe("StartMonit", func() {
 		It("creates a symlink between /etc/service/monit and /etc/sv/monit", func() {
 			err := platform.StartMonit()

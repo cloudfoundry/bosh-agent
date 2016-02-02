@@ -220,49 +220,6 @@ func init() {
 				Expect(err.Error()).To(ContainSubstring("fake-setup-tmp-dir-err"))
 			})
 
-			It("mounts persistent disk", func() {
-				settingsService.Settings.Disks = boshsettings.Disks{
-					Persistent: map[string]interface{}{
-						"vol-123": map[string]interface{}{
-							"volume_id": "2",
-							"path":      "/dev/sdb",
-						},
-					},
-				}
-
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
-					ID:       "vol-123",
-					VolumeID: "2",
-					Path:     "/dev/sdb",
-				}))
-				Expect(platform.MountPersistentDiskMountPoint).To(Equal(dirProvider.StoreDir()))
-			})
-
-			It("errors if there is more than one persistent disk", func() {
-				settingsService.Settings.Disks = boshsettings.Disks{
-					Persistent: map[string]interface{}{
-						"vol-123": "/dev/sdb",
-						"vol-456": "/dev/sdc",
-					},
-				}
-
-				err := bootstrap()
-				Expect(err).To(HaveOccurred())
-			})
-
-			It("does not try to mount when no persistent disk", func() {
-				settingsService.Settings.Disks = boshsettings.Disks{
-					Persistent: map[string]interface{}{},
-				}
-
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{}))
-				Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
-			})
-
 			It("grows the root filesystem", func() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
@@ -359,6 +316,89 @@ func init() {
 				})
 			})
 
+			Describe("Mount persistent disk", func() {
+				Context("when there is more than one persistent disk", func() {
+					It("returns error", func() {
+						settingsService.Settings.Disks = boshsettings.Disks{
+							Persistent: map[string]interface{}{
+								"vol-123": "/dev/sdb",
+								"vol-456": "/dev/sdc",
+							},
+						}
+
+						err := bootstrap()
+						Expect(err).To(HaveOccurred())
+					})
+				})
+
+				Context("when there is no persistent disk", func() {
+					It("does not try to mount ", func() {
+						settingsService.Settings.Disks = boshsettings.Disks{
+							Persistent: map[string]interface{}{},
+						}
+
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{}))
+						Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
+					})
+				})
+
+				Context("when there is no drive specified by settings", func() {
+					It("returns error", func() {
+						settingsService.Settings.Disks = boshsettings.Disks{
+							Persistent: map[string]interface{}{
+								"vol-123": "/dev/not-exists",
+							},
+						}
+						platform.SetIsPersistentDiskPartitioned(false, errors.New("Drive not exist!"))
+
+						err := bootstrap()
+						Expect(err).To(HaveOccurred())
+						Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{}))
+						Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
+					})
+				})
+
+				Context("when there is no partition on drive specified by settings", func() {
+					It("does not try to mount ", func() {
+						settingsService.Settings.Disks = boshsettings.Disks{
+							Persistent: map[string]interface{}{
+								"vol-123": "/dev/valid",
+							},
+						}
+						platform.SetIsPersistentDiskPartitioned(false, nil)
+
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{}))
+						Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
+					})
+				})
+
+				Context("when specified disk has partition", func() {
+					It("mounts persistent disk", func() {
+						settingsService.Settings.Disks = boshsettings.Disks{
+							Persistent: map[string]interface{}{
+								"vol-123": map[string]interface{}{
+									"volume_id": "2",
+									"path":      "/dev/sdb",
+								},
+							},
+						}
+						platform.SetIsPersistentDiskPartitioned(true, nil)
+
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+							ID:       "vol-123",
+							VolumeID: "2",
+							Path:     "/dev/sdb",
+						}))
+						Expect(platform.MountPersistentDiskMountPoint).To(Equal(dirProvider.StoreDir()))
+					})
+				})
+			})
 		})
 
 		Describe("Network setup exercised by Run", func() {
