@@ -2,6 +2,7 @@ package bundlecollection
 
 import (
 	"path"
+	"path/filepath"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -16,7 +17,7 @@ type fileBundleDefinition struct {
 }
 
 func newFileBundleDefinition(installPath string) fileBundleDefinition {
-	cleanInstallPath := path.Clean(installPath) // no trailing slash
+	cleanInstallPath := cleanPath(installPath) // no trailing slash
 
 	// If the path is empty, Base returns ".".
 	// If the path consists entirely of separators, Base returns a single separator.
@@ -51,9 +52,9 @@ func NewFileBundleCollection(
 	logger boshlog.Logger,
 ) FileBundleCollection {
 	return FileBundleCollection{
-		name:        name,
-		installPath: installPath,
-		enablePath:  enablePath,
+		name:        cleanPath(name),
+		installPath: cleanPath(installPath),
+		enablePath:  cleanPath(enablePath),
 		fs:          fs,
 		logger:      logger,
 	}
@@ -93,4 +94,8 @@ func (bc FileBundleCollection) List() ([]Bundle, error) {
 	bc.logger.Debug(fileBundleCollectionLogTag, "Collection contains bundles %v", bundles)
 
 	return bundles, nil
+}
+
+func cleanPath(name string) string {
+	return path.Clean(filepath.ToSlash(name))
 }
