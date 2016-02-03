@@ -767,7 +767,10 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		persistentDiskFS := boshdisk.FileSystemExt4
 		if p.persistentDiskFS == "xfs" {
 			persistentDiskFS = boshdisk.FileSystemXFS
+		} else if p.persistentDiskFS != "ext4" && p.persistentDiskFS != "" {
+			return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, p.persistentDiskFS))
 		}
+
 		err = p.diskManager.GetFormatter().Format(partitionPath, persistentDiskFS)
 		if err != nil {
 			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", p.persistentDiskFS))

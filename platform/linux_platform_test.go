@@ -1495,12 +1495,34 @@ Number  Start   End     Size    File system  Name             Flags
 				})
 
 				Context("when settings specify persistentDiskFS", func() {
-					It("formats in using the given format", func() {
-						platform.SetPersistentDiskFS("xfs")
+					Context("with ext4", func() {
+						It("formats in using the given format", func() {
+							platform.SetPersistentDiskFS("ext4")
 
-						err := act()
-						Expect(err).ToNot(HaveOccurred())
-						Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemXFS}))
+							err := act()
+							Expect(err).ToNot(HaveOccurred())
+							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+						})
+					})
+
+					Context("with xfs", func() {
+						It("formats in using the given format", func() {
+							platform.SetPersistentDiskFS("xfs")
+
+							err := act()
+							Expect(err).ToNot(HaveOccurred())
+							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemXFS}))
+						})
+					})
+
+					Context("with an unsupported type", func() {
+						It("it errors", func() {
+							platform.SetPersistentDiskFS("fat16")
+
+							err := act()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(Equal(`The filesystem type "fat16" is not supported`))
+						})
 					})
 				})
 
