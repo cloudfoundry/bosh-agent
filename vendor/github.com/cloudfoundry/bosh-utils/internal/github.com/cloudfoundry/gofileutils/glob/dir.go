@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -17,7 +18,7 @@ type dir struct {
 }
 
 func NewDir(path string) (d Dir) {
-	return dir{path: path}
+	return dir{path: filepath.ToSlash(path)}
 }
 
 func (d dir) Glob(patterns ...string) (filePaths []string, err error) {
@@ -37,7 +38,7 @@ func (d dir) Glob(patterns ...string) (filePaths []string, err error) {
 }
 
 func (d dir) glob(pattern string) (files []string, err error) {
-	globPattern := filepath.Join(d.path, pattern)
+	globPattern := path.Join(d.path, pattern)
 
 	glob, err := CompileGlob(globPattern)
 	if err != nil {
