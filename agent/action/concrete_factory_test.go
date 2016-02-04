@@ -15,6 +15,7 @@ import (
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
@@ -34,6 +35,7 @@ var _ = Describe("concreteFactory", func() {
 		compiler          *fakecomp.FakeCompiler
 		jobSupervisor     *fakejobsuper.FakeJobSupervisor
 		specService       *fakeas.FakeV1Service
+		arp               *fakearp.FakeArpManager
 		jobScriptProvider boshscript.JobScriptProvider
 		factory           Factory
 		logger            boshlog.Logger
@@ -51,6 +53,7 @@ var _ = Describe("concreteFactory", func() {
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
+		arp = new(fakearp.FakeArpManager)
 
 		factory = NewFactory(
 			settingsService,
@@ -64,6 +67,7 @@ var _ = Describe("concreteFactory", func() {
 			specService,
 			jobScriptProvider,
 			logger,
+			arp,
 		)
 	})
 
@@ -201,5 +205,11 @@ var _ = Describe("concreteFactory", func() {
 		action, err := factory.Create("prepare")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewPrepare(applier)))
+	})
+
+	It("delete_from_arp", func() {
+		action, err := factory.Create("delete_from_arp")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewForcefulARP(arp)))
 	})
 })
