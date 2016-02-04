@@ -759,10 +759,12 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			partitionPath = realPath + "-part1"
 		}
 
-		persistentDiskFS := boshdisk.FileSystemExt4
-		if diskSetting.FileSystemType == "xfs" {
-			persistentDiskFS = boshdisk.FileSystemXFS
-		} else if diskSetting.FileSystemType != "ext4" && diskSetting.FileSystemType != "" {
+		persistentDiskFS := diskSetting.FileSystemType
+		switch persistentDiskFS {
+		case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
+		case boshdisk.FileSystemDefault:
+			persistentDiskFS = boshdisk.FileSystemExt4
+		default:
 			return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
 		}
 

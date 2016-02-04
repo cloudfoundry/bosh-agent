@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/matchers"
+	"github.com/cloudfoundry/bosh-agent/platform/disk"
 	. "github.com/cloudfoundry/bosh-agent/settings"
 )
 
@@ -55,7 +56,7 @@ var _ = Describe("Settings", func() {
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
 					diskSettings, _ := settings.PersistentDiskSettings("fake-disk-id")
-					Expect(settings.Env.PersistentDiskFS).To(Equal("xfs"))
+					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemXFS))
 					Expect(diskSettings).To(Equal(DiskSettings{
 						ID:             "fake-disk-id",
 						DeviceID:       "fake-disk-device-id",
@@ -71,12 +72,28 @@ var _ = Describe("Settings", func() {
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
 					diskSettings, _ := settings.PersistentDiskSettings("fake-disk-id")
-					Expect(settings.Env.PersistentDiskFS).To(Equal(""))
+					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemDefault))
 					Expect(diskSettings).To(Equal(DiskSettings{
 						ID:       "fake-disk-id",
 						DeviceID: "fake-disk-device-id",
 						VolumeID: "fake-disk-volume-id",
 						Path:     "fake-disk-path",
+					}))
+				})
+
+				It("does not crash if env has a bad fs", func() {
+					settingsJSON := `{"env": {"persistent_disk_fs": "blahblah"}}`
+
+					err := json.Unmarshal([]byte(settingsJSON), &settings)
+					Expect(err).NotTo(HaveOccurred())
+					diskSettings, _ := settings.PersistentDiskSettings("fake-disk-id")
+					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemType("blahblah")))
+					Expect(diskSettings).To(Equal(DiskSettings{
+						ID:             "fake-disk-id",
+						DeviceID:       "fake-disk-device-id",
+						VolumeID:       "fake-disk-volume-id",
+						Path:           "fake-disk-path",
+						FileSystemType: disk.FileSystemType("blahblah"),
 					}))
 				})
 			})

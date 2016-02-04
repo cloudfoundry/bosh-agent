@@ -1498,7 +1498,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Context("with ext4", func() {
 						It("formats in using the given format", func() {
 							err := platform.MountPersistentDisk(
-								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "ext4"},
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemExt4},
 								"/mnt/point",
 							)
 
@@ -1510,7 +1510,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Context("with xfs", func() {
 						It("formats in using the given format", func() {
 							err := platform.MountPersistentDisk(
-								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "xfs"},
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
 								"/mnt/point",
 							)
 
@@ -1522,12 +1522,12 @@ Number  Start   End     Size    File system  Name             Flags
 					Context("with an unsupported type", func() {
 						It("it errors", func() {
 							err := platform.MountPersistentDisk(
-								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "fat16"},
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemType("blahblah")},
 								"/mnt/point",
 							)
 
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(Equal(`The filesystem type "fat16" is not supported`))
+							Expect(err.Error()).To(Equal(`The filesystem type "blahblah" is not supported`))
 						})
 					})
 				})
@@ -1535,7 +1535,7 @@ Number  Start   End     Size    File system  Name             Flags
 				It("returns an error when disk could not be formatted", func() {
 					formatter.FormatError = errors.New("Oh noes!")
 					err := platform.MountPersistentDisk(
-						boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "xfs"},
+						boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
 						"/mnt/point",
 					)
 

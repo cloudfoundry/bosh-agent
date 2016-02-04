@@ -2,6 +2,7 @@ package settings
 
 import (
 	"fmt"
+	"github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
 const (
@@ -60,7 +61,7 @@ type DiskSettings struct {
 	DeviceID       string
 	VolumeID       string
 	Path           string
-	FileSystemType string
+	FileSystemType disk.FileSystemType
 }
 
 type VM struct {
@@ -127,8 +128,8 @@ func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
 }
 
 type Env struct {
-	Bosh             BoshEnv `json:"bosh"`
-	PersistentDiskFS string  `json:"persistent_disk_fs"`
+	Bosh             BoshEnv             `json:"bosh"`
+	PersistentDiskFS disk.FileSystemType `json:"persistent_disk_fs"`
 }
 
 func (e Env) GetPassword() string {
