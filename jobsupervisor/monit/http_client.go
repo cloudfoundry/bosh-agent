@@ -8,8 +8,8 @@ import (
 	"path"
 	"strings"
 
-	"code.google.com/p/go-charset/charset"
-	_ "code.google.com/p/go-charset/data" // translations between char sets
+	"github.com/paulrosania/go-charset/charset"
+	_ "github.com/paulrosania/go-charset/data" // translations between char sets
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshhttp "github.com/cloudfoundry/bosh-utils/http"
