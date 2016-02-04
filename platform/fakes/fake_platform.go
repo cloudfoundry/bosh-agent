@@ -97,9 +97,10 @@ type FakePlatform struct {
 	IsPersistentDiskPartitionedResult bool
 	IsPersistentDiskPartitionedErr    error
 
-	IsMountPointPath   string
-	IsMountPointResult bool
-	IsMountPointErr    error
+	IsMountPointPath          string
+	IsMountPointPartitionPath string
+	IsMountPointResult        bool
+	IsMountPointErr           error
 
 	PackageFileListPath    string
 	IsRemoveDevToolsCalled bool
@@ -340,9 +341,9 @@ func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string
 	return
 }
 
-func (p *FakePlatform) IsMountPoint(path string) (bool, error) {
+func (p *FakePlatform) IsMountPoint(path string) (string, bool, error) {
 	p.IsMountPointPath = path
-	return p.IsMountPointResult, p.IsMountPointErr
+	return p.IsMountPointPartitionPath, p.IsMountPointResult, p.IsMountPointErr
 }
 
 func (p *FakePlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error) {

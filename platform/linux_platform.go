@@ -625,7 +625,7 @@ func (p linux) SetupDataDir() error {
 func (p linux) setupRunDir(sysDir string) error {
 	runDir := path.Join(sysDir, "run")
 
-	runDirIsMounted, err := p.IsMountPoint(runDir)
+	_, runDirIsMounted, err := p.IsMountPoint(runDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Checking for mount point %s", runDir)
 	}
@@ -680,7 +680,7 @@ func (p linux) SetupTmpDir() error {
 		return nil
 	}
 
-	systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
+	_, systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Checking for mount point %s", systemTmpDir)
 	}
@@ -830,7 +830,7 @@ func (p linux) IsPersistentDiskPartitioned(diskSettings boshsettings.DiskSetting
 	return lines > 4, nil
 }
 
-func (p linux) IsMountPoint(path string) (bool, error) {
+func (p linux) IsMountPoint(path string) (string, bool, error) {
 	return p.diskManager.GetMounter().IsMountPoint(path)
 }
 
