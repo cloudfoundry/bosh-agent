@@ -1,11 +1,19 @@
 package action
 
-import "errors"
+import (
+	"errors"
 
-type ForcefulARPAction struct{}
+	"github.com/cloudfoundry/bosh-agent/platform/net/arp"
+)
 
-func NewForcefulARP() ForcefulARPAction {
-	return ForcefulARPAction{}
+type ForcefulARPAction struct {
+	arp arp.ArpManager
+}
+
+func NewForcefulARP(arp arp.ArpManager) ForcefulARPAction {
+	return ForcefulARPAction{
+		arp: arp,
+	}
 }
 
 func (a ForcefulARPAction) IsAsynchronous() bool {
@@ -14,6 +22,13 @@ func (a ForcefulARPAction) IsAsynchronous() bool {
 
 func (a ForcefulARPAction) IsPersistent() bool {
 	return false
+}
+
+func (a ForcefulARPAction) Run(addresses []string) (string, error) {
+	for _, address := range addresses {
+		a.arp.Delete(address)
+	}
+	return "completed", nil
 }
 
 func (a ForcefulARPAction) Resume() (interface{}, error) {
