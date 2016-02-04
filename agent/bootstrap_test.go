@@ -125,14 +125,6 @@ func init() {
 				Expect(platform.SetupHostnameHostname).To(Equal("foo-bar-baz-123"))
 			})
 
-			It("sets persistent disk filesystem", func() {
-				settingsService.Settings.Env.PersistentDiskFS = "ext4"
-
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.GetPersistentDiskFS()).To(Equal("ext4"))
-			})
-
 			It("fetches initial settings", func() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())

@@ -56,10 +56,11 @@ type Disks struct {
 }
 
 type DiskSettings struct {
-	ID       string
-	DeviceID string
-	VolumeID string
-	Path     string
+	ID             string
+	DeviceID       string
+	VolumeID       string
+	Path           string
+	FileSystemType string
 }
 
 type VM struct {
@@ -89,6 +90,7 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 				diskSettings.VolumeID = settings.(string)
 			}
 
+			diskSettings.FileSystemType = s.Env.PersistentDiskFS
 			return diskSettings, true
 		}
 	}
@@ -131,10 +133,6 @@ type Env struct {
 
 func (e Env) GetPassword() string {
 	return e.Bosh.Password
-}
-
-func (e Env) GetPersistentDiskFS() string {
-	return e.PersistentDiskFS
 }
 
 func (e Env) GetKeepRootPassword() bool {

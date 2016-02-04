@@ -1497,9 +1497,11 @@ Number  Start   End     Size    File system  Name             Flags
 				Context("when settings specify persistentDiskFS", func() {
 					Context("with ext4", func() {
 						It("formats in using the given format", func() {
-							platform.SetPersistentDiskFS("ext4")
+							err := platform.MountPersistentDisk(
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "ext4"},
+								"/mnt/point",
+							)
 
-							err := act()
 							Expect(err).ToNot(HaveOccurred())
 							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
 						})
@@ -1507,9 +1509,11 @@ Number  Start   End     Size    File system  Name             Flags
 
 					Context("with xfs", func() {
 						It("formats in using the given format", func() {
-							platform.SetPersistentDiskFS("xfs")
+							err := platform.MountPersistentDisk(
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "xfs"},
+								"/mnt/point",
+							)
 
-							err := act()
 							Expect(err).ToNot(HaveOccurred())
 							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemXFS}))
 						})
@@ -1517,9 +1521,11 @@ Number  Start   End     Size    File system  Name             Flags
 
 					Context("with an unsupported type", func() {
 						It("it errors", func() {
-							platform.SetPersistentDiskFS("fat16")
+							err := platform.MountPersistentDisk(
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "fat16"},
+								"/mnt/point",
+							)
 
-							err := act()
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(Equal(`The filesystem type "fat16" is not supported`))
 						})
@@ -1527,10 +1533,12 @@ Number  Start   End     Size    File system  Name             Flags
 				})
 
 				It("returns an error when disk could not be formatted", func() {
-					platform.SetPersistentDiskFS("xfs")
 					formatter.FormatError = errors.New("Oh noes!")
+					err := platform.MountPersistentDisk(
+						boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: "xfs"},
+						"/mnt/point",
+					)
 
-					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Formatting partition with xfs: Oh noes!"))
 				})

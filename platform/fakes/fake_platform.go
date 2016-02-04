@@ -227,10 +227,6 @@ func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetPersistentDiskFS(fsType string) {
-	p.fsType = fsType
-}
-
 func (p *FakePlatform) SetupHostname(hostname string) (err error) {
 	p.SetupHostnameHostname = hostname
 	return

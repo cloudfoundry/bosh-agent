@@ -38,7 +38,6 @@ type dummyPlatform struct {
 	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
 	certManager        boshcert.Manager
-	fsType             string
 }
 
 func NewDummyPlatform(
@@ -116,10 +115,6 @@ func (p dummyPlatform) SetupSSH(publicKey, username string) (err error) {
 
 func (p dummyPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 	return
-}
-
-func (p dummyPlatform) SetPersistentDiskFS(fsType string) {
-	p.fsType = fsType
 }
 
 func (p dummyPlatform) SetupHostname(hostname string) (err error) {

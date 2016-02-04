@@ -47,6 +47,39 @@ var _ = Describe("Settings", func() {
 					Expect(diskSettings).To(Equal(DiskSettings{}))
 				})
 			})
+
+			Context("when Env is provided", func() {
+				It("gets filesystem type from env", func() {
+					settingsJSON := `{"env": {"persistent_disk_fs": "xfs"}}`
+
+					err := json.Unmarshal([]byte(settingsJSON), &settings)
+					Expect(err).NotTo(HaveOccurred())
+					diskSettings, _ := settings.PersistentDiskSettings("fake-disk-id")
+					Expect(settings.Env.PersistentDiskFS).To(Equal("xfs"))
+					Expect(diskSettings).To(Equal(DiskSettings{
+						ID:             "fake-disk-id",
+						DeviceID:       "fake-disk-device-id",
+						VolumeID:       "fake-disk-volume-id",
+						Path:           "fake-disk-path",
+						FileSystemType: "xfs",
+					}))
+				})
+
+				It("does not crash if env does not have a filesystem type", func() {
+					settingsJSON := `{"env": {"bosh": {"password": "secret"}}}`
+
+					err := json.Unmarshal([]byte(settingsJSON), &settings)
+					Expect(err).NotTo(HaveOccurred())
+					diskSettings, _ := settings.PersistentDiskSettings("fake-disk-id")
+					Expect(settings.Env.PersistentDiskFS).To(Equal(""))
+					Expect(diskSettings).To(Equal(DiskSettings{
+						ID:       "fake-disk-id",
+						DeviceID: "fake-disk-device-id",
+						VolumeID: "fake-disk-volume-id",
+						Path:     "fake-disk-path",
+					}))
+				})
+			})
 		})
 
 		Context("when the disk settings is a string", func() {
@@ -532,28 +565,6 @@ var _ = Describe("Settings", func() {
 					Expect(networks.IsPreconfigured()).To(BeFalse())
 				})
 			})
-		})
-	})
-
-	Describe("Env", func() {
-		It("gets persistenDiskFS from env when present", func() {
-			settings = Settings{}
-			settingsJSON := `{"env": {"persistent_disk_fs": "xfs"}}`
-
-			err := json.Unmarshal([]byte(settingsJSON), &settings)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(settings.Env.PersistentDiskFS).To(Equal("xfs"))
-			Expect(settings.Env.GetPersistentDiskFS()).To(Equal("xfs"))
-		})
-
-		It("does not crash when persistent_disk_fs is not present on env", func() {
-			settings = Settings{}
-			settingsJSON := `{"env": {"bosh": {"password": "secret"}}}`
-
-			err := json.Unmarshal([]byte(settingsJSON), &settings)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(settings.Env.PersistentDiskFS).To(Equal(""))
-			Expect(settings.Env.GetPersistentDiskFS()).To(Equal(""))
 		})
 	})
 })
