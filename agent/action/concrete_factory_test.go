@@ -35,7 +35,7 @@ var _ = Describe("concreteFactory", func() {
 		compiler          *fakecomp.FakeCompiler
 		jobSupervisor     *fakejobsuper.FakeJobSupervisor
 		specService       *fakeas.FakeV1Service
-		arp               *fakearp.FakeArpManager
+		arp               *fakearp.FakeManager
 		jobScriptProvider boshscript.JobScriptProvider
 		factory           Factory
 		logger            boshlog.Logger
@@ -53,7 +53,7 @@ var _ = Describe("concreteFactory", func() {
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		arp = new(fakearp.FakeArpManager)
+		arp = new(fakearp.FakeManager)
 
 		factory = NewFactory(
 			settingsService,

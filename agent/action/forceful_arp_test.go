@@ -11,13 +11,13 @@ import (
 func init() {
 	Describe("Forceful ARP", func() {
 		var (
-			arp       *fakes.FakeArpManager
+			arp       *fakes.FakeManager
 			action    ForcefulARPAction
 			addresses []string
 		)
 
 		BeforeEach(func() {
-			arp = new(fakes.FakeArpManager)
+			arp = new(fakes.FakeManager)
 			action = NewForcefulARP(arp)
 			addresses = []string{"10.0.0.1", "10.0.0.2"}
 		})

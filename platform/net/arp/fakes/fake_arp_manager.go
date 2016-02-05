@@ -7,7 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/net/arp"
 )
 
-type FakeArpManager struct {
+type FakeManager struct {
 	DeleteStub        func(string)
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []struct {
@@ -15,7 +15,7 @@ type FakeArpManager struct {
 	}
 }
 
-func (fake *FakeArpManager) Delete(arg1 string) {
+func (fake *FakeManager) Delete(arg1 string) {
 	fake.deleteMutex.Lock()
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
 		arg1 string
@@ -26,16 +26,16 @@ func (fake *FakeArpManager) Delete(arg1 string) {
 	}
 }
 
-func (fake *FakeArpManager) DeleteCallCount() int {
+func (fake *FakeManager) DeleteCallCount() int {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeArpManager) DeleteArgsForCall(i int) string {
+func (fake *FakeManager) DeleteArgsForCall(i int) string {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	return fake.deleteArgsForCall[i].arg1
 }
 
-var _ arp.ArpManager = new(FakeArpManager)
+var _ arp.Manager = new(FakeManager)

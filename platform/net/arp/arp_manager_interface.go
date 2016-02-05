@@ -1,5 +1,5 @@
 package arp
 
-type ArpManager interface {
+type Manager interface {
 	Delete(string)
 }

@@ -7,10 +7,10 @@ import (
 )
 
 type ForcefulARPAction struct {
-	arp arp.ArpManager
+	arp arp.Manager
 }
 
-func NewForcefulARP(arp arp.ArpManager) ForcefulARPAction {
+func NewForcefulARP(arp arp.Manager) ForcefulARPAction {
 	return ForcefulARPAction{
 		arp: arp,
 	}
