@@ -2108,4 +2108,15 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("RemoveDevTools", func() {
+		It("removes listed packages", func() {
+			devToolsListPath := path.Join(dirProvider.EtcDir(), "dev_tools_file_list")
+			fs.WriteFileString(devToolsListPath, "dummy-compiler")
+			err := platform.RemoveDevTools(devToolsListPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-f", "dummy-compiler"}))
+		})
+	})
 }
