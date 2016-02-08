@@ -2111,7 +2111,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 	Describe("RemoveDevTools", func() {
 		It("removes listed packages", func() {
-			devToolsListPath := "/var/vcap/etc/dev-tools-file-list"
+			devToolsListPath := path.Join(dirProvider.EtcDir(), "dev_tools_file_list")
 			fs.WriteFileString(devToolsListPath, "dummy-compiler")
 			err := platform.RemoveDevTools(devToolsListPath)
 			Expect(err).ToNot(HaveOccurred())

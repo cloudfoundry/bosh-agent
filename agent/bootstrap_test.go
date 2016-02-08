@@ -55,7 +55,6 @@ func init() {
 			BeforeEach(func() {
 				platform = fakeplatform.NewFakePlatform()
 				dirProvider = boshdir.NewProvider("/var/vcap")
-
 				settingsSource = &fakeinf.FakeSettingsSource{}
 				settingsService = &fakesettings.FakeSettingsService{}
 			})
@@ -335,8 +334,11 @@ func init() {
 			})
 
 			Describe("RemoveDevTools", func() {
+
 				It("removes development tools if settings.env.bosh.remove_dev_tools is true", func() {
 					settingsService.Settings.Env.Bosh.RemoveDevTools = true
+					platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "dev_tools_file_list"), "/usr/bin/gfortran")
+
 					err := bootstrap()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(platform.IsRemoveDevToolsCalled).To(BeTrue())
@@ -344,6 +346,13 @@ func init() {
 				})
 
 				It("does NOTHING if settings.env.bosh.remove_dev_tools is NOT set", func() {
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeFalse())
+				})
+
+				It("does NOTHING if if settings.env.bosh.remove_dev_tools is true AND dev_tools_file_list does NOT exist", func() {
+					settingsService.Settings.Env.Bosh.RemoveDevTools = true
 					err := bootstrap()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(platform.IsRemoveDevToolsCalled).To(BeFalse())

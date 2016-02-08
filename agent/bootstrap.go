@@ -120,6 +120,10 @@ func (boot bootstrap) Run() (err error) {
 	if settings.Env.GetRemoveDevTools() {
 		packageFileListPath := path.Join(boot.dirProvider.EtcDir(), "dev_tools_file_list")
 
+		if !boot.fs.FileExists(packageFileListPath) {
+			return nil
+		}
+
 		if err = boot.platform.RemoveDevTools(packageFileListPath); err != nil {
 			return bosherr.WrapError(err, "Removing Development Tools Packages")
 		}
