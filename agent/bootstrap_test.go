@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -339,7 +340,7 @@ func init() {
 					err := bootstrap()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(platform.IsRemoveDevToolsCalled).To(BeTrue())
-					Expect(platform.PackageFileListPath).To(Equal("/var/vcap/bosh/etc/dev_tools_file_list"))
+					Expect(platform.PackageFileListPath).To(Equal(path.Join(dirProvider.EtcDir(), "dev_tools_file_list")))
 				})
 
 				It("does NOTHING if settings.env.bosh.remove_dev_tools is NOT set", func() {
