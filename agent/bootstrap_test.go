@@ -332,6 +332,23 @@ func init() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.StartMonitStarted).To(BeTrue())
 			})
+
+			Describe("RemoveDevTools", func() {
+				It("removes development tools if settings.env.bosh.remove_dev_tools is true", func() {
+					settingsService.Settings.Env.Bosh.RemoveDevTools = true
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeTrue())
+					Expect(platform.PackageFileListPath).To(Equal("/var/vcap/bosh/etc/dev_tools_file_list"))
+				})
+
+				It("does NOTHING if settings.env.bosh.remove_dev_tools is NOT set", func() {
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeFalse())
+				})
+			})
+
 		})
 
 		Describe("Network setup exercised by Run", func() {

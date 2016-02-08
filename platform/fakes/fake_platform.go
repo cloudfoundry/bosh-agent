@@ -98,6 +98,10 @@ type FakePlatform struct {
 	IsMountPointResult bool
 	IsMountPointErr    error
 
+	PackageFileListPath    string
+	IsRemoveDevToolsCalled bool
+	IsRemoveDevToolsError  error
+
 	MountedDevicePaths []string
 
 	StartMonitStarted           bool
@@ -378,4 +382,10 @@ func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 
 func (p *FakePlatform) GetHostPublicKey() (string, error) {
 	return p.GetHostPublicKeyValue, p.GetHostPublicKeyError
+}
+
+func (p *FakePlatform) RemoveDevTools(packageFileListPath string) error {
+	p.IsRemoveDevToolsCalled = true
+	p.PackageFileListPath = packageFileListPath
+	return p.IsRemoveDevToolsError
 }

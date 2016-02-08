@@ -279,6 +279,10 @@ func (p dummyPlatform) GetHostPublicKey() (string, error) {
 	return "dummy-public-key", nil
 }
 
+func (p dummyPlatform) RemoveDevTools(packageFileListPath string) error {
+	return nil
+}
+
 func (p dummyPlatform) getDiskCidByMountPoint(mountPoint string, mounts []mount) string {
 	var diskCid string
 	for _, mount := range mounts {
