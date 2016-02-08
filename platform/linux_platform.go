@@ -60,6 +60,9 @@ type LinuxOptions struct {
 	// ephemeral disk
 	CreatePartitionIfNoEphemeralDisk bool
 
+	// When set to true the agent will skip both root and ephemeral disk partitioning
+	SkipDiskSetup bool
+
 	// Strategy for resolving device paths;
 	// possible values: virtio, scsi, ''
 	DevicePathResolutionType string
@@ -274,6 +277,10 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 }
 
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
+	if p.options.SkipDiskSetup {
+		return nil
+	}
+
 	//if there is ephemeral disk we can safely autogrow, if not we should not.
 	if (ephemeralDiskPath == "") && (p.options.CreatePartitionIfNoEphemeralDisk == true) {
 		p.logger.Info(logTag, "No Ephemeral Disk provided, Skipping growing of the Root Filesystem")
@@ -461,6 +468,10 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 }
 
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
+	if p.options.SkipDiskSetup {
+		return nil
+	}
+
 	p.logger.Info(logTag, "Setting up ephemeral disk...")
 	mountPoint := p.dirProvider.DataDir()
 
@@ -535,6 +546,10 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 }
 
 func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error) {
+	if p.options.SkipDiskSetup {
+		return nil
+	}
+
 	p.logger.Info(logTag, "Setting up raw ephemeral disks")
 
 	for i, device := range devices {
