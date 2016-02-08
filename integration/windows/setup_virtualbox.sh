@@ -12,9 +12,9 @@ GOOS=windows \
   $OUTPUT_PATH \
   github.com/cloudfoundry/bosh-agent/main
 
-if echo $status | grep agent | grep running
+if vagrant status | grep agent | grep running
 then
   vagrant provision
 else
-	vagrant up --provider=virtualbox
+	vagrant up --provider=virtualbox --provision
 fi

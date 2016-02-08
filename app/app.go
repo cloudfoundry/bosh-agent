@@ -171,6 +171,8 @@ func (app *app) Setup(args []string) error {
 		app.logger,
 	)
 
+	scriptCommandFactory := boshsys.NewScriptCommandFactory(opts.PlatformName)
+
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		app.platform,
@@ -182,6 +184,7 @@ func (app *app) Setup(args []string) error {
 		jobSupervisor,
 		specService,
 		jobScriptProvider,
+		scriptCommandFactory,
 		app.logger,
 	)
 

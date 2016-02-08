@@ -19,6 +19,7 @@ import (
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 //go:generate counterfeiter -o fakes/fake_clock.go ../../vendor/github.com/pivotal-golang/clock Clock
@@ -63,6 +64,7 @@ var _ = Describe("concreteFactory", func() {
 			jobSupervisor,
 			specService,
 			jobScriptProvider,
+			boshsys.NewScriptCommandFactory("linux"),
 			logger,
 		)
 	})
