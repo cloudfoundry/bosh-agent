@@ -1,0 +1,20 @@
+clone_folder: c:\gopath\src\github.com\cloudfoundry\bosh-utils
+
+environment:
+  GOPATH: c:\gopath
+
+install:
+  - set PATH=%GOPATH%\bin;%PATH%
+  - echo %PATH%
+  - echo %GOPATH%
+  - go version
+  - go env
+  - go install github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo/ginkgo
+
+build_script:
+  - ginkgo -trace -skipPackage="internal" -r
+
+branches:
+  only:
+  - master
+  - /appveyor/
