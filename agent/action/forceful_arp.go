@@ -6,6 +6,10 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/net/arp"
 )
 
+type ForcefulARPActionArgs struct {
+	Ips []string `json:"ips"`
+}
+
 type ForcefulARPAction struct {
 	arp arp.Manager
 }
@@ -24,7 +28,8 @@ func (a ForcefulARPAction) IsPersistent() bool {
 	return false
 }
 
-func (a ForcefulARPAction) Run(addresses []string) (string, error) {
+func (a ForcefulARPAction) Run(args ForcefulARPActionArgs) (string, error) {
+	addresses := args.Ips
 	for _, address := range addresses {
 		a.arp.Delete(address)
 	}

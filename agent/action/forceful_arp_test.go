@@ -14,12 +14,16 @@ func init() {
 			arp       *fakes.FakeManager
 			action    ForcefulARPAction
 			addresses []string
+			args      ForcefulARPActionArgs
 		)
 
 		BeforeEach(func() {
 			arp = new(fakes.FakeManager)
 			action = NewForcefulARP(arp)
 			addresses = []string{"10.0.0.1", "10.0.0.2"}
+			args = ForcefulARPActionArgs{
+				Ips: addresses,
+			}
 		})
 
 		It("is synchronous", func() {
@@ -31,7 +35,7 @@ func init() {
 		})
 
 		It("requests deletion of all provided IPs from the ARP cache", func() {
-			_, err := action.Run(addresses)
+			_, err := action.Run(args)
 
 			Expect(err).ToNot(HaveOccurred())
 
@@ -42,7 +46,7 @@ func init() {
 		})
 
 		It("returns \"completed\"", func() {
-			response, err := action.Run(addresses)
+			response, err := action.Run(args)
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response).To(Equal("completed"))
