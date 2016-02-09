@@ -176,6 +176,9 @@ SHELL
 
 install_blobstore_server = <<-SHELL
   set -ex
+
+  useradd vagrant || true # exists on virtualbox already
+
 	if [ ! -e "/etc/init.d/nginx" ]; then
 		apt-get update && apt-get -y install nginx-full
 	fi
