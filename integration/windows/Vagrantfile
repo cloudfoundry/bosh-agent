@@ -167,6 +167,7 @@ setup_aws_winrm_user = <<-SHELL
 SHELL
 
 start_nats = <<-SHELL
+  set -ex
   rm -f gnatsd-v0.7.2-linux-amd64.tar.gz
   curl -JLO --silent https://github.com/nats-io/gnatsd/releases/download/v0.7.2/gnatsd-v0.7.2-linux-amd64.tar.gz
   tar -xvf gnatsd-v0.7.2-linux-amd64.tar.gz
@@ -174,6 +175,7 @@ start_nats = <<-SHELL
 SHELL
 
 install_blobstore_server = <<-SHELL
+  set -ex
 	if [ ! -e "/etc/init.d/nginx" ]; then
 		apt-get update && apt-get -y install nginx-full
 	fi
