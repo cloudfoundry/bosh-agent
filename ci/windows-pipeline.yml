@@ -55,7 +55,7 @@ jobs:
     file: bosh-agent/ci/tasks/compile-agent-windows.yml
   - put: bosh-agent-zip
     params:
-      file: agent-zip-file/bosh-windows-integration-v*.zip
+      file: compiled-agent-zip/bosh-windows-integration-v*.zip
 
 - name: test-integration
   serial: true

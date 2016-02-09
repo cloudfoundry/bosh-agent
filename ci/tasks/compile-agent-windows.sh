@@ -3,6 +3,7 @@
 set -e -x
 
 VERSION=$(cat bosh-agent-zip-version/number)
+COMPILED_AGENT_ZIP=$PWD/compiled-agent-zip
 
 export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
 export GOPATH=$(pwd)/gopath
@@ -30,4 +31,6 @@ EOF
 apt-get update
 apt-get -y install zip
 
-zip ./bosh-windows-integration-v$VERSION.zip ./commit ./bosh-agent.exe ./service_wrapper.exe ./service_wrapper.xml
+RELEASE_ZIP=$PWD/bosh-windows-integration-v$VERSION.zip
+zip ${RELEASE_ZIP} ./commit ./bosh-agent.exe ./service_wrapper.exe ./service_wrapper.xml
+mv ${RELEASE_ZIP} ${COMPILED_AGENT_ZIP}
