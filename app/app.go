@@ -76,7 +76,9 @@ func (app *app) Setup(args []string) error {
 	// sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 	sigarCollector := stats.NewDummyStatsCollector()
 
-	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, app.fs, config.Platform)
+	scriptCommandFactory := boshsys.NewScriptCommandFactory(opts.PlatformName)
+
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, scriptCommandFactory, app.fs, config.Platform)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
@@ -170,8 +172,6 @@ func (app *app) Setup(args []string) error {
 		timeService,
 		app.logger,
 	)
-
-	scriptCommandFactory := boshsys.NewScriptCommandFactory(opts.PlatformName)
 
 	actionFactory := boshaction.NewFactory(
 		settingsService,

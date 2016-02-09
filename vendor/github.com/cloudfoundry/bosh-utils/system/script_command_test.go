@@ -7,7 +7,7 @@ import (
 	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/gomega"
 )
 
-var _ = FDescribe("ScriptCommand", func() {
+var _ = Describe("ScriptCommand", func() {
 	Context("when using windows", func() {
 		It("wraps command in powershell", func() {
 			scriptCommandFactory := NewScriptCommandFactory("windows")

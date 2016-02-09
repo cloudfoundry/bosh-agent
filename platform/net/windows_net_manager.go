@@ -12,15 +12,15 @@ import (
 )
 
 type WindowsNetManager struct {
-	psRunner boshsys.PSRunner
+	scriptRunner boshsys.ScriptRunner
 
 	logTag string
 	logger boshlog.Logger
 }
 
-func NewWindowsNetManager(psRunner boshsys.PSRunner, logger boshlog.Logger) Manager {
+func NewWindowsNetManager(scriptRunner boshsys.ScriptRunner, logger boshlog.Logger) Manager {
 	return WindowsNetManager{
-		psRunner: psRunner,
+		scriptRunner: scriptRunner,
 
 		logTag: "WindowsNetManager",
 		logger: logger,
@@ -78,9 +78,7 @@ func (net WindowsNetManager) setupInterfaces(networks boshsettings.Networks) err
 		if network.IsDefaultFor("gateway") || len(networks) == 1 {
 			gateway = network.Gateway
 		}
-		_, _, err := net.psRunner.RunCommand(boshsys.PSCommand{
-			Script: fmt.Sprintf(NicSettingsTemplate, network.Mac, network.IP, network.Netmask, gateway),
-		})
+		_, _, err := net.scriptRunner.Run(fmt.Sprintf(NicSettingsTemplate, network.Mac, network.IP, network.Netmask, gateway))
 		if err != nil {
 			return bosherr.WrapError(err, "Configuring interface")
 		}
@@ -90,14 +88,12 @@ func (net WindowsNetManager) setupInterfaces(networks boshsettings.Networks) err
 
 func (net WindowsNetManager) setupDNS(dnsNetwork boshsettings.Network) error {
 	if len(dnsNetwork.DNS) > 0 {
-		_, _, err := net.psRunner.RunCommand(boshsys.PSCommand{
-			Script: fmt.Sprintf(SetDNSTemplate, strings.Join(dnsNetwork.DNS, `","`)),
-		})
+		_, _, err := net.scriptRunner.Run(fmt.Sprintf(SetDNSTemplate, strings.Join(dnsNetwork.DNS, `","`)))
 		if err != nil {
 			return bosherr.WrapError(err, "Configuring DNS servers")
 		}
 	} else {
-		_, _, err := net.psRunner.RunCommand(boshsys.PSCommand{Script: ResetDNSTemplate})
+		_, _, err := net.scriptRunner.Run(ResetDNSTemplate)
 		if err != nil {
 			return bosherr.WrapError(err, "Resetting DNS servers")
 		}

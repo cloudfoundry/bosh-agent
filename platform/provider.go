@@ -43,10 +43,15 @@ type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options) Provider {
+func NewProvider(
+	logger boshlog.Logger,
+	dirProvider boshdirs.Provider,
+	statsCollector boshstats.Collector,
+	scriptCommandFactory boshsys.ScriptCommandFactory,
+	fs boshsys.FileSystem,
+	options Options,
+) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
-	psRunner := boshsys.NewConcretePSRunner(fs, logger)
-
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
@@ -72,7 +77,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
-	windowsNetManager := boshnet.NewWindowsNetManager(psRunner, logger)
+
+	scriptRunner := boshsys.NewConcreteScriptRunner(scriptCommandFactory, runner, fs, logger)
+	windowsNetManager := boshnet.NewWindowsNetManager(scriptRunner, logger)
 
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)

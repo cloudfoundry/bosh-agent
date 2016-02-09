@@ -136,12 +136,13 @@ func NewExecCmdRunner(logger boshlog.Logger) CmdRunner {
 	return execCmdRunner{logger}
 }
 
-func (r execCmdRunner) RunComplexCommand(cmd Command) (string, string, int, error) {
-	panic("Not implemented")
+func (e execCmdRunner) RunComplexCommand(cmd Command) (string, string, int, error) {
+	execCommand := e.buildComplexCommand(cmd)
+	return e.runExecCommand(execCommand)
 }
 
-func (r execCmdRunner) RunComplexCommandAsync(cmd Command) (Process, error) {
-	process := newWindowsProcess(r.buildComplexCommand(cmd), r.logger)
+func (e execCmdRunner) RunComplexCommandAsync(cmd Command) (Process, error) {
+	process := newWindowsProcess(e.buildComplexCommand(cmd), e.logger)
 
 	err := process.Start()
 	if err != nil {
@@ -151,7 +152,7 @@ func (r execCmdRunner) RunComplexCommandAsync(cmd Command) (Process, error) {
 	return process, nil
 }
 
-func (e *execCmdRunner) buildComplexCommand(cmd Command) *exec.Cmd {
+func (e execCmdRunner) buildComplexCommand(cmd Command) *exec.Cmd {
 	execCmd := exec.Command(cmd.Name, cmd.Args...)
 	execCmd.Stdin = cmd.Stdin
 	execCmd.Stdout = cmd.Stdout
@@ -170,18 +171,19 @@ func (e *execCmdRunner) buildComplexCommand(cmd Command) *exec.Cmd {
 	return execCmd
 }
 
-func (r execCmdRunner) RunCommand(cmdName string, args ...string) (string, string, int, error) {
+func (e execCmdRunner) runExecCommand(execCmd *exec.Cmd) (string, string, int, error) {
 	stdout := new(bytes.Buffer)
 	stderr := new(bytes.Buffer)
 
-	command := exec.Command(cmdName, args...)
-	command.Stderr = stderr
-	command.Stdout = stdout
+	execCmd.Stderr = stderr
+	execCmd.Stdout = stdout
 
-	r.logger.Debug(execProcessLogTag, "Running command: %s %s", cmdName, strings.Join(args, " "))
-	err := command.Run()
-	r.logger.Debug(execProcessLogTag, "Stdout: %s", stdout)
-	r.logger.Debug(execProcessLogTag, "Stderr: %s", stderr)
+	e.logger.Debug(execProcessLogTag, "Running command: %s %s", execCmd.Path, strings.Join(execCmd.Args, " "))
+	err := execCmd.Run()
+
+	e.logger.Debug(execProcessLogTag, "Stdout: %s", stdout)
+	e.logger.Debug(execProcessLogTag, "Stderr: %s", stderr)
+
 	if err != nil {
 		return stdout.String(), stderr.String(), -1, err
 	}
@@ -189,10 +191,14 @@ func (r execCmdRunner) RunCommand(cmdName string, args ...string) (string, strin
 	return stdout.String(), stderr.String(), 0, nil
 }
 
-func (r execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (string, string, int, error) {
+func (e execCmdRunner) RunCommand(cmdName string, args ...string) (string, string, int, error) {
+	return e.runExecCommand(exec.Command(cmdName, args...))
+}
+
+func (e execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (string, string, int, error) {
 	panic("Not implemented")
 }
 
-func (r execCmdRunner) CommandExists(cmdName string) bool {
+func (e execCmdRunner) CommandExists(cmdName string) bool {
 	return true
 }

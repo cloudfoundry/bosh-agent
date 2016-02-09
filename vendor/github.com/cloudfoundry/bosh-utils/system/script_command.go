@@ -2,6 +2,7 @@ package system
 
 type ScriptCommandFactory interface {
 	New(path string, args ...string) Command
+	Extension() string
 }
 
 func NewScriptCommandFactory(platformName string) ScriptCommandFactory {
@@ -21,6 +22,10 @@ func (s *linuxScriptCommandFactory) New(path string, args ...string) Command {
 	}
 }
 
+func (s *linuxScriptCommandFactory) Extension() string {
+	return ""
+}
+
 type psScriptCommandFactory struct{}
 
 func (s *psScriptCommandFactory) New(path string, args ...string) Command {
@@ -28,4 +33,8 @@ func (s *psScriptCommandFactory) New(path string, args ...string) Command {
 		Name: "powershell",
 		Args: append([]string{"-noprofile", "-noninteractive", path}, args...),
 	}
+}
+
+func (s *psScriptCommandFactory) Extension() string {
+	return ".ps1"
 }
