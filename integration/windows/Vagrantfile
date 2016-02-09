@@ -180,9 +180,17 @@ install_blobstore_server = <<-SHELL
 SHELL
 
 start_blobstore_server = <<-SHELL
+  set -ex
+
 	rm -f /etc/nginx/sites-enabled/default
-	cp /vagrant/fixtures/nginx.conf /etc/nginx/
-	cp /vagrant/fixtures/blobstore.conf /etc/nginx/sites-enabled/
+  cat >/etc/nginx/nginx.conf <<EOL
+#{File.read("fixtures/nginx.conf")}
+EOL
+
+  cat >/etc/nginx/sites-enabled/blobstore.conf <<EOL
+#{File.read("fixtures/blobstore.conf")}
+EOL
+
 	/etc/init.d/nginx restart
 SHELL
 
