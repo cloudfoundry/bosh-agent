@@ -8,6 +8,10 @@ inputs:
 - name: bosh-agent
   path: gopath/src/github.com/cloudfoundry/bosh-agent
 
+outputs:
+- name: agent-zip-file
+  path: gopath/src/github.com/cloudfoundry/bosh-agent
+
 run:
   path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/compile-agent-windows.sh
 

@@ -39,6 +39,7 @@ resources:
     regexp: VMware-ovftool-(.*)-lin.x86_64.bundle
     access_key_id: {{AWS_ACCESS_KEY}}
     secret_access_key: {{AWS_SECRET_KEY}}
+
 jobs:
 - name: compile-agent-and-push
   serial: true
@@ -54,8 +55,8 @@ jobs:
     file: bosh-agent/ci/tasks/compile-agent-windows.yml
   - put: bosh-agent-zip
     params:
-      from: compile-agent/gopath/src/github.com/cloudfoundry/bosh-agent/bosh-windows-integration-v(.*).zip
-      to: /
+      file: agent-zip-file/bosh-windows-integration-v*.zip
+
 - name: test-integration
   serial: true
   plan:
@@ -78,6 +79,7 @@ jobs:
         NATS_ELASTIC_IP: 52.23.114.20
         VAGRANT_PROVIDER: aws
         WINRM_PASSWORD: {{WINRM_PASSWORD}}
+
 - name: create-vsphere-stemcell-and-push
   serial: true
   plan:
