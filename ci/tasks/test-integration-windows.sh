@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 export AGENT_ZIP_URL=$(cat bosh-agent-zip/url)
 export AGENT_DEPS_ZIP_URL=$(cat bosh-agent-deps-zip/url)
