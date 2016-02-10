@@ -6,6 +6,7 @@ image: docker:///bosh/init
 inputs:
 - name: bosh-vsphere-stemcell-version
 - name: bosh-agent-zip
+- name: bosh-agent-deps-zip
 - name: bosh-agent
   path: gopath/src/github.com/cloudfoundry/bosh-agent
 - name: ovftool-linux

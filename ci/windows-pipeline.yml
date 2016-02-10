@@ -18,6 +18,13 @@ resources:
     regexp: bosh-agent-windows-v(.*).zip
     access_key_id: {{AWS_ACCESS_KEY}}
     secret_access_key: {{AWS_SECRET_KEY}}
+- name: bosh-agent-deps-zip
+  type: s3
+  source:
+    bucket: bosh-windows-dependencies
+    versioned_file: agent-dependencies.zip
+    access_key_id: {{AWS_ACCESS_KEY}}
+    secret_access_key: {{AWS_SECRET_KEY}}
 - name: bosh-vsphere-stemcell-version
   type: semver
   source:
@@ -62,6 +69,7 @@ jobs:
   plan:
   - get: bosh-agent
     resource: bosh-agent-windows
+  - get: bosh-agent-deps-zip
   - get: bosh-agent-zip
     passed:
     - compile-agent-and-push
@@ -85,6 +93,7 @@ jobs:
   plan:
   - get: bosh-agent
     resource: bosh-agent-windows
+  - get: bosh-agent-deps-zip
   - get: bosh-agent-zip
     passed:
     - test-integration

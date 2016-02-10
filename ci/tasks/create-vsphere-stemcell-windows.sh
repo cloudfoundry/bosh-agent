@@ -5,7 +5,8 @@ set -e -x
 apt-get update
 apt-get install -y unzip
 
-BOSH_AGENT_ZIP_URL=$(cat bosh-agent-zip/url)
+export AGENT_ZIP_URL=$(cat bosh-agent-zip/url)
+export AGENT_DEPS_ZIP_URL=$(cat bosh-agent-deps-zip/url)
 BOSH_AGENT_SHA=$(unzip -p bosh-agent-zip/bosh-windows-integration-v*.zip commit | cat)
 VERSION=$(cat bosh-vsphere-stemcell-version/number)
 OVFTOOL_INSTALLATION_PATH=$(find ./ovftool-linux/ -name VMware-ovftool-*.bundle)
@@ -22,7 +23,7 @@ EOF
 
 tar -czvf ./dummy.box ./metadata.json
 vagrant box add ./dummy.box --name dummy
-AGENT_ZIP_URL=$BOSH_AGENT_ZIP_URL vagrant up --provider=vsphere
+vagrant up --provider=vsphere
 vagrant halt
 
 ovftool --sourceSSLThumbprint=$VCENTER_FINGERPRINT vi://$VCENTER_USERNAME:$VCENTER_PASSWORD@vcenter.pizza.cf-app.com:443/pizza-boxes-dc/vm/$VM_BASE_PATH/$VM_NAME image.ova

@@ -30,6 +30,9 @@ function Unzip
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
 }
 
+Invoke-WebRequest "#{ENV['AGENT_DEPS_ZIP_URL']}" -Verbose -OutFile C:\\bosh\\agent_deps.zip
+Unzip C:\\bosh\\agent_deps.zip C:\\bosh\\
+
 Invoke-WebRequest "#{ENV['AGENT_ZIP_URL']}" -Verbose -OutFile C:\\bosh\\agent.zip
 
 Unzip C:\\bosh\\agent.zip C:\\bosh\\
