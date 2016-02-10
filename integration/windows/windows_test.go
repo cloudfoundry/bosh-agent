@@ -93,12 +93,12 @@ func natsURI() string {
 }
 
 func blobstoreURI() string {
-	natsURL := "http://172.31.180.3:25250"
+	blobstoreURI := "http://172.31.180.3:25250"
 	vagrantProvider := os.Getenv("VAGRANT_PROVIDER")
 	if vagrantProvider == "aws" {
-		// do something
+		blobstoreURI = fmt.Sprintf("http://%s:25250", os.Getenv("NATS_ELASTIC_IP"))
 	}
-	return natsURL
+	return blobstoreURI
 }
 
 func testPing() string {

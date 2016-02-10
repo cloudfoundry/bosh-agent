@@ -22,8 +22,11 @@ cat > ./service_wrapper.xml <<EOF
   <name>BOSH Agent</name>
   <description>BOSH Agent</description>
   <executable>bosh-agent.exe</executable>
-  <arguments>-P windows -C agent.json</arguments>
-  <log mode="reset"/>
+  <arguments>-P windows -C agent.json -M windows</arguments>
+  <log mode="roll-by-size">
+  	<sizeThreshold>10240</sizeThreshold>
+  	<keepFiles>8</keepFiles>
+  </log>
   <onfailure action="restart" delay="5 sec"/>
 </service>
 EOF

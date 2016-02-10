@@ -26,6 +26,10 @@ agent_zip_url = ENV.fetch "AGENT_ZIP_URL" do
   puts "AGENT_ZIP_URL not set. Will not download."
   nil
 end
+agent_deps_zip_url = ENV.fetch "AGENT_DEPS_ZIP_URL" do
+  puts "AGENT_DEPS_ZIP_URL not set. Will not download."
+  nil
+end
 keypair_name = ENV.fetch "KEYPAIR_NAME" do
   puts "KEYPAIR_NAME not set"
   nil
@@ -68,6 +72,9 @@ download_agent = <<-SHELL
 
       [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
   }
+
+  Invoke-WebRequest "#{agent_deps_zip_url}" -Verbose -OutFile C:\\bosh\\agent_deps.zip
+  Unzip C:\\bosh\\agent_deps.zip C:\\bosh\\
 
   Invoke-WebRequest "#{agent_zip_url}" -Verbose -OutFile C:\\bosh\\agent.zip
 
@@ -178,8 +185,34 @@ install_blobstore_server = <<-SHELL
 
   useradd vagrant || true # exists on virtualbox already
 
-	if [ ! -e "/etc/init.d/nginx" ]; then
-		apt-get update && apt-get -y install nginx-full
+  if [ ! -e "/etc/init.d/nginx" ]; then
+    cat > /etc/apt/sources.list <<EOS
+deb http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
+deb-src http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
+deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates main restricted
+deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates main restricted
+deb http://security.ubuntu.com/ubuntu trusty-security main restricted
+deb-src http://security.ubuntu.com/ubuntu trusty-security main restricted
+deb http://security.ubuntu.com/ubuntu trusty-security universe
+deb-src http://security.ubuntu.com/ubuntu trusty-security universe
+deb http://security.ubuntu.com/ubuntu trusty-security multiverse
+deb-src http://security.ubuntu.com/ubuntu trusty-security multiverse
+## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
+## team. Also, please note that software in universe WILL NOT receive any
+## review or updates from the Ubuntu security team.
+deb http://us.archive.ubuntu.com/ubuntu/ trusty universe
+deb-src http://us.archive.ubuntu.com/ubuntu/ trusty universe
+deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates universe
+deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates universe
+deb http://us.archive.ubuntu.com/ubuntu/ trusty multiverse
+deb-src http://us.archive.ubuntu.com/ubuntu/ trusty multiverse
+deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
+deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
+EOS
+    rm -rf /etc/apt/sources.list.d/multiverse-trusty*
+    apt-get -y update
+
+    apt-get -y install nginx-full
 	fi
 SHELL
 
