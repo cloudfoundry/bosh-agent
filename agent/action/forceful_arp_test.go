@@ -40,8 +40,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(arp.DeleteCallCount()).To(Equal(len(addresses)))
-			for i := 0; i < len(addresses); i++ {
-				Expect(arp.DeleteArgsForCall(i)).To(Equal(addresses[i]))
+			for i, address := range addresses {
+				Expect(arp.DeleteArgsForCall(i)).To(Equal(address))
 			}
 		})
 
