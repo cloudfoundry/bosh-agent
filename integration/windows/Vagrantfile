@@ -181,45 +181,15 @@ start_nats = <<-SHELL
 SHELL
 
 install_blobstore_server = <<-SHELL
-  set -ex
+#!/bin/bash
 
   useradd vagrant || true # exists on virtualbox already
-
   if [ ! -e "/etc/init.d/nginx" ]; then
-    cat > /etc/apt/sources.list <<EOS
-deb http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
-deb-src http://us.archive.ubuntu.com/ubuntu/ trusty main restricted
-deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates main restricted
-deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates main restricted
-deb http://security.ubuntu.com/ubuntu trusty-security main restricted
-deb-src http://security.ubuntu.com/ubuntu trusty-security main restricted
-deb http://security.ubuntu.com/ubuntu trusty-security universe
-deb-src http://security.ubuntu.com/ubuntu trusty-security universe
-deb http://security.ubuntu.com/ubuntu trusty-security multiverse
-deb-src http://security.ubuntu.com/ubuntu trusty-security multiverse
-## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
-## team. Also, please note that software in universe WILL NOT receive any
-## review or updates from the Ubuntu security team.
-deb http://us.archive.ubuntu.com/ubuntu/ trusty universe
-deb-src http://us.archive.ubuntu.com/ubuntu/ trusty universe
-deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates universe
-deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates universe
-deb http://us.archive.ubuntu.com/ubuntu/ trusty multiverse
-deb-src http://us.archive.ubuntu.com/ubuntu/ trusty multiverse
-deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
-deb-src http://us.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
-EOS
-    rm -rf /etc/apt/sources.list.d/multiverse-trusty*
     apt-get -y update
-
     apt-get -y install nginx-full
-	fi
-SHELL
+  fi
 
-start_blobstore_server = <<-SHELL
-  set -ex
-
-	rm -f /etc/nginx/sites-enabled/default
+  rm -f /etc/nginx/sites-enabled/default
   cat >/etc/nginx/nginx.conf <<EOL
 #{File.read("fixtures/nginx.conf")}
 EOL
@@ -228,7 +198,7 @@ EOL
 #{File.read("fixtures/blobstore.conf")}
 EOL
 
-	/etc/init.d/nginx restart
+  /etc/init.d/nginx restart
 SHELL
 
 Vagrant.configure(2) do |config|
@@ -275,6 +245,7 @@ Vagrant.configure(2) do |config|
     nats.vm.provider :virtualbox do |v, override|
       override.vm.box = "ubuntu/trusty64"
       override.vm.network "private_network", ip: nats_private_ip
+      override.vm.provision "shell", inline: install_blobstore_server
     end
 
     nats.vm.provider :aws do |aws, override|
@@ -286,13 +257,13 @@ Vagrant.configure(2) do |config|
       aws.subnet_id = subnet_id
       aws.elastic_ip = nats_elastic_ip
       aws.private_ip_address = nats_private_ip
+      aws.user_data = install_blobstore_server
+
 
       override.ssh.username = "ubuntu"
       override.ssh.private_key_path = private_key_path
     end
 
     nats.vm.provision "shell", inline: start_nats, privileged: false
-    nats.vm.provision "shell", inline: install_blobstore_server
-    nats.vm.provision "shell", inline: start_blobstore_server
   end
 end
