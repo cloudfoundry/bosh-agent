@@ -238,3 +238,12 @@ func (c *agentClient) CompilePackage(packageSource agentclient.BlobRef, compiled
 
 	return compiledPackageRef, nil
 }
+
+func (c *agentClient) DeleteFromARP(ips []string) error {
+	var response SimpleTaskResponse
+	err := c.agentRequest.Send("delete_from_arp", []interface{}{map[string][]string{"ips": ips}}, &response)
+	if err != nil {
+		return bosherr.WrapError(err, "Deleting from ARP cache")
+	}
+	return nil
+}

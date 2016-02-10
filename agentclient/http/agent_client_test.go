@@ -702,4 +702,60 @@ var _ = Describe("AgentClient", func() {
 			}))
 		})
 	})
+
+	Describe("DeleteFromARP", func() {
+		var (
+			ips []string
+		)
+
+		Context("when agent responds with a value", func() {
+			BeforeEach(func() {
+				ips = []string{"10.0.0.1", "10.0.0.2"}
+				fakeHTTPClient.SetPostBehavior(`{"value":"completed"}`, 200, nil)
+			})
+
+			It("makes a POST request to the endpoint", func() {
+				err := agentClient.DeleteFromARP(ips)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeHTTPClient.PostInputs).To(HaveLen(1))
+				Expect(fakeHTTPClient.PostInputs[0].Endpoint).To(Equal("http://localhost:6305/agent"))
+
+				var request AgentRequestMessage
+				err = json.Unmarshal(fakeHTTPClient.PostInputs[0].Payload, &request)
+				Expect(err).ToNot(HaveOccurred())
+
+				expectedIps := []interface{}{ips[0], ips[1]}
+				Expect(request).To(Equal(AgentRequestMessage{
+					Method:    "delete_from_arp",
+					Arguments: []interface{}{map[string]interface{}{"ips": expectedIps}},
+					ReplyTo:   "fake-uuid",
+				}))
+			})
+		})
+
+		Context("when agent does not respond with 200", func() {
+			BeforeEach(func() {
+				fakeHTTPClient.SetPostBehavior("", http.StatusInternalServerError, nil)
+			})
+
+			It("returns an error", func() {
+				err := agentClient.DeleteFromARP(ips)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("status code: 500"))
+			})
+		})
+
+		Context("when agent responds with exception", func() {
+			BeforeEach(func() {
+				fakeHTTPClient.SetPostBehavior(`{"exception":{"message":"bad request"}}`, 200, nil)
+			})
+
+			It("returns an error", func() {
+				err := agentClient.DeleteFromARP(ips)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("bad request"))
+			})
+		})
+	})
 })
