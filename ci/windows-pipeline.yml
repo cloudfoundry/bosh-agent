@@ -94,6 +94,8 @@ jobs:
   - get: bosh-agent
     resource: bosh-agent-windows
   - get: bosh-agent-deps-zip
+    passed:
+    - test-integration
   - get: bosh-agent-zip
     passed:
     - test-integration
