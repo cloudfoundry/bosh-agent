@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	agentGuid       = "123-456-789"
-	agentID         = "agent." + agentGuid
+	agentGUID       = "123-456-789"
+	agentID         = "agent." + agentGUID
 	senderID        = "director.987-654-321"
 	prepareTemplate = `{
     "arguments": [
@@ -187,9 +187,9 @@ func RunErrand(nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]str
 	return response, err
 }
 
-func checkStatus(nc *nats.Conn, sub *nats.Subscription, agentTaskId string) func() string {
+func checkStatus(nc *nats.Conn, sub *nats.Subscription, agentTaskID string) func() string {
 	return func() string {
-		getTaskMessage := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, agentTaskId, senderID)
+		getTaskMessage := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, agentTaskID, senderID)
 		if err := nc.Publish(agentID, []byte(getTaskMessage)); err != nil {
 			Fail(fmt.Sprintf("Could not publish message: '%s' to agent id: '%s' to the NATS server.\nError is: %v\n", getTaskMessage, agentID, err))
 		}
@@ -209,7 +209,7 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("responds to 'get_state' message over NATS", func() {
-		getStateSpecAgentId := func() string {
+		getStateSpecAgentID := func() string {
 			nc, err := nats.Connect(natsURI())
 			if err != nil {
 				Fail(fmt.Sprintf("Could not connect to NATS. Error is: %s", err.Error()))
@@ -233,7 +233,7 @@ var _ = Describe("An Agent running on Windows", func() {
 			return response["value"].AgentID
 		}
 
-		Eventually(getStateSpecAgentId, 30*time.Second, 1*time.Second).Should(Equal(agentGuid))
+		Eventually(getStateSpecAgentID, 30*time.Second, 1*time.Second).Should(Equal(agentGUID))
 	})
 
 	It("can run a run_errand action", func() {
