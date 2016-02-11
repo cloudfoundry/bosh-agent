@@ -26,8 +26,8 @@ func init() {
 			}
 		})
 
-		It("is synchronous", func() {
-			Expect(action.IsAsynchronous()).To(BeFalse())
+		It("is asynchronous", func() {
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
@@ -45,11 +45,11 @@ func init() {
 			}
 		})
 
-		It("returns \"completed\"", func() {
+		It("returns an empty map", func() {
 			response, err := action.Run(args)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(response).To(Equal("completed"))
+			Expect(response).To(Equal(map[string]interface{}{}))
 		})
 	})
 }

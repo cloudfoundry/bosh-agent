@@ -711,14 +711,17 @@ var _ = Describe("AgentClient", func() {
 		Context("when agent responds with a value", func() {
 			BeforeEach(func() {
 				ips = []string{"10.0.0.1", "10.0.0.2"}
-				fakeHTTPClient.SetPostBehavior(`{"value":"completed"}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
+				fakeHTTPClient.SetPostBehavior(`{"value":"{}"}`, 200, nil)
 			})
 
 			It("makes a POST request to the endpoint", func() {
 				err := agentClient.DeleteFromARP(ips)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(fakeHTTPClient.PostInputs).To(HaveLen(1))
+				Expect(fakeHTTPClient.PostInputs).To(HaveLen(4))
 				Expect(fakeHTTPClient.PostInputs[0].Endpoint).To(Equal("http://localhost:6305/agent"))
 
 				var request AgentRequestMessage

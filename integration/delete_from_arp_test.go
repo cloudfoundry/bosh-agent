@@ -48,7 +48,7 @@ func getValidIp(gatewayIp string) string {
 	return strings.Join(ipParts, ".")
 }
 
-var _ = Describe("DeleteFromARP", func() {
+var _ = FDescribe("DeleteFromARP", func() {
 	const (
 		emptyMacAddress string = "<incomplete>"
 		testMacAddress  string = "52:54:00:12:35:aa"

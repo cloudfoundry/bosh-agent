@@ -21,19 +21,22 @@ func NewForcefulARP(arp arp.Manager) ForcefulARPAction {
 }
 
 func (a ForcefulARPAction) IsAsynchronous() bool {
-	return false
+	return true
 }
 
 func (a ForcefulARPAction) IsPersistent() bool {
 	return false
 }
 
-func (a ForcefulARPAction) Run(args ForcefulARPActionArgs) (string, error) {
+func (a ForcefulARPAction) Run(args ForcefulARPActionArgs) (interface{}, error) {
 	addresses := args.Ips
 	for _, address := range addresses {
 		a.arp.Delete(address)
 	}
-	return "completed", nil
+
+	resultMap := map[string]interface{}{}
+
+	return resultMap, nil
 }
 
 func (a ForcefulARPAction) Resume() (interface{}, error) {
