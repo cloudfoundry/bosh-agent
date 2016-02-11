@@ -11,6 +11,93 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	prepareTemplate = `{
+    "arguments": [
+        {
+            "deployment": "test",
+            "job": {
+                "name": "test-job",
+                "template": "test-job",
+                "templates": [
+                    {
+                        "name": "say-hello",
+						"blobstore_id": "%s",
+						"sha1": "eb9bebdb1f11494b27440ec6ccbefba00e713cd9"
+                    }
+                ]
+            },
+            "packages": {},
+            "rendered_templates_archive": {
+                "blobstore_id": "%s",
+                "sha1": "46a41b2acc4134444d124e949f719a312ccdf806"
+            }
+        }
+    ],
+    "method": "prepare",
+    "reply_to": "%s"
+}`
+	errandTemplate = `
+	{"protocol":2,"method":"run_errand","arguments":[],"reply_to":"%s"}
+	`
+	applyTemplate = `
+{
+    "arguments": [
+        {
+            "configuration_hash": "foo",
+            "deployment": "hello-world-windows-deployment",
+            "id": "62236318-6632-4318-94c7-c3dd6e8e5698",
+            "index": 0,
+            "job": {
+                "blobstore_id": "%[1]s",
+                "name": "say-hello",
+                "sha1": "eb6e6c8bd1b1bc3dd91c741ec5c628b61a4d8f1d",
+                "template": "say-hello",
+                "templates": [
+                    {
+                        "blobstore_id": "%[1]s",
+                        "name": "say-hello",
+                        "sha1": "eb6e6c8bd1b1bc3dd91c741ec5c628b61a4d8f1d",
+                        "version": "8fe0a4982b28ffe4e59d7c1e573c4f30a526770d"
+                    }
+                ],
+                "version": "8fe0a4982b28ffe4e59d7c1e573c4f30a526770d"
+            },
+            "networks": {},
+			"rendered_templates_archive": {
+					"blobstore_id": "%[2]s",
+					"sha1": "46a41b2acc4134444d124e949f719a312ccdf806"
+			}
+        }
+    ],
+    "method": "apply",
+    "protocol": 2,
+    "reply_to": "%[3]s"
+}
+	`
+
+	fetchLogsTemplate = `
+{
+    "arguments": [
+        "job",
+        null
+    ],
+    "method": "fetch_logs",
+    "protocol": 2,
+    "reply_to": "%s"
+}
+	`
+
+	startTemplate = `
+{
+	"arguments":[],
+	"method":"start",
+	"protocol":2,
+	"reply_to":"%s"
+}
+	`
+)
+
 type natsClient struct {
 	nc  *nats.Conn
 	sub *nats.Subscription
@@ -55,6 +142,18 @@ func (n *natsClient) PrepareJob(templateID, renderedTemplateArchiveID string) er
 	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("applied"))
 
 	return nil
+}
+
+func (n *natsClient) RunStart() (map[string]string, error) {
+	message := fmt.Sprintf(startTemplate, senderID)
+	rawResponse, err := n.SendRawMessage(message)
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	response := map[string]string{}
+	err = json.Unmarshal(rawResponse, &response)
+	return response, err
 }
 
 func (n *natsClient) RunErrand() (map[string]map[string]string, error) {
