@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/apcera/nats"
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 
@@ -28,15 +27,15 @@ const (
                 "templates": [
                     {
                         "name": "say-hello",
-												"blobstore_id": "%s",
-												"sha1": "eb9bebdb1f11494b27440ec6ccbefba00e713cd9"
+						"blobstore_id": "%s",
+						"sha1": "eb9bebdb1f11494b27440ec6ccbefba00e713cd9"
                     }
                 ]
             },
             "packages": {},
             "rendered_templates_archive": {
                 "blobstore_id": "%s",
-                "sha1": "80848728c3e2e27027ef44d0e2448d2f314567be"
+                "sha1": "46a41b2acc4134444d124e949f719a312ccdf806"
             }
         }
     ],
@@ -70,10 +69,10 @@ const (
                 "version": "8fe0a4982b28ffe4e59d7c1e573c4f30a526770d"
             },
             "networks": {},
-						"rendered_templates_archive": {
-								"blobstore_id": "%[2]s",
-								"sha1": "80848728c3e2e27027ef44d0e2448d2f314567be"
-						}
+			"rendered_templates_archive": {
+					"blobstore_id": "%[2]s",
+					"sha1": "46a41b2acc4134444d124e949f719a312ccdf806"
+			}
         }
     ],
     "method": "apply",
@@ -113,27 +112,6 @@ func blobstoreURI() string {
 	return blobstoreURI
 }
 
-func testPing() string {
-	message := fmt.Sprintf(`{"method":"ping","arguments":[],"reply_to":"%s"}`, senderID)
-	nc, err := nats.Connect(natsURI())
-	if err != nil {
-		return err.Error()
-	}
-	defer nc.Close()
-
-	sub, err := nc.SubscribeSync(senderID)
-
-	if err := nc.Publish(agentID, []byte(message)); err != nil {
-		Fail(fmt.Sprintf("Could not publish message: '%s' to agent id: '%s' to the NATS server.\nError is: %v\n", message, agentID, err))
-	}
-
-	receivedMessage, err := sub.NextMsg(5 * time.Second)
-	if err != nil {
-		return err.Error()
-	}
-	return string(receivedMessage.Data)
-}
-
 func UploadJob() (templateID, renderedTemplateArchiveID string, err error) {
 	blobstore := utils.NewBlobstore(blobstoreURI())
 
@@ -148,135 +126,37 @@ func UploadJob() (templateID, renderedTemplateArchiveID string, err error) {
 	return
 }
 
-func RunPrepare(nc *nats.Conn, sub *nats.Subscription, templateID, renderedTemplateArchiveID string) (map[string]map[string]string, error) {
-	message := fmt.Sprintf(prepareTemplate, templateID, renderedTemplateArchiveID, senderID)
-	return SendMessage(message, nc, sub)
-}
-
-func RunApply(nc *nats.Conn, sub *nats.Subscription, templateID, renderedTemplateArchiveID string) (map[string]map[string]string, error) {
-	message := fmt.Sprintf(applyTemplate, templateID, renderedTemplateArchiveID, senderID)
-	return SendMessage(message, nc, sub)
-}
-
-func RunErrand(nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]string, error) {
-	message := fmt.Sprintf(errandTemplate, senderID)
-	return SendMessage(message, nc, sub)
-}
-
-func RunFetchLogs(nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]string, error) {
-	message := fmt.Sprintf(fetchLogsTemplate, senderID)
-	return SendMessage(message, nc, sub)
-}
-
-func SendMessage(message string, nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]string, error) {
-	err := nc.Publish(agentID, []byte(message))
-	if err != nil {
-		return nil, err
-	}
-
-	raw, err := sub.NextMsg(5 * time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	response := map[string]map[string]string{}
-	err = json.Unmarshal(raw.Data, &response)
-	return response, err
-}
-
-func getTask(taskID string, nc *nats.Conn, sub *nats.Subscription) ([]byte, error) {
-	getTaskMessage := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, taskID, senderID)
-	if err := nc.Publish(agentID, []byte(getTaskMessage)); err != nil {
-		Fail(fmt.Sprintf("Could not publish message: '%s' to agent id: '%s' to the NATS server.\nError is: %v\n", getTaskMessage, agentID, err))
-	}
-	receivedMessage, err := sub.NextMsg(5 * time.Second)
-	if err != nil {
-		return []byte{}, err
-	}
-	GinkgoWriter.Write(receivedMessage.Data)
-	GinkgoWriter.Write([]byte{'\n'})
-
-	return receivedMessage.Data, nil
-}
-
-func checkStatus(taskID string, nc *nats.Conn, sub *nats.Subscription) func() (string, error) {
-	return func() (string, error) {
-		var result map[string]string
-		valueResponse, err := getTask(taskID, nc, sub)
-		if err != nil {
-			return "", err
-		}
-
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return "", err
-		}
-
-		return result["value"], nil
-	}
-}
-
-func checkFetchLogsStatus(taskID string, nc *nats.Conn, sub *nats.Subscription) func() (map[string]string, error) {
-	return func() (map[string]string, error) {
-		var result map[string]map[string]string
-		valueResponse, err := getTask(taskID, nc, sub)
-		if err != nil {
-			return map[string]string{}, err
-		}
-
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return map[string]string{}, err
-		}
-
-		return result["value"], nil
-	}
-}
-
-func checkErrandResultStatus(taskID string, nc *nats.Conn, sub *nats.Subscription) func() (action.ErrandResult, error) {
-	return func() (action.ErrandResult, error) {
-		var result map[string]action.ErrandResult
-		valueResponse, err := getTask(taskID, nc, sub)
-		if err != nil {
-			return action.ErrandResult{}, err
-		}
-
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return action.ErrandResult{}, err
-		}
-
-		return result["value"], nil
-	}
-}
-
 var _ = Describe("An Agent running on Windows", func() {
 	BeforeEach(func() {
+		message := fmt.Sprintf(`{"method":"ping","arguments":[],"reply_to":"%s"}`, senderID)
+		natsClient := NewNatsClient()
+		err := natsClient.Setup()
+		Expect(err).NotTo(HaveOccurred())
+		defer natsClient.Cleanup()
+
+		testPing := func() (string, error) {
+			response, err := natsClient.SendRawMessage(message)
+			return string(response), err
+		}
+
 		Eventually(testPing, 30*time.Second, 1*time.Second).Should(Equal(`{"value":"pong"}`))
 	})
 
 	It("responds to 'get_state' message over NATS", func() {
 		getStateSpecAgentID := func() string {
-			nc, err := nats.Connect(natsURI())
-			if err != nil {
-				Fail(fmt.Sprintf("Could not connect to NATS. Error is: %s", err.Error()))
-			}
-			defer nc.Close()
-
-			sub, err := nc.SubscribeSync(senderID)
+			natsClient := NewNatsClient()
+			err := natsClient.Setup()
+			Expect(err).NotTo(HaveOccurred())
+			defer natsClient.Cleanup()
 
 			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
-			if err := nc.Publish(agentID, []byte(message)); err != nil {
-				Fail(fmt.Sprintf("Could not publish message: '%s' to agent id: '%s' to the NATS server.\nError is: %v\n", message, agentID, err))
-			}
-
-			receivedMessage, err := sub.NextMsg(5 * time.Second)
-			if err != nil {
-				return err.Error()
-			}
+			rawResponse, err := natsClient.SendRawMessage(message)
+			Expect(err).NotTo(HaveOccurred())
 
 			response := map[string]action.GetStateV1ApplySpec{}
-			json.Unmarshal(receivedMessage.Data, &response)
+			err = json.Unmarshal(rawResponse, &response)
+			Expect(err).NotTo(HaveOccurred())
+
 			return response["value"].AgentID
 		}
 
@@ -284,39 +164,29 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("can run a run_errand action", func() {
-		nc, err := nats.Connect(natsURI())
+		natsClient := NewNatsClient()
+		err := natsClient.Setup()
 		Expect(err).NotTo(HaveOccurred())
-		defer nc.Close()
-
-		sub, err := nc.SubscribeSync(senderID)
-		Expect(err).NotTo(HaveOccurred())
+		defer natsClient.Cleanup()
 
 		templateID, renderedTemplateArchiveID, err := UploadJob()
 		Expect(err).NotTo(HaveOccurred())
 
-		prepareResponse, err := RunPrepare(nc, sub, templateID, renderedTemplateArchiveID)
+		err = natsClient.PrepareJob(templateID, renderedTemplateArchiveID)
 		Expect(err).NotTo(HaveOccurred())
 
-		check := checkStatus(prepareResponse["value"]["agent_task_id"], nc, sub)
-		Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("prepared"))
-
-		applyResponse, err := RunApply(nc, sub, templateID, renderedTemplateArchiveID)
+		runErrandResponse, err := natsClient.RunErrand()
 		Expect(err).NotTo(HaveOccurred())
 
-		check = checkStatus(applyResponse["value"]["agent_task_id"], nc, sub)
-		Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("applied"))
-
-		runErrandResponse, err := RunErrand(nc, sub)
-		Expect(err).NotTo(HaveOccurred())
-		runErrandCheck := checkErrandResultStatus(runErrandResponse["value"]["agent_task_id"], nc, sub)
+		runErrandCheck := natsClient.CheckErrandResultStatus(runErrandResponse["value"]["agent_task_id"])
 		Eventually(runErrandCheck, 30*time.Second, 1*time.Second).Should(Equal(action.ErrandResult{
 			Stdout:     "hello world\r\n",
 			ExitStatus: 0,
 		}))
 
-		fetchLogsResponse, err := RunFetchLogs(nc, sub)
+		fetchLogsResponse, err := natsClient.RunFetchLogs()
 		Expect(err).NotTo(HaveOccurred())
-		fetchLogsCheck := checkFetchLogsStatus(fetchLogsResponse["value"]["agent_task_id"], nc, sub)
+		fetchLogsCheck := natsClient.CheckFetchLogsStatus(fetchLogsResponse["value"]["agent_task_id"])
 		Eventually(fetchLogsCheck, 30*time.Second, 1*time.Second).Should(HaveKey("blobstore_id"))
 	})
 })
