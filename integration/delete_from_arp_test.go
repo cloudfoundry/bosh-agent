@@ -12,43 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func parseARPCacheIntoMap() (map[string]string, error) {
-	ARPCache := map[string]string{}
-	ARPResultsRegex := regexp.MustCompile(`.*\((.*)\)\ at\ (\S+).*`)
-	lines, err := testEnvironment.RunCommand("arp -a")
-	if err != nil {
-		return ARPCache, err
-	}
-
-	for _, item := range ARPResultsRegex.FindAllStringSubmatch(lines, -1) {
-		ip := item[1]
-		mac := item[2]
-		ARPCache[ip] = mac
-	}
-
-	return ARPCache, nil
-}
-
-func getGatewayIp() (string, error) {
-	ARPCache, err := parseARPCacheIntoMap()
-	if err != nil {
-		return "", err
-	}
-
-	for key := range ARPCache {
-		return key, nil
-	}
-
-	return "", errors.New("Unable to find gateway ip")
-}
-
-func getValidIp(gatewayIp string) string {
-	ipParts := strings.Split(gatewayIp, ".")
-	ipParts[3] = "100"
-	return strings.Join(ipParts, ".")
-}
-
-var _ = FDescribe("DeleteFromARP", func() {
+var _ = Describe("DeleteFromARP", func() {
 	const (
 		emptyMacAddress string = "<incomplete>"
 		testMacAddress  string = "52:54:00:12:35:aa"
@@ -57,8 +21,44 @@ var _ = FDescribe("DeleteFromARP", func() {
 	var (
 		agentClient      agentclient.AgentClient
 		registrySettings settings.Settings
-		testIp           string
+		testIP           string
 	)
+
+	var getValidIP = func(gatewayIP string) string {
+		ipParts := strings.Split(gatewayIP, ".")
+		ipParts[3] = "100"
+		return strings.Join(ipParts, ".")
+	}
+
+	var parseARPCacheIntoMap = func() (map[string]string, error) {
+		ARPCache := map[string]string{}
+		ARPResultsRegex := regexp.MustCompile(`.*\((.*)\)\ at\ (\S+).*`)
+		lines, err := testEnvironment.RunCommand("arp -a")
+		if err != nil {
+			return ARPCache, err
+		}
+
+		for _, item := range ARPResultsRegex.FindAllStringSubmatch(lines, -1) {
+			ip := item[1]
+			mac := item[2]
+			ARPCache[ip] = mac
+		}
+
+		return ARPCache, nil
+	}
+
+	var getGatewayIP = func() (string, error) {
+		ARPCache, err := parseARPCacheIntoMap()
+		if err != nil {
+			return "", err
+		}
+
+		for key := range ARPCache {
+			return key, nil
+		}
+
+		return "", errors.New("Unable to find gateway ip")
+	}
 
 	BeforeEach(func() {
 		err := testEnvironment.StopAgent()
@@ -100,15 +100,15 @@ var _ = FDescribe("DeleteFromARP", func() {
 		err = testEnvironment.StartRegistry(registrySettings)
 		Expect(err).ToNot(HaveOccurred())
 
-		gatewayIp, err := getGatewayIp()
+		gatewayIP, err := getGatewayIP()
 		Expect(err).ToNot(HaveOccurred())
 
-		testIp = getValidIp(gatewayIp)
-		testEnvironment.RunCommand("sudo arp -s " + testIp + " " + testMacAddress)
+		testIP = getValidIP(gatewayIP)
+		testEnvironment.RunCommand("sudo arp -s " + testIP + " " + testMacAddress)
 
 		ARPCache, _ := parseARPCacheIntoMap()
-		macOfTestIp := ARPCache[testIp]
-		Expect(macOfTestIp).To(Equal(testMacAddress))
+		macOfTestIP := ARPCache[testIP]
+		Expect(macOfTestIP).To(Equal(testMacAddress))
 	})
 
 	JustBeforeEach(func() {
@@ -132,12 +132,12 @@ var _ = FDescribe("DeleteFromARP", func() {
 
 	Context("on ubuntu", func() {
 		It("deletes ARP entries from the cache", func() {
-			err := agentClient.DeleteFromARP([]string{testIp})
+			err := agentClient.DeleteFromARP([]string{testIP})
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() string {
 				ARPCache, _ := parseARPCacheIntoMap()
-				return ARPCache[testIp]
+				return ARPCache[testIP]
 			}).Should(Equal(emptyMacAddress))
 		})
 	})
