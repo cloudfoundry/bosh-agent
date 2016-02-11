@@ -2,10 +2,11 @@ package jobsupervisor
 
 type windowsJobSupervisor struct {
 	processes []Process
+	status    string
 }
 
 func NewWindowsJobSupervisor() JobSupervisor {
-	return &windowsJobSupervisor{}
+	return &windowsJobSupervisor{status: "unmonitored"}
 }
 
 func (s *windowsJobSupervisor) Reload() error {
@@ -14,19 +15,22 @@ func (s *windowsJobSupervisor) Reload() error {
 
 func (s *windowsJobSupervisor) Start() error {
 	s.processes = []Process{}
+	s.status = "running"
 	return nil
 }
 
 func (s *windowsJobSupervisor) Stop() error {
+	s.status = "stopped"
 	return nil
 }
 
 func (s *windowsJobSupervisor) Unmonitor() error {
+	s.status = "unmonitored"
 	return nil
 }
 
 func (s *windowsJobSupervisor) Status() (status string) {
-	return "running"
+	return s.status
 }
 
 func (s *windowsJobSupervisor) Processes() ([]Process, error) {
