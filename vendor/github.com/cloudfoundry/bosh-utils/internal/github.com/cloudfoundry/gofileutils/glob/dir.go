@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -37,7 +38,9 @@ func (d dir) Glob(patterns ...string) (filePaths []string, err error) {
 }
 
 func (d dir) glob(pattern string) (files []string, err error) {
-	globPattern := filepath.Join(d.path, pattern)
+	// unify path so that pattern will match files on Windows
+	unifiedPath := strings.TrimPrefix(filepath.ToSlash(d.path), filepath.VolumeName(d.path))
+	globPattern := path.Join(unifiedPath, pattern)
 
 	glob, err := CompileGlob(globPattern)
 	if err != nil {
@@ -46,13 +49,15 @@ func (d dir) glob(pattern string) (files []string, err error) {
 	}
 
 	filepath.Walk(d.path, func(path string, info os.FileInfo, inErr error) (err error) {
+		path = strings.TrimPrefix(filepath.ToSlash(path), filepath.VolumeName(path))
+
 		if inErr != nil {
 			err = inErr
 			return
 		}
 
 		if glob.Match(path) {
-			files = append(files, strings.Replace(path, d.path+"/", "", 1))
+			files = append(files, strings.Replace(path, unifiedPath+"/", "", 1))
 		}
 
 		return

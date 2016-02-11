@@ -4,8 +4,8 @@
 		{
 			"Vendor": "github.com/cloudfoundry/gofileutils/glob",
 			"Local": "github.com/cloudfoundry/bosh-utils/internal/github.com/cloudfoundry/gofileutils/glob",
-			"Revision": "74388e8083dc77ebfba108a8dd3e3af92b76ee04",
-			"RevisionTime": "2015-05-15T09:50:14-07:00"
+			"Revision": "788944944894988fe374b311a216f6387efd6ae0",
+			"RevisionTime": "2016-02-11T11:36:14-07:00"
 		},
 		{
 			"Vendor": "github.com/nu7hatch/gouuid",

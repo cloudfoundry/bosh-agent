@@ -81,6 +81,18 @@ const (
     "reply_to": "%[3]s"
 }
 	`
+
+	fetchLogsTemplate = `
+{
+    "arguments": [
+        "job",
+        null
+    ],
+    "method": "fetch_logs",
+    "protocol": 2,
+    "reply_to": "%s"
+}
+	`
 )
 
 func natsURI() string {
@@ -137,41 +149,26 @@ func UploadJob() (templateID, renderedTemplateArchiveID string, err error) {
 }
 
 func RunPrepare(nc *nats.Conn, sub *nats.Subscription, templateID, renderedTemplateArchiveID string) (map[string]map[string]string, error) {
-	prepareMessage := fmt.Sprintf(prepareTemplate, templateID, renderedTemplateArchiveID, senderID)
-	err := nc.Publish(agentID, []byte(prepareMessage))
-	if err != nil {
-		return nil, err
-	}
-
-	raw, err := sub.NextMsg(5 * time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	response := map[string]map[string]string{}
-	err = json.Unmarshal(raw.Data, &response)
-	return response, err
+	message := fmt.Sprintf(prepareTemplate, templateID, renderedTemplateArchiveID, senderID)
+	return SendMessage(message, nc, sub)
 }
 
 func RunApply(nc *nats.Conn, sub *nats.Subscription, templateID, renderedTemplateArchiveID string) (map[string]map[string]string, error) {
 	message := fmt.Sprintf(applyTemplate, templateID, renderedTemplateArchiveID, senderID)
-	err := nc.Publish(agentID, []byte(message))
-	if err != nil {
-		return nil, err
-	}
-
-	raw, err := sub.NextMsg(5 * time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	response := map[string]map[string]string{}
-	err = json.Unmarshal(raw.Data, &response)
-	return response, err
+	return SendMessage(message, nc, sub)
 }
 
 func RunErrand(nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]string, error) {
 	message := fmt.Sprintf(errandTemplate, senderID)
+	return SendMessage(message, nc, sub)
+}
+
+func RunFetchLogs(nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]string, error) {
+	message := fmt.Sprintf(fetchLogsTemplate, senderID)
+	return SendMessage(message, nc, sub)
+}
+
+func SendMessage(message string, nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]string, error) {
 	err := nc.Publish(agentID, []byte(message))
 	if err != nil {
 		return nil, err
@@ -187,19 +184,69 @@ func RunErrand(nc *nats.Conn, sub *nats.Subscription) (map[string]map[string]str
 	return response, err
 }
 
-func checkStatus(nc *nats.Conn, sub *nats.Subscription, agentTaskID string) func() string {
-	return func() string {
-		getTaskMessage := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, agentTaskID, senderID)
-		if err := nc.Publish(agentID, []byte(getTaskMessage)); err != nil {
-			Fail(fmt.Sprintf("Could not publish message: '%s' to agent id: '%s' to the NATS server.\nError is: %v\n", getTaskMessage, agentID, err))
-		}
-		receivedMessage, err := sub.NextMsg(5 * time.Second)
+func getTask(taskID string, nc *nats.Conn, sub *nats.Subscription) ([]byte, error) {
+	getTaskMessage := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, taskID, senderID)
+	if err := nc.Publish(agentID, []byte(getTaskMessage)); err != nil {
+		Fail(fmt.Sprintf("Could not publish message: '%s' to agent id: '%s' to the NATS server.\nError is: %v\n", getTaskMessage, agentID, err))
+	}
+	receivedMessage, err := sub.NextMsg(5 * time.Second)
+	if err != nil {
+		return []byte{}, err
+	}
+	GinkgoWriter.Write(receivedMessage.Data)
+	GinkgoWriter.Write([]byte{'\n'})
+
+	return receivedMessage.Data, nil
+}
+
+func checkStatus(taskID string, nc *nats.Conn, sub *nats.Subscription) func() (string, error) {
+	return func() (string, error) {
+		var result map[string]string
+		valueResponse, err := getTask(taskID, nc, sub)
 		if err != nil {
-			return err.Error()
+			return "", err
 		}
-		GinkgoWriter.Write(receivedMessage.Data)
-		GinkgoWriter.Write([]byte{'\n'})
-		return string(receivedMessage.Data)
+
+		err = json.Unmarshal(valueResponse, &result)
+		if err != nil {
+			return "", err
+		}
+
+		return result["value"], nil
+	}
+}
+
+func checkFetchLogsStatus(taskID string, nc *nats.Conn, sub *nats.Subscription) func() (map[string]string, error) {
+	return func() (map[string]string, error) {
+		var result map[string]map[string]string
+		valueResponse, err := getTask(taskID, nc, sub)
+		if err != nil {
+			return map[string]string{}, err
+		}
+
+		err = json.Unmarshal(valueResponse, &result)
+		if err != nil {
+			return map[string]string{}, err
+		}
+
+		return result["value"], nil
+	}
+}
+
+func checkErrandResultStatus(taskID string, nc *nats.Conn, sub *nats.Subscription) func() (action.ErrandResult, error) {
+	return func() (action.ErrandResult, error) {
+		var result map[string]action.ErrandResult
+		valueResponse, err := getTask(taskID, nc, sub)
+		if err != nil {
+			return action.ErrandResult{}, err
+		}
+
+		err = json.Unmarshal(valueResponse, &result)
+		if err != nil {
+			return action.ErrandResult{}, err
+		}
+
+		return result["value"], nil
 	}
 }
 
@@ -250,43 +297,26 @@ var _ = Describe("An Agent running on Windows", func() {
 		prepareResponse, err := RunPrepare(nc, sub, templateID, renderedTemplateArchiveID)
 		Expect(err).NotTo(HaveOccurred())
 
-		check := checkStatus(nc, sub, prepareResponse["value"]["agent_task_id"])
-		Eventually(check, 30*time.Second, 1*time.Second).Should(Equal(`{"value":"prepared"}`))
+		check := checkStatus(prepareResponse["value"]["agent_task_id"], nc, sub)
+		Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("prepared"))
 
 		applyResponse, err := RunApply(nc, sub, templateID, renderedTemplateArchiveID)
 		Expect(err).NotTo(HaveOccurred())
 
-		check = checkStatus(nc, sub, applyResponse["value"]["agent_task_id"])
-		Eventually(check, 30*time.Second, 1*time.Second).Should(Equal(`{"value":"applied"}`))
+		check = checkStatus(applyResponse["value"]["agent_task_id"], nc, sub)
+		Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("applied"))
 
-		response, err := RunErrand(nc, sub)
+		runErrandResponse, err := RunErrand(nc, sub)
 		Expect(err).NotTo(HaveOccurred())
-
-		checkRunErrand := func() (action.ErrandResult, error) {
-			var valueResponse map[string]action.ErrandResult
-
-			getTaskMessage := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, response["value"]["agent_task_id"], senderID)
-			if err := nc.Publish(agentID, []byte(getTaskMessage)); err != nil {
-				Fail(fmt.Sprintf("Could not publish message: '%s' to agent id: '%s' to the NATS server.\nError is: %v\n", getTaskMessage, agentID, err))
-			}
-			receivedMessage, err := sub.NextMsg(5 * time.Second)
-			if err != nil {
-				return action.ErrandResult{}, err
-			}
-			GinkgoWriter.Write(receivedMessage.Data)
-			GinkgoWriter.Write([]byte{'\n'})
-
-			err = json.Unmarshal(receivedMessage.Data, &valueResponse)
-			if err != nil {
-				return action.ErrandResult{}, err
-			}
-
-			return valueResponse["value"], nil
-		}
-
-		Eventually(checkRunErrand, 30*time.Second, 1*time.Second).Should(Equal(action.ErrandResult{
+		runErrandCheck := checkErrandResultStatus(runErrandResponse["value"]["agent_task_id"], nc, sub)
+		Eventually(runErrandCheck, 30*time.Second, 1*time.Second).Should(Equal(action.ErrandResult{
 			Stdout:     "hello world\r\n",
 			ExitStatus: 0,
 		}))
+
+		fetchLogsResponse, err := RunFetchLogs(nc, sub)
+		Expect(err).NotTo(HaveOccurred())
+		fetchLogsCheck := checkFetchLogsStatus(fetchLogsResponse["value"]["agent_task_id"], nc, sub)
+		Eventually(fetchLogsCheck, 30*time.Second, 1*time.Second).Should(HaveKey("blobstore_id"))
 	})
 })
