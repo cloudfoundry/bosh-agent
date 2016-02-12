@@ -30,7 +30,7 @@ const (
             "packages": {},
             "rendered_templates_archive": {
                 "blobstore_id": "%s",
-                "sha1": "46a41b2acc4134444d124e949f719a312ccdf806"
+                "sha1": "6760d464064ee036db9898c736ff71c6d4457792"
             }
         }
     ],
@@ -66,7 +66,7 @@ const (
             "networks": {},
 			"rendered_templates_archive": {
 					"blobstore_id": "%[2]s",
-					"sha1": "46a41b2acc4134444d124e949f719a312ccdf806"
+					"sha1": "6760d464064ee036db9898c736ff71c6d4457792"
 			}
         }
     ],

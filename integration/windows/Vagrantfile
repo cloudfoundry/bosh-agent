@@ -57,11 +57,16 @@ remove_agent_service = <<-SHELL
 SHELL
 
 setup_bosh_directory = <<-SHELL
-  if (Test-Path c:\\bosh){
-    Remove-Item -Recurse c:\\bosh
+  if (Test-Path C:\\bosh){
+    Remove-Item -Recurse C:\\bosh
+  }
+
+  if (Test-Path C:\\var\\vcap\\bosh\\bin){
+    Remove-Item -Recurse C:\\var\\vcap\\bosh\\bin
   }
 
   mkdir C:\\bosh
+  mkdir C:\\var\\vcap\\bosh\\bin
 SHELL
 
 download_agent = <<-SHELL
@@ -150,6 +155,7 @@ SHELL
 copy_agent_from_vagrant = <<-SHELL
   cd C:\\vagrant\\fixtures
   cp bosh-agent.exe c:\\bosh\\
+  cp job-service-wrapper.exe c:\\var\\vcap\\bosh\\bin\\
   cp service_wrapper.exe c:\\bosh\\
   cp service_wrapper.xml c:\\bosh\\
   cp bosh-blobstore-dav.exe c:\\bosh\\

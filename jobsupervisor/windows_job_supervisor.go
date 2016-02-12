@@ -1,22 +1,57 @@
 package jobsupervisor
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
+	"text/template"
 
+	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const (
+	serviceDescription = "vcap"
+
+	serviceWrapperExeFileName    = "job-service-wrapper.exe"
+	serviceWrapperConfigFileName = "job-service-wrapper.xml"
+
 	addJobScript = `
-New-Service -Name "%s" -Description "%s" -binaryPathName "%s"
+New-Service -Name "%s" -Description "` + serviceDescription + `" -binaryPathName "%s" -StartupType Automatic
+`
+	startJobScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Start-Service $_.Name }
+`
+	stopJobScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Stop-Service $_.Name }
+`
+	deleteAllJobsScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
 `
 
-	deleteAllJobsScript = `
-(get-wmiobject win32_service -filter "description='%s'").delete()
+	serviceWrapperTemplate = `
+<service>
+  <id>{{ .ID }}</id>
+  <name>{{ .Name }}</name>
+  <description>` + serviceDescription + `</description>
+  <executable>{{ .Executable }}</executable>
+  <arguments>{{ .Arguments }}</arguments>
+  <log mode="append"/>
+  <onfailure action="restart" delay="5 sec"/>
+</service>
 `
 )
+
+type WindowsServiceWrapperConfig struct {
+	ID         string
+	Name       string
+	Executable string
+	Arguments  string
+}
 
 type WindowsProcessConfig struct {
 	Processes []WindowsProcess `json:"processes"`
@@ -29,17 +64,26 @@ type WindowsProcess struct {
 }
 
 type windowsJobSupervisor struct {
-	processes []Process
-	status    string
-	cmdRunner boshsys.CmdRunner
-	fs        boshsys.FileSystem
+	processes   []Process
+	status      string
+	cmdRunner   boshsys.CmdRunner
+	dirProvider boshdirs.Provider
+	fs          boshsys.FileSystem
+	logger      boshlog.Logger
 }
 
-func NewWindowsJobSupervisor(cmdRunner boshsys.CmdRunner, fs boshsys.FileSystem) JobSupervisor {
+func NewWindowsJobSupervisor(
+	cmdRunner boshsys.CmdRunner,
+	dirProvider boshdirs.Provider,
+	fs boshsys.FileSystem,
+	logger boshlog.Logger,
+) JobSupervisor {
 	return &windowsJobSupervisor{
-		status:    "unmonitored",
-		cmdRunner: cmdRunner,
-		fs:        fs,
+		status:      "unmonitored",
+		cmdRunner:   cmdRunner,
+		dirProvider: dirProvider,
+		fs:          fs,
+		logger:      logger,
 	}
 }
 
@@ -50,12 +94,16 @@ func (s *windowsJobSupervisor) Reload() error {
 func (s *windowsJobSupervisor) Start() error {
 	s.processes = []Process{}
 	s.status = "running"
-	return nil
+
+	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", startJobScript)
+	return err
 }
 
 func (s *windowsJobSupervisor) Stop() error {
 	s.status = "stopped"
-	return nil
+
+	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", stopJobScript)
+	return err
 }
 
 func (s *windowsJobSupervisor) Unmonitor() error {
@@ -84,11 +132,39 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 	}
 
 	for _, process := range processConfig.Processes {
-		args := strings.Join(process.Args, " ")
-		commandToRun := process.Executable + " " + args
-		psScript := fmt.Sprintf(addJobScript, process.Name, "vcap", commandToRun)
+		serviceConfig := WindowsServiceWrapperConfig{
+			ID:         jobName,
+			Name:       process.Name,
+			Executable: process.Executable,
+			Arguments:  strings.Join(process.Args, " "),
+		}
 
-		_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", psScript)
+		buffer := bytes.NewBuffer([]byte{})
+		t := template.Must(template.New("service-wrapper-config").Parse(serviceWrapperTemplate))
+		err := t.Execute(buffer, serviceConfig)
+		if err != nil {
+			return err
+		}
+
+		s.logger.Debug("windowsJobSupervisor", "Configuring service wrapper for job '%s' with configPath '%s'", jobName, configPath)
+
+		jobDir := filepath.Dir(configPath)
+		serviceWrapperConfigFile := filepath.Join(jobDir, serviceWrapperConfigFileName)
+		err = s.fs.WriteFile(serviceWrapperConfigFile, buffer.Bytes())
+		if err != nil {
+			return err
+		}
+
+		serviceWrapperExePath := filepath.Join(s.dirProvider.BoshBinDir(), serviceWrapperExeFileName)
+		err = s.fs.CopyFile(serviceWrapperExePath, filepath.Join(jobDir, serviceWrapperExeFileName))
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Copying service-wrapper.exe in job directory '%s'", jobDir)
+		}
+
+		cmdToRun := filepath.Join(jobDir, serviceWrapperExeFileName)
+
+		psScript := fmt.Sprintf(addJobScript, jobName, cmdToRun)
+		_, _, _, err = s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", psScript)
 		if err != nil {
 			return err
 		}
@@ -98,8 +174,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 }
 
 func (s *windowsJobSupervisor) RemoveAllJobs() error {
-	psScript := fmt.Sprintf(deleteAllJobsScript, "vcap")
-	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", psScript)
+	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", deleteAllJobsScript)
 	return err
 }
 

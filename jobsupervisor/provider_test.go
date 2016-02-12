@@ -89,7 +89,7 @@ func init() {
 			actualSupervisor, err := provider.Get("windows")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(actualSupervisor).To(Equal(NewWindowsJobSupervisor(platform.Runner, platform.Fs)))
+			Expect(actualSupervisor).To(Equal(NewWindowsJobSupervisor(platform.Runner, dirProvider, platform.Fs, logger)))
 		})
 	})
 }

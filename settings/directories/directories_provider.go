@@ -18,6 +18,10 @@ func (p Provider) BoshDir() string {
 	return path.Join(p.BaseDir(), "bosh")
 }
 
+func (p Provider) BoshBinDir() string {
+	return path.Join(p.BoshDir(), "bin")
+}
+
 func (p Provider) EtcDir() string {
 	return path.Join(p.BoshDir(), "etc")
 }

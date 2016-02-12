@@ -42,7 +42,7 @@ func NewProvider(
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
-		"windows":    NewWindowsJobSupervisor(runner, fs),
+		"windows":    NewWindowsJobSupervisor(runner, dirProvider, fs, logger),
 	}
 
 	return
