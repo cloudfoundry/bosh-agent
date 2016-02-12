@@ -173,7 +173,29 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 }
 
 func (p dummyPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error) {
-	return
+	mounts, err := p.existingMounts()
+	if err != nil {
+		return false, err
+	}
+
+	var updatedMounts []mount
+	for _, mount := range mounts {
+		if mount.DiskCid != diskSettings.ID {
+			updatedMounts = append(updatedMounts, mount)
+		}
+	}
+
+	updatedMountsJSON, err := json.Marshal(updatedMounts)
+	if err != nil {
+		return false, err
+	}
+
+	err = p.fs.WriteFile(p.mountsPath(), updatedMountsJSON)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (p dummyPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
