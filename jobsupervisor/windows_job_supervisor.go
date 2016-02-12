@@ -32,7 +32,9 @@ New-Service -Name "%s" -Description "` + serviceDescription + `" -binaryPathName
 	deleteAllJobsScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
 `
-
+	getStatusScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.State }
+`
 	serviceWrapperTemplate = `
 <service>
   <id>{{ .ID }}</id>
@@ -64,12 +66,11 @@ type WindowsProcess struct {
 }
 
 type windowsJobSupervisor struct {
-	processes   []Process
-	status      string
 	cmdRunner   boshsys.CmdRunner
 	dirProvider boshdirs.Provider
 	fs          boshsys.FileSystem
 	logger      boshlog.Logger
+	logTag      string
 }
 
 func NewWindowsJobSupervisor(
@@ -79,11 +80,11 @@ func NewWindowsJobSupervisor(
 	logger boshlog.Logger,
 ) JobSupervisor {
 	return &windowsJobSupervisor{
-		status:      "unmonitored",
 		cmdRunner:   cmdRunner,
 		dirProvider: dirProvider,
 		fs:          fs,
 		logger:      logger,
+		logTag:      "windowsJobSupervisor",
 	}
 }
 
@@ -92,31 +93,61 @@ func (s *windowsJobSupervisor) Reload() error {
 }
 
 func (s *windowsJobSupervisor) Start() error {
-	s.processes = []Process{}
-	s.status = "running"
-
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", startJobScript)
-	return err
+	if err != nil {
+		return bosherr.WrapError(err, "Starting windows job process")
+	}
+
+	err = s.fs.RemoveAll(s.stoppedFilePath())
+	if err != nil {
+		return bosherr.WrapError(err, "Removing stopped file")
+	}
+
+	return nil
 }
 
 func (s *windowsJobSupervisor) Stop() error {
-	s.status = "stopped"
-
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", stopJobScript)
-	return err
+	if err != nil {
+		return bosherr.WrapError(err, "Stopping services")
+	}
+
+	err = s.fs.WriteFileString(s.stoppedFilePath(), "")
+	if err != nil {
+		return bosherr.WrapError(err, "Creating stopped file")
+	}
+
+	return nil
 }
 
 func (s *windowsJobSupervisor) Unmonitor() error {
-	s.status = "unmonitored"
 	return nil
 }
 
 func (s *windowsJobSupervisor) Status() (status string) {
-	return s.status
+	if s.fs.FileExists(s.stoppedFilePath()) {
+		return "stopped"
+	}
+
+	stdout, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", getStatusScript)
+	if err != nil {
+		return "failing"
+	}
+
+	statuses := strings.Split(strings.TrimSpace(stdout), "\r\n")
+	s.logger.Debug(s.logTag, "Got statuses %#v", statuses)
+
+	for _, status := range statuses {
+		if status != "Running" {
+			return "failing"
+		}
+	}
+
+	return "running"
 }
 
 func (s *windowsJobSupervisor) Processes() ([]Process, error) {
-	return s.processes, nil
+	return []Process{}, nil
 }
 
 func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
@@ -146,7 +177,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 			return err
 		}
 
-		s.logger.Debug("windowsJobSupervisor", "Configuring service wrapper for job '%s' with configPath '%s'", jobName, configPath)
+		s.logger.Debug(s.logTag, "Configuring service wrapper for job '%s' with configPath '%s'", jobName, configPath)
 
 		jobDir := filepath.Dir(configPath)
 		serviceWrapperConfigFile := filepath.Join(jobDir, serviceWrapperConfigFileName)
@@ -158,7 +189,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		serviceWrapperExePath := filepath.Join(s.dirProvider.BoshBinDir(), serviceWrapperExeFileName)
 		err = s.fs.CopyFile(serviceWrapperExePath, filepath.Join(jobDir, serviceWrapperExeFileName))
 		if err != nil {
-			return bosherr.WrapErrorf(err, "Copying service-wrapper.exe in job directory '%s'", jobDir)
+			return bosherr.WrapErrorf(err, "Copying service wrapper in job directory '%s'", jobDir)
 		}
 
 		cmdToRun := filepath.Join(jobDir, serviceWrapperExeFileName)
@@ -180,4 +211,8 @@ func (s *windowsJobSupervisor) RemoveAllJobs() error {
 
 func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	return nil
+}
+
+func (s *windowsJobSupervisor) stoppedFilePath() string {
+	return filepath.Join(s.dirProvider.MonitDir(), "stopped")
 }

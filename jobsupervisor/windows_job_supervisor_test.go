@@ -41,7 +41,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 	)
 
 	BeforeEach(func() {
-		logger := boshlog.NewLogger(boshlog.LevelDebug)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider := boshdirs.NewProvider("/var/vcap/")
 
 		fs = boshsys.NewOsFileSystem(logger)
@@ -113,12 +113,36 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 		Describe("Start", func() {
 			It("will start all the services", func() {
-				jobSupervisor.Start()
+				err := jobSupervisor.Start()
+				Expect(err).ToNot(HaveOccurred())
 
 				stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(stdout).To(ContainSubstring("say-hello"))
 				Expect(stdout).To(ContainSubstring("Running"))
+			})
+		})
+
+		Describe("Status", func() {
+			Context("when running", func() {
+				It("reports that the job is 'Running'", func() {
+					err := jobSupervisor.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(jobSupervisor.Status()).To(Equal("running"))
+				})
+			})
+
+			Context("when stopped", func() {
+				It("reports that the job is 'Stopped'", func() {
+					err := jobSupervisor.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					err = jobSupervisor.Stop()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(jobSupervisor.Status()).To(Equal("stopped"))
+				})
 			})
 		})
 	})
