@@ -22,9 +22,11 @@ func NewProvider(
 	dirProvider boshdir.Provider,
 	handler boshhandler.Handler,
 ) (p Provider) {
+	fs := platform.GetFs()
+	runner := platform.GetRunner()
 	monitJobSupervisor := NewMonitJobSupervisor(
-		platform.GetFs(),
-		platform.GetRunner(),
+		fs,
+		runner,
 		client,
 		logger,
 		dirProvider,
@@ -40,7 +42,7 @@ func NewProvider(
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
-		"windows":    NewWindowsJobSupervisor(),
+		"windows":    NewWindowsJobSupervisor(runner, fs),
 	}
 
 	return
