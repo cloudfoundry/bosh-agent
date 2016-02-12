@@ -33,6 +33,9 @@ function Unzip
 Invoke-WebRequest "#{ENV['AGENT_DEPS_ZIP_URL']}" -Verbose -OutFile C:\\bosh\\agent_deps.zip
 Unzip C:\\bosh\\agent_deps.zip C:\\bosh\\
 
+mkdir C:\\var\\vcap\\bosh\\bin
+mv C:\\bosh\\job-service-wrapper.exe C:\\var\\vcap\\bosh\\bin\\job-service-wrapper.exe
+
 Invoke-WebRequest "#{ENV['AGENT_ZIP_URL']}" -Verbose -OutFile C:\\bosh\\agent.zip
 
 Unzip C:\\bosh\\agent.zip C:\\bosh\\
