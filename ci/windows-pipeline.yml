@@ -46,7 +46,6 @@ resources:
     regexp: VMware-ovftool-(.*)-lin.x86_64.bundle
     access_key_id: {{AWS_ACCESS_KEY}}
     secret_access_key: {{AWS_SECRET_KEY}}
-
 jobs:
 - name: compile-agent-and-push
   serial: true
@@ -107,7 +106,7 @@ jobs:
     privileged: true
     file: bosh-agent/ci/tasks/create-vsphere-stemcell-windows.yml
     tags:
-    - vsphere-v5.1
+    - vsphere-windows
     config:
       params:
         RESOURCE_POOL_NAME: stonetalon
@@ -125,7 +124,7 @@ jobs:
     ensure:
       task: vagrant-destroy-vsphere
       tags:
-      - vsphere-v5.1
+      - vsphere-windows
       config:
         platform: linux
         image: docker:///bosh/init
