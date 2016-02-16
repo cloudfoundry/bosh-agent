@@ -1,5 +1,3 @@
-FROM bosh/main
+FROM bosh/init
 
-RUN /bin/bash -l -c "source /etc/profile.d/chruby.sh ;  \
-                     chruby 2.1.7 ;                     \
-                     gem install bosh_cli --no-ri --no-rdoc"
+RUN /bin/bash -l -c "gem install bosh_cli --no-ri --no-rdoc"
