@@ -20,6 +20,7 @@ run:
 
 params:
   VCENTER_HOST: replace-me
+  VCENTER_COMPUTE_RESOURCE: replace-me
   VCENTER_DATACENTER: replace-me
   VCENTER_RESOURCE_POOL: replace-me
   VCENTER_TEMPLATE_NAME: replace-me
