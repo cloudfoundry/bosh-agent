@@ -21,6 +21,7 @@ resources:
 - name: bosh-agent-deps-zip
   type: s3
   source:
+    private: true
     bucket: bosh-windows-dependencies
     versioned_file: agent-dependencies.zip
     access_key_id: {{AWS_ACCESS_KEY}}
