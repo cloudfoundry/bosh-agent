@@ -2,6 +2,8 @@
 
 set -e -x
 
+env
+
 apt-get update
 apt-get install -y unzip
 
@@ -26,7 +28,7 @@ vagrant box add ./dummy.box --name dummy
 vagrant up --provider=vsphere
 vagrant halt
 
-ovftool --sourceSSLThumbprint=$VCENTER_FINGERPRINT vi://$VCENTER_USERNAME:$VCENTER_PASSWORD@vcenter.pizza.cf-app.com:443/pizza-boxes-dc/vm/$VM_BASE_PATH/$VM_NAME image.ova
+ovftool --sourceSSLThumbprint=$VCENTER_FINGERPRINT vi://$VCENTER_USERNAME:$VCENTER_PASSWORD@$VCENTER_HOST:443/$VCENTER_DATACENTER/vm/$VCENTER_VM_BASE_PATH/$VCENTER_VM_NAME image.ova
 gzip -9 image.ova
 mv image.ova.gz image
 
