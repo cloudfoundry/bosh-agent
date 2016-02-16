@@ -127,7 +127,7 @@ func (n *natsClient) Setup() error {
 }
 
 func (n *natsClient) Cleanup() {
-	_, err := n.RunStop()
+	err := n.RunStop()
 	Expect(err).NotTo(HaveOccurred())
 
 	n.nc.Close()
@@ -157,7 +157,7 @@ func (n *natsClient) PrepareJob(templateID, renderedTemplateArchiveID string) er
 
 func (n *natsClient) RunStart() (map[string]string, error) {
 	message := fmt.Sprintf(startTemplate, senderID)
-	rawResponse, err := n.SendRawMessage(message)
+	rawResponse, err := n.SendRawMessageWithTimeout(message, time.Minute)
 	if err != nil {
 		return map[string]string{}, err
 	}
@@ -167,17 +167,24 @@ func (n *natsClient) RunStart() (map[string]string, error) {
 	return response, err
 }
 
-func (n *natsClient) RunStop() (map[string]map[string]string, error) {
+func (n *natsClient) RunStop() error {
 	message := fmt.Sprintf(stopTemplate, senderID)
 	rawResponse, err := n.SendRawMessage(message)
 	if err != nil {
-		return map[string]map[string]string{}, err
+		return err
 	}
 
 	response := map[string]map[string]string{}
 
 	err = json.Unmarshal(rawResponse, &response)
-	return response, err
+	if err != nil {
+		return err
+	}
+
+	check := n.checkStatus(response["value"]["agent_task_id"])
+	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("stopped"))
+
+	return nil
 }
 
 func (n *natsClient) RunErrand() (map[string]map[string]string, error) {
@@ -224,18 +231,22 @@ func (n *natsClient) CheckErrandResultStatus(taskID string) func() (action.Erran
 	}
 }
 
-func (n *natsClient) SendRawMessage(message string) ([]byte, error) {
+func (n *natsClient) SendRawMessageWithTimeout(message string, timeout time.Duration) ([]byte, error) {
 	err := n.nc.Publish(agentID, []byte(message))
 	if err != nil {
 		return nil, err
 	}
 
-	raw, err := n.sub.NextMsg(5 * time.Second)
+	raw, err := n.sub.NextMsg(timeout)
 	if err != nil {
 		return nil, err
 	}
 
 	return raw.Data, nil
+}
+
+func (n *natsClient) SendRawMessage(message string) ([]byte, error) {
+	return n.SendRawMessageWithTimeout(message, 5*time.Second)
 }
 
 func (n *natsClient) SendMessage(message string) (map[string]map[string]string, error) {
