@@ -6,12 +6,12 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provider :vsphere do |vm, override|
-    vm.host                  = 'vcenter.pizza.cf-app.com'
-    vm.compute_resource_name = 'pizza-boxes'
-    vm.resource_pool_name    = "#{ENV['RESOURCE_POOL_NAME']}"
-    vm.template_name         = "#{ENV['TEMPLATE_NAME']}"
-    vm.vm_base_path          = "#{ENV['VM_BASE_PATH']}"
-    vm.name                  = "#{ENV['VM_NAME']}"
+    vm.host                  = "#{ENV['VCENTER_HOST']}"
+    vm.compute_resource_name = "#{ENV['VCENTER_DATACENTER']}"
+    vm.resource_pool_name    = "#{ENV['VCENTER_RESOURCE_POOL']}"
+    vm.template_name         = "#{ENV['VCENTER_TEMPLATE_NAME']}"
+    vm.vm_base_path          = "#{ENV['VCENTER_VM_BASE_PATH']}"
+    vm.name                  = "#{ENV['VCENTER_VM_NAME']}"
     vm.user                  = "#{ENV['VCENTER_USERNAME']}"
     vm.password              = "#{ENV['VCENTER_PASSWORD']}"
   end
