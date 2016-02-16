@@ -155,14 +155,16 @@ SHELL
 copy_agent_from_vagrant = <<-SHELL
   cd C:\\vagrant\\fixtures
   cp bosh-agent.exe c:\\bosh\\
-  cp job-service-wrapper.exe c:\\var\\vcap\\bosh\\bin\\
   cp service_wrapper.exe c:\\bosh\\
   cp service_wrapper.xml c:\\bosh\\
   cp bosh-blobstore-dav.exe c:\\bosh\\
   cp tar.exe c:\\bosh\\
   cp zlib1.dll c:\\bosh\\
+  cp job-service-wrapper.exe c:\\bosh
 SHELL
 initialize_agent_service = <<-SHELL
+  Move-Item C:\\bosh\\job-service-wrapper.exe C:\\var\\vcap\\bosh\\bin\\job-service-wrapper.exe -Force
+
   C:\\bosh\\service_wrapper.exe install
   C:\\bosh\\service_wrapper.exe start
 SHELL

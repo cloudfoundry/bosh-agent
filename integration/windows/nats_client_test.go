@@ -96,6 +96,14 @@ const (
 	"reply_to":"%s"
 }
 	`
+	stopTemplate = `
+{
+	"protocol":2,
+	"method":"stop",
+	"arguments":[],
+	"reply_to":"%s"
+}
+	`
 )
 
 type natsClient struct {
@@ -119,6 +127,9 @@ func (n *natsClient) Setup() error {
 }
 
 func (n *natsClient) Cleanup() {
+	_, err := n.RunStop()
+	Expect(err).NotTo(HaveOccurred())
+
 	n.nc.Close()
 }
 
@@ -152,6 +163,19 @@ func (n *natsClient) RunStart() (map[string]string, error) {
 	}
 
 	response := map[string]string{}
+	err = json.Unmarshal(rawResponse, &response)
+	return response, err
+}
+
+func (n *natsClient) RunStop() (map[string]map[string]string, error) {
+	message := fmt.Sprintf(stopTemplate, senderID)
+	rawResponse, err := n.SendRawMessage(message)
+	if err != nil {
+		return map[string]map[string]string{}, err
+	}
+
+	response := map[string]map[string]string{}
+
 	err = json.Unmarshal(rawResponse, &response)
 	return response, err
 }

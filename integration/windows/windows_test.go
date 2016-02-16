@@ -132,14 +132,14 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Expect(runStartResponse["value"]).To(Equal("started"))
 
-		// message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
-		// rawResponse, err := natsClient.SendRawMessage(message)
-		// Expect(err).NotTo(HaveOccurred())
+		message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
+		rawResponse, err := natsClient.SendRawMessage(message)
+		Expect(err).NotTo(HaveOccurred())
 
-		// getStateResponse := map[string]action.GetStateV1ApplySpec{}
-		// err = json.Unmarshal(rawResponse, &getStateResponse)
-		// Expect(err).NotTo(HaveOccurred())
+		getStateResponse := map[string]action.GetStateV1ApplySpec{}
+		err = json.Unmarshal(rawResponse, &getStateResponse)
+		Expect(err).NotTo(HaveOccurred())
 
-		// Expect(getStateResponse["value"].JobState).To(Equal("running"))
+		Expect(getStateResponse["value"].JobState).To(Equal("running"))
 	})
 })
