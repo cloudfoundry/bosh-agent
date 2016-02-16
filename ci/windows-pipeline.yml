@@ -201,18 +201,14 @@ jobs:
     tags: [vsphere-windows]
     config:
       platform: linux
-      image: docker:///bosh/init
+      image: docker:///bosh/windows
       inputs:
       - name: vsphere-errand-release
       run:
         path: sh
         args:
         - -c
-        - '
-          gem install bosh_cli --no-rdoc --no-ri
-          &&
-          bosh -n --color -t $DIRECTOR_IP -d vsphere-errand-release/manifest.yml run errand $JOB_NAME
-          '
+        - 'bosh -n --color -t $DIRECTOR_IP -d vsphere-errand-release/manifest.yml run errand $JOB_NAME'
       params:
         DIRECTOR_IP: {{DIRECTOR_IP}}
         BOSH_USER: {{BOSH_USER}}
@@ -223,14 +219,12 @@ jobs:
       tags: [vsphere-windows]
       config:
         platform: linux
-        image: docker:///bosh/init
+        image: docker:///bosh/windows
         run:
           path: sh
           args:
           - -c
           - '
-            gem install bosh_cli --no-rdoc --no-ri
-            &&
             bosh -n --color -t $DIRECTOR_IP delete deployment sample-vsphere-deployment
             &&
             bosh -n --color -t $DIRECTOR_IP cleanup --all
