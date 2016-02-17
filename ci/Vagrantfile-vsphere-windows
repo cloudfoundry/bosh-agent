@@ -7,7 +7,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provider :vsphere do |vm, override|
     vm.host                  = "#{ENV['VCENTER_HOST']}"
-    vm.compute_resource_name = "#{ENV['VCENTER_COMPUTE_RESOURCE']}"
+    vm.compute_resource_name = "#{ENV['VCENTER_DATACENTER']}"
     vm.resource_pool_name    = "#{ENV['VCENTER_RESOURCE_POOL']}"
     vm.template_name         = "#{ENV['VCENTER_TEMPLATE_NAME']}"
     vm.vm_base_path          = "#{ENV['VCENTER_VM_BASE_PATH']}"
