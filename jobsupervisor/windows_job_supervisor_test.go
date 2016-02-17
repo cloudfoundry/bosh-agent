@@ -1,6 +1,7 @@
 package jobsupervisor_test
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"runtime"
 
@@ -22,26 +23,31 @@ var _ = Describe("WindowsJobSupervisor", func() {
 	})
 
 	var (
-		runner        boshsys.CmdRunner
-		fs            boshsys.FileSystem
-		jobSupervisor JobSupervisor
-		jobDir        string
+		runner            boshsys.CmdRunner
+		fs                boshsys.FileSystem
+		jobSupervisor     JobSupervisor
+		jobDir            string
+		processConfigPath string
 	)
 
-	const (
-		processConfigContents = `{
-"processes": [
-	{
-		"name": "say-hello",
-		"executable": "powershell",
-		"args": ["/C", "Start-Sleep 10"]
+	AddJob := func() error {
+		return jobSupervisor.AddJob("say-hello", 0, processConfigPath)
 	}
-]
-}
-`
-	)
 
 	BeforeEach(func() {
+		configContents := WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       "say-hello",
+					Executable: "powershell",
+					Args:       []string{"/C", "Start-Sleep 10"},
+				},
+			},
+		}
+
+		processConfigContents, err := json.Marshal(configContents)
+		Expect(err).ToNot(HaveOccurred())
+
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider := boshdirs.NewProvider("C:/var/vcap/")
 
@@ -50,14 +56,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger)
 		jobSupervisor.RemoveAllJobs()
 
-		var err error
 		jobDir, err = fs.TempDir("testWindowsJobSupervisor")
-		processConfigPath := filepath.Join(jobDir, "monit")
+		processConfigPath = filepath.Join(jobDir, "monit")
 
-		err = fs.WriteFileString(processConfigPath, processConfigContents)
-		Expect(err).ToNot(HaveOccurred())
-
-		err = jobSupervisor.AddJob("say-hello", 0, processConfigPath)
+		err = fs.WriteFile(processConfigPath, processConfigContents)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -69,14 +71,31 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 	Describe("AddJob", func() {
 		It("creates a service with vcap description", func() {
+			Expect(AddJob()).ToNot(HaveOccurred())
+
 			stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stdout).To(ContainSubstring("say-hello"))
 			Expect(stdout).To(ContainSubstring("Stopped"))
 		})
+
+		Context("when monit file is empty", func() {
+			BeforeEach(func() {
+				err := fs.WriteFileString(processConfigPath, "")
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("does not return an error", func() {
+				Expect(AddJob()).ToNot(HaveOccurred())
+			})
+		})
 	})
 
 	Describe("Start", func() {
+		BeforeEach(func() {
+			Expect(AddJob()).ToNot(HaveOccurred())
+		})
+
 		It("will start all the services", func() {
 			err := jobSupervisor.Start()
 			Expect(err).ToNot(HaveOccurred())
@@ -89,6 +108,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 	})
 
 	Describe("Status", func() {
+		BeforeEach(func() {
+			Expect(AddJob()).ToNot(HaveOccurred())
+		})
+
 		Context("when running", func() {
 			It("reports that the job is 'Running'", func() {
 				err := jobSupervisor.Start()

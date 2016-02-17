@@ -156,6 +156,11 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		return err
 	}
 
+	if len(configFileContents) == 0 {
+		s.logger.Debug(s.logTag, "Skipping job configuration for %q, empty monit config file %q", jobName, configPath)
+		return nil
+	}
+
 	var processConfig WindowsProcessConfig
 	err = json.Unmarshal(configFileContents, &processConfig)
 	if err != nil {
@@ -177,7 +182,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 			return err
 		}
 
-		s.logger.Debug(s.logTag, "Configuring service wrapper for job '%s' with configPath '%s'", jobName, configPath)
+		s.logger.Debug(s.logTag, "Configuring service wrapper for job %q with configPath %q", jobName, configPath)
 
 		jobDir := filepath.Dir(configPath)
 		serviceWrapperConfigFile := filepath.Join(jobDir, serviceWrapperConfigFileName)
