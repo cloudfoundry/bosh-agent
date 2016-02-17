@@ -108,28 +108,41 @@ var _ = Describe("WindowsJobSupervisor", func() {
 	})
 
 	Describe("Status", func() {
-		BeforeEach(func() {
-			Expect(AddJob()).ToNot(HaveOccurred())
-		})
+		Context("with jobs", func() {
+			BeforeEach(func() {
+				Expect(AddJob()).ToNot(HaveOccurred())
+			})
 
-		Context("when running", func() {
-			It("reports that the job is 'Running'", func() {
-				err := jobSupervisor.Start()
-				Expect(err).ToNot(HaveOccurred())
+			Context("when running", func() {
+				It("reports that the job is 'Running'", func() {
+					err := jobSupervisor.Start()
+					Expect(err).ToNot(HaveOccurred())
 
-				Expect(jobSupervisor.Status()).To(Equal("running"))
+					Expect(jobSupervisor.Status()).To(Equal("running"))
+				})
+			})
+
+			Context("when stopped", func() {
+				It("reports that the job is 'Stopped'", func() {
+					err := jobSupervisor.Start()
+					Expect(err).ToNot(HaveOccurred())
+
+					err = jobSupervisor.Stop()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(jobSupervisor.Status()).To(Equal("stopped"))
+				})
 			})
 		})
 
-		Context("when stopped", func() {
-			It("reports that the job is 'Stopped'", func() {
-				err := jobSupervisor.Start()
-				Expect(err).ToNot(HaveOccurred())
+		Context("with no jobs", func() {
+			Context("when running", func() {
+				It("reports that the job is 'Running'", func() {
+					err := jobSupervisor.Start()
+					Expect(err).ToNot(HaveOccurred())
 
-				err = jobSupervisor.Stop()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(jobSupervisor.Status()).To(Equal("stopped"))
+					Expect(jobSupervisor.Status()).To(Equal("running"))
+				})
 			})
 		})
 	})

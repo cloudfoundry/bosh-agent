@@ -134,7 +134,13 @@ func (s *windowsJobSupervisor) Status() (status string) {
 		return "failing"
 	}
 
-	statuses := strings.Split(strings.TrimSpace(stdout), "\r\n")
+	stdout = strings.TrimSpace(stdout)
+	if len(stdout) == 0 {
+		s.logger.Debug(s.logTag, "No statuses reported for job processes")
+		return "running"
+	}
+
+	statuses := strings.Split(stdout, "\r\n")
 	s.logger.Debug(s.logTag, "Got statuses %#v", statuses)
 
 	for _, status := range statuses {
