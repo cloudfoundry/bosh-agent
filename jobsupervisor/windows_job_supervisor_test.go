@@ -25,6 +25,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		runner        boshsys.CmdRunner
 		fs            boshsys.FileSystem
 		jobSupervisor JobSupervisor
+		jobDir        string
 	)
 
 	const (
@@ -42,107 +43,70 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		dirProvider := boshdirs.NewProvider("/var/vcap/")
+		dirProvider := boshdirs.NewProvider("C:/var/vcap/")
 
 		fs = boshsys.NewOsFileSystem(logger)
 		runner = boshsys.NewExecCmdRunner(logger)
 		jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger)
+		jobSupervisor.RemoveAllJobs()
+
+		var err error
+		jobDir, err = fs.TempDir("testWindowsJobSupervisor")
+		processConfigPath := filepath.Join(jobDir, "monit")
+
+		err = fs.WriteFileString(processConfigPath, processConfigContents)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = jobSupervisor.AddJob("say-hello", 0, processConfigPath)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
-	Context("when started", func() {
-		BeforeEach(func() {
-			jobSupervisor.Start()
-		})
-
-		It("reports running", func() {
-			Expect(jobSupervisor.Status()).To(Equal("running"))
-		})
+	AfterEach(func() {
+		jobSupervisor.Stop()
+		jobSupervisor.RemoveAllJobs()
+		fs.RemoveAll(jobDir)
 	})
 
-	Context("when stopped", func() {
-		BeforeEach(func() {
-			jobSupervisor.Stop()
-		})
-
-		It("reports stopped", func() {
-			Expect(jobSupervisor.Status()).To(Equal("stopped"))
-		})
-	})
-
-	Context("when unmonitored", func() {
-		BeforeEach(func() {
-			jobSupervisor.Unmonitor()
-		})
-
-		It("reports unmonitored", func() {
-			Expect(jobSupervisor.Status()).To(Equal("unmonitored"))
+	Describe("AddJob", func() {
+		It("creates a service with vcap description", func() {
+			stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stdout).To(ContainSubstring("say-hello"))
+			Expect(stdout).To(ContainSubstring("Stopped"))
 		})
 	})
 
-	Context("with service", func() {
-		var (
-			jobDir string
-		)
-
-		BeforeEach(func() {
-			var err error
-			jobDir, err = fs.TempDir("testWindowsJobSupervisor")
-			processConfigPath := filepath.Join(jobDir, "monit")
-
-			err = fs.WriteFileString(processConfigPath, processConfigContents)
+	Describe("Start", func() {
+		It("will start all the services", func() {
+			err := jobSupervisor.Start()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = jobSupervisor.AddJob("say-hello", 0, processConfigPath)
+			stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
 			Expect(err).ToNot(HaveOccurred())
+			Expect(stdout).To(ContainSubstring("say-hello"))
+			Expect(stdout).To(ContainSubstring("Running"))
 		})
+	})
 
-		AfterEach(func() {
-			jobSupervisor.Stop()
-			jobSupervisor.RemoveAllJobs()
-			fs.RemoveAll(jobDir)
-		})
-
-		Describe("AddJob", func() {
-			It("creates a service with vcap description", func() {
-				stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(stdout).To(ContainSubstring("say-hello"))
-				Expect(stdout).To(ContainSubstring("Stopped"))
-			})
-		})
-
-		Describe("Start", func() {
-			It("will start all the services", func() {
+	Describe("Status", func() {
+		Context("when running", func() {
+			It("reports that the job is 'Running'", func() {
 				err := jobSupervisor.Start()
 				Expect(err).ToNot(HaveOccurred())
 
-				stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(stdout).To(ContainSubstring("say-hello"))
-				Expect(stdout).To(ContainSubstring("Running"))
+				Expect(jobSupervisor.Status()).To(Equal("running"))
 			})
 		})
 
-		Describe("Status", func() {
-			Context("when running", func() {
-				It("reports that the job is 'Running'", func() {
-					err := jobSupervisor.Start()
-					Expect(err).ToNot(HaveOccurred())
+		Context("when stopped", func() {
+			It("reports that the job is 'Stopped'", func() {
+				err := jobSupervisor.Start()
+				Expect(err).ToNot(HaveOccurred())
 
-					Expect(jobSupervisor.Status()).To(Equal("running"))
-				})
-			})
+				err = jobSupervisor.Stop()
+				Expect(err).ToNot(HaveOccurred())
 
-			Context("when stopped", func() {
-				It("reports that the job is 'Stopped'", func() {
-					err := jobSupervisor.Start()
-					Expect(err).ToNot(HaveOccurred())
-
-					err = jobSupervisor.Stop()
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(jobSupervisor.Status()).To(Equal("stopped"))
-				})
+				Expect(jobSupervisor.Status()).To(Equal("stopped"))
 			})
 		})
 	})
