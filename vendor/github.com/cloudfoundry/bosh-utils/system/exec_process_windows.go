@@ -27,6 +27,29 @@ func (p *execProcess) Start() error {
 }
 
 func (p *execProcess) TerminateNicely(killGracePeriod time.Duration) error {
-	panic("execProcess: TerminateNicely NOT IMPLEMENTED")
+	p.logger.Debug(execProcessLogTag, "Terminating process with PID '%d'", p.pid)
+
+	// Make sure process is being waited on for process state reaping to occur
+	// as to avoid forcibly killing the process
+	if p.waitCh == nil {
+		panic("TerminateNicely() must be called after Wait()")
+	}
+
+	// If the process exits before Wait() can be called the
+	// ProcessState may not be set and Kill() will fail with
+	// an: "TerminateProcess: Access is denied" error.
+	//
+	// See: https://github.com/golang/go/issues/5615
+
+	if p.cmd.ProcessState != nil && p.cmd.ProcessState.Exited() {
+		p.logger.Debug(execProcessLogTag, "Skipping process termination: process exited")
+		return nil
+	}
+
+	err := p.cmd.Process.Kill()
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Terminating process: %#v", err)
+	}
+
 	return nil
 }
