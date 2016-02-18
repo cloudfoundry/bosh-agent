@@ -41,7 +41,7 @@ func NewWindowsPlatform(
 		cmdRunner:          cmdRunner,
 		collector:          collector,
 		compressor:         boshcmd.NewTarballCompressor(cmdRunner, fs),
-		copier:             boshcmd.NewCpCopier(cmdRunner, fs, logger),
+		copier:             boshcmd.NewGenericCpCopier(fs, logger),
 		dirProvider:        dirProvider,
 		netManager:         netManager,
 		devicePathResolver: devicePathResolver,
