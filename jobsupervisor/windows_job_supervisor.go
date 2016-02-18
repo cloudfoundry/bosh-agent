@@ -3,7 +3,6 @@ package jobsupervisor
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -22,9 +21,6 @@ const (
 	serviceWrapperExeFileName    = "job-service-wrapper.exe"
 	serviceWrapperConfigFileName = "job-service-wrapper.xml"
 
-	addJobScript = `
-New-Service -Name "%s" -Description "` + serviceDescription + `" -binaryPathName "%s" -StartupType Automatic
-`
 	startJobScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Start-Service $_.Name }
 `
@@ -216,8 +212,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 
 		cmdToRun := filepath.Join(jobDir, serviceWrapperExeFileName)
 
-		psScript := fmt.Sprintf(addJobScript, jobName, cmdToRun)
-		_, _, _, err = s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", psScript)
+		_, _, _, err = s.cmdRunner.RunCommand(cmdToRun, "install")
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Creating service '%s'", process.Name)
 		}
