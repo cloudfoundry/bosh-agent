@@ -181,7 +181,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		}
 
 		serviceConfig := WindowsServiceWrapperConfig{
-			ID:         jobName,
+			ID:         process.Name,
 			Name:       process.Name,
 			Executable: process.Executable,
 			Arguments:  strings.Join(process.Args, " "),
@@ -198,19 +198,26 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		s.logger.Debug(s.logTag, "Configuring service wrapper for job %q with configPath %q", jobName, configPath)
 
 		jobDir := filepath.Dir(configPath)
-		serviceWrapperConfigFile := filepath.Join(jobDir, serviceWrapperConfigFileName)
+
+		processDir := filepath.Join(jobDir, process.Name)
+		err = s.fs.MkdirAll(processDir, os.FileMode(0750))
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Creating job directory for service '%s' at '%s'", process.Name, processDir)
+		}
+
+		serviceWrapperConfigFile := filepath.Join(processDir, serviceWrapperConfigFileName)
 		err = s.fs.WriteFile(serviceWrapperConfigFile, buffer.Bytes())
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Saving service config file for service '%s'", process.Name)
 		}
 
 		serviceWrapperExePath := filepath.Join(s.dirProvider.BoshBinDir(), serviceWrapperExeFileName)
-		err = s.fs.CopyFile(serviceWrapperExePath, filepath.Join(jobDir, serviceWrapperExeFileName))
+		err = s.fs.CopyFile(serviceWrapperExePath, filepath.Join(processDir, serviceWrapperExeFileName))
 		if err != nil {
-			return bosherr.WrapErrorf(err, "Copying service wrapper in job directory '%s'", jobDir)
+			return bosherr.WrapErrorf(err, "Copying service wrapper in job directory '%s'", processDir)
 		}
 
-		cmdToRun := filepath.Join(jobDir, serviceWrapperExeFileName)
+		cmdToRun := filepath.Join(processDir, serviceWrapperExeFileName)
 
 		_, _, _, err = s.cmdRunner.RunCommand(cmdToRun, "install")
 		if err != nil {

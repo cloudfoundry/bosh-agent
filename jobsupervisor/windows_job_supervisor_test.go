@@ -45,9 +45,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		configContents := WindowsProcessConfig{
 			Processes: []WindowsProcess{
 				{
-					Name:       "say-hello",
+					Name:       "say-hello-1",
 					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello\"; Start-Sleep 10"},
+					Args:       []string{"/C", "Write-Host \"Hello 1\"; Start-Sleep 10"},
+				},
+				{
+					Name:       "say-hello-2",
+					Executable: "powershell",
+					Args:       []string{"/C", "Write-Host \"Hello 2\"; Start-Sleep 10"},
 				},
 			},
 		}
@@ -81,9 +86,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		It("creates a service with vcap description", func() {
 			Expect(AddJob()).ToNot(HaveOccurred())
 
-			stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
+			stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello-1")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stdout).To(ContainSubstring("say-hello"))
+			Expect(stdout).To(ContainSubstring("say-hello-1"))
+			Expect(stdout).To(ContainSubstring("Stopped"))
+
+			stdout, _, _, err = runner.RunCommand("powershell", "/C", "get-service", "say-hello-2")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stdout).To(ContainSubstring("say-hello-2"))
 			Expect(stdout).To(ContainSubstring("Stopped"))
 		})
 
@@ -108,9 +118,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			err := jobSupervisor.Start()
 			Expect(err).ToNot(HaveOccurred())
 
-			stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello")
+			stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello-1")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stdout).To(ContainSubstring("say-hello"))
+			Expect(stdout).To(ContainSubstring("say-hello-1"))
+			Expect(stdout).To(ContainSubstring("Running"))
+
+			stdout, _, _, err = runner.RunCommand("powershell", "/C", "get-service", "say-hello-2")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stdout).To(ContainSubstring("say-hello-2"))
 			Expect(stdout).To(ContainSubstring("Running"))
 		})
 
@@ -118,11 +133,17 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			err := jobSupervisor.Start()
 			Expect(err).ToNot(HaveOccurred())
 
-			readLogFile := func() (string, error) {
-				return fs.ReadFileString(path.Join(logDir, "say-hello", "say-hello", "job-service-wrapper.out.log"))
+			readLogFile1 := func() (string, error) {
+				return fs.ReadFileString(path.Join(logDir, "say-hello", "say-hello-1", "job-service-wrapper.out.log"))
 			}
 
-			Eventually(readLogFile, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring("Hello"))
+			Eventually(readLogFile1, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring("Hello 1"))
+
+			readLogFile2 := func() (string, error) {
+				return fs.ReadFileString(path.Join(logDir, "say-hello", "say-hello-2", "job-service-wrapper.out.log"))
+			}
+
+			Eventually(readLogFile2, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring("Hello 2"))
 		})
 	})
 
