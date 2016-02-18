@@ -67,6 +67,7 @@ setup_bosh_directory = <<-SHELL
 
   mkdir C:\\bosh
   mkdir C:\\var\\vcap\\bosh\\bin
+  mkdir C:\\var\\vcap\\bosh\\log
 SHELL
 
 download_agent = <<-SHELL

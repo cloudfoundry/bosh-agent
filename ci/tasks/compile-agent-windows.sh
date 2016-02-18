@@ -23,6 +23,7 @@ cat > ./service_wrapper.xml <<EOF
   <description>BOSH Agent</description>
   <executable>bosh-agent.exe</executable>
   <arguments>-P windows -C agent.json -M windows</arguments>
+  <logpath>/var/vcap/bosh/log</logpath>
   <log mode="roll-by-size">
   	<sizeThreshold>10240</sizeThreshold>
   	<keepFiles>8</keepFiles>
