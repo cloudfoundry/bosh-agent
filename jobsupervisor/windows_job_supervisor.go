@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -42,6 +44,7 @@ New-Service -Name "%s" -Description "` + serviceDescription + `" -binaryPathName
   <description>` + serviceDescription + `</description>
   <executable>{{ .Executable }}</executable>
   <arguments>{{ .Arguments }}</arguments>
+  <logpath>{{ .LogPath }}</logpath>
   <log mode="append"/>
   <onfailure action="restart" delay="5 sec"/>
 </service>
@@ -53,6 +56,7 @@ type WindowsServiceWrapperConfig struct {
 	Name       string
 	Executable string
 	Arguments  string
+	LogPath    string
 }
 
 type WindowsProcessConfig struct {
@@ -174,18 +178,25 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 	}
 
 	for _, process := range processConfig.Processes {
+		logPath := path.Join(s.dirProvider.LogsDir(), jobName, process.Name)
+		err := s.fs.MkdirAll(logPath, os.FileMode(0750))
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Creating log directory for service '%s'", process.Name)
+		}
+
 		serviceConfig := WindowsServiceWrapperConfig{
 			ID:         jobName,
 			Name:       process.Name,
 			Executable: process.Executable,
 			Arguments:  strings.Join(process.Args, " "),
+			LogPath:    logPath,
 		}
 
 		buffer := bytes.NewBuffer([]byte{})
 		t := template.Must(template.New("service-wrapper-config").Parse(serviceWrapperTemplate))
-		err := t.Execute(buffer, serviceConfig)
+		err = t.Execute(buffer, serviceConfig)
 		if err != nil {
-			return err
+			return bosherr.WrapErrorf(err, "Rendering service config template for service '%s'", process.Name)
 		}
 
 		s.logger.Debug(s.logTag, "Configuring service wrapper for job %q with configPath %q", jobName, configPath)
@@ -194,7 +205,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		serviceWrapperConfigFile := filepath.Join(jobDir, serviceWrapperConfigFileName)
 		err = s.fs.WriteFile(serviceWrapperConfigFile, buffer.Bytes())
 		if err != nil {
-			return err
+			return bosherr.WrapErrorf(err, "Saving service config file for service '%s'", process.Name)
 		}
 
 		serviceWrapperExePath := filepath.Join(s.dirProvider.BoshBinDir(), serviceWrapperExeFileName)
@@ -208,7 +219,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		psScript := fmt.Sprintf(addJobScript, jobName, cmdToRun)
 		_, _, _, err = s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", psScript)
 		if err != nil {
-			return err
+			return bosherr.WrapErrorf(err, "Creating service '%s'", process.Name)
 		}
 	}
 

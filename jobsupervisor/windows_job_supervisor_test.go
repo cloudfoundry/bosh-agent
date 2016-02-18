@@ -2,8 +2,10 @@ package jobsupervisor_test
 
 import (
 	"encoding/json"
+	"path"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -28,6 +30,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		jobSupervisor     JobSupervisor
 		jobDir            string
 		processConfigPath string
+		basePath          string
+		logDir            string
 	)
 
 	AddJob := func() error {
@@ -35,12 +39,15 @@ var _ = Describe("WindowsJobSupervisor", func() {
 	}
 
 	BeforeEach(func() {
+		basePath = "C:/var/vcap/"
+		logDir = path.Join(basePath, "sys", "log")
+
 		configContents := WindowsProcessConfig{
 			Processes: []WindowsProcess{
 				{
 					Name:       "say-hello",
 					Executable: "powershell",
-					Args:       []string{"/C", "Start-Sleep 10"},
+					Args:       []string{"/C", "Write-Host \"Hello\"; Start-Sleep 10"},
 				},
 			},
 		}
@@ -49,7 +56,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		dirProvider := boshdirs.NewProvider("C:/var/vcap/")
+		dirProvider := boshdirs.NewProvider(basePath)
 
 		fs = boshsys.NewOsFileSystem(logger)
 		runner = boshsys.NewExecCmdRunner(logger)
@@ -67,6 +74,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		jobSupervisor.Stop()
 		jobSupervisor.RemoveAllJobs()
 		fs.RemoveAll(jobDir)
+		fs.RemoveAll(logDir)
 	})
 
 	Describe("AddJob", func() {
@@ -104,6 +112,17 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stdout).To(ContainSubstring("say-hello"))
 			Expect(stdout).To(ContainSubstring("Running"))
+		})
+
+		It("writes logs to job log directory", func() {
+			err := jobSupervisor.Start()
+			Expect(err).ToNot(HaveOccurred())
+
+			readLogFile := func() (string, error) {
+				return fs.ReadFileString(path.Join(logDir, "say-hello", "say-hello", "job-service-wrapper.out.log"))
+			}
+
+			Eventually(readLogFile, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring("Hello"))
 		})
 	})
 
