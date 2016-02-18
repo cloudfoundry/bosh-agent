@@ -106,16 +106,16 @@ const (
 	`
 )
 
-type natsClient struct {
+type NatsClient struct {
 	nc  *nats.Conn
 	sub *nats.Subscription
 }
 
-func NewNatsClient() *natsClient {
-	return &natsClient{}
+func NewNatsClient() *NatsClient {
+	return &NatsClient{}
 }
 
-func (n *natsClient) Setup() error {
+func (n *NatsClient) Setup() error {
 	var err error
 	n.nc, err = nats.Connect(natsURI())
 	if err != nil {
@@ -126,14 +126,14 @@ func (n *natsClient) Setup() error {
 	return err
 }
 
-func (n *natsClient) Cleanup() {
+func (n *NatsClient) Cleanup() {
 	err := n.RunStop()
 	Expect(err).NotTo(HaveOccurred())
 
 	n.nc.Close()
 }
 
-func (n *natsClient) PrepareJob(templateID, renderedTemplateArchiveID string) error {
+func (n *NatsClient) PrepareJob(templateID, renderedTemplateArchiveID string) error {
 	message := fmt.Sprintf(prepareTemplate, templateID, renderedTemplateArchiveID, senderID)
 	prepareResponse, err := n.SendMessage(message)
 	if err != nil {
@@ -155,7 +155,7 @@ func (n *natsClient) PrepareJob(templateID, renderedTemplateArchiveID string) er
 	return nil
 }
 
-func (n *natsClient) RunStart() (map[string]string, error) {
+func (n *NatsClient) RunStart() (map[string]string, error) {
 	message := fmt.Sprintf(startTemplate, senderID)
 	rawResponse, err := n.SendRawMessageWithTimeout(message, time.Minute)
 	if err != nil {
@@ -167,7 +167,7 @@ func (n *natsClient) RunStart() (map[string]string, error) {
 	return response, err
 }
 
-func (n *natsClient) RunStop() error {
+func (n *NatsClient) RunStop() error {
 	message := fmt.Sprintf(stopTemplate, senderID)
 	rawResponse, err := n.SendRawMessage(message)
 	if err != nil {
@@ -187,17 +187,17 @@ func (n *natsClient) RunStop() error {
 	return nil
 }
 
-func (n *natsClient) RunErrand() (map[string]map[string]string, error) {
+func (n *NatsClient) RunErrand() (map[string]map[string]string, error) {
 	message := fmt.Sprintf(errandTemplate, senderID)
 	return n.SendMessage(message)
 }
 
-func (n *natsClient) RunFetchLogs() (map[string]map[string]string, error) {
+func (n *NatsClient) RunFetchLogs() (map[string]map[string]string, error) {
 	message := fmt.Sprintf(fetchLogsTemplate, senderID)
 	return n.SendMessage(message)
 }
 
-func (n *natsClient) CheckFetchLogsStatus(taskID string) func() (map[string]string, error) {
+func (n *NatsClient) CheckFetchLogsStatus(taskID string) func() (map[string]string, error) {
 	return func() (map[string]string, error) {
 		var result map[string]map[string]string
 		valueResponse, err := n.getTask(taskID)
@@ -214,7 +214,7 @@ func (n *natsClient) CheckFetchLogsStatus(taskID string) func() (map[string]stri
 	}
 }
 
-func (n *natsClient) CheckErrandResultStatus(taskID string) func() (action.ErrandResult, error) {
+func (n *NatsClient) CheckErrandResultStatus(taskID string) func() (action.ErrandResult, error) {
 	return func() (action.ErrandResult, error) {
 		var result map[string]action.ErrandResult
 		valueResponse, err := n.getTask(taskID)
@@ -231,7 +231,7 @@ func (n *natsClient) CheckErrandResultStatus(taskID string) func() (action.Erran
 	}
 }
 
-func (n *natsClient) SendRawMessageWithTimeout(message string, timeout time.Duration) ([]byte, error) {
+func (n *NatsClient) SendRawMessageWithTimeout(message string, timeout time.Duration) ([]byte, error) {
 	err := n.nc.Publish(agentID, []byte(message))
 	if err != nil {
 		return nil, err
@@ -245,11 +245,11 @@ func (n *natsClient) SendRawMessageWithTimeout(message string, timeout time.Dura
 	return raw.Data, nil
 }
 
-func (n *natsClient) SendRawMessage(message string) ([]byte, error) {
+func (n *NatsClient) SendRawMessage(message string) ([]byte, error) {
 	return n.SendRawMessageWithTimeout(message, 5*time.Second)
 }
 
-func (n *natsClient) SendMessage(message string) (map[string]map[string]string, error) {
+func (n *NatsClient) SendMessage(message string) (map[string]map[string]string, error) {
 	rawMessage, err := n.SendRawMessage(message)
 	if err != nil {
 		return nil, err
@@ -260,12 +260,12 @@ func (n *natsClient) SendMessage(message string) (map[string]map[string]string, 
 	return response, err
 }
 
-func (n *natsClient) getTask(taskID string) ([]byte, error) {
+func (n *NatsClient) getTask(taskID string) ([]byte, error) {
 	message := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, taskID, senderID)
 	return n.SendRawMessage(message)
 }
 
-func (n *natsClient) checkStatus(taskID string) func() (string, error) {
+func (n *NatsClient) checkStatus(taskID string) func() (string, error) {
 	return func() (string, error) {
 		var result map[string]string
 		valueResponse, err := n.getTask(taskID)
