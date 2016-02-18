@@ -21,12 +21,10 @@ resources:
 - name: bosh-agent-deps-zip
   type: s3
   source:
-    private: true
     bucket: bosh-windows-dependencies
-    versioned_file: agent-dependencies.zip
+    regexp: agent-dependencies-v(.*).zip
     access_key_id: {{AWS_ACCESS_KEY}}
     secret_access_key: {{AWS_SECRET_KEY}}
-    private: true
 - name: bosh-vsphere-stemcell-version
   type: semver
   source:
