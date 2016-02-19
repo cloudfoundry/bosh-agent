@@ -1,7 +1,7 @@
 package action_test
 
 import (
-	"path/filepath"
+	"path"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -50,9 +50,9 @@ var _ = Describe("FetchLogsAction", func() {
 			var expectedPath string
 			switch logType {
 			case "job":
-				expectedPath = filepath.Join("/fake", "dir", "sys", "log")
+				expectedPath = path.Join("/fake", "dir", "sys", "log")
 			case "agent":
-				expectedPath = filepath.Join("/fake", "dir", "bosh", "log")
+				expectedPath = path.Join("/fake", "dir", "bosh", "log")
 			}
 
 			Expect(copier.FilteredCopyToTempDir).To(Equal(expectedPath))
