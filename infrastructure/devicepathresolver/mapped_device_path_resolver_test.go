@@ -1,6 +1,7 @@
 package devicepathresolver_test
 
 import (
+	"runtime"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -20,6 +21,10 @@ var _ = Describe("mappedDevicePathResolver", func() {
 	)
 
 	BeforeEach(func() {
+		if runtime.GOOS == "windows" {
+			Skip("Not yet implemented on Windows")
+		}
+
 		fs = fakesys.NewFakeFileSystem()
 		resolver = NewMappedDevicePathResolver(time.Second, fs)
 		diskSettings = boshsettings.DiskSettings{
