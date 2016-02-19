@@ -35,6 +35,20 @@ const (
 `
 )
 
+type serviceLogMode struct {
+	Mode string `xml:"mode,attr"`
+}
+
+type serviceOnfailure struct {
+	Action string `xml:"action,attr"`
+	Delay  string `xml:"delay,attr"`
+}
+
+type serviceEnv struct {
+	Name  string `xml:"name,attr"`
+	Value string `xml:"value,attr"`
+}
+
 type WindowsServiceWrapperConfig struct {
 	XMLName     xml.Name         `xml:"service"`
 	ID          string           `xml:"id"`
@@ -45,10 +59,18 @@ type WindowsServiceWrapperConfig struct {
 	LogPath     string           `xml:"logpath"`
 	LogMode     serviceLogMode   `xml:"log"`
 	Onfailure   serviceOnfailure `xml:"onfailure"`
+	Env         []serviceEnv     `xml:"env,omitempty"`
 }
 
-func newWindowsJobSupervisor(p WindowsProcess, logPath string) *WindowsServiceWrapperConfig {
-	return &WindowsServiceWrapperConfig{
+type WindowsProcess struct {
+	Name       string            `json:"name"`
+	Executable string            `json:"executable"`
+	Args       []string          `json:"args"`
+	Env        map[string]string `json:"env"`
+}
+
+func (p *WindowsProcess) ServiceWrapperConfig(logPath string) *WindowsServiceWrapperConfig {
+	srcv := &WindowsServiceWrapperConfig{
 		ID:          p.Name,
 		Name:        p.Name,
 		Description: serviceDescription,
@@ -63,25 +85,15 @@ func newWindowsJobSupervisor(p WindowsProcess, logPath string) *WindowsServiceWr
 			Delay:  "5 sec",
 		},
 	}
-}
+	for k, v := range p.Env {
+		srcv.Env = append(srcv.Env, serviceEnv{Name: k, Value: v})
+	}
 
-type serviceLogMode struct {
-	Mode string `xml:"mode,attr"`
-}
-
-type serviceOnfailure struct {
-	Action string `xml:"action,attr"`
-	Delay  string `xml:"delay,attr"`
+	return srcv
 }
 
 type WindowsProcessConfig struct {
 	Processes []WindowsProcess `json:"processes"`
-}
-
-type WindowsProcess struct {
-	Name       string   `json:"name"`
-	Executable string   `json:"executable"`
-	Args       []string `json:"args"`
 }
 
 type windowsJobSupervisor struct {
@@ -201,7 +213,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		}
 
 		buf.Reset()
-		serviceConfig := newWindowsJobSupervisor(process, logPath)
+		serviceConfig := process.ServiceWrapperConfig(logPath)
 		if err := xml.NewEncoder(&buf).Encode(serviceConfig); err != nil {
 			return bosherr.WrapErrorf(err, "Rendering service config template for service '%s'", process.Name)
 		}
