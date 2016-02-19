@@ -41,20 +41,6 @@ func blobstoreURI() string {
 	return blobstoreURI
 }
 
-func UploadJob() (templateID, renderedTemplateArchiveID string, err error) {
-	blobstore := utils.NewBlobstore(blobstoreURI())
-
-	renderedTemplateArchiveID, err = blobstore.Create("fixtures/rendered_templates_archive.tar")
-	if err != nil {
-		return
-	}
-	templateID, err = blobstore.Create("fixtures/template.tar")
-	if err != nil {
-		return
-	}
-	return
-}
-
 var _ = Describe("An Agent running on Windows", func() {
 	var (
 		fs         boshsys.FileSystem
@@ -104,11 +90,7 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("can run a run_errand action", func() {
-		templateID, renderedTemplateArchiveID, err := UploadJob()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = natsClient.PrepareJob(templateID, renderedTemplateArchiveID)
-		Expect(err).NotTo(HaveOccurred())
+		natsClient.PrepareJob("say-hello")
 
 		runErrandResponse, err := natsClient.RunErrand()
 		Expect(err).NotTo(HaveOccurred())
@@ -120,37 +102,21 @@ var _ = Describe("An Agent running on Windows", func() {
 		}))
 	})
 
-	It("can run a release job", func() {
-		templateID, renderedTemplateArchiveID, err := UploadJob()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = natsClient.PrepareJob(templateID, renderedTemplateArchiveID)
-		Expect(err).NotTo(HaveOccurred())
+	It("can start a job", func() {
+		natsClient.PrepareJob("say-hello")
 
 		runStartResponse, err := natsClient.RunStart()
 		Expect(err).NotTo(HaveOccurred())
-
 		Expect(runStartResponse["value"]).To(Equal("started"))
 
-		message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
-		rawResponse, err := natsClient.SendRawMessage(message)
-		Expect(err).NotTo(HaveOccurred())
-
-		getStateResponse := map[string]action.GetStateV1ApplySpec{}
-		err = json.Unmarshal(rawResponse, &getStateResponse)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(getStateResponse["value"].JobState).To(Equal("running"))
+		agentState := natsClient.GetState()
+		Expect(agentState.JobState).To(Equal("running"))
 	})
 
 	It("can run a drain script", func() {
-		templateID, renderedTemplateArchiveID, err := UploadJob()
-		Expect(err).NotTo(HaveOccurred())
+		natsClient.PrepareJob("say-hello")
 
-		err = natsClient.PrepareJob(templateID, renderedTemplateArchiveID)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = natsClient.RunDrain()
+		err := natsClient.RunDrain()
 		Expect(err).NotTo(HaveOccurred())
 
 		logsDir, err := fs.TempDir("windows-agent-drain-test")
@@ -163,5 +129,32 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(drainLogContents).To(ContainSubstring("Hello from drain"))
+	})
+
+	It("can unmonitor the job during drain script", func() {
+		Skip("Pending until unmonitor is implemented")
+
+		natsClient.PrepareJob("unmonitor-hello")
+
+		runStartResponse, err := natsClient.RunStart()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(runStartResponse["value"]).To(Equal("started"))
+
+		agentState := natsClient.GetState()
+		Expect(agentState.JobState).To(Equal("running"))
+
+		err = natsClient.RunDrain()
+		Expect(err).NotTo(HaveOccurred())
+
+		logsDir, err := fs.TempDir("windows-agent-drain-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer fs.RemoveAll(logsDir)
+
+		natsClient.FetchLogs(logsDir)
+
+		drainLogContents, err := fs.ReadFileString(filepath.Join(logsDir, "unmonitor-hello", "drain.log"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(drainLogContents).To(ContainSubstring("success"))
 	})
 })

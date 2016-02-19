@@ -1,9 +1,11 @@
 package windows_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"text/template"
 	"time"
 
 	"github.com/apcera/nats"
@@ -14,9 +16,15 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	renderedTemplateSha1 = "c455af836d57229f0a55cd2922d349d10cc6e233"
+type PrepareTemplateConfig struct {
+	JobName                             string
+	TemplateBlobstoreID                 string
+	RenderedTemplatesArchiveBlobstoreID string
+	RenderedTemplatesArchiveSHA1        string
+	ReplyTo                             string
+}
 
+const (
 	prepareTemplate = `{
     "arguments": [
         {
@@ -26,21 +34,21 @@ const (
                 "template": "test-job",
                 "templates": [
                     {
-                        "name": "say-hello",
-						"blobstore_id": "%s",
+                        "name": "{{ .JobName }}",
+						"blobstore_id": "{{ .TemplateBlobstoreID }}",
 						"sha1": "eb9bebdb1f11494b27440ec6ccbefba00e713cd9"
                     }
                 ]
             },
             "packages": {},
             "rendered_templates_archive": {
-                "blobstore_id": "%s",
-                "sha1": "` + renderedTemplateSha1 + `"
+                "blobstore_id": "{{ .RenderedTemplatesArchiveBlobstoreID }}",
+                "sha1": "{{ .RenderedTemplatesArchiveSHA1 }}"
             }
         }
     ],
     "method": "prepare",
-    "reply_to": "%s"
+    "reply_to": "{{ .ReplyTo }}"
 }`
 	errandTemplate = `
 	{"protocol":2,"method":"run_errand","arguments":[],"reply_to":"%s"}
@@ -54,14 +62,14 @@ const (
             "id": "62236318-6632-4318-94c7-c3dd6e8e5698",
             "index": 0,
             "job": {
-                "blobstore_id": "%[1]s",
-                "name": "say-hello",
+                "blobstore_id": "{{ .TemplateBlobstoreID }}",
+                "name": "{{ .JobName }}",
                 "sha1": "eb6e6c8bd1b1bc3dd91c741ec5c628b61a4d8f1d",
                 "template": "say-hello",
                 "templates": [
                     {
-                        "blobstore_id": "%[1]s",
-                        "name": "say-hello",
+                        "blobstore_id": "{{ .TemplateBlobstoreID }}",
+                        "name": "{{ .JobName }}",
                         "sha1": "eb6e6c8bd1b1bc3dd91c741ec5c628b61a4d8f1d",
                         "version": "8fe0a4982b28ffe4e59d7c1e573c4f30a526770d"
                     }
@@ -70,14 +78,14 @@ const (
             },
             "networks": {},
 			"rendered_templates_archive": {
-					"blobstore_id": "%[2]s",
-					"sha1": "` + renderedTemplateSha1 + `"
+					"blobstore_id": "{{ .RenderedTemplatesArchiveBlobstoreID }}",
+					"sha1": "{{ .RenderedTemplatesArchiveSHA1 }}"
 			}
         }
     ],
     "method": "apply",
     "protocol": 2,
-    "reply_to": "%[3]s"
+    "reply_to": "{{ .ReplyTo }}"
 }
 	`
 
@@ -129,6 +137,8 @@ type NatsClient struct {
 
 	compressor      boshfileutil.Compressor
 	blobstoreClient utils.BlobClient
+
+	renderedTemplatesArchivesSha1 map[string]string
 }
 
 func NewNatsClient(
@@ -138,6 +148,10 @@ func NewNatsClient(
 	return &NatsClient{
 		compressor:      compressor,
 		blobstoreClient: blobstoreClient,
+		renderedTemplatesArchivesSha1: map[string]string{
+			"say-hello":       "c455af836d57229f0a55cd2922d349d10cc6e233",
+			"unmonitor-hello": "800f816e5ad9e72db2d68ccd7edde1a0dfcea44c",
+		},
 	}
 }
 
@@ -159,26 +173,39 @@ func (n *NatsClient) Cleanup() {
 	n.nc.Close()
 }
 
-func (n *NatsClient) PrepareJob(templateID, renderedTemplateArchiveID string) error {
-	message := fmt.Sprintf(prepareTemplate, templateID, renderedTemplateArchiveID, senderID)
-	prepareResponse, err := n.SendMessage(message)
-	if err != nil {
-		return err
+func (n *NatsClient) PrepareJob(jobName string) {
+	templateID, renderedTemplateArchiveID, err := n.uploadJob(jobName)
+	Expect(err).NotTo(HaveOccurred())
+
+	sha1 := n.renderedTemplatesArchivesSha1[jobName]
+
+	prepareTemplateConfig := PrepareTemplateConfig{
+		JobName:                             jobName,
+		TemplateBlobstoreID:                 templateID,
+		RenderedTemplatesArchiveBlobstoreID: renderedTemplateArchiveID,
+		RenderedTemplatesArchiveSHA1:        sha1,
+		ReplyTo: senderID,
 	}
+
+	buffer := bytes.NewBuffer([]byte{})
+	t := template.Must(template.New("prepare").Parse(prepareTemplate))
+	err = t.Execute(buffer, prepareTemplateConfig)
+	Expect(err).NotTo(HaveOccurred())
+	prepareResponse, err := n.SendMessage(buffer.String())
+	Expect(err).NotTo(HaveOccurred())
 
 	check := n.checkStatus(prepareResponse["value"]["agent_task_id"])
 	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("prepared"))
 
-	message = fmt.Sprintf(applyTemplate, templateID, renderedTemplateArchiveID, senderID)
-	applyResponse, err := n.SendMessage(message)
-	if err != nil {
-		return err
-	}
+	buffer.Reset()
+	t = template.Must(template.New("apply").Parse(applyTemplate))
+	err = t.Execute(buffer, prepareTemplateConfig)
+	Expect(err).NotTo(HaveOccurred())
+	applyResponse, err := n.SendMessage(buffer.String())
+	Expect(err).NotTo(HaveOccurred())
 
 	check = n.checkStatus(applyResponse["value"]["agent_task_id"])
 	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("applied"))
-
-	return nil
 }
 
 func (n *NatsClient) RunDrain() error {
@@ -204,6 +231,18 @@ func (n *NatsClient) RunStart() (map[string]string, error) {
 	response := map[string]string{}
 	err = json.Unmarshal(rawResponse, &response)
 	return response, err
+}
+
+func (n *NatsClient) GetState() action.GetStateV1ApplySpec {
+	message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
+	rawResponse, err := n.SendRawMessage(message)
+	Expect(err).NotTo(HaveOccurred())
+
+	getStateResponse := map[string]action.GetStateV1ApplySpec{}
+	err = json.Unmarshal(rawResponse, &getStateResponse)
+	Expect(err).NotTo(HaveOccurred())
+
+	return getStateResponse["value"]
 }
 
 func (n *NatsClient) RunStop() error {
@@ -348,4 +387,16 @@ func (n *NatsClient) checkDrain(taskID string) func() (int, error) {
 
 		return result["value"], nil
 	}
+}
+
+func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateArchiveID string, err error) {
+	renderedTemplateArchiveID, err = n.blobstoreClient.Create(fmt.Sprintf("fixtures/rendered_templates_archives/%s.tar", jobName))
+	if err != nil {
+		return
+	}
+	templateID, err = n.blobstoreClient.Create("fixtures/template.tar")
+	if err != nil {
+		return
+	}
+	return
 }
