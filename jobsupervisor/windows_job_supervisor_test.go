@@ -211,6 +211,25 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				})
 			})
 		})
+
+		Describe("Unmonitor", func() {
+			BeforeEach(func() {
+				Expect(AddJob()).ToNot(HaveOccurred())
+			})
+
+			It("sets service status to Disabled", func() {
+				err := jobSupervisor.Unmonitor()
+				Expect(err).ToNot(HaveOccurred())
+
+				stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-wmiobject", "win32_service", "-filter", `"name='say-hello-1'"`, "-property", "StartMode")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(stdout).To(ContainSubstring("Disabled"))
+
+				stdout, _, _, err = runner.RunCommand("powershell", "/C", "get-wmiobject", "win32_service", "-filter", `"name='say-hello-2'"`, "-property", "StartMode")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(stdout).To(ContainSubstring("Disabled"))
+			})
+		})
 	})
 
 	Describe("WindowsProcess#ServiceWrapperConfig", func() {

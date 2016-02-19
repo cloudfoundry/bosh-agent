@@ -132,8 +132,6 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("can unmonitor the job during drain script", func() {
-		Skip("Pending until unmonitor is implemented")
-
 		natsClient.PrepareJob("unmonitor-hello")
 
 		runStartResponse, err := natsClient.RunStart()

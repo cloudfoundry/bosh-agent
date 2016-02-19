@@ -150,7 +150,7 @@ func NewNatsClient(
 		blobstoreClient: blobstoreClient,
 		renderedTemplatesArchivesSha1: map[string]string{
 			"say-hello":       "c455af836d57229f0a55cd2922d349d10cc6e233",
-			"unmonitor-hello": "800f816e5ad9e72db2d68ccd7edde1a0dfcea44c",
+			"unmonitor-hello": "4ff9960a1d594743c498141cdbd611b93262e78c",
 		},
 	}
 }

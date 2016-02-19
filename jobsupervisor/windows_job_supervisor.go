@@ -41,6 +41,9 @@ const (
 	getStatusScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.State }
 `
+	unmonitorJobScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Disabled" }
+`
 )
 
 type serviceLogMode struct {
@@ -160,7 +163,8 @@ func (s *windowsJobSupervisor) Stop() error {
 }
 
 func (s *windowsJobSupervisor) Unmonitor() error {
-	return nil
+	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", unmonitorJobScript)
+	return err
 }
 
 func (s *windowsJobSupervisor) Status() (status string) {
