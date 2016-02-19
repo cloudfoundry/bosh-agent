@@ -134,7 +134,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 		})
 
-		FDescribe("Start", func() {
+		Describe("Start", func() {
 			BeforeEach(func() {
 				Expect(AddJob()).ToNot(HaveOccurred())
 			})
