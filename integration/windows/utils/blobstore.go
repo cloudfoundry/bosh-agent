@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"io"
 	"net/http"
 	"os"
 
@@ -33,6 +34,24 @@ func (b BlobClient) Create(filepath string) (string, error) {
 		return "", err
 	}
 	return uuid, nil
+}
+
+func (b BlobClient) Get(uuid string, destinationPath string) error {
+	readCloser, err := b.dav.Get(uuid)
+	if err != nil {
+		return err
+	}
+	defer readCloser.Close()
+
+	targetFile, err := os.Create(destinationPath)
+	if err != nil {
+		return err
+	}
+	defer targetFile.Close()
+
+	_, err = io.Copy(targetFile, readCloser)
+
+	return err
 }
 
 func NewBlobstore(uri string) BlobClient {

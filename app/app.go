@@ -169,6 +169,7 @@ func (app *app) Setup(args []string) error {
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		app.platform.GetDirProvider(),
+		scriptCommandFactory,
 		timeService,
 		app.logger,
 	)

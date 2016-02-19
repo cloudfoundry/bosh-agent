@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
+	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -52,12 +56,24 @@ func UploadJob() (templateID, renderedTemplateArchiveID string, err error) {
 }
 
 var _ = Describe("An Agent running on Windows", func() {
+	var (
+		fs         boshsys.FileSystem
+		natsClient *NatsClient
+	)
+
 	BeforeEach(func() {
 		message := fmt.Sprintf(`{"method":"ping","arguments":[],"reply_to":"%s"}`, senderID)
-		natsClient := NewNatsClient()
+
+		blobstore := utils.NewBlobstore(blobstoreURI())
+
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		cmdRunner := boshsys.NewExecCmdRunner(logger)
+		fs = boshsys.NewOsFileSystem(logger)
+		compressor := boshfileutil.NewTarballCompressor(cmdRunner, fs)
+
+		natsClient = NewNatsClient(compressor, blobstore)
 		err := natsClient.Setup()
 		Expect(err).NotTo(HaveOccurred())
-		defer natsClient.Cleanup()
 
 		testPing := func() (string, error) {
 			response, err := natsClient.SendRawMessage(message)
@@ -67,13 +83,12 @@ var _ = Describe("An Agent running on Windows", func() {
 		Eventually(testPing, 30*time.Second, 1*time.Second).Should(Equal(`{"value":"pong"}`))
 	})
 
+	AfterEach(func() {
+		natsClient.Cleanup()
+	})
+
 	It("responds to 'get_state' message over NATS", func() {
 		getStateSpecAgentID := func() string {
-			natsClient := NewNatsClient()
-			err := natsClient.Setup()
-			Expect(err).NotTo(HaveOccurred())
-			defer natsClient.Cleanup()
-
 			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
 			rawResponse, err := natsClient.SendRawMessage(message)
 			Expect(err).NotTo(HaveOccurred())
@@ -89,11 +104,6 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("can run a run_errand action", func() {
-		natsClient := NewNatsClient()
-		err := natsClient.Setup()
-		Expect(err).NotTo(HaveOccurred())
-		defer natsClient.Cleanup()
-
 		templateID, renderedTemplateArchiveID, err := UploadJob()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -108,19 +118,9 @@ var _ = Describe("An Agent running on Windows", func() {
 			Stdout:     "hello world\r\n",
 			ExitStatus: 0,
 		}))
-
-		fetchLogsResponse, err := natsClient.RunFetchLogs()
-		Expect(err).NotTo(HaveOccurred())
-		fetchLogsCheck := natsClient.CheckFetchLogsStatus(fetchLogsResponse["value"]["agent_task_id"])
-		Eventually(fetchLogsCheck, 30*time.Second, 1*time.Second).Should(HaveKey("blobstore_id"))
 	})
 
 	It("can run a release job", func() {
-		natsClient := NewNatsClient()
-		err := natsClient.Setup()
-		Expect(err).NotTo(HaveOccurred())
-		defer natsClient.Cleanup()
-
 		templateID, renderedTemplateArchiveID, err := UploadJob()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -141,5 +141,27 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(getStateResponse["value"].JobState).To(Equal("running"))
+	})
+
+	It("can run a drain script", func() {
+		templateID, renderedTemplateArchiveID, err := UploadJob()
+		Expect(err).NotTo(HaveOccurred())
+
+		err = natsClient.PrepareJob(templateID, renderedTemplateArchiveID)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = natsClient.RunDrain()
+		Expect(err).NotTo(HaveOccurred())
+
+		logsDir, err := fs.TempDir("windows-agent-drain-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer fs.RemoveAll(logsDir)
+
+		natsClient.FetchLogs(logsDir)
+
+		drainLogContents, err := fs.ReadFileString(filepath.Join(logsDir, "say-hello", "drain.log"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(drainLogContents).To(ContainSubstring("Hello from drain"))
 	})
 })

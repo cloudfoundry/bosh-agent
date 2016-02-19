@@ -3,15 +3,20 @@ package windows_test
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/apcera/nats"
 	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
+	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 
 	. "github.com/onsi/gomega"
 )
 
 const (
+	renderedTemplateSha1 = "c455af836d57229f0a55cd2922d349d10cc6e233"
+
 	prepareTemplate = `{
     "arguments": [
         {
@@ -30,7 +35,7 @@ const (
             "packages": {},
             "rendered_templates_archive": {
                 "blobstore_id": "%s",
-                "sha1": "6760d464064ee036db9898c736ff71c6d4457792"
+                "sha1": "` + renderedTemplateSha1 + `"
             }
         }
     ],
@@ -66,7 +71,7 @@ const (
             "networks": {},
 			"rendered_templates_archive": {
 					"blobstore_id": "%[2]s",
-					"sha1": "6760d464064ee036db9898c736ff71c6d4457792"
+					"sha1": "` + renderedTemplateSha1 + `"
 			}
         }
     ],
@@ -104,15 +109,36 @@ const (
 	"reply_to":"%s"
 }
 	`
+
+	drainTemplate = `
+{
+	"protocol":2,
+	"method":"drain",
+	"arguments":[
+	  "update",
+	  {}
+	],
+	"reply_to":"%s"
+}
+	`
 )
 
 type NatsClient struct {
 	nc  *nats.Conn
 	sub *nats.Subscription
+
+	compressor      boshfileutil.Compressor
+	blobstoreClient utils.BlobClient
 }
 
-func NewNatsClient() *NatsClient {
-	return &NatsClient{}
+func NewNatsClient(
+	compressor boshfileutil.Compressor,
+	blobstoreClient utils.BlobClient,
+) *NatsClient {
+	return &NatsClient{
+		compressor:      compressor,
+		blobstoreClient: blobstoreClient,
+	}
 }
 
 func (n *NatsClient) Setup() error {
@@ -155,6 +181,19 @@ func (n *NatsClient) PrepareJob(templateID, renderedTemplateArchiveID string) er
 	return nil
 }
 
+func (n *NatsClient) RunDrain() error {
+	message := fmt.Sprintf(drainTemplate, senderID)
+	drainResponse, err := n.SendMessage(message)
+	if err != nil {
+		return err
+	}
+
+	check := n.checkDrain(drainResponse["value"]["agent_task_id"])
+	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal(0))
+
+	return nil
+}
+
 func (n *NatsClient) RunStart() (map[string]string, error) {
 	message := fmt.Sprintf(startTemplate, senderID)
 	rawResponse, err := n.SendRawMessageWithTimeout(message, time.Minute)
@@ -192,26 +231,38 @@ func (n *NatsClient) RunErrand() (map[string]map[string]string, error) {
 	return n.SendMessage(message)
 }
 
-func (n *NatsClient) RunFetchLogs() (map[string]map[string]string, error) {
+func (n *NatsClient) FetchLogs(destinationDir string) {
 	message := fmt.Sprintf(fetchLogsTemplate, senderID)
-	return n.SendMessage(message)
-}
+	fetchLogsResponse, err := n.SendMessage(message)
+	var fetchLogsResult map[string]string
 
-func (n *NatsClient) CheckFetchLogsStatus(taskID string) func() (map[string]string, error) {
-	return func() (map[string]string, error) {
-		var result map[string]map[string]string
-		valueResponse, err := n.getTask(taskID)
+	fetchLogsCheckFunc := func() (map[string]string, error) {
+		var err error
+		var taskResult map[string]map[string]string
+
+		valueResponse, err := n.getTask(fetchLogsResponse["value"]["agent_task_id"])
 		if err != nil {
 			return map[string]string{}, err
 		}
 
-		err = json.Unmarshal(valueResponse, &result)
+		err = json.Unmarshal(valueResponse, &taskResult)
 		if err != nil {
 			return map[string]string{}, err
 		}
 
-		return result["value"], nil
+		fetchLogsResult = taskResult["value"]
+
+		return fetchLogsResult, nil
 	}
+
+	Eventually(fetchLogsCheckFunc, 30*time.Second, 1*time.Second).Should(HaveKey("blobstore_id"))
+
+	fetchedLogFile := filepath.Join(destinationDir, "log.tgz")
+	err = n.blobstoreClient.Get(fetchLogsResult["blobstore_id"], fetchedLogFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = n.compressor.DecompressFileToDir(fetchedLogFile, destinationDir, boshfileutil.CompressorOptions{})
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func (n *NatsClient) CheckErrandResultStatus(taskID string) func() (action.ErrandResult, error) {
@@ -276,6 +327,23 @@ func (n *NatsClient) checkStatus(taskID string) func() (string, error) {
 		err = json.Unmarshal(valueResponse, &result)
 		if err != nil {
 			return "", err
+		}
+
+		return result["value"], nil
+	}
+}
+
+func (n *NatsClient) checkDrain(taskID string) func() (int, error) {
+	return func() (int, error) {
+		var result map[string]int
+		valueResponse, err := n.getTask(taskID)
+		if err != nil {
+			return -1, err
+		}
+
+		err = json.Unmarshal(valueResponse, &result)
+		if err != nil {
+			return -1, err
 		}
 
 		return result["value"], nil
