@@ -2,6 +2,7 @@ package jobsupervisor_test
 
 import (
 	"encoding/json"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -31,7 +32,9 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		jobDir            string
 		processConfigPath string
 		basePath          string
+		exePath           string
 		logDir            string
+		exePathNotExist   bool
 	)
 
 	AddJob := func() error {
@@ -39,7 +42,27 @@ var _ = Describe("WindowsJobSupervisor", func() {
 	}
 
 	BeforeEach(func() {
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		fs = boshsys.NewOsFileSystem(logger)
+
 		basePath = "C:/var/vcap/"
+		fs.MkdirAll(basePath, 0755)
+
+		binPath := filepath.Join(basePath, "bosh", "bin")
+		fs.MkdirAll(binPath, 0755)
+
+		logDir = path.Join(basePath, "sys", "log")
+		fs.MkdirAll(binPath, 0755)
+
+		const testExtPath = "testdata/job-service-wrapper"
+		exePath = filepath.Join(binPath, "job-service-wrapper.exe")
+
+		_, err := os.Stat(exePath)
+		exePathNotExist = os.IsNotExist(err)
+		if exePathNotExist {
+			Expect(fs.CopyFile(testExtPath, exePath)).ToNot(HaveOccurred())
+		}
+
 		logDir = path.Join(basePath, "sys", "log")
 
 		configContents := WindowsProcessConfig{
@@ -60,10 +83,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		processConfigContents, err := json.Marshal(configContents)
 		Expect(err).ToNot(HaveOccurred())
 
-		logger := boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider := boshdirs.NewProvider(basePath)
 
-		fs = boshsys.NewOsFileSystem(logger)
 		runner = boshsys.NewExecCmdRunner(logger)
 		jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger)
 		jobSupervisor.RemoveAllJobs()
@@ -80,6 +101,9 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		jobSupervisor.RemoveAllJobs()
 		fs.RemoveAll(jobDir)
 		fs.RemoveAll(logDir)
+		if exePathNotExist {
+			fs.RemoveAll(exePath)
+		}
 	})
 
 	Describe("AddJob", func() {
