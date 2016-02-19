@@ -3,11 +3,11 @@ package jobsupervisor
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -33,26 +33,45 @@ const (
 	getStatusScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.State }
 `
-	serviceWrapperTemplate = `
-<service>
-  <id>{{ .ID }}</id>
-  <name>{{ .Name }}</name>
-  <description>` + serviceDescription + `</description>
-  <executable>{{ .Executable }}</executable>
-  <arguments>{{ .Arguments }}</arguments>
-  <logpath>{{ .LogPath }}</logpath>
-  <log mode="append"/>
-  <onfailure action="restart" delay="5 sec"/>
-</service>
-`
 )
 
 type WindowsServiceWrapperConfig struct {
-	ID         string
-	Name       string
-	Executable string
-	Arguments  string
-	LogPath    string
+	XMLName     xml.Name         `xml:"service"`
+	ID          string           `xml:"id"`
+	Name        string           `xml:"name"`
+	Description string           `xml:"description"`
+	Executable  string           `xml:"executable"`
+	Arguments   []string         `xml:"argument"`
+	LogPath     string           `xml:"logpath"`
+	LogMode     serviceLogMode   `xml:"log"`
+	Onfailure   serviceOnfailure `xml:"onfailure"`
+}
+
+func newWindowsJobSupervisor(p WindowsProcess, logPath string) *WindowsServiceWrapperConfig {
+	return &WindowsServiceWrapperConfig{
+		ID:          p.Name,
+		Name:        p.Name,
+		Description: serviceDescription,
+		Executable:  p.Executable,
+		Arguments:   p.Args,
+		LogPath:     logPath,
+		LogMode: serviceLogMode{
+			Mode: "append",
+		},
+		Onfailure: serviceOnfailure{
+			Action: "restart",
+			Delay:  "5 sec",
+		},
+	}
+}
+
+type serviceLogMode struct {
+	Mode string `xml:"mode,attr"`
+}
+
+type serviceOnfailure struct {
+	Action string `xml:"action,attr"`
+	Delay  string `xml:"delay,attr"`
 }
 
 type WindowsProcessConfig struct {
@@ -173,6 +192,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		return err
 	}
 
+	var buf bytes.Buffer
 	for _, process := range processConfig.Processes {
 		logPath := path.Join(s.dirProvider.LogsDir(), jobName, process.Name)
 		err := s.fs.MkdirAll(logPath, os.FileMode(0750))
@@ -180,18 +200,9 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 			return bosherr.WrapErrorf(err, "Creating log directory for service '%s'", process.Name)
 		}
 
-		serviceConfig := WindowsServiceWrapperConfig{
-			ID:         process.Name,
-			Name:       process.Name,
-			Executable: process.Executable,
-			Arguments:  strings.Join(process.Args, " "),
-			LogPath:    logPath,
-		}
-
-		buffer := bytes.NewBuffer([]byte{})
-		t := template.Must(template.New("service-wrapper-config").Parse(serviceWrapperTemplate))
-		err = t.Execute(buffer, serviceConfig)
-		if err != nil {
+		buf.Reset()
+		serviceConfig := newWindowsJobSupervisor(process, logPath)
+		if err := xml.NewEncoder(&buf).Encode(serviceConfig); err != nil {
 			return bosherr.WrapErrorf(err, "Rendering service config template for service '%s'", process.Name)
 		}
 
@@ -206,7 +217,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		}
 
 		serviceWrapperConfigFile := filepath.Join(processDir, serviceWrapperConfigFileName)
-		err = s.fs.WriteFile(serviceWrapperConfigFile, buffer.Bytes())
+		err = s.fs.WriteFile(serviceWrapperConfigFile, buf.Bytes())
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Saving service config file for service '%s'", process.Name)
 		}
