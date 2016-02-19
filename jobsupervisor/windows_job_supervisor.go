@@ -18,8 +18,16 @@ import (
 const (
 	serviceDescription = "vcap"
 
-	serviceWrapperExeFileName    = "job-service-wrapper.exe"
-	serviceWrapperConfigFileName = "job-service-wrapper.xml"
+	serviceWrapperExeFileName       = "job-service-wrapper.exe"
+	serviceWrapperConfigFileName    = "job-service-wrapper.xml"
+	serviceWrapperAppConfigFileName = "job-service-wrapper.exe.config"
+	serviceWrapperAppConfigBody     = `
+<configuration>
+  <startup>
+    <supportedRuntime version="v4.0" />
+  </startup>
+</configuration>
+`
 
 	startJobScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Start-Service $_.Name }
@@ -232,6 +240,11 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		err = s.fs.WriteFile(serviceWrapperConfigFile, buf.Bytes())
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Saving service config file for service '%s'", process.Name)
+		}
+
+		err = s.fs.WriteFileString(filepath.Join(processDir, serviceWrapperAppConfigFileName), serviceWrapperAppConfigBody)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Saving app runtime config file for service '%s'", process.Name)
 		}
 
 		serviceWrapperExePath := filepath.Join(s.dirProvider.BoshBinDir(), serviceWrapperExeFileName)

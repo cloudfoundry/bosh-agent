@@ -32,9 +32,17 @@ cat > ./service_wrapper.xml <<EOF
 </service>
 EOF
 
+cat > ./service_wrapper.exe.config <<EOF
+<configuration>
+  <startup>
+    <supportedRuntime version="v4.0" />
+  </startup>
+</configuration>
+EOF
+
 apt-get update
 apt-get -y install zip
 
 RELEASE_ZIP=$PWD/bosh-windows-integration-v$VERSION.zip
-zip ${RELEASE_ZIP} ./commit ./bosh-agent.exe ./service_wrapper.exe ./service_wrapper.xml
+zip ${RELEASE_ZIP} ./commit ./bosh-agent.exe ./service_wrapper.exe ./service_wrapper.xml ./service_wrapper.exe.config
 mv ${RELEASE_ZIP} ${COMPILED_AGENT_ZIP}
