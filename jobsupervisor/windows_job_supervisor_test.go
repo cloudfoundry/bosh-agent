@@ -2,6 +2,7 @@ package jobsupervisor_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -36,6 +37,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			exePath           string
 			logDir            string
 			exePathNotExist   bool
+			configContents    WindowsProcessConfig
 		)
 
 		AddJob := func() error {
@@ -66,15 +68,15 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			logDir = path.Join(basePath, "sys", "log")
 
-			configContents := WindowsProcessConfig{
+			configContents = WindowsProcessConfig{
 				Processes: []WindowsProcess{
 					{
-						Name:       "say-hello-1",
+						Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
 						Executable: "powershell",
 						Args:       []string{"/C", "Write-Host \"Hello 1\"; Start-Sleep 10"},
 					},
 					{
-						Name:       "say-hello-2",
+						Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
 						Executable: "powershell",
 						Args:       []string{"/C", "Write-Host \"Hello 2\"; Start-Sleep 10"},
 					},
@@ -116,10 +118,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(stdout).To(ContainSubstring("say-hello-1"))
 				Expect(stdout).To(ContainSubstring("Stopped"))
 
-				stdout, _, _, err = runner.RunCommand("powershell", "/C", "get-service", "say-hello-2")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(stdout).To(ContainSubstring("say-hello-2"))
-				Expect(stdout).To(ContainSubstring("Stopped"))
+				for _, proc := range configContents.Processes {
+					stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", proc.Name)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring(proc.Name))
+					Expect(stdout).To(ContainSubstring("Stopped"))
+				}
 			})
 
 			Context("when monit file is empty", func() {
@@ -140,35 +144,26 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			It("will start all the services", func() {
-				err := jobSupervisor.Start()
-				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.Start()).To(Succeed())
 
-				stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", "say-hello-1")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(stdout).To(ContainSubstring("say-hello-1"))
-				Expect(stdout).To(ContainSubstring("Running"))
-
-				stdout, _, _, err = runner.RunCommand("powershell", "/C", "get-service", "say-hello-2")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(stdout).To(ContainSubstring("say-hello-2"))
-				Expect(stdout).To(ContainSubstring("Running"))
+				for _, proc := range configContents.Processes {
+					stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", proc.Name)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring(proc.Name))
+					Expect(stdout).To(ContainSubstring("Running"))
+				}
 			})
 
 			It("writes logs to job log directory", func() {
-				err := jobSupervisor.Start()
-				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.Start()).To(Succeed())
 
-				readLogFile1 := func() (string, error) {
-					return fs.ReadFileString(path.Join(logDir, "say-hello", "say-hello-1", "job-service-wrapper.out.log"))
+				for i, proc := range configContents.Processes {
+					readLogFile := func() (string, error) {
+						return fs.ReadFileString(path.Join(logDir, "say-hello", proc.Name, "job-service-wrapper.out.log"))
+					}
+
+					Eventually(readLogFile, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring(fmt.Sprintf("Hello %d", i+1)))
 				}
-
-				Eventually(readLogFile1, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring("Hello 1"))
-
-				readLogFile2 := func() (string, error) {
-					return fs.ReadFileString(path.Join(logDir, "say-hello", "say-hello-2", "job-service-wrapper.out.log"))
-				}
-
-				Eventually(readLogFile2, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring("Hello 2"))
 			})
 		})
 
@@ -221,13 +216,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				err := jobSupervisor.Unmonitor()
 				Expect(err).ToNot(HaveOccurred())
 
-				stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-wmiobject", "win32_service", "-filter", `"name='say-hello-1'"`, "-property", "StartMode")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(stdout).To(ContainSubstring("Disabled"))
-
-				stdout, _, _, err = runner.RunCommand("powershell", "/C", "get-wmiobject", "win32_service", "-filter", `"name='say-hello-2'"`, "-property", "StartMode")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(stdout).To(ContainSubstring("Disabled"))
+				for _, proc := range configContents.Processes {
+					stdout, _, _, err := runner.RunCommand(
+						"powershell", "/C", "get-wmiobject", "win32_service", "-filter",
+						fmt.Sprintf(`"name='%s'"`, proc.Name), "-property", "StartMode",
+					)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stdout).To(ContainSubstring("Disabled"))
+				}
 			})
 		})
 	})
