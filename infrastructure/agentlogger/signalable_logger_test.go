@@ -2,7 +2,6 @@ package agentlogger_test
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"syscall"
 
@@ -24,7 +23,6 @@ var _ = Describe("Signalable logger debug", func() {
 			signalChannel <- syscall.SIGSEGV
 			<-doneChannel
 
-			fmt.Println(errBuf)
 			Expect(errBuf).To(ContainSubstring("Dumping goroutines"))
 			Expect(errBuf).To(MatchRegexp(`goroutine (\d+) \[(syscall|running)\]`))
 		})
