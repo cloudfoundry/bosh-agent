@@ -58,10 +58,10 @@ jobs:
 - name: test-compile-and-push
   serial: true
   plan:
+  - get: bosh-agent
+    trigger: true
+    resource: bosh-agent-windows
   - aggregate:
-    - get: bosh-agent
-      trigger: true
-      resource: bosh-agent-windows
     - task: test-unit
       file: bosh-agent/ci/tasks/test-unit-windows.yml
     - put: bosh-agent-zip-version
