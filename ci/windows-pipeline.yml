@@ -55,18 +55,21 @@ resources:
     deployment: sample-errand-windows-deployment
 
 jobs:
-- name: compile-agent-and-push
+- name: test-compile-and-push
   serial: true
   plan:
-  - put: bosh-agent-zip-version
-    params:
-      bump: patch
-  - get: bosh-agent
-    trigger: true
-    resource: bosh-agent-windows
-  - task: compile-agent
-    privileged: true
-    file: bosh-agent/ci/tasks/compile-agent-windows.yml
+  - aggregate:
+    - get: bosh-agent
+      trigger: true
+      resource: bosh-agent-windows
+    - task: test-unit
+      file: bosh-agent/ci/tasks/test-unit-windows.yml
+    - put: bosh-agent-zip-version
+      params:
+        bump: patch
+    - task: compile-agent
+      privileged: true
+      file: bosh-agent/ci/tasks/compile-agent-windows.yml
   - put: bosh-agent-zip
     params:
       file: compiled-agent-zip/bosh-windows-integration-v*.zip
@@ -79,7 +82,7 @@ jobs:
   - get: bosh-agent-deps-zip
   - get: bosh-agent-zip
     passed:
-    - compile-agent-and-push
+    - test-compile-and-push
     trigger: true
   - task: test-integration
     privileged: true
