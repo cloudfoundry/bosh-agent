@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-utils/system"

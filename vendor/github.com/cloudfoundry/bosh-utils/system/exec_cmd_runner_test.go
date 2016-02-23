@@ -1,17 +1,102 @@
 package system_test
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
 
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
+
+const ErrExitCode = 14
+
+var windowsCommands = map[string]Command{
+	"pwd": Command{
+		Name:       "powershell",
+		Args:       []string{"echo $PWD"},
+		WorkingDir: `C:\windows\temp`,
+	},
+	"stderr": Command{
+		Name: "powershell",
+		Args: []string{"[Console]::Error.WriteLine('error-output')"},
+	},
+	"exit": Command{
+		Name: "powershell",
+		Args: []string{fmt.Sprintf("exit %d", ErrExitCode)},
+	},
+	"ls": Command{
+		Name:       "powershell",
+		Args:       []string{"dir"},
+		WorkingDir: ".",
+	},
+	"env": Command{
+		Name: "cmd.exe",
+		Args: []string{"/C", "SET"},
+		Env: map[string]string{
+			"FOO": "BAR",
+		},
+	},
+	"echo": Command{
+		Name: "powershell",
+		Args: []string{"Write-Host", "Hello World!"},
+	},
+}
+
+var unixCommands = map[string]Command{
+	"pwd": Command{
+		Name:       "bash",
+		Args:       []string{"-c", "echo $PWD"},
+		WorkingDir: `/tmp`,
+	},
+	"stderr": Command{
+		Name: "bash",
+		Args: []string{"-c", "echo error-output >&2"},
+	},
+	"exit": Command{
+		Name: "bash",
+		Args: []string{"-c", fmt.Sprintf("exit %d", ErrExitCode)},
+	},
+	"ls": Command{
+		Name:       "ls",
+		Args:       []string{"-l"},
+		WorkingDir: ".",
+	},
+	"env": Command{
+		Name: "env",
+		Env: map[string]string{
+			"FOO": "BAR",
+		},
+	},
+	"echo": Command{
+		Name: "echo",
+		Args: []string{"Hello World!"},
+	},
+}
+
+func GetPlatformCommand(cmdName string) Command {
+	if runtime.GOOS == "windows" {
+		return windowsCommands[cmdName]
+	}
+	return unixCommands[cmdName]
+}
+
+func parseEnvFields(envDump string) map[string]string {
+	fields := make(map[string]string)
+	envDump = strings.Replace(envDump, "\r", "", -1)
+	for _, line := range strings.Split(envDump, "\n") {
+		f := strings.Split(line, "=")
+		if len(f) >= 2 {
+			fields[strings.ToUpper(f[0])] = f[1]
+		}
+	}
+	return fields
+}
 
 var _ = Describe("execCmdRunner", func() {
 	var (
@@ -24,46 +109,36 @@ var _ = Describe("execCmdRunner", func() {
 
 	Describe("RunComplexCommand", func() {
 		It("run complex command with working directory", func() {
-			cmd := Command{
-				Name:       "ls",
-				Args:       []string{"-l"},
-				WorkingDir: ".",
-			}
+			cmd := GetPlatformCommand("ls")
 			stdout, stderr, status, err := runner.RunComplexCommand(cmd)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stdout).To(ContainSubstring("exec_cmd_runner_fixtures"))
-			Expect(stdout).To(ContainSubstring("total"))
 			Expect(stderr).To(BeEmpty())
 			Expect(status).To(Equal(0))
 		})
 
 		It("run complex command with env", func() {
-			cmd := Command{
-				Name: "env",
-				Env: map[string]string{
-					"FOO": "BAR",
-				},
-			}
+			cmd := GetPlatformCommand("env")
+			cmd.UseIsolatedEnv = false
 			stdout, stderr, status, err := runner.RunComplexCommand(cmd)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stdout).To(ContainSubstring("FOO=BAR"))
-			Expect(stdout).To(ContainSubstring("PATH="))
+
+			envVars := parseEnvFields(stdout)
+			Expect(envVars).To(HaveKeyWithValue("FOO", "BAR"))
+			Expect(envVars).To(HaveKey("PATH"))
 			Expect(stderr).To(BeEmpty())
 			Expect(status).To(Equal(0))
 		})
 
 		It("runs complex command with specific env", func() {
-			cmd := Command{
-				Name: "env",
-				Env: map[string]string{
-					"FOO": "BAR",
-				},
-				UseIsolatedEnv: true,
-			}
+			cmd := GetPlatformCommand("env")
+			cmd.UseIsolatedEnv = true
 			stdout, stderr, status, err := runner.RunComplexCommand(cmd)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stdout).To(ContainSubstring("FOO=BAR"))
-			Expect(stdout).ToNot(ContainSubstring("PATH="))
+
+			envVars := parseEnvFields(stdout)
+			Expect(envVars).To(HaveKeyWithValue("FOO", "BAR"))
+			Expect(envVars).ToNot(HaveKey("PATH"))
 			Expect(stderr).To(BeEmpty())
 			Expect(status).To(Equal(0))
 		})
@@ -71,8 +146,7 @@ var _ = Describe("execCmdRunner", func() {
 		It("run complex command with stdin", func() {
 			input := "This is STDIN\nWith another line."
 			cmd := Command{
-				Name:  "cat",
-				Args:  []string{"/dev/stdin"},
+				Name:  CatExePath,
 				Stdin: strings.NewReader(input),
 			}
 			stdout, stderr, status, err := runner.RunComplexCommand(cmd)
@@ -91,8 +165,8 @@ var _ = Describe("execCmdRunner", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			cmd := Command{
-				Name:   "bash",
-				Args:   []string{"-c", "echo fake-out >&1; echo fake-err >&2"},
+				Name:   CatExePath,
+				Args:   []string{"-stdout", "fake-out", "-stderr", "fake-err"},
 				Stdout: stdoutFile,
 				Stderr: stderrFile,
 			}
@@ -118,7 +192,7 @@ var _ = Describe("execCmdRunner", func() {
 
 	Describe("RunComplexCommandAsync", func() {
 		It("populates stdout and stderr", func() {
-			cmd := Command{Name: "ls"}
+			cmd := GetPlatformCommand("ls")
 			process, err := runner.RunComplexCommandAsync(cmd)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -128,33 +202,33 @@ var _ = Describe("execCmdRunner", func() {
 		})
 
 		It("populates stdout and stderr", func() {
-			cmd := Command{Name: "bash", Args: []string{"-c", "echo stdout >&1; echo stderr >&2"}}
+			cmd := Command{
+				Name: CatExePath,
+				Args: []string{"-stdout", "STDOUT", "-stderr", "STDERR"},
+			}
 			process, err := runner.RunComplexCommandAsync(cmd)
 			Expect(err).ToNot(HaveOccurred())
 
 			result := <-process.Wait()
 			Expect(result.Error).ToNot(HaveOccurred())
-			Expect(result.Stdout).To(Equal("stdout\n"))
-			Expect(result.Stderr).To(Equal("stderr\n"))
+			Expect(result.Stdout).To(Equal("STDOUT\n"))
+			Expect(result.Stderr).To(Equal("STDERR\n"))
 		})
 
-		It("returns error and sets status to exit status of comamnd if it command exits with non-0 status", func() {
-			cmd := Command{Name: "bash", Args: []string{"-c", "exit 10"}}
+		It("returns error and sets status to exit status of command if it exits with non-0 status", func() {
+			cmd := GetPlatformCommand("exit")
 			process, err := runner.RunComplexCommandAsync(cmd)
 			Expect(err).ToNot(HaveOccurred())
 
 			result := <-process.Wait()
 			Expect(result.Error).To(HaveOccurred())
-			Expect(result.ExitStatus).To(Equal(10))
+			Expect(result.ExitStatus).To(Equal(ErrExitCode))
 		})
 
 		It("allows setting custom env variable in addition to inheriting process env variables", func() {
-			cmd := Command{
-				Name: "env",
-				Env: map[string]string{
-					"FOO": "BAR",
-				},
-			}
+			cmd := GetPlatformCommand("env")
+			cmd.UseIsolatedEnv = false
+
 			process, err := runner.RunComplexCommandAsync(cmd)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -177,7 +251,8 @@ var _ = Describe("execCmdRunner", func() {
 
 	Describe("RunCommand", func() {
 		It("run command", func() {
-			stdout, stderr, status, err := runner.RunCommand("echo", "Hello World!")
+			cmd := GetPlatformCommand("echo")
+			stdout, stderr, status, err := runner.RunCommand(cmd.Name, cmd.Args...)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stdout).To(Equal("Hello World!\n"))
 			Expect(stderr).To(BeEmpty())
@@ -199,22 +274,22 @@ var _ = Describe("execCmdRunner", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(stdout).To(BeEmpty())
 			Expect(stderr).To(BeEmpty())
-			Expect(status).To(Equal(14))
+			Expect(status).To(Equal(ErrExitCode))
 		})
 
 		It("run command with error", func() {
-			stdout, stderr, status, err := runner.RunCommand("false")
+			stdout, stderr, status, err := runner.RunCommand(FalseExePath)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Running command: 'false', stdout: '', stderr: '': exit status 1"))
 			Expect(stderr).To(BeEmpty())
 			Expect(stdout).To(BeEmpty())
 			Expect(status).To(Equal(1))
 		})
 
 		It("run command with error with args", func() {
-			stdout, stderr, status, err := runner.RunCommand("false", "second arg")
+			stdout, stderr, status, err := runner.RunCommand(FalseExePath, "second arg")
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Running command: 'false second arg', stdout: '', stderr: '': exit status 1"))
+			errMsg := fmt.Sprintf("Running command: '%s second arg', stdout: '', stderr: '': exit status 1", FalseExePath)
+			Expect(err.Error()).To(Equal(errMsg))
 			Expect(stderr).To(BeEmpty())
 			Expect(stdout).To(BeEmpty())
 			Expect(status).To(Equal(1))
@@ -232,9 +307,9 @@ var _ = Describe("execCmdRunner", func() {
 
 	Describe("CommandExists", func() {
 		It("run command with input", func() {
-			stdout, stderr, status, err := runner.RunCommandWithInput("foo\nbar\nbaz", "grep", "ba")
+			stdout, stderr, status, err := runner.RunCommandWithInput("foo\nbar\nbaz", CatExePath)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stdout).To(Equal("bar\nbaz\n"))
+			Expect(stdout).To(Equal("foo\nbar\nbaz"))
 			Expect(stderr).To(BeEmpty())
 			Expect(status).To(Equal(0))
 		})
@@ -242,48 +317,14 @@ var _ = Describe("execCmdRunner", func() {
 
 	Describe("CommandExists", func() {
 		It("command exists", func() {
-			Expect(runner.CommandExists("env")).To(BeTrue())
+			var cmd string
+			if runtime.GOOS == "windows" {
+				cmd = "cmd.exe"
+			} else {
+				cmd = "env"
+			}
+			Expect(runner.CommandExists(cmd)).To(BeTrue())
 			Expect(runner.CommandExists("absolutely-does-not-exist-ever-please-unicorns")).To(BeFalse())
 		})
 	})
 })
-
-func GetPlatformCommand(cmdName string) Command {
-	windowsCommands := map[string]Command{
-		"pwd": Command{
-			Name:       "powershell",
-			Args:       []string{"echo $PWD"},
-			WorkingDir: `C:\windows\temp`,
-		},
-		"stderr": Command{
-			Name: "powershell",
-			Args: []string{"[Console]::Error.WriteLine('error-output')"},
-		},
-		"exit": Command{
-			Name: "powershell",
-			Args: []string{"exit 14"},
-		},
-	}
-
-	unixCommands := map[string]Command{
-		"pwd": Command{
-			Name:       "bash",
-			Args:       []string{"-c", "echo $PWD"},
-			WorkingDir: `/tmp`,
-		},
-		"stderr": Command{
-			Name: "bash",
-			Args: []string{"-c", "echo error-output >&2"},
-		},
-		"exit": Command{
-			Name: "bash",
-			Args: []string{"-c", "exit 14"},
-		},
-	}
-
-	if runtime.GOOS == "windows" {
-		return windowsCommands[cmdName]
-	}
-
-	return unixCommands[cmdName]
-}

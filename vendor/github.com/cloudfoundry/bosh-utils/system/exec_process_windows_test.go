@@ -4,24 +4,19 @@ package system_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-utils/system"
 )
 
 var _ = Describe("execCmdRunner", func() {
-	var (
-		buildDir string
-		logger   boshlog.Logger
-	)
+	var logger boshlog.Logger
 
 	BeforeEach(func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
@@ -43,27 +38,9 @@ var _ = Describe("execCmdRunner", func() {
 	})
 
 	Describe("TerminateNicely", func() {
-		var (
-			execPath string
-		)
-
-		BeforeEach(func() {
-			const exeName = "windows_exe"
-			const exePath = exeName + ".go"
-
-			var err error
-			buildDir, err = ioutil.TempDir("z:/bosh-agent-workspace/tmp", "TerminateNicely")
-			Expect(err).ToNot(HaveOccurred())
-
-			execPath = filepath.Join(buildDir, exeName+".exe")
-			src := filepath.Join("exec_cmd_runner_fixtures", exePath)
-			err = exec.Command("go", "build", "-o", execPath, src).Run()
-			Expect(err).ToNot(HaveOccurred())
-		})
-
 		Context("when process exists", func() {
 			It("kills the process and returns its exit status", func() {
-				execProcess := NewExecProcess(exec.Command(execPath), logger)
+				execProcess := NewExecProcess(exec.Command(WindowsExePath), logger)
 				err := execProcess.Start()
 				Expect(err).ToNot(HaveOccurred())
 
@@ -86,7 +63,7 @@ var _ = Describe("execCmdRunner", func() {
 
 		Context("when process does not exist", func() {
 			It("returns no error", func() {
-				execProcess := NewExecProcess(exec.Command(execPath), logger)
+				execProcess := NewExecProcess(exec.Command(WindowsExePath), logger)
 				err := execProcess.Start()
 				Expect(err).ToNot(HaveOccurred())
 

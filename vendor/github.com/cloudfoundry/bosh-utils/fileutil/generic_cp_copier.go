@@ -6,7 +6,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-utils/internal/github.com/cloudfoundry/gofileutils/glob"
+	"github.com/cloudfoundry/gofileutils/glob"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
