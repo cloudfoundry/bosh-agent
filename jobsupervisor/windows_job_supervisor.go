@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -43,6 +44,9 @@ const (
 `
 	unmonitorJobScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Disabled" }
+`
+	waitForDeleteAllScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'").Length
 `
 )
 
@@ -269,8 +273,52 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 }
 
 func (s *windowsJobSupervisor) RemoveAllJobs() error {
-	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", deleteAllJobsScript)
-	return err
+	const MaxRetries = 100
+	const RetryInterval = time.Millisecond * 5
+
+	_, _, _, err := s.cmdRunner.RunCommand(
+		"powershell",
+		"-noprofile",
+		"-noninteractive",
+		"/C",
+		deleteAllJobsScript,
+	)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Removing Windows job supervisor services")
+	}
+
+	i := 0
+	start := time.Now()
+	for {
+		stdout, _, _, err := s.cmdRunner.RunCommand(
+			"powershell",
+			"-noprofile",
+			"-noninteractive",
+			"/C",
+			waitForDeleteAllScript,
+		)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Checking if Windows job supervisor services exist")
+		}
+		if strings.TrimSpace(stdout) == "0" {
+			break
+		}
+
+		i++
+		if i == MaxRetries {
+			return bosherr.Errorf("removing Windows job supervisor services after %d attempts",
+				MaxRetries)
+		}
+		s.logger.Debug(s.logTag, "Waiting for services to be deleted: attempt (%d) time (%s)",
+			i, time.Since(start))
+
+		time.Sleep(RetryInterval)
+	}
+
+	s.logger.Debug(s.logTag, "Removed Windows job supervisor services: attempts (%d) time (%s)",
+		i, time.Since(start))
+
+	return nil
 }
 
 func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
