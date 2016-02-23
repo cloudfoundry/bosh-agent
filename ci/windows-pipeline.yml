@@ -61,15 +61,14 @@ jobs:
   - get: bosh-agent
     trigger: true
     resource: bosh-agent-windows
-  - aggregate:
-    - task: test-unit
-      file: bosh-agent/ci/tasks/test-unit-windows.yml
-    - put: bosh-agent-zip-version
-      params:
-        bump: patch
-    - task: compile-agent
-      privileged: true
-      file: bosh-agent/ci/tasks/compile-agent-windows.yml
+  - put: bosh-agent-zip-version
+    params:
+      bump: patch
+  - task: test-unit
+    file: bosh-agent/ci/tasks/test-unit-windows.yml
+  - task: compile-agent
+    privileged: true
+    file: bosh-agent/ci/tasks/compile-agent-windows.yml
   - put: bosh-agent-zip
     params:
       file: compiled-agent-zip/bosh-windows-integration-v*.zip
