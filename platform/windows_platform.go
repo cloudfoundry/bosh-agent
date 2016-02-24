@@ -46,7 +46,7 @@ func NewWindowsPlatform(
 		netManager:         netManager,
 		devicePathResolver: devicePathResolver,
 		vitalsService:      boshvitals.NewService(collector, dirProvider),
-		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, logger),
+		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
 	}
 }
 
@@ -191,6 +191,14 @@ func (p WindowsPlatform) GetMonitCredentials() (username, password string, err e
 }
 
 func (p WindowsPlatform) PrepareForNetworkingChange() error {
+	return nil
+}
+
+func (p WindowsPlatform) CleanIPMacAddressCache(ip string) error {
+	return nil
+}
+
+func (p WindowsPlatform) RemoveDevTools(packageFileListPath string) error {
 	return nil
 }
 
