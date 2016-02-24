@@ -25,6 +25,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 					"UseDefaultTmpDir": true,
 					"UsePreformattedPersistentDisk": true,
 					"BindMountPersistentDisk": true,
+					"SkipDiskSetup": true,
 					"DevicePathResolutionType": "virtio"
 				}
 			},
@@ -67,6 +68,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 					UseDefaultTmpDir:              true,
 					UsePreformattedPersistentDisk: true,
 					BindMountPersistentDisk:       true,
+					SkipDiskSetup:                 true,
 					DevicePathResolutionType:      "virtio",
 				},
 			},

@@ -317,6 +317,19 @@ bosh_foobar:...`
 			})
 		})
 
+		Context("when SkipDiskSetup is true", func() {
+			BeforeEach(func() {
+				options.SkipDiskSetup = true
+				cmdRunner.CommandExistsValue = true
+			})
+
+			It("does nothing", func() {
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
+		})
 	})
 
 	Describe("SetupSSH", func() {
@@ -972,6 +985,21 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				})
 			})
 		})
+
+		Context("when SkipDiskSetup is true", func() {
+			BeforeEach(func() {
+				options.SkipDiskSetup = true
+			})
+
+			It("does nothing", func() {
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(partitioner.PartitionCalled).To(BeFalse())
+				Expect(formatter.FormatCalled).To(BeFalse())
+				Expect(mounter.MountCalled).To(BeFalse())
+			})
+		})
 	})
 
 	Describe("SetupRawEphemeralDisks", func() {
@@ -1120,6 +1148,19 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvda", "p"}))
+		})
+
+		Context("when SkipDiskSetup is true", func() {
+			BeforeEach(func() {
+				options.SkipDiskSetup = true
+			})
+
+			It("does nothing", func() {
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}})
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
 		})
 	})
 
