@@ -241,23 +241,27 @@ func (p dummyPlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string
 	return p.fs.WriteFile(diskMigrationsPath, diskMigrationsJSON)
 }
 
-func (p dummyPlatform) IsMountPoint(mountPointPath string) (result bool, err error) {
+func (p dummyPlatform) IsMountPoint(mountPointPath string) (partitionPath string, result bool, err error) {
 	mounts, err := p.existingMounts()
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
 
 	for _, mount := range mounts {
 		if mount.MountDir == mountPointPath {
-			return true, nil
+			return "", true, nil
 		}
 	}
 
-	return false, nil
+	return "", false, nil
 }
 
 func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (bool, error) {
 	return true, nil
+}
+
+func (p dummyPlatform) IsPersistentDiskPartitioned(diskSettings boshsettings.DiskSettings) (bool, error) {
+	return false, nil
 }
 
 func (p dummyPlatform) StartMonit() (err error) {

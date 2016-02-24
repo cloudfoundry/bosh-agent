@@ -640,7 +640,7 @@ func (p linux) SetupDataDir() error {
 func (p linux) setupRunDir(sysDir string) error {
 	runDir := path.Join(sysDir, "run")
 
-	runDirIsMounted, err := p.IsMountPoint(runDir)
+	_, runDirIsMounted, err := p.IsMountPoint(runDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Checking for mount point %s", runDir)
 	}
@@ -695,7 +695,7 @@ func (p linux) SetupTmpDir() error {
 		return nil
 	}
 
-	systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
+	_, systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Checking for mount point %s", systemTmpDir)
 	}
@@ -830,7 +830,22 @@ func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) stri
 	return realPath
 }
 
-func (p linux) IsMountPoint(path string) (bool, error) {
+func (p linux) IsPersistentDiskPartitioned(diskSettings boshsettings.DiskSettings) (bool, error) {
+	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
+	if err != nil {
+		return false, bosherr.WrapErrorf(err, "Validating path: %s", diskSettings.Path)
+	}
+
+	stdout, stderr, _, _ := p.cmdRunner.RunCommand("sfdisk", "-d", realPath)
+	if strings.Contains(stderr, "unrecognized partition table type") {
+		return false, nil
+	}
+
+	lines := len(strings.Split(stdout, "\n"))
+	return lines > 4, nil
+}
+
+func (p linux) IsMountPoint(path string) (string, bool, error) {
 	return p.diskManager.GetMounter().IsMountPoint(path)
 }
 
