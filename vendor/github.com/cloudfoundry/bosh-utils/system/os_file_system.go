@@ -208,7 +208,7 @@ func (fs *osFileSystem) FileExists(path string) bool {
 
 	_, err := os.Stat(path)
 	if err != nil {
-		return !os.IsNotExist(err)
+		return os.IsExist(err)
 	}
 	return true
 }

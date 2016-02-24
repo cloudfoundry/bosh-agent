@@ -40,7 +40,7 @@ var _ = Describe("HandlerProvider", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// yagnats.NewClient returns new object every time
-			expectedHandler := NewNatsHandler(settingsService, yagnats.NewClient(), logger)
+			expectedHandler := NewNatsHandler(settingsService, yagnats.NewClient(), logger, platform)
 			Expect(reflect.TypeOf(handler)).To(Equal(reflect.TypeOf(expectedHandler)))
 		})
 

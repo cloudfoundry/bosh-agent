@@ -78,7 +78,13 @@ func (app *app) Setup(args []string) error {
 
 	scriptCommandFactory := boshsys.NewScriptCommandFactory(opts.PlatformName)
 
-	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, scriptCommandFactory, app.fs, config.Platform)
+	state, err := boshplatform.NewBootstrapState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
+	if err != nil {
+		return bosherr.WrapError(err, "Loading state")
+	}
+
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, scriptCommandFactory, app.fs, config.Platform, state)
+
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")

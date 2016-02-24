@@ -2,6 +2,7 @@ package disk
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -64,7 +65,48 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	partitionRetryStrategy := NewSfdiskPartitionStrategy(partitionRetryable, p.timeService, p.logger)
 	err := partitionRetryStrategy.Try()
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(devicePath, "/dev/mapper/") {
+		_, _, _, err = p.cmdRunner.RunCommand("/etc/init.d/open-iscsi", "restart")
+		if err != nil {
+			return bosherr.WrapError(err, "Shelling out to restart open-iscsi")
+		}
+
+		detectPartitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+			output, _, _, err := p.cmdRunner.RunCommand("dmsetup", "ls")
+			if err != nil {
+				return true, bosherr.WrapError(err, "Shelling out to dmsetup ls")
+			}
+
+			if strings.Contains(output, "No devices found") {
+				return true, bosherr.Errorf("No devices found")
+			}
+
+			device := strings.TrimPrefix(devicePath, "/dev/mapper/")
+			lines := strings.Split(strings.Trim(output, "\n"), "\n")
+			for i := 0; i < len(lines); i++ {
+				if match, _ := regexp.MatchString("-part1", lines[i]); match {
+					if strings.Contains(lines[i], device) {
+						p.logger.Info(p.logTag, "Succeeded in detecting partition %s", devicePath+"-part1")
+						return false, nil
+					}
+				}
+			}
+
+			return true, bosherr.Errorf("Partition %s does not show up", devicePath+"-part1")
+		})
+
+		detectPartitionRetryStrategy := NewSfdiskPartitionStrategy(detectPartitionRetryable, p.timeService, p.logger)
+		err := detectPartitionRetryStrategy.Try()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p sfdiskPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {

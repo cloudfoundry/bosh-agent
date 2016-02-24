@@ -16,6 +16,8 @@ type FakeYagnats struct {
 
 	connectedConnectionProvider yagnats.ConnectionProvider
 
+	beforeConnectCallback func()
+
 	connectError     error
 	unsubscribeError error
 
@@ -78,9 +80,17 @@ func (f *FakeYagnats) Ping() bool {
 	return response
 }
 
+func (f *FakeYagnats) BeforeConnectCallback(callback func()) {
+	f.beforeConnectCallback = callback
+}
+
 func (f *FakeYagnats) Connect(connectionProvider yagnats.ConnectionProvider) error {
 	f.Lock()
 	defer f.Unlock()
+
+	if f.beforeConnectCallback != nil {
+		f.beforeConnectCallback()
+	}
 
 	if f.connectError != nil {
 		return f.connectError

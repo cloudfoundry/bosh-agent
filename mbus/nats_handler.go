@@ -4,15 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
 	"github.com/cloudfoundry/yagnats"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -33,6 +36,7 @@ type Handler interface {
 type natsHandler struct {
 	settingsService boshsettings.Service
 	client          yagnats.NATSClient
+	platform        boshplatform.Platform
 
 	handlerFuncs     []boshhandler.Func
 	handlerFuncsLock sync.Mutex
@@ -45,10 +49,12 @@ func NewNatsHandler(
 	settingsService boshsettings.Service,
 	client yagnats.NATSClient,
 	logger boshlog.Logger,
+	platform boshplatform.Platform,
 ) Handler {
 	return &natsHandler{
 		settingsService: settingsService,
 		client:          client,
+		platform:        platform,
 
 		logger: logger,
 		logTag: "NATS Handler",
@@ -57,11 +63,11 @@ func NewNatsHandler(
 
 func (h *natsHandler) Run(handlerFunc boshhandler.Func) error {
 	err := h.Start(handlerFunc)
+	defer h.Stop()
+
 	if err != nil {
 		return bosherr.WrapError(err, "Starting nats handler")
 	}
-
-	defer h.Stop()
 
 	h.runUntilInterrupted()
 
@@ -75,6 +81,20 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Getting connection info")
 	}
+
+	h.client.BeforeConnectCallback(func() {
+		hostSplit := strings.Split(connProvider.Addr, ":")
+		ip := hostSplit[0]
+
+		if net.ParseIP(ip) == nil {
+			return
+		}
+
+		err = h.platform.CleanIPMacAddressCache(ip)
+		if err != nil {
+			h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s", ip)
+		}
+	})
 
 	err = h.client.Connect(connProvider)
 	if err != nil {

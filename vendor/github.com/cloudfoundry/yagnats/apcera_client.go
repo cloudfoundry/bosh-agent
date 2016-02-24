@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apcera/nats"
+	"github.com/nats-io/nats"
 )
 
 type NATSConn interface {

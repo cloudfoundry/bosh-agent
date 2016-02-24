@@ -230,16 +230,29 @@ var _ = Describe("Testing with Ginkgo", func() {
 		Expect("some contents").To(Equal(string(content)))
 	})
 
-	It("file exists", func() {
-		osFs := createOsFs()
-		testPath := filepath.Join(os.TempDir(), "FileExistsTestFile")
+	Context("FileExists", func() {
+		It("returns true when file exists", func() {
+			osFs := createOsFs()
+			testPath := filepath.Join(os.TempDir(), "FileExistsTestFile")
+			osFs.WriteFileString(testPath, "initial write")
+			defer os.Remove(testPath)
 
-		Expect(osFs.FileExists(testPath)).To(BeFalse())
+			Expect(osFs.FileExists(testPath)).To(BeTrue())
+		})
 
-		osFs.WriteFileString(testPath, "initial write")
-		defer os.Remove(testPath)
+		It("returns false when file does not exist and filename is unusually long", func() {
+			osFs := createOsFs()
+			longFilePath := filepath.Join(os.TempDir(), strings.Repeat("a", 1000))
 
-		Expect(osFs.FileExists(testPath)).To(BeTrue())
+			Expect(osFs.FileExists(longFilePath)).To(BeFalse())
+		})
+
+		It("returns false when file does not exist", func() {
+			osFs := createOsFs()
+			testPath := filepath.Join(os.TempDir(), "FileExistsTestFile")
+
+			Expect(osFs.FileExists(testPath)).To(BeFalse())
+		})
 	})
 
 	It("rename", func() {

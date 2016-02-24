@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -54,7 +55,6 @@ func init() {
 			BeforeEach(func() {
 				platform = fakeplatform.NewFakePlatform()
 				dirProvider = boshdir.NewProvider("/var/vcap")
-
 				settingsSource = &fakeinf.FakeSettingsSource{}
 				settingsService = &fakesettings.FakeSettingsService{}
 			})
@@ -332,6 +332,33 @@ func init() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.StartMonitStarted).To(BeTrue())
 			})
+
+			Describe("RemoveDevTools", func() {
+
+				It("removes development tools if settings.env.bosh.remove_dev_tools is true", func() {
+					settingsService.Settings.Env.Bosh.RemoveDevTools = true
+					platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "dev_tools_file_list"), "/usr/bin/gfortran")
+
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeTrue())
+					Expect(platform.PackageFileListPath).To(Equal(path.Join(dirProvider.EtcDir(), "dev_tools_file_list")))
+				})
+
+				It("does NOTHING if settings.env.bosh.remove_dev_tools is NOT set", func() {
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeFalse())
+				})
+
+				It("does NOTHING if if settings.env.bosh.remove_dev_tools is true AND dev_tools_file_list does NOT exist", func() {
+					settingsService.Settings.Env.Bosh.RemoveDevTools = true
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveDevToolsCalled).To(BeFalse())
+				})
+			})
+
 		})
 
 		Describe("Network setup exercised by Run", func() {
@@ -426,7 +453,7 @@ func init() {
 				fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
 				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
-				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
+				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 1, logger)
 
 				monitRetryable := boshplatform.NewMonitRetryable(runner)
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
@@ -435,6 +462,8 @@ func init() {
 
 				routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
 				defaultNetworkResolver = boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+				state, err := boshplatform.NewBootstrapState(fs, "/tmp/agent_state.json")
+				Expect(err).NotTo(HaveOccurred())
 
 				platform = boshplatform.NewLinuxPlatform(
 					fs,
@@ -451,6 +480,7 @@ func init() {
 					monitRetryStrategy,
 					devicePathResolver,
 					500*time.Millisecond,
+					state,
 					linuxOptions,
 					logger,
 					defaultNetworkResolver,

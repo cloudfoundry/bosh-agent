@@ -15,22 +15,24 @@ type NATSClient interface {
 	SubscribeWithQueue(subject, queue string, callback Callback) (int64, error)
 	Unsubscribe(subscription int64) error
 	UnsubscribeAll(subject string)
+	BeforeConnectCallback(callback func())
 }
 
 type Callback func(*Message)
 
 type Client struct {
-	connection          chan *Connection
-	subscriptions       map[int64]*Subscription
-	subscriptionCounter int64
-	connected           bool
-	disconnecting       bool
-	lock                *sync.Mutex
+	connection              chan *Connection
+	subscriptions           map[int64]*Subscription
+	subscriptionCounter     int64
+	connected               bool
+	disconnecting           bool
+	lock                    *sync.Mutex
 
-	ConnectedCallback func()
+	beforeConnectCallback   func()
+	ConnectedCallback       func()
 
-	logger      Logger
-	loggerMutex *sync.RWMutex
+	logger                  Logger
+	loggerMutex             *sync.RWMutex
 }
 
 type Message struct {
@@ -86,14 +88,29 @@ func (c *Client) Connect(cp ConnectionProvider) error {
 }
 
 func (c *Client) Disconnect() {
-	if !c.connected || c.disconnecting {
+	c.lock.Lock()
+
+	disconnecting := !c.connected || c.disconnecting
+	c.lock.Unlock()
+	if disconnecting {
 		return
 	}
 
 	conn := <-c.connection
+
+	c.lock.Lock()
 	c.disconnecting = true
+	c.lock.Unlock()
+
 	conn.Disconnect()
+
+	c.lock.Lock()
 	c.connected = false
+	c.lock.Unlock()
+}
+
+func (c *Client) BeforeConnectCallback(callback func()) {
+	c.beforeConnectCallback = callback
 }
 
 func (c *Client) Publish(subject string, payload []byte) error {
@@ -202,7 +219,9 @@ func (c *Client) subscribe(subject, queue string, callback Callback) (int64, err
 }
 
 func (c *Client) serveConnections(conn *Connection, cp ConnectionProvider) {
+	c.lock.Lock()
 	c.connected = true
+	c.lock.Unlock()
 
 	// serve connection until disconnected
 	for stop := false; !stop; {
@@ -216,8 +235,12 @@ func (c *Client) serveConnections(conn *Connection, cp ConnectionProvider) {
 		}
 	}
 
+	c.lock.Lock()
+	disconnecting := c.disconnecting
+	c.lock.Unlock()
+
 	// stop if client was told to disconnect
-	if c.disconnecting {
+	if disconnecting {
 		c.Logger().Info("client.disconnecting")
 		return
 	}
@@ -226,6 +249,10 @@ func (c *Client) serveConnections(conn *Connection, cp ConnectionProvider) {
 }
 
 func (c *Client) connect(cp ConnectionProvider) (conn *Connection, err error) {
+	if c.beforeConnectCallback != nil {
+		c.beforeConnectCallback()
+	}
+
 	conn, err = cp.ProvideConnection()
 	if err != nil {
 		return

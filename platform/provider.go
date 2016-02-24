@@ -43,14 +43,7 @@ type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(
-	logger boshlog.Logger,
-	dirProvider boshdirs.Provider,
-	statsCollector boshstats.Collector,
-	scriptCommandFactory boshsys.ScriptCommandFactory,
-	fs boshsys.FileSystem,
-	options Options,
-) Provider {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, scriptCommandFactory boshsys.ScriptCommandFactory, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
@@ -81,8 +74,8 @@ func NewProvider(
 	scriptRunner := boshsys.NewConcreteScriptRunner(scriptCommandFactory, runner, fs, logger)
 	windowsNetManager := boshnet.NewWindowsNetManager(scriptRunner, logger)
 
-	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, logger)
-	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, logger)
+	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, 0, logger)
+	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
 
 	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
 	linuxDefaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
@@ -98,7 +91,9 @@ func NewProvider(
 		mappedDevicePathResolver := devicepathresolver.NewMappedDevicePathResolver(500*time.Millisecond, fs)
 		devicePathResolver = devicepathresolver.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
 	case "scsi":
-		devicePathResolver = devicepathresolver.NewScsiDevicePathResolver(500*time.Millisecond, fs)
+		scsiIDPathResolver := devicepathresolver.NewSCSIIDDevicePathResolver(50000*time.Millisecond, fs, logger)
+		scsiVolumeIDPathResolver := devicepathresolver.NewSCSIVolumeIDDevicePathResolver(500*time.Millisecond, fs)
+		devicePathResolver = devicepathresolver.NewScsiDevicePathResolver(scsiVolumeIDPathResolver, scsiIDPathResolver)
 	default:
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}
@@ -118,6 +113,7 @@ func NewProvider(
 		monitRetryStrategy,
 		devicePathResolver,
 		500*time.Millisecond,
+		bootstrapState,
 		options.Linux,
 		logger,
 		linuxDefaultNetworkResolver,
@@ -138,6 +134,7 @@ func NewProvider(
 		monitRetryStrategy,
 		devicePathResolver,
 		500*time.Millisecond,
+		bootstrapState,
 		options.Linux,
 		logger,
 		linuxDefaultNetworkResolver,

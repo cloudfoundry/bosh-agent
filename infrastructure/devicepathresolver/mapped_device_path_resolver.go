@@ -25,6 +25,9 @@ func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 	stopAfter := time.Now().Add(dpr.diskWaitTimeout)
 
 	devicePath := diskSettings.Path
+	if len(devicePath) == 0 {
+		return "", false, bosherr.Error("Getting real device path: path is missing")
+	}
 
 	realPath, found := dpr.findPossibleDevice(devicePath)
 

@@ -56,6 +56,7 @@ type Platform interface {
 	GetDefaultNetwork() (boshsettings.Network, error)
 	GetConfiguredNetworkInterfaces() ([]string, error)
 	PrepareForNetworkingChange() error
+	CleanIPMacAddressCache(ip string) error
 
 	// Additional monit management
 	GetMonitCredentials() (username, password string, err error)
@@ -63,4 +64,6 @@ type Platform interface {
 	GetCertManager() cert.Manager
 
 	GetHostPublicKey() (string, error)
+
+	RemoveDevTools(packageFileListPath string) error
 }

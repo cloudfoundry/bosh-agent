@@ -46,7 +46,7 @@ func (p HandlerProvider) Get(
 
 	switch mbusURL.Scheme {
 	case "nats":
-		handler = NewNatsHandler(p.settingsService, yagnats.NewClient(), p.logger)
+		handler = NewNatsHandler(p.settingsService, yagnats.NewClient(), p.logger, platform)
 	case "https":
 		handler = boshmicro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider)
 	default:

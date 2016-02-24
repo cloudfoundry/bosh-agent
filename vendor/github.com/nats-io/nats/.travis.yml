@@ -1,0 +1,19 @@
+language: go
+sudo: false
+go:
+- 1.5
+install:
+- DST=~/gopath/src/github.com/nats-io
+- mkdir -p "$DST"
+- git clone --depth=1 --quiet https://github.com/nats-io/gnatsd.git "$DST"/gnatsd
+- go get -t ./...
+- go get golang.org/x/tools/cmd/vet
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
+- go get github.com/wadey/gocovmerge
+script:
+- go fmt ./...
+- go vet ./...
+- go test -i -race ./...
+- go test -v -race ./...
+- ./scripts/cov.sh TRAVIS
