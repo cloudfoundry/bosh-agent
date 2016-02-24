@@ -127,7 +127,7 @@ var _ = Describe("concreteFactory", func() {
 	It("mount_disk", func() {
 		action, err := factory.Create("mount_disk")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewMountDisk(settingsService, platform, platform.GetDirProvider(), logger)))
+		Expect(action).To(Equal(NewMountDisk(settingsService, platform, platform.GetDevicePathResolver(), platform.GetDirProvider(), logger)))
 	})
 
 	It("ping", func() {

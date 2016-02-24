@@ -69,7 +69,7 @@ func NewFactory(
 			// Disk management
 			"list_disk":    NewListDisk(settingsService, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settingsService, platform, dirProvider, logger),
+			"mount_disk":   NewMountDisk(settingsService, platform, platform.GetDevicePathResolver(), dirProvider, logger),
 			"unmount_disk": NewUnmountDisk(settingsService, platform),
 
 			// ARP cache management

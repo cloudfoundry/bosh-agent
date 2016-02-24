@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -20,6 +21,7 @@ var _ = Describe("MountDiskAction", func() {
 		platform        *fakeplatform.FakePlatform
 		action          MountDiskAction
 		logger          boshlog.Logger
+		pathResolver    *fakedpresolv.FakeDevicePathResolver
 	)
 
 	BeforeEach(func() {
@@ -27,7 +29,8 @@ var _ = Describe("MountDiskAction", func() {
 		platform = fakeplatform.NewFakePlatform()
 		dirProvider := boshdirs.NewProvider("/fake-base-dir")
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		action = NewMountDisk(settingsService, platform, dirProvider, logger)
+		pathResolver = fakedpresolv.NewFakeDevicePathResolver()
+		action = NewMountDisk(settingsService, platform, pathResolver, dirProvider, logger)
 	})
 
 	It("is asynchronous", func() {
@@ -50,18 +53,93 @@ var _ = Describe("MountDiskAction", func() {
 					}
 				})
 
-				Context("when mounting succeeds", func() {
-					It("returns without an error after mounting store directory", func() {
-						result, err := action.Run("fake-disk-cid")
-						Expect(err).NotTo(HaveOccurred())
-						Expect(result).To(Equal(map[string]string{}))
+				It("checks if store directory is already mounted", func() {
+					_, err := action.Run("fake-disk-cid")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsMountPointPath).To(Equal("/fake-base-dir/store"))
+				})
 
-						Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+				Context("when store directory is not mounted", func() {
+					BeforeEach(func() {
+						platform.IsMountPointResult = false
+					})
+
+					Context("when mounting succeeds", func() {
+						It("returns without an error after mounting store directory", func() {
+							result, err := action.Run("fake-disk-cid")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(result).To(Equal(map[string]string{}))
+
+							Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+								ID:       "fake-disk-cid",
+								VolumeID: "fake-volume-id",
+								Path:     "fake-device-path",
+							}))
+							Expect(platform.MountPersistentDiskMountPoint).To(Equal("/fake-base-dir/store"))
+						})
+					})
+
+					Context("when mounting fails", func() {
+						It("returns error after trying to mount store directory", func() {
+							platform.MountPersistentDiskErr = errors.New("fake-mount-persistent-disk-err")
+
+							_, err := action.Run("fake-disk-cid")
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))
+						})
+					})
+				})
+
+				Context("when store directory is already mounted", func() {
+					BeforeEach(func() {
+						platform.IsMountPointResult = true
+						platform.IsMountPointPartitionPath = "fake-device-path"
+
+						platform.MountPersistentDiskSettings = boshsettings.DiskSettings{
 							ID:       "fake-disk-cid",
 							VolumeID: "fake-volume-id",
 							Path:     "fake-device-path",
-						}))
-						Expect(platform.MountPersistentDiskMountPoint).To(Equal("/fake-base-dir/store"))
+						}
+					})
+
+					Context("when mouting the same device", func() {
+						It("returns without error", func() {
+							pathResolver.RealDevicePath = "fake-device-path"
+
+							result, err := action.Run("fake-disk-cid")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(result).To(Equal(map[string]string{}))
+						})
+					})
+
+					Context("when mouting a different device", func() {
+						Context("when mounting succeeds", func() {
+							It("returns without an error after mounting store migration directory", func() {
+								pathResolver.RealDevicePath = "fake-different-device-path"
+
+								result, err := action.Run("fake-disk-cid")
+								Expect(err).NotTo(HaveOccurred())
+								Expect(result).To(Equal(map[string]string{}))
+
+								Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+									ID:       "fake-disk-cid",
+									VolumeID: "fake-volume-id",
+									Path:     "fake-device-path",
+								}))
+								Expect(platform.MountPersistentDiskMountPoint).To(Equal("/fake-base-dir/store_migration_target"))
+							})
+						})
+
+						Context("when mounting fails", func() {
+							It("returns error after trying to mount store migration directory", func() {
+								pathResolver.RealDevicePath = "fake-different-device-path"
+								platform.MountPersistentDiskErr = errors.New("fake-mount-persistent-disk-err")
+
+								_, err := action.Run("fake-disk-cid")
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))
+							})
+						})
 					})
 				})
 
