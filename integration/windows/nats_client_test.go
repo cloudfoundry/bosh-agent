@@ -8,10 +8,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/apcera/nats"
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
+	"github.com/nats-io/nats"
 
 	. "github.com/onsi/gomega"
 )
