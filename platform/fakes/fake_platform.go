@@ -94,8 +94,8 @@ type FakePlatform struct {
 	MigratePersistentDiskFromMountPoint string
 	MigratePersistentDiskToMountPoint   string
 
-	IsPersistentDiskPartitionedResult bool
-	IsPersistentDiskPartitionedErr    error
+	IsPersistentDiskMountableResult bool
+	IsPersistentDiskMountableErr    error
 
 	IsMountPointPath          string
 	IsMountPointPartitionPath string
@@ -157,7 +157,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.GetHostPublicKeyError = nil
 	platform.SetupRootDiskCalledTimes = 0
 	platform.SetupRootDiskError = nil
-	platform.IsPersistentDiskPartitionedErr = nil
+	platform.IsPersistentDiskMountableErr = nil
 	return
 }
 
@@ -355,13 +355,13 @@ func (p *FakePlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSet
 	return
 }
 
-func (p *FakePlatform) SetIsPersistentDiskPartitioned(isPartitioned bool, err error) {
-	p.IsPersistentDiskPartitionedResult = isPartitioned
-	p.IsPersistentDiskPartitionedErr = err
+func (p *FakePlatform) SetIsPersistentDiskMountable(isPartitioned bool, err error) {
+	p.IsPersistentDiskMountableResult = isPartitioned
+	p.IsPersistentDiskMountableErr = err
 }
 
-func (p *FakePlatform) IsPersistentDiskPartitioned(diskSettings boshsettings.DiskSettings) (bool, error) {
-	return p.IsPersistentDiskPartitionedResult, p.IsPersistentDiskPartitionedErr
+func (p *FakePlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
+	return p.IsPersistentDiskMountableResult, p.IsPersistentDiskMountableErr
 }
 
 func (p *FakePlatform) StartMonit() (err error) {

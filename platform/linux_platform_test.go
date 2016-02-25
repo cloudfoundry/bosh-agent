@@ -2041,7 +2041,7 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
-	Describe("IsPersistentDiskPartitioned", func() {
+	Describe("IsPersistentDiskMountable", func() {
 		BeforeEach(func() {
 			devicePathResolver.RealDevicePath = "/fake/device"
 		})
@@ -2054,7 +2054,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Path: "/fake/device",
 				}
 
-				isMounted, err := platform.IsPersistentDiskPartitioned(diskSettings)
+				isMounted, err := platform.IsPersistentDiskMountable(diskSettings)
 				Expect(err).To(HaveOccurred())
 				Expect(isMounted).To(Equal(false))
 			})
@@ -2079,7 +2079,7 @@ No partitions found
 					Path: "/fake/device",
 				}
 
-				isMounted, err := platform.IsPersistentDiskPartitioned(diskSettings)
+				isMounted, err := platform.IsPersistentDiskMountable(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(isMounted).To(Equal(false))
 			})
@@ -2107,7 +2107,7 @@ unit: sectors
 					Path: "/fake/device",
 				}
 
-				isMounted, err := platform.IsPersistentDiskPartitioned(diskSettings)
+				isMounted, err := platform.IsPersistentDiskMountable(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(isMounted).To(Equal(true))
 			})

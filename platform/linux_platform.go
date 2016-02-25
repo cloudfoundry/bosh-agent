@@ -845,7 +845,7 @@ func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) stri
 	return realPath
 }
 
-func (p linux) IsPersistentDiskPartitioned(diskSettings boshsettings.DiskSettings) (bool, error) {
+func (p linux) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
 		return false, bosherr.WrapErrorf(err, "Validating path: %s", diskSettings.Path)

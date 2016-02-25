@@ -351,7 +351,7 @@ func init() {
 								"vol-123": "/dev/not-exists",
 							},
 						}
-						platform.SetIsPersistentDiskPartitioned(false, errors.New("Drive not exist!"))
+						platform.SetIsPersistentDiskMountable(false, errors.New("Drive not exist!"))
 
 						err := bootstrap()
 						Expect(err).To(HaveOccurred())
@@ -367,7 +367,7 @@ func init() {
 								"vol-123": "/dev/valid",
 							},
 						}
-						platform.SetIsPersistentDiskPartitioned(false, nil)
+						platform.SetIsPersistentDiskMountable(false, nil)
 
 						err := bootstrap()
 						Expect(err).NotTo(HaveOccurred())
@@ -386,7 +386,7 @@ func init() {
 								},
 							},
 						}
-						platform.SetIsPersistentDiskPartitioned(true, nil)
+						platform.SetIsPersistentDiskMountable(true, nil)
 
 						err := bootstrap()
 						Expect(err).NotTo(HaveOccurred())

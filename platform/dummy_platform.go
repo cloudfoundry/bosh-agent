@@ -260,7 +260,7 @@ func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSet
 	return true, nil
 }
 
-func (p dummyPlatform) IsPersistentDiskPartitioned(diskSettings boshsettings.DiskSettings) (bool, error) {
+func (p dummyPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
 	return false, nil
 }
 

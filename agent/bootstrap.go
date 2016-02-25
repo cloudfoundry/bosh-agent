@@ -105,7 +105,7 @@ func (boot bootstrap) Run() (err error) {
 	for diskID := range settings.Disks.Persistent {
 		diskSettings, _ := settings.PersistentDiskSettings(diskID)
 
-		isPartitioned, err := boot.platform.IsPersistentDiskPartitioned(diskSettings)
+		isPartitioned, err := boot.platform.IsPersistentDiskMountable(diskSettings)
 		if err != nil {
 			return bosherr.WrapError(err, "Checking if persistent disk is partitioned")
 		}
