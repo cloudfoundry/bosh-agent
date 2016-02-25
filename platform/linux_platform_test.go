@@ -1450,6 +1450,51 @@ Number  Start   End     Size    File system  Name             Flags
 				devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
 			})
 
+			Context("when store directory is already mounted", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointResult = true
+				})
+
+				Context("when mounting the same device", func() {
+					BeforeEach(func() {
+						mounter.IsMountPointPartitionPath = "/dev/mapper/fake-real-device-path-part1"
+					})
+
+					It("skips mounting", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(mounter.MountCalled).To(BeFalse())
+					})
+				})
+
+				Context("when mounting a different device", func() {
+					BeforeEach(func() {
+						mounter.IsMountPointPartitionPath = "/dev/mapper/another-device"
+					})
+
+					It("mounts the store migration directory", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
+						Expect(mounter.MountMountPoints).To(Equal([]string{"/fake-dir/store_migration_target"}))
+						Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+					})
+				})
+			})
+
+			Context("when failing to determine if store directory is mounted", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointErr = errors.New("fake-is-mount-point-err")
+				})
+
+				It("returns an error", func() {
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-mount-point-err"))
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+			})
+
 			Context("when UsePreformattedPersistentDisk set to false", func() {
 				It("creates the mount directory with the correct permissions", func() {
 					err := act()

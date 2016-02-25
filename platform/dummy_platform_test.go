@@ -94,8 +94,11 @@ func describeDummyPlatform() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(unmounted).To(Equal(true))
 
-				Expect(platform.IsMountPoint("dir1")).To(Equal(false))
-				Expect(platform.IsMountPoint("dir2")).To(Equal(true))
+				_, isMountPoint, err := platform.IsMountPoint("dir1")
+				Expect(isMountPoint).To(Equal(false))
+
+				_, isMountPoint, err = platform.IsMountPoint("dir2")
+				Expect(isMountPoint).To(Equal(true))
 			})
 		})
 	})
