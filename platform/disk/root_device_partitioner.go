@@ -26,13 +26,6 @@ func NewRootDevicePartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner
 	}
 }
 
-type existingPartition struct {
-	Index        int
-	SizeInBytes  uint64
-	StartInBytes uint64
-	EndInBytes   uint64
-}
-
 func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, deviceFullSizeInBytes, err := p.getPartitions(devicePath)
 	if err != nil {

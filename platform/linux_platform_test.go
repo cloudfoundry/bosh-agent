@@ -1404,6 +1404,52 @@ Number  Start   End     Size    File system  Name             Flags
 			mounter = diskManager.FakeMounter
 		})
 
+		Context("when the size of the disk is larger than or equals 2 Terrabytes", func() {
+
+			BeforeEach(func() {
+				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255552)
+			})
+
+			It("uses parted partitioner", func() {
+				err := act()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(diskManager.PartedPartitionerCalled).To(BeTrue())
+				Expect(diskManager.PartitionerCalled).To(BeFalse())
+			})
+		})
+
+		Context("when the size of the disk is less than 2 Terrabytes", func() {
+
+			BeforeEach(func() {
+				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
+			})
+
+			It("uses fdisk partitioner", func() {
+				err := act()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(diskManager.PartitionerCalled).To(BeTrue())
+				Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
+			})
+		})
+
+		Context("when the lsblk command returns an error", func() {
+
+			BeforeEach(func() {
+				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(3199023255556)
+				diskManager.FakeDiskUtil.GetBlockDeviceSizeError = errors.New("Some error")
+			})
+
+			It("uses fdisk partitioner", func() {
+				err := act()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(diskManager.PartitionerCalled).To(BeTrue())
+				Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
+			})
+		})
+
 		Context("when device real path contains /dev/mapper/ and is successfully resolved", func() {
 			BeforeEach(func() {
 				devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"

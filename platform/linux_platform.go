@@ -41,6 +41,7 @@ const (
 	sshAuthKeysFilePermissions = os.FileMode(0600)
 
 	minRootEphemeralSpaceInBytes = uint64(1024 * 1024 * 1024)
+	maxFdiskPartitionSize        = uint64(2 * 1024 * 1024 * 1024 * 1024)
 )
 
 type LinuxOptions struct {
@@ -749,7 +750,14 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			{Type: boshdisk.PartitionTypeLinux},
 		}
 
-		err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+		diskSize, err := p.diskManager.GetDiskUtil(realPath).GetBlockDeviceSize()
+
+		if err != nil || diskSize < maxFdiskPartitionSize {
+			err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+		} else {
+			err = p.diskManager.GetPartedPartitioner().Partition(realPath, partitions)
+		}
+
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")
 		}
