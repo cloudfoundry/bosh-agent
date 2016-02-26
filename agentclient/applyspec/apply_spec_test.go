@@ -17,8 +17,10 @@ var _ = Describe("ApplySpec", func() {
 
 	BeforeEach(func() {
 		applySpec = ApplySpec{
-			Deployment: "fake-deployment-name",
-			Index:      0,
+			Deployment:       "fake-deployment-name",
+			Index:            0,
+			NodeID:           "this-is-a-node-id",
+			AvailabilityZone: "this-is-an-availability-zone",
 			Packages: map[string]Blob{
 				"first-package-name": Blob{
 					Name:        "first-package-name",
@@ -63,6 +65,8 @@ var _ = Describe("ApplySpec", func() {
 			Expect(applySpecMap).To(Equal(map[string]interface{}{
 				"deployment": "fake-deployment-name",
 				"index":      0.0, //json.Unmarshal ultimately converts all ints to floats. type must be float for comparisons to work
+				"id":         "this-is-a-node-id",
+				"az":         "this-is-an-availability-zone",
 				"packages": map[string]interface{}{
 					"first-package-name": map[string]interface{}{
 						"name":         "first-package-name",
