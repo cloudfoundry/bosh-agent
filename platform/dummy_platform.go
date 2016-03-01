@@ -163,6 +163,15 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 		return err
 	}
 
+	_, isMountPoint, err := p.IsMountPoint(mountPoint)
+	if err != nil {
+		return err
+	}
+
+	if isMountPoint {
+		mountPoint = p.dirProvider.StoreMigrationDir()
+	}
+
 	mounts = append(mounts, mount{MountDir: mountPoint, DiskCid: diskSettings.ID})
 	mountsJSON, err := json.Marshal(mounts)
 	if err != nil {
