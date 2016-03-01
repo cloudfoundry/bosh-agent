@@ -170,11 +170,15 @@ func (p WindowsPlatform) MigratePersistentDisk(fromMountPoint, toMountPoint stri
 	return
 }
 
-func (p WindowsPlatform) IsMountPoint(path string) (result bool, err error) {
-	return
+func (p WindowsPlatform) IsMountPoint(path string) (string, bool, error) {
+	return "", true, nil
 }
 
 func (p WindowsPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (bool, error) {
+	return true, nil
+}
+
+func (p WindowsPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
 	return true, nil
 }
 
