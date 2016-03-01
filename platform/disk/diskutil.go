@@ -8,6 +8,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	"strconv"
+	"strings"
 )
 
 type diskUtil struct {
@@ -88,7 +89,7 @@ func (util diskUtil) GetBlockDeviceSize() (size uint64, err error) {
 		util.logger.Error(util.logTag, "Getting the Block Device size of '%s': %s", util.diskPath, err.Error())
 		return 0, err
 	}
-	deviceSize, err := strconv.Atoi(stdout)
+	deviceSize, err := strconv.Atoi(strings.Trim(stdout, "\n"))
 	if err != nil {
 		util.logger.Error(util.logTag, "Converting the Block Device size of '%s': %s", util.diskPath, err.Error())
 		return 0, err

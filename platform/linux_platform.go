@@ -787,9 +787,13 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 
 		diskSize, err := p.diskManager.GetDiskUtil(realPath).GetBlockDeviceSize()
 
+		p.logger.Debug(logTag, "Persistent disk size to be partitioned is: %d, and error is: %v", diskSize, err)
+
 		if err != nil || diskSize < maxFdiskPartitionSize {
+			p.logger.Debug(logTag, "fdisk partitioner was chosen")
 			err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
 		} else {
+			p.logger.Debug(logTag, "parted partitioner was chosen")
 			err = p.diskManager.GetPartedPartitioner().Partition(realPath, partitions)
 		}
 
