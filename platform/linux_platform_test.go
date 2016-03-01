@@ -317,6 +317,19 @@ bosh_foobar:...`
 			})
 		})
 
+		Context("when SkipDiskSetup is true", func() {
+			BeforeEach(func() {
+				options.SkipDiskSetup = true
+				cmdRunner.CommandExistsValue = true
+			})
+
+			It("does nothing", func() {
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
+		})
 	})
 
 	Describe("SetupSSH", func() {
@@ -972,6 +985,21 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				})
 			})
 		})
+
+		Context("when SkipDiskSetup is true", func() {
+			BeforeEach(func() {
+				options.SkipDiskSetup = true
+			})
+
+			It("does nothing", func() {
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(partitioner.PartitionCalled).To(BeFalse())
+				Expect(formatter.FormatCalled).To(BeFalse())
+				Expect(mounter.MountCalled).To(BeFalse())
+			})
+		})
 	})
 
 	Describe("SetupRawEphemeralDisks", func() {
@@ -1120,6 +1148,19 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvda", "p"}))
+		})
+
+		Context("when SkipDiskSetup is true", func() {
+			BeforeEach(func() {
+				options.SkipDiskSetup = true
+			})
+
+			It("does nothing", func() {
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}, {Path: "/dev/xvdc"}})
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
 		})
 	})
 
@@ -1407,6 +1448,51 @@ Number  Start   End     Size    File system  Name             Flags
 		Context("when device real path contains /dev/mapper/ and is successfully resolved", func() {
 			BeforeEach(func() {
 				devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
+			})
+
+			Context("when store directory is already mounted", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointResult = true
+				})
+
+				Context("when mounting the same device", func() {
+					BeforeEach(func() {
+						mounter.IsMountPointPartitionPath = "/dev/mapper/fake-real-device-path-part1"
+					})
+
+					It("skips mounting", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(mounter.MountCalled).To(BeFalse())
+					})
+				})
+
+				Context("when mounting a different device", func() {
+					BeforeEach(func() {
+						mounter.IsMountPointPartitionPath = "/dev/mapper/another-device"
+					})
+
+					It("mounts the store migration directory", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
+						Expect(mounter.MountMountPoints).To(Equal([]string{"/fake-dir/store_migration_target"}))
+						Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+					})
+				})
+			})
+
+			Context("when failing to determine if store directory is mounted", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointErr = errors.New("fake-is-mount-point-err")
+				})
+
+				It("returns an error", func() {
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-mount-point-err"))
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
 			})
 
 			Context("when UsePreformattedPersistentDisk set to false", func() {
@@ -1951,6 +2037,79 @@ Number  Start   End     Size    File system  Name             Flags
 				isMounted, err := act()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMounted).To(BeFalse())
+			})
+		})
+	})
+
+	Describe("IsPersistentDiskMountable", func() {
+		BeforeEach(func() {
+			devicePathResolver.RealDevicePath = "/fake/device"
+		})
+
+		Context("when the specified drive does not exist", func() {
+			It("returns error", func() {
+				devicePathResolver.GetRealDevicePathTimedOut = true
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-timeout-error")
+				diskSettings := boshsettings.DiskSettings{
+					Path: "/fake/device",
+				}
+
+				isMounted, err := platform.IsPersistentDiskMountable(diskSettings)
+				Expect(err).To(HaveOccurred())
+				Expect(isMounted).To(Equal(false))
+			})
+		})
+
+		Context("when there is no partition on drive", func() {
+			It("returns false", func() {
+				result := fakesys.FakeCmdResult{
+					Error:      nil,
+					ExitStatus: 0,
+					Stderr: `
+dfdisk: ERROR: sector 0 does not have an msdos signature
+/fake/device: unrecognized partition table type
+No partitions found
+`,
+					Stdout: "",
+				}
+
+				cmdRunner.AddCmdResult("sfdisk -d /fake/device", result)
+
+				diskSettings := boshsettings.DiskSettings{
+					Path: "/fake/device",
+				}
+
+				isMounted, err := platform.IsPersistentDiskMountable(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(isMounted).To(Equal(false))
+			})
+		})
+
+		Context("when drive is partitioned", func() {
+			It("returns true", func() {
+				result := fakesys.FakeCmdResult{
+					Error:      nil,
+					ExitStatus: 0,
+					Stderr:     "",
+					Stdout: `# partition table of /fake/device
+unit: sectors
+
+/fake/device1 : start=       63, size=  5997984, Id=83
+/fake/device2 : start=  5998592, size= 32691088, Id=83
+/fake/device3 : start= 38690816, size=195750832, Id=83
+/fake/device4 : start=        0, size=        0, Id= 0
+`,
+				}
+
+				cmdRunner.AddCmdResult("sfdisk -d /fake/device", result)
+
+				diskSettings := boshsettings.DiskSettings{
+					Path: "/fake/device",
+				}
+
+				isMounted, err := platform.IsPersistentDiskMountable(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(isMounted).To(Equal(true))
 			})
 		})
 	})

@@ -2,27 +2,35 @@ package action
 
 import (
 	"errors"
+	"path"
 
 	boshappl "github.com/cloudfoundry/bosh-agent/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type ApplyAction struct {
 	applier         boshappl.Applier
 	specService     boshas.V1Service
 	settingsService boshsettings.Service
+	etcDir          string
+	fs              boshsys.FileSystem
 }
 
 func NewApply(
 	applier boshappl.Applier,
 	specService boshas.V1Service,
 	settingsService boshsettings.Service,
+	etcDir string,
+	fs boshsys.FileSystem,
 ) (action ApplyAction) {
 	action.applier = applier
 	action.specService = specService
 	action.settingsService = settingsService
+	action.etcDir = etcDir
+	action.fs = fs
 	return
 }
 
@@ -59,7 +67,30 @@ func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
 		return "", bosherr.WrapError(err, "Persisting apply spec")
 	}
 
+	err = a.writeInstanceData(resolvedDesiredSpec)
+	if err != nil {
+		return "", err
+	}
+
 	return "applied", nil
+}
+
+func (a ApplyAction) writeInstanceData(spec boshas.V1ApplySpec) error {
+	instanceDir := path.Join(a.etcDir, "instance")
+	err := a.fs.WriteFileString(path.Join(instanceDir, "id"), spec.NodeID)
+	if err != nil {
+		return err
+	}
+	err = a.fs.WriteFileString(path.Join(instanceDir, "az"), spec.AvailabilityZone)
+	if err != nil {
+		return err
+	}
+	err = a.fs.WriteFileString(path.Join(instanceDir, "name"), spec.Deployment)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (a ApplyAction) Resume() (interface{}, error) {

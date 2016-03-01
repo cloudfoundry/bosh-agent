@@ -56,7 +56,7 @@ func NewFactory(
 
 			// Job management
 			"prepare":    NewPrepare(applier),
-			"apply":      NewApply(applier, specService, settingsService),
+			"apply":      NewApply(applier, specService, settingsService, dirProvider.EtcDir(), platform.GetFs()),
 			"start":      NewStart(jobSupervisor, applier, specService),
 			"stop":       NewStop(jobSupervisor),
 			"drain":      NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger),
@@ -71,7 +71,7 @@ func NewFactory(
 			// Disk management
 			"list_disk":    NewListDisk(settingsService, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settingsService, platform, platform, dirProvider),
+			"mount_disk":   NewMountDisk(settingsService, platform, dirProvider, logger),
 			"unmount_disk": NewUnmountDisk(settingsService, platform),
 
 			// Networkingconcrete_factory_test.go

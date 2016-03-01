@@ -16,6 +16,7 @@ import (
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
+	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -78,7 +79,7 @@ var _ = Describe("concreteFactory", func() {
 	It("apply", func() {
 		action, err := factory.Create("apply")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewApply(applier, specService, settingsService)))
+		Expect(action).To(Equal(NewApply(applier, specService, settingsService, boshdir.NewProvider("/var/vcap").EtcDir(), platform.GetFs())))
 	})
 
 	It("drain", func() {
@@ -128,7 +129,7 @@ var _ = Describe("concreteFactory", func() {
 	It("mount_disk", func() {
 		action, err := factory.Create("mount_disk")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewMountDisk(settingsService, platform, platform, platform.GetDirProvider())))
+		Expect(action).To(Equal(NewMountDisk(settingsService, platform, platform.GetDirProvider(), logger)))
 	})
 
 	It("ping", func() {
