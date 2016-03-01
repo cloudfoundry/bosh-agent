@@ -18,8 +18,9 @@ type V1ApplySpec struct {
 	// Since default value of int is 0 use pointer
 	// to indicate that state does not have an assigned index
 	// (json.Marshal will result in null instead of 0).
-	Index  *int   `json:"index"`
-	NodeID string `json:"id"`
+	Index            *int   `json:"index"`
+	NodeID           string `json:"id"`
+	AvailabilityZone string `json:"az"`
 
 	PersistentDisk int `json:"persistent_disk"`
 

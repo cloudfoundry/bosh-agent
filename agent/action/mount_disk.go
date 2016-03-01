@@ -3,36 +3,37 @@ package action
 import (
 	"errors"
 
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
+
+const logTag string = "MountDiskAction"
 
 type diskMounter interface {
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
 }
 
-type mountPoints interface {
-	IsMountPoint(string) (bool, error)
-}
-
 type MountDiskAction struct {
-	settingsService boshsettings.Service
-	diskMounter     diskMounter
-	mountPoints     mountPoints
-	dirProvider     boshdirs.Provider
+	settingsService    boshsettings.Service
+	diskMounter        diskMounter
+	devicePathResolver boshdpresolv.DevicePathResolver
+	dirProvider        boshdirs.Provider
+	logger             boshlog.Logger
 }
 
 func NewMountDisk(
 	settingsService boshsettings.Service,
 	diskMounter diskMounter,
-	mountPoints mountPoints,
 	dirProvider boshdirs.Provider,
+	logger boshlog.Logger,
 ) (mountDisk MountDiskAction) {
 	mountDisk.settingsService = settingsService
 	mountDisk.diskMounter = diskMounter
-	mountDisk.mountPoints = mountPoints
 	mountDisk.dirProvider = dirProvider
+	mountDisk.logger = logger
 	return
 }
 
@@ -58,14 +59,6 @@ func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 	}
 
 	mountPoint := a.dirProvider.StoreDir()
-
-	isMountPoint, err := a.mountPoints.IsMountPoint(mountPoint)
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Checking mount point")
-	}
-	if isMountPoint {
-		mountPoint = a.dirProvider.StoreMigrationDir()
-	}
 
 	err = a.diskMounter.MountPersistentDisk(diskSettings, mountPoint)
 	if err != nil {

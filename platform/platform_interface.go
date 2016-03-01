@@ -46,8 +46,9 @@ type Platform interface {
 	UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string
-	IsMountPoint(path string) (result bool, err error)
+	IsMountPoint(path string) (partitionPath string, result bool, err error)
 	IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error)
+	IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error)
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)

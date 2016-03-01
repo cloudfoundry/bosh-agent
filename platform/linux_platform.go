@@ -61,6 +61,9 @@ type LinuxOptions struct {
 	// ephemeral disk
 	CreatePartitionIfNoEphemeralDisk bool
 
+	// When set to true the agent will skip both root and ephemeral disk partitioning
+	SkipDiskSetup bool
+
 	// Strategy for resolving device paths;
 	// possible values: virtio, scsi, ''
 	DevicePathResolutionType string
@@ -275,6 +278,10 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 }
 
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
+	if p.options.SkipDiskSetup {
+		return nil
+	}
+
 	//if there is ephemeral disk we can safely autogrow, if not we should not.
 	if (ephemeralDiskPath == "") && (p.options.CreatePartitionIfNoEphemeralDisk == true) {
 		p.logger.Info(logTag, "No Ephemeral Disk provided, Skipping growing of the Root Filesystem")
@@ -462,6 +469,10 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 }
 
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
+	if p.options.SkipDiskSetup {
+		return nil
+	}
+
 	p.logger.Info(logTag, "Setting up ephemeral disk...")
 	mountPoint := p.dirProvider.DataDir()
 
@@ -536,6 +547,10 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 }
 
 func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error) {
+	if p.options.SkipDiskSetup {
+		return nil
+	}
+
 	p.logger.Info(logTag, "Setting up raw ephemeral disks")
 
 	for i, device := range devices {
@@ -626,7 +641,7 @@ func (p linux) SetupDataDir() error {
 func (p linux) setupRunDir(sysDir string) error {
 	runDir := path.Join(sysDir, "run")
 
-	runDirIsMounted, err := p.IsMountPoint(runDir)
+	_, runDirIsMounted, err := p.IsMountPoint(runDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Checking for mount point %s", runDir)
 	}
@@ -681,7 +696,7 @@ func (p linux) SetupTmpDir() error {
 		return nil
 	}
 
-	systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
+	_, systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Checking for mount point %s", systemTmpDir)
 	}
@@ -745,6 +760,26 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		return bosherr.WrapError(err, "Getting real device path")
 	}
 
+	devicePath, isMountPoint, err := p.IsMountPoint(mountPoint)
+	if err != nil {
+		return bosherr.WrapError(err, "Checking mount point")
+	}
+	p.logger.Info(logTag, "realPath = %s, devicePath = %s, isMountPoint = %s", realPath, devicePath, isMountPoint)
+
+	partitionPath := realPath + "1"
+	if strings.Contains(realPath, "/dev/mapper/") {
+		partitionPath = realPath + "-part1"
+	}
+
+	if isMountPoint {
+		if partitionPath == devicePath {
+			p.logger.Info(logTag, "device: %s is already mount to %s, skipping mounting", devicePath, mountPoint)
+			return nil
+		}
+
+		mountPoint = p.dirProvider.StoreMigrationDir()
+	}
+
 	if !p.options.UsePreformattedPersistentDisk {
 		partitions := []boshdisk.Partition{
 			{Type: boshdisk.PartitionTypeLinux},
@@ -760,11 +795,6 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")
-		}
-
-		partitionPath := realPath + "1"
-		if strings.Contains(realPath, "/dev/mapper/") {
-			partitionPath = realPath + "-part1"
 		}
 
 		persistentDiskFS := diskSetting.FileSystemType
@@ -823,7 +853,22 @@ func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) stri
 	return realPath
 }
 
-func (p linux) IsMountPoint(path string) (bool, error) {
+func (p linux) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
+	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
+	if err != nil {
+		return false, bosherr.WrapErrorf(err, "Validating path: %s", diskSettings.Path)
+	}
+
+	stdout, stderr, _, _ := p.cmdRunner.RunCommand("sfdisk", "-d", realPath)
+	if strings.Contains(stderr, "unrecognized partition table type") {
+		return false, nil
+	}
+
+	lines := len(strings.Split(stdout, "\n"))
+	return lines > 4, nil
+}
+
+func (p linux) IsMountPoint(path string) (string, bool, error) {
 	return p.diskManager.GetMounter().IsMountPoint(path)
 }
 
