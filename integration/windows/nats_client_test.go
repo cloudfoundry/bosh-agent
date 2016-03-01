@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
+	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
+	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	"github.com/nats-io/nats"
@@ -132,8 +134,9 @@ const (
 )
 
 type NatsClient struct {
-	nc  *nats.Conn
-	sub *nats.Subscription
+	nc       *nats.Conn
+	sub      *nats.Subscription
+	alertSub *nats.Subscription
 
 	compressor      boshfileutil.Compressor
 	blobstoreClient utils.BlobClient
@@ -163,6 +166,7 @@ func (n *NatsClient) Setup() error {
 	}
 
 	n.sub, err = n.nc.SubscribeSync(senderID)
+	n.alertSub, err = n.nc.SubscribeSync("hm.agent.alert." + agentGUID)
 	return err
 }
 
@@ -195,7 +199,7 @@ func (n *NatsClient) PrepareJob(jobName string) {
 	Expect(err).NotTo(HaveOccurred())
 
 	check := n.checkStatus(prepareResponse["value"]["agent_task_id"])
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("prepared"))
+	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("finished"))
 
 	buffer.Reset()
 	t = template.Must(template.New("apply").Parse(applyTemplate))
@@ -205,7 +209,7 @@ func (n *NatsClient) PrepareJob(jobName string) {
 	Expect(err).NotTo(HaveOccurred())
 
 	check = n.checkStatus(applyResponse["value"]["agent_task_id"])
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("applied"))
+	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("finished"))
 }
 
 func (n *NatsClient) RunDrain() error {
@@ -260,7 +264,7 @@ func (n *NatsClient) RunStop() error {
 	}
 
 	check := n.checkStatus(response["value"]["agent_task_id"])
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("stopped"))
+	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("finished"))
 
 	return nil
 }
@@ -350,6 +354,16 @@ func (n *NatsClient) SendMessage(message string) (map[string]map[string]string, 
 	return response, err
 }
 
+func (n *NatsClient) GetNextAlert(timeout time.Duration) (*boshalert.Alert, error) {
+	raw, err := n.alertSub.NextMsg(timeout)
+	if err != nil {
+		return nil, err
+	}
+	var alert boshalert.Alert
+	err = json.Unmarshal(raw.Data, &alert)
+	return &alert, err
+}
+
 func (n *NatsClient) getTask(taskID string) ([]byte, error) {
 	message := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, taskID, senderID)
 	return n.SendRawMessage(message)
@@ -357,7 +371,7 @@ func (n *NatsClient) getTask(taskID string) ([]byte, error) {
 
 func (n *NatsClient) checkStatus(taskID string) func() (string, error) {
 	return func() (string, error) {
-		var result map[string]string
+		var result http.TaskResponse
 		valueResponse, err := n.getTask(taskID)
 		if err != nil {
 			return "", err
@@ -368,7 +382,11 @@ func (n *NatsClient) checkStatus(taskID string) func() (string, error) {
 			return "", err
 		}
 
-		return result["value"], nil
+		if err = result.ServerError(); err != nil {
+			return "", err
+		}
+
+		return result.TaskState()
 	}
 }
 

@@ -126,7 +126,7 @@ func (r *TaskResponse) TaskID() (string, error) {
 //
 // Agent response to get_task can be in different format based on task state.
 // If task state is running agent responds
-// with value as { agent_task_id: "task-id", state: "running" }
+// with value as {value: { agent_task_id: "task-id", state: "running" }}
 // Otherwise the value is a string like "stopped".
 func (r *TaskResponse) TaskState() (string, error) {
 	complexResponse, ok := r.Value.(map[string]interface{})

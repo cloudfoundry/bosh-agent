@@ -1,15 +1,19 @@
 package jobsupervisor
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
+	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -22,6 +26,7 @@ const (
 	serviceWrapperExeFileName       = "job-service-wrapper.exe"
 	serviceWrapperConfigFileName    = "job-service-wrapper.xml"
 	serviceWrapperAppConfigFileName = "job-service-wrapper.exe.config"
+	serviceWrapperEventJSONFileName = "job-service-wrapper.wrapper.log.json"
 	serviceWrapperAppConfigBody     = `
 <configuration>
   <startup>
@@ -117,6 +122,8 @@ type windowsJobSupervisor struct {
 	fs          boshsys.FileSystem
 	logger      boshlog.Logger
 	logTag      string
+	logDirs     []string
+	msgCh       chan *windowsServiceEvent
 }
 
 func NewWindowsJobSupervisor(
@@ -131,6 +138,7 @@ func NewWindowsJobSupervisor(
 		fs:          fs,
 		logger:      logger,
 		logTag:      "windowsJobSupervisor",
+		msgCh:       make(chan *windowsServiceEvent, 8),
 	}
 }
 
@@ -244,6 +252,18 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 			return bosherr.WrapErrorf(err, "Creating job directory for service '%s' at '%s'", process.Name, processDir)
 		}
 
+		// The winsw service wrapper writes a JSON event file at the specified
+		// location on failure.
+		eventLogFile := filepath.Join(logPath, serviceWrapperEventJSONFileName)
+		err = s.fs.WriteFile(eventLogFile, []byte{})
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Creating JSON log directory for service '%s' at '%s'", process.Name, eventLogFile)
+		}
+		if err := s.monitorJob(eventLogFile); err != nil {
+			return bosherr.WrapErrorf(err, "Monitoring job for service '%s'", process.Name)
+		}
+		s.logDirs = append(s.logDirs, logPath)
+
 		serviceWrapperConfigFile := filepath.Join(processDir, serviceWrapperConfigFileName)
 		err = s.fs.WriteFile(serviceWrapperConfigFile, buf.Bytes())
 		if err != nil {
@@ -275,6 +295,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 func (s *windowsJobSupervisor) RemoveAllJobs() error {
 	const MaxRetries = 100
 	const RetryInterval = time.Millisecond * 5
+	s.logDirs = s.logDirs[:0]
 
 	_, _, _, err := s.cmdRunner.RunCommand(
 		"powershell",
@@ -321,7 +342,58 @@ func (s *windowsJobSupervisor) RemoveAllJobs() error {
 	return nil
 }
 
+type windowsServiceEvent struct {
+	Datetime    string `json:"datetime"`
+	Event       string `json:"event"`
+	ProcessName string `json:"processName"`
+	ExitCode    int    `json:"exitCode"`
+}
+
+func (s *windowsJobSupervisor) monitorJob(logFile string) error {
+	f, err := s.fs.OpenFile(logFile, os.O_RDONLY, 0)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Opening service wrapper JSON event log: %s", logFile)
+	}
+	go func() {
+		defer f.Close()
+		r := bufio.NewReader(f)
+		var buf bytes.Buffer
+		for {
+			b, err := r.ReadBytes('\n')
+			switch err {
+			case nil:
+				if buf.Len() != 0 {
+					b = append(buf.Bytes(), b...)
+					buf.Reset()
+				}
+				var m windowsServiceEvent
+				if err := json.Unmarshal(b, &m); err != nil {
+					s.logger.Debug(s.logTag, "Unmarshaling service event JSON: %s", err)
+				} else {
+					s.msgCh <- &m
+				}
+			case io.EOF:
+				buf.Write(b)
+				time.Sleep(time.Millisecond * 100)
+			default:
+				s.logger.Debug(s.logTag, "Unhandled error reading service event log file (%s): %s", logFile, err)
+			}
+		}
+	}()
+	return nil
+}
+
 func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
+	for m := range s.msgCh {
+		handler(boshalert.MonitAlert{
+			Action:      "Start",
+			Date:        m.Datetime,
+			Event:       "pid failed",
+			ID:          m.ProcessName,
+			Service:     m.ProcessName,
+			Description: fmt.Sprintf("exited with code %d", m.ExitCode),
+		})
+	}
 	return nil
 }
 

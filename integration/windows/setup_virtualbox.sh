@@ -14,7 +14,7 @@ GOOS=windows \
 
 if vagrant status | grep agent | grep running
 then
-  vagrant provision
+	vagrant provision
 else
 	vagrant up --provider=virtualbox --provision
 fi

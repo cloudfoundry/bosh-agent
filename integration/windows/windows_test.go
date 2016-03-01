@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
+	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -154,5 +155,26 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(drainLogContents).To(ContainSubstring("success"))
+	})
+
+	It("alerts when jobs fail on start", func() {
+		natsClient.PrepareJob("crashes-on-start")
+		runStartResponse, err := natsClient.RunStart()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(runStartResponse["value"]).To(Equal("started"))
+
+		Eventually(func() string { return natsClient.GetState().JobState }, 30*time.Second, 1*time.Second).Should(Equal("failing"))
+
+		expected := boshalert.Alert{
+			Title: "crash-service - pid failed - Start",
+		}
+
+		Eventually(func() (string, error) {
+			alert, err := natsClient.GetNextAlert(10 * time.Second)
+			if err != nil {
+				return "", err
+			}
+			return alert.Title, nil
+		}).Should(Equal(expected.Title))
 	})
 })
