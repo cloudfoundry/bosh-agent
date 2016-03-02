@@ -1,6 +1,7 @@
 package jobsupervisor_test
 
 import (
+	"reflect"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -89,7 +90,13 @@ func init() {
 			actualSupervisor, err := provider.Get("windows")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(actualSupervisor).To(Equal(NewWindowsJobSupervisor(platform.Runner, dirProvider, platform.Fs, logger)))
+			expectedSupervisor := NewWindowsJobSupervisor(
+				platform.Runner,
+				dirProvider,
+				platform.Fs,
+				logger,
+			)
+			Expect(reflect.TypeOf(actualSupervisor)).To(Equal(reflect.TypeOf(expectedSupervisor)))
 		})
 	})
 }
