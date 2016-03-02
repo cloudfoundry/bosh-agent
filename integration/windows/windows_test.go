@@ -157,7 +157,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(drainLogContents).To(ContainSubstring("success"))
 	})
 
-	It("alerts when jobs fail on start", func() {
+	It("stops alerting failing jobs when job is stopped", func() {
 		natsClient.PrepareJob("crashes-on-start")
 		runStartResponse, err := natsClient.RunStart()
 		Expect(err).NotTo(HaveOccurred())
@@ -176,5 +176,12 @@ var _ = Describe("An Agent running on Windows", func() {
 			}
 			return alert.Title, nil
 		}).Should(Equal(expected.Title))
+
+		err = natsClient.RunStop()
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = natsClient.GetNextAlert(10 * time.Second)
+		Expect(err).To(HaveOccurred())
+		Expect(err).To(MatchError("nats: timeout"))
 	})
 })

@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/bosh-utils/state"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -122,8 +124,8 @@ type windowsJobSupervisor struct {
 	fs          boshsys.FileSystem
 	logger      boshlog.Logger
 	logTag      string
-	logDirs     []string
 	msgCh       chan *windowsServiceEvent
+	monitor     *state.Monitor
 }
 
 func NewWindowsJobSupervisor(
@@ -132,6 +134,7 @@ func NewWindowsJobSupervisor(
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) JobSupervisor {
+	monitor, _ := state.New()
 	return &windowsJobSupervisor{
 		cmdRunner:   cmdRunner,
 		dirProvider: dirProvider,
@@ -139,6 +142,7 @@ func NewWindowsJobSupervisor(
 		logger:      logger,
 		logTag:      "windowsJobSupervisor",
 		msgCh:       make(chan *windowsServiceEvent, 8),
+		monitor:     monitor,
 	}
 }
 
@@ -147,6 +151,8 @@ func (s *windowsJobSupervisor) Reload() error {
 }
 
 func (s *windowsJobSupervisor) Start() error {
+	s.monitor.Start()
+
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", startJobScript)
 	if err != nil {
 		return bosherr.WrapError(err, "Starting windows job process")
@@ -161,6 +167,8 @@ func (s *windowsJobSupervisor) Start() error {
 }
 
 func (s *windowsJobSupervisor) Stop() error {
+	s.monitor.Stop()
+
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", stopJobScript)
 	if err != nil {
 		return bosherr.WrapError(err, "Stopping services")
@@ -262,7 +270,6 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		if err := s.monitorJob(eventLogFile); err != nil {
 			return bosherr.WrapErrorf(err, "Monitoring job for service '%s'", process.Name)
 		}
-		s.logDirs = append(s.logDirs, logPath)
 
 		serviceWrapperConfigFile := filepath.Join(processDir, serviceWrapperConfigFileName)
 		err = s.fs.WriteFile(serviceWrapperConfigFile, buf.Bytes())
@@ -293,9 +300,10 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 }
 
 func (s *windowsJobSupervisor) RemoveAllJobs() error {
+	defer s.monitor.Exit()
+
 	const MaxRetries = 100
 	const RetryInterval = time.Millisecond * 5
-	s.logDirs = s.logDirs[:0]
 
 	_, _, _, err := s.cmdRunner.RunCommand(
 		"powershell",
@@ -356,9 +364,11 @@ func (s *windowsJobSupervisor) monitorJob(logFile string) error {
 	}
 	go func() {
 		defer f.Close()
-		r := bufio.NewReader(f)
 		var buf bytes.Buffer
+		r := bufio.NewReader(f)
+		p := s.monitor.NewProcess()
 		for {
+			p.Wait()
 			b, err := r.ReadBytes('\n')
 			switch err {
 			case nil:
