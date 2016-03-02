@@ -300,7 +300,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 }
 
 func (s *windowsJobSupervisor) RemoveAllJobs() error {
-	defer s.monitor.Exit()
+	s.monitor.Exit()
 
 	const MaxRetries = 100
 	const RetryInterval = time.Millisecond * 5
