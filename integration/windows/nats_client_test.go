@@ -131,6 +131,17 @@ const (
 	"reply_to":"%s"
 }
 	`
+	runScriptTemplate = `
+{
+	"protocol":2,
+	"method":"run_script",
+	"arguments":[
+	  "%s",
+	  {}
+	],
+	"reply_to":"%s"
+}
+	`
 )
 
 type NatsClient struct {
@@ -152,7 +163,7 @@ func NewNatsClient(
 		compressor:      compressor,
 		blobstoreClient: blobstoreClient,
 		renderedTemplatesArchivesSha1: map[string]string{
-			"say-hello":       "c455af836d57229f0a55cd2922d349d10cc6e233",
+			"say-hello":       "8d62be87451e2ac3b5b3e736d210176274c95ec9",
 			"unmonitor-hello": "4ff9960a1d594743c498141cdbd611b93262e78c",
 		},
 	}
@@ -221,6 +232,34 @@ func (n *NatsClient) RunDrain() error {
 
 	check := n.checkDrain(drainResponse["value"]["agent_task_id"])
 	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal(0))
+
+	return nil
+}
+
+func (n *NatsClient) RunScript(scriptName string) error {
+	message := fmt.Sprintf(runScriptTemplate, scriptName, senderID)
+	response, err := n.SendMessage(message)
+	if err != nil {
+		return err
+	}
+
+	check := func() (map[string]string, error) {
+		var result map[string]map[string]string
+		valueResponse, err := n.getTask(response["value"]["agent_task_id"])
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(valueResponse, &result)
+		if err != nil {
+			return nil, err
+		}
+
+		return result["value"], nil
+	}
+
+	// run_script commands just return {} when they're done
+	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal(map[string]string{}))
 
 	return nil
 }

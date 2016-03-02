@@ -184,4 +184,27 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError("nats: timeout"))
 	})
+
+	It("can run arbitrary user scripts", func() {
+		natsClient.PrepareJob("say-hello")
+
+		err := natsClient.RunScript("pre-start")
+		Expect(err).NotTo(HaveOccurred())
+
+		logsDir, err := fs.TempDir("windows-agent-prestart-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer fs.RemoveAll(logsDir)
+
+		natsClient.FetchLogs(logsDir)
+
+		prestartStdoutContents, err := fs.ReadFileString(filepath.Join(logsDir, "say-hello", "pre-start.stdout.log"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(prestartStdoutContents).To(ContainSubstring("Hello from stdout"))
+
+		prestartStderrContents, err := fs.ReadFileString(filepath.Join(logsDir, "say-hello", "pre-start.stderr.log"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(prestartStderrContents).To(ContainSubstring("Hello from stderr"))
+	})
 })
