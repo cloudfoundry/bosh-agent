@@ -62,6 +62,10 @@ setup_bosh_directory = <<-SHELL
     Remove-Item -Recurse C:\\var\\vcap\\bosh\\bin
   }
 
+  if (Test-Path C:\\var\\vcap\\bosh\\log){
+    Remove-Item -Recurse C:\\var\\vcap\\bosh\\log
+  }
+
   mkdir C:\\bosh
   mkdir C:\\var\\vcap\\bosh\\bin
   mkdir C:\\var\\vcap\\bosh\\log
@@ -219,6 +223,7 @@ Vagrant.configure(2) do |config|
 
     agent.vm.provider :virtualbox do |v, override|
       override.vm.box = "https://s3.amazonaws.com/windows-bosh-integration/bosh-agent.windows-integration.box"
+      v.cpus = 4
     end
 
     agent.vm.provider :aws do |aws, override|
