@@ -85,7 +85,11 @@ func (a ApplyAction) writeInstanceData(spec boshas.V1ApplySpec) error {
 	if err != nil {
 		return err
 	}
-	err = a.fs.WriteFileString(path.Join(instanceDir, "name"), spec.Deployment)
+	err = a.fs.WriteFileString(path.Join(instanceDir, "name"), spec.Name)
+	if err != nil {
+		return err
+	}
+	err = a.fs.WriteFileString(path.Join(instanceDir, "deployment"), spec.Deployment)
 	if err != nil {
 		return err
 	}

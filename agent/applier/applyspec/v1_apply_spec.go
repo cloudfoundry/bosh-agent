@@ -14,6 +14,7 @@ type V1ApplySpec struct {
 	NetworkSpecs      map[string]NetworkSpec `json:"networks"`
 	ResourcePoolSpecs interface{}            `json:"resource_pool"`
 	Deployment        string                 `json:"deployment"`
+	Name              string                 `json:"name"`
 
 	// Since default value of int is 0 use pointer
 	// to indicate that state does not have an assigned index

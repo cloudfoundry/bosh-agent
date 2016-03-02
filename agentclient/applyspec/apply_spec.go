@@ -8,6 +8,7 @@ import (
 // The format is suboptimal for its current usage. :(
 type ApplySpec struct {
 	Deployment       string `json:"deployment"`
+	Name             string `json:"name"`
 	Index            int    `json:"index"`
 	NodeID           string `json:"id"`
 	AvailabilityZone string `json:"az"`
