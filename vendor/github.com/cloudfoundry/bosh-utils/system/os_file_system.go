@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"errors"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -223,23 +224,21 @@ func (fs *osFileSystem) Rename(oldPath, newPath string) (err error) {
 func (fs *osFileSystem) Symlink(oldPath, newPath string) error {
 	fs.logger.Debug(fs.logTag, "Symlinking oldPath %s with newPath %s", oldPath, newPath)
 
-	actualOldPath, err := filepath.EvalSymlinks(oldPath)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Evaluating symlinks for %s", oldPath)
-	}
-
-	existingTargetedPath, err := filepath.EvalSymlinks(newPath)
-	if err == nil {
-		if existingTargetedPath == actualOldPath {
-			return nil
+	if fi, err := os.Lstat(newPath); err == nil {
+		if fi.Mode()&os.ModeSymlink != 0 {
+			// Symlink
+			new, err := os.Readlink(newPath)
+			if err != nil {
+				return bosherr.WrapErrorf(err, "Reading link for %s", newPath)
+			}
+			if filepath.Clean(oldPath) == filepath.Clean(new) {
+				return nil
+			}
 		}
-
-		err = os.Remove(newPath)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Failed to delete symlimk at %s", newPath)
+		if err := os.Remove(newPath); err != nil {
+			return bosherr.WrapErrorf(err, "Removing new path at %s", newPath)
 		}
 	}
-
 	containingDir := filepath.Dir(newPath)
 	if !fs.FileExists(containingDir) {
 		fs.MkdirAll(containingDir, os.FileMode(0700))
