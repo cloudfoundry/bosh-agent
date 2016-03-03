@@ -102,4 +102,33 @@ func describeDummyPlatform() {
 			})
 		})
 	})
+
+	Describe("SetUserPassword", func() {
+		It("writes the password to a file", func() {
+			err := platform.SetUserPassword("user-name", "fake-password")
+			Expect(err).NotTo(HaveOccurred())
+
+			userPasswordsPath := path.Join(dirProvider.BoshDir(), "user-name", CredentialFileName)
+			password, err := fs.ReadFileString(userPasswordsPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(password).To(Equal("fake-password"))
+		})
+
+		It("writes the passwords to different files for each user", func() {
+			err := platform.SetUserPassword("user-name1", "fake-password1")
+			Expect(err).NotTo(HaveOccurred())
+			err = platform.SetUserPassword("user-name2", "fake-password2")
+			Expect(err).NotTo(HaveOccurred())
+
+			userPasswordsPath := path.Join(dirProvider.BoshDir(), "user-name1", CredentialFileName)
+			password, err := fs.ReadFileString(userPasswordsPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(password).To(Equal("fake-password1"))
+
+			userPasswordsPath = path.Join(dirProvider.BoshDir(), "user-name2", CredentialFileName)
+			password, err = fs.ReadFileString(userPasswordsPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(password).To(Equal("fake-password2"))
+		})
+	})
 }

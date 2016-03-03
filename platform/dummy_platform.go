@@ -27,6 +27,8 @@ type diskMigration struct {
 	ToDiskCid   string
 }
 
+const CredentialFileName = "password"
+
 type dummyPlatform struct {
 	collector          boshstats.Collector
 	fs                 boshsys.FileSystem
@@ -114,7 +116,8 @@ func (p dummyPlatform) SetupSSH(publicKey, username string) (err error) {
 }
 
 func (p dummyPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
-	return
+	credentialsPath := path.Join(p.dirProvider.BoshDir(), user, CredentialFileName)
+	return p.fs.WriteFileString(credentialsPath, encryptedPwd)
 }
 
 func (p dummyPlatform) SetupHostname(hostname string) (err error) {
