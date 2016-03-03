@@ -1460,7 +1460,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 		})
 
-		Context("when the size of the disk is less than 2 Terrabytes", func() {
+		Context("when the size of the disk is less than 2 Terabytes", func() {
 
 			BeforeEach(func() {
 				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
@@ -1521,6 +1521,7 @@ Number  Start   End     Size    File system  Name             Flags
 					It("mounts the store migration directory", func() {
 						err := act()
 						Expect(err).ToNot(HaveOccurred())
+						Expect(fs.GetFileTestStat("/fake-dir/store_migration_target").FileType).To(Equal(fakesys.FakeFileTypeDir))
 						Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
 						Expect(mounter.MountMountPoints).To(Equal([]string{"/fake-dir/store_migration_target"}))
 						Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))

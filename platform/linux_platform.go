@@ -750,11 +750,6 @@ func (p linux) changeTmpDirPermissions(path string) error {
 func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountPoint string) error {
 	p.logger.Debug(logTag, "Mounting persistent disk %+v at %s", diskSetting, mountPoint)
 
-	err := p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Creating directory %s", mountPoint)
-	}
-
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting real device path")
@@ -773,11 +768,16 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 
 	if isMountPoint {
 		if partitionPath == devicePath {
-			p.logger.Info(logTag, "device: %s is already mount to %s, skipping mounting", devicePath, mountPoint)
+			p.logger.Info(logTag, "device: %s is already mounted on %s, skipping mounting", devicePath, mountPoint)
 			return nil
 		}
 
 		mountPoint = p.dirProvider.StoreMigrationDir()
+	}
+
+	err = p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Creating directory %s", mountPoint)
 	}
 
 	if !p.options.UsePreformattedPersistentDisk {
