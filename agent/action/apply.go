@@ -2,6 +2,7 @@ package action
 
 import (
 	"errors"
+	"os"
 	"path"
 
 	boshappl "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -11,11 +12,16 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+const (
+	userBaseDirPermissions      = os.FileMode(0755)
+	userInstanceFilePermissions = os.FileMode(0444)
+)
+
 type ApplyAction struct {
 	applier         boshappl.Applier
 	specService     boshas.V1Service
 	settingsService boshsettings.Service
-	etcDir          string
+	instanceDir     string
 	fs              boshsys.FileSystem
 }
 
@@ -23,13 +29,13 @@ func NewApply(
 	applier boshappl.Applier,
 	specService boshas.V1Service,
 	settingsService boshsettings.Service,
-	etcDir string,
+	instanceDir string,
 	fs boshsys.FileSystem,
 ) (action ApplyAction) {
 	action.applier = applier
 	action.specService = specService
 	action.settingsService = settingsService
-	action.etcDir = etcDir
+	action.instanceDir = instanceDir
 	action.fs = fs
 	return
 }
@@ -76,20 +82,44 @@ func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
 }
 
 func (a ApplyAction) writeInstanceData(spec boshas.V1ApplySpec) error {
-	instanceDir := path.Join(a.etcDir, "instance")
-	err := a.fs.WriteFileString(path.Join(instanceDir, "id"), spec.NodeID)
+	err := a.writeInstanceField("id", spec.NodeID)
 	if err != nil {
 		return err
 	}
-	err = a.fs.WriteFileString(path.Join(instanceDir, "az"), spec.AvailabilityZone)
+	err = a.writeInstanceField("az", spec.AvailabilityZone)
 	if err != nil {
 		return err
 	}
-	err = a.fs.WriteFileString(path.Join(instanceDir, "name"), spec.Name)
+	err = a.writeInstanceField("name", spec.Name)
 	if err != nil {
 		return err
 	}
-	err = a.fs.WriteFileString(path.Join(instanceDir, "deployment"), spec.Deployment)
+	err = a.writeInstanceField("deployment", spec.Deployment)
+	if err != nil {
+		return err
+	}
+
+	err = a.fs.Chmod(a.instanceDir, userBaseDirPermissions)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a ApplyAction) writeInstanceField(filename string, instanceField string) error {
+	instanceFieldFilePath := path.Join(a.instanceDir, filename)
+	err := a.fs.WriteFileString(instanceFieldFilePath, instanceField)
+	if err != nil {
+		return err
+	}
+
+	err = a.fs.Chown(instanceFieldFilePath, boshsettings.VCAPUsername)
+	if err != nil {
+		return err
+	}
+
+	err = a.fs.Chmod(instanceFieldFilePath, userInstanceFilePermissions)
 	if err != nil {
 		return err
 	}

@@ -73,3 +73,7 @@ func (p Provider) TmpDir() string {
 func (p Provider) LogsDir() string {
 	return path.Join(p.DataDir(), "sys", "log")
 }
+
+func (p Provider) InstanceDir() string {
+	return path.Join(p.BaseDir(), "instance")
+}

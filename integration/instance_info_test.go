@@ -6,8 +6,10 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	"github.com/cloudfoundry/bosh-agent/integration"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strings"
 )
 
 var _ = Describe("Instance Info", func() {
@@ -82,17 +84,19 @@ var _ = Describe("Instance Info", func() {
 			err := agentClient.Apply(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
-			verifyFileReadable("/var/vcap/bosh/etc/instance/id", testEnvironment)
-			verifyFileContent("/var/vcap/bosh/etc/instance/id", applySpec.NodeID, testEnvironment)
+			verifyFileReadableAndOwnership("/var/vcap/instance/id", testEnvironment)
+			verifyFileContent("/var/vcap/instance/id", applySpec.NodeID, testEnvironment)
 
-			verifyFileReadable("/var/vcap/bosh/etc/instance/az", testEnvironment)
-			verifyFileContent("/var/vcap/bosh/etc/instance/az", applySpec.AvailabilityZone, testEnvironment)
+			verifyFileReadableAndOwnership("/var/vcap/instance/az", testEnvironment)
+			verifyFileContent("/var/vcap/instance/az", applySpec.AvailabilityZone, testEnvironment)
 
-			verifyFileReadable("/var/vcap/bosh/etc/instance/name", testEnvironment)
-			verifyFileContent("/var/vcap/bosh/etc/instance/name", applySpec.Name, testEnvironment)
+			verifyFileReadableAndOwnership("/var/vcap/instance/name", testEnvironment)
+			verifyFileContent("/var/vcap/instance/name", applySpec.Name, testEnvironment)
 
-			verifyFileReadable("/var/vcap/bosh/etc/instance/deployment", testEnvironment)
-			verifyFileContent("/var/vcap/bosh/etc/instance/deployment", applySpec.Deployment, testEnvironment)
+			verifyFileReadableAndOwnership("/var/vcap/instance/deployment", testEnvironment)
+			verifyFileContent("/var/vcap/instance/deployment", applySpec.Deployment, testEnvironment)
+
+			verifyDirectoryExecutable("/var/vcap/instance", testEnvironment)
 		})
 	})
 })
@@ -103,10 +107,23 @@ func verifyFileContent(filePath string, expectedContent string, testEnvironment 
 	Expect(deployment).To(Equal(expectedContent))
 }
 
-func verifyFileReadable(filePath string, testEnvironment *integration.TestEnvironment) {
+func verifyFileReadableAndOwnership(filePath string, testEnvironment *integration.TestEnvironment) {
 	fileListing, err := testEnvironment.RunCommand("ls -l " + filePath)
 	Expect(err).NotTo(HaveOccurred())
+
+	fileListingTokens := strings.Fields(fileListing)
+	Expect(fileListingTokens[2]).To(Equal(boshsettings.VCAPUsername))
+
 	Expect(fileListing[1]).To(Equal(uint8('r')))
 	Expect(fileListing[4]).To(Equal(uint8('r')))
 	Expect(fileListing[7]).To(Equal(uint8('r')))
+}
+
+func verifyDirectoryExecutable(filePath string, testEnvironment *integration.TestEnvironment) {
+	fileListing, err := testEnvironment.RunCommand("ls -l -d " + filePath)
+	Expect(err).NotTo(HaveOccurred())
+
+	Expect(fileListing[3]).To(Equal(uint8('x')))
+	Expect(fileListing[6]).To(Equal(uint8('x')))
+	Expect(fileListing[9]).To(Equal(uint8('x')))
 }

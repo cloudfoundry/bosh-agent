@@ -25,17 +25,17 @@ func init() {
 			specService     *fakeas.FakeV1Service
 			settingsService *fakesettings.FakeSettingsService
 			dirProvider     boshdir.Provider
-			fs              boshsys.FileSystem
 			action          ApplyAction
+			fs              boshsys.FileSystem
 		)
 
 		BeforeEach(func() {
 			applier = fakeappl.NewFakeApplier()
 			specService = fakeas.NewFakeV1Service()
 			settingsService = &fakesettings.FakeSettingsService{}
-			dirProvider = boshdir.NewProvider("/var/vcap/bosh")
+			dirProvider = boshdir.NewProvider("/var/vcap")
 			fs = fakesys.NewFakeFileSystem()
-			action = NewApply(applier, specService, settingsService, dirProvider.EtcDir(), fs)
+			action = NewApply(applier, specService, settingsService, dirProvider.InstanceDir(), fs)
 		})
 
 		It("apply should be asynchronous", func() {
@@ -107,7 +107,7 @@ func init() {
 										Expect(err).ToNot(HaveOccurred())
 										Expect(value).To(Equal("applied"))
 
-										instanceDir := path.Join(dirProvider.EtcDir(), "instance")
+										instanceDir := dirProvider.InstanceDir()
 
 										id, err := fs.ReadFileString(path.Join(instanceDir, "id"))
 										Expect(err).ToNot(HaveOccurred())
