@@ -6,10 +6,8 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	"github.com/cloudfoundry/bosh-agent/integration"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strings"
 )
 
 var _ = Describe("Instance Info", func() {
@@ -84,16 +82,16 @@ var _ = Describe("Instance Info", func() {
 			err := agentClient.Apply(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
-			verifyFileReadableAndOwnership("/var/vcap/instance/id", testEnvironment)
+			verifyFilePermissions("/var/vcap/instance/id", testEnvironment)
 			verifyFileContent("/var/vcap/instance/id", applySpec.NodeID, testEnvironment)
 
-			verifyFileReadableAndOwnership("/var/vcap/instance/az", testEnvironment)
+			verifyFilePermissions("/var/vcap/instance/az", testEnvironment)
 			verifyFileContent("/var/vcap/instance/az", applySpec.AvailabilityZone, testEnvironment)
 
-			verifyFileReadableAndOwnership("/var/vcap/instance/name", testEnvironment)
+			verifyFilePermissions("/var/vcap/instance/name", testEnvironment)
 			verifyFileContent("/var/vcap/instance/name", applySpec.Name, testEnvironment)
 
-			verifyFileReadableAndOwnership("/var/vcap/instance/deployment", testEnvironment)
+			verifyFilePermissions("/var/vcap/instance/deployment", testEnvironment)
 			verifyFileContent("/var/vcap/instance/deployment", applySpec.Deployment, testEnvironment)
 
 			verifyDirectoryExecutable("/var/vcap/instance", testEnvironment)
@@ -107,14 +105,12 @@ func verifyFileContent(filePath string, expectedContent string, testEnvironment 
 	Expect(deployment).To(Equal(expectedContent))
 }
 
-func verifyFileReadableAndOwnership(filePath string, testEnvironment *integration.TestEnvironment) {
+func verifyFilePermissions(filePath string, testEnvironment *integration.TestEnvironment) {
 	fileListing, err := testEnvironment.RunCommand("ls -l " + filePath)
 	Expect(err).NotTo(HaveOccurred())
 
-	fileListingTokens := strings.Fields(fileListing)
-	Expect(fileListingTokens[2]).To(Equal(boshsettings.VCAPUsername))
-
 	Expect(fileListing[1]).To(Equal(uint8('r')))
+	Expect(fileListing[2]).To(Equal(uint8('w')))
 	Expect(fileListing[4]).To(Equal(uint8('r')))
 	Expect(fileListing[7]).To(Equal(uint8('r')))
 }

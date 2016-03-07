@@ -14,7 +14,7 @@ import (
 
 const (
 	userBaseDirPermissions      = os.FileMode(0755)
-	userInstanceFilePermissions = os.FileMode(0444)
+	userInstanceFilePermissions = os.FileMode(0644)
 )
 
 type ApplyAction struct {
@@ -110,11 +110,6 @@ func (a ApplyAction) writeInstanceData(spec boshas.V1ApplySpec) error {
 func (a ApplyAction) writeInstanceField(filename string, instanceField string) error {
 	instanceFieldFilePath := path.Join(a.instanceDir, filename)
 	err := a.fs.WriteFileString(instanceFieldFilePath, instanceField)
-	if err != nil {
-		return err
-	}
-
-	err = a.fs.Chown(instanceFieldFilePath, boshsettings.VCAPUsername)
 	if err != nil {
 		return err
 	}
