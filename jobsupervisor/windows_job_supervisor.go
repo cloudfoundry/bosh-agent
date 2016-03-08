@@ -43,6 +43,9 @@ const (
 	stopJobScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Stop-Service $_.Name }
 `
+	listAllJobsScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name }
+`
 	deleteAllJobsScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
 `
@@ -52,6 +55,10 @@ const (
 	unmonitorJobScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Disabled" }
 `
+	autoStartJobScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Automatic" }
+`
+
 	waitForDeleteAllScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'").Length
 `
@@ -153,7 +160,11 @@ func (s *windowsJobSupervisor) Reload() error {
 func (s *windowsJobSupervisor) Start() error {
 	s.monitor.Start()
 
-	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", startJobScript)
+	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", autoStartJobScript)
+	if err != nil {
+		return bosherr.WrapError(err, "Starting windows job process")
+	}
+	_, _, _, err = s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", startJobScript)
 	if err != nil {
 		return bosherr.WrapError(err, "Starting windows job process")
 	}
@@ -169,16 +180,17 @@ func (s *windowsJobSupervisor) Start() error {
 func (s *windowsJobSupervisor) Stop() error {
 	s.monitor.Stop()
 
-	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", stopJobScript)
+	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", unmonitorJobScript)
+	if err != nil {
+		return bosherr.WrapError(err, "Disabling services")
+	}
+	_, _, _, err = s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", stopJobScript)
 	if err != nil {
 		return bosherr.WrapError(err, "Stopping services")
 	}
-
-	err = s.fs.WriteFileString(s.stoppedFilePath(), "")
-	if err != nil {
-		return bosherr.WrapError(err, "Creating stopped file")
+	if err := s.fs.WriteFileString(s.stoppedFilePath(), ""); err != nil {
+		return bosherr.WrapError(err, "Removing stop services")
 	}
-
 	return nil
 }
 
