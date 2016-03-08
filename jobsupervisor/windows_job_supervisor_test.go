@@ -1,3 +1,5 @@
+// +build windows
+
 package jobsupervisor_test
 
 import (
@@ -52,7 +54,7 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 	return conf, ok
 }
 
-var _ = FDescribe("WindowsJobSupervisor", func() {
+var _ = Describe("WindowsJobSupervisor", func() {
 	Context("add jobs and control services", func() {
 		BeforeEach(func() {
 			if runtime.GOOS != "windows" {
