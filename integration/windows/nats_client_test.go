@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"text/template"
 	"time"
 
@@ -225,8 +226,8 @@ func (n *NatsClient) PrepareJob(jobName string) {
 	prepareResponse, err := n.SendMessage(buffer.String())
 	Expect(err).NotTo(HaveOccurred())
 
-	check := n.checkStatus(prepareResponse["value"]["agent_task_id"])
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("finished"))
+	_, err = n.WaitForTask(prepareResponse["value"]["agent_task_id"], -1)
+	Expect(err).ToNot(HaveOccurred())
 
 	buffer.Reset()
 	t = template.Must(template.New("apply").Parse(applyTemplate))
@@ -235,8 +236,8 @@ func (n *NatsClient) PrepareJob(jobName string) {
 	applyResponse, err := n.SendMessage(buffer.String())
 	Expect(err).NotTo(HaveOccurred())
 
-	check = n.checkStatus(applyResponse["value"]["agent_task_id"])
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("finished"))
+	_, err = n.WaitForTask(applyResponse["value"]["agent_task_id"], -1)
+	Expect(err).ToNot(HaveOccurred())
 }
 
 type CompileTemplate struct {
@@ -323,7 +324,7 @@ func (n *NatsClient) WaitForTask(id string, timeout time.Duration) (*http.TaskRe
 	const finished = "finished" // TaskResponse final state
 	start := time.Now()
 	for time.Since(start) < timeout {
-		response, err := n.TaskStatus(id)
+		response, err := n.GetTask(id)
 		if err != nil {
 			return nil, err
 		}
@@ -334,11 +335,12 @@ func (n *NatsClient) WaitForTask(id string, timeout time.Duration) (*http.TaskRe
 		if state == finished {
 			return response, nil
 		}
+		time.Sleep(50 * time.Millisecond)
 	}
 	return nil, fmt.Errorf("WaitForTask: timed out after: %s", timeout)
 }
 
-func (n *NatsClient) TaskStatus(id string) (*http.TaskResponse, error) {
+func (n *NatsClient) GetTask(id string) (*http.TaskResponse, error) {
 	var b []byte
 	const msgFmt = `{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`
 	b, err := n.SendRawMessage(fmt.Sprintf(msgFmt, id, senderID))
@@ -361,44 +363,6 @@ func (n *NatsClient) getTask(taskID string) ([]byte, error) {
 	return n.SendRawMessage(message)
 }
 
-func (n *NatsClient) checkStatus(taskID string) func() (string, error) {
-	return func() (string, error) {
-		var result http.TaskResponse
-		valueResponse, err := n.getTask(taskID)
-		if err != nil {
-			return "", err
-		}
-
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return "", err
-		}
-
-		if err = result.ServerError(); err != nil {
-			return "", err
-		}
-
-		return result.TaskState()
-	}
-}
-
-func (n *NatsClient) checkDrain(taskID string) func() (int, error) {
-	return func() (int, error) {
-		var result map[string]int
-		valueResponse, err := n.getTask(taskID)
-		if err != nil {
-			return -1, err
-		}
-
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return -1, err
-		}
-
-		return result["value"], nil
-	}
-}
-
 func (n *NatsClient) RunDrain() error {
 	message := fmt.Sprintf(drainTemplate, senderID)
 	drainResponse, err := n.SendMessage(message)
@@ -406,8 +370,12 @@ func (n *NatsClient) RunDrain() error {
 		return err
 	}
 
-	check := n.checkDrain(drainResponse["value"]["agent_task_id"])
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal(0))
+	taskResponse, err := n.WaitForTask(drainResponse["value"]["agent_task_id"], time.Second*30)
+	magicNumber, ok := taskResponse.Value.(float64)
+	if !ok {
+		return fmt.Errorf("RunDrain got invalid taskResponse %s", reflect.TypeOf(taskResponse.Value))
+	}
+	Expect(int(magicNumber)).To(Equal(0))
 
 	return nil
 }
@@ -419,25 +387,9 @@ func (n *NatsClient) RunScript(scriptName string) error {
 		return err
 	}
 
-	check := func() (map[string]string, error) {
-		var result map[string]map[string]string
-		valueResponse, err := n.getTask(response["value"]["agent_task_id"])
-		if err != nil {
-			return nil, err
-		}
+	_, err = n.WaitForTask(response["value"]["agent_task_id"], 30*time.Second)
 
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return nil, err
-		}
-
-		return result["value"], nil
-	}
-
-	// run_script commands just return {} when they're done
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal(map[string]string{}))
-
-	return nil
+	return err
 }
 
 func (n *NatsClient) RunStart() (map[string]string, error) {
@@ -478,10 +430,8 @@ func (n *NatsClient) RunStop() error {
 		return err
 	}
 
-	check := n.checkStatus(response["value"]["agent_task_id"])
-	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("finished"))
-
-	return nil
+	_, err = n.WaitForTask(response["value"]["agent_task_id"], -1)
+	return err
 }
 
 func (n *NatsClient) RunErrand() (map[string]map[string]string, error) {
