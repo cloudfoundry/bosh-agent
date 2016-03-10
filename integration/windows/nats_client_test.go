@@ -8,6 +8,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/cloudfoundry/bosh-agent/agentclient"
+
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
@@ -144,6 +146,19 @@ const (
 	`
 )
 
+type NatCommand struct {
+	Protocol  int           `json:"protocol"`
+	Method    string        `json:"method"`
+	Arguments []interface{} `json:"arguments"`
+	ReplyTo   string        `json:"reply_to"`
+}
+
+func (n NatCommand) Marshal() (string, error) {
+	n.Protocol = 2
+	b, err := json.Marshal(n)
+	return string(b), err
+}
+
 type NatsClient struct {
 	nc       *nats.Conn
 	sub      *nats.Subscription
@@ -165,6 +180,7 @@ func NewNatsClient(
 		renderedTemplatesArchivesSha1: map[string]string{
 			"say-hello":       "8d62be87451e2ac3b5b3e736d210176274c95ec9",
 			"unmonitor-hello": "4ff9960a1d594743c498141cdbd611b93262e78c",
+			"simple-package":  "902d0e7690d45738681f9d0c1ecee19e40dec507",
 		},
 	}
 }
@@ -221,6 +237,166 @@ func (n *NatsClient) PrepareJob(jobName string) {
 
 	check = n.checkStatus(applyResponse["value"]["agent_task_id"])
 	Eventually(check, 30*time.Second, 1*time.Second).Should(Equal("finished"))
+}
+
+type CompileTemplate struct {
+	BlobstoreID  string
+	SHA1         string
+	Name         string
+	Version      string
+	Dependencies map[string]agentclient.BlobRef
+}
+
+func (c CompileTemplate) Arguments() []interface{} {
+	return []interface{}{
+		c.BlobstoreID,
+		c.SHA1,
+		c.Name,
+		c.Version,
+		c.Dependencies,
+	}
+}
+
+func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, error) {
+	blobID, err := n.uploadPackage(packageName)
+	if err != nil {
+		return nil, err
+	}
+
+	template := CompileTemplate{
+		BlobstoreID:  blobID,
+		SHA1:         "902d0e7690d45738681f9d0c1ecee19e40dec507",
+		Name:         packageName,
+		Version:      "1.2.3",
+		Dependencies: nil,
+	}
+
+	command := NatCommand{
+		Method:    "compile_package",
+		ReplyTo:   senderID,
+		Arguments: template.Arguments(),
+	}
+	msg, err := command.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	pkgResponse, err := n.SendMessage(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	taskId := pkgResponse["value"]["agent_task_id"]
+	response, err := n.WaitForTask(taskId, -1)
+	if err != nil {
+		return nil, err
+	}
+
+	value, ok := response.Value.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(`CompilePackage invalid response value: %#v`, value)
+	}
+	result, ok := value["result"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(`CompilePackage invalid 'result' field: %#v`, value)
+	}
+	blobstoreID, ok := result["blobstore_id"].(string)
+	if !ok {
+		return nil, fmt.Errorf(`CompilePackage missing 'blobstore_id' field: %#v`, result)
+	}
+	sha1, ok := result["sha1"].(string)
+	if !ok {
+		return nil, fmt.Errorf(`CompilePackage missing 'sha1' field: %#v`, result)
+	}
+	compiledPackageRef := agentclient.BlobRef{
+		Name:        template.Name,
+		Version:     template.Version,
+		SHA1:        sha1,
+		BlobstoreID: blobstoreID,
+	}
+	return &compiledPackageRef, nil
+}
+
+func (n *NatsClient) WaitForTask(id string, timeout time.Duration) (*http.TaskResponse, error) {
+	if timeout <= 0 {
+		timeout = time.Second * 5
+	}
+	const finished = "finished" // TaskResponse final state
+	start := time.Now()
+	for time.Since(start) < timeout {
+		response, err := n.TaskStatus(id)
+		if err != nil {
+			return nil, err
+		}
+		state, err := response.TaskState()
+		if err != nil {
+			return nil, err
+		}
+		if state == finished {
+			return response, nil
+		}
+	}
+	return nil, fmt.Errorf("WaitForTask: timed out after: %s", timeout)
+}
+
+func (n *NatsClient) TaskStatus(id string) (*http.TaskResponse, error) {
+	var b []byte
+	const msgFmt = `{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`
+	b, err := n.SendRawMessage(fmt.Sprintf(msgFmt, id, senderID))
+	if err != nil {
+		return nil, err
+	}
+
+	var result http.TaskResponse
+	if err := json.Unmarshal(b, &result); err != nil {
+		return nil, err
+	}
+	if err := result.ServerError(); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+func (n *NatsClient) getTask(taskID string) ([]byte, error) {
+	message := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, taskID, senderID)
+	return n.SendRawMessage(message)
+}
+
+func (n *NatsClient) checkStatus(taskID string) func() (string, error) {
+	return func() (string, error) {
+		var result http.TaskResponse
+		valueResponse, err := n.getTask(taskID)
+		if err != nil {
+			return "", err
+		}
+
+		err = json.Unmarshal(valueResponse, &result)
+		if err != nil {
+			return "", err
+		}
+
+		if err = result.ServerError(); err != nil {
+			return "", err
+		}
+
+		return result.TaskState()
+	}
+}
+
+func (n *NatsClient) checkDrain(taskID string) func() (int, error) {
+	return func() (int, error) {
+		var result map[string]int
+		valueResponse, err := n.getTask(taskID)
+		if err != nil {
+			return -1, err
+		}
+
+		err = json.Unmarshal(valueResponse, &result)
+		if err != nil {
+			return -1, err
+		}
+
+		return result["value"], nil
+	}
 }
 
 func (n *NatsClient) RunDrain() error {
@@ -403,49 +579,6 @@ func (n *NatsClient) GetNextAlert(timeout time.Duration) (*boshalert.Alert, erro
 	return &alert, err
 }
 
-func (n *NatsClient) getTask(taskID string) ([]byte, error) {
-	message := fmt.Sprintf(`{"method": "get_task", "arguments": ["%s"], "reply_to": "%s"}`, taskID, senderID)
-	return n.SendRawMessage(message)
-}
-
-func (n *NatsClient) checkStatus(taskID string) func() (string, error) {
-	return func() (string, error) {
-		var result http.TaskResponse
-		valueResponse, err := n.getTask(taskID)
-		if err != nil {
-			return "", err
-		}
-
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return "", err
-		}
-
-		if err = result.ServerError(); err != nil {
-			return "", err
-		}
-
-		return result.TaskState()
-	}
-}
-
-func (n *NatsClient) checkDrain(taskID string) func() (int, error) {
-	return func() (int, error) {
-		var result map[string]int
-		valueResponse, err := n.getTask(taskID)
-		if err != nil {
-			return -1, err
-		}
-
-		err = json.Unmarshal(valueResponse, &result)
-		if err != nil {
-			return -1, err
-		}
-
-		return result["value"], nil
-	}
-}
-
 func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateArchiveID string, err error) {
 	renderedTemplateArchiveID, err = n.blobstoreClient.Create(fmt.Sprintf("fixtures/rendered_templates_archives/%s.tar", jobName))
 	if err != nil {
@@ -456,4 +589,8 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateArch
 		return
 	}
 	return
+}
+
+func (n *NatsClient) uploadPackage(packageName string) (blobID string, err error) {
+	return n.blobstoreClient.Create(fmt.Sprintf("fixtures/rendered_templates_archives/%s.tar", packageName))
 }

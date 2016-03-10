@@ -3,7 +3,9 @@ package windows_test
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -44,21 +46,22 @@ func blobstoreURI() string {
 
 var _ = Describe("An Agent running on Windows", func() {
 	var (
-		fs         boshsys.FileSystem
-		natsClient *NatsClient
+		fs              boshsys.FileSystem
+		natsClient      *NatsClient
+		blobstoreClient utils.BlobClient
 	)
 
 	BeforeEach(func() {
 		message := fmt.Sprintf(`{"method":"ping","arguments":[],"reply_to":"%s"}`, senderID)
 
-		blobstore := utils.NewBlobstore(blobstoreURI())
+		blobstoreClient = utils.NewBlobstore(blobstoreURI())
 
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		fs = boshsys.NewOsFileSystem(logger)
 		compressor := boshfileutil.NewTarballCompressor(cmdRunner, fs)
 
-		natsClient = NewNatsClient(compressor, blobstore)
+		natsClient = NewNatsClient(compressor, blobstoreClient)
 		err := natsClient.Setup()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -206,5 +209,32 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(prestartStderrContents).To(ContainSubstring("Hello from stderr"))
+	})
+
+	It("can compile packages", func() {
+		const (
+			blobName     = "blob.tar"
+			fileName     = "output.txt"
+			fileContents = "i'm a compiled package!"
+		)
+		result, err := natsClient.CompilePackage("simple-package")
+		Expect(err).NotTo(HaveOccurred())
+
+		tempDir, err := fs.TempDir("windows-agent-compile-test")
+		Expect(err).NotTo(HaveOccurred())
+
+		path := filepath.Join(tempDir, blobName)
+		Expect(blobstoreClient.Get(result.BlobstoreID, path)).To(Succeed())
+
+		tarPath, err := ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.Remove(tarPath)
+
+		err = exec.Command("tar", "xf", path, "-C", tarPath).Run()
+		Expect(err).NotTo(HaveOccurred())
+
+		out, err := ioutil.ReadFile(filepath.Join(tarPath, fileName))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(out)).To(ContainSubstring(fileContents))
 	})
 })
