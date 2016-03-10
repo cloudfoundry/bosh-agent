@@ -241,7 +241,7 @@ func init() {
 
 					if runtime.GOOS == "windows" {
 						expectedCmd.Name = "powershell"
-						expectedCmd.Args = []string{PackagingScriptName}
+						expectedCmd.Args = []string{"-NoProfile", "-NonInteractive", `.\` + PackagingScriptName}
 					} else {
 						expectedCmd.Name = "bash"
 						expectedCmd.Args = []string{"-x", PackagingScriptName}
