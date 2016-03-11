@@ -3,9 +3,11 @@
 package jobsupervisor_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -14,6 +16,7 @@ import (
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 
+	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -23,6 +26,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+const jobFailuresServerPort = 5000
 
 func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 	m := map[string]WindowsProcessConfig{
@@ -72,12 +77,17 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			processConfigPath string
 			jobSupervisor     JobSupervisor
 			runner            boshsys.CmdRunner
+			logOut            *bytes.Buffer
+			logErr            *bytes.Buffer
 		)
 
 		BeforeEach(func() {
 			const testExtPath = "testdata/job-service-wrapper"
 
-			logger = boshlog.NewLogger(boshlog.LevelNone)
+			logOut = bytes.NewBufferString("")
+			logErr = bytes.NewBufferString("")
+
+			logger = boshlog.NewWriterLogger(boshlog.LevelDebug, logOut, logErr)
 			fs = boshsys.NewOsFileSystem(logger)
 
 			var err error
@@ -102,7 +112,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		WriteJobConfig := func(configContents WindowsProcessConfig) (string, error) {
 			dirProvider := boshdirs.NewProvider(basePath)
 			runner = boshsys.NewExecCmdRunner(logger)
-			jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger)
+			jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort)
 			if err := jobSupervisor.RemoveAllJobs(); err != nil {
 				return "", err
 			}
@@ -355,6 +365,65 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					return StateString(st), err
 				}, time.Second*6, time.Millisecond*10).Should(Equal(StateString(svc.Stopped)))
 
+			})
+		})
+
+		Describe("MonitorJobFailures", func() {
+			BeforeEach(func() {
+				dirProvider := boshdirs.NewProvider(basePath)
+				runner = boshsys.NewExecCmdRunner(logger)
+				jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort)
+			})
+
+			doJobFailureRequest := func(payload string, port int) error {
+				url := fmt.Sprintf("http://localhost:%d", port)
+				buf := bytes.NewBufferString(payload)
+				_, err := http.Post(url, "application/json", buf)
+				return err
+			}
+
+			It("receives job failures from the service wrapper via HTTP", func() {
+				var handledAlert boshalert.MonitAlert
+
+				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+					handledAlert = alert
+					return
+				}
+
+				go jobSupervisor.MonitorJobFailures(failureHandler)
+
+				msg := `{"datetime":"Sun, 22 May 2011 20:07:41 +0500",
+								 "event": "pid failed",
+								 "processName": "nats",
+								 "exitCode":55}`
+
+				err := doJobFailureRequest(msg, jobFailuresServerPort)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(handledAlert).To(Equal(boshalert.MonitAlert{
+					ID:          "nats",
+					Service:     "nats",
+					Event:       "pid failed",
+					Action:      "Start",
+					Date:        "Sun, 22 May 2011 20:07:41 +0500",
+					Description: "exited with code 55",
+				}))
+			})
+
+			It("ignores unknown requests", func() {
+				var didHandleAlert bool
+
+				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+					didHandleAlert = true
+					return
+				}
+
+				go jobSupervisor.MonitorJobFailures(failureHandler)
+
+				err := doJobFailureRequest(`some bad request`, jobFailuresServerPort)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(didHandleAlert).To(BeFalse())
+				Expect(logErr.Bytes()).To(ContainSubstring("MonitorJobFailures received unknown request"))
 			})
 		})
 	})

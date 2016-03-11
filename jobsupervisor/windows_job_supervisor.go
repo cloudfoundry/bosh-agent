@@ -1,12 +1,11 @@
 package jobsupervisor
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -126,13 +125,14 @@ type WindowsProcessConfig struct {
 }
 
 type windowsJobSupervisor struct {
-	cmdRunner   boshsys.CmdRunner
-	dirProvider boshdirs.Provider
-	fs          boshsys.FileSystem
-	logger      boshlog.Logger
-	logTag      string
-	msgCh       chan *windowsServiceEvent
-	monitor     *state.Monitor
+	cmdRunner             boshsys.CmdRunner
+	dirProvider           boshdirs.Provider
+	fs                    boshsys.FileSystem
+	logger                boshlog.Logger
+	logTag                string
+	msgCh                 chan *windowsServiceEvent
+	monitor               *state.Monitor
+	jobFailuresServerPort int
 }
 
 func NewWindowsJobSupervisor(
@@ -140,16 +140,18 @@ func NewWindowsJobSupervisor(
 	dirProvider boshdirs.Provider,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
+	jobFailuresServerPort int,
 ) JobSupervisor {
 	monitor, _ := state.New()
 	return &windowsJobSupervisor{
-		cmdRunner:   cmdRunner,
-		dirProvider: dirProvider,
-		fs:          fs,
-		logger:      logger,
-		logTag:      "windowsJobSupervisor",
-		msgCh:       make(chan *windowsServiceEvent, 8),
-		monitor:     monitor,
+		cmdRunner:             cmdRunner,
+		dirProvider:           dirProvider,
+		fs:                    fs,
+		logger:                logger,
+		logTag:                "windowsJobSupervisor",
+		msgCh:                 make(chan *windowsServiceEvent, 8),
+		monitor:               monitor,
+		jobFailuresServerPort: jobFailuresServerPort,
 	}
 }
 
@@ -272,17 +274,6 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 			return bosherr.WrapErrorf(err, "Creating job directory for service '%s' at '%s'", process.Name, processDir)
 		}
 
-		// The winsw service wrapper writes a JSON event file at the specified
-		// location on failure.
-		eventLogFile := filepath.Join(logPath, serviceWrapperEventJSONFileName)
-		err = s.fs.WriteFile(eventLogFile, []byte{})
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Creating JSON log directory for service '%s' at '%s'", process.Name, eventLogFile)
-		}
-		if err := s.monitorJob(eventLogFile); err != nil {
-			return bosherr.WrapErrorf(err, "Monitoring job for service '%s'", process.Name)
-		}
-
 		serviceWrapperConfigFile := filepath.Join(processDir, serviceWrapperConfigFileName)
 		err = s.fs.WriteFile(serviceWrapperConfigFile, buf.Bytes())
 		if err != nil {
@@ -369,53 +360,33 @@ type windowsServiceEvent struct {
 	ExitCode    int    `json:"exitCode"`
 }
 
-func (s *windowsJobSupervisor) monitorJob(logFile string) error {
-	f, err := s.fs.OpenFile(logFile, os.O_RDONLY, 0)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Opening service wrapper JSON event log: %s", logFile)
-	}
-	go func() {
-		defer f.Close()
-		var buf bytes.Buffer
-		r := bufio.NewReader(f)
-		p := s.monitor.NewProcess()
-		for {
-			p.Wait()
-			b, err := r.ReadBytes('\n')
-			switch err {
-			case nil:
-				if buf.Len() != 0 {
-					b = append(buf.Bytes(), b...)
-					buf.Reset()
-				}
-				var m windowsServiceEvent
-				if err := json.Unmarshal(b, &m); err != nil {
-					s.logger.Debug(s.logTag, "Unmarshaling service event JSON: %s", err)
-				} else {
-					s.msgCh <- &m
-				}
-			case io.EOF:
-				buf.Write(b)
-				time.Sleep(time.Millisecond * 100)
-			default:
-				s.logger.Debug(s.logTag, "Unhandled error reading service event log file (%s): %s", logFile, err)
-			}
-		}
-	}()
-	return nil
-}
-
 func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
-	for m := range s.msgCh {
+	hl := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		var event windowsServiceEvent
+		err := decoder.Decode(&event)
+		if err != nil {
+			s.logger.Error(s.logTag, "MonitorJobFailures received unknown request: %s", err)
+			return
+		}
 		handler(boshalert.MonitAlert{
 			Action:      "Start",
-			Date:        m.Datetime,
-			Event:       "pid failed",
-			ID:          m.ProcessName,
-			Service:     m.ProcessName,
-			Description: fmt.Sprintf("exited with code %d", m.ExitCode),
+			Date:        event.Datetime,
+			Event:       event.Event,
+			ID:          event.ProcessName,
+			Service:     event.ProcessName,
+			Description: fmt.Sprintf("exited with code %d", event.ExitCode),
 		})
+	})
+	server := http.Server{
+		Addr:    fmt.Sprintf(":%d", s.jobFailuresServerPort),
+		Handler: &hl,
 	}
+	err := server.ListenAndServe()
+	if err != nil {
+		return bosherr.WrapError(err, "Listen for HTTP")
+	}
+
 	return nil
 }
 

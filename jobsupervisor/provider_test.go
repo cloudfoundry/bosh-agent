@@ -95,6 +95,7 @@ func init() {
 				dirProvider,
 				platform.Fs,
 				logger,
+				jobFailuresServerPort,
 			)
 			Expect(reflect.TypeOf(actualSupervisor)).To(Equal(reflect.TypeOf(expectedSupervisor)))
 		})

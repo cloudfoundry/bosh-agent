@@ -11,6 +11,8 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
+const jobSupervisorListenPort = 2825
+
 type Provider struct {
 	supervisors map[string]JobSupervisor
 }
@@ -30,7 +32,7 @@ func NewProvider(
 		client,
 		logger,
 		dirProvider,
-		2825,
+		jobSupervisorListenPort,
 		MonitReloadOptions{
 			MaxTries:               3,
 			MaxCheckTries:          6,
@@ -42,7 +44,7 @@ func NewProvider(
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
-		"windows":    NewWindowsJobSupervisor(runner, dirProvider, fs, logger),
+		"windows":    NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobSupervisorListenPort),
 	}
 
 	return
