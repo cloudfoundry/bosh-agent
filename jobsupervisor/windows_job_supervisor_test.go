@@ -112,7 +112,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		WriteJobConfig := func(configContents WindowsProcessConfig) (string, error) {
 			dirProvider := boshdirs.NewProvider(basePath)
 			runner = boshsys.NewExecCmdRunner(logger)
-			jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort)
+			jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort, make(chan bool))
 			if err := jobSupervisor.RemoveAllJobs(); err != nil {
 				return "", err
 			}
@@ -369,10 +369,16 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		})
 
 		Describe("MonitorJobFailures", func() {
+			var cancelServer chan bool
 			BeforeEach(func() {
 				dirProvider := boshdirs.NewProvider(basePath)
 				runner = boshsys.NewExecCmdRunner(logger)
-				jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort)
+				cancelServer = make(chan bool)
+				jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort, cancelServer)
+			})
+
+			AfterEach(func() {
+				cancelServer <- true
 			})
 
 			doJobFailureRequest := func(payload string, port int) error {
@@ -424,6 +430,15 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(didHandleAlert).To(BeFalse())
 				Expect(logErr.Bytes()).To(ContainSubstring("MonitorJobFailures received unknown request"))
+			})
+
+			It("returns an error when it fails to bind", func() {
+				failureHandler := func(alert boshalert.MonitAlert) (err error) { return }
+
+				go jobSupervisor.MonitorJobFailures(failureHandler)
+				time.Sleep(50 * time.Millisecond)
+				err := jobSupervisor.MonitorJobFailures(failureHandler)
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})

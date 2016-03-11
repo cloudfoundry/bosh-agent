@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-utils/state"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/http_server"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -133,6 +135,7 @@ type windowsJobSupervisor struct {
 	msgCh                 chan *windowsServiceEvent
 	monitor               *state.Monitor
 	jobFailuresServerPort int
+	cancelServer          chan bool
 }
 
 func NewWindowsJobSupervisor(
@@ -141,6 +144,7 @@ func NewWindowsJobSupervisor(
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 	jobFailuresServerPort int,
+	cancelChan chan bool,
 ) JobSupervisor {
 	monitor, _ := state.New()
 	return &windowsJobSupervisor{
@@ -152,6 +156,7 @@ func NewWindowsJobSupervisor(
 		msgCh:                 make(chan *windowsServiceEvent, 8),
 		monitor:               monitor,
 		jobFailuresServerPort: jobFailuresServerPort,
+		cancelServer:          cancelChan,
 	}
 }
 
@@ -378,16 +383,19 @@ func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) err
 			Description: fmt.Sprintf("exited with code %d", event.ExitCode),
 		})
 	})
-	server := http.Server{
-		Addr:    fmt.Sprintf(":%d", s.jobFailuresServerPort),
-		Handler: &hl,
+	server := http_server.New(fmt.Sprintf("localhost:%d", s.jobFailuresServerPort), hl)
+	process := ifrit.Invoke(server)
+	for {
+		select {
+		case <-s.cancelServer:
+			process.Signal(os.Kill)
+		case err := <-process.Wait():
+			if err != nil {
+				return bosherr.WrapError(err, "Listen for HTTP")
+			}
+			return nil
+		}
 	}
-	err := server.ListenAndServe()
-	if err != nil {
-		return bosherr.WrapError(err, "Listen for HTTP")
-	}
-
-	return nil
 }
 
 func (s *windowsJobSupervisor) stoppedFilePath() string {

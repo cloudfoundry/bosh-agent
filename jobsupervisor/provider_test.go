@@ -96,6 +96,7 @@ func init() {
 				platform.Fs,
 				logger,
 				jobFailuresServerPort,
+				make(chan bool),
 			)
 			Expect(reflect.TypeOf(actualSupervisor)).To(Equal(reflect.TypeOf(expectedSupervisor)))
 		})
