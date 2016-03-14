@@ -1,3 +1,5 @@
+// +build windows
+
 package jobsupervisor
 
 import (
@@ -15,6 +17,8 @@ import (
 	"github.com/cloudfoundry/bosh-utils/state"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
+	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/mgr"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -234,8 +238,107 @@ func (s *windowsJobSupervisor) Status() (status string) {
 	return "running"
 }
 
+/*
+func (m monitJobSupervisor) Processes() (processes []Process, err error) {
+	processes = []Process{}
+
+	monitStatus, err := m.client.Status()
+	if err != nil {
+		return processes, bosherr.WrapError(err, "Getting service status")
+	}
+
+	for _, service := range monitStatus.ServicesInGroup("vcap") {
+		process := Process{
+			Name:  service.Name,
+			State: service.Status,
+			Uptime: UptimeVitals{
+				Secs: service.Uptime,
+			},
+			Memory: MemoryVitals{
+				Kb:      service.MemoryKilobytesTotal,
+				Percent: service.MemoryPercentTotal,
+			},
+			CPU: CPUVitals{
+				Total: service.CPUPercentTotal,
+			},
+		}
+		processes = append(processes, process)
+	}
+
+	return
+}
+*/
+
+/*
+m, err := mgr.Connect()
+			if err != nil {
+				return 0, err
+			}
+			defer m.Disconnect()
+			s, err := m.OpenService(serviceName)
+			if err != nil {
+				return 0, err
+			}
+			defer s.Close()
+			st, err := s.Query()
+			if err != nil {
+				return 0, err
+			}
+			return st.State, nil
+*/
+
+// var windowsService
+
+var windowsSvcStateMap = map[svc.State]string{
+	svc.Stopped:         "stopped",
+	svc.StartPending:    "starting",
+	svc.StopPending:     "stop_pending",
+	svc.Running:         "running",
+	svc.ContinuePending: "continue_pending",
+	svc.PausePending:    "pause_pending",
+	svc.Paused:          "paused",
+}
+
+// Exported for testing.
+func SvcStateString(s svc.State) string {
+	return windowsSvcStateMap[s]
+}
+
 func (s *windowsJobSupervisor) Processes() ([]Process, error) {
-	return []Process{}, nil
+	stdout, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", listAllJobsScript)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Listing windows job process")
+	}
+
+	m, err := mgr.Connect()
+	if err != nil {
+		return nil, err
+	}
+	defer m.Disconnect()
+
+	var procs []Process
+	for _, s := range strings.Split(stdout, "\n") {
+		if len(s) == 0 {
+			continue
+		}
+		name := strings.TrimSpace(s)
+		service, err := m.OpenService(name)
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Opening windows service: %q", name)
+		}
+		defer service.Close()
+		st, err := service.Query()
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Querying windows service: %q", name)
+		}
+		p := Process{
+			Name:  name,
+			State: SvcStateString(st.State),
+		}
+		procs = append(procs, p)
+	}
+
+	return procs, nil
 }
 
 func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
@@ -367,6 +470,7 @@ type windowsServiceEvent struct {
 
 func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	hl := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
 		decoder := json.NewDecoder(r.Body)
 		var event windowsServiceEvent
 		err := decoder.Decode(&event)

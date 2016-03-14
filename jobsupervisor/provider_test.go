@@ -1,7 +1,6 @@
 package jobsupervisor_test
 
 import (
-	"reflect"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -84,21 +83,6 @@ func init() {
 			_, err := provider.Get("does-not-exist")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("does-not-exist could not be found"))
-		})
-
-		It("provides a windows job supervisor", func() {
-			actualSupervisor, err := provider.Get("windows")
-			Expect(err).ToNot(HaveOccurred())
-
-			expectedSupervisor := NewWindowsJobSupervisor(
-				platform.Runner,
-				dirProvider,
-				platform.Fs,
-				logger,
-				jobFailuresServerPort,
-				make(chan bool),
-			)
-			Expect(reflect.TypeOf(actualSupervisor)).To(Equal(reflect.TypeOf(expectedSupervisor)))
 		})
 	})
 }

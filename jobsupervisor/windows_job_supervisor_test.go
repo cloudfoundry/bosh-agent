@@ -147,6 +147,41 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			Expect(fs.RemoveAll(logDir)).To(Succeed())
 		})
 
+		Describe("Processes", func() {
+			It("list the process under vcap description", func() {
+
+				conf, err := AddJob("say-hello")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				procs, err := jobSupervisor.Processes()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(procs)).To(Equal(len(conf.Processes)))
+
+				names := make(map[string]bool)
+				for _, p := range conf.Processes {
+					names[p.Name] = true
+				}
+				for _, p := range procs {
+					Expect(names).To(HaveKey(p.Name))
+				}
+			})
+			It("process should all be running", func() {
+
+				conf, err := AddJob("say-hello")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				procs, err := jobSupervisor.Processes()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(procs)).To(Equal(len(conf.Processes)))
+
+				for _, v := range procs {
+					Expect(v.State).To(Equal("running"))
+				}
+			})
+		})
+
 		Describe("AddJob", func() {
 			It("creates a service with vcap description", func() {
 				conf, err := AddJob("say-hello")
@@ -281,27 +316,6 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			return st.State, nil
 		}
 
-		StateString := func(s svc.State) string {
-			switch s {
-			case svc.Stopped:
-				return "Stopped"
-			case svc.StartPending:
-				return "StartPending"
-			case svc.StopPending:
-				return "StopPending"
-			case svc.Running:
-				return "Running"
-			case svc.ContinuePending:
-				return "ContinuePending"
-			case svc.PausePending:
-				return "PausePending"
-			case svc.Paused:
-				return "Paused"
-			}
-			return fmt.Sprintf("Unkown State: %d", s)
-		}
-		var _ = StateString
-
 		Describe("Stop", func() {
 			It("sets service status to Stopped", func() {
 				conf, err := AddJob("say-hello")
@@ -313,8 +327,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				for _, proc := range conf.Processes {
 					Eventually(func() (string, error) {
 						st, err := GetServiceState(proc.Name)
-						return StateString(st), err
-					}).Should(Equal(StateString(svc.Stopped)))
+						return SvcStateString(st), err
+					}).Should(Equal(SvcStateString(svc.Stopped)))
 				}
 			})
 
@@ -328,16 +342,16 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				for _, proc := range conf.Processes {
 					Eventually(func() (string, error) {
 						st, err := GetServiceState(proc.Name)
-						return StateString(st), err
-					}).Should(Equal(StateString(svc.Stopped)))
+						return SvcStateString(st), err
+					}).Should(Equal(SvcStateString(svc.Stopped)))
 				}
 
 				Expect(jobSupervisor.Start()).To(Succeed())
 				for _, proc := range conf.Processes {
 					Eventually(func() (string, error) {
 						st, err := GetServiceState(proc.Name)
-						return StateString(st), err
-					}).Should(Equal(StateString(svc.Running)))
+						return SvcStateString(st), err
+					}).Should(Equal(SvcStateString(svc.Running)))
 				}
 			})
 
@@ -350,20 +364,20 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				proc := conf.Processes[0]
 				Eventually(func() (string, error) {
 					st, err := GetServiceState(proc.Name)
-					return StateString(st), err
-				}, time.Second*6).Should(Equal(StateString(svc.Stopped)))
+					return SvcStateString(st), err
+				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
 
 				Expect(jobSupervisor.Stop()).To(Succeed())
 
 				Eventually(func() (string, error) {
 					st, err := GetServiceState(proc.Name)
-					return StateString(st), err
-				}, time.Second*6).Should(Equal(StateString(svc.Stopped)))
+					return SvcStateString(st), err
+				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
 
 				Consistently(func() (string, error) {
 					st, err := GetServiceState(proc.Name)
-					return StateString(st), err
-				}, time.Second*6, time.Millisecond*10).Should(Equal(StateString(svc.Stopped)))
+					return SvcStateString(st), err
+				}, time.Second*6, time.Millisecond*10).Should(Equal(SvcStateString(svc.Stopped)))
 
 			})
 		})

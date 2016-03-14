@@ -1,4 +1,4 @@
-// +build !windows
+// +build windows
 
 package jobsupervisor
 
@@ -46,7 +46,7 @@ func NewProvider(
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
-		// Cannot link to "windows" JobSupervisor
+		"windows":    NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobSupervisorListenPort, make(chan bool)),
 	}
 
 	return
