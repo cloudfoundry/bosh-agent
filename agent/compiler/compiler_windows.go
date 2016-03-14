@@ -1,19 +1,17 @@
 package compiler
 
 import (
+	"fmt"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-const PackagingScriptName = "packaging.ps1"
-
 func (c concreteCompiler) RunPackagingCommand(compilePath, enablePath string, pkg Package) error {
-	// Required to execute a script local to the working directory.
-	const scriptPath = `.\` + PackagingScriptName
-
+	runCommand := fmt.Sprintf("iex ((get-content %s) -join \"`n\")", PackagingScriptName)
 	command := boshsys.Command{
 		Name: "powershell",
-		Args: []string{"-NoProfile", "-NonInteractive", scriptPath},
+		Args: []string{"-NoProfile", "-NonInteractive", "-command", runCommand},
 		Env: map[string]string{
 			"BOSH_COMPILE_TARGET":  compilePath,
 			"BOSH_INSTALL_TARGET":  enablePath,

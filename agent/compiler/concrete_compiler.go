@@ -15,6 +15,8 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+const PackagingScriptName = "packaging"
+
 type CompileDirProvider interface {
 	CompileDir() string
 }
