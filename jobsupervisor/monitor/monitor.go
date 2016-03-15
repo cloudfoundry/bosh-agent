@@ -12,6 +12,8 @@ import (
 	"unsafe"
 )
 
+var Default *Monitor
+
 var (
 	// Global kernel32 DLL
 	kernel32DLL = syscall.NewLazyDLL("kernel32")
@@ -21,8 +23,14 @@ var (
 )
 
 func init() {
-	if err := procGetSystemTimes.Find(); err != nil {
+	var err error
+	if err = procGetSystemTimes.Find(); err != nil {
 		panic(fmt.Errorf("monitor: %s", err))
+	}
+
+	Default, err = New(-1)
+	if err != nil {
+		panic(fmt.Errorf("monitor: initializing Default: %s", err))
 	}
 }
 
@@ -59,6 +67,11 @@ type CPU struct {
 	User   float64
 	Kernel float64
 	Idle   float64
+}
+
+// Total returns the sum of user and kernel CPU time.
+func (c CPU) Total() float64 {
+	return c.User + c.Kernel
 }
 
 func (m *Monitor) CPU() (cpu CPU, err error) {
@@ -105,7 +118,7 @@ func (f filetime) Uint64() uint64 {
 	return uint64(f.HighDateTime)<<32 | uint64(f.LowDateTime)
 }
 
-func (m *Monitor) updateCPULoad() (err error) {
+func (m *Monitor) updateCPULoad() error {
 	if m.err != nil {
 		return m.err
 	}
@@ -121,10 +134,11 @@ func (m *Monitor) updateCPULoad() (err error) {
 	)
 	if r1 == 0 {
 		if e1 != 0 {
-			err = fmt.Errorf("GetSystemTimes: %s", error(e1))
+			m.err = fmt.Errorf("GetSystemTimes: %s", error(e1))
 		} else {
-			err = fmt.Errorf("GetSystemTimes: %s", syscall.EINVAL)
+			m.err = fmt.Errorf("GetSystemTimes: %s", syscall.EINVAL)
 		}
+		return m.err
 	}
 
 	m.mu.Lock()

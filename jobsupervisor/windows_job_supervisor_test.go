@@ -148,7 +148,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		})
 
 		Describe("Processes", func() {
-			It("list the process under vcap description", func() {
+			FIt("list the process under vcap description", func() {
 
 				conf, err := AddJob("say-hello")
 				Expect(err).ToNot(HaveOccurred())
@@ -164,20 +164,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				}
 				for _, p := range procs {
 					Expect(names).To(HaveKey(p.Name))
-				}
-			})
-			It("process should all be running", func() {
-
-				conf, err := AddJob("say-hello")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				procs, err := jobSupervisor.Processes()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(procs)).To(Equal(len(conf.Processes)))
-
-				for _, v := range procs {
-					Expect(v.State).To(Equal("running"))
+					Expect(p.State).To(Equal("running"))
+					Expect(p.CPU.Total).ToNot(Equal(0))
+					Expect(p.CPU.Total).ToNot(Equal(0))
+					Expect(p.Memory.Kb).ToNot(Equal(0))
 				}
 			})
 		})

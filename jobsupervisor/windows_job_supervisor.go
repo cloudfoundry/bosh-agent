@@ -20,6 +20,8 @@ import (
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monitor"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -316,6 +318,15 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 	}
 	defer m.Disconnect()
 
+	memStats, err := monitor.MemStats()
+	if err != nil {
+		return nil, err
+	}
+	cpuStats, err := monitor.Default.CPU()
+	if err != nil {
+		return nil, err
+	}
+
 	var procs []Process
 	for _, s := range strings.Split(stdout, "\n") {
 		if len(s) == 0 {
@@ -334,6 +345,13 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 		p := Process{
 			Name:  name,
 			State: SvcStateString(st.State),
+			Memory: MemoryVitals{
+				Kb:      int(memStats.Avail / monitor.KB),
+				Percent: memStats.Used(),
+			},
+			CPU: CPUVitals{
+				Total: cpuStats.Total(),
+			},
 		}
 		procs = append(procs, p)
 	}
