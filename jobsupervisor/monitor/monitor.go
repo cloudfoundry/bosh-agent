@@ -39,6 +39,12 @@ type cpuTime struct {
 	load     float64
 }
 
+type process struct {
+	Pid    uint32
+	Name   string
+	ignore bool
+}
+
 type Monitor struct {
 	user   cpuTime
 	kernel cpuTime
@@ -46,12 +52,13 @@ type Monitor struct {
 	mu     sync.RWMutex
 	err    error
 	freq   time.Duration
-	inited bool //
+	inited bool              // monitor initialized
+	pids   map[uint32]string // pid => process name
 }
 
 func New(freq time.Duration) (*Monitor, error) {
-	if freq < time.Millisecond*15 {
-		freq = time.Millisecond * 100
+	if freq < time.Millisecond*10 {
+		freq = time.Second
 	}
 	m := &Monitor{
 		freq:   freq,
@@ -61,6 +68,10 @@ func New(freq time.Duration) (*Monitor, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func (m *Monitor) WatchProcess() {
+
 }
 
 type CPU struct {
@@ -137,31 +148,72 @@ func (m *Monitor) updateCPULoad() error {
 		return m.err
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.update(kernelTime.Uint64(), userTime.Uint64(), idleTime.Uint64())
 
-	kernelTicks := kernelTime.Uint64()
-	userTicks := userTime.Uint64()
-	idleTicks := idleTime.Uint64()
+	// m.mu.Lock()
+	// defer m.mu.Unlock()
 
-	totalTicks := kernelTicks + userTicks
-	total := totalTicks - (m.kernel.previous + m.user.previous)
-	if total <= 0 {
-		return nil
-	}
+	// kernelTicks := kernelTime.Uint64()
+	// userTicks := userTime.Uint64()
+	// idleTicks := idleTime.Uint64()
 
-	idle := idleTicks - m.idle.previous
-	load := 1 - (float64(idle) / float64(total))
+	// totalTicks := kernelTicks + userTicks
+	// total := totalTicks - (m.kernel.previous + m.user.previous)
+	// if total <= 0 {
+	// 	return nil
+	// }
 
-	m.idle.load = 1 - load
-	m.kernel.load = load * math.Abs(1-(float64(kernelTicks)/float64(totalTicks)))
-	m.user.load = load * math.Abs(1-(float64(userTicks)/float64(totalTicks)))
+	// idle := idleTicks - m.idle.previous
+	// load := 1 - (float64(idle) / float64(total))
 
-	m.kernel.previous = kernelTicks
-	m.user.previous = userTicks
-	m.idle.previous = idleTicks
+	// m.idle.load = 1 - load
+	// m.kernel.load = load * math.Abs(1-(float64(kernelTicks)/float64(totalTicks)))
+	// m.user.load = load * math.Abs(1-(float64(userTicks)/float64(totalTicks)))
+	// m.kernel.update(load, kernelTicks, totalTicks)
+	// m.user.update(load, userTicks, totalTicks)
+
+	// m.kernel.previous = kernelTicks
+	// m.user.previous = userTicks
+	// m.idle.previous = idleTicks
 
 	return nil
+}
+
+// 3125000
+// 1562500
+
+// 0.25 idle
+// 0.625
+
+func (m *Monitor) update(kernelTicks, userTicks, idleTicks uint64) {
+	m.mu.Lock()
+
+	kernel := kernelTicks - m.kernel.previous
+	user := userTicks - m.user.previous
+	idle := idleTicks - m.idle.previous
+
+	total := kernel + user
+	if total > 0 {
+		m.idle.load = float64(idle) / float64(total)
+		m.idle.previous = idleTicks
+
+		m.kernel.load = math.Max(float64(kernel-idle)/float64(total), 0)
+		m.kernel.previous = kernelTicks
+
+		m.user.load = math.Max(1-m.idle.load-m.kernel.load, 0)
+		m.user.previous = userTicks
+	} else {
+		m.idle.load = 0
+		m.kernel.load = 0
+		m.user.load = 0
+	}
+
+	m.mu.Unlock()
+}
+
+func (c *cpuTime) update(load float64, ticks, total uint64) {
+	c.load = load * math.Abs(1-(float64(ticks)/float64(total)))
+	c.previous = ticks
 }
 
 func checkErrno(r1 uintptr, err error) error {

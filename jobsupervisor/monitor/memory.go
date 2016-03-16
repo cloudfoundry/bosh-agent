@@ -115,6 +115,7 @@ func ProcessMemStats(pid uint32) (Byte, error) {
 	if err != nil {
 		return 0, fmt.Errorf("ProcessMemStats: %s", err)
 	}
+	defer windows.CloseHandle(h)
 
 	var m process_memory_counters_ex
 	r1, _, err := procGetProcessMemoryInfo.Call(

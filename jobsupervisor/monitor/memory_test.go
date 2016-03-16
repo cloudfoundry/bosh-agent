@@ -1,10 +1,6 @@
-package monitor_test
+package monitor
 
 import (
-	"math"
-
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monitor"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -12,9 +8,6 @@ import (
 var _ = Describe("Memory", func() {
 	Context("when create a new memstat", func() {
 		It("should report the percent used", func() {
-			matchFloat := func(a, b float64) bool {
-				return math.Abs(a-b) < 0.000001
-			}
 			var tests = []struct {
 				Avail Byte
 				Total Byte
@@ -27,7 +20,7 @@ var _ = Describe("Memory", func() {
 			}
 			for _, x := range tests {
 				m := MemStat{Avail: x.Avail, Total: x.Total}
-				Expect(matchFloat(m.Used(), x.Exp)).To(Equal(true))
+				Expect(matchFloat(m.Used(), x.Exp)).To(Succeed())
 			}
 		})
 	})
