@@ -6,11 +6,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -51,7 +53,7 @@ const (
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Stop-Service $_.Name }
 `
 	listAllJobsScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name }
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name, $_.ProcessId }
 `
 	deleteAllJobsScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
@@ -70,6 +72,8 @@ const (
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'").Length
 `
 )
+
+// get-wmiobject win32_service -filter "description='vcap'"
 
 type serviceLogMode struct {
 	Mode string `xml:"mode,attr"`
@@ -318,21 +322,27 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 	}
 	defer m.Disconnect()
 
-	memStats, err := monitor.MemStats()
-	if err != nil {
-		return nil, err
-	}
-	cpuStats, err := monitor.Default.CPU()
+	memStats, err := monitor.SystemMemStats()
 	if err != nil {
 		return nil, err
 	}
 
+	// WARN
+	cpuStats, err := monitor.Default.CPU()
+	if err != nil {
+		return nil, err
+	}
+	_ = cpuStats // WARN
+
 	var procs []Process
-	for _, s := range strings.Split(stdout, "\n") {
-		if len(s) == 0 {
+	lines := strings.Split(stdout, "\n")
+
+	for i := 0; i < len(lines)-1; i += 2 {
+		name := strings.TrimSpace(lines[i])
+		if name == "" {
 			continue
 		}
-		name := strings.TrimSpace(s)
+		pidStr := lines[i+1]
 		service, err := m.OpenService(name)
 		if err != nil {
 			return nil, bosherr.WrapErrorf(err, "Opening windows service: %q", name)
@@ -345,18 +355,39 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 		p := Process{
 			Name:  name,
 			State: SvcStateString(st.State),
-			Memory: MemoryVitals{
-				Kb:      int(memStats.Avail / monitor.KB),
-				Percent: memStats.Used(),
-			},
-			CPU: CPUVitals{
-				Total: cpuStats.Total(),
-			},
+		}
+		pid, err := strconv.ParseUint(pidStr, 10, 32)
+		if err == nil && pid > 0 {
+			mem, cpu, err := s.processVitals(name, uint32(pid), memStats)
+			if err != nil {
+				return nil, bosherr.WrapErrorf(err, "Querying vitals for process (%q) and pid: %d", name, pid)
+			}
+			p.Memory = mem
+			p.CPU = cpu
 		}
 		procs = append(procs, p)
 	}
 
 	return procs, nil
+}
+
+// RENAME
+func (s *windowsJobSupervisor) processVitals(name string, pid uint32, system monitor.MemStat) (mem MemoryVitals, cpu CPUVitals, err error) {
+	if pid == 0 {
+		err = errors.New("processVitals: invalid pid")
+		return
+	}
+	if used, err := monitor.ProcessMemStats(uint32(pid)); err == nil {
+		mem = MemoryVitals{
+			Kb:      int(used / monitor.KB),
+			Percent: float64(used) / float64(system.Total),
+		}
+	}
+	// WARN (CEV): Implement process level CPU
+	cpu = CPUVitals{
+		Total: 0,
+	}
+	return
 }
 
 func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {

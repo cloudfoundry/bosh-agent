@@ -26,10 +26,12 @@ func UsedDiskSpace(name string) (float64, error) {
 		bytesPerSector        uint32
 		numberOfFreeClusters  uint32
 		totalNumberOfClusters uint32
+		used                  float64 = -1
 	)
+
 	root, err := syscall.UTF16PtrFromString(name)
 	if err != nil {
-		return -1, fmt.Errorf("UsedDiskSpace (%s): %s", name, err)
+		return used, fmt.Errorf("UsedDiskSpace (%s): %s", name, err)
 	}
 	r1, _, e1 := syscall.Syscall6(procGetDiskFreeSpace.Addr(), 5,
 		uintptr(unsafe.Pointer(root)),
@@ -39,12 +41,11 @@ func UsedDiskSpace(name string) (float64, error) {
 		uintptr(unsafe.Pointer(&totalNumberOfClusters)),
 		0,
 	)
-	if r1 == 0 {
-		if e1 != 0 {
-			return -1, fmt.Errorf("UsedDiskSpace (%s): %s", name, error(e1))
-		}
-		return -1, fmt.Errorf("UsedDiskSpace (%s): %s", name, syscall.EINVAL)
+	if err := checkErrno(r1, e1); err != nil {
+		return used, fmt.Errorf("UsedDiskSpace (%s): %s", name, err)
 	}
-	used := 1 - float64(numberOfFreeClusters)/float64(totalNumberOfClusters)
+	if totalNumberOfClusters > 0 {
+		used = 1 - float64(numberOfFreeClusters)/float64(totalNumberOfClusters)
+	}
 	return used, nil
 }

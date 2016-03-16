@@ -132,12 +132,8 @@ func (m *Monitor) updateCPULoad() error {
 		uintptr(unsafe.Pointer(&kernelTime)),
 		uintptr(unsafe.Pointer(&userTime)),
 	)
-	if r1 == 0 {
-		if e1 != 0 {
-			m.err = fmt.Errorf("GetSystemTimes: %s", error(e1))
-		} else {
-			m.err = fmt.Errorf("GetSystemTimes: %s", syscall.EINVAL)
-		}
+	if err := checkErrno(r1, e1); err != nil {
+		m.err = fmt.Errorf("GetSystemTimes: %s", error(e1))
 		return m.err
 	}
 
@@ -165,5 +161,15 @@ func (m *Monitor) updateCPULoad() error {
 	m.user.previous = userTicks
 	m.idle.previous = idleTicks
 
+	return nil
+}
+
+func checkErrno(r1 uintptr, err error) error {
+	if r1 == 0 {
+		if e, ok := err.(syscall.Errno); ok && e != 0 {
+			return err
+		}
+		return syscall.EINVAL
+	}
 	return nil
 }
