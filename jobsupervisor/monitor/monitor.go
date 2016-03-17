@@ -16,21 +16,14 @@ import (
 
 var (
 	// Global kernel32 DLL
-	kernel32DLL = syscall.NewLazyDLL("kernel32")
+	kernel32DLL = syscall.MustLoadDLL("kernel32")
 
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724400(v=vs.85).aspx
-	procGetSystemTimes = kernel32DLL.NewProc("GetSystemTimes")
+	procGetSystemTimes = kernel32DLL.MustFindProc("GetSystemTimes")
 
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms683223(v=vs.85).aspx
-	procGetProcessTimes = kernel32DLL.NewProc("GetProcessTimes")
+	procGetProcessTimes = kernel32DLL.MustFindProc("GetProcessTimes")
 )
-
-func init() {
-	var err error
-	if err = procGetSystemTimes.Find(); err != nil {
-		panic(fmt.Errorf("monitor: %s", err))
-	}
-}
 
 type CPU struct {
 	User   float64

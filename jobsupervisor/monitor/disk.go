@@ -10,14 +10,8 @@ import (
 
 var (
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa364935(v=vs.85).aspx
-	procGetDiskFreeSpace = kernel32DLL.NewProc("GetDiskFreeSpaceW")
+	procGetDiskFreeSpace = kernel32DLL.MustFindProc("GetDiskFreeSpaceW")
 )
-
-func init() {
-	if err := procGetDiskFreeSpace.Find(); err != nil {
-		panic(fmt.Errorf("monitor: %s", err))
-	}
-}
 
 // UsedDiskSpace returns the percentage of used disk space for drive name.
 func UsedDiskSpace(name string) (float64, error) {

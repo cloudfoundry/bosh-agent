@@ -12,7 +12,7 @@ import (
 
 var (
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa366589(v=vs.85).aspx
-	procGlobalMemoryStatusEx = kernel32DLL.NewProc("GlobalMemoryStatusEx")
+	procGlobalMemoryStatusEx = kernel32DLL.MustFindProc("GlobalMemoryStatusEx")
 
 	// TODO (CEV): Change other DLLs to use MustLoad
 	psapiDLL = syscall.MustLoadDLL("psapi")
@@ -20,12 +20,6 @@ var (
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms683219(v=vs.85).aspx
 	procGetProcessMemoryInfo = psapiDLL.MustFindProc("GetProcessMemoryInfo")
 )
-
-func init() {
-	if err := procGlobalMemoryStatusEx.Find(); err != nil {
-		panic(fmt.Errorf("monitor: %s", err))
-	}
-}
 
 type Byte uint64
 
