@@ -144,7 +144,7 @@ var _ = Describe("CPU", func() {
 			Expect(m.pids[pid]).ToNot(BeNil())
 			Expect(m.pids[pid].handle).ToNot(BeNil())
 
-			time.Sleep(m.freq * 2)
+			time.Sleep(time.Second * 2)
 			m.pids[pid].handle = 0
 
 			Eventually(func() bool {

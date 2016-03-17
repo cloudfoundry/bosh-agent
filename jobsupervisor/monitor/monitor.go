@@ -14,8 +14,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-var Default *Monitor
-
 var (
 	// Global kernel32 DLL
 	kernel32DLL = syscall.NewLazyDLL("kernel32")
@@ -31,11 +29,6 @@ func init() {
 	var err error
 	if err = procGetSystemTimes.Find(); err != nil {
 		panic(fmt.Errorf("monitor: %s", err))
-	}
-
-	Default, err = New(-1)
-	if err != nil {
-		panic(fmt.Errorf("monitor: initializing Default: %s", err))
 	}
 }
 
@@ -77,17 +70,17 @@ type Monitor struct {
 	idle   CPUTime
 	mu     sync.RWMutex
 	err    error
-	freq   time.Duration
+	tick   *time.Ticker        // use tick.Stop() to stop monitoring
 	inited bool                // monitor initialized
 	pids   map[uint32]*Process // pid => Process name
 }
 
 func New(freq time.Duration) (*Monitor, error) {
 	if freq < time.Millisecond*10 {
-		freq = time.Second
+		freq = time.Millisecond * 500
 	}
 	m := &Monitor{
-		freq:   freq,
+		tick:   time.NewTicker(freq),
 		inited: true,
 	}
 	if err := m.monitorCPU(); err != nil {
@@ -162,8 +155,7 @@ func (m *Monitor) monitorCPU() error {
 		return m.err
 	}
 	go func() {
-		tick := time.NewTicker(m.freq)
-		for _ = range tick.C {
+		for _ = range m.tick.C {
 			//Hard error
 			if err := m.updateSystemCPU(); err != nil {
 				m.err = err
