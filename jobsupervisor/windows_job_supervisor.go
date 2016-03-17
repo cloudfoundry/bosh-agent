@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry/bosh-utils/state"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
 	"golang.org/x/sys/windows/svc"
@@ -143,7 +142,7 @@ type windowsJobSupervisor struct {
 	logger                boshlog.Logger
 	logTag                string
 	msgCh                 chan *windowsServiceEvent
-	monitor               *state.Monitor
+	monitor               *monitor.Monitor
 	jobFailuresServerPort int
 	cancelServer          chan bool
 }
@@ -156,18 +155,23 @@ func NewWindowsJobSupervisor(
 	jobFailuresServerPort int,
 	cancelChan chan bool,
 ) JobSupervisor {
-	monitor, _ := state.New()
-	return &windowsJobSupervisor{
-		cmdRunner:             cmdRunner,
-		dirProvider:           dirProvider,
-		fs:                    fs,
-		logger:                logger,
-		logTag:                "windowsJobSupervisor",
-		msgCh:                 make(chan *windowsServiceEvent, 8),
-		monitor:               monitor,
+	s := &windowsJobSupervisor{
+		cmdRunner:   cmdRunner,
+		dirProvider: dirProvider,
+		fs:          fs,
+		logger:      logger,
+		logTag:      "windowsJobSupervisor",
+		msgCh:       make(chan *windowsServiceEvent, 8),
 		jobFailuresServerPort: jobFailuresServerPort,
 		cancelServer:          cancelChan,
 	}
+	m, err := monitor.New(-1)
+	if err != nil {
+		s.logger.Error(s.logTag, "Initializing monitor.Monitor: %s", err)
+	}
+	// WARN (CEV): Handle error case
+	s.monitor = m
+	return s
 }
 
 func (s *windowsJobSupervisor) Reload() error {
@@ -175,7 +179,6 @@ func (s *windowsJobSupervisor) Reload() error {
 }
 
 func (s *windowsJobSupervisor) Start() error {
-	s.monitor.Start()
 
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", autoStartJobScript)
 	if err != nil {
@@ -195,7 +198,6 @@ func (s *windowsJobSupervisor) Start() error {
 }
 
 func (s *windowsJobSupervisor) Stop() error {
-	s.monitor.Stop()
 
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", unmonitorJobScript)
 	if err != nil {
@@ -244,57 +246,6 @@ func (s *windowsJobSupervisor) Status() (status string) {
 	return "running"
 }
 
-/*
-func (m monitJobSupervisor) Processes() (processes []Process, err error) {
-	processes = []Process{}
-
-	monitStatus, err := m.client.Status()
-	if err != nil {
-		return processes, bosherr.WrapError(err, "Getting service status")
-	}
-
-	for _, service := range monitStatus.ServicesInGroup("vcap") {
-		process := Process{
-			Name:  service.Name,
-			State: service.Status,
-			Uptime: UptimeVitals{
-				Secs: service.Uptime,
-			},
-			Memory: MemoryVitals{
-				Kb:      service.MemoryKilobytesTotal,
-				Percent: service.MemoryPercentTotal,
-			},
-			CPU: CPUVitals{
-				Total: service.CPUPercentTotal,
-			},
-		}
-		processes = append(processes, process)
-	}
-
-	return
-}
-*/
-
-/*
-m, err := mgr.Connect()
-			if err != nil {
-				return 0, err
-			}
-			defer m.Disconnect()
-			s, err := m.OpenService(serviceName)
-			if err != nil {
-				return 0, err
-			}
-			defer s.Close()
-			st, err := s.Query()
-			if err != nil {
-				return 0, err
-			}
-			return st.State, nil
-*/
-
-// var windowsService
-
 var windowsSvcStateMap = map[svc.State]string{
 	svc.Stopped:         "stopped",
 	svc.StartPending:    "starting",
@@ -328,7 +279,7 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 	}
 
 	// WARN
-	cpuStats, err := monitor.Default.CPU()
+	cpuStats, err := s.monitor.CPU()
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +411,6 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 }
 
 func (s *windowsJobSupervisor) RemoveAllJobs() error {
-	s.monitor.Exit()
 
 	const MaxRetries = 100
 	const RetryInterval = time.Millisecond * 5
