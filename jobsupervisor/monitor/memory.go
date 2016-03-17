@@ -105,13 +105,13 @@ type process_memory_counters_ex struct {
 	PrivateUsage               uintptr
 }
 
+// PROCESS_QUERY_INFORMATION
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ms684880(v=vs.85).aspx
+const process_query_information = 0x400
+
 //https://msdn.microsoft.com/en-us/library/windows/desktop/ms684320(v=vs.85).aspx
 func ProcessMemStats(pid uint32) (Byte, error) {
-	// PROCESS_QUERY_INFORMATION
-	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms684880(v=vs.85).aspx
-	const access uint32 = 0x0400
-
-	h, err := windows.OpenProcess(access, false, uint32(pid))
+	h, err := windows.OpenProcess(process_query_information, false, uint32(pid))
 	if err != nil {
 		return 0, fmt.Errorf("ProcessMemStats: %s", err)
 	}
