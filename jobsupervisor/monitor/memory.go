@@ -6,19 +6,11 @@ import (
 	"fmt"
 	"syscall"
 	"unsafe"
-
-	"golang.org/x/sys/windows"
 )
 
 var (
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa366589(v=vs.85).aspx
 	procGlobalMemoryStatusEx = kernel32DLL.MustFindProc("GlobalMemoryStatusEx")
-
-	// TODO (CEV): Change other DLLs to use MustLoad
-	psapiDLL = syscall.MustLoadDLL("psapi")
-
-	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms683219(v=vs.85).aspx
-	procGetProcessMemoryInfo = psapiDLL.MustFindProc("GetProcessMemoryInfo")
 )
 
 type Byte uint64
@@ -82,43 +74,4 @@ func SystemMemStats() (MemStat, error) {
 		Avail: Byte(m.AvailPhys),
 	}
 	return mem, nil
-}
-
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms684874(v=vs.85).aspx
-type process_memory_counters_ex struct {
-	cb                         uint32
-	PageFaultCount             uint32
-	PeakWorkingSetSize         uintptr
-	WorkingSetSize             uintptr
-	QuotaPeakPagedPoolUsage    uintptr
-	QuotaPagedPoolUsage        uintptr
-	QuotaPeakNonPagedPoolUsage uintptr
-	QuotaNonPagedPoolUsage     uintptr
-	PagefileUsage              uintptr
-	PeakPagefileUsage          uintptr
-	PrivateUsage               uintptr
-}
-
-// PROCESS_QUERY_INFORMATION
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms684880(v=vs.85).aspx
-const process_query_information = 0x400
-
-//https://msdn.microsoft.com/en-us/library/windows/desktop/ms684320(v=vs.85).aspx
-func ProcessMemStats(pid uint32) (Byte, error) {
-	h, err := windows.OpenProcess(process_query_information, false, uint32(pid))
-	if err != nil {
-		return 0, fmt.Errorf("ProcessMemStats: %s", err)
-	}
-	defer windows.CloseHandle(h)
-
-	var m process_memory_counters_ex
-	r1, _, err := procGetProcessMemoryInfo.Call(
-		uintptr(h),
-		uintptr(unsafe.Pointer(&m)),
-		unsafe.Sizeof(m),
-	)
-	if err = checkErrno(r1, err); err != nil {
-		return 0, fmt.Errorf("ProcessMemStats: %s", err)
-	}
-	return Byte(m.WorkingSetSize), nil
 }

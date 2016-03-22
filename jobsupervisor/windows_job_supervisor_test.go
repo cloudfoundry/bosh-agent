@@ -165,9 +165,6 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				for _, p := range procs {
 					Expect(names).To(HaveKey(p.Name))
 					Expect(p.State).To(Equal("running"))
-					Expect(p.CPU.Total).ToNot(Equal(0))
-					Expect(p.CPU.Total).ToNot(Equal(0))
-					Expect(p.Memory.Kb).ToNot(Equal(0))
 				}
 			})
 

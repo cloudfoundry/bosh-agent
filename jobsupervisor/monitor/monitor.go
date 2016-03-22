@@ -11,7 +11,7 @@ import (
 	"time"
 	"unsafe"
 
-	"golang.org/x/sys/windows"
+	"github.com/cloudfoundry/bosh-utils/state"
 )
 
 var (
@@ -20,9 +20,6 @@ var (
 
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724400(v=vs.85).aspx
 	procGetSystemTimes = kernel32DLL.MustFindProc("GetSystemTimes")
-
-	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms683223(v=vs.85).aspx
-	procGetProcessTimes = kernel32DLL.MustFindProc("GetProcessTimes")
 )
 
 type CPU struct {
@@ -44,65 +41,42 @@ type CPUTime struct {
 
 func (c CPUTime) CPU() float64 { return c.load }
 
-type Process struct {
-	pid    uint32
-	name   string
-	cpu    CPUTime
-	mem    MemStat
-	handle windows.Handle
-}
-
-func (p *Process) Pid() uint32  { return p.pid }
-func (p *Process) Name() string { return p.name }
-func (p *Process) CPU() CPUTime { return p.cpu }
-func (p *Process) Mem() MemStat { return p.mem }
-
 type Monitor struct {
 	user   CPUTime
 	kernel CPUTime
 	idle   CPUTime
-	mu     sync.RWMutex
-	err    error
-	tick   *time.Ticker        // use tick.Stop() to stop monitoring
-	inited bool                // monitor initialized
-	pids   map[uint32]*Process // pid => Process name
+	mem    MemStat      // system memory
+	tick   *time.Ticker // use tick.Stop() to stop monitoring
+	err    error        // system error, if any
+	inited bool         // monitor initialized
+	mu     sync.RWMutex // pids mutex
+	state  *state.State
 }
 
 func New(freq time.Duration) (*Monitor, error) {
 	if freq < time.Millisecond*10 {
 		freq = time.Millisecond * 500
 	}
+	st, err := state.NewState(state.Stopped, state.Running, state.Exited)
+	if err != nil {
+		return nil, err
+	}
 	m := &Monitor{
 		tick:   time.NewTicker(freq),
 		inited: true,
+		state:  st,
 	}
-	if err := m.monitorCPU(); err != nil {
+	if err := m.monitorLoop(); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (m *Monitor) WatchProcess(name string, pid uint32) error {
-	if _, ok := m.getProc(pid); ok {
-		return nil
-	}
-
-	handle, err := windows.OpenProcess(process_query_information, false, pid)
-	if err != nil {
-		return fmt.Errorf("opening handle for process (%d): %s", pid, err)
-	}
-
-	p := &Process{
-		name:   name,
-		pid:    pid,
-		handle: handle,
-	}
-	m.setProc(p)
-	return nil
-}
-
-func (m *Monitor) LookupProcess(pid uint32) (*Process, bool) {
-	return m.getProc(pid)
+func (m *Monitor) MemStat() MemStat {
+	m.mu.RLock()
+	mem := m.mem
+	m.mu.RUnlock()
+	return mem
 }
 
 func (m *Monitor) CPU() (cpu CPU, err error) {
@@ -122,40 +96,24 @@ func (m *Monitor) CPU() (cpu CPU, err error) {
 	return
 }
 
-func (m *Monitor) getProc(pid uint32) (p *Process, ok bool) {
-	m.mu.RLock()
-	if m.pids != nil {
-		p, ok = m.pids[pid]
-	}
-	m.mu.RUnlock()
-	return
-}
-
-func (m *Monitor) setProc(p *Process) {
-	m.mu.Lock()
-	if m.pids == nil {
-		m.pids = make(map[uint32]*Process)
-	}
-	if p != nil {
-		m.pids[p.pid] = p
-	}
-	m.mu.Unlock()
-}
-
-func (m *Monitor) monitorCPU() error {
+func (m *Monitor) monitorLoop() error {
 	if err := m.updateSystemCPU(); err != nil {
 		m.err = err
 		return m.err
 	}
 	go func() {
-		for _ = range m.tick.C {
-			//Hard error
-			if err := m.updateSystemCPU(); err != nil {
-				m.err = err
-				return
-			}
-			if err := m.updateProcessesCPU(); err != nil {
-				// Soft error
+		defer m.state.Set(state.Exited)
+		for {
+			select {
+			case <-m.tick.C:
+				if !m.state.Is(state.Running) {
+					continue
+				}
+				// Hard error
+				if err := m.updateSystemCPU(); err != nil {
+					m.err = err
+					return // WARN
+				}
 			}
 		}
 	}()
@@ -213,52 +171,6 @@ func (m *Monitor) calculateSystemCPU(kernelTicks, userTicks, idleTicks uint64) {
 	}
 
 	m.mu.Unlock()
-}
-
-func (m *Monitor) updateProcessesCPU() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	var first error
-	for _, p := range m.pids {
-		var (
-			creationTime filetime
-			exitTime     filetime
-			kernelTime   filetime
-			userTime     filetime
-		)
-		r1, _, e1 := procGetProcessTimes.Call(
-			uintptr(p.handle),
-			uintptr(unsafe.Pointer(&creationTime)),
-			uintptr(unsafe.Pointer(&exitTime)),
-			uintptr(unsafe.Pointer(&kernelTime)),
-			uintptr(unsafe.Pointer(&userTime)),
-		)
-		if err := checkErrno(r1, e1); err != nil {
-			// The process likely died.
-			if first == nil {
-				first = err
-			}
-			defer windows.CloseHandle(p.handle)
-			delete(m.pids, p.pid)
-		}
-		m.calculateProcessCPU(p, kernelTime.Uint64()+userTime.Uint64())
-	}
-
-	return first
-}
-
-func (m *Monitor) calculateProcessCPU(p *Process, ticks uint64) {
-
-	p.cpu.delta = ticks - p.cpu.previous
-	p.cpu.previous = ticks
-
-	total := m.kernel.delta + m.user.delta - m.idle.delta
-	if total > 0 {
-		frac := float64(p.cpu.delta) / float64(total)
-		load := m.kernel.load + m.user.load
-		p.cpu.load = math.Min(frac*load, load)
-	}
 }
 
 func checkErrno(r1 uintptr, err error) error {

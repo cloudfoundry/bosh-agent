@@ -6,13 +6,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -273,18 +271,6 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 	}
 	defer m.Disconnect()
 
-	memStats, err := monitor.SystemMemStats()
-	if err != nil {
-		return nil, err
-	}
-
-	// WARN
-	cpuStats, err := s.monitor.CPU()
-	if err != nil {
-		return nil, err
-	}
-	_ = cpuStats // WARN
-
 	var procs []Process
 	lines := strings.Split(stdout, "\n")
 
@@ -293,7 +279,8 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 		if name == "" {
 			continue
 		}
-		pidStr := lines[i+1]
+		_ = lines[i+1] // pid string
+
 		service, err := m.OpenService(name)
 		if err != nil {
 			return nil, bosherr.WrapErrorf(err, "Opening windows service: %q", name)
@@ -303,42 +290,15 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 		if err != nil {
 			return nil, bosherr.WrapErrorf(err, "Querying windows service: %q", name)
 		}
+
 		p := Process{
 			Name:  name,
 			State: SvcStateString(st.State),
-		}
-		pid, err := strconv.ParseUint(pidStr, 10, 32)
-		if err == nil && pid > 0 {
-			mem, cpu, err := s.processVitals(name, uint32(pid), memStats)
-			if err != nil {
-				return nil, bosherr.WrapErrorf(err, "Querying vitals for process (%q) and pid: %d", name, pid)
-			}
-			p.Memory = mem
-			p.CPU = cpu
 		}
 		procs = append(procs, p)
 	}
 
 	return procs, nil
-}
-
-// RENAME
-func (s *windowsJobSupervisor) processVitals(name string, pid uint32, system monitor.MemStat) (mem MemoryVitals, cpu CPUVitals, err error) {
-	if pid == 0 {
-		err = errors.New("processVitals: invalid pid")
-		return
-	}
-	if used, err := monitor.ProcessMemStats(uint32(pid)); err == nil {
-		mem = MemoryVitals{
-			Kb:      int(used / monitor.KB),
-			Percent: float64(used) / float64(system.Total),
-		}
-	}
-	// WARN (CEV): Implement process level CPU
-	cpu = CPUVitals{
-		Total: 0,
-	}
-	return
 }
 
 func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
