@@ -51,6 +51,7 @@ type Monitor struct {
 	inited bool         // monitor initialized
 	mu     sync.RWMutex // pids mutex
 	state  *state.State
+	cond   *sync.Cond // Optional sync conditional for StatsCollector
 }
 
 func New(freq time.Duration) (*Monitor, error) {
@@ -66,6 +67,25 @@ func New(freq time.Duration) (*Monitor, error) {
 		inited: true,
 		state:  st,
 	}
+	if err := m.monitorLoop(); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// condMonitor, returns a Monitor that broadcasts on cond on each update.
+func condMonitor(freq time.Duration, cond *sync.Cond) (*Monitor, error) {
+	st, err := state.NewState(state.Stopped, state.Running, state.Exited)
+	if err != nil {
+		return nil, err
+	}
+	m := &Monitor{
+		tick:   time.NewTicker(freq),
+		inited: true,
+		state:  st,
+		cond:   cond,
+	}
+	m.state.Set(state.Stopped)
 	if err := m.monitorLoop(); err != nil {
 		return nil, err
 	}
@@ -108,6 +128,9 @@ func (m *Monitor) monitorLoop() error {
 			case <-m.tick.C:
 				if !m.state.Is(state.Running) {
 					continue
+				}
+				if m.cond != nil {
+					m.cond.Broadcast()
 				}
 				// Hard error
 				if err := m.updateSystemCPU(); err != nil {
