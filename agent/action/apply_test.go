@@ -25,17 +25,17 @@ func init() {
 			specService     *fakeas.FakeV1Service
 			settingsService *fakesettings.FakeSettingsService
 			dirProvider     boshdir.Provider
-			fs              boshsys.FileSystem
 			action          ApplyAction
+			fs              boshsys.FileSystem
 		)
 
 		BeforeEach(func() {
 			applier = fakeappl.NewFakeApplier()
 			specService = fakeas.NewFakeV1Service()
 			settingsService = &fakesettings.FakeSettingsService{}
-			dirProvider = boshdir.NewProvider("/var/vcap/bosh")
+			dirProvider = boshdir.NewProvider("/var/vcap")
 			fs = fakesys.NewFakeFileSystem()
-			action = NewApply(applier, specService, settingsService, dirProvider.EtcDir(), fs)
+			action = NewApply(applier, specService, settingsService, dirProvider.InstanceDir(), fs)
 		})
 
 		It("apply should be asynchronous", func() {
@@ -95,19 +95,19 @@ func init() {
 									Expect(specService.Spec).To(Equal(populatedDesiredApplySpec))
 								})
 
-								Context("desired spec has id, deployment name, and az", func() {
+								Context("desired spec has id, instance name, deployment name, and az", func() {
 
 									BeforeEach(func() {
-										desiredApplySpec = boshas.V1ApplySpec{ConfigurationHash: "fake-desired-config-hash", NodeID: "node-id01-123f-r2344", AvailabilityZone: "ex-az", Deployment: "deployment-name"}
+										desiredApplySpec = boshas.V1ApplySpec{ConfigurationHash: "fake-desired-config-hash", NodeID: "node-id01-123f-r2344", AvailabilityZone: "ex-az", Deployment: "deployment-name", Name: "instance-name"}
 										specService.PopulateDHCPNetworksResultSpec = desiredApplySpec
 									})
 
-									It("returns 'applied' and writes the id, deployment name, and az to files in the instance directory", func() {
+									It("returns 'applied' and writes the id, instance name, deployment name, and az to files in the instance directory", func() {
 										value, err := action.Run(desiredApplySpec)
 										Expect(err).ToNot(HaveOccurred())
 										Expect(value).To(Equal("applied"))
 
-										instanceDir := path.Join(dirProvider.EtcDir(), "instance")
+										instanceDir := dirProvider.InstanceDir()
 
 										id, err := fs.ReadFileString(path.Join(instanceDir, "id"))
 										Expect(err).ToNot(HaveOccurred())
@@ -117,7 +117,11 @@ func init() {
 										Expect(err).ToNot(HaveOccurred())
 										Expect(az).To(Equal(desiredApplySpec.AvailabilityZone))
 
-										deploymentName, err := fs.ReadFileString(path.Join(instanceDir, "name"))
+										instanceName, err := fs.ReadFileString(path.Join(instanceDir, "name"))
+										Expect(err).ToNot(HaveOccurred())
+										Expect(instanceName).To(Equal(desiredApplySpec.Name))
+
+										deploymentName, err := fs.ReadFileString(path.Join(instanceDir, "deployment"))
 										Expect(err).ToNot(HaveOccurred())
 										Expect(deploymentName).To(Equal(desiredApplySpec.Deployment))
 									})

@@ -27,6 +27,8 @@ type diskMigration struct {
 	ToDiskCid   string
 }
 
+const CredentialFileName = "password"
+
 type dummyPlatform struct {
 	collector          boshstats.Collector
 	fs                 boshsys.FileSystem
@@ -114,7 +116,8 @@ func (p dummyPlatform) SetupSSH(publicKey, username string) (err error) {
 }
 
 func (p dummyPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
-	return
+	credentialsPath := path.Join(p.dirProvider.BoshDir(), user, CredentialFileName)
+	return p.fs.WriteFileString(credentialsPath, encryptedPwd)
 }
 
 func (p dummyPlatform) SetupHostname(hostname string) (err error) {
@@ -161,6 +164,15 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 	mounts, err := p.existingMounts()
 	if err != nil {
 		return err
+	}
+
+	_, isMountPoint, err := p.IsMountPoint(mountPoint)
+	if err != nil {
+		return err
+	}
+
+	if isMountPoint {
+		mountPoint = p.dirProvider.StoreMigrationDir()
 	}
 
 	mounts = append(mounts, mount{MountDir: mountPoint, DiskCid: diskSettings.ID})

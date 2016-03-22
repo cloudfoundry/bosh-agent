@@ -5,6 +5,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/settings"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
+	"github.com/cloudfoundry/bosh-agent/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -77,40 +78,48 @@ var _ = Describe("Instance Info", func() {
 
 	Context("on ubuntu", func() {
 		It("apply spec saves instance info to file and is readable by anyone", func() {
-			applySpec := applyspec.ApplySpec{ConfigurationHash: "fake-desired-config-hash", NodeID: "node-id01-123f-r2344", AvailabilityZone: "ex-az", Deployment: "deployment-name"}
+			applySpec := applyspec.ApplySpec{ConfigurationHash: "fake-desired-config-hash", NodeID: "node-id01-123f-r2344", AvailabilityZone: "ex-az", Deployment: "deployment-name", Name: "instance-name"}
 			err := agentClient.Apply(applySpec)
-
 			Expect(err).NotTo(HaveOccurred())
 
-			id, err := testEnvironment.RunCommand("cat /var/vcap/bosh/etc/instance/id")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(id).To(Equal(applySpec.NodeID))
+			verifyFilePermissions("/var/vcap/instance/id", testEnvironment)
+			verifyFileContent("/var/vcap/instance/id", applySpec.NodeID, testEnvironment)
 
-			idListing, err := testEnvironment.RunCommand("ls -l /var/vcap/bosh/etc/instance/id")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(idListing[1]).To(Equal(uint8('r')))
-			Expect(idListing[4]).To(Equal(uint8('r')))
-			Expect(idListing[7]).To(Equal(uint8('r')))
+			verifyFilePermissions("/var/vcap/instance/az", testEnvironment)
+			verifyFileContent("/var/vcap/instance/az", applySpec.AvailabilityZone, testEnvironment)
 
-			az, err := testEnvironment.RunCommand("cat /var/vcap/bosh/etc/instance/az")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(az).To(Equal(applySpec.AvailabilityZone))
+			verifyFilePermissions("/var/vcap/instance/name", testEnvironment)
+			verifyFileContent("/var/vcap/instance/name", applySpec.Name, testEnvironment)
 
-			azListing, err := testEnvironment.RunCommand("ls -l /var/vcap/bosh/etc/instance/az")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(azListing[1]).To(Equal(uint8('r')))
-			Expect(azListing[4]).To(Equal(uint8('r')))
-			Expect(azListing[7]).To(Equal(uint8('r')))
+			verifyFilePermissions("/var/vcap/instance/deployment", testEnvironment)
+			verifyFileContent("/var/vcap/instance/deployment", applySpec.Deployment, testEnvironment)
 
-			name, err := testEnvironment.RunCommand("cat /var/vcap/bosh/etc/instance/name")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(name).To(Equal(applySpec.Deployment))
-
-			nameListing, err := testEnvironment.RunCommand("ls -l /var/vcap/bosh/etc/instance/name")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(nameListing[1]).To(Equal(uint8('r')))
-			Expect(nameListing[4]).To(Equal(uint8('r')))
-			Expect(nameListing[7]).To(Equal(uint8('r')))
+			verifyDirectoryExecutable("/var/vcap/instance", testEnvironment)
 		})
 	})
 })
+
+func verifyFileContent(filePath string, expectedContent string, testEnvironment *integration.TestEnvironment) {
+	deployment, err := testEnvironment.RunCommand("cat " + filePath)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(deployment).To(Equal(expectedContent))
+}
+
+func verifyFilePermissions(filePath string, testEnvironment *integration.TestEnvironment) {
+	fileListing, err := testEnvironment.RunCommand("ls -l " + filePath)
+	Expect(err).NotTo(HaveOccurred())
+
+	Expect(fileListing[1]).To(Equal(uint8('r')))
+	Expect(fileListing[2]).To(Equal(uint8('w')))
+	Expect(fileListing[4]).To(Equal(uint8('r')))
+	Expect(fileListing[7]).To(Equal(uint8('r')))
+}
+
+func verifyDirectoryExecutable(filePath string, testEnvironment *integration.TestEnvironment) {
+	fileListing, err := testEnvironment.RunCommand("ls -l -d " + filePath)
+	Expect(err).NotTo(HaveOccurred())
+
+	Expect(fileListing[3]).To(Equal(uint8('x')))
+	Expect(fileListing[6]).To(Equal(uint8('x')))
+	Expect(fileListing[9]).To(Equal(uint8('x')))
+}

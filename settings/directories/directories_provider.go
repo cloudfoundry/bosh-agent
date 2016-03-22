@@ -81,3 +81,7 @@ func (p Provider) LogsDir() string {
 func (p Provider) AgentLogsDir() string {
 	return path.Join(p.BaseDir(), "bosh", "log")
 }
+
+func (p Provider) InstanceDir() string {
+	return path.Join(p.BaseDir(), "instance")
+}

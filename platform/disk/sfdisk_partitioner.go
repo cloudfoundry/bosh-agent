@@ -62,7 +62,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 		return false, nil
 	})
 
-	partitionRetryStrategy := NewSfdiskPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+	partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
 	err := partitionRetryStrategy.Try()
 
 	if err != nil {
@@ -99,7 +99,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 			return true, bosherr.Errorf("Partition %s does not show up", devicePath+"-part1")
 		})
 
-		detectPartitionRetryStrategy := NewSfdiskPartitionStrategy(detectPartitionRetryable, p.timeService, p.logger)
+		detectPartitionRetryStrategy := NewPartitionStrategy(detectPartitionRetryable, p.timeService, p.logger)
 		err := detectPartitionRetryStrategy.Try()
 		if err != nil {
 			return err

@@ -7,21 +7,25 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"strconv"
+	"strings"
 )
 
 type diskUtil struct {
 	diskPath string
 	mounter  Mounter
+	runner   boshsys.CmdRunner
 	fs       boshsys.FileSystem
 
 	logTag string
 	logger boshlog.Logger
 }
 
-func NewDiskUtil(diskPath string, mounter Mounter, fs boshsys.FileSystem, logger boshlog.Logger) boshdevutil.DeviceUtil {
+func NewDiskUtil(diskPath string, runner boshsys.CmdRunner, mounter Mounter, fs boshsys.FileSystem, logger boshlog.Logger) boshdevutil.DeviceUtil {
 	return diskUtil{
 		diskPath: diskPath,
 		mounter:  mounter,
+		runner:   runner,
 		fs:       fs,
 
 		logTag: "diskUtil",
@@ -77,6 +81,20 @@ func (util diskUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
 	}
 
 	return contents, nil
+}
+
+func (util diskUtil) GetBlockDeviceSize() (size uint64, err error) {
+	stdout, _, _, err := util.runner.RunCommand("lsblk", "--nodeps", "-nb", "-o", "SIZE", util.diskPath)
+	if err != nil {
+		util.logger.Error(util.logTag, "Getting the Block Device size of '%s': %s", util.diskPath, err.Error())
+		return 0, err
+	}
+	deviceSize, err := strconv.Atoi(strings.Trim(stdout, "\n"))
+	if err != nil {
+		util.logger.Error(util.logTag, "Converting the Block Device size of '%s': %s", util.diskPath, err.Error())
+		return 0, err
+	}
+	return uint64(deviceSize), nil
 }
 
 func (util diskUtil) unmount(tempDir string) error {
