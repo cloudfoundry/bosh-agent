@@ -23,7 +23,6 @@ import (
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
@@ -72,9 +71,7 @@ func (app *app) Setup(args []string) error {
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
-	// FIXME: needs GCC on Windows to compile go-sigar
-	// sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
-	sigarCollector := stats.NewDummyStatsCollector()
+	statsCollector := newStatsCollector()
 
 	scriptCommandFactory := boshsys.NewScriptCommandFactory(opts.PlatformName)
 
@@ -83,7 +80,7 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Loading state")
 	}
 
-	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, scriptCommandFactory, app.fs, config.Platform, state)
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, statsCollector, scriptCommandFactory, app.fs, config.Platform, state)
 
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
