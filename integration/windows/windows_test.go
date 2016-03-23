@@ -237,21 +237,4 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(out)).To(ContainSubstring(fileContents))
 	})
-
-	It("it includes processes in the 'get_state' response", func() {
-		natsClient.PrepareJob("say-hello")
-
-		runStartResponse, err := natsClient.RunStart()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(runStartResponse["value"]).To(Equal("started"))
-
-		agentState := natsClient.GetState()
-		Expect(agentState.JobState).To(Equal("running"))
-		Expect(len(agentState.Processes)).To(Equal(1))
-		for _, proc := range agentState.Processes {
-			Expect(proc.CPU.Total).ToNot(Equal(0))
-			Expect(proc.Memory.Kb).ToNot(Equal(0))
-			Expect(proc.Memory.Percent).ToNot(Equal(0))
-		}
-	})
 })
