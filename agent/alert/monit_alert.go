@@ -5,6 +5,6 @@ type MonitAlert struct {
 	Service     string
 	Event       string
 	Action      string
-	Date        string
+	Date        string // RFC1123Z formatted date string
 	Description string
 }

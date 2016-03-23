@@ -421,7 +421,6 @@ func (s *windowsJobSupervisor) RemoveAllJobs() error {
 }
 
 type windowsServiceEvent struct {
-	Datetime    string `json:"datetime"`
 	Event       string `json:"event"`
 	ProcessName string `json:"processName"`
 	ExitCode    int    `json:"exitCode"`
@@ -430,16 +429,15 @@ type windowsServiceEvent struct {
 func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	hl := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		decoder := json.NewDecoder(r.Body)
 		var event windowsServiceEvent
-		err := decoder.Decode(&event)
+		err := json.NewDecoder(r.Body).Decode(&event)
 		if err != nil {
 			s.logger.Error(s.logTag, "MonitorJobFailures received unknown request: %s", err)
 			return
 		}
 		handler(boshalert.MonitAlert{
 			Action:      "Start",
-			Date:        event.Datetime,
+			Date:        time.Now().Format(time.RFC1123Z),
 			Event:       event.Event,
 			ID:          event.ProcessName,
 			Service:     event.ProcessName,

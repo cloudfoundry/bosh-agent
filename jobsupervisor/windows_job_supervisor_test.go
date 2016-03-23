@@ -431,12 +431,15 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				err := doJobFailureRequest(msg, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
 
+				alertTime, err := time.Parse(time.RFC1123Z, handledAlert.Date)
+				Expect(err).ToNot(HaveOccurred())
+
 				Expect(handledAlert).To(Equal(boshalert.MonitAlert{
 					ID:          "nats",
 					Service:     "nats",
 					Event:       "pid failed",
 					Action:      "Start",
-					Date:        "Sun, 22 May 2011 20:07:41 +0500",
+					Date:        alertTime.Format(time.RFC1123Z),
 					Description: "exited with code 55",
 				}))
 			})
