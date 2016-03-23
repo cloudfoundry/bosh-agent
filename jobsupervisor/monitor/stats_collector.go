@@ -39,7 +39,7 @@ func (c *collector) GetCPUStats() (stats.CPUStats, error) {
 	load := stats.CPUStats{
 		User:  uint64(cpu.User * mult),
 		Sys:   uint64(cpu.Kernel * mult),
-		Total: uint64((cpu.User + cpu.Kernel) * mult),
+		Total: uint64(mult),
 	}
 	return load, err
 }
