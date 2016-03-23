@@ -391,6 +391,28 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				}, time.Second*6, time.Millisecond*10).Should(Equal(SvcStateString(svc.Stopped)))
 
 			})
+
+			It("stops flapping services and gives a status of stopped", func() {
+				conf, err := AddJob("flapping")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				procs, err := jobSupervisor.Processes()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(procs)).To(Equal(len(conf.Processes)))
+
+				const wait = time.Second * 6
+
+				Eventually(jobSupervisor.Status, wait).Should(Equal("running"))
+
+				Eventually(jobSupervisor.Status, wait).Should(Equal("failing"))
+
+				Expect(jobSupervisor.Stop()).To(Succeed())
+
+				Eventually(jobSupervisor.Status, wait).Should(Equal("stopped"))
+
+				Consistently(jobSupervisor.Status, wait).Should(Equal("stopped"))
+			})
 		})
 
 		Describe("MonitorJobFailures", func() {
