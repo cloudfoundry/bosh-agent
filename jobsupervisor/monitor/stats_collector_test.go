@@ -6,7 +6,7 @@ import (
 )
 
 var _ = Describe("Stats collector", func() {
-	FContext("when calculating CPU usage", func() {
+	Context("when calculating CPU usage", func() {
 		It("should correctly format it for usage by stats.CPUStats", func() {
 			m := &Monitor{
 				user:   CPUTime{load: 0.25},
