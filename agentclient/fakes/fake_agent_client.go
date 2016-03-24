@@ -40,6 +40,9 @@ type FakeAgentClient struct {
 
 	RunScriptCalledTimes int
 	runScriptErr         error
+
+	DeleteFromARPCalledTimes int
+	deleteFromARPErr         error
 }
 
 type pingResponse struct {
@@ -129,6 +132,11 @@ func (c *FakeAgentClient) UpdateSettings(settings settings.Settings) error {
 func (c *FakeAgentClient) RunScript(scriptName string, options map[string]interface{}) error {
 	c.RunScriptCalledTimes++
 	return c.runScriptErr
+}
+
+func (c *FakeAgentClient) DeleteFromARP(ips []string) error {
+	c.DeleteFromARPCalledTimes++
+	return c.deleteFromARPErr
 }
 
 func (c *FakeAgentClient) CompilePackage(

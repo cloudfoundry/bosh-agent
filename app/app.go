@@ -25,6 +25,7 @@ import (
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
@@ -178,6 +179,9 @@ func (app *app) Setup(args []string) error {
 		app.logger,
 	)
 
+	cmdRunner := boshsys.NewExecCmdRunner(app.logger)
+	arp := bosharp.NewArp(cmdRunner, app.logger)
+
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		app.platform,
@@ -190,6 +194,7 @@ func (app *app) Setup(args []string) error {
 		specService,
 		jobScriptProvider,
 		app.logger,
+		arp,
 	)
 
 	actionRunner := boshaction.NewRunner()

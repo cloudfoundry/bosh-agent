@@ -238,3 +238,8 @@ func (c *agentClient) CompilePackage(packageSource agentclient.BlobRef, compiled
 
 	return compiledPackageRef, nil
 }
+
+func (c *agentClient) DeleteFromARP(ips []string) error {
+	_, err := c.sendAsyncTaskMessage("delete_from_arp", []interface{}{map[string][]string{"ips": ips}})
+	return err
+}
