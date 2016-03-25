@@ -1,8 +1,14 @@
+// +build windows
+
 package monitor
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/platform/stats"
 )
 
 var _ = Describe("Stats collector", func() {
@@ -20,4 +26,41 @@ var _ = Describe("Stats collector", func() {
 			Expect(matchFloat(cpu.SysPercent().FractionOf100(), m.kernel.load*100)).To(Succeed())
 		})
 	})
+
+	It("should start collecting when StartCollecting is called", func() {
+		const freq = time.Second
+
+		sema := make(chan struct{})
+		c := NewStatsCollector()
+		go c.StartCollecting(freq, sema)
+
+		<-sema
+		cpu, err := c.GetCPUStats()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(cpu).ToNot(Equal(stats.CPUStats{}))
+
+		Eventually(func() (stats.CPUStats, error) {
+			<-sema
+			return c.GetCPUStats()
+		}, freq*10).ShouldNot(Equal(cpu))
+	})
+
+	It("should handle a nil sema channel", func() {
+		const freq = time.Second
+
+		c := NewStatsCollector()
+		go c.StartCollecting(freq, nil)
+
+		// Wait for collector to initialize
+		Eventually(func() error {
+			_, err := c.GetCPUStats()
+			return err
+		}).Should(Succeed())
+
+		cpu, err := c.GetCPUStats()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(cpu).ToNot(Equal(stats.CPUStats{}))
+
+	})
+
 })

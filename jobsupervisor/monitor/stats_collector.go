@@ -3,6 +3,7 @@
 package monitor
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -26,7 +27,9 @@ func (c *collector) StartCollecting(freq time.Duration, updateSema chan struct{}
 		c.cond.L.Lock()
 		c.cond.Wait()
 		c.cond.L.Unlock()
-		updateSema <- struct{}{}
+		if updateSema != nil {
+			updateSema <- struct{}{}
+		}
 	}
 }
 
@@ -34,6 +37,9 @@ func (c *collector) StartCollecting(freq time.Duration, updateSema chan struct{}
 func (c *collector) GetCPULoad() (load stats.CPULoad, err error) { return }
 
 func (c *collector) GetCPUStats() (stats.CPUStats, error) {
+	if c.m == nil {
+		return stats.CPUStats{}, errors.New("collector not initialized")
+	}
 	const mult float64 = 100000
 	cpu, err := c.m.CPU()
 	load := stats.CPUStats{

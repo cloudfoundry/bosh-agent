@@ -85,7 +85,7 @@ func condMonitor(freq time.Duration, cond *sync.Cond) (*Monitor, error) {
 		state:  st,
 		cond:   cond,
 	}
-	m.state.Set(state.Stopped)
+	m.state.Set(state.Running)
 	if err := m.monitorLoop(); err != nil {
 		return nil, err
 	}
