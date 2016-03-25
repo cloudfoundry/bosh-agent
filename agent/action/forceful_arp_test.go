@@ -5,21 +5,21 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
+	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 )
 
 func init() {
 	Describe("Forceful ARP", func() {
 		var (
-			arp       *fakes.FakeManager
+			platform  *fakeplatform.FakePlatform
 			action    ForcefulARPAction
 			addresses []string
 			args      ForcefulARPActionArgs
 		)
 
 		BeforeEach(func() {
-			arp = new(fakes.FakeManager)
-			action = NewForcefulARP(arp)
+			platform = new(fakeplatform.FakePlatform)
+			action = NewForcefulARP(platform)
 			addresses = []string{"10.0.0.1", "10.0.0.2"}
 			args = ForcefulARPActionArgs{
 				Ips: addresses,
@@ -35,14 +35,10 @@ func init() {
 		})
 
 		It("requests deletion of all provided IPs from the ARP cache", func() {
+			Expect(platform.CleanedIPMacAddressCache).To(Equal(""))
 			_, err := action.Run(args)
-
 			Expect(err).ToNot(HaveOccurred())
-
-			Expect(arp.DeleteCallCount()).To(Equal(len(addresses)))
-			for i, address := range addresses {
-				Expect(arp.DeleteArgsForCall(i)).To(Equal(address))
-			}
+			Expect(platform.CleanedIPMacAddressCache).To(Equal("10.0.0.2"))
 		})
 
 		It("returns an empty map", func() {

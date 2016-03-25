@@ -3,7 +3,7 @@ package action
 import (
 	"errors"
 
-	"github.com/cloudfoundry/bosh-agent/platform/net/arp"
+	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 )
 
 type ForcefulARPActionArgs struct {
@@ -11,12 +11,12 @@ type ForcefulARPActionArgs struct {
 }
 
 type ForcefulARPAction struct {
-	arp arp.Manager
+	platform boshplatform.Platform
 }
 
-func NewForcefulARP(arp arp.Manager) ForcefulARPAction {
+func NewForcefulARP(platform boshplatform.Platform) ForcefulARPAction {
 	return ForcefulARPAction{
-		arp: arp,
+		platform: platform,
 	}
 }
 
@@ -31,7 +31,7 @@ func (a ForcefulARPAction) IsPersistent() bool {
 func (a ForcefulARPAction) Run(args ForcefulARPActionArgs) (interface{}, error) {
 	addresses := args.Ips
 	for _, address := range addresses {
-		a.arp.Delete(address)
+		a.platform.CleanIPMacAddressCache(address)
 	}
 
 	resultMap := map[string]interface{}{}
