@@ -2292,9 +2292,9 @@ unit: sectors
 		})
 	})
 
-	Describe("CleanIPMacAddressCache", func() {
+	Describe("DeleteArpEntryWithIp", func() {
 		It("cleans the arp entry for the given ip", func() {
-			err := platform.CleanIPMacAddressCache("1.2.3.4")
+			err := platform.DeleteArpEntryWithIp("1.2.3.4")
 			deleteArpEntry := []string{"arp", "-d", "1.2.3.4"}
 			Expect(cmdRunner.RunCommands[0]).To(Equal(deleteArpEntry))
 			Expect(err).ToNot(HaveOccurred())
@@ -2309,7 +2309,7 @@ unit: sectors
 			}
 			cmdRunner.AddCmdResult("arp -d 1.2.3.4", result)
 
-			err := platform.CleanIPMacAddressCache("1.2.3.4")
+			err := platform.DeleteArpEntryWithIp("1.2.3.4")
 
 			Expect(err).To(HaveOccurred())
 		})

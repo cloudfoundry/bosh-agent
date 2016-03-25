@@ -90,7 +90,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 			return
 		}
 
-		err = h.platform.CleanIPMacAddressCache(ip)
+		err = h.platform.DeleteArpEntryWithIp(ip)
 		if err != nil {
 			h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s", ip)
 		}

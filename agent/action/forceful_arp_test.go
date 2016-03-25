@@ -35,10 +35,10 @@ func init() {
 		})
 
 		It("requests deletion of all provided IPs from the ARP cache", func() {
-			Expect(platform.CleanedIPMacAddressCache).To(Equal(""))
+			Expect(platform.LastIpDeletedFromArp).To(Equal(""))
 			_, err := action.Run(args)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(platform.CleanedIPMacAddressCache).To(Equal("10.0.0.2"))
+			Expect(platform.LastIpDeletedFromArp).To(Equal("10.0.0.2"))
 		})
 
 		It("returns an empty map", func() {

@@ -292,7 +292,7 @@ func (p dummyPlatform) PrepareForNetworkingChange() error {
 	return nil
 }
 
-func (p dummyPlatform) CleanIPMacAddressCache(ip string) error {
+func (p dummyPlatform) DeleteArpEntryWithIp(ip string) error {
 	return nil
 }
 

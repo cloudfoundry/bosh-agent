@@ -981,7 +981,7 @@ func (p linux) PrepareForNetworkingChange() error {
 	return nil
 }
 
-func (p linux) CleanIPMacAddressCache(ip string) error {
+func (p linux) DeleteArpEntryWithIp(ip string) error {
 	_, _, _, err := p.cmdRunner.RunCommand("arp", "-d", ip)
 	if err != nil {
 		return bosherr.WrapError(err, "Deleting arp entry")

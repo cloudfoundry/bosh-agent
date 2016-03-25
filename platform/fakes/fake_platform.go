@@ -122,8 +122,8 @@ type FakePlatform struct {
 	GetConfiguredNetworkInterfacesInterfaces []string
 	GetConfiguredNetworkInterfacesErr        error
 
-	CleanedIPMacAddressCache  string
-	CleanIPMacAddressCacheErr error
+	LastIpDeletedFromArp    string
+	DeleteArpEntryWithIpErr error
 
 	certManager boshcert.Manager
 
@@ -380,9 +380,9 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	return
 }
 
-func (p *FakePlatform) CleanIPMacAddressCache(ip string) error {
-	p.CleanedIPMacAddressCache = ip
-	return p.CleanIPMacAddressCacheErr
+func (p *FakePlatform) DeleteArpEntryWithIp(ip string) error {
+	p.LastIpDeletedFromArp = ip
+	return p.DeleteArpEntryWithIpErr
 }
 
 func (p *FakePlatform) PrepareForNetworkingChange() error {

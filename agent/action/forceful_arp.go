@@ -31,7 +31,7 @@ func (a ForcefulARPAction) IsPersistent() bool {
 func (a ForcefulARPAction) Run(args ForcefulARPActionArgs) (interface{}, error) {
 	addresses := args.Ips
 	for _, address := range addresses {
-		a.platform.CleanIPMacAddressCache(address)
+		a.platform.DeleteArpEntryWithIp(address)
 	}
 
 	resultMap := map[string]interface{}{}
