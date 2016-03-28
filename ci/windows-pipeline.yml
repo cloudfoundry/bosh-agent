@@ -174,20 +174,19 @@ jobs:
     tags: [vsphere-windows]
     outputs:
       - name: vsphere-errand-release
-    config:
-      params:
-        DIRECTOR_UUID: {{DIRECTOR_UUID}}
-        DEPLOYMENT_NAME: sample-errand-windows-deployment
-        RELEASE_NAME: sample-vsphere-release
-        JOB_NAME: sample-errand
-        BOSH_USER: {{BOSH_USER}}
-        BOSH_PASSWORD: {{BOSH_PASSWORD}}
-        BOSH_RANGE: {{BOSH_RANGE}}
-        BOSH_GATEWAY: {{BOSH_GATEWAY}}
-        BOSH_DNS: {{BOSH_DNS}}
-        BOSH_RESERVED: {{BOSH_RESERVED}}
-        BOSH_STATIC: {{BOSH_STATIC}}
-        BOSH_NETWORK_NAME: {{BOSH_NETWORK_NAME}}
+    params:
+      DIRECTOR_UUID: {{DIRECTOR_UUID}}
+      DEPLOYMENT_NAME: sample-errand-windows-deployment
+      RELEASE_NAME: sample-vsphere-release
+      JOB_NAME: sample-errand
+      BOSH_USER: {{BOSH_USER}}
+      BOSH_PASSWORD: {{BOSH_PASSWORD}}
+      BOSH_RANGE: {{BOSH_RANGE}}
+      BOSH_GATEWAY: {{BOSH_GATEWAY}}
+      BOSH_DNS: {{BOSH_DNS}}
+      BOSH_RESERVED: {{BOSH_RESERVED}}
+      BOSH_STATIC: {{BOSH_STATIC}}
+      BOSH_NETWORK_NAME: {{BOSH_NETWORK_NAME}}
 
   - put: vsphere-deployment
     tags: [vsphere-windows]
