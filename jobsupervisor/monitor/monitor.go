@@ -135,7 +135,7 @@ func (m *Monitor) monitorLoop() error {
 				// Hard error
 				if err := m.updateSystemCPU(); err != nil {
 					m.err = err
-					return // WARN
+					return
 				}
 			}
 		}

@@ -167,7 +167,6 @@ func NewWindowsJobSupervisor(
 	if err != nil {
 		s.logger.Error(s.logTag, "Initializing monitor.Monitor: %s", err)
 	}
-	// WARN (CEV): Handle error case
 	s.monitor = m
 	return s
 }

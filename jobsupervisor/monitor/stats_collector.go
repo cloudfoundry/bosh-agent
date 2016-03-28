@@ -63,7 +63,6 @@ func (c *collector) GetMemStats() (stats.Usage, error) {
 func (c *collector) GetSwapStats() (usage stats.Usage, err error) { return }
 
 func (c *collector) GetDiskStats(path string) (stats.DiskStats, error) {
-	// TODO (CEV): Implement InodeUsage
 	u, err := UsedDiskSpace(path)
 	d := stats.DiskStats{
 		DiskUsage: stats.Usage{
