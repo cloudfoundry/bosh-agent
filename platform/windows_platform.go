@@ -213,3 +213,7 @@ func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 	return "", nil
 }
+
+func (p WindowsPlatform) DeleteARPEntryWithIP(ip string) error {
+	return nil
+}
