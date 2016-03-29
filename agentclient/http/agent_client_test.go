@@ -703,7 +703,7 @@ var _ = Describe("AgentClient", func() {
 		})
 	})
 
-	Describe("DeleteFromARP", func() {
+	Describe("DeleteARPEntries", func() {
 		var (
 			ips []string
 		)
@@ -718,7 +718,7 @@ var _ = Describe("AgentClient", func() {
 			})
 
 			It("makes a POST request to the endpoint", func() {
-				err := agentClient.DeleteFromARP(ips)
+				err := agentClient.DeleteARPEntries(ips)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeHTTPClient.PostInputs).To(HaveLen(4))
@@ -730,7 +730,7 @@ var _ = Describe("AgentClient", func() {
 
 				expectedIps := []interface{}{ips[0], ips[1]}
 				Expect(request).To(Equal(AgentRequestMessage{
-					Method:    "delete_from_arp",
+					Method:    "delete_arp_entries",
 					Arguments: []interface{}{map[string]interface{}{"ips": expectedIps}},
 					ReplyTo:   "fake-uuid",
 				}))
@@ -743,7 +743,7 @@ var _ = Describe("AgentClient", func() {
 			})
 
 			It("returns an error", func() {
-				err := agentClient.DeleteFromARP(ips)
+				err := agentClient.DeleteARPEntries(ips)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("status code: 500"))
 			})
@@ -755,7 +755,7 @@ var _ = Describe("AgentClient", func() {
 			})
 
 			It("returns an error", func() {
-				err := agentClient.DeleteFromARP(ips)
+				err := agentClient.DeleteARPEntries(ips)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bad request"))
 			})

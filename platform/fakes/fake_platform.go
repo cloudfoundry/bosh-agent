@@ -122,8 +122,8 @@ type FakePlatform struct {
 	GetConfiguredNetworkInterfacesInterfaces []string
 	GetConfiguredNetworkInterfacesErr        error
 
-	LastIpDeletedFromArp    string
-	DeleteArpEntryWithIpErr error
+	LastIPDeletedFromARP    string
+	DeleteARPEntryWithIPErr error
 
 	certManager boshcert.Manager
 
@@ -380,9 +380,9 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	return
 }
 
-func (p *FakePlatform) DeleteArpEntryWithIp(ip string) error {
-	p.LastIpDeletedFromArp = ip
-	return p.DeleteArpEntryWithIpErr
+func (p *FakePlatform) DeleteARPEntryWithIP(ip string) error {
+	p.LastIPDeletedFromARP = ip
+	return p.DeleteARPEntryWithIPErr
 }
 
 func (p *FakePlatform) PrepareForNetworkingChange() error {

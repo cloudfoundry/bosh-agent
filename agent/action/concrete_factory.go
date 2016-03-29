@@ -73,7 +73,7 @@ func NewFactory(
 			"unmount_disk": NewUnmountDisk(settingsService, platform),
 
 			// ARP cache management
-			"delete_from_arp": NewForcefulARP(platform),
+			"delete_arp_entries": NewDeleteARPEntries(platform),
 
 			// Networkingconcrete_factory_test.go
 			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settingsService, NewAgentKiller()),

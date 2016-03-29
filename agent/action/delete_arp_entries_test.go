@@ -9,19 +9,19 @@ import (
 )
 
 func init() {
-	Describe("Forceful ARP", func() {
+	Describe("Delete ARP Entries", func() {
 		var (
 			platform  *fakeplatform.FakePlatform
-			action    ForcefulARPAction
+			action    DeleteARPEntriesAction
 			addresses []string
-			args      ForcefulARPActionArgs
+			args      DeleteARPEntriesActionArgs
 		)
 
 		BeforeEach(func() {
 			platform = new(fakeplatform.FakePlatform)
-			action = NewForcefulARP(platform)
+			action = NewDeleteARPEntries(platform)
 			addresses = []string{"10.0.0.1", "10.0.0.2"}
-			args = ForcefulARPActionArgs{
+			args = DeleteARPEntriesActionArgs{
 				Ips: addresses,
 			}
 		})
@@ -35,10 +35,10 @@ func init() {
 		})
 
 		It("requests deletion of all provided IPs from the ARP cache", func() {
-			Expect(platform.LastIpDeletedFromArp).To(Equal(""))
+			Expect(platform.LastIPDeletedFromARP).To(Equal(""))
 			_, err := action.Run(args)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(platform.LastIpDeletedFromArp).To(Equal("10.0.0.2"))
+			Expect(platform.LastIPDeletedFromARP).To(Equal("10.0.0.2"))
 		})
 
 		It("returns an empty map", func() {

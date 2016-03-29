@@ -292,7 +292,7 @@ func (p dummyPlatform) PrepareForNetworkingChange() error {
 	return nil
 }
 
-func (p dummyPlatform) DeleteArpEntryWithIp(ip string) error {
+func (p dummyPlatform) DeleteARPEntryWithIP(ip string) error {
 	return nil
 }
 

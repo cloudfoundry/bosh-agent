@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("DeleteFromARP", func() {
+var _ = Describe("DeleteARPEntries", func() {
 	const (
 		emptyMacAddress string = "<incomplete>"
 		testMacAddress  string = "52:54:00:12:35:aa"
@@ -132,7 +132,7 @@ var _ = Describe("DeleteFromARP", func() {
 
 	Context("on ubuntu", func() {
 		It("deletes ARP entries from the cache", func() {
-			err := agentClient.DeleteFromARP([]string{testIP})
+			err := agentClient.DeleteARPEntries([]string{testIP})
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() string {
