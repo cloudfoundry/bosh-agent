@@ -59,8 +59,14 @@ func (c *collector) GetMemStats() (stats.Usage, error) {
 	return usage, err
 }
 
-// Not implemented on Windows.
-func (c *collector) GetSwapStats() (usage stats.Usage, err error) { return }
+func (c *collector) GetSwapStats() (stats.Usage, error) {
+	mem, err := SystemPageStats()
+	usage := stats.Usage{
+		Total: mem.Total.Uint64(),
+		Used:  mem.Total.Uint64() - mem.Avail.Uint64(),
+	}
+	return usage, err
+}
 
 func (c *collector) GetDiskStats(path string) (stats.DiskStats, error) {
 	u, err := UsedDiskSpace(path)

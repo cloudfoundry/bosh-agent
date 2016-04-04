@@ -64,11 +64,7 @@ func (s concreteService) Get() (vitals Vitals, err error) {
 	}
 
 	vitals = Vitals{
-		Load: []string{
-			fmt.Sprintf("%.2f", loadStats.One),
-			fmt.Sprintf("%.2f", loadStats.Five),
-			fmt.Sprintf("%.2f", loadStats.Fifteen),
-		},
+		Load: createLoadVitals(loadStats),
 		CPU: CPUVitals{
 			User: cpuStats.UserPercent().FormatFractionOf100(1),
 			Sys:  cpuStats.SysPercent().FormatFractionOf100(1),
