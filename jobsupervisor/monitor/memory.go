@@ -3,7 +3,11 @@
 package monitor
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"os/exec"
+	"strconv"
 	"syscall"
 	"unsafe"
 )
@@ -83,13 +87,39 @@ func SystemMemStats() (MemStat, error) {
 }
 
 func SystemPageStats() (MemStat, error) {
-	m, err := getGlobalMemoryStatusEx()
+	const MB = 1024 * 1024
+	out, err := exec.Command("wmic", "pagefile", "list", "full").Output()
 	if err != nil {
 		return MemStat{}, err
 	}
+	total, err := parseWmicOutput(out, []byte("AllocatedBaseSize"))
+	if err != nil {
+		return MemStat{}, err
+	}
+	used, err := parseWmicOutput(out, []byte("CurrentUsage"))
+	if err != nil {
+		return MemStat{}, err
+	}
+	total *= MB
+	used *= MB
 	mem := MemStat{
-		Total: Byte(m.TotalPageFile - m.TotalPhys),
-		Avail: Byte(m.AvailPageFile - m.AvailPhys),
+		Total: Byte(total),
+		Avail: Byte(total - used),
 	}
 	return mem, nil
+}
+
+func parseWmicOutput(s, sep []byte) (uint64, error) {
+	bb := bytes.Split(s, []byte("\n"))
+	for i := 0; i < len(bb); i++ {
+		b := bytes.TrimSpace(bb[i])
+		if bytes.HasPrefix(b, sep) {
+			n := bytes.IndexByte(b, '=')
+			if n == -1 || n == len(s)-1 {
+				return 0, errors.New("parseWmicOutput: parsing field: " + string(sep))
+			}
+			return strconv.ParseUint(string(b[n+1:]), 10, 64)
+		}
+	}
+	return 0, errors.New("parseWmicOutput: missing field: " + string(sep))
 }

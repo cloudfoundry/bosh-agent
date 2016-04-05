@@ -43,4 +43,46 @@ var _ = Describe("Memory", func() {
 			}
 		})
 	})
+	Context("when parsing wmic output", func() {
+		It("should parse the output", func() {
+			res := `
+
+AllocatedBaseSize=4791
+
+CurrentUsage=393
+
+Description=C:\pagefile.sys
+
+InstallDate=20151221103329.285091-480
+
+Name=C:\pagefile.sys
+
+PeakUsage=2916
+
+Status=
+
+TempPageFile=FALSE
+
+
+`
+			out := []byte(res)
+			num, err := parseWmicOutput(out, []byte("CurrentUsage"))
+			Expect(err).To(BeNil())
+			Expect(num).To(Equal(uint64(393)))
+
+			num, err = parseWmicOutput(out, []byte("AllocatedBaseSize"))
+			Expect(err).To(BeNil())
+			Expect(num).To(Equal(uint64(4791)))
+
+			num, err = parseWmicOutput(out, []byte("Status"))
+			Expect(err).To(HaveOccurred())
+			Expect(num).To(Equal(uint64(0)))
+
+			num, err = parseWmicOutput(out, []byte("SOMETHINGELSE"))
+			Expect(err).To(HaveOccurred())
+			Expect(num).To(Equal(uint64(0)))
+		})
+
+	})
+
 })
