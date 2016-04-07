@@ -205,4 +205,10 @@ var _ = Describe("concreteFactory", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewPrepare(applier)))
 	})
+
+	It("delete_arp_entries", func() {
+		action, err := factory.Create("delete_arp_entries")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewDeleteARPEntries(platform)))
+	})
 })

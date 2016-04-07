@@ -23,7 +23,7 @@ var _ = Describe("Server", func() {
 		serverPort       uint16
 		logger           boshlog.Logger
 		server           Server
-		msgs             msgCollector
+		msgs             *msgCollector
 		listenerProvider func(protocol, address string) (net.Listener, error)
 	)
 
@@ -42,7 +42,7 @@ var _ = Describe("Server", func() {
 		return uint16(port)
 	}
 
-	captureNMsgs := func(doneCh chan struct{}, maxMsgs int) func(msg Msg) {
+	captureNMsgs := func(msgs *msgCollector, doneCh chan struct{}, maxMsgs int) func(msg Msg) {
 		return func(msg Msg) {
 			msgs.Add(msg)
 			if len(msgs.Msgs()) == maxMsgs {
@@ -69,7 +69,7 @@ var _ = Describe("Server", func() {
 			return net.Listen(protocol, Iaddr)
 		}
 		server = NewServer(serverPort, listenerProvider, logger)
-		msgs = msgCollector{}
+		msgs = &msgCollector{}
 	})
 
 	It("it calls back on a new syslog message", func() {
@@ -78,7 +78,7 @@ var _ = Describe("Server", func() {
 
 		go func() {
 			defer GinkgoRecover()
-			startErrCh <- server.Start(captureNMsgs(doneCh, 4))
+			startErrCh <- server.Start(captureNMsgs(msgs, doneCh, 4))
 		}()
 
 		conn, err := waitToDial()
@@ -112,7 +112,7 @@ var _ = Describe("Server", func() {
 
 	It("it can accept multiple connections at once", func() {
 		doneCh := make(chan struct{})
-		go server.Start(captureNMsgs(doneCh, 4))
+		go server.Start(captureNMsgs(msgs, doneCh, 4))
 
 		conn1, err := waitToDial()
 		Expect(err).ToNot(HaveOccurred())
@@ -159,7 +159,7 @@ var _ = Describe("Server", func() {
 		server = NewServer(serverPort, listenerProvider, logger)
 
 		doneCh := make(chan struct{})
-		go server.Start(captureNMsgs(doneCh, 2))
+		go server.Start(captureNMsgs(msgs, doneCh, 2))
 
 		conn, err := waitToDial()
 		Expect(err).ToNot(HaveOccurred())
