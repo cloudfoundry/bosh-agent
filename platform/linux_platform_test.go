@@ -2322,7 +2322,7 @@ unit: sectors
 			err := platform.RemoveDevTools(devToolsListPath)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-f", "dummy-compiler"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-rf", "dummy-compiler"}))
 		})
 	})
 }

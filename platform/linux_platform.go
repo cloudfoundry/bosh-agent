@@ -1132,7 +1132,7 @@ func (p linux) RemoveDevTools(packageFileListPath string) error {
 	pkgFileList := strings.Split(content, "\n")
 
 	for _, pkgFile := range pkgFileList {
-		_, _, _, err = p.cmdRunner.RunCommand("rm", "-f", pkgFile)
+		_, _, _, err = p.cmdRunner.RunCommand("rm", "-rf", pkgFile)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Unable to remove package file: %s", pkgFile)
 		}
