@@ -29,7 +29,11 @@ type SourceOptions interface {
 }
 
 type HTTPSourceOptions struct {
-	URI string
+	URI            string
+	Headers        map[string]string
+	UserDataPath   string
+	InstanceIDPath string
+	SSHKeysPath    string
 }
 
 func (o HTTPSourceOptions) sourceOptionsInterface() {}
@@ -97,7 +101,16 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 
 		switch typedOpts := opts.(type) {
 		case HTTPSourceOptions:
-			metadataService = NewHTTPMetadataService(typedOpts.URI, resolver, f.platform, f.logger)
+			metadataService = NewHTTPMetadataService(
+				typedOpts.URI,
+				typedOpts.Headers,
+				typedOpts.UserDataPath,
+				typedOpts.InstanceIDPath,
+				typedOpts.SSHKeysPath,
+				resolver,
+				f.platform,
+				f.logger,
+			)
 
 		case ConfigDriveSourceOptions:
 			metadataService = NewConfigDriveMetadataService(
