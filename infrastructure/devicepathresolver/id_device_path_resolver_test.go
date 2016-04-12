@@ -30,6 +30,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 		diskSettings = boshsettings.DiskSettings{
 			ID: "fake-disk-id-include-truncate",
 		}
+		devicePrefix = ""
 	})
 
 	JustBeforeEach(func() {
