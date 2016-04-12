@@ -417,6 +417,11 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 		Describe("MonitorJobFailures", func() {
 			var cancelServer chan bool
+			const failureRequest = `{
+				"event": "pid failed",
+				"exitCode": 55,
+				"processName": "nats"
+			}`
 			BeforeEach(func() {
 				dirProvider := boshdirs.NewProvider(basePath)
 				runner = boshsys.NewExecCmdRunner(logger)
@@ -430,9 +435,24 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			doJobFailureRequest := func(payload string, port int) error {
 				url := fmt.Sprintf("http://localhost:%d", port)
-				buf := bytes.NewBufferString(payload)
-				_, err := http.Post(url, "application/json", buf)
+				r := bytes.NewReader([]byte(payload))
+				_, err := http.Post(url, "application/json", r)
 				return err
+			}
+
+			expectedMonitAlert := func(recieved boshalert.MonitAlert) interface{} {
+				date, err := time.Parse(time.RFC1123Z, recieved.Date)
+				if err != nil {
+					return err
+				}
+				return boshalert.MonitAlert{
+					ID:          "nats",
+					Service:     "nats",
+					Event:       "pid failed",
+					Action:      "Start",
+					Date:        date.Format(time.RFC1123Z),
+					Description: "exited with code 55",
+				}
 			}
 
 			It("receives job failures from the service wrapper via HTTP", func() {
@@ -445,25 +465,54 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 				go jobSupervisor.MonitorJobFailures(failureHandler)
 
-				msg := `{"datetime":"Sun, 22 May 2011 20:07:41 +0500",
-								 "event": "pid failed",
-								 "processName": "nats",
-								 "exitCode":55}`
-
-				err := doJobFailureRequest(msg, jobFailuresServerPort)
+				err := doJobFailureRequest(failureRequest, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
 
-				alertTime, err := time.Parse(time.RFC1123Z, handledAlert.Date)
+				Expect(handledAlert).To(Equal(expectedMonitAlert(handledAlert)))
+			})
+
+			It("stops sending failures after a call to Unmonitor", func() {
+				var handledAlert boshalert.MonitAlert
+				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+					handledAlert = alert
+					return
+				}
+				go jobSupervisor.MonitorJobFailures(failureHandler)
+
+				// Unmonitor jobs
+				Expect(jobSupervisor.Unmonitor()).To(Succeed())
+
+				err := doJobFailureRequest(failureRequest, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(handledAlert).To(Equal(boshalert.MonitAlert{
-					ID:          "nats",
-					Service:     "nats",
-					Event:       "pid failed",
-					Action:      "Start",
-					Date:        alertTime.Format(time.RFC1123Z),
-					Description: "exited with code 55",
-				}))
+				// Should match empty MonitAlert
+				Expect(handledAlert).To(Equal(boshalert.MonitAlert{}))
+			})
+
+			It("re-monitors all jobs after a call to start", func() {
+				var handledAlert boshalert.MonitAlert
+				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+					handledAlert = alert
+					return
+				}
+				go jobSupervisor.MonitorJobFailures(failureHandler)
+
+				// Unmonitor jobs
+				Expect(jobSupervisor.Unmonitor()).To(Succeed())
+
+				err := doJobFailureRequest(failureRequest, jobFailuresServerPort)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Should match empty MonitAlert
+				Expect(handledAlert).To(Equal(boshalert.MonitAlert{}))
+
+				// Start should re-monitor all jobs
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				err = doJobFailureRequest(failureRequest, jobFailuresServerPort)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(handledAlert).To(Equal(expectedMonitAlert(handledAlert)))
 			})
 
 			It("ignores unknown requests", func() {
