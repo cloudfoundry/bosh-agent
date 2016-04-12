@@ -718,7 +718,7 @@ func (p linux) SetupTmpDir() error {
 			return bosherr.WrapError(err, "Creating root tmp dir filesystem")
 		}
 
-		err = p.diskManager.GetMounter().Mount(boshRootTmpPath, systemTmpDir, "-t", "ext4", "-o", "loop")
+		err = p.diskManager.GetMounter().Mount(boshRootTmpPath, systemTmpDir, "-t", "ext4", "-o", "loop,noexec")
 		if err != nil {
 			return bosherr.WrapError(err, "Mounting root tmp dir over /tmp")
 		}

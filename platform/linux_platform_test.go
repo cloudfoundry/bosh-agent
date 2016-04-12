@@ -1364,7 +1364,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
 					Expect(mounter.MountPartitionPaths[0]).To(Equal("/fake-dir/data/root_tmp"))
 					Expect(mounter.MountMountPoints[0]).To(Equal("/tmp"))
-					Expect(mounter.MountMountOptions[0]).To(Equal([]string{"-t", "ext4", "-o", "loop"}))
+					Expect(mounter.MountMountOptions[0]).To(Equal([]string{"-t", "ext4", "-o", "loop,noexec"}))
 				})
 
 				It("returns error if mounting the new tmp filesystem fails", func() {
