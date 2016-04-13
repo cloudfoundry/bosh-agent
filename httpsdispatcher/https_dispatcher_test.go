@@ -23,8 +23,18 @@ var _ = Describe("HTTPSDispatcher", func() {
 		serverURL, err := url.Parse("https://127.0.0.1:7788")
 		Expect(err).ToNot(HaveOccurred())
 		dispatcher = boshdispatcher.NewHTTPSDispatcher(serverURL, logger)
-		go dispatcher.Start()
-		time.Sleep(1 * time.Second)
+
+		errChan := make(chan error)
+		go func() {
+			errChan <- dispatcher.Start()
+		}()
+
+		select {
+		case err := <-errChan:
+			Expect(err).ToNot(HaveOccurred())
+		case <-time.After(1 * time.Second):
+			// server should now be running, continue
+		}
 	})
 
 	AfterEach(func() {
