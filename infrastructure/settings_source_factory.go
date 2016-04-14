@@ -141,7 +141,6 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 
 		case CDROMSourceOptions:
 			return nil, bosherr.Error("CDROM source is not supported when registry is used")
-		}
 
 		case InstanceMetadataSourceOptions:
 			return nil, bosherr.Error("Instance Metadata source is not supported when registry is used")
@@ -181,6 +180,14 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 		case CDROMSourceOptions:
 			settingsSource = NewCDROMSettingsSource(
 				typedOpts.FileName,
+				f.platform,
+				f.logger,
+			)
+		case InstanceMetadataSourceOptions:
+			settingsSource = NewInstanceMetadataSettingsSource(
+				typedOpts.URI,
+				typedOpts.Headers,
+				typedOpts.SettingsPath,
 				f.platform,
 				f.logger,
 			)
