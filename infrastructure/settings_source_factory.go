@@ -64,6 +64,14 @@ type CDROMSourceOptions struct {
 
 func (o CDROMSourceOptions) sourceOptionsInterface() {}
 
+type InstanceMetadataSourceOptions struct {
+	URI          string
+	Headers      map[string]string
+	SettingsPath string
+}
+
+func (o InstanceMetadataSourceOptions) sourceOptionsInterface() {}
+
 type SettingsSourceFactory struct {
 	options  SettingsOptions
 	platform boshplat.Platform
@@ -135,6 +143,9 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 			return nil, bosherr.Error("CDROM source is not supported when registry is used")
 		}
 
+		case InstanceMetadataSourceOptions:
+			return nil, bosherr.Error("Instance Metadata source is not supported when registry is used")
+		}
 		metadataServices = append(metadataServices, metadataService)
 	}
 
