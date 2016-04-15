@@ -23,14 +23,16 @@ func (c *collector) StartCollecting(freq time.Duration, updateSema chan struct{}
 	if c.m == nil {
 		c.m, _ = condMonitor(freq, c.cond)
 	}
-	for {
-		c.cond.L.Lock()
-		c.cond.Wait()
-		c.cond.L.Unlock()
-		if updateSema != nil {
-			updateSema <- struct{}{}
+	go func() {
+		for {
+			c.cond.L.Lock()
+			c.cond.Wait()
+			c.cond.L.Unlock()
+			if updateSema != nil {
+				updateSema <- struct{}{}
+			}
 		}
-	}
+	}()
 }
 
 // Not implemented on Windows.

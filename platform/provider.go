@@ -55,7 +55,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	copier := boshcmd.NewCpCopier(runner, fs, logger)
 
 	// Kick of stats collection as soon as possible
-	go statsCollector.StartCollecting(SigarStatsCollectionInterval, nil)
+	statsCollector.StartCollecting(SigarStatsCollectionInterval, nil)
 
 	vitalsService := boshvitals.NewService(statsCollector, dirProvider)
 

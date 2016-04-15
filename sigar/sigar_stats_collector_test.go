@@ -51,7 +51,7 @@ var _ = Describe("sigarStatsCollector", func() {
 
 			latestGotUpdated := make(chan struct{})
 
-			go collector.StartCollecting(1*time.Millisecond, latestGotUpdated)
+			collector.StartCollecting(1*time.Millisecond, latestGotUpdated)
 			<-latestGotUpdated
 
 			stats, _ := collector.GetCPUStats()

@@ -32,7 +32,7 @@ var _ = Describe("Stats collector", func() {
 
 		sema := make(chan struct{})
 		c := NewStatsCollector()
-		go c.StartCollecting(freq, sema)
+		c.StartCollecting(freq, sema)
 
 		<-sema
 		cpu, err := c.GetCPUStats()
@@ -49,18 +49,10 @@ var _ = Describe("Stats collector", func() {
 		const freq = time.Second
 
 		c := NewStatsCollector()
-		go c.StartCollecting(freq, nil)
-
-		// Wait for collector to initialize
-		Eventually(func() error {
-			_, err := c.GetCPUStats()
-			return err
-		}).Should(Succeed())
+		c.StartCollecting(freq, nil)
 
 		cpu, err := c.GetCPUStats()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(cpu).ToNot(Equal(stats.CPUStats{}))
-
 	})
-
 })
