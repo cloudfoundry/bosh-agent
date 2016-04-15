@@ -392,7 +392,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			})
 
-			FIt("stops flapping services and gives a status of stopped", func() {
+			It("stops flapping services and gives a status of stopped", func() {
 				conf, err := AddJob("flapping")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(jobSupervisor.Start()).To(Succeed())
