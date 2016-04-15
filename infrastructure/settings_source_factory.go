@@ -183,6 +183,7 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 				f.platform,
 				f.logger,
 			)
+
 		case InstanceMetadataSourceOptions:
 			settingsSource = NewInstanceMetadataSettingsSource(
 				typedOpts.URI,
@@ -215,6 +216,10 @@ func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {
 			switch {
 			case optType == "HTTP":
 				var o HTTPSourceOptions
+				err, opts = mapstruc.Decode(m, &o), o
+
+			case optType == "InstanceMetadata":
+				var o InstanceMetadataSourceOptions
 				err, opts = mapstruc.Decode(m, &o), o
 
 			case optType == "ConfigDrive":
