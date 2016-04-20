@@ -1,0 +1,42 @@
+{
+    "agent_id": "anagentid",
+    "blobstore": {
+        "options": null,
+        "provider": ""
+    },
+    "disks": {
+        "ephemeral": "",
+        "persistent": null,
+        "raw_ephemeral": null,
+        "system": ""
+    },
+    "env": {
+        "bosh": {
+            "keep_root_password": false,
+            "password": ""
+        }
+    },
+    "mbus": "",
+    "networks": {
+        "default": {
+            "default": null,
+            "dns": [
+                "10.234.50.180",
+                "10.234.71.124"
+            ],
+            "gateway": "10.234.228.129",
+            "ip": "10.234.228.158",
+            "mac": "00:0C:29:E5:12:DE",
+            "netmask": "255.255.255.192",
+            "preconfigured": false,
+            "resolved": false,
+            "type": "manual",
+            "use_dhcp": false
+        }
+    },
+    "ntp": null,
+    "trusted_certs": "",
+    "vm": {
+        "name": "fooname"
+    }
+}

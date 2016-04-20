@@ -17,16 +17,18 @@ import (
 
 var _ = Describe("RunErrand", func() {
 	var (
-		specService *fakeas.FakeV1Service
-		cmdRunner   *fakesys.FakeCmdRunner
-		action      RunErrandAction
+		specService          *fakeas.FakeV1Service
+		cmdRunner            *fakesys.FakeCmdRunner
+		action               RunErrandAction
+		scriptCommandFactory boshsys.ScriptCommandFactory
 	)
 
 	BeforeEach(func() {
 		specService = fakeas.NewFakeV1Service()
 		cmdRunner = fakesys.NewFakeCmdRunner()
+		scriptCommandFactory = boshsys.NewScriptCommandFactory("linux")
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
+		action = NewRunErrand(specService, "/fake-jobs-dir", scriptCommandFactory, cmdRunner, logger)
 	})
 
 	It("is asynchronous", func() {

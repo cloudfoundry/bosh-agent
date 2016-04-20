@@ -1,7 +1,7 @@
 ---
 platform: linux
 
-image: docker:///bosh/utils
+image: docker:///bosh/init
 
 inputs:
 - name: bosh-utils

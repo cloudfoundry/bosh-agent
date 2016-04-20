@@ -1,3 +1,5 @@
+// +build !windows
+
 package jobsupervisor
 
 import (
@@ -11,6 +13,8 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
+const jobSupervisorListenPort = 2825
+
 type Provider struct {
 	supervisors map[string]JobSupervisor
 }
@@ -22,13 +26,15 @@ func NewProvider(
 	dirProvider boshdir.Provider,
 	handler boshhandler.Handler,
 ) (p Provider) {
+	fs := platform.GetFs()
+	runner := platform.GetRunner()
 	monitJobSupervisor := NewMonitJobSupervisor(
-		platform.GetFs(),
-		platform.GetRunner(),
+		fs,
+		runner,
 		client,
 		logger,
 		dirProvider,
-		2825,
+		jobSupervisorListenPort,
 		MonitReloadOptions{
 			MaxTries:               3,
 			MaxCheckTries:          6,
@@ -40,6 +46,7 @@ func NewProvider(
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
+		// Cannot link to "windows" JobSupervisor
 	}
 
 	return

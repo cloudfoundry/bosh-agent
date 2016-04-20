@@ -14,31 +14,34 @@ import (
 )
 
 type ConcreteJobScriptProvider struct {
-	cmdRunner   boshsys.CmdRunner
-	fs          boshsys.FileSystem
-	dirProvider boshdir.Provider
-	timeService clock.Clock
-	logger      boshlog.Logger
+	cmdRunner            boshsys.CmdRunner
+	fs                   boshsys.FileSystem
+	dirProvider          boshdir.Provider
+	scriptCommandFactory boshsys.ScriptCommandFactory
+	timeService          clock.Clock
+	logger               boshlog.Logger
 }
 
 func NewConcreteJobScriptProvider(
 	cmdRunner boshsys.CmdRunner,
 	fs boshsys.FileSystem,
 	dirProvider boshdir.Provider,
+	scriptCommandFactory boshsys.ScriptCommandFactory,
 	timeService clock.Clock,
 	logger boshlog.Logger,
 ) ConcreteJobScriptProvider {
 	return ConcreteJobScriptProvider{
-		cmdRunner:   cmdRunner,
-		fs:          fs,
-		dirProvider: dirProvider,
-		timeService: timeService,
-		logger:      logger,
+		cmdRunner:            cmdRunner,
+		fs:                   fs,
+		dirProvider:          dirProvider,
+		scriptCommandFactory: scriptCommandFactory,
+		timeService:          timeService,
+		logger:               logger,
 	}
 }
 
 func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string) Script {
-	path := path.Join(p.dirProvider.JobBinDir(jobName), scriptName)
+	path := path.Join(p.dirProvider.JobBinDir(jobName), scriptName+p.scriptCommandFactory.Extension())
 
 	stdoutLogFilename := fmt.Sprintf("%s.stdout.log", scriptName)
 	stdoutLogPath := filepath.Join(p.dirProvider.LogsDir(), jobName, stdoutLogFilename)
@@ -46,13 +49,13 @@ func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string) 
 	stderrLogFilename := fmt.Sprintf("%s.stderr.log", scriptName)
 	stderrLogPath := filepath.Join(p.dirProvider.LogsDir(), jobName, stderrLogFilename)
 
-	return NewScript(p.fs, p.cmdRunner, jobName, path, stdoutLogPath, stderrLogPath)
+	return NewScript(p.fs, p.cmdRunner, p.scriptCommandFactory, jobName, path, stdoutLogPath, stderrLogPath)
 }
 
 func (p ConcreteJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) CancellableScript {
-	path := path.Join(p.dirProvider.JobsDir(), jobName, "bin", "drain")
+	path := path.Join(p.dirProvider.JobsDir(), jobName, "bin", "drain"+p.scriptCommandFactory.Extension())
 
-	return boshdrain.NewConcreteScript(p.fs, p.cmdRunner, jobName, path, params, p.timeService, p.logger)
+	return boshdrain.NewConcreteScript(p.fs, p.cmdRunner, p.scriptCommandFactory, jobName, path, params, p.timeService, p.logger)
 }
 
 func (p ConcreteJobScriptProvider) NewParallelScript(scriptName string, scripts []Script) CancellableScript {

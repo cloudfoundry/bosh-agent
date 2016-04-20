@@ -1,6 +1,7 @@
 package vitals_test
 
 import (
+	"runtime"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -55,71 +56,77 @@ func buildVitalsService() (statsCollector *fakestats.FakeCollector, service Serv
 	statsCollector.StartCollecting(1*time.Millisecond, nil)
 	return
 }
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("vitals construction", func() {
-			_, service := buildVitalsService()
-			vitals, err := service.Get()
 
-			expectedVitals := map[string]interface{}{
-				"cpu": map[string]string{
-					"sys":  "10.0",
-					"user": "56.0",
-					"wait": "1.0",
+var _ = Describe("Testing with Ginkgo", func() {
+	It("vitals construction", func() {
+		_, service := buildVitalsService()
+		vitals, err := service.Get()
+
+		var loadVitals []string
+		if runtime.GOOS == "windows" {
+			loadVitals = []string{"N/A"}
+		} else {
+			loadVitals = []string{"0.20", "4.55", "1.12"}
+		}
+
+		expectedVitals := map[string]interface{}{
+			"cpu": map[string]string{
+				"sys":  "10.0",
+				"user": "56.0",
+				"wait": "1.0",
+			},
+			"disk": map[string]interface{}{
+				"system": map[string]string{
+					"percent":       "50",
+					"inode_percent": "10",
 				},
-				"disk": map[string]interface{}{
-					"system": map[string]string{
-						"percent":       "50",
-						"inode_percent": "10",
-					},
-					"ephemeral": map[string]string{
-						"percent":       "75",
-						"inode_percent": "20",
-					},
-					"persistent": map[string]string{
-						"percent":       "100",
-						"inode_percent": "75",
-					},
+				"ephemeral": map[string]string{
+					"percent":       "75",
+					"inode_percent": "20",
 				},
-				"load": []string{"0.20", "4.55", "1.12"},
-				"mem": map[string]string{
-					"kb":      "700",
-					"percent": "70",
+				"persistent": map[string]string{
+					"percent":       "100",
+					"inode_percent": "75",
 				},
-				"swap": map[string]string{
-					"kb":      "600",
-					"percent": "60",
-				},
-			}
+			},
+			"load": loadVitals,
+			"mem": map[string]string{
+				"kb":      "700",
+				"percent": "70",
+			},
+			"swap": map[string]string{
+				"kb":      "600",
+				"percent": "60",
+			},
+		}
 
-			Expect(err).ToNot(HaveOccurred())
+		Expect(err).ToNot(HaveOccurred())
 
-			boshassert.MatchesJSONMap(GinkgoT(), vitals, expectedVitals)
-		})
-
-		It("getting vitals when missing disks", func() {
-
-			statsCollector, service := buildVitalsService()
-			statsCollector.DiskStats = map[string]boshstats.DiskStats{
-				"/": boshstats.DiskStats{
-					DiskUsage:  boshstats.Usage{Used: 100, Total: 200},
-					InodeUsage: boshstats.Usage{Used: 50, Total: 500},
-				},
-			}
-
-			vitals, err := service.Get()
-			Expect(err).ToNot(HaveOccurred())
-
-			boshassert.LacksJSONKey(GinkgoT(), vitals.Disk, "ephemeral")
-			boshassert.LacksJSONKey(GinkgoT(), vitals.Disk, "persistent")
-		})
-		It("get getting vitals on system disk error", func() {
-
-			statsCollector, service := buildVitalsService()
-			statsCollector.DiskStats = map[string]boshstats.DiskStats{}
-
-			_, err := service.Get()
-			Expect(err).To(HaveOccurred())
-		})
+		boshassert.MatchesJSONMap(GinkgoT(), vitals, expectedVitals)
 	})
-}
+
+	It("getting vitals when missing disks", func() {
+
+		statsCollector, service := buildVitalsService()
+		statsCollector.DiskStats = map[string]boshstats.DiskStats{
+			"/": boshstats.DiskStats{
+				DiskUsage:  boshstats.Usage{Used: 100, Total: 200},
+				InodeUsage: boshstats.Usage{Used: 50, Total: 500},
+			},
+		}
+
+		vitals, err := service.Get()
+		Expect(err).ToNot(HaveOccurred())
+
+		boshassert.LacksJSONKey(GinkgoT(), vitals.Disk, "ephemeral")
+		boshassert.LacksJSONKey(GinkgoT(), vitals.Disk, "persistent")
+	})
+	It("get getting vitals on system disk error", func() {
+
+		statsCollector, service := buildVitalsService()
+		statsCollector.DiskStats = map[string]boshstats.DiskStats{}
+
+		_, err := service.Get()
+		Expect(err).To(HaveOccurred())
+	})
+})

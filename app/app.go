@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	sigar "github.com/cloudfoundry/gosigar"
-
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -27,7 +25,6 @@ import (
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -74,16 +71,17 @@ func (app *app) Setup(args []string) error {
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
+	statsCollector := newStatsCollector()
+
+	scriptCommandFactory := boshsys.NewScriptCommandFactory(opts.PlatformName)
+
 	state, err := boshplatform.NewBootstrapState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
 	if err != nil {
 		return bosherr.WrapError(err, "Loading state")
 	}
 
-	// Pulled outside of the platform provider so bosh-init will not pull in
-	// sigar when cross compiling linux -> darwin
-	sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, statsCollector, scriptCommandFactory, app.fs, config.Platform, state)
 
-	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, sigarCollector, app.fs, config.Platform, state)
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
@@ -174,6 +172,7 @@ func (app *app) Setup(args []string) error {
 		app.platform.GetRunner(),
 		app.platform.GetFs(),
 		app.platform.GetDirProvider(),
+		scriptCommandFactory,
 		timeService,
 		app.logger,
 	)
@@ -189,6 +188,7 @@ func (app *app) Setup(args []string) error {
 		jobSupervisor,
 		specService,
 		jobScriptProvider,
+		scriptCommandFactory,
 		app.logger,
 	)
 

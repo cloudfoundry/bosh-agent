@@ -18,6 +18,10 @@ func (p Provider) BoshDir() string {
 	return path.Join(p.BaseDir(), "bosh")
 }
 
+func (p Provider) BoshBinDir() string {
+	return path.Join(p.BoshDir(), "bin")
+}
+
 func (p Provider) EtcDir() string {
 	return path.Join(p.BoshDir(), "etc")
 }
@@ -71,7 +75,11 @@ func (p Provider) TmpDir() string {
 }
 
 func (p Provider) LogsDir() string {
-	return path.Join(p.DataDir(), "sys", "log")
+	return path.Join(p.BaseDir(), "sys", "log")
+}
+
+func (p Provider) AgentLogsDir() string {
+	return path.Join(p.BaseDir(), "bosh", "log")
 }
 
 func (p Provider) InstanceDir() string {
