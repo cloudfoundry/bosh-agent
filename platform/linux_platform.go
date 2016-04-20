@@ -67,6 +67,9 @@ type LinuxOptions struct {
 	// Strategy for resolving device paths;
 	// possible values: virtio, scsi, ''
 	DevicePathResolutionType string
+
+	// Device prexix when using virtio (defaults to 'virtio')
+	VirtioDevicePrefix string
 }
 
 type linux struct {
@@ -718,7 +721,7 @@ func (p linux) SetupTmpDir() error {
 			return bosherr.WrapError(err, "Creating root tmp dir filesystem")
 		}
 
-		err = p.diskManager.GetMounter().Mount(boshRootTmpPath, systemTmpDir, "-t", "ext4", "-o", "loop")
+		err = p.diskManager.GetMounter().Mount(boshRootTmpPath, systemTmpDir, "-t", "ext4", "-o", "loop,noexec")
 		if err != nil {
 			return bosherr.WrapError(err, "Mounting root tmp dir over /tmp")
 		}
@@ -1132,7 +1135,7 @@ func (p linux) RemoveDevTools(packageFileListPath string) error {
 	pkgFileList := strings.Split(content, "\n")
 
 	for _, pkgFile := range pkgFileList {
-		_, _, _, err = p.cmdRunner.RunCommand("rm", "-f", pkgFile)
+		_, _, _, err = p.cmdRunner.RunCommand("rm", "-rf", pkgFile)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Unable to remove package file: %s", pkgFile)
 		}

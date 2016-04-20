@@ -41,10 +41,17 @@ var _ = Describe("HTTPSDispatcher", func() {
 		Expect(err).ToNot(HaveOccurred())
 		dispatcher = boshdispatcher.NewHTTPSDispatcher(serverURL, logger)
 
-		// CEV: This returns an error!  But is required for the tests to work.
-		go dispatcher.Start()
+		errChan := make(chan error)
+		go func() {
+			errChan <- dispatcher.Start()
+		}()
 
-		time.Sleep(1 * time.Second)
+		select {
+		case err := <-errChan:
+			Expect(err).ToNot(HaveOccurred())
+		case <-time.After(1 * time.Second):
+			// server should now be running, continue
+		}
 	})
 
 	AfterEach(func() {
