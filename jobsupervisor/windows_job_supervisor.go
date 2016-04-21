@@ -279,7 +279,6 @@ var windowsSvcStateMap = map[svc.State]string{
 	svc.Paused:          "paused",
 }
 
-// Exported for testing.
 func SvcStateString(s svc.State) string {
 	return windowsSvcStateMap[s]
 }

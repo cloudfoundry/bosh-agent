@@ -286,8 +286,8 @@ func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, e
 		return nil, err
 	}
 
-	taskId := pkgResponse["value"]["agent_task_id"]
-	response, err := n.WaitForTask(taskId, -1)
+	taskID := pkgResponse["value"]["agent_task_id"]
+	response, err := n.WaitForTask(taskID, -1)
 	if err != nil {
 		return nil, err
 	}
