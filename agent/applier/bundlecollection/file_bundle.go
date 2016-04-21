@@ -97,17 +97,7 @@ func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {
 		return nil, "", bosherr.WrapError(err, "failed to create enable dir")
 	}
 
-	absInstallPath, err := filepath.Abs(b.installPath)
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "failed to get absolute installation path")
-	}
-
-	absEnablePath, err := filepath.Abs(b.enablePath)
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "failed to get absolute enable path")
-	}
-
-	err = b.fs.Symlink(absInstallPath, absEnablePath)
+	err = b.fs.Symlink(b.installPath, b.enablePath)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "failed to enable")
 	}

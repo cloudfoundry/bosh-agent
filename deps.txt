@@ -17,3 +17,4 @@ github.com/cloudfoundry/bosh-davcli/...:6b59ec2
 golang.org/x/sys/windows:7a56174
 golang.org/x/sys/windows/...:7a56174
 github.com/tedsuo/ifrit/...:0daf379
+github.com/cloudfoundry/bosh-utils/system:0f0c31a
