@@ -195,6 +195,23 @@ var _ = Describe("LoadConfigFromPath", func() {
 		Expect(err.Error()).To(ContainSubstring("Unmarshalling source type 'HTTP'"))
 	})
 
+	It("returns errors if failed to decode InstanceMetadata source options", func() {
+		fs.WriteFileString("/fake-config.conf", `{
+			"Infrastructure": {
+			  "Settings": {
+				  "Sources": [{
+				  	"Type": "InstanceMetadata",
+					"URI": 1
+					}]
+				}
+			}
+		}`)
+
+		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("Unmarshalling source type 'InstanceMetadata'"))
+	})
+
 	It("returns errors if failed to decode ConfigDrive source options", func() {
 		fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
