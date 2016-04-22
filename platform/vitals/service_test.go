@@ -14,6 +14,8 @@ import (
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
+const Windows = runtime.GOOS == "windows"
+
 func buildVitalsService() (statsCollector *fakestats.FakeCollector, service Service) {
 	dirProvider := boshdirs.NewProvider("/fake/base/dir")
 	statsCollector = &fakestats.FakeCollector{
@@ -62,13 +64,6 @@ var _ = Describe("Vitals service", func() {
 		_, service := buildVitalsService()
 		vitals, err := service.Get()
 
-		var loadVitals []string
-		if runtime.GOOS == "windows" {
-			loadVitals = []string{"N/A"}
-		} else {
-			loadVitals = []string{"0.20", "4.55", "1.12"}
-		}
-
 		expectedVitals := map[string]interface{}{
 			"cpu": map[string]string{
 				"sys":  "10.0",
@@ -89,7 +84,6 @@ var _ = Describe("Vitals service", func() {
 					"inode_percent": "75",
 				},
 			},
-			"load": loadVitals,
 			"mem": map[string]string{
 				"kb":      "700",
 				"percent": "70",
@@ -98,6 +92,11 @@ var _ = Describe("Vitals service", func() {
 				"kb":      "600",
 				"percent": "60",
 			},
+		}
+		if Windows {
+			expectedVitals["load"] = []string{""}
+		} else {
+			expectedVitals["load"] = []string{"0.20", "4.55", "1.12"}
 		}
 
 		Expect(err).ToNot(HaveOccurred())
