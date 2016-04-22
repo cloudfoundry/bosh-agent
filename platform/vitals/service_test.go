@@ -57,7 +57,7 @@ func buildVitalsService() (statsCollector *fakestats.FakeCollector, service Serv
 	return
 }
 
-var _ = Describe("Testing with Ginkgo", func() {
+var _ = Describe("Vitals service", func() {
 	It("vitals construction", func() {
 		_, service := buildVitalsService()
 		vitals, err := service.Get()
