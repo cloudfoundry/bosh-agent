@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
-
-	"github.com/cloudfoundry/bosh-utils/state"
 )
 
 var (
@@ -41,6 +40,26 @@ type CPUTime struct {
 
 func (c CPUTime) CPU() float64 { return c.load }
 
+type monitorState int32
+
+const (
+	stateStopped monitorState = iota
+	stateRunning
+	stateExited
+)
+
+type state struct {
+	val monitorState
+}
+
+func (s *state) Set(n monitorState) {
+	atomic.StoreInt32((*int32)(&s.val), int32(n))
+}
+
+func (s *state) Is(n monitorState) bool {
+	return atomic.LoadInt32((*int32)(&s.val)) == int32(n)
+}
+
 type Monitor struct {
 	user   CPUTime
 	kernel CPUTime
@@ -50,7 +69,7 @@ type Monitor struct {
 	err    error        // system error, if any
 	inited bool         // monitor initialized
 	mu     sync.RWMutex // pids mutex
-	state  *state.State
+	state  state
 	cond   *sync.Cond // Optional sync conditional for StatsCollector
 }
 
@@ -58,14 +77,9 @@ func New(freq time.Duration) (*Monitor, error) {
 	if freq < time.Millisecond*10 {
 		freq = time.Millisecond * 500
 	}
-	st, err := state.NewState(state.Stopped, state.Running, state.Exited)
-	if err != nil {
-		return nil, err
-	}
 	m := &Monitor{
 		tick:   time.NewTicker(freq),
 		inited: true,
-		state:  st,
 	}
 	if err := m.monitorLoop(); err != nil {
 		return nil, err
@@ -75,17 +89,12 @@ func New(freq time.Duration) (*Monitor, error) {
 
 // condMonitor, returns a Monitor that broadcasts on cond on each update.
 func condMonitor(freq time.Duration, cond *sync.Cond) (*Monitor, error) {
-	st, err := state.NewState(state.Stopped, state.Running, state.Exited)
-	if err != nil {
-		return nil, err
-	}
 	m := &Monitor{
 		tick:   time.NewTicker(freq),
 		inited: true,
-		state:  st,
 		cond:   cond,
 	}
-	m.state.Set(state.Running)
+	m.state.Set(stateRunning)
 	if err := m.monitorLoop(); err != nil {
 		return nil, err
 	}
@@ -122,11 +131,11 @@ func (m *Monitor) monitorLoop() error {
 		return m.err
 	}
 	go func() {
-		defer m.state.Set(state.Exited)
+		defer m.state.Set(stateExited)
 		for {
 			select {
 			case <-m.tick.C:
-				if !m.state.Is(state.Running) {
+				if !m.state.Is(stateRunning) {
 					continue
 				}
 				if m.cond != nil {

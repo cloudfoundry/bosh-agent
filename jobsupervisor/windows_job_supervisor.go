@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/tedsuo/ifrit"
@@ -20,7 +21,6 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monitor"
-	"github.com/cloudfoundry/bosh-utils/state"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -141,14 +141,6 @@ const (
 	stateDisabled
 )
 
-var supervisorStateStr = [...]string{
-	"Enabled",
-	"Disabled",
-}
-
-func (s supervisorState) String() string { return supervisorStateStr[s] }
-func (s supervisorState) Int32() int32   { return int32(s) }
-
 type windowsJobSupervisor struct {
 	cmdRunner             boshsys.CmdRunner
 	dirProvider           boshdirs.Provider
@@ -160,7 +152,16 @@ type windowsJobSupervisor struct {
 	jobFailuresServerPort int
 	cancelServer          chan bool
 
-	state *state.State
+	// state *state.State
+	state supervisorState
+}
+
+func (w *windowsJobSupervisor) stateSet(s supervisorState) {
+	atomic.StoreInt32((*int32)(&w.state), int32(s))
+}
+
+func (w *windowsJobSupervisor) stateIs(s supervisorState) bool {
+	return atomic.LoadInt32((*int32)(&w.state)) == int32(s)
 }
 
 func NewWindowsJobSupervisor(
@@ -186,12 +187,7 @@ func NewWindowsJobSupervisor(
 		s.logger.Error(s.logTag, "Initializing monitor.Monitor: %s", err)
 	}
 	s.monitor = m
-	st, err := state.NewState(stateEnabled, stateDisabled)
-	if err != nil {
-		s.logger.Error(s.logTag, "Initializing JobSupervisor state: %s", err)
-	}
-	s.state = st
-	s.state.Set(stateEnabled)
+	s.stateSet(stateEnabled)
 	return s
 }
 
@@ -215,7 +211,7 @@ func (s *windowsJobSupervisor) Start() error {
 		return bosherr.WrapError(err, "Removing stopped file")
 	}
 
-	s.state.Set(stateEnabled)
+	s.stateSet(stateEnabled)
 	return nil
 }
 
@@ -236,7 +232,7 @@ func (s *windowsJobSupervisor) Stop() error {
 }
 
 func (s *windowsJobSupervisor) Unmonitor() error {
-	s.state.Set(stateDisabled)
+	s.stateSet(stateDisabled)
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", unmonitorJobScript)
 	return err
 }
@@ -453,7 +449,7 @@ type windowsServiceEvent struct {
 func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	hl := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		if s.state.Is(stateDisabled) {
+		if s.stateIs(stateDisabled) {
 			return
 		}
 		var event windowsServiceEvent
