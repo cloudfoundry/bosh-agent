@@ -97,7 +97,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 	scriptPath := path.Join(compilePath, PackagingScriptName)
 
 	if c.fs.FileExists(scriptPath) {
-		if err := c.RunPackagingCommand(compilePath, enablePath, pkg); err != nil {
+		if err := c.runPackagingCommand(compilePath, enablePath, pkg); err != nil {
 			return "", "", bosherr.WrapError(err, "Running packaging script")
 		}
 	}

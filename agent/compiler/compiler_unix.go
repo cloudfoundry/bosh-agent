@@ -7,7 +7,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-func (c concreteCompiler) RunPackagingCommand(compilePath, enablePath string, pkg Package) error {
+func (c concreteCompiler) runPackagingCommand(compilePath, enablePath string, pkg Package) error {
 	command := boshsys.Command{
 		Name: "bash",
 		Args: []string{"-x", PackagingScriptName},

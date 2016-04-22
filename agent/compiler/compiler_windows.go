@@ -7,7 +7,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-func (c concreteCompiler) RunPackagingCommand(compilePath, enablePath string, pkg Package) error {
+func (c concreteCompiler) runPackagingCommand(compilePath, enablePath string, pkg Package) error {
 	runCommand := fmt.Sprintf("iex ((get-content %s) -join \"`n\")", PackagingScriptName)
 	command := boshsys.Command{
 		Name: "powershell",
