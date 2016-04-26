@@ -4,7 +4,7 @@ code.google.com/p/go-charset/data:ebbeafdc430e
 github.com/jeromer/syslogparser:ff71fe7
 github.com/pivotal-golang/clock:f2e1cd2
 github.com/pivotal/go-smtpd/smtpd:0af6982
-github.com/cloudfoundry/gosigar:3ed7c74
+github.com/cloudfoundry/gosigar:e949f42
 github.com/mitchellh/mapstructure:281073e
 github.com/cloudfoundry/yagnats:ea4caf6
 github.com/github.com/stretchr/testify/assert:2b15294

@@ -25,12 +25,14 @@ import (
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	sigar "github.com/cloudfoundry/gosigar"
 	"github.com/pivotal-golang/clock"
 )
 
@@ -71,7 +73,7 @@ func (app *app) Setup(args []string) error {
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
-	statsCollector := newStatsCollector()
+	statsCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
 	scriptCommandFactory := boshsys.NewScriptCommandFactory(opts.PlatformName)
 
