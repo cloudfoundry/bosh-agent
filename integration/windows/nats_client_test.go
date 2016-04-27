@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"text/template"
@@ -167,8 +169,6 @@ type NatsClient struct {
 
 	compressor      boshfileutil.Compressor
 	blobstoreClient utils.BlobClient
-
-	renderedTemplatesArchivesSha1 map[string]string
 }
 
 func NewNatsClient(
@@ -178,11 +178,6 @@ func NewNatsClient(
 	return &NatsClient{
 		compressor:      compressor,
 		blobstoreClient: blobstoreClient,
-		renderedTemplatesArchivesSha1: map[string]string{
-			"say-hello":       "8d62be87451e2ac3b5b3e736d210176274c95ec9",
-			"unmonitor-hello": "4ff9960a1d594743c498141cdbd611b93262e78c",
-			"simple-package":  "902d0e7690d45738681f9d0c1ecee19e40dec507",
-		},
 	}
 }
 
@@ -206,15 +201,13 @@ func (n *NatsClient) Cleanup() {
 }
 
 func (n *NatsClient) PrepareJob(jobName string) {
-	templateID, renderedTemplateArchiveID, err := n.uploadJob(jobName)
+	templateID, sha1, err := n.uploadJob(jobName)
 	Expect(err).NotTo(HaveOccurred())
-
-	sha1 := n.renderedTemplatesArchivesSha1[jobName]
 
 	prepareTemplateConfig := PrepareTemplateConfig{
 		JobName:                             jobName,
 		TemplateBlobstoreID:                 templateID,
-		RenderedTemplatesArchiveBlobstoreID: renderedTemplateArchiveID,
+		RenderedTemplatesArchiveBlobstoreID: templateID,
 		RenderedTemplatesArchiveSHA1:        sha1,
 		ReplyTo: senderID,
 	}
@@ -529,12 +522,23 @@ func (n *NatsClient) GetNextAlert(timeout time.Duration) (*boshalert.Alert, erro
 	return &alert, err
 }
 
-func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateArchiveID string, err error) {
-	renderedTemplateArchiveID, err = n.blobstoreClient.Create(fmt.Sprintf("fixtures/rendered_templates_archives/%s.tar", jobName))
+func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha string, err error) {
+	var dirname string
+	dirname, err = ioutil.TempDir("", "templates")
 	if err != nil {
 		return
 	}
-	templateID, err = n.blobstoreClient.Create("fixtures/template.tar")
+	defer os.RemoveAll(dirname)
+
+	tarfile := filepath.Join(dirname, jobName+".tar")
+	chdir := "fixtures/templates"
+	dir := filepath.Join(chdir, jobName)
+
+	renderedTemplateSha, err = utils.TarDirectory(dir, chdir, tarfile)
+	if err != nil {
+		return
+	}
+	templateID, err = n.blobstoreClient.Create(tarfile)
 	if err != nil {
 		return
 	}
@@ -542,5 +546,19 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateArch
 }
 
 func (n *NatsClient) uploadPackage(packageName string) (blobID string, err error) {
-	return n.blobstoreClient.Create(fmt.Sprintf("fixtures/rendered_templates_archives/%s.tar", packageName))
+	var dirname string
+	dirname, err = ioutil.TempDir("", "templates")
+	if err != nil {
+		return
+	}
+	defer os.RemoveAll(dirname)
+
+	tarfile := filepath.Join(dirname, packageName+".tar")
+	dir := filepath.Join("fixtures/templates", packageName)
+	_, err = utils.TarDirectory(dir, dir, tarfile)
+	if err != nil {
+		return
+	}
+
+	return n.blobstoreClient.Create(tarfile)
 }
