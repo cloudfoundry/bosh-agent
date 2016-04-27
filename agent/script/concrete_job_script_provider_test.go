@@ -29,6 +29,7 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 			runner,
 			fs,
 			dirProvider,
+			&fakesys.FakeCommandFactory{},
 			&fakeaction.FakeClock{},
 			logger,
 		)

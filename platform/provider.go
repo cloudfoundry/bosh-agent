@@ -43,9 +43,8 @@ type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState) Provider {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, scriptCommandFactory boshsys.ScriptCommandFactory, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
-
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
@@ -56,7 +55,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	copier := boshcmd.NewCpCopier(runner, fs, logger)
 
 	// Kick of stats collection as soon as possible
-	go statsCollector.StartCollecting(SigarStatsCollectionInterval, nil)
+	statsCollector.StartCollecting(SigarStatsCollectionInterval, nil)
 
 	vitalsService := boshvitals.NewService(statsCollector, dirProvider)
 
@@ -71,6 +70,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
+
+	scriptRunner := boshsys.NewConcreteScriptRunner(scriptCommandFactory, runner, fs, logger)
+	windowsNetManager := boshnet.NewWindowsNetManager(scriptRunner, logger)
 
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, 0, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
@@ -140,9 +142,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	return provider{
 		platforms: map[string]Platform{
-			"ubuntu": ubuntu,
-			"centos": centos,
-			"dummy":  NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
+			"ubuntu":  ubuntu,
+			"centos":  centos,
+			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
+			"windows": NewWindowsPlatform(statsCollector, fs, runner, dirProvider, windowsNetManager, devicePathResolver, logger),
 		},
 	}
 }

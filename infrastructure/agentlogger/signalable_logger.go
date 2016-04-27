@@ -14,8 +14,8 @@ func NewSignalableLogger(writerLogger logger.Logger, signalChannel chan os.Signa
 			<-signalChannel
 			writerLogger.Error("Received SIGSEGV", "Dumping goroutines...")
 			stackTrace := make([]byte, 10000)
-			runtime.Stack(stackTrace, true)
-			writerLogger.Error("Received SIGSEGV", string(stackTrace))
+			n := runtime.Stack(stackTrace, true)
+			writerLogger.Error("Received SIGSEGV", string(stackTrace[:n]))
 			doneChannel <- true
 		}
 	}()

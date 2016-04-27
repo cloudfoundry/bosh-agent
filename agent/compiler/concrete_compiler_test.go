@@ -3,6 +3,7 @@ package compiler_test
 import (
 	"errors"
 	"os"
+	"runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -218,17 +219,17 @@ func init() {
 			Context("when packaging script exists", func() {
 				BeforeEach(func() {
 					compressor.DecompressFileToDirCallBack = func() {
-						fs.WriteFileString("/fake-compile-dir/pkg_name/packaging", "hi")
+						filename := "/fake-compile-dir/pkg_name/" + PackagingScriptName
+						fs.WriteFileString(filename, "hi")
 					}
 				})
 
 				It("runs packaging script ", func() {
+
 					_, _, err := compiler.Compile(pkg, pkgDeps)
 					Expect(err).ToNot(HaveOccurred())
 
 					expectedCmd := boshsys.Command{
-						Name: "bash",
-						Args: []string{"-x", "packaging"},
 						Env: map[string]string{
 							"BOSH_COMPILE_TARGET":  "/fake-compile-dir/pkg_name",
 							"BOSH_INSTALL_TARGET":  "/fake-dir/packages/pkg_name",
@@ -238,10 +239,18 @@ func init() {
 						WorkingDir: "/fake-compile-dir/pkg_name",
 					}
 
+					if runtime.GOOS == "windows" {
+						expectedCmd.Name = "powershell"
+						expectedCmd.Args = []string{"-NoProfile", "-NonInteractive", "-command", "iex ((get-content packaging) -join \"`n\")"}
+					} else {
+						expectedCmd.Name = "bash"
+						expectedCmd.Args = []string{"-x", PackagingScriptName}
+					}
+
 					Expect(len(runner.RunCommands)).To(Equal(1))
 					Expect(runner.RunCommands[0]).To(Equal(expectedCmd))
 					Expect(runner.RunCommandJobName).To(Equal("compilation"))
-					Expect(runner.RunCommandTaskName).To(Equal("packaging"))
+					Expect(runner.RunCommandTaskName).To(Equal(PackagingScriptName))
 				})
 
 				It("propagates the error from packaging script", func() {

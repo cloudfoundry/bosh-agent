@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-utils/blobstore"
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/ginkgo"
-	. "github.com/cloudfoundry/bosh-utils/internal/github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshsysfake "github.com/cloudfoundry/bosh-utils/system/fakes"

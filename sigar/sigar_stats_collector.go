@@ -25,25 +25,29 @@ func NewSigarStatsCollector(sigar sigar.Sigar) boshstats.Collector {
 func (s *sigarStatsCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
 	cpuSamplesCh, _ := s.statsSigar.CollectCpuStats(collectionInterval)
 
-	for cpuSample := range cpuSamplesCh {
-		s.latestCPUStatsLock.Lock()
-		s.latestCPUStats.User = cpuSample.User
-		s.latestCPUStats.Nice = cpuSample.Nice
-		s.latestCPUStats.Sys = cpuSample.Sys
-		s.latestCPUStats.Wait = cpuSample.Wait
-		s.latestCPUStats.Total = cpuSample.Total()
-		s.latestCPUStatsLock.Unlock()
+	go func() {
+		for cpuSample := range cpuSamplesCh {
+			s.latestCPUStatsLock.Lock()
+			s.latestCPUStats.User = cpuSample.User
+			s.latestCPUStats.Nice = cpuSample.Nice
+			s.latestCPUStats.Sys = cpuSample.Sys
+			s.latestCPUStats.Wait = cpuSample.Wait
+			s.latestCPUStats.Total = cpuSample.Total()
+			s.latestCPUStatsLock.Unlock()
 
-		if latestGotUpdated != nil {
-			latestGotUpdated <- struct{}{}
+			if latestGotUpdated != nil {
+				latestGotUpdated <- struct{}{}
+			}
 		}
-	}
+	}()
 }
 
 func (s *sigarStatsCollector) GetCPULoad() (load boshstats.CPULoad, err error) {
 	l, err := s.statsSigar.GetLoadAverage()
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting Sigar Load Average")
+		if err != sigar.ErrNotImplemented {
+			err = bosherr.WrapError(err, "Getting Sigar Load Average")
+		}
 		return
 	}
 
