@@ -45,7 +45,9 @@ func (s *sigarStatsCollector) StartCollecting(collectionInterval time.Duration, 
 func (s *sigarStatsCollector) GetCPULoad() (load boshstats.CPULoad, err error) {
 	l, err := s.statsSigar.GetLoadAverage()
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting Sigar Load Average")
+		if err != sigar.ErrNotImplemented {
+			err = bosherr.WrapError(err, "Getting Sigar Load Average")
+		}
 		return
 	}
 
