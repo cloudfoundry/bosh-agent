@@ -222,7 +222,8 @@ Vagrant.configure(2) do |config|
     agent.vm.communicator = "winrm"
 
     agent.vm.provider :virtualbox do |v, override|
-      override.vm.box = "https://s3.amazonaws.com/windows-bosh-integration/bosh-agent.windows-integration.box"
+      # Private bucket: https://s3.amazonaws.com/windows-bosh-private/bosh-agent.windows-integration.box
+      override.vm.box = "windows-integration"
       v.cpus = 4
     end
 
