@@ -52,6 +52,12 @@ var _ = Describe("LoadConfigFromPath", func() {
 					  {
 					  	"Type": "CDROM",
 					  	"FileName": "/fake-file-name"
+					  },
+					  {
+						"Type": "InstanceMetadata",
+						"URI": "/fake-uri",
+						"Headers": {"fake": "headers"},
+						"SettingsPath": "/fake-settings-path"
 					  }
 				  ],
 				  "UseServerName": true,
@@ -91,6 +97,11 @@ var _ = Describe("LoadConfigFromPath", func() {
 						},
 						boshinf.CDROMSourceOptions{
 							FileName: "/fake-file-name",
+						},
+						boshinf.InstanceMetadataSourceOptions{
+							URI:          "/fake-uri",
+							Headers:      map[string]string{"fake": "headers"},
+							SettingsPath: "/fake-settings-path",
 						},
 					},
 					UseServerName: true,
