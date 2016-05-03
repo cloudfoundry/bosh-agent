@@ -33,7 +33,7 @@ func NewHTTPMetadataService(
 	resolver DNSResolver,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
-) MetadataService {
+) DynamicMetadataService {
 	return httpMetadataService{
 		metadataHost:    metadataHost,
 		metadataHeaders: metadataHeaders,
@@ -111,6 +111,35 @@ func (ms httpMetadataService) GetInstanceID() (string, error) {
 	return string(bytes), nil
 }
 
+func (ms httpMetadataService) GetValueAtPath(path string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("Can not retrieve metadata value for empthy path")
+	}
+
+	err := ms.ensureMinimalNetworkSetup()
+	if err != nil {
+		return "", err
+	}
+
+	url := fmt.Sprintf("%s%s", ms.metadataHost, path)
+	resp, err := ms.doGet(url)
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "Getting value from url %s", url)
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			ms.logger.Warn(ms.logTag, "Failed to close response body when getting value from path: %s", err.Error())
+		}
+	}()
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", bosherr.WrapError(err, fmt.Sprintf("Reading response body from %s", url))
+	}
+
+	return string(bytes), nil
+}
 func (ms httpMetadataService) GetServerName() (string, error) {
 	userData, err := ms.getUserData()
 	if err != nil {
