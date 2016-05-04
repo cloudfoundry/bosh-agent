@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 while getopts ":q:w" opt; do
   case "$opt" in
     q) QUIET=true ;;
@@ -18,7 +20,6 @@ fi
 echo 'Note: if you want to quickly run tests for just one package, do it like this:'
 echo '  % ginkgo path/to/package'
 
-result=0
 
 # Travis randomly kills go builds when using -race
 race=$([ "$TRAVIS" != "true" ] && echo "-race")
@@ -27,42 +28,26 @@ ignored=(vendor)
 echo -e "\n Formatting packages, other than: ${ignored[*]}..."
 for i in `ls -1` ; do
   if [ -d "$i" ] && [[ ! ${ignored[*]} =~ "$i" ]] ; then
-    $bin/go fmt github.com/cloudfoundry/bosh-agent/${i}/... 2> /dev/null
+    $bin/go fmt github.com/cloudfoundry/bosh-agent/${i}/...
   fi
 done
-let "result+=$?"
 
 echo -e "\n Installing ginkgo..."
 $bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
-let "result+=$?"
 
 echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk/errcheck/issues/75 is resolved"
 # $bin/test-unhandled-errors
-# let "result+=$?"
 
 echo -e "\n Testing packages..."
 $bin/env ginkgo $WATCH -r $race -skipPackage="integration,vendor" $dir
-let "result+=$?"
 
 echo -e "\n Running build script to confirm everything compiles..."
 $bin/build
-let "result+=$?"
-
-if [ ! $QUIET ]; then
-  if [ $result -eq 0 ]; then
-    echo -e "\n\033[0;32mSUITE SUCCESS\033[0m"
-  else
-    echo -e "\n\033[0;31mSUITE FAILURE (exit code: $result)\033[0m"
-  fi
-fi
-
 
 echo -e "\n Checking with golint..."
 $bin/golint
-let "result+=$?"
 
 echo -e "\n Govetting"
 $bin/govet
-let "result+=$?"
 
-exit $result
+echo -e "\n\033[0;32mSUCCESS\033[0m"
