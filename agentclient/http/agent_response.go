@@ -5,6 +5,7 @@ import (
 
 	"runtime/debug"
 
+	"github.com/cloudfoundry/bosh-agent/agentclient"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
@@ -89,7 +90,8 @@ func (r *StateResponse) Unmarshal(message []byte) error {
 }
 
 type AgentState struct {
-	JobState string `json:"job_state"`
+	JobState     string                             `json:"job_state"`
+	NetworkSpecs map[string]agentclient.NetworkSpec `json:"networks"`
 }
 
 type TaskResponse struct {
