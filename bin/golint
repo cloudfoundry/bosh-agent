@@ -1,12 +1,8 @@
 #!/bin/bash
 
-set -e
-
 bin=$(dirname $0)
 
 go get -u github.com/golang/lint/golint
-
-PATH=$bin/../../../../../bin:$PATH
 
 errors=$(
   $bin/gofiles $bin/env golint                              \
