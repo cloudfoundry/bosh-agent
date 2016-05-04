@@ -53,7 +53,7 @@ func (t *TarWalker) Walk(path string, fi os.FileInfo, err error) error {
 	return nil
 }
 
-// rootdir is equivalent to tar -C 'rootdir'
+// TarDirectory - rootdir is equivalent to tar -C 'rootdir'
 func TarDirectory(dirname, rootdir, tarname string) (string, error) {
 	f, err := os.OpenFile(tarname, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 	if err != nil {

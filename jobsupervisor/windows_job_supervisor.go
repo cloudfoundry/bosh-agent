@@ -191,11 +191,11 @@ func NewWindowsJobSupervisor(
 	return s
 }
 
-func (s *windowsJobSupervisor) Reload() error {
+func (w *windowsJobSupervisor) Reload() error {
 	return nil
 }
 
-func (s *windowsJobSupervisor) Start() error {
+func (w *windowsJobSupervisor) Start() error {
 
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", autoStartJobScript)
 	if err != nil {
@@ -215,7 +215,7 @@ func (s *windowsJobSupervisor) Start() error {
 	return nil
 }
 
-func (s *windowsJobSupervisor) Stop() error {
+func (w *windowsJobSupervisor) Stop() error {
 
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", unmonitorJobScript)
 	if err != nil {
@@ -231,13 +231,13 @@ func (s *windowsJobSupervisor) Stop() error {
 	return nil
 }
 
-func (s *windowsJobSupervisor) Unmonitor() error {
+func (w *windowsJobSupervisor) Unmonitor() error {
 	s.stateSet(stateDisabled)
 	_, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", unmonitorJobScript)
 	return err
 }
 
-func (s *windowsJobSupervisor) Status() (status string) {
+func (w *windowsJobSupervisor) Status() (status string) {
 	if s.fs.FileExists(s.stoppedFilePath()) {
 		return "stopped"
 	}
@@ -279,7 +279,7 @@ func SvcStateString(s svc.State) string {
 	return windowsSvcStateMap[s]
 }
 
-func (s *windowsJobSupervisor) Processes() ([]Process, error) {
+func (w *windowsJobSupervisor) Processes() ([]Process, error) {
 	stdout, _, _, err := s.cmdRunner.RunCommand("powershell", "-noprofile", "-noninteractive", "/C", listAllJobsScript)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Listing windows job process")
@@ -321,7 +321,7 @@ func (s *windowsJobSupervisor) Processes() ([]Process, error) {
 	return procs, nil
 }
 
-func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
+func (w *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
 	configFileContents, err := s.fs.ReadFile(configPath)
 	if err != nil {
 		return err
@@ -390,7 +390,7 @@ func (s *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 	return nil
 }
 
-func (s *windowsJobSupervisor) RemoveAllJobs() error {
+func (w *windowsJobSupervisor) RemoveAllJobs() error {
 
 	const MaxRetries = 100
 	const RetryInterval = time.Millisecond * 5
@@ -446,7 +446,7 @@ type windowsServiceEvent struct {
 	ExitCode    int    `json:"exitCode"`
 }
 
-func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
+func (w *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	hl := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		if s.stateIs(stateDisabled) {
@@ -482,6 +482,6 @@ func (s *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) err
 	}
 }
 
-func (s *windowsJobSupervisor) stoppedFilePath() string {
+func (w *windowsJobSupervisor) stoppedFilePath() string {
 	return filepath.Join(s.dirProvider.MonitDir(), "stopped")
 }
