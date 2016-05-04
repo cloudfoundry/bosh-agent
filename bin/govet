@@ -4,8 +4,6 @@ set -e
 
 bin=$(dirname $0)
 
-$bin/go get -u golang.org/x/tools/cmd/vet
-
 $bin/go vet `$bin/go list ./... | grep -v "github.com/cloudfoundry/bosh-agent/vendor/" | xargs`
 
 echo -e "\n All good"
