@@ -75,7 +75,7 @@ func (p Provider) TmpDir() string {
 }
 
 func (p Provider) LogsDir() string {
-	return path.Join(p.DataDir(), "sys", "log")
+	return path.Join(p.BaseDir(), "sys", "log")
 }
 
 func (p Provider) AgentLogsDir() string {

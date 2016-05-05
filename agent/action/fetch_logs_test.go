@@ -50,7 +50,7 @@ var _ = Describe("FetchLogsAction", func() {
 			var expectedPath string
 			switch logType {
 			case "job":
-				expectedPath = path.Join("/fake", "dir", "data", "sys", "log")
+				expectedPath = path.Join("/fake", "dir", "sys", "log")
 			case "agent":
 				expectedPath = path.Join("/fake", "dir", "bosh", "log")
 			}
