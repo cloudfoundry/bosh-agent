@@ -29,7 +29,7 @@ func describeDummyPlatform() {
 	var (
 		platform           Platform
 		collector          boshstats.Collector
-		fs                 boshsys.FileSystem
+		fs                 *fakesys.FakeFileSystem
 		cmdRunner          boshsys.CmdRunner
 		dirProvider        boshdirs.Provider
 		devicePathResolver boshdpresolv.DevicePathResolver
@@ -129,6 +129,18 @@ func describeDummyPlatform() {
 			password, err = fs.ReadFileString(userPasswordsPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(password).To(Equal("fake-password2"))
+		})
+	})
+
+	Describe("SetupDataDir", func() {
+		It("creates a link from BASEDIR/sys to BASEDIR/data/sys", func() {
+			err := platform.SetupDataDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			stat := fs.GetFileTestStat("/fake-dir/sys")
+
+			Expect(stat).ToNot(BeNil())
+			Expect(stat.SymlinkTarget).To(Equal("/fake-dir/data/sys"))
 		})
 	})
 }
