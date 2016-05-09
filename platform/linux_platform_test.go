@@ -2,12 +2,11 @@ package platform_test
 
 import (
 	"errors"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"os"
 	"path"
 	"time"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform"
@@ -1348,45 +1347,38 @@ Number  Start   End     Size    File system  Name             Flags
 					mounter.IsMountPointResult = false
 				})
 
-				It("creates new tmp filesystem of 128MB placed in data dir", func() {
+				It("creates a root_tmp folder", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
+				})
+
+				It("changes permissions on the new bind mount folder", func() {
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"truncate", "-s", "128M", "/fake-dir/data/root_tmp"}))
 					Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
-					Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"mke2fs", "-t", "ext4", "-m", "1", "-F", "/fake-dir/data/root_tmp"}))
 				})
 
-				It("mounts the new tmp filesystem over /tmp", func() {
+				It("bind mounts it in /tmp", func() {
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
 					Expect(mounter.MountPartitionPaths[0]).To(Equal("/fake-dir/data/root_tmp"))
-					Expect(mounter.MountMountPoints[0]).To(Equal("/tmp"))
-					Expect(mounter.MountMountOptions[0]).To(Equal([]string{"-t", "ext4", "-o", "loop,noexec"}))
 				})
 
-				It("returns error if mounting the new tmp filesystem fails", func() {
-					mounter.MountErr = errors.New("fake-mount-error")
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
-				})
-
-				It("changes permissions on /tmp again because it is a new mount", func() {
+				It("changes permissions for the system /tmp folder", func() {
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
-					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"chmod", "0770", "/tmp"}))
+					Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
 				})
 			})
 
 			Context("when /tmp is a mount point", func() {
 				BeforeEach(func() {
-					mounter.IsMountPointResult = true
+					mounter.IsMountedResult = true
 				})
 
 				It("returns without an error", func() {
@@ -1399,13 +1391,13 @@ Number  Start   End     Size    File system  Name             Flags
 
 			Context("when /tmp cannot be determined if it is a mount point", func() {
 				BeforeEach(func() {
-					mounter.IsMountPointErr = errors.New("fake-is-mount-point-error")
+					mounter.IsMountedErr = errors.New("fake-is-mounted-error")
 				})
 
 				It("returns error", func() {
 					err := act()
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-is-mount-point-error"))
+					Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
 				})
 
 				ItDoesNotTryToUseLoopDevice()
