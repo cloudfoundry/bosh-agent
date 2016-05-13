@@ -94,7 +94,10 @@ var _ = Describe("status", func() {
 				Service{
 					Name:                 "dummy",
 					Monitored:            true,
+					Errored:              false,
+					Pending:              false,
 					Status:               "running",
+					StatusMessage:        "",
 					Uptime:               880183,
 					MemoryPercentTotal:   0,
 					MemoryKilobytesTotal: 4004,
