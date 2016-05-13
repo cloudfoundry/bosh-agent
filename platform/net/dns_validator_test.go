@@ -41,15 +41,15 @@ var _ = Describe("DNSValidator", func() {
 		})
 	})
 
-	Context("when /etc/resolv.conf does not contain specififed dns servers", func() {
+	Context("when /etc/resolv.conf does not contain any of the dns servers specified in the manifest", func() {
 		BeforeEach(func() {
-			fs.WriteFileString("/etc/resolv.conf", ``)
+			fs.WriteFileString("/etc/resolv.conf", `nameserver 6.6.6.6`)
 		})
 
 		It("returns error", func() {
 			err := dnsValidator.Validate([]string{"8.8.8.8", "9.9.9.9"})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("No specified dns servers found in /etc/resolv.conf"))
+			Expect(err.Error()).To(ContainSubstring("None of the DNS servers that were specified in the manifest were found in /etc/resolv.conf."))
 		})
 	})
 })
