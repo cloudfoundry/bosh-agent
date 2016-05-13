@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/smtp"
 	"os"
 	"time"
+
+	"github.com/pivotal-golang/clock/fakeclock"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,6 +33,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		dirProvider           boshdir.Provider
 		jobFailuresServerPort int
 		monit                 JobSupervisor
+		timeService           *fakeclock.FakeClock
 	)
 
 	var jobFailureServerPort = 5000
@@ -45,6 +50,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider = boshdir.NewProvider("/var/vcap")
 		jobFailuresServerPort = getJobFailureServerPort()
+		timeService = fakeclock.NewFakeClock(time.Now())
 
 		monit = NewMonitJobSupervisor(
 			fs,
@@ -58,6 +64,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				MaxCheckTries:          10,
 				DelayBetweenCheckTries: 0 * time.Millisecond,
 			},
+			timeService,
 		)
 	})
 
@@ -175,14 +182,318 @@ var _ = Describe("monitJobSupervisor", func() {
 
 	Describe("Stop", func() {
 		It("stop stops each monit service in group vcap", func() {
-			client.ServicesInGroupServices = []string{"fake-service"}
-
 			err := monit.Stop()
 			Expect(err).ToNot(HaveOccurred())
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "stop", "-g", "vcap"}))
+		})
 
-			Expect(client.ServicesInGroupName).To(Equal("vcap"))
-			Expect(len(client.StopServiceNames)).To(Equal(1))
-			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
+		It("stops", func() {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requestData := make(map[string]string)
+				resBody := readFixture("monit/test_assets/monit_status_stopped.xml")
+
+				if r.URL.Path == "/_status2" {
+					w.Write(resBody)
+				} else {
+					Expect(r.Method).To(Equal("POST"))
+					requestData["action"] = r.PostFormValue("action")
+				}
+			})
+
+			ts := httptest.NewServer(handler)
+			defer ts.Close()
+
+			url := ts.Listener.Addr().String()
+			client := boshmonit.NewHTTPClient(
+				url,
+				"fake-user",
+				"fake-pass",
+				http.DefaultClient,
+				http.DefaultClient,
+				logger,
+			)
+
+			monit := NewMonitJobSupervisor(
+				fs,
+				runner,
+				client,
+				logger,
+				dirProvider,
+				jobFailuresServerPort,
+				MonitReloadOptions{
+					MaxTries:               3,
+					MaxCheckTries:          10,
+					DelayBetweenCheckTries: 0 * time.Millisecond,
+				},
+				timeService,
+			)
+
+			err := monit.Stop()
+			Expect(err).To(BeNil())
+		})
+
+		Describe("Waiting for pending services", func() {
+			It("waits for services to not be pending before attempting to stop", func() {
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: false, Name: "foo", Status: "unknown", Pending: true},
+						{Monitored: true, Name: "bar", Status: "unknown", Pending: false},
+					},
+				}
+
+				errchan := make(chan error)
+				go func() {
+					errchan <- monit.Stop()
+				}()
+
+				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the sleep
+
+				// never called stop since 2 jobs pending
+				Expect(len(runner.RunCommands)).To(Equal(0))
+
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: false, Name: "foo", Status: "unknown", Pending: false},
+						{Monitored: true, Name: "bar", Status: "unknown", Pending: true},
+					},
+				}
+				timeService.Increment(2 * time.Minute)
+
+				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the sleep
+
+				// never called stop since 1 job pending
+				Expect(len(runner.RunCommands)).To(Equal(0))
+
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: false, Name: "foo", Status: "unknown", Pending: false},
+						{Monitored: false, Name: "bar", Status: "unknown", Pending: false},
+					},
+				}
+				timeService.Increment(2 * time.Minute)
+
+				Eventually(errchan).Should(Receive(BeNil()))
+				Expect(len(runner.RunCommands)).To(Equal(1))
+				Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "stop", "-g", "vcap"}))
+			})
+
+			It("times out if services take too long to no longer be pending", func() {
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: false, Name: "foo", Status: "unknown", Pending: true},
+					},
+				}
+
+				errchan := make(chan error)
+				go func() {
+					errchan <- monit.Stop()
+				}()
+
+				failureMessage := "Timed out waiting for services 'foo' to no longer be pending after 10 minutes"
+
+				advanceTime(timeService, 10*time.Minute, 2)
+				Eventually(timeService.WatcherCount).Should(Equal(0))
+				Eventually(errchan).Should(Receive(Equal(errors.New(failureMessage))))
+				Expect(len(runner.RunCommands)).To(Equal(0)) // never called 'monit stop'
+			})
+
+			It("uses the same timer for waiting for pending and waiting for services to stop", func() {
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: false, Name: "foo", Status: "unknown", Pending: true},
+					},
+				}
+
+				errchan := make(chan error)
+				go func() {
+					errchan <- monit.Stop()
+				}()
+
+				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the pending sleep
+
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: true, Name: "foo", Status: "unknown", Pending: false},
+					},
+				}
+				timeService.Increment(5 * time.Minute)
+
+				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the stop sleep
+
+				timeService.Increment(6 * time.Minute)
+
+				Eventually(errchan).Should(Receive(Equal(errors.New("Timed out waiting for services 'foo' to stop after 10 minutes"))))
+			})
+		})
+
+		Context("when a status request errors", func() {
+			It("exits with an error message if it's waiting for services to no longer be pending", func() {
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: true, Name: "foo", Status: "unknown", Pending: true},
+					},
+				}
+
+				errchan := make(chan error)
+				go func() {
+					errchan <- monit.Stop()
+				}()
+
+				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the sleep
+				client.StatusErr = errors.New("Error message")
+
+				timeService.Increment(5 * time.Minute)
+
+				Eventually(func() string {
+					err := <-errchan
+					return err.Error()
+				}).Should(Equal("Getting monit status: Error message"))
+				Expect(len(runner.RunCommands)).To(Equal(0)) // never called 'monit stop', the right loop is failing
+			})
+
+			It("exits with an error message if it's waiting for services to stop", func() {
+				client.StatusStatus = fakemonit.FakeMonitStatus{
+					Services: []boshmonit.Service{
+						{Monitored: true, Name: "foo", Status: "unknown", Pending: false},
+					},
+				}
+
+				errchan := make(chan error)
+				go func() {
+					errchan <- monit.Stop()
+				}()
+
+				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the sleep
+				client.StatusErr = errors.New("Error message")
+
+				timeService.Increment(5 * time.Minute)
+
+				Eventually(func() string {
+					err := <-errchan
+					return err.Error()
+				}).Should(Equal("Getting monit status: Error message"))
+				Expect(len(runner.RunCommands)).To(Equal(1)) // called 'monit stop', the right loop is failing
+			})
+		})
+
+		Context("when a stop service errors", func() {
+			It("exits with an error message", func() {
+				fakeErrorResult := fakesys.FakeCmdResult{
+					Error: errors.New("test error result"),
+				}
+
+				runner.AddCmdResult("monit stop -g vcap", fakeErrorResult)
+
+				err := monit.Stop()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(fmt.Sprintf("%s%s", "Stop all services: ", fakeErrorResult.Error)))
+			})
+		})
+
+		Context("when a service is in error state", func() {
+			It("exits with an error message", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requestData := make(map[string]string)
+					resBody := readFixture("monit/test_assets/monit_status_errored.xml")
+
+					if r.URL.Path == "/_status2" {
+						w.Write(resBody)
+					} else {
+						Expect(r.Method).To(Equal("POST"))
+						requestData["action"] = r.PostFormValue("action")
+					}
+				})
+
+				ts := httptest.NewServer(handler)
+				defer ts.Close()
+
+				url := ts.Listener.Addr().String()
+				client := boshmonit.NewHTTPClient(
+					url,
+					"fake-user",
+					"fake-pass",
+					http.DefaultClient,
+					http.DefaultClient,
+					logger,
+				)
+
+				monit := NewMonitJobSupervisor(
+					fs,
+					runner,
+					client,
+					logger,
+					dirProvider,
+					jobFailuresServerPort,
+					MonitReloadOptions{
+						MaxTries:               3,
+						MaxCheckTries:          10,
+						DelayBetweenCheckTries: 0 * time.Millisecond,
+					},
+					timeService,
+				)
+
+				err := monit.Stop()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Stopping services '[test-service]' errored"))
+			})
+		})
+
+		Context("when a service takes too long to stop", func() {
+			It("exits with an error after a timeout", func() {
+				statusRequests := 0
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requestData := make(map[string]string)
+
+					if r.URL.Path == "/_status2" {
+						statusRequests++
+						if statusRequests == 1 {
+							w.Write(readFixture("monit/test_assets/monit_status_running.xml"))
+						} else {
+							w.Write(readFixture("monit/test_assets/monit_status_multiple.xml"))
+						}
+					} else {
+						Expect(r.Method).To(Equal("POST"))
+						requestData["action"] = r.PostFormValue("action")
+					}
+				})
+
+				ts := httptest.NewServer(handler)
+				defer ts.Close()
+
+				url := ts.Listener.Addr().String()
+				client := boshmonit.NewHTTPClient(
+					url,
+					"fake-user",
+					"fake-pass",
+					http.DefaultClient,
+					http.DefaultClient,
+					logger,
+				)
+
+				monit := NewMonitJobSupervisor(
+					fs,
+					runner,
+					client,
+					logger,
+					dirProvider,
+					jobFailuresServerPort,
+					MonitReloadOptions{},
+					timeService,
+				)
+
+				errchan := make(chan error)
+				go func() {
+					errchan <- monit.Stop()
+				}()
+
+				failureMessage := "Timed out waiting for services 'unmonitored-start-pending, initializing, running, running-stop-pending, unmonitored-stop-pending, failing' to stop after 10 minutes"
+
+				advanceTime(timeService, 10*time.Minute, 2)
+				Eventually(timeService.WatcherCount).Should(Equal(0))
+				Eventually(errchan).Should(Receive(Equal(errors.New(failureMessage))))
+				Expect(statusRequests).To(Equal(3))
+			})
 		})
 
 		It("creates stopped file", func() {
@@ -501,3 +812,8 @@ var _ = Describe("monitJobSupervisor", func() {
 		})
 	})
 })
+
+func advanceTime(timeService *fakeclock.FakeClock, duration time.Duration, watcherCount int) {
+	Eventually(timeService.WatcherCount).Should(Equal(watcherCount))
+	timeService.Increment(duration)
+}

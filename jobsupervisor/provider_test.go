@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	"github.com/pivotal-golang/clock"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -24,6 +25,7 @@ func init() {
 			jobFailuresServerPort int
 			handler               *fakembus.FakeHandler
 			provider              Provider
+			timeService           clock.Clock
 		)
 
 		BeforeEach(func() {
@@ -33,6 +35,7 @@ func init() {
 			dirProvider = boshdir.NewProvider("/fake-base-dir")
 			jobFailuresServerPort = 2825
 			handler = &fakembus.FakeHandler{}
+			timeService = clock.NewClock()
 
 			provider = NewProvider(
 				platform,
@@ -59,6 +62,7 @@ func init() {
 					MaxCheckTries:          6,
 					DelayBetweenCheckTries: 5 * time.Second,
 				},
+				timeService,
 			)
 			Expect(actualSupervisor).To(Equal(expectedSupervisor))
 		})
