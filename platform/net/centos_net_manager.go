@@ -128,8 +128,8 @@ const centosStaticIfcfgTemplate = `DEVICE={{ .Name }}
 BOOTPROTO=static
 IPADDR={{ .Address }}
 NETMASK={{ .Netmask }}
-BROADCAST={{ .Broadcast }}
-GATEWAY={{ .Gateway }}
+BROADCAST={{ .Broadcast }}{{if .IsDefaultForGateway}}
+GATEWAY={{ .Gateway }}{{end}}
 ONBOOT=yes
 PEERDNS=no{{ range .DNSServers }}
 DNS{{ .Index }}={{ .Address }}{{ end }}

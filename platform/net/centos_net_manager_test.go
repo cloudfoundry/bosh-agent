@@ -98,7 +98,6 @@ BOOTPROTO=static
 IPADDR=1.2.3.4
 NETMASK=255.255.255.0
 BROADCAST=1.2.3.255
-GATEWAY=3.4.5.6
 ONBOOT=yes
 PEERDNS=no
 DNS1=8.8.8.8
@@ -524,6 +523,67 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				Expect(virtualNetworkConfig).To(BeNil())
 			})
 		})
+
+		It("configures gateway, broadcast and dns for default network only", func() {
+			staticNetwork = boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Netmask: "255.255.255.0",
+				Gateway: "3.4.5.6",
+				Mac:     "fake-static-mac-address",
+			}
+			secondStaticNetwork := boshsettings.Network{
+				Type:    "manual",
+				IP:      "5.6.7.8",
+				Netmask: "255.255.255.0",
+				Gateway: "6.7.8.9",
+				Mac:     "second-fake-static-mac-address",
+				DNS:     []string{"8.8.8.8"},
+				Default: []string{"gateway", "dns"},
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"eth0": staticNetwork,
+				"eth1": secondStaticNetwork,
+			})
+
+			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
+				boship.NewSimpleInterfaceAddress("eth1", "5.6.7.8"),
+			}
+
+			err := netManager.SetupNetworking(boshsettings.Networks{
+				"static-1": staticNetwork,
+				"static-2": secondStaticNetwork,
+			}, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			networkConfig0 := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+			networkConfig1 := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth1")
+			Expect(networkConfig0).ToNot(BeNil())
+			Expect(networkConfig1).ToNot(BeNil())
+			Expect(networkConfig0.StringContents()).To(Equal(`DEVICE=eth0
+BOOTPROTO=static
+IPADDR=1.2.3.4
+NETMASK=255.255.255.0
+BROADCAST=1.2.3.255
+ONBOOT=yes
+PEERDNS=no
+DNS1=8.8.8.8
+`))
+			Expect(networkConfig1.StringContents()).To(Equal(`DEVICE=eth1
+BOOTPROTO=static
+IPADDR=5.6.7.8
+NETMASK=255.255.255.0
+BROADCAST=5.6.7.255
+GATEWAY=6.7.8.9
+ONBOOT=yes
+PEERDNS=no
+DNS1=8.8.8.8
+`))
+
+		})
+
 	})
 
 	Describe("GetConfiguredNetworkInterfaces", func() {
