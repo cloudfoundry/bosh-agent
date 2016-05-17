@@ -67,9 +67,6 @@ type LinuxOptions struct {
 	// Strategy for resolving device paths;
 	// possible values: virtio, scsi, ''
 	DevicePathResolutionType string
-
-	// Device prexix when using virtio (defaults to 'virtio')
-	VirtioDevicePrefix string
 }
 
 type linux struct {

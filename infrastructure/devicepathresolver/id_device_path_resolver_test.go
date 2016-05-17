@@ -19,7 +19,6 @@ var _ = Describe("IDDevicePathResolver", func() {
 	var (
 		fs           *fakesys.FakeFileSystem
 		udev         *fakeudev.FakeUdevDevice
-		devicePrefix string
 		diskSettings boshsettings.DiskSettings
 		pathResolver DevicePathResolver
 	)
@@ -30,11 +29,10 @@ var _ = Describe("IDDevicePathResolver", func() {
 		diskSettings = boshsettings.DiskSettings{
 			ID: "fake-disk-id-include-truncate",
 		}
-		devicePrefix = ""
 	})
 
 	JustBeforeEach(func() {
-		pathResolver = NewIDDevicePathResolver(500*time.Millisecond, devicePrefix, udev, fs)
+		pathResolver = NewIDDevicePathResolver(500*time.Millisecond, udev, fs)
 	})
 
 	Describe("GetRealDevicePath", func() {
@@ -48,37 +46,40 @@ var _ = Describe("IDDevicePathResolver", func() {
 			BeforeEach(func() {
 				err := fs.MkdirAll("fake-device-path", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
+
+				err = fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
+				Expect(err).ToNot(HaveOccurred())
+
+				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{"fake-device-path"})
 			})
 
-			Context("when using the default device prefix", func() {
-				BeforeEach(func() {
-					err := fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
-					Expect(err).ToNot(HaveOccurred())
-				})
+			It("returns the path", func() {
+				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
 
-				It("returns the path", func() {
-					path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(path).To(Equal("fake-device-path"))
-					Expect(timeout).To(BeFalse())
-				})
+				Expect(path).To(Equal("fake-device-path"))
+				Expect(timeout).To(BeFalse())
 			})
+		})
 
-			Context("when using a custom device prefix", func() {
-				BeforeEach(func() {
-					devicePrefix = "prefix"
-					err := fs.Symlink("fake-device-path", "/dev/disk/by-id/prefix-fake-disk-id-include")
-					Expect(err).ToNot(HaveOccurred())
-				})
+		Context("when disks with the same ID but different virtio prefixes exist ", func() {
+			BeforeEach(func() {
+				err := fs.MkdirAll("fake-device-path-1", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.MkdirAll("fake-device-path-2", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
 
-				It("returns the path", func() {
-					path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-					Expect(err).ToNot(HaveOccurred())
+				err = fs.Symlink("fake-device-path-1", "/dev/disk/by-id/virtio-fake-disk-id-include")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.Symlink("fake-device-path-2", "/dev/disk/by-id/customprefix-fake-disk-id-include")
+				Expect(err).ToNot(HaveOccurred())
 
-					Expect(path).To(Equal("fake-device-path"))
-					Expect(timeout).To(BeFalse())
-				})
+				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{"fake-device-path-1", "fake-device-path-2"})
+			})
+			It("returns an error", func() {
+				_, _, err := pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("More than one disk matched"))
 			})
 		})
 
@@ -110,6 +111,8 @@ var _ = Describe("IDDevicePathResolver", func() {
 
 						err = fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
 						Expect(err).ToNot(HaveOccurred())
+
+						fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{"fake-device-path"})
 					})
 				})
 
