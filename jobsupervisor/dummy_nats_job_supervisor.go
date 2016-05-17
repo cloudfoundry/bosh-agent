@@ -2,22 +2,29 @@ package jobsupervisor
 
 import (
 	"encoding/json"
+	"time"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	bosherror "github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/pivotal-golang/clock"
 )
 
 type dummyNatsJobSupervisor struct {
 	mbusHandler       boshhandler.Handler
+	fs                boshsys.FileSystem
 	status            string
 	processes         []Process
 	jobFailureHandler JobFailureHandler
+	timeService       clock.Clock
 }
 
-func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
+func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler, fs boshsys.FileSystem, timeService clock.Clock) JobSupervisor {
 	return &dummyNatsJobSupervisor{
 		mbusHandler: mbusHandler,
+		fs:          fs,
+		timeService: timeService,
 		status:      "running",
 		processes: []Process{
 			Process{
@@ -85,7 +92,25 @@ func (d *dummyNatsJobSupervisor) Start() error {
 }
 
 func (d *dummyNatsJobSupervisor) Stop() error {
+	var testSettings struct {
+		Timeout int `json:"stop_timeout"`
+	}
+
+	if d.fs.FileExists("test-supervisor-settings.json") {
+		jsonString, err := d.fs.ReadFile("test-supervisor-settings.json")
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(jsonString, &testSettings)
+		if err != nil {
+			return err
+		}
+	}
+
 	if d.status != "failing" && d.status != "fail_task" {
+		if testSettings.Timeout != 0 {
+			d.timeService.Sleep(time.Duration(testSettings.Timeout) * time.Second)
+		}
 		d.status = "stopped"
 	}
 	return nil

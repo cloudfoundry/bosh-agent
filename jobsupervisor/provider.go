@@ -49,7 +49,7 @@ func NewProvider(
 	p.supervisors = map[string]JobSupervisor{
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
-		"dummy-nats": NewDummyNatsJobSupervisor(handler),
+		"dummy-nats": NewDummyNatsJobSupervisor(handler, platform.GetFs(), timeService),
 		// Cannot link to "windows" JobSupervisor
 	}
 
