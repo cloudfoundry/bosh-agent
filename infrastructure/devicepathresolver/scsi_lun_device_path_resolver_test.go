@@ -27,7 +27,7 @@ var _ = Describe("SCSILunDevicePathResolver", func() {
 		fs = fakesys.NewFakeFileSystem()
 		pathResolver = NewSCSILunDevicePathResolver(500*time.Millisecond, fs, boshlog.NewLogger(boshlog.LevelNone))
 		diskSettings = boshsettings.DiskSettings{
-			Lun:     lun,
+			Lun:          lun,
 			HostDeviceID: "fake-host-device-id",
 		}
 
@@ -40,7 +40,7 @@ var _ = Describe("SCSILunDevicePathResolver", func() {
 			"/sys/class/scsi_host/host5/scan",
 		}
 		fs.SetGlob("/sys/class/scsi_host/host*/scan", hosts)
-		fs.SetGlob("/sys/bus/scsi/devices/*:*:*:" + lun + "/block/*", []string{
+		fs.SetGlob("/sys/bus/scsi/devices/*:*:*:"+lun+"/block/*", []string{
 			"/sys/bus/scsi/devices/2:0:0:0/block/sda",
 			"/sys/bus/scsi/devices/3:0:1:0/block/sdb",
 			"/sys/bus/scsi/devices/5:0:0:" + lun + "/block/sdc",
@@ -181,7 +181,7 @@ var _ = Describe("SCSILunDevicePathResolver", func() {
 
 				It("returns an error", func() {
 					path, timeout, err := pathResolver.GetRealDevicePath(boshsettings.DiskSettings{
-						Lun:     "7",
+						Lun:          "7",
 						HostDeviceID: "fake-host-device-id",
 					})
 					Expect(err).To(HaveOccurred())
@@ -209,7 +209,7 @@ var _ = Describe("SCSILunDevicePathResolver", func() {
 		Context("when host_device_id is empty", func() {
 			BeforeEach(func() {
 				diskSettings = boshsettings.DiskSettings{
-					Lun:     "0",
+					Lun: "0",
 				}
 			})
 
