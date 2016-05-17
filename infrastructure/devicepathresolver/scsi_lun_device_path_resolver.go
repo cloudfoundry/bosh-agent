@@ -3,13 +3,13 @@ package devicepathresolver
 import (
 	"fmt"
 	"path"
-	"time"
 	"strings"
+	"time"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type SCSILunDevicePathResolver struct {
@@ -38,6 +38,7 @@ func (ldpr SCSILunDevicePathResolver) GetRealDevicePath(diskSettings boshsetting
 	if diskSettings.Lun == "" {
 		return "", false, bosherr.Error("Disk lun is not set")
 	}
+
 	if diskSettings.HostDeviceID == "" {
 		return "", false, bosherr.Error("Disk host_device_id is not set")
 	}
@@ -49,6 +50,7 @@ func (ldpr SCSILunDevicePathResolver) GetRealDevicePath(diskSettings boshsetting
 
 	for _, hostPath := range hostPaths {
 		ldpr.logger.Info(ldpr.logTag, "Performing SCSI rescan of %s", hostPath)
+
 		err = ldpr.fs.WriteFileString(hostPath, "- - -")
 		if err != nil {
 			return "", false, bosherr.WrapError(err, "Starting SCSI rescan")
@@ -69,7 +71,8 @@ func (ldpr SCSILunDevicePathResolver) GetRealDevicePath(diskSettings boshsetting
 		if err != nil {
 			continue
 		}
-		if strings.Compare(strings.TrimSpace(deviceID), diskSettings.HostDeviceID) == 0 {
+
+		if strings.TrimSpace(deviceID) == diskSettings.HostDeviceID {
 			vmBusDeviceSplits := strings.Split(vmBusDevice, "/")
 			vmBusDeviceForDataDisks = vmBusDeviceSplits[5]
 			break
@@ -79,13 +82,12 @@ func (ldpr SCSILunDevicePathResolver) GetRealDevicePath(diskSettings boshsetting
 	if vmBusDeviceForDataDisks == "" {
 		return "", false, bosherr.WrapErrorf(err, "Cannot find the vmbus device by host_device_id '%s'", diskSettings.HostDeviceID)
 	}
+
 	ldpr.logger.Debug(ldpr.logTag, "Find the vmbus device '%s' by host_device_id '%s'", vmBusDeviceForDataDisks, diskSettings.HostDeviceID)
 
 	deviceGlobPath := fmt.Sprintf("/sys/bus/scsi/devices/*:*:*:%s/block/*", diskSettings.Lun)
-	found := false
-	var realPath string
-	
-	for !found {
+
+	for {
 		ldpr.logger.Debug(ldpr.logTag, "Waiting for device to appear")
 
 		if time.Now().After(stopAfter) {
@@ -100,22 +102,21 @@ func (ldpr SCSILunDevicePathResolver) GetRealDevicePath(diskSettings boshsetting
 		}
 
 		for _, devicePath := range devicePaths {
-			basename := path.Base(devicePath)
-			tempPath, err := ldpr.fs.ReadLink(path.Join("/sys/class/block/", basename))
+			baseName := path.Base(devicePath)
+
+			tempPath, err := ldpr.fs.ReadLink(path.Join("/sys/class/block/", baseName))
 			if err != nil {
 				continue
 			}
 
-			if strings.Contains(tempPath, "/" + vmBusDeviceForDataDisks + "/") {
-				realPath = path.Join("/dev/", basename)
+			if strings.Contains(tempPath, fmt.Sprintf("/%s/", vmBusDeviceForDataDisks)) {
+				realPath := path.Join("/dev/", baseName)
+
 				if ldpr.fs.FileExists(realPath) {
-					ldpr.logger.Debug(ldpr.logTag, "Found real path " + realPath)
-					found = true
-					break
+					ldpr.logger.Debug(ldpr.logTag, "Found real path '%s'", realPath)
+					return realPath, false, nil
 				}
 			}
 		}
 	}
-
-	return realPath, false, nil
 }

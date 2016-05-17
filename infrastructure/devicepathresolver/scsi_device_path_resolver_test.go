@@ -68,7 +68,7 @@ var _ = Describe("scsiDevicePathResolver", func() {
 			Context("When both lun and scsi_host_id are provided", func() {
 				BeforeEach(func() {
 					diskSettings = boshsettings.DiskSettings{
-						Lun: "fake-lun-id",
+						Lun:          "fake-lun-id",
 						HostDeviceID: "fake-host-device-id",
 					}
 				})
