@@ -24,6 +24,8 @@ var _ = Describe("AgentClient", func() {
 
 		agentAddress  string
 		agentEndpoint string
+
+		replyToAddress string
 	)
 
 	BeforeEach(func() {
@@ -32,11 +34,12 @@ var _ = Describe("AgentClient", func() {
 
 		agentAddress = "http://localhost:6305"
 		agentEndpoint = agentAddress + "/agent"
+		replyToAddress = "fake-reply-to-uuid"
 
 		getTaskDelay := time.Duration(0)
 		toleratedErrorCount := 2
 
-		agentClient = NewAgentClient(agentAddress, "fake-uuid", getTaskDelay, toleratedErrorCount, fakeHTTPClient, logger)
+		agentClient = NewAgentClient(agentAddress, replyToAddress, getTaskDelay, toleratedErrorCount, fakeHTTPClient, logger)
 	})
 
 	Describe("get_task", func() {
@@ -100,7 +103,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "ping",
 					Arguments: []interface{}{},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 
@@ -159,7 +162,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "stop",
 					Arguments: []interface{}{},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 
@@ -177,7 +180,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "get_task",
 					Arguments: []interface{}{"fake-agent-task-id"},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 		})
@@ -248,7 +251,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "apply",
 					Arguments: []interface{}{specArgument},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 
@@ -266,7 +269,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "get_task",
 					Arguments: []interface{}{"fake-agent-task-id"},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 		})
@@ -316,7 +319,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "start",
 					Arguments: []interface{}{},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 		})
@@ -377,7 +380,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "get_state",
 					Arguments: []interface{}{},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 		})
@@ -464,7 +467,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "mount_disk",
 					Arguments: []interface{}{"fake-disk-cid"},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 
@@ -482,7 +485,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "get_task",
 					Arguments: []interface{}{"fake-agent-task-id"},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 		})
@@ -510,7 +513,7 @@ var _ = Describe("AgentClient", func() {
 					Expect(request).To(Equal(AgentRequestMessage{
 						Method:    "unmount_disk",
 						Arguments: []interface{}{"fake-disk-cid"},
-						ReplyTo:   "fake-uuid",
+						ReplyTo:   replyToAddress,
 					}))
 				})
 
@@ -528,7 +531,7 @@ var _ = Describe("AgentClient", func() {
 					Expect(request).To(Equal(AgentRequestMessage{
 						Method:    "get_task",
 						Arguments: []interface{}{"fake-agent-task-id"},
-						ReplyTo:   "fake-uuid",
+						ReplyTo:   replyToAddress,
 					}))
 				})
 			})
@@ -579,7 +582,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "list_disk",
 					Arguments: []interface{}{},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 
@@ -638,7 +641,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "migrate_disk",
 					Arguments: []interface{}{},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 
@@ -656,7 +659,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "get_task",
 					Arguments: []interface{}{"fake-agent-task-id"},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 		})
@@ -719,7 +722,7 @@ var _ = Describe("AgentClient", func() {
 						},
 					},
 				},
-				ReplyTo: "fake-uuid",
+				ReplyTo: replyToAddress,
 			}))
 		})
 	})
@@ -753,7 +756,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "delete_arp_entries",
 					Arguments: []interface{}{map[string]interface{}{"ips": expectedIps}},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   replyToAddress,
 				}))
 			})
 		})
@@ -804,7 +807,7 @@ var _ = Describe("AgentClient", func() {
 			Expect(request).To(Equal(AgentRequestMessage{
 				Method:    "run_script",
 				Arguments: []interface{}{"the-script", map[string]interface{}{}},
-				ReplyTo:   "fake-uuid",
+				ReplyTo:   replyToAddress,
 			}))
 		})
 
@@ -825,7 +828,7 @@ var _ = Describe("AgentClient", func() {
 			Expect(request).To(Equal(AgentRequestMessage{
 				Method:    "run_script",
 				Arguments: []interface{}{"the-script", map[string]interface{}{}},
-				ReplyTo:   "fake-uuid",
+				ReplyTo:   replyToAddress,
 			}))
 		})
 
