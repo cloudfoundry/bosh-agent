@@ -22,10 +22,10 @@ var _ = Describe("AgentClient", func() {
 		fakeHTTPClient *fakehttpclient.FakeHTTPClient
 		agentClient    agentclient.AgentClient
 
-		agentAddress  string
-		agentEndpoint string
-
-		replyToAddress string
+		agentAddress        string
+		agentEndpoint       string
+		replyToAddress      string
+		toleratedErrorCount int
 	)
 
 	BeforeEach(func() {
@@ -37,7 +37,7 @@ var _ = Describe("AgentClient", func() {
 		replyToAddress = "fake-reply-to-uuid"
 
 		getTaskDelay := time.Duration(0)
-		toleratedErrorCount := 2
+		toleratedErrorCount = 2
 
 		agentClient = NewAgentClient(agentAddress, replyToAddress, getTaskDelay, toleratedErrorCount, fakeHTTPClient, logger)
 	})
@@ -50,6 +50,7 @@ var _ = Describe("AgentClient", func() {
 				fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer"))
 				fakeHTTPClient.SetPostBehavior(`{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`, 200, nil)
 				fakeHTTPClient.SetPostBehavior(`{"value":"stopped"}`, 200, nil)
+
 				err := agentClient.Stop()
 				Expect(err).ToNot(HaveOccurred())
 			})
@@ -60,6 +61,7 @@ var _ = Describe("AgentClient", func() {
 					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 1"))
 					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 2"))
 					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 3"))
+
 					err := agentClient.Stop()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("connection reset by peer 3"))
@@ -75,6 +77,7 @@ var _ = Describe("AgentClient", func() {
 					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 3"))
 					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection reset by peer 4"))
 					fakeHTTPClient.SetPostBehavior("", 0, errors.New("connection is bad"))
+
 					err := agentClient.Stop()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("connection is bad"))
