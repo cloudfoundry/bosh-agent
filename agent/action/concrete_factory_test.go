@@ -211,4 +211,10 @@ var _ = Describe("concreteFactory", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewDeleteARPEntries(platform)))
 	})
+
+	It("sync_dns", func() {
+		action, err := factory.Create("sync_dns")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewSyncDNS(blobstore, platform.GetFs(), logger)))
+	})
 })
