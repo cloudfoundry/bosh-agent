@@ -1,6 +1,4 @@
 github.com/onsi/ginkgo:1b59c57
-code.google.com/p/go-charset/charset:ebbeafdc430e
-code.google.com/p/go-charset/data:ebbeafdc430e
 github.com/jeromer/syslogparser:ff71fe7
 github.com/pivotal-golang/clock:f2e1cd2
 github.com/pivotal/go-smtpd/smtpd:0af6982
@@ -17,3 +15,4 @@ github.com/cloudfoundry/bosh-davcli/...:6b59ec2
 golang.org/x/sys/windows:7a56174
 golang.org/x/sys/windows/...:7a56174
 github.com/tedsuo/ifrit/...:0daf379
+golang.org/x/net/html:3b99394
