@@ -1,8 +1,6 @@
 package fakeyagnats
 
 import (
-	"fmt"
-	"os"
 	"sync"
 
 	"github.com/cloudfoundry/yagnats"
@@ -35,7 +33,6 @@ type FakeYagnats struct {
 func New() *FakeYagnats {
 	fake := &FakeYagnats{}
 	fake.Reset()
-	fmt.Fprintln(os.Stderr, "WARNING: yagnats.NewClient() and fakeyagnats.New() are deprecated. You should use yagnats.Connect() and fakeyagnats.Connect() instead")
 	return fake
 }
 
