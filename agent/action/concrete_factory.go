@@ -15,6 +15,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuidgen "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 type concreteFactory struct {
@@ -33,6 +34,7 @@ func NewFactory(
 	specService boshas.V1Service,
 	jobScriptProvider boshscript.JobScriptProvider,
 	scriptCommandFactory boshsys.ScriptCommandFactory,
+	uuidGenerator boshuuidgen.Generator,
 	logger boshlog.Logger,
 ) (factory Factory) {
 	compressor := platform.GetCompressor()
@@ -83,7 +85,7 @@ func NewFactory(
 			"configure_networks":         NewConfigureNetworks(NewAgentKiller()),
 
 			// DNS
-			"sync_dns": NewSyncDNS(blobstore, platform.GetFs(), logger),
+			"sync_dns": NewSyncDNS(blobstore, platform.GetFs(), uuidGenerator, logger),
 		},
 	}
 	return
