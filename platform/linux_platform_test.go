@@ -2317,4 +2317,72 @@ unit: sectors
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-rf", "dummy-compiler"}))
 		})
 	})
+
+	Describe("SaveDNSRecords", func() {
+		// MOVE to linux platform
+		// 			const defaultEtcHostsEntries string = `127.0.0.1 localhost
+
+		// # The following lines are desirable for IPv6 capable hosts
+		// ::1 localhost ip6-localhost ip6-loopback
+		// fe00::0 ip6-localnet
+		// ff00::0 ip6-mcastprefix
+		// ff02::1 ip6-allnodes
+		// ff02::2 ip6-allrouters
+		// ff02::3 ip6-allhosts`
+
+		// MOVE to linux platform
+		// It("preserves the default DNS records in '/etc/hosts'", func() {
+		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+		// 	Expect(err).ToNot(HaveOccurred())
+
+		// 	hostsFileContents, err := fakeFileSystem.ReadFile("/etc/hosts")
+		// 	Expect(err).ToNot(HaveOccurred())
+		// 	Expect(string(hostsFileContents)).To(ContainSubstring(defaultEtcHostsEntries))
+		// })
+
+		// It("writes the new DNS records in '/etc/hosts'", func() {
+		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+		// 	Expect(err).ToNot(HaveOccurred())
+
+		// 	hostsFileContents, err := fakeFileSystem.ReadFile("/etc/hosts")
+		// 	Expect(err).ToNot(HaveOccurred())
+
+		// 	Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0"))
+		// 	Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1"))
+		// })
+
+		// It("fails generating a UUID", func() {
+		// 	fakeUUIDGenerator.GenerateError = errors.New("fake-error")
+
+		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+		// 	Expect(err).To(HaveOccurred())
+		// 	Expect(err.Error()).To(ContainSubstring("Generating UUID"))
+		// })
+
+		// It("creates intermediary /etc/hosts-uuid file with content and move it atomically to /etc/hosts", func() {
+		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+		// 	Expect(err).ToNot(HaveOccurred())
+
+		// 	Expect(fakeFileSystem.RenameError).ToNot(HaveOccurred())
+
+		// 	Expect(len(fakeFileSystem.RenameOldPaths)).To(Equal(1))
+		// 	Expect(fakeFileSystem.RenameOldPaths).To(ContainElement("/etc/hosts-fake-uuid-0"))
+
+		// 	Expect(len(fakeFileSystem.RenameNewPaths)).To(Equal(1))
+		// 	Expect(fakeFileSystem.RenameNewPaths).To(ContainElement("/etc/hosts"))
+		// })
+
+		// MOVE to linux platform
+		// Context("when failing to write to /etc/hosts", func() {
+		// 	BeforeEach(func() {
+		// 		fakeFileSystem.WriteFileError = errors.New("fake-error")
+		// 	})
+
+		// 	It("writes the new DNS records in '/etc/hosts'", func() {
+		// 		_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+		// 		Expect(err).To(HaveOccurred())
+		// 		Expect(err.Error()).To(ContainSubstring("Writing to /etc/hosts"))
+		// 	})
+		// })
+	})
 }
