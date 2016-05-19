@@ -48,6 +48,7 @@ type FakePlatform struct {
 	SetupHostnameHostname string
 
 	SaveDNSRecordsError      error
+	SaveDNSRecordsHostname   string
 	SaveDNSRecordsDNSRecords boshsettings.DNSRecords
 
 	SetTimeWithNtpServersServers []string
@@ -239,8 +240,9 @@ func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords) error {
+func (p *FakePlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) error {
 	p.SaveDNSRecordsDNSRecords = dnsRecords
+	p.SaveDNSRecordsHostname = hostname
 	return p.SaveDNSRecordsError
 }
 
