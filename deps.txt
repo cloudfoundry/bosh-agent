@@ -1,6 +1,6 @@
 github.com/onsi/ginkgo:1b59c57
 github.com/jeromer/syslogparser:ff71fe7
-github.com/pivotal-golang/clock:f2e1cd2
+github.com/pivotal-golang/clock:3fd3c19
 github.com/pivotal/go-smtpd/smtpd:0af6982
 github.com/cloudfoundry/gosigar:e949f42
 github.com/mitchellh/mapstructure:281073e
