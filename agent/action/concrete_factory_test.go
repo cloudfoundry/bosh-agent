@@ -220,6 +220,6 @@ var _ = Describe("concreteFactory", func() {
 	It("sync_dns", func() {
 		action, err := factory.Create("sync_dns")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewSyncDNS(blobstore, platform.GetFs(), uuidGenerator, logger)))
+		Expect(action).To(Equal(NewSyncDNS(blobstore, platform, uuidGenerator, logger)))
 	})
 })

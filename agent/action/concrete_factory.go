@@ -85,7 +85,7 @@ func NewFactory(
 			"configure_networks":         NewConfigureNetworks(NewAgentKiller()),
 
 			// DNS
-			"sync_dns": NewSyncDNS(blobstore, platform.GetFs(), uuidGenerator, logger),
+			"sync_dns": NewSyncDNS(blobstore, platform, uuidGenerator, logger),
 		},
 	}
 	return
