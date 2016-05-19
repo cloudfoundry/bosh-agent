@@ -133,7 +133,7 @@ func (m monitJobSupervisor) Start() error {
 }
 
 func (m monitJobSupervisor) Stop() error {
-	timer := m.timeService.NewTimer(10 * time.Minute)
+	timer := m.timeService.NewTimer(5 * time.Minute)
 
 	for {
 		services, err := m.checkServices()
@@ -151,7 +151,7 @@ func (m monitJobSupervisor) Stop() error {
 
 		select {
 		case <-timer.C():
-			return bosherr.Errorf("Timed out waiting for services '%s' to no longer be pending after 10 minutes", strings.Join(pendingServices, ", "))
+			return bosherr.Errorf("Timed out waiting for services '%s' to no longer be pending after 5 minutes", strings.Join(pendingServices, ", "))
 		default:
 		}
 
@@ -198,7 +198,7 @@ func (m monitJobSupervisor) Stop() error {
 
 		select {
 		case <-timer.C():
-			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 10 minutes", strings.Join(servicesToStop, ", "))
+			return bosherr.Errorf("Timed out waiting for services '%s' to stop after 5 minutes", strings.Join(servicesToStop, ", "))
 		default:
 		}
 

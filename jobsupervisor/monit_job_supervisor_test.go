@@ -290,7 +290,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					errchan <- monit.Stop()
 				}()
 
-				failureMessage := "Timed out waiting for services 'foo' to no longer be pending after 10 minutes"
+				failureMessage := "Timed out waiting for services 'foo' to no longer be pending after 5 minutes"
 
 				advanceTime(timeService, 10*time.Minute, 2)
 				Eventually(timeService.WatcherCount).Should(Equal(0))
@@ -317,13 +317,13 @@ var _ = Describe("monitJobSupervisor", func() {
 						{Monitored: true, Name: "foo", Status: "unknown", Pending: false},
 					},
 				}
-				timeService.Increment(5 * time.Minute)
+				timeService.Increment(3 * time.Minute)
 
 				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the stop sleep
 
-				timeService.Increment(6 * time.Minute)
+				timeService.Increment(3 * time.Minute)
 
-				Eventually(errchan).Should(Receive(Equal(errors.New("Timed out waiting for services 'foo' to stop after 10 minutes"))))
+				Eventually(errchan).Should(Receive(Equal(errors.New("Timed out waiting for services 'foo' to stop after 5 minutes"))))
 			})
 		})
 
@@ -487,9 +487,9 @@ var _ = Describe("monitJobSupervisor", func() {
 					errchan <- monit.Stop()
 				}()
 
-				failureMessage := "Timed out waiting for services 'unmonitored-start-pending, initializing, running, running-stop-pending, unmonitored-stop-pending, failing' to stop after 10 minutes"
+				failureMessage := "Timed out waiting for services 'unmonitored-start-pending, initializing, running, running-stop-pending, unmonitored-stop-pending, failing' to stop after 5 minutes"
 
-				advanceTime(timeService, 10*time.Minute, 2)
+				advanceTime(timeService, 5*time.Minute, 2)
 				Eventually(timeService.WatcherCount).Should(Equal(0))
 				Eventually(errchan).Should(Receive(Equal(errors.New(failureMessage))))
 				Expect(statusRequests).To(Equal(3))
