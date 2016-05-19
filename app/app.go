@@ -191,6 +191,7 @@ func (app *app) Setup(args []string) error {
 		specService,
 		jobScriptProvider,
 		scriptCommandFactory,
+		uuidGen,
 		app.logger,
 	)
 

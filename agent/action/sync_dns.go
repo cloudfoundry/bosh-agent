@@ -10,6 +10,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuidgen "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const defaultEtcHostsEntries string = `127.0.0.1 localhost
@@ -23,20 +24,22 @@ ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts`
 
 type SyncDNS struct {
-	blobstore boshblob.Blobstore
-	fs        boshsys.FileSystem
-	logger    boshlog.Logger
+	blobstore     boshblob.Blobstore
+	uuidGenerator boshuuidgen.Generator
+	fs            boshsys.FileSystem
+	logger        boshlog.Logger
 }
 
 type DNSRecords struct {
 	Records [][2]string `json:"records"`
 }
 
-func NewSyncDNS(blobstore boshblob.Blobstore, fs boshsys.FileSystem, logger boshlog.Logger) SyncDNS {
+func NewSyncDNS(blobstore boshblob.Blobstore, fs boshsys.FileSystem, uuidGenerator boshuuidgen.Generator, logger boshlog.Logger) SyncDNS {
 	return SyncDNS{
-		blobstore: blobstore,
-		fs:        fs,
-		logger:    logger,
+		blobstore:     blobstore,
+		uuidGenerator: uuidGenerator,
+		fs:            fs,
+		logger:        logger,
 	}
 }
 
@@ -70,7 +73,7 @@ func (a SyncDNS) Run(blobID, sha1 string) (interface{}, error) {
 	dnsRecords := DNSRecords{}
 	err = json.Unmarshal(contents, &dnsRecords)
 	if err != nil {
-		return nil, bosherr.WrapError(err, fmt.Sprintf("Unmarshalling DNS records"))
+		return nil, bosherr.WrapError(err, "Unmarshalling DNS records")
 	}
 
 	dnsRecordsContents := bytes.Buffer{}
@@ -80,9 +83,20 @@ func (a SyncDNS) Run(blobID, sha1 string) (interface{}, error) {
 		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s", dnsRecord[0], dnsRecord[1]))
 	}
 
-	err = a.fs.WriteFile("/etc/hosts", dnsRecordsContents.Bytes())
+	uuid, err := a.uuidGenerator.Generate()
 	if err != nil {
-		return nil, bosherr.WrapError(err, fmt.Sprintf("Writing to /etc/hosts"))
+		return nil, bosherr.WrapError(err, "Generating UUID")
+	}
+
+	etcHostsUUIDFileName := fmt.Sprintf("/etc/hosts-%s", uuid)
+	err = a.fs.WriteFile(etcHostsUUIDFileName, dnsRecordsContents.Bytes())
+	if err != nil {
+		return nil, bosherr.WrapError(err, fmt.Sprintf("Writing to %s", etcHostsUUIDFileName))
+	}
+
+	err = a.fs.Rename(etcHostsUUIDFileName, "/etc/hosts")
+	if err != nil {
+		return nil, bosherr.WrapError(err, fmt.Sprintf("Renaming %s to /etc/hosts", etcHostsUUIDFileName))
 	}
 
 	return nil, nil

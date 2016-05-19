@@ -12,14 +12,16 @@ import (
 
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
 var _ = Describe("SyncDNS", func() {
 	var (
-		syncDNS        SyncDNS
-		fakeBlobstore  *fakeblobstore.FakeBlobstore
-		fakeFileSystem *fakesys.FakeFileSystem
-		logger         boshlog.Logger
+		syncDNS           SyncDNS
+		fakeBlobstore     *fakeblobstore.FakeBlobstore
+		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
+		fakeFileSystem    *fakesys.FakeFileSystem
+		logger            boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -27,8 +29,9 @@ var _ = Describe("SyncDNS", func() {
 
 		fakeBlobstore = fakeblobstore.NewFakeBlobstore()
 		fakeFileSystem = fakesys.NewFakeFileSystem()
+		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 
-		syncDNS = NewSyncDNS(fakeBlobstore, fakeFileSystem, logger)
+		syncDNS = NewSyncDNS(fakeBlobstore, fakeFileSystem, fakeUUIDGenerator, logger)
 	})
 
 	It("returns IsAsynchronous false", func() {
@@ -119,6 +122,27 @@ ff02::3 ip6-allhosts`
 
 				Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0"))
 				Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1"))
+			})
+
+			It("fails generating a UUID", func() {
+				fakeUUIDGenerator.GenerateError = errors.New("fake-error")
+
+				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Generating UUID"))
+			})
+
+			It("creates intermediary /etc/hosts-uuid file with content and move it atomically to /etc/hosts", func() {
+				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeFileSystem.RenameError).ToNot(HaveOccurred())
+
+				Expect(len(fakeFileSystem.RenameOldPaths)).To(Equal(1))
+				Expect(fakeFileSystem.RenameOldPaths).To(ContainElement("/etc/hosts-fake-uuid-0"))
+
+				Expect(len(fakeFileSystem.RenameNewPaths)).To(Equal(1))
+				Expect(fakeFileSystem.RenameNewPaths).To(ContainElement("/etc/hosts"))
 			})
 
 			Context("when DNS records is invalid", func() {
