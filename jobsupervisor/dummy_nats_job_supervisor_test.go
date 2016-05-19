@@ -90,7 +90,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 		Context("When test settings file exist", func() {
 			It("reads stop wait setting", func() {
-				fs.WriteFileString("test-supervisor-settings.json", `{"stop_timeout": 1}`)
+				fs.WriteFileString(TestSupervisorSettingsFile, `{"stop_delay": 1}`)
 
 				errchan := make(chan error)
 				go func() {

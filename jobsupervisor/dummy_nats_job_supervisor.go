@@ -11,6 +11,8 @@ import (
 	"github.com/pivotal-golang/clock"
 )
 
+const TestSupervisorSettingsFile = "test-supervisor-settings.json"
+
 type dummyNatsJobSupervisor struct {
 	mbusHandler       boshhandler.Handler
 	fs                boshsys.FileSystem
@@ -93,11 +95,11 @@ func (d *dummyNatsJobSupervisor) Start() error {
 
 func (d *dummyNatsJobSupervisor) Stop() error {
 	var testSettings struct {
-		Timeout int `json:"stop_timeout"`
+		StopDelay int `json:"stop_delay"`
 	}
 
-	if d.fs.FileExists("test-supervisor-settings.json") {
-		jsonString, err := d.fs.ReadFile("test-supervisor-settings.json")
+	if d.fs.FileExists(TestSupervisorSettingsFile) {
+		jsonString, err := d.fs.ReadFile(TestSupervisorSettingsFile)
 		if err != nil {
 			return err
 		}
@@ -108,8 +110,8 @@ func (d *dummyNatsJobSupervisor) Stop() error {
 	}
 
 	if d.status != "failing" && d.status != "fail_task" {
-		if testSettings.Timeout != 0 {
-			d.timeService.Sleep(time.Duration(testSettings.Timeout) * time.Second)
+		if testSettings.StopDelay != 0 {
+			d.timeService.Sleep(time.Duration(testSettings.StopDelay) * time.Second)
 		}
 		d.status = "stopped"
 	}
