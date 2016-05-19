@@ -47,6 +47,9 @@ type FakePlatform struct {
 	UserPasswords         map[string]string
 	SetupHostnameHostname string
 
+	SaveDNSRecordsError      error
+	SaveDNSRecordsDNSRecords boshsettings.DNSRecords
+
 	SetTimeWithNtpServersServers []string
 
 	SetupEphemeralDiskWithPathDevicePath string
@@ -234,6 +237,11 @@ func (p *FakePlatform) SetupSSH(publicKey, username string) error {
 func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 	p.UserPasswords[user] = encryptedPwd
 	return
+}
+
+func (p *FakePlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords) error {
+	p.SaveDNSRecordsDNSRecords = dnsRecords
+	return p.SaveDNSRecordsError
 }
 
 func (p *FakePlatform) SetupHostname(hostname string) (err error) {

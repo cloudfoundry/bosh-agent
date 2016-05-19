@@ -8,6 +8,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -62,16 +63,6 @@ var _ = Describe("SyncDNS", func() {
 
 	Context("when sync_dns is recieved", func() {
 		Context("when blobstore contains DNS records", func() {
-			const defaultEtcHostsEntries string = `127.0.0.1 localhost
-
-# The following lines are desirable for IPv6 capable hosts
-::1 localhost ip6-localhost ip6-loopback
-fe00::0 ip6-localnet
-ff00::0 ip6-mcastprefix
-ff02::1 ip6-allnodes
-ff02::2 ip6-allrouters
-ff02::3 ip6-allhosts`
-
 			BeforeEach(func() {
 				fakeDNSRecordsString := `
 				{
@@ -98,7 +89,7 @@ ff02::3 ip6-allhosts`
 				Expect(fakeBlobstore.GetFileName).ToNot(Equal(""))
 			})
 
-			It("reads the DNS records from the file", func() {
+			It("reads the DNS records from the blobstore file", func() {
 				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 				Expect(err).ToNot(HaveOccurred())
 
@@ -107,45 +98,25 @@ ff02::3 ip6-allhosts`
 				Expect(fakeFileSystem.ReadFileError).ToNot(HaveOccurred())
 			})
 
-			It("preserves the default DNS records in '/etc/hosts'", func() {
-				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-				Expect(err).ToNot(HaveOccurred())
-
-				hostsFileContents, err := fakeFileSystem.ReadFile("/etc/hosts")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(string(hostsFileContents)).To(ContainSubstring(defaultEtcHostsEntries))
-			})
-
-			It("writes the new DNS records in '/etc/hosts'", func() {
-				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-				Expect(err).ToNot(HaveOccurred())
-
-				hostsFileContents, err := fakeFileSystem.ReadFile("/etc/hosts")
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0"))
-				Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1"))
-			})
-
-			It("fails generating a UUID", func() {
-				fakeUUIDGenerator.GenerateError = errors.New("fake-error")
+			It("fails reading the DNS records from the blobstore file", func() {
+				fakeFileSystem.RegisterReadFileError("fake-blobstore-file-path", errors.New("fake-error"))
 
 				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Generating UUID"))
+				Expect(err.Error()).To(ContainSubstring("Reading fileName"))
 			})
 
-			It("creates intermediary /etc/hosts-uuid file with content and move it atomically to /etc/hosts", func() {
+			It("saves DNS records to the platform", func() {
 				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(fakeFileSystem.RenameError).ToNot(HaveOccurred())
-
-				Expect(len(fakeFileSystem.RenameOldPaths)).To(Equal(1))
-				Expect(fakeFileSystem.RenameOldPaths).To(ContainElement("/etc/hosts-fake-uuid-0"))
-
-				Expect(len(fakeFileSystem.RenameNewPaths)).To(Equal(1))
-				Expect(fakeFileSystem.RenameNewPaths).To(ContainElement("/etc/hosts"))
+				Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
+				Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+					Records: [][2]string{
+						{"fake-ip0", "fake-name0"},
+						{"fake-ip1", "fake-name1"},
+					},
+				}))
 			})
 
 			Context("when DNS records is invalid", func() {
@@ -161,15 +132,15 @@ ff02::3 ip6-allhosts`
 				})
 			})
 
-			Context("when failing to write to /etc/hosts", func() {
+			Context("when platform fails to save DNS records", func() {
 				BeforeEach(func() {
-					fakeFileSystem.WriteFileError = errors.New("fake-error")
+					fakePlatform.SaveDNSRecordsError = errors.New("fake-error")
 				})
 
-				It("writes the new DNS records in '/etc/hosts'", func() {
+				It("fails to save DNS records on the platform", func() {
 					_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Writing to /etc/hosts"))
+					Expect(err.Error()).To(ContainSubstring("Saving DNS records in platform"))
 				})
 			})
 		})

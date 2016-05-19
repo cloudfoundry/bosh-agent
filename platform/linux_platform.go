@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -368,6 +369,34 @@ func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
 	}
 	return
+}
+
+func (p linux) SaveDNSRecords(dnsRecords boshsettings.DNSRecords) error {
+	// MOVE to linux platform
+	// dnsRecordsContents := bytes.Buffer{}
+	// dnsRecordsContents.WriteString(defaultEtcHostsEntries + "\n")
+
+	// for _, dnsRecord := range dnsRecords.Records {
+	// 	dnsRecordsContents.WriteString(fmt.Sprintf("%s %s", dnsRecord[0], dnsRecord[1]))
+	// }
+
+	// uuid, err := a.uuidGenerator.Generate()
+	// if err != nil {
+	// 	return nil, bosherr.WrapError(err, "Generating UUID")
+	// }
+
+	// etcHostsUUIDFileName := fmt.Sprintf("/etc/hosts-%s", uuid)
+	// err = a.platform.GetFs().WriteFile(etcHostsUUIDFileName, dnsRecordsContents.Bytes())
+	// if err != nil {
+	// 	return nil, bosherr.WrapError(err, fmt.Sprintf("Writing to %s", etcHostsUUIDFileName))
+	// }
+
+	// err = a.platform.GetFs().Rename(etcHostsUUIDFileName, "/etc/hosts")
+	// if err != nil {
+	// 	return nil, bosherr.WrapError(err, fmt.Sprintf("Renaming %s to /etc/hosts", etcHostsUUIDFileName))
+	// }
+
+	return errors.New("TODO: Implement me")
 }
 
 func (p linux) SetupHostname(hostname string) error {
