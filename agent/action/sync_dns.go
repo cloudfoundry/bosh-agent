@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuidgen "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
@@ -26,7 +26,7 @@ ff02::3 ip6-allhosts`
 type SyncDNS struct {
 	blobstore     boshblob.Blobstore
 	uuidGenerator boshuuidgen.Generator
-	fs            boshsys.FileSystem
+	platform      boshplat.Platform
 	logger        boshlog.Logger
 }
 
@@ -34,11 +34,11 @@ type DNSRecords struct {
 	Records [][2]string `json:"records"`
 }
 
-func NewSyncDNS(blobstore boshblob.Blobstore, fs boshsys.FileSystem, uuidGenerator boshuuidgen.Generator, logger boshlog.Logger) SyncDNS {
+func NewSyncDNS(blobstore boshblob.Blobstore, platform boshplat.Platform, uuidGenerator boshuuidgen.Generator, logger boshlog.Logger) SyncDNS {
 	return SyncDNS{
 		blobstore:     blobstore,
 		uuidGenerator: uuidGenerator,
-		fs:            fs,
+		platform:      platform,
 		logger:        logger,
 	}
 }
@@ -65,7 +65,7 @@ func (a SyncDNS) Run(blobID, sha1 string) (interface{}, error) {
 		return nil, bosherr.WrapError(err, fmt.Sprintf("Getting %s from blobstore", blobID))
 	}
 
-	contents, err := a.fs.ReadFile(fileName)
+	contents, err := a.platform.GetFs().ReadFile(fileName)
 	if err != nil {
 		return nil, bosherr.WrapError(err, fmt.Sprintf("Reading fileName %s from blobstore", fileName))
 	}
@@ -89,12 +89,12 @@ func (a SyncDNS) Run(blobID, sha1 string) (interface{}, error) {
 	}
 
 	etcHostsUUIDFileName := fmt.Sprintf("/etc/hosts-%s", uuid)
-	err = a.fs.WriteFile(etcHostsUUIDFileName, dnsRecordsContents.Bytes())
+	err = a.platform.GetFs().WriteFile(etcHostsUUIDFileName, dnsRecordsContents.Bytes())
 	if err != nil {
 		return nil, bosherr.WrapError(err, fmt.Sprintf("Writing to %s", etcHostsUUIDFileName))
 	}
 
-	err = a.fs.Rename(etcHostsUUIDFileName, "/etc/hosts")
+	err = a.platform.GetFs().Rename(etcHostsUUIDFileName, "/etc/hosts")
 	if err != nil {
 		return nil, bosherr.WrapError(err, fmt.Sprintf("Renaming %s to /etc/hosts", etcHostsUUIDFileName))
 	}

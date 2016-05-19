@@ -10,6 +10,7 @@ import (
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
+	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
@@ -20,6 +21,7 @@ var _ = Describe("SyncDNS", func() {
 		syncDNS           SyncDNS
 		fakeBlobstore     *fakeblobstore.FakeBlobstore
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
+		fakePlatform      *fakeplatform.FakePlatform
 		fakeFileSystem    *fakesys.FakeFileSystem
 		logger            boshlog.Logger
 	)
@@ -28,10 +30,11 @@ var _ = Describe("SyncDNS", func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		fakeBlobstore = fakeblobstore.NewFakeBlobstore()
-		fakeFileSystem = fakesys.NewFakeFileSystem()
+		fakePlatform = fakeplatform.NewFakePlatform()
+		fakeFileSystem = fakePlatform.GetFs().(*fakesys.FakeFileSystem)
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 
-		syncDNS = NewSyncDNS(fakeBlobstore, fakeFileSystem, fakeUUIDGenerator, logger)
+		syncDNS = NewSyncDNS(fakeBlobstore, fakePlatform, fakeUUIDGenerator, logger)
 	})
 
 	It("returns IsAsynchronous false", func() {
