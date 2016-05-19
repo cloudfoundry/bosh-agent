@@ -120,7 +120,7 @@ func (p dummyPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 	return p.fs.WriteFileString(credentialsPath, encryptedPwd)
 }
 
-func (p dummyPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords) (err error) {
+func (p dummyPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) (err error) {
 	return
 }
 

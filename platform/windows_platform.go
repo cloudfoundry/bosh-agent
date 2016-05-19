@@ -106,7 +106,7 @@ func (p WindowsPlatform) SetUserPassword(user, encryptedPwd string) (err error) 
 	return
 }
 
-func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords) (err error) {
+func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) (err error) {
 	return
 }
 

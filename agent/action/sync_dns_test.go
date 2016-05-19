@@ -12,30 +12,30 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
 var _ = Describe("SyncDNS", func() {
 	var (
-		syncDNS           SyncDNS
-		fakeBlobstore     *fakeblobstore.FakeBlobstore
-		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
-		fakePlatform      *fakeplatform.FakePlatform
-		fakeFileSystem    *fakesys.FakeFileSystem
-		logger            boshlog.Logger
+		syncDNS             SyncDNS
+		fakeBlobstore       *fakeblobstore.FakeBlobstore
+		fakeSettingsService *fakesettings.FakeSettingsService
+		fakePlatform        *fakeplatform.FakePlatform
+		fakeFileSystem      *fakesys.FakeFileSystem
+		logger              boshlog.Logger
 	)
 
 	BeforeEach(func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		fakeBlobstore = fakeblobstore.NewFakeBlobstore()
+		fakeSettingsService = &fakesettings.FakeSettingsService{}
 		fakePlatform = fakeplatform.NewFakePlatform()
 		fakeFileSystem = fakePlatform.GetFs().(*fakesys.FakeFileSystem)
-		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 
-		syncDNS = NewSyncDNS(fakeBlobstore, fakePlatform, fakeUUIDGenerator, logger)
+		syncDNS = NewSyncDNS(fakeBlobstore, fakeSettingsService, fakePlatform, logger)
 	})
 
 	It("returns IsAsynchronous false", func() {
@@ -104,6 +104,24 @@ var _ = Describe("SyncDNS", func() {
 				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Reading fileName"))
+			})
+
+			It("loads the agent settings", func() {
+				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeSettingsService.SettingsWereLoaded).To(BeTrue())
+				Expect(fakeSettingsService.LoadSettingsError).To(BeNil())
+			})
+
+			It("fails loading the agent settings", func() {
+				fakeSettingsService.LoadSettingsError = errors.New("fake-error")
+
+				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+				Expect(err).To(HaveOccurred())
+
+				Expect(fakeSettingsService.SettingsWereLoaded).To(BeTrue())
+				Expect(err.Error()).To(ContainSubstring("Loading settings"))
 			})
 
 			It("saves DNS records to the platform", func() {

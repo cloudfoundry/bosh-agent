@@ -3,7 +3,9 @@ package platform
 import (
 	"time"
 
+	"github.com/pivotal-golang/clock"
 	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
@@ -19,8 +21,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-
-	"github.com/pivotal-golang/clock"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (
@@ -101,6 +102,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}
 
+	uuidGenerator := boshuuid.NewGenerator()
+
 	centos := NewLinuxPlatform(
 		fs,
 		runner,
@@ -115,11 +118,11 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		centosCertManager,
 		monitRetryStrategy,
 		devicePathResolver,
-		500*time.Millisecond,
 		bootstrapState,
 		options.Linux,
 		logger,
 		linuxDefaultNetworkResolver,
+		uuidGenerator,
 	)
 
 	ubuntu := NewLinuxPlatform(
@@ -136,11 +139,11 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		ubuntuCertManager,
 		monitRetryStrategy,
 		devicePathResolver,
-		500*time.Millisecond,
 		bootstrapState,
 		options.Linux,
 		logger,
 		linuxDefaultNetworkResolver,
+		uuidGenerator,
 	)
 
 	return provider{

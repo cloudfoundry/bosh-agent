@@ -22,7 +22,6 @@ import (
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
 //go:generate counterfeiter -o fakes/fake_clock.go ../../vendor/github.com/pivotal-golang/clock Clock
@@ -40,7 +39,6 @@ var _ = Describe("concreteFactory", func() {
 		specService       *fakeas.FakeV1Service
 		jobScriptProvider boshscript.JobScriptProvider
 		factory           Factory
-		uuidGenerator     *fakeuuidgen.FakeGenerator
 		logger            boshlog.Logger
 	)
 
@@ -55,7 +53,6 @@ var _ = Describe("concreteFactory", func() {
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
-		uuidGenerator = fakeuuidgen.NewFakeGenerator()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		factory = NewFactory(
@@ -70,7 +67,6 @@ var _ = Describe("concreteFactory", func() {
 			specService,
 			jobScriptProvider,
 			boshsys.NewScriptCommandFactory("linux"),
-			uuidGenerator,
 			logger,
 		)
 	})
@@ -220,6 +216,6 @@ var _ = Describe("concreteFactory", func() {
 	It("sync_dns", func() {
 		action, err := factory.Create("sync_dns")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewSyncDNS(blobstore, platform, uuidGenerator, logger)))
+		Expect(action).To(Equal(NewSyncDNS(blobstore, settingsService, platform, logger)))
 	})
 })

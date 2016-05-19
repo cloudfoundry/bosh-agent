@@ -11,22 +11,21 @@ import (
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshuuidgen "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 type SyncDNS struct {
-	blobstore     boshblob.Blobstore
-	uuidGenerator boshuuidgen.Generator
-	platform      boshplat.Platform
-	logger        boshlog.Logger
+	blobstore       boshblob.Blobstore
+	settingsService boshsettings.Service
+	platform        boshplat.Platform
+	logger          boshlog.Logger
 }
 
-func NewSyncDNS(blobstore boshblob.Blobstore, platform boshplat.Platform, uuidGenerator boshuuidgen.Generator, logger boshlog.Logger) SyncDNS {
+func NewSyncDNS(blobstore boshblob.Blobstore, settingsService boshsettings.Service, platform boshplat.Platform, logger boshlog.Logger) SyncDNS {
 	return SyncDNS{
-		blobstore:     blobstore,
-		uuidGenerator: uuidGenerator,
-		platform:      platform,
-		logger:        logger,
+		blobstore:       blobstore,
+		settingsService: settingsService,
+		platform:        platform,
+		logger:          logger,
 	}
 }
 
@@ -63,7 +62,12 @@ func (a SyncDNS) Run(blobID, sha1 string) (interface{}, error) {
 		return nil, bosherr.WrapError(err, "Unmarshalling DNS records")
 	}
 
-	err = a.platform.SaveDNSRecords(dnsRecords)
+	err = a.settingsService.LoadSettings()
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Loading settings")
+	}
+
+	err = a.platform.SaveDNSRecords(dnsRecords, a.settingsService.GetSettings().AgentID)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Saving DNS records in platform")
 	}

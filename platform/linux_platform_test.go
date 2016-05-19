@@ -2,27 +2,31 @@ package platform_test
 
 import (
 	"errors"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"os"
 	"path"
-	"time"
+	"strings"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/platform"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	. "github.com/cloudfoundry/bosh-agent/platform"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
-	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
+	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+
+	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("LinuxPlatform", describeLinuxPlatform)
@@ -44,6 +48,8 @@ func describeLinuxPlatform() {
 		certManager                *fakecert.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+
+		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
 
 		state    *BootstrapState
 		stateErr error
@@ -69,6 +75,8 @@ func describeLinuxPlatform() {
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+
+		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 
 		state, stateErr = NewBootstrapState(fs, "/agent-state.json")
 		Expect(stateErr).NotTo(HaveOccurred())
@@ -101,11 +109,11 @@ func describeLinuxPlatform() {
 			certManager,
 			monitRetryStrategy,
 			devicePathResolver,
-			5*time.Millisecond,
 			state,
 			options,
 			logger,
 			fakeDefaultNetworkResolver,
+			fakeUUIDGenerator,
 		)
 	})
 
@@ -289,11 +297,11 @@ bosh_foobar:...`
 					certManager,
 					monitRetryStrategy,
 					devicePathResolver,
-					5*time.Millisecond,
 					state,
 					options,
 					logger,
 					fakeDefaultNetworkResolver,
+					fakeUUIDGenerator,
 				)
 				err := platformWithNoEphemeralDisk.SetupRootDisk("")
 
@@ -2319,70 +2327,80 @@ unit: sectors
 	})
 
 	Describe("SaveDNSRecords", func() {
-		// MOVE to linux platform
-		// 			const defaultEtcHostsEntries string = `127.0.0.1 localhost
+		var (
+			dnsRecords boshsettings.DNSRecords
 
-		// # The following lines are desirable for IPv6 capable hosts
-		// ::1 localhost ip6-localhost ip6-loopback
-		// fe00::0 ip6-localnet
-		// ff00::0 ip6-mcastprefix
-		// ff02::1 ip6-allnodes
-		// ff02::2 ip6-allrouters
-		// ff02::3 ip6-allhosts`
+			defaultEtcHosts string
+		)
 
-		// MOVE to linux platform
-		// It("preserves the default DNS records in '/etc/hosts'", func() {
-		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-		// 	Expect(err).ToNot(HaveOccurred())
+		BeforeEach(func() {
+			dnsRecords = boshsettings.DNSRecords{
+				Records: [][2]string{
+					{"fake-ip0", "fake-name0"},
+					{"fake-ip1", "fake-name1"},
+				},
+			}
 
-		// 	hostsFileContents, err := fakeFileSystem.ReadFile("/etc/hosts")
-		// 	Expect(err).ToNot(HaveOccurred())
-		// 	Expect(string(hostsFileContents)).To(ContainSubstring(defaultEtcHostsEntries))
-		// })
+			defaultEtcHosts = strings.Replace(EtcHostsTemplate, "{{ . }}", "fake-hostname", -1)
+		})
 
-		// It("writes the new DNS records in '/etc/hosts'", func() {
-		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-		// 	Expect(err).ToNot(HaveOccurred())
+		It("fails generating a UUID", func() {
+			fakeUUIDGenerator.GenerateError = errors.New("fake-error")
 
-		// 	hostsFileContents, err := fakeFileSystem.ReadFile("/etc/hosts")
-		// 	Expect(err).ToNot(HaveOccurred())
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Generating UUID"))
+		})
 
-		// 	Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0"))
-		// 	Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1"))
-		// })
+		It("fails to create intermediary /etc/hosts-<uuid> file", func() {
+			fs.WriteFileErrors["/etc/hosts-fake-uuid-0"] = errors.New("fake-error")
 
-		// It("fails generating a UUID", func() {
-		// 	fakeUUIDGenerator.GenerateError = errors.New("fake-error")
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).To(HaveOccurred())
 
-		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-		// 	Expect(err).To(HaveOccurred())
-		// 	Expect(err.Error()).To(ContainSubstring("Generating UUID"))
-		// })
+			Expect(err.Error()).To(ContainSubstring("Writing to /etc/hosts-fake-uuid-0"))
+		})
 
-		// It("creates intermediary /etc/hosts-uuid file with content and move it atomically to /etc/hosts", func() {
-		// 	_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-		// 	Expect(err).ToNot(HaveOccurred())
+		It("fails to renames intermediary /etc/hosts-<uuid> file to /etc/hosts", func() {
+			fs.RenameError = errors.New("fake-error")
 
-		// 	Expect(fakeFileSystem.RenameError).ToNot(HaveOccurred())
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).To(HaveOccurred())
 
-		// 	Expect(len(fakeFileSystem.RenameOldPaths)).To(Equal(1))
-		// 	Expect(fakeFileSystem.RenameOldPaths).To(ContainElement("/etc/hosts-fake-uuid-0"))
+			Expect(err.Error()).To(ContainSubstring("Renaming /etc/hosts-fake-uuid-0 to /etc/hosts"))
+		})
 
-		// 	Expect(len(fakeFileSystem.RenameNewPaths)).To(Equal(1))
-		// 	Expect(fakeFileSystem.RenameNewPaths).To(ContainElement("/etc/hosts"))
-		// })
+		It("renames intermediary /etc/hosts-<uuid> atomically to /etc/hosts", func() {
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).ToNot(HaveOccurred())
 
-		// MOVE to linux platform
-		// Context("when failing to write to /etc/hosts", func() {
-		// 	BeforeEach(func() {
-		// 		fakeFileSystem.WriteFileError = errors.New("fake-error")
-		// 	})
+			Expect(fs.RenameError).ToNot(HaveOccurred())
 
-		// 	It("writes the new DNS records in '/etc/hosts'", func() {
-		// 		_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-		// 		Expect(err).To(HaveOccurred())
-		// 		Expect(err.Error()).To(ContainSubstring("Writing to /etc/hosts"))
-		// 	})
-		// })
+			Expect(len(fs.RenameOldPaths)).To(Equal(1))
+			Expect(fs.RenameOldPaths).To(ContainElement("/etc/hosts-fake-uuid-0"))
+
+			Expect(len(fs.RenameNewPaths)).To(Equal(1))
+			Expect(fs.RenameNewPaths).To(ContainElement("/etc/hosts"))
+		})
+
+		It("preserves the default DNS records in '/etc/hosts'", func() {
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).ToNot(HaveOccurred())
+
+			hostsFileContents, err := fs.ReadFile("/etc/hosts")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(hostsFileContents)).To(ContainSubstring(defaultEtcHosts))
+		})
+
+		It("writes the new DNS records in '/etc/hosts'", func() {
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).ToNot(HaveOccurred())
+
+			hostsFileContents, err := fs.ReadFile("/etc/hosts")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0"))
+			Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1"))
+		})
 	})
 }

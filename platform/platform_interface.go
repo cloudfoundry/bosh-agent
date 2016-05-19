@@ -59,7 +59,7 @@ type Platform interface {
 	GetConfiguredNetworkInterfaces() ([]string, error)
 	PrepareForNetworkingChange() error
 	DeleteARPEntryWithIP(ip string) error
-	SaveDNSRecords(dnsRecords boshsettings.DNSRecords) error
+	SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) error
 
 	// Additional monit management
 	GetMonitCredentials() (username, password string, err error)
