@@ -197,8 +197,7 @@ func (c *agentClient) CompilePackage(packageSource agentclient.BlobRef, compiled
 }
 
 func (c *agentClient) DeleteARPEntries(ips []string) error {
-	_, err := c.sendAsyncTaskMessage("delete_arp_entries", []interface{}{map[string][]string{"ips": ips}})
-	return err
+	return c.agentRequest.Send("delete_arp_entries", []interface{}{map[string][]string{"ips": ips}}, &TaskResponse{})
 }
 
 func (c *agentClient) sendAsyncTaskMessage(method string, arguments []interface{}) (value map[string]interface{}, err error) {
