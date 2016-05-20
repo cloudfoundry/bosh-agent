@@ -9,9 +9,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	. "github.com/cloudfoundry/bosh-agent/agentclient/http"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
@@ -864,7 +861,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "sync_dns",
 					Arguments: []interface{}{"fake-blob-store-id", "fake-blob-store-id-sha1"},
-					ReplyTo:   "fake-uuid",
+					ReplyTo:   "fake-reply-to-uuid",
 				}))
 			})
 		})
