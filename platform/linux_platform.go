@@ -384,11 +384,11 @@ ff02::3 ip6-allhosts
 func (p linux) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) error {
 	dnsRecordsContents, err := p.generateDefaultEtcHosts(hostname)
 	if err != nil {
-		return err
+		return bosherr.WrapError(err, "Generating default /etc/hosts")
 	}
 
 	for _, dnsRecord := range dnsRecords.Records {
-		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s", dnsRecord[0], dnsRecord[1]))
+		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s\n", dnsRecord[0], dnsRecord[1]))
 	}
 
 	uuid, err := p.uuidGenerator.Generate()
@@ -1172,7 +1172,7 @@ func (p linux) generateDefaultEtcHosts(hostname string) (*bytes.Buffer, error) {
 
 	err := t.Execute(buffer, hostname)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Generating config from template")
+		return nil, err
 	}
 
 	return buffer, nil

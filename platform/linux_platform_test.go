@@ -2399,8 +2399,8 @@ unit: sectors
 			hostsFileContents, err := fs.ReadFile("/etc/hosts")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0"))
-			Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1"))
+			Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0\\n"))
+			Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1\\n"))
 		})
 	})
 }
