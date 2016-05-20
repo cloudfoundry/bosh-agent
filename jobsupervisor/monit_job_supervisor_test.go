@@ -182,7 +182,20 @@ var _ = Describe("monitJobSupervisor", func() {
 
 	Describe("Stop", func() {
 		It("stop stops each monit service in group vcap", func() {
+			client.ServicesInGroupServices = []string{"fake-service"}
+
 			err := monit.Stop()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(client.ServicesInGroupName).To(Equal("vcap"))
+			Expect(len(client.StopServiceNames)).To(Equal(1))
+			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
+		})
+	})
+
+	Describe("StopAndWait", func() {
+		It("stop stops each monit service in group vcap", func() {
+			err := monit.StopAndWait()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(runner.RunCommands)).To(Equal(1))
 			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "stop", "-g", "vcap"}))
@@ -229,7 +242,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				timeService,
 			)
 
-			err := monit.Stop()
+			err := monit.StopAndWait()
 			Expect(err).To(BeNil())
 		})
 
@@ -244,7 +257,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				errchan := make(chan error)
 				go func() {
-					errchan <- monit.Stop()
+					errchan <- monit.StopAndWait()
 				}()
 
 				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the sleep
@@ -287,7 +300,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				errchan := make(chan error)
 				go func() {
-					errchan <- monit.Stop()
+					errchan <- monit.StopAndWait()
 				}()
 
 				failureMessage := "Timed out waiting for services 'foo' to no longer be pending after 5 minutes"
@@ -307,7 +320,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				errchan := make(chan error)
 				go func() {
-					errchan <- monit.Stop()
+					errchan <- monit.StopAndWait()
 				}()
 
 				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the pending sleep
@@ -337,7 +350,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				errchan := make(chan error)
 				go func() {
-					errchan <- monit.Stop()
+					errchan <- monit.StopAndWait()
 				}()
 
 				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the sleep
@@ -361,7 +374,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				errchan := make(chan error)
 				go func() {
-					errchan <- monit.Stop()
+					errchan <- monit.StopAndWait()
 				}()
 
 				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the sleep
@@ -385,7 +398,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				runner.AddCmdResult("monit stop -g vcap", fakeErrorResult)
 
-				err := monit.Stop()
+				err := monit.StopAndWait()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal(fmt.Sprintf("%s%s", "Stop all services: ", fakeErrorResult.Error)))
 			})
@@ -433,7 +446,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					timeService,
 				)
 
-				err := monit.Stop()
+				err := monit.StopAndWait()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("Stopping services '[test-service]' errored"))
 			})
@@ -484,7 +497,7 @@ var _ = Describe("monitJobSupervisor", func() {
 
 				errchan := make(chan error)
 				go func() {
-					errchan <- monit.Stop()
+					errchan <- monit.StopAndWait()
 				}()
 
 				failureMessage := "Timed out waiting for services 'unmonitored-start-pending, initializing, running, running-stop-pending, unmonitored-stop-pending, failing' to stop after 5 minutes"
@@ -497,7 +510,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		})
 
 		It("creates stopped file", func() {
-			err := monit.Stop()
+			err := monit.StopAndWait()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fs.FileExists("/var/vcap/monit/stopped")).To(BeTrue())
 		})

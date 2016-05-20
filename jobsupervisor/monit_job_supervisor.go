@@ -133,6 +133,23 @@ func (m monitJobSupervisor) Start() error {
 }
 
 func (m monitJobSupervisor) Stop() error {
+	services, err := m.client.ServicesInGroup("vcap")
+	if err != nil {
+		return bosherr.WrapError(err, "Getting vcap services")
+	}
+
+	for _, service := range services {
+		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service %s", service)
+		err = m.client.StopService(service)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Stopping service %s", service)
+		}
+	}
+
+	return nil
+}
+
+func (m monitJobSupervisor) StopAndWait() error {
 	timer := m.timeService.NewTimer(5 * time.Minute)
 
 	for {

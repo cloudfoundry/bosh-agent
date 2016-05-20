@@ -85,12 +85,7 @@ func (c httpClient) StartService(serviceName string) error {
 func (c httpClient) StopService(serviceName string) error {
 	var response *http.Response
 
-	err := c.UnmonitorService(serviceName)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Sending unmonitor before stop for service '%s'", serviceName)
-	}
-
-	response, err = c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "action=stop")
+	response, err := c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "action=stop")
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Sending stop request for service '%s'", serviceName)
 	}
@@ -188,23 +183,6 @@ func (c httpClient) validateResponse(response *http.Response) error {
 	c.logger.Debug("http-client", "Request failed with %s: %s", response.Status, string(body))
 
 	return bosherr.Errorf("Request failed with %s: %s", response.Status, string(body))
-}
-
-func (c httpClient) getServiceByName(serviceName string) (service *Service, err error) {
-	st, err := c.Status()
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Sending status request to monit")
-	}
-
-	services := st.ServicesInGroup("vcap")
-
-	for _, service := range services {
-		if service.Name == serviceName {
-			return &service, nil
-		}
-	}
-
-	return nil, nil
 }
 
 func (c httpClient) makeRequest(client boshhttp.Client, target url.URL, method, requestBody string) (*http.Response, error) {
