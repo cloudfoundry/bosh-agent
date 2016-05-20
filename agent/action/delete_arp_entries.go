@@ -21,7 +21,7 @@ func NewDeleteARPEntries(platform boshplatform.Platform) DeleteARPEntriesAction 
 }
 
 func (a DeleteARPEntriesAction) IsAsynchronous() bool {
-	return true
+	return false
 }
 
 func (a DeleteARPEntriesAction) IsPersistent() bool {
