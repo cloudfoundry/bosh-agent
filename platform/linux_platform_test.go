@@ -1366,6 +1366,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
 					Expect(mounter.MountPartitionPaths[0]).To(Equal("/fake-dir/data/root_tmp"))
+					Expect(mounter.MountMountOptions[0]).To(ConsistOf("nodev","noexec", "nosuid", "--bind"))
 				})
 
 				It("changes permissions for the system /tmp folder", func() {
