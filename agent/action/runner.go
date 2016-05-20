@@ -20,7 +20,7 @@ func NewRunner() Runner {
 type concreteRunner struct{}
 
 func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface{}, err error) {
-	payloadArgs, err := r.extractJSONArguments(payloadBytes)
+	protocolVersion, payloadArgs, err := r.extractJSONArguments(payloadBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Extracting json arguments")
 		return
@@ -39,7 +39,7 @@ func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface
 		return
 	}
 
-	methodArgs, err := r.extractMethodArgs(runMethodType, payloadArgs)
+	methodArgs, err := r.extractMethodArgs(runMethodType, protocolVersion, payloadArgs)
 	if err != nil {
 		err = bosherr.WrapError(err, "Extracting method arguments from payload")
 		return
@@ -53,9 +53,10 @@ func (r concreteRunner) Resume(action Action, payloadBytes []byte) (value interf
 	return action.Resume()
 }
 
-func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (args []interface{}, err error) {
+func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (protocolVersion ProtocolVersion, args []interface{}, err error) {
 	type payloadType struct {
-		Arguments []interface{} `json:"arguments"`
+		ProtocolVersion ProtocolVersion `json:"protocol"`
+		Arguments       []interface{}   `json:"arguments"`
 	}
 	payload := payloadType{}
 
@@ -65,6 +66,7 @@ func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (args []interf
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling payload arguments to interface{} types")
 	}
+	protocolVersion = payload.ProtocolVersion
 	args = payload.Arguments
 	return
 }
@@ -88,12 +90,24 @@ func (r concreteRunner) invalidReturnTypes(methodType reflect.Type) (valid bool)
 	return
 }
 
-func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, args []interface{}) (methodArgs []reflect.Value, err error) {
+func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, protocolVersion ProtocolVersion, args []interface{}) (methodArgs []reflect.Value, err error) {
 	numberOfArgs := runMethodType.NumIn()
 	numberOfReqArgs := numberOfArgs
 
 	if runMethodType.IsVariadic() {
 		numberOfReqArgs--
+	}
+
+	argsOffset := 0
+
+	if numberOfArgs > 0 {
+		firstArgType := runMethodType.In(0)
+
+		if firstArgType.Name() == "ProtocolVersion" {
+			methodArgs = append(methodArgs, reflect.ValueOf(protocolVersion))
+			numberOfReqArgs--
+			argsOffset++
+		}
 	}
 
 	if len(args) < numberOfReqArgs {
@@ -109,7 +123,7 @@ func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, args []int
 			return
 		}
 
-		argType, typeFound := r.getMethodArgType(runMethodType, i)
+		argType, typeFound := r.getMethodArgType(runMethodType, i+argsOffset)
 		if !typeFound {
 			continue
 		}

@@ -1,5 +1,7 @@
 package action
 
+type ProtocolVersion int
+
 type Action interface {
 	IsAsynchronous() bool
 	IsPersistent() bool

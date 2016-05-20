@@ -28,6 +28,7 @@ func (a StopAction) IsPersistent() bool {
 
 func (a StopAction) Run() (value string, err error) {
 	err = a.jobSupervisor.Stop()
+
 	if err != nil {
 		err = bosherr.WrapError(err, "Stopping Monitored Services")
 		return

@@ -192,6 +192,34 @@ func (a *actionWithSecondReturnValueNotError) Cancel() error {
 	return nil
 }
 
+type actionWithProtocolVersion struct {
+	ProtocolVersion ProtocolVersion
+	SubAction       string
+}
+
+func (a *actionWithProtocolVersion) IsAsynchronous() bool {
+	return false
+}
+
+func (a *actionWithProtocolVersion) IsPersistent() bool {
+	return false
+}
+
+func (a *actionWithProtocolVersion) Run(protocolVersion ProtocolVersion, subAction string) (valueType, error) {
+	a.ProtocolVersion = protocolVersion
+	a.SubAction = subAction
+
+	return valueType{}, nil
+}
+
+func (a *actionWithProtocolVersion) Resume() (interface{}, error) {
+	return nil, nil
+}
+
+func (a *actionWithProtocolVersion) Cancel() error {
+	return nil
+}
+
 func init() {
 	Describe("concreteRunner", func() {
 		It("runner run parses the payload", func() {
@@ -342,6 +370,19 @@ func init() {
 
 				Expect(testAction.Resumed).To(BeTrue())
 			})
+		})
+
+		It("passes protocol version to run method", func() {
+			runner := NewRunner()
+
+			action := &actionWithProtocolVersion{}
+			payload := `{"protocol":98,"arguments":["setup"]}`
+
+			_, err := runner.Run(action, []byte(payload))
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(action.ProtocolVersion).To(Equal(ProtocolVersion(98)))
+			Expect(action.SubAction).To(Equal("setup"))
 		})
 	})
 }
