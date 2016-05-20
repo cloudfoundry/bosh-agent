@@ -48,29 +48,29 @@ func (a SyncDNS) Cancel() error {
 func (a SyncDNS) Run(blobID, sha1 string) (interface{}, error) {
 	fileName, err := a.blobstore.Get(blobID, sha1)
 	if err != nil {
-		return nil, bosherr.WrapError(err, fmt.Sprintf("Getting %s from blobstore", blobID))
+		return map[string]interface{}{}, bosherr.WrapError(err, fmt.Sprintf("Getting %s from blobstore", blobID))
 	}
 
 	contents, err := a.platform.GetFs().ReadFile(fileName)
 	if err != nil {
-		return nil, bosherr.WrapError(err, fmt.Sprintf("Reading fileName %s from blobstore", fileName))
+		return map[string]interface{}{}, bosherr.WrapError(err, fmt.Sprintf("Reading fileName %s from blobstore", fileName))
 	}
 
 	dnsRecords := boshsettings.DNSRecords{}
 	err = json.Unmarshal(contents, &dnsRecords)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Unmarshalling DNS records")
+		return map[string]interface{}{}, bosherr.WrapError(err, "Unmarshalling DNS records")
 	}
 
 	err = a.settingsService.LoadSettings()
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Loading settings")
+		return map[string]interface{}{}, bosherr.WrapError(err, "Loading settings")
 	}
 
 	err = a.platform.SaveDNSRecords(dnsRecords, a.settingsService.GetSettings().AgentID)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Saving DNS records in platform")
+		return map[string]interface{}{}, bosherr.WrapError(err, "Saving DNS records in platform")
 	}
 
-	return nil, nil
+	return map[string]interface{}{}, nil
 }
