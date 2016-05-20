@@ -226,6 +226,29 @@ bosh_foobar:...`
 				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda1"}))
 			})
 
+			It("runs growpart and resize2fs for the right root device number", func() {
+				err := platform.SetupEphemeralDiskWithPath("/dev/sda")
+				Expect(err).NotTo(HaveOccurred())
+
+				mountsSearcher := diskManager.FakeMountsSearcher
+				mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
+					PartitionPath: "/dev/sda2",
+					MountPoint:    "/",
+				}}
+
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda2",
+					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda2"},
+				)
+
+				err = platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "2"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda2"}))
+			})
+
 			It("returns error if it can't find the root device", func() {
 				cmdRunner.AddCmdResult(
 					"readlink -f /dev/sda1",
