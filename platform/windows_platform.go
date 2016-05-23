@@ -15,16 +15,17 @@ import (
 )
 
 type WindowsPlatform struct {
-	collector          boshstats.Collector
-	fs                 boshsys.FileSystem
-	cmdRunner          boshsys.CmdRunner
-	compressor         boshcmd.Compressor
-	copier             boshcmd.Copier
-	dirProvider        boshdirs.Provider
-	vitalsService      boshvitals.Service
-	netManager         boshnet.Manager
-	devicePathResolver boshdpresolv.DevicePathResolver
-	certManager        boshcert.Manager
+	collector              boshstats.Collector
+	fs                     boshsys.FileSystem
+	cmdRunner              boshsys.CmdRunner
+	compressor             boshcmd.Compressor
+	copier                 boshcmd.Copier
+	dirProvider            boshdirs.Provider
+	vitalsService          boshvitals.Service
+	netManager             boshnet.Manager
+	devicePathResolver     boshdpresolv.DevicePathResolver
+	certManager            boshcert.Manager
+	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 }
 
 func NewWindowsPlatform(
@@ -35,18 +36,20 @@ func NewWindowsPlatform(
 	netManager boshnet.Manager,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
+	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
 ) Platform {
 	return &WindowsPlatform{
-		fs:                 fs,
-		cmdRunner:          cmdRunner,
-		collector:          collector,
-		compressor:         boshcmd.NewTarballCompressor(cmdRunner, fs),
-		copier:             boshcmd.NewGenericCpCopier(fs, logger),
-		dirProvider:        dirProvider,
-		netManager:         netManager,
-		devicePathResolver: devicePathResolver,
-		vitalsService:      boshvitals.NewService(collector, dirProvider),
-		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
+		fs:                     fs,
+		cmdRunner:              cmdRunner,
+		collector:              collector,
+		compressor:             boshcmd.NewTarballCompressor(cmdRunner, fs),
+		copier:                 boshcmd.NewGenericCpCopier(fs, logger),
+		dirProvider:            dirProvider,
+		netManager:             netManager,
+		devicePathResolver:     devicePathResolver,
+		vitalsService:          boshvitals.NewService(collector, dirProvider),
+		certManager:            boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
+		defaultNetworkResolver: defaultNetworkResolver,
 	}
 }
 
@@ -211,7 +214,7 @@ func (p WindowsPlatform) RemoveDevTools(packageFileListPath string) error {
 }
 
 func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
-	return boshsettings.Network{}, nil
+	return p.defaultNetworkResolver.GetDefaultNetwork()
 }
 
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
