@@ -3,6 +3,8 @@ package net_test
 import (
 	"errors"
 	"fmt"
+	"math/rand"
+	gonet "net"
 	"strings"
 	"time"
 
@@ -18,18 +20,52 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 )
 
+func randomMAC() string {
+	rand.Seed(time.Now().UnixNano())
+
+	hw := make(gonet.HardwareAddr, 6)
+	for i := 0; i < len(hw); i++ {
+		hw[i] = byte(rand.Intn(1<<8 - 1))
+	}
+	return hw.String()
+}
+
+type fakeMACAddressDetector struct {
+	macs map[string]string
+}
+
+func (m *fakeMACAddressDetector) MACAddresses() (map[string]string, error) {
+	return m.macs, nil
+}
+
 var _ = Describe("WindowsNetManager", func() {
 	var (
-		scriptRunner *fakesys.FakeScriptRunner
-		clock        *fakeclock.FakeClock
-		netManager   Manager
+		clock                         *fakeclock.FakeClock
+		scriptRunner                  *fakesys.FakeScriptRunner
+		netManager                    Manager
+		interfaceConfigurationCreator InterfaceConfigurationCreator
 	)
+	macAddressDetector := new(fakeMACAddressDetector)
+
+	setupMACs := func(networks ...boshsettings.Network) error {
+		m := make(map[string]string)
+		for i, net := range networks {
+			if net.Mac != "" {
+				m[net.Mac] = fmt.Sprintf("Eth_HW %d", i)
+			} else {
+				m[randomMAC()] = fmt.Sprintf("Eth_Rand %d", i)
+			}
+		}
+		macAddressDetector.macs = m
+		return nil
+	}
 
 	BeforeEach(func() {
 		scriptRunner = fakesys.NewFakeScriptRunner()
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		netManager = NewWindowsNetManager(scriptRunner, logger, clock)
+		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
+		netManager = NewWindowsNetManager(scriptRunner, interfaceConfigurationCreator, macAddressDetector, logger, clock)
 	})
 
 	Describe("SetupNetworking", func() {
@@ -65,6 +101,7 @@ var _ = Describe("WindowsNetManager", func() {
 			}
 
 			It("sets the IP address and netmask on all interfaces, and the gateway on the default gateway interface", func() {
+				setupMACs(network1, network2)
 				err := setupNetworking(boshsettings.Networks{"net1": network1, "net2": network2, "vip": vip})
 				Expect(err).ToNot(HaveOccurred())
 
@@ -79,15 +116,6 @@ netsh interface ip set address $connectionName static 192.168.50.50 255.255.255.
 						"netsh interface ip set address $connectionName static 192.168.20.20 255.255.255.0 ",
 						"",
 					}, "\n")))
-			})
-
-			It("sets the gateway when there is only one network and it is not the default for gateway", func() {
-				err := setupNetworking(boshsettings.Networks{"net": network2, "vip": vip})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(scriptRunner.RunScripts).To(ContainElement(`
-$connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '99:55:C3:5A:52:7A'}).netconnectionid
-netsh interface ip set address $connectionName static 192.168.20.20 255.255.255.0 192.168.20.0
-`))
 			})
 
 			It("ignores VIP networks", func() {
