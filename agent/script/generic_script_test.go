@@ -3,34 +3,33 @@ package script_test
 import (
 	"errors"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("GenericScript", func() {
 	var (
-		fs                   *fakesys.FakeFileSystem
-		cmdRunner            *fakesys.FakeCmdRunner
-		scriptCommandFactory *fakesys.FakeCommandFactory
-		genericScript        boshscript.GenericScript
-		stdoutLogPath        string
-		stderrLogPath        string
+		fs            *fakesys.FakeFileSystem
+		cmdRunner     *fakesys.FakeCmdRunner
+		genericScript boshscript.GenericScript
+		stdoutLogPath string
+		stderrLogPath string
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
-		scriptCommandFactory = &fakesys.FakeCommandFactory{}
 		stdoutLogPath = filepath.Join("base", "stdout", "logdir", "stdout.log")
 		stderrLogPath = filepath.Join("base", "stderr", "logdir", "stderr.log")
 		genericScript = boshscript.NewScript(
 			fs,
 			cmdRunner,
-			scriptCommandFactory,
 			"my-tag",
 			"/path-to-script",
 			stdoutLogPath,
@@ -81,9 +80,19 @@ var _ = Describe("GenericScript", func() {
 			Expect(err.Error()).To(Equal("fake-open-file-error"))
 		})
 
+		addCmdResult := func(cr *fakesys.FakeCmdRunner, fullCmd string, result fakesys.FakeCmdResult) {
+			// RunErrandAction uses system.NewScriptCommand, on windows
+			// this modifies the cmd name and args to use powershell.
+
+			cmd := boshsys.NewScriptCommand(fullCmd)
+			runCmd := append([]string{cmd.Name}, cmd.Args...)
+			fullCmd = strings.Join(runCmd, " ")
+			cr.AddCmdResult(fullCmd, result)
+		}
+
 		Context("when command succeeds", func() {
 			BeforeEach(func() {
-				cmdRunner.AddCmdResult("/path-to-script", fakesys.FakeCmdResult{
+				addCmdResult(cmdRunner, "/path-to-script", fakesys.FakeCmdResult{
 					Stdout:     "fake-stdout",
 					Stderr:     "fake-stderr",
 					ExitStatus: 0,
@@ -110,7 +119,7 @@ var _ = Describe("GenericScript", func() {
 
 		Context("when command fails", func() {
 			BeforeEach(func() {
-				cmdRunner.AddCmdResult("/path-to-script", fakesys.FakeCmdResult{
+				addCmdResult(cmdRunner, "/path-to-script", fakesys.FakeCmdResult{
 					Stdout:     "fake-stdout",
 					Stderr:     "fake-stderr",
 					ExitStatus: 1,
