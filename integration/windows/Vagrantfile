@@ -143,7 +143,6 @@ New-Item -ItemType file -path "C:\\bosh\\settings.json" -Value @"
       "preconfigured": false
     }
   },
-  "ntp": ["0.pool.ntp.org", "1.pool.ntp.org"],
   "mbus": "nats://#{nats_private_ip}:4222",
   "vm": {
     "name": "vm-1f1aaed4-b479-4cf5-b73e-a7cbf0abf4ae"
