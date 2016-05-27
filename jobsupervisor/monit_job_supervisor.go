@@ -146,6 +146,11 @@ func (m monitJobSupervisor) Stop() error {
 		}
 	}
 
+	err = m.fs.WriteFileString(m.stoppedFilePath(), "")
+	if err != nil {
+		return bosherr.WrapError(err, "Creating stopped File")
+	}
+
 	return nil
 }
 

@@ -191,6 +191,12 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(len(client.StopServiceNames)).To(Equal(1))
 			Expect(client.StopServiceNames[0]).To(Equal("fake-service"))
 		})
+
+		It("creates stopped file", func() {
+			err := monit.Stop()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fs.FileExists("/var/vcap/monit/stopped")).To(BeTrue())
+		})
 	})
 
 	Describe("StopAndWait", func() {
