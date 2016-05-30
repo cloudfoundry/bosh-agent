@@ -16,13 +16,14 @@ import (
 
 var _ = Describe("WindowsPlatform", func() {
 	var (
-		collector          *fakestats.FakeCollector
-		fs                 *fakesys.FakeFileSystem
-		cmdRunner          *fakesys.FakeCmdRunner
-		dirProvider        boshdirs.Provider
-		netManager         *fakenet.FakeManager
-		devicePathResolver *fakedpresolv.FakeDevicePathResolver
-		platform           Platform
+		collector                  *fakestats.FakeCollector
+		fs                         *fakesys.FakeFileSystem
+		cmdRunner                  *fakesys.FakeCmdRunner
+		dirProvider                boshdirs.Provider
+		netManager                 *fakenet.FakeManager
+		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
+		platform                   Platform
+		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 
 		options LinuxOptions
 		logger  boshlog.Logger
@@ -38,6 +39,7 @@ var _ = Describe("WindowsPlatform", func() {
 		netManager = &fakenet.FakeManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		options = LinuxOptions{}
+		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 	})
 
 	JustBeforeEach(func() {
@@ -49,6 +51,7 @@ var _ = Describe("WindowsPlatform", func() {
 			netManager,
 			devicePathResolver,
 			logger,
+			fakeDefaultNetworkResolver,
 		)
 	})
 
@@ -69,6 +72,18 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(netManager.SetupNetworkingNetworks).To(Equal(networks))
+		})
+	})
+
+	Describe("GetDefaultNetwork", func() {
+		It("delegates to the defaultNetworkResolver", func() {
+			defaultNetwork := boshsettings.Network{IP: "1.2.3.4"}
+			fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
+
+			network, err := platform.GetDefaultNetwork()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(network).To(Equal(defaultNetwork))
 		})
 	})
 })

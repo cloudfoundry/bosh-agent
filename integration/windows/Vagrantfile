@@ -228,7 +228,7 @@ Vagrant.configure(2) do |config|
     end
 
     agent.vm.provider :aws do |aws, override|
-      aws.ami = "ami-3586ac5f"
+      aws.ami = "ami-c8a9baa2"
       override.vm.box = "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box"
       override.winrm.password = winrm_password
       override.winrm.username = winrm_username

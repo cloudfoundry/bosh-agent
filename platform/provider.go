@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	"github.com/pivotal-golang/clock"
+
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
@@ -19,6 +21,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (
@@ -43,7 +46,7 @@ type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, scriptCommandFactory boshsys.ScriptCommandFactory, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState) Provider {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, scriptCommandFactory boshsys.ScriptCommandFactory, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
@@ -72,13 +75,13 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
 	scriptRunner := boshsys.NewConcreteScriptRunner(scriptCommandFactory, runner, fs, logger)
-	windowsNetManager := boshnet.NewWindowsNetManager(scriptRunner, logger)
+	windowsNetManager := boshnet.NewWindowsNetManager(scriptRunner, interfaceConfigurationCreator, boshnet.NewMACAddressDetector(), logger, clock)
 
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, 0, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
 
-	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
-	linuxDefaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+	routesSearcher := boshnet.NewRoutesSearcher(runner)
+	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 
 	monitRetryable := NewMonitRetryable(runner)
 	monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
@@ -99,6 +102,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}
 
+	uuidGenerator := boshuuid.NewGenerator()
+
 	centos := NewLinuxPlatform(
 		fs,
 		runner,
@@ -113,11 +118,11 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		centosCertManager,
 		monitRetryStrategy,
 		devicePathResolver,
-		500*time.Millisecond,
 		bootstrapState,
 		options.Linux,
 		logger,
-		linuxDefaultNetworkResolver,
+		defaultNetworkResolver,
+		uuidGenerator,
 	)
 
 	ubuntu := NewLinuxPlatform(
@@ -134,11 +139,22 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		ubuntuCertManager,
 		monitRetryStrategy,
 		devicePathResolver,
-		500*time.Millisecond,
 		bootstrapState,
 		options.Linux,
 		logger,
-		linuxDefaultNetworkResolver,
+		defaultNetworkResolver,
+		uuidGenerator,
+	)
+
+	windows := NewWindowsPlatform(
+		statsCollector,
+		fs,
+		runner,
+		dirProvider,
+		windowsNetManager,
+		devicePathResolver,
+		logger,
+		defaultNetworkResolver,
 	)
 
 	return provider{
@@ -146,7 +162,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			"ubuntu":  ubuntu,
 			"centos":  centos,
 			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
-			"windows": NewWindowsPlatform(statsCollector, fs, runner, dirProvider, windowsNetManager, devicePathResolver, logger),
+			"windows": windows,
 		},
 	}
 }

@@ -5,6 +5,7 @@ import "time"
 type Clock interface {
 	Now() time.Time
 	Sleep(d time.Duration)
+	Since(t time.Time) time.Duration
 
 	NewTimer(d time.Duration) Timer
 	NewTicker(d time.Duration) Ticker
@@ -18,6 +19,10 @@ func NewClock() Clock {
 
 func (clock *realClock) Now() time.Time {
 	return time.Now()
+}
+
+func (clock *realClock) Since(t time.Time) time.Duration {
+	return time.Now().Sub(t)
 }
 
 func (clock *realClock) Sleep(d time.Duration) {
