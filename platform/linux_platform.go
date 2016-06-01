@@ -741,7 +741,7 @@ func (p linux) SetupTmpDir() error {
 		}
 
 		// mount
-		err = bindMounter.Mount(boshRootTmpPath, systemTmpDir, "-o", "nodev", "-o", "noexec", "-o", "nosuid")
+		err = bindMounter.Mount(boshRootTmpPath, systemTmpDir)
 		if err != nil {
 			return bosherr.WrapError(err, "Bind mounting root tmp dir over /tmp")
 		}
