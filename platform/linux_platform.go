@@ -70,6 +70,9 @@ type LinuxOptions struct {
 
 	// Device prexix when using virtio (defaults to 'virtio')
 	VirtioDevicePrefix string
+
+	// Override for default mappedDevicePathResolver timeout
+	MappedDevicePathResolverTimeout int
 }
 
 type linux struct {
