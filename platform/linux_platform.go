@@ -725,34 +725,38 @@ func (p linux) SetupTmpDir() error {
 		return nil
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", boshRootTmpPath)
+	_, systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
 	if err != nil {
-		return bosherr.WrapError(err, "Creating root tmp dir")
+		return bosherr.WrapErrorf(err, "Checking for mount point %s", systemTmpDir)
 	}
 
-	bindMounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
-	mounted, err := bindMounter.IsMounted(boshRootTmpPath)
+	if !systemTmpDirIsMounted {
+		// If it's not mounted on /tmp, blow it away
+		_, _, _, err = p.cmdRunner.RunCommand("truncate", "-s", "128M", boshRootTmpPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Truncating root tmp dir")
+		}
 
-	if !mounted && err == nil {
-		// change permissions
 		_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", boshRootTmpPath)
 		if err != nil {
 			return bosherr.WrapError(err, "Chmoding root tmp dir")
 		}
 
-		// mount
-		err = bindMounter.Mount(boshRootTmpPath, systemTmpDir)
+		_, _, _, err = p.cmdRunner.RunCommand("mke2fs", "-t", "ext4", "-m", "1", "-F", boshRootTmpPath)
 		if err != nil {
-			return bosherr.WrapError(err, "Bind mounting root tmp dir over /tmp")
+			return bosherr.WrapError(err, "Creating root tmp dir filesystem")
 		}
 
-		// change permissions for mount point
+		err = p.diskManager.GetMounter().Mount(boshRootTmpPath, systemTmpDir, "-t", "ext4", "-o", "loop,noexec")
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting root tmp dir over /tmp")
+		}
+
+		// Change permissions for new mount point
 		err = p.changeTmpDirPermissions(systemTmpDir)
 		if err != nil {
 			return err
 		}
-	} else if err != nil {
-		return err
 	}
 
 	return nil
