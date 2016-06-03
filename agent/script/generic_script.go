@@ -74,13 +74,14 @@ func (s GenericScript) Run() error {
 		_ = stderrFile.Close()
 	}()
 
-	command := boshsys.NewScriptCommand(s.path)
-	command.Env = map[string]string{
-		"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+	command := boshsys.Command{
+		Name: s.path,
+		Env: map[string]string{
+			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+		},
+		Stdout: stdoutFile,
+		Stderr: stderrFile,
 	}
-	command.Stdout = stdoutFile
-	command.Stderr = stderrFile
-
 	_, _, _, err = s.runner.RunComplexCommand(command)
 
 	return err

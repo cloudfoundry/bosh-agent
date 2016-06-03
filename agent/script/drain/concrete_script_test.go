@@ -2,8 +2,6 @@ package drain_test
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -67,16 +65,6 @@ var _ = Describe("ConcreteScript", func() {
 		})
 	})
 
-	addProcess := func(cr *fakesys.FakeCmdRunner, fullCmd string, process *fakesys.FakeProcess) {
-		// RunErrandAction uses system.NewScriptCommand, on windows
-		// this modifies the cmd name and args to use powershell.
-
-		cmd := boshsys.NewScriptCommand(fullCmd)
-		runCmd := append([]string{cmd.Name}, cmd.Args...)
-		fullCmd = strings.Join(runCmd, " ")
-		cr.AddProcess(fullCmd, process)
-	}
-
 	Describe("Run", func() {
 		BeforeEach(func() {
 			oldSpec := exampleSpec()
@@ -94,24 +82,20 @@ var _ = Describe("ConcreteScript", func() {
 		})
 
 		It("runs drain script", func() {
-			cmdName := "/fake/script"
-			cmdArgs := []string{"job_unchanged", "hash_unchanged", "bar", "foo"}
-			fullCmd := fmt.Sprintf("%s %s", cmdName, strings.Join(cmdArgs, " "))
-
-			addProcess(runner, fullCmd, &fakesys.FakeProcess{
-				WaitResult: boshsys.Result{
-					Stdout: "1",
-				},
-			})
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo",
+				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "1"}})
 
 			err := script.Run()
 			Expect(err).ToNot(HaveOccurred())
 
-			expectedCmd := boshsys.NewScriptCommand(cmdName, cmdArgs...)
-			expectedCmd.Env = map[string]string{
-				"PATH":                "/usr/sbin:/usr/bin:/sbin:/bin",
-				"BOSH_JOB_STATE":      "{\"persistent_disk\":42}",
-				"BOSH_JOB_NEXT_STATE": "{\"persistent_disk\":42}",
+			expectedCmd := boshsys.Command{
+				Name: "/fake/script",
+				Args: []string{"job_unchanged", "hash_unchanged", "bar", "foo"},
+				Env: map[string]string{
+					"PATH":                "/usr/sbin:/usr/bin:/sbin:/bin",
+					"BOSH_JOB_STATE":      "{\"persistent_disk\":42}",
+					"BOSH_JOB_NEXT_STATE": "{\"persistent_disk\":42}",
+				},
 			}
 
 			Expect(len(runner.RunComplexCommands)).To(Equal(1))
@@ -119,7 +103,7 @@ var _ = Describe("ConcreteScript", func() {
 		})
 
 		It("sleeps when script returns a positive integer", func() {
-			addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo",
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "12"}})
 
 			err := script.Run()
@@ -129,13 +113,13 @@ var _ = Describe("ConcreteScript", func() {
 		})
 
 		It("sleeps then calls the script again as long as script returns a negative integer", func() {
-			addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo",
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "-5"}})
-			addProcess(runner, "/fake/script job_check_status hash_unchanged",
+			runner.AddProcess("/fake/script job_check_status hash_unchanged",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "-5"}})
-			addProcess(runner, "/fake/script job_check_status hash_unchanged",
+			runner.AddProcess("/fake/script job_check_status hash_unchanged",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "-5"}})
-			addProcess(runner, "/fake/script job_check_status hash_unchanged",
+			runner.AddProcess("/fake/script job_check_status hash_unchanged",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "0"}})
 
 			err := script.Run()
@@ -149,9 +133,9 @@ var _ = Describe("ConcreteScript", func() {
 		})
 
 		It("ignores whitespace in stdout", func() {
-			addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo",
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "-56\n"}})
-			addProcess(runner, "/fake/script job_check_status hash_unchanged",
+			runner.AddProcess("/fake/script job_check_status hash_unchanged",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: " 0  \t\n"}})
 
 			err := script.Run()
@@ -162,7 +146,7 @@ var _ = Describe("ConcreteScript", func() {
 		})
 
 		It("returns error with non integer stdout", func() {
-			addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo",
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "hello!"}})
 
 			err := script.Run()
@@ -170,7 +154,7 @@ var _ = Describe("ConcreteScript", func() {
 		})
 
 		It("returns error when running command errors", func() {
-			addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo",
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo",
 				&fakesys.FakeProcess{WaitResult: boshsys.Result{Error: errors.New("woops")}})
 
 			err := script.Run()
@@ -179,7 +163,7 @@ var _ = Describe("ConcreteScript", func() {
 
 		Describe("job state", func() {
 			BeforeEach(func() {
-				addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo",
+				runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo",
 					&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "1"}})
 			})
 
@@ -213,7 +197,7 @@ var _ = Describe("ConcreteScript", func() {
 		Describe("job next state", func() {
 			BeforeEach(func() {
 				commandResult := &fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "1"}}
-				addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo", commandResult)
+				runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo", commandResult)
 			})
 
 			Context("when job next state is present", func() {
@@ -230,7 +214,7 @@ var _ = Describe("ConcreteScript", func() {
 				BeforeEach(func() {
 					params = NewShutdownParams(exampleSpec(), nil)
 
-					addProcess(runner, "/fake/script job_shutdown hash_unchanged",
+					runner.AddProcess("/fake/script job_shutdown hash_unchanged",
 						&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "1"}})
 				})
 
@@ -299,7 +283,7 @@ var _ = Describe("ConcreteScript", func() {
 					}
 				},
 			}
-			addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo", process)
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo", process)
 
 			err := script.Cancel()
 			Expect(err).ToNot(HaveOccurred())
@@ -321,7 +305,7 @@ var _ = Describe("ConcreteScript", func() {
 					}
 				},
 			}
-			addProcess(runner, "/fake/script job_unchanged hash_unchanged bar foo", process)
+			runner.AddProcess("/fake/script job_unchanged hash_unchanged bar foo", process)
 
 			err := script.Cancel()
 			Expect(err).ToNot(HaveOccurred())

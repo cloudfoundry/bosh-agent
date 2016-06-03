@@ -64,9 +64,11 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 		return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
 	}
 
-	command := boshsys.NewScriptCommand(path.Join(a.jobsDir, currentSpec.JobSpec.Template, "bin", "run"))
-	command.Env = map[string]string{
-		"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+	command := boshsys.Command{
+		Name: path.Join(a.jobsDir, currentSpec.JobSpec.Template, "bin", "run"),
+		Env: map[string]string{
+			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+		},
 	}
 
 	process, err := a.cmdRunner.RunComplexCommandAsync(command)

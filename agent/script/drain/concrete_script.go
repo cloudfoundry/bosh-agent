@@ -87,9 +87,11 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()
 
-	command := boshsys.NewScriptCommand(s.path)
-	command.Env = map[string]string{
-		"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+	command := boshsys.Command{
+		Name: s.path,
+		Env: map[string]string{
+			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+		},
 	}
 
 	jobState, err := params.JobState()
