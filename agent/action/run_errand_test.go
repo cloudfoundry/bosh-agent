@@ -2,7 +2,6 @@ package action_test
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -38,16 +37,6 @@ var _ = Describe("RunErrand", func() {
 		Expect(action.IsPersistent()).To(BeFalse())
 	})
 
-	addProcess := func(cr *fakesys.FakeCmdRunner, fullCmd string, process *fakesys.FakeProcess) {
-		// RunErrandAction uses system.NewScriptCommand, on windows
-		// this modifies the cmd name and args to use powershell.
-
-		cmd := boshsys.NewScriptCommand(fullCmd)
-		runCmd := append([]string{cmd.Name}, cmd.Args...)
-		fullCmd = strings.Join(runCmd, " ")
-		cr.AddProcess(fullCmd, process)
-	}
-
 	Describe("Run", func() {
 		Context("when apply spec is successfully retrieved", func() {
 			Context("when current agent has a job spec template", func() {
@@ -59,7 +48,7 @@ var _ = Describe("RunErrand", func() {
 
 				Context("when errand script exits with non-0 exit code (execution of script is ok)", func() {
 					BeforeEach(func() {
-						addProcess(cmdRunner, "/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								Stdout:     "fake-stdout",
 								Stderr:     "fake-stderr",
@@ -91,7 +80,7 @@ var _ = Describe("RunErrand", func() {
 
 				Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
 					BeforeEach(func() {
-						addProcess(cmdRunner, "/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								Stdout:     "fake-stdout",
 								Stderr:     "fake-stderr",
@@ -116,7 +105,7 @@ var _ = Describe("RunErrand", func() {
 
 				Context("when errand script fails to execute", func() {
 					BeforeEach(func() {
-						addProcess(cmdRunner, "/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								ExitStatus: -1,
 								Error:      errors.New("fake-bosh-error"),
@@ -190,7 +179,7 @@ var _ = Describe("RunErrand", func() {
 					},
 				}
 
-				addProcess(cmdRunner, "/fake-jobs-dir/fake-job-name/bin/run", process)
+				cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", process)
 
 				err := action.Cancel()
 				Expect(err).ToNot(HaveOccurred())
@@ -203,7 +192,7 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script exits with non-0 exit code (execution of script is ok)", func() {
 				BeforeEach(func() {
-					addProcess(cmdRunner, "/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								Stdout:     "fake-stdout",
@@ -232,7 +221,7 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
 				BeforeEach(func() {
-					addProcess(cmdRunner, "/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								Stdout:     "fake-stdout",
@@ -262,7 +251,7 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script fails to execute", func() {
 				BeforeEach(func() {
-					addProcess(cmdRunner, "/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								ExitStatus: -1,
