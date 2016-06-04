@@ -16,15 +16,14 @@ jobs:
       - task: test-integration
         privileged: true
         file: bosh-agent/ci/tasks/test-integration.yml
-        config:
-          params:
-            BOSH_AWS_ACCESS_KEY_ID: {{BOSH_AWS_ACCESS_KEY_ID}}
-            BOSH_AWS_SECRET_ACCESS_KEY: {{BOSH_AWS_SECRET_ACCESS_KEY}}
-            BOSH_LITE_KEYPAIR: {{BOSH_LITE_KEYPAIR}}
-            BOSH_LITE_SUBNET_ID: {{BOSH_LITE_SUBNET_ID}}
-            BOSH_LITE_NAME: {{BOSH_LITE_NAME}}
-            BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
-            BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
+        params:
+          BOSH_AWS_ACCESS_KEY_ID: {{BOSH_AWS_ACCESS_KEY_ID}}
+          BOSH_AWS_SECRET_ACCESS_KEY: {{BOSH_AWS_SECRET_ACCESS_KEY}}
+          BOSH_LITE_KEYPAIR: {{BOSH_LITE_KEYPAIR}}
+          BOSH_LITE_SUBNET_ID: {{BOSH_LITE_SUBNET_ID}}
+          BOSH_LITE_NAME: {{BOSH_LITE_NAME}}
+          BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
+          BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
 
   - name: promote
     public: true
