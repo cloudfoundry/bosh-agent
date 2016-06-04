@@ -104,6 +104,13 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 				Eventually(errchan).Should(Receive(BeNil()))
 				Eventually(dummyNats.Status).Should(Equal("stopped"))
 			})
+
+			It("reads custom error setting", func() {
+				fs.WriteFileString(TestSupervisorSettingsFile, `{"error":"Timed out waiting for service 'foo'."}`)
+
+				err := dummyNats.Stop()
+				Expect(err.Error()).To(Equal("Timed out waiting for service 'foo'."))
+			})
 		})
 
 		Context("When test settings file does not exist", func() {

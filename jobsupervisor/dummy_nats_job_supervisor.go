@@ -95,7 +95,8 @@ func (d *dummyNatsJobSupervisor) Start() error {
 
 func (d *dummyNatsJobSupervisor) Stop() error {
 	var testSettings struct {
-		StopDelay int `json:"stop_delay"`
+		StopDelay int    `json:"stop_delay"`
+		Error     string `json:"error"`
 	}
 
 	if d.fs.FileExists(TestSupervisorSettingsFile) {
@@ -109,6 +110,10 @@ func (d *dummyNatsJobSupervisor) Stop() error {
 		}
 	}
 
+	if testSettings.Error != "" {
+		return bosherror.Error(testSettings.Error)
+	}
+
 	if d.status != "failing" && d.status != "fail_task" {
 		if testSettings.StopDelay != 0 {
 			d.timeService.Sleep(time.Duration(testSettings.StopDelay) * time.Second)
@@ -119,7 +124,7 @@ func (d *dummyNatsJobSupervisor) Stop() error {
 }
 
 func (d *dummyNatsJobSupervisor) StopAndWait() error {
-	return nil
+	return d.Stop()
 }
 
 func (d *dummyNatsJobSupervisor) Unmonitor() error {
