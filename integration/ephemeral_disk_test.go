@@ -79,14 +79,14 @@ var _ = Describe("EphemeralDisk", func() {
 					Eventually(func() error {
 						_, err := testEnvironment.RunCommand("netcat -z -v 127.0.0.1 6868")
 						return err
-					}, 2 * time.Minute, 1 * time.Second).ShouldNot(HaveOccurred())
+					}, 2*time.Minute, 1*time.Second).ShouldNot(HaveOccurred())
 				})
 
 				It("it is being mounted", func() {
 					Eventually(func() string {
 						result, _ := testEnvironment.RunCommand("sudo mount | grep /dev/sdh | grep -c /var/vcap/data")
 						return strings.TrimSpace(result)
-					}, 2 * time.Minute, 1 * time.Second).Should(Equal("1"))
+					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 				})
 			})
 
@@ -98,7 +98,7 @@ var _ = Describe("EphemeralDisk", func() {
 				It("agent fails with error", func() {
 					Eventually(func() bool {
 						return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
-					}, 2 * time.Minute, 1 * time.Second).Should(BeTrue())
+					}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 				})
 			})
 		})
@@ -106,7 +106,7 @@ var _ = Describe("EphemeralDisk", func() {
 		Context("when ephemeral disk is not provided in settings", func() {
 			Context("when root disk can be used as ephemeral", func() {
 				var (
-					rootLink string
+					rootLink      string
 					oldRootDevice string
 				)
 
@@ -129,7 +129,7 @@ var _ = Describe("EphemeralDisk", func() {
 						Expect(err).ToNot(HaveOccurred())
 
 						return strings.TrimSpace(ephemeralDataDevice)
-					}, 2 * time.Minute, 1 * time.Second).Should(Equal("/dev/sdz3"))
+					}, 2*time.Minute, 1*time.Second).Should(Equal("/dev/sdz3"))
 
 					partitionTable, err := testEnvironment.RunCommand("sudo sfdisk -d /dev/sdz")
 					Expect(err).ToNot(HaveOccurred())
@@ -144,7 +144,7 @@ var _ = Describe("EphemeralDisk", func() {
 				It("agent fails with error", func() {
 					Eventually(func() bool {
 						return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
-					}, 2 * time.Minute, 1 * time.Second).Should(BeTrue())
+					}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 				})
 			})
 		})
