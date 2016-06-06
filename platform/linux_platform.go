@@ -731,7 +731,7 @@ func (p linux) SetupTmpDir() error {
 	}
 
 	bindMounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
-	mounted, err := bindMounter.IsMounted(boshRootTmpPath)
+	mounted, err := bindMounter.IsMounted(systemTmpDir)
 
 	if !mounted && err == nil {
 		// change permissions
