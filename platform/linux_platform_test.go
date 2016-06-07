@@ -1391,6 +1391,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 				It("returns without an error", func() {
 					err := act()
+					Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal("/tmp"))
 					Expect(err).ToNot(HaveOccurred())
 				})
 
