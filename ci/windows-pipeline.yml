@@ -142,6 +142,7 @@ jobs:
     tags: [vsphere-windows]
     resource: bosh-agent-windows
     passed: [test-integration]
+  - get: stemcell-builder
   - get: bosh-agent-deps-zip
     tags: [vsphere-windows]
     passed:
@@ -158,7 +159,7 @@ jobs:
       bump: patch
   - task: create-vsphere-stemcell
     privileged: true
-    file: bosh-agent/ci/tasks/create-vsphere-stemcell-windows.yml
+    file: stemcell-builder/tasks/create-vsphere-stemcell.yml
     tags: [vsphere-windows]
     params: &vagrant-vsphere-params
       VCENTER_HOST: {{VCENTER_HOST}}
@@ -175,7 +176,7 @@ jobs:
       WINRM_USERNAME: {{WINRM_USERNAME}}
       VAGRANT_HOME: ./vagrant_home/.vagrant.d/
       VAGRANT_DOTFILE_PATH: ./vagrant_home/.vagrant/
-      VAGRANT_VAGRANTFILE: ./gopath/src/github.com/cloudfoundry/bosh-agent/ci/Vagrantfile-vsphere-windows
+      VAGRANT_VAGRANTFILE: ./stemcell-builder/vsphere/Vagrantfile
     ensure:
       task: vagrant-destroy-vsphere
       tags: [vsphere-windows]
@@ -189,8 +190,7 @@ jobs:
           - -c
           - vagrant destroy --force
         inputs:
-        - name: bosh-agent
-          path: gopath/src/github.com/cloudfoundry/bosh-agent
+        - name: stemcell-builder
         - name: vagrant_home
   - put: bosh-vsphere-stemcell
     params:
