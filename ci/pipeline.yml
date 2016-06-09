@@ -30,17 +30,8 @@ jobs:
   plan:
   - get: bosh-agent
     trigger: true
-  - put: bosh-agent-zip-version
-    params:
-      bump: patch
   - task: test-unit
     file: bosh-agent/ci/tasks/test-unit-windows.yml
-  - task: compile-agent
-    privileged: true
-    file: bosh-agent/ci/tasks/compile-agent-windows.yml
-  - put: windows-zip
-    params:
-      file: compiled-agent-zip/bosh-windows-integration-v*.zip
 
 - name: windows-test-integration
   serial: true
@@ -48,13 +39,12 @@ jobs:
   - get: bosh-agent
     passed:
     - windows-test-unit
-  - get: bosh-agent-zip
-    resource: windows-zip
-    passed:
-    - windows-test-unit
     trigger: true
   - get: bosh-agent-deps-zip
     resource: windows-deps-zip
+  - task: compile-agent
+    privileged: true
+    file: bosh-agent/ci/tasks/compile-agent-windows.yml
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
@@ -92,20 +82,6 @@ resources:
     uri: git@github.com:cloudfoundry/bosh-agent.git
     branch: master
     private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
-- name: bosh-agent-zip-version
-  type: semver
-  source:
-    bucket: windows-bosh-integration
-    key: versions/bosh-agent-version
-    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
-    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
-- name: windows-zip
-  type: s3
-  source:
-    bucket: windows-bosh-integration
-    regexp: bosh-agent-windows-v(.*).zip
-    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
-    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
 - name: windows-deps-zip
   type: s3
   source:
