@@ -2,7 +2,7 @@ package compiler_test
 
 import (
 	"errors"
-	"io/ioutil"
+	"fmt"
 	"os"
 	"runtime"
 
@@ -243,20 +243,13 @@ func init() {
 					cmd := runner.RunCommands[0]
 					if runtime.GOOS == "windows" {
 						expectedCmd.Name = "powershell"
-						expectedCmd.Args = []string{"-command", "'$input | iex'"}
-						b, err := ioutil.ReadAll(cmd.Stdin)
-						Expect(err).To(BeNil())
-						Expect(string(b)).To(Equal(packagingScriptContents))
+						expectedCmd.Args = []string{"-command", fmt.Sprintf(`"iex (get-content -raw %s)"`, PackagingScriptName)}
 					} else {
 						expectedCmd.Name = "bash"
 						expectedCmd.Args = []string{"-x", PackagingScriptName}
 					}
 
-					Expect(cmd.Name).To(Equal(expectedCmd.Name))
-					Expect(cmd.Args).To(Equal(expectedCmd.Args))
-					Expect(cmd.Env).To(Equal(expectedCmd.Env))
-					Expect(cmd.WorkingDir).To(Equal(expectedCmd.WorkingDir))
-
+					Expect(cmd).To(Equal(expectedCmd))
 					Expect(len(runner.RunCommands)).To(Equal(1))
 					Expect(runner.RunCommandJobName).To(Equal("compilation"))
 					Expect(runner.RunCommandTaskName).To(Equal(PackagingScriptName))
