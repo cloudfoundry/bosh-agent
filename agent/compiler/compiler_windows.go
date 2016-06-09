@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"os"
+	"fmt"
 	"path"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -10,15 +10,9 @@ import (
 
 func (c concreteCompiler) runPackagingCommand(compilePath, enablePath string, pkg Package) error {
 	packagingScript := path.Join(compilePath, PackagingScriptName)
-	file, err := c.fs.OpenFile(packagingScript, os.O_RDONLY, 0)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
 	command := boshsys.Command{
-		Name:  "powershell",
-		Args:  []string{"-command", "'$input | iex'"},
-		Stdin: file,
+		Name: "powershell",
+		Args: []string{"-command", fmt.Sprintf(`"iex (get-content -raw %s)"`, packagingScript)},
 		Env: map[string]string{
 			"BOSH_COMPILE_TARGET":  compilePath,
 			"BOSH_INSTALL_TARGET":  enablePath,
@@ -28,7 +22,7 @@ func (c concreteCompiler) runPackagingCommand(compilePath, enablePath string, pk
 		WorkingDir: compilePath,
 	}
 
-	_, err = c.runner.RunCommand("compilation", PackagingScriptName, command)
+	_, err := c.runner.RunCommand("compilation", PackagingScriptName, command)
 	if err != nil {
 		return bosherr.WrapError(err, "Running packaging script")
 	}
