@@ -16,9 +16,15 @@ type mappedDevicePathResolver struct {
 
 func NewMappedDevicePathResolver(
 	diskWaitTimeout time.Duration,
+	diskWaitTimeoutOverride int,
 	fs boshsys.FileSystem,
 ) DevicePathResolver {
-	return mappedDevicePathResolver{fs: fs, diskWaitTimeout: diskWaitTimeout}
+        if diskWaitTimeoutOverride != 0 {
+	        return mappedDevicePathResolver{fs: fs, diskWaitTimeout: diskWaitTimeoutOverride*time.Millisecond}
+        }
+        else {
+	        return mappedDevicePathResolver{fs: fs, diskWaitTimeout: diskWaitTimeout}
+        }
 }
 
 func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
