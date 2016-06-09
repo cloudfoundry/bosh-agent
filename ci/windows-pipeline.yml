@@ -6,7 +6,7 @@ resource_types:
     tag: latest
 
 resources:
-- name: bosh-agent-windows
+- name: bosh-agent
   type: git
   source:
     branch: windows
@@ -94,17 +94,14 @@ resources:
     secret_access_key: {{AWS_SECRET_KEY}}
 
 jobs:
-- name: test-compile-and-push
+- name: compile-and-push
   serial: true
   plan:
   - get: bosh-agent
     trigger: true
-    resource: bosh-agent-windows
   - put: bosh-agent-zip-version
     params:
       bump: patch
-  - task: test-unit
-    file: bosh-agent/ci/tasks/test-unit-windows.yml
   - task: compile-agent
     privileged: true
     file: bosh-agent/ci/tasks/compile-agent-windows.yml
@@ -112,45 +109,19 @@ jobs:
     params:
       file: compiled-agent-zip/bosh-windows-integration-v*.zip
 
-- name: test-integration
-  serial: true
-  plan:
-  - get: bosh-agent
-    resource: bosh-agent-windows
-  - get: bosh-agent-deps-zip
-  - get: bosh-agent-zip
-    passed:
-    - test-compile-and-push
-    trigger: true
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    params:
-      AWS_ACCESS_KEY: {{AWS_ACCESS_KEY}}
-      AWS_SECRET_KEY: {{AWS_SECRET_KEY}}
-      AWS_SUBNET: subnet-110fae67
-      AWS_SSH_KEY: {{AWS_SSH_KEY}}
-      KEYPAIR_NAME: agent-integration
-      NATS_ELASTIC_IP: 52.23.114.20
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: {{WINRM_PASSWORD}}
-
 - name: create-vsphere-stemcell-and-push
   serial: true
   plan:
   - get: bosh-agent
     tags: [vsphere-windows]
-    resource: bosh-agent-windows
-    passed: [test-integration]
+    passed: [compile-and-push]
   - get: stemcell-builder
   - get: bosh-agent-deps-zip
     tags: [vsphere-windows]
-    passed:
-    - test-integration
   - get: bosh-agent-zip
     tags: [vsphere-windows]
-    passed:
-    - test-integration
+    passed: [compile-and-push]
+    trigger: true
   - get: ovftool-linux
     tags: [vsphere-windows]
   - put: bosh-vsphere-stemcell-version
@@ -200,12 +171,11 @@ jobs:
   plan:
   - get: bosh-agent
     tags: [vsphere-windows]
-    resource: bosh-agent-windows
+    passed: [create-vsphere-stemcell-and-push]
   - get: bosh-vsphere-stemcell
     tags: [vsphere-windows]
     trigger: true
-    passed:
-    - create-vsphere-stemcell-and-push
+    passed: [create-vsphere-stemcell-and-push]
   - task: create-vsphere-errand-release
     file: bosh-agent/ci/tasks/create-vsphere-errand-release-windows.yml
     tags: [vsphere-windows]
@@ -279,16 +249,15 @@ jobs:
     - get: windows-ami
     - get: stemcell-builder
     - get: bosh-agent
-      resource: bosh-agent-windows
-      passed: [test-integration]
+      passed: [compile-and-push]
     - put: version
       resource: bosh-aws-stemcell-version
       params:
         bump: patch
     - get: bosh-agent-zip
-      passed: [test-integration]
+      passed: [compile-and-push]
+      trigger: true
     - get: bosh-agent-deps-zip
-      passed: [test-integration]
   - task: create-stemcell
     file: stemcell-builder/tasks/create-aws-stemcell.yml
     params:
