@@ -98,7 +98,6 @@ jobs:
   serial: true
   plan:
   - get: bosh-agent
-    trigger: true
   - put: bosh-agent-zip-version
     params:
       bump: patch
