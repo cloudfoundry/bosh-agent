@@ -9,7 +9,7 @@ resources:
 - name: bosh-agent
   type: git
   source:
-    branch: windows
+    branch: master
     uri: https://github.com/cloudfoundry/bosh-agent.git
 - name: stemcell-builder
   type: git
