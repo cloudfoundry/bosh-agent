@@ -298,7 +298,7 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 		return nil
 	}
 
-	rootDevicePath, _, err := p.findRootDevicePathAndNumber()
+	rootDevicePath, rootDeviceNumber, err := p.findRootDevicePathAndNumber()
 	if err != nil {
 		return bosherr.WrapError(err, "findRootDevicePath")
 	}
@@ -306,7 +306,7 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	stdout, _, _, err := p.cmdRunner.RunCommand(
 		"growpart",
 		rootDevicePath,
-		"1",
+		strconv.Itoa(rootDeviceNumber),
 	)
 
 	if err != nil {
@@ -318,7 +318,7 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	_, _, _, err = p.cmdRunner.RunCommand(
 		"resize2fs",
 		"-f",
-		fmt.Sprintf("%s1", rootDevicePath),
+		fmt.Sprintf("%s%d", rootDevicePath, rootDeviceNumber),
 	)
 
 	if err != nil {
