@@ -43,7 +43,7 @@ func NewNetworkInterfaces() NetworkInterfaces {
 }
 
 type WindowsNetManager struct {
-	scriptRunner                  boshsys.ScriptRunner
+	runner                        boshsys.CmdRunner
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	macAddressDetector            MACAddressDetector
 	logTag                        string
@@ -52,14 +52,14 @@ type WindowsNetManager struct {
 }
 
 func NewWindowsNetManager(
-	scriptRunner boshsys.ScriptRunner,
+	runner boshsys.CmdRunner,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	macAddressDetector MACAddressDetector,
 	logger boshlog.Logger,
 	clock clock.Clock,
 ) Manager {
 	return WindowsNetManager{
-		scriptRunner:                  scriptRunner,
+		runner: runner,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		macAddressDetector:            macAddressDetector,
 		logTag:                        "WindowsNetManager",
@@ -89,6 +89,10 @@ $connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddres
 netsh interface ip set address $connectionName static %s %s %s
 `
 )
+
+func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
+	panic("Not implemented")
+}
 
 func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks) (
 	[]StaticInterfaceConfiguration,
@@ -143,8 +147,10 @@ func (net WindowsNetManager) setupInterfaces(staticConfigs []StaticInterfaceConf
 		if conf.IsDefaultForGateway {
 			gateway = conf.Gateway
 		}
-		_, _, err := net.scriptRunner.Run(fmt.Sprintf(NicSettingsTemplate,
-			conf.Mac, conf.Address, conf.Netmask, gateway))
+
+		content := fmt.Sprintf(NicSettingsTemplate, conf.Mac, conf.Address, conf.Netmask, gateway)
+
+		_, _, _, err := net.runner.RunCommand("-Command", content)
 		if err != nil {
 			return bosherr.WrapError(err, "Configuring interface")
 		}
@@ -173,20 +179,16 @@ func (net WindowsNetManager) buildInterfaces(networks boshsettings.Networks) (
 }
 
 func (net WindowsNetManager) setupDNS(dnsServers []string) error {
+	var content string
 	if len(dnsServers) > 0 {
-		_, _, err := net.scriptRunner.Run(fmt.Sprintf(SetDNSTemplate, strings.Join(dnsServers, `","`)))
-		if err != nil {
-			return bosherr.WrapError(err, "Configuring DNS servers")
-		}
+		content = fmt.Sprintf(SetDNSTemplate, strings.Join(dnsServers, `","`))
 	} else {
-		_, _, err := net.scriptRunner.Run(ResetDNSTemplate)
-		if err != nil {
-			return bosherr.WrapError(err, "Resetting DNS servers")
-		}
+		content = ResetDNSTemplate
+	}
+
+	_, _, _, err := net.runner.RunCommand("-Command", content)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting DNS servers")
 	}
 	return nil
-}
-
-func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
-	panic("Not implemented")
 }

@@ -1,6 +1,8 @@
 package platform_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -84,6 +86,27 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(network).To(Equal(defaultNetwork))
+		})
+	})
+
+	Describe("SetTimeWithNtpServers", func() {
+		It("sets time with ntp servers", func() {
+			servers := []string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}
+			platform.SetTimeWithNtpServers(servers)
+
+			Expect(len(cmdRunner.RunCommands)).To(Equal(6))
+			Expect(cmdRunner.RunCommands[0]).To(ContainElement(ContainSubstring("new-netfirewallrule")))
+			Expect(cmdRunner.RunCommands[1]).To(ContainElement(ContainSubstring("stop")))
+			ntpServers := strings.Join(servers, " ")
+			Expect(cmdRunner.RunCommands[2]).To(ContainElement(ContainSubstring(ntpServers)))
+			Expect(cmdRunner.RunCommands[3]).To(ContainElement(ContainSubstring("start")))
+			Expect(cmdRunner.RunCommands[4]).To(ContainElement(ContainSubstring("/update")))
+			Expect(cmdRunner.RunCommands[5]).To(ContainElement(ContainSubstring("/resync")))
+		})
+
+		It("sets time with ntp servers is noop when no ntp server provided", func() {
+			platform.SetTimeWithNtpServers([]string{})
+			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 		})
 	})
 })
