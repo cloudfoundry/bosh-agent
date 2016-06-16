@@ -5,6 +5,8 @@ package jobsupervisor
 import (
 	"time"
 
+	"github.com/pivotal-golang/clock"
+
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -28,6 +30,7 @@ func NewProvider(
 ) (p Provider) {
 	fs := platform.GetFs()
 	runner := platform.GetRunner()
+	timeService := clock.NewClock()
 	monitJobSupervisor := NewMonitJobSupervisor(
 		fs,
 		runner,
@@ -40,12 +43,13 @@ func NewProvider(
 			MaxCheckTries:          6,
 			DelayBetweenCheckTries: 5 * time.Second,
 		},
+		timeService,
 	)
 
 	p.supervisors = map[string]JobSupervisor{
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
-		"dummy-nats": NewDummyNatsJobSupervisor(handler),
+		"dummy-nats": NewDummyNatsJobSupervisor(handler, fs, timeService),
 		"windows":    NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobSupervisorListenPort, make(chan bool)),
 	}
 

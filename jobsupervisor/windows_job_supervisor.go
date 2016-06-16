@@ -231,6 +231,10 @@ func (w *windowsJobSupervisor) Stop() error {
 	return nil
 }
 
+func (w *windowsJobSupervisor) StopAndWait() error {
+	return w.Stop()
+}
+
 func (w *windowsJobSupervisor) Unmonitor() error {
 	w.stateSet(stateDisabled)
 	_, _, _, err := w.cmdRunner.RunCommand("-Command", unmonitorJobScript)
