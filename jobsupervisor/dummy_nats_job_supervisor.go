@@ -2,31 +2,22 @@ package jobsupervisor
 
 import (
 	"encoding/json"
-	"time"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	bosherror "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"github.com/pivotal-golang/clock"
 )
-
-const TestSupervisorSettingsFile = "test-supervisor-settings.json"
 
 type dummyNatsJobSupervisor struct {
 	mbusHandler       boshhandler.Handler
-	fs                boshsys.FileSystem
 	status            string
 	processes         []Process
 	jobFailureHandler JobFailureHandler
-	timeService       clock.Clock
 }
 
-func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler, fs boshsys.FileSystem, timeService clock.Clock) JobSupervisor {
+func NewDummyNatsJobSupervisor(mbusHandler boshhandler.Handler) JobSupervisor {
 	return &dummyNatsJobSupervisor{
 		mbusHandler: mbusHandler,
-		fs:          fs,
-		timeService: timeService,
 		status:      "running",
 		processes: []Process{
 			Process{
@@ -94,37 +85,14 @@ func (d *dummyNatsJobSupervisor) Start() error {
 }
 
 func (d *dummyNatsJobSupervisor) Stop() error {
-	var testSettings struct {
-		StopDelay int    `json:"stop_delay"`
-		Error     string `json:"error"`
-	}
-
-	if d.fs.FileExists(TestSupervisorSettingsFile) {
-		jsonString, err := d.fs.ReadFile(TestSupervisorSettingsFile)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(jsonString, &testSettings)
-		if err != nil {
-			return err
-		}
-	}
-
-	if testSettings.Error != "" {
-		return bosherror.Error(testSettings.Error)
-	}
-
 	if d.status != "failing" && d.status != "fail_task" {
-		if testSettings.StopDelay != 0 {
-			d.timeService.Sleep(time.Duration(testSettings.StopDelay) * time.Second)
-		}
 		d.status = "stopped"
 	}
 	return nil
 }
 
 func (d *dummyNatsJobSupervisor) StopAndWait() error {
-	return d.Stop()
+	return nil
 }
 
 func (d *dummyNatsJobSupervisor) Unmonitor() error {

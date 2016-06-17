@@ -49,7 +49,7 @@ func NewProvider(
 	p.supervisors = map[string]JobSupervisor{
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
-		"dummy-nats": NewDummyNatsJobSupervisor(handler, fs, timeService),
+		"dummy-nats": NewDummyNatsJobSupervisor(handler),
 		"windows":    NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobSupervisorListenPort, make(chan bool)),
 	}
 

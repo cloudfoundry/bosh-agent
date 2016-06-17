@@ -1,32 +1,24 @@
 package jobsupervisor_test
 
 import (
-	"github.com/pivotal-golang/clock/fakeclock"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("dummyNatsJobSupervisor", func() {
 	var (
-		dummyNats   JobSupervisor
-		handler     *fakembus.FakeHandler
-		fs          *fakesys.FakeFileSystem
-		timeService *fakeclock.FakeClock
+		dummyNats JobSupervisor
+		handler   *fakembus.FakeHandler
 	)
 
 	BeforeEach(func() {
 		handler = &fakembus.FakeHandler{}
-		fs = fakesys.NewFakeFileSystem()
-		timeService = fakeclock.NewFakeClock(time.Now())
-		dummyNats = NewDummyNatsJobSupervisor(handler, fs, timeService)
+		dummyNats = NewDummyNatsJobSupervisor(handler)
 	})
 
 	Describe("MonitorJobFailures", func() {
@@ -79,45 +71,6 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 				handler.RegisteredAdditionalFunc(statusMessage)
 				err := dummyNats.Start()
 				Expect(err).ToNot(HaveOccurred())
-			})
-		})
-	})
-
-	Describe("Stop", func() {
-		BeforeEach(func() {
-			dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
-		})
-
-		Context("When test settings file exist", func() {
-			It("reads stop wait setting", func() {
-				fs.WriteFileString(TestSupervisorSettingsFile, `{"stop_delay": 1}`)
-
-				errchan := make(chan error)
-				go func() {
-					errchan <- dummyNats.Stop()
-				}()
-
-				Consistently(dummyNats.Status).Should(Equal("running"))
-
-				timeService.IncrementBySeconds(1)
-
-				Eventually(errchan).Should(Receive(BeNil()))
-				Eventually(dummyNats.Status).Should(Equal("stopped"))
-			})
-
-			It("reads custom error setting", func() {
-				fs.WriteFileString(TestSupervisorSettingsFile, `{"error":"Timed out waiting for service 'foo'."}`)
-
-				err := dummyNats.Stop()
-				Expect(err.Error()).To(Equal("Timed out waiting for service 'foo'."))
-			})
-		})
-
-		Context("When test settings file does not exist", func() {
-			It("does not read stop wait setting", func() {
-				err := dummyNats.Stop()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(dummyNats.Status()).To(Equal("stopped"))
 			})
 		})
 	})

@@ -79,7 +79,7 @@ func init() {
 			actualSupervisor, err := provider.Get("dummy-nats")
 			Expect(err).NotTo(HaveOccurred())
 
-			expectedSupervisor := NewDummyNatsJobSupervisor(handler, platform.GetFs(), timeService)
+			expectedSupervisor := NewDummyNatsJobSupervisor(handler)
 			Expect(actualSupervisor).To(Equal(expectedSupervisor))
 		})
 
