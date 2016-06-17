@@ -106,7 +106,7 @@ func (status status) ServicesInGroup(name string) (services []Service) {
 				Name:                 serviceTag.Name,
 				Pending:              serviceTag.Pending > 0,
 				Status:               serviceTag.StatusString(),
-				Errored:              serviceTag.Status > 0 && serviceTag.StatusMessage != "", // review this
+				Errored:              serviceTag.Status > 0 && serviceTag.StatusMessage != "",
 				StatusMessage:        serviceTag.StatusMessage,
 				Monitored:            serviceTag.Monitor > 0,
 				Uptime:               serviceTag.Uptime,
