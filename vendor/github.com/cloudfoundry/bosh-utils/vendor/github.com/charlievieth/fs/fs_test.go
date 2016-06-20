@@ -62,14 +62,6 @@ var dot = []string{
 	"stat_linux.go",
 }
 
-// WARN
-func init() {
-	goroot := runtime.GOROOT()
-	if goroot == "" {
-
-	}
-}
-
 type sysDir struct {
 	name  string
 	files []string
@@ -320,7 +312,7 @@ func testReaddir(dir string, contents []string, t *testing.T) {
 
 func TestReaddirnames(t *testing.T) {
 	// CEV: Changed dir "." => "testdata"
-	testReaddirnames("testdata", dot, t) // WARN
+	testReaddirnames("testdata", dot, t)
 	testReaddirnames(sysdir.name, sysdir.files, t)
 }
 
