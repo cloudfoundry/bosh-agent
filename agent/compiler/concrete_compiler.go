@@ -51,8 +51,8 @@ func NewConcreteCompiler(
 	}
 }
 
-func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (string, string, error) {
-	err := c.packageApplier.KeepOnly([]boshmodels.Package{})
+func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobID, sha1 string, err error) {
+	err = c.packageApplier.KeepOnly([]boshmodels.Package{})
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Removing packages")
 	}
@@ -69,9 +69,13 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 	if err != nil {
 		return "", "", bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
 	}
+	defer c.fs.RemoveAll(compilePath)
 
 	defer func() {
-		_ = c.fs.RemoveAll(compilePath)
+		e := c.fs.RemoveAll(compilePath)
+		if e != nil && err == nil {
+			err = e
+		}
 	}()
 
 	compiledPkg := boshmodels.Package{

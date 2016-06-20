@@ -261,4 +261,14 @@ var _ = Describe("An Agent running on Windows", func() {
 		Eventually(getNetworkProperty("gateway"), 30*time.Second, 1*time.Second).ShouldNot(BeEmpty())
 		Eventually(getNetworkProperty("netmask"), 30*time.Second, 1*time.Second).ShouldNot(BeEmpty())
 	})
+
+	It("can compile longpath complex pakcage", func() {
+		const (
+			blobName     = "blob.tar"
+			fileName     = "output.txt"
+			fileContents = "i'm a compiled package!"
+		)
+		_, err := natsClient.CompilePackage("longpath-package")
+		Expect(err).NotTo(HaveOccurred())
+	})
 })

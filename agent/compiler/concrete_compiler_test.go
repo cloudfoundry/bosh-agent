@@ -217,6 +217,23 @@ func init() {
 				}))
 			})
 
+			It("returns an error if removing the compile directory fails", func() {
+				callCount := 0
+				fs.RemoveAllStub = func(path string) error {
+					if path == "/fake-compile-dir/pkg_name" {
+						callCount++
+						if callCount > 1 {
+							return errors.New("fake-remove-error")
+						}
+					}
+					return nil
+				}
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-remove-error"))
+			})
+
 			Context("when packaging script exists", func() {
 				const packagingScriptContents = "hi"
 				BeforeEach(func() {
