@@ -106,6 +106,7 @@ var _ = Describe("SyncDNS", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(response).To(Equal(""))
 				Expect(err.Error()).To(ContainSubstring("Reading fileName"))
+				Expect(fakeFileSystem.FileExists("fake-blobstore-file-path")).To(BeFalse())
 			})
 
 			It("deletes the file once read", func() {
@@ -120,7 +121,7 @@ var _ = Describe("SyncDNS", func() {
 				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 				Expect(err).ToNot(HaveOccurred())
 
-				tag, message, _ := logger.InfoArgsForCall(0)
+				tag, message, _ := logger.ErrorArgsForCall(0)
 				Expect(tag).To(Equal("Sync DNS action"))
 				Expect(message).To(Equal("Failed to remove dns blob file at path 'fake-blobstore-file-path'"))
 			})
@@ -166,9 +167,44 @@ var _ = Describe("SyncDNS", func() {
 		})
 
 		Context("when blobstore does not contain DNS records", func() {
-			It("fails getting the DNS records", func() {
-				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-				Expect(err).To(HaveOccurred())
+			Context("when fileName returned is empty string", func() {
+				It("fails getting the DNS records", func() {
+					_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Got empty filename from blobstore"))
+				})
+			})
+
+			Context("when blobstore returns an error", func() {
+				It("fails with an wrapped error", func() {
+					_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Got empty filename from blobstore"))
+				})
+			})
+
+			Context("when blobstore returns a file that cannot be read", func() {
+				var removeAllError error
+
+				BeforeEach(func() {
+					fakeBlobstore.GetFileName = "fake-blobstore-file-path"
+					fakeBlobstore.GetError = nil
+
+					removeAllError = errors.New("fake-remove-all-error")
+					fakeFileSystem.RemoveAllError = removeAllError
+				})
+
+				Context("when file removal failed", func() {
+					It("logs error", func() {
+						_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
+						Expect(err).To(HaveOccurred())
+						Expect(fakeFileSystem.RemoveAllError).To(Equal(removeAllError))
+
+						tag, message, _ := logger.ErrorArgsForCall(0)
+						Expect(tag).To(Equal("Sync DNS action"))
+						Expect(message).To(Equal("Failed to remove dns blob file at path 'fake-blobstore-file-path'"))
+					})
+				})
 			})
 		})
 	})

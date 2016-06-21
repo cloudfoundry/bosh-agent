@@ -49,20 +49,25 @@ func (a SyncDNS) Cancel() error {
 
 func (a SyncDNS) Run(blobID, sha1 string) (string, error) {
 	fileName, err := a.blobstore.Get(blobID, sha1)
+	if fileName == "" {
+		return "", bosherr.WrapErrorf(err, "Got empty filename from blobstore", blobID)
+	}
+
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting %s from blobstore", blobID)
 	}
 
 	fs := a.platform.GetFs()
+	defer func() {
+		err = fs.RemoveAll(fileName)
+		if err != nil {
+			a.logger.Error(a.logTag, fmt.Sprintf("Failed to remove dns blob file at path '%s'", fileName))
+		}
+	}()
 
 	contents, err := fs.ReadFile(fileName)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Reading fileName %s from blobstore", fileName)
-	}
-
-	err = fs.RemoveAll(fileName)
-	if err != nil {
-		a.logger.Info(a.logTag, fmt.Sprintf("Failed to remove dns blob file at path '%s'", fileName))
 	}
 
 	dnsRecords := boshsettings.DNSRecords{}
