@@ -105,7 +105,7 @@ var _ = Describe("SyncDNS", func() {
 				response, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 				Expect(err).To(HaveOccurred())
 				Expect(response).To(Equal(""))
-				Expect(err.Error()).To(ContainSubstring("Reading fileName"))
+				Expect(err.Error()).To(ContainSubstring("Reading fake-blobstore-file-path from blobstore"))
 				Expect(fakeFileSystem.FileExists("fake-blobstore-file-path")).To(BeFalse())
 			})
 
@@ -167,19 +167,15 @@ var _ = Describe("SyncDNS", func() {
 		})
 
 		Context("when blobstore does not contain DNS records", func() {
-			Context("when fileName returned is empty string", func() {
-				It("fails getting the DNS records", func() {
-					_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Got empty filename from blobstore"))
-				})
+			BeforeEach(func() {
+				fakeBlobstore.GetFileName = "fake-blobstore-file-path"
 			})
 
 			Context("when blobstore returns an error", func() {
 				It("fails with an wrapped error", func() {
 					_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Got empty filename from blobstore"))
+					Expect(err.Error()).To(ContainSubstring("Reading fake-blobstore-file-path from blobstore"))
 				})
 			})
 
