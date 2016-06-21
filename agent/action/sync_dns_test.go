@@ -117,7 +117,12 @@ var _ = Describe("SyncDNS", func() {
 			})
 
 			It("logs when the dns blob file can't be deleted", func() {
-				fakeFileSystem.RegisterRemoveAllError("fake-blobstore-file-path", errors.New("fake-file-path-error"))
+				fakeFileSystem.RemoveAllStub = func(path string) error {
+					if path == "fake-blobstore-file-path" {
+						return errors.New("fake-file-path-error")
+					}
+					return nil
+				}
 				_, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint")
 				Expect(err).ToNot(HaveOccurred())
 
