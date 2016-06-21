@@ -58,7 +58,9 @@ func init() {
 
 			Context("when the network rules file cannot be removed", func() {
 				BeforeEach(func() {
-					fs.RemoveAllError = errors.New("fake-remove-all-error")
+					fs.RemoveAllStub = func(_ string) error {
+						return errors.New("fake-remove-all-error")
+					}
 				})
 
 				It("returns error from removing the network rules file", func() {

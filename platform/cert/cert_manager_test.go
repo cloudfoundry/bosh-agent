@@ -148,7 +148,9 @@ var _ = Describe("Certificate Management", func() {
 		})
 
 		It("returns an error when RemoveAll() fails", func() {
-			fakeFs.RemoveAllError = errors.New("couldn't delete")
+			fakeFs.RemoveAllStub = func(_ string) error {
+				return errors.New("couldn't delete")
+			}
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
 			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.bar", "goodbye")
 			fakeFs.SetGlob("/path/to/delete/stuff/in/delete_me_*", []string{
@@ -219,7 +221,9 @@ var _ = Describe("Certificate Management", func() {
 			})
 
 			It("returns an error when deleting old certs fails", func() {
-				fakeFs.RemoveAllError = errors.New("NOT ALLOW")
+				fakeFs.RemoveAllStub = func(_ string) error {
+					return errors.New("NOT ALLOW")
+				}
 				fakeFs.WriteFileString(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath), "goodbye")
 				fakeFs.SetGlob(fmt.Sprintf("%s/bosh-trusted-cert-*", certBasePath), []string{
 					fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath),

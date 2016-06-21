@@ -443,7 +443,9 @@ var _ = Describe("monitJobSupervisor", func() {
 
 		Context("when jobs directory removal fails", func() {
 			It("returns error if removing jobs directory fails", func() {
-				fs.RemoveAllError = errors.New("fake-remove-all-error")
+				fs.RemoveAllStub = func(_ string) error {
+					return errors.New("fake-remove-all-error")
+				}
 
 				err := monit.RemoveAllJobs()
 				Expect(err).To(HaveOccurred())

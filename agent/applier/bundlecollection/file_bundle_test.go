@@ -284,7 +284,9 @@ var _ = Describe("FileBundle", func() {
 			})
 
 			It("returns error when bundle cannot be disabled", func() {
-				fs.RemoveAllError = errors.New("fake-removeall-error")
+				fs.RemoveAllStub = func(_ string) error {
+					return errors.New("fake-removeall-error")
+				}
 
 				err := fileBundle.Disable()
 				Expect(err).To(HaveOccurred())

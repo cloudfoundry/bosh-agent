@@ -2260,7 +2260,9 @@ unit: sectors
 		})
 
 		It("returns error if removing persistent rules file fails", func() {
-			fs.RemoveAllError = errors.New("fake-remove-all-error")
+			fs.RemoveAllStub = func(_ string) error {
+				return errors.New("fake-remove-all-error")
+			}
 
 			err := platform.PrepareForNetworkingChange()
 			Expect(err).To(HaveOccurred())

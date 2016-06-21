@@ -174,7 +174,9 @@ func init() {
 				fakeSettingsSource.SettingsErr = nil
 				service, fs := buildService()
 
-				fs.RemoveAllError = errors.New("fs-remove-all-error")
+				fs.RemoveAllStub = func(_ string) error {
+					return errors.New("fs-remove-all-error")
+				}
 
 				err := service.InvalidateSettings()
 				Expect(err).To(HaveOccurred())

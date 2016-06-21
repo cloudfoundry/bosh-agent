@@ -155,7 +155,12 @@ func init() {
 			})
 
 			It("returns an error if removing compile target directory during uncompression fails", func() {
-				fs.RegisterRemoveAllError("/fake-compile-dir/pkg_name", errors.New("fake-remove-error"))
+				fs.RemoveAllStub = func(path string) error {
+					if path == "/fake-compile-dir/pkg_name" {
+						return errors.New("fake-remove-error")
+					}
+					return nil
+				}
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(HaveOccurred())
@@ -163,7 +168,12 @@ func init() {
 			})
 
 			It("returns an error if creating compile target directory during uncompression fails", func() {
-				fs.RegisterMkdirAllError("/fake-compile-dir/pkg_name", errors.New("fake-mkdir-error"))
+				fs.RemoveAllStub = func(path string) error {
+					if path == "/fake-compile-dir/pkg_name" {
+						return errors.New("fake-mkdir-error")
+					}
+					return nil
+				}
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(HaveOccurred())
