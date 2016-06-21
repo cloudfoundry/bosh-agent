@@ -27,7 +27,7 @@ resources:
   type: s3
   source:
     bucket: windows-bosh-integration
-    regexp: bosh-agent-windows-v(.*).zip
+    regexp: bosh-windows-integration-v(.*).zip
     access_key_id: {{AWS_ACCESS_KEY}}
     secret_access_key: {{AWS_SECRET_KEY}}
 - name: bosh-agent-deps-zip
