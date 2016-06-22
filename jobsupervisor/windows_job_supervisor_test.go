@@ -29,6 +29,11 @@ import (
 
 const jobFailuresServerPort = 5000
 
+const (
+	DefaultTimeout  = time.Second * 15
+	DefaultInterval = time.Millisecond * 500
+)
+
 func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 	m := map[string]WindowsProcessConfig{
 		"say-hello": WindowsProcessConfig{
@@ -151,21 +156,27 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			It("list the process under vcap description", func() {
 
 				conf, err := AddJob("say-hello")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				procs, err := jobSupervisor.Processes()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(procs)).To(Equal(len(conf.Processes)))
-
 				names := make(map[string]bool)
 				for _, p := range conf.Processes {
 					names[p.Name] = true
 				}
-				for _, p := range procs {
-					Expect(names).To(HaveKey(p.Name))
-					Expect(p.State).To(Equal("running"))
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				allProcsAreRunning := func() bool {
+					procs, err := jobSupervisor.Processes()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(procs)).To(Equal(len(conf.Processes)))
+					for _, p := range procs {
+						Expect(names).To(HaveKey(p.Name))
+						if p.State != "running" && p.State != "starting" {
+							return false
+						}
+					}
+					return true
 				}
+				Eventually(allProcsAreRunning, DefaultTimeout, DefaultInterval).Should(BeTrue())
 			})
 
 			It("lists the status of stopped process under vcap description", func() {
@@ -245,7 +256,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 						return fs.ReadFileString(path.Join(logDir, "say-hello", proc.Name, "job-service-wrapper.out.log"))
 					}
 
-					Eventually(readLogFile, 10*time.Second, 500*time.Millisecond).Should(ContainSubstring(fmt.Sprintf("Hello %d", i+1)))
+					Eventually(readLogFile, DefaultTimeout, DefaultInterval).Should(ContainSubstring(fmt.Sprintf("Hello %d", i+1)))
 				}
 			})
 		})
