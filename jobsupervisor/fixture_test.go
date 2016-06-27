@@ -1,15 +1,10 @@
-package monit_test
+package jobsupervisor_test
 
 import (
 	"io/ioutil"
 	"path/filepath"
 
 	. "github.com/onsi/gomega"
-)
-
-const (
-	statusWithMultipleServiceFixturePath = "test_assets/monit_status_multiple.xml"
-	statusFixturePath                    = "test_assets/monit_status.xml"
 )
 
 func readFixture(relativePath string) []byte {
