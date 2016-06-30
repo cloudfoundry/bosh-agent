@@ -2,18 +2,17 @@ package state
 
 import (
 	"encoding/json"
-	//"errors"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type SyncDNSState interface {
-	LoadState() (BlobstoreDNSState, error)
-	SaveState(blobstoreDNSState BlobstoreDNSState) error
+	LoadState() (LocalDNSState, error)
+	SaveState(localDNSState LocalDNSState) error
 }
 
-type BlobstoreDNSState struct {
+type LocalDNSState struct {
 	Version uint32 `json:"version"`
 }
 
@@ -22,30 +21,30 @@ type syncDNSState struct {
 	path string
 }
 
-func NewSyncDNSState(fs boshsys.FileSystem, path string) *syncDNSState {
+func NewSyncDNSState(fs boshsys.FileSystem, path string) SyncDNSState {
 	return &syncDNSState{
 		fs:   fs,
 		path: path,
 	}
 }
 
-func (s *syncDNSState) LoadState() (BlobstoreDNSState, error) {
+func (s *syncDNSState) LoadState() (LocalDNSState, error) {
 	contents, err := s.fs.ReadFile(s.path)
 	if err != nil {
-		return BlobstoreDNSState{}, bosherr.WrapError(err, "reading state file")
+		return LocalDNSState{}, bosherr.WrapError(err, "reading state file")
 	}
 
-	bDNSState := BlobstoreDNSState{}
+	bDNSState := LocalDNSState{}
 	err = json.Unmarshal(contents, &bDNSState)
 	if err != nil {
-		return BlobstoreDNSState{}, bosherr.WrapError(err, "unmarshalling state file")
+		return LocalDNSState{}, bosherr.WrapError(err, "unmarshalling state file")
 	}
 
 	return bDNSState, nil
 }
 
-func (s *syncDNSState) SaveState(blobstoreDNSState BlobstoreDNSState) error {
-	contents, err := json.Marshal(blobstoreDNSState)
+func (s *syncDNSState) SaveState(localDNSState LocalDNSState) error {
+	contents, err := json.Marshal(localDNSState)
 	if err != nil {
 		return bosherr.WrapError(err, "marshalling blobstore DNS state")
 	}

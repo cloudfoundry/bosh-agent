@@ -12,11 +12,11 @@ import (
 
 var _ = Describe("SyncDNSState", func() {
 	var (
-		blobstoreDNSState BlobstoreDNSState
-		syncDNSState      SyncDNSState
-		fakeFileSystem    *fakes.FakeFileSystem
-		path              string
-		err               error
+		localDNSState  LocalDNSState
+		syncDNSState   SyncDNSState
+		fakeFileSystem *fakes.FakeFileSystem
+		path           string
+		err            error
 	)
 
 	BeforeEach(func() {
@@ -24,7 +24,7 @@ var _ = Describe("SyncDNSState", func() {
 		path = "/blobstore-dns-records.json"
 		syncDNSState = NewSyncDNSState(fakeFileSystem, path)
 		err = nil
-		blobstoreDNSState = BlobstoreDNSState{}
+		localDNSState = LocalDNSState{}
 	})
 
 	Describe("#LoadState", func() {
@@ -54,9 +54,9 @@ var _ = Describe("SyncDNSState", func() {
 			It("loads and unmarshalls the DNS state with Version", func() {
 				fakeFileSystem.WriteFile(path, []byte("{\"version\": 1234}"))
 
-				blobstoreDNSState, err := syncDNSState.LoadState()
+				localDNSState, err := syncDNSState.LoadState()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(blobstoreDNSState.Version).To(Equal(uint32(1234)))
+				Expect(localDNSState.Version).To(Equal(uint32(1234)))
 			})
 		})
 	})
@@ -64,14 +64,14 @@ var _ = Describe("SyncDNSState", func() {
 	Describe("#SaveState", func() {
 		Context("when there are failures", func() {
 			BeforeEach(func() {
-				blobstoreDNSState = BlobstoreDNSState{}
+				localDNSState = LocalDNSState{}
 			})
 
 			Context("when saving the marshalled DNS state", func() {
 				It("fails saving the DNS state", func() {
 					fakeFileSystem.WriteFileError = errors.New("fake fail saving error")
 
-					err = syncDNSState.SaveState(blobstoreDNSState)
+					err = syncDNSState.SaveState(localDNSState)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("writing the blobstore DNS state"))
 				})
@@ -80,13 +80,13 @@ var _ = Describe("SyncDNSState", func() {
 
 		Context("when there are no failures", func() {
 			BeforeEach(func() {
-				blobstoreDNSState = BlobstoreDNSState{
+				localDNSState = LocalDNSState{
 					Version: 1234,
 				}
 			})
 
 			It("saves the state in the path", func() {
-				err = syncDNSState.SaveState(blobstoreDNSState)
+				err = syncDNSState.SaveState(localDNSState)
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
