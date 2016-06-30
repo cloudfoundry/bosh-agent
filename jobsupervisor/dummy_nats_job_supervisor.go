@@ -92,7 +92,7 @@ func (d *dummyNatsJobSupervisor) Stop() error {
 }
 
 func (d *dummyNatsJobSupervisor) StopAndWait() error {
-	return nil
+	return d.Stop()
 }
 
 func (d *dummyNatsJobSupervisor) Unmonitor() error {

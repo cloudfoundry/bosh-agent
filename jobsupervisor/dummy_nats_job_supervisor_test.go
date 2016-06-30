@@ -66,7 +66,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 		})
 
 		Context("when set_task_fail flag is not sent in message", func() {
-			It("raises an error", func() {
+			It("does not raise an error", func() {
 				statusMessage := boshhandler.NewRequest("", "set_task_fail", []byte(`{"status":"something_else"}`))
 				handler.RegisteredAdditionalFunc(statusMessage)
 				err := dummyNats.Start()
@@ -74,4 +74,73 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 			})
 		})
 	})
+
+	Describe("Stop", func() {
+		It("changes status to 'stopped'", func() {
+			err := dummyNats.Stop()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(dummyNats.Status()).To(Equal("stopped"))
+		})
+
+		Context("when a job is failing", func() {
+			BeforeEach(func() {
+				dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			})
+
+			Context("with 'fail_task'", func() {
+				It("does not change status", func() {
+					statusMessage := boshhandler.NewRequest("", "set_task_fail", []byte(`{"status":"fail_task"}`))
+					handler.RegisteredAdditionalFunc(statusMessage)
+					err := dummyNats.Stop()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(dummyNats.Status()).To(Equal("fail_task"))
+				})
+			})
+
+			Context("with 'failing'", func() {
+				It("does not change status", func() {
+					statusMessage := boshhandler.NewRequest("", "set_dummy_status", []byte(`{"status":"failing"}`))
+					handler.RegisteredAdditionalFunc(statusMessage)
+					err := dummyNats.Stop()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(dummyNats.Status()).To(Equal("failing"))
+				})
+			})
+		})
+	})
+
+	Describe("StopAndWait", func() {
+		It("changes status to 'stopped'", func() {
+			err := dummyNats.StopAndWait()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(dummyNats.Status()).To(Equal("stopped"))
+		})
+
+		Context("when a job is failing", func() {
+			BeforeEach(func() {
+				dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			})
+
+			Context("with 'fail_task'", func() {
+				It("does not change status", func() {
+					statusMessage := boshhandler.NewRequest("", "set_task_fail", []byte(`{"status":"fail_task"}`))
+					handler.RegisteredAdditionalFunc(statusMessage)
+					err := dummyNats.StopAndWait()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(dummyNats.Status()).To(Equal("fail_task"))
+				})
+			})
+
+			Context("with 'failing'", func() {
+				It("does not change status", func() {
+					statusMessage := boshhandler.NewRequest("", "set_dummy_status", []byte(`{"status":"failing"}`))
+					handler.RegisteredAdditionalFunc(statusMessage)
+					err := dummyNats.StopAndWait()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(dummyNats.Status()).To(Equal("failing"))
+				})
+			})
+		})
+	})
+
 })
