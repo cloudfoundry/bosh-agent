@@ -105,15 +105,16 @@ var _ = Describe("IDDevicePathResolver", func() {
 		Context("when no matching device is found the first time", func() {
 			Context("when the timeout has not expired", func() {
 				BeforeEach(func() {
-					time.AfterFunc(100*time.Millisecond, func() {
+					fs.GlobStub = func(pattern string) ([]string, error) {
 						err := fs.MkdirAll("fake-device-path", os.FileMode(0750))
 						Expect(err).ToNot(HaveOccurred())
 
-						err = fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
-						Expect(err).ToNot(HaveOccurred())
-
 						fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{"fake-device-path"})
-					})
+
+						fs.GlobStub = nil
+
+						return nil, errors.New("new error")
+					}
 				})
 
 				It("returns the real path", func() {

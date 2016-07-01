@@ -22,6 +22,8 @@ type FakeFileType string
 
 type removeAllFn func(path string) error
 
+type globFn func(pattern string) ([]string, error)
+
 const (
 	FakeFileTypeFile    FakeFileType = "file"
 	FakeFileTypeSymlink FakeFileType = "symlink"
@@ -80,6 +82,7 @@ type FakeFileSystem struct {
 	TempDirError error
 
 	GlobErr  error
+	GlobStub globFn
 	globsMap map[string][][]string
 
 	WalkErr error
@@ -677,6 +680,13 @@ func (fs *FakeFileSystem) removeAll(path string) error {
 }
 
 func (fs *FakeFileSystem) Glob(pattern string) (matches []string, err error) {
+	if fs.GlobStub != nil{
+		_, err = fs.GlobStub(pattern)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	remainingMatches, found := fs.globsMap[pattern]
 	if found {
 		matches = remainingMatches[0]
