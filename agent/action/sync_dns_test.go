@@ -316,5 +316,34 @@ var _ = Describe("SyncDNS", func() {
 				Expect(err.Error()).To(ContainSubstring("reading local DNS state"))
 			})
 		})
+
+		Context("when there is no local DNS state", func() {
+			It("runs successfully and creates a new state file", func() {
+				Expect(fakeFileSystem.FileExists(stateFilePath)).To(BeFalse())
+
+				response, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint", 1)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response).To(Equal("synced"))
+
+				contents, err := fakeFileSystem.ReadFile(stateFilePath)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(contents)).To(Equal(`{"version":1}`))
+			})
+
+			It("saves DNS records to the platform", func() {
+				response, err := syncDNS.Run("fake-blobstore-id", "fake-fingerprint", 2)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response).To(Equal("synced"))
+
+				Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
+				Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+					Version: 2,
+					Records: [][2]string{
+						{"fake-ip0", "fake-name0"},
+						{"fake-ip1", "fake-name1"},
+					},
+				}))
+			})
+		})
 	})
 })

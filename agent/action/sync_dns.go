@@ -1,20 +1,22 @@
 package action
 
 import (
-	"path/filepath"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action/state"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
+
+const LocalDNSStateFilename = "local_dns_state.json"
 
 type SyncDNS struct {
 	blobstore       boshblob.Blobstore
@@ -90,10 +92,13 @@ func (a SyncDNS) Run(blobID, sha1 string, version uint32) (string, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
+	localDNSState := state.LocalDNSState{}
 	syncDNSState := a.createSyncDNSState()
-	localDNSState, err := syncDNSState.LoadState()
-	if err != nil {
-		return "", bosherr.WrapError(err, "loading local DNS state")
+	if a.stateFileExists() {
+		localDNSState, err = syncDNSState.LoadState()
+		if err != nil {
+			return "", bosherr.WrapError(err, "loading local DNS state")
+		}
 	}
 
 	//Checking again since don't want to keep lock during blobstore operations
@@ -119,6 +124,10 @@ func (a SyncDNS) isLocalStateGreaterThanOrEqual(version uint32) (bool, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
+	if !a.stateFileExists() {
+		return false, nil
+	}
+
 	localDNSState, err := a.loadLocalDNSState()
 	if err != nil {
 		return false, bosherr.WrapError(err, "loading local DNS state")
@@ -137,6 +146,10 @@ func (a SyncDNS) loadLocalDNSState() (state.LocalDNSState, error) {
 }
 
 func (a SyncDNS) createSyncDNSState() state.SyncDNSState {
-	stateFilePath := filepath.Join(a.platform.GetDirProvider().BaseDir(), "local_dns_state.json")
+	stateFilePath := filepath.Join(a.platform.GetDirProvider().BaseDir(), LocalDNSStateFilename)
 	return state.NewSyncDNSState(a.platform.GetFs(), stateFilePath)
+}
+
+func (a SyncDNS) stateFileExists() bool {
+	return a.platform.GetFs().FileExists(filepath.Join(a.platform.GetDirProvider().BaseDir(), LocalDNSStateFilename))
 }
