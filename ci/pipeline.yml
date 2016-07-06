@@ -45,6 +45,7 @@ jobs:
 - name: windows-test-integration
   serial: true
   plan:
+  - get: windows-ami
   - get: bosh-agent
     passed:
     - windows-test-unit
@@ -59,7 +60,6 @@ jobs:
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
     params:
-      AWS_AMI_ID: ami-79dc1b14
       AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
       AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
       AWS_SUBNET: subnet-110fae67
@@ -114,3 +114,25 @@ resources:
     regexp: agent-dependencies-v(.*).zip
     access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
     secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
+- name: windows-ami
+  type: ami-resource
+  source:
+    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
+    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
+    region: us-east-1
+    search_options:
+      filters:
+      - name: name
+        values:
+        - Windows_Server-2012-R2_RTM-English-64Bit-Base*
+      - name: state
+        values:
+        - available
+      owners:
+      - amazon
+resource_types:
+- name: ami-resource
+  type: docker-image
+  source:
+    repository: pivotalgreenhouse/ami-resource
+    tag: latest
