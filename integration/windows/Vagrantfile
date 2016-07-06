@@ -249,17 +249,21 @@ Vagrant.configure(2) do |config|
       aws.associate_public_ip = true
     end
 
-    agent.vm.provision "shell", inline: configure_security_settings
-    agent.vm.provision "shell", inline: remove_agent_service
-    agent.vm.provision "shell", inline: setup_bosh_directory
-    agent.vm.provision "shell", inline: add_bosh_to_path
+    provision_scripts = [
+      configure_security_settings,
+      remove_agent_service,
+      setup_bosh_directory,
+      add_bosh_to_path
+    ]
     if agent_zip_url
-      agent.vm.provision "shell", inline: download_agent
+      provision_scripts << download_agent
     else
-      agent.vm.provision "shell", inline: copy_agent_from_vagrant
+      provision_scripts << copy_agent_from_vagrant
     end
-    agent.vm.provision "shell", inline: write_agent_configs
-    agent.vm.provision "shell", inline: initialize_agent_service
+    provision_scripts << write_agent_configs
+    provision_scripts << initialize_agent_service
+
+    agent.vm.provision "shell", inline: provision_scripts.join("\n")
   end
 
   config.vm.define "nats" do |nats|
