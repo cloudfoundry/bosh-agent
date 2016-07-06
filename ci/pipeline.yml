@@ -59,6 +59,7 @@ jobs:
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
     params:
+      AWS_AMI_ID: ami-79dc1b14
       AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
       AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
       AWS_SUBNET: subnet-110fae67

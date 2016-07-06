@@ -22,6 +22,10 @@ subnet_id = ENV.fetch "AWS_SUBNET" do
   puts "AWS_SUBNET not set"
   nil
 end
+ami_id = ENV.fetch "AWS_AMI_ID" do
+  puts "AWS_AMI_ID not set"
+  nil
+end
 agent_zip_url = ENV.fetch "AGENT_ZIP_URL" do
   puts "AGENT_ZIP_URL not set. Will not download."
   nil
@@ -237,7 +241,7 @@ Vagrant.configure(2) do |config|
     end
 
     agent.vm.provider :aws do |aws, override|
-      aws.ami = "ami-c8a9baa2"
+      aws.ami = ami_id
       override.vm.box = "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box"
       override.winrm.password = winrm_password
       override.winrm.username = winrm_username
