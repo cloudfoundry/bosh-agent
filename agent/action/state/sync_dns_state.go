@@ -14,7 +14,7 @@ type SyncDNSState interface {
 }
 
 type LocalDNSState struct {
-	Version int64 `json:"version"`
+	Version uint64 `json:"version"`
 }
 
 type syncDNSState struct {

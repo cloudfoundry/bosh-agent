@@ -54,7 +54,7 @@ func (a SyncDNS) Cancel() error {
 	return errors.New("Not supported")
 }
 
-func (a SyncDNS) Run(blobID, sha1 string, version int64) (string, error) {
+func (a SyncDNS) Run(blobID, sha1 string, version uint64) (string, error) {
 	requestVersionStale, err := a.isLocalStateGreaterThanOrEqual(version)
 	if err != nil {
 		return "", bosherr.WrapError(err, "reading local DNS state")
@@ -125,7 +125,7 @@ func (a SyncDNS) createSyncDNSState() state.SyncDNSState {
 	return state.NewSyncDNSState(a.platform.GetFs(), stateFilePath)
 }
 
-func (a SyncDNS) isLocalStateGreaterThanOrEqual(version int64) (bool, error) {
+func (a SyncDNS) isLocalStateGreaterThanOrEqual(version uint64) (bool, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 

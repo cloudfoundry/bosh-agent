@@ -56,7 +56,7 @@ var _ = Describe("SyncDNSState", func() {
 
 				localDNSState, err := syncDNSState.LoadState()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(localDNSState.Version).To(Equal(int64(1234)))
+				Expect(localDNSState.Version).To(Equal(uint64(1234)))
 			})
 		})
 	})
