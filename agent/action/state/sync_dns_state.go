@@ -8,12 +8,13 @@ import (
 )
 
 type SyncDNSState interface {
+	StateFileExists() bool
 	LoadState() (LocalDNSState, error)
 	SaveState(localDNSState LocalDNSState) error
 }
 
 type LocalDNSState struct {
-	Version uint32 `json:"version"`
+	Version int64 `json:"version"`
 }
 
 type syncDNSState struct {
@@ -55,4 +56,8 @@ func (s *syncDNSState) SaveState(localDNSState LocalDNSState) error {
 	}
 
 	return nil
+}
+
+func (s *syncDNSState) StateFileExists() bool {
+	return s.fs.FileExists(s.path)
 }

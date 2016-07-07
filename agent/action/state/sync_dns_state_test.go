@@ -56,7 +56,7 @@ var _ = Describe("SyncDNSState", func() {
 
 				localDNSState, err := syncDNSState.LoadState()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(localDNSState.Version).To(Equal(uint32(1234)))
+				Expect(localDNSState.Version).To(Equal(int64(1234)))
 			})
 		})
 	})
@@ -88,6 +88,26 @@ var _ = Describe("SyncDNSState", func() {
 			It("saves the state in the path", func() {
 				err = syncDNSState.SaveState(localDNSState)
 				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("#StateFileExists", func() {
+		Context("when state file exists", func() {
+			BeforeEach(func() {
+				fakeFileSystem.WriteFile(path, []byte(`{"version":1}`))
+			})
+
+			It("returns true", func() {
+				exists := syncDNSState.StateFileExists()
+				Expect(exists).To(BeTrue())
+			})
+		})
+
+		Context("when state file does not exist", func() {
+			It("returns false", func() {
+				exists := syncDNSState.StateFileExists()
+				Expect(exists).To(BeFalse())
 			})
 		})
 	})

@@ -16,7 +16,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-const LocalDNSStateFilename = "local_dns_state.json"
+const localDNSStateFilename = "local_dns_state.json"
 
 type SyncDNS struct {
 	blobstore       boshblob.Blobstore
@@ -54,7 +54,7 @@ func (a SyncDNS) Cancel() error {
 	return errors.New("Not supported")
 }
 
-func (a SyncDNS) Run(blobID, sha1 string, version uint32) (string, error) {
+func (a SyncDNS) Run(blobID, sha1 string, version int64) (string, error) {
 	requestVersionStale, err := a.isLocalStateGreaterThanOrEqual(version)
 	if err != nil {
 		return "", bosherr.WrapError(err, "reading local DNS state")
@@ -94,7 +94,7 @@ func (a SyncDNS) Run(blobID, sha1 string, version uint32) (string, error) {
 
 	localDNSState := state.LocalDNSState{}
 	syncDNSState := a.createSyncDNSState()
-	if a.stateFileExists() {
+	if syncDNSState.StateFileExists() {
 		localDNSState, err = syncDNSState.LoadState()
 		if err != nil {
 			return "", bosherr.WrapError(err, "loading local DNS state")
@@ -120,36 +120,25 @@ func (a SyncDNS) Run(blobID, sha1 string, version uint32) (string, error) {
 	return "synced", nil
 }
 
-func (a SyncDNS) isLocalStateGreaterThanOrEqual(version uint32) (bool, error) {
+func (a SyncDNS) createSyncDNSState() state.SyncDNSState {
+	stateFilePath := filepath.Join(a.platform.GetDirProvider().BaseDir(), localDNSStateFilename)
+	return state.NewSyncDNSState(a.platform.GetFs(), stateFilePath)
+}
+
+func (a SyncDNS) isLocalStateGreaterThanOrEqual(version int64) (bool, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	if !a.stateFileExists() {
+	syncDNSState := a.createSyncDNSState()
+
+	if !syncDNSState.StateFileExists() {
 		return false, nil
 	}
 
-	localDNSState, err := a.loadLocalDNSState()
+	localDNSState, err := syncDNSState.LoadState()
 	if err != nil {
 		return false, bosherr.WrapError(err, "loading local DNS state")
 	}
 
 	return (localDNSState.Version >= version), nil
-}
-
-func (a SyncDNS) loadLocalDNSState() (state.LocalDNSState, error) {
-	localDNSState, err := a.createSyncDNSState().LoadState()
-	if err != nil {
-		return state.LocalDNSState{}, bosherr.WrapError(err, "loading local DNS state")
-	}
-
-	return localDNSState, nil
-}
-
-func (a SyncDNS) createSyncDNSState() state.SyncDNSState {
-	stateFilePath := filepath.Join(a.platform.GetDirProvider().BaseDir(), LocalDNSStateFilename)
-	return state.NewSyncDNSState(a.platform.GetFs(), stateFilePath)
-}
-
-func (a SyncDNS) stateFileExists() bool {
-	return a.platform.GetFs().FileExists(filepath.Join(a.platform.GetDirProvider().BaseDir(), LocalDNSStateFilename))
 }

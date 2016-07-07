@@ -200,7 +200,7 @@ func (c *agentClient) DeleteARPEntries(ips []string) error {
 	return c.agentRequest.Send("delete_arp_entries", []interface{}{map[string][]string{"ips": ips}}, &TaskResponse{})
 }
 
-func (c *agentClient) SyncDNS(blobID, sha1 string, version uint32) (string, error) {
+func (c *agentClient) SyncDNS(blobID, sha1 string, version int64) (string, error) {
 	var response SyncDNSResponse
 	err := c.agentRequest.Send("sync_dns", []interface{}{blobID, sha1, version}, &response)
 	if err != nil {
