@@ -8,6 +8,7 @@ inputs:
   path: gopath/src/github.com/cloudfoundry/bosh-agent
 - name: bosh-agent-zip
 - name: bosh-agent-deps-zip
+- name: windows-ami
 
 run:
   path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/test-integration-windows.sh
