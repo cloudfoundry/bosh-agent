@@ -1,7 +1,9 @@
 package platform
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"path"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -28,6 +30,7 @@ type diskMigration struct {
 }
 
 const CredentialFileName = "password"
+const EtcHostsFileName = "etc_hosts"
 
 type dummyPlatform struct {
 	collector          boshstats.Collector
@@ -121,7 +124,14 @@ func (p dummyPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
 }
 
 func (p dummyPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) (err error) {
-	return
+	etcHostsPath := path.Join(p.dirProvider.BoshDir(), EtcHostsFileName)
+
+	dnsRecordsContents := bytes.NewBuffer([]byte{})
+	for _, dnsRecord := range dnsRecords.Records {
+		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s\n", dnsRecord[0], dnsRecord[1]))
+	}
+
+	return p.fs.WriteFileString(etcHostsPath, dnsRecordsContents.String())
 }
 
 func (p dummyPlatform) SetupHostname(hostname string) (err error) {
