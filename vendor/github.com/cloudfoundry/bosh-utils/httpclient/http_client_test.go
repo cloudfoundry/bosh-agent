@@ -1,116 +1,225 @@
 package httpclient_test
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net"
 	"net/http"
 
-	. "github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-utils/httpclient"
 )
 
-var _ = Describe("HttpClient", func() {
+var _ = Describe("HTTPClient", func() {
 	var (
 		httpClient HTTPClient
-		fakeServer *fakeServer
+		serv       *fakeServer
 	)
 
 	BeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		httpClient = NewHTTPClient(DefaultClient, logger)
-		fakeServer = newFakeServer("localhost:0")
+		httpClient = NewHTTPClient(CreateDefaultClientInsecureSkipVerify(), logger)
 
+		serv = newFakeServer("localhost:0")
 		readyCh := make(chan error)
-		go fakeServer.Start(readyCh)
+		go serv.Start(readyCh)
+
 		err := <-readyCh
+
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		fakeServer.Stop()
+		serv.Stop()
 	})
 
-	Describe("DefaultClient", func() {
-		It("is a singleton http client", func() {
-			var client http.Client
-			client = DefaultClient
+	Describe("Post/PostCustomized", func() {
+		It("makes a POST request with given payload", func() {
+			serv.SetResponseBody("post-response")
+			serv.SetResponseStatus(200)
 
-			Expect(client).To(Equal(DefaultClient))
-		})
+			url := "http://" + serv.Listener.Addr().String() + "/path"
 
-		It("disables keep alive", func() {
-			var client http.Client
-			client = DefaultClient
-
-			Expect(client.Transport.(*http.Transport).DisableKeepAlives).To(Equal(true))
-		})
-	})
-
-	Describe("CreateDefaultClient", func() {
-		It("creates a new http client", func() {
-			var (
-				first  http.Client
-				second http.Client
-			)
-
-			first = CreateDefaultClient()
-			second = CreateDefaultClient()
-
-			Expect(first).ToNot(Equal(second))
-		})
-	})
-
-	Describe("Post", func() {
-		It("makes a post request with given payload", func() {
-			fakeServer.SetResponseBody("fake-post-response")
-			fakeServer.SetResponseStatus(200)
-
-			response, err := httpClient.Post("http://"+fakeServer.Listener.Addr().String()+"/fake-path", []byte("fake-post-request"))
+			response, err := httpClient.Post(url, []byte("post-request"))
 			Expect(err).ToNot(HaveOccurred())
 
 			defer response.Body.Close()
+
 			responseBody, err := ioutil.ReadAll(response.Body)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(responseBody).To(Equal([]byte("fake-post-response")))
+			Expect(responseBody).To(Equal([]byte("post-response")))
 			Expect(response.StatusCode).To(Equal(200))
 
-			Expect(fakeServer.ReceivedRequests).To(HaveLen(1))
-			Expect(fakeServer.ReceivedRequests).To(ContainElement(
+			Expect(serv.ReceivedRequests).To(HaveLen(1))
+			Expect(serv.ReceivedRequests).To(ContainElement(
 				receivedRequest{
-					Body:   []byte("fake-post-request"),
+					Body:   []byte("post-request"),
 					Method: "POST",
+				},
+			))
+		})
+
+		It("allows to override request including payload", func() {
+			serv.SetResponseBody("post-response")
+			serv.SetResponseStatus(200)
+
+			url := "http://" + serv.Listener.Addr().String() + "/path"
+
+			setHeaders := func(r *http.Request) {
+				r.Header.Add("X-Custom", "custom")
+				r.Body = ioutil.NopCloser(bytes.NewBufferString("post-request-override"))
+				r.ContentLength = 21
+			}
+
+			response, err := httpClient.PostCustomized(url, []byte("post-request"), setHeaders)
+			Expect(err).ToNot(HaveOccurred())
+
+			defer response.Body.Close()
+
+			responseBody, err := ioutil.ReadAll(response.Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(responseBody).To(Equal([]byte("post-response")))
+			Expect(response.StatusCode).To(Equal(200))
+
+			Expect(serv.ReceivedRequests).To(HaveLen(1))
+			Expect(serv.ReceivedRequests).To(ContainElement(
+				receivedRequest{
+					Body:   []byte("post-request-override"),
+					Method: "POST",
+
+					CustomHeader: "custom",
 				},
 			))
 		})
 	})
 
-	Describe("Get", func() {
-		It("makes a get request with given payload", func() {
-			fakeServer.SetResponseBody("fake-get-response")
-			fakeServer.SetResponseStatus(200)
+	Describe("Put/PutCustomized", func() {
+		It("makes a PUT request with given payload", func() {
+			serv.SetResponseBody("put-response")
+			serv.SetResponseStatus(200)
 
-			response, err := httpClient.Get("http://" + fakeServer.Listener.Addr().String() + "/fake-path")
+			url := "http://" + serv.Listener.Addr().String() + "/path"
+
+			response, err := httpClient.Put(url, []byte("put-request"))
 			Expect(err).ToNot(HaveOccurred())
 
 			defer response.Body.Close()
+
 			responseBody, err := ioutil.ReadAll(response.Body)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(responseBody).To(Equal([]byte("fake-get-response")))
+			Expect(responseBody).To(Equal([]byte("put-response")))
 			Expect(response.StatusCode).To(Equal(200))
 
-			Expect(fakeServer.ReceivedRequests).To(HaveLen(1))
-			Expect(fakeServer.ReceivedRequests).To(ContainElement(
+			Expect(serv.ReceivedRequests).To(HaveLen(1))
+			Expect(serv.ReceivedRequests).To(ContainElement(
+				receivedRequest{
+					Body:   []byte("put-request"),
+					Method: "PUT",
+				},
+			))
+		})
+
+		It("allows to override request including payload", func() {
+			serv.SetResponseBody("put-response")
+			serv.SetResponseStatus(200)
+
+			url := "http://" + serv.Listener.Addr().String() + "/path"
+
+			setHeaders := func(r *http.Request) {
+				r.Header.Add("X-Custom", "custom")
+				r.Body = ioutil.NopCloser(bytes.NewBufferString("put-request-override"))
+				r.ContentLength = 20
+			}
+
+			response, err := httpClient.PutCustomized(url, []byte("put-request"), setHeaders)
+			Expect(err).ToNot(HaveOccurred())
+
+			defer response.Body.Close()
+
+			responseBody, err := ioutil.ReadAll(response.Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(responseBody).To(Equal([]byte("put-response")))
+			Expect(response.StatusCode).To(Equal(200))
+
+			Expect(serv.ReceivedRequests).To(HaveLen(1))
+			Expect(serv.ReceivedRequests).To(ContainElement(
+				receivedRequest{
+					Body:   []byte("put-request-override"),
+					Method: "PUT",
+
+					CustomHeader: "custom",
+				},
+			))
+		})
+	})
+
+	Describe("Get/GetCustomized", func() {
+		It("makes a get request with given payload", func() {
+			serv.SetResponseBody("get-response")
+			serv.SetResponseStatus(200)
+
+			url := "http://" + serv.Listener.Addr().String() + "/path"
+
+			response, err := httpClient.Get(url)
+			Expect(err).ToNot(HaveOccurred())
+
+			defer response.Body.Close()
+
+			responseBody, err := ioutil.ReadAll(response.Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(responseBody).To(Equal([]byte("get-response")))
+			Expect(response.StatusCode).To(Equal(200))
+
+			Expect(serv.ReceivedRequests).To(HaveLen(1))
+			Expect(serv.ReceivedRequests).To(ContainElement(
 				receivedRequest{
 					Body:   []byte(""),
 					Method: "GET",
 				},
 			))
 		})
+
+		It("allows to override request", func() {
+			serv.SetResponseBody("get-response")
+			serv.SetResponseStatus(200)
+
+			url := "http://" + serv.Listener.Addr().String() + "/path"
+
+			setHeaders := func(r *http.Request) {
+				r.Header.Add("X-Custom", "custom")
+			}
+
+			response, err := httpClient.GetCustomized(url, setHeaders)
+			Expect(err).ToNot(HaveOccurred())
+
+			defer response.Body.Close()
+
+			responseBody, err := ioutil.ReadAll(response.Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(responseBody).To(Equal([]byte("get-response")))
+			Expect(response.StatusCode).To(Equal(200))
+
+			Expect(serv.ReceivedRequests).To(HaveLen(1))
+			Expect(serv.ReceivedRequests).To(ContainElement(
+				receivedRequest{
+					Body:   []byte(""),
+					Method: "GET",
+
+					CustomHeader: "custom",
+				},
+			))
+		})
 	})
+
 })
 
 type receivedRequestBody struct {
@@ -122,6 +231,8 @@ type receivedRequestBody struct {
 type receivedRequest struct {
 	Body   []byte
 	Method string
+
+	CustomHeader string
 }
 
 type fakeServer struct {
@@ -155,7 +266,7 @@ func (s *fakeServer) Start(readyErrCh chan error) {
 	mux := http.NewServeMux()
 	httpServer.Handler = mux
 
-	mux.HandleFunc("/fake-path", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(s.responseStatus)
 
 		requestBody, _ := ioutil.ReadAll(r.Body)
@@ -164,6 +275,8 @@ func (s *fakeServer) Start(readyErrCh chan error) {
 		receivedRequest := receivedRequest{
 			Body:   requestBody,
 			Method: r.Method,
+
+			CustomHeader: r.Header.Get("X-Custom"),
 		}
 
 		s.ReceivedRequests = append(s.ReceivedRequests, receivedRequest)

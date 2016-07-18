@@ -13,6 +13,7 @@ import (
 
 	"errors"
 
+	"github.com/bmatcuk/doublestar"
 	fsWrapper "github.com/charlievieth/fs"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -64,6 +65,7 @@ func (fs *osFileSystem) ExpandPath(path string) (string, error) {
 	if err != nil {
 		return "", bosherr.WrapError(err, "Getting absolute path")
 	}
+
 	return path, nil
 }
 
@@ -110,6 +112,11 @@ func (fs *osFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 
 func (fs *osFileSystem) OpenFile(path string, flag int, perm os.FileMode) (File, error) {
 	return os.OpenFile(path, flag, perm)
+}
+
+func (fs *osFileSystem) Stat(path string) (os.FileInfo, error) {
+	fs.logger.Debug(fs.logTag, "Stat '%s'", path)
+	return fsWrapper.Stat(path)
 }
 
 func (fs *osFileSystem) WriteFileString(path, content string) (err error) {
@@ -205,7 +212,7 @@ func (fs *osFileSystem) ReadFile(path string) (content []byte, err error) {
 func (fs *osFileSystem) FileExists(path string) bool {
 	fs.logger.Debug(fs.logTag, "Checking if file exists %s", path)
 
-	_, err := fs.Stat(path)
+	_, err := os.Stat(path)
 	if err != nil {
 		return !os.IsNotExist(err)
 	}
@@ -237,6 +244,7 @@ func (fs *osFileSystem) Symlink(oldPath, newPath string) error {
 			return bosherr.WrapErrorf(err, "Removing new path at %s", newPath)
 		}
 	}
+
 	containingDir := filepath.Dir(newPath)
 	if !fs.FileExists(containingDir) {
 		fs.MkdirAll(containingDir, os.FileMode(0700))
@@ -252,6 +260,7 @@ func (fs *osFileSystem) ReadLink(symlinkPath string) (targetPath string, err err
 
 func (fs *osFileSystem) CopyFile(srcPath, dstPath string) error {
 	fs.logger.Debug(fs.logTag, "Copying file '%s' to '%s'", srcPath, dstPath)
+
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Opening source path")
@@ -277,7 +286,7 @@ func (fs *osFileSystem) CopyFile(srcPath, dstPath string) error {
 func (fs *osFileSystem) CopyDir(srcPath, dstPath string) error {
 	fs.logger.Debug(fs.logTag, "Copying dir '%s' to '%s'", srcPath, dstPath)
 
-	sourceInfo, err := fs.Stat(srcPath)
+	sourceInfo, err := os.Stat(srcPath)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Reading dir stats for '%s'", srcPath)
 	}
@@ -359,13 +368,14 @@ func (fs *osFileSystem) RemoveAll(fileOrDir string) (err error) {
 	return
 }
 
-func (fs *osFileSystem) Stat(fileOrDir string) (fileInfo os.FileInfo, err error) {
-	return fsWrapper.Stat(fileOrDir)
-}
-
 func (fs *osFileSystem) Glob(pattern string) (matches []string, err error) {
 	fs.logger.Debug(fs.logTag, "Glob '%s'", pattern)
 	return filepath.Glob(pattern)
+}
+
+func (fs *osFileSystem) RecursiveGlob(pattern string) (matches []string, err error) {
+	fs.logger.Debug(fs.logTag, "RecursiveGlob '%s'", pattern)
+	return doublestar.Glob(pattern)
 }
 
 func (fs *osFileSystem) Walk(root string, walkFunc filepath.WalkFunc) error {
@@ -373,7 +383,7 @@ func (fs *osFileSystem) Walk(root string, walkFunc filepath.WalkFunc) error {
 }
 
 func (fs *osFileSystem) filesAreIdentical(newContent []byte, filePath string) bool {
-	existingStat, err := fs.Stat(filePath)
+	existingStat, err := os.Stat(filePath)
 	if err != nil || int64(len(newContent)) != existingStat.Size() {
 		return false
 	}

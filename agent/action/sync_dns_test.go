@@ -277,20 +277,20 @@ var _ = Describe("SyncDNS", func() {
 				})
 
 				Context("when blobstore returns a file that cannot be read", func() {
-					var removeAllError error
-
 					BeforeEach(func() {
 						fakeBlobstore.GetFileName = "fake-blobstore-file-path"
 						fakeBlobstore.GetError = nil
 
-						removeAllError = errors.New("fake-remove-all-error")
-						fakeFileSystem.RemoveAllError = removeAllError
+						fakeFileSystem.RemoveAllStub = func(path string) error {
+							if path == "fake-blobstore-file-path" {
+								return errors.New("fake-remove-all-error")
+							}
+							return nil
+						}
 					})
 
 					Context("when file removal failed", func() {
 						It("logs error", func() {
-							fakeFileSystem.RegisterRemoveAllError("fake-blobstore-file-path", errors.New("fake-remove-all-error"))
-
 							_, _ = syncDNS.Run("fake-blobstore-id", "fake-fingerprint", 2)
 							tag, message, _ := logger.ErrorArgsForCall(0)
 							Expect(tag).To(Equal("Sync DNS action"))

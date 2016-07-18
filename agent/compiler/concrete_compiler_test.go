@@ -181,7 +181,12 @@ func init() {
 			})
 
 			It("returns an error if removing temporary compile target directory during uncompression fails", func() {
-				fs.RegisterRemoveAllError("/fake-compile-dir/pkg_name-bosh-agent-unpack", errors.New("fake-remove-error"))
+				fs.RemoveAllStub = func(path string) error {
+					if path == "/fake-compile-dir/pkg_name-bosh-agent-unpack" {
+						return errors.New("fake-remove-error")
+					}
+					return nil
+				}
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(HaveOccurred())

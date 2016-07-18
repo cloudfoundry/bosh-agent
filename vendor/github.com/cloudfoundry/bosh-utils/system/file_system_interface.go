@@ -6,10 +6,12 @@ import (
 	"path/filepath"
 )
 
-//File is a subset of os.File
+// File is a subset of os.File
 type File interface {
 	io.ReadWriteCloser
 	ReadAt([]byte, int64) (int, error)
+	WriteAt([]byte, int64) (int, error)
+	Seek(int64, int) (int64, error)
 	Stat() (os.FileInfo, error)
 	Name() string
 }
@@ -22,8 +24,6 @@ type FileSystem interface {
 	// if dir exists and has different permissions
 	MkdirAll(path string, perm os.FileMode) error
 	RemoveAll(fileOrDir string) error
-
-	Stat(fileOrDir string) (os.FileInfo, error)
 
 	Chown(path, username string) error
 	Chmod(path string, perm os.FileMode) error
@@ -38,6 +38,7 @@ type FileSystem interface {
 	ReadFile(path string) (content []byte, err error)
 
 	FileExists(path string) bool
+	Stat(path string) (os.FileInfo, error)
 
 	Rename(oldPath, newPath string) error
 
@@ -56,5 +57,6 @@ type FileSystem interface {
 	ChangeTempRoot(path string) error
 
 	Glob(pattern string) (matches []string, err error)
+	RecursiveGlob(pattern string) (matches []string, err error)
 	Walk(root string, walkFunc filepath.WalkFunc) error
 }
