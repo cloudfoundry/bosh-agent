@@ -17,6 +17,10 @@ Vagrant.configure('2') do |config|
     v.tags = {
       'PipelineName' => 'bosh-agent'
     }
+
+    v.access_key_id = ENV['BOSH_AWS_ACCESS_KEY_ID'] || ''
+    v.secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY'] || ''
+    v.ami = ''
   end
 
   agent_dir = '/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent'
