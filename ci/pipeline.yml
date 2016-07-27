@@ -65,7 +65,7 @@ jobs:
       AWS_SUBNET: subnet-110fae67
       AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
       KEYPAIR_NAME: agent-integration
-      NATS_ELASTIC_IP: 52.23.114.20
+      NATS_ELASTIC_IP: {{NATS_ELASTIC_IP}}
       VAGRANT_PROVIDER: aws
       WINRM_PASSWORD: {{WINRM_PASSWORD}}
 
