@@ -4,12 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
+	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-utils/system"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -348,6 +353,118 @@ var _ = Describe("Certificate Management", func() {
 				err := certManager.UpdateCertificates(cert1)
 				Expect(err).To(HaveOccurred())
 			})
+		})
+
+		Context("Windows", func() {
+			const validCerts string = `-----BEGIN CERTIFICATE-----
+MIIC0jCCAboCCQCuQJScK+G0WzANBgkqhkiG9w0BAQsFADArMQswCQYDVQQGEwJV
+UzENMAsGA1UECBMEQk9TSDENMAsGA1UEChMEQk9TSDAeFw0xNjA4MDIxNDQ2MTla
+Fw0xNzA4MDIxNDQ2MTlaMCsxCzAJBgNVBAYTAlVTMQ0wCwYDVQQIEwRCT1NIMQ0w
+CwYDVQQKEwRCT1NIMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA22ea
+D3XBlXOLDzcJOKKICYrkoHxT4wg+9ybRS9r/oAx+5xEwTdoUNvK3j7hUP4ttfCgT
+qx9TUN+h4HzjDZQQ9oj8aUOhV83BLawUxDUOZbyDGUrHCKXkE5UKeiMjVtfmZNd0
+0t+zepLF+helT0p+ogXFGFM6pKgfNoPHrf5R+KUqzvCoeMiL9nxO/yypfR+fnKOQ
+KYGo55BlH0nYLAwKfefiUkaqAOMyQ7mdLf+iWT6CqfZ83OdNSXe8SmaDspnHkipu
+/9+/VBEABv+IiAgLrosynSIA0DFP4vPYuV6PzHW8pXpTB6CSl8QwhPQv3SpgjXoB
+O3rMc0pJ/2sSRIXKvQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBnbY4FOo28yWAJ
+G5hkOReWl6f6y/LNa+W5B7zqoPuUpiYwujdDSGA+wsig46EK65mEK2NdGO2PnTKw
+hP27FHbagskiu9h0PtEfBcRi6lNySOgQNFEqpB+maOzwOwYRRxdABBu0ieSaxYXI
+TINuBZ/Fi1igmL4Auwl4mFLYn6ofrtZFOLp7a1vGDewZFG75V4t2IdKvN8HsCnPW
+vHfs34+z5ZdCHWY7uQFmC1K+4oqKanG7Lw78bZ+HaU5fLb8CpvkiDmCDA/KXXpCS
+En4cZ4+CJRoyzjaooDDOo/+9P7Mx1O12Ev/lna2laLLueUyTN3aVPbLvWsUrCr/1
+NrjpvLIP
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIC0jCCAboCCQC/JcYWmGS6OTANBgkqhkiG9w0BAQsFADArMQswCQYDVQQGEwJV
+UzENMAsGA1UECBMEQk9TSDENMAsGA1UEChMEQk9TSDAeFw0xNjA4MDIyMTQyMzJa
+Fw0xNzA4MDIyMTQyMzJaMCsxCzAJBgNVBAYTAlVTMQ0wCwYDVQQIEwRCT1NIMQ0w
+CwYDVQQKEwRCT1NIMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7Z4R
+8dSoipPja6cnjs5x3bk2zfuHwSFW6XHOASNVQXxdSgbRixXeiSh0cJoT0FUvGnQX
+ptU2WeMtx7ZrXp3YcO312bVxjyEBhzlvLhdqWHaATOucuvXi+sH+I4EXVhlHlbr7
++OhR85q0DCdF9x7U3xVJm/JG/cNXHtNB0aaYUZ9HXpVpt8yMdVGQCE8FMqNQ4DsU
+/WHRCaTkoP3BXbza090yoGMSCT8IilrKUnwmtNZiDerWwTJfVz6oqIN8Ei+myJ4M
+qvis48OQkOgg/e1RbrCGuF2L7q7Ja3j1RQWgEXrNiK45Eae3W6uhbTV6RXPrk9Xk
+Si8Atvw03rkuqJjXYwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQC6HK25lvP2PLmF
+KRQ4z7qOvIVXNl9m4scHCsINF+VpZo+miXK2kMhOk6Bade+PG76dYRNhPXv0vWqe
+QNHDW2J85dF1h0Dbdl84irCijSb1WOPHdRgqSMooTaRxn0mpRMKgUdOSuJTUj6N7
+yHdf1gYNB8vt/NzTfl1gKc0KjK9L8I2Y0myq9Hu1aHVELFAKskhZJpnToZn1w6O0
+WDtlweO/jTmDwyeIqzA/60LXAv7xfJMRoyNElqWHC+EeeuMnh6BJPSdwC8ynTP3R
+SDRQj6MXyyS4LBMZA56DYXaXyR6pDTpmvBUNQ4FR0UgYm1GeGWo1kOUPjfs7sUQz
+aAzOWRDC
+-----END CERTIFICATE-----`
+
+			var certThumbprints []string = []string{
+				"23AC7706D032651BE146388FA8DF7B0B2DD7CFA6",
+				"73C0BFD7BB53EC299B289CB86A010AE485F6D49B",
+			}
+
+			const getCertScript string = `
+(Get-ChildItem Cert:\LocalMachine\Root | where { $_.Subject -eq "O=BOSH, S=BOSH, C=US" }).Length`
+
+			const removeCertScript string = `
+if (Test-Path %[1]s) {
+	Remove-Item %[1]s
+}`
+
+			var tempDir string
+
+			BeforeEach(func() {
+				if runtime.GOOS != "windows" {
+					Skip("Only run on Windows")
+				}
+
+				fs := boshsys.NewOsFileSystem(log)
+				var err error
+				tempDir, err = fs.TempDir("")
+				Expect(err).To(BeNil())
+				dirProvider := boshdir.NewProvider(tempDir)
+				err = fs.MkdirAll(dirProvider.TmpDir(), os.FileMode(0777))
+				Expect(err).To(BeNil())
+				certManager = cert.NewWindowsCertManager(fs, boshsys.NewExecCmdRunner(log), dirProvider, log)
+			})
+
+			AfterEach(func() {
+				for _, thumbprint := range certThumbprints {
+					cmd := exec.Command("powershell", "-Command", fmt.Sprintf(removeCertScript, `Cert:\LocalMachine\Root\`+thumbprint))
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).To(BeNil())
+					Eventually(session).Should(gexec.Exit(0))
+				}
+				os.RemoveAll(tempDir)
+			})
+
+			It("adds certs to the trusted cert chain", func() {
+				err := certManager.UpdateCertificates(validCerts)
+				Expect(err).To(BeNil())
+
+				cmd := exec.Command("powershell", "-Command", getCertScript)
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).To(BeNil())
+
+				Eventually(session).Should(gexec.Exit(0))
+				Eventually(session.Out).Should(gbytes.Say("2"))
+			})
+
+			It("returns an error when passed an invalid cert", func() {
+				err := certManager.UpdateCertificates(cert1)
+				Expect(err).NotTo(BeNil())
+			})
+
+			It("deletes all certs when passed an empty string", func() {
+				err := certManager.UpdateCertificates(validCerts)
+				Expect(err).To(BeNil())
+
+				err = certManager.UpdateCertificates("")
+				Expect(err).To(BeNil())
+
+				cmd := exec.Command("powershell", "-Command", getCertScript)
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).To(BeNil())
+
+				Eventually(session).Should(gexec.Exit(0))
+				Eventually(session.Out).Should(gbytes.Say("0"))
+			})
+
 		})
 	})
 })

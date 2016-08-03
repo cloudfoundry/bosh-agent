@@ -38,6 +38,7 @@ func NewWindowsPlatform(
 	cmdRunner boshsys.CmdRunner,
 	dirProvider boshdirs.Provider,
 	netManager boshnet.Manager,
+	certManager boshcert.Manager,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
@@ -52,7 +53,7 @@ func NewWindowsPlatform(
 		netManager:             netManager,
 		devicePathResolver:     devicePathResolver,
 		vitalsService:          boshvitals.NewService(collector, dirProvider),
-		certManager:            boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
+		certManager:            certManager,
 		defaultNetworkResolver: defaultNetworkResolver,
 	}
 }

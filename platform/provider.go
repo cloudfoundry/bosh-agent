@@ -78,6 +78,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, 0, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
+	windowsCertManager := boshcert.NewWindowsCertManager(fs, runner, dirProvider, logger)
 
 	routesSearcher := boshnet.NewRoutesSearcher(runner)
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
@@ -151,6 +152,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		runner,
 		dirProvider,
 		windowsNetManager,
+		windowsCertManager,
 		devicePathResolver,
 		logger,
 		defaultNetworkResolver,
