@@ -29,3 +29,8 @@ $file = Join-Path -Path $PWD jobsupervisor/windows_job_supervisor.go
 
 go.exe install github.com/cloudfoundry/bosh-agent/vendor/github.com/onsi/ginkgo/ginkgo
 ginkgo.exe -r -keepGoing -skipPackage="integration,vendor"
+if ($LastExitCode -ne 0)
+{
+    Write-Error $_
+    exit 1
+}
