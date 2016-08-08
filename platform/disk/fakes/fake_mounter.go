@@ -30,6 +30,7 @@ type FakeMounter struct {
 
 	IsMountedResult bool
 	IsMountedErr    error
+	IsMountedStub   func(string) (bool, error)
 	isMountedArgs   []string
 }
 
@@ -71,6 +72,9 @@ func (m *FakeMounter) IsMountPoint(path string) (partitionPath string, result bo
 
 func (m *FakeMounter) IsMounted(devicePathOrMountPoint string) (bool, error) {
 	m.isMountedArgs = append(m.isMountedArgs, devicePathOrMountPoint)
+	if m.IsMountedStub != nil {
+		return m.IsMountedStub(devicePathOrMountPoint)
+	}
 	return m.IsMountedResult, m.IsMountedErr
 }
 
