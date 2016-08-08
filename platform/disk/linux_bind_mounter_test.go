@@ -123,7 +123,7 @@ var _ = Describe("linuxBindMounter", func() {
 			Expect(err).To(Equal(delegateErr))
 
 			// Inputs
-			Expect(delegateMounter.IsMountedDevicePathOrMountPoint).To(Equal("fake-device-path"))
+			Expect(delegateMounter.IsMountedArgsForCall(0)).To(Equal("fake-device-path"))
 		})
 	})
 })

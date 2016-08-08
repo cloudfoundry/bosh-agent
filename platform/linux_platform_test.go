@@ -1415,7 +1415,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 				It("returns without an error", func() {
 					err := act()
-					Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal("/tmp"))
+					Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/tmp"))
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -2000,7 +2000,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeTrue())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 
 					It("returns false if mount point does not exist", func() {
@@ -2009,7 +2009,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 
@@ -2022,7 +2022,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-err"))
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 			}
@@ -2045,7 +2045,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeTrue())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 
 					It("returns false if mount point does not exist", func() {
@@ -2054,7 +2054,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 
@@ -2067,7 +2067,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-err"))
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 			}
