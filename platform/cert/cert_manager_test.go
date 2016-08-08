@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/charlievieth/fs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -407,6 +408,7 @@ if (Test-Path %[1]s) {
 }`
 
 			var tempDir string
+			var dirProvider boshdir.Provider
 
 			BeforeEach(func() {
 				if runtime.GOOS != "windows" {
@@ -417,9 +419,7 @@ if (Test-Path %[1]s) {
 				var err error
 				tempDir, err = fs.TempDir("")
 				Expect(err).To(BeNil())
-				dirProvider := boshdir.NewProvider(tempDir)
-				err = fs.MkdirAll(dirProvider.TmpDir(), os.FileMode(0777))
-				Expect(err).To(BeNil())
+				dirProvider = boshdir.NewProvider(tempDir)
 				certManager = cert.NewWindowsCertManager(fs, boshsys.NewExecCmdRunner(log), dirProvider, log)
 			})
 
@@ -433,36 +433,53 @@ if (Test-Path %[1]s) {
 				os.RemoveAll(tempDir)
 			})
 
-			It("adds certs to the trusted cert chain", func() {
-				err := certManager.UpdateCertificates(validCerts)
+			It("should create the tmpDir if doesn't exist", func() {
+				_, err := os.Stat(dirProvider.TmpDir())
+				fmt.Println("BEfore", dirProvider.TmpDir(), err)
+				missing := os.IsNotExist(err)
+				Expect(missing).To(BeTrue())
+				err = certManager.UpdateCertificates(validCerts)
 				Expect(err).To(BeNil())
-
-				cmd := exec.Command("powershell", "-Command", getCertScript)
-				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				_, err = os.Stat(dirProvider.TmpDir())
 				Expect(err).To(BeNil())
-
-				Eventually(session).Should(gexec.Exit(0))
-				Eventually(session.Out).Should(gbytes.Say("2"))
 			})
 
-			It("returns an error when passed an invalid cert", func() {
-				err := certManager.UpdateCertificates(cert1)
-				Expect(err).NotTo(BeNil())
-			})
+			Context("When TempDir exists", func() {
+				BeforeEach(func() {
+					err := fs.MkdirAll(dirProvider.TmpDir(), os.FileMode(0777))
+					Expect(err).To(BeNil())
+				})
+				It("adds certs to the trusted cert chain", func() {
+					err := certManager.UpdateCertificates(validCerts)
+					Expect(err).To(BeNil())
 
-			It("deletes all certs when passed an empty string", func() {
-				err := certManager.UpdateCertificates(validCerts)
-				Expect(err).To(BeNil())
+					cmd := exec.Command("powershell", "-Command", getCertScript)
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).To(BeNil())
 
-				err = certManager.UpdateCertificates("")
-				Expect(err).To(BeNil())
+					Eventually(session).Should(gexec.Exit(0))
+					Eventually(session.Out).Should(gbytes.Say("2"))
+				})
 
-				cmd := exec.Command("powershell", "-Command", getCertScript)
-				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).To(BeNil())
+				It("returns an error when passed an invalid cert", func() {
+					err := certManager.UpdateCertificates(cert1)
+					Expect(err).NotTo(BeNil())
+				})
 
-				Eventually(session).Should(gexec.Exit(0))
-				Eventually(session.Out).Should(gbytes.Say("0"))
+				It("deletes all certs when passed an empty string", func() {
+					err := certManager.UpdateCertificates(validCerts)
+					Expect(err).To(BeNil())
+
+					err = certManager.UpdateCertificates("")
+					Expect(err).To(BeNil())
+
+					cmd := exec.Command("powershell", "-Command", getCertScript)
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).To(BeNil())
+
+					Eventually(session).Should(gexec.Exit(0))
+					Eventually(session.Out).Should(gbytes.Say("0"))
+				})
 			})
 
 		})
