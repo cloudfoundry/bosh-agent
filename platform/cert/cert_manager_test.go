@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/charlievieth/fs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -409,13 +408,14 @@ if (Test-Path %[1]s) {
 
 			var tempDir string
 			var dirProvider boshdir.Provider
+			var fs boshsys.FileSystem
 
 			BeforeEach(func() {
 				if runtime.GOOS != "windows" {
 					Skip("Only run on Windows")
 				}
 
-				fs := boshsys.NewOsFileSystem(log)
+				fs = boshsys.NewOsFileSystem(log)
 				var err error
 				tempDir, err = fs.TempDir("")
 				Expect(err).To(BeNil())

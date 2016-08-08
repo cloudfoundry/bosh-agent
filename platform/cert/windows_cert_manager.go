@@ -6,7 +6,6 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/charlievieth/fs"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -34,7 +33,7 @@ func NewWindowsCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, dirP
 
 func (c *windowsCertManager) createBackup() error {
 	if _, err := os.Stat(c.backupPath); os.IsNotExist(err) {
-		err = fs.MkdirAll(c.dirProvider.TmpDir(), os.FileMode(0777))
+		err = c.fs.MkdirAll(c.dirProvider.TmpDir(), os.FileMode(0777))
 		if err != nil {
 			return err
 		}
