@@ -66,6 +66,9 @@ type FakePlatform struct {
 	SetupTmpDirCalled bool
 	SetupTmpDirErr    error
 
+	SetupHomeDirCalled bool
+	SetupHomeDirErr    error
+
 	SetupNetworkingCalled   bool
 	SetupNetworkingNetworks boshsettings.Networks
 	SetupNetworkingErr      error
@@ -293,6 +296,11 @@ func (p *FakePlatform) SetupDataDir() error {
 func (p *FakePlatform) SetupTmpDir() error {
 	p.SetupTmpDirCalled = true
 	return p.SetupTmpDirErr
+}
+
+func (p *FakePlatform) SetupHomeDir() error {
+	p.SetupHomeDirCalled = true
+	return p.SetupHomeDirErr
 }
 
 func (p *FakePlatform) MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) (err error) {

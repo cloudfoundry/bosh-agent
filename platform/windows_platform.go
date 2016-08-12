@@ -191,6 +191,10 @@ func (p WindowsPlatform) SetupDataDir() error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupHomeDir() error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupTmpDir() error {
 	return nil
 }

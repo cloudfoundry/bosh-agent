@@ -7,6 +7,11 @@ type FakeMounter struct {
 	MountMountOptions   [][]string
 	MountErr            error
 
+	RemountInPlaceCalled       bool
+	RemountInPlaceMountPoint   string
+	RemountInPlaceMountOptions []string
+	RemountInPlaceErr          error
+
 	RemountAsReadonlyCalled bool
 	RemountAsReadonlyPath   string
 	RemountAsReadonlyErr    error
@@ -80,4 +85,11 @@ func (m *FakeMounter) IsMounted(devicePathOrMountPoint string) (bool, error) {
 
 func (m *FakeMounter) IsMountedArgsForCall(callNumber int) string {
 	return m.isMountedArgs[callNumber]
+}
+
+func (m *FakeMounter) RemountInPlace(mountPoint string, mountOptions ...string) error {
+	m.RemountInPlaceCalled = true
+	m.RemountInPlaceMountPoint = mountPoint
+	m.RemountInPlaceMountOptions = mountOptions
+	return m.RemountInPlaceErr
 }

@@ -1308,6 +1308,62 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
+	Describe("SetupHomeDir", func() {
+		act := func() error { return platform.SetupHomeDir() }
+
+		var mounter *fakedisk.FakeMounter
+		BeforeEach(func() {
+			mounter = diskManager.FakeMounter
+		})
+
+		Context("/home is not mounted", func() {
+			It("mounts the /home dir", func() {
+				err := act()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mounter.MountCalled).To(BeTrue())
+				Expect(mounter.MountPartitionPaths).To(ContainElement("/home"))
+				Expect(mounter.MountMountPoints).To(ContainElement("/home"))
+				Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
+				Expect(mounter.RemountInPlaceCalled).To(BeTrue())
+				Expect(mounter.RemountInPlaceMountPoint).To(Equal("/home"))
+				Expect(mounter.RemountInPlaceMountOptions).To(Equal([]string{"-o", "nodev"}))
+			})
+
+			It("return error if it cannot mount", func() {
+				mounter.MountErr = errors.New("fake-mount-error")
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
+				Expect(mounter.RemountInPlaceCalled).To(BeFalse())
+			})
+
+			It("return error if it cannot remount in place", func() {
+				mounter.RemountInPlaceErr = errors.New("fake-remount-error")
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-remount-error"))
+				Expect(mounter.MountCalled).To(BeTrue())
+			})
+		})
+
+		Context("/home is mounted", func() {
+			BeforeEach(func() {
+				mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+					if devicePathOrMountPoint == "/home" {
+						return true, nil
+					}
+					return false, nil
+				}
+			})
+			It("does no op", func() {
+				err := act()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mounter.MountCalled).To(BeFalse())
+				Expect(mounter.RemountInPlaceCalled).To(BeFalse())
+			})
+		})
+	})
+
 	Describe("SetupTmpDir", func() {
 		act := func() error { return platform.SetupTmpDir() }
 

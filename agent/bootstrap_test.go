@@ -214,6 +214,12 @@ func init() {
 				Expect(platform.SetupTmpDirCalled).To(BeTrue())
 			})
 
+			It("sets up /home dir", func() {
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupHomeDirCalled).To(BeTrue())
+			})
+
 			It("returns error if set up of tmp dir fails", func() {
 				platform.SetupTmpDirErr = errors.New("fake-setup-tmp-dir-err")
 				err := bootstrap()

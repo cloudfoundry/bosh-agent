@@ -692,6 +692,27 @@ func (p linux) setupRunDir(sysDir string) error {
 	return nil
 }
 
+func (p linux) SetupHomeDir() error {
+	mounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
+	isMounted, err := mounter.IsMounted("/home")
+	if err != nil {
+		return bosherr.WrapError(err, "Setup home dir, checking if mounted")
+	}
+	if !isMounted {
+		err := mounter.Mount("/home", "/home")
+		if err != nil {
+			p.logger.Error(logTag, "Can't bind /home to /home with -o bind")
+			return bosherr.WrapError(err, "Setup home dir, mounting home")
+		}
+		err = mounter.RemountInPlace("/home", "-o", "nodev")
+		if err != nil {
+			p.logger.Error(logTag, "Can't rebind /home to /home with -o remount,nodev")
+			return bosherr.WrapError(err, "Setup home dir, remount in place")
+		}
+	}
+	return nil
+}
+
 func (p linux) SetupTmpDir() error {
 	systemTmpDir := "/tmp"
 	boshTmpDir := p.dirProvider.TmpDir()

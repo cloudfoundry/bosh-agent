@@ -190,6 +190,10 @@ func (p dummyPlatform) SetupTmpDir() error {
 	return nil
 }
 
+func (p dummyPlatform) SetupHomeDir() error {
+	return nil
+}
+
 func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error {
 	mounts, err := p.existingMounts()
 	if err != nil {
