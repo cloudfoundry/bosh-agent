@@ -177,7 +177,7 @@ func (p partedPartitioner) runPartedPrint(devicePath string) (stdout, stderr str
 	stdout, stderr, exitStatus, err = p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
 
 	// If the error is not having a partition table, create one
-	if err != nil && strings.Contains(err.Error(), "unrecognised disk label") {
+	if strings.Contains(stderr, "unrecognised disk label") {
 		stdout, stderr, exitStatus, err = p.getPartitionTable(devicePath)
 
 		if err != nil {
