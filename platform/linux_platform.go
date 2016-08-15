@@ -765,6 +765,14 @@ func (p linux) SetupTmpDir() error {
 	return nil
 }
 
+func (p linux) SetupLogDir() error {
+	return nil
+}
+
+func (p linux) SetupLoggingAndAuditing() error {
+	return nil
+}
+
 func (p linux) mountTmpDir(mountSource, mountPoint string) error {
 	bindMounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
 	mounted, err := bindMounter.IsMounted(mountPoint)
