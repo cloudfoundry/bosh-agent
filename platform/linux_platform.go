@@ -795,6 +795,10 @@ func (p linux) SetupLogDir() error {
 }
 
 func (p linux) SetupLoggingAndAuditing() error {
+	_, _, _, err := p.cmdRunner.RunCommand("/var/vcap/bosh/bin/start_logging_and_auditing.sh")
+	if err != nil {
+		return bosherr.WrapError(err, "Running start logging and audit script")
+	}
 	return nil
 }
 

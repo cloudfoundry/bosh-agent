@@ -1741,6 +1741,40 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
+	Describe("SetupLoggingAndAuditing", func() {
+		act := func() error {
+			return platform.SetupLoggingAndAuditing()
+		}
+
+		Context("when logging and auditing startup script runs successfully", func() {
+			BeforeEach(func() {
+				fakeResult := fakesys.FakeCmdResult{Error:nil}
+				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
+			})
+
+			It("returns no error", func() {
+				err := act()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/start_logging_and_auditing.sh"}))
+			})
+		})
+
+		Context("when logging and auditing startup script runs successfully", func() {
+			BeforeEach(func() {
+				fakeResult := fakesys.FakeCmdResult{Error:errors.New("FAIL")}
+				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
+			})
+
+			It("returns an error", func() {
+				err := act()
+
+				Expect(err).To(HaveOccurred())
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/start_logging_and_auditing.sh"}))
+			})
+		})
+	})
+
 	Describe("MountPersistentDisk", func() {
 		act := func() error {
 			return platform.MountPersistentDisk(
