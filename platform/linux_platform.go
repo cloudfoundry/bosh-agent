@@ -774,10 +774,16 @@ func (p linux) SetupLogDir() error {
 		return bosherr.WrapError(err, "Creating root tmp dir")
 	}
 
-	// change permissions
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", boshRootLogPath)
+	auditDirPath := path.Join(boshRootLogPath, "audit")
+	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", auditDirPath)
 	if err != nil {
-		return bosherr.WrapError(err, "Chmoding root tmp dir")
+		return bosherr.WrapError(err, "Creating audit log dir")
+	}
+
+	// change permissions
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0755", boshRootLogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding root log dir")
 	}
 
 	// change ownership

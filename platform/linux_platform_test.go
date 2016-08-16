@@ -1665,18 +1665,24 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log"}))
 		})
 
+		It("creates an audit dir in root_log folder", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
+		})
+
 		It("changes permissions on the new bind mount folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_log"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0755", "/fake-dir/data/root_log"}))
 		})
 
 		It("changes ownership on the new bind mount folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "vcap:syslog", "/fake-dir/data/root_log"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "vcap:syslog", "/fake-dir/data/root_log"}))
 		})
 
 		Context("mounting root_log into /var/log", func() {
