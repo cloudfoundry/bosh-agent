@@ -752,12 +752,12 @@ func (p linux) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
 	}
 
-	err = p.mountTmpDir(boshRootTmpPath, systemTmpDir)
+	err = p.bindMountDir(boshRootTmpPath, systemTmpDir)
 	if err != nil {
 		return err
 	}
 
-	err = p.mountTmpDir(boshRootTmpPath, "/var/tmp")
+	err = p.bindMountDir(boshRootTmpPath, "/var/tmp")
 	if err != nil {
 		return err
 	}
@@ -766,6 +766,31 @@ func (p linux) SetupTmpDir() error {
 }
 
 func (p linux) SetupLogDir() error {
+	logDir := "/var/log"
+	boshRootLogPath := path.Join(p.dirProvider.DataDir(), "root_log")
+
+	_, _, _, err := p.cmdRunner.RunCommand("mkdir", "-p", boshRootLogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating root tmp dir")
+	}
+
+	// change permissions
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", boshRootLogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding root tmp dir")
+	}
+
+	// change ownership
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "vcap:syslog", boshRootLogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning root log dir")
+	}
+
+	err = p.bindMountDir(boshRootLogPath, logDir)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -773,7 +798,7 @@ func (p linux) SetupLoggingAndAuditing() error {
 	return nil
 }
 
-func (p linux) mountTmpDir(mountSource, mountPoint string) error {
+func (p linux) bindMountDir(mountSource, mountPoint string) error {
 	bindMounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
 	mounted, err := bindMounter.IsMounted(mountPoint)
 
