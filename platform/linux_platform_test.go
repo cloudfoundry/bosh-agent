@@ -37,13 +37,13 @@ func describeLinuxPlatform() {
 		fs                         *fakesys.FakeFileSystem
 		cmdRunner                  *fakesys.FakeCmdRunner
 		diskManager                *fakedisk.FakeDiskManager
-		dirProvider                boshdirs.Provider
+		dirProvider boshdirs.Provider
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
-		platform                   Platform
+		platform Platform
 		cdutil                     *fakedevutil.FakeDeviceUtil
-		compressor                 boshcmd.Compressor
-		copier                     boshcmd.Copier
-		vitalsService              boshvitals.Service
+		compressor boshcmd.Compressor
+		copier boshcmd.Copier
+		vitalsService boshvitals.Service
 		netManager                 *fakenet.FakeManager
 		certManager                *fakecert.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
@@ -53,7 +53,7 @@ func describeLinuxPlatform() {
 
 		state    *BootstrapState
 		stateErr error
-		options  LinuxOptions
+		options LinuxOptions
 
 		logger boshlog.Logger
 	)
@@ -562,7 +562,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		}
 
 		Context("when ephemeral disk path is provided", func() {
-			act := func() error { return platform.SetupEphemeralDiskWithPath("/dev/xvda") }
+			act := func() error {
+				return platform.SetupEphemeralDiskWithPath("/dev/xvda")
+			}
 
 			itSetsUpEphemeralDisk(act)
 
@@ -638,7 +640,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
 				memSizeInBytes := uint64(1024 * 1024 * 1024)
-				diskSizeInBytes := 2*memSizeInBytes + 64
+				diskSizeInBytes := 2 * memSizeInBytes + 64
 				fakePartitioner := partitioner
 				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
 				collector.MemStats.Total = memSizeInBytes
@@ -653,7 +655,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
 				memSizeInBytes := uint64(1024 * 1024 * 1024)
-				diskSizeInBytes := 2*memSizeInBytes - 64
+				diskSizeInBytes := 2 * memSizeInBytes - 64
 				fakePartitioner := partitioner
 				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
 				collector.MemStats.Total = memSizeInBytes
@@ -668,7 +670,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		})
 
 		Context("when ephemeral disk path is not provided", func() {
-			act := func() error { return platform.SetupEphemeralDiskWithPath("") }
+			act := func() error {
+				return platform.SetupEphemeralDiskWithPath("")
+			}
 
 			Context("when agent should partition ephemeral disk on root disk", func() {
 				BeforeEach(func() {
@@ -727,7 +731,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 						Context("when root device has insufficient space for ephemeral partitions", func() {
 							BeforeEach(func() {
-								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024*1024*1024 - 1
+								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024 - 1
 								collector.MemStats.Total = 8
 							})
 
@@ -798,7 +802,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2*memSizeInBytes + 64
+								diskSizeInBytes := 2 * memSizeInBytes + 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -821,7 +825,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2*memSizeInBytes - 64
+								diskSizeInBytes := 2 * memSizeInBytes - 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -914,7 +918,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2*memSizeInBytes + 64
+								diskSizeInBytes := 2 * memSizeInBytes + 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -937,7 +941,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2*memSizeInBytes - 64
+								diskSizeInBytes := 2 * memSizeInBytes - 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -1309,7 +1313,9 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("SetupHomeDir", func() {
-		act := func() error { return platform.SetupHomeDir() }
+		act := func() error {
+			return platform.SetupHomeDir()
+		}
 
 		var mounter *fakedisk.FakeMounter
 		BeforeEach(func() {
@@ -1365,7 +1371,9 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("SetupTmpDir", func() {
-		act := func() error { return platform.SetupTmpDir() }
+		act := func() error {
+			return platform.SetupTmpDir()
+		}
 
 		var mounter *fakedisk.FakeMounter
 		BeforeEach(func() {
