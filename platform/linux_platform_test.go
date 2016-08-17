@@ -37,13 +37,13 @@ func describeLinuxPlatform() {
 		fs                         *fakesys.FakeFileSystem
 		cmdRunner                  *fakesys.FakeCmdRunner
 		diskManager                *fakedisk.FakeDiskManager
-		dirProvider boshdirs.Provider
+		dirProvider                boshdirs.Provider
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
-		platform Platform
+		platform                   Platform
 		cdutil                     *fakedevutil.FakeDeviceUtil
-		compressor boshcmd.Compressor
-		copier boshcmd.Copier
-		vitalsService boshvitals.Service
+		compressor                 boshcmd.Compressor
+		copier                     boshcmd.Copier
+		vitalsService              boshvitals.Service
 		netManager                 *fakenet.FakeManager
 		certManager                *fakecert.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
@@ -53,7 +53,7 @@ func describeLinuxPlatform() {
 
 		state    *BootstrapState
 		stateErr error
-		options LinuxOptions
+		options  LinuxOptions
 
 		logger boshlog.Logger
 	)
@@ -640,7 +640,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
 				memSizeInBytes := uint64(1024 * 1024 * 1024)
-				diskSizeInBytes := 2 * memSizeInBytes + 64
+				diskSizeInBytes := 2*memSizeInBytes + 64
 				fakePartitioner := partitioner
 				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
 				collector.MemStats.Total = memSizeInBytes
@@ -655,7 +655,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
 				memSizeInBytes := uint64(1024 * 1024 * 1024)
-				diskSizeInBytes := 2 * memSizeInBytes - 64
+				diskSizeInBytes := 2*memSizeInBytes - 64
 				fakePartitioner := partitioner
 				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
 				collector.MemStats.Total = memSizeInBytes
@@ -731,7 +731,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 						Context("when root device has insufficient space for ephemeral partitions", func() {
 							BeforeEach(func() {
-								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024 - 1
+								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024*1024*1024 - 1
 								collector.MemStats.Total = 8
 							})
 
@@ -802,7 +802,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2 * memSizeInBytes + 64
+								diskSizeInBytes := 2*memSizeInBytes + 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -825,7 +825,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2 * memSizeInBytes - 64
+								diskSizeInBytes := 2*memSizeInBytes - 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -918,7 +918,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2 * memSizeInBytes + 64
+								diskSizeInBytes := 2*memSizeInBytes + 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -941,7 +941,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
 								memSizeInBytes := uint64(1024 * 1024 * 1024)
-								diskSizeInBytes := 2 * memSizeInBytes - 64
+								diskSizeInBytes := 2*memSizeInBytes - 64
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 								collector.MemStats.Total = memSizeInBytes
 
@@ -1662,27 +1662,27 @@ Number  Start   End     Size    File system  Name             Flags
 		It("creates a root_log folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log"}))
+			Expect(fs.GetFileTestStat("/fake-dir/data/root_log").FileType).To(Equal(fakesys.FakeFileTypeDir))
 		})
 
 		It("creates an audit dir in root_log folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
 		})
 
 		It("changes permissions on the new bind mount folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0755", "/fake-dir/data/root_log"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0775", "/fake-dir/data/root_log"}))
 		})
 
 		It("changes ownership on the new bind mount folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "vcap:syslog", "/fake-dir/data/root_log"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "vcap:syslog", "/fake-dir/data/root_log"}))
 		})
 
 		Context("mounting root_log into /var/log", func() {
@@ -1754,7 +1754,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 		Context("when logging and auditing startup script runs successfully", func() {
 			BeforeEach(func() {
-				fakeResult := fakesys.FakeCmdResult{Error:nil}
+				fakeResult := fakesys.FakeCmdResult{Error: nil}
 				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
 			})
 
@@ -1768,7 +1768,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 		Context("when logging and auditing startup script runs successfully", func() {
 			BeforeEach(func() {
-				fakeResult := fakesys.FakeCmdResult{Error:errors.New("FAIL")}
+				fakeResult := fakesys.FakeCmdResult{Error: errors.New("FAIL")}
 				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
 			})
 

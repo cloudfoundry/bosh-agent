@@ -32,10 +32,11 @@ const (
 	ephemeralDiskPermissions  = os.FileMode(0750)
 	persistentDiskPermissions = os.FileMode(0700)
 
-	logDirPermissions      = os.FileMode(0750)
-	runDirPermissions      = os.FileMode(0750)
-	userBaseDirPermissions = os.FileMode(0755)
-	tmpDirPermissions      = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
+	logDirPermissions         = os.FileMode(0750)
+	runDirPermissions         = os.FileMode(0750)
+	userBaseDirPermissions    = os.FileMode(0755)
+	userRootLogDirPermissions = os.FileMode(0755)
+	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
 
 	sshDirPermissions          = os.FileMode(0700)
 	sshAuthKeysFilePermissions = os.FileMode(0600)
@@ -769,7 +770,7 @@ func (p linux) SetupLogDir() error {
 	logDir := "/var/log"
 	boshRootLogPath := path.Join(p.dirProvider.DataDir(), "root_log")
 
-	_, _, _, err := p.cmdRunner.RunCommand("mkdir", "-p", boshRootLogPath)
+	err := p.fs.MkdirAll(boshRootLogPath, userRootLogDirPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating root tmp dir")
 	}
@@ -781,7 +782,7 @@ func (p linux) SetupLogDir() error {
 	}
 
 	// change permissions
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0755", boshRootLogPath)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0775", boshRootLogPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Chmoding root log dir")
 	}
