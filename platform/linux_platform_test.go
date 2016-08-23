@@ -562,7 +562,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		}
 
 		Context("when ephemeral disk path is provided", func() {
-			act := func() error { return platform.SetupEphemeralDiskWithPath("/dev/xvda") }
+			act := func() error {
+				return platform.SetupEphemeralDiskWithPath("/dev/xvda")
+			}
 
 			itSetsUpEphemeralDisk(act)
 
@@ -668,7 +670,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		})
 
 		Context("when ephemeral disk path is not provided", func() {
-			act := func() error { return platform.SetupEphemeralDiskWithPath("") }
+			act := func() error {
+				return platform.SetupEphemeralDiskWithPath("")
+			}
 
 			Context("when agent should partition ephemeral disk on root disk", func() {
 				BeforeEach(func() {
@@ -1309,7 +1313,9 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("SetupHomeDir", func() {
-		act := func() error { return platform.SetupHomeDir() }
+		act := func() error {
+			return platform.SetupHomeDir()
+		}
 
 		var mounter *fakedisk.FakeMounter
 		BeforeEach(func() {
@@ -1365,7 +1371,9 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("SetupTmpDir", func() {
-		act := func() error { return platform.SetupTmpDir() }
+		act := func() error {
+			return platform.SetupTmpDir()
+		}
 
 		var mounter *fakedisk.FakeMounter
 		BeforeEach(func() {
@@ -1637,6 +1645,138 @@ Number  Start   End     Size    File system  Name             Flags
 			It("does not try to mount anything", func() {
 				act()
 				Expect(len(mounter.MountPartitionPaths)).To(Equal(0))
+			})
+		})
+	})
+
+	Describe("SetupLogDir", func() {
+		act := func() error {
+			return platform.SetupLogDir()
+		}
+
+		var mounter *fakedisk.FakeMounter
+		BeforeEach(func() {
+			mounter = diskManager.FakeMounter
+		})
+
+		It("creates a root_log folder", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fs.GetFileTestStat("/fake-dir/data/root_log").FileType).To(Equal(fakesys.FakeFileTypeDir))
+		})
+
+		It("creates an audit dir in root_log folder", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
+		})
+
+		It("changes permissions on the new bind mount folder", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0775", "/fake-dir/data/root_log"}))
+		})
+
+		It("changes ownership on the new bind mount folder", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "vcap:syslog", "/fake-dir/data/root_log"}))
+		})
+
+		Context("mounting root_log into /var/log", func() {
+			Context("when /var/log is not a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointResult = false
+				})
+
+				It("bind mounts it in /var/log", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_log"))
+					Expect(mounter.MountMountPoints).To(ContainElement("/var/log"))
+					Expect(mounter.MountMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"}))
+				})
+			})
+
+			Context("when /var/log is a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+						if devicePathOrMountPoint == "/var/log" {
+							return true, nil
+						}
+						return false, nil
+					}
+				})
+
+				It("returns without an error", func() {
+					err := act()
+					Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/var/log"))
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("does not try to mount root_log into /var/log", func() {
+					act()
+					Expect(mounter.MountMountPoints).ToNot(ContainElement("/var/log"))
+				})
+			})
+
+			Context("when /var/log cannot be determined if it is a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+						if devicePathOrMountPoint == "/var/log" {
+							return false, errors.New("fake-is-mounted-error")
+						}
+						return false, nil
+					}
+				})
+
+				It("returns error", func() {
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
+				})
+
+				It("does not try to mount /tmp", func() {
+					act()
+					Expect(mounter.MountMountPoints).ToNot(ContainElement("/var/log"))
+				})
+			})
+		})
+	})
+
+	Describe("SetupLoggingAndAuditing", func() {
+		act := func() error {
+			return platform.SetupLoggingAndAuditing()
+		}
+
+		Context("when logging and auditing startup script runs successfully", func() {
+			BeforeEach(func() {
+				fakeResult := fakesys.FakeCmdResult{Error: nil}
+				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
+			})
+
+			It("returns no error", func() {
+				err := act()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/start_logging_and_auditing.sh"}))
+			})
+		})
+
+		Context("when logging and auditing startup script runs successfully", func() {
+			BeforeEach(func() {
+				fakeResult := fakesys.FakeCmdResult{Error: errors.New("FAIL")}
+				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
+			})
+
+			It("returns an error", func() {
+				err := act()
+
+				Expect(err).To(HaveOccurred())
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/start_logging_and_auditing.sh"}))
 			})
 		})
 	})
