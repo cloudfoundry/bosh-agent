@@ -194,14 +194,6 @@ func (p dummyPlatform) SetupHomeDir() error {
 	return nil
 }
 
-func (p dummyPlatform) SetupLogDir() error {
-	return nil
-}
-
-func (p dummyPlatform) SetupLoggingAndAuditing() error {
-	return nil
-}
-
 func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error {
 	mounts, err := p.existingMounts()
 	if err != nil {
