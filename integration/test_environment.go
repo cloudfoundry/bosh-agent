@@ -58,10 +58,8 @@ sudo umount /tmp/config-drive
 	return err
 }
 
-func (t *TestEnvironment) CleanupDataDir() error {
-	t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`)
-
-	mountPoints, err := t.RunCommand(`sudo mount | grep "on /var/vcap/data" | cut -d ' ' -f 3`)
+func (t *TestEnvironment) unmountDir(dir string) error {
+	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
 	if err != nil {
 		return err
 	}
@@ -72,8 +70,19 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		}
 	}
 
-	_, err = t.RunCommand("sudo rm -rf /var/vcap/data")
+	_, err = t.RunCommand(fmt.Sprintf("sudo rm -rf %s", dir))
 	return err
+}
+
+func (t *TestEnvironment) CleanupDataDir() error {
+	t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`)
+
+	err := t.unmountDir("/var/log")
+	if err != nil {
+		return err
+	}
+
+	return t.unmountDir("/var/vcap/data")
 }
 
 // ConfigureAgentForGenericInfrastructure executes the agent_runit.sh asset.

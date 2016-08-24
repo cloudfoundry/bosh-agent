@@ -768,11 +768,17 @@ func (p linux) SetupTmpDir() error {
 
 func (p linux) SetupLogDir() error {
 	logDir := "/var/log"
+
+	err := p.fs.MkdirAll(logDir, userRootLogDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating system log dir")
+	}
+
 	boshRootLogPath := path.Join(p.dirProvider.DataDir(), "root_log")
 
-	err := p.fs.MkdirAll(boshRootLogPath, userRootLogDirPermissions)
+	err = p.fs.MkdirAll(boshRootLogPath, userRootLogDirPermissions)
 	if err != nil {
-		return bosherr.WrapError(err, "Creating root tmp dir")
+		return bosherr.WrapError(err, "Creating root log dir")
 	}
 
 	auditDirPath := path.Join(boshRootLogPath, "audit")
