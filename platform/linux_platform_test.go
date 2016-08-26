@@ -1353,87 +1353,210 @@ Number  Start   End     Size    File system  Name             Flags
 			// uses os package; no way to trigger err
 		})
 
-		ItDoesNotTryToUseLoopDevice := func() {
-			It("does not create new tmp filesystem", func() {
-				act()
-				for _, cmd := range cmdRunner.RunCommands {
-					Expect(cmd[0]).ToNot(Equal("truncate"))
-					Expect(cmd[0]).ToNot(Equal("mke2fs"))
-				}
-			})
-
-			It("does not try to mount anything /tmp", func() {
-				act()
-				Expect(len(mounter.MountPartitionPaths)).To(Equal(0))
-			})
-		}
-
 		Context("when UseDefaultTmpDir option is set to false", func() {
 			BeforeEach(func() {
 				options.UseDefaultTmpDir = false
 			})
 
-			Context("when /tmp is not a mount point", func() {
-				BeforeEach(func() {
-					mounter.IsMountPointResult = false
+			It("creates a root_tmp folder", func() {
+				err := act()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
+			})
+
+			It("changes permissions on the new bind mount folder", func() {
+				err := act()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
+			})
+
+			Context("mounting root_tmp into /tmp", func() {
+				Context("when /tmp is not a mount point", func() {
+					BeforeEach(func() {
+						mounter.IsMountPointResult = false
+					})
+
+					It("bind mounts it in /tmp", func() {
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_tmp"))
+						Expect(mounter.MountMountPoints).To(ContainElement("/tmp"))
+						Expect(mounter.MountMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"}))
+					})
+
+					It("changes permissions for the system /tmp folder", func() {
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
+					})
 				})
 
-				It("creates a root_tmp folder", func() {
-					err := act()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
+				Context("when /tmp is a mount point", func() {
+					BeforeEach(func() {
+						mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+							if devicePathOrMountPoint == "/tmp" {
+								return true, nil
+							}
+							return false, nil
+						}
+					})
+
+					It("returns without an error", func() {
+						err := act()
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/tmp"))
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("does not create new tmp filesystem", func() {
+						act()
+						for _, cmd := range cmdRunner.RunCommands {
+							Expect(cmd[0]).ToNot(Equal("truncate"))
+							Expect(cmd[0]).ToNot(Equal("mke2fs"))
+						}
+					})
+
+					It("does not try to mount root_tmp into /tmp", func() {
+						act()
+						Expect(mounter.MountMountPoints).ToNot(ContainElement("/tmp"))
+					})
 				})
 
-				It("changes permissions on the new bind mount folder", func() {
-					err := act()
-					Expect(err).NotTo(HaveOccurred())
+				Context("when /tmp cannot be determined if it is a mount point", func() {
+					BeforeEach(func() {
+						mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+							if devicePathOrMountPoint == "/tmp" {
+								return false, errors.New("fake-is-mounted-error")
+							}
+							return false, nil
+						}
+					})
 
-					Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
-				})
+					It("returns error", func() {
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
+					})
 
-				It("bind mounts it in /tmp", func() {
-					err := act()
-					Expect(err).NotTo(HaveOccurred())
+					It("does not create new tmp filesystem", func() {
+						act()
+						for _, cmd := range cmdRunner.RunCommands {
+							Expect(cmd[0]).ToNot(Equal("truncate"))
+							Expect(cmd[0]).ToNot(Equal("mke2fs"))
+						}
+					})
 
-					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
-					Expect(mounter.MountPartitionPaths[0]).To(Equal("/fake-dir/data/root_tmp"))
-					Expect(mounter.MountMountOptions[0]).To(ConsistOf("-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"))
-				})
-
-				It("changes permissions for the system /tmp folder", func() {
-					err := act()
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
+					It("does not try to mount /tmp", func() {
+						act()
+						Expect(mounter.MountMountPoints).ToNot(ContainElement("/tmp"))
+					})
 				})
 			})
 
-			Context("when /tmp is a mount point", func() {
-				BeforeEach(func() {
-					mounter.IsMountedResult = true
+			Context("mounting root_tmp into /var/tmp", func() {
+				Context("when /var/tmp is not a mount point", func() {
+					BeforeEach(func() {
+						mounter.IsMountedResult = false
+					})
+
+					It("bind mounts it in /var/tmp", func() {
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(len(mounter.MountPartitionPaths)).To(Equal(2))
+						Expect(mounter.MountPartitionPaths[1]).To(Equal("/fake-dir/data/root_tmp"))
+						Expect(mounter.MountMountPoints[1]).To(Equal("/var/tmp"))
+						Expect(mounter.MountMountOptions[1]).To(ConsistOf("-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"))
+					})
+
+					It("changes permissions for the system /var/tmp folder", func() {
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"chown", "root:vcap", "/var/tmp"}))
+					})
 				})
 
-				It("returns without an error", func() {
+				Context("when /var/tmp is a mount point", func() {
+					BeforeEach(func() {
+						mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+							if devicePathOrMountPoint == "/var/tmp" {
+								return true, nil
+							}
+							return false, nil
+						}
+					})
+
+					It("returns without an error", func() {
+						err := act()
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/tmp"))
+						Expect(mounter.IsMountedArgsForCall(1)).To(Equal("/var/tmp"))
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("does not create new tmp filesystem", func() {
+						act()
+						for _, cmd := range cmdRunner.RunCommands {
+							Expect(cmd[0]).ToNot(Equal("truncate"))
+							Expect(cmd[0]).ToNot(Equal("mke2fs"))
+						}
+					})
+
+					It("does not try to mount root_tmp into /var/tmp", func() {
+						act()
+						Expect(mounter.MountMountPoints).ToNot(ContainElement("/var/tmp"))
+					})
+				})
+
+				Context("when /var/tmp cannot be determined if it is a mount point", func() {
+					BeforeEach(func() {
+						mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+							if devicePathOrMountPoint == "/var/tmp" {
+								return false, errors.New("fake-is-mounted-error")
+							}
+							return false, nil
+						}
+					})
+
+					It("returns error", func() {
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
+					})
+
+					It("does not create new tmp filesystem", func() {
+						act()
+						for _, cmd := range cmdRunner.RunCommands {
+							Expect(cmd[0]).ToNot(Equal("truncate"))
+							Expect(cmd[0]).ToNot(Equal("mke2fs"))
+						}
+					})
+
+					It("does not try to mount /var/tmp", func() {
+						act()
+						Expect(mounter.MountMountPoints).ToNot(ContainElement("/var/tmp"))
+					})
+				})
+			})
+
+			Context("mounting after agent has been restarted", func() {
+				BeforeEach(func() {
+					mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+						if devicePathOrMountPoint == "/tmp" {
+							return true, nil
+						}
+						return false, nil
+					}
+				})
+
+				It("mounts unmounted tmp dirs", func() {
 					err := act()
-					Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal("/tmp"))
 					Expect(err).ToNot(HaveOccurred())
+					Expect(mounter.MountMountPoints).To(ContainElement("/var/tmp"))
+					Expect(mounter.MountMountPoints).ToNot(ContainElement("/tmp"))
 				})
-
-				ItDoesNotTryToUseLoopDevice()
-			})
-
-			Context("when /tmp cannot be determined if it is a mount point", func() {
-				BeforeEach(func() {
-					mounter.IsMountedErr = errors.New("fake-is-mounted-error")
-				})
-
-				It("returns error", func() {
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
-				})
-
-				ItDoesNotTryToUseLoopDevice()
 			})
 		})
 
@@ -1447,7 +1570,18 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			ItDoesNotTryToUseLoopDevice()
+			It("does not create new tmp filesystem", func() {
+				act()
+				for _, cmd := range cmdRunner.RunCommands {
+					Expect(cmd[0]).ToNot(Equal("truncate"))
+					Expect(cmd[0]).ToNot(Equal("mke2fs"))
+				}
+			})
+
+			It("does not try to mount anything", func() {
+				act()
+				Expect(len(mounter.MountPartitionPaths)).To(Equal(0))
+			})
 		})
 	})
 
@@ -2000,7 +2134,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeTrue())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 
 					It("returns false if mount point does not exist", func() {
@@ -2009,7 +2143,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 
@@ -2022,7 +2156,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-err"))
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 			}
@@ -2045,7 +2179,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeTrue())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 
 					It("returns false if mount point does not exist", func() {
@@ -2054,7 +2188,7 @@ Number  Start   End     Size    File system  Name             Flags
 						isMounted, err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 
@@ -2067,7 +2201,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-err"))
 						Expect(isMounted).To(BeFalse())
-						Expect(mounter.IsMountedDevicePathOrMountPoint).To(Equal(expectedCheckedMountPoint))
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
 					})
 				})
 			}
