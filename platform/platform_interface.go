@@ -41,6 +41,8 @@ type Platform interface {
 	SetupMonitUser() (err error)
 	StartMonit() (err error)
 	SetupRuntimeConfiguration() (err error)
+	SetupLogDir() (err error)
+	SetupLoggingAndAuditing() (err error)
 
 	// Disk management
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error

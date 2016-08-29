@@ -33,6 +33,7 @@ Vagrant.configure('2') do |config|
   config.vm.provision :shell, inline: "chmod 777 /var/vcap/sys/log/cpi"
 
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-go.sh"
+  config.vm.provision :shell, inline: "sudo cp #{agent_dir}/integration/assets/bosh-start-logging-and-auditing /var/vcap/bosh/bin/bosh-start-logging-and-auditing"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-agent.sh"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-fake-registry.sh"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/disable_growpart.sh"

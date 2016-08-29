@@ -32,10 +32,11 @@ const (
 	ephemeralDiskPermissions  = os.FileMode(0750)
 	persistentDiskPermissions = os.FileMode(0700)
 
-	logDirPermissions      = os.FileMode(0750)
-	runDirPermissions      = os.FileMode(0750)
-	userBaseDirPermissions = os.FileMode(0755)
-	tmpDirPermissions      = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
+	logDirPermissions         = os.FileMode(0750)
+	runDirPermissions         = os.FileMode(0750)
+	userBaseDirPermissions    = os.FileMode(0755)
+	userRootLogDirPermissions = os.FileMode(0755)
+	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
 
 	sshDirPermissions          = os.FileMode(0700)
 	sshAuthKeysFilePermissions = os.FileMode(0600)
@@ -736,12 +737,12 @@ func (p linux) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
 	}
 
-	err = p.mountTmpDir(boshRootTmpPath, systemTmpDir)
+	err = p.bindMountDir(boshRootTmpPath, systemTmpDir)
 	if err != nil {
 		return err
 	}
 
-	err = p.mountTmpDir(boshRootTmpPath, "/var/tmp")
+	err = p.bindMountDir(boshRootTmpPath, "/var/tmp")
 	if err != nil {
 		return err
 	}
@@ -749,7 +750,56 @@ func (p linux) SetupTmpDir() error {
 	return nil
 }
 
-func (p linux) mountTmpDir(mountSource, mountPoint string) error {
+func (p linux) SetupLogDir() error {
+	logDir := "/var/log"
+
+	err := p.fs.MkdirAll(logDir, userRootLogDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating system log dir")
+	}
+
+	boshRootLogPath := path.Join(p.dirProvider.DataDir(), "root_log")
+
+	err = p.fs.MkdirAll(boshRootLogPath, userRootLogDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating root log dir")
+	}
+
+	auditDirPath := path.Join(boshRootLogPath, "audit")
+	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", auditDirPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating audit log dir")
+	}
+
+	// change permissions
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0775", boshRootLogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding root log dir")
+	}
+
+	// change ownership
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "vcap:syslog", boshRootLogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning root log dir")
+	}
+
+	err = p.bindMountDir(boshRootLogPath, logDir)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p linux) SetupLoggingAndAuditing() error {
+	_, _, _, err := p.cmdRunner.RunCommand("/var/vcap/bosh/bin/bosh-start-logging-and-auditing")
+	if err != nil {
+		return bosherr.WrapError(err, "Running start logging and audit script")
+	}
+	return nil
+}
+
+func (p linux) bindMountDir(mountSource, mountPoint string) error {
 	bindMounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
 	mounted, err := bindMounter.IsMounted(mountPoint)
 
