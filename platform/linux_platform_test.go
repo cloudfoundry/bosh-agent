@@ -1755,28 +1755,28 @@ Number  Start   End     Size    File system  Name             Flags
 		Context("when logging and auditing startup script runs successfully", func() {
 			BeforeEach(func() {
 				fakeResult := fakesys.FakeCmdResult{Error: nil}
-				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
+				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/bosh-start-logging-and-auditing", fakeResult)
 			})
 
 			It("returns no error", func() {
 				err := act()
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/start_logging_and_auditing.sh"}))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/bosh-start-logging-and-auditing"}))
 			})
 		})
 
 		Context("when logging and auditing startup script runs successfully", func() {
 			BeforeEach(func() {
 				fakeResult := fakesys.FakeCmdResult{Error: errors.New("FAIL")}
-				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/start_logging_and_auditing.sh", fakeResult)
+				cmdRunner.AddCmdResult("/var/vcap/bosh/bin/bosh-start-logging-and-auditing", fakeResult)
 			})
 
 			It("returns an error", func() {
 				err := act()
 
 				Expect(err).To(HaveOccurred())
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/start_logging_and_auditing.sh"}))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/bosh-start-logging-and-auditing"}))
 			})
 		})
 	})
