@@ -20,9 +20,11 @@ import (
 )
 
 const (
-	agentGUID = "123-456-789"
-	agentID   = "agent." + agentGUID
-	senderID  = "director.987-654-321"
+	agentGUID       = "123-456-789"
+	agentID         = "agent." + agentGUID
+	senderID        = "director.987-654-321"
+	DefaultTimeout  = time.Second * 30
+	DefaultInterval = time.Second
 )
 
 func natsURI() string {
@@ -69,7 +71,7 @@ var _ = Describe("An Agent running on Windows", func() {
 			return string(response), err
 		}
 
-		Eventually(testPing, 30*time.Second, 1*time.Second).Should(Equal(`{"value":"pong"}`))
+		Eventually(testPing, DefaultTimeout, DefaultInterval).Should(Equal(`{"value":"pong"}`))
 	})
 
 	AfterEach(func() {
@@ -80,7 +82,6 @@ var _ = Describe("An Agent running on Windows", func() {
 		getStateSpecAgentID := func() string {
 			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
 			rawResponse, err := natsClient.SendRawMessage(message)
-			Expect(err).NotTo(HaveOccurred())
 
 			response := map[string]action.GetStateV1ApplySpec{}
 			err = json.Unmarshal(rawResponse, &response)
@@ -89,7 +90,7 @@ var _ = Describe("An Agent running on Windows", func() {
 			return response["value"].AgentID
 		}
 
-		Eventually(getStateSpecAgentID, 30*time.Second, 1*time.Second).Should(Equal(agentGUID))
+		Eventually(getStateSpecAgentID, DefaultTimeout, DefaultInterval).Should(Equal(agentGUID))
 	})
 
 	It("can run a run_errand action", func() {
@@ -99,7 +100,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		runErrandCheck := natsClient.CheckErrandResultStatus(runErrandResponse["value"]["agent_task_id"])
-		Eventually(runErrandCheck, 30*time.Second, 1*time.Second).Should(Equal(action.ErrandResult{
+		Eventually(runErrandCheck, DefaultTimeout, DefaultInterval).Should(Equal(action.ErrandResult{
 			Stdout:     "hello world\r\n",
 			ExitStatus: 0,
 		}))
@@ -165,7 +166,9 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(runStartResponse["value"]).To(Equal("started"))
 
-		Eventually(func() string { return natsClient.GetState().JobState }, 30*time.Second, 1*time.Second).Should(Equal("failing"))
+		Eventually(func() string {
+			return natsClient.GetState().JobState
+		}, DefaultTimeout, DefaultInterval).Should(Equal("failing"))
 
 		Eventually(func() (string, error) {
 			alert, err := natsClient.GetNextAlert(10 * time.Second)
@@ -257,9 +260,9 @@ var _ = Describe("An Agent running on Windows", func() {
 			}
 		}
 
-		Eventually(getNetworkProperty("ip"), 30*time.Second, 1*time.Second).ShouldNot(BeEmpty())
-		Eventually(getNetworkProperty("gateway"), 30*time.Second, 1*time.Second).ShouldNot(BeEmpty())
-		Eventually(getNetworkProperty("netmask"), 30*time.Second, 1*time.Second).ShouldNot(BeEmpty())
+		Eventually(getNetworkProperty("ip"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
+		Eventually(getNetworkProperty("gateway"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
+		Eventually(getNetworkProperty("netmask"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
 	})
 
 	It("can compile longpath complex pakcage", func() {

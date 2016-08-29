@@ -151,6 +151,9 @@ const (
 	`
 )
 
+const DefaultNatsTimeout = time.Second * 15
+const DefaultTaskTimeout = time.Second * 30
+
 type NatCommand struct {
 	Protocol  int           `json:"protocol"`
 	Method    string        `json:"method"`
@@ -365,7 +368,7 @@ func (n *NatsClient) RunDrain() error {
 		return err
 	}
 
-	taskResponse, err := n.WaitForTask(drainResponse["value"]["agent_task_id"], time.Second*30)
+	taskResponse, err := n.WaitForTask(drainResponse["value"]["agent_task_id"], DefaultTaskTimeout)
 	magicNumber, ok := taskResponse.Value.(float64)
 	if !ok {
 		return fmt.Errorf("RunDrain got invalid taskResponse %s", reflect.TypeOf(taskResponse.Value))
@@ -382,7 +385,7 @@ func (n *NatsClient) RunScript(scriptName string) error {
 		return err
 	}
 
-	_, err = n.WaitForTask(response["value"]["agent_task_id"], 30*time.Second)
+	_, err = n.WaitForTask(response["value"]["agent_task_id"], DefaultTaskTimeout)
 
 	return err
 }
@@ -458,7 +461,7 @@ func (n *NatsClient) FetchLogs(destinationDir string) {
 		return fetchLogsResult, nil
 	}
 
-	Eventually(fetchLogsCheckFunc, 30*time.Second, 1*time.Second).Should(HaveKey("blobstore_id"))
+	Eventually(fetchLogsCheckFunc, DefaultTimeout, DefaultInterval).Should(HaveKey("blobstore_id"))
 
 	fetchedLogFile := filepath.Join(destinationDir, "log.tgz")
 	err = n.blobstoreClient.Get(fetchLogsResult["blobstore_id"], fetchedLogFile)
@@ -500,7 +503,7 @@ func (n *NatsClient) SendRawMessageWithTimeout(message string, timeout time.Dura
 }
 
 func (n *NatsClient) SendRawMessage(message string) ([]byte, error) {
-	return n.SendRawMessageWithTimeout(message, 5*time.Second)
+	return n.SendRawMessageWithTimeout(message, DefaultNatsTimeout)
 }
 
 func (n *NatsClient) SendMessage(message string) (map[string]map[string]string, error) {
