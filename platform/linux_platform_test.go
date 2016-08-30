@@ -1034,7 +1034,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		Context("when ScrubEphemeralDisk is true", func() {
 			BeforeEach(func() {
 				options.ScrubEphemeralDisk = true
-				fs.WriteFileString(path.Join(dirProvider.BaseDir(), "bosh", "etc", "stemcell_version"), "1235")
+				fs.WriteFileString(path.Join(dirProvider.EtcDir(), "stemcell_version"), "1235")
 				fs.WriteFileString(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"), "1234")
 			})
 
@@ -1044,7 +1044,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			Context("when stemcell_version file does not exist", func() {
 				BeforeEach(func() {
-					fs.RemoveAll(path.Join(dirProvider.BaseDir(), "bosh", "etc", "stemcell_version"))
+					fs.RemoveAll(path.Join(dirProvider.EtcDir(), "stemcell_version"))
 				})
 
 				It("returns error", func() {
@@ -1088,7 +1088,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 					Context("when agent version is same with stemcell version", func() {
 						BeforeEach(func() {
-							fs.WriteFileString(path.Join(dirProvider.BaseDir(), "bosh", "etc", "stemcell_version"), "1236")
+							fs.WriteFileString(path.Join(dirProvider.EtcDir(), "stemcell_version"), "1236")
 							fs.WriteFileString(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"), "1236")
 						})
 
@@ -1098,7 +1098,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 							agentVersionStats := fs.GetFileTestStat(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"))
 							Expect(agentVersionStats).ToNot(BeNil())
-							stemcellVersionStats := fs.GetFileTestStat(path.Join(dirProvider.BaseDir(), "bosh", "etc", "stemcell_version"))
+							stemcellVersionStats := fs.GetFileTestStat(path.Join(dirProvider.EtcDir(), "stemcell_version"))
 							Expect(stemcellVersionStats).ToNot(BeNil())
 							Expect(agentVersionStats.StringContents()).To(Equal(stemcellVersionStats.StringContents()))
 						})
@@ -1106,7 +1106,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 					Context("when agent version differs with stemcell version", func() {
 						BeforeEach(func() {
-							fs.WriteFileString(path.Join(dirProvider.BaseDir(), "bosh", "etc", "stemcell_version"), "1239")
+							fs.WriteFileString(path.Join(dirProvider.EtcDir(), "stemcell_version"), "1239")
 							fs.WriteFileString(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"), "1238")
 							fs.SetGlob(path.Join("/fake-dir", "data", "", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
 						})
