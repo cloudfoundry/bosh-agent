@@ -327,7 +327,7 @@ var _ = Describe("FileBundle", func() {
 
 		Context("when the symlink cannot be read", func() {
 			It("returns error because we cannot determine if bundle is enabled or disabled", func() {
-				fs.ReadLinkError = errors.New("fake-read-link-error")
+				fs.ReadAndFollowLinkError = errors.New("fake-read-link-error")
 
 				err := fileBundle.Disable()
 				Expect(err).To(HaveOccurred())

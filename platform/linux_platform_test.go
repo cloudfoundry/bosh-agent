@@ -2520,7 +2520,7 @@ unit: sectors
 		It("creates a symlink between /etc/service/monit and /etc/sv/monit", func() {
 			err := platform.StartMonit()
 			Expect(err).NotTo(HaveOccurred())
-			target, _ := fs.ReadLink(path.Join("/etc", "service", "monit"))
+			target, _ := fs.ReadAndFollowLink(path.Join("/etc", "service", "monit"))
 			Expect(target).To(Equal(path.Join("/etc", "sv", "monit")))
 		})
 

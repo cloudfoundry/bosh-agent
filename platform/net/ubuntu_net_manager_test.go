@@ -257,7 +257,7 @@ nameserver 9.9.9.9
 
 				Context("when could not read link /etc/resolv.conf", func() {
 					It("fails reporting error", func() {
-						fs.ReadLinkError = errors.New("fake-read-link-error")
+						fs.ReadAndFollowLinkError = errors.New("fake-read-link-error")
 
 						err := netManager.SetupNetworking(networks, nil)
 						Expect(err).To(HaveOccurred())
@@ -298,7 +298,9 @@ nameserver 9.9.9.9
 			It("forces /etc/resolv.conf to be a symlink", func() {
 				err := netManager.SetupNetworking(networks, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(fs.ReadLink("/etc/resolv.conf")).To(Equal("/run/resolvconf/resolv.conf"))
+				linkContents, err := fs.Readlink("/etc/resolv.conf")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(linkContents).To(Equal("/run/resolvconf/resolv.conf"))
 			})
 
 			Context("when symlink command fails", func() {

@@ -140,6 +140,51 @@ var _ = Describe("tarballCompressor", func() {
 		})
 	})
 
+	Describe("CompressSpecificFilesInDir", func() {
+		It("compresses the given files in the given directory", func() {
+			srcDir := fixtureSrcDir()
+			files := []string{
+				"app.stdout.log",
+				"some_directory/",
+				"app.stderr.log",
+			}
+			tgzName, err := compressor.CompressSpecificFilesInDir(srcDir, files)
+			Expect(err).ToNot(HaveOccurred())
+			defer os.Remove(tgzName)
+
+			tarballContents, _, _, err := cmdRunner.RunCommand("tar", "-tf", tgzName)
+			Expect(err).ToNot(HaveOccurred())
+
+			contentElements := strings.Split(strings.TrimSpace(tarballContents), "\n")
+
+			Expect(contentElements).To(Equal([]string{
+				"app.stdout.log",
+				"some_directory/",
+				"some_directory/sub_dir/",
+				"some_directory/sub_dir/other_sub_dir/",
+				"some_directory/sub_dir/other_sub_dir/.keep",
+				"app.stderr.log",
+			}))
+
+			_, _, _, err = cmdRunner.RunCommand("cp", tgzName, "/tmp")
+
+			_, _, _, err = cmdRunner.RunCommand("tar", "-xzpf", tgzName, "-C", dstDir)
+			Expect(err).ToNot(HaveOccurred())
+
+			content, err := fs.ReadFileString(dstDir + "/app.stdout.log")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(content).To(ContainSubstring("this is app stdout"))
+
+			content, err = fs.ReadFileString(dstDir + "/app.stderr.log")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(content).To(ContainSubstring("this is app stderr"))
+
+			content, err = fs.ReadFileString(dstDir + "/some_directory/sub_dir/other_sub_dir/.keep")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(content).To(ContainSubstring("this is a .keep file"))
+		})
+	})
+
 	Describe("DecompressFileToDir", func() {
 		It("decompresses the file to the given directory", func() {
 			err := compressor.DecompressFileToDir(fixtureSrcTgz(), dstDir, CompressorOptions{})

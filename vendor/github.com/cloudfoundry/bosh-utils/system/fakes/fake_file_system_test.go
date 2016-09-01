@@ -173,4 +173,128 @@ var _ = Describe("FakeFileSystem", func() {
 			Expect(len(matches)).To(Equal(2))
 		})
 	})
+
+	Describe("Symlink", func() {
+		It("creates", func() {
+			err := fs.Symlink("foobarbaz", "foobar")
+			Expect(err).ToNot(HaveOccurred())
+
+			stat, err := fs.Lstat("foobar")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(stat.Mode() & os.ModeSymlink).ToNot(Equal(0))
+		})
+	})
+
+	Describe("ReadAndFollowLink", func() {
+		Context("when the target exists", func() {
+			It("returns the target", func() {
+				err := fs.WriteFileString("foobarbaz", "asdfghjk")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.Symlink("foobarbaz", "foobar")
+				Expect(err).ToNot(HaveOccurred())
+
+				targetPath, err := fs.ReadAndFollowLink("foobar")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(targetPath).To(Equal("foobarbaz"))
+			})
+		})
+
+		Context("when the target file does not exist", func() {
+			It("returns an error", func() {
+				err := fs.Symlink("non-existant-target", "foobar")
+				Expect(err).ToNot(HaveOccurred())
+
+				targetPath, err := fs.ReadAndFollowLink("foobar")
+				Expect(err).To(HaveOccurred())
+				Expect(targetPath).To(Equal("non-existant-target"))
+			})
+		})
+	})
+
+	Describe("Readlink", func() {
+		Context("when the given 'link' is a regular file", func() {
+			It("returns an error", func() {
+				err := fs.WriteFileString("foobar", "notalink")
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = fs.Readlink("foobar")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when the link does not exist", func() {
+			It("returns an error", func() {
+				_, err := fs.Readlink("foobar")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when the target path does not exist", func() {
+			It("returns the target path without error", func() {
+				err := fs.Symlink("foobarTarget", "foobarSymlink")
+				Expect(err).ToNot(HaveOccurred())
+
+				targetPath, err := fs.Readlink("foobarSymlink")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(targetPath).To(Equal("foobarTarget"))
+			})
+		})
+
+		Context("when the target path exists", func() {
+			It("returns the target path without error", func() {
+				fs.WriteFileString("foobarTarget", "asdfasdf")
+				Expect(fs.FileExists("foobarTarget")).To(Equal(true))
+
+				err := fs.Symlink("foobarTarget", "foobarSymlink")
+				Expect(err).ToNot(HaveOccurred())
+
+				targetPath, err := fs.Readlink("foobarSymlink")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(targetPath).To(Equal("foobarTarget"))
+			})
+		})
+	})
+
+	Describe("Stat", func() {
+		It("errors when symlink targets do not exist", func() {
+			err := fs.Symlink("foobarbaz", "foobar")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = fs.Stat("foobar")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("follows symlink target to show its stats", func() {
+			err := fs.WriteFileString("foobarbaz", "asdfghjk")
+			Expect(err).ToNot(HaveOccurred())
+
+			err = fs.Symlink("foobarbaz", "foobar")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = fs.Stat("foobar")
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Describe("Lstat", func() {
+		It("returns symlink info to a target that does not exist", func() {
+			err := fs.Symlink("foobarbaz", "foobar")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = fs.Lstat("foobar")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("returns symlink info to a target that exists", func() {
+			err := fs.WriteFileString("foobarbaz", "asdfghjk")
+			Expect(err).ToNot(HaveOccurred())
+
+			err = fs.Symlink("foobarbaz", "foobar")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = fs.Lstat("foobar")
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
 })

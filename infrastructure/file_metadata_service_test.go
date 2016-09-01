@@ -117,7 +117,7 @@ var _ = Describe("FileMetadataService", func() {
 		It("raises an error if we can't read the file", func() {
 			networks, err := metadataService.GetNetworks()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Reading user data: File not found"))
+			Expect(err.Error()).To(ContainSubstring("Reading user data: open fake-userdata-file-path: no such file or directory"))
 			Expect(networks).To(BeNil())
 		})
 	})

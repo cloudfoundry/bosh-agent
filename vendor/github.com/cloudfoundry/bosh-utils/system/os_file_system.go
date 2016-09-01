@@ -119,6 +119,11 @@ func (fs *osFileSystem) Stat(path string) (os.FileInfo, error) {
 	return fsWrapper.Stat(path)
 }
 
+func (fs *osFileSystem) Lstat(path string) (os.FileInfo, error) {
+	fs.logger.Debug(fs.logTag, "Lstat '%s'", path)
+	return fsWrapper.Lstat(path)
+}
+
 func (fs *osFileSystem) WriteFileString(path, content string) (err error) {
 	return fs.WriteFile(path, []byte(content))
 }
@@ -253,9 +258,13 @@ func (fs *osFileSystem) Symlink(oldPath, newPath string) error {
 	return symlink(oldPath, newPath)
 }
 
-func (fs *osFileSystem) ReadLink(symlinkPath string) (targetPath string, err error) {
+func (fs *osFileSystem) ReadAndFollowLink(symlinkPath string) (targetPath string, err error) {
 	targetPath, err = filepath.EvalSymlinks(symlinkPath)
 	return
+}
+
+func (fs *osFileSystem) Readlink(symlinkPath string) (targetPath string, err error) {
+	return os.Readlink(symlinkPath)
 }
 
 func (fs *osFileSystem) CopyFile(srcPath, dstPath string) error {
