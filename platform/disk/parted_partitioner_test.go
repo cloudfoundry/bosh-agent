@@ -34,7 +34,10 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stderr: "Error: /dev/sda: unrecognised disk label", ExitStatus: 0},
+							Stdout:     "Error: /dev/sda: unrecognised disk label",
+							ExitStatus: 1,
+							Error:      errors.New("Error: /dev/sda: unrecognised disk label"),
+						},
 					)
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
