@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -86,9 +85,6 @@ var _ = Describe("tarballCompressor", func() {
 	})
 
 	BeforeEach(func() {
-		if runtime.GOOS == "windows" {
-			Skip("Pending on Windows")
-		}
 		fs.MkdirAll(dstDir, os.ModePerm)
 	})
 
@@ -106,7 +102,7 @@ var _ = Describe("tarballCompressor", func() {
 			tarballContents, _, _, err := cmdRunner.RunCommand("tar", "-tf", tgzName)
 			Expect(err).ToNot(HaveOccurred())
 
-			contentElements := strings.Split(strings.TrimSpace(tarballContents), "\n")
+			contentElements := strings.Fields(strings.TrimSpace(tarballContents))
 
 			Expect(contentElements).To(ConsistOf(
 				"./",
@@ -145,7 +141,7 @@ var _ = Describe("tarballCompressor", func() {
 			srcDir := fixtureSrcDir()
 			files := []string{
 				"app.stdout.log",
-				"some_directory/",
+				"some_directory",
 				"app.stderr.log",
 			}
 			tgzName, err := compressor.CompressSpecificFilesInDir(srcDir, files)
@@ -155,7 +151,7 @@ var _ = Describe("tarballCompressor", func() {
 			tarballContents, _, _, err := cmdRunner.RunCommand("tar", "-tf", tgzName)
 			Expect(err).ToNot(HaveOccurred())
 
-			contentElements := strings.Split(strings.TrimSpace(tarballContents), "\n")
+			contentElements := strings.Fields(strings.TrimSpace(tarballContents))
 
 			Expect(contentElements).To(Equal([]string{
 				"app.stdout.log",
