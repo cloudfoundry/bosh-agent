@@ -33,7 +33,7 @@ var _ = Describe("SyncDNSState", func() {
 				It("should fail loading DNS state", func() {
 					_, err = syncDNSState.LoadState()
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("no such file or directory"))
+					Expect(err.Error()).To(ContainSubstring("reading state file"))
 				})
 			})
 
