@@ -1111,14 +1111,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 							fs.SetGlob(path.Join("/fake-dir", "data", "", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
 						})
 
-						It("returns an error if unmounting fails", func() {
-							mounter.UnmountErr = errors.New("fake-unmount-err")
-							err := act()
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("fake-unmount-err"))
-
-						})
-
 						It("returns an error if removing files fails", func() {
 							fs.RemoveAllStub = func(_ string) error {
 								return errors.New("fake-remove-all-error")

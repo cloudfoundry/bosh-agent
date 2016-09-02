@@ -546,12 +546,6 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 			}
 
 			if agentVersion != stemcellVersion {
-				sysRunPath := path.Join(p.dirProvider.DataDir(), "sys", "run")
-				_, err = p.diskManager.GetMounter().Unmount(sysRunPath)
-				if err != nil {
-					return bosherr.WrapErrorf(err, "Unmounting '%s'", sysRunPath)
-				}
-
 				for _, content := range contents {
 					err = p.fs.RemoveAll(content)
 					if err != nil {
