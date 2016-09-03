@@ -1,6 +1,7 @@
 package disk_test
 
 import (
+	"errors"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -66,6 +67,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 	It("sfdisk partition", func() {
 		runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskEmptyDump})
+		runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
 
 		partitions := []Partition{
 			{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
@@ -77,6 +79,39 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
+	})
+
+	Context("when we get an error occurs", func() {
+		Context("during get partitions", func() {
+			It("raises error", func() {
+				runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Error: errors.New("Some weird error")})
+
+				partitions := []Partition{
+					{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
+					{Type: PartitionTypeLinux, SizeInBytes: 1024 * 1024 * 1024},
+					{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
+				}
+
+				err := partitioner.Partition("/dev/sda", partitions)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Some weird error"))
+			})
+		})
+
+		Context("when getting device size", func() {
+			It("raises error", func() {
+				runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
+				runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Error: errors.New("Another weird error")})
+
+				partitions := []Partition{
+					{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
+				}
+
+				err := partitioner.Partition("/dev/sda", partitions)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Another weird error"))
+			})
+		})
 	})
 
 	It("sfdisk partition with no partition table", func() {
@@ -172,11 +207,16 @@ var _ = Describe("sfdiskPartitioner", func() {
 	It("sfdisk command is retried 20 times", func() {
 		for i := 0; i < 19; i++ {
 			testError := fmt.Errorf("test error")
-			runner.AddCmdResult(" sfdisk -uM /dev/sda", fakesys.FakeCmdResult{ExitStatus: 1, Error: testError})
+			runner.AddCmdResult(",,L\n sfdisk -uM /dev/sda", fakesys.FakeCmdResult{ExitStatus: 1, Error: testError})
 		}
-		runner.AddCmdResult(" sfdisk -uM /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
+		runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
+		runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
 
-		partitions := []Partition{}
+		runner.AddCmdResult(",,L\n sfdisk -uM /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
+
+		partitions := []Partition{
+			{Type: PartitionTypeLinux},
+		}
 
 		err := partitioner.Partition("/dev/sda", partitions)
 		Expect(err).To(BeNil())
@@ -185,17 +225,21 @@ var _ = Describe("sfdiskPartitioner", func() {
 	})
 
 	It("dmsetup command is retried 20 times", func() {
+		runner.AddCmdResult("sfdisk -d /dev/mapper/xxxxxx", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
 		for i := 0; i < 19; i++ {
 			testError := fmt.Errorf("test error")
 			runner.AddCmdResult("dmsetup ls", fakesys.FakeCmdResult{ExitStatus: 1, Error: testError})
 		}
 		runner.AddCmdResult("dmsetup ls", fakesys.FakeCmdResult{Stdout: expectedDmSetupLs})
+		runner.AddCmdResult("sfdisk -s /dev/mapper/xxxxxx", fakesys.FakeCmdResult{Stdout: "1048576"})
 
-		partitions := []Partition{}
+		partitions := []Partition{
+			{Type: PartitionTypeLinux},
+		}
 
 		err := partitioner.Partition("/dev/mapper/xxxxxx", partitions)
 		Expect(err).To(BeNil())
 		Expect(fakeclock.SleepCallCount()).To(Equal(19))
-		Expect(len(runner.RunCommands)).To(Equal(23))
+		Expect(len(runner.RunCommands)).To(Equal(25))
 	})
 })
