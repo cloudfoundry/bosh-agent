@@ -1,21 +1,23 @@
 package platform_test
 
 import (
+	. "github.com/cloudfoundry/bosh-agent/platform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"encoding/json"
+	"path"
+
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	. "github.com/cloudfoundry/bosh-agent/platform"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"path"
 )
 
 type mount struct {
@@ -79,11 +81,11 @@ func describeDummyPlatform() {
 	Describe("UnmountPersistentDisk", func() {
 		Context("when there are two mounted persistent disks in the mounts json", func() {
 			BeforeEach(func() {
-
 				var mounts []mount
 				mounts = append(mounts, mount{MountDir: "dir1", DiskCid: "cid1"})
 				mounts = append(mounts, mount{MountDir: "dir2", DiskCid: "cid2"})
-				mountsJSON, _ := json.Marshal(mounts)
+				mountsJSON, err := json.Marshal(mounts)
+				Expect(err).NotTo(HaveOccurred())
 
 				mountsPath := path.Join(dirProvider.BoshDir(), "mounts.json")
 				fs.WriteFile(mountsPath, mountsJSON)
@@ -95,11 +97,44 @@ func describeDummyPlatform() {
 				Expect(unmounted).To(Equal(true))
 
 				_, isMountPoint, err := platform.IsMountPoint("dir1")
+				Expect(err).NotTo(HaveOccurred())
 				Expect(isMountPoint).To(Equal(false))
 
 				_, isMountPoint, err = platform.IsMountPoint("dir2")
+				Expect(err).NotTo(HaveOccurred())
 				Expect(isMountPoint).To(Equal(true))
 			})
+		})
+	})
+
+	Describe("SetDiskAssociations", func() {
+		It("writes the associations to the file", func() {
+			diskAssociation1 := boshsettings.DiskAssociation{
+				Name:    "disk1",
+				DiskCID: "cid1",
+			}
+			diskAssociation2 := boshsettings.DiskAssociation{
+				Name:    "disk2",
+				DiskCID: "cid2",
+			}
+			err := platform.AssociateDisk(diskAssociation1, boshsettings.DiskSettings{})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = platform.AssociateDisk(diskAssociation2, boshsettings.DiskSettings{})
+			Expect(err).NotTo(HaveOccurred())
+			diskAssociationsPath := path.Join(dirProvider.BoshDir(), "disk_associations.json")
+
+			actualDiskAssociations := []boshsettings.DiskAssociation{}
+			fileContent, err := fs.ReadFile(diskAssociationsPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = json.Unmarshal(fileContent, &actualDiskAssociations)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(actualDiskAssociations).To(ConsistOf([]boshsettings.DiskAssociation{
+				diskAssociation1,
+				diskAssociation2,
+			}))
 		})
 	})
 

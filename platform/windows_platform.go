@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -56,6 +57,10 @@ func NewWindowsPlatform(
 		certManager:            certManager,
 		defaultNetworkResolver: defaultNetworkResolver,
 	}
+}
+
+func (p WindowsPlatform) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+	return errors.New("unimplemented")
 }
 
 func (p WindowsPlatform) GetFs() (fs boshsys.FileSystem) {

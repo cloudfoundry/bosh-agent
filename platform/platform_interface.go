@@ -53,6 +53,7 @@ type Platform interface {
 	IsMountPoint(path string) (partitionPath string, result bool, err error)
 	IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error)
 	IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error)
+	AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)

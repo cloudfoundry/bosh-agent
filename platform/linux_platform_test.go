@@ -2354,6 +2354,43 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
+	Describe("AssociateDisk", func() {
+		var (
+			diskAssoc    boshsettings.DiskAssociation
+			diskSettings boshsettings.DiskSettings
+		)
+
+		BeforeEach(func() {
+			diskAssoc = boshsettings.DiskAssociation{Name: "cool_disk"}
+			diskSettings = boshsettings.DiskSettings{Path: "/dev/path/to/cool_disk"}
+		})
+
+		It("Creates a symlink a disk", func() {
+			err := platform.AssociateDisk(diskAssoc, diskSettings)
+			Expect(err).ToNot(HaveOccurred())
+
+			path, err := fs.Readlink("/fake-dir/store-cool_disk")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(path).To(Equal("/dev/path/to/cool_disk"))
+		})
+
+		Context("when symlinking returns an error", func() {
+			BeforeEach(func() {
+				fs.SymlinkError = &os.LinkError{
+					Op:  "Symlink",
+					Old: "/dev/path/to/cool_disk",
+					New: "/fake-dir/store-cool_disk",
+					Err: errors.New("some linking error"),
+				}
+			})
+
+			It("returns an error", func() {
+				err := platform.AssociateDisk(diskAssoc, diskSettings)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("GetFileContentsFromCDROM", func() {
 		It("delegates to cdutil", func() {
 			cdutil.GetFilesContentsContents = [][]byte{[]byte("fake-contents")}

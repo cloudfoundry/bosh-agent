@@ -10,8 +10,6 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-const logTag string = "MountDiskAction"
-
 type diskMounter interface {
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
 }

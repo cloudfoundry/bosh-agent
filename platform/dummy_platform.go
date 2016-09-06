@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path"
+	"path/filepath"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -316,6 +318,33 @@ func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSet
 
 func (p dummyPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
 	return false, nil
+}
+
+func (p dummyPlatform) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+	diskAssocsPath := filepath.Join(p.dirProvider.BoshDir(), "disk_associations.json")
+
+	diskAssociations := []boshsettings.DiskAssociation{}
+
+	bytes, err := p.fs.ReadFile(diskAssocsPath)
+	if err != nil {
+		err, ok := err.(bosherr.ComplexError)
+		if !ok {
+			return bosherr.WrapError(err, "Associating Disk: ")
+		} else if !os.IsNotExist(err.Cause) {
+			return bosherr.WrapError(err, "Associating Disk: ")
+		}
+	} else if err == nil {
+		json.Unmarshal(bytes, &diskAssociations)
+	}
+
+	diskAssociations = append(diskAssociations, diskAssociation)
+
+	contents, err := json.Marshal(diskAssociations)
+	if err != nil {
+		return err
+	}
+
+	return p.fs.WriteFile(diskAssocsPath, contents)
 }
 
 func (p dummyPlatform) StartMonit() (err error) {

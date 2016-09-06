@@ -67,10 +67,11 @@ func NewFactory(
 			"release_apply_spec": NewReleaseApplySpec(platform),
 
 			// Disk management
-			"list_disk":    NewListDisk(settingsService, platform, logger),
-			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settingsService, platform, dirProvider, logger),
-			"unmount_disk": NewUnmountDisk(settingsService, platform),
+			"list_disk":       NewListDisk(settingsService, platform, logger),
+			"migrate_disk":    NewMigrateDisk(platform, dirProvider),
+			"mount_disk":      NewMountDisk(settingsService, platform, dirProvider, logger),
+			"unmount_disk":    NewUnmountDisk(settingsService, platform),
+			"associate_disks": NewAssociateDisks(settingsService, platform, logger),
 
 			// ARP cache management
 			"delete_arp_entries": NewDeleteARPEntries(platform),

@@ -139,6 +139,12 @@ func NewLinuxPlatform(
 
 const logTag = "linuxPlatform"
 
+func (p linux) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+	baseDir := p.dirProvider.BaseDir()
+	linkPath := path.Join(baseDir, fmt.Sprintf("store-%s", diskAssociation.Name))
+	return p.fs.Symlink(settings.Path, linkPath)
+}
+
 func (p linux) GetFs() (fs boshsys.FileSystem) {
 	return p.fs
 }

@@ -506,10 +506,13 @@ func (fs *FakeFileSystem) ReadFile(path string) ([]byte, error) {
 		return stats.Content, nil
 	}
 
-	return nil, &os.PathError{
-		Op:   "open",
-		Path: path,
-		Err:  syscall.ENOENT,
+	return nil, bosherr.ComplexError{
+		Err: bosherr.Error("Not found:"),
+		Cause: &os.PathError{
+			Op:   "open",
+			Path: path,
+			Err:  syscall.ENOENT,
+		},
 	}
 }
 

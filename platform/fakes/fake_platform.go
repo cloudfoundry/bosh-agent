@@ -110,6 +110,13 @@ type FakePlatform struct {
 	IsPersistentDiskMountableResult bool
 	IsPersistentDiskMountableErr    error
 
+	AssociateDiskCallCount int
+	AssociateDiskArgs      []struct {
+		a boshsettings.DiskAssociation
+		s boshsettings.DiskSettings
+	}
+	AssociateDiskError error
+
 	IsMountPointPath          string
 	IsMountPointPartitionPath string
 	IsMountPointResult        bool
@@ -436,4 +443,21 @@ func (p *FakePlatform) RemoveDevTools(packageFileListPath string) error {
 	p.IsRemoveDevToolsCalled = true
 	p.PackageFileListPath = packageFileListPath
 	return p.IsRemoveDevToolsError
+}
+
+func (p *FakePlatform) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+	p.AssociateDiskCallCount++
+	p.AssociateDiskArgs = append(p.AssociateDiskArgs, struct {
+		a boshsettings.DiskAssociation
+		s boshsettings.DiskSettings
+	}{
+		a: diskAssociation,
+		s: settings,
+	})
+
+	return p.AssociateDiskError
+}
+
+func (p *FakePlatform) AssociateDiskArgsForCall(i int) (boshsettings.DiskAssociation, boshsettings.DiskSettings) {
+	return p.AssociateDiskArgs[i].a, p.AssociateDiskArgs[i].s
 }

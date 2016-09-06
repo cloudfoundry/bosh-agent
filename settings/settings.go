@@ -171,6 +171,11 @@ type DNSRecords struct {
 	Records [][2]string `json:"records"`
 }
 
+type DiskAssociation struct {
+	Name    string `json:"name"`
+	DiskCID string `json:"diskCid"`
+}
+
 type NetworkType string
 
 const (
