@@ -2369,7 +2369,7 @@ Number  Start   End     Size    File system  Name             Flags
 			err := platform.AssociateDisk(diskAssoc, diskSettings)
 			Expect(err).ToNot(HaveOccurred())
 
-			path, err := fs.Readlink("/fake-dir/store-cool_disk")
+			path, err := fs.Readlink("/fake-dir/instance/disks/cool_disk")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(path).To(Equal("/dev/path/to/cool_disk"))
 		})
@@ -2379,7 +2379,7 @@ Number  Start   End     Size    File system  Name             Flags
 				fs.SymlinkError = &os.LinkError{
 					Op:  "Symlink",
 					Old: "/dev/path/to/cool_disk",
-					New: "/fake-dir/store-cool_disk",
+					New: "/fake-dir/instance/disks/cool_disk",
 					Err: errors.New("some linking error"),
 				}
 			})

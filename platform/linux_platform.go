@@ -140,8 +140,13 @@ func NewLinuxPlatform(
 const logTag = "linuxPlatform"
 
 func (p linux) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
-	baseDir := p.dirProvider.BaseDir()
-	linkPath := path.Join(baseDir, fmt.Sprintf("store-%s", diskAssociation.Name))
+	disksDir := p.dirProvider.DisksDir()
+	err := p.fs.MkdirAll(disksDir, userBaseDirPermissions)
+	if err != nil {
+		bosherr.WrapError(err, "Associating disk: ")
+	}
+
+	linkPath := path.Join(disksDir, diskAssociation.Name)
 	return p.fs.Symlink(settings.Path, linkPath)
 }
 

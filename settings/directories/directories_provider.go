@@ -85,3 +85,7 @@ func (p Provider) AgentLogsDir() string {
 func (p Provider) InstanceDir() string {
 	return path.Join(p.BaseDir(), "instance")
 }
+
+func (p Provider) DisksDir() string {
+	return path.Join(p.InstanceDir(), "disks")
+}
