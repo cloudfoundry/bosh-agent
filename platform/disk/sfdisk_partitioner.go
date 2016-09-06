@@ -177,6 +177,9 @@ func (p sfdiskPartitioner) getPartitions(devicePath string) ([]Partition, error)
 		partition := Partition{Type: partitionType}
 
 		if partition.Type != PartitionTypeEmpty {
+			if strings.Contains(partitionPath, "/dev/mapper/") {
+				partitionPath = partitionPath[0:len(partitionPath)-1] + "-part1"
+			}
 			size, err := p.GetDeviceSizeInBytes(partitionPath)
 			if err == nil {
 				partition.SizeInBytes = size
