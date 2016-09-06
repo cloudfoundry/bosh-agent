@@ -70,6 +70,7 @@ type FakeFileSystem struct {
 	RenameNewPaths []string
 
 	RemoveAllStub removeAllFn
+	RemoveAllCount int
 
 	ReadAndFollowLinkError error
 
@@ -713,6 +714,7 @@ func (fs *FakeFileSystem) TempDir(prefix string) (string, error) {
 }
 
 func (fs *FakeFileSystem) RemoveAll(path string) error {
+	fs.RemoveAllCount++
 	if path == "" {
 		panic("RemoveAll requires path")
 	}
