@@ -210,7 +210,7 @@ func (app *app) Setup(args []string) error {
 		jobSupervisor,
 		specService,
 		syslogServer,
-		time.Minute,
+		time.Second*30,
 		settingsService,
 		uuidGen,
 		timeService,
