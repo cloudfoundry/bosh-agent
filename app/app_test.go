@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,10 +26,6 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			if runtime.GOOS == "windows" {
-				Skip("Pending on Windows")
-			}
-
 			var err error
 
 			baseDir, err = ioutil.TempDir("", "go-agent-test")
