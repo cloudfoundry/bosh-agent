@@ -139,15 +139,21 @@ func NewLinuxPlatform(
 
 const logTag = "linuxPlatform"
 
-func (p linux) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+func (p linux) AssociateDisk(name string, settings boshsettings.DiskSettings) error {
 	disksDir := p.dirProvider.DisksDir()
 	err := p.fs.MkdirAll(disksDir, userBaseDirPermissions)
 	if err != nil {
 		bosherr.WrapError(err, "Associating disk: ")
 	}
 
-	linkPath := path.Join(disksDir, diskAssociation.Name)
-	return p.fs.Symlink(settings.Path, linkPath)
+	linkPath := path.Join(disksDir, name)
+
+	devicePath, _, err := p.devicePathResolver.GetRealDevicePath(settings)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Associating disk with name %s", name)
+	}
+
+	return p.fs.Symlink(devicePath, linkPath)
 }
 
 func (p linux) GetFs() (fs boshsys.FileSystem) {

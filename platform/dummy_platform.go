@@ -321,10 +321,10 @@ func (p dummyPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskS
 	return false, nil
 }
 
-func (p dummyPlatform) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+func (p dummyPlatform) AssociateDisk(name string, settings boshsettings.DiskSettings) error {
 	diskAssocsPath := filepath.Join(p.dirProvider.BoshDir(), "disk_associations.json")
 
-	diskAssociations := []boshsettings.DiskAssociation{}
+	diskNames := []string{}
 
 	bytes, err := p.fs.ReadFile(diskAssocsPath)
 	if err != nil {
@@ -335,12 +335,12 @@ func (p dummyPlatform) AssociateDisk(diskAssociation boshsettings.DiskAssociatio
 			return bosherr.WrapError(err, "Associating Disk: ")
 		}
 	} else if err == nil {
-		json.Unmarshal(bytes, &diskAssociations)
+		json.Unmarshal(bytes, &diskNames)
 	}
 
-	diskAssociations = append(diskAssociations, diskAssociation)
+	diskNames = append(diskNames, name)
 
-	contents, err := json.Marshal(diskAssociations)
+	contents, err := json.Marshal(diskNames)
 	if err != nil {
 		return err
 	}

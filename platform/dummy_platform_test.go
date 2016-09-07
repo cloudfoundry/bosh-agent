@@ -109,31 +109,26 @@ func describeDummyPlatform() {
 
 	Describe("SetDiskAssociations", func() {
 		It("writes the associations to the file", func() {
-			diskAssociation1 := boshsettings.DiskAssociation{
-				Name:    "disk1",
-				DiskCID: "cid1",
-			}
-			diskAssociation2 := boshsettings.DiskAssociation{
-				Name:    "disk2",
-				DiskCID: "cid2",
-			}
-			err := platform.AssociateDisk(diskAssociation1, boshsettings.DiskSettings{})
+			diskName1 := "disk1"
+			diskName2 := "disk2"
+
+			err := platform.AssociateDisk(diskName1, boshsettings.DiskSettings{})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = platform.AssociateDisk(diskAssociation2, boshsettings.DiskSettings{})
+			err = platform.AssociateDisk(diskName2, boshsettings.DiskSettings{})
 			Expect(err).NotTo(HaveOccurred())
 			diskAssociationsPath := path.Join(dirProvider.BoshDir(), "disk_associations.json")
 
-			actualDiskAssociations := []boshsettings.DiskAssociation{}
+			actualDiskNames := []string{}
 			fileContent, err := fs.ReadFile(diskAssociationsPath)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = json.Unmarshal(fileContent, &actualDiskAssociations)
+			err = json.Unmarshal(fileContent, &actualDiskNames)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(actualDiskAssociations).To(ConsistOf([]boshsettings.DiskAssociation{
-				diskAssociation1,
-				diskAssociation2,
+			Expect(actualDiskNames).To(ConsistOf([]string{
+				diskName1,
+				diskName2,
 			}))
 		})
 	})

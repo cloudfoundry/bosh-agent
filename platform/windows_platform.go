@@ -59,7 +59,7 @@ func NewWindowsPlatform(
 	}
 }
 
-func (p WindowsPlatform) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+func (p WindowsPlatform) AssociateDisk(name string, settings boshsettings.DiskSettings) error {
 	return errors.New("unimplemented")
 }
 

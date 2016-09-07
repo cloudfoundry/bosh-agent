@@ -2356,22 +2356,34 @@ Number  Start   End     Size    File system  Name             Flags
 
 	Describe("AssociateDisk", func() {
 		var (
-			diskAssoc    boshsettings.DiskAssociation
+			diskName     string
 			diskSettings boshsettings.DiskSettings
 		)
 
 		BeforeEach(func() {
-			diskAssoc = boshsettings.DiskAssociation{Name: "cool_disk"}
+			diskName = "cool_disk"
 			diskSettings = boshsettings.DiskSettings{Path: "/dev/path/to/cool_disk"}
+			devicePathResolver.RealDevicePath = "/dev/path/to/cool_disk"
 		})
 
 		It("Creates a symlink a disk", func() {
-			err := platform.AssociateDisk(diskAssoc, diskSettings)
+			err := platform.AssociateDisk(diskName, diskSettings)
 			Expect(err).ToNot(HaveOccurred())
 
 			path, err := fs.Readlink("/fake-dir/instance/disks/cool_disk")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(path).To(Equal("/dev/path/to/cool_disk"))
+		})
+
+		Context("when discovering real device path returns an error", func() {
+			BeforeEach(func() {
+				devicePathResolver.GetRealDevicePathErr = errors.New("barf")
+			})
+
+			It("returns an error", func() {
+				err := platform.AssociateDisk(diskName, diskSettings)
+				Expect(err).To(HaveOccurred())
+			})
 		})
 
 		Context("when symlinking returns an error", func() {
@@ -2385,7 +2397,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns an error", func() {
-				err := platform.AssociateDisk(diskAssoc, diskSettings)
+				err := platform.AssociateDisk(diskName, diskSettings)
 				Expect(err).To(HaveOccurred())
 			})
 		})

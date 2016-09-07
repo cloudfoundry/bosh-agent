@@ -112,7 +112,7 @@ type FakePlatform struct {
 
 	AssociateDiskCallCount int
 	AssociateDiskArgs      []struct {
-		a boshsettings.DiskAssociation
+		n string
 		s boshsettings.DiskSettings
 	}
 	AssociateDiskError error
@@ -445,19 +445,19 @@ func (p *FakePlatform) RemoveDevTools(packageFileListPath string) error {
 	return p.IsRemoveDevToolsError
 }
 
-func (p *FakePlatform) AssociateDisk(diskAssociation boshsettings.DiskAssociation, settings boshsettings.DiskSettings) error {
+func (p *FakePlatform) AssociateDisk(name string, settings boshsettings.DiskSettings) error {
 	p.AssociateDiskCallCount++
 	p.AssociateDiskArgs = append(p.AssociateDiskArgs, struct {
-		a boshsettings.DiskAssociation
+		n string
 		s boshsettings.DiskSettings
 	}{
-		a: diskAssociation,
+		n: name,
 		s: settings,
 	})
 
 	return p.AssociateDiskError
 }
 
-func (p *FakePlatform) AssociateDiskArgsForCall(i int) (boshsettings.DiskAssociation, boshsettings.DiskSettings) {
-	return p.AssociateDiskArgs[i].a, p.AssociateDiskArgs[i].s
+func (p *FakePlatform) AssociateDiskArgsForCall(i int) (string, boshsettings.DiskSettings) {
+	return p.AssociateDiskArgs[i].n, p.AssociateDiskArgs[i].s
 }

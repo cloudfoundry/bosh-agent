@@ -20,7 +20,7 @@ var _ = Describe("Associate Disks Action", func() {
 		logger          *fakelog.FakeLogger
 		settingsService *fakesettings.FakeSettingsService
 		platform        *fakeplatform.FakePlatform
-		diskAssociation boshsettings.DiskAssociation
+		diskAssociation DiskAssociation
 	)
 
 	BeforeEach(func() {
@@ -52,7 +52,7 @@ var _ = Describe("Associate Disks Action", func() {
 
 	Context("when the settings does not contain the disk", func() {
 		BeforeEach(func() {
-			diskAssociation = boshsettings.DiskAssociation{
+			diskAssociation = DiskAssociation{
 				Name:    "fake-disk-name",
 				DiskCID: "fake-disk-id",
 			}
@@ -61,7 +61,7 @@ var _ = Describe("Associate Disks Action", func() {
 
 		It("returns the error", func() {
 			_, err := action.Run(DiskAssociations{
-				Associations: []boshsettings.DiskAssociation{
+				Associations: []DiskAssociation{
 					diskAssociation,
 				},
 			})
@@ -92,18 +92,18 @@ var _ = Describe("Associate Disks Action", func() {
 			},
 		}
 
-		diskAssociation := boshsettings.DiskAssociation{
+		diskAssociation := DiskAssociation{
 			Name:    "fake-disk-name",
 			DiskCID: "fake-disk-id",
 		}
 
-		diskAssociation2 := boshsettings.DiskAssociation{
+		diskAssociation2 := DiskAssociation{
 			Name:    "fake-disk-name2",
 			DiskCID: "fake-disk-id-2",
 		}
 
 		result, err := action.Run(DiskAssociations{
-			Associations: []boshsettings.DiskAssociation{
+			Associations: []DiskAssociation{
 				diskAssociation,
 				diskAssociation2,
 			},
@@ -112,8 +112,8 @@ var _ = Describe("Associate Disks Action", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result).To(Equal("associated"))
 
-		actualDiskAssociation, actualDiskSettings := platform.AssociateDiskArgsForCall(0)
-		Expect(actualDiskAssociation).To(Equal(diskAssociation))
+		actualDiskName, actualDiskSettings := platform.AssociateDiskArgsForCall(0)
+		Expect(actualDiskName).To(Equal(diskAssociation.Name))
 		Expect(actualDiskSettings).To(Equal(boshsettings.DiskSettings{
 			ID:           "fake-disk-id",
 			DeviceID:     "fake-disk-device-id",
@@ -125,8 +125,8 @@ var _ = Describe("Associate Disks Action", func() {
 
 		Expect(platform.AssociateDiskCallCount).To(Equal(2))
 
-		actualDiskAssociation, actualDiskSettings = platform.AssociateDiskArgsForCall(1)
-		Expect(actualDiskAssociation).To(Equal(diskAssociation2))
+		actualDiskName, actualDiskSettings = platform.AssociateDiskArgsForCall(1)
+		Expect(actualDiskName).To(Equal(diskAssociation2.Name))
 		Expect(actualDiskSettings).To(Equal(boshsettings.DiskSettings{
 			ID:           "fake-disk-id-2",
 			DeviceID:     "fake-disk-device-id-2",
@@ -154,7 +154,7 @@ var _ = Describe("Associate Disks Action", func() {
 				},
 			}
 
-			diskAssociation := boshsettings.DiskAssociation{
+			diskAssociation := DiskAssociation{
 				Name:    "fake-disk-name",
 				DiskCID: "fake-disk-id",
 			}
@@ -162,7 +162,7 @@ var _ = Describe("Associate Disks Action", func() {
 			platform.AssociateDiskError = errors.New("not today")
 
 			_, err := action.Run(DiskAssociations{
-				Associations: []boshsettings.DiskAssociation{
+				Associations: []DiskAssociation{
 					diskAssociation,
 				},
 			})

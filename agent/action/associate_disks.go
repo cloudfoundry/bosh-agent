@@ -10,7 +10,12 @@ import (
 )
 
 type DiskAssociations struct {
-	Associations []boshsettings.DiskAssociation `json:"diskAssociations"`
+	Associations []DiskAssociation `json:"disk_associations"`
+}
+
+type DiskAssociation struct {
+	Name    string `json:"name"`
+	DiskCID string `json:"cid"`
 }
 
 type AssociateDisksAction struct {
@@ -45,7 +50,7 @@ func (a AssociateDisksAction) Run(diskAssociations DiskAssociations) (string, er
 			return "", bosherr.Errorf("Persistent disk settings contains no disk with CID: %s", diskAssociation.DiskCID)
 		}
 
-		err := a.platform.AssociateDisk(diskAssociation, diskSettings)
+		err := a.platform.AssociateDisk(diskAssociation.Name, diskSettings)
 		if err != nil {
 			return "", err
 		}

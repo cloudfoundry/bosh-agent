@@ -2,6 +2,7 @@ package settings
 
 import (
 	"fmt"
+
 	"github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
@@ -169,11 +170,6 @@ type BoshEnv struct {
 type DNSRecords struct {
 	Version uint32      `json:"Version"`
 	Records [][2]string `json:"records"`
-}
-
-type DiskAssociation struct {
-	Name    string `json:"name"`
-	DiskCID string `json:"diskCid"`
 }
 
 type NetworkType string
