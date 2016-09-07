@@ -1,11 +1,14 @@
 package infrastructure_test
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -118,7 +121,13 @@ var _ = Describe("FileMetadataService", func() {
 			networks, err := metadataService.GetNetworks()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Reading user data:"))
-			Expect(err.Error()).To(ContainSubstring("open fake-userdata-file-path: no such file or directory"))
+			be, ok := err.(bosherr.ComplexError)
+			Expect(ok).To(BeTrue())
+			be, ok = be.Cause.(bosherr.ComplexError)
+			Expect(ok).To(BeTrue())
+			pe, ok := be.Cause.(*os.PathError)
+			Expect(ok).To(BeTrue())
+			Expect(os.IsNotExist(pe)).To(BeTrue())
 			Expect(networks).To(BeNil())
 		})
 	})
