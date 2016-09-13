@@ -68,7 +68,7 @@ func (fs *osFileSystem) ExpandPath(path string) (string, error) {
 }
 
 func (fs *osFileSystem) MkdirAll(path string, perm os.FileMode) (err error) {
-	fs.logger.Debug(fs.logTag, "Making dir %s with perm %d", path, perm)
+	fs.logger.Debug(fs.logTag, "Making dir %s with perm %#o", path, perm)
 	return os.MkdirAll(path, perm)
 }
 
