@@ -180,7 +180,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 		Expect(len(runner.RunCommandsWithInput)).To(Equal(0))
 	})
 
-	It("sfdisk partition when partitions already match for mutlitpath", func() {
+	It("sfdisk partition when partitions already match for multipath", func() {
 		runner.AddCmdResult("sfdisk -d /dev/mapper/xxxxxx", fakesys.FakeCmdResult{Stdout: devMapperSfdiskDumpOnePartition})
 		runner.AddCmdResult("sfdisk -s /dev/mapper/xxxxxx", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024+7000)})
 		runner.AddCmdResult("sfdisk -s /dev/mapper/xxxxxx-part1", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024)})
