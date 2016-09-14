@@ -13,6 +13,7 @@ import (
 
 var _ = Describe("Settings", func() {
 	var settings Settings
+	var updateSettings UpdateSettings
 
 	Describe("PersistentDiskSettings", func() {
 		Context("when the disk settings are hash", func() {
@@ -646,6 +647,17 @@ var _ = Describe("Settings", func() {
 			Expect(env.GetPassword()).To(Equal("fake-password"))
 			Expect(env.GetKeepRootPassword()).To(BeFalse())
 			Expect(env.GetRemoveDevTools()).To(BeTrue())
+		})
+	})
+
+	Describe("UpdateSettings", func() {
+		var updateSettingsJSON string
+		BeforeEach(func() {
+			updateSettingsJSON = `{"trusted_certs": "some_cert", "disk_associations": [{"name": "some_name", "cid": "some_cid"}]}`
+		})
+		It("contains the correct keys", func() {
+			err := json.Unmarshal([]byte(updateSettingsJSON), &updateSettings)
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

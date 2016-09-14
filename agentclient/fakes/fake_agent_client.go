@@ -102,10 +102,10 @@ type FakeAgentClient struct {
 		result1 string
 		result2 error
 	}
-	UpdateSettingsStub        func(settings settings.Settings) error
+	UpdateSettingsStub        func(settings settings.UpdateSettings) error
 	updateSettingsMutex       sync.RWMutex
 	updateSettingsArgsForCall []struct {
-		settings settings.Settings
+		settings settings.UpdateSettings
 	}
 	updateSettingsReturns struct {
 		result1 error
@@ -465,10 +465,10 @@ func (fake *FakeAgentClient) SyncDNSReturns(result1 string, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *FakeAgentClient) UpdateSettings(settings1 settings.Settings) error {
+func (fake *FakeAgentClient) UpdateSettings(settings1 settings.UpdateSettings) error {
 	fake.updateSettingsMutex.Lock()
 	fake.updateSettingsArgsForCall = append(fake.updateSettingsArgsForCall, struct {
-		settings settings.Settings
+		settings settings.UpdateSettings
 	}{settings1})
 	fake.updateSettingsMutex.Unlock()
 	if fake.UpdateSettingsStub != nil {
@@ -484,7 +484,7 @@ func (fake *FakeAgentClient) UpdateSettingsCallCount() int {
 	return len(fake.updateSettingsArgsForCall)
 }
 
-func (fake *FakeAgentClient) UpdateSettingsArgsForCall(i int) settings.Settings {
+func (fake *FakeAgentClient) UpdateSettingsArgsForCall(i int) settings.UpdateSettings {
 	fake.updateSettingsMutex.RLock()
 	defer fake.updateSettingsMutex.RUnlock()
 	return fake.updateSettingsArgsForCall[i].settings

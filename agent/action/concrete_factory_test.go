@@ -216,10 +216,4 @@ var _ = Describe("concreteFactory", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewSyncDNS(blobstore, settingsService, platform, logger)))
 	})
-
-	It("associate_disks", func() {
-		action, err := factory.Create("associate_disks")
-		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewAssociateDisks(settingsService, platform, logger)))
-	})
 })
