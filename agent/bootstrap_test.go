@@ -495,7 +495,7 @@ func init() {
 				linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
 
 				compressor := boshcmd.NewTarballCompressor(runner, fs)
-				copier := boshcmd.NewCpCopier(runner, fs, logger)
+				copier := boshcmd.NewGenericCpCopier(fs, logger)
 
 				sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 

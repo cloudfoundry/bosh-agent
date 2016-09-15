@@ -67,7 +67,7 @@ func describeLinuxPlatform() {
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		cdutil = fakedevutil.NewFakeDeviceUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
-		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)
+		copier = boshcmd.NewGenericCpCopier(fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
 		netManager = &fakenet.FakeManager{}
 		certManager = new(fakecert.FakeManager)
