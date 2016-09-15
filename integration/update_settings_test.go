@@ -88,7 +88,7 @@ MIIEJDCCaWRnaXRzIFB0eSBMdGQxIjAgBgNVBAMTGWR4MTkwLnRvci5waXZvdGFs
 b20wHhcNMTUwNTEzMTM1NjA2WhcNMjUwNTEwMTM1NjA2WjBpMQswCQYDVQQGEwJD
 QTETMBEGA1U=
 -----END CERTIFICATE-----`
-			settings := settings.Settings{TrustedCerts: cert}
+			settings := settings.UpdateSettings{TrustedCerts: cert}
 
 			err := agentClient.UpdateSettings(settings)
 
