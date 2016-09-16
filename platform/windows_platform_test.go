@@ -29,8 +29,7 @@ var _ = Describe("WindowsPlatform", func() {
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		certManager                *fakecert.FakeManager
 
-		options LinuxOptions
-		logger  boshlog.Logger
+		logger boshlog.Logger
 	)
 
 	BeforeEach(func() {
@@ -42,7 +41,6 @@ var _ = Describe("WindowsPlatform", func() {
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		netManager = &fakenet.FakeManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
-		options = LinuxOptions{}
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		certManager = new(fakecert.FakeManager)
 	})
