@@ -63,16 +63,20 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 		}
 
 		time.Sleep(100 * time.Millisecond)
-		realPathMatches, err := idpr.fs.Glob(deviceIDPathGlobPattern)
+		pathMatches, err := idpr.fs.Glob(deviceIDPathGlobPattern)
 		if err != nil {
 			continue
 		}
 
-		switch len(realPathMatches) {
+		switch len(pathMatches) {
 		case 0:
 			continue
 		case 1:
-			realPath = realPathMatches[0]
+			realPath, err = idpr.fs.ReadLink(pathMatches[0])
+			if err != nil {
+				continue
+			}
+
 			if idpr.fs.FileExists(realPath) {
 				found = true
 			}
