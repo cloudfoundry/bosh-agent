@@ -175,23 +175,15 @@ func init() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("stop"))
 
-					Expect(handler.SendInputs()).To(Equal([]fakembus.SendInput{
-						{
+					inputs := handler.SendInputs()
+					Expect(len(inputs)).To(BeNumerically(">=", 3))
+					for _, input := range inputs {
+						Expect(input).To(Equal(fakembus.SendInput{
 							Target:  boshhandler.HealthMonitor,
 							Topic:   boshhandler.Heartbeat,
 							Message: expectedHb,
-						},
-						{
-							Target:  boshhandler.HealthMonitor,
-							Topic:   boshhandler.Heartbeat,
-							Message: expectedHb,
-						},
-						{
-							Target:  boshhandler.HealthMonitor,
-							Topic:   boshhandler.Heartbeat,
-							Message: expectedHb,
-						},
-					}))
+						}))
+					}
 				})
 			})
 
