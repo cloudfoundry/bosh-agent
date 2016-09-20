@@ -1609,24 +1609,31 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0775)))
 		})
 
+		It("sets the permission on /var/log to 770", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chmod", "0770", "/fake-dir/data/root_log"}))
+		})
+
 		It("creates an audit dir in root_log folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
 		})
 
 		It("changes permissions on the audit directory", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0750", "/fake-dir/data/root_log/audit"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0750", "/fake-dir/data/root_log/audit"}))
 		})
 
 		It("changes ownership on the new bind mount folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:syslog", "/fake-dir/data/root_log"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "root:syslog", "/fake-dir/data/root_log"}))
 		})
 
 		Context("mounting root_log into /var/log", func() {
