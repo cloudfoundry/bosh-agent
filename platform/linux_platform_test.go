@@ -2,11 +2,12 @@ package platform_test
 
 import (
 	"errors"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"os"
 	"path"
 	"strings"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform"
 
@@ -1327,7 +1328,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0770", "/tmp"}))
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0700", "/var/tmp"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0770", "/var/tmp"}))
 		})
 
 		It("creates new temp dir", func() {
@@ -1373,7 +1374,7 @@ Number  Start   End     Size    File system  Name             Flags
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
+				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0770", "/fake-dir/data/root_tmp"}))
 			})
 
 			Context("mounting root_tmp into /tmp", func() {

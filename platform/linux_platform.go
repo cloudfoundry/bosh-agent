@@ -715,7 +715,7 @@ func (p linux) SetupTmpDir() error {
 
 	// /var/tmp is used for preserving temporary files between system reboots
 	varTmpDir := "/var/tmp"
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", varTmpDir)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", varTmpDir)
 	if err != nil {
 		return bosherr.WrapError(err, "chmod /var/tmp")
 	}
@@ -730,7 +730,7 @@ func (p linux) SetupTmpDir() error {
 	}
 
 	// change permissions
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", boshRootTmpPath)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", boshRootTmpPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
 	}
