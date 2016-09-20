@@ -119,7 +119,7 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string) *WindowsServiceWra
 		LogPath:     logPath,
 		LogMode: serviceLogMode{
 			Mode:          "roll-by-size",
-			SizeThreshold: "51200",
+			SizeThreshold: "50000",
 			KeepFiles:     "7",
 		},
 		Onfailure: serviceOnfailure{
