@@ -37,7 +37,6 @@ const (
 	userBaseDirPermissions    = os.FileMode(0755)
 	userRootLogDirPermissions = os.FileMode(0775)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
-	systemTmpDirPermissions   = os.FileMode(0770)
 
 	sshDirPermissions          = os.FileMode(0700)
 	sshAuthKeysFilePermissions = os.FileMode(0600)
@@ -799,10 +798,9 @@ func (p linux) SetupTmpDir() error {
 
 	// /var/tmp is used for preserving temporary files between system reboots
 	varTmpDir := "/var/tmp"
-
-	err = p.changeTmpDirPermissions(varTmpDir)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", varTmpDir)
 	if err != nil {
-		return err
+		return bosherr.WrapError(err, "chmod /var/tmp")
 	}
 
 	if p.options.UseDefaultTmpDir {
@@ -815,7 +813,7 @@ func (p linux) SetupTmpDir() error {
 	}
 
 	// change permissions
-	err = p.changeTmpDirPermissions(boshRootTmpPath)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", boshRootTmpPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
 	}
@@ -825,7 +823,17 @@ func (p linux) SetupTmpDir() error {
 		return err
 	}
 
+	err = p.changeTmpDirPermissions(systemTmpDir)
+	if err != nil {
+		return err
+	}
+
 	err = p.bindMountDir(boshRootTmpPath, varTmpDir)
+	if err != nil {
+		return err
+	}
+
+	err = p.changeTmpDirPermissions(varTmpDir)
 	if err != nil {
 		return err
 	}
@@ -903,7 +911,7 @@ func (p linux) changeTmpDirPermissions(path string) error {
 		return bosherr.WrapErrorf(err, "chown %s", path)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", fmt.Sprintf("%#o", systemTmpDirPermissions), path)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", path)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chmod %s", path)
 	}

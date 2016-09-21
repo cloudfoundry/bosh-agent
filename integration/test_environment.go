@@ -89,37 +89,12 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 func (t *TestEnvironment) CleanupDataDir() error {
 	t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`)
 
-	_, err := t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
-	if err != nil {
-		return err
-	}
-
-	err = t.DetachDevice("/var/tmp")
-	if err != nil {
-		return err
-	}
-
-	err = t.DetachDevice("/var/log")
+	err := t.DetachDevice("/var/log")
 	if err != nil {
 		return err
 	}
 
 	err = t.DetachDevice("/var/vcap/data")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo mkdir -p /var/tmp")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chmod 700 /var/tmp")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chmod 1777 /tmp")
 	if err != nil {
 		return err
 	}

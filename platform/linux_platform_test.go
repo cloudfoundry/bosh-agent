@@ -1503,10 +1503,9 @@ Number  Start   End     Size    File system  Name             Flags
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/tmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/var/tmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/var/tmp"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0770", "/tmp"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0700", "/var/tmp"}))
 		})
 
 		It("creates new temp dir", func() {
@@ -1545,14 +1544,14 @@ Number  Start   End     Size    File system  Name             Flags
 			It("creates a root_tmp folder", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
+				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
 			})
 
 			It("changes permissions on the new bind mount folder", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/fake-dir/data/root_tmp"}))
+				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
 			})
 
 			Context("mounting root_tmp into /tmp", func() {
@@ -1659,7 +1658,7 @@ Number  Start   End     Size    File system  Name             Flags
 						err := act()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/var/tmp"}))
+						Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"chown", "root:vcap", "/var/tmp"}))
 					})
 				})
 
