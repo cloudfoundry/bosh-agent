@@ -1,7 +1,11 @@
 package agent
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"path"
+	"path/filepath"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -109,6 +113,13 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up home dir")
 	}
 
+	// check if settings.json and update_settings.json match
+	//settings.Disks.Persistent vs updateSettings.DiskAssociations
+
+	if err = boot.comparePersistentDisk(); err != nil {
+		return bosherr.WrapError(err, "Comparing persistent disks")
+	}
+
 	for diskID := range settings.Disks.Persistent {
 		diskSettings, _ := settings.PersistentDiskSettings(diskID)
 
@@ -145,6 +156,65 @@ func (boot bootstrap) Run() (err error) {
 	}
 
 	return nil
+}
+
+func (boot bootstrap) comparePersistentDisk() error {
+	settings := boot.settingsService.GetSettings()
+	updateSettingsPath := filepath.Join(boot.platform.GetDirProvider().BoshDir(), "update_settings.json")
+
+	if boot.platform.GetFs().FileExists(updateSettingsPath) {
+
+		contents, _ := boot.platform.GetFs().ReadFile(updateSettingsPath)
+		var updateSettings boshsettings.UpdateSettings
+		json.Unmarshal(contents, &updateSettings)
+
+		for _, diskAssociation := range updateSettings.DiskAssociations {
+			if _, ok := settings.PersistentDiskSettings(diskAssociation.DiskCID); !ok {
+				return errors.New(fmt.Sprintf("Disk %s is not attached", diskAssociation.DiskCID))
+			}
+		}
+
+		if len(settings.Disks.Persistent) > 1 {
+			if len(settings.Disks.Persistent) > len(updateSettings.DiskAssociations) {
+				return errors.New("Unexpected disk attached")
+			}
+		}
+
+		return nil
+	}
+
+	if len(settings.Disks.Persistent) != 0 {
+		return errors.New("Persistent disk count and disk association count mismatch")
+	}
+
+	return nil
+
+	// updateSettingsPath := filepath.Join(boot.platform.GetDirProvider().BoshDir(), "update_settings.json")
+
+	// boot.platform..GetFs().FileExists(updateSettingsPath)
+
+	// contents, err := boot.platform.GetFs().ReadFile(updateSettingsPath)
+	// if err != nil {
+	// 	return err
+	// }
+	// var updateSettings boshsettings.UpdateSettings
+	// json.Unmarshal(contents, &updateSettings)
+
+	// settings := boot.settingsService.GetSettings()
+	// //"persistent":{"vol-03a309d6":"/dev/sdf","vol-5b14a48e":"/dev/sdi","vol-a5b41e70":"/dev/sdh","vol-f7a00a22":"/dev/sdg"}
+	// //"disk_associations":[{"name":"new-disk1","cid":"vol-03a309d6"},{"name":"new-disk2","cid":"vol-f7a00a22"},{"name":"new-disk3","cid":"vol-a5b41e70"},{"name":"new-disk4","cid":"vol-5b14a48e"}
+	// if len(settings.Disks.Persistent) != len(updateSettings.DiskAssociations) {
+	// 	return errors.New("Persistent disk count and disk association count mismatch")
+	// }
+
+	// for _, diskAssociation := range updateSettings.DiskAssociations {
+	// 	// TODO change to use PersistentDiskSettings method
+	// 	if _, ok := settings.Disks.Persistent[diskAssociation.DiskCID]; !ok {
+	// 		return errors.New(fmt.Sprintf("Disk %s is not attached", diskAssociation.DiskCID))
+	// 	}
+	// }
+
+	// return nil
 }
 
 func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
