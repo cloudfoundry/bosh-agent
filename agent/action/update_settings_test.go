@@ -12,6 +12,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	"github.com/cloudfoundry/bosh-utils/logger"
+	"path/filepath"
 )
 
 var _ = Describe("UpdateSettings", func() {
@@ -28,7 +29,7 @@ var _ = Describe("UpdateSettings", func() {
 		log = logger.NewLogger(logger.LevelNone)
 		certManager = new(fakes.FakeManager)
 		settingsService = &fakesettings.FakeSettingsService{}
-		platform = &fakeplatform.FakePlatform{}
+		platform = fakeplatform.NewFakePlatform()
 		updateAction = action.NewUpdateSettings(settingsService, platform, certManager, log)
 		newUpdateSettings = boshsettings.UpdateSettings{}
 	})
@@ -41,10 +42,31 @@ var _ = Describe("UpdateSettings", func() {
 		Expect(updateAction.IsPersistent()).To(BeFalse())
 	})
 
-	It("returns 'updated' on success", func() {
-		result, err := updateAction.Run(newUpdateSettings)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(Equal("updated"))
+	Context("on success", func() {
+		It("returns 'updated'", func() {
+			result, err := updateAction.Run(newUpdateSettings)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).To(Equal("updated"))
+		})
+
+		It("writes the updated settings to a file", func() {
+			updateAction.Run(newUpdateSettings)
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
+			exists := platform.GetFs().FileExists(expectedPath)
+			Expect(exists).To(Equal(true))
+		})
+	})
+
+	Context("when it cannot write the update settings file", func() {
+		BeforeEach(func() {
+			platform.Fs.WriteFileError = errors.New("Fake write error")
+		})
+
+		It("returns an error", func() {
+			_, err := updateAction.Run(newUpdateSettings)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Fake write error"))
+		})
 	})
 
 	Context("when updating the certificates fails", func() {

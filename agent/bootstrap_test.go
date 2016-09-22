@@ -337,7 +337,7 @@ func init() {
 
 			Describe("Mount persistent disk", func() {
 				Context("when there is more than one persistent disk", func() {
-					It("returns error", func() {
+					It("does not returns error", func() {
 						settingsService.Settings.Disks = boshsettings.Disks{
 							Persistent: map[string]interface{}{
 								"vol-123": "/dev/sdb",
@@ -346,7 +346,7 @@ func init() {
 						}
 
 						err := bootstrap()
-						Expect(err).To(HaveOccurred())
+						Expect(err).ToNot(HaveOccurred())
 					})
 				})
 

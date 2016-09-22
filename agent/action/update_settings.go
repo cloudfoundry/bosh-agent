@@ -3,11 +3,13 @@ package action
 import (
 	"errors"
 
+	"encoding/json"
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/logger"
+	"path/filepath"
 )
 
 type UpdateSettingsAction struct {
@@ -57,6 +59,17 @@ func (a UpdateSettingsAction) Run(newUpdateSettings boshsettings.UpdateSettings)
 	err = a.trustedCertManager.UpdateCertificates(newUpdateSettings.TrustedCerts)
 	if err != nil {
 		return "", err
+	}
+
+	updateSettingsJSON, err := json.Marshal(newUpdateSettings)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Marshalling updateSettings json")
+	}
+
+	updateSettingsPath := filepath.Join(a.platform.GetDirProvider().BoshDir(), "update_settings.json")
+	err = a.platform.GetFs().WriteFile(updateSettingsPath, updateSettingsJSON)
+	if err != nil {
+		return "", bosherr.WrapError(err, "writing update settings json")
 	}
 
 	return "updated", nil

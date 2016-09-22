@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"errors"
 	"path"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -108,10 +107,6 @@ func (boot bootstrap) Run() (err error) {
 
 	if err = boot.platform.SetupHomeDir(); err != nil {
 		return bosherr.WrapError(err, "Setting up home dir")
-	}
-
-	if len(settings.Disks.Persistent) > 1 {
-		return errors.New("Error mounting persistent disk, there is more than one persistent disk")
 	}
 
 	for diskID := range settings.Disks.Persistent {
