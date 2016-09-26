@@ -30,6 +30,8 @@ jobs:
   plan:
   - get: bosh-agent
     trigger: true
+  - get: bosh-agent-deps-zip
+    resource: windows-deps-zip
   - put: bosh-agent-zip-version
     params:
       bump: patch
