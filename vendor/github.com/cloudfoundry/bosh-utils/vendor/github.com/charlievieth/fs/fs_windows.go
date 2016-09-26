@@ -16,6 +16,9 @@ import (
 	"time"
 )
 
+// https://msdn.microsoft.com/en-us/library/system.io.path.getfullpath(v=vs.110).aspx
+const MAX_PATH = 248
+
 func isSlash(c uint8) bool { return c == '\\' || c == '/' }
 
 func absPath(path string) (string, error) {
@@ -37,7 +40,7 @@ func winPath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if len(p) >= syscall.MAX_PATH-2 {
+	if len(p) >= MAX_PATH {
 		if !strings.HasPrefix(p, `\\?\`) {
 			p = `\\?\` + p
 		}

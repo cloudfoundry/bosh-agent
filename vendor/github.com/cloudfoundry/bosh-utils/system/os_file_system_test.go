@@ -5,22 +5,22 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	osuser "os/user"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"github.com/stretchr/testify/assert"
 
 	"io/ioutil"
 
+	. "github.com/cloudfoundry/bosh-utils/assert"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/cloudfoundry/bosh-utils/system"
 )
-
-const Windows = runtime.GOOS == "windows"
 
 func createOsFs() (fs FileSystem) {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
@@ -40,41 +40,46 @@ func readFile(file *os.File) string {
 }
 
 var _ = Describe("OS FileSystem", func() {
-	Describe("linux-only tests", func() {
-		BeforeEach(func() {
-			if Windows {
-				Skip("Pending on Windows")
-			}
-		})
-
-		It("home dir", func() {
-			osFs := createOsFs()
-
-			homeDir, err := osFs.HomeDir("root")
+	It("home dir", func() {
+		superuser := "root"
+		expDir := "/root"
+		if Windows {
+			u, err := osuser.Current()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(homeDir).To(ContainSubstring("/root"))
-		})
+			superuser = u.Name
+			expDir = `\` + u.Name
+		}
 
-		It("expand path", func() {
-			osFs := createOsFs()
+		homeDir, err := createOsFs().HomeDir(superuser)
+		Expect(err).ToNot(HaveOccurred())
 
-			expandedPath, err := osFs.ExpandPath("~/fake-dir/fake-file.txt")
-			Expect(err).ToNot(HaveOccurred())
+		// path and user names are case-insensitive
+		if Windows {
+			Expect(strings.ToLower(homeDir)).To(ContainSubstring(strings.ToLower(expDir)))
+		} else {
+			Expect(homeDir).To(ContainSubstring(expDir))
+		}
+	})
 
-			currentUser, err := osuser.Current()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(expandedPath).To(Equal(currentUser.HomeDir + "/fake-dir/fake-file.txt"))
+	It("expand path", func() {
+		osFs := createOsFs()
 
-			expandedPath, err = osFs.ExpandPath("/fake-dir//fake-file.txt")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(expandedPath).To(Equal("/fake-dir/fake-file.txt"))
+		expandedPath, err := osFs.ExpandPath("~/fake-dir/fake-file.txt")
+		Expect(err).ToNot(HaveOccurred())
 
-			expandedPath, err = osFs.ExpandPath("./fake-file.txt")
-			Expect(err).ToNot(HaveOccurred())
-			currentDir, err := os.Getwd()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(expandedPath).To(Equal(currentDir + "/fake-file.txt"))
-		})
+		currentUser, err := osuser.Current()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(expandedPath).To(MatchPath(currentUser.HomeDir + "/fake-dir/fake-file.txt"))
+
+		expandedPath, err = osFs.ExpandPath("/fake-dir//fake-file.txt")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(expandedPath).To(MatchPath("/fake-dir/fake-file.txt"))
+
+		expandedPath, err = osFs.ExpandPath("./fake-file.txt")
+		Expect(err).ToNot(HaveOccurred())
+		currentDir, err := os.Getwd()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(expandedPath).To(MatchPath(currentDir + "/fake-file.txt"))
 	})
 
 	It("mkdir all", func() {
@@ -168,21 +173,22 @@ var _ = Describe("OS FileSystem", func() {
 
 	Describe("Stat", func() {
 		It("returns file info", func() {
-			if Windows {
-				Skip("Pending on Windows")
-			}
-
 			osFs := createOsFs()
 			testPath := filepath.Join(os.TempDir(), "OpenFileTestFile")
 
-			file, err := osFs.OpenFile(testPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.FileMode(0644))
+			file, err := osFs.OpenFile(testPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 			Expect(err).ToNot(HaveOccurred())
 			defer file.Close()
 			defer os.Remove(testPath)
 
-			info, err := osFs.Stat(testPath)
+			fsInfo, err := osFs.Stat(testPath)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(info.Mode()).To(Equal(os.FileMode(0644)))
+
+			// Go standard library
+			osInfo, err := os.Stat(testPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(os.SameFile(fsInfo, osInfo)).To(BeTrue())
 		})
 	})
 
@@ -447,7 +453,7 @@ var _ = Describe("OS FileSystem", func() {
 		// on Mac OS /var -> private/var
 		absPath, err := filepath.EvalSymlinks(targetPath)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(actualFilePath).To(Equal(absPath))
+		Expect(actualFilePath).To(MatchPath(absPath))
 	})
 
 	Context("read link", func() {
@@ -490,7 +496,7 @@ var _ = Describe("OS FileSystem", func() {
 				Expect(osFs.FileExists(targetPath)).To(Equal(false))
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(targetFilePath).To(Equal(targetPath))
+				Expect(targetFilePath).To(MatchPath(targetPath))
 			})
 		})
 
@@ -606,6 +612,8 @@ var _ = Describe("OS FileSystem", func() {
 		It("copies file", func() {
 			osFs := createOsFs()
 			srcPath := "test_assets/test_copy_dir_entries/foo.txt"
+			srcContent, err := osFs.ReadFileString(srcPath)
+			Expect(err).ToNot(HaveOccurred())
 			dstFile, err := osFs.TempFile("CopyFileTestFile")
 			Expect(err).ToNot(HaveOccurred())
 			defer os.Remove(dstFile.Name())
@@ -614,23 +622,30 @@ var _ = Describe("OS FileSystem", func() {
 
 			fooContent, err := osFs.ReadFileString(dstFile.Name())
 			Expect(err).ToNot(HaveOccurred())
-			Expect(fooContent).To(Equal("foo\n"))
+			Expect(fooContent).To(Equal(srcContent))
 		})
 
 		It("does not leak file descriptors", func() {
+			cmdName := "lsof"
 			if Windows {
-				Skip("Pending on Windows")
+				if _, err := exec.LookPath("handle.exe"); err != nil {
+					Skip("This test requires handle.exe it can be downloaded here:\n" +
+						"https://technet.microsoft.com/en-us/sysinternals/handle.aspx")
+				}
+				cmdName = "handle.exe"
 			}
 			osFs := createOsFs()
 
 			srcFile, err := osFs.TempFile("srcPath")
 			Expect(err).ToNot(HaveOccurred())
+			defer os.Remove(srcFile.Name())
 
 			err = srcFile.Close()
 			Expect(err).ToNot(HaveOccurred())
 
 			dstFile, err := osFs.TempFile("dstPath")
 			Expect(err).ToNot(HaveOccurred())
+			defer os.Remove(dstFile.Name())
 
 			err = dstFile.Close()
 			Expect(err).ToNot(HaveOccurred())
@@ -639,7 +654,7 @@ var _ = Describe("OS FileSystem", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			runner := NewExecCmdRunner(boshlog.NewLogger(boshlog.LevelNone))
-			stdout, _, _, err := runner.RunCommand("lsof")
+			stdout, _, _, err := runner.RunCommand(cmdName)
 			Expect(err).ToNot(HaveOccurred())
 
 			for _, line := range strings.Split(stdout, "\n") {
@@ -650,9 +665,6 @@ var _ = Describe("OS FileSystem", func() {
 					Fail(fmt.Sprintf("CopyFile did not close: dstFile: %s", dstFile.Name()))
 				}
 			}
-
-			os.Remove(srcFile.Name())
-			os.Remove(dstFile.Name())
 		})
 	})
 
@@ -685,8 +697,13 @@ var _ = Describe("OS FileSystem", func() {
 		})
 
 		It("does not leak file descriptors", func() {
+			cmdName := "lsof"
 			if Windows {
-				Skip("Pending on Windows")
+				if _, err := exec.LookPath("handle.exe"); err != nil {
+					Skip("This test requires handle.exe it can be downloaded here:\n" +
+						"https://technet.microsoft.com/en-us/sysinternals/handle.aspx")
+				}
+				cmdName = "handle.exe"
 			}
 
 			osFs := createOsFs()
@@ -699,10 +716,10 @@ var _ = Describe("OS FileSystem", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			runner := NewExecCmdRunner(boshlog.NewLogger(boshlog.LevelNone))
-			stdout, _, _, err := runner.RunCommand("lsof")
+			stdout, _, _, err := runner.RunCommand(cmdName)
 			Expect(err).ToNot(HaveOccurred())
 
-			// lsof uses absolute paths
+			// lsof and handle use absolute paths
 			srcPath, err = filepath.Abs(srcPath)
 			Expect(err).ToNot(HaveOccurred())
 

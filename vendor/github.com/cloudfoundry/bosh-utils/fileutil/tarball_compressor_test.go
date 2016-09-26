@@ -113,6 +113,7 @@ var _ = Describe("tarballCompressor", func() {
 				"./some_directory/sub_dir/",
 				"./some_directory/sub_dir/other_sub_dir/",
 				"./some_directory/sub_dir/other_sub_dir/.keep",
+				"./symlink_dir",
 				"./other_logs/more_logs/",
 				"./other_logs/other_app.stderr.log",
 				"./other_logs/other_app.stdout.log",

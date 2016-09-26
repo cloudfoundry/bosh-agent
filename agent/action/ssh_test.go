@@ -18,7 +18,7 @@ import (
 func validatePlatformSetupWithPassword(platform *fakeplatform.FakePlatform, expectedPwd string) {
 	Expect(platform.CreateUserUsername).To(Equal("fake-user"))
 	Expect(platform.CreateUserPassword).To(Equal(expectedPwd))
-	Expect(platform.CreateUserBasePath).To(Equal("/foo/bosh_ssh"))
+	Expect(platform.CreateUserBasePath).To(boshassert.MatchPath("/foo/bosh_ssh"))
 	Expect(platform.AddUserToGroupsGroups["fake-user"]).To(Equal(
 		[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup},
 	))

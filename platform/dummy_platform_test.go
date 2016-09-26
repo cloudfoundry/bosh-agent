@@ -1,12 +1,13 @@
 package platform_test
 
 import (
+	"path/filepath"
+
 	. "github.com/cloudfoundry/bosh-agent/platform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"encoding/json"
-	"path"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
@@ -87,7 +88,7 @@ func describeDummyPlatform() {
 				mountsJSON, err := json.Marshal(mounts)
 				Expect(err).NotTo(HaveOccurred())
 
-				mountsPath := path.Join(dirProvider.BoshDir(), "mounts.json")
+				mountsPath := filepath.Join(dirProvider.BoshDir(), "mounts.json")
 				fs.WriteFile(mountsPath, mountsJSON)
 			})
 
@@ -117,7 +118,7 @@ func describeDummyPlatform() {
 
 			err = platform.AssociateDisk(diskName2, boshsettings.DiskSettings{})
 			Expect(err).NotTo(HaveOccurred())
-			diskAssociationsPath := path.Join(dirProvider.BoshDir(), "disk_associations.json")
+			diskAssociationsPath := filepath.Join(dirProvider.BoshDir(), "disk_associations.json")
 
 			actualDiskNames := []string{}
 			fileContent, err := fs.ReadFile(diskAssociationsPath)
@@ -138,7 +139,7 @@ func describeDummyPlatform() {
 			err := platform.SetUserPassword("user-name", "fake-password")
 			Expect(err).NotTo(HaveOccurred())
 
-			userPasswordsPath := path.Join(dirProvider.BoshDir(), "user-name", CredentialFileName)
+			userPasswordsPath := filepath.Join(dirProvider.BoshDir(), "user-name", CredentialFileName)
 			password, err := fs.ReadFileString(userPasswordsPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(password).To(Equal("fake-password"))
@@ -150,12 +151,12 @@ func describeDummyPlatform() {
 			err = platform.SetUserPassword("user-name2", "fake-password2")
 			Expect(err).NotTo(HaveOccurred())
 
-			userPasswordsPath := path.Join(dirProvider.BoshDir(), "user-name1", CredentialFileName)
+			userPasswordsPath := filepath.Join(dirProvider.BoshDir(), "user-name1", CredentialFileName)
 			password, err := fs.ReadFileString(userPasswordsPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(password).To(Equal("fake-password1"))
 
-			userPasswordsPath = path.Join(dirProvider.BoshDir(), "user-name2", CredentialFileName)
+			userPasswordsPath = filepath.Join(dirProvider.BoshDir(), "user-name2", CredentialFileName)
 			password, err = fs.ReadFileString(userPasswordsPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(password).To(Equal("fake-password2"))
@@ -167,7 +168,7 @@ func describeDummyPlatform() {
 			err := platform.SetupDataDir()
 			Expect(err).NotTo(HaveOccurred())
 
-			stat := fs.GetFileTestStat("/fake-dir/sys")
+			stat := fs.GetFileTestStat(filepath.Clean("/fake-dir/sys"))
 
 			Expect(stat).ToNot(BeNil())
 			Expect(stat.SymlinkTarget).To(Equal("/fake-dir/data/sys"))
