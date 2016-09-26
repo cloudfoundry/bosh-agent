@@ -29,6 +29,14 @@ func fixtureSrcTgz() string {
 	return filepath.Join(pwd, "test_assets", "compressor-decompress-file-to-dir.tgz")
 }
 
+func createTestSymlink() (string, error) {
+	srcDir := fixtureSrcDir()
+	symlinkPath := filepath.Join(srcDir, "symlink_dir")
+	symlinkTarget := filepath.Join(srcDir, "../symlink_target")
+	os.Remove(symlinkPath)
+	return symlinkPath, os.Symlink(symlinkTarget, symlinkPath)
+}
+
 func beDir() beDirMatcher {
 	return beDirMatcher{}
 }
@@ -95,6 +103,11 @@ var _ = Describe("tarballCompressor", func() {
 	Describe("CompressFilesInDir", func() {
 		It("compresses the files in the given directory", func() {
 			srcDir := fixtureSrcDir()
+
+			symlinkPath, err := createTestSymlink()
+			Expect(err).To(Succeed())
+			defer os.Remove(symlinkPath)
+
 			tgzName, err := compressor.CompressFilesInDir(srcDir)
 			Expect(err).ToNot(HaveOccurred())
 			defer os.Remove(tgzName)

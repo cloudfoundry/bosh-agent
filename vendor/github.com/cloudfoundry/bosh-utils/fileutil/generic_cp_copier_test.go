@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,7 +12,6 @@ import (
 	. "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"sort"
 )
 
 var _ = Describe("genericCpCopier", func() {
@@ -27,11 +27,6 @@ var _ = Describe("genericCpCopier", func() {
 	})
 
 	Describe("FilteredCopyToTemp", func() {
-		copierFixtureSrcDir := func() string {
-			pwd, err := os.Getwd()
-			Expect(err).ToNot(HaveOccurred())
-			return filepath.Join(pwd, "test_assets", "test_filtered_copy_to_temp")
-		}
 		filesInDir := func(dir string) []string {
 			copiedFiles := []string{}
 			err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -52,13 +47,13 @@ var _ = Describe("genericCpCopier", func() {
 		}
 
 		It("copies all regular files from filtered copy to temp", func() {
-			srcDir := copierFixtureSrcDir()
+			srcDir := fixtureSrcDir()
 			filters := []string{
-				filepath.Join("**","*.stdout.log"),
+				filepath.Join("**", "*.stdout.log"),
 				"*.stderr.log",
-				filepath.Join("**","more.stderr.log"),
-				filepath.Join("..","some.config"),
-				filepath.Join("some_directory","**","*"),
+				filepath.Join("**", "more.stderr.log"),
+				filepath.Join("..", "some.config"),
+				filepath.Join("some_directory", "**", "*"),
 			}
 
 			dstDir, err := cpCopier.FilteredCopyToTemp(srcDir, filters)
@@ -110,13 +105,17 @@ var _ = Describe("genericCpCopier", func() {
 				Skip("Pending on Windows, relative symlinks are not supported")
 			}
 
-			srcDir := copierFixtureSrcDir()
+			srcDir := fixtureSrcDir()
+			symlinkPath, err := createTestSymlink()
+			Expect(err).To(Succeed())
+			defer os.Remove(symlinkPath)
+
 			filters := []string{
-				filepath.Join("**","*.stdout.log"),
+				filepath.Join("**", "*.stdout.log"),
 				"*.stderr.log",
-				filepath.Join("**","more.stderr.log"),
-				filepath.Join("..","some.config"),
-				filepath.Join("some_directory","**","*"),
+				filepath.Join("**", "more.stderr.log"),
+				filepath.Join("..", "some.config"),
+				filepath.Join("some_directory", "**", "*"),
 			}
 
 			dstDir, err := cpCopier.FilteredCopyToTemp(srcDir, filters)
@@ -143,7 +142,7 @@ var _ = Describe("genericCpCopier", func() {
 			})
 
 			It("fixes permissions on destination directory", func() {
-				srcDir := copierFixtureSrcDir()
+				srcDir := fixtureSrcDir()
 				filters := []string{
 					"**/*",
 				}
@@ -160,7 +159,7 @@ var _ = Describe("genericCpCopier", func() {
 		})
 
 		It("copies the content of directories when specified as a filter", func() {
-			srcDir := copierFixtureSrcDir()
+			srcDir := fixtureSrcDir()
 			filters := []string{
 				"some_directory",
 			}
