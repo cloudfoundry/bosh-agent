@@ -116,7 +116,7 @@ func (p dummyPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
-func (p dummyPlatform) SetupSSH(publicKey, username string) (err error) {
+func (p dummyPlatform) SetupSSH(publicKey []string, username string) (err error) {
 	return
 }
 

@@ -174,10 +174,15 @@ func (e Env) GetRemoveDevTools() bool {
 	return e.Bosh.RemoveDevTools
 }
 
+func (e Env) GetAuthorizedKeys() []string {
+	return e.Bosh.AuthorizedKeys
+}
+
 type BoshEnv struct {
-	Password         string `json:"password"`
-	KeepRootPassword bool   `json:"keep_root_password"`
-	RemoveDevTools   bool   `json:"remove_dev_tools"`
+	Password         string   `json:"password"`
+	KeepRootPassword bool     `json:"keep_root_password"`
+	RemoveDevTools   bool     `json:"remove_dev_tools"`
+	AuthorizedKeys   []string `json:"authorized_keys"`
 }
 
 type DNSRecords struct {
