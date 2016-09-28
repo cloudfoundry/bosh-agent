@@ -85,9 +85,9 @@ func describeDummyPlatform() {
 
 		BeforeEach(func() {
 			diskSettings = boshsettings.DiskSettings{ID: "somediskid"}
-			mountsPath = path.Join(dirProvider.BoshDir(), "mounts.json")
+			mountsPath = filepath.Join(dirProvider.BoshDir(), "mounts.json")
 			managedSettingsPath = filepath.Join(dirProvider.BoshDir(), "managed_disk_settings.json")
-			formattedDisksPath = path.Join(dirProvider.BoshDir(), "formatted_disks.json")
+			formattedDisksPath = filepath.Join(dirProvider.BoshDir(), "formatted_disks.json")
 		})
 
 		It("Mounts a persistent disk", func() {
@@ -196,7 +196,7 @@ func describeDummyPlatform() {
 
 	Describe("IsPersistentDiskMountable", func() {
 		BeforeEach(func() {
-			formattedDisksPath := path.Join(dirProvider.BoshDir(), "formatted_disks.json")
+			formattedDisksPath := filepath.Join(dirProvider.BoshDir(), "formatted_disks.json")
 			fs.WriteFileString(formattedDisksPath, `[{"DiskCid": "my-disk-id"}]`)
 		})
 
