@@ -2,11 +2,13 @@ package platform_test
 
 import (
 	"errors"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform"
 
@@ -1912,7 +1914,7 @@ Number  Start   End     Size    File system  Name             Flags
 	Describe("MountPersistentDisk", func() {
 		act := func() error {
 			return platform.MountPersistentDisk(
-				boshsettings.DiskSettings{Path: "fake-volume-id"},
+				boshsettings.DiskSettings{ID: "fake-unique-id", Path: "fake-volume-id"},
 				"/mnt/point",
 			)
 		}
@@ -2065,6 +2067,18 @@ Number  Start   End     Size    File system  Name             Flags
 					Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
 					Expect(mounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
 					Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+				})
+
+				It("generates the managed disk settings file", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					var contents string
+					managedSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+
+					contents, err = platform.GetFs().ReadFileString(managedSettingsPath)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(contents).To(Equal("fake-unique-id"))
 				})
 			})
 		})
