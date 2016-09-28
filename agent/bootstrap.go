@@ -1,8 +1,11 @@
 package agent
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"path"
+	"path/filepath"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -110,8 +113,8 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up home dir")
 	}
 
-	if len(settings.Disks.Persistent) > 1 {
-		return errors.New("Error mounting persistent disk, there is more than one persistent disk")
+	if err = boot.comparePersistentDisk(); err != nil {
+		return bosherr.WrapError(err, "Comparing persistent disks")
 	}
 
 	for diskID := range settings.Disks.Persistent {
@@ -122,7 +125,7 @@ func (boot bootstrap) Run() (err error) {
 			return bosherr.WrapError(err, "Checking if persistent disk is partitioned")
 		}
 
-		if isPartitioned {
+		if isPartitioned && diskID == boot.lastMountedCid() {
 			if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
 				return bosherr.WrapError(err, "Mounting persistent disk")
 			}
@@ -152,6 +155,36 @@ func (boot bootstrap) Run() (err error) {
 	return nil
 }
 
+func (boot bootstrap) comparePersistentDisk() error {
+	settings := boot.settingsService.GetSettings()
+	updateSettingsPath := filepath.Join(boot.platform.GetDirProvider().BoshDir(), "update_settings.json")
+
+	if err := boot.checkLastMountedCid(settings); err != nil {
+		return err
+	}
+
+	var updateSettings boshsettings.UpdateSettings
+
+	if boot.platform.GetFs().FileExists(updateSettingsPath) {
+		contents, _ := boot.platform.GetFs().ReadFile(updateSettingsPath)
+		json.Unmarshal(contents, &updateSettings)
+	}
+
+	for _, diskAssociation := range updateSettings.DiskAssociations {
+		if _, ok := settings.PersistentDiskSettings(diskAssociation.DiskCID); !ok {
+			return fmt.Errorf("Disk %s is not attached", diskAssociation.DiskCID)
+		}
+	}
+
+	if len(settings.Disks.Persistent) > 1 {
+		if len(settings.Disks.Persistent) > len(updateSettings.DiskAssociations) {
+			return errors.New("Unexpected disk attached")
+		}
+	}
+
+	return nil
+}
+
 func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 	password := env.GetPassword()
 	if password == "" {
@@ -171,4 +204,32 @@ func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 	}
 
 	return nil
+}
+
+func (boot bootstrap) checkLastMountedCid(settings boshsettings.Settings) error {
+	lastMountedCid := boot.lastMountedCid()
+
+	if len(settings.Disks.Persistent) == 0 || lastMountedCid == "" {
+		return nil
+	}
+
+	if _, ok := settings.PersistentDiskSettings(lastMountedCid); !ok {
+		return fmt.Errorf("Attached disk disagrees with previous mount")
+	}
+
+	return nil
+}
+
+func (boot bootstrap) lastMountedCid() string {
+	managedDiskSettingsPath := filepath.Join(boot.platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+	var lastMountedCid string
+
+	if boot.platform.GetFs().FileExists(managedDiskSettingsPath) {
+		contents, _ := boot.platform.GetFs().ReadFile(managedDiskSettingsPath)
+		lastMountedCid = string(contents)
+
+		return lastMountedCid
+	}
+
+	return ""
 }

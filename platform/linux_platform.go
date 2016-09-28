@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -991,6 +992,11 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	}
 
 	err = p.diskManager.GetMounter().Mount(realPath, mountPoint)
+
+	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
+
+	p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
+
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
 	}

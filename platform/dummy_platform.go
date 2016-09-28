@@ -25,6 +25,10 @@ type mount struct {
 	DiskCid  string
 }
 
+type formattedDisk struct {
+	DiskCid string
+}
+
 type diskMigration struct {
 	FromDiskCid string
 	ToDiskCid   string
@@ -215,15 +219,36 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 		return err
 	}
 
+	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
+
 	if isMountPoint {
+		currentManagedDisk, err := p.fs.ReadFileString(managedSettingsPath)
+		if err != nil {
+			return err
+		}
+
+		if diskSettings.ID == currentManagedDisk {
+			return nil
+		}
+
 		mountPoint = p.dirProvider.StoreMigrationDir()
 	}
+
+	newlyFormattedDisk := []formattedDisk{{DiskCid: diskSettings.ID}}
+	diskJSON, err := json.Marshal(newlyFormattedDisk)
+	if err != nil {
+		return err
+	}
+
+	p.fs.WriteFile(filepath.Join(p.dirProvider.BoshDir(), "formatted_disks.json"), diskJSON)
 
 	mounts = append(mounts, mount{MountDir: mountPoint, DiskCid: diskSettings.ID})
 	mountsJSON, err := json.Marshal(mounts)
 	if err != nil {
 		return err
 	}
+
+	p.fs.WriteFileString(managedSettingsPath, diskSettings.ID)
 
 	return p.fs.WriteFile(p.mountsPath(), mountsJSON)
 }
@@ -317,6 +342,22 @@ func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSet
 }
 
 func (p dummyPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
+	var formattedDisks []formattedDisk
+	formattedDisksPath := filepath.Join(p.dirProvider.BoshDir(), "formatted_disks.json")
+	if p.fs.FileExists(formattedDisksPath) {
+		bytes, err := p.fs.ReadFile(formattedDisksPath)
+		if err != nil {
+			return false, err
+		}
+		json.Unmarshal(bytes, &formattedDisks)
+
+		for _, disk := range formattedDisks {
+			if diskSettings.ID == disk.DiskCid {
+				return true, nil
+			}
+		}
+	}
+
 	return false, nil
 }
 

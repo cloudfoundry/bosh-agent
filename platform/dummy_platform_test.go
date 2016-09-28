@@ -72,10 +72,70 @@ func describeDummyPlatform() {
 	})
 
 	Describe("GetCertManager", func() {
-		It("returs a dummy cert manager", func() {
+		It("returns a dummy cert manager", func() {
 			certManager := platform.GetCertManager()
 
 			Expect(certManager.UpdateCertificates("")).Should(BeNil())
+		})
+	})
+
+	Describe("MountPersistentDisk", func() {
+		var diskSettings boshsettings.DiskSettings
+		var mountsPath, managedSettingsPath, formattedDisksPath string
+
+		BeforeEach(func() {
+			diskSettings = boshsettings.DiskSettings{ID: "somediskid"}
+			mountsPath = path.Join(dirProvider.BoshDir(), "mounts.json")
+			managedSettingsPath = filepath.Join(dirProvider.BoshDir(), "managed_disk_settings.json")
+			formattedDisksPath = path.Join(dirProvider.BoshDir(), "formatted_disks.json")
+		})
+
+		It("Mounts a persistent disk", func() {
+			mountsContent, _ := fs.ReadFileString(mountsPath)
+			Expect(mountsContent).To(Equal(""))
+
+			err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
+			Expect(err).NotTo(HaveOccurred())
+
+			mountsContent, _ = fs.ReadFileString(mountsPath)
+			Expect(mountsContent).To(Equal(`[{"MountDir":"/dev/potato","DiskCid":"somediskid"}]`))
+		})
+
+		It("Updates the managed disk settings", func() {
+			lastMountedCid, _ := fs.ReadFileString(managedSettingsPath)
+			Expect(lastMountedCid).To(Equal(""))
+
+			err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
+			Expect(err).NotTo(HaveOccurred())
+
+			lastMountedCid, _ = fs.ReadFileString(managedSettingsPath)
+			Expect(lastMountedCid).To(Equal("somediskid"))
+		})
+
+		It("Updates the formatted disks", func() {
+			formattedDisks, _ := fs.ReadFileString(formattedDisksPath)
+			Expect(formattedDisks).To(Equal(""))
+
+			err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
+			Expect(err).NotTo(HaveOccurred())
+
+			formattedDisks, _ = fs.ReadFileString(formattedDisksPath)
+			Expect(formattedDisks).To(Equal(`[{"DiskCid":"somediskid"}]`))
+		})
+
+		Context("Device has already been mounted as expected", func() {
+			BeforeEach(func() {
+				fs.WriteFileString(managedSettingsPath, "somediskid")
+				fs.WriteFileString(mountsPath, `[{"MountDir":"/dev/potato","DiskCid":"somediskid"}]`)
+			})
+
+			It("Does not mount in new location", func() {
+				err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
+				Expect(err).NotTo(HaveOccurred())
+
+				mountsContent, _ := fs.ReadFileString(mountsPath)
+				Expect(mountsContent).To(Equal(`[{"MountDir":"/dev/potato","DiskCid":"somediskid"}]`))
+			})
 		})
 	})
 
@@ -131,6 +191,33 @@ func describeDummyPlatform() {
 				diskName1,
 				diskName2,
 			}))
+		})
+	})
+
+	Describe("IsPersistentDiskMountable", func() {
+		BeforeEach(func() {
+			formattedDisksPath := path.Join(dirProvider.BoshDir(), "formatted_disks.json")
+			fs.WriteFileString(formattedDisksPath, `[{"DiskCid": "my-disk-id"}]`)
+		})
+
+		Context("when disk has been formatted", func() {
+			It("returns true with no error", func() {
+				diskSettings := boshsettings.DiskSettings{ID: "my-disk-id"}
+
+				mountable, err := platform.IsPersistentDiskMountable(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(mountable).To(Equal(true))
+			})
+		})
+
+		Context("when disk has NOT been formatted", func() {
+			It("returns false with no error", func() {
+				diskSettings := boshsettings.DiskSettings{ID: "some-other-disk-id"}
+
+				mountable, err := platform.IsPersistentDiskMountable(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(mountable).To(Equal(false))
+			})
 		})
 	})
 
