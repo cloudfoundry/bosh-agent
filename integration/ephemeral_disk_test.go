@@ -79,14 +79,14 @@ var _ = Describe("EphemeralDisk", func() {
 					Eventually(func() error {
 						_, err := testEnvironment.RunCommand("netcat -z -v 127.0.0.1 6868")
 						return err
-					}, 2*time.Minute, 1*time.Second).ShouldNot(HaveOccurred())
+					}, 2 * time.Minute, 1 * time.Second).ShouldNot(HaveOccurred())
 				})
 
 				It("it is being mounted", func() {
 					Eventually(func() string {
 						result, _ := testEnvironment.RunCommand("sudo mount | grep /dev/sdh | grep -c /var/vcap/data")
 						return strings.TrimSpace(result)
-					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
+					}, 2 * time.Minute, 1 * time.Second).Should(Equal("1"))
 				})
 			})
 
@@ -98,7 +98,7 @@ var _ = Describe("EphemeralDisk", func() {
 				It("agent fails with error", func() {
 					Eventually(func() bool {
 						return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
-					}, 2*time.Minute, 1*time.Second).Should(BeTrue())
+					}, 2 * time.Minute, 1 * time.Second).Should(BeTrue())
 				})
 			})
 		})
@@ -106,7 +106,6 @@ var _ = Describe("EphemeralDisk", func() {
 		Context("when ephemeral disk is not provided in settings", func() {
 			Context("when root disk can be used as ephemeral", func() {
 				var (
-					rootLink      string
 					oldRootDevice string
 				)
 
@@ -114,12 +113,12 @@ var _ = Describe("EphemeralDisk", func() {
 					err := testEnvironment.UpdateAgentConfig("root-partition-agent.json")
 					Expect(err).ToNot(HaveOccurred())
 
-					oldRootDevice, rootLink, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 2048, 128)
+					oldRootDevice, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 2048, 128)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				AfterEach(func() {
-					err := testEnvironment.SwitchRootDevice(oldRootDevice, rootLink)
+					err := testEnvironment.DetachPartitionedRootDevice(oldRootDevice, "/dev/sdz")
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -129,14 +128,14 @@ var _ = Describe("EphemeralDisk", func() {
 						Expect(err).ToNot(HaveOccurred())
 
 						return strings.TrimSpace(ephemeralDataDevice)
-					}, 2*time.Minute, 1*time.Second).Should(Equal("/dev/sdz3"))
+					}, 2 * time.Minute, 1 * time.Second).Should(Equal("/dev/sdz3"))
 
 					partitionTable, err := testEnvironment.RunCommand("sudo sfdisk -d /dev/sdz")
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz1"))
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz2"))
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz3"))
+					Expect(partitionTable).To(ContainSubstring("/dev/sdz1 : start=        1, size=   273104, Id=83"))
+					Expect(partitionTable).To(ContainSubstring("/dev/sdz2 : start=   274432, size=  1960600, Id=83"))
+					Expect(partitionTable).To(ContainSubstring("/dev/sdz3 : start=  2236416, size=  1957888, Id=83"))
 				})
 			})
 
@@ -144,7 +143,7 @@ var _ = Describe("EphemeralDisk", func() {
 				It("agent fails with error", func() {
 					Eventually(func() bool {
 						return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
-					}, 2*time.Minute, 1*time.Second).Should(BeTrue())
+					}, 2 * time.Minute, 1 * time.Second).Should(BeTrue())
 				})
 			})
 		})
