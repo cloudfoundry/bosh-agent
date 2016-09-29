@@ -54,3 +54,7 @@ func (fs *osFileSystem) chown(path, username string) error {
 
 	return nil
 }
+
+func (fs *osFileSystem) symlinkPaths(oldPath, newPath string) (old, new string, err error) {
+	return oldPath, newPath, nil
+}

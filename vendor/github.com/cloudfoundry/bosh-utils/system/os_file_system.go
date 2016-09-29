@@ -211,28 +211,32 @@ func (fs *osFileSystem) Rename(oldPath, newPath string) (err error) {
 func (fs *osFileSystem) Symlink(oldPath, newPath string) error {
 	fs.logger.Debug(fs.logTag, "Symlinking oldPath %s with newPath %s", oldPath, newPath)
 
-	if fi, err := fs.Lstat(newPath); err == nil {
+	source, target, err := fs.symlinkPaths(oldPath, newPath)
+	if err != nil {
+		bosherr.WrapErrorf(err, "Getting absolute paths for target and path links: %s %s", oldPath, newPath)
+	}
+	if fi, err := fs.Lstat(target); err == nil {
 		if fi.Mode()&os.ModeSymlink != 0 {
 			// Symlink
-			new, err := fs.Readlink(newPath)
+			new, err := fs.Readlink(target)
 			if err != nil {
-				return bosherr.WrapErrorf(err, "Reading link for %s", newPath)
+				return bosherr.WrapErrorf(err, "Reading link for %s", target)
 			}
-			if filepath.Clean(oldPath) == filepath.Clean(new) {
+			if filepath.Clean(source) == filepath.Clean(new) {
 				return nil
 			}
 		}
-		if err := fs.RemoveAll(newPath); err != nil {
-			return bosherr.WrapErrorf(err, "Removing new path at %s", newPath)
+		if err := fs.RemoveAll(target); err != nil {
+			return bosherr.WrapErrorf(err, "Removing new path at %s", target)
 		}
 	}
 
-	containingDir := filepath.Dir(newPath)
+	containingDir := filepath.Dir(target)
 	if !fs.FileExists(containingDir) {
 		fs.MkdirAll(containingDir, os.FileMode(0700))
 	}
 
-	return fsWrapper.Symlink(oldPath, newPath)
+	return fsWrapper.Symlink(source, target)
 }
 
 func (fs *osFileSystem) ReadAndFollowLink(symlinkPath string) (targetPath string, err error) {

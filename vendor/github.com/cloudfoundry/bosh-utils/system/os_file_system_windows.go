@@ -4,6 +4,8 @@ package system
 import "os/user"
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -34,4 +36,33 @@ func (fs *osFileSystem) homeDir(username string) (string, error) {
 
 func (fs *osFileSystem) chown(path, username string) error {
 	return bosherr.WrapError(error(syscall.EWINDOWS), "Chown not supported on Windows")
+}
+
+func isSlash(c uint8) bool { return c == '\\' || c == '/' }
+
+func absPath(path string) (string, error) {
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path), nil
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	if len(path) > 0 && isSlash(path[0]) {
+		return filepath.Join(filepath.VolumeName(wd), path), nil
+	}
+	return filepath.Join(wd, path), nil
+}
+
+func (fs *osFileSystem) symlinkPaths(oldPath, newPath string) (old, new string, err error) {
+	// note: the type of the returned error is not *os.LinkError
+	old, err = absPath(oldPath)
+	if err != nil {
+		return
+	}
+	new, err = absPath(newPath)
+	if err != nil {
+		return
+	}
+	return
 }

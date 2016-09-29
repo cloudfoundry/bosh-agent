@@ -322,6 +322,7 @@ var _ = Describe("OS FileSystem", func() {
 		AfterEach(func() {
 			os.RemoveAll(TempDir)
 		})
+
 		It("creates a symlink", func() {
 			osFs := createOsFs()
 			filePath := filepath.Join(TempDir, "SymlinkTestFile")
@@ -430,6 +431,49 @@ var _ = Describe("OS FileSystem", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect("file b").To(Equal(readFile(symlinkFile)))
 
+		})
+
+		testSymlinkDir := func(sourceDir, targetDir string) {
+			const Content = "Hello!"
+			osFs := createOsFs()
+
+			Expect(osFs.MkdirAll(sourceDir, 0700)).To(Succeed())
+
+			Expect(osFs.Symlink(sourceDir, targetDir)).To(Succeed())
+
+			sourceFile := filepath.Join(sourceDir, "file.txt")
+			targetFile := filepath.Join(targetDir, "file.txt")
+
+			Expect(osFs.WriteFileString(targetFile, Content)).To(Succeed())
+			s, err := osFs.ReadFileString(targetFile)
+			Expect(err).To(Succeed())
+			Expect(s).To(Equal(Content))
+
+			s, err = osFs.ReadFileString(sourceFile)
+			Expect(err).To(Succeed())
+			Expect(s).To(Equal(Content))
+
+			names, err := ioutil.ReadDir(targetDir)
+			Expect(err).To(Succeed())
+			Expect(names).To(HaveLen(1))
+			Expect(names[0].Name()).To(Equal("file.txt"))
+		}
+
+		It("creates links to a directory", func() {
+			sourceDir := filepath.Join(TempDir, "dir_a")
+			targetDir := filepath.Join(TempDir, "dir_b")
+			testSymlinkDir(sourceDir, targetDir)
+		})
+
+		It("creates links to a directory when the source and target paths are not absolute", func() {
+			sourceDir := filepath.Join(TempDir, "dir_a")
+			targetDir := filepath.Join(TempDir, "dir_b")
+
+			// On Windows this removes the volume name - on Unix this is a no-op
+			sourceDir = strings.TrimPrefix(sourceDir, filepath.VolumeName(sourceDir))
+			targetDir = strings.TrimPrefix(targetDir, filepath.VolumeName(targetDir))
+
+			testSymlinkDir(sourceDir, targetDir)
 		})
 	})
 
