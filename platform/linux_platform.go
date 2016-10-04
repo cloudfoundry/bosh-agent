@@ -887,15 +887,15 @@ func (p linux) bindMountDir(mountSource, mountPoint string) error {
 	mounted, err := bindMounter.IsMounted(mountPoint)
 
 	if !mounted && err == nil {
-		// mount
-		err = bindMounter.Mount(mountSource, mountPoint, "-o", "nodev", "-o", "noexec", "-o", "nosuid")
+		err = bindMounter.Mount(mountSource, mountPoint)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Bind mounting %s dir over %s", mountSource, mountPoint)
 		}
 	} else if err != nil {
 		return err
 	}
-	return nil
+
+	return bindMounter.RemountInPlace(mountPoint, "-o", "nodev", "-o", "noexec", "-o", "nosuid")
 }
 
 func (p linux) changeTmpDirPermissions(path string) error {

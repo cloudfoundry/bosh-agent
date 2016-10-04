@@ -88,6 +88,36 @@ var _ = Describe("EphemeralDisk", func() {
 						return strings.TrimSpace(result)
 					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 				})
+
+				Context("when bind mount /var/vcap/data/root_tmp on /tmp", func() {
+					BeforeEach(func() {
+						err := testEnvironment.UpdateAgentConfig("bind-mount-agent.json")
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					JustBeforeEach(func() {
+						Eventually(func() string {
+							result, _ := testEnvironment.RunCommand("sudo mount | grep /tmp | grep -c /var/vcap/data/root_tmp")
+							return strings.TrimSpace(result)
+						}, 2*time.Minute, 1*time.Second).Should(Equal("2"))
+					})
+
+					It("does not execute executables", func() {
+						_, err := testEnvironment.RunCommand("cp /bin/echo /tmp/echo")
+						Expect(err).ToNot(HaveOccurred())
+
+						_, err = testEnvironment.RunCommand("/tmp/echo hello")
+						Expect(err).To(HaveOccurred())
+					})
+
+					It("does not allow device files", func() {
+						_, err := testEnvironment.RunCommand("sudo mknod /tmp/blockDevice b 7 98")
+						Expect(err).ToNot(HaveOccurred())
+
+						_, err = testEnvironment.RunCommand("sudo dd if=/tmp/blockDevice bs=1M count=10")
+						Expect(err).To(HaveOccurred())
+					})
+				})
 			})
 
 			Context("when ephemeral disk does not exist", func() {

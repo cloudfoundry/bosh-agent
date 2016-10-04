@@ -1454,8 +1454,8 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(mounter.MountMountPoints).To(ContainElement("/home"))
 				Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
 				Expect(mounter.RemountInPlaceCalled).To(BeTrue())
-				Expect(mounter.RemountInPlaceMountPoint).To(Equal("/home"))
-				Expect(mounter.RemountInPlaceMountOptions).To(Equal([]string{"-o", "nodev"}))
+				Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/home"))
+				Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev"}))
 			})
 
 			It("return error if it cannot mount", func() {
@@ -1571,7 +1571,11 @@ Number  Start   End     Size    File system  Name             Flags
 
 						Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_tmp"))
 						Expect(mounter.MountMountPoints).To(ContainElement("/tmp"))
-						Expect(mounter.MountMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"}))
+						Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
+
+						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
+						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/tmp"))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
 					})
 
 					It("changes permissions for the system /tmp folder", func() {
@@ -1592,10 +1596,25 @@ Number  Start   End     Size    File system  Name             Flags
 						}
 					})
 
+					Context("when remount fails", func() {
+						BeforeEach(func() {
+							mounter.RemountInPlaceErr = errors.New("remount error")
+						})
+						It("returns an error", func() {
+							err := act()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(Equal("remount error"))
+						})
+					})
+
 					It("returns without an error", func() {
 						err := act()
 						Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/tmp"))
 						Expect(err).ToNot(HaveOccurred())
+
+						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
+						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/tmp"))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
 					})
 
 					It("does not create new tmp filesystem", func() {
@@ -1656,7 +1675,11 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(len(mounter.MountPartitionPaths)).To(Equal(2))
 						Expect(mounter.MountPartitionPaths[1]).To(Equal("/fake-dir/data/root_tmp"))
 						Expect(mounter.MountMountPoints[1]).To(Equal("/var/tmp"))
-						Expect(mounter.MountMountOptions[1]).To(ConsistOf("-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"))
+						Expect(mounter.MountMountOptions[1]).To(ConsistOf("--bind"))
+
+						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
+						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/var/tmp"))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
 					})
 
 					It("changes permissions for the system /var/tmp folder", func() {
@@ -1830,7 +1853,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 					Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_log"))
 					Expect(mounter.MountMountPoints).To(ContainElement("/var/log"))
-					Expect(mounter.MountMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"}))
+					Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
 				})
 			})
 

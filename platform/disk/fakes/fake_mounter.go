@@ -8,8 +8,8 @@ type FakeMounter struct {
 	MountErr            error
 
 	RemountInPlaceCalled       bool
-	RemountInPlaceMountPoint   string
-	RemountInPlaceMountOptions []string
+	RemountInPlaceMountPoints  []string
+	RemountInPlaceMountOptions [][]string
 	RemountInPlaceErr          error
 
 	RemountAsReadonlyCalled bool
@@ -89,7 +89,7 @@ func (m *FakeMounter) IsMountedArgsForCall(callNumber int) string {
 
 func (m *FakeMounter) RemountInPlace(mountPoint string, mountOptions ...string) error {
 	m.RemountInPlaceCalled = true
-	m.RemountInPlaceMountPoint = mountPoint
-	m.RemountInPlaceMountOptions = mountOptions
+	m.RemountInPlaceMountPoints = append(m.RemountInPlaceMountPoints, mountPoint)
+	m.RemountInPlaceMountOptions = append(m.RemountInPlaceMountOptions, mountOptions)
 	return m.RemountInPlaceErr
 }
