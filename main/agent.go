@@ -45,7 +45,7 @@ func runAgent(logger logger.Logger) chan error {
 
 func startAgent(logger logger.Logger) error {
 	sigCh := make(chan os.Signal, 8)
-	signal.Notify(sigCh, os.Interrupt, os.Kill)
+	signal.Notify(sigCh, syscall.SIGTERM, os.Interrupt, os.Kill)
 	errCh := runAgent(logger)
 	for {
 		select {
