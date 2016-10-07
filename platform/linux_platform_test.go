@@ -518,7 +518,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 			Expect(ntpConfig.FileType).To(Equal(fakesys.FakeFileTypeFile))
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"ntpdate"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"ntpdate &"}))
 		})
 
 		It("sets time with ntp servers is noop when no ntp server provided", func() {
