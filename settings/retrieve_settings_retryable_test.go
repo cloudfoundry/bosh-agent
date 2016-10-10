@@ -33,7 +33,7 @@ var _ = Describe("RetrieveSettingsRetryable", func() {
 				_, err := settingsRetryable.Attempt()
 				Expect(err).ToNot(HaveOccurred())
 
-				settings := settingsRetryable.NewSettings()
+				settings := settingsRetryable.Settings()
 				Expect(settings).To(Equal(Settings{AgentID: "some-agend-id"}))
 			})
 

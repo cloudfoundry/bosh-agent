@@ -6,13 +6,13 @@ import (
 
 type RetrieveSettingsRetryable interface {
 	Attempt() (bool, error)
-	NewSettings() Settings
+	Settings() Settings
 }
 
 type retrieveSettingsRetryable struct {
-	source      Source
-	newSettings Settings
-	logger      boshlog.Logger
+	source   Source
+	settings Settings
+	logger   boshlog.Logger
 }
 
 func NewRetrieveSettingsRetryable(source Source, logger boshlog.Logger) RetrieveSettingsRetryable {
@@ -25,7 +25,7 @@ func NewRetrieveSettingsRetryable(source Source, logger boshlog.Logger) Retrieve
 func (s *retrieveSettingsRetryable) Attempt() (bool, error) {
 	var fetchErr error
 	s.logger.Debug("retrieveSettingsRetryable", "Fetching settings")
-	s.newSettings, fetchErr = s.source.Settings()
+	s.settings, fetchErr = s.source.Settings()
 
 	if fetchErr != nil {
 		s.logger.Error("retrieveSettingsRetryable", "Fetching settings failed: ", fetchErr)
@@ -36,6 +36,6 @@ func (s *retrieveSettingsRetryable) Attempt() (bool, error) {
 	return true, fetchErr
 }
 
-func (s *retrieveSettingsRetryable) NewSettings() Settings {
-	return s.newSettings
+func (s *retrieveSettingsRetryable) Settings() Settings {
+	return s.settings
 }
