@@ -107,7 +107,7 @@ func (s *settingsService) LoadSettings() error {
 	}
 
 	s.logger.Debug(settingsServiceLogTag, "Successfully received settings from fetcher")
-	s.settings = settingsRetryable.NewSettings()
+	s.settings = settingsRetryable.Settings()
 
 	newSettingsJSON, err := json.Marshal(s.settings)
 	if err != nil {
