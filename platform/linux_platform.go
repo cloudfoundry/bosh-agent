@@ -546,13 +546,6 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 		return bosherr.WrapError(err, "Creating data dir")
 	}
 
-	if p.options.ScrubEphemeralDisk {
-		err = p.scrubEphemeralDisk(contents)
-		if err != nil {
-			return bosherr.WrapError(err, "Scrubbing ephemeral disk")
-		}
-	}
-
 	var swapPartitionPath, dataPartitionPath string
 
 	// Agent can only setup ephemeral data directory either on ephemeral device
@@ -598,6 +591,18 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	err = p.diskManager.GetMounter().Mount(dataPartitionPath, mountPoint)
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting data partition")
+	}
+
+	if p.options.ScrubEphemeralDisk {
+		contents, err := p.fs.Glob(mountPointGlob)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Globbing ephemeral disk mount point `%s'", mountPointGlob)
+		}
+
+		err = p.scrubEphemeralDisk(contents)
+		if err != nil {
+			return bosherr.WrapError(err, "Scrubbing ephemeral disk")
+		}
 	}
 
 	return nil
@@ -669,6 +674,14 @@ func (p linux) scrubEphemeralDisk(contents []string) error {
 	}
 
 	if !p.fs.FileExists(agentVersionFilePath) {
+		// need to remove contents when it is upgrading from a stemcell without scrubEphemeralDisk enabled
+		for _, content := range contents {
+			err = p.fs.RemoveAll(content)
+			if err != nil {
+				return bosherr.WrapErrorf(err, "Removing '%s'", content)
+			}
+		}
+
 		err = p.fs.WriteFileString(agentVersionFilePath, stemcellVersion)
 		if err != nil {
 			return bosherr.WrapError(err, "Writting agent version file")
@@ -693,6 +706,7 @@ func (p linux) scrubEphemeralDisk(contents []string) error {
 			}
 		}
 	}
+
 	return nil
 }
 
