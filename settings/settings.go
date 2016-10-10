@@ -6,6 +6,15 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
+type DiskAssociations struct {
+	Associations []DiskAssociation `json:"disk_associations"`
+}
+
+type DiskAssociation struct {
+	Name    string `json:"name"`
+	DiskCID string `json:"cid"`
+}
+
 const (
 	RootUsername        = "root"
 	VCAPUsername        = "vcap"
@@ -15,15 +24,19 @@ const (
 )
 
 type Settings struct {
-	AgentID      string    `json:"agent_id"`
-	Blobstore    Blobstore `json:"blobstore"`
-	Disks        Disks     `json:"disks"`
-	Env          Env       `json:"env"`
-	Networks     Networks  `json:"networks"`
-	Ntp          []string  `json:"ntp"`
-	Mbus         string    `json:"mbus"`
-	VM           VM        `json:"vm"`
-	TrustedCerts string    `json:"trusted_certs"`
+	AgentID   string    `json:"agent_id"`
+	Blobstore Blobstore `json:"blobstore"`
+	Disks     Disks     `json:"disks"`
+	Env       Env       `json:"env"`
+	Networks  Networks  `json:"networks"`
+	Ntp       []string  `json:"ntp"`
+	Mbus      string    `json:"mbus"`
+	VM        VM        `json:"vm"`
+}
+
+type UpdateSettings struct {
+	DiskAssociations []DiskAssociation `json:"disk_associations"`
+	TrustedCerts     string            `json:"trusted_certs"`
 }
 
 type Source interface {

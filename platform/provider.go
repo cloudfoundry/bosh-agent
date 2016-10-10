@@ -55,7 +55,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
 
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
-	copier := boshcmd.NewCpCopier(runner, fs, logger)
+	copier := boshcmd.NewGenericCpCopier(fs, logger)
 
 	// Kick of stats collection as soon as possible
 	statsCollector.StartCollecting(SigarStatsCollectionInterval, nil)

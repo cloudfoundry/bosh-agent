@@ -5,6 +5,7 @@ image: docker:///bosh/init
 
 inputs:
 - name: bosh-agent-zip-version
+- name: bosh-agent-deps-zip
 - name: bosh-agent
   path: gopath/src/github.com/cloudfoundry/bosh-agent
 

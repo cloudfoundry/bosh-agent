@@ -89,12 +89,37 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 func (t *TestEnvironment) CleanupDataDir() error {
 	t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`)
 
-	err := t.DetachDevice("/var/log")
+	_, err := t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
+	if err != nil {
+		return err
+	}
+
+	err = t.DetachDevice("/var/tmp")
+	if err != nil {
+		return err
+	}
+
+	err = t.DetachDevice("/var/log")
 	if err != nil {
 		return err
 	}
 
 	err = t.DetachDevice("/var/vcap/data")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo mkdir -p /var/tmp")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chmod 700 /var/tmp")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chmod 1777 /tmp")
 	if err != nil {
 		return err
 	}
@@ -158,7 +183,10 @@ func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPart
 			return err
 		}
 
-		t.RemoveDevice(partitionPath)
+		err = t.RemoveDevice(partitionPath)
+		if err != nil {
+			return err
+		}
 
 		_, err = t.RunCommand(fmt.Sprintf("sudo mknod %s b 7 %s", partitionPath, minorNum))
 		if err != nil {
@@ -168,27 +196,10 @@ func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPart
 	return nil
 }
 
-func (t *TestEnvironment) AttachPartitionedRootDevice(devicePath string, sizeInMB, rootPartitionSizeInMB int) (string, string, error) {
-	// Partitioner requires fs backed device
-	_, err := t.RunCommand(fmt.Sprintf("sudo mknod %s b 7 99", devicePath))
+func (t *TestEnvironment) AttachPartitionedRootDevice(devicePath string, sizeInMB, rootPartitionSizeInMB int) (string, error) {
+	err := t.AttachDevice(devicePath, sizeInMB, 3)
 	if err != nil {
-		return "", "", err
-	}
-
-	attachDeviceTemplate := `
-sudo rm -rf /virtual-root-fs
-sudo dd if=/dev/zero of=/virtual-root-fs bs=1M count=%d
-sudo losetup %s /virtual-root-fs
-`
-	attachDeviceScript := fmt.Sprintf(attachDeviceTemplate, sizeInMB, devicePath)
-	_, err = t.RunCommand(attachDeviceScript)
-	if err != nil {
-		return "", "", err
-	}
-
-	err = t.AttachDevice(devicePath, sizeInMB, 3)
-	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	// Create only first partition, agent will partition the rest for ephemeral disk
@@ -198,36 +209,70 @@ echo ',%d,L,' | sudo sfdisk -uM %s
 	partitionScript := fmt.Sprintf(partitionTemplate, rootPartitionSizeInMB, devicePath)
 	_, err = t.RunCommand(partitionScript)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	rootLink, err := t.RunCommand("df / | grep /dev/ | cut -d' ' -f1")
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	oldRootDevice, err := t.RunCommand(fmt.Sprintf("readlink -f %s", rootLink))
 	if err != nil {
-		return "", "", err
+		return "", err
+	}
+
+	_, err = t.RunCommand(fmt.Sprintf("sudo mv %s %s-temp", strings.TrimSpace(oldRootDevice), strings.TrimSpace(oldRootDevice)))
+	if err != nil {
+		return "", err
 	}
 
 	// Agent reads the symlink to get root device
-	// Replace the symlink with our fake device
-	err = t.SwitchRootDevice(devicePath, rootLink)
+	// Create a symlink to our fake device
+	_, err = t.RunCommand(fmt.Sprintf("sudo ln -sf %s1 %s", devicePath, strings.TrimSpace(rootLink)))
+
 	if err != nil {
-		return "", "", err
+		return strings.TrimSpace(oldRootDevice), err
 	}
 
-	return strings.TrimSpace(oldRootDevice), strings.TrimSpace(rootLink), nil
+	return strings.TrimSpace(oldRootDevice), nil
 }
 
-func (t *TestEnvironment) SwitchRootDevice(devicePath, rootLink string) error {
+func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePath string) error {
 	_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", rootLink))
 	if err != nil {
 		return err
 	}
 
-	_, err = t.RunCommand(fmt.Sprintf("sudo ln -s %s1 %s", devicePath, rootLink))
+	partitionPath := devicePath
+	for i := 3; i >= 0; i-- {
+		if i > 0 {
+			partitionPath = fmt.Sprintf("%s%d", devicePath, i)
+		}
+
+		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
+			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" {
+				t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
+			}
+
+			if i > 0 {
+				_, _ = t.RunCommand(fmt.Sprintf("sudo parted %s rm %d", devicePath, i))
+			}
+
+			err = t.DetachLoopDevice(partitionPath)
+			if err != nil {
+				return err
+			}
+
+			err = t.RemoveDevice(partitionPath)
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+
+	_, err = t.RunCommand(fmt.Sprintf("sudo mv %s-temp %s", rootLink, rootLink))
 	if err != nil {
 		return err
 	}

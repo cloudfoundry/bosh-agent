@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -37,6 +38,7 @@ const (
 	userBaseDirPermissions    = os.FileMode(0755)
 	userRootLogDirPermissions = os.FileMode(0775)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
+	systemTmpDirPermissions   = os.FileMode(0770)
 
 	sshDirPermissions          = os.FileMode(0700)
 	sshAuthKeysFilePermissions = os.FileMode(0600)
@@ -512,7 +514,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 	}
 
 	// Make a best effort to sync time now but don't error
-	_, _, _, _ = p.cmdRunner.RunCommand("ntpdate")
+	_, _, _, _ = p.cmdRunner.RunCommand("ntpdate &")
 	return
 }
 
@@ -798,9 +800,10 @@ func (p linux) SetupTmpDir() error {
 
 	// /var/tmp is used for preserving temporary files between system reboots
 	varTmpDir := "/var/tmp"
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", varTmpDir)
+
+	err = p.changeTmpDirPermissions(varTmpDir)
 	if err != nil {
-		return bosherr.WrapError(err, "chmod /var/tmp")
+		return err
 	}
 
 	if p.options.UseDefaultTmpDir {
@@ -813,7 +816,7 @@ func (p linux) SetupTmpDir() error {
 	}
 
 	// change permissions
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", boshRootTmpPath)
+	err = p.changeTmpDirPermissions(boshRootTmpPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
 	}
@@ -823,17 +826,7 @@ func (p linux) SetupTmpDir() error {
 		return err
 	}
 
-	err = p.changeTmpDirPermissions(systemTmpDir)
-	if err != nil {
-		return err
-	}
-
 	err = p.bindMountDir(boshRootTmpPath, varTmpDir)
-	if err != nil {
-		return err
-	}
-
-	err = p.changeTmpDirPermissions(varTmpDir)
 	if err != nil {
 		return err
 	}
@@ -851,6 +844,11 @@ func (p linux) SetupLogDir() error {
 		return bosherr.WrapError(err, "Creating root log dir")
 	}
 
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", boshRootLogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding /var/log dir")
+	}
+
 	auditDirPath := path.Join(boshRootLogPath, "audit")
 	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", auditDirPath)
 	if err != nil {
@@ -859,7 +857,7 @@ func (p linux) SetupLogDir() error {
 
 	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0750", auditDirPath)
 	if err != nil {
-		return bosherr.WrapError(err, "Chmoding root log dir")
+		return bosherr.WrapError(err, "Chmoding audit log dir")
 	}
 
 	// change ownership
@@ -889,15 +887,15 @@ func (p linux) bindMountDir(mountSource, mountPoint string) error {
 	mounted, err := bindMounter.IsMounted(mountPoint)
 
 	if !mounted && err == nil {
-		// mount
-		err = bindMounter.Mount(mountSource, mountPoint, "-o", "nodev", "-o", "noexec", "-o", "nosuid")
+		err = bindMounter.Mount(mountSource, mountPoint)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Bind mounting %s dir over %s", mountSource, mountPoint)
 		}
 	} else if err != nil {
 		return err
 	}
-	return nil
+
+	return bindMounter.RemountInPlace(mountPoint, "-o", "nodev", "-o", "noexec", "-o", "nosuid")
 }
 
 func (p linux) changeTmpDirPermissions(path string) error {
@@ -906,7 +904,7 @@ func (p linux) changeTmpDirPermissions(path string) error {
 		return bosherr.WrapErrorf(err, "chown %s", path)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", path)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", fmt.Sprintf("%#o", systemTmpDirPermissions), path)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chmod %s", path)
 	}
@@ -986,6 +984,11 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	}
 
 	err = p.diskManager.GetMounter().Mount(realPath, mountPoint)
+
+	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
+
+	p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
+
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
 	}

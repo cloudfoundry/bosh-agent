@@ -1,12 +1,16 @@
+// +build !windows
+
 package platform_test
 
 import (
 	"errors"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform"
 
@@ -67,7 +71,7 @@ func describeLinuxPlatform() {
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		cdutil = fakedevutil.NewFakeDeviceUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
-		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)
+		copier = boshcmd.NewGenericCpCopier(fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
 		netManager = &fakenet.FakeManager{}
 		certManager = new(fakecert.FakeManager)
@@ -514,7 +518,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 			Expect(ntpConfig.FileType).To(Equal(fakesys.FakeFileTypeFile))
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"ntpdate"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"ntpdate &"}))
 		})
 
 		It("sets time with ntp servers is noop when no ntp server provided", func() {
@@ -1450,8 +1454,8 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(mounter.MountMountPoints).To(ContainElement("/home"))
 				Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
 				Expect(mounter.RemountInPlaceCalled).To(BeTrue())
-				Expect(mounter.RemountInPlaceMountPoint).To(Equal("/home"))
-				Expect(mounter.RemountInPlaceMountOptions).To(Equal([]string{"-o", "nodev"}))
+				Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/home"))
+				Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev"}))
 			})
 
 			It("return error if it cannot mount", func() {
@@ -1503,9 +1507,10 @@ Number  Start   End     Size    File system  Name             Flags
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0770", "/tmp"}))
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0700", "/var/tmp"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/tmp"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/var/tmp"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/var/tmp"}))
 		})
 
 		It("creates new temp dir", func() {
@@ -1544,14 +1549,14 @@ Number  Start   End     Size    File system  Name             Flags
 			It("creates a root_tmp folder", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
+				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
 			})
 
 			It("changes permissions on the new bind mount folder", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
+				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/fake-dir/data/root_tmp"}))
 			})
 
 			Context("mounting root_tmp into /tmp", func() {
@@ -1566,7 +1571,11 @@ Number  Start   End     Size    File system  Name             Flags
 
 						Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_tmp"))
 						Expect(mounter.MountMountPoints).To(ContainElement("/tmp"))
-						Expect(mounter.MountMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"}))
+						Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
+
+						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
+						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/tmp"))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
 					})
 
 					It("changes permissions for the system /tmp folder", func() {
@@ -1587,10 +1596,25 @@ Number  Start   End     Size    File system  Name             Flags
 						}
 					})
 
+					Context("when remount fails", func() {
+						BeforeEach(func() {
+							mounter.RemountInPlaceErr = errors.New("remount error")
+						})
+						It("returns an error", func() {
+							err := act()
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(Equal("remount error"))
+						})
+					})
+
 					It("returns without an error", func() {
 						err := act()
 						Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/tmp"))
 						Expect(err).ToNot(HaveOccurred())
+
+						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
+						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/tmp"))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
 					})
 
 					It("does not create new tmp filesystem", func() {
@@ -1651,14 +1675,18 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(len(mounter.MountPartitionPaths)).To(Equal(2))
 						Expect(mounter.MountPartitionPaths[1]).To(Equal("/fake-dir/data/root_tmp"))
 						Expect(mounter.MountMountPoints[1]).To(Equal("/var/tmp"))
-						Expect(mounter.MountMountOptions[1]).To(ConsistOf("-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"))
+						Expect(mounter.MountMountOptions[1]).To(ConsistOf("--bind"))
+
+						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
+						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/var/tmp"))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
 					})
 
 					It("changes permissions for the system /var/tmp folder", func() {
 						err := act()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"chown", "root:vcap", "/var/tmp"}))
+						Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/var/tmp"}))
 					})
 				})
 
@@ -1786,24 +1814,31 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0775)))
 		})
 
+		It("sets the permission on /var/log to 770", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chmod", "0770", "/fake-dir/data/root_log"}))
+		})
+
 		It("creates an audit dir in root_log folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
 		})
 
 		It("changes permissions on the audit directory", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0750", "/fake-dir/data/root_log/audit"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chmod", "0750", "/fake-dir/data/root_log/audit"}))
 		})
 
 		It("changes ownership on the new bind mount folder", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:syslog", "/fake-dir/data/root_log"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "root:syslog", "/fake-dir/data/root_log"}))
 		})
 
 		Context("mounting root_log into /var/log", func() {
@@ -1818,7 +1853,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 					Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_log"))
 					Expect(mounter.MountMountPoints).To(ContainElement("/var/log"))
-					Expect(mounter.MountMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid", "--bind"}))
+					Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
 				})
 			})
 
@@ -1905,7 +1940,7 @@ Number  Start   End     Size    File system  Name             Flags
 	Describe("MountPersistentDisk", func() {
 		act := func() error {
 			return platform.MountPersistentDisk(
-				boshsettings.DiskSettings{Path: "fake-volume-id"},
+				boshsettings.DiskSettings{ID: "fake-unique-id", Path: "fake-volume-id"},
 				"/mnt/point",
 			)
 		}
@@ -2058,6 +2093,18 @@ Number  Start   End     Size    File system  Name             Flags
 					Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
 					Expect(mounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
 					Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+				})
+
+				It("generates the managed disk settings file", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					var contents string
+					managedSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+
+					contents, err = platform.GetFs().ReadFileString(managedSettingsPath)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(contents).To(Equal("fake-unique-id"))
 				})
 			})
 		})

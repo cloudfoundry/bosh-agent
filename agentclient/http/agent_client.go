@@ -130,7 +130,7 @@ func (c *agentClient) MigrateDisk() error {
 	return err
 }
 
-func (c *agentClient) UpdateSettings(settings settings.Settings) error {
+func (c *agentClient) UpdateSettings(settings settings.UpdateSettings) error {
 	_, err := c.sendAsyncTaskMessage("update_settings", []interface{}{settings})
 	return err
 }

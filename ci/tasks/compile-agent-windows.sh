@@ -4,9 +4,13 @@ set -e -x
 
 VERSION=$(cat bosh-agent-zip-version/number)
 COMPILED_AGENT_ZIP=$PWD/compiled-agent-zip
+AGENT_DEPS_ZIP=$PWD/bosh-agent-deps-zip
 
 export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
 export GOPATH=$(pwd)/gopath
+
+apt-get update
+apt-get -y install zip
 
 cd gopath/src/github.com/cloudfoundry/bosh-agent
 
@@ -14,7 +18,8 @@ GOOS=windows ./bin/go build -o bosh-agent.exe main/agent.go
 
 git rev-parse HEAD > ./commit
 
-curl http://repo.jenkins-ci.org/releases/com/sun/winsw/winsw/1.18/winsw-1.18-bin.exe -o ./service_wrapper.exe
+unzip $AGENT_DEPS_ZIP/agent-dependencies-v*.zip
+mv ./job-service-wrapper.exe ./service_wrapper.exe
 
 cat > ./service_wrapper.xml <<EOF
 <service>
@@ -39,9 +44,6 @@ cat > ./service_wrapper.exe.config <<EOF
   </startup>
 </configuration>
 EOF
-
-apt-get update
-apt-get -y install zip
 
 RELEASE_ZIP=$PWD/bosh-windows-integration-v$VERSION.zip
 zip ${RELEASE_ZIP} ./commit ./bosh-agent.exe ./service_wrapper.exe ./service_wrapper.xml ./service_wrapper.exe.config

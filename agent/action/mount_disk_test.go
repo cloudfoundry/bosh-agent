@@ -11,6 +11,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -61,7 +62,7 @@ var _ = Describe("MountDiskAction", func() {
 							VolumeID: "fake-volume-id",
 							Path:     "fake-device-path",
 						}))
-						Expect(platform.MountPersistentDiskMountPoint).To(Equal("/fake-base-dir/store"))
+						Expect(platform.MountPersistentDiskMountPoint).To(boshassert.MatchPath("/fake-base-dir/store"))
 					})
 				})
 

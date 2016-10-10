@@ -74,7 +74,9 @@ const (
 // get-wmiobject win32_service -filter "description='vcap'"
 
 type serviceLogMode struct {
-	Mode string `xml:"mode,attr"`
+	Mode          string `xml:"mode,attr"`
+	SizeThreshold string `xml:"sizeThreshold"`
+	KeepFiles     string `xml:"keepFiles"`
 }
 
 type serviceOnfailure struct {
@@ -116,7 +118,9 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string) *WindowsServiceWra
 		Arguments:   p.Args,
 		LogPath:     logPath,
 		LogMode: serviceLogMode{
-			Mode: "append",
+			Mode:          "roll-by-size",
+			SizeThreshold: "50000",
+			KeepFiles:     "7",
 		},
 		Onfailure: serviceOnfailure{
 			Action: "restart",
