@@ -37,10 +37,10 @@ type FakePlatform struct {
 
 	AddUserToGroupsGroups             map[string][]string
 	DeleteEphemeralUsersMatchingRegex string
-	SetupSSHPublicKeys                map[string]string
+	SetupSSHPublicKeys                map[string][]string
 
 	SetupSSHCalled    bool
-	SetupSSHPublicKey string
+	SetupSSHPublicKey []string
 	SetupSSHUsername  string
 	SetupSSHErr       error
 
@@ -163,7 +163,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.FakeVitalsService = fakevitals.NewFakeService()
 	platform.DevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 	platform.AddUserToGroupsGroups = make(map[string][]string)
-	platform.SetupSSHPublicKeys = make(map[string]string)
+	platform.SetupSSHPublicKeys = make(map[string][]string)
 	platform.UserPasswords = make(map[string]string)
 	platform.ScsiDiskMap = make(map[string]string)
 	platform.GetFileContentsFromDiskDiskPaths = []string{}
@@ -243,7 +243,7 @@ func (p *FakePlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupSSH(publicKey, username string) error {
+func (p *FakePlatform) SetupSSH(publicKey []string, username string) error {
 	p.SetupSSHCalled = true
 	p.SetupSSHPublicKeys[username] = publicKey
 	p.SetupSSHPublicKey = publicKey

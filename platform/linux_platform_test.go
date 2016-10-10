@@ -366,10 +366,10 @@ bosh_foobar:...`
 	})
 
 	Describe("SetupSSH", func() {
-		It("setup ssh", func() {
+		It("setup ssh with a single key", func() {
 			fs.HomeDirHomePath = "/some/home/dir"
 
-			platform.SetupSSH("some public key", "vcap")
+			platform.SetupSSH([]string{"some public key"}, "vcap")
 
 			sshDirPath := "/some/home/dir/.ssh"
 			sshDirStat := fs.GetFileTestStat(sshDirPath)
@@ -388,6 +388,30 @@ bosh_foobar:...`
 			Expect(os.FileMode(0600)).To(Equal(authKeysStat.FileMode))
 			Expect("vcap").To(Equal(authKeysStat.Username))
 			Expect("some public key").To(Equal(authKeysStat.StringContents()))
+		})
+
+		It("setup ssh with multiple keys", func() {
+			fs.HomeDirHomePath = "/some/home/dir"
+
+			platform.SetupSSH([]string{"some public key", "some other public key"}, "vcap")
+
+			sshDirPath := "/some/home/dir/.ssh"
+			sshDirStat := fs.GetFileTestStat(sshDirPath)
+
+			Expect("vcap").To(Equal(fs.HomeDirUsername))
+
+			Expect(sshDirStat).NotTo(BeNil())
+			Expect(sshDirStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(os.FileMode(0700)).To(Equal(sshDirStat.FileMode))
+			Expect("vcap").To(Equal(sshDirStat.Username))
+
+			authKeysStat := fs.GetFileTestStat(path.Join(sshDirPath, "authorized_keys"))
+
+			Expect(authKeysStat).NotTo(BeNil())
+			Expect(fakesys.FakeFileTypeFile).To(Equal(authKeysStat.FileType))
+			Expect(os.FileMode(0600)).To(Equal(authKeysStat.FileMode))
+			Expect("vcap").To(Equal(authKeysStat.Username))
+			Expect("some public key\nsome other public key").To(Equal(authKeysStat.StringContents()))
 		})
 
 	})

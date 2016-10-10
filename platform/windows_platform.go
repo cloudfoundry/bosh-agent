@@ -111,7 +111,7 @@ func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupSSH(publicKey, username string) (err error) {
+func (p WindowsPlatform) SetupSSH(publicKey []string, username string) (err error) {
 	return
 }
 

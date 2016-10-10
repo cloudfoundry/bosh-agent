@@ -93,7 +93,7 @@ func init() {
 						err := bootstrap()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(platform.SetupSSHPublicKey).To(Equal("fake-public-key"))
+						Expect(platform.SetupSSHPublicKey).To(ConsistOf("fake-public-key"))
 						Expect(platform.SetupSSHUsername).To(Equal("vcap"))
 					})
 
@@ -108,7 +108,7 @@ func init() {
 
 				Context("when public key key is empty", func() {
 					BeforeEach(func() {
-						settingsSource.PublicKey = ""
+						settingsService.PublicKey = ""
 					})
 
 					It("gets the public key and does not setup SSH", func() {
@@ -118,6 +118,39 @@ func init() {
 						Expect(platform.SetupSSHCalled).To(BeFalse())
 					})
 				})
+
+				Context("when the environment has authorized keys", func() {
+					BeforeEach(func() {
+						settingsService.Settings.Env.Bosh.AuthorizedKeys = []string{"fake-public-key", "another-fake-public-key"}
+						settingsService.PublicKey = ""
+					})
+
+					It("gets the public key and sets up SSH", func() {
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(platform.SetupSSHCalled).To(BeTrue())
+						Expect(platform.SetupSSHPublicKey).To(ConsistOf("fake-public-key", "another-fake-public-key"))
+						Expect(platform.SetupSSHUsername).To(Equal("vcap"))
+					})
+				})
+
+				Context("when both have authorized keys", func() {
+					BeforeEach(func() {
+						settingsService.Settings.Env.Bosh.AuthorizedKeys = []string{"another-fake-public-key"}
+						settingsService.PublicKey = "fake-public-key"
+					})
+
+					It("gets the public key and sets up SSH", func() {
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(platform.SetupSSHCalled).To(BeTrue())
+						Expect(platform.SetupSSHPublicKey).To(ConsistOf("fake-public-key", "another-fake-public-key"))
+						Expect(platform.SetupSSHUsername).To(Equal("vcap"))
+					})
+				})
+
 			})
 
 			It("sets up hostname", func() {

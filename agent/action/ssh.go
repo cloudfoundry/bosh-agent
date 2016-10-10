@@ -83,7 +83,7 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 		return result, bosherr.WrapError(err, "Adding user to groups")
 	}
 
-	err = a.platform.SetupSSH(params.PublicKey, params.User)
+	err = a.platform.SetupSSH([]string{params.PublicKey}, params.User)
 	if err != nil {
 		return result, bosherr.WrapError(err, "Setting ssh public key")
 	}

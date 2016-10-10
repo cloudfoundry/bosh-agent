@@ -640,13 +640,14 @@ var _ = Describe("Settings", func() {
 	Describe("Env", func() {
 		It("unmarshal env value correctly", func() {
 			var env Env
-			envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true}}`
+			envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"]}}`
 
 			err := json.Unmarshal([]byte(envJSON), &env)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(env.GetPassword()).To(Equal("fake-password"))
 			Expect(env.GetKeepRootPassword()).To(BeFalse())
 			Expect(env.GetRemoveDevTools()).To(BeTrue())
+			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
 		})
 	})
 

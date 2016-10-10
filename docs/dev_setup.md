@@ -75,7 +75,7 @@ All dependencies:
 ./update-dep github.com/cloudfoundry/bosh-utils/...
 ```
 
-An example for a single depdency:
+An example for a single dependency:
 
 ```
 ./update-dep github.com/pivotal-golang/clock/fakeclock

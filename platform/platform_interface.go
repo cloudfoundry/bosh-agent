@@ -28,7 +28,7 @@ type Platform interface {
 
 	// Bootstrap functionality
 	SetupRootDisk(ephemeralDiskPath string) (err error)
-	SetupSSH(publicKey, username string) (err error)
+	SetupSSH(publicKey []string, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
 	SetupHostname(hostname string) (err error)
 	SetupNetworking(networks boshsettings.Networks) (err error)
