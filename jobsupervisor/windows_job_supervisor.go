@@ -62,13 +62,14 @@ const (
 	unmonitorJobScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Disabled" }
 `
-	autoStartJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Automatic" }
+	manualStartJobScript = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Manual" }
 `
 
 	waitForDeleteAllScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'").Length
 `
+	disableAgentAutoStart = `Set-Service bosh-agent -startuptype "Manual"`
 )
 
 // get-wmiobject win32_service -filter "description='vcap'"
@@ -200,8 +201,15 @@ func (w *windowsJobSupervisor) Reload() error {
 }
 
 func (w *windowsJobSupervisor) Start() error {
+	// Set the starttype of the service running the Agent to 'manual'.
+	// This will prevent the agent from automatically starting if the
+	// machine is rebooted.
+	//
+	// Do this here, as we know the agent has successfully connected
+	// with the director and is healthy.
+	w.cmdRunner.RunCommand("-Command", disableAgentAutoStart)
 
-	_, _, _, err := w.cmdRunner.RunCommand("-Command", autoStartJobScript)
+	_, _, _, err := w.cmdRunner.RunCommand("-Command", manualStartJobScript)
 	if err != nil {
 		return bosherr.WrapError(err, "Starting windows job process")
 	}
