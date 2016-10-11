@@ -349,7 +349,7 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	return nil
 }
 
-func (p linux) SetupSSH(publicKey, username string) error {
+func (p linux) SetupSSH(publicKeys []string, username string) error {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {
 		return bosherr.WrapError(err, "Finding home dir for user")
@@ -366,7 +366,8 @@ func (p linux) SetupSSH(publicKey, username string) error {
 	}
 
 	authKeysPath := path.Join(sshPath, "authorized_keys")
-	err = p.fs.WriteFileString(authKeysPath, publicKey)
+	publicKeyString := strings.Join(publicKeys, "\n")
+	err = p.fs.WriteFileString(authKeysPath, publicKeyString)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating authorized_keys file")
 	}
