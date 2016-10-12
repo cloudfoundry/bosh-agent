@@ -515,7 +515,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 	}
 
 	// Make a best effort to sync time now but don't error
-	_, _, _, _ = p.cmdRunner.RunCommand("ntpdate &")
+	_, _, _, _ = p.cmdRunner.RunCommand("ntpdate")
 	return
 }
 
