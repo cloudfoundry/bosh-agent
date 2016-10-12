@@ -986,12 +986,16 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 
 	err = p.diskManager.GetMounter().Mount(realPath, mountPoint)
 
-	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
-
-	p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
-
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
+	}
+
+	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
+
+	err = p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
+
+	if err != nil {
+		return bosherr.WrapError(err, "Writing managed_disk_settings.json")
 	}
 
 	return nil

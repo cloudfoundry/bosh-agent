@@ -1980,7 +1980,7 @@ Number  Start   End     Size    File system  Name             Flags
 			mounter = diskManager.FakeMounter
 		})
 
-		Context("when the size of the disk is larger than or equals 2 Terrabytes", func() {
+		Context("when the size of the disk is larger than or equal to 2 terabytes", func() {
 
 			BeforeEach(func() {
 				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255552)
@@ -1995,7 +1995,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 		})
 
-		Context("when the size of the disk is less than 2 Terabytes", func() {
+		Context("when the size of the disk is less than 2 terabytes", func() {
 
 			BeforeEach(func() {
 				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
@@ -2221,6 +2221,18 @@ Number  Start   End     Size    File system  Name             Flags
 
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Formatting partition with xfs: Oh noes!"))
+				})
+
+				It("returns an error when updating managed_disk_settings.json fails", func() {
+					fs.WriteFileError = errors.New("Oh noes!")
+
+					err := platform.MountPersistentDisk(
+						boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
+						"/mnt/point",
+					)
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Writing managed_disk_settings.json: Oh noes!"))
 				})
 
 				It("mounts the disk", func() {

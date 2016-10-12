@@ -419,10 +419,12 @@ func init() {
 					})
 
 					Context("last mount information is present", func() {
+						var managedDiskSettingsPath string
+
 						BeforeEach(func() {
 							diskCid := "i-am-a-disk-cid"
 
-							managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+							managedDiskSettingsPath = filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
 							platform.Fs.WriteFile(managedDiskSettingsPath, []byte(diskCid))
 
 							settingsService.Settings.Disks = boshsettings.Disks{
@@ -437,11 +439,19 @@ func init() {
 							Expect(err).ToNot(HaveOccurred())
 						})
 
+						Context("when the last mount information cannot be read", func() {
+							It("returns an error", func() {
+								platform.Fs.RegisterReadFileError(managedDiskSettingsPath, errors.New("Oh noes!"))
+								err := bootstrap()
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(ContainSubstring("Reading managed_disk_settings.json"))
+							})
+						})
+
 						Context("attached disk's CID differs from last mounted CID", func() {
 							BeforeEach(func() {
 								diskCid := "i-am-a-different-cid"
 
-								managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
 								platform.Fs.WriteFile(managedDiskSettingsPath, []byte(diskCid))
 							})
 
@@ -553,6 +563,34 @@ func init() {
 							err := bootstrap()
 							Expect(err).ToNot(HaveOccurred())
 						})
+					})
+				})
+
+				Context("when update_settings.json exists but cannot be read", func() {
+					BeforeEach(func() {
+						updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
+						platform.Fs.WriteFile(updateSettingsPath, []byte(`{"persistent_disks":{"invalid":true`))
+					})
+
+					It("returns error", func() {
+						platform.Fs.ReadFileError = errors.New("Oh noes!")
+
+						err := bootstrap()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Reading update_settings.json"))
+					})
+				})
+
+				Context("when unmarshalling update_settings fails", func() {
+					BeforeEach(func() {
+						updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
+						platform.Fs.WriteFile(updateSettingsPath, []byte(`{"persistent_disks":{"invalid":true`))
+					})
+
+					It("returns wrapped error", func() {
+						err := bootstrap()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Unmarshalling update_settings.json"))
 					})
 				})
 			})

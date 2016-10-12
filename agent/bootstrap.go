@@ -124,6 +124,7 @@ func (boot bootstrap) Run() (err error) {
 	}
 
 	for diskID := range settings.Disks.Persistent {
+		var lastDiskID string
 		diskSettings, _ := settings.PersistentDiskSettings(diskID)
 
 		isPartitioned, err := boot.platform.IsPersistentDiskMountable(diskSettings)
@@ -131,7 +132,11 @@ func (boot bootstrap) Run() (err error) {
 			return bosherr.WrapError(err, "Checking if persistent disk is partitioned")
 		}
 
-		if isPartitioned && diskID == boot.lastMountedCid() {
+		lastDiskID, err = boot.lastMountedCid()
+		if err != nil {
+			return bosherr.WrapError(err, "Fetching last mounted disk CID")
+		}
+		if isPartitioned && diskID == lastDiskID {
 			if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
 				return bosherr.WrapError(err, "Mounting persistent disk")
 			}
@@ -172,8 +177,14 @@ func (boot bootstrap) comparePersistentDisk() error {
 	var updateSettings boshsettings.UpdateSettings
 
 	if boot.platform.GetFs().FileExists(updateSettingsPath) {
-		contents, _ := boot.platform.GetFs().ReadFile(updateSettingsPath)
-		json.Unmarshal(contents, &updateSettings)
+		contents, err := boot.platform.GetFs().ReadFile(updateSettingsPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Reading update_settings.json")
+		}
+
+		if err = json.Unmarshal(contents, &updateSettings); err != nil {
+			return bosherr.WrapError(err, "Unmarshalling update_settings.json")
+		}
 	}
 
 	for _, diskAssociation := range updateSettings.DiskAssociations {
@@ -213,7 +224,10 @@ func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 }
 
 func (boot bootstrap) checkLastMountedCid(settings boshsettings.Settings) error {
-	lastMountedCid := boot.lastMountedCid()
+	lastMountedCid, err := boot.lastMountedCid()
+	if err != nil {
+		return bosherr.WrapError(err, "Fetching last mounted disk CID")
+	}
 
 	if len(settings.Disks.Persistent) == 0 || lastMountedCid == "" {
 		return nil
@@ -226,16 +240,19 @@ func (boot bootstrap) checkLastMountedCid(settings boshsettings.Settings) error 
 	return nil
 }
 
-func (boot bootstrap) lastMountedCid() string {
+func (boot bootstrap) lastMountedCid() (string, error) {
 	managedDiskSettingsPath := filepath.Join(boot.platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
 	var lastMountedCid string
 
 	if boot.platform.GetFs().FileExists(managedDiskSettingsPath) {
-		contents, _ := boot.platform.GetFs().ReadFile(managedDiskSettingsPath)
+		contents, err := boot.platform.GetFs().ReadFile(managedDiskSettingsPath)
+		if err != nil {
+			return "", bosherr.WrapError(err, "Reading managed_disk_settings.json")
+		}
 		lastMountedCid = string(contents)
 
-		return lastMountedCid
+		return lastMountedCid, nil
 	}
 
-	return ""
+	return "", nil
 }
