@@ -81,7 +81,7 @@ var _ = Describe("Linux Formatter", func() {
 			It("retries mke2fs if the erros is 'device is already in use'", func() {
 				fakeRunner.AddCmdResult(mkeCmd, fakesys.FakeCmdResult{
 					Error: errors.New(`mke2fs 1.42.9 (4-Feb-2014)
-/dev/xvdf1 is apparently in use by the system; will not make a filesystem here!`),
+/dev/xvdf1 is apparently in use by the system; will not make a filesystem here`),
 				})
 				fakeRunner.AddCmdResult(mkeCmd, fakesys.FakeCmdResult{
 					ExitStatus: 0,
