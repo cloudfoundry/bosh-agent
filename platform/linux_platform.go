@@ -38,6 +38,7 @@ const (
 	userBaseDirPermissions    = os.FileMode(0755)
 	userRootLogDirPermissions = os.FileMode(0775)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
+	blobsDirPermissions       = os.FileMode(0700)
 	systemTmpDirPermissions   = os.FileMode(0770)
 
 	sshDirPermissions          = os.FileMode(0700)
@@ -776,6 +777,22 @@ func (p linux) SetupHomeDir() error {
 			return bosherr.WrapError(err, "Setup home dir, remount in place")
 		}
 	}
+	return nil
+}
+
+func (p linux) SetupBlobsDir() error {
+	blobsDirPath := p.dirProvider.BlobsDir()
+
+	err := p.fs.MkdirAll(blobsDirPath, blobsDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating blobs dir")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", blobsDirPath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "chown %s", blobsDirPath)
+	}
+
 	return nil
 }
 

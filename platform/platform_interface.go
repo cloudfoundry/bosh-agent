@@ -39,6 +39,7 @@ type Platform interface {
 	SetupDataDir() (err error)
 	SetupTmpDir() (err error)
 	SetupHomeDir() (err error)
+	SetupBlobsDir() (err error)
 	SetupMonitUser() (err error)
 	StartMonit() (err error)
 	SetupRuntimeConfiguration() (err error)

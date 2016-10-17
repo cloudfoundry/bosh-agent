@@ -89,3 +89,7 @@ func (p Provider) InstanceDir() string {
 func (p Provider) DisksDir() string {
 	return filepath.Join(p.InstanceDir(), "disks")
 }
+
+func (p Provider) BlobsDir() string {
+	return filepath.Join(p.DataDir(), "blobs")
+}

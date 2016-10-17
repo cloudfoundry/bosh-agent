@@ -1927,6 +1927,26 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
+	Describe("SetupBlobDir", func() {
+		act := func() error {
+			return platform.SetupBlobsDir()
+		}
+
+		It("creates a blobs folder with correct permissions", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+			testFileStat := fs.GetFileTestStat("/fake-dir/data/blobs")
+			Expect(testFileStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0700)))
+		})
+
+		It("creates a blobs folder with correct ownership", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/fake-dir/data/blobs"}))
+		})
+	})
+
 	Describe("SetupLoggingAndAuditing", func() {
 		act := func() error {
 			return platform.SetupLoggingAndAuditing()

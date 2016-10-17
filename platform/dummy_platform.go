@@ -204,6 +204,16 @@ func (p dummyPlatform) SetupLogDir() error {
 	return nil
 }
 
+func (p dummyPlatform) SetupBlobsDir() error {
+
+	blobsDir := p.dirProvider.BlobsDir()
+	if err := p.fs.MkdirAll(blobsDir, blobsDirPermissions); err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", blobsDir)
+	}
+
+	return nil
+}
+
 func (p dummyPlatform) SetupLoggingAndAuditing() error {
 	return nil
 }

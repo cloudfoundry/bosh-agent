@@ -39,6 +39,7 @@ func NewFactory(
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
 	ntpService := boshntp.NewConcreteService(platform.GetFs(), dirProvider)
+	blobManager := boshblob.NewBlobManager(platform.GetFs(), dirProvider.BlobsDir())
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -65,6 +66,9 @@ func NewFactory(
 			// Compilation
 			"compile_package":    NewCompilePackage(compiler),
 			"release_apply_spec": NewReleaseApplySpec(platform),
+
+			// Rendered Templates
+			"upload_blob": NewUploadBlobAction(blobManager),
 
 			// Disk management
 			"list_disk":    NewListDisk(settingsService, platform, logger),

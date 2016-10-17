@@ -9,6 +9,7 @@ import (
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -215,5 +216,13 @@ var _ = Describe("concreteFactory", func() {
 		action, err := factory.Create("sync_dns")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewSyncDNS(blobstore, settingsService, platform, logger)))
+	})
+
+	It("upload_blob", func() {
+		action, err := factory.Create("upload_blob")
+		Expect(err).ToNot(HaveOccurred())
+
+		blobManager := boshblob.NewBlobManager(platform.GetFs(), platform.GetDirProvider().BlobsDir())
+		Expect(action).To(Equal(NewUploadBlobAction(blobManager)))
 	})
 })

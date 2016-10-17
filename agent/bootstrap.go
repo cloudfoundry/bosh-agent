@@ -119,6 +119,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up home dir")
 	}
 
+	if err = boot.platform.SetupBlobsDir(); err != nil {
+		return bosherr.WrapError(err, "Setting up blobs dir")
+	}
+
 	if err = boot.comparePersistentDisk(); err != nil {
 		return bosherr.WrapError(err, "Comparing persistent disks")
 	}

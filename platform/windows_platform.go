@@ -208,6 +208,10 @@ func (p WindowsPlatform) SetupLogDir() error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupBlobsDir() error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupLoggingAndAuditing() error {
 	return nil
 }

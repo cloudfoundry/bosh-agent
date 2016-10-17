@@ -19,6 +19,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"os"
 )
 
 type mount struct {
@@ -259,6 +260,18 @@ func describeDummyPlatform() {
 
 			Expect(stat).ToNot(BeNil())
 			Expect(stat.SymlinkTarget).To(Equal("/fake-dir/data/sys"))
+		})
+	})
+
+	Describe("SetupBlobsDir", func() {
+		It("creates a blobs folder under BASEDIR/DATADIR with correct permissions", func() {
+			err := platform.SetupBlobsDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			stat := fs.GetFileTestStat(filepath.Clean("/fake-dir/data/blobs"))
+
+			Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(stat.FileMode).To(Equal(os.FileMode(0700)))
 		})
 	})
 }
