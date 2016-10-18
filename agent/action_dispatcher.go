@@ -81,6 +81,11 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 		return boshhandler.NewExceptionResponse(bosherr.Errorf("unknown message %s", req.Method))
 	}
 
+	dispatcher.logger.Info(actionDispatcherLogTag, "Received request with action %s", req.Method)
+	if action.IsLoggable() {
+		dispatcher.logger.DebugWithDetails(actionDispatcherLogTag, "Payload", req.Payload)
+	}
+
 	if action.IsAsynchronous() {
 		return dispatcher.dispatchAsynchronousAction(action, req)
 	}
