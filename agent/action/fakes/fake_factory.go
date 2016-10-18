@@ -46,7 +46,7 @@ func (f *FakeFactory) RegisterActionErr(method string, err error) {
 type TestAction struct {
 	Asynchronous bool
 	Persistent   bool
-	Loggable	 bool
+	Loggable     bool
 
 	ResumeValue interface{}
 	ResumeErr   error

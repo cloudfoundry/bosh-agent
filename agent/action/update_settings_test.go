@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("UpdateSettings", func() {
 	var (
-		action UpdateSettingsAction
+		action            UpdateSettingsAction
 		certManager       *fakes.FakeManager
 		settingsService   *fakesettings.FakeSettingsService
 		log               logger.Logger

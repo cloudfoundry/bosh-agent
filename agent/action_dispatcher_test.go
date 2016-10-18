@@ -13,8 +13,8 @@ import (
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	"github.com/cloudfoundry/bosh-agent/logger/fakes"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 func init() {
@@ -48,7 +48,7 @@ func init() {
 		Context("Action Payload Logging", func() {
 			var (
 				action *fakeaction.TestAction
-				req boshhandler.Request
+				req    boshhandler.Request
 			)
 
 			Context("action is loggable", func() {

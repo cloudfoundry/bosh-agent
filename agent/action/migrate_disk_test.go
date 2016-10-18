@@ -19,7 +19,7 @@ func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action Migra
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		var (
-			action MigrateDiskAction
+			action   MigrateDiskAction
 			platform *fakeplatform.FakePlatform
 		)
 

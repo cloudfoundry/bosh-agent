@@ -23,7 +23,7 @@ import (
 
 var _ = Describe("SyncDNS", func() {
 	var (
-		action SyncDNS
+		action              SyncDNS
 		fakeBlobstore       *fakeblobstore.FakeBlobstore
 		fakeSettingsService *fakesettings.FakeSettingsService
 		fakePlatform        *fakeplatform.FakePlatform
