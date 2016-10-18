@@ -29,13 +29,11 @@ var _ = Describe("RunErrand", func() {
 		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
 	})
 
-	It("is asynchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeTrue())
-	})
+	AssertActionIsAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
 
-	It("is not persistent", func() {
-		Expect(action.IsPersistent()).To(BeFalse())
-	})
+	AssertActionIsNotResumable(action)
 
 	Describe("Run", func() {
 		Context("when apply spec is successfully retrieved", func() {

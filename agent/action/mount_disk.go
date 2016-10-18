@@ -43,6 +43,10 @@ func (a MountDiskAction) IsPersistent() bool {
 	return false
 }
 
+func (a MountDiskAction) IsLoggable() bool {
+	return true
+}
+
 func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 	err := a.settingsService.LoadSettings()
 	if err != nil {

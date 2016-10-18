@@ -53,6 +53,10 @@ func (a *actionWithTypes) IsPersistent() bool {
 	return false
 }
 
+func (a *actionWithTypes) IsLoggable() bool {
+	return true
+}
+
 func (a *actionWithTypes) Run(arg argumentWithTypes) (valueType, error) {
 	a.Arg = arg
 	return a.Value, a.Err
@@ -82,6 +86,10 @@ func (a *actionWithGoodRunMethod) IsAsynchronous() bool {
 
 func (a *actionWithGoodRunMethod) IsPersistent() bool {
 	return false
+}
+
+func (a *actionWithGoodRunMethod) IsLoggable() bool {
+	return true
 }
 
 func (a *actionWithGoodRunMethod) Run(subAction string, someID int, extraArgs argsType, sliceArgs []string) (valueType, error) {
@@ -116,6 +124,10 @@ func (a *actionWithOptionalRunArgument) IsPersistent() bool {
 	return false
 }
 
+func (a *actionWithOptionalRunArgument) IsLoggable() bool {
+	return true
+}
+
 func (a *actionWithOptionalRunArgument) Run(subAction string, optionalArgs ...argsType) (valueType, error) {
 	a.SubAction = subAction
 	a.OptionalArgs = optionalArgs
@@ -140,6 +152,10 @@ func (a *actionWithoutRunMethod) IsPersistent() bool {
 	return false
 }
 
+func (a *actionWithoutRunMethod) IsLoggable() bool {
+	return true
+}
+
 func (a *actionWithoutRunMethod) Resume() (interface{}, error) {
 	return nil, nil
 }
@@ -156,6 +172,10 @@ func (a *actionWithOneRunReturnValue) IsAsynchronous() bool {
 
 func (a *actionWithOneRunReturnValue) IsPersistent() bool {
 	return false
+}
+
+func (a *actionWithOneRunReturnValue) IsLoggable() bool {
+	return true
 }
 
 func (a *actionWithOneRunReturnValue) Run() error {
@@ -178,6 +198,10 @@ func (a *actionWithSecondReturnValueNotError) IsAsynchronous() bool {
 
 func (a *actionWithSecondReturnValueNotError) IsPersistent() bool {
 	return false
+}
+
+func (a *actionWithSecondReturnValueNotError) IsLoggable() bool {
+	return true
 }
 
 func (a *actionWithSecondReturnValueNotError) Run() (interface{}, string) {
@@ -203,6 +227,10 @@ func (a *actionWithProtocolVersion) IsAsynchronous() bool {
 
 func (a *actionWithProtocolVersion) IsPersistent() bool {
 	return false
+}
+
+func (a *actionWithProtocolVersion) IsLoggable() bool {
+	return true
 }
 
 func (a *actionWithProtocolVersion) Run(protocolVersion ProtocolVersion, subAction string) (valueType, error) {

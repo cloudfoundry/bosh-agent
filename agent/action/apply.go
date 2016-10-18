@@ -48,6 +48,10 @@ func (a ApplyAction) IsPersistent() bool {
 	return false
 }
 
+func (a ApplyAction) IsLoggable() bool {
+	return true
+}
+
 func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
 	settings := a.settingsService.GetSettings()
 

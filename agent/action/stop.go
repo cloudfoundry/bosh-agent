@@ -26,6 +26,10 @@ func (a StopAction) IsPersistent() bool {
 	return false
 }
 
+func (a StopAction) IsLoggable() bool {
+	return true
+}
+
 func (a StopAction) Run(protocolVersion ProtocolVersion) (value string, err error) {
 	if protocolVersion > 2 {
 		err = a.jobSupervisor.StopAndWait()

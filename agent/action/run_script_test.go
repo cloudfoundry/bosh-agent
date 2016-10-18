@@ -28,13 +28,12 @@ var _ = Describe("RunScript", func() {
 		action = NewRunScript(fakeJobScriptProvider, specService, logger)
 	})
 
-	It("is asynchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeTrue())
-	})
+	AssertActionIsAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
 
-	It("is not persistent", func() {
-		Expect(action.IsPersistent()).To(BeFalse())
-	})
+	AssertActionIsNotResumable(action)
+	AssertActionIsNotCancelable(action)
 
 	Describe("Run", func() {
 		act := func() (map[string]string, error) { return action.Run("run-me", map[string]interface{}{}) }

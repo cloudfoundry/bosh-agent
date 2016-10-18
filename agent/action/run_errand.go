@@ -48,6 +48,10 @@ func (a RunErrandAction) IsPersistent() bool {
 	return false
 }
 
+func (a RunErrandAction) IsLoggable() bool {
+	return true
+}
+
 type ErrandResult struct {
 	Stdout     string `json:"stdout"`
 	Stderr     string `json:"stderr"`

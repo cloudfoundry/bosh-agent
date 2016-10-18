@@ -43,6 +43,10 @@ func (a SSHAction) IsPersistent() bool {
 	return false
 }
 
+func (a SSHAction) IsLoggable() bool {
+	return true
+}
+
 type SSHParams struct {
 	UserRegex string `json:"user_regex"`
 	User      string

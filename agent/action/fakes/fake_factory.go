@@ -46,6 +46,7 @@ func (f *FakeFactory) RegisterActionErr(method string, err error) {
 type TestAction struct {
 	Asynchronous bool
 	Persistent   bool
+	Loggable	 bool
 
 	ResumeValue interface{}
 	ResumeErr   error
@@ -61,6 +62,10 @@ func (a *TestAction) IsAsynchronous() bool {
 
 func (a *TestAction) IsPersistent() bool {
 	return a.Persistent
+}
+
+func (a *TestAction) IsLoggable() bool {
+	return a.Loggable
 }
 
 func (a *TestAction) Run(payload []byte) (interface{}, error) {

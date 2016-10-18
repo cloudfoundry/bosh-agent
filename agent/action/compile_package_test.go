@@ -45,13 +45,12 @@ var _ = Describe("CompilePackageAction", func() {
 		action = NewCompilePackage(compiler)
 	})
 
-	It("is asynchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeTrue())
-	})
+	AssertActionIsAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
 
-	It("is not persistent", func() {
-		Expect(action.IsPersistent()).To(BeFalse())
-	})
+	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(action)
 
 	Describe("Run", func() {
 		It("compile package compiles the package abd returns blob id", func() {

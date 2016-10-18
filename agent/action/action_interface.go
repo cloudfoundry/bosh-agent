@@ -5,6 +5,7 @@ type ProtocolVersion int
 type Action interface {
 	IsAsynchronous() bool
 	IsPersistent() bool
+	IsLoggable() bool
 
 	// Action should implement Run
 	// Arguments should be the list of arguments the payload will include

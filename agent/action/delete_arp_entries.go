@@ -28,6 +28,10 @@ func (a DeleteARPEntriesAction) IsPersistent() bool {
 	return false
 }
 
+func (a DeleteARPEntriesAction) IsLoggable() bool {
+	return true
+}
+
 func (a DeleteARPEntriesAction) Run(args DeleteARPEntriesActionArgs) (interface{}, error) {
 	addresses := args.Ips
 	for _, address := range addresses {

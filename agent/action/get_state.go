@@ -42,6 +42,10 @@ func (a GetStateAction) IsPersistent() bool {
 	return false
 }
 
+func (a GetStateAction) IsLoggable() bool {
+	return true
+}
+
 type GetStateV1ApplySpec struct {
 	boshas.V1ApplySpec
 

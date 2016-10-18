@@ -30,6 +30,10 @@ func (a MigrateDiskAction) IsPersistent() bool {
 	return false
 }
 
+func (a MigrateDiskAction) IsLoggable() bool {
+	return true
+}
+
 func (a MigrateDiskAction) Run() (value interface{}, err error) {
 	err = a.platform.MigratePersistentDisk(a.dirProvider.StoreDir(), a.dirProvider.StoreMigrationDir())
 	if err != nil {

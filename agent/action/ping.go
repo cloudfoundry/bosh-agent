@@ -18,6 +18,10 @@ func (a PingAction) IsPersistent() bool {
 	return false
 }
 
+func (a PingAction) IsLoggable() bool {
+	return true
+}
+
 func (a PingAction) Run() (string, error) {
 	return "pong", nil
 }

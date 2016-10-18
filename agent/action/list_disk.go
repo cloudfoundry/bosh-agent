@@ -34,6 +34,10 @@ func (a ListDiskAction) IsPersistent() bool {
 	return false
 }
 
+func (a ListDiskAction) IsLoggable() bool {
+	return true
+}
+
 func (a ListDiskAction) Run() (interface{}, error) {
 	settings := a.settingsService.GetSettings()
 	diskIDs := []string{}

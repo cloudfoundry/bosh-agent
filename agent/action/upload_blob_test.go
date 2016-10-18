@@ -21,25 +21,12 @@ func init() {
 			action = NewUploadBlobAction(fakeBlobManager)
 		})
 
-		It("should be asynchronous", func() {
-			Expect(action.IsAsynchronous()).To(BeTrue())
-		})
+		AssertActionIsAsynchronous(action)
+		AssertActionIsNotPersistent(action)
+		AssertActionIsNotLoggable(action)
 
-		It("is not persistent", func() {
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
-
-		It("cannot be resumed", func() {
-			_, err := action.Resume()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("not supported"))
-		})
-
-		It("cannot be cancelled", func() {
-			err := action.Cancel()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("not supported"))
-		})
+		AssertActionIsNotResumable(action)
+		AssertActionIsNotCancelable(action)
 
 		Describe("Run", func() {
 			Context("Payload Validation", func() {

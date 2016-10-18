@@ -17,6 +17,13 @@ func init() {
 			action = NewConfigureNetworks(fakeactions.NewFakeAgentKiller())
 		})
 
+		AssertActionIsAsynchronous(action)
+		AssertActionIsPersistent(action)
+		AssertActionIsLoggable(action)
+
+		AssertActionIsNotCancelable(action)
+		AssertActionIsResumable(action)
+
 		It("is asynchronous", func() {
 			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
@@ -27,14 +34,6 @@ func init() {
 
 		Describe("Run", func() {
 			// restarts agent process
-		})
-
-		Describe("Resume", func() {
-			It("returns ok because agent was restarted and connections were re-initialized", func() {
-				value, err := action.Resume()
-				Expect(value).To(Equal("ok"))
-				Expect(err).ToNot(HaveOccurred())
-			})
 		})
 	})
 }

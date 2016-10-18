@@ -27,13 +27,12 @@ func init() {
 			action = NewListDisk(settingsService, platform, logger)
 		})
 
-		It("list disk should be synchronous", func() {
-			Expect(action.IsAsynchronous()).To(BeFalse())
-		})
+		AssertActionIsNotAsynchronous(action)
+		AssertActionIsNotPersistent(action)
+		AssertActionIsLoggable(action)
 
-		It("is not persistent", func() {
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
+		AssertActionIsNotResumable(action)
+		AssertActionIsNotCancelable(action)
 
 		It("list disk run", func() {
 			platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}

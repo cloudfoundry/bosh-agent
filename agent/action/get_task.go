@@ -24,6 +24,10 @@ func (a GetTaskAction) IsPersistent() bool {
 	return false
 }
 
+func (a GetTaskAction) IsLoggable() bool {
+	return true
+}
+
 func (a GetTaskAction) Run(taskID string) (interface{}, error) {
 	task, found := a.taskService.FindTaskWithID(taskID)
 	if !found {

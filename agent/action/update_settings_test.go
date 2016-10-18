@@ -6,7 +6,7 @@ import (
 
 	"errors"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("UpdateSettings", func() {
 	var (
-		updateAction      action.UpdateSettingsAction
+		action UpdateSettingsAction
 		certManager       *fakes.FakeManager
 		settingsService   *fakesettings.FakeSettingsService
 		log               logger.Logger
@@ -30,27 +30,26 @@ var _ = Describe("UpdateSettings", func() {
 		certManager = new(fakes.FakeManager)
 		settingsService = &fakesettings.FakeSettingsService{}
 		platform = fakeplatform.NewFakePlatform()
-		updateAction = action.NewUpdateSettings(settingsService, platform, certManager, log)
+		action = NewUpdateSettings(settingsService, platform, certManager, log)
 		newUpdateSettings = boshsettings.UpdateSettings{}
 	})
 
-	It("is asynchronous", func() {
-		Expect(updateAction.IsAsynchronous()).To(BeTrue())
-	})
+	AssertActionIsAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
 
-	It("is not persistent", func() {
-		Expect(updateAction.IsPersistent()).To(BeFalse())
-	})
+	AssertActionIsNotResumable(action)
+	AssertActionIsNotCancelable(action)
 
 	Context("on success", func() {
 		It("returns 'updated'", func() {
-			result, err := updateAction.Run(newUpdateSettings)
+			result, err := action.Run(newUpdateSettings)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(Equal("updated"))
 		})
 
 		It("writes the updated settings to a file", func() {
-			updateAction.Run(newUpdateSettings)
+			action.Run(newUpdateSettings)
 			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
 			exists := platform.GetFs().FileExists(expectedPath)
 			Expect(exists).To(Equal(true))
@@ -63,7 +62,7 @@ var _ = Describe("UpdateSettings", func() {
 		})
 
 		It("returns an error", func() {
-			_, err := updateAction.Run(newUpdateSettings)
+			_, err := action.Run(newUpdateSettings)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Fake write error"))
 		})
@@ -74,18 +73,18 @@ var _ = Describe("UpdateSettings", func() {
 			log = logger.NewLogger(logger.LevelNone)
 			certManager = new(fakes.FakeManager)
 			certManager.UpdateCertificatesReturns(errors.New("Error"))
-			updateAction = action.NewUpdateSettings(settingsService, platform, certManager, log)
+			action = NewUpdateSettings(settingsService, platform, certManager, log)
 		})
 
 		It("returns the error", func() {
-			result, err := updateAction.Run(newUpdateSettings)
+			result, err := action.Run(newUpdateSettings)
 			Expect(err).To(HaveOccurred())
 			Expect(result).To(BeEmpty())
 		})
 	})
 
 	It("loads settings", func() {
-		_, err := updateAction.Run(newUpdateSettings)
+		_, err := action.Run(newUpdateSettings)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(settingsService.SettingsWereLoaded).To(BeTrue())
 	})
@@ -93,7 +92,7 @@ var _ = Describe("UpdateSettings", func() {
 	Context("when loading the settings fails", func() {
 		It("returns an error", func() {
 			settingsService.LoadSettingsError = errors.New("nope")
-			_, err := updateAction.Run(newUpdateSettings)
+			_, err := action.Run(newUpdateSettings)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -115,7 +114,7 @@ var _ = Describe("UpdateSettings", func() {
 		})
 
 		It("returns the error", func() {
-			_, err := updateAction.Run(newUpdateSettings)
+			_, err := action.Run(newUpdateSettings)
 
 			Expect(err).To(HaveOccurred())
 		})
@@ -153,7 +152,7 @@ var _ = Describe("UpdateSettings", func() {
 			DiskCID: "fake-disk-id-2",
 		}
 
-		result, err := updateAction.Run(boshsettings.UpdateSettings{
+		result, err := action.Run(boshsettings.UpdateSettings{
 			DiskAssociations: []boshsettings.DiskAssociation{
 				diskAssociation,
 				diskAssociation2,

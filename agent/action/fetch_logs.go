@@ -37,6 +37,10 @@ func (a FetchLogsAction) IsPersistent() bool {
 	return false
 }
 
+func (a FetchLogsAction) IsLoggable() bool {
+	return true
+}
+
 func (a FetchLogsAction) Run(logType string, filters []string) (value map[string]string, err error) {
 	var logsDir string
 

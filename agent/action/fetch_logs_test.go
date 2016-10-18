@@ -30,13 +30,12 @@ var _ = Describe("FetchLogsAction", func() {
 		action = NewFetchLogs(compressor, copier, blobstore, dirProvider)
 	})
 
-	It("logs should be asynchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeTrue())
-	})
+	AssertActionIsAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
 
-	It("is not persistent", func() {
-		Expect(action.IsPersistent()).To(BeFalse())
-	})
+	AssertActionIsNotResumable(action)
+	AssertActionIsNotCancelable(action)
 
 	Describe("Run", func() {
 		testLogs := func(logType string, filters []string, expectedFilters []string) {

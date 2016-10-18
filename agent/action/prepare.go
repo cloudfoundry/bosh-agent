@@ -25,6 +25,10 @@ func (a PrepareAction) IsPersistent() bool {
 	return false
 }
 
+func (a PrepareAction) IsLoggable() bool {
+	return true
+}
+
 func (a PrepareAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
 	err := a.applier.Prepare(desiredSpec)
 	if err != nil {

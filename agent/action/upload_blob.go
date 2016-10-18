@@ -25,6 +25,10 @@ func (a UploadBlobAction) IsPersistent() bool {
 	return false
 }
 
+func (a UploadBlobAction) IsLoggable() bool {
+	return false
+}
+
 func (a UploadBlobAction) Run(base64Payload, payloadSha1, blobID string) (string, error) {
 
 	decodedPayload, err := base64.StdEncoding.DecodeString(base64Payload)

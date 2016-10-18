@@ -20,13 +20,12 @@ func init() {
 			action = NewStop(jobSupervisor)
 		})
 
-		It("is asynchronous", func() {
-			Expect(action.IsAsynchronous()).To(BeTrue())
-		})
+		AssertActionIsAsynchronous(action)
+		AssertActionIsNotPersistent(action)
+		AssertActionIsLoggable(action)
 
-		It("is not persistent", func() {
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
+		AssertActionIsNotResumable(action)
+		AssertActionIsNotCancelable(action)
 
 		It("returns stopped", func() {
 			stopped, err := action.Run(ProtocolVersion(2))

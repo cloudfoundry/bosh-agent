@@ -24,6 +24,10 @@ func (a ConfigureNetworksAction) IsPersistent() bool {
 	return true
 }
 
+func (a ConfigureNetworksAction) IsLoggable() bool {
+	return true
+}
+
 func (a ConfigureNetworksAction) Run() (interface{}, error) {
 	// Two possible ways to implement this action:
 	// (1) Restart agent which will in turn fetch infrastructure settings

@@ -46,12 +46,16 @@ func (a SyncDNS) IsPersistent() bool {
 	return false
 }
 
+func (a SyncDNS) IsLoggable() bool {
+	return true
+}
+
 func (a SyncDNS) Resume() (interface{}, error) {
-	return nil, errors.New("Not supported")
+	return nil, errors.New("not supported")
 }
 
 func (a SyncDNS) Cancel() error {
-	return errors.New("Not supported")
+	return errors.New("not supported")
 }
 
 func (a SyncDNS) Run(blobID, sha1 string, version uint64) (string, error) {

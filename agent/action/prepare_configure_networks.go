@@ -31,6 +31,10 @@ func (a PrepareConfigureNetworksAction) IsPersistent() bool {
 	return false
 }
 
+func (a PrepareConfigureNetworksAction) IsLoggable() bool {
+	return true
+}
+
 func (a PrepareConfigureNetworksAction) Run() (string, error) {
 	err := a.settingsService.InvalidateSettings()
 	if err != nil {

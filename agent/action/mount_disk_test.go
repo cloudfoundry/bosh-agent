@@ -31,13 +31,12 @@ var _ = Describe("MountDiskAction", func() {
 		action = NewMountDisk(settingsService, platform, dirProvider, logger)
 	})
 
-	It("is asynchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeTrue())
-	})
+	AssertActionIsAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
 
-	It("is not persistent", func() {
-		Expect(action.IsPersistent()).To(BeFalse())
-	})
+	AssertActionIsNotResumable(action)
+	AssertActionIsNotCancelable(action)
 
 	Describe("Run", func() {
 		Context("when settings can be loaded", func() {

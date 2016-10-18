@@ -36,6 +36,10 @@ func (a UpdateSettingsAction) IsPersistent() bool {
 	return false
 }
 
+func (a UpdateSettingsAction) IsLoggable() bool {
+	return true
+}
+
 func (a UpdateSettingsAction) Run(newUpdateSettings boshsettings.UpdateSettings) (string, error) {
 	err := a.settingsService.LoadSettings()
 	if err != nil {

@@ -39,6 +39,10 @@ func (a RunScriptAction) IsPersistent() bool {
 	return false
 }
 
+func (a RunScriptAction) IsLoggable() bool {
+	return true
+}
+
 func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) (map[string]string, error) {
 	// May be used in future to return more information
 	emptyResults := map[string]string{}

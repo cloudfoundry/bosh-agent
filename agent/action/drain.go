@@ -58,6 +58,10 @@ func (a DrainAction) IsPersistent() bool {
 	return false
 }
 
+func (a DrainAction) IsLoggable() bool {
+	return true
+}
+
 func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (int, error) {
 	currentSpec, err := a.specService.Get()
 	if err != nil {

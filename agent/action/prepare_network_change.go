@@ -36,6 +36,10 @@ func (a PrepareNetworkChangeAction) IsPersistent() bool {
 	return false
 }
 
+func (a PrepareNetworkChangeAction) IsLoggable() bool {
+	return true
+}
+
 func (a PrepareNetworkChangeAction) Run() (interface{}, error) {
 
 	err := a.settingsService.InvalidateSettings()
