@@ -448,7 +448,6 @@ func (p linux) SetupHostname(hostname string) error {
 		if err != nil {
 			return err
 		}
-
 		err = p.fs.WriteFile("/etc/hosts", buffer.Bytes())
 		if err != nil {
 			return bosherr.WrapError(err, "Writing to /etc/hosts")
@@ -597,7 +596,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	if p.options.ScrubEphemeralDisk {
 		contents, err := p.fs.Glob(mountPointGlob)
 		if err != nil {
-			return bosherr.WrapErrorf(err, "Globbing ephemeral disk mount point `%s'", mountPointGlob)
+			return bosherr.WrapErrorf(err, "Globbing ephemeral disk mount point '%s'", mountPointGlob)
 		}
 
 		err = p.scrubEphemeralDisk(contents)
