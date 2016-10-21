@@ -20,6 +20,7 @@ Vagrant.configure('2') do |config|
 
     v.access_key_id = ENV['BOSH_AWS_ACCESS_KEY_ID'] || ''
     v.secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY'] || ''
+    v.subnet_id = ENV['BOSH_LITE_SUBNET_ID'] || ''
     v.ami = ''
   end
 
