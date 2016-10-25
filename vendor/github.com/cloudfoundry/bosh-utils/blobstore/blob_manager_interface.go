@@ -1,13 +1,16 @@
 package blobstore
 
 import (
-    "io"
-    boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"io"
 )
 
 type BlobManagerInterface interface {
+	Fetch(blobID string) (boshsys.File, error, int)
 
-    Fetch(blobID string) (boshsys.File, error, int)
+	Write(blobID string, reader io.Reader) error
 
-    Write(blobID string, reader io.Reader) error
+	GetPath(blobID string) (string, error)
+
+	Delete(blobID string) error
 }
