@@ -53,6 +53,11 @@ const (
 	listAllJobsScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name, $_.ProcessId }
 `
+
+	listAllServiceNames = `
+(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name }
+`
+
 	deleteAllJobsScript = `
 (get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
 `
@@ -244,7 +249,72 @@ func (w *windowsJobSupervisor) Stop() error {
 }
 
 func (w *windowsJobSupervisor) StopAndWait() error {
-	return w.Stop()
+	const Timeout = time.Second * 3 // match
+
+	stdout, _, _, err := w.cmdRunner.RunCommand("-Command", listAllServiceNames)
+	if err != nil {
+		return bosherr.WrapError(err, "Disabling services")
+	}
+	names := strings.Split(strings.TrimSpace(stdout), "\r\n")
+	m, err := mgr.Connect()
+	if err != nil {
+		return err // TODO: Wrap
+	}
+	defer m.Disconnect()
+	var svcs []*mgr.Service
+	for _, name := range names {
+		s, err := m.OpenService(name)
+		if err != nil {
+			continue
+		}
+		svcs = append(svcs, s)
+	}
+	defer func() {
+		for _, s := range svcs {
+			s.Close()
+		}
+	}()
+
+	doneCh := make(chan struct{})
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+
+	go func() {
+		tick := time.NewTicker(time.Millisecond * 100)
+		for {
+			select {
+			case <-tick.C:
+				running := false
+				for _, s := range svcs {
+					st, err := s.Query()
+					if err == nil && st.State == svc.Running {
+						running = true
+						break
+					}
+				}
+				if !running {
+					tick.Stop()
+					close(doneCh)
+					return
+				}
+			case <-stopCh:
+				return
+			}
+		}
+	}()
+
+	err = w.Stop()
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-doneCh:
+		// Ok
+	case <-time.After(Timeout):
+		return fmt.Errorf("StopAndWait: timed after: %s", Timeout)
+	}
+	return nil
 }
 
 func (w *windowsJobSupervisor) Unmonitor() error {
