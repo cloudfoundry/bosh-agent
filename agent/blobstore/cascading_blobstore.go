@@ -2,75 +2,57 @@ package blobstore
 
 import (
 	boshUtilsBlobStore "github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"path/filepath"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
+const logTag = "cascadingBlobstore"
+
 type cascadingBlobstore struct {
-	fs        boshsys.FileSystem
-	blobstore boshUtilsBlobStore.Blobstore
-	blobsDir  string
+	innerBlobstore boshUtilsBlobStore.Blobstore
+	blobManager    boshUtilsBlobStore.BlobManagerInterface
+	logger         boshlog.Logger
 }
 
-func NewCascadingBlobstore(fs boshsys.FileSystem, blobstore boshUtilsBlobStore.Blobstore, blobsDir string) boshUtilsBlobStore.Blobstore {
+func NewCascadingBlobstore(
+	innerBlobstore boshUtilsBlobStore.Blobstore,
+	blobManager boshUtilsBlobStore.BlobManagerInterface,
+	logger boshlog.Logger) boshUtilsBlobStore.Blobstore {
 	return cascadingBlobstore{
-		fs:        fs,
-		blobstore: blobstore,
-		blobsDir:  blobsDir,
+		innerBlobstore: innerBlobstore,
+		blobManager:    blobManager,
+		logger:         logger,
 	}
 }
 
 func (b cascadingBlobstore) Get(blobID, fingerprint string) (string, error) {
-	localBlobPath := filepath.Join(b.blobsDir, blobID)
+	blobPath, err := b.blobManager.GetPath(blobID)
 
-	if b.fs.FileExists(localBlobPath) {
-		return b.copyToTmpFile(localBlobPath)
+	if err == nil {
+		b.logger.Debug(logTag, "Found blob with BlobManager. BlobID: %s", blobID)
+		return blobPath, nil
 	}
 
-	return b.blobstore.Get(blobID, fingerprint)
+	return b.innerBlobstore.Get(blobID, fingerprint)
 }
 
 func (b cascadingBlobstore) CleanUp(fileName string) error {
-	return b.blobstore.CleanUp(fileName)
+	return b.innerBlobstore.CleanUp(fileName)
 }
 
 func (b cascadingBlobstore) Create(fileName string) (string, string, error) {
-	return b.blobstore.Create(fileName)
+	return b.innerBlobstore.Create(fileName)
 }
 
 func (b cascadingBlobstore) Validate() error {
-	return b.blobstore.Validate()
+	return b.innerBlobstore.Validate()
 }
 
 func (b cascadingBlobstore) Delete(blobID string) error {
-	localBlobPath := filepath.Join(b.blobsDir, blobID)
+	err := b.blobManager.Delete(blobID)
 
-	if b.fs.FileExists(localBlobPath) {
-		b.fs.RemoveAll(localBlobPath)
-	}
-
-	return b.blobstore.Delete(blobID)
-}
-
-func (b cascadingBlobstore) cleanUploadedFile() error {
-
-	return nil
-}
-
-func (b cascadingBlobstore) copyToTmpFile(srcFileName string) (string, error) {
-	file, err := b.fs.TempFile("bosh-blobstore-cascading-Get")
 	if err != nil {
-		return "", bosherr.WrapError(err, "Creating temporary file")
+		return err
 	}
 
-	destTmpFileName := file.Name()
-
-	err = b.fs.CopyFile(srcFileName, destTmpFileName)
-	if err != nil {
-		b.fs.RemoveAll(destTmpFileName)
-		return "", bosherr.WrapError(err, "Copying file")
-	}
-
-	return destTmpFileName, nil
+	return b.innerBlobstore.Delete(blobID)
 }

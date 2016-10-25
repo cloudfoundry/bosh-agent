@@ -6,106 +6,89 @@ import (
 
 	"errors"
 	"github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	"github.com/cloudfoundry/bosh-agent/logger/fakes"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"io/ioutil"
-	"path"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("cascadingBlobstore", func() {
 	var (
-		fs                 boshsys.FileSystem
 		innerBlobstore     *fakeblob.FakeBlobstore
-		logger             *fakes.FakeLogger
+		blobManager        *fakeblob.FakeBlobManagerInterface
 		cascadingBlobstore boshblob.Blobstore
-		blobsDir           string
 	)
 
 	BeforeEach(func() {
-		logger = &fakes.FakeLogger{}
-		fs = boshsys.NewOsFileSystem(logger)
-		blobsDir, _ = ioutil.TempDir("", "vroom")
-
 		innerBlobstore = &fakeblob.FakeBlobstore{}
-		cascadingBlobstore = blobstore.NewCascadingBlobstore(fs, innerBlobstore, blobsDir)
+		blobManager = &fakeblob.FakeBlobManagerInterface{}
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+
+		cascadingBlobstore = blobstore.NewCascadingBlobstore(innerBlobstore, blobManager, logger)
 	})
 
 	Describe("Get", func() {
-		Describe("when the requested file exists in blobsDir", func() {
-			It("returns the name of the file on the file system", func() {
-				blobID := "smurf-1"
-				sha1 := "smurf-1-sha"
+		Describe("when blobManager returns the file path", func() {
+			It("returns the path provided by the blobManager", func() {
+				blobManager.GetPathReturns("/path/to-copy/of-blob", nil)
 
-				err := fs.WriteFileString(path.Join(blobsDir, blobID), "smurf-content")
-				Expect(err).To(BeNil())
-
-				filename, err := cascadingBlobstore.Get(blobID, sha1)
+				filename, err := cascadingBlobstore.Get("blobID", "sha1")
 
 				Expect(err).To(BeNil())
-				Expect(fs.ReadFileString(filename)).To(Equal("smurf-content"))
+				Expect(filename).To(Equal("/path/to-copy/of-blob"))
 
-				Expect(innerBlobstore.GetBlobIDs).Should(BeEmpty())
-			})
-
-			It("should return the path to a copy of the requested file", func() {
-				blobID := "smurf-2"
-				sha1 := "smurf-2-sha"
-
-				err := fs.WriteFileString(path.Join(blobsDir, blobID), "smurf-content")
-				Expect(err).To(BeNil())
-
-				filename, err := cascadingBlobstore.Get(blobID, sha1)
-
-				Expect(err).To(BeNil())
-				Expect(fs.ReadFileString(filename)).To(Equal("smurf-content"))
-				Expect(filename).ToNot(Equal(path.Join(blobsDir, blobID)))
+				Expect(blobManager.GetPathCallCount()).To(Equal(1))
+				Expect(blobManager.GetPathArgsForCall(0)).To(Equal("blobID"))
 
 				Expect(innerBlobstore.GetBlobIDs).Should(BeEmpty())
 			})
 		})
 
-		Describe("when file requested does not exist in blobsDir", func() {
+		Describe("when blobManager returns an error", func() {
 			It("delegates the action of getting the blob to inner blobstore", func() {
-				blobID := "smurf-3"
-				sha1 := "smurf-3-sha"
-
-				_, err := cascadingBlobstore.Get(blobID, sha1)
-
-				Expect(err).To(BeNil())
-				Expect(innerBlobstore.GetBlobIDs).ShouldNot(BeEmpty())
-			})
-
-			It("returns the name of the file in the inner blobstore when it cannot find it on the local file system", func() {
 				blobID := "smurf-4"
 				sha1 := "smurf-4-sha"
 
-				innerBlobstore.GetFileName = "/smurf-tmpfile"
+				blobManager.GetPathReturns("", errors.New("broken"))
+
+				innerBlobstore.GetFileName = "/smurf-file/path"
 				innerBlobstore.GetError = nil
 				innerBlobstore.CreateBlobID = "createdBlobID"
 				innerBlobstore.CreateFingerprint = "createdSha"
 
-				resultFileName, err := cascadingBlobstore.Get(blobID, sha1)
+				filename, err := cascadingBlobstore.Get(blobID, sha1)
+
+				Expect(blobManager.GetPathCallCount()).To(Equal(1))
+				Expect(blobManager.GetPathArgsForCall(0)).To(Equal(blobID))
 
 				Expect(err).To(BeNil())
-
 				Expect(len(innerBlobstore.GetBlobIDs)).To(Equal(1))
 				Expect(len(innerBlobstore.GetFingerprints)).To(Equal(1))
 
 				Expect(innerBlobstore.GetBlobIDs[0]).To(Equal(blobID))
 				Expect(innerBlobstore.GetFingerprints[0]).To(Equal(sha1))
 
-				Expect(resultFileName).To(Equal("/smurf-tmpfile"))
+				Expect(filename).To(Equal("/smurf-file/path"))
 			})
-		})
 
-		It("returns an error if the blobID is not in blobsDir or the inner blobstore", func() {
-			innerBlobstore.GetError = errors.New("error returned by inner blobstore")
+			Describe("when inner blobstore returns an error", func() {
+				It("returns that error to the caller", func() {
+					blobID := "smurf-5"
+					sha1 := "smurf-5-sha"
 
-			_, err := cascadingBlobstore.Get("whatever", "hiha")
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("error returned by inner blobstore"))
+					blobManager.GetPathReturns("", errors.New("broken"))
+
+					innerBlobstore.GetFileName = "/smurf-file/path"
+					innerBlobstore.GetError = errors.New("inner blobstore GET is broken")
+
+					_, err := cascadingBlobstore.Get(blobID, sha1)
+
+					Expect(blobManager.GetPathCallCount()).To(Equal(1))
+					Expect(blobManager.GetPathArgsForCall(0)).To(Equal(blobID))
+
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("inner blobstore GET is broken"))
+				})
+			})
 		})
 	})
 
@@ -173,37 +156,54 @@ var _ = Describe("cascadingBlobstore", func() {
 	})
 
 	Describe("Delete", func() {
-		It("tries to delete the blob from local blobsDir, and calls Delete on inner blobstore", func() {
+		It("deletes the blob from the blobManager, and calls Delete on inner blobstore", func() {
 			blobID := "smurf-25"
 
-			err := fs.WriteFileString(path.Join(blobsDir, blobID), "smurf-content")
-			Expect(err).To(BeNil())
-			Expect(fs.FileExists(path.Join(blobsDir, blobID))).To(BeTrue())
-
-			err = cascadingBlobstore.Delete(blobID)
-			Expect(err).To(BeNil())
-
-			Expect(fs.FileExists(path.Join(blobsDir, blobID))).To(BeFalse())
-
-			Expect(innerBlobstore.DeleteBlobID).To(Equal("smurf-25"))
-		})
-
-		It("does not error if it can't find the file in local blobsDir, and calls Delete on inner blobstore", func() {
-			blobID := "smurf-26"
+			blobManager.DeleteReturns(nil)
+			innerBlobstore.DeleteErr = nil
 
 			err := cascadingBlobstore.Delete(blobID)
+
 			Expect(err).To(BeNil())
 
-			Expect(innerBlobstore.DeleteBlobID).To(Equal("smurf-26"))
+			Expect(blobManager.DeleteCallCount()).To(Equal(1))
+			Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
+
+			Expect(innerBlobstore.DeleteBlobID).To(Equal(blobID))
 		})
 
-		It("returns an error if the inner blobstore fails to delete", func() {
-			innerBlobstore.DeleteErr = errors.New("error deleting")
+		It("returns an error if blobManager returns an error when deleting", func() {
+			blobID := "smurf-28"
 
-			err := cascadingBlobstore.Delete("smurf-27")
+			blobManager.DeleteReturns(errors.New("error deleting in blobManager"))
+			innerBlobstore.DeleteErr = nil
+
+			err := cascadingBlobstore.Delete(blobID)
 
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("error deleting"))
+			Expect(err.Error()).To(Equal("error deleting in blobManager"))
+
+			Expect(blobManager.DeleteCallCount()).To(Equal(1))
+			Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
+
+			Expect(innerBlobstore.DeleteBlobID).To(Equal(""))
+		})
+
+		It("returns an error if inner blobStore returns an error when deleting", func() {
+			blobID := "smurf-29"
+
+			blobManager.DeleteReturns(nil)
+			innerBlobstore.DeleteErr = errors.New("error deleting in innerBlobStore")
+
+			err := cascadingBlobstore.Delete(blobID)
+
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("error deleting in innerBlobStore"))
+
+			Expect(blobManager.DeleteCallCount()).To(Equal(1))
+			Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
+
+			Expect(innerBlobstore.DeleteBlobID).To(Equal(blobID))
 		})
 	})
 })
