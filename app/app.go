@@ -15,6 +15,7 @@ import (
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshaj "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
@@ -102,6 +103,7 @@ func (app *app) Setup(args []string) error {
 		app.platform,
 		app.logger,
 	)
+
 	boot := boshagent.NewBootstrap(
 		app.platform,
 		app.dirProvider,
@@ -120,10 +122,9 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting mbus handler")
 	}
 
-	blobstoreProvider := boshblob.NewProvider(app.platform.GetFs(), app.platform.GetRunner(), app.dirProvider.EtcDir(), app.logger)
+	blobManager := boshblob.NewBlobManager(app.platform.GetFs(), app.dirProvider.BlobsDir())
+	blobstore, err := app.setupBlobstore(settingsService.GetSettings().Blobstore, blobManager)
 
-	blobsettings := settingsService.GetSettings().Blobstore
-	blobstore, err := blobstoreProvider.Get(blobsettings.Type, blobsettings.Options)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting blobstore")
 	}
@@ -180,6 +181,7 @@ func (app *app) Setup(args []string) error {
 		settingsService,
 		app.platform,
 		blobstore,
+		blobManager,
 		taskService,
 		notifier,
 		applier,
@@ -315,4 +317,20 @@ func (app *app) fileContents(path string) string {
 		contents = "?"
 	}
 	return contents
+}
+
+func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobManager boshblob.BlobManagerInterface) (boshblob.Blobstore, error) {
+	blobstoreProvider := boshblob.NewProvider(
+		app.platform.GetFs(),
+		app.platform.GetRunner(),
+		app.dirProvider.EtcDir(),
+		app.logger,
+	)
+
+	blobstore, err := blobstoreProvider.Get(blobstoreSettings.Type, blobstoreSettings.Options)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Getting blobstore")
+	}
+
+	return boshagentblobstore.NewCascadingBlobstore(blobstore, blobManager, app.logger), nil
 }

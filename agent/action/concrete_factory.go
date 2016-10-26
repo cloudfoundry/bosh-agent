@@ -24,6 +24,7 @@ func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	blobstore boshblob.Blobstore,
+	blobManager boshblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
 	applier boshappl.Applier,
@@ -39,7 +40,6 @@ func NewFactory(
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
 	ntpService := boshntp.NewConcreteService(platform.GetFs(), dirProvider)
-	blobManager := boshblob.NewBlobManager(platform.GetFs(), dirProvider.BlobsDir())
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{

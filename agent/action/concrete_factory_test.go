@@ -9,7 +9,6 @@ import (
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -31,6 +30,7 @@ var _ = Describe("concreteFactory", func() {
 		settingsService   *fakesettings.FakeSettingsService
 		platform          *fakeplatform.FakePlatform
 		blobstore         *fakeblobstore.FakeBlobstore
+		blobManager       *fakeblobstore.FakeBlobManagerInterface
 		taskService       *faketask.FakeService
 		notifier          *fakenotif.FakeNotifier
 		applier           *fakeappl.FakeApplier
@@ -46,6 +46,7 @@ var _ = Describe("concreteFactory", func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		platform = fakeplatform.NewFakePlatform()
 		blobstore = &fakeblobstore.FakeBlobstore{}
+		blobManager = &fakeblobstore.FakeBlobManagerInterface{}
 		taskService = &faketask.FakeService{}
 		notifier = fakenotif.NewFakeNotifier()
 		applier = fakeappl.NewFakeApplier()
@@ -59,6 +60,7 @@ var _ = Describe("concreteFactory", func() {
 			settingsService,
 			platform,
 			blobstore,
+			blobManager,
 			taskService,
 			notifier,
 			applier,
@@ -222,7 +224,6 @@ var _ = Describe("concreteFactory", func() {
 		action, err := factory.Create("upload_blob")
 		Expect(err).ToNot(HaveOccurred())
 
-		blobManager := boshblob.NewBlobManager(platform.GetFs(), platform.GetDirProvider().BlobsDir())
 		Expect(action).To(Equal(NewUploadBlobAction(blobManager)))
 	})
 })
