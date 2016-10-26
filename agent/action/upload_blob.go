@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/cloudfoundry/bosh-utils/blobstore"
+	"fmt"
 )
 
 type UploadBlobAction struct {
@@ -56,7 +57,7 @@ func (a UploadBlobAction) validatePayload(payload []byte, payloadSha1 string) er
 	computedHash := hex.EncodeToString(computedShaHex)
 
 	if computedHash != payloadSha1 {
-		return errors.New("Payload corrupted. SHA1 mismatch. Expected " + payloadSha1 + " but received " + computedHash)
+		return fmt.Errorf("Payload corrupted. SHA1 mismatch. Expected %s but received %s", payloadSha1, computedHash)
 	}
 
 	return nil
