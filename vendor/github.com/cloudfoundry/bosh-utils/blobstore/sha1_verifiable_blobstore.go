@@ -18,7 +18,6 @@ func NewSHA1VerifiableBlobstore(blobstore Blobstore) Blobstore {
 }
 
 func (b sha1VerifiableBlobstore) Get(blobID, fingerprint string) (string, error) {
-
 	fileName, err := b.blobstore.Get(blobID, fingerprint)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Getting blob from inner blobstore")
