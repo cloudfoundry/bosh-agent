@@ -105,7 +105,7 @@ func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 
 	defer func() {
 		if err = s.blobstore.CleanUp(file); err != nil {
-			s.logger.Warn(logTag, "Failed to clean up blobstore blog: %s", err.Error())
+			s.logger.Warn(logTag, "Failed to clean up blobstore blob: %s", err.Error())
 		}
 	}()
 

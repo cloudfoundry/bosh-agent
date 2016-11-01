@@ -6,8 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"github.com/cloudfoundry/bosh-utils/blobstore"
 	"fmt"
+	"github.com/cloudfoundry/bosh-utils/blobstore"
 )
 
 type UploadBlobAction struct {
