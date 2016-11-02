@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"strings"
 
+	"errors"
+	"regexp"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	"regexp"
-	"errors"
 )
 
 type HTTPClient interface {
@@ -128,11 +129,11 @@ func (c httpClient) Delete(endpoint string) (*http.Response, error) {
 	return response, nil
 }
 
+var scrubUserinfoRegex = regexp.MustCompile("(https?://.*:).*@")
+
 func scrubErrorOutput(err error) error {
 	errorMsg := err.Error()
-	r := regexp.MustCompile("(http://.*:).*@")
-
-	errorMsg = r.ReplaceAllString(errorMsg, "$1<redacted>@")
+	errorMsg = scrubUserinfoRegex.ReplaceAllString(errorMsg, "$1<redacted>@")
 
 	return errors.New(errorMsg)
 }
