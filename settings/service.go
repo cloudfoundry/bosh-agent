@@ -2,11 +2,9 @@ package settings
 
 import (
 	"encoding/json"
-	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -30,7 +28,6 @@ type settingsService struct {
 	settingsSource         Source
 	defaultNetworkResolver DefaultNetworkResolver
 	logger                 boshlog.Logger
-	retryDelay             time.Duration
 }
 
 type DefaultNetworkResolver interface {
@@ -46,24 +43,6 @@ func NewService(
 	defaultNetworkResolver DefaultNetworkResolver,
 	logger boshlog.Logger,
 ) (service Service) {
-	return NewServiceWithCustomRetryDelay(
-		fs,
-		settingsPath,
-		settingsSource,
-		defaultNetworkResolver,
-		logger,
-		1*time.Second,
-	)
-}
-
-func NewServiceWithCustomRetryDelay(
-	fs boshsys.FileSystem,
-	settingsPath string,
-	settingsSource Source,
-	defaultNetworkResolver DefaultNetworkResolver,
-	logger boshlog.Logger,
-	delay time.Duration,
-) (service Service) {
 	return &settingsService{
 		fs:                     fs,
 		settingsPath:           settingsPath,
@@ -71,7 +50,6 @@ func NewServiceWithCustomRetryDelay(
 		settingsSource:         settingsSource,
 		defaultNetworkResolver: defaultNetworkResolver,
 		logger:                 logger,
-		retryDelay:             delay,
 	}
 }
 
@@ -82,10 +60,7 @@ func (s *settingsService) PublicSSHKeyForUsername(username string) (string, erro
 func (s *settingsService) LoadSettings() error {
 	s.logger.Debug(settingsServiceLogTag, "Loading settings from fetcher")
 
-	settingsRetryable := NewRetrieveSettingsRetryable(s.settingsSource, s.logger)
-	retryStrategy := boshretry.NewAttemptRetryStrategy(10, s.retryDelay, settingsRetryable, s.logger)
-	fetchErr := retryStrategy.Try()
-
+	newSettings, fetchErr := s.settingsSource.Settings()
 	if fetchErr != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed loading settings via fetcher: %v", fetchErr)
 
@@ -107,9 +82,9 @@ func (s *settingsService) LoadSettings() error {
 	}
 
 	s.logger.Debug(settingsServiceLogTag, "Successfully received settings from fetcher")
-	s.settings = settingsRetryable.Settings()
+	s.settings = newSettings
 
-	newSettingsJSON, err := json.Marshal(s.settings)
+	newSettingsJSON, err := json.Marshal(newSettings)
 	if err != nil {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}

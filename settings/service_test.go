@@ -3,7 +3,6 @@ package settings_test
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -93,84 +92,64 @@ func init() {
 				})
 			})
 
-			Context("when retrieving the settings fails", func() {
-				var serviceWithRetryDelay0 Service
-
-				JustBeforeEach(func() {
-					logger := boshlog.NewLogger(boshlog.LevelNone)
-					serviceWithRetryDelay0 = NewServiceWithCustomRetryDelay(fs, "/setting/path.json", fakeSettingsSource, fakeDefaultNetworkResolver, logger, 0*time.Second)
+			Context("when settings fetcher fails fetching settings", func() {
+				BeforeEach(func() {
+					fetcherFuncErr = errors.New("fake-fetch-error")
 				})
 
-				It("retries 10 times", func() {
-					succeedAfter := 10
-					fakeSettingsSource.DynamicSettings = fakes.FailAfter(Settings{AgentID: "some-new-agent-id"}, errors.New("fake-fetch-error"), succeedAfter)
-					err := serviceWithRetryDelay0.LoadSettings()
-
-					Expect(err).ToNot(HaveOccurred())
-					Expect(serviceWithRetryDelay0.GetSettings()).To(Equal(Settings{
-						AgentID: "some-new-agent-id",
-					}))
-				})
-
-				Context("when settings cannot be retrieved after 10 retries", func() {
-					BeforeEach(func() {
-						fetcherFuncErr = errors.New("fake-fetch-error")
-					})
-
-					Context("when a settings file exists", func() {
-						Context("when settings contain at most one dynamic network", func() {
-							BeforeEach(func() {
-								fs.WriteFile("/setting/path.json", []byte(`{
+				Context("when a settings file exists", func() {
+					Context("when settings contain at most one dynamic network", func() {
+						BeforeEach(func() {
+							fs.WriteFile("/setting/path.json", []byte(`{
 								"agent_id":"some-agent-id",
 								"networks": {"fake-net-1": {"type": "dynamic"}}
 							}`))
 
-								fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = Network{
-									IP:      "fake-resolved-ip",
-									Netmask: "fake-resolved-netmask",
-									Gateway: "fake-resolved-gateway",
-								}
-							})
+							fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = Network{
+								IP:      "fake-resolved-ip",
+								Netmask: "fake-resolved-netmask",
+								Gateway: "fake-resolved-gateway",
+							}
+						})
 
-							It("returns settings from the settings file with resolved network", func() {
-								err := serviceWithRetryDelay0.LoadSettings()
-								Expect(err).ToNot(HaveOccurred())
-								Expect(serviceWithRetryDelay0.GetSettings()).To(Equal(Settings{
-									AgentID: "some-agent-id",
-									Networks: Networks{
-										"fake-net-1": Network{
-											Type:     NetworkTypeDynamic,
-											IP:       "fake-resolved-ip",
-											Netmask:  "fake-resolved-netmask",
-											Gateway:  "fake-resolved-gateway",
-											Resolved: true,
-										},
+						It("returns settings from the settings file with resolved network", func() {
+							err := service.LoadSettings()
+							Expect(err).ToNot(HaveOccurred())
+							Expect(service.GetSettings()).To(Equal(Settings{
+								AgentID: "some-agent-id",
+								Networks: Networks{
+									"fake-net-1": Network{
+										Type:     NetworkTypeDynamic,
+										IP:       "fake-resolved-ip",
+										Netmask:  "fake-resolved-netmask",
+										Gateway:  "fake-resolved-gateway",
+										Resolved: true,
 									},
-								}))
-							})
+								},
+							}))
 						})
 					})
+				})
 
-					Context("when non-unmarshallable settings file exists", func() {
-						It("returns any error from the fetcher", func() {
-							fs.WriteFile("/setting/path.json", []byte(`$%^&*(`))
+				Context("when non-unmarshallable settings file exists", func() {
+					It("returns any error from the fetcher", func() {
+						fs.WriteFile("/setting/path.json", []byte(`$%^&*(`))
 
-							err := serviceWithRetryDelay0.LoadSettings()
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
+						err := service.LoadSettings()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
 
-							Expect(serviceWithRetryDelay0.GetSettings()).To(Equal(Settings{}))
-						})
+						Expect(service.GetSettings()).To(Equal(Settings{}))
 					})
+				})
 
-					Context("when no settings file exists", func() {
-						It("returns any error from the fetcher", func() {
-							err := serviceWithRetryDelay0.LoadSettings()
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
+				Context("when no settings file exists", func() {
+					It("returns any error from the fetcher", func() {
+						err := service.LoadSettings()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
 
-							Expect(serviceWithRetryDelay0.GetSettings()).To(Equal(Settings{}))
-						})
+						Expect(service.GetSettings()).To(Equal(Settings{}))
 					})
 				})
 			})
