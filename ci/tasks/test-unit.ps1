@@ -4,7 +4,7 @@ trap {
 }
 
 $env:GOPATH = Join-Path -Path $PWD "gopath"
-$env:PATH = $env:GOPATH + "/bin;C:/go/bin;" + $env:PATH
+$env:PATH = $env:GOPATH + "/bin;C:/go/bin;C:/var/vcap/bosh/bin;" + $env:PATH
 
 cd $env:GOPATH/src/github.com/cloudfoundry/bosh-agent
 

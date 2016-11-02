@@ -29,6 +29,8 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+var pipeExePath = "C:\\var\\vcap\\bosh\\bin\\pipe.exe"
+
 const (
 	serviceDescription = "vcap"
 
@@ -96,16 +98,17 @@ type serviceEnv struct {
 }
 
 type WindowsServiceWrapperConfig struct {
-	XMLName     xml.Name         `xml:"service"`
-	ID          string           `xml:"id"`
-	Name        string           `xml:"name"`
-	Description string           `xml:"description"`
-	Executable  string           `xml:"executable"`
-	Arguments   []string         `xml:"argument"`
-	LogPath     string           `xml:"logpath"`
-	LogMode     serviceLogMode   `xml:"log"`
-	Onfailure   serviceOnfailure `xml:"onfailure"`
-	Env         []serviceEnv     `xml:"env,omitempty"`
+	XMLName                xml.Name         `xml:"service"`
+	ID                     string           `xml:"id"`
+	Name                   string           `xml:"name"`
+	Description            string           `xml:"description"`
+	Executable             string           `xml:"executable"`
+	Arguments              []string         `xml:"argument"`
+	LogPath                string           `xml:"logpath"`
+	LogMode                serviceLogMode   `xml:"log"`
+	Onfailure              serviceOnfailure `xml:"onfailure"`
+	Env                    []serviceEnv     `xml:"env,omitempty"`
+	StopParentProcessFirst bool             `xml:"stopparentprocessfirst,omitempty"`
 }
 
 type WindowsProcess struct {
@@ -115,13 +118,14 @@ type WindowsProcess struct {
 	Env        map[string]string `json:"env"`
 }
 
-func (p *WindowsProcess) ServiceWrapperConfig(logPath string) *WindowsServiceWrapperConfig {
+func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int) *WindowsServiceWrapperConfig {
+	args := append([]string{p.Executable}, p.Args...)
 	srcv := &WindowsServiceWrapperConfig{
 		ID:          p.Name,
 		Name:        p.Name,
 		Description: serviceDescription,
-		Executable:  p.Executable,
-		Arguments:   p.Args,
+		Executable:  pipeExePath,
+		Arguments:   args,
 		LogPath:     logPath,
 		LogMode: serviceLogMode{
 			Mode:          "roll-by-size",
@@ -132,11 +136,17 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string) *WindowsServiceWra
 			Action: "restart",
 			Delay:  "5 sec",
 		},
+		StopParentProcessFirst: false,
 	}
+	srcv.Env = make([]serviceEnv, 0, len(p.Env))
 	for k, v := range p.Env {
 		srcv.Env = append(srcv.Env, serviceEnv{Name: k, Value: v})
 	}
-
+	srcv.Env = append(srcv.Env,
+		serviceEnv{Name: "__PIPE_SERVICE_NAME", Value: p.Name},
+		serviceEnv{Name: "__PIPE_LOG_DIR", Value: logPath},
+		serviceEnv{Name: "__PIPE_NOTIFY_HTTP", Value: fmt.Sprintf("http://localhost:%d", eventPort)},
+	)
 	return srcv
 }
 
@@ -433,7 +443,7 @@ func (w *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		}
 
 		buf.Reset()
-		serviceConfig := process.ServiceWrapperConfig(logPath)
+		serviceConfig := process.ServiceWrapperConfig(logPath, w.jobFailuresServerPort)
 		if err := xml.NewEncoder(&buf).Encode(serviceConfig); err != nil {
 			return bosherr.WrapErrorf(err, "Rendering service config template for service '%s'", process.Name)
 		}

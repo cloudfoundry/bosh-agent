@@ -7,10 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 
 	"golang.org/x/sys/windows/svc"
@@ -30,8 +34,9 @@ import (
 const jobFailuresServerPort = 5000
 
 const (
-	DefaultTimeout  = time.Second * 15
-	DefaultInterval = time.Millisecond * 500
+	DefaultTimeout   = time.Second * 15
+	DefaultInterval  = time.Millisecond * 500
+	DefaultEventPort = 2825
 )
 
 func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
@@ -47,6 +52,20 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 					Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
 					Executable: "powershell",
 					Args:       []string{"/C", "Write-Host \"Hello 2\"; Start-Sleep 10"},
+				},
+			},
+		},
+		"say-hello-syslog": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+					Executable: "powershell",
+					Args:       []string{"/C", "Write-Host \"Hello 1\"; Start-Sleep 10"},
+					Env: map[string]string{
+						"__PIPE_SYSLOG_HOST":      "localhost",
+						"__PIPE_SYSLOG_PORT":      "10202",
+						"__PIPE_SYSLOG_TRANSPORT": "udp",
+					},
 				},
 			},
 		},
@@ -83,6 +102,20 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 	return conf, ok
 }
 
+func buildPipeExe() error {
+	tmpdir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(tmpdir, "pipe.exe")
+	cmd := exec.Command("go", "build", "-o", path, "github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	SetPipeExePath(path)
+	return nil
+}
+
 var _ = Describe("WindowsJobSupervisor", func() {
 	Context("add jobs and control services", func() {
 		BeforeEach(func() {
@@ -92,6 +125,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		})
 
 		var (
+			once              sync.Once
 			fs                boshsys.FileSystem
 			logger            boshlog.Logger
 			basePath          string
@@ -106,6 +140,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		)
 
 		BeforeEach(func() {
+			once.Do(func() { Expect(buildPipeExe()).To(Succeed()) })
+
 			const testExtPath = "testdata/job-service-wrapper"
 
 			logOut = bytes.NewBufferString("")
@@ -274,8 +310,51 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					readLogFile := func() (string, error) {
 						return fs.ReadFileString(path.Join(logDir, "say-hello", proc.Name, "job-service-wrapper.out.log"))
 					}
-
 					Eventually(readLogFile, DefaultTimeout, DefaultInterval).Should(ContainSubstring(fmt.Sprintf("Hello %d", i+1)))
+				}
+			})
+
+			It("sets the LOG_DIR env variable for the pipe", func() {
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				validFile := func(name string) func() error {
+					return func() error {
+						fi, err := os.Stat(name)
+						if err != nil {
+							return err
+						}
+						if fi.Size() == 0 {
+							return fmt.Errorf("empty file: %s", name)
+						}
+						return nil
+					}
+				}
+
+				for _, proc := range conf.Processes {
+					pipeLogPath := filepath.Join(logDir, "say-hello", proc.Name, "pipe.log")
+					Eventually(validFile(pipeLogPath), DefaultTimeout, DefaultInterval).Should(Succeed())
+				}
+			})
+
+			It("sets the SERVICE_NAME env variable for the pipe", func() {
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				fileContains := func(filename, substring string) func() error {
+					return func() error {
+						b, err := ioutil.ReadFile(filename)
+						if err != nil {
+							return err
+						}
+						if !bytes.Contains(b, []byte(substring)) {
+							return fmt.Errorf("file %s does not contain substring: %s", filename, substring)
+						}
+						return nil
+					}
+				}
+
+				for _, proc := range conf.Processes {
+					pipeLogPath := filepath.Join(logDir, "say-hello", proc.Name, "pipe.log")
+					Eventually(fileContains(pipeLogPath, proc.Name), DefaultTimeout, DefaultInterval).Should(Succeed())
 				}
 			})
 		})
@@ -493,13 +572,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 		Describe("MonitorJobFailures", func() {
 			var cancelServer chan bool
+			var dirProvider boshdirs.Provider
 			const failureRequest = `{
 				"event": "pid failed",
 				"exitCode": 55,
 				"processName": "nats"
 			}`
 			BeforeEach(func() {
-				dirProvider := boshdirs.NewProvider(basePath)
+				dirProvider = boshdirs.NewProvider(basePath)
 				runner = boshsys.NewExecCmdRunner(logger)
 				cancelServer = make(chan bool)
 				jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort, cancelServer)
@@ -530,6 +610,33 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					Description: "exited with code 55",
 				}
 			}
+
+			It("sends alerts for a flapping service", func() {
+
+				var handledAlert boshalert.MonitAlert
+				alertReceived := make(chan (bool), 1)
+				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+					handledAlert = alert
+					alertReceived <- true
+					return
+				}
+				go jobSupervisor.MonitorJobFailures(failureHandler)
+
+				conf, err := AddJob("flapping")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				Expect(len(conf.Processes)).To(BeNumerically(">=", 1))
+				proc := conf.Processes[0]
+				Eventually(func() (string, error) {
+					st, err := GetServiceState(proc.Name)
+					return SvcStateString(st), err
+				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
+
+				Eventually(alertReceived, time.Second*6).Should(Receive())
+				Expect(handledAlert.ID).To(ContainSubstring("flapping"))
+				Expect(handledAlert.Event).To(Equal("pid failed"))
+			})
 
 			It("receives job failures from the service wrapper via HTTP", func() {
 				var handledAlert boshalert.MonitAlert
@@ -616,9 +723,59 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
+
+		Context("when the WindowsProcess has syslog environment variables", func() {
+			var ServerConn *net.UDPConn
+			var syslogReceived chan (string)
+			BeforeEach(func() {
+				ServerAddr, err := net.ResolveUDPAddr("udp", ":10202")
+				Expect(err).To(Succeed())
+				ServerConn, err = net.ListenUDP("udp", ServerAddr)
+				Expect(err).To(Succeed())
+
+				syslogReceived = make(chan (string), 1)
+				go func() {
+					buf := make([]byte, 1024)
+					for {
+						n, _, err := ServerConn.ReadFromUDP(buf)
+						if err == nil {
+							syslogReceived <- string(buf[0:n])
+						} else {
+							return
+						}
+					}
+				}()
+			})
+			AfterEach(func() {
+				ServerConn.Close()
+			})
+
+			It("report the logs", func(done Done) {
+				_, err := AddJob("say-hello-syslog")
+				Expect(err).To(Succeed())
+				Expect(jobSupervisor.Start()).To(Succeed())
+				Eventually(<-syslogReceived).Should(MatchRegexp("<6>\\S+\\s+\\S+\\s+say-hello-1-[^\\s:]*: Hello\n"))
+				close(done)
+			}, 20)
+		})
 	})
 
 	Describe("WindowsProcess#ServiceWrapperConfig", func() {
+		It("adds the pipe.exe environment variables to the winsw XML", func() {
+			proc := WindowsProcess{
+				Name:       "Name",
+				Executable: "Executable",
+				Args:       []string{"A"},
+			}
+			srvc := proc.ServiceWrapperConfig("LogPath", 123)
+			envs := make(map[string]string)
+			for _, e := range srvc.Env {
+				envs[e.Name] = e.Value
+			}
+			Expect(envs["__PIPE_LOG_DIR"]).To(Equal("LogPath"))
+			Expect(envs["__PIPE_NOTIFY_HTTP"]).To(Equal(fmt.Sprintf("http://localhost:%d", 123)))
+		})
+
 		Context("when the WindowsProcess has environment variables", func() {
 			It("adds them to the marshalled WindowsServiceWrapperConfig XML", func() {
 				proc := WindowsProcess{
@@ -630,10 +787,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 						"Key_2": "Val_2",
 					},
 				}
-				srvc := proc.ServiceWrapperConfig("LogPath")
-				Expect(len(srvc.Env)).To(Equal(len(proc.Env)))
+				srvc := proc.ServiceWrapperConfig("LogPath", 0)
+				srvcHash := map[string]string{}
 				for _, e := range srvc.Env {
-					Expect(e.Value).To(Equal(proc.Env[e.Name]))
+					srvcHash[e.Name] = e.Value
+				}
+
+				for key, value := range proc.Env {
+					Expect(value).To(Equal(srvcHash[key]))
 				}
 			})
 		})

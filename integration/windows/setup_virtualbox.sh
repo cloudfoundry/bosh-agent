@@ -3,6 +3,7 @@ set -ex
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTPUT_PATH=$DIR/fixtures/bosh-agent.exe
+PIPE_OUTPUT_PATH=$DIR/fixtures/pipe.exe
 
 rm -f $OUTPUT_PATH
 
@@ -11,6 +12,12 @@ GOOS=windows \
   -o \
   $OUTPUT_PATH \
   github.com/cloudfoundry/bosh-agent/main
+
+GOOS=windows \
+  go build \
+  -o \
+  $PIPE_OUTPUT_PATH \
+  github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe
 
 if vagrant status | grep agent | grep running
 then

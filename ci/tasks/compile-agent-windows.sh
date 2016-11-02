@@ -15,6 +15,7 @@ apt-get -y install zip
 cd gopath/src/github.com/cloudfoundry/bosh-agent
 
 GOOS=windows ./bin/go build -o bosh-agent.exe main/agent.go
+GOOS=windows ./bin/go build -o pipe.exe jobsupervisor/pipe/main.go
 
 git rev-parse HEAD > ./commit
 
@@ -46,5 +47,5 @@ cat > ./service_wrapper.exe.config <<EOF
 EOF
 
 RELEASE_ZIP=$PWD/bosh-windows-integration-v$VERSION.zip
-zip ${RELEASE_ZIP} ./commit ./bosh-agent.exe ./service_wrapper.exe ./service_wrapper.xml ./service_wrapper.exe.config
+zip ${RELEASE_ZIP} ./commit ./bosh-agent.exe ./pipe.exe ./service_wrapper.exe ./service_wrapper.xml ./service_wrapper.exe.config
 mv ${RELEASE_ZIP} ${COMPILED_AGENT_ZIP}

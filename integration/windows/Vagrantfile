@@ -100,6 +100,9 @@ download_agent = <<-SHELL
   Invoke-WebRequest "#{agent_zip_url}" -Verbose -OutFile C:\\bosh\\agent.zip
 
   Unzip C:\\bosh\\agent.zip C:\\bosh\\
+
+  New-Item -Type Directory C:\\var\\vcap\\bosh\\bin -Force
+  Move-Item C:\\bosh\\pipe.exe C:\\var\\vcap\\bosh\\bin\\pipe.exe
 SHELL
 
 write_agent_configs = <<-SHELL
@@ -176,6 +179,7 @@ copy_agent_from_vagrant = <<-SHELL
   cp tar.exe c:\\bosh\\
   cp zlib1.dll c:\\bosh\\
   cp job-service-wrapper.exe c:\\bosh
+  cp pipe.exe C:\\var\\vcap\\bosh\\bin\\
 SHELL
 initialize_agent_service = <<-SHELL
   Move-Item C:\\bosh\\job-service-wrapper.exe C:\\var\\vcap\\bosh\\bin\\job-service-wrapper.exe -Force
