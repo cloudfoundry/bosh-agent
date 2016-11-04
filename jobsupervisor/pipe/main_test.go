@@ -26,15 +26,17 @@ import (
 )
 
 const ServiceName = "jimbob"
+const EchoOutput = "hello"
 
 var _ = Describe("Main", func() {
 	It("should run the echo", func() {
 		var stdout bytes.Buffer
-		cmd := exec.Command(pathToPipeCLI, "echo", "exciting text")
+		cmd := exec.Command(pathToPipeCLI, shell, "-c", "echo", EchoOutput)
+
 		cmd.Stdout = &stdout
 
 		Expect(cmd.Run()).To(Succeed())
-		Expect(strings.TrimSpace(stdout.String())).To(Equal("exciting text"))
+		Expect(strings.TrimSpace(stdout.String())).To(Equal(EchoOutput))
 	})
 
 	It("should return the exit code", func() {
@@ -115,7 +117,7 @@ var _ = Describe("Main", func() {
 		})
 
 		It("never logs own behaviour to stdout/err", func() {
-			cmd := exec.Command(pathToPipeCLI, "echo", "exciting text")
+			cmd := exec.Command(pathToPipeCLI, shell, "-c", "echo", EchoOutput)
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 			cmd.Stdout = &stdout
@@ -123,14 +125,14 @@ var _ = Describe("Main", func() {
 			cmd.Env = os.Environ()
 			Expect(cmd.Run()).To(Succeed())
 
-			Expect(strings.TrimSpace(stdout.String())).To(Equal("exciting text"))
+			Expect(strings.TrimSpace(stdout.String())).To(Equal(EchoOutput))
 			Expect(stderr.Len()).To(Equal(0))
 		})
 
 		It("logs own behaviour to file", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
-			cmd := exec.Command(pathToPipeCLI, "echo", "exciting text")
+			cmd := exec.Command(pathToPipeCLI, shell, "-c", "echo", EchoOutput)
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
 			cmd.Env = append(os.Environ(), joinEnv("LOG_DIR", tempDir))
@@ -144,7 +146,7 @@ var _ = Describe("Main", func() {
 			Expect(err).To(Succeed())
 			Expect(string(pipeLog)).To(ContainSubstring("pipe:"))
 
-			Expect(strings.TrimSpace(stdout.String())).To(Equal("exciting text"))
+			Expect(strings.TrimSpace(stdout.String())).To(Equal(EchoOutput))
 			Expect(stderr.Len()).To(Equal(0))
 		})
 
@@ -164,7 +166,7 @@ var _ = Describe("Main", func() {
 			}
 			Expect(invalidLogDir).ToNot(Equal(""))
 
-			cmd := exec.Command(pathToPipeCLI, "echo", "exciting text")
+			cmd := exec.Command(pathToPipeCLI, shell, "-c", "echo", EchoOutput)
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 			cmd.Stdout = &stdout
@@ -175,7 +177,7 @@ var _ = Describe("Main", func() {
 			_, err := os.Stat(invalidLogDir)
 			Expect(err).ToNot(Succeed())
 
-			Expect(strings.TrimSpace(stdout.String())).To(Equal("exciting text"))
+			Expect(strings.TrimSpace(stdout.String())).To(Equal(EchoOutput))
 			Expect(stderr.Len()).To(Equal(0))
 		})
 	})
