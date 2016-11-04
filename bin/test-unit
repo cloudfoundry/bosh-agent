@@ -39,7 +39,7 @@ echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk
 # $bin/test-unhandled-errors
 
 echo -e "\n Testing packages..."
-$bin/env ginkgo $WATCH -r $race -skipPackage="integration,vendor" $dir
+$bin/env ginkgo $WATCH -r $race -skipPackage="integration,vendor,pipe" $dir
 
 echo -e "\n Running build script to confirm everything compiles..."
 $bin/build

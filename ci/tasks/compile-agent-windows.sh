@@ -19,7 +19,7 @@ GOOS=windows ./bin/go build -o pipe.exe jobsupervisor/pipe/main.go
 
 git rev-parse HEAD > ./commit
 
-unzip $AGENT_DEPS_ZIP/agent-dependencies-v*.zip
+unzip -n $AGENT_DEPS_ZIP/agent-dependencies-v*.zip
 mv ./job-service-wrapper.exe ./service_wrapper.exe
 
 cat > ./service_wrapper.xml <<EOF
