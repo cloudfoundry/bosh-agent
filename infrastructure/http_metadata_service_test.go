@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,6 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
-	"time"
 )
 
 var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)

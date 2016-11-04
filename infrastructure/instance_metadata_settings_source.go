@@ -3,12 +3,12 @@ package infrastructure
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	"time"
 )
 
 type InstanceMetadataSettingsSource struct {
