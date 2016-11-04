@@ -14,6 +14,8 @@ import (
 var pathToPipeCLI string
 var GoSequencePath string
 var shell string
+var echoCmdArgs []string
+const echoOutput = "hello"
 
 func TestWinswPipe(t *testing.T) {
 	BeforeSuite(func() {
@@ -28,8 +30,10 @@ func TestWinswPipe(t *testing.T) {
 	BeforeEach(func() {
 		if runtime.GOOS == "windows" {
 			shell = "powershell"
+			echoCmdArgs = []string{shell, "-c", "echo", echoOutput}
 			SetDefaultEventuallyTimeout(5 * time.Second)
 		} else {
+			echoCmdArgs = []string{"echo", echoOutput}
 			shell = "bash"
 		}
 	})
