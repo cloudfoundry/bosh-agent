@@ -220,8 +220,8 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(NewSyncDNS(blobstore, settingsService, platform, logger)))
 	})
 
-	It("upload_blob", func() {
-		action, err := factory.Create("upload_blob")
+	It("upload_blob.v0", func() {
+		action, err := factory.Create("upload_blob.v0")
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(action).To(Equal(NewUploadBlobAction(blobManager)))

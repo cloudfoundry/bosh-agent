@@ -15,6 +15,7 @@ var pathToPipeCLI string
 var GoSequencePath string
 var shell string
 var echoCmdArgs []string
+
 const echoOutput = "hello"
 
 func TestWinswPipe(t *testing.T) {
