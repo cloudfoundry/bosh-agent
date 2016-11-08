@@ -95,6 +95,11 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 					Executable: "powershell",
 					Args:       []string{"/C", "While($true) { Write-Host \"Looping\"; Start-Sleep 1; }"},
 				},
+				{
+					Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
+					Executable: "powershell",
+					Args:       []string{"/C", "While($true) { Start-Process -NoNewWindow powershell.exe -ArgumentList 'Start-Sleep','50'; Start-Sleep 1 }"},
+				},
 			},
 		},
 	}

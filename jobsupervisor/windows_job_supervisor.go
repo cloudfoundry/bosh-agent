@@ -294,15 +294,15 @@ func (w *windowsJobSupervisor) StopAndWait() error {
 		for {
 			select {
 			case <-tick.C:
-				running := false
+				stopped := true
 				for _, s := range svcs {
 					st, err := s.Query()
-					if err == nil && st.State == svc.Running {
-						running = true
+					if err != nil || st.State != svc.Stopped {
+						stopped = false
 						break
 					}
 				}
-				if !running {
+				if stopped {
 					tick.Stop()
 					close(doneCh)
 					return
