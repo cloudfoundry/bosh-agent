@@ -1099,7 +1099,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				Context("when agent_version file does not exist", func() {
 					BeforeEach(func() {
 						fs.RemoveAll(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"))
-						fs.SetGlob(path.Join("/fake-dir", "data", "", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
+						fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
 					})
 
 					It("returns an error if removing files fails", func() {
@@ -1168,7 +1168,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						BeforeEach(func() {
 							fs.WriteFileString(path.Join(dirProvider.EtcDir(), "stemcell_version"), "1239")
 							fs.WriteFileString(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"), "1238")
-							fs.SetGlob(path.Join("/fake-dir", "data", "", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
+							fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
 						})
 
 						It("returns an error if removing files fails", func() {
