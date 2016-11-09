@@ -150,7 +150,6 @@ func init() {
 						Expect(platform.SetupSSHUsername).To(Equal("vcap"))
 					})
 				})
-
 			})
 
 			It("sets up hostname", func() {
@@ -173,6 +172,20 @@ func init() {
 				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-load-error"))
+			})
+
+			Context("load settings errors", func() {
+				BeforeEach(func() {
+					settingsService.LoadSettingsError = errors.New("fake-load-error")
+					settingsService.PublicKey = "fake-public-key"
+				})
+
+				It("sets a ssh key despite settings error", func() {
+					err := bootstrap()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-load-error"))
+					Expect(platform.SetupSSHCalled).To(BeTrue())
+				})
 			})
 
 			It("sets up networking", func() {

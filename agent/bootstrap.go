@@ -47,26 +47,33 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up runtime configuration")
 	}
 
+	iaasPublicKey, err := boot.settingsService.PublicSSHKeyForUsername(boshsettings.VCAPUsername)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting up ssh: Getting iaas public key")
+	}
+
+	if len(iaasPublicKey) > 0 {
+		if err = boot.platform.SetupSSH([]string{iaasPublicKey}, boshsettings.VCAPUsername); err != nil {
+			return bosherr.WrapError(err, "Setting up iaas ssh")
+		}
+	}
+
 	if err = boot.settingsService.LoadSettings(); err != nil {
 		return bosherr.WrapError(err, "Fetching settings")
 	}
 
 	settings := boot.settingsService.GetSettings()
-
 	envPublicKeys := settings.Env.GetAuthorizedKeys()
-	iaasPublicKey, err := boot.settingsService.PublicSSHKeyForUsername(boshsettings.VCAPUsername)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting up ssh: Getting public key")
-	}
 
-	publicKeys := envPublicKeys
-	if len(iaasPublicKey) > 0 {
-		publicKeys = append(publicKeys, iaasPublicKey)
-	}
+	if len(envPublicKeys) > 0 {
+		publicKeys := envPublicKeys
 
-	if len(publicKeys) > 0 {
+		if len(iaasPublicKey) > 0 {
+			publicKeys = append(publicKeys, iaasPublicKey)
+		}
+
 		if err = boot.platform.SetupSSH(publicKeys, boshsettings.VCAPUsername); err != nil {
-			return bosherr.WrapError(err, "Setting up ssh")
+			return bosherr.WrapError(err, "Adding env-configured ssh keys")
 		}
 	}
 
