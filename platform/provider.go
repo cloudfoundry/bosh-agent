@@ -80,6 +80,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
+	opensuseNetManager := boshnet.NewOpensuseNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
@@ -94,6 +95,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	centosCertManager := boshcert.NewCentOSCertManager(fs, runner, 0, logger)
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
 	windowsCertManager := boshcert.NewWindowsCertManager(fs, runner, dirProvider, logger)
+	opensuseCertManager := boshcert.NewOpensuseOSCertManager(fs, runner, 0, logger)
 
 	routesSearcher := boshnet.NewRoutesSearcher(runner)
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
@@ -195,12 +197,37 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		)
 	}
 
+	var opensuse = func() Platform {
+		return NewLinuxPlatform(
+			fs,
+			runner,
+			statsCollector,
+			compressor,
+			copier,
+			dirProvider,
+			vitalsService,
+			linuxCdutil,
+			linuxDiskManager,
+			opensuseNetManager,
+			opensuseCertManager,
+			monitRetryStrategy,
+			devicePathResolver,
+			bootstrapState,
+			options.Linux,
+			logger,
+			defaultNetworkResolver,
+			uuidGenerator,
+			auditLogger,
+		)
+	}
+
 	return provider{
 		platforms: map[string]func() Platform{
-			"ubuntu":  ubuntu,
-			"centos":  centos,
-			"dummy":   dummy,
-			"windows": windows,
+			"ubuntu":   ubuntu,
+			"centos":   centos,
+			"dummy":    dummy,
+			"windows":  windows,
+			"opensuse": opensuse,
 		},
 	}
 }

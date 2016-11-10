@@ -71,6 +71,18 @@ func NewCentOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeo
 	}
 }
 
+func NewOpensuseOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeout time.Duration, logger logger.Logger) Manager {
+	return &certManager{
+		fs:            fs,
+		runner:        runner,
+		path:          "/usr/lib/ca-certificates/",
+		updateCmdPath: "/usr/sbin/update-ca-certificates",
+		logger:        logger,
+		logTag:        "OpensuseOSCertManager",
+		updateTimeout: timeout,
+	}
+}
+
 func NewDummyCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeout time.Duration, logger logger.Logger) Manager {
 	return &certManager{
 		fs:            fs,
