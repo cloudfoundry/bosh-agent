@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -29,6 +28,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 const jobFailuresServerPort = 5000
@@ -108,16 +108,11 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 }
 
 func buildPipeExe() error {
-	tmpdir, err := ioutil.TempDir("", "")
+	pathToPipeCLI, err := gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(tmpdir, "pipe.exe")
-	cmd := exec.Command("go", "build", "-o", path, "github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	SetPipeExePath(path)
+	SetPipeExePath(pathToPipeCLI)
 	return nil
 }
 

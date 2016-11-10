@@ -13,6 +13,8 @@ import (
 
 var pathToPipeCLI string
 var GoSequencePath string
+var PrintPidsPath string
+var ExitRunnerPath string
 var shell string
 var echoCmdArgs []string
 
@@ -24,7 +26,11 @@ func TestWinswPipe(t *testing.T) {
 		pathToPipeCLI, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
 		Expect(err).To(Succeed())
 
-		GoSequencePath, err = gexec.Build("./testdata/gosequence.go")
+		GoSequencePath, err = gexec.Build("./testdata/gosequence/gosequence.go")
+		Expect(err).To(Succeed())
+		PrintPidsPath, err = gexec.Build("./testdata/printpids/printpids.go")
+		Expect(err).To(Succeed())
+		ExitRunnerPath, err = gexec.Build("./testdata/exitrunner/exitrunner.go")
 		Expect(err).To(Succeed())
 	})
 

@@ -124,6 +124,28 @@ func (c *Config) SendEvent(code int) error {
 	return nil
 }
 
+func watchParent(sigCh chan os.Signal) error {
+	parent, err := os.FindProcess(os.Getppid())
+	if err != nil {
+		log.Printf("Failed to find parent process : %v\n", err)
+		return err
+	}
+	go func() {
+		_, err := parent.Wait()
+		if err != nil {
+			log.Printf("Failed to wait for parent process : %v\n", err)
+			return
+		}
+
+		for {
+			sigCh <- os.Kill
+			time.Sleep(time.Millisecond * 10)
+		}
+	}()
+
+	return nil
+}
+
 func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exitCode int, err error) {
 	exitCode = 1
 	defer func() {
@@ -146,46 +168,34 @@ func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exit
 	sigCh := make(chan os.Signal, 64)
 	signal.Notify(sigCh)
 
+	err = watchParent(sigCh)
+	if err != nil {
+		log.Printf("watchParent: %v", err)
+		return 1, err
+	}
+	haltCh := make(chan struct{})
+
 	cmd := exec.Command(path, args...)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	cmd.Env = Environ()
 
-	// Closed when Wait() returns.
-	haltCh := make(chan struct{})
-
-	// Immediately start waiting for the command to exit.
-	waitCh := make(chan error, 1)
-
 	if err := cmd.Start(); err != nil {
 		return 1, fmt.Errorf("starting command (%s): %s", path, err)
 	}
-	go func() { waitCh <- cmd.Wait(); close(haltCh) }()
+	go func() { cmd.Wait(); close(haltCh) }()
 
-	// Critical section: make sure we do not miss a fast exiting process.
-	//
-	// NB: This may not be necessary and in fact the errors we've seen
-	// running packaging scripts may be due to how we're handling them.
-	//
-	// I ran this program against a C program 'main () { return 123; }'
-	// and Go caught the exit code.  On Windows, that C program compiles
-	// down to a single instruction 'mov eax, 123' so it's hard to imagine
-	// anything returning faster.
-	//
-	critCh := make(chan error, 1)
+	// Critical section: make sure we do not miss an exiting process (fast or otherwise).
 	go func(pid int) {
-		done := time.After(time.Second * 10)
 		tick := time.NewTicker(time.Millisecond * 100)
 		defer tick.Stop()
 		for {
 			select {
 			case <-tick.C:
 				if err := FindProcess(pid); err != nil {
-					critCh <- err
+					close(haltCh)
 					return
 				}
-			case <-done:
-				return
 			case <-haltCh:
 				return
 			}
@@ -197,9 +207,6 @@ func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exit
 		for {
 			select {
 			case sig := <-sigCh:
-				// TODO: make sure SIGINT (really, CTRL-C is being sent on
-				// Windows, this is done in winsw by attaching a console to
-				// the process).
 				cmd.Process.Signal(sig)
 			case <-haltCh:
 				return
@@ -208,20 +215,7 @@ func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exit
 	}()
 
 	// Wait for termination.
-	select {
-	case err := <-waitCh:
-		log.Printf("wait: %v", err)
-	case err := <-critCh:
-		// If waitCh and critCh are sent simultaneously the selected channel
-		// is random - give preference to waitCh as it represents the process
-		// ending - not just an error finding it.
-		select {
-		case e := <-waitCh:
-			log.Printf("wait (critical): %v", e)
-		default:
-			log.Printf("fast exit: %v", err)
-		}
-	}
+	<-haltCh
 
 	exitCode, err = ExitCode(cmd)
 	if err != nil {
