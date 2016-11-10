@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Main", func() {
@@ -19,12 +19,11 @@ var _ = Describe("Main", func() {
 			cmd.Env = append(os.Environ(),
 				joinEnv("SERVICE_NAME", ServiceName),
 			)
-			var stdout bytes.Buffer
-			cmd.Stdout = &stdout
 
-			Expect(cmd.Start()).To(Succeed())
-			Eventually(func() string { return stdout.String() }).Should(ContainSubstring(","))
-			pids := strings.Split(strings.TrimSpace(stdout.String()), ",")
+			s, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).To(Succeed())
+			Eventually(func() int { return len(s.Out.Contents()) }).Should(BeNumerically(">", 0))
+			pids := strings.Split(strings.TrimSpace(string(s.Out.Contents())), ",")
 
 			i, err := strconv.Atoi(pids[0])
 			Expect(err).To(Succeed())
