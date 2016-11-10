@@ -1,0 +1,29 @@
+#include <stdio.h>
+#include <windows.h>
+#include <tlhelp32.h>
+
+int main(int argc, char *argv[]) 
+{
+    int pid = -1;
+    HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe = { 0 };
+    pe.dwSize = sizeof(PROCESSENTRY32);
+    printf("size: %d\n", pe.dwSize);
+
+    //assume first arg is the PID to get the PPID for, or use own PID
+    if (argc > 1) {
+        pid = atoi(argv[1]);
+    } else {
+        pid = GetCurrentProcessId();
+    }
+
+    if( Process32First(h, &pe)) {
+        do {
+            if (pe.th32ProcessID == pid) {
+                printf("PID: %i; PPID: %i\n", pid, pe.th32ParentProcessID);
+            }
+        } while( Process32Next(h, &pe));
+    }
+
+    CloseHandle(h);
+}

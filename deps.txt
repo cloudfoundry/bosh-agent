@@ -13,8 +13,9 @@ github.com/onsi/gomega:d6dbcad
 github.com/cloudfoundry/bosh-init/registry:c99761b
 github.com/cloudfoundry/bosh-utils/...:70d7d64
 github.com/cloudfoundry/bosh-davcli/...:6b59ec2
-golang.org/x/sys/windows:7a56174
-golang.org/x/sys/windows/...:7a56174
+golang.org/x/sys/windows:9a2e24c
+golang.org/x/sys/windows/...:9a2e24c
 github.com/tedsuo/ifrit/...:0daf379
 golang.org/x/net/html:3b99394
 golang.org/x/text:f773ec0
+github.com/greenhouse-org/ps:b0ef2e2

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -307,12 +308,21 @@ func main() {
 	conf.InitLog()
 	log.Printf("pipe: configuration: %+v", conf)
 
-	exit := func(code int) {
+	exitMain := func(code int) {
 		if err := conf.SendEvent(code); err != nil {
 			log.Printf("event: error %s", err)
 		}
 		log.Printf("pipe: exiting with code: %d", code)
+	}
+	exit := func(code int) {
+		exitMain(code)
 		os.Exit(code)
+	}
+
+	err := watchParent(exitMain)
+	if err != nil {
+		log.Printf("watchParent: %v", err)
+		exit(1)
 	}
 
 	// check after initializing logs
@@ -342,4 +352,15 @@ func main() {
 		log.Printf("pipe: error running command: %s", err)
 	}
 	exit(exitCode)
+}
+
+func pseudo_uuid() string {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return ""
+	}
+
+	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
