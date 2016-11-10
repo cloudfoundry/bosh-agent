@@ -72,7 +72,7 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 		case 0:
 			continue
 		case 1:
-			realPath, err = idpr.fs.Readlink(pathMatches[0])
+			realPath, err = idpr.fs.ReadAndFollowLink(pathMatches[0])
 			if err != nil {
 				continue
 			}

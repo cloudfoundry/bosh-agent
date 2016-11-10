@@ -44,20 +44,23 @@ var _ = Describe("IDDevicePathResolver", func() {
 
 		Context("when path exists", func() {
 			BeforeEach(func() {
-				err := fs.MkdirAll("fake-device-path", os.FileMode(0750))
+				err := fs.MkdirAll("/dev/fake-device-path", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
 
-				err = fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
+				err = fs.Symlink("/dev/fake-device-path", "/dev/intermediate/fake-device-path")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
 				Expect(err).ToNot(HaveOccurred())
 
 				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{"/dev/disk/by-id/virtio-fake-disk-id-include"})
 			})
 
-			It("returns the path", func() {
+			It("returns fully resolved the path (not potentially relative symlink target)", func() {
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(path).To(Equal("fake-device-path"))
+				Expect(path).To(Equal("/dev/fake-device-path"))
 				Expect(timeout).To(BeFalse())
 			})
 		})
