@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -25,18 +24,17 @@ var _ = Describe("Main", func() {
 			Eventually(func() int { return len(s.Out.Contents()) }).Should(BeNumerically(">", 0))
 			pids := strings.Split(strings.TrimSpace(string(s.Out.Contents())), ",")
 
-			i, err := strconv.Atoi(pids[0])
+			i, err := strconv.Atoi(pids[1])
 			Expect(err).To(Succeed())
 			pipeProc, err := os.FindProcess(i)
 			Expect(err).To(Succeed())
 
-			i, err = strconv.Atoi(pids[1])
+			i, err = strconv.Atoi(pids[0])
 			Expect(err).To(Succeed())
 			childProc, err := os.FindProcess(i)
 			Expect(err).To(Succeed())
 
-			st, err := pipeProc.Wait()
-			fmt.Println(st)
+			_, err = pipeProc.Wait()
 			Expect(err).To(Succeed())
 
 			_, err = childProc.Wait()
