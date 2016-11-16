@@ -7,8 +7,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+
 	"github.com/cloudfoundry/bosh-utils/blobstore"
 )
+
+type UploadBlobSpec struct {
+	BlobID  string `json:"blob_id"`
+	Sha1    string `json:"sha1"`
+	Payload string `json:"payload"`
+}
 
 type UploadBlobAction struct {
 	blobManager blobstore.BlobManagerInterface
@@ -30,22 +37,22 @@ func (a UploadBlobAction) IsLoggable() bool {
 	return false
 }
 
-func (a UploadBlobAction) Run(base64Payload, payloadSha1, blobID string) (string, error) {
+func (a UploadBlobAction) Run(content UploadBlobSpec) (string, error) {
 
-	decodedPayload, err := base64.StdEncoding.DecodeString(base64Payload)
+	decodedPayload, err := base64.StdEncoding.DecodeString(content.Payload)
 	if err != nil {
-		return blobID, err
+		return content.BlobID, err
 	}
 
-	if err = a.validatePayload(decodedPayload, payloadSha1); err != nil {
-		return blobID, err
+	if err = a.validatePayload(decodedPayload, content.Sha1); err != nil {
+		return content.BlobID, err
 	}
 
 	reader := bytes.NewReader(decodedPayload)
 
-	err = a.blobManager.Write(blobID, reader)
+	err = a.blobManager.Write(content.BlobID, reader)
 
-	return blobID, err
+	return content.BlobID, err
 }
 
 func (a UploadBlobAction) validatePayload(payload []byte, payloadSha1 string) error {
