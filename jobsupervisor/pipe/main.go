@@ -37,6 +37,7 @@ type Config struct {
 	SyslogHost      string // "SYSLOG_HOST"
 	SyslogPort      string // "SYSLOG_PORT"
 	SyslogTransport string // "SYSLOG_TRANSPORT"
+	MachineIP       string // "MACHINE_IP"
 }
 
 func ParseConfig() *Config {
@@ -47,6 +48,7 @@ func ParseConfig() *Config {
 		SyslogHost:      os.Getenv(EnvPrefix + "SYSLOG_HOST"),
 		SyslogPort:      os.Getenv(EnvPrefix + "SYSLOG_PORT"),
 		SyslogTransport: os.Getenv(EnvPrefix + "SYSLOG_TRANSPORT"),
+		MachineIP:       os.Getenv(EnvPrefix + "MACHINE_IP"),
 	}
 	if c.ServiceName == "" {
 		c.ServiceName = os.Args[0]
@@ -89,11 +91,11 @@ func (c *Config) Syslog() (outw *syslog.Writer, errw *syslog.Writer, err error) 
 		return
 	}
 	addr := c.SyslogHost + ":" + c.SyslogPort
-	outw, err = syslog.Dial(c.SyslogTransport, addr, syslog.LOG_INFO, c.ServiceName)
+	outw, err = syslog.DialHostname(c.SyslogTransport, addr, syslog.LOG_INFO, c.ServiceName, c.MachineIP)
 	if err != nil {
 		return
 	}
-	errw, err = syslog.Dial(c.SyslogTransport, addr, syslog.LOG_WARNING, c.ServiceName)
+	errw, err = syslog.DialHostname(c.SyslogTransport, addr, syslog.LOG_WARNING, c.ServiceName, c.MachineIP)
 	if err != nil {
 		return
 	}

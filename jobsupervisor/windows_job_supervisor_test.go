@@ -33,6 +33,8 @@ import (
 
 const jobFailuresServerPort = 5000
 
+const DefaultMachineIP = "127.0.0.1"
+
 const (
 	DefaultTimeout   = time.Second * 15
 	DefaultInterval  = time.Millisecond * 500
@@ -172,7 +174,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		WriteJobConfig := func(configContents WindowsProcessConfig) (string, error) {
 			dirProvider := boshdirs.NewProvider(basePath)
 			runner = boshsys.NewExecCmdRunner(logger)
-			jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort, make(chan bool))
+			jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort,
+				make(chan bool), DefaultMachineIP)
 			if err := jobSupervisor.RemoveAllJobs(); err != nil {
 				return "", err
 			}
@@ -582,7 +585,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				dirProvider = boshdirs.NewProvider(basePath)
 				runner = boshsys.NewExecCmdRunner(logger)
 				cancelServer = make(chan bool)
-				jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort, cancelServer)
+				jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort,
+					cancelServer, DefaultMachineIP)
 			})
 
 			AfterEach(func() {
@@ -754,7 +758,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				_, err := AddJob("say-hello-syslog")
 				Expect(err).To(Succeed())
 				Expect(jobSupervisor.Start()).To(Succeed())
-				Eventually(<-syslogReceived).Should(MatchRegexp("<6>\\S+\\s+\\S+\\s+say-hello-1-[^\\s:]*: Hello\n"))
+				syslogMsg := <-syslogReceived
+				Expect(syslogMsg).To(MatchRegexp("<6>\\S+\\s+\\S+\\s+say-hello-1-[^\\s:]*: Hello\n"))
+				Expect(syslogMsg).To(ContainSubstring(DefaultMachineIP))
+
 				close(done)
 			}, 20)
 		})
@@ -767,7 +774,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Executable: "Executable",
 				Args:       []string{"A"},
 			}
-			srvc := proc.ServiceWrapperConfig("LogPath", 123)
+			srvc := proc.ServiceWrapperConfig("LogPath", 123, DefaultMachineIP)
 			envs := make(map[string]string)
 			for _, e := range srvc.Env {
 				envs[e.Name] = e.Value
@@ -787,7 +794,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 						"Key_2": "Val_2",
 					},
 				}
-				srvc := proc.ServiceWrapperConfig("LogPath", 0)
+				srvc := proc.ServiceWrapperConfig("LogPath", 0, DefaultMachineIP)
 				srvcHash := map[string]string{}
 				for _, e := range srvc.Env {
 					srvcHash[e.Name] = e.Value

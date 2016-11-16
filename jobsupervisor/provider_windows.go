@@ -3,6 +3,7 @@
 package jobsupervisor
 
 import (
+	"os"
 	"time"
 
 	"github.com/pivotal-golang/clock"
@@ -46,11 +47,21 @@ func NewProvider(
 		timeService,
 	)
 
+	network, err := platform.GetDefaultNetwork()
+	var machineIP string
+	if err != nil {
+		machineIP, _ = os.Hostname()
+		logger.Debug("providerWindows", "Initializing jobsupervisor.provider_windows: %s, using hostname \"%s\"instead of IP", err, machineIP)
+	} else {
+		machineIP = network.IP
+	}
+
 	p.supervisors = map[string]JobSupervisor{
 		"monit":      monitJobSupervisor,
 		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
-		"windows":    NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobSupervisorListenPort, make(chan bool)),
+		"windows": NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobSupervisorListenPort,
+			make(chan bool), machineIP),
 	}
 
 	return

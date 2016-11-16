@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+const TestHostname = "ipHere"
+
 func runPktSyslog(c net.PacketConn, done chan<- string) {
 	var buf [4096]byte
 	var rcvd string
@@ -106,8 +108,32 @@ func startServer(n, la string, done chan<- string) (addr string, sock io.Closer,
 	return
 }
 
+type dialFunc func(tr, addr string) (*Writer, error)
+type checkFunc func(t *testing.T, in, out string)
+
+func testSimulated(t *testing.T, transport string, dialFn dialFunc, checkFn checkFunc) {
+	const msg = "Test 123"
+
+	done := make(chan string)
+	addr, sock, srvWG := startServer(transport, "", done)
+	defer srvWG.Wait()
+	defer sock.Close()
+
+	s, err := dialFn(transport, addr)
+	if err != nil {
+		t.Fatalf("Dial() failed: %v", err)
+	}
+	if err := s.Info(msg); err != nil {
+		t.Fatalf("log failed: %v", err)
+	}
+
+	checkFn(t, msg, <-done)
+	s.Close()
+}
+
 func TestWithSimulated(t *testing.T) {
-	msg := "Test 123"
+	const priority = LOG_INFO | LOG_USER
+
 	var transport []string
 	for _, n := range []string{"udp", "tcp"} {
 		if testableNetwork(n) {
@@ -115,21 +141,23 @@ func TestWithSimulated(t *testing.T) {
 		}
 	}
 
+	// Dial
 	for _, tr := range transport {
-		done := make(chan string)
-		addr, sock, srvWG := startServer(tr, "", done)
-		defer srvWG.Wait()
-		defer sock.Close()
-		s, err := Dial(tr, addr, LOG_INFO|LOG_USER, "syslog_test")
-		if err != nil {
-			t.Fatalf("Dial() failed: %v", err)
+		dialFn := func(tr, addr string) (*Writer, error) {
+			return Dial(tr, addr, priority, "syslog_test")
 		}
-		err = s.Info(msg)
-		if err != nil {
-			t.Fatalf("log failed: %v", err)
+		testSimulated(t, tr, dialFn, check)
+	}
+
+	// DialHostname
+	for _, tr := range transport {
+		dialFn := func(tr, addr string) (*Writer, error) {
+			return DialHostname(tr, addr, priority, "syslog_test", TestHostname)
 		}
-		check(t, msg, <-done)
-		s.Close()
+		checkFn := func(t *testing.T, in, out string) {
+			checkHostname(t, in, out, TestHostname)
+		}
+		testSimulated(t, tr, dialFn, checkFn)
 	}
 }
 
@@ -188,6 +216,38 @@ func TestFlapTCP(t *testing.T) {
 	s.Close()
 }
 
+func TestDialHostname(t *testing.T) {
+	net := "tcp"
+	if !testableNetwork(net) {
+		t.Skipf("skipping on %s/%s; '%s' is not supported", runtime.GOOS, runtime.GOARCH, net)
+	}
+	done := make(chan string)
+	addr, sock, srvWG := startServer(net, "", done)
+	defer srvWG.Wait()
+	defer os.Remove(addr)
+	defer sock.Close()
+	if testing.Short() {
+		t.Skip("skipping syslog test during -short")
+	}
+	f, err := DialHostname(net, addr, (LOG_LOCAL7|LOG_DEBUG)+1, "syslog_test", TestHostname)
+	if f != nil {
+		t.Fatalf("Should have trapped bad priority")
+	}
+	f, err = DialHostname(net, addr, -1, "syslog_test", TestHostname)
+	if f != nil {
+		t.Fatalf("Should have trapped bad priority")
+	}
+	l, err := DialHostname(net, addr, LOG_USER|LOG_ERR, "syslog_test", TestHostname)
+	if err != nil {
+		t.Fatalf("Dial() failed: %s", err)
+	}
+	l.Close()
+	_, err = DialHostname("", "", LOG_USER|LOG_ERR, "syslog_test", TestHostname)
+	if err == nil {
+		t.Fatalf("Should have returned an error for empty network addresses: %s", err)
+	}
+}
+
 func TestDial(t *testing.T) {
 	net := "tcp"
 	if !testableNetwork(net) {
@@ -221,15 +281,22 @@ func TestDial(t *testing.T) {
 }
 
 func check(t *testing.T, in, out string) {
+	hostname, _ := os.Hostname()
+	if hostname == "" {
+		t.Fatal("Error retrieving hostname")
+	}
+	checkHostname(t, in, out, hostname)
+}
+
+func checkHostname(t *testing.T, in, out, hostname string) {
+	var parsedHostname, timestamp string
+	var pid int
+
 	tmpl := fmt.Sprintf("<%d>%%s %%s syslog_test[%%d]: %s\n", LOG_USER+LOG_INFO, in)
-	if hostname, err := os.Hostname(); err != nil {
-		t.Error("Error retrieving hostname")
-	} else {
-		var parsedHostname, timestamp string
-		var pid int
-		if n, err := fmt.Sscanf(out, tmpl, &timestamp, &parsedHostname, &pid); n != 3 || err != nil || hostname != parsedHostname {
-			t.Errorf("Got %q, does not match template %q (%d %s)", out, tmpl, n, err)
-		}
+
+	n, err := fmt.Sscanf(out, tmpl, &timestamp, &parsedHostname, &pid)
+	if n != 3 || err != nil || hostname != parsedHostname {
+		t.Errorf("Got %q, does not match template %q (%d %s) (%s - %s)", out, tmpl, n, err, hostname, parsedHostname)
 	}
 }
 
@@ -246,32 +313,34 @@ func TestWrite(t *testing.T) {
 		{LOG_USER | LOG_ERR, "syslog_test", "write test 2\n", "%s %s syslog_test[%d]: write test 2\n"},
 	}
 
-	if hostname, err := os.Hostname(); err != nil {
-		t.Fatalf("Error retrieving hostname")
-	} else {
-		for _, test := range tests {
-			done := make(chan string)
-			addr, sock, srvWG := startServer("udp", "", done)
-			defer srvWG.Wait()
-			defer sock.Close()
-			l, err := Dial("udp", addr, test.pri, test.pre)
-			if err != nil {
-				t.Fatalf("syslog.Dial() failed: %v", err)
-			}
-			defer l.Close()
-			_, err = io.WriteString(l, test.msg)
-			if err != nil {
-				t.Fatalf("WriteString() failed: %v", err)
-			}
-			rcvd := <-done
-			test.exp = fmt.Sprintf("<%d>", test.pri) + test.exp
-			var parsedHostname, timestamp string
-			var pid int
-			if n, err := fmt.Sscanf(rcvd, test.exp, &timestamp, &parsedHostname, &pid); n != 3 || err != nil || hostname != parsedHostname {
-				t.Errorf("s.Info() = '%q', didn't match '%q' (%d %s)", rcvd, test.exp, n, err)
-			}
+	hostname, _ := os.Hostname()
+	if hostname == "" {
+		t.Fatal("Error retrieving hostname")
+	}
+
+	for _, test := range tests {
+		done := make(chan string)
+		addr, sock, srvWG := startServer("udp", "", done)
+		defer srvWG.Wait()
+		defer sock.Close()
+		l, err := Dial("udp", addr, test.pri, test.pre)
+		if err != nil {
+			t.Fatalf("syslog.Dial() failed: %v", err)
+		}
+		defer l.Close()
+		_, err = io.WriteString(l, test.msg)
+		if err != nil {
+			t.Fatalf("WriteString() failed: %v", err)
+		}
+		rcvd := <-done
+		test.exp = fmt.Sprintf("<%d>", test.pri) + test.exp
+		var parsedHostname, timestamp string
+		var pid int
+		if n, err := fmt.Sscanf(rcvd, test.exp, &timestamp, &parsedHostname, &pid); n != 3 || err != nil || hostname != parsedHostname {
+			t.Errorf("s.Info() = '%q', didn't match '%q' (%d %s)", rcvd, test.exp, n, err)
 		}
 	}
+
 }
 
 func TestConcurrentWrite(t *testing.T) {

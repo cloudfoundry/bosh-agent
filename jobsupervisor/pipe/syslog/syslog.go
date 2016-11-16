@@ -93,6 +93,11 @@ type netConn struct {
 // writer sends a log message with the given facility, severity and
 // tag.
 func Dial(network, raddr string, priority Priority, tag string) (*Writer, error) {
+	hostname, _ := os.Hostname()
+	return DialHostname(network, raddr, priority, tag, hostname)
+}
+
+func DialHostname(network, raddr string, priority Priority, tag, hostname string) (*Writer, error) {
 	if priority < 0 || priority > LOG_LOCAL7|LOG_DEBUG {
 		return nil, errors.New("log/syslog: invalid priority")
 	}
@@ -100,7 +105,6 @@ func Dial(network, raddr string, priority Priority, tag string) (*Writer, error)
 	if tag == "" {
 		tag = os.Args[0]
 	}
-	hostname, _ := os.Hostname()
 
 	w := &Writer{
 		priority: priority,

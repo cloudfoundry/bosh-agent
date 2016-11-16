@@ -26,6 +26,7 @@ import (
 )
 
 const ServiceName = "jimbob"
+const MachineIP = "1.2.3.4"
 
 var _ = Describe("Main", func() {
 	It("should run the echo", func() {
@@ -285,6 +286,7 @@ var _ = Describe("Main", func() {
 				joinEnv("SYSLOG_PORT", syslogPort),
 				joinEnv("SYSLOG_TRANSPORT", "udp"),
 				joinEnv("SERVICE_NAME", ServiceName),
+				joinEnv("MACHINE_IP", MachineIP),
 			)
 			var stdout bytes.Buffer
 			cmd.Stdout = &stdout
@@ -316,6 +318,7 @@ var _ = Describe("Main", func() {
 				joinEnv("SYSLOG_PORT", syslogPort),
 				joinEnv("SYSLOG_TRANSPORT", "udp"),
 				joinEnv("SERVICE_NAME", ServiceName),
+				joinEnv("MACHINE_IP", MachineIP),
 			)
 			var stderr bytes.Buffer
 			cmd.Stderr = &stderr
@@ -341,16 +344,11 @@ var _ = Describe("Main", func() {
 func check(p syslog.Priority, in, out string) error {
 	tmpl := fmt.Sprintf("<%d>%%s %%s %s[%%d]: %s\n", p, ServiceName, in)
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		return fmt.Errorf("Error retrieving hostname: %s", err)
-	}
-
 	var parsedHostname, timestamp string
 	var pid int
 
 	n, err := fmt.Sscanf(out, tmpl, &timestamp, &parsedHostname, &pid)
-	if n != 3 || err != nil || hostname != parsedHostname {
+	if n != 3 || err != nil || parsedHostname != MachineIP {
 		return fmt.Errorf("Got %q, does not match template %q (%d %s)", out, tmpl, n, err)
 	}
 	return nil

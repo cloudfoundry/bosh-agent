@@ -118,7 +118,7 @@ type WindowsProcess struct {
 	Env        map[string]string `json:"env"`
 }
 
-func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int) *WindowsServiceWrapperConfig {
+func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int, machineIP string) *WindowsServiceWrapperConfig {
 	args := append([]string{p.Executable}, p.Args...)
 	srcv := &WindowsServiceWrapperConfig{
 		ID:          p.Name,
@@ -146,6 +146,7 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int) *Wi
 		serviceEnv{Name: "__PIPE_SERVICE_NAME", Value: p.Name},
 		serviceEnv{Name: "__PIPE_LOG_DIR", Value: logPath},
 		serviceEnv{Name: "__PIPE_NOTIFY_HTTP", Value: fmt.Sprintf("http://localhost:%d", eventPort)},
+		serviceEnv{Name: "__PIPE_MACHINE_IP", Value: machineIP},
 	)
 	return srcv
 }
@@ -167,6 +168,7 @@ type windowsJobSupervisor struct {
 	fs                    boshsys.FileSystem
 	logger                boshlog.Logger
 	logTag                string
+	machineIP             string
 	msgCh                 chan *windowsServiceEvent
 	monitor               *monitor.Monitor
 	jobFailuresServerPort int
@@ -191,6 +193,7 @@ func NewWindowsJobSupervisor(
 	logger boshlog.Logger,
 	jobFailuresServerPort int,
 	cancelChan chan bool,
+	machineIP string,
 ) JobSupervisor {
 	s := &windowsJobSupervisor{
 		cmdRunner:   cmdRunner,
@@ -198,6 +201,7 @@ func NewWindowsJobSupervisor(
 		fs:          fs,
 		logger:      logger,
 		logTag:      "windowsJobSupervisor",
+		machineIP:   machineIP,
 		msgCh:       make(chan *windowsServiceEvent, 8),
 		jobFailuresServerPort: jobFailuresServerPort,
 		cancelServer:          cancelChan,
@@ -443,7 +447,7 @@ func (w *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		}
 
 		buf.Reset()
-		serviceConfig := process.ServiceWrapperConfig(logPath, w.jobFailuresServerPort)
+		serviceConfig := process.ServiceWrapperConfig(logPath, w.jobFailuresServerPort, w.machineIP)
 		if err := xml.NewEncoder(&buf).Encode(serviceConfig); err != nil {
 			return bosherr.WrapErrorf(err, "Rendering service config template for service '%s'", process.Name)
 		}
