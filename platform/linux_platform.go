@@ -884,9 +884,38 @@ func (p linux) SetupLogDir() error {
 		return bosherr.WrapError(err, "Chowning root log dir")
 	}
 
+	err = p.ensureFile(fmt.Sprintf("%s/btmp", boshRootLogPath), "root:utmp", "0600")
+	if err != nil {
+		return err
+	}
+
+	err = p.ensureFile(fmt.Sprintf("%s/wtmp", boshRootLogPath), "root:utmp", "0664")
+	if err != nil {
+		return err
+	}
+
 	err = p.bindMountDir(boshRootLogPath, logDir)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (p linux) ensureFile(path, owner, mode string) error {
+	_, _, _, err := p.cmdRunner.RunCommand("touch", path)
+	if err != nil {
+		return bosherr.WrapError(err, fmt.Sprintf("Touching '%s' file", path))
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", owner, path)
+	if err != nil {
+		return bosherr.WrapError(err, fmt.Sprintf("Chowning '%s' file", path))
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", mode, path)
+	if err != nil {
+		return bosherr.WrapError(err, fmt.Sprintf("Chmoding '%s' file", path))
 	}
 
 	return nil
