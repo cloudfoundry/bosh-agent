@@ -1073,6 +1073,15 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				return platform.SetupEphemeralDiskWithPath("/dev/xvda")
 			}
 
+			It("returns err when the data directory cannot be globbed", func() {
+				fs.GlobErr = errors.New("fake-glob-err")
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Globbing ephemeral disk mount point `/fake-dir/data/*'"))
+				Expect(err.Error()).To(ContainSubstring("fake-glob-err"))
+			})
+
 			Context("when stemcell_version file does not exist", func() {
 				BeforeEach(func() {
 					fs.RemoveAll(path.Join(dirProvider.EtcDir(), "stemcell_version"))
@@ -1090,6 +1099,26 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				Context("when agent_version file does not exist", func() {
 					BeforeEach(func() {
 						fs.RemoveAll(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"))
+						fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
+					})
+
+					It("returns an error if removing files fails", func() {
+						fs.RemoveAllStub = func(_ string) error {
+							return errors.New("fake-remove-all-error")
+						}
+
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-remove-all-error"))
+					})
+
+					It("removes all contents", func() {
+						fs.WriteFileString(path.Join(dirProvider.DataDir(), "fake-file1"), "fake")
+						fs.WriteFileString(path.Join(dirProvider.DataDir(), "fakedir", "fake-file2"), "1234")
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(fs.FileExists(path.Join(dirProvider.DataDir(), "fake-file1"))).To(BeFalse())
+						Expect(fs.FileExists(path.Join(dirProvider.DataDir(), "fakedir", "fake-file2"))).To(BeFalse())
 					})
 
 					It("writes agent_version file", func() {
@@ -1139,7 +1168,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						BeforeEach(func() {
 							fs.WriteFileString(path.Join(dirProvider.EtcDir(), "stemcell_version"), "1239")
 							fs.WriteFileString(path.Join(dirProvider.DataDir(), ".bosh", "agent_version"), "1238")
-							fs.SetGlob(path.Join("/fake-dir", "data", "", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
+							fs.SetGlob(path.Join("/fake-dir", "data", "*"), []string{"/fake-dir/data/fake-file1", "/fake-dir/data/fakedir"})
 						})
 
 						It("returns an error if removing files fails", func() {
