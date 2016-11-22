@@ -12,9 +12,9 @@ import (
 )
 
 type UploadBlobSpec struct {
-	BlobID  string `json:"blob_id"`
-	Sha1    string `json:"sha1"`
-	Payload string `json:"payload"`
+	BlobID   string `json:"blob_id"`
+	Checksum string `json:"checksum"`
+	Payload  string `json:"payload"`
 }
 
 type UploadBlobAction struct {
@@ -44,7 +44,7 @@ func (a UploadBlobAction) Run(content UploadBlobSpec) (string, error) {
 		return content.BlobID, err
 	}
 
-	if err = a.validatePayload(decodedPayload, content.Sha1); err != nil {
+	if err = a.validatePayload(decodedPayload, content.Checksum); err != nil {
 		return content.BlobID, err
 	}
 
@@ -55,7 +55,7 @@ func (a UploadBlobAction) Run(content UploadBlobSpec) (string, error) {
 	return content.BlobID, err
 }
 
-func (a UploadBlobAction) validatePayload(payload []byte, payloadSha1 string) error {
+func (a UploadBlobAction) validatePayload(payload []byte, payloadChecksum string) error {
 
 	h := sha1.New()
 	h.Write(payload)
@@ -63,8 +63,8 @@ func (a UploadBlobAction) validatePayload(payload []byte, payloadSha1 string) er
 
 	computedHash := hex.EncodeToString(computedShaHex)
 
-	if computedHash != payloadSha1 {
-		return fmt.Errorf("Payload corrupted. SHA1 mismatch. Expected %s but received %s", payloadSha1, computedHash)
+	if computedHash != payloadChecksum {
+		return fmt.Errorf("Payload corrupted. Checksum mismatch. Expected '%s' but received '%s'", payloadChecksum, computedHash)
 	}
 
 	return nil
