@@ -68,7 +68,7 @@ func NewFactory(
 			"release_apply_spec": NewReleaseApplySpec(platform),
 
 			// Rendered Templates
-			"upload_blob.v0": NewUploadBlobAction(blobManager),
+			"upload_blob": NewUploadBlobAction(blobManager),
 
 			// Disk management
 			"list_disk":    NewListDisk(settingsService, platform, logger),
