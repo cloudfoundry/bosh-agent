@@ -82,7 +82,7 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 		return result, bosherr.WrapError(err, "Creating user")
 	}
 
-	err = a.platform.AddUserToGroups(params.User, []string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup})
+	err = a.platform.AddUserToGroups(params.User, []string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup, boshsettings.SshersGroup})
 	if err != nil {
 		return result, bosherr.WrapError(err, "Adding user to groups")
 	}

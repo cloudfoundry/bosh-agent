@@ -20,6 +20,7 @@ const (
 	VCAPUsername        = "vcap"
 	AdminGroup          = "admin"
 	SudoersGroup        = "bosh_sudoers"
+	SshersGroup         = "bosh_sshers"
 	EphemeralUserPrefix = "bosh_"
 )
 

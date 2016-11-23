@@ -20,7 +20,7 @@ func validatePlatformSetupWithPassword(platform *fakeplatform.FakePlatform, expe
 	Expect(platform.CreateUserPassword).To(Equal(expectedPwd))
 	Expect(platform.CreateUserBasePath).To(boshassert.MatchPath("/foo/bosh_ssh"))
 	Expect(platform.AddUserToGroupsGroups["fake-user"]).To(Equal(
-		[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup},
+		[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup, boshsettings.SshersGroup},
 	))
 	Expect(platform.SetupSSHPublicKeys["fake-user"]).To(ConsistOf("fake-public-key"))
 }
@@ -121,11 +121,6 @@ var _ = Describe("SSHAction", func() {
 				It("should setup with a username and password", func() {
 					validatePlatformSetupWithPassword(platform, "fake-password")
 					Expect(err).ToNot(HaveOccurred())
-				})
-				It("adds ssh user to bosh sudoers group", func() {
-					Expect(platform.AddUserToGroupsGroups["fake-user"]).To(Equal(
-						[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup},
-					))
 				})
 			})
 
