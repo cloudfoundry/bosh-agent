@@ -13,6 +13,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/action/state"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 
 	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -115,7 +116,7 @@ var _ = Describe("SyncDNS", func() {
 					Expect(response).To(Equal("synced"))
 
 					Expect(fakeBlobstore.GetBlobIDs).To(ContainElement("fake-blobstore-id"))
-					Expect(fakeBlobstore.GetFingerprints).To(ContainElement("fake-fingerprint"))
+					Expect(fakeBlobstore.GetFingerprints).To(ContainElement(boshcrypto.NewDigest("sha1", "fake-fingerprint")))
 
 					Expect(fakeBlobstore.GetError).ToNot(HaveOccurred())
 					Expect(fakeBlobstore.GetFileName).ToNot(Equal(""))

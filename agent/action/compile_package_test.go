@@ -10,6 +10,7 @@ import (
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 func getCompileActionArguments() (blobID, sha1, name, version string, deps boshcomp.Dependencies) {
@@ -55,7 +56,7 @@ var _ = Describe("CompilePackageAction", func() {
 	Describe("Run", func() {
 		It("compile package compiles the package abd returns blob id", func() {
 			compiler.CompileBlobID = "my-blob-id"
-			compiler.CompileSha1 = "some sha1"
+			compiler.CompileDigest = boshcrypto.NewDigest("sha1", "some checksum")
 
 			expectedPkg := boshcomp.Package{
 				BlobstoreID: "fake-blobstore-id",
@@ -67,7 +68,7 @@ var _ = Describe("CompilePackageAction", func() {
 			expectedValue := map[string]interface{}{
 				"result": map[string]string{
 					"blobstore_id": "my-blob-id",
-					"sha1":         "some sha1",
+					"sha1":         "some checksum",
 				},
 			}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshcmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -25,6 +26,7 @@ type concreteCompiler struct {
 	compressor         boshcmd.Compressor
 	blobstore          boshblob.Blobstore
 	fs                 boshsys.FileSystem
+	digestProvider     boshcrypto.DigestProvider
 	runner             boshcmdrunner.CmdRunner
 	compileDirProvider CompileDirProvider
 	packageApplier     packages.Applier
@@ -35,6 +37,7 @@ func NewConcreteCompiler(
 	compressor boshcmd.Compressor,
 	blobstore boshblob.Blobstore,
 	fs boshsys.FileSystem,
+	digestProvider boshcrypto.DigestProvider,
 	runner boshcmdrunner.CmdRunner,
 	compileDirProvider CompileDirProvider,
 	packageApplier packages.Applier,
@@ -44,6 +47,7 @@ func NewConcreteCompiler(
 		compressor:         compressor,
 		blobstore:          blobstore,
 		fs:                 fs,
+		digestProvider:     digestProvider,
 		runner:             runner,
 		compileDirProvider: compileDirProvider,
 		packageApplier:     packageApplier,
@@ -51,23 +55,23 @@ func NewConcreteCompiler(
 	}
 }
 
-func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobID, sha1 string, err error) {
+func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobID string, digest boshcrypto.Digest, err error) {
 	err = c.packageApplier.KeepOnly([]boshmodels.Package{})
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Removing packages")
+		return "", nil, bosherr.WrapError(err, "Removing packages")
 	}
 
 	for _, dep := range deps {
 		err := c.packageApplier.Apply(dep)
 		if err != nil {
-			return "", "", bosherr.WrapErrorf(err, "Installing dependent package: '%s'", dep.Name)
+			return "", nil, bosherr.WrapErrorf(err, "Installing dependent package: '%s'", dep.Name)
 		}
 	}
 
 	compilePath := path.Join(c.compileDirProvider.CompileDir(), pkg.Name)
 	err = c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
-		return "", "", bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
+		return "", nil, bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
 	}
 	defer c.fs.RemoveAll(compilePath)
 
@@ -85,57 +89,62 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 
 	compiledPkgBundle, err := c.packagesBc.Get(compiledPkg)
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Getting bundle for new package")
+		return "", nil, bosherr.WrapError(err, "Getting bundle for new package")
 	}
 
 	_, installPath, err := compiledPkgBundle.InstallWithoutContents()
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Setting up new package bundle")
+		return "", nil, bosherr.WrapError(err, "Setting up new package bundle")
 	}
 
 	_, enablePath, err := compiledPkgBundle.Enable()
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Enabling new package bundle")
+		return "", nil, bosherr.WrapError(err, "Enabling new package bundle")
 	}
 
 	scriptPath := path.Join(compilePath, PackagingScriptName)
 
 	if c.fs.FileExists(scriptPath) {
 		if err := c.runPackagingCommand(compilePath, enablePath, pkg); err != nil {
-			return "", "", bosherr.WrapError(err, "Running packaging script")
+			return "", nil, bosherr.WrapError(err, "Running packaging script")
 		}
 	}
 
 	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath)
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Compressing compiled package")
+		return "", nil, bosherr.WrapError(err, "Compressing compiled package")
 	}
 
 	defer func() {
 		_ = c.compressor.CleanUp(tmpPackageTar)
 	}()
 
-	uploadedBlobID, sha1, err := c.blobstore.Create(tmpPackageTar)
+	digest, err = c.digestProvider.CreateFromFile(tmpPackageTar, boshcrypto.DigestAlgorithmSHA1)
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Uploading compiled package")
+		return "", nil, bosherr.WrapError(err, "Calculating compiled package digest")
+	}
+
+	uploadedBlobID, err := c.blobstore.Create(tmpPackageTar)
+	if err != nil {
+		return "", nil, bosherr.WrapError(err, "Uploading compiled package")
 	}
 
 	err = compiledPkgBundle.Disable()
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Disabling compiled package")
+		return "", nil, bosherr.WrapError(err, "Disabling compiled package")
 	}
 
 	err = compiledPkgBundle.Uninstall()
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Uninstalling compiled package")
+		return "", nil, bosherr.WrapError(err, "Uninstalling compiled package")
 	}
 
 	err = c.packageApplier.KeepOnly([]boshmodels.Package{})
 	if err != nil {
-		return "", "", bosherr.WrapError(err, "Removing packages")
+		return "", nil, bosherr.WrapError(err, "Removing packages")
 	}
 
-	return uploadedBlobID, sha1, nil
+	return uploadedBlobID, digest, nil
 }
 
 func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) error {
@@ -148,7 +157,7 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) erro
 	// This will be fixed in future by explicitly asking to verify SHA1
 	// instead of doing that by default like all other downloads.
 	// (Ruby agent mistakenly never checked SHA1.)
-	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, "")
+	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, nil)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}

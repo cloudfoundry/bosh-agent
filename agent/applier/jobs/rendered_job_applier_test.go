@@ -13,6 +13,7 @@ import (
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -120,7 +121,7 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal("fake-blob-sha1"))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest("sha1", "fake-blob-sha1")))
 
 					// downloaded file is cleaned up
 					Expect(blobstore.CleanUpFileName).To(Equal("/fake-blobstore-file-name"))
@@ -162,6 +163,35 @@ func init() {
 					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
+				})
+
+				It("can process sha1 checksums in the new format", func() {
+					blobstore.GetFileName = "/fake-blobstore-file-name"
+					job.Source.Sha1 = "sha1:fake-blob-sha1"
+
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest("sha1", "fake-blob-sha1")))
+				})
+
+				It("can process sha2 checksums", func() {
+					blobstore.GetFileName = "/fake-blobstore-file-name"
+					job.Source.Sha1 = "sha256:fake-blob-sha256"
+
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest("sha256", "fake-blob-sha256")))
+				})
+
+				It("returns error when given and unsupported fingerprint", func() {
+					blobstore.GetFileName = "/fake-blobstore-file-name"
+					job.Source.Sha1 = "unsupported:checksum"
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Parsing job blob digest"))
 				})
 
 				It("returns error when decompressing job template fails", func() {

@@ -12,6 +12,7 @@ import (
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -58,7 +59,7 @@ func (a SyncDNS) Cancel() error {
 	return errors.New("not supported")
 }
 
-func (a SyncDNS) Run(blobID, sha1 string, version uint64) (string, error) {
+func (a SyncDNS) Run(blobID, digestString string, version uint64) (string, error) {
 	requestVersionStale, err := a.isLocalStateGreaterThanOrEqual(version)
 	if err != nil {
 		return "", bosherr.WrapError(err, "reading local DNS state")
@@ -68,7 +69,12 @@ func (a SyncDNS) Run(blobID, sha1 string, version uint64) (string, error) {
 		return "synced", nil
 	}
 
-	filePath, err := a.blobstore.Get(blobID, sha1)
+	digest, err := boshcrypto.ParseDigestString(digestString)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Parsing blob digest")
+	}
+
+	filePath, err := a.blobstore.Get(blobID, digest)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "getting %s from blobstore", blobID)
 	}

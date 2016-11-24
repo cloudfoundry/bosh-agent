@@ -2,6 +2,7 @@ package blobstore
 
 import (
 	boshUtilsBlobStore "github.com/cloudfoundry/bosh-utils/blobstore"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -24,7 +25,7 @@ func NewCascadingBlobstore(
 	}
 }
 
-func (b cascadingBlobstore) Get(blobID, fingerprint string) (string, error) {
+func (b cascadingBlobstore) Get(blobID string, digest boshcrypto.Digest) (string, error) {
 	blobPath, err := b.blobManager.GetPath(blobID)
 
 	if err == nil {
@@ -32,14 +33,14 @@ func (b cascadingBlobstore) Get(blobID, fingerprint string) (string, error) {
 		return blobPath, nil
 	}
 
-	return b.innerBlobstore.Get(blobID, fingerprint)
+	return b.innerBlobstore.Get(blobID, digest)
 }
 
 func (b cascadingBlobstore) CleanUp(fileName string) error {
 	return b.innerBlobstore.CleanUp(fileName)
 }
 
-func (b cascadingBlobstore) Create(fileName string) (string, string, error) {
+func (b cascadingBlobstore) Create(fileName string) (string, error) {
 	return b.innerBlobstore.Create(fileName)
 }
 
