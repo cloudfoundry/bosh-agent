@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -15,16 +14,19 @@ import (
 	"time"
 
 	. "github.com/cloudfoundry/bosh-utils/httpclient"
+	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 
 var _ = Describe("HTTPClient", func() {
 	var (
 		httpClient HTTPClient
 		server     *ghttp.Server
+		logger loggerfakes.FakeLogger
 	)
 
 	BeforeEach(func() {
-		logger := boshlog.NewLogger(boshlog.LevelNone)
+		logger = loggerfakes.FakeLogger{}
+
 		httpClient = NewHTTPClient(&http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
@@ -42,7 +44,7 @@ var _ = Describe("HTTPClient", func() {
 				TLSHandshakeTimeout: 10 * time.Millisecond,
 				DisableKeepAlives:   true,
 			},
-		}, logger)
+		}, &logger)
 
 		server = ghttp.NewServer()
 	})
@@ -126,6 +128,165 @@ var _ = Describe("HTTPClient", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Post https://foo:<redacted>@10.10.0.0/path"))
 		})
+
+		Describe("httpclient opts", func() {
+			var opts Opts
+
+			BeforeEach(func() {
+				opts = Opts{NoRedactUrlQuery: true}
+
+				httpClient = NewHTTPClientOpts(&http.Client{
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{
+							RootCAs:            nil,
+							InsecureSkipVerify: true,
+						},
+
+						Proxy: http.ProxyFromEnvironment,
+
+						Dial: (&net.Dialer{
+							Timeout:   10 * time.Millisecond,
+							KeepAlive: 0,
+						}).Dial,
+
+						TLSHandshakeTimeout: 10 * time.Millisecond,
+						DisableKeepAlives:   true,
+					},
+				},
+					&logger,
+					opts,
+				)
+			})
+
+			It("does not redact every query param from endpoint for https calls", func() {
+
+				url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+				httpClient.PostCustomized(url, []byte("post-request"), func(r *http.Request) {})
+				_, _, args := logger.DebugArgsForCall(0)
+				Expect(args[0]).To(ContainSubstring("param2=xyz"))
+				Expect(args[0]).To(ContainSubstring("refresh_token=abc"))
+			})
+
+			Context("httpclient has been configured to redact query parmas", func() {
+				BeforeEach(func() {
+					opts = Opts{}
+
+					httpClient = NewHTTPClientOpts(&http.Client{
+						Transport: &http.Transport{
+							TLSClientConfig: &tls.Config{
+								RootCAs:            nil,
+								InsecureSkipVerify: true,
+							},
+
+							Proxy: http.ProxyFromEnvironment,
+
+							Dial: (&net.Dialer{
+								Timeout:   10 * time.Millisecond,
+								KeepAlive: 0,
+							}).Dial,
+
+							TLSHandshakeTimeout: 10 * time.Millisecond,
+							DisableKeepAlives:   true,
+						},
+					},
+						&logger,
+						opts,
+					)
+				})
+
+				It("redacts every query param from endpoint for https calls", func() {
+					url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+					httpClient.PostCustomized(url, []byte("post-request"), func(r *http.Request) {})
+					_, _, args := logger.DebugArgsForCall(0)
+					Expect(args[0]).To(ContainSubstring("param2=<redacted>"))
+					Expect(args[0]).To(ContainSubstring("refresh_token=<redacted>"))
+					Expect(args[0]).ToNot(ContainSubstring("abc"))
+					Expect(args[0]).ToNot(ContainSubstring("xyz"))
+				})
+			})
+		})
+	})
+
+	Describe("Delete", func() {
+		Describe("httpclient opts", func() {
+			var opts Opts
+
+			BeforeEach(func() {
+				opts = Opts{NoRedactUrlQuery: true}
+
+				httpClient = NewHTTPClientOpts(&http.Client{
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{
+							RootCAs:            nil,
+							InsecureSkipVerify: true,
+						},
+
+						Proxy: http.ProxyFromEnvironment,
+
+						Dial: (&net.Dialer{
+							Timeout:   10 * time.Millisecond,
+							KeepAlive: 0,
+						}).Dial,
+
+						TLSHandshakeTimeout: 10 * time.Millisecond,
+						DisableKeepAlives:   true,
+					},
+				},
+					&logger,
+					opts,
+				)
+			})
+
+			It("does not redact every query param from endpoint for https calls", func() {
+				url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+				httpClient.Delete(url)
+				_, _, args := logger.DebugArgsForCall(0)
+				Expect(args[0]).To(ContainSubstring("param2=xyz"))
+				Expect(args[0]).To(ContainSubstring("refresh_token=abc"))
+			})
+
+			Context("httpclient has been configured to redact query parmas", func() {
+				BeforeEach(func() {
+					opts = Opts{}
+
+					httpClient = NewHTTPClientOpts(&http.Client{
+						Transport: &http.Transport{
+							TLSClientConfig: &tls.Config{
+								RootCAs:            nil,
+								InsecureSkipVerify: true,
+							},
+
+							Proxy: http.ProxyFromEnvironment,
+
+							Dial: (&net.Dialer{
+								Timeout:   10 * time.Millisecond,
+								KeepAlive: 0,
+							}).Dial,
+
+							TLSHandshakeTimeout: 10 * time.Millisecond,
+							DisableKeepAlives:   true,
+						},
+					},
+						&logger,
+						opts,
+					)
+				})
+
+				It("redacts every query param from endpoint for https calls", func() {
+					url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+					httpClient.Delete(url)
+					_, _, args := logger.DebugArgsForCall(0)
+					Expect(args[0]).To(ContainSubstring("param2=<redacted>"))
+					Expect(args[0]).To(ContainSubstring("refresh_token=<redacted>"))
+					Expect(args[0]).ToNot(ContainSubstring("abc"))
+					Expect(args[0]).ToNot(ContainSubstring("xyz"))
+				})
+			})
+		})
 	})
 
 	Describe("Put/PutCustomized", func() {
@@ -203,6 +364,84 @@ var _ = Describe("HTTPClient", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Put https://foo:<redacted>@10.10.0.0/path"))
 		})
+
+		Describe("httpclient opts", func() {
+			var opts Opts
+
+			BeforeEach(func() {
+				opts = Opts{NoRedactUrlQuery: true}
+
+				httpClient = NewHTTPClientOpts(&http.Client{
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{
+							RootCAs:            nil,
+							InsecureSkipVerify: true,
+						},
+
+						Proxy: http.ProxyFromEnvironment,
+
+						Dial: (&net.Dialer{
+							Timeout:   10 * time.Millisecond,
+							KeepAlive: 0,
+						}).Dial,
+
+						TLSHandshakeTimeout: 10 * time.Millisecond,
+						DisableKeepAlives:   true,
+					},
+				},
+					&logger,
+					opts,
+				)
+			})
+
+			It("does not redact every query param from endpoint for https calls", func() {
+				url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+				httpClient.PutCustomized(url, []byte("post-request"), func(r *http.Request) {})
+				_, _, args := logger.DebugArgsForCall(0)
+				Expect(args[0]).To(ContainSubstring("param2=xyz"))
+				Expect(args[0]).To(ContainSubstring("refresh_token=abc"))
+			})
+
+			Context("httpclient has been configured to redact query parmas", func() {
+				BeforeEach(func() {
+					opts = Opts{}
+
+					httpClient = NewHTTPClientOpts(&http.Client{
+						Transport: &http.Transport{
+							TLSClientConfig: &tls.Config{
+								RootCAs:            nil,
+								InsecureSkipVerify: true,
+							},
+
+							Proxy: http.ProxyFromEnvironment,
+
+							Dial: (&net.Dialer{
+								Timeout:   10 * time.Millisecond,
+								KeepAlive: 0,
+							}).Dial,
+
+							TLSHandshakeTimeout: 10 * time.Millisecond,
+							DisableKeepAlives:   true,
+						},
+					},
+						&logger,
+						opts,
+					)
+				})
+
+				It("redacts every query param from endpoint for https calls", func() {
+					url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+					httpClient.PutCustomized(url, []byte("post-request"), func(r *http.Request) {})
+					_, _, args := logger.DebugArgsForCall(0)
+					Expect(args[0]).To(ContainSubstring("param2=<redacted>"))
+					Expect(args[0]).To(ContainSubstring("refresh_token=<redacted>"))
+					Expect(args[0]).ToNot(ContainSubstring("abc"))
+					Expect(args[0]).ToNot(ContainSubstring("xyz"))
+				})
+			})
+		})
 	})
 
 	Describe("Get/GetCustomized", func() {
@@ -275,6 +514,84 @@ var _ = Describe("HTTPClient", func() {
 			_, err := httpClient.GetCustomized(url, func(r *http.Request) {})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Get https://foo:<redacted>@10.10.0.0:8080/path"))
+		})
+
+		Describe("httpclient opts", func() {
+			var opts Opts
+
+			BeforeEach(func() {
+				opts = Opts{NoRedactUrlQuery: true}
+
+				httpClient = NewHTTPClientOpts(&http.Client{
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{
+							RootCAs:            nil,
+							InsecureSkipVerify: true,
+						},
+
+						Proxy: http.ProxyFromEnvironment,
+
+						Dial: (&net.Dialer{
+							Timeout:   10 * time.Millisecond,
+							KeepAlive: 0,
+						}).Dial,
+
+						TLSHandshakeTimeout: 10 * time.Millisecond,
+						DisableKeepAlives:   true,
+					},
+				},
+					&logger,
+					opts,
+				)
+			})
+
+			It("does not redact every query param from endpoint for https calls", func() {
+				url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+				httpClient.GetCustomized(url, func(r *http.Request) {})
+				_, _, args := logger.DebugArgsForCall(0)
+				Expect(args[0]).To(ContainSubstring("param2=xyz"))
+				Expect(args[0]).To(ContainSubstring("refresh_token=abc"))
+			})
+
+			Context("httpclient has been configured to redact query parmas", func() {
+				BeforeEach(func() {
+					opts = Opts{}
+
+					httpClient = NewHTTPClientOpts(&http.Client{
+						Transport: &http.Transport{
+							TLSClientConfig: &tls.Config{
+								RootCAs:            nil,
+								InsecureSkipVerify: true,
+							},
+
+							Proxy: http.ProxyFromEnvironment,
+
+							Dial: (&net.Dialer{
+								Timeout:   10 * time.Millisecond,
+								KeepAlive: 0,
+							}).Dial,
+
+							TLSHandshakeTimeout: 10 * time.Millisecond,
+							DisableKeepAlives:   true,
+						},
+					},
+						&logger,
+						opts,
+					)
+				})
+
+				It("redacts every query param from endpoint for https calls", func() {
+					url := "https://oauth-url?refresh_token=abc&param2=xyz"
+
+					httpClient.GetCustomized(url, func(r *http.Request) {})
+					_, _, args := logger.DebugArgsForCall(0)
+					Expect(args[0]).To(ContainSubstring("param2=<redacted>"))
+					Expect(args[0]).To(ContainSubstring("refresh_token=<redacted>"))
+					Expect(args[0]).ToNot(ContainSubstring("abc"))
+					Expect(args[0]).ToNot(ContainSubstring("xyz"))
+				})
+			})
 		})
 	})
 

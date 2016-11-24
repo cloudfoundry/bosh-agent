@@ -1,8 +1,12 @@
 package fakes
 
+import (
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+)
+
 type FakeBlobstore struct {
 	GetBlobIDs      []string
-	GetFingerprints []string
+	GetFingerprints []boshcrypto.Digest
 	GetFileName     string
 	GetFileNames    []string
 	GetError        error
@@ -17,8 +21,6 @@ type FakeBlobstore struct {
 	CreateFileNames    []string
 	CreateBlobID       string
 	CreateBlobIDs      []string
-	CreateFingerprint  string
-	CreateFingerprints []string
 	CreateErr          error
 	CreateErrs         []error
 	CreateCallBack     func()
@@ -30,7 +32,7 @@ func NewFakeBlobstore() *FakeBlobstore {
 	return &FakeBlobstore{}
 }
 
-func (bs *FakeBlobstore) Get(blobID, fingerprint string) (string, error) {
+func (bs *FakeBlobstore) Get(blobID string, fingerprint boshcrypto.Digest) (string, error) {
 	bs.GetBlobIDs = append(bs.GetBlobIDs, blobID)
 	bs.GetFingerprints = append(bs.GetFingerprints, fingerprint)
 
@@ -59,23 +61,18 @@ func (bs *FakeBlobstore) Delete(blobId string) error {
 	return bs.DeleteErr
 }
 
-func (bs *FakeBlobstore) Create(fileName string) (string, string, error) {
+func (bs *FakeBlobstore) Create(fileName string) (string, error) {
 	bs.CreateFileNames = append(bs.CreateFileNames, fileName)
 
 	if bs.CreateCallBack != nil {
 		bs.CreateCallBack()
 	}
 
-	blobID, fingerprint, err := bs.CreateBlobID, bs.CreateFingerprint, bs.CreateErr
+	blobID, err := bs.CreateBlobID, bs.CreateErr
 
 	if len(bs.CreateBlobIDs) > 0 {
 		blobID = bs.CreateBlobIDs[0]
 		bs.CreateBlobIDs = bs.CreateBlobIDs[1:]
-	}
-
-	if len(bs.CreateFingerprints) > 0 {
-		fingerprint = bs.CreateFingerprints[0]
-		bs.CreateFingerprints = bs.CreateFingerprints[1:]
 	}
 
 	if len(bs.CreateErrs) > 0 {
@@ -83,7 +80,7 @@ func (bs *FakeBlobstore) Create(fileName string) (string, string, error) {
 		bs.CreateErrs = bs.CreateErrs[1:]
 	}
 
-	return blobID, fingerprint, err
+	return blobID, err
 }
 
 func (bs *FakeBlobstore) Validate() error {
