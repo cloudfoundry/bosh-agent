@@ -4,6 +4,7 @@ import (
 	bc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -98,7 +99,12 @@ func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 		}
 	}()
 
-	file, err := s.blobstore.Get(pkg.Source.BlobstoreID, pkg.Source.Sha1)
+	digest, err := boshcrypto.ParseDigestString(pkg.Source.Sha1)
+	if err != nil {
+		return bosherr.WrapError(err, "Parsing package blob digest")
+	}
+
+	file, err := s.blobstore.Get(pkg.Source.BlobstoreID, digest)
 	if err != nil {
 		return bosherr.WrapError(err, "Fetching package blob")
 	}

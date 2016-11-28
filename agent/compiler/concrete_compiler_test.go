@@ -15,6 +15,8 @@ import (
 	fakecmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	fakecrypto "github.com/cloudfoundry/bosh-utils/crypto/fakes"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -63,6 +65,7 @@ func init() {
 			compressor     *fakecmd.FakeCompressor
 			blobstore      *fakeblobstore.FakeBlobstore
 			fs             *fakesys.FakeFileSystem
+			digestProvider *fakecrypto.FakeDigestProvider
 			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepackages.FakeApplier
 			packagesBc     *fakebc.FakeBundleCollection
@@ -72,14 +75,18 @@ func init() {
 			compressor = fakecmd.NewFakeCompressor()
 			blobstore = &fakeblobstore.FakeBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
+			digestProvider = &fakecrypto.FakeDigestProvider{}
 			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
 			packageApplier = fakepackages.NewFakeApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
+
+			digestProvider.CreateFromFileReturns(boshcrypto.NewDigest("sha1", "fake-blob-sha1"), nil)
 
 			compiler = NewConcreteCompiler(
 				compressor,
 				blobstore,
 				fs,
+				digestProvider,
 				runner,
 				FakeCompileDirProvider{Dir: "/fake-compile-dir"},
 				packageApplier,
@@ -114,13 +121,12 @@ func init() {
 
 			It("returns blob id and sha1 of created compiled package", func() {
 				blobstore.CreateBlobID = "fake-blob-id"
-				blobstore.CreateFingerprint = "fake-blob-sha1"
 
-				blobID, sha1, err := compiler.Compile(pkg, pkgDeps)
+				blobID, digest, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(blobID).To(Equal("fake-blob-id"))
-				Expect(sha1).To(Equal("fake-blob-sha1"))
+				Expect(digest).To(Equal(boshcrypto.NewDigest("sha1", "fake-blob-sha1")))
 			})
 
 			It("cleans up all packages before and after applying dependent packages", func() {
@@ -143,7 +149,7 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-				Expect(blobstore.GetFingerprints[0]).To(Equal(""))
+				Expect(blobstore.GetFingerprints[0]).To(BeNil())
 			})
 
 			PIt("(Pending Tracker Story: <https://www.pivotaltracker.com/story/show/94524232>) fetches source package from blobstore and checks SHA1 by default in future", func() {

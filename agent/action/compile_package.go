@@ -29,11 +29,11 @@ func (a CompilePackageAction) IsLoggable() bool {
 	return true
 }
 
-func (a CompilePackageAction) Run(blobID, sha1, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
+func (a CompilePackageAction) Run(blobID, digestString, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
 	pkg := boshcomp.Package{
 		BlobstoreID: blobID,
 		Name:        name,
-		Sha1:        sha1,
+		Sha1:        digestString,
 		Version:     version,
 	}
 
@@ -50,7 +50,7 @@ func (a CompilePackageAction) Run(blobID, sha1, name, version string, deps boshc
 		})
 	}
 
-	uploadedBlobID, uploadedSha1, err := a.compiler.Compile(pkg, modelsDeps)
+	uploadedBlobID, uploadedDigest, err := a.compiler.Compile(pkg, modelsDeps)
 	if err != nil {
 		err = bosherr.WrapErrorf(err, "Compiling package %s", pkg.Name)
 		return
@@ -58,7 +58,7 @@ func (a CompilePackageAction) Run(blobID, sha1, name, version string, deps boshc
 
 	result := map[string]string{
 		"blobstore_id": uploadedBlobID,
-		"sha1":         uploadedSha1,
+		"sha1":         uploadedDigest.String(),
 	}
 
 	val = map[string]interface{}{

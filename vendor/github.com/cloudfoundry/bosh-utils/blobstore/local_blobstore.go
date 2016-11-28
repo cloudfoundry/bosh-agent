@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
@@ -31,7 +32,7 @@ func NewLocalBlobstore(
 	}
 }
 
-func (b localBlobstore) Get(blobID, _ string) (fileName string, err error) {
+func (b localBlobstore) Get(blobID string, _ boshcrypto.Digest) (fileName string, err error) {
 	file, err := b.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")
@@ -59,7 +60,7 @@ func (b localBlobstore) Delete(blobID string) error {
 	return b.fs.RemoveAll(blobPath)
 }
 
-func (b localBlobstore) Create(fileName string) (blobID string, fingerprint string, err error) {
+func (b localBlobstore) Create(fileName string) (blobID string, err error) {
 	blobID, err = b.uuidGen.Generate()
 	if err != nil {
 		err = bosherr.WrapError(err, "Generating blobID")

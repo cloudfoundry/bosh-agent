@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -31,7 +32,7 @@ var _ = Describe("cascadingBlobstore", func() {
 			It("returns the path provided by the blobManager", func() {
 				blobManager.GetPathReturns("/path/to-copy/of-blob", nil)
 
-				filename, err := cascadingBlobstore.Get("blobID", "sha1")
+				filename, err := cascadingBlobstore.Get("blobID", boshcrypto.NewDigest("sha1", "fake-checksum"))
 
 				Expect(err).To(BeNil())
 				Expect(filename).To(Equal("/path/to-copy/of-blob"))
@@ -46,16 +47,15 @@ var _ = Describe("cascadingBlobstore", func() {
 		Describe("when blobManager returns an error", func() {
 			It("delegates the action of getting the blob to inner blobstore", func() {
 				blobID := "smurf-4"
-				sha1 := "smurf-4-sha"
+				digest := boshcrypto.NewDigest("sha1", "smurf-4-sha")
 
 				blobManager.GetPathReturns("", errors.New("broken"))
 
 				innerBlobstore.GetFileName = "/smurf-file/path"
 				innerBlobstore.GetError = nil
 				innerBlobstore.CreateBlobID = "createdBlobID"
-				innerBlobstore.CreateFingerprint = "createdSha"
 
-				filename, err := cascadingBlobstore.Get(blobID, sha1)
+				filename, err := cascadingBlobstore.Get(blobID, digest)
 
 				Expect(blobManager.GetPathCallCount()).To(Equal(1))
 				Expect(blobManager.GetPathArgsForCall(0)).To(Equal(blobID))
@@ -65,7 +65,7 @@ var _ = Describe("cascadingBlobstore", func() {
 				Expect(len(innerBlobstore.GetFingerprints)).To(Equal(1))
 
 				Expect(innerBlobstore.GetBlobIDs[0]).To(Equal(blobID))
-				Expect(innerBlobstore.GetFingerprints[0]).To(Equal(sha1))
+				Expect(innerBlobstore.GetFingerprints[0]).To(Equal(digest))
 
 				Expect(filename).To(Equal("/smurf-file/path"))
 			})
@@ -73,7 +73,7 @@ var _ = Describe("cascadingBlobstore", func() {
 			Describe("when inner blobstore returns an error", func() {
 				It("returns that error to the caller", func() {
 					blobID := "smurf-5"
-					sha1 := "smurf-5-sha"
+					sha1 := boshcrypto.NewDigest("sha1", "smurf-5-sha")
 
 					blobManager.GetPathReturns("", errors.New("broken"))
 
@@ -114,14 +114,12 @@ var _ = Describe("cascadingBlobstore", func() {
 		It("delegates the action to the inner blobstore", func() {
 			innerBlobstore.CreateErr = nil
 			innerBlobstore.CreateBlobID = "createBlobId"
-			innerBlobstore.CreateFingerprint = "createFingerprint"
 
-			createdBlobID, createdFingerprint, err := cascadingBlobstore.Create("createdFile")
+			createdBlobID, err := cascadingBlobstore.Create("createdFile")
 
 			Expect(err).To(BeNil())
 
 			Expect(createdBlobID).To(Equal("createBlobId"))
-			Expect(createdFingerprint).To(Equal("createFingerprint"))
 
 			Expect(innerBlobstore.CreateFileNames).ShouldNot(BeEmpty())
 			Expect(len(innerBlobstore.CreateFileNames)).To(Equal(1))
@@ -131,7 +129,7 @@ var _ = Describe("cascadingBlobstore", func() {
 		It("returns an error if the inner blobstore fails to create", func() {
 			innerBlobstore.CreateErr = errors.New("error creating")
 
-			_, _, err := cascadingBlobstore.Create("createdFile")
+			_, err := cascadingBlobstore.Create("createdFile")
 
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("error creating"))
