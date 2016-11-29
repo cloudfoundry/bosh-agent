@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	"github.com/cloudfoundry/bosh-agent/settings"
@@ -208,6 +209,15 @@ func (c *agentClient) SyncDNS(blobID, sha1 string, version uint64) (string, erro
 	}
 
 	return response.Value, nil
+}
+
+func (c *agentClient) SSH(cmd string, params action.SSHParams) error {
+	err := c.agentRequest.Send("ssh", []interface{}{cmd, params}, &SSHResponse{})
+	if err != nil {
+		return bosherr.WrapError(err, "Sending 'ssh' to the agent")
+	}
+
+	return nil
 }
 
 func (c *agentClient) sendAsyncTaskMessage(method string, arguments []interface{}) (value map[string]interface{}, err error) {

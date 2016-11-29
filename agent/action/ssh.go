@@ -11,10 +11,6 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-const (
-	sshActionLogTag = "SSH Action"
-)
-
 type SSHAction struct {
 	settingsService boshsettings.Service
 	platform        boshplatform.Platform

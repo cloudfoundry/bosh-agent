@@ -140,6 +140,7 @@ func describeLinuxPlatform() {
 				"-p", "bar-pwd",
 				"foo-user",
 			}
+			fs.HomeDirHomePath = "/some/path/to/home/foo-user"
 
 			err := platform.CreateUser("foo-user", "bar-pwd", "/some/path/to/home")
 			Expect(err).NotTo(HaveOccurred())
@@ -148,26 +149,44 @@ func describeLinuxPlatform() {
 			Expect(basePathStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(basePathStat.FileMode).To(Equal(os.FileMode(0755)))
 
-			Expect(cmdRunner.RunCommands).To(Equal([][]string{expectedUseradd}))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+			Expect(cmdRunner.RunCommands[0]).To(Equal(expectedUseradd))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "700", "/some/path/to/home/foo-user"}))
 		})
 
 		It("creates user with an empty password", func() {
+			fs.HomeDirHomePath = "/some/path/to/home1/foo-user"
+
 			expectedUseradd := []string{
 				"useradd",
 				"-m",
-				"-b", "/some/path/to/home",
+				"-b", "/some/path/to/home1",
 				"-s", "/bin/bash",
 				"foo-user",
 			}
 
-			err := platform.CreateUser("foo-user", "", "/some/path/to/home")
+			err := platform.CreateUser("foo-user", "", "/some/path/to/home1")
 			Expect(err).NotTo(HaveOccurred())
 
-			basePathStat := fs.GetFileTestStat("/some/path/to/home")
+			basePathStat := fs.GetFileTestStat("/some/path/to/home1")
 			Expect(basePathStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(basePathStat.FileMode).To(Equal(os.FileMode(0755)))
 
-			Expect(cmdRunner.RunCommands).To(Equal([][]string{expectedUseradd}))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+			Expect(cmdRunner.RunCommands[0]).To(Equal(expectedUseradd))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "700", "/some/path/to/home1/foo-user"}))
+		})
+
+		It("should handle errors when chmoding the home directory", func() {
+			fs.HomeDirHomePath = "/some/path/to/home/foo-user"
+
+			cmdRunner.AddCmdResult(
+				"chmod 700 /some/path/to/home/foo-user",
+				fakesys.FakeCmdResult{Error: errors.New("some error occurred"), Stdout: "error"},
+			)
+
+			err := platform.CreateUser("foo-user", "", "/some/path/to/home")
+			Expect(err).To(HaveOccurred())
 		})
 	})
 

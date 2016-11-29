@@ -160,6 +160,11 @@ func (t *TestEnvironment) CleanupLogFile() error {
 	return err
 }
 
+func (t *TestEnvironment) CleanupSSH() error {
+	_, err := t.RunCommand("sudo rm -rf /var/vcap/bosh_ssh")
+	return err
+}
+
 func (t *TestEnvironment) LogFileContains(content string) bool {
 	_, err := t.RunCommand(fmt.Sprintf(`sudo grep "%s" /var/vcap/bosh/log/current`, content))
 	return err == nil

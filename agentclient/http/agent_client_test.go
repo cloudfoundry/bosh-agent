@@ -14,6 +14,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 
+	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/integration"
 	fakehttpclient "github.com/cloudfoundry/bosh-utils/httpclient/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -838,6 +840,38 @@ var _ = Describe("AgentClient", func() {
 
 			err := agentClient.RunScript("the-script", map[string]interface{}{})
 			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Describe("SSH", func() {
+		Context("when agent successfully executes ssh", func() {
+			BeforeEach(func() {
+				sshSuccess, err := json.Marshal(action.SSHResult{
+					Command: "setup",
+					Status:  "success",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				fakeHTTPClient.SetPostBehavior(string(sshSuccess), 200, nil)
+			})
+
+			It("makes a POST request to the endpoint", func() {
+				err := agentClient.SSH("username")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeHTTPClient.PostInputs).To(HaveLen(1))
+				Expect(fakeHTTPClient.PostInputs[0].Endpoint).To(Equal("http://localhost:6305/agent"))
+
+				var request AgentRequestMessage
+				err = json.Unmarshal(fakeHTTPClient.PostInputs[0].Payload, &request)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(request).To(Equal(AgentRequestMessage{
+					Method:    "ssh",
+					Arguments: []interface{}{"username"}, // JSON unmarshals to float64
+					ReplyTo:   "fake-reply-to-uuid",
+				}))
+
+			})
 		})
 	})
 

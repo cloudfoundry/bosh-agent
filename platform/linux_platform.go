@@ -36,6 +36,7 @@ const (
 	logDirPermissions         = os.FileMode(0750)
 	runDirPermissions         = os.FileMode(0750)
 	userBaseDirPermissions    = os.FileMode(0755)
+	disksDirPermissions       = os.FileMode(0755)
 	userRootLogDirPermissions = os.FileMode(0775)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
 	blobsDirPermissions       = os.FileMode(0700)
@@ -144,7 +145,7 @@ const logTag = "linuxPlatform"
 
 func (p linux) AssociateDisk(name string, settings boshsettings.DiskSettings) error {
 	disksDir := p.dirProvider.DisksDir()
-	err := p.fs.MkdirAll(disksDir, userBaseDirPermissions)
+	err := p.fs.MkdirAll(disksDir, disksDirPermissions)
 	if err != nil {
 		bosherr.WrapError(err, "Associating disk: ")
 	}
@@ -246,6 +247,16 @@ func (p linux) CreateUser(username, password, basePath string) error {
 	_, _, _, err = p.cmdRunner.RunCommand("useradd", args...)
 	if err != nil {
 		return bosherr.WrapError(err, "Shelling out to useradd")
+	}
+
+	userHomeDir, err := p.fs.HomeDir(username)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Unable to retrieve home directory for user %s", username)
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "700", userHomeDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Shelling out to chmod")
 	}
 	return nil
 }
