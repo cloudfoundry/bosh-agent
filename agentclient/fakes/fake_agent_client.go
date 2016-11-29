@@ -4,6 +4,7 @@ package fakes
 import (
 	"sync"
 
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	"github.com/cloudfoundry/bosh-agent/settings"
@@ -119,10 +120,11 @@ type FakeAgentClient struct {
 	runScriptReturns struct {
 		result1 error
 	}
-	SSHStub        func(username string) error
+	SSHStub        func(cmd string, params action.SSHParams) error
 	sSHMutex       sync.RWMutex
 	sSHArgsForCall []struct {
-		username string
+		cmd    string
+		params action.SSHParams
 	}
 	sSHReturns struct {
 		result1 error
@@ -497,15 +499,15 @@ func (fake *FakeAgentClient) SyncDNSReturns(result1 string, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *FakeAgentClient) UpdateSettings(settingsA settings.UpdateSettings) error {
+func (fake *FakeAgentClient) UpdateSettings(settings1 settings.UpdateSettings) error {
 	fake.updateSettingsMutex.Lock()
 	fake.updateSettingsArgsForCall = append(fake.updateSettingsArgsForCall, struct {
 		settings settings.UpdateSettings
-	}{settingsA})
-	fake.recordInvocation("UpdateSettings", []interface{}{settingsA})
+	}{settings1})
+	fake.recordInvocation("UpdateSettings", []interface{}{settings1})
 	fake.updateSettingsMutex.Unlock()
 	if fake.UpdateSettingsStub != nil {
-		return fake.UpdateSettingsStub(settingsA)
+		return fake.UpdateSettingsStub(settings1)
 	} else {
 		return fake.updateSettingsReturns.result1
 	}
@@ -564,15 +566,16 @@ func (fake *FakeAgentClient) RunScriptReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeAgentClient) SSH(username string) error {
+func (fake *FakeAgentClient) SSH(cmd string, params action.SSHParams) error {
 	fake.sSHMutex.Lock()
 	fake.sSHArgsForCall = append(fake.sSHArgsForCall, struct {
-		username string
-	}{username})
-	fake.recordInvocation("SSH", []interface{}{username})
+		cmd    string
+		params action.SSHParams
+	}{cmd, params})
+	fake.recordInvocation("SSH", []interface{}{cmd, params})
 	fake.sSHMutex.Unlock()
 	if fake.SSHStub != nil {
-		return fake.SSHStub(username)
+		return fake.SSHStub(cmd, params)
 	} else {
 		return fake.sSHReturns.result1
 	}
@@ -584,10 +587,10 @@ func (fake *FakeAgentClient) SSHCallCount() int {
 	return len(fake.sSHArgsForCall)
 }
 
-func (fake *FakeAgentClient) SSHArgsForCall(i int) string {
+func (fake *FakeAgentClient) SSHArgsForCall(i int) (string, action.SSHParams) {
 	fake.sSHMutex.RLock()
 	defer fake.sSHMutex.RUnlock()
-	return fake.sSHArgsForCall[i].username
+	return fake.sSHArgsForCall[i].cmd, fake.sSHArgsForCall[i].params
 }
 
 func (fake *FakeAgentClient) SSHReturns(result1 error) {

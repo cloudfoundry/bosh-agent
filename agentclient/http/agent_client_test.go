@@ -15,7 +15,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/integration"
 	fakehttpclient "github.com/cloudfoundry/bosh-utils/httpclient/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -855,7 +854,11 @@ var _ = Describe("AgentClient", func() {
 			})
 
 			It("makes a POST request to the endpoint", func() {
-				err := agentClient.SSH("username")
+				params := action.SSHParams{
+					User: "username",
+				}
+
+				err := agentClient.SSH("setup", params)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeHTTPClient.PostInputs).To(HaveLen(1))
@@ -867,7 +870,7 @@ var _ = Describe("AgentClient", func() {
 
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "ssh",
-					Arguments: []interface{}{"username"}, // JSON unmarshals to float64
+					Arguments: []interface{}{"setup", map[string]interface{}{"user_regex": "", "User": "username", "Password": "", "public_key": ""}},
 					ReplyTo:   "fake-reply-to-uuid",
 				}))
 
