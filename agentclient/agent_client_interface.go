@@ -21,7 +21,7 @@ type AgentClient interface {
 	CompilePackage(packageSource BlobRef, compiledPackageDependencies []BlobRef) (compiledPackageRef BlobRef, err error)
 	DeleteARPEntries(ips []string) error
 	SyncDNS(blobID, sha1 string, version uint64) (string, error)
-	UpdateSettings(settings settings.UpdateSettings) error
+	UpdateSettings(settings.UpdateSettings) error
 	RunScript(scriptName string, options map[string]interface{}) error
 	SSH(cmd string, params action.SSHParams) error
 }
