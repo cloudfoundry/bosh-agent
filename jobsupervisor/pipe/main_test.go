@@ -64,9 +64,9 @@ var _ = Describe("Main", func() {
 			server.Close()
 		})
 
-		It("should notify over http upon exit", func() {
+		testNotifyHTTP := func() {
 			cmd := exec.Command(pathToPipeCLI, shell, "-c", "exit 23")
-			cmd.Env = append(os.Environ(),
+			cmd.Env = cmdEnv(
 				joinEnv("NOTIFY_HTTP", server.URL()),
 				joinEnv("SERVICE_NAME", "foo"),
 			)
@@ -84,11 +84,23 @@ var _ = Describe("Main", func() {
 			Expect(json.Unmarshal(b, &event)).To(Succeed())
 			Expect(event.ExitCode).To(Equal(23))
 			Expect(event.ProcessName).To(Equal("foo"))
+		}
+
+		// On Concourse tests on Windows may be ran in a Pipe, which
+		// will already have it's env vars set.  Make sure we don't
+		// pass those env vars to the Pipe we are testing.
+		It("overwrites Pipe specific NOTIFY_HTTP env vars during testing", func() {
+			defer invalidatePipeEnvVars()()
+			testNotifyHTTP()
+		})
+
+		It("should notify over http upon exit NEW", func() {
+			testNotifyHTTP()
 		})
 
 		It("should notify when given nothing to run", func() {
 			cmd := exec.Command(pathToPipeCLI)
-			cmd.Env = append(os.Environ(),
+			cmd.Env = cmdEnv(
 				joinEnv("NOTIFY_HTTP", server.URL()),
 				joinEnv("SERVICE_NAME", "foo"),
 			)
@@ -129,13 +141,13 @@ var _ = Describe("Main", func() {
 			Expect(stderr.Len()).To(Equal(0))
 		})
 
-		It("logs own behaviour to file", func() {
+		testLogToFile := func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 			cmd := exec.Command(pathToPipeCLI, echoCmdArgs...)
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
-			cmd.Env = append(os.Environ(), joinEnv("LOG_DIR", tempDir))
+			cmd.Env = cmdEnv(joinEnv("LOG_DIR", tempDir))
 			Expect(cmd.Run()).To(Succeed())
 
 			files, err := filepath.Glob(path.Join(tempDir, "*.log"))
@@ -148,6 +160,15 @@ var _ = Describe("Main", func() {
 
 			Expect(strings.TrimSpace(stdout.String())).To(Equal(echoOutput))
 			Expect(stderr.Len()).To(Equal(0))
+		}
+
+		It("overwrites Pipe specific LOG_DIR env vars during testing", func() {
+			defer invalidatePipeEnvVars()()
+			testLogToFile()
+		})
+
+		It("logs own behaviour to file", func() {
+			testLogToFile()
 		})
 
 		It("does not log when given an invalid log directory", func() {
@@ -171,7 +192,7 @@ var _ = Describe("Main", func() {
 			var stderr bytes.Buffer
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
-			cmd.Env = append(os.Environ(), joinEnv("LOG_DIR", invalidLogDir))
+			cmd.Env = cmdEnv(joinEnv("LOG_DIR", invalidLogDir))
 			Expect(cmd.Run()).To(Succeed())
 
 			_, err := os.Stat(invalidLogDir)
@@ -256,7 +277,7 @@ var _ = Describe("Main", func() {
 				"-end", strconv.Itoa(End),
 				"-int", Interval.String(),
 			)
-			cmd.Env = append(os.Environ(),
+			cmd.Env = cmdEnv(
 				joinEnv("SYSLOG_HOST", "localhost"),
 				joinEnv("SYSLOG_PORT", syslogPort),
 				joinEnv("SYSLOG_TRANSPORT", "udp"),
@@ -275,13 +296,13 @@ var _ = Describe("Main", func() {
 			checkSequenceOutput(&stdout, Start, End)
 		})
 
-		It("logs stdout output to syslog", func() {
+		testStdoutToSyslog := func() {
 			cmd := exec.Command(pathToPipeCLI, GoSequencePath,
 				"-start", strconv.Itoa(Start),
 				"-end", strconv.Itoa(End),
 				"-int", Interval.String(),
 			)
-			cmd.Env = append(os.Environ(),
+			cmd.Env = cmdEnv(
 				joinEnv("SYSLOG_HOST", "localhost"),
 				joinEnv("SYSLOG_PORT", syslogPort),
 				joinEnv("SYSLOG_TRANSPORT", "udp"),
@@ -304,6 +325,15 @@ var _ = Describe("Main", func() {
 
 			// test that stdout was still written to
 			Expect(checkSequenceOutput(&stdout, Start, End)).To(Succeed())
+		}
+
+		It("overwrites Pipe specific SYSLOG env vars during testing", func() {
+			defer invalidatePipeEnvVars()()
+			testStdoutToSyslog()
+		})
+
+		It("logs stdout output to syslog", func() {
+			testStdoutToSyslog()
 		})
 
 		It("logs stderr output to syslog", func() {
@@ -313,7 +343,7 @@ var _ = Describe("Main", func() {
 				"-int", Interval.String(),
 				"-out", "stderr",
 			)
-			cmd.Env = append(os.Environ(),
+			cmd.Env = cmdEnv(
 				joinEnv("SYSLOG_HOST", "localhost"),
 				joinEnv("SYSLOG_PORT", syslogPort),
 				joinEnv("SYSLOG_TRANSPORT", "udp"),
@@ -356,4 +386,64 @@ func check(p syslog.Priority, in, out string) error {
 
 func joinEnv(key, value string) string {
 	return EnvPrefix + strings.TrimPrefix(key, EnvPrefix) + "=" + value
+}
+
+// cmdEnv returns a union of the current environment and envVars, and removes
+// any Pipe specific variables not present in envVars.
+func cmdEnv(envVars ...string) []string {
+	env := os.Environ()
+	if len(envVars) == 0 {
+		return env
+	}
+	n := 0
+	for i, s := range env {
+		if !strings.HasPrefix(s, EnvPrefix) {
+			env[n] = env[i]
+			n++
+		}
+	}
+	return append(env[:n], envVars...)
+}
+
+// invalidatePipeEnvVars stores invalid values in the Pipe specific variables
+// of the current environment and returns a function to the reset any modified
+// varaibles.
+//
+// Example:
+//
+//   defer invalidatePipeEnvVars()()
+//   doWork...
+//
+func invalidatePipeEnvVars() (restore func()) {
+	type val struct {
+		s  string
+		ok bool
+	}
+	lookupEnv := func(key string) val {
+		s, ok := os.LookupEnv(key)
+		return val{s, ok}
+	}
+	envVars := map[string]val{
+		"__PIPE_LOG_DIR":          lookupEnv("__PIPE_LOG_DIR"),
+		"__PIPE_MACHINE_IP":       lookupEnv("__PIPE_MACHINE_IP"),
+		"__PIPE_NOTIFY_HTTP":      lookupEnv("__PIPE_NOTIFY_HTTP"),
+		"__PIPE_SERVICE_NAME":     lookupEnv("__PIPE_SERVICE_NAME"),
+		"__PIPE_SYSLOG_HOST":      lookupEnv("__PIPE_SYSLOG_HOST"),
+		"__PIPE_SYSLOG_PORT":      lookupEnv("__PIPE_SYSLOG_PORT"),
+		"__PIPE_SYSLOG_TRANSPORT": lookupEnv("__PIPE_SYSLOG_TRANSPORT"),
+	}
+	// set empty env vars
+	for k := range envVars {
+		os.Setenv(k, "")
+	}
+	// function to reset restore environemnt
+	return func() {
+		for k, v := range envVars {
+			if v.ok {
+				os.Setenv(k, v.s)
+			} else {
+				os.Unsetenv(k)
+			}
+		}
+	}
 }
