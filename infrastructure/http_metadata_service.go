@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshhttp "github.com/cloudfoundry/bosh-utils/http"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -22,6 +24,7 @@ type httpMetadataService struct {
 	platform        boshplat.Platform
 	logTag          string
 	logger          boshlog.Logger
+	retryDelay      time.Duration
 }
 
 func NewHTTPMetadataService(
@@ -44,6 +47,32 @@ func NewHTTPMetadataService(
 		platform:        platform,
 		logTag:          "httpMetadataService",
 		logger:          logger,
+		retryDelay:      1 * time.Second,
+	}
+}
+
+func NewHTTPMetadataServiceWithCustomRetryDelay(
+	metadataHost string,
+	metadataHeaders map[string]string,
+	userdataPath string,
+	instanceIDPath string,
+	sshKeysPath string,
+	resolver DNSResolver,
+	platform boshplat.Platform,
+	logger boshlog.Logger,
+	retryDelay time.Duration,
+) DynamicMetadataService {
+	return httpMetadataService{
+		metadataHost:    metadataHost,
+		metadataHeaders: metadataHeaders,
+		userdataPath:    userdataPath,
+		instanceIDPath:  instanceIDPath,
+		sshKeysPath:     sshKeysPath,
+		resolver:        resolver,
+		platform:        platform,
+		logTag:          "httpMetadataService",
+		logger:          logger,
+		retryDelay:      retryDelay,
 	}
 }
 
@@ -238,7 +267,6 @@ func (ms httpMetadataService) ensureMinimalNetworkSetup() error {
 }
 
 func (ms httpMetadataService) doGet(url string) (*http.Response, error) {
-	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -249,5 +277,11 @@ func (ms httpMetadataService) doGet(url string) (*http.Response, error) {
 		req.Header.Add(key, value)
 	}
 
+	client := boshhttp.NewRetryClient(
+		&http.Client{},
+		10,
+		ms.retryDelay,
+		ms.logger,
+	)
 	return client.Do(req)
 }
