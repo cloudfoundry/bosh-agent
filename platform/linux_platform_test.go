@@ -2633,7 +2633,7 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(mounter.RemountAsReadonlyPath).To(Equal("/from/path"))
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path -b 128 -cf - .) | (tar -C /to/path -b 128 -xpf -)"}))
 
 			Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("/from/path"))
 			Expect(mounter.RemountFromMountPoint).To(Equal("/to/path"))
