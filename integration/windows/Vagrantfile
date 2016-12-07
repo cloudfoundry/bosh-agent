@@ -26,14 +26,6 @@ ami_id = ENV.fetch "AWS_AMI_ID" do
   puts "AWS_AMI_ID not set"
   nil
 end
-agent_zip_url = ENV.fetch "AGENT_ZIP_URL" do
-  puts "AGENT_ZIP_URL not set. Will not download."
-  nil
-end
-agent_deps_zip_url = ENV.fetch "AGENT_DEPS_ZIP_URL" do
-  puts "AGENT_DEPS_ZIP_URL not set. Will not download."
-  nil
-end
 keypair_name = ENV.fetch "KEYPAIR_NAME" do
   puts "KEYPAIR_NAME not set"
   nil
@@ -47,7 +39,7 @@ configure_security_settings = <<-SHELL
   Set-ExecutionPolicy -ExecutionPolicy Bypass
 SHELL
 
-remove_agent_service = <<-SHELL
+reset_bosh_directory = <<-SHELL
   if ((Test-Path c:\\bosh\\service_wrapper.exe) -And ($(C:\\bosh\\service_wrapper.exe status) -ne "NonExistent")) {
     if ($(C:\\bosh\\service_wrapper.exe status) -eq "Started") {
       C:\\bosh\\service_wrapper.exe stop
@@ -55,24 +47,18 @@ remove_agent_service = <<-SHELL
 
     C:\\bosh\\service_wrapper.exe uninstall
   }
-SHELL
 
-setup_bosh_directory = <<-SHELL
   if (Test-Path C:\\bosh){
-    Remove-Item -Recurse C:\\bosh
+    Remove-Item -Recurse -Path C:\\bosh -Force
   }
 
-  if (Test-Path C:\\var\\vcap\\bosh\\bin){
-    Remove-Item -Recurse C:\\var\\vcap\\bosh\\bin
+  if (Test-Path C:\\var\\vcap\\bosh){
+    Remove-Item -Recurse -Path C:\\var\\vcap\\bosh\\bin -Force
   }
 
-  if (Test-Path C:\\var\\vcap\\bosh\\log){
-    Remove-Item -Recurse C:\\var\\vcap\\bosh\\log
-  }
-
-  mkdir C:\\bosh
-  mkdir C:\\var\\vcap\\bosh\\bin
-  mkdir C:\\var\\vcap\\bosh\\log
+  New-Item -ItemType 'directory' -Path C:\\bosh -Force
+  New-Item -ItemType 'directory' -Path C:\\var\\vcap\\bosh\\bin -Force
+  New-Item -ItemType 'directory' -Path C:\\var\\vcap\\bosh\\log -Force
 SHELL
 
 add_bosh_to_path = <<-SHELL
@@ -83,26 +69,6 @@ if ((Get-Command "tar.exe" -ErrorAction SilentlyContinue) -eq $null)
   $NewPath=$OldPath+';'+$AddedFolder
   Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name PATH -Value $newPath
 }
-SHELL
-
-download_agent = <<-SHELL
-  Add-Type -AssemblyName System.IO.Compression.FileSystem
-  function Unzip
-  {
-      param([string]$zipfile, [string]$outpath)
-
-      [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
-  }
-
-  Invoke-WebRequest "#{agent_deps_zip_url}" -Verbose -OutFile C:\\bosh\\agent_deps.zip
-  Unzip C:\\bosh\\agent_deps.zip C:\\bosh\\
-
-  Invoke-WebRequest "#{agent_zip_url}" -Verbose -OutFile C:\\bosh\\agent.zip
-
-  Unzip C:\\bosh\\agent.zip C:\\bosh\\
-
-  New-Item -Type Directory C:\\var\\vcap\\bosh\\bin -Force
-  Move-Item C:\\bosh\\pipe.exe C:\\var\\vcap\\bosh\\bin\\pipe.exe
 SHELL
 
 write_agent_configs = <<-SHELL
@@ -170,17 +136,6 @@ New-Item -ItemType file -path "C:\\bosh\\settings.json" -Value @"
 
 SHELL
 
-copy_agent_from_vagrant = <<-SHELL
-  cd C:\\vagrant\\fixtures
-  cp bosh-agent.exe c:\\bosh\\
-  cp service_wrapper.exe c:\\bosh\\
-  cp service_wrapper.xml c:\\bosh\\
-  cp bosh-blobstore-dav.exe c:\\bosh\\
-  cp tar.exe c:\\bosh\\
-  cp zlib1.dll c:\\bosh\\
-  cp job-service-wrapper.exe c:\\bosh
-  cp pipe.exe C:\\var\\vcap\\bosh\\bin\\
-SHELL
 initialize_agent_service = <<-SHELL
   Move-Item C:\\bosh\\job-service-wrapper.exe C:\\var\\vcap\\bosh\\bin\\job-service-wrapper.exe -Force
 
@@ -196,6 +151,11 @@ setup_aws_winrm_user = <<-SHELL
 
   winrm set winrm/config/service '@{AllowUnencrypted="true"}'
   winrm set winrm/config/service/auth '@{Basic="true"}'
+  winrm set winrm/config/winrs '@{MaxShellsPerUser="100"}'
+  winrm set winrm/config/winrs '@{MaxConcurrentUsers="30"}'
+  winrm set winrm/config/winrs '@{MaxProcessesPerShell="100"}'
+  winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="1024"}'
+  winrm set winrm/config/service '@{MaxConcurrentOperationsPerUser="5000"}'
   netsh advfirewall set publicprofile state off
   </powershell>
 SHELL
@@ -258,21 +218,33 @@ Vagrant.configure(2) do |config|
       aws.associate_public_ip = true
     end
 
+    agent.vm.provision "shell", inline: reset_bosh_directory
+
+    file_list = [
+      {file: "fixtures/service_wrapper.xml", dest: "c:\\bosh\\"},
+      {file: "fixtures/service_wrapper.exe.config", dest: "c:\\bosh\\"},
+      {file: "fixtures/service_wrapper.exe", dest: "c:\\bosh\\"},
+      {file: "fixtures/job-service-wrapper.exe", dest: "c:\\bosh"},
+      {file: "fixtures/bosh-blobstore-dav.exe", dest: "c:\\bosh\\"},
+      {file: "fixtures/tar.exe", dest: "c:\\bosh\\"},
+      {file: "fixtures/zlib1.dll", dest: "c:\\bosh\\"},
+      {file: "fixtures/bosh-agent.exe", dest: "c:\\bosh\\"},
+      {file: "fixtures/pipe.exe", dest: "C:\\var\\vcap\\bosh\\bin\\"}
+    ]
+
+    file_list.each do |file_dest|
+      agent.vm.provision "file", source: file_dest[:file], destination: file_dest[:dest]
+    end
+
     provision_scripts = [
       configure_security_settings,
-      remove_agent_service,
-      setup_bosh_directory,
-      add_bosh_to_path
+      add_bosh_to_path,
+      write_agent_configs,
+      initialize_agent_service
     ]
-    if agent_zip_url
-      provision_scripts << download_agent
-    else
-      provision_scripts << copy_agent_from_vagrant
-    end
-    provision_scripts << write_agent_configs
-    provision_scripts << initialize_agent_service
 
     agent.vm.provision "shell", inline: provision_scripts.join("\n")
+
   end
 
   config.vm.define "nats" do |nats|
@@ -292,7 +264,6 @@ Vagrant.configure(2) do |config|
       aws.elastic_ip = nats_elastic_ip
       aws.private_ip_address = nats_private_ip
       aws.user_data = install_blobstore_server
-
 
       override.ssh.username = "ubuntu"
       override.ssh.private_key_path = private_key_path
