@@ -38,8 +38,6 @@ jobs:
   plan:
   - get: windows-ami
   - get: bosh-agent
-    passed:
-    - windows-test-unit
     trigger: true
   - task: test-integration
     privileged: true
@@ -59,7 +57,7 @@ jobs:
   serial: true
   plan:
     - trigger: true
-      passed: [test-unit, test-integration, windows-test-integration]
+      passed: [test-unit, test-integration, windows-test-unit, windows-test-integration]
       get: bosh-agent
     - put: bosh-agent-master
       params:
