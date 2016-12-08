@@ -12,6 +12,7 @@ fi
 cleanup() {
 	echo "Cleaning up"
 
+  (cd integration/windows && vagrant halt -f)
   (cd integration/windows && vagrant destroy -f)
 
   if [ -f "$tmpfile" ]; then

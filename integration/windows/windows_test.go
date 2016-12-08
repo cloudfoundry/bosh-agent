@@ -23,26 +23,31 @@ const (
 	agentGUID       = "123-456-789"
 	agentID         = "agent." + agentGUID
 	senderID        = "director.987-654-321"
+	defaultNatsIP   = "172.31.180.3"
 	DefaultTimeout  = time.Second * 30
 	DefaultInterval = time.Second
 )
 
-func natsURI() string {
-	natsURL := "nats://172.31.180.3:4222"
-	vagrantProvider := os.Getenv("VAGRANT_PROVIDER")
-	if vagrantProvider == "aws" {
-		natsURL = fmt.Sprintf("nats://%s:4222", os.Getenv("NATS_ELASTIC_IP"))
+func natsIP() string {
+	if ip := os.Getenv("NATS_PRIVATE_IP"); ip != "" {
+		return ip
 	}
-	return natsURL
+	return defaultNatsIP
+}
+
+func natsURI() string {
+	if vagrantProvider == "aws" {
+		return fmt.Sprintf("nats://%s:4222", os.Getenv("NATS_ELASTIC_IP"))
+	}
+	return fmt.Sprintf("nats://%s:4222", natsIP())
+
 }
 
 func blobstoreURI() string {
-	blobstoreURI := "http://172.31.180.3:25250"
-	vagrantProvider := os.Getenv("VAGRANT_PROVIDER")
 	if vagrantProvider == "aws" {
-		blobstoreURI = fmt.Sprintf("http://%s:25250", os.Getenv("NATS_ELASTIC_IP"))
+		return fmt.Sprintf("http://%s:25250", os.Getenv("NATS_ELASTIC_IP"))
 	}
-	return blobstoreURI
+	return fmt.Sprintf("http://%s:25250", natsIP())
 }
 
 var _ = Describe("An Agent running on Windows", func() {
