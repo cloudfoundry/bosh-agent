@@ -1,4 +1,7 @@
-nats_private_ip = "172.31.180.3"
+nats_private_ip = ENV.fetch "NATS_PRIVATE_IP" do
+  puts "NATS_PRIVATE_IP not set"
+  nil
+end
 
 winrm_username = "vagrant"
 winrm_password = ENV.fetch "WINRM_PASSWORD" do

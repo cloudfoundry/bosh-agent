@@ -18,5 +18,6 @@ params:
   AWS_SSH_KEY: replace-me
   KEYPAIR_NAME: replace-me
   NATS_ELASTIC_IP: replace-me
+  NATS_PRIVATE_IP: replace-me
   VAGRANT_PROVIDER: aws
   WINRM_PASSWORD: replace-me
