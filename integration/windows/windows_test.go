@@ -23,7 +23,6 @@ const (
 	agentGUID       = "123-456-789"
 	agentID         = "agent." + agentGUID
 	senderID        = "director.987-654-321"
-	defaultNatsIP   = "172.31.180.3"
 	DefaultTimeout  = time.Second * 30
 	DefaultInterval = time.Second
 )
@@ -32,7 +31,7 @@ func natsIP() string {
 	if ip := os.Getenv("NATS_PRIVATE_IP"); ip != "" {
 		return ip
 	}
-	return defaultNatsIP
+	return ""
 }
 
 func natsURI() string {
