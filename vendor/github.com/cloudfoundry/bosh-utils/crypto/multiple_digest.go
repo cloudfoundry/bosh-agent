@@ -3,6 +3,7 @@ package crypto
 import (
 	"fmt"
 	"errors"
+	"strings"
 )
 
 type MultipleDigestImpl struct {
@@ -28,7 +29,9 @@ func NewMultipleDigest(digests ...Digest) MultipleDigestImpl {
 }
 
 func (m *MultipleDigestImpl) UnmarshalJSON(data []byte) error {
-	multiDigest, err := ParseMultipleDigestString(string(data))
+	digestString := string(data)
+	digestString = strings.Replace(digestString, `"`, "", 2)
+	multiDigest, err := ParseMultipleDigestString(digestString)
 
 	if err != nil {
 		return err

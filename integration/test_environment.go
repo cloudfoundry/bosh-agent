@@ -480,6 +480,22 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 	return stdout, err
 }
 
+func (t *TestEnvironment) CreateBlobFromAsset(assetPath, blobID string) error {
+	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data")
+	if err != nil {
+		return err
+	}
+
+	_, _, _, err = t.cmdRunner.RunCommand(
+		"vagrant",
+		"ssh",
+		"-c",
+		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/%s", t.assetsDir(), assetPath, blobID),
+	)
+
+	return err
+}
+
 func (t *TestEnvironment) agentDir() string {
 	return "/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent"
 }
