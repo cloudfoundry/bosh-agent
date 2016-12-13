@@ -21,7 +21,7 @@ var _ = Describe("HTTPClient", func() {
 	var (
 		httpClient HTTPClient
 		server     *ghttp.Server
-		logger loggerfakes.FakeLogger
+		logger     loggerfakes.FakeLogger
 	)
 
 	BeforeEach(func() {

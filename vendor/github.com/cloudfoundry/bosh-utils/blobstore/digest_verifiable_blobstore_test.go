@@ -64,6 +64,22 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 			Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 		})
 
+		Context("multiple algorithms", func() {
+			BeforeEach(func() {
+				fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "incorrect-sha1"), boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, fixtureSHA256))
+			})
+
+			It("uses sha256 (strongest available algorithm)", func() {
+				innerBlobstore.GetFileName = fixturePath
+
+				fileName, err := checksumVerifiableBlobstore.Get("fake-blob-id", fixtureDigest)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(innerBlobstore.GetBlobIDs).To(Equal([]string{"fake-blob-id"}))
+				Expect(fileName).To(Equal(fixturePath))
+			})
+		})
+
 		Context("sha256", func() {
 			BeforeEach(func() {
 				fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha256", fixtureSHA256))
@@ -85,7 +101,7 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 				fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha512", fixtureSHA512))
 			})
 
-			It("returns without an error if sha256 matches", func() {
+			It("returns without an error if sha512 matches", func() {
 				innerBlobstore.GetFileName = fixturePath
 
 				fileName, err := checksumVerifiableBlobstore.Get("fake-blob-id", fixtureDigest)

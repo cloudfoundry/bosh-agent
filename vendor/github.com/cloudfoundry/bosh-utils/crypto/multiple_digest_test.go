@@ -10,8 +10,8 @@ import (
 var _ = Describe("MultipleDigest", func() {
 	var (
 		expectedDigest MultipleDigestImpl
-		digest1 Digest
-		digest2 Digest
+		digest1        Digest
+		digest2        Digest
 	)
 
 	BeforeEach(func() {
@@ -75,16 +75,28 @@ var _ = Describe("MultipleDigest", func() {
 
 	Describe("Unmarshalling JSON", func() {
 		It("should produce valid JSON", func() {
-			jsonString := `{"sha1": "sha1:abcdefg;sha256:hijklmn"}`
+			jsonString := "sha1:abcdefg;sha256:hijklmn"
 
 			err := expectedDigest.UnmarshalJSON([]byte(jsonString))
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(expectedDigest.Digests()).To(HaveLen(1))
+			Expect(expectedDigest.Digests()).To(HaveLen(2))
+		})
+
+		Context("when given string has extra double quotes", func() {
+			It("should unmarshal the string correctly, stripping the quotes", func() {
+				jsonString := `"abcdefg"`
+
+				err := expectedDigest.UnmarshalJSON([]byte(jsonString))
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(expectedDigest.Digests()).To(HaveLen(1))
+				Expect(expectedDigest.Digests()[0].Digest()).To(Equal("abcdefg"))
+			})
 		})
 
 		It("should throw an error if JSON does not contain a valid algorithm", func() {
-			jsonString := `{"sha1": "sha33:abcdefg;sha34:hijklmn"}`
+			jsonString := "sha33:abcdefg;sha34:hijklmn"
 
 			err := expectedDigest.UnmarshalJSON([]byte(jsonString))
 
@@ -92,4 +104,3 @@ var _ = Describe("MultipleDigest", func() {
 		})
 	})
 })
-

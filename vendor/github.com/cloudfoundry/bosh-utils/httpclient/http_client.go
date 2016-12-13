@@ -29,7 +29,7 @@ type httpClient struct {
 	client Client
 	logger boshlog.Logger
 	logTag string
-	opts Opts
+	opts   Opts
 }
 
 type Opts struct {
@@ -49,7 +49,7 @@ func NewHTTPClientOpts(client Client, logger boshlog.Logger, opts Opts) HTTPClie
 		client: client,
 		logger: logger,
 		logTag: "httpClient",
-		opts: opts,
+		opts:   opts,
 	}
 }
 

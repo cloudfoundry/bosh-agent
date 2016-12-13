@@ -13,4 +13,6 @@ type BlobManagerInterface interface {
 	GetPath(blobID string) (string, error)
 
 	Delete(blobID string) error
+
+	BlobExists(blobID string) bool
 }

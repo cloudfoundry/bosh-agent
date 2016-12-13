@@ -46,6 +46,14 @@ type FakeBlobManagerInterface struct {
 	deleteReturns struct {
 		result1 error
 	}
+	BlobExistsStub        func(blobID string) bool
+	blobExistsMutex       sync.RWMutex
+	blobExistsArgsForCall []struct {
+		blobID string
+	}
+	blobExistsReturns struct {
+		result1 bool
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -186,6 +194,39 @@ func (fake *FakeBlobManagerInterface) DeleteReturns(result1 error) {
 	}{result1}
 }
 
+func (fake *FakeBlobManagerInterface) BlobExists(blobID string) bool {
+	fake.blobExistsMutex.Lock()
+	fake.blobExistsArgsForCall = append(fake.blobExistsArgsForCall, struct {
+		blobID string
+	}{blobID})
+	fake.recordInvocation("BlobExists", []interface{}{blobID})
+	fake.blobExistsMutex.Unlock()
+	if fake.BlobExistsStub != nil {
+		return fake.BlobExistsStub(blobID)
+	} else {
+		return fake.blobExistsReturns.result1
+	}
+}
+
+func (fake *FakeBlobManagerInterface) BlobExistsCallCount() int {
+	fake.blobExistsMutex.RLock()
+	defer fake.blobExistsMutex.RUnlock()
+	return len(fake.blobExistsArgsForCall)
+}
+
+func (fake *FakeBlobManagerInterface) BlobExistsArgsForCall(i int) string {
+	fake.blobExistsMutex.RLock()
+	defer fake.blobExistsMutex.RUnlock()
+	return fake.blobExistsArgsForCall[i].blobID
+}
+
+func (fake *FakeBlobManagerInterface) BlobExistsReturns(result1 bool) {
+	fake.BlobExistsStub = nil
+	fake.blobExistsReturns = struct {
+		result1 bool
+	}{result1}
+}
+
 func (fake *FakeBlobManagerInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -197,6 +238,8 @@ func (fake *FakeBlobManagerInterface) Invocations() map[string][][]interface{} {
 	defer fake.getPathMutex.RUnlock()
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
+	fake.blobExistsMutex.RLock()
+	defer fake.blobExistsMutex.RUnlock()
 	return fake.invocations
 }
 

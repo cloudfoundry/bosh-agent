@@ -1,13 +1,13 @@
 package crypto
 
 import (
-	"fmt"
-	"strings"
-	"hash"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"errors"
+	"fmt"
+	"hash"
+	"strings"
 )
 
 const (

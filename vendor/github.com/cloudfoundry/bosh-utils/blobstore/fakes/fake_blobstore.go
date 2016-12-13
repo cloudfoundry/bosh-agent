@@ -18,12 +18,12 @@ type FakeBlobstore struct {
 	DeleteBlobID string
 	DeleteErr    error
 
-	CreateFileNames    []string
-	CreateBlobID       string
-	CreateBlobIDs      []string
-	CreateErr          error
-	CreateErrs         []error
-	CreateCallBack     func()
+	CreateFileNames []string
+	CreateBlobID    string
+	CreateBlobIDs   []string
+	CreateErr       error
+	CreateErrs      []error
+	CreateCallBack  func()
 
 	ValidateError error
 }

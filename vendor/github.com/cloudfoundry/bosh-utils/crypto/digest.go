@@ -8,8 +8,8 @@ import (
 type DigestAlgorithm string
 
 type digestImpl struct {
-	algorithm 		DigestAlgorithm
-	digest    		string
+	algorithm DigestAlgorithm
+	digest    string
 }
 
 func (c digestImpl) Algorithm() DigestAlgorithm {

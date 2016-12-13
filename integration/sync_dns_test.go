@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("sync_dns", func() {
 	var (
-		agentClient agentclient.AgentClient
+		agentClient      agentclient.AgentClient
 		registrySettings settings.Settings
 	)
 

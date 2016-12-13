@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-utils/crypto"
 	"fmt"
+	. "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("utils", func() {
@@ -187,4 +187,3 @@ var _ = Describe("utils", func() {
 		})
 	})
 })
-

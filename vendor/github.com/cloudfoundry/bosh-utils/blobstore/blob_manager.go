@@ -70,6 +70,11 @@ func (manager BlobManager) Delete(blobID string) error {
 	return manager.fs.RemoveAll(localBlobPath)
 }
 
+func (manager BlobManager) BlobExists(blobID string) bool {
+	blobPath := path.Join(manager.blobstorePath, blobID)
+	return manager.fs.FileExists(blobPath)
+}
+
 func (manager BlobManager) copyToTmpFile(srcFileName string) (string, error) {
 	file, err := manager.fs.TempFile("blob-manager-copyToTmpFile")
 	if err != nil {
