@@ -59,7 +59,7 @@ func (a SyncDNS) Cancel() error {
 	return errors.New("not supported")
 }
 
-func (a SyncDNS) Run(blobID, digestString string, version uint64) (string, error) {
+func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigestImpl, version uint64) (string, error) {
 	requestVersionStale, err := a.isLocalStateGreaterThanOrEqual(version)
 	if err != nil {
 		return "", bosherr.WrapError(err, "reading local DNS state")
@@ -69,12 +69,11 @@ func (a SyncDNS) Run(blobID, digestString string, version uint64) (string, error
 		return "synced", nil
 	}
 
-	digest, err := boshcrypto.ParseMultipleDigestString(digestString)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Parsing blob digest")
 	}
 
-	filePath, err := a.blobstore.Get(blobID, digest)
+	filePath, err := a.blobstore.Get(blobID, multiDigest)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "getting %s from blobstore", blobID)
 	}
