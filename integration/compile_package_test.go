@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("compile_package", func() {
 	var (
-		agentClient agentclient.AgentClient
+		agentClient      agentclient.AgentClient
 		registrySettings settings.Settings
 	)
 
@@ -80,8 +80,8 @@ var _ = Describe("compile_package", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = agentClient.CompilePackage(agentclient.BlobRef{
-			Name: "fake",
-			Version: "1",
+			Name:        "fake",
+			Version:     "1",
 			BlobstoreID: "123",
 			SHA1:        "236cbd31a483c3594061b00a84a80c1c182b3b20",
 		}, []agentclient.BlobRef{})
@@ -91,44 +91,22 @@ var _ = Describe("compile_package", func() {
 		out, err := testEnvironment.RunCommand("sudo zgrep 'dummy contents of dummy package file' /var/vcap/data/* | wc -l")
 		Expect(err).NotTo(HaveOccurred(), out)
 		// we expect both the original, uncompiled copy and the compiled copy of the package to exist
-		Expect(strings.Trim(out,"\n")).To(Equal("2"))
+		Expect(strings.Trim(out, "\n")).To(Equal("2"))
 	})
 
-	It("allows passing multi digest string", func() {
+	It("does not skip verification when digest argument is missing", func() {
 		err := testEnvironment.CreateBlobFromAsset("dummy_package.tgz", "123")
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = agentClient.CompilePackage(agentclient.BlobRef{
-			Name: "fake",
-			Version: "1",
+			Name:        "fake",
+			Version:     "1",
 			BlobstoreID: "123",
-			SHA1:        "sha1:236cbd31a483c3594061b00a84a80c1c182b3b20;sha2:notactuallyvalid",
+			SHA1:        "",
 		}, []agentclient.BlobRef{})
 
-		Expect(err).NotTo(HaveOccurred())
-
-		out, err := testEnvironment.RunCommand("sudo zgrep 'dummy contents of dummy package file' /var/vcap/data/* | wc -l")
-		Expect(err).NotTo(HaveOccurred(), out)
-		// we expect both the original, uncompiled copy and the compiled copy of the package to exist
-		Expect(strings.Trim(out,"\n")).To(Equal("2"))
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("No recognizable digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
 	})
 
-	It("uses strongest algo for comparison", func() {
-		err := testEnvironment.CreateBlobFromAsset("dummy_package.tgz", "123")
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = agentClient.CompilePackage(agentclient.BlobRef{
-			Name: "fake",
-			Version: "1",
-			BlobstoreID: "123",
-			SHA1:        "sha1:notvalidshasum;sha256:59ec7a4b0280a1fd062b35736f31e9dcc9edd91dc21bd1df5392ae1be75a5d1d",
-		}, []agentclient.BlobRef{})
-
-		Expect(err).NotTo(HaveOccurred())
-
-		out, err := testEnvironment.RunCommand("sudo zgrep 'dummy contents of dummy package file' /var/vcap/data/* | wc -l")
-		Expect(err).NotTo(HaveOccurred(), out)
-		// we expect both the original, uncompiled copy and the compiled copy of the package to exist
-		Expect(strings.Trim(out,"\n")).To(Equal("2"))
-	})
 })

@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("sync_dns", func() {
 	var (
-		agentClient      agentclient.AgentClient
+		agentClient agentclient.AgentClient
 		registrySettings settings.Settings
 	)
 
@@ -115,4 +115,36 @@ var _ = Describe("sync_dns", func() {
 		Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
 		Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
 	})
+
+	It("does not skip verification if no checksum is sent", func() {
+		newDNSRecords := settings.DNSRecords{
+			Records: [][2]string{
+				{"216.58.194.206", "google.com"},
+				{"54.164.223.71", "pivotal.io"},
+			},
+		}
+		contents, err := json.Marshal(newDNSRecords)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(contents).NotTo(BeNil())
+
+		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testEnvironment.RunCommand("sudo touch /var/vcap/data/new-dns-records")
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testEnvironment.RunCommand("sudo ls -la /var/vcap/data/new-dns-records")
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testEnvironment.RunCommand("sudo echo '{\"records\":[[\"216.58.194.206\",\"google.com\"],[\"54.164.223.71\",\"pivotal.io\"]]}' > /tmp/new-dns-records")
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/new-dns-records")
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = agentClient.SyncDNS("new-dns-records", "", 1)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("No recognizable digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
+	})
+
 })
