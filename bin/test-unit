@@ -56,13 +56,4 @@ if [ ! $QUIET ]; then
   fi
 fi
 
-
-echo -e "\n Checking with golint..."
-$bin/golint
-let "result+=$?"
-
-echo -e "\n Govetting"
-$bin/govet
-let "result+=$?"
-
 exit $result
