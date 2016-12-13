@@ -14,7 +14,7 @@ func (s *JobTemplateSpec) AsJob() models.Job {
 		Name:    s.Name,
 		Version: s.Version,
 		Source: models.Source{
-			Sha1:        s.Sha1,
+			//Sha1:        s.Sha1,
 			BlobstoreID: s.BlobstoreID,
 		},
 	}

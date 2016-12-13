@@ -5,6 +5,7 @@ import (
 
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
@@ -29,11 +30,11 @@ func (a CompilePackageAction) IsLoggable() bool {
 	return true
 }
 
-func (a CompilePackageAction) Run(blobID, digestString, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
+func (a CompilePackageAction) Run(blobID string, multiDigest boshcrypto.MultipleDigestImpl, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
 	pkg := boshcomp.Package{
 		BlobstoreID: blobID,
 		Name:        name,
-		Sha1:        digestString,
+		Sha1:        multiDigest,
 		Version:     version,
 	}
 

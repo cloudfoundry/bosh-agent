@@ -19,22 +19,23 @@ func NewDigestVerifiableBlobstore(blobstore Blobstore, digestProvider boshcrypto
 	}
 }
 
-func (b digestVerifiableBlobstore) Get(blobID string, digest boshcrypto.Digest) (string, error) {
-	fileName, err := b.blobstore.Get(blobID, digest)
+func (b digestVerifiableBlobstore) Get(blobID string, multiDigest boshcrypto.MultipleDigest) (string, error) {
+	fileName, err := b.blobstore.Get(blobID, multiDigest)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Getting blob from inner blobstore")
 	}
 
-	if digest == nil {
-		return fileName, nil
-	}
-
-	actualDigest, err := b.digestProvider.CreateFromFile(fileName, digest.Algorithm())
+	strongestDigest, err := boshcrypto.PreferredDigest(multiDigest)
 	if err != nil {
 		return "", err
 	}
 
-	err = digest.Verify(actualDigest)
+	actualDigest, err := b.digestProvider.CreateFromFile(fileName, strongestDigest.Algorithm())
+	if err != nil {
+		return "", err
+	}
+
+	err = strongestDigest.Verify(actualDigest)
 	if err != nil {
 		return "", bosherr.WrapError(err, fmt.Sprintf(`Checking downloaded blob "%s"`, blobID))
 	}

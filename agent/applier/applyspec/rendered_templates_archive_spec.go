@@ -2,6 +2,7 @@ package applyspec
 
 import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 type RenderedTemplatesArchiveSpec struct {
@@ -11,7 +12,7 @@ type RenderedTemplatesArchiveSpec struct {
 
 func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
 	return models.Source{
-		Sha1:          s.Sha1,
+		Sha1:          crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, s.Sha1)),
 		BlobstoreID:   s.BlobstoreID,
 		PathInArchive: job.Name,
 	}

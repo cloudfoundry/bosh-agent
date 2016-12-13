@@ -12,7 +12,7 @@ type Compiler interface {
 type Package struct {
 	BlobstoreID string `json:"blobstore_id"`
 	Name        string
-	Sha1        string `json:"sha1"`
+	Sha1        boshcrypto.MultipleDigestImpl
 	Version     string
 }
 

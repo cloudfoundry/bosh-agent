@@ -16,7 +16,7 @@ import (
 var _ = Describe("retryableBlobstore", func() {
 	var (
 		innerBlobstore     *fakeblob.FakeBlobstore
-		logger             boshlog.Logger
+		logger boshlog.Logger
 		retryableBlobstore boshblob.Blobstore
 	)
 
@@ -31,12 +31,13 @@ var _ = Describe("retryableBlobstore", func() {
 			It("returns path without an error", func() {
 				innerBlobstore.GetFileName = "fake-path"
 
-				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewDigest("fake", "fingerprint"))
+				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("fake", "fingerprint")))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(path).To(Equal("fake-path"))
 
 				Expect(innerBlobstore.GetBlobIDs).To(Equal([]string{"fake-blob-id"}))
-				Expect(innerBlobstore.GetFingerprints).To(Equal([]boshcrypto.Digest{boshcrypto.NewDigest("fake", "fingerprint")}))
+				Expect(innerBlobstore.GetFingerprints).To(HaveLen(1))
+				Expect(innerBlobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("fake", "fingerprint"))))
 			})
 		})
 
@@ -49,7 +50,7 @@ var _ = Describe("retryableBlobstore", func() {
 					nil,
 				}
 
-				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewDigest("fake", "fingerprint"))
+				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("fake", "fingerprint")))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(path).To(Equal("fake-last-path"))
 
@@ -57,12 +58,17 @@ var _ = Describe("retryableBlobstore", func() {
 					[]string{"fake-blob-id", "fake-blob-id", "fake-blob-id"},
 				))
 
-				Expect(innerBlobstore.GetFingerprints).To(Equal(
-					[]boshcrypto.Digest{
+				Expect(innerBlobstore.GetFingerprints).To(HaveLen(3))
+				Expect(innerBlobstore.GetFingerprints).To(ConsistOf(
+					boshcrypto.NewMultipleDigest(
 						boshcrypto.NewDigest("fake", "fingerprint"),
+					),
+					boshcrypto.NewMultipleDigest(
 						boshcrypto.NewDigest("fake", "fingerprint"),
+					),
+					boshcrypto.NewMultipleDigest(
 						boshcrypto.NewDigest("fake", "fingerprint"),
-					},
+					),
 				))
 			})
 		})
@@ -76,7 +82,7 @@ var _ = Describe("retryableBlobstore", func() {
 					errors.New("fake-last-get-err"),
 				}
 
-				_, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewDigest("fake", "fingerprint"))
+				_, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("fake", "fingerprint")))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-last-get-err"))
 
@@ -84,12 +90,17 @@ var _ = Describe("retryableBlobstore", func() {
 					[]string{"fake-blob-id", "fake-blob-id", "fake-blob-id"},
 				))
 
-				Expect(innerBlobstore.GetFingerprints).To(Equal(
-					[]boshcrypto.Digest{
+				Expect(innerBlobstore.GetFingerprints).To(HaveLen(3))
+				Expect(innerBlobstore.GetFingerprints).To(ConsistOf(
+					boshcrypto.NewMultipleDigest(
 						boshcrypto.NewDigest("fake", "fingerprint"),
+					),
+					boshcrypto.NewMultipleDigest(
 						boshcrypto.NewDigest("fake", "fingerprint"),
+					),
+					boshcrypto.NewMultipleDigest(
 						boshcrypto.NewDigest("fake", "fingerprint"),
-					},
+					),
 				))
 			})
 		})

@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -106,12 +105,7 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		}
 	}()
 
-	digest, err := boshcrypto.ParseDigestString(job.Source.Sha1)
-	if err != nil {
-		return bosherr.WrapError(err, "Parsing job blob digest")
-	}
-
-	file, err := s.blobstore.Get(job.Source.BlobstoreID, digest)
+	file, err := s.blobstore.Get(job.Source.BlobstoreID, job.Source.Sha1)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting job source from blobstore")
 	}

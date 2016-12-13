@@ -8,6 +8,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("V1ApplySpec", func() {
@@ -26,13 +27,13 @@ var _ = Describe("V1ApplySpec", func() {
 					"sha1": "router sha1",
 					"blobstore_id": "router-blob-id-1",
 					"templates": [
-						{"name": "template 1", "version": "0.1", "sha1": "template 1 sha1", "blobstore_id": "template-blob-id-1"},
-						{"name": "template 2", "version": "0.2", "sha1": "template 2 sha1", "blobstore_id": "template-blob-id-2"}
+						{"name": "template 1", "version": "0.1", "sha1": "sha1", "blobstore_id": "template-blob-id-1"},
+						{"name": "template 2", "version": "0.2", "sha1": "sha1", "blobstore_id": "template-blob-id-2"}
 					]
 				},
 				"packages": {
-					"package 1": {"name": "package 1", "version": "0.1", "sha1": "package 1 sha1", "blobstore_id": "package-blob-id-1"},
-					"package 2": {"name": "package 2", "version": "0.2", "sha1": "package 2 sha1", "blobstore_id": "package-blob-id-2"}
+					"package 1": {"name": "package 1", "version": "0.1", "sha1": "sha1", "blobstore_id": "package-blob-id-1"},
+					"package 2": {"name": "package 2", "version": "0.2", "sha1": "sha1", "blobstore_id": "package-blob-id-2"}
 				},
 				"networks": {
 					"manual-net": {
@@ -109,13 +110,13 @@ var _ = Describe("V1ApplySpec", func() {
 					Sha1:        "router sha1",
 					BlobstoreID: "router-blob-id-1",
 					JobTemplateSpecs: []JobTemplateSpec{
-						JobTemplateSpec{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreID: "template-blob-id-1"},
-						JobTemplateSpec{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreID: "template-blob-id-2"},
+						JobTemplateSpec{Name: "template 1", Version: "0.1", Sha1: "sha1", BlobstoreID: "template-blob-id-1"},
+						JobTemplateSpec{Name: "template 2", Version: "0.2", Sha1: "sha1", BlobstoreID: "template-blob-id-2"},
 					},
 				},
 				PackageSpecs: map[string]PackageSpec{
-					"package 1": PackageSpec{Name: "package 1", Version: "0.1", Sha1: "package 1 sha1", BlobstoreID: "package-blob-id-1"},
-					"package 2": PackageSpec{Name: "package 2", Version: "0.2", Sha1: "package 2 sha1", BlobstoreID: "package-blob-id-2"},
+					"package 1": PackageSpec{Name: "package 1", Version: "0.1", Sha1: "sha1", BlobstoreID: "package-blob-id-1"},
+					"package 2": PackageSpec{Name: "package 2", Version: "0.2", Sha1: "sha1", BlobstoreID: "package-blob-id-2"},
 				},
 				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
 					Sha1:        "archive sha 1",
@@ -178,7 +179,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:          "fake-package1-sha1",
+						Sha1:          crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
 						BlobstoreID:   "fake-package1-blob-id",
 						PathInArchive: "",
 					},
@@ -187,7 +188,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package2-name",
 					Version: "fake-package2-version",
 					Source: models.Source{
-						Sha1:          "fake-package2-sha1",
+						Sha1:          crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package2-sha1")),
 						BlobstoreID:   "fake-package2-blob-id",
 						PathInArchive: "",
 					},
@@ -205,7 +206,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-job1-name",
 					Version: "fake-job1-version",
 					Source: models.Source{
-						Sha1:          "fake-rendered-templates-archive-sha1",
+						Sha1:          crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-rendered-templates-archive-sha1")),
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job1-name",
 					},
@@ -215,7 +216,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-job2-name",
 					Version: "fake-job2-version",
 					Source: models.Source{
-						Sha1:          "fake-rendered-templates-archive-sha1",
+						Sha1:          crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-rendered-templates-archive-sha1")),
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job2-name",
 					},
@@ -248,7 +249,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:        "fake-package1-sha1",
+						Sha1:        crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
 						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},

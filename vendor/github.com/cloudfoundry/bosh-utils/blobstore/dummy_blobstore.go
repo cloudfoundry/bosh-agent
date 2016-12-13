@@ -10,7 +10,7 @@ func newDummyBlobstore() dummyBlobstore {
 	return dummyBlobstore{}
 }
 
-func (b dummyBlobstore) Get(blobID string, fingerprint boshcrypto.Digest) (string, error) {
+func (b dummyBlobstore) Get(blobID string, fingerprint boshcrypto.MultipleDigest) (string, error) {
 	return "", nil
 }
 

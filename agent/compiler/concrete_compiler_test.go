@@ -31,7 +31,7 @@ func (cdp FakeCompileDirProvider) CompileDir() string { return cdp.Dir }
 func getCompileArgs() (Package, []boshmodels.Package) {
 	pkg := Package{
 		BlobstoreID: "blobstore_id",
-		Sha1:        "sha1",
+		Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1")),
 		Name:        "pkg_name",
 		Version:     "pkg_version",
 	}
@@ -41,7 +41,7 @@ func getCompileArgs() (Package, []boshmodels.Package) {
 			Name:    "first_dep_name",
 			Version: "first_dep_version",
 			Source: boshmodels.Source{
-				Sha1:        "first_dep_sha1",
+				Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
 				BlobstoreID: "first_dep_blobstore_id",
 			},
 		},
@@ -49,7 +49,7 @@ func getCompileArgs() (Package, []boshmodels.Package) {
 			Name:    "sec_dep_name",
 			Version: "sec_dep_version",
 			Source: boshmodels.Source{
-				Sha1:        "sec_dep_sha1",
+				Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
 				BlobstoreID: "sec_dep_blobstore_id",
 			},
 		},
@@ -80,7 +80,10 @@ func init() {
 			packageApplier = fakepackages.NewFakeApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
 
-			digestProvider.CreateFromFileReturns(boshcrypto.NewDigest("sha1", "fake-blob-sha1"), nil)
+			digestProvider.CreateFromFileStub = func(path string, algorithm boshcrypto.DigestAlgorithm) (boshcrypto.Digest, error) {
+				Expect(path).To(Equal("/tmp/compressed-compiled-package"))
+				return boshcrypto.NewDigest(algorithm, "fake-blob-sha1"), nil
+			}
 
 			compiler = NewConcreteCompiler(
 				compressor,
@@ -129,6 +132,18 @@ func init() {
 				Expect(digest).To(Equal(boshcrypto.NewDigest("sha1", "fake-blob-sha1")))
 			})
 
+			It("returns blob id and correct sha1 algo of created compiled package", func() {
+				blobstore.CreateBlobID = "fake-blob-id"
+				expectedDigestSha256 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "fake-blob-sha1")
+				pkg.Sha1 = boshcrypto.NewMultipleDigest(expectedDigestSha256)
+				_, digest, err := compiler.Compile(pkg, pkgDeps)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(digest).To(Equal(expectedDigestSha256))
+				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
+				Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(expectedDigestSha256)))
+			})
+
 			It("cleans up all packages before and after applying dependent packages", func() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
@@ -142,22 +157,6 @@ func init() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
-			})
-
-			It("fetches source package from blobstore without checking SHA1 by default because of Director bug", func() {
-				_, _, err := compiler.Compile(pkg, pkgDeps)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-				Expect(blobstore.GetFingerprints[0]).To(BeNil())
-			})
-
-			PIt("(Pending Tracker Story: <https://www.pivotaltracker.com/story/show/94524232>) fetches source package from blobstore and checks SHA1 by default in future", func() {
-				_, _, err := compiler.Compile(pkg, pkgDeps)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-				Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
 			})
 
 			It("returns an error if removing compile target directory during uncompression fails", func() {

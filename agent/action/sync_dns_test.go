@@ -116,7 +116,7 @@ var _ = Describe("SyncDNS", func() {
 					Expect(response).To(Equal("synced"))
 
 					Expect(fakeBlobstore.GetBlobIDs).To(ContainElement("fake-blobstore-id"))
-					Expect(fakeBlobstore.GetFingerprints).To(ContainElement(boshcrypto.NewDigest("sha1", "fake-fingerprint")))
+					Expect(fakeBlobstore.GetFingerprints).To(ContainElement(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha1", "fake-fingerprint"))))
 
 					Expect(fakeBlobstore.GetError).ToNot(HaveOccurred())
 					Expect(fakeBlobstore.GetFileName).ToNot(Equal(""))

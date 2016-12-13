@@ -32,7 +32,7 @@ func NewLocalBlobstore(
 	}
 }
 
-func (b localBlobstore) Get(blobID string, _ boshcrypto.Digest) (fileName string, err error) {
+func (b localBlobstore) Get(blobID string, _ boshcrypto.MultipleDigest) (fileName string, err error) {
 	file, err := b.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")

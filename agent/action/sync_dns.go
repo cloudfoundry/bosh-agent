@@ -69,7 +69,7 @@ func (a SyncDNS) Run(blobID, digestString string, version uint64) (string, error
 		return "synced", nil
 	}
 
-	digest, err := boshcrypto.ParseDigestString(digestString)
+	digest, err := boshcrypto.ParseMultipleDigestString(digestString)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Parsing blob digest")
 	}

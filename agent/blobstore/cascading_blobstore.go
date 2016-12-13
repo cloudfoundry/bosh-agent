@@ -25,7 +25,7 @@ func NewCascadingBlobstore(
 	}
 }
 
-func (b cascadingBlobstore) Get(blobID string, digest boshcrypto.Digest) (string, error) {
+func (b cascadingBlobstore) Get(blobID string, digest boshcrypto.MultipleDigest) (string, error) {
 	blobPath, err := b.blobManager.GetPath(blobID)
 
 	if err == nil {

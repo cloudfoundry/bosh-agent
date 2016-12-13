@@ -119,7 +119,8 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		_ = c.compressor.CleanUp(tmpPackageTar)
 	}()
 
-	digest, err = c.digestProvider.CreateFromFile(tmpPackageTar, boshcrypto.DigestAlgorithmSHA1)
+	preferredDigest, _ := boshcrypto.PreferredDigest(pkg.Sha1)
+	digest, err = c.digestProvider.CreateFromFile(tmpPackageTar, preferredDigest.Algorithm())
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Calculating compiled package digest")
 	}
@@ -152,12 +153,7 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) erro
 		return bosherr.Error(fmt.Sprintf("Blobstore ID for package '%s' is empty", pkg.Name))
 	}
 
-	// Do not verify integrity of the download via SHA1
-	// because Director might have stored non-matching SHA1.
-	// This will be fixed in future by explicitly asking to verify SHA1
-	// instead of doing that by default like all other downloads.
-	// (Ruby agent mistakenly never checked SHA1.)
-	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, nil)
+	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, pkg.Sha1)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}

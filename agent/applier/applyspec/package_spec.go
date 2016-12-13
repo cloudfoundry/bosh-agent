@@ -1,6 +1,9 @@
 package applyspec
 
-import models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+import (
+	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-utils/crypto"
+)
 
 type PackageSpec struct {
 	Name        string `json:"name"`
@@ -14,7 +17,7 @@ func (s *PackageSpec) AsPackage() models.Package {
 		Name:    s.Name,
 		Version: s.Version,
 		Source: models.Source{
-			Sha1:        s.Sha1,
+			Sha1:        crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, s.Sha1)),
 			BlobstoreID: s.BlobstoreID,
 		},
 	}
