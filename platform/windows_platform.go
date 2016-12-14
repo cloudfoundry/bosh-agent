@@ -285,5 +285,10 @@ func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 }
 
 func (p WindowsPlatform) DeleteARPEntryWithIP(ip string) error {
+	_, _, _, err := p.cmdRunner.RunCommand("arp", "-d", ip)
+	if err != nil {
+		return bosherr.WrapError(err, "Deleting arp entry")
+	}
+
 	return nil
 }
