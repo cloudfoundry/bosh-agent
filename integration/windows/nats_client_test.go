@@ -257,14 +257,14 @@ func (c CompileTemplate) Arguments() []interface{} {
 }
 
 func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, error) {
-	blobID, err := n.uploadPackage(packageName)
+	tarSha1, blobID, err := n.uploadPackage(packageName)
 	if err != nil {
 		return nil, err
 	}
 
 	template := CompileTemplate{
 		BlobstoreID:  blobID,
-		SHA1:         "902d0e7690d45738681f9d0c1ecee19e40dec507",
+		SHA1:         tarSha1,
 		Name:         packageName,
 		Version:      "1.2.3",
 		Dependencies: nil,
@@ -550,7 +550,7 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha 
 	return
 }
 
-func (n *NatsClient) uploadPackage(packageName string) (blobID string, err error) {
+func (n *NatsClient) uploadPackage(packageName string) (sha1, blobID string, err error) {
 	var dirname string
 	dirname, err = ioutil.TempDir("", "templates")
 	if err != nil {
@@ -560,10 +560,11 @@ func (n *NatsClient) uploadPackage(packageName string) (blobID string, err error
 
 	tarfile := filepath.Join(dirname, packageName+".tar")
 	dir := filepath.Join("fixtures/templates", packageName)
-	_, err = utils.TarDirectory(dir, dir, tarfile)
+	sha1, err = utils.TarDirectory(dir, dir, tarfile)
 	if err != nil {
 		return
 	}
 
-	return n.blobstoreClient.Create(tarfile)
+	blobId, err := n.blobstoreClient.Create(tarfile)
+	return sha1, blobId, err
 }
