@@ -53,34 +53,17 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 }
 
 func (p partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
-	p.logger.Debug(p.logTag, "Getting size of disk remaining after first partition")
-
-	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
+	stdout, _, _, err := p.cmdRunner.RunCommand("lsblk", "--nodeps", "-nb", "-o", "SIZE", devicePath)
 	if err != nil {
-		return 0, bosherr.WrapErrorf(err, "Getting remaining size of `%s'", devicePath)
+		return 0, bosherr.WrapErrorf(err, "Getting block device size of '%s'", devicePath)
 	}
 
-	allLines := strings.Split(stdout, "\n")
-	if len(allLines) < 3 {
-		return 0, bosherr.Errorf("Getting remaining size of `%s'", devicePath)
-	}
-
-	partitionInfoLines := allLines[1:3]
-	deviceInfo := strings.Split(partitionInfoLines[0], ":")
-	deviceFullSizeInBytes, err := strconv.ParseUint(strings.TrimRight(deviceInfo[1], "B"), 10, 64)
+	deviceSize, err := strconv.Atoi(strings.Trim(stdout, "\n"))
 	if err != nil {
-		return 0, bosherr.WrapErrorf(err, "Getting remaining size of `%s'", devicePath)
+		return 0, bosherr.WrapErrorf(err, "Converting block device size of '%s'", devicePath)
 	}
 
-	firstPartitionInfo := strings.Split(partitionInfoLines[1], ":")
-	firstPartitionEndInBytes, err := strconv.ParseUint(strings.TrimRight(firstPartitionInfo[2], "B"), 10, 64)
-	if err != nil {
-		return 0, bosherr.WrapErrorf(err, "Getting remaining size of `%s'", devicePath)
-	}
-
-	remainingSizeInBytes := deviceFullSizeInBytes - firstPartitionEndInBytes - 1
-
-	return remainingSizeInBytes, nil
+	return uint64(deviceSize), nil
 }
 
 func (p partedPartitioner) partitionsMatch(existingPartitions []existingPartition, desiredPartitions []Partition, deviceSizeInBytes uint64) bool {
@@ -110,7 +93,6 @@ func (p partedPartitioner) partitionsMatch(existingPartitions []existingPartitio
 
 func (p partedPartitioner) getPartitions(devicePath string) (partitions []existingPartition, deviceFullSizeInBytes uint64, err error) {
 	stdout, _, _, err := p.runPartedPrint(devicePath)
-
 	if err != nil {
 		return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Running parted print")
 	}
