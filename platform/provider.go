@@ -48,8 +48,13 @@ type Options struct {
 
 func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
-	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
+	diskManagerOpts := boshdisk.LinuxDiskManagerOpts{
+		BindMount:       options.Linux.BindMountPersistentDisk,
+		PartitionerType: options.Linux.PartitionerType,
+	}
+
+	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, diskManagerOpts)
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 	linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
