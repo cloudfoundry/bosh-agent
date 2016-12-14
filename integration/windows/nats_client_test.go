@@ -550,21 +550,21 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha 
 	return
 }
 
-func (n *NatsClient) uploadPackage(packageName string) (sha1, blobID string, err error) {
+func (n *NatsClient) uploadPackage(packageName string) (string, string, error) {
 	var dirname string
-	dirname, err = ioutil.TempDir("", "templates")
+	dirname, err := ioutil.TempDir("", "templates")
 	if err != nil {
-		return
+		return "", "", err
 	}
 	defer os.RemoveAll(dirname)
 
 	tarfile := filepath.Join(dirname, packageName+".tar")
 	dir := filepath.Join("fixtures/templates", packageName)
-	sha1, err = utils.TarDirectory(dir, dir, tarfile)
+	sha1, err := utils.TarDirectory(dir, dir, tarfile)
 	if err != nil {
-		return
+		return "", "", err
 	}
 
-	blobId, err := n.blobstoreClient.Create(tarfile)
-	return sha1, blobId, err
+	blobID, err := n.blobstoreClient.Create(tarfile)
+	return sha1, blobID, err
 }
