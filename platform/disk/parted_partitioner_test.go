@@ -494,4 +494,40 @@ var _ = Describe("PartedPartitioner", func() {
 			})
 		})
 	})
+
+	Describe("GetDeviceSizeInBytes", func() {
+		It("returns error if lsblk fails", func() {
+			fakeCmdRunner.AddCmdResult(
+				"lsblk --nodeps -nb -o SIZE /dev/path",
+				fakesys.FakeCmdResult{Error: errors.New("fake-err")},
+			)
+
+			_, err := partitioner.GetDeviceSizeInBytes("/dev/path")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-err"))
+		})
+
+		It("returns error if lsblk doesnt return number", func() {
+			fakeCmdRunner.AddCmdResult(
+				"lsblk --nodeps -nb -o SIZE /dev/path",
+				fakesys.FakeCmdResult{Stdout: "not-number"},
+			)
+
+			_, err := partitioner.GetDeviceSizeInBytes("/dev/path")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Converting block device size"))
+			Expect(err.Error()).To(ContainSubstring(`parsing "not-number"`))
+		})
+
+		It("returns number in bytes (stripping newline) from lsblk", func() {
+			fakeCmdRunner.AddCmdResult(
+				"lsblk --nodeps -nb -o SIZE /dev/path",
+				fakesys.FakeCmdResult{Stdout: "123\n"},
+			)
+
+			num, err := partitioner.GetDeviceSizeInBytes("/dev/path")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(num).To(Equal(uint64(123)))
+		})
+	})
 })

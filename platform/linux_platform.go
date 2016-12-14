@@ -65,11 +65,15 @@ type LinuxOptions struct {
 	SkipDiskSetup bool
 
 	// Strategy for resolving device paths;
-	// possible values: virtio, scsi, ''
+	// possible values: virtio, scsi, ""
 	DevicePathResolutionType string
 
 	// Device prexix when using virtio (defaults to 'virtio')
 	VirtioDevicePrefix string
+
+	// Strategy for resolving ephemeral & persistent disk partitioners;
+	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
+	PartitionerType string
 }
 
 type linux struct {
