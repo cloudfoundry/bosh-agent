@@ -9,7 +9,7 @@ import (
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
@@ -18,7 +18,17 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"io"
 )
+
+type unsupportedAlgo struct{}
+
+func (unsupportedAlgo) Compare(algo boshcrypto.Algorithm) int {
+	return -1
+}
+func (unsupportedAlgo) CreateDigest(reader io.Reader) (boshcrypto.Digest, error) {
+	return boshcrypto.MultipleDigestImpl{}, nil
+}
 
 func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) {
 	uuidGen := boshuuid.NewGenerator()
@@ -121,7 +131,7 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha1", "fake-blob-sha1"))))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
 
 					// downloaded file is cleaned up
 					Expect(blobstore.CleanUpFileName).To(Equal("/fake-blobstore-file-name"))
@@ -172,7 +182,7 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha1", "sha1:fake-blob-sha1"))))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 				})
 
 				It("can process sha2 checksums", func() {
@@ -182,12 +192,13 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha256", "sha256:fake-blob-sha256"))))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))
 				})
 
-				XIt("returns error when given and unsupported fingerprint", func() {
+				It("returns error when given and unsupported fingerprint", func() {
 					blobstore.GetFileName = "/fake-blobstore-file-name"
-					job.Source.Sha1 = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithm("unsupported"), "unsupported:checksum"))
+
+					job.Source.Sha1 = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(unsupportedAlgo{}, "unsupported:checksum"))
 
 					err := act()
 					Expect(err).To(HaveOccurred())
@@ -345,7 +356,9 @@ func init() {
 			}
 
 			Describe("Prepare", func() {
-				act := func() error { return applier.Prepare(job) }
+				act := func() error {
+					return applier.Prepare(job)
+				}
 
 				It("return an error if getting file bundle fails", func() {
 					jobsBc.GetErr = errors.New("fake-get-bundle-error")
@@ -397,7 +410,9 @@ func init() {
 			})
 
 			Describe("Apply", func() {
-				act := func() error { return applier.Apply(job) }
+				act := func() error {
+					return applier.Apply(job)
+				}
 
 				It("return an error if getting file bundle fails", func() {
 					jobsBc.GetErr = errors.New("fake-get-bundle-error")

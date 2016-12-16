@@ -25,7 +25,7 @@ var _ = Describe("MultipleDigest", func() {
 		It("should select the highest algo and verify that digest", func() {
 			actualDigest := NewDigest(DigestAlgorithmSHA256, "07e1306432667f916639d47481edc4f2ca456454")
 
-			err := Verify(expectedDigest, actualDigest)
+			err := expectedDigest.Verify(actualDigest)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -33,7 +33,7 @@ var _ = Describe("MultipleDigest", func() {
 			expectedDigest := NewMultipleDigest(digest1)
 			actualDigest := NewDigest(DigestAlgorithmSHA1, "07e1306432667f916639d47481edc4f2ca456454")
 
-			err := Verify(expectedDigest, actualDigest)
+			err := expectedDigest.Verify(actualDigest)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -41,7 +41,7 @@ var _ = Describe("MultipleDigest", func() {
 			expectedDigest := NewMultipleDigest(digest1, digest2)
 			actualDigest := NewDigest(DigestAlgorithmSHA256, "b1e66f505465c28d705cf587b041a6506cfe749f")
 
-			err := Verify(expectedDigest, actualDigest)
+			err := expectedDigest.Verify(actualDigest)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Expected sha256 digest \"07e1306432667f916639d47481edc4f2ca456454\" but received \"b1e66f505465c28d705cf587b041a6506cfe749f\""))
 		})
@@ -50,7 +50,7 @@ var _ = Describe("MultipleDigest", func() {
 			expectedDigest := NewMultipleDigest(digest1, digest2)
 			actualDigest := NewDigest(DigestAlgorithmSHA512, "07e1306432667f916639d47481edc4f2ca456454")
 
-			err := Verify(expectedDigest, actualDigest)
+			err := expectedDigest.Verify(actualDigest)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("No digest found that matches sha512"))
 		})
@@ -91,7 +91,7 @@ var _ = Describe("MultipleDigest", func() {
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(expectedDigest.Digests()).To(HaveLen(1))
-				Expect(expectedDigest.Digests()[0].Digest()).To(Equal("abcdefg"))
+				Expect(expectedDigest.Digests()[0].String()).To(Equal("abcdefg"))
 			})
 		})
 

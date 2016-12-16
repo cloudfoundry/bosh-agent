@@ -1,10 +1,5 @@
 package models
 
-import (
-	"github.com/cloudfoundry/bosh-utils/crypto"
-	"log"
-)
-
 type Package struct {
 	Name    string
 	Version string
@@ -19,11 +14,7 @@ func (s Package) BundleVersion() string {
 	var digest string
 
 	if s.Source.Sha1 != nil {
-		preferredDigest, err := crypto.PreferredDigest(s.Source.Sha1)
-		if err != nil {
-			log.Panicf("Err that can't be returned!! %v", err)
-		}
-		digest = preferredDigest.Digest()
+		digest = s.Source.Sha1.String()
 	}
 
 	return s.Version + "-" + digest

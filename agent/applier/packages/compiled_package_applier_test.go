@@ -8,7 +8,7 @@ import (
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -143,7 +143,7 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha1", "sha1:fake-blob-sha1"))))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 				})
 
 				It("can process sha2 checksums", func() {
@@ -154,7 +154,7 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
 					Expect(blobstore.GetFingerprints).To(HaveLen(1))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha256", "sha256:fake-blob-sha256"))))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))
 				})
 
 				It("returns error when given and unsupported fingerprint", func() {

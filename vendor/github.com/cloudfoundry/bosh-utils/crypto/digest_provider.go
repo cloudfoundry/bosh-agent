@@ -24,5 +24,10 @@ func (f digestProviderImpl) CreateFromStream(reader io.Reader, algorithm DigestA
 		return nil, bosherr.WrapError(err, "Copying file for digest calculation")
 	}
 
-	return NewDigest(algorithm, fmt.Sprintf("%x", hash.Sum(nil))), nil
+	digestAlgorithm, err := NewAlgorithm(string(algorithm))
+	if err != nil {
+		return nil, err
+	}
+
+	return NewDigest(digestAlgorithm, fmt.Sprintf("%x", hash.Sum(nil))), nil
 }

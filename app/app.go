@@ -291,7 +291,6 @@ func (app *app) buildApplierAndCompiler(
 		app.platform.GetCompressor(),
 		blobstore,
 		fileSystem,
-		app.digestProvider,
 		cmdRunner,
 		dirProvider,
 		packageApplierProvider.Root(),

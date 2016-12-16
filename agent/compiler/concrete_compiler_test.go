@@ -16,11 +16,9 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	fakecrypto "github.com/cloudfoundry/bosh-utils/crypto/fakes"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"io"
 	"io/ioutil"
 )
 
@@ -67,7 +65,6 @@ func init() {
 			compressor     *fakecmd.FakeCompressor
 			blobstore      *fakeblobstore.FakeBlobstore
 			fs             *fakesys.FakeFileSystem
-			digestProvider *fakecrypto.FakeDigestProvider
 			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepackages.FakeApplier
 			packagesBc     *fakebc.FakeBundleCollection
@@ -77,23 +74,14 @@ func init() {
 			compressor = fakecmd.NewFakeCompressor()
 			blobstore = &fakeblobstore.FakeBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
-			digestProvider = &fakecrypto.FakeDigestProvider{}
 			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
 			packageApplier = fakepackages.NewFakeApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
-
-			digestProvider.CreateFromStreamStub = func(reader io.Reader, algorithm boshcrypto.DigestAlgorithm) (boshcrypto.Digest, error) {
-				_, err := ioutil.ReadAll(reader)
-				Expect(err).ToNot(HaveOccurred())
-
-				return boshcrypto.NewDigest(algorithm, "fake-blob-sha1"), nil
-			}
 
 			compiler = NewConcreteCompiler(
 				compressor,
 				blobstore,
 				fs,
-				digestProvider,
 				runner,
 				FakeCompileDirProvider{Dir: "/fake-compile-dir"},
 				packageApplier,
@@ -138,12 +126,12 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(blobID).To(Equal("fake-blob-id"))
-				Expect(digest).To(Equal(boshcrypto.NewDigest("sha1", "fake-blob-sha1")))
+				Expect(digest).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "978ad524a02039f261773fe93d94973ae7de6470")))
 			})
 
 			It("returns blob id and correct sha1 algo of created compiled package", func() {
 				blobstore.CreateBlobID = "fake-blob-id"
-				expectedDigestSha256 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "fake-blob-sha1")
+				expectedDigestSha256 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "d12d3a3ee8dcdc9e7ea3416fd618298ea50abde2cf434313c6c3edb213f441cd")
 				pkg.Sha1 = boshcrypto.NewMultipleDigest(expectedDigestSha256)
 				_, digest, err := compiler.Compile(pkg, pkgDeps)
 

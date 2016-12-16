@@ -56,7 +56,7 @@ var _ = Describe("CompilePackageAction", func() {
 	Describe("Run", func() {
 		It("compile package compiles the package and returns blob id", func() {
 			compiler.CompileBlobID = "my-blob-id"
-			compiler.CompileDigest = boshcrypto.NewDigest("sha1", "some checksum")
+			compiler.CompileDigest = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "some checksum")
 
 			expectedPkg := boshcomp.Package{
 				BlobstoreID: "fake-blobstore-id",

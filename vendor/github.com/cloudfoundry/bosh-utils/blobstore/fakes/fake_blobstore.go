@@ -6,7 +6,7 @@ import (
 
 type FakeBlobstore struct {
 	GetBlobIDs      []string
-	GetFingerprints []boshcrypto.MultipleDigest
+	GetFingerprints []boshcrypto.Digest
 	GetFileName     string
 	GetFileNames    []string
 	GetError        error
@@ -32,7 +32,7 @@ func NewFakeBlobstore() *FakeBlobstore {
 	return &FakeBlobstore{}
 }
 
-func (bs *FakeBlobstore) Get(blobID string, fingerprint boshcrypto.MultipleDigest) (string, error) {
+func (bs *FakeBlobstore) Get(blobID string, fingerprint boshcrypto.Digest) (string, error) {
 	bs.GetBlobIDs = append(bs.GetBlobIDs, blobID)
 	bs.GetFingerprints = append(bs.GetFingerprints, fingerprint)
 

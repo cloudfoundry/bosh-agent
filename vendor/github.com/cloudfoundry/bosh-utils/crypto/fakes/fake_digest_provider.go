@@ -16,9 +16,9 @@ type FakeDigestProvider struct {
 		algorithm crypto.DigestAlgorithm
 	}
 	createFromStreamReturns struct {
-		result1 crypto.Digest
-		result2 error
-	}
+																result1 crypto.Digest
+																result2 error
+															}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }

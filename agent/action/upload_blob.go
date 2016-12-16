@@ -54,21 +54,16 @@ func (a UploadBlobAction) Run(content UploadBlobSpec) (string, error) {
 	return content.BlobID, err
 }
 
-func (a UploadBlobAction) validatePayload(payload []byte, payloadChecksum crypto.MultipleDigest) error {
-	strongestDigest, err := crypto.PreferredDigest(payloadChecksum)
+func (a UploadBlobAction) validatePayload(payload []byte, payloadDigest crypto.Digest) error {
+	actualDigest, err := payloadDigest.Algorithm().CreateDigest(bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
 
-	digestProvider := crypto.NewDigestProvider()
-	actualDigest, err := digestProvider.CreateFromStream(bytes.NewReader(payload), strongestDigest.Algorithm())
+	//TODO: payloadDigest.Verify(bytes.NewReader(payload))
+	err = payloadDigest.Verify(actualDigest)
 	if err != nil {
-		return err
-	}
-
-	err = strongestDigest.Verify(actualDigest)
-	if err != nil {
-		return fmt.Errorf("Payload corrupted. Checksum mismatch. Expected '%s' but received '%s'", strongestDigest.String(), actualDigest.String())
+		return fmt.Errorf("Payload corrupted. Checksum mismatch. Expected '%s' but received '%s'", payloadDigest.String(), actualDigest.String())
 	}
 
 	return nil

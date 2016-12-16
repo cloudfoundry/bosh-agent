@@ -10,19 +10,19 @@ import (
 	"strings"
 )
 
-const (
-	DigestAlgorithmSHA1   DigestAlgorithm = "sha1"
-	DigestAlgorithmSHA256 DigestAlgorithm = "sha256"
-	DigestAlgorithmSHA512 DigestAlgorithm = "sha512"
+var (
+	DigestAlgorithmSHA1 Algorithm = algorithmSHA1{Name: "sha1"}
+	DigestAlgorithmSHA256 Algorithm = algorithmSHA256{Name: "sha256"}
+	DigestAlgorithmSHA512 Algorithm = algorithmSHA512{Name: "sha512"}
 )
 
 func CreateHashFromAlgorithm(algorithm DigestAlgorithm) (hash.Hash, error) {
 	switch algorithm {
-	case DigestAlgorithmSHA1:
+	case DigestAlgorithm("sha1"):
 		return sha1.New(), nil
-	case DigestAlgorithmSHA256:
+	case DigestAlgorithm("sha256"):
 		return sha256.New(), nil
-	case DigestAlgorithmSHA512:
+	case DigestAlgorithm("sha512"):
 		return sha512.New(), nil
 	}
 
@@ -43,26 +43,12 @@ func ParseDigestString(digest string) (Digest, error) {
 	}
 
 	switch pieces[0] {
-	case string(DigestAlgorithmSHA1), string(DigestAlgorithmSHA256), string(DigestAlgorithmSHA512):
-		return NewDigest(DigestAlgorithm(pieces[0]), pieces[1]), nil
+	case string("sha1"), string("sha256"), string("sha512"):
+		digestAlgo, _ := NewAlgorithm(pieces[0])
+		return NewDigest(digestAlgo, pieces[1]), nil
 	default:
 		return nil, errors.New(fmt.Sprintf("Unrecognized digest algorithm: %s. Supported algorithms: sha1, sha256, sha512", pieces[0]))
 	}
-}
-
-func PreferredDigest(m MultipleDigest) (Digest, error) {
-	if len(m.Digests()) == 0 {
-		return NewDigest(DigestAlgorithmSHA1, ""), errors.New("No valid digests available")
-	}
-
-	currentStrongest := m.Digests()[0]
-	for _, candidateDigest := range m.Digests() {
-		if candidateDigest.Compare(currentStrongest) > 0 {
-			currentStrongest = candidateDigest
-		}
-	}
-
-	return currentStrongest, nil
 }
 
 func ParseMultipleDigestString(multipleDigest string) (MultipleDigestImpl, error) {

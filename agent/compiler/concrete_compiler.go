@@ -26,7 +26,6 @@ type concreteCompiler struct {
 	compressor         boshcmd.Compressor
 	blobstore          boshblob.Blobstore
 	fs                 boshsys.FileSystem
-	digestProvider     boshcrypto.DigestProvider
 	runner             boshcmdrunner.CmdRunner
 	compileDirProvider CompileDirProvider
 	packageApplier     packages.Applier
@@ -37,7 +36,6 @@ func NewConcreteCompiler(
 	compressor boshcmd.Compressor,
 	blobstore boshblob.Blobstore,
 	fs boshsys.FileSystem,
-	digestProvider boshcrypto.DigestProvider,
 	runner boshcmdrunner.CmdRunner,
 	compileDirProvider CompileDirProvider,
 	packageApplier packages.Applier,
@@ -47,7 +45,6 @@ func NewConcreteCompiler(
 		compressor:         compressor,
 		blobstore:          blobstore,
 		fs:                 fs,
-		digestProvider:     digestProvider,
 		runner:             runner,
 		compileDirProvider: compileDirProvider,
 		packageApplier:     packageApplier,
@@ -124,8 +121,8 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		return "", nil, bosherr.WrapError(err, "Opening compiled package")
 	}
 
-	preferredDigest, _ := boshcrypto.PreferredDigest(pkg.Sha1)
-	digest, err = c.digestProvider.CreateFromStream(file, preferredDigest.Algorithm())
+	// Use SHA256, not the strongest algo from the source blob
+	digest, err = pkg.Sha1.Algorithm().CreateDigest(file)
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Calculating compiled package digest")
 	}
