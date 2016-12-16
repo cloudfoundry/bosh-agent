@@ -97,6 +97,33 @@ var _ = Describe("An Agent running on Windows", func() {
 		Eventually(getStateSpecAgentID, DefaultTimeout, DefaultInterval).Should(Equal(agentGUID))
 	})
 
+	It("includes memory vitals in the 'get_state' response", func() {
+		message := fmt.Sprintf(`{"method":"get_state","arguments":["full"],"reply_to":"%s"}`, senderID)
+
+		checkVitals := func() error {
+			b, err := natsClient.SendRawMessage(message)
+			if err != nil {
+				return err
+			}
+
+			var res map[string]action.GetStateV1ApplySpec
+			if err := json.Unmarshal(b, &res); err != nil {
+				return err
+			}
+
+			v := res["value"].Vitals
+			if v == nil {
+				return fmt.Errorf("nil Vitals")
+			}
+			if v.Mem.Kb == "" || v.Mem.Percent == "" {
+				return fmt.Errorf("Empty Memory Vitals: %+v", v.Mem)
+			}
+			return nil
+		}
+
+		Eventually(checkVitals, DefaultTimeout, DefaultInterval).Should(Succeed())
+	})
+
 	It("can run a run_errand action", func() {
 		natsClient.PrepareJob("say-hello")
 

@@ -2,7 +2,7 @@ github.com/onsi/ginkgo:1b59c57
 github.com/jeromer/syslogparser:ff71fe7
 github.com/pivotal-golang/clock:3fd3c19
 github.com/pivotal/go-smtpd/smtpd:0af6982
-github.com/cloudfoundry/gosigar:e949f42
+github.com/cloudfoundry/gosigar:dfaa4d4
 github.com/mitchellh/mapstructure:281073e
 github.com/cloudfoundry/yagnats:6bbfbf6
 github.com/github.com/stretchr/testify/assert:2b15294
