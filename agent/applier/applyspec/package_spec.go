@@ -17,7 +17,7 @@ func (s *PackageSpec) AsPackage() models.Package {
 		Name:    s.Name,
 		Version: s.Version,
 		Source: models.Source{
-			Sha1:        crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, s.Sha1)),
+			Sha1:        crypto.NewDigest(crypto.DigestAlgorithmSHA1, s.Sha1),
 			BlobstoreID: s.BlobstoreID,
 		},
 	}

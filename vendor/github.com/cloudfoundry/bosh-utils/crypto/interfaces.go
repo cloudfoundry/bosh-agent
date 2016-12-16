@@ -7,7 +7,7 @@ type DigestProvider interface {
 }
 
 type Digest interface {
-	Verify(Digest) error
+	Verify(io.Reader) error
 	Algorithm() Algorithm
 	String() string
 }
@@ -15,4 +15,5 @@ type Digest interface {
 type Algorithm interface {
 	Compare(Algorithm) int
 	CreateDigest(io.Reader) (Digest, error)
+	String() string
 }

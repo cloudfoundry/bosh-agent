@@ -51,7 +51,7 @@ func ParseDigestString(digest string) (Digest, error) {
 	}
 }
 
-func ParseMultipleDigestString(multipleDigest string) (MultipleDigestImpl, error) {
+func ParseMultipleDigestString(multipleDigest string) (MultipleDigest, error) {
 	pieces := strings.Split(multipleDigest, ";")
 
 	digests := []Digest{}
@@ -64,8 +64,8 @@ func ParseMultipleDigestString(multipleDigest string) (MultipleDigestImpl, error
 	}
 
 	if len(digests) == 0 {
-		return NewMultipleDigest(), errors.New("No recognizable digest algorithm found. Supported algorithms: sha1, sha256, sha512")
+		return MultipleDigest{}, errors.New("No recognizable digest algorithm found. Supported algorithms: sha1, sha256, sha512")
 	}
 
-	return NewMultipleDigest(digests...), nil
+	return MultipleDigest{digests: digests}, nil
 }

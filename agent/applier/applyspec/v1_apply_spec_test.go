@@ -179,7 +179,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:          crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
+						Sha1:          crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1"),
 						BlobstoreID:   "fake-package1-blob-id",
 						PathInArchive: "",
 					},
@@ -188,7 +188,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package2-name",
 					Version: "fake-package2-version",
 					Source: models.Source{
-						Sha1:          crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package2-sha1")),
+						Sha1:          crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package2-sha1"),
 						BlobstoreID:   "fake-package2-blob-id",
 						PathInArchive: "",
 					},
@@ -249,7 +249,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:        crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
+						Sha1:        crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1"),
 						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},

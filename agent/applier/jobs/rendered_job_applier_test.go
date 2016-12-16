@@ -27,7 +27,7 @@ func (unsupportedAlgo) Compare(algo boshcrypto.Algorithm) int {
 	return -1
 }
 func (unsupportedAlgo) CreateDigest(reader io.Reader) (boshcrypto.Digest, error) {
-	return boshcrypto.MultipleDigestImpl{}, nil
+	return boshcrypto.MultipleDigest{}, nil
 }
 
 func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) {
@@ -109,7 +109,6 @@ func init() {
 
 			BeforeEach(func() {
 				job, bundle = buildJob(jobsBc)
-
 			})
 
 			ItInstallsJob := func(act func() error) {
@@ -192,17 +191,7 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))
-				})
-
-				It("returns error when given and unsupported fingerprint", func() {
-					blobstore.GetFileName = "/fake-blobstore-file-name"
-
-					job.Source.Sha1 = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(unsupportedAlgo{}, "unsupported:checksum"))
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Parsing job blob digest"))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(job.Source.Sha1))
 				})
 
 				It("returns error when decompressing job template fails", func() {

@@ -13,7 +13,7 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-func getCompileActionArguments() (blobID string, multiDigest boshcrypto.MultipleDigestImpl, name, version string, deps boshcomp.Dependencies) {
+func getCompileActionArguments() (blobID string, multiDigest boshcrypto.MultipleDigest, name, version string, deps boshcomp.Dependencies) {
 	blobID = "fake-blobstore-id"
 	multiDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-sha1"))
 	name = "fake-package-name"

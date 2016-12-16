@@ -10,6 +10,7 @@ import (
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 )
 
 var _ = Describe("checksumVerifiableBlobstore", func() {
@@ -24,7 +25,7 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 		innerBlobstore              *fakeblob.FakeBlobstore
 		checksumVerifiableBlobstore boshblob.Blobstore
 		checksumProvider            boshcrypto.DigestProvider
-		fixtureDigest               boshcrypto.MultipleDigestImpl
+		fixtureDigest               boshcrypto.MultipleDigest
 	)
 
 	BeforeEach(func() {
@@ -48,11 +49,12 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 
 		It("returns error if sha1 does not match", func() {
 			innerBlobstore.GetFileName = fixturePath
+
 			incorrectSha1 := boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "some-incorrect-sha1"))
 
 			_, err := checksumVerifiableBlobstore.Get("fake-blob-id", incorrectSha1)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Expected sha1 digest"))
+			Expect(err.Error()).To(ContainSubstring("Checking downloaded blob \"fake-blob-id\""))
 		})
 
 		It("returns error if inner blobstore getting fails", func() {
@@ -81,7 +83,7 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 
 		Context("sha256", func() {
 			BeforeEach(func() {
-				fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha256", fixtureSHA256))
+				fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, fixtureSHA256))
 			})
 
 			It("returns without an error if sha256 matches", func() {
@@ -97,7 +99,7 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 
 		Context("sha512", func() {
 			BeforeEach(func() {
-				fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest("sha512", fixtureSHA512))
+				fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA512, fixtureSHA512))
 			})
 
 			It("returns without an error if sha512 matches", func() {

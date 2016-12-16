@@ -1,8 +1,6 @@
 package blobstore
 
 import (
-	"fmt"
-
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"os"
@@ -33,12 +31,10 @@ func (b digestVerifiableBlobstore) Get(blobID string, digest boshcrypto.Digest) 
 	}
 	defer file.Close()
 
-
-	fileDigest, err := digest.Algorithm().CreateDigest(file)
-	fileDigest.Verify(digest)
+	err = digest.Verify(file)
 
 	if err != nil {
-		return "", bosherr.WrapError(err, fmt.Sprintf(`Checking downloaded blob "%s"`, blobID))
+		return "", bosherr.WrapErrorf(err, "Checking downloaded blob \"%s\"", blobID)
 	}
 
 	return fileName, nil

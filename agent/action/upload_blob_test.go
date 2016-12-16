@@ -58,7 +58,7 @@ func init() {
 						BlobID:   "id",
 					})
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Payload corrupted. Checksum mismatch. Expected 'badChecksum' but received 'e578935e2f0613d68ba6a4fcc0d32754b52d334d'"))
+					Expect(err.Error()).To(ContainSubstring("Payload corrupted. Checksum mismatch. Expected 'badChecksum'"))
 				})
 			})
 

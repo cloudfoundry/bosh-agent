@@ -59,7 +59,7 @@ func (a SyncDNS) Cancel() error {
 	return errors.New("not supported")
 }
 
-func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigestImpl, version uint64) (string, error) {
+func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, version uint64) (string, error) {
 	requestVersionStale, err := a.isLocalStateGreaterThanOrEqual(version)
 	if err != nil {
 		return "", bosherr.WrapError(err, "reading local DNS state")

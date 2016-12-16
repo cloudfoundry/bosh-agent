@@ -11,3 +11,4 @@ func TestDigest(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Crypto Suite")
 }
+

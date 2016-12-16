@@ -30,7 +30,7 @@ func (a CompilePackageAction) IsLoggable() bool {
 	return true
 }
 
-func (a CompilePackageAction) Run(blobID string, multiDigest boshcrypto.MultipleDigestImpl, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
+func (a CompilePackageAction) Run(blobID string, multiDigest boshcrypto.MultipleDigest, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
 	pkg := boshcomp.Package{
 		BlobstoreID: blobID,
 		Name:        name,

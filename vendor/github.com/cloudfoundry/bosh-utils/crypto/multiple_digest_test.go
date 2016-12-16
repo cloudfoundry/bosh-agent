@@ -5,71 +5,139 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-utils/crypto"
+	"strings"
 )
 
 var _ = Describe("MultipleDigest", func() {
 	var (
-		expectedDigest MultipleDigestImpl
-		digest1        Digest
-		digest2        Digest
+		digest MultipleDigest
+		digest1 Digest
+		digest2 Digest
 	)
 
 	BeforeEach(func() {
 		digest1 = NewDigest(DigestAlgorithmSHA1, "07e1306432667f916639d47481edc4f2ca456454")
 		digest2 = NewDigest(DigestAlgorithmSHA256, "07e1306432667f916639d47481edc4f2ca456454")
 
-		expectedDigest = NewMultipleDigest(digest1, digest2)
+		digest = NewMultipleDigest(digest1, digest2)
 	})
 
 	Describe("Verify", func() {
-		It("should select the highest algo and verify that digest", func() {
-			actualDigest := NewDigest(DigestAlgorithmSHA256, "07e1306432667f916639d47481edc4f2ca456454")
+		var (
+			digest Digest
+		)
 
-			err := expectedDigest.Verify(actualDigest)
-			Expect(err).ToNot(HaveOccurred())
+		Context("for a multi digest containing no digests", func() {
+			BeforeEach(func() {
+				digest = NewMultipleDigest()
+			})
+
+			It("does not Verify", func() {
+				Expect(digest.Verify(strings.NewReader("desired content"))).To(HaveOccurred())
+			})
+
 		})
 
-		It("should work with only a single digest", func() {
-			expectedDigest := NewMultipleDigest(digest1)
-			actualDigest := NewDigest(DigestAlgorithmSHA1, "07e1306432667f916639d47481edc4f2ca456454")
+		Context("for a multi digest containing only SHA1 digest", func() {
+			BeforeEach(func() {
+				abcDigest, err := DigestAlgorithmSHA1.CreateDigest(strings.NewReader("desired content"))
+				Expect(err).ToNot(HaveOccurred())
+				digest = NewMultipleDigest(abcDigest)
+			})
 
-			err := expectedDigest.Verify(actualDigest)
-			Expect(err).ToNot(HaveOccurred())
+			Context("when the checksum matches", func() {
+				It("does not error", func() {
+					Expect(digest.Verify(strings.NewReader("desired content"))).ToNot(HaveOccurred())
+				})
+			})
+
+			Context("when the checksum does not match", func() {
+				It("does errors", func() {
+					Expect(digest.Verify(strings.NewReader("different content"))).To(HaveOccurred())
+				})
+			})
 		})
 
-		It("should throw an error if the digest does not match", func() {
-			expectedDigest := NewMultipleDigest(digest1, digest2)
-			actualDigest := NewDigest(DigestAlgorithmSHA256, "b1e66f505465c28d705cf587b041a6506cfe749f")
+		Context("for a multi digest containing many digest", func() {
+			Context("when the strongest digest matches", func() {
+				BeforeEach(func() {
+					sha1DesiredContentDigest, err := DigestAlgorithmSHA1.CreateDigest(strings.NewReader("weak digest content"))
+					Expect(err).ToNot(HaveOccurred())
+					sha256DesiredContentDigest, err := DigestAlgorithmSHA256.CreateDigest(strings.NewReader("weak digest content"))
+					Expect(err).ToNot(HaveOccurred())
+					sha512DesiredContentDigest, err := DigestAlgorithmSHA512.CreateDigest(strings.NewReader("strong desired content"))
+					Expect(err).ToNot(HaveOccurred())
 
-			err := expectedDigest.Verify(actualDigest)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Expected sha256 digest \"07e1306432667f916639d47481edc4f2ca456454\" but received \"b1e66f505465c28d705cf587b041a6506cfe749f\""))
+					digest = NewMultipleDigest(sha1DesiredContentDigest, sha256DesiredContentDigest, sha512DesiredContentDigest)
+				})
+
+				It("It favors the strongest digest and does not error", func() {
+					Expect(digest.Verify(strings.NewReader("strong desired content"))).ToNot(HaveOccurred())
+				})
+
+				Context("when the checksum does not match", func() {
+					It("does not error", func() {
+						Expect(digest.Verify(strings.NewReader("weak digest content"))).To(HaveOccurred())
+					})
+				})
+			})
+
+			Context("when two of the digests are the same algorithm", func() {
+				Context("when the two digests are equal", func() {
+					BeforeEach(func() {
+						sha1DesiredContentDigestA, err := DigestAlgorithmSHA1.CreateDigest(strings.NewReader("digest content"))
+						Expect(err).ToNot(HaveOccurred())
+						sha1DesiredContentDigestB, err := DigestAlgorithmSHA1.CreateDigest(strings.NewReader("digest content"))
+						Expect(err).ToNot(HaveOccurred())
+
+						digest = NewMultipleDigest(sha1DesiredContentDigestA, sha1DesiredContentDigestB)
+					})
+
+					It("should be verifiable", func() {
+						Expect(digest.Verify(strings.NewReader("digest content"))).ToNot(HaveOccurred())
+					})
+				})
+
+				Context("when the two digests are not equal", func() {
+					BeforeEach(func() {
+						sha1DesiredContentDigestA, err := DigestAlgorithmSHA1.CreateDigest(strings.NewReader("digest content A"))
+						Expect(err).ToNot(HaveOccurred())
+						sha1DesiredContentDigestB, err := DigestAlgorithmSHA1.CreateDigest(strings.NewReader("digest content B"))
+						Expect(err).ToNot(HaveOccurred())
+
+						digest = NewMultipleDigest(sha1DesiredContentDigestA, sha1DesiredContentDigestB)
+					})
+
+					It("should not be verifiable", func() {
+						err := digest.Verify(strings.NewReader("digest content A"))
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("multiple digests of the same algorithm with different checksums. Algorthim: 'sha1'"))
+					})
+				})
+			})
 		})
 
-		It("should throw an error if the algorithms do not match", func() {
-			expectedDigest := NewMultipleDigest(digest1, digest2)
-			actualDigest := NewDigest(DigestAlgorithmSHA512, "07e1306432667f916639d47481edc4f2ca456454")
+		Context("for a multi digest containing many digest", func() {
+			BeforeEach(func() {
+				sha1DesiredContentDigest, err := DigestAlgorithmSHA1.CreateDigest(strings.NewReader("weak digest content"))
+				Expect(err).ToNot(HaveOccurred())
+				sha256DesiredContentDigest, err := DigestAlgorithmSHA256.CreateDigest(strings.NewReader("weak digest content"))
+				Expect(err).ToNot(HaveOccurred())
+				sha512DesiredContentDigest, err := DigestAlgorithmSHA512.CreateDigest(strings.NewReader("strong desired content"))
+				Expect(err).ToNot(HaveOccurred())
 
-			err := expectedDigest.Verify(actualDigest)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("No digest found that matches sha512"))
-		})
-	})
+				digest = NewMultipleDigest(sha1DesiredContentDigest, sha256DesiredContentDigest, sha512DesiredContentDigest)
+			})
 
-	Describe("Digests", func() {
-		It("should return all the digests", func() {
-			digest1 := NewDigest(DigestAlgorithmSHA512, "07e1306432667f916639d47481edc4f2ca456454")
-			digest2 := NewDigest(DigestAlgorithmSHA512, "07e1306432667f916639d47481edc4f2ca456454")
-			digest3 := NewDigest(DigestAlgorithmSHA512, "07e1306432667f916639d47481edc4f2ca456454")
-			digests := []Digest{digest1, digest2, digest3}
+			It("It favors the strongest digest and does not error", func() {
+				Expect(digest.Verify(strings.NewReader("strong desired content"))).ToNot(HaveOccurred())
+			})
 
-			multiDigest := NewMultipleDigest(digest1, digest2, digest3)
-			Expect(multiDigest.Digests()).To(Equal(digests))
-		})
-
-		It("should return an empty array if there are no digests", func() {
-			multiDigest := NewMultipleDigest()
-			Expect(multiDigest.Digests()).To(BeNil())
+			Context("when the strongest checksum does not match, but a weaker checksum does match", func() {
+				It("errors", func() {
+					Expect(digest.Verify(strings.NewReader("weak digest content"))).To(HaveOccurred())
+				})
+			})
 		})
 	})
 
@@ -77,28 +145,36 @@ var _ = Describe("MultipleDigest", func() {
 		It("should produce valid JSON", func() {
 			jsonString := "sha1:abcdefg;sha256:hijklmn"
 
-			err := expectedDigest.UnmarshalJSON([]byte(jsonString))
+			err := digest.UnmarshalJSON([]byte(jsonString))
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(expectedDigest.Digests()).To(HaveLen(2))
+			Expect(digest.Algorithm()).To(Equal(DigestAlgorithmSHA256))
 		})
 
 		Context("when given string has extra double quotes", func() {
 			It("should unmarshal the string correctly, stripping the quotes", func() {
 				jsonString := `"abcdefg"`
 
-				err := expectedDigest.UnmarshalJSON([]byte(jsonString))
+				err := digest.UnmarshalJSON([]byte(jsonString))
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(expectedDigest.Digests()).To(HaveLen(1))
-				Expect(expectedDigest.Digests()[0].String()).To(Equal("abcdefg"))
+				Expect(digest.Algorithm()).To(Equal(DigestAlgorithmSHA1))
+				Expect(digest.String()).To(Equal("abcdefg"))
 			})
 		})
 
 		It("should throw an error if JSON does not contain a valid algorithm", func() {
 			jsonString := "sha33:abcdefg;sha34:hijklmn"
 
-			err := expectedDigest.UnmarshalJSON([]byte(jsonString))
+			err := digest.UnmarshalJSON([]byte(jsonString))
+
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should throw an error if JSON does not contain any digests", func() {
+			jsonString := ""
+
+			err := digest.UnmarshalJSON([]byte(jsonString))
 
 			Expect(err).To(HaveOccurred())
 		})
