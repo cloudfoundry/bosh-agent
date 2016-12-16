@@ -19,7 +19,6 @@ import (
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"io/ioutil"
 )
 
 type FakeCompileDirProvider struct {
@@ -91,11 +90,7 @@ func init() {
 
 		BeforeEach(func() {
 			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
-			Expect(ioutil.WriteFile("/tmp/compressed-compiled-package", []byte("fake-contents"), os.ModePerm)).ToNot(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			Expect(os.Remove("/tmp/compressed-compiled-package")).ToNot(HaveOccurred())
+			Expect(fs.WriteFileString("/tmp/compressed-compiled-package", "fake-contents")).ToNot(HaveOccurred())
 		})
 
 		Describe("Compile", func() {

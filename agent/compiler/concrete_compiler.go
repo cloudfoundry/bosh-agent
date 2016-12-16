@@ -116,7 +116,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		_ = c.compressor.CleanUp(tmpPackageTar)
 	}()
 
-	file, err := os.Open(tmpPackageTar)
+	file, err := c.fs.OpenFile(tmpPackageTar, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Opening compiled package")
 	}
