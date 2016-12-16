@@ -24,7 +24,7 @@ var _ = Describe("Provider", func() {
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		digestProvider = boshcrypto.NewDigestProvider(fs)
+		digestProvider = boshcrypto.NewDigestProvider()
 		provider = NewProvider(fs, runner, "/var/vcap/config", digestProvider, logger)
 	})
 

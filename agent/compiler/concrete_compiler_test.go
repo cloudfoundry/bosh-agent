@@ -20,6 +20,8 @@ import (
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"io"
+	"io/ioutil"
 )
 
 type FakeCompileDirProvider struct {
@@ -80,8 +82,10 @@ func init() {
 			packageApplier = fakepackages.NewFakeApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
 
-			digestProvider.CreateFromFileStub = func(path string, algorithm boshcrypto.DigestAlgorithm) (boshcrypto.Digest, error) {
-				Expect(path).To(Equal("/tmp/compressed-compiled-package"))
+			digestProvider.CreateFromStreamStub = func(reader io.Reader, algorithm boshcrypto.DigestAlgorithm) (boshcrypto.Digest, error) {
+				_, err := ioutil.ReadAll(reader)
+				Expect(err).ToNot(HaveOccurred())
+
 				return boshcrypto.NewDigest(algorithm, "fake-blob-sha1"), nil
 			}
 
@@ -99,6 +103,11 @@ func init() {
 
 		BeforeEach(func() {
 			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
+			Expect(ioutil.WriteFile("/tmp/compressed-compiled-package", []byte("fake-contents"), os.ModePerm)).ToNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			Expect(os.Remove("/tmp/compressed-compiled-package")).ToNot(HaveOccurred())
 		})
 
 		Describe("Compile", func() {

@@ -74,7 +74,7 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Loading config")
 	}
 
-	app.digestProvider = boshcrypto.NewDigestProvider(app.fs)
+	app.digestProvider = boshcrypto.NewDigestProvider()
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 

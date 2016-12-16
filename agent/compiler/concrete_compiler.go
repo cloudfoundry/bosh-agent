@@ -119,8 +119,13 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		_ = c.compressor.CleanUp(tmpPackageTar)
 	}()
 
+	file, err := os.Open(tmpPackageTar)
+	if err != nil {
+		return "", nil, bosherr.WrapError(err, "Opening compiled package")
+	}
+
 	preferredDigest, _ := boshcrypto.PreferredDigest(pkg.Sha1)
-	digest, err = c.digestProvider.CreateFromFile(tmpPackageTar, preferredDigest.Algorithm())
+	digest, err = c.digestProvider.CreateFromStream(file, preferredDigest.Algorithm())
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Calculating compiled package digest")
 	}

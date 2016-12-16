@@ -5,6 +5,7 @@ import (
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"os"
 )
 
 type digestVerifiableBlobstore struct {
@@ -30,7 +31,12 @@ func (b digestVerifiableBlobstore) Get(blobID string, multiDigest boshcrypto.Mul
 		return "", err
 	}
 
-	actualDigest, err := b.digestProvider.CreateFromFile(fileName, strongestDigest.Algorithm())
+	file, err := os.Open(fileName)
+	if err != nil {
+		return "", err
+	}
+
+	actualDigest, err := b.digestProvider.CreateFromStream(file, strongestDigest.Algorithm())
 	if err != nil {
 		return "", err
 	}

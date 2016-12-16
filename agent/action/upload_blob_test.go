@@ -5,6 +5,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -34,7 +35,17 @@ func init() {
 				It("validates the payload using provided Checksum", func() {
 					_, err := action.Run(UploadBlobSpec{
 						Payload:  "Y2xvdWRmb3VuZHJ5",
-						Checksum: "e578935e2f0613d68ba6a4fcc0d32754b52d334d",
+						Checksum: crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "e578935e2f0613d68ba6a4fcc0d32754b52d334d")),
+						BlobID:   "id",
+					})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("validates the payload using provided sha256 Checksum", func() {
+					//echo -n 'cloudfoundry' | shasum -a 256
+					_, err := action.Run(UploadBlobSpec{
+						Payload:  "Y2xvdWRmb3VuZHJ5",
+						Checksum: crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA256, "2ad453a5a20f9e110c40100c7f8eeb929070dd5abea32d7401ab74779b695e73")),
 						BlobID:   "id",
 					})
 					Expect(err).ToNot(HaveOccurred())
@@ -43,7 +54,7 @@ func init() {
 				It("does not validate the payload when the Checksum is incorrect", func() {
 					_, err := action.Run(UploadBlobSpec{
 						Payload:  "Y2xvdWRmb3VuZHJ5",
-						Checksum: "badChecksum",
+						Checksum: crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "badChecksum")),
 						BlobID:   "id",
 					})
 					Expect(err).To(HaveOccurred())
@@ -54,7 +65,7 @@ func init() {
 			It("should call the blob manager", func() {
 				_, err := action.Run(UploadBlobSpec{
 					Payload:  "Y2xvdWRmb3VuZHJ5",
-					Checksum: "e578935e2f0613d68ba6a4fcc0d32754b52d334d",
+					Checksum: crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "e578935e2f0613d68ba6a4fcc0d32754b52d334d")),
 					BlobID:   "id",
 				})
 				Expect(err).ToNot(HaveOccurred())
@@ -65,7 +76,7 @@ func init() {
 				fakeBlobManager.WriteReturns(errors.New("blob write error"))
 				_, err := action.Run(UploadBlobSpec{
 					Payload:  "Y2xvdWRmb3VuZHJ5",
-					Checksum: "e578935e2f0613d68ba6a4fcc0d32754b52d334d",
+					Checksum: crypto.NewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "e578935e2f0613d68ba6a4fcc0d32754b52d334d")),
 					BlobID:   "id",
 				})
 				Expect(err).To(HaveOccurred())

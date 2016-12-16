@@ -10,7 +10,6 @@ import (
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("checksumVerifiableBlobstore", func() {
@@ -32,7 +31,7 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 		fixtureDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, fixtureSHA1))
 
 		innerBlobstore = &fakeblob.FakeBlobstore{}
-		checksumProvider = boshcrypto.NewDigestProvider(fakesys.NewFakeFileSystem())
+		checksumProvider = boshcrypto.NewDigestProvider()
 		checksumVerifiableBlobstore = boshblob.NewDigestVerifiableBlobstore(innerBlobstore, checksumProvider)
 	})
 

@@ -2,19 +2,18 @@ package action
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-utils/blobstore"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 type UploadBlobSpec struct {
-	BlobID   string `json:"blob_id"`
-	Checksum string `json:"checksum"`
-	Payload  string `json:"payload"`
+	BlobID   string                    `json:"blob_id"`
+	Checksum crypto.MultipleDigestImpl `json:"checksum"`
+	Payload  string                    `json:"payload"`
 }
 
 type UploadBlobAction struct {
@@ -55,16 +54,21 @@ func (a UploadBlobAction) Run(content UploadBlobSpec) (string, error) {
 	return content.BlobID, err
 }
 
-func (a UploadBlobAction) validatePayload(payload []byte, payloadChecksum string) error {
+func (a UploadBlobAction) validatePayload(payload []byte, payloadChecksum crypto.MultipleDigest) error {
+	strongestDigest, err := crypto.PreferredDigest(payloadChecksum)
+	if err != nil {
+		return err
+	}
 
-	h := sha1.New()
-	h.Write(payload)
-	computedShaHex := h.Sum(nil)
+	digestProvider := crypto.NewDigestProvider()
+	actualDigest, err := digestProvider.CreateFromStream(bytes.NewReader(payload), strongestDigest.Algorithm())
+	if err != nil {
+		return err
+	}
 
-	computedHash := hex.EncodeToString(computedShaHex)
-
-	if computedHash != payloadChecksum {
-		return fmt.Errorf("Payload corrupted. Checksum mismatch. Expected '%s' but received '%s'", payloadChecksum, computedHash)
+	err = strongestDigest.Verify(actualDigest)
+	if err != nil {
+		return fmt.Errorf("Payload corrupted. Checksum mismatch. Expected '%s' but received '%s'", strongestDigest.String(), actualDigest.String())
 	}
 
 	return nil

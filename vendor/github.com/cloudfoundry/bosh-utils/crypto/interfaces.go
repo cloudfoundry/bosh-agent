@@ -1,7 +1,9 @@
 package crypto
 
+import "io"
+
 type DigestProvider interface {
-	CreateFromFile(path string, algorithm DigestAlgorithm) (Digest, error)
+	CreateFromStream(reader io.Reader, algorithm DigestAlgorithm) (Digest, error)
 }
 
 type Digest interface {
