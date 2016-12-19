@@ -63,7 +63,7 @@ var _ = Describe("localBlobstore", func() {
 			fs.ReturnTempFile = tempFile
 			defer fs.RemoveAll(tempFile.Name())
 
-			_, err = blobstore.Get("fake-blob-id", crypto.NewMultipleDigest())
+			_, err = blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
 			Expect(err).ToNot(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat(tempFile.Name())
@@ -74,7 +74,7 @@ var _ = Describe("localBlobstore", func() {
 		It("errs when temp file create errs", func() {
 			fs.TempFileError = errors.New("fake-error")
 
-			fileName, err := blobstore.Get("fake-blob-id", crypto.NewMultipleDigest())
+			fileName, err := blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-error"))
 
@@ -90,7 +90,7 @@ var _ = Describe("localBlobstore", func() {
 
 			fs.CopyFileError = errors.New("fake-copy-file-error")
 
-			fileName, err := blobstore.Get("fake-blob-id", crypto.NewMultipleDigest())
+			fileName, err := blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-copy-file-error"))
 
@@ -166,13 +166,13 @@ var _ = Describe("localBlobstore", func() {
 			blobID, err := blobstore.Create("/fake-file.txt")
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = blobstore.Get(blobID, crypto.NewMultipleDigest())
+			_, err = blobstore.Get(blobID, crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
 			Expect(err).ToNot(HaveOccurred())
 
 			err = blobstore.Delete(blobID)
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = blobstore.Get(blobID, crypto.NewMultipleDigest())
+			_, err = blobstore.Get(blobID, crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("doesn't exist"))
 		})

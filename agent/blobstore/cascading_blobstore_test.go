@@ -32,7 +32,7 @@ var _ = Describe("cascadingBlobstore", func() {
 			It("returns the path provided by the blobManager", func() {
 				blobManager.GetPathReturns("/path/to-copy/of-blob", nil)
 
-				filename, err := cascadingBlobstore.Get("blobID", boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-checksum")))
+				filename, err := cascadingBlobstore.Get("blobID", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-checksum"))
 
 				Expect(err).To(BeNil())
 				Expect(filename).To(Equal("/path/to-copy/of-blob"))
@@ -47,7 +47,7 @@ var _ = Describe("cascadingBlobstore", func() {
 		Describe("when blobManager returns an error", func() {
 			It("delegates the action of getting the blob to inner blobstore", func() {
 				blobID := "smurf-4"
-				digest := boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "smurf-4-sha"))
+				digest := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "smurf-4-sha")
 
 				blobManager.GetPathReturns("", errors.New("broken"))
 
@@ -80,7 +80,7 @@ var _ = Describe("cascadingBlobstore", func() {
 					innerBlobstore.GetFileName = "/smurf-file/path"
 					innerBlobstore.GetError = errors.New("inner blobstore GET is broken")
 
-					_, err := cascadingBlobstore.Get(blobID, boshcrypto.NewMultipleDigest(sha1))
+					_, err := cascadingBlobstore.Get(blobID, boshcrypto.MustNewMultipleDigest(sha1))
 
 					Expect(blobManager.GetPathCallCount()).To(Equal(1))
 					Expect(blobManager.GetPathArgsForCall(0)).To(Equal(blobID))

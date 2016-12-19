@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	"github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -71,11 +72,11 @@ var _ = Describe("ConcreteScript", func() {
 			newSpec := exampleSpec()
 
 			s := newSpec.PackageSpecs["foo"]
-			s.Sha1 = "foo_updated_sha1"
+			s.Sha1 = crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo_updated_sha1"))
 			newSpec.PackageSpecs["foo"] = s
 
 			s = newSpec.PackageSpecs["bar"]
-			s.Sha1 = "bar_updated_sha1"
+			s.Sha1 = crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "bar_updated_sha1"))
 			newSpec.PackageSpecs["bar"] = s
 
 			params = NewUpdateParams(oldSpec, newSpec)
@@ -251,11 +252,11 @@ var _ = Describe("ConcreteScript", func() {
 			newSpec := exampleSpec()
 
 			s := newSpec.PackageSpecs["foo"]
-			s.Sha1 = "foo_updated_sha1"
+			s.Sha1 = crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo_updated_sha1"))
 			newSpec.PackageSpecs["foo"] = s
 
 			s = newSpec.PackageSpecs["bar"]
-			s.Sha1 = "bar_updated_sha1"
+			s.Sha1 = crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "bar_updated_sha1"))
 			newSpec.PackageSpecs["bar"] = s
 
 			params = NewUpdateParams(oldSpec, newSpec)
@@ -327,13 +328,13 @@ var _ = Describe("ConcreteScript", func() {
 				Release:     "fakerelease",
 				Template:    "jobtemplate",
 				Version:     "jobtemplate_version",
-				Sha1:        "jobtemplate_sha1",
+				Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "jobtemplate_sha1")),
 				BlobstoreID: "jobtemplate_blobid",
 				JobTemplateSpecs: []applyspec.JobTemplateSpec{
 					applyspec.JobTemplateSpec{
 						Name:        "jobtemplate",
 						Version:     "jobtemplate_version",
-						Sha1:        "jobtemplate_sha1",
+						Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "jobtemplate_sha1")),
 						BlobstoreID: "jobtemplate_blobid",
 					},
 				},
@@ -342,13 +343,13 @@ var _ = Describe("ConcreteScript", func() {
 				"foo": applyspec.PackageSpec{
 					Name:        "foo",
 					Version:     "foo_version",
-					Sha1:        "foo_sha1",
+					Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo_sha1")),
 					BlobstoreID: "foo_blobid",
 				},
 				"bar": applyspec.PackageSpec{
 					Name:        "bar",
 					Version:     "bar_version",
-					Sha1:        "bar_sha1",
+					Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "bar_sha1")),
 					BlobstoreID: "bar_blobid",
 				},
 			},

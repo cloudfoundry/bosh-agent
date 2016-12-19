@@ -15,20 +15,20 @@ import (
 
 func getCompileActionArguments() (blobID string, multiDigest boshcrypto.MultipleDigest, name, version string, deps boshcomp.Dependencies) {
 	blobID = "fake-blobstore-id"
-	multiDigest = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-sha1"))
+	multiDigest = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-sha1"))
 	name = "fake-package-name"
 	version = "fake-package-version"
 	deps = boshcomp.Dependencies{
 		"first_dep": boshcomp.Package{
 			BlobstoreID: "first_dep_blobstore_id",
 			Name:        "first_dep",
-			Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
+			Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1"),
 			Version:     "first_dep_version",
 		},
 		"sec_dep": boshcomp.Package{
 			BlobstoreID: "sec_dep_blobstore_id",
 			Name:        "sec_dep",
-			Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
+			Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"),
 			Version:     "sec_dep_version",
 		},
 	}
@@ -60,7 +60,7 @@ var _ = Describe("CompilePackageAction", func() {
 
 			expectedPkg := boshcomp.Package{
 				BlobstoreID: "fake-blobstore-id",
-				Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-sha1")),
+				Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-sha1")),
 				Name:        "fake-package-name",
 				Version:     "fake-package-version",
 			}
@@ -77,7 +77,7 @@ var _ = Describe("CompilePackageAction", func() {
 					Name:    "first_dep",
 					Version: "first_dep_version",
 					Source: boshmodels.Source{
-						Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
+						Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1"),
 						BlobstoreID: "first_dep_blobstore_id",
 					},
 				},
@@ -85,7 +85,7 @@ var _ = Describe("CompilePackageAction", func() {
 					Name:    "sec_dep",
 					Version: "sec_dep_version",
 					Source: boshmodels.Source{
-						Sha1:        boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
+						Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"),
 						BlobstoreID: "sec_dep_blobstore_id",
 					},
 				},

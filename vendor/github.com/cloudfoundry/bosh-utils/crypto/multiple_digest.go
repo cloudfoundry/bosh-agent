@@ -12,8 +12,10 @@ type MultipleDigest struct {
 	digests []Digest
 }
 
-func NewMultipleDigest(digests ...Digest) MultipleDigest {
-
+func MustNewMultipleDigest(digests ...Digest) MultipleDigest {
+	if len(digests) == 0 {
+		panic("no digests have been provided")
+	}
 	return MultipleDigest{digests}
 }
 
@@ -73,6 +75,9 @@ func (m MultipleDigest) validate() error {
 }
 
 func (m MultipleDigest) strongestDigest() (Digest) {
+	if len(m.digests) == 0 {
+		panic("no digests have been provided")
+	}
 	sort.Sort(ByStrongest{m.digests})
 
 	return m.digests[len(m.digests) - 1]

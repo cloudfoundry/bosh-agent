@@ -6,6 +6,7 @@ import (
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("NewShutdownParams", func() {
@@ -74,26 +75,26 @@ var _ = Describe("NewUpdateParams", func() {
 			oldPkgs := map[string]boshas.PackageSpec{
 				"foo": boshas.PackageSpec{
 					Name: "foo",
-					Sha1: "foo-sha1-old",
+					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-old")),
 				},
 				"bar": boshas.PackageSpec{
 					Name: "bar",
-					Sha1: "bar-sha1",
+					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "bar-sha1")),
 				},
 			}
 
 			newPkgs := map[string]boshas.PackageSpec{
 				"foo": boshas.PackageSpec{
 					Name: "foo",
-					Sha1: "foo-sha1-new",
+					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-new")),
 				},
 				"bar": boshas.PackageSpec{
 					Name: "bar",
-					Sha1: "bar-sha1",
+					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "bar-sha1")),
 				},
 				"baz": boshas.PackageSpec{
 					Name: "baz",
-					Sha1: "baz-sha1",
+					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "baz-sha1")),
 				},
 			}
 

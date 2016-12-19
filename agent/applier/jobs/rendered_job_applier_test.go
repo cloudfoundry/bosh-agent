@@ -39,7 +39,7 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 		Name:    "fake-job-name" + uuid,
 		Version: "fake-job-version",
 		Source: models.Source{
-			Sha1:          boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")),
+			Sha1:          boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"),
 			BlobstoreID:   "fake-blobstore-id",
 			PathInArchive: "fake-path-in-archive",
 		},
@@ -48,7 +48,7 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 				Name:    "fake-package1-name" + uuid,
 				Version: "fake-package1-version",
 				Source: models.Source{
-					Sha1:          boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
+					Sha1:          boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-package1-sha1"),
 					BlobstoreID:   "fake-package1-blobstore-id",
 					PathInArchive: "",
 				},
@@ -57,7 +57,7 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 				Name:    "fake-package2-name" + uuid,
 				Version: "fake-package2-version",
 				Source: models.Source{
-					Sha1:          boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-package2-sha1")),
+					Sha1:          boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-package2-sha1"),
 					BlobstoreID:   "fake-package2-blobstore-id",
 					PathInArchive: "",
 				},
@@ -130,7 +130,7 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")))
 
 					// downloaded file is cleaned up
 					Expect(blobstore.CleanUpFileName).To(Equal("/fake-blobstore-file-name"))
@@ -176,17 +176,17 @@ func init() {
 
 				It("can process sha1 checksums in the new format", func() {
 					blobstore.GetFileName = "/fake-blobstore-file-name"
-					job.Source.Sha1 = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))
+					job.Source.Sha1 = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1")
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
+					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1")))
 				})
 
 				It("can process sha2 checksums", func() {
 					blobstore.GetFileName = "/fake-blobstore-file-name"
-					job.Source.Sha1 = boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))
+					job.Source.Sha1 = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256")
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())

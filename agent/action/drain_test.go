@@ -16,6 +16,7 @@ import (
 	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -70,28 +71,38 @@ var _ = Describe("DrainAction", func() {
 
 		addJobTemplate := func(spec *applyspec.JobSpec, name string) {
 			spec.Template = name
-			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, applyspec.JobTemplateSpec{Name: name})
+			spec.Sha1 = crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "abc"))
+			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, applyspec.JobTemplateSpec{Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "abc")), Name: name})
 		}
 
 		Context("when drain update is requested", func() {
-			newSpec := boshas.V1ApplySpec{
-				PackageSpecs: map[string]boshas.PackageSpec{
-					"foo": boshas.PackageSpec{
-						Name: "foo",
-						Sha1: "foo-sha1-new",
-					},
-				},
-			}
+			var newSpec boshas.V1ApplySpec
 
-			act := func() (int, error) { return action.Run(DrainTypeUpdate, newSpec) }
+			BeforeEach(func() {
+				newSpec = boshas.V1ApplySpec{
+					PackageSpecs: map[string]boshas.PackageSpec{
+						"foo": boshas.PackageSpec{
+							Name: "foo",
+							Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-new")),
+						},
+					},
+				}
+				addJobTemplate(&newSpec.JobSpec, "foo")
+			})
+
+			act := func() (int, error) {
+				return action.Run(DrainTypeUpdate, newSpec)
+			}
 
 			Context("when current agent has a job spec template", func() {
 				var currentSpec boshas.V1ApplySpec
 
 				BeforeEach(func() {
 					currentSpec = boshas.V1ApplySpec{}
+
 					addJobTemplate(&currentSpec.JobSpec, "foo")
 					addJobTemplate(&currentSpec.JobSpec, "bar")
+
 					specService.Spec = currentSpec
 				})
 
@@ -333,7 +344,7 @@ var _ = Describe("DrainAction", func() {
 				PackageSpecs: map[string]boshas.PackageSpec{
 					"foo": boshas.PackageSpec{
 						Name: "foo",
-						Sha1: "foo-sha1-new",
+						Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-new")),
 					},
 				},
 			}

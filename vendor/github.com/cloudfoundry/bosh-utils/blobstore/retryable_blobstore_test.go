@@ -31,13 +31,13 @@ var _ = Describe("retryableBlobstore", func() {
 			It("returns path without an error", func() {
 				innerBlobstore.GetFileName = "fake-path"
 
-				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint")))
+				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(path).To(Equal("fake-path"))
 
 				Expect(innerBlobstore.GetBlobIDs).To(Equal([]string{"fake-blob-id"}))
 				Expect(innerBlobstore.GetFingerprints).To(HaveLen(1))
-				Expect(innerBlobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"))))
+				Expect(innerBlobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint")))
 			})
 		})
 
@@ -50,7 +50,7 @@ var _ = Describe("retryableBlobstore", func() {
 					nil,
 				}
 
-				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint")))
+				path, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(path).To(Equal("fake-last-path"))
 
@@ -60,15 +60,9 @@ var _ = Describe("retryableBlobstore", func() {
 
 				Expect(innerBlobstore.GetFingerprints).To(HaveLen(3))
 				Expect(innerBlobstore.GetFingerprints).To(ConsistOf(
-					boshcrypto.NewMultipleDigest(
-						boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
-					),
-					boshcrypto.NewMultipleDigest(
-						boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
-					),
-					boshcrypto.NewMultipleDigest(
-						boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
-					),
+					boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
+					boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
+					boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
 				))
 			})
 		})
@@ -82,7 +76,7 @@ var _ = Describe("retryableBlobstore", func() {
 					errors.New("fake-last-get-err"),
 				}
 
-				_, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint")))
+				_, err := retryableBlobstore.Get("fake-blob-id", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-last-get-err"))
 
@@ -92,15 +86,9 @@ var _ = Describe("retryableBlobstore", func() {
 
 				Expect(innerBlobstore.GetFingerprints).To(HaveLen(3))
 				Expect(innerBlobstore.GetFingerprints).To(ConsistOf(
-					boshcrypto.NewMultipleDigest(
-						boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
-					),
-					boshcrypto.NewMultipleDigest(
-						boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
-					),
-					boshcrypto.NewMultipleDigest(
-						boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
-					),
+					boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
+					boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
+					boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fingerprint"),
 				))
 			})
 		})
