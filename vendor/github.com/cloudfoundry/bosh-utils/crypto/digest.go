@@ -1,47 +1,15 @@
 package crypto
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
-
-type DigestAlgorithm string
 
 type digestImpl struct {
 	algorithm Algorithm
 	digest    string
-}
-
-
-func (c digestImpl) Algorithm() Algorithm {
-	return c.algorithm
-}
-
-func (c digestImpl) String() string {
-	if c.algorithm == DigestAlgorithmSHA1 {
-		return c.digest
-	}
-
-	return fmt.Sprintf("%s:%s", c.algorithm, c.digest)
-}
-
-func (c digestImpl) Verify(reader io.Reader) error {
-	otherDigest, err := c.Algorithm().CreateDigest(reader)
-	if err != nil {
-		return err
-	}
-
-	if otherDigest, ok := otherDigest.(digestImpl); ok {
-		if c.digest != otherDigest.digest {
-			return errors.New(fmt.Sprintf(`Expected %s digest "%s" but received "%s"`, c.algorithm, c.digest, otherDigest.String()))
-		}
-	} else {
-		return errors.New(fmt.Sprintf(`Unknown digest to verify against %v`, otherDigest.String()))
-	}
-
-	return nil
 }
 
 func NewDigest(algorithm Algorithm, digest string) digestImpl {
@@ -49,4 +17,27 @@ func NewDigest(algorithm Algorithm, digest string) digestImpl {
 		algorithm: algorithm,
 		digest:    digest,
 	}
+}
+
+func (c digestImpl) Algorithm() Algorithm { return c.algorithm }
+
+func (c digestImpl) String() string {
+	if c.algorithm.Name() == DigestAlgorithmSHA1.Name() {
+		return c.digest
+	}
+
+	return fmt.Sprintf("%s:%s", c.algorithm.Name(), c.digest)
+}
+
+func (c digestImpl) Verify(reader io.Reader) error {
+	computedDigest, err := c.Algorithm().CreateDigest(reader)
+	if err != nil {
+		return bosherr.WrapError(err, "Computing digest from stream")
+	}
+
+	if c.String() != computedDigest.String() {
+		return bosherr.Errorf("Expected stream to have digest '%s' but was '%s'", c.String(), computedDigest.String())
+	}
+
+	return nil
 }

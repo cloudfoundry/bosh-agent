@@ -66,10 +66,12 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 	}
 
 	compilePath := path.Join(c.compileDirProvider.CompileDir(), pkg.Name)
+
 	err = c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
 		return "", nil, bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
 	}
+
 	defer c.fs.RemoveAll(compilePath)
 
 	defer func() {
@@ -79,7 +81,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		}
 	}()
 
-	compiledPkg := boshmodels.Package{
+	compiledPkg := boshmodels.LocalPackage{
 		Name:    pkg.Name,
 		Version: pkg.Version,
 	}

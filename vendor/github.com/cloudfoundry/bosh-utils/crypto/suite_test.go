@@ -7,8 +7,7 @@ import (
 	"testing"
 )
 
-func TestDigest(t *testing.T) {
+func TestReg(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Crypto Suite")
+	RunSpecs(t, "crypto")
 }
-

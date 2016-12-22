@@ -2,84 +2,57 @@ package crypto
 
 import (
 	"io"
+	"hash"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"fmt"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
-func NewAlgorithm(algorithm string) (Algorithm, error) {
-	switch algorithm {
-	case "sha1":
-		return DigestAlgorithmSHA1, nil
-	case "sha256":
-		return DigestAlgorithmSHA256, nil
-	case "sha512":
-		return DigestAlgorithmSHA512, nil
+var (
+	DigestAlgorithmSHA1 Algorithm = algorithmSHAImpl{"sha1"}
+	DigestAlgorithmSHA256 Algorithm = algorithmSHAImpl{"sha256"}
+	DigestAlgorithmSHA512 Algorithm = algorithmSHAImpl{"sha512"}
+)
+
+type algorithmSHAImpl struct {
+	name string
+}
+
+func (a algorithmSHAImpl) Name() string { return a.name }
+
+func (a algorithmSHAImpl) CreateDigest(reader io.Reader) (Digest, error) {
+	hash := a.hashFunc()
+
+	_, err := io.Copy(hash, reader)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Copying file for digest calculation")
 	}
-	return nil, bosherr.Errorf("Unknown algorithim '%s'", algorithm)
+
+	return NewDigest(a, fmt.Sprintf("%x", hash.Sum(nil))), nil
 }
 
-type algorithmSHA512 struct {
-	Name string
-}
-
-func (a algorithmSHA512)  String() string {
-	return a.Name
-}
-
-func (a algorithmSHA512)  Compare(other Algorithm) int {
-	if _, ok := other.(algorithmSHA512); ok {
-		return 0
+func (a algorithmSHAImpl) hashFunc() hash.Hash {
+	switch a.name {
+	case "sha1": return sha1.New()
+	case "sha256": return sha256.New()
+	case "sha512": return sha512.New()
+	default: panic("Internal inconsistency")
 	}
-	return 1
 }
 
-func (a algorithmSHA512)  CreateDigest(reader io.Reader) (Digest, error) {
-	return digestProviderImpl{}.CreateFromStream(reader, DigestAlgorithm(a.Name))
+type unknownAlgorithmImpl struct {
+	name string
 }
 
-type algorithmSHA256 struct {
-	Name string
+func NewUnknownAlgorithm(name string) unknownAlgorithmImpl {
+	return unknownAlgorithmImpl{name: name}
 }
 
-func (a algorithmSHA256)  CreateDigest(reader io.Reader) (Digest, error) {
-	return digestProviderImpl{}.CreateFromStream(reader, DigestAlgorithm(a.Name))
+func (c unknownAlgorithmImpl) Name() string { return c.name }
 
-}
-
-func (a algorithmSHA256)  String() string {
-	return a.Name
-}
-
-func (a algorithmSHA256)  Compare(other Algorithm) int {
-	if _, ok := other.(algorithmSHA1); ok {
-		return 1
-	} else if _, ok = other.(algorithmSHA512); ok {
-		return -1
-	} else if _, ok = other.(algorithmSHA256); ok {
-		return 0
-	}
-	return 1
-}
-
-type algorithmSHA1 struct {
-	Name string
-}
-
-func (a algorithmSHA1)  CreateDigest(reader io.Reader) (Digest, error) {
-	return digestProviderImpl{}.CreateFromStream(reader, DigestAlgorithm(a.Name))
-
-}
-
-func (a algorithmSHA1)  String() string {
-	return a.Name
-}
-
-func (a algorithmSHA1)  Compare(other Algorithm) int {
-	if _, ok := other.(algorithmSHA1); ok {
-		return 0
-	} else if _, ok = other.(algorithmSHA512); ok {
-		return -1
-	} else if _, ok = other.(algorithmSHA256); ok {
-		return -1
-	}
-	return 1
+func (c unknownAlgorithmImpl) CreateDigest(reader io.Reader) (Digest, error) {
+	return nil, bosherr.Errorf("Unable to create digest of unkown algorithm '%s'", c.name)
 }

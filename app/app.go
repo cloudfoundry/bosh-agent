@@ -31,7 +31,6 @@ import (
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -46,13 +45,12 @@ type App interface {
 }
 
 type app struct {
-	logger         boshlog.Logger
-	agent          boshagent.Agent
-	platform       boshplatform.Platform
-	fs             boshsys.FileSystem
-	digestProvider boshcrypto.DigestProvider
-	logTag         string
-	dirProvider    boshdirs.Provider
+	logger      boshlog.Logger
+	agent       boshagent.Agent
+	platform    boshplatform.Platform
+	fs          boshsys.FileSystem
+	logTag      string
+	dirProvider boshdirs.Provider
 }
 
 func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
@@ -74,7 +72,6 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Loading config")
 	}
 
-	app.digestProvider = boshcrypto.NewDigestProvider()
 	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
@@ -327,7 +324,6 @@ func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobMan
 		app.platform.GetFs(),
 		app.platform.GetRunner(),
 		app.dirProvider.EtcDir(),
-		app.digestProvider,
 		app.logger,
 	)
 

@@ -1,6 +1,7 @@
 package action_test
 
 import (
+	"encoding/json"
 	"errors"
 
 	. "github.com/onsi/ginkgo"
@@ -22,13 +23,13 @@ func getCompileActionArguments() (blobID string, multiDigest boshcrypto.Multiple
 		"first_dep": boshcomp.Package{
 			BlobstoreID: "first_dep_blobstore_id",
 			Name:        "first_dep",
-			Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1"),
+			Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
 			Version:     "first_dep_version",
 		},
 		"sec_dep": boshcomp.Package{
 			BlobstoreID: "sec_dep_blobstore_id",
 			Name:        "sec_dep",
-			Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"),
+			Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
 			Version:     "sec_dep_version",
 		},
 	}
@@ -54,6 +55,25 @@ var _ = Describe("CompilePackageAction", func() {
 	AssertActionIsNotResumable(action)
 
 	Describe("Run", func() {
+		It("can unmarshal deps arguments", func() {
+			depsJSON := `{"foo": {
+      								"name":"foo",
+      								"version":"0ee95716c58cf7aab3ef7301ff907118552c2dda.1",
+      								"sha1":"9c7b167258b49ffa91c1689670bba9460808ad40",
+      								"blobstore_id":"06f48a15-d739-4cca-4af1-ed95b5c791de"
+      								}}`
+
+			var deps boshcomp.Dependencies
+			err := json.Unmarshal([]byte(depsJSON), &deps)
+			Expect(err).ToNot(HaveOccurred())
+
+			fooDep := deps["foo"]
+			Expect(fooDep.Name).To(Equal("foo"))
+			Expect(fooDep.Sha1.String()).To(Equal("9c7b167258b49ffa91c1689670bba9460808ad40"))
+			Expect(fooDep.BlobstoreID).To(Equal("06f48a15-d739-4cca-4af1-ed95b5c791de"))
+			Expect(fooDep.Version).To(Equal("0ee95716c58cf7aab3ef7301ff907118552c2dda.1"))
+		})
+
 		It("compile package compiles the package and returns blob id", func() {
 			compiler.CompileBlobID = "my-blob-id"
 			compiler.CompileDigest = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "some checksum")
@@ -77,7 +97,7 @@ var _ = Describe("CompilePackageAction", func() {
 					Name:    "first_dep",
 					Version: "first_dep_version",
 					Source: boshmodels.Source{
-						Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1"),
+						Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
 						BlobstoreID: "first_dep_blobstore_id",
 					},
 				},
@@ -85,7 +105,7 @@ var _ = Describe("CompilePackageAction", func() {
 					Name:    "sec_dep",
 					Version: "sec_dep_version",
 					Source: boshmodels.Source{
-						Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"),
+						Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
 						BlobstoreID: "sec_dep_blobstore_id",
 					},
 				},

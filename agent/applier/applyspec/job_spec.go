@@ -2,17 +2,14 @@ package applyspec
 
 import (
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 type JobSpec struct {
-	Name             *string               `json:"name"`
-	Release          string                `json:"release"`
-	Template         string                `json:"template"`
-	Version          string                `json:"version"`
-	Sha1             crypto.MultipleDigest `json:"sha1"`
-	BlobstoreID      string                `json:"blobstore_id"`
-	JobTemplateSpecs []JobTemplateSpec     `json:"templates"`
+	Name             *string           `json:"name"`
+	Release          string            `json:"release"`
+	Template         string            `json:"template"`
+	Version          string            `json:"version"`
+	JobTemplateSpecs []JobTemplateSpec `json:"templates"`
 }
 
 func (s *JobSpec) JobTemplateSpecsAsJobs() []models.Job {

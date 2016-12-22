@@ -71,8 +71,7 @@ var _ = Describe("DrainAction", func() {
 
 		addJobTemplate := func(spec *applyspec.JobSpec, name string) {
 			spec.Template = name
-			spec.Sha1 = crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "abc"))
-			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, applyspec.JobTemplateSpec{Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "abc")), Name: name})
+			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, applyspec.JobTemplateSpec{Sha1: crypto.MustParseMultipleDigest("sha1:abc"), Name: name})
 		}
 
 		Context("when drain update is requested", func() {
@@ -81,13 +80,13 @@ var _ = Describe("DrainAction", func() {
 			BeforeEach(func() {
 				newSpec = boshas.V1ApplySpec{
 					PackageSpecs: map[string]boshas.PackageSpec{
-						"foo": boshas.PackageSpec{
+						"foo": {
 							Name: "foo",
-							Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-new")),
+							Sha1: crypto.MustParseMultipleDigest("sha1:foo-sha1-new"),
 						},
 					},
+					RenderedTemplatesArchiveSpec: &boshas.RenderedTemplatesArchiveSpec{},
 				}
-				addJobTemplate(&newSpec.JobSpec, "foo")
 			})
 
 			act := func() (int, error) {
@@ -98,7 +97,9 @@ var _ = Describe("DrainAction", func() {
 				var currentSpec boshas.V1ApplySpec
 
 				BeforeEach(func() {
-					currentSpec = boshas.V1ApplySpec{}
+					currentSpec = boshas.V1ApplySpec{
+						RenderedTemplatesArchiveSpec: &applyspec.RenderedTemplatesArchiveSpec{},
+					}
 
 					addJobTemplate(&currentSpec.JobSpec, "foo")
 					addJobTemplate(&currentSpec.JobSpec, "bar")
@@ -211,7 +212,9 @@ var _ = Describe("DrainAction", func() {
 				)
 
 				BeforeEach(func() {
-					currentSpec = boshas.V1ApplySpec{}
+					currentSpec = boshas.V1ApplySpec{
+						RenderedTemplatesArchiveSpec: &applyspec.RenderedTemplatesArchiveSpec{}, // todo
+					}
 					addJobTemplate(&currentSpec.JobSpec, "foo")
 					addJobTemplate(&currentSpec.JobSpec, "bar")
 					specService.Spec = currentSpec
@@ -342,9 +345,9 @@ var _ = Describe("DrainAction", func() {
 			parallelScript *fakescript.FakeCancellableScript
 			newSpec        = boshas.V1ApplySpec{
 				PackageSpecs: map[string]boshas.PackageSpec{
-					"foo": boshas.PackageSpec{
+					"foo": {
 						Name: "foo",
-						Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-new")),
+						Sha1: crypto.MustParseMultipleDigest("sha1:foo-sha1-new"),
 					},
 				},
 			}

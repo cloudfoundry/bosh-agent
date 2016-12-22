@@ -74,29 +74,8 @@ var _ = Describe("V1ApplySpec", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			jobName := "router"
-
-			expectedNetworks := map[string]NetworkSpec{
-				"manual-net": NetworkSpec{
-					Fields: map[string]interface{}{
-						"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
-						"default":          []interface{}{"dns", "gateway"},
-						"dns":              []interface{}{"xx.xx.xx.xx"},
-						"dns_record_name":  "job-index.job-name.manual-net.deployment-name.bosh",
-						"gateway":          "xx.xx.xx.xx",
-						"ip":               "xx.xx.xx.xx",
-						"netmask":          "xx.xx.xx.xx",
-					},
-				},
-				"vip-net": NetworkSpec{
-					Fields: map[string]interface{}{
-						"cloud_properties": map[string]interface{}{"security_groups": []interface{}{"bosh"}},
-						"dns_record_name":  "job-index.job-name.vip-net.deployment-name.bosh",
-						"ip":               "xx.xx.xx.xx",
-						"type":             "vip",
-					},
-				},
-			}
 			expectedIndex := 4
+
 			expectedSpec := V1ApplySpec{
 				Index:  &expectedIndex,
 				NodeID: "node-id",
@@ -104,28 +83,89 @@ var _ = Describe("V1ApplySpec", func() {
 					LoggingSpec: LoggingSpec{MaxLogFileSize: "10M"},
 				},
 				JobSpec: JobSpec{
-					Name:        &jobName,
-					Template:    "router template",
-					Version:     "1.0",
-					Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "routersha1"), crypto.NewDigest(crypto.DigestAlgorithmSHA256, "routersha256")),
-					BlobstoreID: "router-blob-id-1",
+					Name:     &jobName,
+					Template: "router template",
+					Version:  "1.0",
 					JobTemplateSpecs: []JobTemplateSpec{
-						{Name: "template 1", Version: "0.1", Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "template1sha1"), crypto.NewDigest(crypto.DigestAlgorithmSHA256, "template1sha256")), BlobstoreID: "template-blob-id-1"},
-						{Name: "template 2", Version: "0.2", Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "template2sha1"), crypto.NewDigest(crypto.DigestAlgorithmSHA256, "template2sha256")), BlobstoreID: "template-blob-id-2"},
+						{Name: "template 1", Version: "0.1", Sha1: crypto.MustParseMultipleDigest("sha1:template1sha1;sha256:template1sha256"), BlobstoreID: "template-blob-id-1"},
+						{Name: "template 2", Version: "0.2", Sha1: crypto.MustParseMultipleDigest("sha1:template2sha1;sha256:template2sha256"), BlobstoreID: "template-blob-id-2"},
 					},
 				},
 				PackageSpecs: map[string]PackageSpec{
-					"package 1": {Name: "package 1", Version: "0.1", Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "package1sha1"), crypto.NewDigest(crypto.DigestAlgorithmSHA256, "package1sha256")), BlobstoreID: "package-blob-id-1"},
-					"package 2": {Name: "package 2", Version: "0.2", Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "package2sha1"), crypto.NewDigest(crypto.DigestAlgorithmSHA256, "package2sha256")), BlobstoreID: "package-blob-id-2"},
+					"package 1": {Name: "package 1", Version: "0.1", Sha1: crypto.MustParseMultipleDigest("sha1:package1sha1;sha256:package1sha256"), BlobstoreID: "package-blob-id-1"},
+					"package 2": {Name: "package 2", Version: "0.2", Sha1: crypto.MustParseMultipleDigest("sha1:package2sha1;sha256:package2sha256"), BlobstoreID: "package-blob-id-2"},
 				},
-				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
-					Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "archivesha1"), crypto.NewDigest(crypto.DigestAlgorithmSHA256, "archivesha256")),
+				RenderedTemplatesArchiveSpec: &RenderedTemplatesArchiveSpec{
+					Sha1:        crypto.MustParseMultipleDigest("sha1:archivesha1;sha256:archivesha256"),
 					BlobstoreID: "archive-blob-id-1",
 				},
-				NetworkSpecs: expectedNetworks,
+				NetworkSpecs: map[string]NetworkSpec{
+					"manual-net": {
+						Fields: map[string]interface{}{
+							"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
+							"default":          []interface{}{"dns", "gateway"},
+							"dns":              []interface{}{"xx.xx.xx.xx"},
+							"dns_record_name":  "job-index.job-name.manual-net.deployment-name.bosh",
+							"gateway":          "xx.xx.xx.xx",
+							"ip":               "xx.xx.xx.xx",
+							"netmask":          "xx.xx.xx.xx",
+						},
+					},
+					"vip-net": {
+						Fields: map[string]interface{}{
+							"cloud_properties": map[string]interface{}{"security_groups": []interface{}{"bosh"}},
+							"dns_record_name":  "job-index.job-name.vip-net.deployment-name.bosh",
+							"ip":               "xx.xx.xx.xx",
+							"type":             "vip",
+						},
+					},
+				},
 			}
 
 			Expect(spec).To(Equal(expectedSpec))
+
+			specBytes, err := json.Marshal(spec)
+			Expect(err).ToNot(HaveOccurred())
+
+			reloadedSpec := V1ApplySpec{}
+			err = json.Unmarshal([]byte(specBytes), &reloadedSpec)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(reloadedSpec).To(Equal(spec))
+		})
+
+		It("marshals partial apply specs, like compilation apply specs", func() {
+			specJSON := `{
+				"deployment": "simple",
+				"job": {
+					"name": "compilation-160f4005"
+				},
+				"index": 0,
+				"id": "ef7a1af2",
+				"networks": {
+					"a": {
+						"ip": "192.168.1.5",
+						"netmask": "255.255.255.0",
+						"cloud_properties": {},
+						"default": [
+							"dns",
+							"gateway"
+						],
+						"dns": [
+							"192.168.1.1",
+							"192.168.1.2"
+						],
+						"gateway": "192.168.1.1"
+					}
+				}
+			}`
+
+			spec := V1ApplySpec{}
+			err := json.Unmarshal([]byte(specJSON), &spec)
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = json.Marshal(spec)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -135,21 +175,19 @@ var _ = Describe("V1ApplySpec", func() {
 
 			spec := V1ApplySpec{
 				JobSpec: JobSpec{
-					Name:        &jobName,
-					Version:     "fake-job-legacy-version",
-					Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-job-legacy-sha1")),
-					BlobstoreID: "fake-job-legacy-blobstore-id",
+					Name:    &jobName,
+					Version: "fake-job-legacy-version",
 					JobTemplateSpecs: []JobTemplateSpec{
 						{
 							Name:        "fake-job1-name",
 							Version:     "fake-job1-version",
-							Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-job1-sha1")),
+							Sha1:        crypto.MustParseMultipleDigest("sha1:fake-job1-sha1"),
 							BlobstoreID: "fake-job1-blobstore-id",
 						},
 						{
 							Name:        "fake-job2-name",
 							Version:     "fake-job2-version",
-							Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-job2-sha1")),
+							Sha1:        crypto.MustParseMultipleDigest("sha1:fake-job2-sha1"),
 							BlobstoreID: "fake-job2-blobstore-id",
 						},
 					},
@@ -158,18 +196,18 @@ var _ = Describe("V1ApplySpec", func() {
 					"fake-package1": {
 						Name:        "fake-package1-name",
 						Version:     "fake-package1-version",
-						Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
 						BlobstoreID: "fake-package1-blob-id",
 					},
 					"fake-package2": {
 						Name:        "fake-package2-name",
 						Version:     "fake-package2-version",
-						Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package2-sha1")),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package2-sha1"),
 						BlobstoreID: "fake-package2-blob-id",
 					},
 				},
-				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
-					Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-rendered-templates-archive-sha1")),
+				RenderedTemplatesArchiveSpec: &RenderedTemplatesArchiveSpec{
+					Sha1:        crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1"),
 					BlobstoreID: "fake-rendered-templates-archive-blobstore-id",
 				},
 			}
@@ -179,7 +217,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:          crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
 						BlobstoreID:   "fake-package1-blob-id",
 						PathInArchive: "",
 					},
@@ -188,7 +226,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package2-name",
 					Version: "fake-package2-version",
 					Source: models.Source{
-						Sha1:          crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package2-sha1")),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-package2-sha1"),
 						BlobstoreID:   "fake-package2-blob-id",
 						PathInArchive: "",
 					},
@@ -206,7 +244,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-job1-name",
 					Version: "fake-job1-version",
 					Source: models.Source{
-						Sha1:          crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-rendered-templates-archive-sha1")),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1"),
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job1-name",
 					},
@@ -216,7 +254,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-job2-name",
 					Version: "fake-job2-version",
 					Source: models.Source{
-						Sha1:          crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-rendered-templates-archive-sha1")),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1"),
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job2-name",
 					},
@@ -238,7 +276,7 @@ var _ = Describe("V1ApplySpec", func() {
 					"fake-package1-name-key": {
 						Name:        "fake-package1-name",
 						Version:     "fake-package1-version",
-						Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
 						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},
@@ -249,7 +287,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:        crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-package1-sha1")),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
 						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},

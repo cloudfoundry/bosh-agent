@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path"
 
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-utils/system"
@@ -21,7 +20,6 @@ type Provider struct {
 	runner         system.CmdRunner
 	configDir      string
 	uuidGen        boshuuid.Generator
-	digestProvider boshcrypto.DigestProvider
 	logger         boshlog.Logger
 }
 
@@ -29,7 +27,6 @@ func NewProvider(
 	fs system.FileSystem,
 	runner system.CmdRunner,
 	configDir string,
-	digestProvider boshcrypto.DigestProvider,
 	logger boshlog.Logger,
 ) Provider {
 	return Provider{
@@ -37,14 +34,12 @@ func NewProvider(
 		fs:             fs,
 		runner:         runner,
 		configDir:      configDir,
-		digestProvider: digestProvider,
 		logger:         logger,
 	}
 }
 
-func (p Provider) Get(storeType string, options map[string]interface{}) (blobstore Blobstore, err error) {
-	configName := fmt.Sprintf("blobstore-%s.json", storeType)
-	externalConfigFile := path.Join(p.configDir, configName)
+func (p Provider) Get(storeType string, options map[string]interface{}) (Blobstore, error) {
+	var blobstore Blobstore
 
 	switch storeType {
 	case BlobstoreTypeDummy:
@@ -64,17 +59,16 @@ func (p Provider) Get(storeType string, options map[string]interface{}) (blobsto
 			p.fs,
 			p.runner,
 			p.uuidGen,
-			externalConfigFile,
+			path.Join(p.configDir, fmt.Sprintf("blobstore-%s.json", storeType)),
 		)
 	}
 
-	blobstore = NewDigestVerifiableBlobstore(blobstore, p.digestProvider)
+	blobstore = NewRetryableBlobstore(NewDigestVerifiableBlobstore(blobstore), 3, p.logger)
 
-	blobstore = NewRetryableBlobstore(blobstore, 3, p.logger)
-
-	err = blobstore.Validate()
+	err := blobstore.Validate()
 	if err != nil {
-		err = bosherr.WrapError(err, "Validating blobstore")
+		return nil, bosherr.WrapError(err, "Validating blobstore")
 	}
-	return
+
+	return blobstore, nil
 }

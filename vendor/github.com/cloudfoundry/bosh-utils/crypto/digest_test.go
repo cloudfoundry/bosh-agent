@@ -9,11 +9,11 @@ import (
 )
 
 
-var _ = Describe("digest", func() {
+var _ = Describe("digestImpl", func() {
 	Describe("Verify", func() {
-		Context("sha1", func() {
-			var digest Digest
+		var digest Digest
 
+		Context("sha1", func() {
 			BeforeEach(func() {
 				digest = NewDigest(DigestAlgorithmSHA1, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed")
 			})
@@ -23,13 +23,13 @@ var _ = Describe("digest", func() {
 			})
 
 			It("returns error when invalid sum", func() {
-				Expect(digest.Verify(strings.NewReader("omg"))).ToNot(BeNil())
+				err := digest.Verify(strings.NewReader("omg"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Expected stream to have digest '2aae6c35c94fcfb415dbe95f408b9ce91ee846ed' but was 'adccece39a0795801972604c8cf21a22bf45b262'"))
 			})
 		})
 
 		Context("sha256", func() {
-			var digest Digest
-
 			BeforeEach(func() {
 				digest = NewDigest(DigestAlgorithmSHA256, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9")
 			})
@@ -39,13 +39,13 @@ var _ = Describe("digest", func() {
 			})
 
 			It("returns error when invalid sum", func() {
-				Expect(digest.Verify(strings.NewReader("omg"))).ToNot(BeNil())
+				err := digest.Verify(strings.NewReader("omg"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Expected stream to have digest 'sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9' but was 'sha256:651de3316fa27e74d6a9de619ebac68e3b781e9527fdd00c5ef7143b1fa581b6'"))
 			})
 		})
 
 		Context("sha512", func() {
-			var digest Digest
-
 			BeforeEach(func() {
 				digest = NewDigest(DigestAlgorithmSHA512, "309ecc489c12d6eb4cc40f50c902f2b4d0ed77ee511a7c7a9bcd3ca86d4cd86f989dd35bc5ff499670da34255b45b0cfd830e81f605dcf7dc5542e93ae9cd76f")
 			})
@@ -55,32 +55,32 @@ var _ = Describe("digest", func() {
 			})
 
 			It("returns error when invalid sum", func() {
-				Expect(digest.Verify(strings.NewReader("omg"))).ToNot(BeNil())
+				err := digest.Verify(strings.NewReader("omg"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Expected stream to have digest 'sha512:309ecc489c12d6eb4cc40f50c902f2b4d0ed77ee511a7c7a9bcd3ca86d4cd86f989dd35bc5ff499670da34255b45b0cfd830e81f605dcf7dc5542e93ae9cd76f' but was 'sha512:a1eb442d3b6c9680e95b73033968223e6ea5fbff7c3d6ed8f6f9ec38cec74cad307f5b8662291323c65e81cc2ec1d24384e4c1a165aed36d9874efecf976b2c4'"))
 			})
 		})
 	})
 
-	Describe("Digest", func() {
-		Describe("#String", func() {
-			Context("sha1", func() {
-				It("excludes algorithm", func() {
-					digest := NewDigest(DigestAlgorithmSHA1, "07e1306432667f916639d47481edc4f2ca456454")
-					Expect(digest.String()).To(Equal("07e1306432667f916639d47481edc4f2ca456454"))
-				})
+	Describe("String", func() {
+		Context("sha1", func() {
+			It("excludes algorithm", func() {
+				digest := NewDigest(DigestAlgorithmSHA1, "value")
+				Expect(digest.String()).To(Equal("value"))
 			})
+		})
 
-			Context("sha256", func() {
-				It("includes algorithm", func() {
-					digest := NewDigest(DigestAlgorithmSHA256, "b1e66f505465c28d705cf587b041a6506cfe749f7aa4159d8a3f45cc53f1fb23")
-					Expect(digest.String()).To(Equal("sha256:b1e66f505465c28d705cf587b041a6506cfe749f7aa4159d8a3f45cc53f1fb23"))
-				})
+		Context("sha256", func() {
+			It("includes algorithm", func() {
+				digest := NewDigest(DigestAlgorithmSHA256, "value")
+				Expect(digest.String()).To(Equal("sha256:value"))
 			})
+		})
 
-			Context("sha512", func() {
-				It("includes algorithm", func() {
-					digest := NewDigest(DigestAlgorithmSHA512, "6f06a0c6c3827d827145b077cd8c8b7a15c75eb2bed809569296e6502ef0872c8e7ef91307a6994fcd2be235d3c41e09bfe1b6023df45697d88111df4349d64a")
-					Expect(digest.String()).To(Equal("sha512:6f06a0c6c3827d827145b077cd8c8b7a15c75eb2bed809569296e6502ef0872c8e7ef91307a6994fcd2be235d3c41e09bfe1b6023df45697d88111df4349d64a"))
-				})
+		Context("sha512", func() {
+			It("includes algorithm", func() {
+				digest := NewDigest(DigestAlgorithmSHA512, "value")
+				Expect(digest.String()).To(Equal("sha512:value"))
 			})
 		})
 	})

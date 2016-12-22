@@ -160,8 +160,9 @@ var _ = Describe("RunErrand", func() {
 
 	Describe("Cancel", func() {
 		BeforeEach(func() {
-			currentSpec := boshas.V1ApplySpec{}
-			currentSpec.JobSpec.Template = "fake-job-name"
+			currentSpec := boshas.V1ApplySpec{
+				JobSpec: boshas.JobSpec{Template: "fake-job-name"},
+			}
 			specService.Spec = currentSpec
 		})
 

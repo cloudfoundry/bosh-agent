@@ -30,7 +30,7 @@ func (cdp FakeCompileDirProvider) CompileDir() string { return cdp.Dir }
 func getCompileArgs() (Package, []boshmodels.Package) {
 	pkg := Package{
 		BlobstoreID: "blobstore_id",
-		Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1"),
+		Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1")),
 		Name:        "pkg_name",
 		Version:     "pkg_version",
 	}
@@ -40,7 +40,7 @@ func getCompileArgs() (Package, []boshmodels.Package) {
 			Name:    "first_dep_name",
 			Version: "first_dep_version",
 			Source: boshmodels.Source{
-				Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1"),
+				Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
 				BlobstoreID: "first_dep_blobstore_id",
 			},
 		},
@@ -48,7 +48,7 @@ func getCompileArgs() (Package, []boshmodels.Package) {
 			Name:    "sec_dep_name",
 			Version: "sec_dep_version",
 			Source: boshmodels.Source{
-				Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"),
+				Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
 				BlobstoreID: "sec_dep_blobstore_id",
 			},
 		},
@@ -101,7 +101,7 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				bundle = packagesBc.FakeGet(boshmodels.Package{
+				bundle = packagesBc.FakeGet(boshmodels.LocalPackage{
 					Name:    "pkg_name",
 					Version: "pkg_version",
 				})
@@ -126,14 +126,17 @@ func init() {
 
 			It("returns blob id and correct sha algo of created compiled package", func() {
 				blobstore.CreateBlobID = "fake-blob-id"
-				digestSha256 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "d12d3a3ee8dcdc9e7ea3416fd618298ea50abde2cf434313c6c3edb213f441cd")
-				pkg.Sha1 = digestSha256
-				_, digest, err := compiler.Compile(pkg, pkgDeps)
 
+				// Currently algo of source package is used for compilation pkg algo
+				pkg.Sha1 = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "fakesha"))
+
+				_, digest, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(digest).To(Equal(digestSha256))
+				// echo -n fake-contents|shasum -a 256
+				Expect(digest.String()).To(Equal("sha256:d12d3a3ee8dcdc9e7ea3416fd618298ea50abde2cf434313c6c3edb213f441cd"))
+
 				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-				Expect(blobstore.GetFingerprints[0]).To(Equal(digestSha256))
+				Expect(blobstore.GetFingerprints[0]).To(Equal(pkg.Sha1))
 			})
 
 			It("cleans up all packages before and after applying dependent packages", func() {

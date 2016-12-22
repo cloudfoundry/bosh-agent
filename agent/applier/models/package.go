@@ -11,11 +11,24 @@ func (s Package) BundleName() string {
 }
 
 func (s Package) BundleVersion() string {
-	var digest string
-
-	if s.Source.Sha1 != nil {
-		digest = s.Source.Sha1.String()
+	if len(s.Version) == 0 {
+		panic("Internal inconsistency: Expected package.Version to be non-empty")
 	}
+	return s.Version + "-" + s.Source.Sha1.String()
+}
 
-	return s.Version + "-" + digest
+type LocalPackage struct {
+	Name    string
+	Version string
+}
+
+func (s LocalPackage) BundleName() string {
+	return s.Name
+}
+
+func (s LocalPackage) BundleVersion() string {
+	if len(s.Version) == 0 {
+		panic("Internal inconsistency: Expected localPackage.Version to be non-empty")
+	}
+	return s.Version
 }

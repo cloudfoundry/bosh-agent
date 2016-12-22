@@ -35,7 +35,7 @@ func init() {
 				It("validates the payload using provided Checksum", func() {
 					_, err := action.Run(UploadBlobSpec{
 						Payload:  "Y2xvdWRmb3VuZHJ5",
-						Checksum: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "e578935e2f0613d68ba6a4fcc0d32754b52d334d")),
+						Checksum: crypto.MustParseMultipleDigest("sha1:e578935e2f0613d68ba6a4fcc0d32754b52d334d"),
 						BlobID:   "id",
 					})
 					Expect(err).ToNot(HaveOccurred())
@@ -54,7 +54,7 @@ func init() {
 				It("does not validate the payload when the Checksum is incorrect", func() {
 					_, err := action.Run(UploadBlobSpec{
 						Payload:  "Y2xvdWRmb3VuZHJ5",
-						Checksum: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "badChecksum")),
+						Checksum: crypto.MustParseMultipleDigest("sha1:badChecksum"),
 						BlobID:   "id",
 					})
 					Expect(err).To(HaveOccurred())
@@ -65,7 +65,7 @@ func init() {
 			It("should call the blob manager", func() {
 				_, err := action.Run(UploadBlobSpec{
 					Payload:  "Y2xvdWRmb3VuZHJ5",
-					Checksum: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "e578935e2f0613d68ba6a4fcc0d32754b52d334d")),
+					Checksum: crypto.MustParseMultipleDigest("sha1:e578935e2f0613d68ba6a4fcc0d32754b52d334d"),
 					BlobID:   "id",
 				})
 				Expect(err).ToNot(HaveOccurred())
@@ -76,7 +76,7 @@ func init() {
 				fakeBlobManager.WriteReturns(errors.New("blob write error"))
 				_, err := action.Run(UploadBlobSpec{
 					Payload:  "Y2xvdWRmb3VuZHJ5",
-					Checksum: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "e578935e2f0613d68ba6a4fcc0d32754b52d334d")),
+					Checksum: crypto.MustParseMultipleDigest("sha1:e578935e2f0613d68ba6a4fcc0d32754b52d334d"),
 					BlobID:   "id",
 				})
 				Expect(err).To(HaveOccurred())

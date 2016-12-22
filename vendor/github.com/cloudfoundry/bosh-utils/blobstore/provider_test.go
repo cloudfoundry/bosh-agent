@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-utils/blobstore"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
@@ -17,15 +16,13 @@ var _ = Describe("Provider", func() {
 		runner         *fakesys.FakeCmdRunner
 		logger         boshlog.Logger
 		provider       Provider
-		digestProvider boshcrypto.DigestProvider
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		digestProvider = boshcrypto.NewDigestProvider()
-		provider = NewProvider(fs, runner, "/var/vcap/config", digestProvider, logger)
+		provider = NewProvider(fs, runner, "/var/vcap/config", logger)
 	})
 
 	Describe("Get", func() {
@@ -47,7 +44,7 @@ var _ = Describe("Provider", func() {
 				boshuuid.NewGenerator(),
 				"/var/vcap/config/blobstore-fake-external-type.json",
 			)
-			expectedBlobstore = NewDigestVerifiableBlobstore(expectedBlobstore, digestProvider)
+			expectedBlobstore = NewDigestVerifiableBlobstore(expectedBlobstore)
 			expectedBlobstore = NewRetryableBlobstore(expectedBlobstore, 3, logger)
 
 			blobstore, err := provider.Get("fake-external-type", options)

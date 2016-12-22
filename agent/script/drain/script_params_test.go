@@ -75,26 +75,26 @@ var _ = Describe("NewUpdateParams", func() {
 			oldPkgs := map[string]boshas.PackageSpec{
 				"foo": boshas.PackageSpec{
 					Name: "foo",
-					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-old")),
+					Sha1: crypto.MustParseMultipleDigest("sha1:foo-sha1-old"),
 				},
 				"bar": boshas.PackageSpec{
 					Name: "bar",
-					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "bar-sha1")),
+					Sha1: crypto.MustParseMultipleDigest("sha1:bar-sha1"),
 				},
 			}
 
 			newPkgs := map[string]boshas.PackageSpec{
 				"foo": boshas.PackageSpec{
 					Name: "foo",
-					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "foo-sha1-new")),
+					Sha1: crypto.MustParseMultipleDigest("sha1:foo-sha1-new"),
 				},
 				"bar": boshas.PackageSpec{
 					Name: "bar",
-					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "bar-sha1")),
+					Sha1: crypto.MustParseMultipleDigest("sha1:bar-sha1"),
 				},
 				"baz": boshas.PackageSpec{
 					Name: "baz",
-					Sha1: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA1, "baz-sha1")),
+					Sha1: crypto.MustParseMultipleDigest("sha1:baz-sha1"),
 				},
 			}
 

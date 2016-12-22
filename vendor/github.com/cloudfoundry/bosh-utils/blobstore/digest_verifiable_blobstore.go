@@ -1,21 +1,18 @@
 package blobstore
 
 import (
+	"os"
+
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	"os"
 )
 
 type digestVerifiableBlobstore struct {
 	blobstore      Blobstore
-	digestProvider boshcrypto.DigestProvider
 }
 
-func NewDigestVerifiableBlobstore(blobstore Blobstore, digestProvider boshcrypto.DigestProvider) Blobstore {
-	return digestVerifiableBlobstore{
-		blobstore:      blobstore,
-		digestProvider: digestProvider,
-	}
+func NewDigestVerifiableBlobstore(blobstore Blobstore) Blobstore {
+	return digestVerifiableBlobstore{blobstore}
 }
 
 func (b digestVerifiableBlobstore) Get(blobID string, digest boshcrypto.Digest) (string, error) {
@@ -24,17 +21,16 @@ func (b digestVerifiableBlobstore) Get(blobID string, digest boshcrypto.Digest) 
 		return "", bosherr.WrapError(err, "Getting blob from inner blobstore")
 	}
 
-
 	file, err := os.Open(fileName)
 	if err != nil {
 		return "", err
 	}
+
 	defer file.Close()
 
 	err = digest.Verify(file)
-
 	if err != nil {
-		return "", bosherr.WrapErrorf(err, "Checking downloaded blob \"%s\"", blobID)
+		return "", bosherr.WrapErrorf(err, "Checking downloaded blob '%s'", blobID)
 	}
 
 	return fileName, nil

@@ -24,6 +24,7 @@ var _ = Describe("RunScript", func() {
 	BeforeEach(func() {
 		fakeJobScriptProvider = &fakescript.FakeJobScriptProvider{}
 		specService = fakeapplyspec.NewFakeV1Service()
+		specService.Spec.RenderedTemplatesArchiveSpec = &applyspec.RenderedTemplatesArchiveSpec{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		action = NewRunScript(fakeJobScriptProvider, specService, logger)
 	})
