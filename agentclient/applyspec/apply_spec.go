@@ -14,7 +14,7 @@ type ApplySpec struct {
 	// The value type would ideally be a struct with IP, Type & CloudProperties, but the agent supports arbitrary key/value pairs. :(
 	Networks                 map[string]interface{}       `json:"networks"`
 	Job                      Job                          `json:"job"`
-	RenderedTemplatesArchive RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
+	RenderedTemplatesArchive *RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 	ConfigurationHash        string                       `json:"configuration_hash"`
 }
 
