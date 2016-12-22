@@ -12,10 +12,10 @@ type ApplySpec struct {
 	Packages map[string]Blob `json:"packages"`
 	// Networks is a map of network names to network interfaces.
 	// The value type would ideally be a struct with IP, Type & CloudProperties, but the agent supports arbitrary key/value pairs. :(
-	Networks                 map[string]interface{}       `json:"networks"`
-	Job                      Job                          `json:"job"`
+	Networks                 map[string]interface{}        `json:"networks"`
+	Job                      Job                           `json:"job"`
 	RenderedTemplatesArchive *RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
-	ConfigurationHash        string                       `json:"configuration_hash"`
+	ConfigurationHash        string                        `json:"configuration_hash"`
 }
 
 // Blob is a reference to a named and versioned object, with an archive uploaded to the blobstore.
