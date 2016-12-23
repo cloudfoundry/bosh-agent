@@ -75,7 +75,7 @@ var _ = Describe("V1ApplySpec", func() {
 
 			jobName := "router"
 			expectedIndex := 4
-
+			sha1 := crypto.MustParseMultipleDigest("sha1:archivesha1;sha256:archivesha256")
 			expectedSpec := V1ApplySpec{
 				Index:  &expectedIndex,
 				NodeID: "node-id",
@@ -96,7 +96,7 @@ var _ = Describe("V1ApplySpec", func() {
 					"package 2": {Name: "package 2", Version: "0.2", Sha1: crypto.MustParseMultipleDigest("sha1:package2sha1;sha256:package2sha256"), BlobstoreID: "package-blob-id-2"},
 				},
 				RenderedTemplatesArchiveSpec: &RenderedTemplatesArchiveSpec{
-					Sha1:        crypto.MustParseMultipleDigest("sha1:archivesha1;sha256:archivesha256"),
+					Sha1:        &sha1,
 					BlobstoreID: "archive-blob-id-1",
 				},
 				NetworkSpecs: map[string]NetworkSpec{
@@ -142,6 +142,10 @@ var _ = Describe("V1ApplySpec", func() {
 				},
 				"index": 0,
 				"id": "ef7a1af2",
+				"rendered_templates_archive": {
+					"blobstore_id": "",
+					"sha1": ""
+				},
 				"networks": {
 					"a": {
 						"ip": "192.168.1.5",
@@ -163,16 +167,21 @@ var _ = Describe("V1ApplySpec", func() {
 			spec := V1ApplySpec{}
 			err := json.Unmarshal([]byte(specJSON), &spec)
 			Expect(err).ToNot(HaveOccurred())
-
-			_, err = json.Marshal(spec)
+			specBytes, err := json.Marshal(spec)
 			Expect(err).ToNot(HaveOccurred())
+			reloadedSpec := V1ApplySpec{}
+			err = json.Unmarshal([]byte(specBytes), &reloadedSpec)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(reloadedSpec).To(Equal(spec))
+
 		})
 	})
 
 	Describe("Jobs", func() {
 		It("returns jobs specified in job specs", func() {
 			jobName := "fake-job-legacy-name"
-
+			sha1 := crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1")
 			spec := V1ApplySpec{
 				JobSpec: JobSpec{
 					Name:    &jobName,
@@ -207,7 +216,7 @@ var _ = Describe("V1ApplySpec", func() {
 					},
 				},
 				RenderedTemplatesArchiveSpec: &RenderedTemplatesArchiveSpec{
-					Sha1:        crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1"),
+					Sha1:        &sha1,
 					BlobstoreID: "fake-rendered-templates-archive-blobstore-id",
 				},
 			}

@@ -44,7 +44,7 @@ var _ = Describe("ApplySpec", func() {
 					},
 				},
 			},
-			RenderedTemplatesArchive: &RenderedTemplatesArchiveSpec{
+			RenderedTemplatesArchive: RenderedTemplatesArchiveSpec{
 				BlobstoreID: "fake-rendered-template-blob-id",
 				SHA1:        "fake-rendered-template-sha1",
 			},
