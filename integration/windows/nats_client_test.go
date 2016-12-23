@@ -44,7 +44,7 @@ const (
                         "name": "{{ .JobName }}",
 						"blobstore_id": "{{ .TemplateBlobstoreID }}",
 						"sha1": "eb9bebdb1f11494b27440ec6ccbefba00e713cd9",
-						"version: "template-version-123"
+						"version": "template-version-123"
                     }
                 ]
             },
