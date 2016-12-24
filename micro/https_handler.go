@@ -86,7 +86,7 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) func(http.Respo
 			h.logger,
 		)
 		if err != nil {
-			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
+			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwich")
 			h.logger.Error("https_handler", err.Error())
 			return
 		}
