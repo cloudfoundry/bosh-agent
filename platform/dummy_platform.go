@@ -14,6 +14,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -48,6 +49,7 @@ type dummyPlatform struct {
 	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
 	certManager        boshcert.Manager
+	syslogger          syslog.Logger
 }
 
 func NewDummyPlatform(
@@ -57,6 +59,7 @@ func NewDummyPlatform(
 	dirProvider boshdirs.Provider,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
+	syslogger syslog.Logger,
 ) Platform {
 	return &dummyPlatform{
 		fs:                 fs,
@@ -69,11 +72,16 @@ func NewDummyPlatform(
 		vitalsService:      boshvitals.NewService(collector, dirProvider),
 		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
 		logger:             logger,
+		syslogger:          syslogger,
 	}
 }
 
 func (p dummyPlatform) GetFs() (fs boshsys.FileSystem) {
 	return p.fs
+}
+
+func (p dummyPlatform) GetSyslogger() syslog.Logger {
+	return p.syslogger
 }
 
 func (p dummyPlatform) GetRunner() (runner boshsys.CmdRunner) {

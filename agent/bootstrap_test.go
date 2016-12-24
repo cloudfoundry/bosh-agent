@@ -21,6 +21,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	sigar "github.com/cloudfoundry/gosigar"
 
@@ -840,6 +841,7 @@ func init() {
 					logger,
 					defaultNetworkResolver,
 					fakeUUIDGenerator,
+					fakesyslog.NewFakeSyslogger(),
 				)
 			})
 

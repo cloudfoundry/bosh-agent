@@ -14,6 +14,8 @@ import (
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/syslog"
+	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -29,6 +31,7 @@ var _ = Describe("WindowsPlatform", func() {
 		platform                   Platform
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		certManager                *fakecert.FakeManager
+		syslogger                  syslog.Logger
 
 		logger boshlog.Logger
 	)
@@ -44,6 +47,7 @@ var _ = Describe("WindowsPlatform", func() {
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		certManager = new(fakecert.FakeManager)
+		syslogger = fakesyslog.NewFakeSyslogger()
 	})
 
 	JustBeforeEach(func() {
@@ -57,6 +61,7 @@ var _ = Describe("WindowsPlatform", func() {
 			devicePathResolver,
 			logger,
 			fakeDefaultNetworkResolver,
+			syslogger,
 		)
 	})
 

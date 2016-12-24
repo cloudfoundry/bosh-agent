@@ -21,6 +21,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -101,6 +102,7 @@ type linux struct {
 	logger                 boshlog.Logger
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 	uuidGenerator          boshuuid.Generator
+	syslogger              syslog.Logger
 }
 
 func NewLinuxPlatform(
@@ -122,6 +124,7 @@ func NewLinuxPlatform(
 	logger boshlog.Logger,
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
 	uuidGenerator boshuuid.Generator,
+	syslogger syslog.Logger,
 ) Platform {
 	return &linux{
 		fs:                     fs,
@@ -142,6 +145,7 @@ func NewLinuxPlatform(
 		logger:                 logger,
 		defaultNetworkResolver: defaultNetworkResolver,
 		uuidGenerator:          uuidGenerator,
+		syslogger:              syslogger,
 	}
 }
 
@@ -203,6 +207,10 @@ func (p linux) GetFilesContentsFromDisk(diskPath string, fileNames []string) ([]
 
 func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.devicePathResolver
+}
+
+func (p linux) GetSyslogger() syslog.Logger {
+	return p.syslogger
 }
 
 func (p linux) SetupNetworking(networks boshsettings.Networks) (err error) {

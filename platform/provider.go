@@ -16,6 +16,7 @@ import (
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherror "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -128,6 +129,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		logger,
 		defaultNetworkResolver,
 		uuidGenerator,
+		syslog.NewSysLogger(),
 	)
 
 	ubuntu := NewLinuxPlatform(
@@ -149,6 +151,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		logger,
 		defaultNetworkResolver,
 		uuidGenerator,
+		syslog.NewSysLogger(),
 	)
 
 	windows := NewWindowsPlatform(
@@ -161,13 +164,14 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver,
 		logger,
 		defaultNetworkResolver,
+		syslog.NewSysLogger(),
 	)
 
 	return provider{
 		platforms: map[string]Platform{
 			"ubuntu":  ubuntu,
 			"centos":  centos,
-			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger),
+			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger, syslog.NewSysLogger()),
 			"windows": windows,
 		},
 	}
