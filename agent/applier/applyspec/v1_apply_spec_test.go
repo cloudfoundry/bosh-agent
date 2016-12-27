@@ -27,8 +27,8 @@ var _ = Describe("V1ApplySpec", func() {
 					"sha1": "sha1:routersha1;sha256:routersha256",
 					"blobstore_id": "router-blob-id-1",
 					"templates": [
-						{"name": "template 1", "version": "0.1", "sha1": "sha1:template1sha1;sha256:template1sha256", "blobstore_id": "template-blob-id-1"},
-						{"name": "template 2", "version": "0.2", "sha1": "sha1:template2sha1;sha256:template2sha256", "blobstore_id": "template-blob-id-2"}
+						{"name": "template 1", "version": "0.1"},
+						{"name": "template 2", "version": "0.2"}
 					]
 				},
 				"packages": {
@@ -87,8 +87,8 @@ var _ = Describe("V1ApplySpec", func() {
 					Template: "router template",
 					Version:  "1.0",
 					JobTemplateSpecs: []JobTemplateSpec{
-						{Name: "template 1", Version: "0.1", Sha1: crypto.MustParseMultipleDigest("sha1:template1sha1;sha256:template1sha256"), BlobstoreID: "template-blob-id-1"},
-						{Name: "template 2", Version: "0.2", Sha1: crypto.MustParseMultipleDigest("sha1:template2sha1;sha256:template2sha256"), BlobstoreID: "template-blob-id-2"},
+						{Name: "template 1", Version: "0.1"},
+						{Name: "template 2", Version: "0.2"},
 					},
 				},
 				PackageSpecs: map[string]PackageSpec{
@@ -174,7 +174,6 @@ var _ = Describe("V1ApplySpec", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(reloadedSpec).To(Equal(spec))
-
 		})
 	})
 
@@ -188,16 +187,12 @@ var _ = Describe("V1ApplySpec", func() {
 					Version: "fake-job-legacy-version",
 					JobTemplateSpecs: []JobTemplateSpec{
 						{
-							Name:        "fake-job1-name",
-							Version:     "fake-job1-version",
-							Sha1:        crypto.MustParseMultipleDigest("sha1:fake-job1-sha1"),
-							BlobstoreID: "fake-job1-blobstore-id",
+							Name:    "fake-job1-name",
+							Version: "fake-job1-version",
 						},
 						{
-							Name:        "fake-job2-name",
-							Version:     "fake-job2-version",
-							Sha1:        crypto.MustParseMultipleDigest("sha1:fake-job2-sha1"),
-							BlobstoreID: "fake-job2-blobstore-id",
+							Name:    "fake-job2-name",
+							Version: "fake-job2-version",
 						},
 					},
 				},

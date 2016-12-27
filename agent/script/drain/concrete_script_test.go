@@ -331,10 +331,8 @@ var _ = Describe("ConcreteScript", func() {
 				Version:  "jobtemplate_version",
 				JobTemplateSpecs: []applyspec.JobTemplateSpec{
 					{
-						Name:        "jobtemplate",
-						Version:     "jobtemplate_version",
-						Sha1:        crypto.MustParseMultipleDigest("sha1:jobtemplate_sha1"),
-						BlobstoreID: "jobtemplate_blobid",
+						Name:    "jobtemplate",
+						Version: "jobtemplate_version",
 					},
 				},
 			},

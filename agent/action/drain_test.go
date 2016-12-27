@@ -71,7 +71,7 @@ var _ = Describe("DrainAction", func() {
 
 		addJobTemplate := func(spec *applyspec.JobSpec, name string) {
 			spec.Template = name
-			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, applyspec.JobTemplateSpec{Sha1: crypto.MustParseMultipleDigest("sha1:abc"), Name: name})
+			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, applyspec.JobTemplateSpec{Name: name})
 		}
 
 		Context("when drain update is requested", func() {
