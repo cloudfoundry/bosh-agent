@@ -215,9 +215,6 @@ func (boot bootstrap) comparePersistentDisk() error {
 
 func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 	password := env.GetPassword()
-	if password == "" {
-		return nil
-	}
 
 	if !env.GetKeepRootPassword() {
 		err := boot.platform.SetUserPassword(boshsettings.RootUsername, password)

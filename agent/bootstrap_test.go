@@ -325,14 +325,6 @@ func init() {
 				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["vcap"]))
 			})
 
-			It("does not set password if not provided", func() {
-				settingsService.Settings.Env.Bosh.KeepRootPassword = false
-
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(0).To(Equal(len(platform.UserPasswords)))
-			})
-
 			It("sets ntp", func() {
 				settingsService.Settings.Ntp = []string{
 					"0.north-america.pool.ntp.org",
