@@ -447,6 +447,14 @@ bosh_foobar:...`
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"usermod", "-p", "my-encrypted-password", "my-user"}))
 		})
+
+		Context("password is empty string", func() {
+			It("sets password to *", func() {
+				platform.SetUserPassword("my-user", "")
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"usermod", "-p", "*", "my-user"}))
+			})
+		})
 	})
 
 	Describe("SetupHostname", func() {

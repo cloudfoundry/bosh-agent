@@ -409,6 +409,9 @@ func (p linux) SetupSSH(publicKeys []string, username string) error {
 }
 
 func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {
+	if encryptedPwd == "" {
+		encryptedPwd = "*"
+	}
 	_, _, _, err = p.cmdRunner.RunCommand("usermod", "-p", encryptedPwd, user)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
