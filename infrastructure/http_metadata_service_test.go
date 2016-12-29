@@ -422,4 +422,70 @@ func describeHTTPMetadataService() {
 		})
 
 	})
+
+	Describe("GetServerName from encoded user data by IaaS", func() {
+		var (
+			ts         *httptest.Server
+			serverName *string
+		)
+
+		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+			defer GinkgoRecover()
+
+			Expect(r.Method).To(Equal("GET"))
+			Expect(r.URL.Path).To(Equal("/user-data"))
+			Expect(r.Header.Get("key")).To(Equal("value"))
+
+			var jsonStr string
+
+			if serverName == nil {
+				jsonStr = `"e30="`
+			} else {
+				jsonStr = `"eyJSZWdpc3RyeSI6eyJFbmRwb2ludCI6Imh0dHA6Ly9mYWtlLXJlZ2lzdHJ5LmNvbSJ9LCJTZXJ2ZXIiOnsiTmFtZSI6ImZha2Utc2VydmVyLW5hbWUifSwiRE5TIjp7Ik5hbWVzZXJ2ZXIiOm51bGx9fQ"`
+			}
+
+			w.Write([]byte(jsonStr))
+		}
+
+		BeforeEach(func() {
+			serverName = nil
+
+			handler := http.HandlerFunc(handlerFunc)
+			ts = httptest.NewServer(handler)
+			metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
+		})
+
+		AfterEach(func() {
+			ts.Close()
+		})
+
+		Context("when the server name is present in the JSON", func() {
+			BeforeEach(func() {
+				name := "fake-server-name"
+				serverName = &name
+			})
+
+			It("returns the server name", func() {
+				name, err := metadataService.GetServerName()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(name).To(Equal("fake-server-name"))
+			})
+
+			ItEnsuresMinimalNetworkSetup(func() (string, error) {
+				return metadataService.GetServerName()
+			})
+		})
+
+		Context("when the server name is not present in the JSON", func() {
+			BeforeEach(func() {
+				serverName = nil
+			})
+
+			It("returns an error", func() {
+				name, err := metadataService.GetServerName()
+				Expect(err).To(HaveOccurred())
+				Expect(name).To(BeEmpty())
+			})
+		})
+	})
 }

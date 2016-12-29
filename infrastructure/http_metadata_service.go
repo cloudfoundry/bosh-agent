@@ -1,10 +1,12 @@
 package infrastructure
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
@@ -236,7 +238,15 @@ func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 
 	err = json.Unmarshal(userDataBytes, &userData)
 	if err != nil {
-		return userData, bosherr.WrapErrorf(err, "Unmarshalling user data '%s'", string(userDataBytes))
+		decodedUserData, err := base64.RawURLEncoding.DecodeString(strings.Replace(string(userDataBytes), `"`, ``, -1))
+		if err != nil {
+			return userData, bosherr.WrapError(err, "Decoding user data response body using base64")
+		}
+
+		err = json.Unmarshal([]byte(decodedUserData), &userData)
+		if err != nil {
+			return userData, bosherr.WrapErrorf(err, "Unmarshalling decoded user data using base64 '%s'", decodedUserData)
+		}
 	}
 
 	return userData, nil
