@@ -3,6 +3,7 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -201,6 +202,23 @@ func (p WindowsPlatform) SetupHomeDir() error {
 }
 
 func (p WindowsPlatform) SetupTmpDir() error {
+	boshTmpDir := p.dirProvider.TmpDir()
+
+	err := p.fs.MkdirAll(boshTmpDir, tmpDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating temp dir")
+	}
+
+	err = os.Setenv("TMP", boshTmpDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting TMP")
+	}
+
+	err = os.Setenv("TEMP", boshTmpDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting TEMP")
+	}
+
 	return nil
 }
 
