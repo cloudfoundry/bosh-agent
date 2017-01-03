@@ -2,6 +2,8 @@ package platform_test
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -71,6 +73,42 @@ var _ = Describe("WindowsPlatform", func() {
 			contents, err := platform.GetFileContentsFromCDROM("env")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(Equal([]byte("fake-contents")))
+		})
+	})
+
+	Describe("SetupTmpDir", func() {
+		act := func() error {
+			return platform.SetupTmpDir()
+		}
+
+		It("creates new temp dir", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
+			Expect(fileStats).NotTo(BeNil())
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+		})
+
+		It("returns error if creating new temp dir errs", func() {
+			fs.MkdirAllError = errors.New("fake-mkdir-error")
+
+			err := act()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
+		})
+
+		It("sets TMP and TEMP environment variable so that children of this process will use new temp dir", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			fakeTmpDir := filepath.FromSlash("/fake-dir/data/tmp")
+			Expect(os.Getenv("TMP")).To(Equal(fakeTmpDir))
+			Expect(os.Getenv("TEMP")).To(Equal(fakeTmpDir))
+		})
+
+		It("returns error if setting TMPDIR errs", func() {
+			// uses os package; no way to trigger err
 		})
 	})
 
