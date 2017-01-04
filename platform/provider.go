@@ -39,7 +39,7 @@ type Provider interface {
 }
 
 type provider struct {
-	platforms map[string]Platform
+	platforms func() map[string]Platform
 }
 
 type Options struct {
@@ -109,75 +109,83 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	uuidGenerator := boshuuid.NewGenerator()
 
-	centos := NewLinuxPlatform(
-		fs,
-		runner,
-		statsCollector,
-		compressor,
-		copier,
-		dirProvider,
-		vitalsService,
-		linuxCdutil,
-		linuxDiskManager,
-		centosNetManager,
-		centosCertManager,
-		monitRetryStrategy,
-		devicePathResolver,
-		bootstrapState,
-		options.Linux,
-		logger,
-		defaultNetworkResolver,
-		uuidGenerator,
-		NewDelayedAuditLogger(),
-	)
+	var centos = func() Platform {
+		return NewLinuxPlatform(
+			fs,
+			runner,
+			statsCollector,
+			compressor,
+			copier,
+			dirProvider,
+			vitalsService,
+			linuxCdutil,
+			linuxDiskManager,
+			centosNetManager,
+			centosCertManager,
+			monitRetryStrategy,
+			devicePathResolver,
+			bootstrapState,
+			options.Linux,
+			logger,
+			defaultNetworkResolver,
+			uuidGenerator,
+			NewDelayedAuditLogger(),
+		)
+	}
 
-	ubuntu := NewLinuxPlatform(
-		fs,
-		runner,
-		statsCollector,
-		compressor,
-		copier,
-		dirProvider,
-		vitalsService,
-		linuxCdutil,
-		linuxDiskManager,
-		ubuntuNetManager,
-		ubuntuCertManager,
-		monitRetryStrategy,
-		devicePathResolver,
-		bootstrapState,
-		options.Linux,
-		logger,
-		defaultNetworkResolver,
-		uuidGenerator,
-		NewDelayedAuditLogger(),
-	)
+	var ubuntu = func() Platform {
+		return NewLinuxPlatform(
+			fs,
+			runner,
+			statsCollector,
+			compressor,
+			copier,
+			dirProvider,
+			vitalsService,
+			linuxCdutil,
+			linuxDiskManager,
+			ubuntuNetManager,
+			ubuntuCertManager,
+			monitRetryStrategy,
+			devicePathResolver,
+			bootstrapState,
+			options.Linux,
+			logger,
+			defaultNetworkResolver,
+			uuidGenerator,
+			NewDelayedAuditLogger(),
+		)
+	}
 
-	windows := NewWindowsPlatform(
-		statsCollector,
-		fs,
-		runner,
-		dirProvider,
-		windowsNetManager,
-		windowsCertManager,
-		devicePathResolver,
-		logger,
-		defaultNetworkResolver,
-		NewDelayedAuditLogger(),
-	)
+	var windows = func() Platform {
+		return NewWindowsPlatform(
+			statsCollector,
+			fs,
+			runner,
+			dirProvider,
+			windowsNetManager,
+			windowsCertManager,
+			devicePathResolver,
+			logger,
+			defaultNetworkResolver,
+			NewDelayedAuditLogger(),
+		)
+	}
 
 	return provider{
-		platforms: map[string]Platform{
-			"ubuntu":  ubuntu,
-			"centos":  centos,
-			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger, NewDelayedAuditLogger()),
-			"windows": windows,
+		platforms: func() map[string]Platform {
+			return map[string]Platform{
+				"ubuntu":  ubuntu(),
+				"centos":  centos(),
+				"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger, NewDelayedAuditLogger()),
+				"windows": windows(),
+			}
 		},
 	}
 }
 
 func (p provider) Get(name string) (Platform, error) {
-	plat, found := p.platforms[name]
+	plat, found := p.platforms()[name]
 	if !found {
 		return nil, bosherror.Errorf("Platform %s could not be found", name)
 	}
