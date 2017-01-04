@@ -7,7 +7,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -19,7 +18,7 @@ type Platform interface {
 	GetCopier() boshcmd.Copier
 	GetDirProvider() boshdir.Provider
 	GetVitalsService() boshvitals.Service
-	GetSyslogger() syslog.Logger
+
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
 
 	// User management

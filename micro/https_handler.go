@@ -17,8 +17,6 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-const httpsHandlerLogTag = "https_handler"
-
 type HTTPSHandler struct {
 	parsedURL   *url.URL
 	logger      boshlog.Logger
@@ -71,18 +69,13 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) func(http.Respo
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			w.WriteHeader(404)
-			h.generateCEFLog(r, 404, "")
-
 			return
 		}
 
 		rawJSONPayload, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			err = bosherr.WrapError(err, "Reading http body")
-			h.logger.Error(httpsHandlerLogTag, err.Error())
-			w.WriteHeader(400)
-			h.generateCEFLog(r, 400, "")
-
+			h.logger.Error("https_handler", err.Error())
 			return
 		}
 
@@ -92,22 +85,17 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) func(http.Respo
 			boshhandler.UnlimitedResponseLength,
 			h.logger,
 		)
-
 		if err != nil {
-			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwich")
-			h.logger.Error(httpsHandlerLogTag, err.Error())
-			w.WriteHeader(500)
-			h.generateCEFLog(r, 500, "")
-
+			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
+			h.logger.Error("https_handler", err.Error())
 			return
 		}
 
 		_, err = w.Write(respBytes)
 		if err != nil {
 			err = bosherr.WrapError(err, "Writing response")
-			h.logger.Error(httpsHandlerLogTag, err.Error())
+			h.logger.Error("https_handler", err.Error())
 		}
-		h.generateCEFLog(r, 200, "")
 	}
 }
 
@@ -120,7 +108,6 @@ func (h HTTPSHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *ht
 			h.putBlob(w, r)
 		default:
 			w.WriteHeader(404)
-			h.generateCEFLog(r, 404, "")
 		}
 		return
 	}
@@ -134,15 +121,13 @@ func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 	err := blobManager.Write(blobID, r.Body)
 	if err != nil {
 		w.WriteHeader(500)
-		h.generateCEFLog(r, 500, "")
 		if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
-			h.logger.Error(httpsHandlerLogTag, "Failed to write response body: %s", wErr.Error())
+			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
 		}
 		return
 	}
 
 	w.WriteHeader(201)
-	h.generateCEFLog(r, 201, "")
 }
 
 func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +137,7 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	file, err, statusCode := blobManager.Fetch(blobID)
 
 	if err != nil {
-		h.logger.Error(httpsHandlerLogTag, "Failed to fetch blob: %s", err.Error())
+		h.logger.Error("https_handler", "Failed to fetch blob: %s", err.Error())
 
 		w.WriteHeader(statusCode)
 
@@ -162,23 +147,9 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 		}()
 		reader := bufio.NewReader(file)
 		if _, wErr := io.Copy(w, reader); wErr != nil {
-			h.logger.Error(httpsHandlerLogTag, "Failed to write response body: %s", wErr.Error())
+			h.logger.Error("https_handler", "Failed to write response body: %s", wErr.Error())
 		}
 	}
-
-	h.generateCEFLog(r, statusCode, "")
-}
-
-func (h HTTPSHandler) generateCEFLog(r *http.Request, respStatusCode int, respJSON string) {
-	cef := boshhandler.NewCommonEventFormat()
-
-	cefString, err := cef.ProduceHTTPRequestEventLog(r, respStatusCode, respJSON)
-	if err != nil {
-		h.logger.Error(httpsHandlerLogTag, err.Error())
-		return
-	}
-
-	h.logger.Debug(httpsHandlerLogTag, cefString)
 }
 
 // Utils:

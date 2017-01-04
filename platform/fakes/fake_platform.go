@@ -11,8 +11,6 @@ import (
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
-	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -28,7 +26,6 @@ type FakePlatform struct {
 	FakeVitalsService *fakevitals.FakeService
 	fsType            string
 	logger            boshlog.Logger
-	syslogger         syslog.Logger
 
 	DevicePathResolver boshdpresolv.DevicePathResolver
 
@@ -184,7 +181,6 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupRootDiskCalledTimes = 0
 	platform.SetupRootDiskError = nil
 	platform.IsPersistentDiskMountableErr = nil
-	platform.syslogger = fakesyslog.NewFakeSyslogger()
 	return
 }
 
@@ -218,10 +214,6 @@ func (p *FakePlatform) GetVitalsService() (service boshvitals.Service) {
 
 func (p *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.DevicePathResolver
-}
-
-func (p *FakePlatform) GetSyslogger() syslog.Logger {
-	return p.syslogger
 }
 
 func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {

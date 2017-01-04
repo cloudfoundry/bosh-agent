@@ -16,8 +16,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
-	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -40,7 +38,6 @@ func describeDummyPlatform() {
 		dirProvider        boshdirs.Provider
 		devicePathResolver boshdpresolv.DevicePathResolver
 		logger             boshlog.Logger
-		syslogger          syslog.Logger
 	)
 
 	BeforeEach(func() {
@@ -50,7 +47,6 @@ func describeDummyPlatform() {
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		syslogger = fakesyslog.NewFakeSyslogger()
 	})
 
 	JustBeforeEach(func() {
@@ -61,7 +57,6 @@ func describeDummyPlatform() {
 			dirProvider,
 			devicePathResolver,
 			logger,
-			syslogger,
 		)
 	})
 

@@ -17,14 +17,12 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const (
 	responseMaxLength = 1024 * 1024
-	natsHandlerLogTag = "NATS Handler"
 )
 
 type Handler interface {
@@ -43,9 +41,8 @@ type natsHandler struct {
 	handlerFuncs     []boshhandler.Func
 	handlerFuncsLock sync.Mutex
 
-	logger    boshlog.Logger
-	syslogger syslog.Logger
-	logTag    string
+	logger boshlog.Logger
+	logTag string
 }
 
 func NewNatsHandler(
@@ -59,9 +56,8 @@ func NewNatsHandler(
 		client:          client,
 		platform:        platform,
 
-		logger:    logger,
-		logTag:    natsHandlerLogTag,
-		syslogger: platform.GetSyslogger(),
+		logger: logger,
+		logTag: "NATS Handler",
 	}
 }
 
@@ -162,23 +158,17 @@ func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshha
 		responseMaxLength,
 		h.logger,
 	)
-
 	if err != nil {
 		h.logger.Error(h.logTag, "Running handler: %s", err)
-		h.generateCEFLog(natsMsg, 7, err.Error())
 		return
 	}
 
 	if len(respBytes) > 0 {
 		err = h.client.Publish(req.ReplyTo, respBytes)
 		if err != nil {
-			h.generateCEFLog(natsMsg, 7, err.Error())
 			h.logger.Error(h.logTag, "Publishing to the client: %s", err.Error())
-			return
 		}
 	}
-
-	h.generateCEFLog(natsMsg, 1, "")
 }
 
 func (h *natsHandler) runUntilInterrupted() {
@@ -219,43 +209,4 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 	}
 
 	return connInfo, nil
-}
-
-func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, statusReason string) {
-	cef := boshhandler.NewCommonEventFormat()
-
-	settings := h.settingsService.GetSettings()
-
-	natsURL, err := url.Parse(settings.Mbus)
-	if err != nil {
-		h.logger.Error(natsHandlerLogTag, err.Error())
-		return
-	}
-
-	hostSplit := strings.Split(natsURL.Host, ":")
-	ip := hostSplit[0]
-	payload := struct {
-		Method  string `json:"method"`
-		ReplyTo string `json:"reply_to"`
-	}{}
-	json.Unmarshal(natsMsg.Payload, &payload)
-	cefString, err := cef.ProduceNATSRequestEventLog(ip, hostSplit[1], payload.ReplyTo, payload.Method, severity, natsMsg.Subject, statusReason)
-
-	if err != nil {
-		h.logger.Error(natsHandlerLogTag, err.Error())
-		return
-	}
-
-	if severity == 7 {
-		err = h.syslogger.Err(cefString)
-		if err != nil {
-			h.logger.Error(natsHandlerLogTag, err.Error())
-		}
-		return
-	}
-
-	err = h.syslogger.Debug(cefString)
-	if err != nil {
-		h.logger.Error(natsHandlerLogTag, err.Error())
-	}
 }

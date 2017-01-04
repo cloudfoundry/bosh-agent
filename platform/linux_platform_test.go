@@ -20,7 +20,6 @@ import (
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
-	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
@@ -29,7 +28,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -53,7 +51,6 @@ func describeLinuxPlatform() {
 		certManager                *fakecert.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
-		fakesyslogger              syslog.Logger
 
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
 
@@ -83,7 +80,6 @@ func describeLinuxPlatform() {
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
-		fakesyslogger = fakesyslog.NewFakeSyslogger()
 
 		state, stateErr = NewBootstrapState(fs, "/agent-state.json")
 		Expect(stateErr).NotTo(HaveOccurred())
@@ -121,7 +117,6 @@ func describeLinuxPlatform() {
 			logger,
 			fakeDefaultNetworkResolver,
 			fakeUUIDGenerator,
-			fakesyslogger,
 		)
 	})
 
@@ -352,7 +347,6 @@ bosh_foobar:...`
 					logger,
 					fakeDefaultNetworkResolver,
 					fakeUUIDGenerator,
-					fakesyslogger,
 				)
 				err := platformWithNoEphemeralDisk.SetupRootDisk("")
 

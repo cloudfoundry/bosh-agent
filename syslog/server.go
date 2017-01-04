@@ -12,7 +12,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-const concreteServerLogTag = "concreteServer"
+const concreteServerLogTag = "conreteServer"
 
 type concreteServer struct {
 	port   uint16
