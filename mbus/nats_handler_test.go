@@ -15,7 +15,6 @@ import (
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	"github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -261,9 +260,9 @@ func init() {
 						Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 					})
 
-					syslogger := platform.GetSyslogger().(*fakes.FakeSyslogger)
+					auditLogger := platform.GetAuditLogger().(*fakeplatform.FakeAuditLogger)
 
-					Expect(syslogger.DebugMsg).To(ContainSubstring("CEF:0|CloudFoundry|BOSH|1|agent_api|ping|1|duser=reply to me! src=127.0.0.1 spt=1234"))
+					Expect(auditLogger.GetDebugMsgs()[0]).To(ContainSubstring("CEF:0|CloudFoundry|BOSH|1|agent_api|ping|1|duser=reply to me! src=127.0.0.1 spt=1234"))
 				})
 
 				Context("when NATs handler has an error", func() {
@@ -280,10 +279,10 @@ func init() {
 							Payload: []byte(`bad json`),
 						})
 
-						syslogger := platform.GetSyslogger().(*fakes.FakeSyslogger)
+						auditLogger := platform.GetAuditLogger().(*fakeplatform.FakeAuditLogger)
 
-						Expect(syslogger.DebugMsg).NotTo(ContainSubstring("CEF:"))
-						Expect(syslogger.ErrMsg).To(ContainSubstring(`cs1=Unmarshalling JSON payload: invalid character 'b' looking for beginning of value cs1Label=statusReason`))
+						Expect(auditLogger.GetDebugMsgs()).To(BeEmpty())
+						Expect(auditLogger.GetErrMsgs()[0]).To(ContainSubstring(`cs1=Unmarshalling JSON payload: invalid character 'b' looking for beginning of value cs1Label=statusReason`))
 					})
 				})
 
@@ -305,10 +304,10 @@ func init() {
 							Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 						})
 
-						syslogger := platform.GetSyslogger().(*fakes.FakeSyslogger)
+						auditLogger := platform.GetAuditLogger().(*fakeplatform.FakeAuditLogger)
 
-						Expect(syslogger.DebugMsg).NotTo(ContainSubstring("CEF:"))
-						Expect(syslogger.ErrMsg).To(ContainSubstring(`cs1=Oh noes! cs1Label=statusReason`))
+						Expect(auditLogger.GetDebugMsgs()).To(BeEmpty())
+						Expect(auditLogger.GetErrMsgs()[0]).To(ContainSubstring(`cs1=Oh noes! cs1Label=statusReason`))
 					})
 				})
 			})

@@ -18,9 +18,9 @@ import (
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
-	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
@@ -29,7 +29,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -53,7 +52,7 @@ func describeLinuxPlatform() {
 		certManager                *fakecert.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
-		fakesyslogger              syslog.Logger
+		fakeAuditLogger            *fakeplat.FakeAuditLogger
 
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
 
@@ -83,7 +82,7 @@ func describeLinuxPlatform() {
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
-		fakesyslogger = fakesyslog.NewFakeSyslogger()
+		fakeAuditLogger = fakeplat.NewFakeAuditLogger()
 
 		state, stateErr = NewBootstrapState(fs, "/agent-state.json")
 		Expect(stateErr).NotTo(HaveOccurred())
@@ -121,7 +120,7 @@ func describeLinuxPlatform() {
 			logger,
 			fakeDefaultNetworkResolver,
 			fakeUUIDGenerator,
-			fakesyslogger,
+			fakeAuditLogger,
 		)
 	})
 
@@ -352,7 +351,7 @@ bosh_foobar:...`
 					logger,
 					fakeDefaultNetworkResolver,
 					fakeUUIDGenerator,
-					fakesyslogger,
+					fakeAuditLogger,
 				)
 				err := platformWithNoEphemeralDisk.SetupRootDisk("")
 

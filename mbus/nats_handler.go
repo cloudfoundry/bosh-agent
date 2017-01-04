@@ -17,7 +17,6 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -43,9 +42,9 @@ type natsHandler struct {
 	handlerFuncs     []boshhandler.Func
 	handlerFuncsLock sync.Mutex
 
-	logger    boshlog.Logger
-	syslogger syslog.Logger
-	logTag    string
+	logger      boshlog.Logger
+	auditLogger boshplatform.AuditLogger
+	logTag      string
 }
 
 func NewNatsHandler(
@@ -59,9 +58,9 @@ func NewNatsHandler(
 		client:          client,
 		platform:        platform,
 
-		logger:    logger,
-		logTag:    natsHandlerLogTag,
-		syslogger: platform.GetSyslogger(),
+		logger:      logger,
+		logTag:      natsHandlerLogTag,
+		auditLogger: platform.GetAuditLogger(),
 	}
 }
 
@@ -246,15 +245,25 @@ func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, sta
 		return
 	}
 
+	/*
+
+		heap := heap.Add(cefString)
+		go func(msgs heap) {
+			for msg: msgs {
+				h.auditLogger.Err(msg)
+			}
+		}(heap)
+	*/
+
 	if severity == 7 {
-		err = h.syslogger.Err(cefString)
+		err = h.auditLogger.Err(cefString)
 		if err != nil {
 			h.logger.Error(natsHandlerLogTag, err.Error())
 		}
 		return
 	}
 
-	err = h.syslogger.Debug(cefString)
+	err = h.auditLogger.Debug(cefString)
 	if err != nil {
 		h.logger.Error(natsHandlerLogTag, err.Error())
 	}
