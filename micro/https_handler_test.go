@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	"github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -34,7 +35,7 @@ var _ = Describe("HTTPSHandler", func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fs = fakesys.NewFakeFileSystem()
 		dirProvider := boshdir.NewProvider("/var/vcap")
-		handler = NewHTTPSHandler(mbusURL, logger, fs, dirProvider)
+		handler = NewHTTPSHandler(mbusURL, logger, fs, dirProvider, fakes.NewFakeAuditLogger())
 
 		go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 			receivedRequest = req

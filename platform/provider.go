@@ -39,20 +39,22 @@ type Provider interface {
 }
 
 type provider struct {
-	platforms func() map[string]Platform
+	platforms map[string]func() Platform
 }
 
 type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock) Provider {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock, auditLogger AuditLogger) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
 
 	diskManagerOpts := boshdisk.LinuxDiskManagerOpts{
 		BindMount:       options.Linux.BindMountPersistentDisk,
 		PartitionerType: options.Linux.PartitionerType,
 	}
+
+	auditLogger.StartLogging()
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, diskManagerOpts)
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
@@ -129,7 +131,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			logger,
 			defaultNetworkResolver,
 			uuidGenerator,
-			NewDelayedAuditLogger(),
+			auditLogger,
 		)
 	}
 
@@ -153,7 +155,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			logger,
 			defaultNetworkResolver,
 			uuidGenerator,
-			NewDelayedAuditLogger(),
+			auditLogger,
 		)
 	}
 
@@ -168,26 +170,36 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			devicePathResolver,
 			logger,
 			defaultNetworkResolver,
-			NewDelayedAuditLogger(),
+			auditLogger,
+		)
+	}
+
+	var dummy = func() Platform {
+		return NewDummyPlatform(
+			statsCollector,
+			fs,
+			runner,
+			dirProvider,
+			devicePathResolver,
+			logger,
+			auditLogger,
 		)
 	}
 
 	return provider{
-		platforms: func() map[string]Platform {
-			return map[string]Platform{
-				"ubuntu":  ubuntu(),
-				"centos":  centos(),
-				"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger, NewDelayedAuditLogger()),
-				"windows": windows(),
-			}
+		platforms: map[string]func() Platform{
+			"ubuntu":  ubuntu,
+			"centos":  centos,
+			"dummy":   dummy,
+			"windows": windows,
 		},
 	}
 }
 
 func (p provider) Get(name string) (Platform, error) {
-	plat, found := p.platforms()[name]
+	plat, found := p.platforms[name]
 	if !found {
 		return nil, bosherror.Errorf("Platform %s could not be found", name)
 	}
-	return plat, nil
+	return plat(), nil
 }

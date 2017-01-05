@@ -237,7 +237,10 @@ func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, sta
 		Method  string `json:"method"`
 		ReplyTo string `json:"reply_to"`
 	}{}
-	json.Unmarshal(natsMsg.Payload, &payload)
+	err = json.Unmarshal(natsMsg.Payload, &payload)
+	if err != nil {
+		h.logger.Error(natsHandlerLogTag, err.Error())
+	}
 	cefString, err := cef.ProduceNATSRequestEventLog(ip, hostSplit[1], payload.ReplyTo, payload.Method, severity, natsMsg.Subject, statusReason)
 
 	if err != nil {
@@ -245,26 +248,10 @@ func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, sta
 		return
 	}
 
-	/*
-
-		heap := heap.Add(cefString)
-		go func(msgs heap) {
-			for msg: msgs {
-				h.auditLogger.Err(msg)
-			}
-		}(heap)
-	*/
-
 	if severity == 7 {
-		err = h.auditLogger.Err(cefString)
-		if err != nil {
-			h.logger.Error(natsHandlerLogTag, err.Error())
-		}
+		h.auditLogger.Err(cefString)
 		return
 	}
 
-	err = h.auditLogger.Debug(cefString)
-	if err != nil {
-		h.logger.Error(natsHandlerLogTag, err.Error())
-	}
+	h.auditLogger.Debug(cefString)
 }

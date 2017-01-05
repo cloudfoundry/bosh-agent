@@ -12,8 +12,9 @@ import (
 )
 
 type AuditLogger interface {
-	Debug(string) error
-	Err(string) error
+	Debug(string)
+	Err(string)
+	StartLogging()
 }
 
 type Platform interface {

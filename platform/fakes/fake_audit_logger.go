@@ -15,19 +15,19 @@ func NewFakeAuditLogger() *FakeAuditLogger {
 	return &FakeAuditLogger{}
 }
 
-func (f *FakeAuditLogger) Debug(msg string) error {
+func (f *FakeAuditLogger) Debug(msg string) {
 	f.debugMutex.Lock()
 	f.DebugMsgs = append(f.DebugMsgs, msg)
 	f.debugMutex.Unlock()
-	return nil
 }
 
-func (f *FakeAuditLogger) Err(msg string) error {
+func (f *FakeAuditLogger) Err(msg string) {
 	f.errMutex.Lock()
 	f.ErrMsgs = append(f.ErrMsgs, msg)
 	f.errMutex.Unlock()
-	return nil
 }
+
+func (f *FakeAuditLogger) StartLogging() {}
 
 func (f *FakeAuditLogger) GetDebugMsgs() []string {
 	f.debugMutex.RLock()

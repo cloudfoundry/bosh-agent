@@ -3,41 +3,64 @@
 package platform
 
 import (
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"log"
 	"log/syslog"
 )
 
 type DelayedAuditLogger struct {
-	debugSyslogger *log.Logger
-	errSyslogger   *log.Logger
+	debugAuditLogger       *log.Logger
+	errAuditLogger         *log.Logger
+	debugLogCh, errorLogCh chan string
+	logger boshlog.Logger
 }
 
-func NewDelayedAuditLogger() *DelayedAuditLogger {
-	return &DelayedAuditLogger{debugSyslogger: nil, errSyslogger: nil}
-}
+const delayedAuditLoggerTag = "DelayedAuditLogger"
 
-func (l *DelayedAuditLogger) Debug(msg string) error {
-	if l.debugSyslogger == nil {
-		debugSyslogger, err := syslog.NewLogger(syslog.LOG_DEBUG, log.LstdFlags)
-		if err != nil {
-			return err
-		}
-		l.debugSyslogger = debugSyslogger
+func NewDelayedAuditLogger(logger boshlog.Logger) *DelayedAuditLogger {
+	debugAuditLogger, err := syslog.NewLogger(syslog.LOG_DEBUG, log.LstdFlags)
+	if err != nil {
+		logger.Error(delayedAuditLoggerTag, err.Error())
 	}
 
-	l.debugSyslogger.Println(msg)
-	return nil
-}
-
-func (l *DelayedAuditLogger) Err(msg string) error {
-	if l.errSyslogger == nil {
-		errSyslogger, err := syslog.NewLogger(syslog.LOG_ERR, log.LstdFlags)
-		if err != nil {
-			return err
-		}
-		l.errSyslogger = errSyslogger
+	errAuditLogger, err := syslog.NewLogger(syslog.LOG_ERR, log.LstdFlags)
+	if err != nil {
+		logger.Error(delayedAuditLoggerTag, err.Error())
 	}
 
-	l.errSyslogger.Println(msg)
-	return nil
+	return &DelayedAuditLogger{
+		debugLogCh:       make(chan string, 1000),
+		errorLogCh:       make(chan string, 1000),
+		debugAuditLogger: debugAuditLogger,
+		errAuditLogger:   errAuditLogger,
+		logger: logger,
+	}
+}
+
+func (l *DelayedAuditLogger) StartLogging() {
+	l.logger.Debug(delayedAuditLoggerTag, "Starting logging to syslog...")
+
+	go func() {
+		for debugLog := range l.debugLogCh {
+			l.debugAuditLogger.Print(debugLog)
+		}
+	}()
+
+	go func() {
+		for errorLog := range l.errorLogCh {
+			l.errAuditLogger.Print(errorLog)
+		}
+	}()
+}
+
+func (l *DelayedAuditLogger) Debug(msg string) {
+	l.logger.Debug(delayedAuditLoggerTag, "Logging %s to syslog", msg)
+
+	l.debugLogCh <- msg
+}
+
+func (l *DelayedAuditLogger) Err(msg string) {
+	l.logger.Debug(delayedAuditLoggerTag, "Logging %s to syslog", msg)
+
+	l.errorLogCh <- msg
 }

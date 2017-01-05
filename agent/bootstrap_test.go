@@ -832,7 +832,7 @@ func init() {
 					logger,
 					defaultNetworkResolver,
 					fakeUUIDGenerator,
-					boshplatform.NewDelayedAuditLogger(),
+					boshplatform.NewDelayedAuditLogger(logger),
 				)
 			})
 
