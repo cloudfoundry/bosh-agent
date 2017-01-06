@@ -17,15 +17,18 @@ import (
 type HandlerProvider struct {
 	settingsService boshsettings.Service
 	logger          boshlog.Logger
+	auditLogger     boshplatform.AuditLogger
 	handler         boshhandler.Handler
 }
 
 func NewHandlerProvider(
 	settingsService boshsettings.Service,
 	logger boshlog.Logger,
+	auditLogger boshplatform.AuditLogger,
 ) (p HandlerProvider) {
 	p.settingsService = settingsService
 	p.logger = logger
+	p.auditLogger = auditLogger
 	return
 }
 
@@ -48,7 +51,7 @@ func (p HandlerProvider) Get(
 	case "nats":
 		handler = NewNatsHandler(p.settingsService, yagnats.NewClient(), p.logger, platform)
 	case "https":
-		handler = boshmicro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider)
+		handler = boshmicro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider, p.auditLogger)
 	default:
 		err = bosherr.Errorf("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
 	}

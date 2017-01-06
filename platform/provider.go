@@ -16,7 +16,6 @@ import (
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherror "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -40,20 +39,22 @@ type Provider interface {
 }
 
 type provider struct {
-	platforms map[string]Platform
+	platforms map[string]func() Platform
 }
 
 type Options struct {
 	Linux LinuxOptions
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock) Provider {
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock, auditLogger AuditLogger) Provider {
 	runner := boshsys.NewExecCmdRunner(logger)
 
 	diskManagerOpts := boshdisk.LinuxDiskManagerOpts{
 		BindMount:       options.Linux.BindMountPersistentDisk,
 		PartitionerType: options.Linux.PartitionerType,
 	}
+
+	auditLogger.StartLogging()
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, diskManagerOpts)
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
@@ -110,68 +111,86 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	uuidGenerator := boshuuid.NewGenerator()
 
-	centos := NewLinuxPlatform(
-		fs,
-		runner,
-		statsCollector,
-		compressor,
-		copier,
-		dirProvider,
-		vitalsService,
-		linuxCdutil,
-		linuxDiskManager,
-		centosNetManager,
-		centosCertManager,
-		monitRetryStrategy,
-		devicePathResolver,
-		bootstrapState,
-		options.Linux,
-		logger,
-		defaultNetworkResolver,
-		uuidGenerator,
-		syslog.NewSysLogger(),
-	)
+	var centos = func() Platform {
+		return NewLinuxPlatform(
+			fs,
+			runner,
+			statsCollector,
+			compressor,
+			copier,
+			dirProvider,
+			vitalsService,
+			linuxCdutil,
+			linuxDiskManager,
+			centosNetManager,
+			centosCertManager,
+			monitRetryStrategy,
+			devicePathResolver,
+			bootstrapState,
+			options.Linux,
+			logger,
+			defaultNetworkResolver,
+			uuidGenerator,
+			auditLogger,
+		)
+	}
 
-	ubuntu := NewLinuxPlatform(
-		fs,
-		runner,
-		statsCollector,
-		compressor,
-		copier,
-		dirProvider,
-		vitalsService,
-		linuxCdutil,
-		linuxDiskManager,
-		ubuntuNetManager,
-		ubuntuCertManager,
-		monitRetryStrategy,
-		devicePathResolver,
-		bootstrapState,
-		options.Linux,
-		logger,
-		defaultNetworkResolver,
-		uuidGenerator,
-		syslog.NewSysLogger(),
-	)
+	var ubuntu = func() Platform {
+		return NewLinuxPlatform(
+			fs,
+			runner,
+			statsCollector,
+			compressor,
+			copier,
+			dirProvider,
+			vitalsService,
+			linuxCdutil,
+			linuxDiskManager,
+			ubuntuNetManager,
+			ubuntuCertManager,
+			monitRetryStrategy,
+			devicePathResolver,
+			bootstrapState,
+			options.Linux,
+			logger,
+			defaultNetworkResolver,
+			uuidGenerator,
+			auditLogger,
+		)
+	}
 
-	windows := NewWindowsPlatform(
-		statsCollector,
-		fs,
-		runner,
-		dirProvider,
-		windowsNetManager,
-		windowsCertManager,
-		devicePathResolver,
-		logger,
-		defaultNetworkResolver,
-		syslog.NewSysLogger(),
-	)
+	var windows = func() Platform {
+		return NewWindowsPlatform(
+			statsCollector,
+			fs,
+			runner,
+			dirProvider,
+			windowsNetManager,
+			windowsCertManager,
+			devicePathResolver,
+			logger,
+			defaultNetworkResolver,
+			auditLogger,
+		)
+	}
+
+	var dummy = func() Platform {
+		return NewDummyPlatform(
+			statsCollector,
+			fs,
+			runner,
+			dirProvider,
+			devicePathResolver,
+			logger,
+			auditLogger,
+		)
+	}
 
 	return provider{
-		platforms: map[string]Platform{
+		platforms: map[string]func() Platform{
 			"ubuntu":  ubuntu,
 			"centos":  centos,
-			"dummy":   NewDummyPlatform(statsCollector, fs, runner, dirProvider, devicePathResolver, logger, syslog.NewSysLogger()),
+			"dummy":   dummy,
 			"windows": windows,
 		},
 	}
@@ -182,5 +201,5 @@ func (p provider) Get(name string) (Platform, error) {
 	if !found {
 		return nil, bosherror.Errorf("Platform %s could not be found", name)
 	}
-	return plat, nil
+	return plat(), nil
 }

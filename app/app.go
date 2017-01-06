@@ -76,6 +76,7 @@ func (app *app) Setup(args []string) error {
 	app.logStemcellInfo()
 
 	statsCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+	auditLogger := boshplatform.NewDelayedAuditLogger(app.logger)
 
 	state, err := boshplatform.NewBootstrapState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
 	if err != nil {
@@ -83,7 +84,7 @@ func (app *app) Setup(args []string) error {
 	}
 
 	timeService := clock.NewClock()
-	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, statsCollector, app.fs, config.Platform, state, timeService)
+	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, statsCollector, app.fs, config.Platform, state, timeService, auditLogger)
 
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
@@ -115,7 +116,7 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Running bootstrap")
 	}
 
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger)
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, auditLogger)
 
 	mbusHandler, err := mbusHandlerProvider.Get(app.platform, app.dirProvider)
 	if err != nil {

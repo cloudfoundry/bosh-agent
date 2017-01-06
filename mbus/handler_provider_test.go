@@ -30,7 +30,7 @@ var _ = Describe("HandlerProvider", func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		platform = fakeplatform.NewFakePlatform()
 		dirProvider = boshdir.NewProvider("/var/vcap")
-		provider = NewHandlerProvider(settingsService, logger)
+		provider = NewHandlerProvider(settingsService, logger, fakeplatform.NewFakeAuditLogger())
 	})
 
 	Describe("Get", func() {
@@ -51,7 +51,7 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
 			handler, err := provider.Get(platform, dirProvider)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(handler).To(Equal(micro.NewHTTPSHandler(url, logger, platform.GetFs(), dirProvider)))
+			Expect(handler).To(Equal(micro.NewHTTPSHandler(url, logger, platform.GetFs(), dirProvider, fakeplatform.NewFakeAuditLogger())))
 		})
 
 		It("returns an error if not supported", func() {

@@ -5,14 +5,13 @@ import (
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
-	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -28,7 +27,7 @@ type FakePlatform struct {
 	FakeVitalsService *fakevitals.FakeService
 	fsType            string
 	logger            boshlog.Logger
-	syslogger         syslog.Logger
+	auditLogger       platform.AuditLogger
 
 	DevicePathResolver boshdpresolv.DevicePathResolver
 
@@ -184,7 +183,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.SetupRootDiskCalledTimes = 0
 	platform.SetupRootDiskError = nil
 	platform.IsPersistentDiskMountableErr = nil
-	platform.syslogger = fakesyslog.NewFakeSyslogger()
+	platform.auditLogger = NewFakeAuditLogger()
 	return
 }
 
@@ -220,8 +219,8 @@ func (p *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.
 	return p.DevicePathResolver
 }
 
-func (p *FakePlatform) GetSyslogger() syslog.Logger {
-	return p.syslogger
+func (p *FakePlatform) GetAuditLogger() platform.AuditLogger {
+	return p.auditLogger
 }
 
 func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {

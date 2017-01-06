@@ -10,6 +10,7 @@ import (
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
+	"github.com/cloudfoundry/bosh-agent/platform"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -25,6 +26,7 @@ type HTTPSHandler struct {
 	dispatcher  *boshdispatcher.HTTPSDispatcher
 	fs          boshsys.FileSystem
 	dirProvider boshdir.Provider
+	auditLogger platform.AuditLogger
 }
 
 func NewHTTPSHandler(
@@ -32,12 +34,14 @@ func NewHTTPSHandler(
 	logger boshlog.Logger,
 	fs boshsys.FileSystem,
 	dirProvider boshdir.Provider,
+	auditLogger platform.AuditLogger,
 ) (handler HTTPSHandler) {
 	handler.parsedURL = parsedURL
 	handler.logger = logger
 	handler.fs = fs
 	handler.dirProvider = dirProvider
 	handler.dispatcher = boshdispatcher.NewHTTPSDispatcher(parsedURL, logger)
+	handler.auditLogger = auditLogger
 	return
 }
 
@@ -178,7 +182,7 @@ func (h HTTPSHandler) generateCEFLog(r *http.Request, respStatusCode int, respJS
 		return
 	}
 
-	h.logger.Debug(httpsHandlerLogTag, cefString)
+	h.auditLogger.Debug(cefString)
 }
 
 // Utils:

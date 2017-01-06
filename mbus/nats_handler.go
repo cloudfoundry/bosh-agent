@@ -17,7 +17,6 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -43,9 +42,9 @@ type natsHandler struct {
 	handlerFuncs     []boshhandler.Func
 	handlerFuncsLock sync.Mutex
 
-	logger    boshlog.Logger
-	syslogger syslog.Logger
-	logTag    string
+	logger      boshlog.Logger
+	auditLogger boshplatform.AuditLogger
+	logTag      string
 }
 
 func NewNatsHandler(
@@ -59,9 +58,9 @@ func NewNatsHandler(
 		client:          client,
 		platform:        platform,
 
-		logger:    logger,
-		logTag:    natsHandlerLogTag,
-		syslogger: platform.GetSyslogger(),
+		logger:      logger,
+		logTag:      natsHandlerLogTag,
+		auditLogger: platform.GetAuditLogger(),
 	}
 }
 
@@ -238,7 +237,10 @@ func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, sta
 		Method  string `json:"method"`
 		ReplyTo string `json:"reply_to"`
 	}{}
-	json.Unmarshal(natsMsg.Payload, &payload)
+	err = json.Unmarshal(natsMsg.Payload, &payload)
+	if err != nil {
+		h.logger.Error(natsHandlerLogTag, err.Error())
+	}
 	cefString, err := cef.ProduceNATSRequestEventLog(ip, hostSplit[1], payload.ReplyTo, payload.Method, severity, natsMsg.Subject, statusReason)
 
 	if err != nil {
@@ -247,15 +249,9 @@ func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, sta
 	}
 
 	if severity == 7 {
-		err = h.syslogger.Err(cefString)
-		if err != nil {
-			h.logger.Error(natsHandlerLogTag, err.Error())
-		}
+		h.auditLogger.Err(cefString)
 		return
 	}
 
-	err = h.syslogger.Debug(cefString)
-	if err != nil {
-		h.logger.Error(natsHandlerLogTag, err.Error())
-	}
+	h.auditLogger.Debug(cefString)
 }

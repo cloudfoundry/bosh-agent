@@ -12,12 +12,11 @@ import (
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
+	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/syslog"
-	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -33,7 +32,7 @@ var _ = Describe("WindowsPlatform", func() {
 		platform                   Platform
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		certManager                *fakecert.FakeManager
-		syslogger                  syslog.Logger
+		auditLogger                *fakeplat.FakeAuditLogger
 
 		logger boshlog.Logger
 	)
@@ -49,7 +48,7 @@ var _ = Describe("WindowsPlatform", func() {
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		certManager = new(fakecert.FakeManager)
-		syslogger = fakesyslog.NewFakeSyslogger()
+		auditLogger = fakeplat.NewFakeAuditLogger()
 	})
 
 	JustBeforeEach(func() {
@@ -63,7 +62,7 @@ var _ = Describe("WindowsPlatform", func() {
 			devicePathResolver,
 			logger,
 			fakeDefaultNetworkResolver,
-			syslogger,
+			auditLogger,
 		)
 	})
 
