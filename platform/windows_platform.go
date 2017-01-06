@@ -14,6 +14,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -32,6 +33,7 @@ type WindowsPlatform struct {
 	devicePathResolver     boshdpresolv.DevicePathResolver
 	certManager            boshcert.Manager
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
+	syslogger              syslog.Logger
 }
 
 func NewWindowsPlatform(
@@ -44,6 +46,7 @@ func NewWindowsPlatform(
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
+	syslogger syslog.Logger,
 ) Platform {
 	return &WindowsPlatform{
 		fs:                     fs,
@@ -57,6 +60,7 @@ func NewWindowsPlatform(
 		vitalsService:          boshvitals.NewService(collector, dirProvider),
 		certManager:            certManager,
 		defaultNetworkResolver: defaultNetworkResolver,
+		syslogger:              syslogger,
 	}
 }
 
@@ -90,6 +94,10 @@ func (p WindowsPlatform) GetVitalsService() (service boshvitals.Service) {
 
 func (p WindowsPlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.devicePathResolver
+}
+
+func (p WindowsPlatform) GetSyslogger() syslog.Logger {
+	return p.syslogger
 }
 
 func (p WindowsPlatform) SetupRuntimeConfiguration() (err error) {
