@@ -9,12 +9,18 @@ import (
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"log"
 )
 
 type AuditLogger interface {
 	Debug(string)
 	Err(string)
-	StartLogging()
+	StartLogging(AuditLoggerProvider)
+}
+
+type AuditLoggerProvider interface {
+	ProvideDebugLogger() (*log.Logger, error)
+	ProvideErrorLogger() (*log.Logger, error)
 }
 
 type Platform interface {

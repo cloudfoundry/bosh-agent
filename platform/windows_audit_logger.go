@@ -12,7 +12,7 @@ func NewDelayedAuditLogger(logger boshlog.Logger) AuditLogger {
 	return &WindowsAuditLogger{}
 }
 
-func (w *WindowsAuditLogger) StartLogging() {
+func (w *WindowsAuditLogger) StartLogging(auditLoggerProvider AuditLoggerProvider) {
 }
 
 func (w *WindowsAuditLogger) Debug(msg string) {

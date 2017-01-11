@@ -54,7 +54,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		PartitionerType: options.Linux.PartitionerType,
 	}
 
-	auditLogger.StartLogging()
+	auditLogger.StartLogging(NewAuditLoggerProvider())
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, diskManagerOpts)
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
