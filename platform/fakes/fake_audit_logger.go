@@ -1,7 +1,6 @@
 package fakes
 
 import (
-	"github.com/cloudfoundry/bosh-agent/platform"
 	"sync"
 )
 
@@ -28,7 +27,7 @@ func (f *FakeAuditLogger) Err(msg string) {
 	f.errMutex.Unlock()
 }
 
-func (f *FakeAuditLogger) StartLogging(auditLoggerProvider platform.AuditLoggerProvider) {}
+func (f *FakeAuditLogger) StartLogging() {}
 
 func (f *FakeAuditLogger) GetDebugMsgs() []string {
 	f.debugMutex.RLock()

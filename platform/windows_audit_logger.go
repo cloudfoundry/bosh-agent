@@ -8,11 +8,11 @@ import (
 
 type WindowsAuditLogger struct{}
 
-func NewDelayedAuditLogger(logger boshlog.Logger) AuditLogger {
+func NewDelayedAuditLogger(auditLoggerProvider AuditLoggerProvider, logger boshlog.Logger) AuditLogger {
 	return &WindowsAuditLogger{}
 }
 
-func (w *WindowsAuditLogger) StartLogging(auditLoggerProvider AuditLoggerProvider) {
+func (w *WindowsAuditLogger) StartLogging() {
 }
 
 func (w *WindowsAuditLogger) Debug(msg string) {

@@ -18,12 +18,15 @@ var _ = Describe("Delayed Audit Logger", func() {
 	)
 
 	Context("StartLogging", func() {
+		BeforeEach(func() {
+			logger = &loggerfakes.FakeLogger{}
+			auditLoggerProvider = fakes.NewFakeAuditLoggerProvider()
+			delayedAuditLogger = platform.NewDelayedAuditLogger(auditLoggerProvider, logger)
+		})
+
 		Context("when there is an audit logger available", func() {
 			BeforeEach(func() {
-				logger := &loggerfakes.FakeLogger{}
-				delayedAuditLogger = platform.NewDelayedAuditLogger(logger)
-				auditLoggerProvider = fakes.NewFakeAuditLoggerProvider()
-				delayedAuditLogger.StartLogging(auditLoggerProvider)
+				delayedAuditLogger.StartLogging()
 			})
 
 			It("should start logging to the debug log", func() {
@@ -44,67 +47,48 @@ var _ = Describe("Delayed Audit Logger", func() {
 		})
 
 		Context("when there are over a 1000 long messages that have piled up in the debug log", func() {
-			BeforeEach(func() {
-				logger = &loggerfakes.FakeLogger{}
-				delayedAuditLogger = platform.NewDelayedAuditLogger(logger)
-				auditLoggerProvider = fakes.NewFakeAuditLoggerProvider()
-			})
-
 			It("should overflow and drop messages", func() {
 				for i := 0; i < 1001; i++ {
 					delayedAuditLogger.Debug(fmt.Sprintf("Message %d", i))
 				}
 
-				delayedAuditLogger.StartLogging(auditLoggerProvider)
+				delayedAuditLogger.StartLogging()
 				Eventually(func() string {
 					return auditLoggerProvider.GetDebugLogsAt(0)
 				}).Should(ContainSubstring("Message 999"))
 				Consistently(func() string {
 					return auditLoggerProvider.GetDebugLogsAt(1000)
 				}).ShouldNot(ContainSubstring("Message 1000"))
-				Eventually(func() string {
-					_, debugLog, _ := logger.DebugArgsForCall(1001)
-					return debugLog
-				}).Should(ContainSubstring("Debug message 'Message 1000' not sent to syslog"))
+
+				_, debugLog, _ := logger.DebugArgsForCall(1001)
+				Expect(debugLog).To(ContainSubstring("Debug message 'Message 1000' not sent to syslog"))
 			})
 		})
 
 		Context("when there are over a 1000 long messages that have piled up in the error log", func() {
-			BeforeEach(func() {
-				logger = &loggerfakes.FakeLogger{}
-				delayedAuditLogger = platform.NewDelayedAuditLogger(logger)
-				auditLoggerProvider = fakes.NewFakeAuditLoggerProvider()
-			})
-
 			It("should overflow and drop messages", func() {
 				for i := 0; i < 1001; i++ {
 					delayedAuditLogger.Err(fmt.Sprintf("Message %d", i))
 				}
 
-				delayedAuditLogger.StartLogging(auditLoggerProvider)
+				delayedAuditLogger.StartLogging()
 				Eventually(func() string {
 					return auditLoggerProvider.GetErrorLogsAt(0)
 				}).Should(ContainSubstring("Message 999"))
 				Consistently(func() string {
 					return auditLoggerProvider.GetErrorLogsAt(1000)
 				}).ShouldNot(ContainSubstring("Message 1000"))
-				Eventually(func() string {
-					_, errorLog, _ := logger.DebugArgsForCall(1001)
-					return errorLog
-				}).Should(ContainSubstring("Error message 'Message 1000' not sent to syslog"))
+
+				_, errorLog, _ := logger.DebugArgsForCall(1001)
+				Expect(errorLog).To(ContainSubstring("Error message 'Message 1000' not sent to syslog"))
 			})
 		})
 
 		Context("when there is no debug audit logger available", func() {
-			BeforeEach(func() {
-				logger = &loggerfakes.FakeLogger{}
-				delayedAuditLogger = platform.NewDelayedAuditLogger(logger)
-				auditLoggerProvider = fakes.NewFakeAuditLoggerProvider()
-				auditLoggerProvider.SetDebugLoggerError(errors.New("Problems!"))
-				delayedAuditLogger.StartLogging(auditLoggerProvider)
-			})
-
 			It("should retry until audit logger is available", func() {
+				auditLoggerProvider.SetDebugLoggerError(errors.New("Problems!"))
+				delayedAuditLogger.StartLogging()
+
 				Eventually(func() int {
 					return logger.ErrorCallCount()
 				}).Should(Equal(1))
@@ -115,15 +99,10 @@ var _ = Describe("Delayed Audit Logger", func() {
 		})
 
 		Context("when there is no error audit logger available", func() {
-			BeforeEach(func() {
-				logger = &loggerfakes.FakeLogger{}
-				delayedAuditLogger = platform.NewDelayedAuditLogger(logger)
-				auditLoggerProvider = fakes.NewFakeAuditLoggerProvider()
-				auditLoggerProvider.SetErrorLoggerError(errors.New("Problems!"))
-				delayedAuditLogger.StartLogging(auditLoggerProvider)
-			})
-
 			It("should retry until audit logger is available", func() {
+				auditLoggerProvider.SetErrorLoggerError(errors.New("Problems!"))
+				delayedAuditLogger.StartLogging()
+
 				Eventually(func() int {
 					return logger.ErrorCallCount()
 				}).Should(Equal(1))

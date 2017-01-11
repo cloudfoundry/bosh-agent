@@ -76,7 +76,8 @@ func (app *app) Setup(args []string) error {
 	app.logStemcellInfo()
 
 	statsCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
-	auditLogger := boshplatform.NewDelayedAuditLogger(app.logger)
+	auditLoggerProvider := boshplatform.NewAuditLoggerProvider()
+	auditLogger := boshplatform.NewDelayedAuditLogger(auditLoggerProvider, app.logger)
 
 	state, err := boshplatform.NewBootstrapState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
 	if err != nil {

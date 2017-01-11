@@ -11,6 +11,7 @@ import (
 )
 
 type DelayedAuditLogger struct {
+	auditLoggerProvider    AuditLoggerProvider
 	debugAuditLogger       *log.Logger
 	errAuditLogger         *log.Logger
 	debugLogCh, errorLogCh chan string
@@ -19,24 +20,25 @@ type DelayedAuditLogger struct {
 
 const delayedAuditLoggerTag = "DelayedAuditLogger"
 
-func NewDelayedAuditLogger(logger boshlog.Logger) *DelayedAuditLogger {
+func NewDelayedAuditLogger(auditLoggerProvider AuditLoggerProvider, logger boshlog.Logger) *DelayedAuditLogger {
 	return &DelayedAuditLogger{
-		debugLogCh: make(chan string, 1000),
-		errorLogCh: make(chan string, 1000),
-		logger:     logger,
+		auditLoggerProvider: auditLoggerProvider,
+		debugLogCh:          make(chan string, 1000),
+		errorLogCh:          make(chan string, 1000),
+		logger:              logger,
 	}
 }
 
-func (l *DelayedAuditLogger) StartLogging(auditLoggerProvider AuditLoggerProvider) {
+func (l *DelayedAuditLogger) StartLogging() {
 	go func() {
 		retryable := boshretry.NewRetryable(func() (bool, error) {
-			debugAuditLogger, err := auditLoggerProvider.ProvideDebugLogger()
+			debugAuditLogger, err := l.auditLoggerProvider.ProvideDebugLogger()
 			if err != nil {
 				l.logger.Error(delayedAuditLoggerTag, err.Error())
 				return true, err
 			}
 
-			errAuditLogger, err := auditLoggerProvider.ProvideErrorLogger()
+			errAuditLogger, err := l.auditLoggerProvider.ProvideErrorLogger()
 			if err != nil {
 				l.logger.Error(delayedAuditLoggerTag, err.Error())
 				return true, err

@@ -15,7 +15,7 @@ import (
 type AuditLogger interface {
 	Debug(string)
 	Err(string)
-	StartLogging(AuditLoggerProvider)
+	StartLogging()
 }
 
 type AuditLoggerProvider interface {
