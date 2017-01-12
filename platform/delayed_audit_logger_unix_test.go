@@ -1,8 +1,11 @@
+// +build !windows
+
 package platform_test
 
 import (
 	"errors"
 	"fmt"
+
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-agent/platform/fakes"
 	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
