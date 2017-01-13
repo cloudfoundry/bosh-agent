@@ -74,13 +74,17 @@ func (s *settingsService) LoadSettings() error {
 
 		s.logger.Debug(settingsServiceLogTag, "Successfully read settings from file")
 
-		s.settingsMutex.Lock()
-		err := json.Unmarshal(existingSettingsJSON, &s.settings)
-		s.settingsMutex.Unlock()
+		cachedSettings := Settings{}
+
+		err := json.Unmarshal(existingSettingsJSON, &cachedSettings)
 		if err != nil {
 			s.logger.Error(settingsServiceLogTag, "Failed unmarshalling settings from file %s", err.Error())
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
 		}
+
+		s.settingsMutex.Lock()
+		s.settings = cachedSettings
+		s.settingsMutex.Unlock()
 
 		return nil
 	}
