@@ -200,6 +200,9 @@ func init() {
 			})
 
 			It("sets up ephemeral disk", func() {
+				var swapSize uint64
+				swapSize = 2048
+				settingsService.Settings.Env.Bosh.SwapSizeInMB = &swapSize
 				settingsService.Settings.Disks = boshsettings.Disks{
 					Ephemeral: "fake-ephemeral-disk-setting",
 				}
@@ -209,6 +212,7 @@ func init() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupEphemeralDiskWithPathDevicePath).To(Equal("/dev/sda"))
+				Expect(*platform.SetupEphemeralDiskWithPathSwapSize).To(Equal(uint64(2048 * 1024 * 1024)))
 				Expect(platform.GetEphemeralDiskPathSettings).To(Equal(boshsettings.DiskSettings{
 					VolumeID: "fake-ephemeral-disk-setting",
 					Path:     "fake-ephemeral-disk-setting",

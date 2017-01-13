@@ -179,11 +179,21 @@ func (e Env) GetAuthorizedKeys() []string {
 	return e.Bosh.AuthorizedKeys
 }
 
+func (e Env) GetSwapSizeInBytes() *uint64 {
+	if e.Bosh.SwapSizeInMB == nil {
+		return nil
+	}
+
+	result := uint64(*e.Bosh.SwapSizeInMB * 1024 * 1024)
+	return &result
+}
+
 type BoshEnv struct {
 	Password         string   `json:"password"`
 	KeepRootPassword bool     `json:"keep_root_password"`
 	RemoveDevTools   bool     `json:"remove_dev_tools"`
 	AuthorizedKeys   []string `json:"authorized_keys"`
+	SwapSizeInMB     *uint64  `json:"swap_size"`
 }
 
 type DNSRecords struct {

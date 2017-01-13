@@ -640,7 +640,7 @@ var _ = Describe("Settings", func() {
 	Describe("Env", func() {
 		It("unmarshal env value correctly", func() {
 			var env Env
-			envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"]}}`
+			envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"], "swap_size": 2048}}`
 
 			err := json.Unmarshal([]byte(envJSON), &env)
 			Expect(err).NotTo(HaveOccurred())
@@ -648,6 +648,18 @@ var _ = Describe("Settings", func() {
 			Expect(env.GetKeepRootPassword()).To(BeFalse())
 			Expect(env.GetRemoveDevTools()).To(BeTrue())
 			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
+			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+		})
+		Context("when swap_size is not specified in the json", func() {
+			It("unmarshalls correctly", func() {
+				var env Env
+				envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"]}}`
+
+				err := json.Unmarshal([]byte(envJSON), &env)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(env.GetSwapSizeInBytes()).To(BeNil())
+			})
 		})
 	})
 

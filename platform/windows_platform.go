@@ -192,7 +192,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
+func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error) {
 	return
 }
 

@@ -56,6 +56,7 @@ type FakePlatform struct {
 	SetTimeWithNtpServersServers []string
 
 	SetupEphemeralDiskWithPathDevicePath string
+	SetupEphemeralDiskWithPathSwapSize   *uint64
 	SetupEphemeralDiskWithPathErr        error
 
 	SetupRawEphemeralDisksDevices   []boshsettings.DiskSettings
@@ -300,8 +301,9 @@ func (p *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
+func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
+	p.SetupEphemeralDiskWithPathSwapSize = desiredSwapSizeInBytes
 	return p.SetupEphemeralDiskWithPathErr
 }
 

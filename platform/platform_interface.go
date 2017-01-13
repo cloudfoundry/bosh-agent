@@ -3,13 +3,14 @@ package platform
 import (
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 
+	"log"
+
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"log"
 )
 
 type AuditLogger interface {
@@ -46,7 +47,7 @@ type Platform interface {
 	SetupNetworking(networks boshsettings.Networks) (err error)
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string) (err error)
-	SetupEphemeralDiskWithPath(devicePath string) (err error)
+	SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error)
 	SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error)
 	SetupDataDir() (err error)
 	SetupTmpDir() (err error)

@@ -544,7 +544,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
+func (p linux) SetupEphemeralDiskWithPath(realPath string, desiredSwapSizeInBytes *uint64) error {
 	if p.options.SkipDiskSetup {
 		return nil
 	}
@@ -589,16 +589,18 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 			return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
 		}
 	} else {
-		swapPartitionPath, dataPartitionPath, err = p.partitionEphemeralDisk(realPath)
+		swapPartitionPath, dataPartitionPath, err = p.partitionEphemeralDisk(realPath, desiredSwapSizeInBytes)
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning ephemeral disk")
 		}
 	}
 
-	p.logger.Info(logTag, "Formatting `%s' as swap", swapPartitionPath)
-	err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
-	if err != nil {
-		return bosherr.WrapError(err, "Formatting swap")
+	if len(swapPartitionPath) > 0 {
+		p.logger.Info(logTag, "Formatting `%s' as swap", swapPartitionPath)
+		err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
+		if err != nil {
+			return bosherr.WrapError(err, "Formatting swap")
+		}
 	}
 
 	p.logger.Info(logTag, "Formatting `%s' as ext4", dataPartitionPath)
@@ -607,10 +609,12 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 		return bosherr.WrapError(err, "Formatting data partition with ext4")
 	}
 
-	p.logger.Info(logTag, "Mounting `%s' as swap", swapPartitionPath)
-	err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Mounting swap")
+	if len(swapPartitionPath) > 0 {
+		p.logger.Info(logTag, "Mounting `%s' as swap", swapPartitionPath)
+		err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting swap")
+		}
 	}
 
 	p.logger.Info(logTag, "Mounting `%s' at `%s'", dataPartitionPath, mountPoint)
@@ -1253,7 +1257,7 @@ func (p linux) GetDefaultNetwork() (boshsettings.Network, error) {
 	return p.defaultNetworkResolver.GetDefaultNetwork()
 }
 
-func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uint64, uint64, error) {
+func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64, desiredSwapSizeInBytes *uint64) (uint64, uint64, error) {
 	memStats, err := p.collector.GetMemStats()
 	if err != nil {
 		return uint64(0), uint64(0), bosherr.WrapError(err, "Getting mem stats")
@@ -1262,10 +1266,15 @@ func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uin
 	totalMemInBytes := memStats.Total
 
 	var swapSizeInBytes uint64
-	if totalMemInBytes > diskSizeInBytes/2 {
-		swapSizeInBytes = diskSizeInBytes / 2
+
+	if desiredSwapSizeInBytes == nil {
+		if totalMemInBytes > diskSizeInBytes/2 {
+			swapSizeInBytes = diskSizeInBytes / 2
+		} else {
+			swapSizeInBytes = totalMemInBytes
+		}
 	} else {
-		swapSizeInBytes = totalMemInBytes
+		swapSizeInBytes = *desiredSwapSizeInBytes
 	}
 
 	linuxSizeInBytes := diskSizeInBytes - swapSizeInBytes
@@ -1328,7 +1337,7 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	}
 
 	p.logger.Debug(logTag, "Calculating partition sizes of `%s', remaining size: %dB", rootDevicePath, remainingSizeInBytes)
-	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes)
+	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes, nil)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
 	}
@@ -1352,7 +1361,7 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	return swapPartitionPath, dataPartitionPath, nil
 }
 
-func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
+func (p linux) partitionEphemeralDisk(realPath string, desiredSwapSizeInBytes *uint64) (string, string, error) {
 	p.logger.Info(logTag, "Creating swap & ephemeral partitions on ephemeral disk...")
 	p.logger.Debug(logTag, "Getting device size of `%s'", realPath)
 	diskSizeInBytes, err := p.diskManager.GetPartitioner().GetDeviceSizeInBytes(realPath)
@@ -1361,14 +1370,28 @@ func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 	}
 
 	p.logger.Debug(logTag, "Calculating ephemeral disk partition sizes of `%s' with total disk size %dB", realPath, diskSizeInBytes)
-	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(diskSizeInBytes)
+	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(diskSizeInBytes, desiredSwapSizeInBytes)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
 	}
 
-	partitions := []boshdisk.Partition{
-		{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
-		{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+	var partitions []boshdisk.Partition
+	var swapPartitionPath string
+	var dataPartitionPath string
+
+	if swapSizeInBytes == 0 {
+		partitions = []boshdisk.Partition{
+			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+		}
+		swapPartitionPath = ""
+		dataPartitionPath = realPath + "1"
+	} else {
+		partitions = []boshdisk.Partition{
+			{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
+			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+		}
+		swapPartitionPath = realPath + "1"
+		dataPartitionPath = realPath + "2"
 	}
 
 	p.logger.Info(logTag, "Partitioning ephemeral disk `%s' with %s", realPath, partitions)
@@ -1377,8 +1400,6 @@ func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 		return "", "", bosherr.WrapErrorf(err, "Partitioning ephemeral disk `%s'", realPath)
 	}
 
-	swapPartitionPath := realPath + "1"
-	dataPartitionPath := realPath + "2"
 	return swapPartitionPath, dataPartitionPath, nil
 }
 
