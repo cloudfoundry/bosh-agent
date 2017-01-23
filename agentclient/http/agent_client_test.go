@@ -876,6 +876,23 @@ var _ = Describe("AgentClient", func() {
 
 			})
 		})
+
+		Context("when POST to agent returns error", func() {
+			BeforeEach(func() {
+				fakeHTTPClient.SetPostBehavior("", http.StatusInternalServerError, errors.New("foo error"))
+			})
+
+			It("returns an error that wraps original error", func() {
+				params := action.SSHParams{
+					User: "username",
+				}
+
+				err := agentClient.SSH("setup", params)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Performing request to agent"))
+				Expect(err.Error()).To(ContainSubstring("foo error"))
+			})
+		})
 	})
 
 	Describe("SyncDNS", func() {
