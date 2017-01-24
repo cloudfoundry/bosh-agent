@@ -10,13 +10,12 @@ import (
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-
 )
 
 var _ = Describe("checksumVerifiableBlobstore", func() {
 	const (
-		fixturePath   = "test_assets/some.config"
-		fixtureSHA1   = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+		fixturePath = "test_assets/some.config"
+		fixtureSHA1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 	)
 
 	var (

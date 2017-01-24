@@ -1,8 +1,8 @@
 package crypto_test
 
 import (
-	"io"
 	"bytes"
+	"io"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -1,8 +1,8 @@
 package retrystrategy_test
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

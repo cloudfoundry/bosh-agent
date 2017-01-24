@@ -59,10 +59,10 @@ type FakeLogger struct {
 	ToggleForcedDebugStub        func()
 	toggleForcedDebugMutex       sync.RWMutex
 	toggleForcedDebugArgsForCall []struct{}
-	FlushStub        func() error
-	flushMutex       sync.RWMutex
-	flushArgsForCall []struct{}
-	flushReturns struct {
+	FlushStub                    func() error
+	flushMutex                   sync.RWMutex
+	flushArgsForCall             []struct{}
+	flushReturns                 struct {
 		result1 error
 	}
 	FlushTimeoutStub        func(time.Duration) error

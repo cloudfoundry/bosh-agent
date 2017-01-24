@@ -12,10 +12,10 @@ import (
 
 var _ = Describe("Provider", func() {
 	var (
-		fs             *fakesys.FakeFileSystem
-		runner         *fakesys.FakeCmdRunner
-		logger         boshlog.Logger
-		provider       Provider
+		fs       *fakesys.FakeFileSystem
+		runner   *fakesys.FakeCmdRunner
+		logger   boshlog.Logger
+		provider Provider
 	)
 
 	BeforeEach(func() {

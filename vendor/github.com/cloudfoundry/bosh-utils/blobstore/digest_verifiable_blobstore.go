@@ -8,7 +8,7 @@ import (
 )
 
 type digestVerifiableBlobstore struct {
-	blobstore      Blobstore
+	blobstore Blobstore
 }
 
 func NewDigestVerifiableBlobstore(blobstore Blobstore) Blobstore {

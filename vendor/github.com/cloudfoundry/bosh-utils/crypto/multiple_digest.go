@@ -1,10 +1,10 @@
 package crypto
 
 import (
-	"strings"
-	"io"
 	"errors"
 	"fmt"
+	"io"
+	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
@@ -29,7 +29,7 @@ func MustParseMultipleDigest(json string) MultipleDigest {
 	return digest
 }
 
-func (m MultipleDigest) String() string { return m.strongestDigest().String() }
+func (m MultipleDigest) String() string       { return m.strongestDigest().String() }
 func (m MultipleDigest) Algorithm() Algorithm { return m.strongestDigest().Algorithm() }
 
 func (m MultipleDigest) Verify(reader io.Reader) error {
@@ -61,7 +61,7 @@ func (m MultipleDigest) validate() error {
 	return nil
 }
 
-func (m MultipleDigest) strongestDigest() (Digest) {
+func (m MultipleDigest) strongestDigest() Digest {
 	if len(m.digests) == 0 {
 		panic("no digests have been provided")
 	}

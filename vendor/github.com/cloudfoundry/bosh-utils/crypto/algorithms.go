@@ -1,18 +1,18 @@
 package crypto
 
 import (
-	"io"
-	"hash"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
+	"hash"
+	"io"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 var (
-	DigestAlgorithmSHA1 Algorithm = algorithmSHAImpl{"sha1"}
+	DigestAlgorithmSHA1   Algorithm = algorithmSHAImpl{"sha1"}
 	DigestAlgorithmSHA256 Algorithm = algorithmSHAImpl{"sha256"}
 	DigestAlgorithmSHA512 Algorithm = algorithmSHAImpl{"sha512"}
 )
@@ -36,10 +36,14 @@ func (a algorithmSHAImpl) CreateDigest(reader io.Reader) (Digest, error) {
 
 func (a algorithmSHAImpl) hashFunc() hash.Hash {
 	switch a.name {
-	case "sha1": return sha1.New()
-	case "sha256": return sha256.New()
-	case "sha512": return sha512.New()
-	default: panic("Internal inconsistency")
+	case "sha1":
+		return sha1.New()
+	case "sha256":
+		return sha256.New()
+	case "sha512":
+		return sha512.New()
+	default:
+		panic("Internal inconsistency")
 	}
 }
 

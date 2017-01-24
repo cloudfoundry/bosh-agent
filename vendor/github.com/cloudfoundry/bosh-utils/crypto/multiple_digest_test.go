@@ -1,8 +1,8 @@
 package crypto_test
 
 import (
-	"strings"
 	"encoding/json"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

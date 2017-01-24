@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-
 var _ = Describe("digestImpl", func() {
 	Describe("Verify", func() {
 		var digest Digest
