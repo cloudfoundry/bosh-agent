@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"time"
 
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
@@ -15,6 +14,7 @@ import (
 )
 
 type httpMetadataService struct {
+	retryClient     boshhttp.RetryClient
 	metadataHost    string
 	metadataHeaders map[string]string
 	userdataPath    string
@@ -24,7 +24,6 @@ type httpMetadataService struct {
 	platform        boshplat.Platform
 	logTag          string
 	logger          boshlog.Logger
-	retryDelay      time.Duration
 }
 
 func NewHTTPMetadataService(
@@ -38,6 +37,7 @@ func NewHTTPMetadataService(
 	logger boshlog.Logger,
 ) DynamicMetadataService {
 	return httpMetadataService{
+		retryClient:     boshhttp.NewDefaultRetryClient(10, 1*time.Second, logger),
 		metadataHost:    metadataHost,
 		metadataHeaders: metadataHeaders,
 		userdataPath:    userdataPath,
@@ -47,7 +47,6 @@ func NewHTTPMetadataService(
 		platform:        platform,
 		logTag:          "httpMetadataService",
 		logger:          logger,
-		retryDelay:      1 * time.Second,
 	}
 }
 
@@ -63,6 +62,7 @@ func NewHTTPMetadataServiceWithCustomRetryDelay(
 	retryDelay time.Duration,
 ) DynamicMetadataService {
 	return httpMetadataService{
+		retryClient:     boshhttp.NewDefaultRetryClient(10, retryDelay, logger),
 		metadataHost:    metadataHost,
 		metadataHeaders: metadataHeaders,
 		userdataPath:    userdataPath,
@@ -72,7 +72,6 @@ func NewHTTPMetadataServiceWithCustomRetryDelay(
 		platform:        platform,
 		logTag:          "httpMetadataService",
 		logger:          logger,
-		retryDelay:      retryDelay,
 	}
 }
 
@@ -91,7 +90,7 @@ func (ms httpMetadataService) GetPublicKey() (string, error) {
 	}
 
 	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.sshKeysPath)
-	resp, err := ms.doGet(url)
+	resp, err := ms.retryClient.GetWithHeaders(url, ms.metadataHeaders)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting open ssh key from url %s", url)
 	}
@@ -121,7 +120,7 @@ func (ms httpMetadataService) GetInstanceID() (string, error) {
 	}
 
 	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.instanceIDPath)
-	resp, err := ms.doGet(url)
+	resp, err := ms.retryClient.GetWithHeaders(url, ms.metadataHeaders)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting instance id from url %s", url)
 	}
@@ -151,7 +150,7 @@ func (ms httpMetadataService) GetValueAtPath(path string) (string, error) {
 	}
 
 	url := fmt.Sprintf("%s%s", ms.metadataHost, path)
-	resp, err := ms.doGet(url)
+	resp, err := ms.retryClient.GetWithHeaders(url, ms.metadataHeaders)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting value from url %s", url)
 	}
@@ -218,7 +217,7 @@ func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 	}
 
 	userDataURL := fmt.Sprintf("%s%s", ms.metadataHost, ms.userdataPath)
-	userDataResp, err := ms.doGet(userDataURL)
+	userDataResp, err := ms.retryClient.GetWithHeaders(userDataURL, ms.metadataHeaders)
 	if err != nil {
 		return userData, bosherr.WrapErrorf(err, "Getting user data from url %s", userDataURL)
 	}
@@ -264,24 +263,4 @@ func (ms httpMetadataService) ensureMinimalNetworkSetup() error {
 	}
 
 	return nil
-}
-
-func (ms httpMetadataService) doGet(url string) (*http.Response, error) {
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	for key, value := range ms.metadataHeaders {
-		req.Header.Add(key, value)
-	}
-
-	client := boshhttp.NewRetryClient(
-		&http.Client{},
-		10,
-		ms.retryDelay,
-		ms.logger,
-	)
-	return client.Do(req)
 }
