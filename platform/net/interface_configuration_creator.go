@@ -16,6 +16,7 @@ type StaticInterfaceConfiguration struct {
 	IsDefaultForGateway bool
 	Mac                 string
 	Gateway             string
+	PostUpRoutes        boshsettings.Routes
 }
 
 type StaticInterfaceConfigurations []StaticInterfaceConfiguration
@@ -69,7 +70,7 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration, ifaceName string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	creator.logger.Debug(creator.logTag, "Creating network configuration with settings: %s", networkSettings)
 
-	if networkSettings.IsDHCP() || networkSettings.Mac == "" {
+	if (networkSettings.IsDHCP() || networkSettings.Mac == "") && networkSettings.LinkName == "" {
 		creator.logger.Debug(creator.logTag, "Using dhcp networking")
 		dhcpConfigs = append(dhcpConfigs, DHCPInterfaceConfiguration{
 			Name: ifaceName,
@@ -96,6 +97,10 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 }
 
 func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
+	if networks.HasLinkName() {
+		return creator.createMultipleInterfaceConfigurationsWithLinkNames(networks)
+	}
+
 	// In cases where we only have one network and it has no MAC address (either because the IAAS doesn't give us one or
 	// it's an old CPI), if we only have one interface, we should map them
 	if len(networks) == 1 && len(interfacesByMAC) == 1 {
@@ -135,6 +140,21 @@ func (creator interfaceConfigurationCreator) createMultipleInterfaceConfiguratio
 		staticConfigs, dhcpConfigs, err = creator.createInterfaceConfiguration(staticConfigs, dhcpConfigs, ifaceName, networkSettings)
 		if err != nil {
 			return nil, nil, bosherr.WrapError(err, "Creating interface configuration")
+		}
+	}
+
+	return staticConfigs, dhcpConfigs, nil
+}
+
+func (creator interfaceConfigurationCreator) createMultipleInterfaceConfigurationsWithLinkNames(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
+	var err error
+	staticConfigs := []StaticInterfaceConfiguration{}
+	dhcpConfigs := []DHCPInterfaceConfiguration{}
+
+	for _, networkSettings := range networks {
+		staticConfigs, dhcpConfigs, err = creator.createInterfaceConfiguration(staticConfigs, dhcpConfigs, networkSettings.LinkName, networkSettings)
+		if err != nil {
+			return nil, nil, bosherr.WrapError(err, "Creating interface configuration using link names")
 		}
 	}
 

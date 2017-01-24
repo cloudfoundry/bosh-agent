@@ -122,6 +122,10 @@ func (s *settingsService) GetSettings() Settings {
 	}
 	s.settingsMutex.Unlock()
 
+	if settingsCopy.Networks.HasLinkName() {
+		return settingsCopy
+	}
+
 	for networkName, network := range settingsCopy.Networks {
 		if !network.IsDHCP() {
 			continue
