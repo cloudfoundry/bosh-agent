@@ -9,14 +9,24 @@ import (
 
 type linuxAuditLoggerProvider struct{}
 
+const topicName = "vcap.agent"
+
 func NewAuditLoggerProvider() AuditLoggerProvider {
 	return &linuxAuditLoggerProvider{}
 }
 
 func (p *linuxAuditLoggerProvider) ProvideDebugLogger() (*log.Logger, error) {
-	return syslog.NewLogger(syslog.LOG_DEBUG, log.LstdFlags)
+	writer, err := syslog.New(syslog.LOG_DEBUG, topicName)
+	if err != nil {
+		return nil, err
+	}
+	return log.New(writer, "", log.LstdFlags), nil
 }
 
 func (p *linuxAuditLoggerProvider) ProvideErrorLogger() (*log.Logger, error) {
-	return syslog.NewLogger(syslog.LOG_ERR, log.LstdFlags)
+	writer, err := syslog.New(syslog.LOG_ERR, topicName)
+	if err != nil {
+		return nil, err
+	}
+	return log.New(writer, "", log.LstdFlags), nil
 }

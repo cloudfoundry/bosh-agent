@@ -75,9 +75,10 @@ func (l *DelayedAuditLogger) StartLogging() {
 func (l *DelayedAuditLogger) Debug(msg string) {
 	l.logger.Debug(delayedAuditLoggerTag, fmt.Sprintf("Logging %s to syslog", msg))
 
-	if len(l.debugLogCh) < 1000 {
-		l.debugLogCh <- msg
-	} else {
+	select {
+	case l.debugLogCh <- msg:
+
+	default:
 		l.logger.Debug(delayedAuditLoggerTag, fmt.Sprintf("Debug message '%s' not sent to syslog", msg))
 	}
 }
@@ -85,9 +86,10 @@ func (l *DelayedAuditLogger) Debug(msg string) {
 func (l *DelayedAuditLogger) Err(msg string) {
 	l.logger.Debug(delayedAuditLoggerTag, fmt.Sprintf("Logging %s to syslog", msg))
 
-	if len(l.errorLogCh) < 1000 {
-		l.errorLogCh <- msg
-	} else {
+	select {
+	case l.errorLogCh <- msg:
+
+	default:
 		l.logger.Debug(delayedAuditLoggerTag, fmt.Sprintf("Error message '%s' not sent to syslog", msg))
 	}
 }
