@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-utils/blobstore"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 	"github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -29,10 +30,11 @@ type FakeBlobManagerInterface struct {
 	writeReturns struct {
 		result1 error
 	}
-	GetPathStub        func(blobID string) (string, error)
+	GetPathStub        func(blobID string, digest crypto.Digest) (string, error)
 	getPathMutex       sync.RWMutex
 	getPathArgsForCall []struct {
 		blobID string
+		digest crypto.Digest
 	}
 	getPathReturns struct {
 		result1 string
@@ -127,15 +129,16 @@ func (fake *FakeBlobManagerInterface) WriteReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeBlobManagerInterface) GetPath(blobID string) (string, error) {
+func (fake *FakeBlobManagerInterface) GetPath(blobID string, digest crypto.Digest) (string, error) {
 	fake.getPathMutex.Lock()
 	fake.getPathArgsForCall = append(fake.getPathArgsForCall, struct {
 		blobID string
-	}{blobID})
-	fake.recordInvocation("GetPath", []interface{}{blobID})
+		digest crypto.Digest
+	}{blobID, digest})
+	fake.recordInvocation("GetPath", []interface{}{blobID, digest})
 	fake.getPathMutex.Unlock()
 	if fake.GetPathStub != nil {
-		return fake.GetPathStub(blobID)
+		return fake.GetPathStub(blobID, digest)
 	} else {
 		return fake.getPathReturns.result1, fake.getPathReturns.result2
 	}
@@ -147,10 +150,10 @@ func (fake *FakeBlobManagerInterface) GetPathCallCount() int {
 	return len(fake.getPathArgsForCall)
 }
 
-func (fake *FakeBlobManagerInterface) GetPathArgsForCall(i int) string {
+func (fake *FakeBlobManagerInterface) GetPathArgsForCall(i int) (string, crypto.Digest) {
 	fake.getPathMutex.RLock()
 	defer fake.getPathMutex.RUnlock()
-	return fake.getPathArgsForCall[i].blobID
+	return fake.getPathArgsForCall[i].blobID, fake.getPathArgsForCall[i].digest
 }
 
 func (fake *FakeBlobManagerInterface) GetPathReturns(result1 string, result2 error) {
