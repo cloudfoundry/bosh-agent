@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -754,14 +755,38 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				ServerConn.Close()
 			})
 
+			// Test that the syslog message s matches pattern:
+			// <6>2017-02-01T10:14:58-05:00 127.0.0.1 say-hello-1-123[100]: Hello 1
+			matchSyslogMsg := func(s string) {
+				const tmpl = "<6>%s %s say-hello-1-%d[%d]: Hello 1"
+				var (
+					id        int
+					pid       int
+					timeStamp string
+					ipAddr    string
+				)
+				s = strings.TrimSpace(s)
+				n, err := fmt.Sscanf(s, tmpl, &timeStamp, &ipAddr, &id, &pid)
+				if n != 4 || err != nil {
+					Expect(fmt.Errorf("Got %q, does not match template %q (%d %s)",
+						s, tmpl, n, err)).To(Succeed())
+				}
+
+				_, err = time.Parse(time.RFC3339, timeStamp)
+				Expect(err).To(Succeed())
+
+				Expect(ipAddr).To(Equal(DefaultMachineIP))
+
+				Expect(id).ToNot(Equal(0))
+				Expect(pid).ToNot(Equal(0))
+			}
+
 			It("report the logs", func(done Done) {
 				_, err := AddJob("say-hello-syslog")
 				Expect(err).To(Succeed())
 				Expect(jobSupervisor.Start()).To(Succeed())
 				syslogMsg := <-syslogReceived
-				Expect(syslogMsg).To(MatchRegexp("<6>\\S+\\s+\\S+\\s+say-hello-1-[^\\s:]*: Hello\n"))
-				Expect(syslogMsg).To(ContainSubstring(DefaultMachineIP))
-
+				matchSyslogMsg(syslogMsg)
 				close(done)
 			}, 20)
 		})
