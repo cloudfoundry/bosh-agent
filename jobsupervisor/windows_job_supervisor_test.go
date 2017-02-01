@@ -63,7 +63,7 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 				{
 					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
 					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello 1\"; Start-Sleep 10"},
+					Args:       []string{"/C", "Write-Host \"Hello\"; Start-Sleep 10"},
 					Env: map[string]string{
 						"__PIPE_SYSLOG_HOST":      "localhost",
 						"__PIPE_SYSLOG_PORT":      "10202",
@@ -758,7 +758,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			// Test that the syslog message s matches pattern:
 			// <6>2017-02-01T10:14:58-05:00 127.0.0.1 say-hello-1-123[100]: Hello 1
 			matchSyslogMsg := func(s string) {
-				const tmpl = "<6>%s %s say-hello-1-%d[%d]: Hello 1"
+				const tmpl = "<6>%s %s say-hello-1-%d[%d]: Hello"
 				var (
 					id        int
 					pid       int
