@@ -20,7 +20,7 @@ import (
 const localDNSStateFilename = "local_dns_state.json"
 
 type SyncDNS struct {
-	blobstore       boshblob.Blobstore
+	blobstore       boshblob.DigestBlobstore
 	settingsService boshsettings.Service
 	platform        boshplat.Platform
 	logger          boshlog.Logger
@@ -28,7 +28,7 @@ type SyncDNS struct {
 	lock            *sync.Mutex
 }
 
-func NewSyncDNS(blobstore boshblob.Blobstore, settingsService boshsettings.Service, platform boshplat.Platform, logger boshlog.Logger) SyncDNS {
+func NewSyncDNS(blobstore boshblob.DigestBlobstore, settingsService boshsettings.Service, platform boshplat.Platform, logger boshlog.Logger) SyncDNS {
 	return SyncDNS{
 		blobstore:       blobstore,
 		settingsService: settingsService,

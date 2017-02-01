@@ -62,7 +62,7 @@ func init() {
 		var (
 			compiler       Compiler
 			compressor     *fakecmd.FakeCompressor
-			blobstore      *fakeblobstore.FakeBlobstore
+			blobstore      *fakeblobstore.FakeDigestBlobstore
 			fs             *fakesys.FakeFileSystem
 			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepackages.FakeApplier
@@ -71,7 +71,7 @@ func init() {
 
 		BeforeEach(func() {
 			compressor = fakecmd.NewFakeCompressor()
-			blobstore = &fakeblobstore.FakeBlobstore{}
+			blobstore = &fakeblobstore.FakeDigestBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
 			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
 			packageApplier = fakepackages.NewFakeApplier()
@@ -86,9 +86,7 @@ func init() {
 				packageApplier,
 				packagesBc,
 			)
-		})
 
-		BeforeEach(func() {
 			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
 			Expect(fs.WriteFileString("/tmp/compressed-compiled-package", "fake-contents")).ToNot(HaveOccurred())
 		})
@@ -115,7 +113,7 @@ func init() {
 			})
 
 			It("returns blob id and sha1 of created compiled package", func() {
-				blobstore.CreateBlobID = "fake-blob-id"
+				blobstore.CreateReturns("fake-blob-id", boshcrypto.MultipleDigest{}, nil)
 
 				blobID, digest, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
@@ -125,7 +123,7 @@ func init() {
 			})
 
 			It("returns blob id and correct sha algo of created compiled package", func() {
-				blobstore.CreateBlobID = "fake-blob-id"
+				blobstore.CreateReturns("fake-blob-id", boshcrypto.MultipleDigest{}, nil)
 
 				// Currently algo of source package is used for compilation pkg algo
 				pkg.Sha1 = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "fakesha"))
@@ -135,8 +133,9 @@ func init() {
 				// echo -n fake-contents|shasum -a 256
 				Expect(digest.String()).To(Equal("sha256:d12d3a3ee8dcdc9e7ea3416fd618298ea50abde2cf434313c6c3edb213f441cd"))
 
-				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-				Expect(blobstore.GetFingerprints[0]).To(Equal(pkg.Sha1))
+				blobID, fingerprint := blobstore.GetArgsForCall(0)
+				Expect(blobID).To(Equal("blobstore_id"))
+				Expect(fingerprint).To(Equal(pkg.Sha1))
 			})
 
 			It("cleans up all packages before and after applying dependent packages", func() {
@@ -308,7 +307,7 @@ func init() {
 
 				// archive was downloaded from the blobstore and decompress to this temp dir
 				Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/fake-compile-dir/pkg_name-bosh-agent-unpack"))
-				Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal(blobstore.GetFileName))
+				Expect(compressor.DecompressFileToDirTarballPaths[0]).To(BeEmpty())
 
 				// contents were moved from the temp dir to the install/enable dir
 				Expect(fs.RenameOldPaths[0]).To(Equal("/fake-compile-dir/pkg_name-bosh-agent-unpack"))
@@ -324,11 +323,11 @@ func init() {
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(blobstore.CreateFileNames[0]).To(Equal("/tmp/compressed-compiled-package"))
+				Expect(blobstore.CreateArgsForCall(0)).To(Equal("/tmp/compressed-compiled-package"))
 			})
 
 			It("returs error if uploading compressed package fails", func() {
-				blobstore.CreateErr = errors.New("fake-create-err")
+				blobstore.CreateReturns("", boshcrypto.MultipleDigest{}, errors.New("fake-create-err"))
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(HaveOccurred())
@@ -338,8 +337,9 @@ func init() {
 			It("cleans up compressed package after uploading it to blobstore", func() {
 				var beforeCleanUpTarballPath, afterCleanUpTarballPath string
 
-				blobstore.CreateCallBack = func() {
+				blobstore.CreateStub = func(fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
 					beforeCleanUpTarballPath = compressor.CleanUpTarballPath
+					return "my-blob-id", boshcrypto.MultipleDigest{}, nil
 				}
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)

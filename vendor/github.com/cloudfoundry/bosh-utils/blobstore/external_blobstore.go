@@ -7,7 +7,6 @@ import (
 
 	"errors"
 
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
@@ -40,7 +39,7 @@ func NewExternalBlobstore(
 	}
 }
 
-func (b externalBlobstore) Get(blobID string, _ boshcrypto.Digest) (string, error) {
+func (b externalBlobstore) Get(blobID string) (string, error) {
 	file, err := b.fs.TempFile("bosh-blobstore-externalBlobstore-Get")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")

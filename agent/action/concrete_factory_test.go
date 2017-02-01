@@ -29,7 +29,7 @@ var _ = Describe("concreteFactory", func() {
 	var (
 		settingsService   *fakesettings.FakeSettingsService
 		platform          *fakeplatform.FakePlatform
-		blobstore         *fakeblobstore.FakeBlobstore
+		blobstore         *fakeblobstore.FakeDigestBlobstore
 		blobManager       *fakeblobstore.FakeBlobManagerInterface
 		taskService       *faketask.FakeService
 		notifier          *fakenotif.FakeNotifier
@@ -45,7 +45,7 @@ var _ = Describe("concreteFactory", func() {
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		platform = fakeplatform.NewFakePlatform()
-		blobstore = &fakeblobstore.FakeBlobstore{}
+		blobstore = &fakeblobstore.FakeDigestBlobstore{}
 		blobManager = &fakeblobstore.FakeBlobManagerInterface{}
 		taskService = &faketask.FakeService{}
 		notifier = fakenotif.NewFakeNotifier()

@@ -14,13 +14,13 @@ import (
 
 var _ = Describe("cascadingBlobstore", func() {
 	var (
-		innerBlobstore     *fakeblob.FakeBlobstore
+		innerBlobstore     *fakeblob.FakeDigestBlobstore
 		blobManager        *fakeblob.FakeBlobManagerInterface
-		cascadingBlobstore boshblob.Blobstore
+		cascadingBlobstore boshblob.DigestBlobstore
 	)
 
 	BeforeEach(func() {
-		innerBlobstore = &fakeblob.FakeBlobstore{}
+		innerBlobstore = &fakeblob.FakeDigestBlobstore{}
 		blobManager = &fakeblob.FakeBlobManagerInterface{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 
@@ -49,7 +49,7 @@ var _ = Describe("cascadingBlobstore", func() {
 				Expect(receivedBlobID).To(Equal("blobID"))
 				Expect(receivedDigest).To(Equal(digest))
 
-				Expect(innerBlobstore.GetBlobIDs).Should(BeEmpty())
+				Expect(innerBlobstore.GetCallCount()).To(Equal(0))
 			})
 
 			Context("when blobManager returns an error", func() {
@@ -68,7 +68,7 @@ var _ = Describe("cascadingBlobstore", func() {
 					Expect(receivedBlobID).To(Equal("blobID"))
 					Expect(receivedDigest).To(Equal(digest))
 
-					Expect(innerBlobstore.GetBlobIDs).Should(BeEmpty())
+					Expect(innerBlobstore.GetCallCount()).To(Equal(0))
 				})
 			})
 		})
@@ -85,9 +85,8 @@ var _ = Describe("cascadingBlobstore", func() {
 
 				blobManager.GetPathReturns("", errors.New("broken"))
 
-				innerBlobstore.GetFileName = "/smurf-file/path"
-				innerBlobstore.GetError = nil
-				innerBlobstore.CreateBlobID = "createdBlobID"
+				innerBlobstore.GetReturns("/smurf-file/path", nil)
+				innerBlobstore.CreateReturns("createdBlobID", boshcrypto.MultipleDigest{}, nil)
 
 				filename, err := cascadingBlobstore.Get(blobID, digest)
 
@@ -96,11 +95,10 @@ var _ = Describe("cascadingBlobstore", func() {
 
 				Expect(blobManager.GetPathCallCount()).To(Equal(0))
 
-				Expect(len(innerBlobstore.GetBlobIDs)).To(Equal(1))
-				Expect(len(innerBlobstore.GetFingerprints)).To(Equal(1))
-
-				Expect(innerBlobstore.GetBlobIDs[0]).To(Equal(blobID))
-				Expect(innerBlobstore.GetFingerprints[0]).To(Equal(digest))
+				Expect(innerBlobstore.GetCallCount()).To(Equal(1))
+				receivedBlobID, receivedDigest := innerBlobstore.GetArgsForCall(0)
+				Expect(receivedBlobID).To(Equal(blobID))
+				Expect(receivedDigest).To(Equal(digest))
 			})
 
 			Context("when inner blobstore returns an error", func() {
@@ -111,8 +109,7 @@ var _ = Describe("cascadingBlobstore", func() {
 
 					blobManager.GetPathReturns("", errors.New("broken"))
 
-					innerBlobstore.GetFileName = "/smurf-file/path"
-					innerBlobstore.GetError = errors.New("inner blobstore GET is broken")
+					innerBlobstore.GetReturns("/smurf-file/path", errors.New("inner blobstore GET is broken"))
 
 					_, err := cascadingBlobstore.Get(blobID, boshcrypto.MustNewMultipleDigest(sha1))
 
@@ -125,15 +122,13 @@ var _ = Describe("cascadingBlobstore", func() {
 
 	Describe("CleanUp", func() {
 		It("delegates the action to the inner blobstore", func() {
-			innerBlobstore.CleanUpErr = nil
-
 			err := cascadingBlobstore.CleanUp("fileToDelete")
 			Expect(err).To(BeNil())
-			Expect(innerBlobstore.CleanUpFileName).To(Equal("fileToDelete"))
+			Expect(innerBlobstore.CleanUpArgsForCall(0)).To(Equal("fileToDelete"))
 		})
 
 		It("returns an error if the inner blobstore fails to clean up", func() {
-			innerBlobstore.CleanUpErr = errors.New("error cleaning up")
+			innerBlobstore.CleanUpReturns(errors.New("error cleaning up"))
 
 			err := cascadingBlobstore.CleanUp("randomFile")
 			Expect(err).ToNot(BeNil())
@@ -143,24 +138,22 @@ var _ = Describe("cascadingBlobstore", func() {
 
 	Describe("Create", func() {
 		It("delegates the action to the inner blobstore", func() {
-			innerBlobstore.CreateErr = nil
-			innerBlobstore.CreateBlobID = "createBlobId"
+			innerBlobstore.CreateReturns("createBlobId", boshcrypto.MultipleDigest{}, nil)
 
-			createdBlobID, err := cascadingBlobstore.Create("createdFile")
+			createdBlobID, _, err := cascadingBlobstore.Create("createdFile")
 
 			Expect(err).To(BeNil())
 
 			Expect(createdBlobID).To(Equal("createBlobId"))
 
-			Expect(innerBlobstore.CreateFileNames).ShouldNot(BeEmpty())
-			Expect(len(innerBlobstore.CreateFileNames)).To(Equal(1))
-			Expect(innerBlobstore.CreateFileNames[0]).To(Equal("createdFile"))
+			Expect(innerBlobstore.CreateCallCount()).To(Equal(1))
+			Expect(innerBlobstore.CreateArgsForCall(0)).To(Equal("createdFile"))
 		})
 
 		It("returns an error if the inner blobstore fails to create", func() {
-			innerBlobstore.CreateErr = errors.New("error creating")
+			innerBlobstore.CreateReturns("", boshcrypto.MultipleDigest{}, errors.New("error creating"))
 
-			_, err := cascadingBlobstore.Create("createdFile")
+			_, _, err := cascadingBlobstore.Create("createdFile")
 
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("error creating"))
@@ -175,7 +168,7 @@ var _ = Describe("cascadingBlobstore", func() {
 		})
 
 		It("returns an error if the inner blobstore fails to validate", func() {
-			innerBlobstore.ValidateError = errors.New("error validating")
+			innerBlobstore.ValidateReturns(errors.New("error validating"))
 
 			err := cascadingBlobstore.Validate()
 
@@ -189,7 +182,6 @@ var _ = Describe("cascadingBlobstore", func() {
 			blobID := "smurf-25"
 
 			blobManager.DeleteReturns(nil)
-			innerBlobstore.DeleteErr = nil
 
 			err := cascadingBlobstore.Delete(blobID)
 
@@ -198,14 +190,13 @@ var _ = Describe("cascadingBlobstore", func() {
 			Expect(blobManager.DeleteCallCount()).To(Equal(1))
 			Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
 
-			Expect(innerBlobstore.DeleteBlobID).To(Equal(blobID))
+			Expect(innerBlobstore.DeleteArgsForCall(0)).To(Equal(blobID))
 		})
 
 		It("returns an error if blobManager returns an error when deleting", func() {
 			blobID := "smurf-28"
 
 			blobManager.DeleteReturns(errors.New("error deleting in blobManager"))
-			innerBlobstore.DeleteErr = nil
 
 			err := cascadingBlobstore.Delete(blobID)
 
@@ -215,14 +206,14 @@ var _ = Describe("cascadingBlobstore", func() {
 			Expect(blobManager.DeleteCallCount()).To(Equal(1))
 			Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
 
-			Expect(innerBlobstore.DeleteBlobID).To(Equal(""))
+			Expect(innerBlobstore.DeleteCallCount()).To(Equal(0))
 		})
 
 		It("returns an error if inner blobStore returns an error when deleting", func() {
 			blobID := "smurf-29"
 
 			blobManager.DeleteReturns(nil)
-			innerBlobstore.DeleteErr = errors.New("error deleting in innerBlobStore")
+			innerBlobstore.DeleteReturns(errors.New("error deleting in innerBlobStore"))
 
 			err := cascadingBlobstore.Delete(blobID)
 
@@ -232,7 +223,7 @@ var _ = Describe("cascadingBlobstore", func() {
 			Expect(blobManager.DeleteCallCount()).To(Equal(1))
 			Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
 
-			Expect(innerBlobstore.DeleteBlobID).To(Equal(blobID))
+			Expect(innerBlobstore.DeleteArgsForCall(0)).To(Equal(blobID))
 		})
 	})
 })

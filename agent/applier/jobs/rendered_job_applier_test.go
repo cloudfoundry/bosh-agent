@@ -76,7 +76,7 @@ func init() {
 			jobsBc                 *fakebc.FakeBundleCollection
 			jobSupervisor          *fakejobsuper.FakeJobSupervisor
 			packageApplierProvider *fakepackages.FakeApplierProvider
-			blobstore              *fakeblob.FakeBlobstore
+			blobstore              *fakeblob.FakeDigestBlobstore
 			compressor             *fakecmd.FakeCompressor
 			fs                     *fakesys.FakeFileSystem
 			applier                Applier
@@ -86,7 +86,7 @@ func init() {
 			jobsBc = fakebc.NewFakeBundleCollection()
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			packageApplierProvider = fakepackages.NewFakeApplierProvider()
-			blobstore = fakeblob.NewFakeBlobstore()
+			blobstore = &fakeblob.FakeDigestBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
 			compressor = fakecmd.NewFakeCompressor()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
@@ -125,19 +125,20 @@ func init() {
 				})
 
 				It("downloads and later cleans up downloaded job template blob", func() {
-					blobstore.GetFileName = "/fake-blobstore-file-name"
+					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")))
+					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					Expect(blobID).To(Equal("fake-blobstore-id"))
+					Expect(fingerPrint).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")))
 
 					// downloaded file is cleaned up
-					Expect(blobstore.CleanUpFileName).To(Equal("/fake-blobstore-file-name"))
+					Expect(blobstore.CleanUpArgsForCall(0)).To(Equal("/fake-blobstore-file-name"))
 				})
 
 				It("returns error when downloading job template blob fails", func() {
-					blobstore.GetError = errors.New("fake-get-error")
+					blobstore.GetReturns("", errors.New("fake-get-error"))
 
 					err := act()
 					Expect(err).To(HaveOccurred())
@@ -145,7 +146,7 @@ func init() {
 				})
 
 				It("decompresses job template blob to tmp path and later cleans it up", func() {
-					blobstore.GetFileName = "/fake-blobstore-file-name"
+					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 
 					var tmpDirExistsBeforeInstall bool
 
@@ -175,23 +176,25 @@ func init() {
 				})
 
 				It("can process sha1 checksums in the new format", func() {
-					blobstore.GetFileName = "/fake-blobstore-file-name"
+					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 					job.Source.Sha1 = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1")
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1")))
+					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					Expect(blobID).To(Equal("fake-blobstore-id"))
+					Expect(fingerPrint).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1")))
 				})
 
 				It("can process sha2 checksums", func() {
-					blobstore.GetFileName = "/fake-blobstore-file-name"
+					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 					job.Source.Sha1 = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256")
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
-					Expect(blobstore.GetFingerprints[0]).To(Equal(job.Source.Sha1))
+					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					Expect(blobID).To(Equal("fake-blobstore-id"))
+					Expect(fingerPrint).To(Equal(job.Source.Sha1))
 				})
 
 				It("returns error when decompressing job template fails", func() {
@@ -379,7 +382,7 @@ func init() {
 					It("does not download the job template", func() {
 						err := act()
 						Expect(err).ToNot(HaveOccurred())
-						Expect(blobstore.GetBlobIDs).To(BeNil())
+						Expect(blobstore.GetCallCount()).To(Equal(0))
 					})
 				})
 
@@ -441,7 +444,7 @@ func init() {
 					It("does not download the job template", func() {
 						err := act()
 						Expect(err).ToNot(HaveOccurred())
-						Expect(blobstore.GetBlobIDs).To(BeNil())
+						Expect(blobstore.GetCallCount()).To(Equal(0))
 					})
 
 					ItUpdatesPackages(act)

@@ -9,15 +9,15 @@ import (
 const logTag = "cascadingBlobstore"
 
 type cascadingBlobstore struct {
-	innerBlobstore boshUtilsBlobStore.Blobstore
+	innerBlobstore boshUtilsBlobStore.DigestBlobstore
 	blobManager    boshUtilsBlobStore.BlobManagerInterface
 	logger         boshlog.Logger
 }
 
 func NewCascadingBlobstore(
-	innerBlobstore boshUtilsBlobStore.Blobstore,
+	innerBlobstore boshUtilsBlobStore.DigestBlobstore,
 	blobManager boshUtilsBlobStore.BlobManagerInterface,
-	logger boshlog.Logger) boshUtilsBlobStore.Blobstore {
+	logger boshlog.Logger) boshUtilsBlobStore.DigestBlobstore {
 	return cascadingBlobstore{
 		innerBlobstore: innerBlobstore,
 		blobManager:    blobManager,
@@ -45,7 +45,7 @@ func (b cascadingBlobstore) CleanUp(fileName string) error {
 	return b.innerBlobstore.CleanUp(fileName)
 }
 
-func (b cascadingBlobstore) Create(fileName string) (string, error) {
+func (b cascadingBlobstore) Create(fileName string) (string, boshcrypto.MultipleDigest, error) {
 	return b.innerBlobstore.Create(fileName)
 }
 

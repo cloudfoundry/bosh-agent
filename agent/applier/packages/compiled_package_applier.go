@@ -18,7 +18,7 @@ type compiledPackageApplier struct {
 	// KeepOnly will permanently uninstall packages when operating as owner
 	packagesBcOwner bool
 
-	blobstore  boshblob.Blobstore
+	blobstore  boshblob.DigestBlobstore
 	compressor boshcmd.Compressor
 	fs         boshsys.FileSystem
 	logger     boshlog.Logger
@@ -27,7 +27,7 @@ type compiledPackageApplier struct {
 func NewCompiledPackageApplier(
 	packagesBc bc.BundleCollection,
 	packagesBcOwner bool,
-	blobstore boshblob.Blobstore,
+	blobstore boshblob.DigestBlobstore,
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,

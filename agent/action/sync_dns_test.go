@@ -25,7 +25,7 @@ import (
 var _ = Describe("SyncDNS", func() {
 	var (
 		action              SyncDNS
-		fakeBlobstore       *fakeblobstore.FakeBlobstore
+		fakeBlobstore       *fakeblobstore.FakeDigestBlobstore
 		fakeSettingsService *fakesettings.FakeSettingsService
 		fakePlatform        *fakeplatform.FakePlatform
 		fakeFileSystem      *fakesys.FakeFileSystem
@@ -34,7 +34,7 @@ var _ = Describe("SyncDNS", func() {
 
 	BeforeEach(func() {
 		logger = &fakelogger.FakeLogger{}
-		fakeBlobstore = fakeblobstore.NewFakeBlobstore()
+		fakeBlobstore = &fakeblobstore.FakeDigestBlobstore{}
 		fakeSettingsService = &fakesettings.FakeSettingsService{}
 		fakePlatform = fakeplatform.NewFakePlatform()
 		fakeFileSystem = fakePlatform.GetFs().(*fakesys.FakeFileSystem)
@@ -68,13 +68,13 @@ var _ = Describe("SyncDNS", func() {
 			err := fakeFileSystem.WriteFileString("fake-blobstore-file-path", fakeDNSRecordsString)
 			Expect(err).ToNot(HaveOccurred())
 
-			fakeBlobstore.GetFileName = "fake-blobstore-file-path"
+			fakeBlobstore.GetReturns("fake-blobstore-file-path", nil)
 			stateFilePath = filepath.Join(fakePlatform.GetDirProvider().BaseDir(), "local_dns_state.json")
 		})
 
 		Context("when local DNS state version is >= Run's version", func() {
 			BeforeEach(func() {
-				fakeBlobstore.GetError = errors.New("fake-blobstore-get-error")
+				fakeBlobstore.GetReturns("", errors.New("fake-blobstore-get-error"))
 			})
 
 			Context("when the version equals the Run's version", func() {
@@ -118,11 +118,11 @@ var _ = Describe("SyncDNS", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
-					Expect(fakeBlobstore.GetBlobIDs).To(ContainElement("fake-blobstore-id"))
-					Expect(fakeBlobstore.GetFingerprints).To(ContainElement(multiDigest))
+					Expect(fakeBlobstore.GetCallCount()).To(Equal(1))
+					blobID, fingerPrint := fakeBlobstore.GetArgsForCall(0)
+					Expect(blobID).To(Equal("fake-blobstore-id"))
+					Expect(fingerPrint).To(Equal(multiDigest))
 
-					Expect(fakeBlobstore.GetError).ToNot(HaveOccurred())
-					Expect(fakeBlobstore.GetFileName).ToNot(Equal(""))
 				})
 
 				It("reads the DNS records from the blobstore file", func() {
@@ -130,8 +130,6 @@ var _ = Describe("SyncDNS", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
-					Expect(fakeBlobstore.GetError).ToNot(HaveOccurred())
-					Expect(fakeBlobstore.GetFileName).To(Equal("fake-blobstore-file-path"))
 					Expect(fakeFileSystem.ReadFileError).ToNot(HaveOccurred())
 				})
 
@@ -253,7 +251,7 @@ var _ = Describe("SyncDNS", func() {
 
 			Context("when blobstore does not contain DNS records", func() {
 				BeforeEach(func() {
-					fakeBlobstore.GetFileName = "fake-blobstore-file-path-does-not-exist"
+					fakeBlobstore.GetReturns("fake-blobstore-file-path-does-not-exist", nil)
 				})
 
 				Context("when blobstore returns an error", func() {
@@ -266,8 +264,7 @@ var _ = Describe("SyncDNS", func() {
 
 				Context("when blobstore returns a file that cannot be read", func() {
 					BeforeEach(func() {
-						fakeBlobstore.GetFileName = "fake-blobstore-file-path"
-						fakeBlobstore.GetError = nil
+						fakeBlobstore.GetReturns("fake-blobstore-file-path", nil)
 
 						fakeFileSystem.RemoveAllStub = func(path string) error {
 							if path == "fake-blobstore-file-path" {

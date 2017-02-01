@@ -12,14 +12,14 @@ import (
 type FetchLogsAction struct {
 	compressor  boshcmd.Compressor
 	copier      boshcmd.Copier
-	blobstore   boshblob.Blobstore
+	blobstore   boshblob.DigestBlobstore
 	settingsDir boshdirs.Provider
 }
 
 func NewFetchLogs(
 	compressor boshcmd.Compressor,
 	copier boshcmd.Copier,
-	blobstore boshblob.Blobstore,
+	blobstore boshblob.DigestBlobstore,
 	settingsDir boshdirs.Provider,
 ) (action FetchLogsAction) {
 	action.compressor = compressor
@@ -78,7 +78,7 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 		_ = a.compressor.CleanUp(tarball)
 	}()
 
-	blobID, err := a.blobstore.Create(tarball)
+	blobID, _, err := a.blobstore.Create(tarball)
 	if err != nil {
 		err = bosherr.WrapError(err, "Create file on blobstore")
 		return

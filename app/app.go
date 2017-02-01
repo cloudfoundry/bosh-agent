@@ -237,7 +237,7 @@ func (app *app) GetPlatform() boshplatform.Platform {
 
 func (app *app) buildApplierAndCompiler(
 	dirProvider boshdirs.Provider,
-	blobstore boshblob.Blobstore,
+	blobstore boshblob.DigestBlobstore,
 	jobSupervisor boshjobsuper.JobSupervisor,
 ) (boshapplier.Applier, boshcomp.Compiler) {
 	fileSystem := app.platform.GetFs()
@@ -321,7 +321,7 @@ func (app *app) fileContents(path string) string {
 	return contents
 }
 
-func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobManager boshblob.BlobManagerInterface) (boshblob.Blobstore, error) {
+func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobManager boshblob.BlobManagerInterface) (boshblob.DigestBlobstore, error) {
 	blobstoreProvider := boshblob.NewProvider(
 		app.platform.GetFs(),
 		app.platform.GetRunner(),

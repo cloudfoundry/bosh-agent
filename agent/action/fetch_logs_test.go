@@ -10,6 +10,7 @@ import (
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 )
 
@@ -17,14 +18,14 @@ var _ = Describe("FetchLogsAction", func() {
 	var (
 		compressor  *fakecmd.FakeCompressor
 		copier      *fakecmd.FakeCopier
-		blobstore   *fakeblobstore.FakeBlobstore
+		blobstore   *fakeblobstore.FakeDigestBlobstore
 		dirProvider boshdirs.Provider
 		action      FetchLogsAction
 	)
 
 	BeforeEach(func() {
 		compressor = fakecmd.NewFakeCompressor()
-		blobstore = &fakeblobstore.FakeBlobstore{}
+		blobstore = &fakeblobstore.FakeDigestBlobstore{}
 		dirProvider = boshdirs.NewProvider("/fake/dir")
 		copier = fakecmd.NewFakeCopier()
 		action = NewFetchLogs(compressor, copier, blobstore, dirProvider)
@@ -41,7 +42,9 @@ var _ = Describe("FetchLogsAction", func() {
 		testLogs := func(logType string, filters []string, expectedFilters []string) {
 			copier.FilteredCopyToTempTempDir = "/fake-temp-dir"
 			compressor.CompressFilesInDirTarballPath = "logs_test.tar"
-			blobstore.CreateBlobID = "my-blob-id"
+			blobstore.CreateStub = func(fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
+				return "my-blob-id", boshcrypto.MultipleDigest{}, nil
+			}
 
 			logs, err := action.Run(logType, filters)
 			Expect(err).ToNot(HaveOccurred())
@@ -60,7 +63,7 @@ var _ = Describe("FetchLogsAction", func() {
 			Expect(copier.FilteredCopyToTempTempDir).To(Equal(compressor.CompressFilesInDirDir))
 			Expect(copier.CleanUpTempDir).To(Equal(compressor.CompressFilesInDirDir))
 
-			Expect(compressor.CompressFilesInDirTarballPath).To(Equal(blobstore.CreateFileNames[0]))
+			Expect(compressor.CompressFilesInDirTarballPath).To(Equal(blobstore.CreateArgsForCall(0)))
 
 			boshassert.MatchesJSONString(GinkgoT(), logs, `{"blobstore_id":"my-blob-id"}`)
 		}
@@ -99,8 +102,10 @@ var _ = Describe("FetchLogsAction", func() {
 
 			compressor.CompressFilesInDirTarballPath = "/fake-compressed-logs.tar"
 
-			blobstore.CreateCallBack = func() {
+			blobstore.CreateStub = func(fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
 				beforeCleanUpTarballPath = compressor.CleanUpTarballPath
+
+				return "my-blob-id", boshcrypto.MultipleDigest{}, nil
 			}
 
 			_, err := action.Run("job", []string{})

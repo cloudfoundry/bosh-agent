@@ -24,7 +24,7 @@ type CompileDirProvider interface {
 
 type concreteCompiler struct {
 	compressor         boshcmd.Compressor
-	blobstore          boshblob.Blobstore
+	blobstore          boshblob.DigestBlobstore
 	fs                 boshsys.FileSystem
 	runner             boshcmdrunner.CmdRunner
 	compileDirProvider CompileDirProvider
@@ -34,7 +34,7 @@ type concreteCompiler struct {
 
 func NewConcreteCompiler(
 	compressor boshcmd.Compressor,
-	blobstore boshblob.Blobstore,
+	blobstore boshblob.DigestBlobstore,
 	fs boshsys.FileSystem,
 	runner boshcmdrunner.CmdRunner,
 	compileDirProvider CompileDirProvider,
@@ -129,7 +129,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		return "", nil, bosherr.WrapError(err, "Calculating compiled package digest")
 	}
 
-	uploadedBlobID, err := c.blobstore.Create(tmpPackageTar)
+	uploadedBlobID, _, err := c.blobstore.Create(tmpPackageTar)
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Uploading compiled package")
 	}

@@ -10,7 +10,6 @@ import (
 
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	. "github.com/cloudfoundry/bosh-utils/blobstore"
-	"github.com/cloudfoundry/bosh-utils/crypto"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
@@ -69,7 +68,7 @@ var _ = Describe("externalBlobstore", func() {
 			fs.ReturnTempFile = tempFile
 			defer fs.RemoveAll(tempFile.Name())
 
-			fileName, err := blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			fileName, err := blobstore.Get("fake-blob-id")
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(len(runner.RunCommands)).To(Equal(1))
@@ -86,7 +85,7 @@ var _ = Describe("externalBlobstore", func() {
 		It("external get errs when temp file create errs", func() {
 			fs.TempFileError = errors.New("fake-error")
 
-			fileName, err := blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			fileName, err := blobstore.Get("fake-blob-id")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-error"))
 
@@ -107,7 +106,7 @@ var _ = Describe("externalBlobstore", func() {
 			}
 			runner.AddCmdResult(strings.Join(expectedCmd, " "), fakesys.FakeCmdResult{Error: errors.New("fake-error")})
 
-			fileName, err := blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			fileName, err := blobstore.Get("fake-blob-id")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-error"))
 

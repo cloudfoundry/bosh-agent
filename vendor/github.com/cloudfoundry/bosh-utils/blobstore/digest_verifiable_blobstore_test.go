@@ -10,6 +10,8 @@ import (
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("checksumVerifiableBlobstore", func() {
@@ -20,29 +22,35 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 
 	var (
 		innerBlobstore              *fakeblob.FakeBlobstore
-		checksumVerifiableBlobstore boshblob.Blobstore
+		checksumVerifiableBlobstore boshblob.DigestBlobstore
 		correctDigest               boshcrypto.Digest
+		fs 			    *fakesys.FakeFileSystem
 	)
 
 	BeforeEach(func() {
 		correctDigest = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, fixtureSHA1)
 		innerBlobstore = &fakeblob.FakeBlobstore{}
-		checksumVerifiableBlobstore = boshblob.NewDigestVerifiableBlobstore(innerBlobstore)
+		fs = fakesys.NewFakeFileSystem()
+		createAlgorithms := []boshcrypto.Algorithm{
+			boshcrypto.DigestAlgorithmSHA1,
+			boshcrypto.DigestAlgorithmSHA256,
+		}
+		checksumVerifiableBlobstore = boshblob.NewDigestVerifiableBlobstore(innerBlobstore, fs, createAlgorithms)
 	})
 
 	Describe("Get", func() {
 		It("returns without an error if digest matches", func() {
-			innerBlobstore.GetFileName = fixturePath
+			innerBlobstore.GetReturns(fixturePath, nil)
 
 			fileName, err := checksumVerifiableBlobstore.Get("fake-blob-id", correctDigest)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(innerBlobstore.GetBlobIDs).To(Equal([]string{"fake-blob-id"}))
+			Expect(innerBlobstore.GetArgsForCall(0)).To(Equal("fake-blob-id"))
 			Expect(fileName).To(Equal(fixturePath))
 		})
 
 		It("returns error if digest does not match", func() {
-			innerBlobstore.GetFileName = fixturePath
+			innerBlobstore.GetReturns(fixturePath, nil)
 
 			incorrectDigest := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "some-incorrect-sha1")
 
@@ -52,7 +60,7 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 		})
 
 		It("returns error if inner blobstore getting fails", func() {
-			innerBlobstore.GetError = errors.New("fake-get-error")
+			innerBlobstore.GetReturns("", errors.New("fake-get-error"))
 
 			_, err := checksumVerifiableBlobstore.Get("fake-blob-id", correctDigest)
 			Expect(err).To(HaveOccurred())
@@ -65,11 +73,11 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 			err := checksumVerifiableBlobstore.CleanUp("/some/file")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(innerBlobstore.CleanUpFileName).To(Equal("/some/file"))
+			Expect(innerBlobstore.CleanUpArgsForCall(0)).To(Equal("/some/file"))
 		})
 
 		It("returns error if inner blobstore cleaning up fails", func() {
-			innerBlobstore.CleanUpErr = errors.New("fake-clean-up-error")
+			innerBlobstore.CleanUpReturns(errors.New("fake-clean-up-error"))
 
 			err := checksumVerifiableBlobstore.CleanUp("/some/file")
 			Expect(err).To(HaveOccurred())
@@ -78,15 +86,15 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 	})
 
 	Describe("Delete", func() {
-		It("delegates to inner blobstore to clean up", func() {
+		It("delegates to inner blobstore", func() {
 			err := checksumVerifiableBlobstore.Delete("some-blob")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(innerBlobstore.DeleteBlobID).To(Equal("some-blob"))
+			Expect(innerBlobstore.DeleteArgsForCall(0)).To(Equal("some-blob"))
 		})
 
-		It("returns error if inner blobstore cleaning up fails", func() {
-			innerBlobstore.DeleteErr = errors.New("fake-clean-up-error")
+		It("returns error if inner blobstore fails", func() {
+			innerBlobstore.DeleteReturns(errors.New("fake-clean-up-error"))
 
 			err := checksumVerifiableBlobstore.Delete("/some/file")
 			Expect(err).To(HaveOccurred())
@@ -95,20 +103,47 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 	})
 
 	Describe("Create", func() {
-		It("delegates to inner blobstore to create blob and returns sha1 of returned blob", func() {
-			innerBlobstore.CreateBlobID = "fake-blob-id"
+		BeforeEach(func() {
+			fakeFile := fakesys.NewFakeFile(fixturePath, fs)
+			fakeFile.Write([]byte("blargityblargblarg"))
+			fs.RegisterOpenFile(fixturePath, fakeFile)
+		})
 
-			blobID, err := checksumVerifiableBlobstore.Create(fixturePath)
+		It("delegates to inner blobstore to create blob and returns a multiple digest of returned blob", func() {
+			innerBlobstore.CreateReturns("fake-blob-id", nil)
+
+			blobID, multipleDigest, err := checksumVerifiableBlobstore.Create(fixturePath)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blobID).To(Equal("fake-blob-id"))
 
-			Expect(innerBlobstore.CreateFileNames[0]).To(Equal(fixturePath))
+			Expect(innerBlobstore.CreateArgsForCall(0)).To(Equal(fixturePath))
+			Expect(multipleDigest.String()).To(Equal("b153af8b5f71cf357896988886a76e9fe59b1e2e;sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"))
+		})
+
+		It("returns error if blob cannot be opened by filesystem", func () {
+			fs.OpenFileErr = errors.New("no-way")
+
+			_, _, err := checksumVerifiableBlobstore.Create(fixturePath)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("no-way"))
+		})
+
+		It("returns an error if creating the digest fails", func() {
+			createAlgorithms := []boshcrypto.Algorithm{boshcrypto.NewUnknownAlgorithm("who")}
+			checksumVerifiableBlobstore = boshblob.NewDigestVerifiableBlobstore(innerBlobstore, fs, createAlgorithms)
+
+			innerBlobstore.CreateReturns("fake-blob-id", nil)
+			_, _, err := checksumVerifiableBlobstore.Create(fixturePath)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Unable to create digest of unknown algorithm 'who'"))
 		})
 
 		It("returns error if inner blobstore blob creation fails", func() {
-			innerBlobstore.CreateErr = errors.New("fake-create-error")
+			innerBlobstore.CreateReturns("", errors.New("fake-create-error"))
 
-			_, err := checksumVerifiableBlobstore.Create(fixturePath)
+			_, _, err := checksumVerifiableBlobstore.Create(fixturePath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-create-error"))
 		})
@@ -121,7 +156,7 @@ var _ = Describe("checksumVerifiableBlobstore", func() {
 		})
 
 		It("returns error if inner blobstore validation fails", func() {
-			innerBlobstore.ValidateError = bosherr.Error("fake-validate-error")
+			innerBlobstore.ValidateReturns(bosherr.Error("fake-validate-error"))
 
 			err := checksumVerifiableBlobstore.Validate()
 			Expect(err).To(HaveOccurred())

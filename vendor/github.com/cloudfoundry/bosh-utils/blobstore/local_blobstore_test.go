@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-utils/blobstore"
-	"github.com/cloudfoundry/bosh-utils/crypto"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
@@ -63,7 +62,7 @@ var _ = Describe("localBlobstore", func() {
 			fs.ReturnTempFile = tempFile
 			defer fs.RemoveAll(tempFile.Name())
 
-			_, err = blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			_, err = blobstore.Get("fake-blob-id")
 			Expect(err).ToNot(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat(tempFile.Name())
@@ -74,7 +73,7 @@ var _ = Describe("localBlobstore", func() {
 		It("errs when temp file create errs", func() {
 			fs.TempFileError = errors.New("fake-error")
 
-			fileName, err := blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			fileName, err := blobstore.Get("fake-blob-id")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-error"))
 
@@ -90,7 +89,7 @@ var _ = Describe("localBlobstore", func() {
 
 			fs.CopyFileError = errors.New("fake-copy-file-error")
 
-			fileName, err := blobstore.Get("fake-blob-id", crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			fileName, err := blobstore.Get("fake-blob-id")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-copy-file-error"))
 
@@ -166,13 +165,13 @@ var _ = Describe("localBlobstore", func() {
 			blobID, err := blobstore.Create("/fake-file.txt")
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = blobstore.Get(blobID, crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			_, err = blobstore.Get(blobID)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = blobstore.Delete(blobID)
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = blobstore.Get(blobID, crypto.NewDigest(crypto.DigestAlgorithmSHA1, "sha-sum"))
+			_, err = blobstore.Get(blobID)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("doesn't exist"))
 		})
