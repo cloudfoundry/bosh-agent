@@ -225,7 +225,6 @@ Vagrant.configure(2) do |config|
 
     file_list = [
       {file: "fixtures/service_wrapper.xml", dest: "c:\\bosh\\"},
-      {file: "fixtures/service_wrapper.exe.config", dest: "c:\\bosh\\"},
       {file: "fixtures/service_wrapper.exe", dest: "c:\\bosh\\"},
       {file: "fixtures/job-service-wrapper.exe", dest: "c:\\bosh"},
       {file: "fixtures/bosh-blobstore-dav.exe", dest: "c:\\bosh\\"},
