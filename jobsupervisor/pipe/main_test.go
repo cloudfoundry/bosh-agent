@@ -40,7 +40,7 @@ var _ = Describe("Main", func() {
 	})
 
 	It("should return the exit code", func() {
-		cmd := exec.Command(pathToPipeCLI, shell, "-c", "exit 23")
+		cmd := exec.Command(pathToPipeCLI, ExitCodePath, "-exitcode", "23")
 		Expect(cmd.Run()).ToNot(Succeed())
 		code, err := ExitCode(cmd)
 		Expect(err).To(Succeed())
@@ -65,7 +65,7 @@ var _ = Describe("Main", func() {
 		})
 
 		testNotifyHTTP := func() {
-			cmd := exec.Command(pathToPipeCLI, shell, "-c", "exit 23")
+			cmd := exec.Command(pathToPipeCLI, ExitCodePath, "-exitcode", "23")
 			cmd.Env = cmdEnv(
 				joinEnv("NOTIFY_HTTP", server.URL()),
 				joinEnv("SERVICE_NAME", "foo"),

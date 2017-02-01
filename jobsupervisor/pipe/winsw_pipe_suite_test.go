@@ -15,7 +15,7 @@ var pathToPipeCLI string
 var GoSequencePath string
 var PrintPidsPath string
 var ExitRunnerPath string
-var shell string
+var ExitCodePath string
 var echoCmdArgs []string
 
 const echoOutput = "hello"
@@ -32,16 +32,16 @@ func TestWinswPipe(t *testing.T) {
 		Expect(err).To(Succeed())
 		ExitRunnerPath, err = gexec.Build("./testdata/exitrunner/exitrunner.go")
 		Expect(err).To(Succeed())
+		ExitCodePath, err = gexec.Build("./testdata/exitcode/exitcode.go")
+		Expect(err).To(Succeed())
 	})
 
 	BeforeEach(func() {
 		if runtime.GOOS == "windows" {
-			shell = "powershell"
-			echoCmdArgs = []string{shell, "-c", "echo", echoOutput}
+			echoCmdArgs = []string{"powershell.exe", "-c", "echo", echoOutput}
 			SetDefaultEventuallyTimeout(5 * time.Second)
 		} else {
 			echoCmdArgs = []string{"echo", echoOutput}
-			shell = "bash"
 		}
 	})
 
