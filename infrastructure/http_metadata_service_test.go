@@ -15,6 +15,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
+	"encoding/base64"
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
@@ -421,5 +422,89 @@ func describeHTTPMetadataService() {
 
 		})
 
+	})
+
+	Describe("GetServerName from url encoded user data", func() {
+		var (
+			ts      *httptest.Server
+			jsonStr *string
+		)
+
+		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+			defer GinkgoRecover()
+
+			Expect(r.Method).To(Equal("GET"))
+			Expect(r.URL.Path).To(Equal("/user-data"))
+			Expect(r.Header.Get("key")).To(Equal("value"))
+			w.Write([]byte(*jsonStr))
+		}
+
+		BeforeEach(func() {
+			handler := http.HandlerFunc(handlerFunc)
+			ts = httptest.NewServer(handler)
+			metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
+		})
+
+		AfterEach(func() {
+			ts.Close()
+		})
+
+		Context("when the server name is present in the JSON", func() {
+			BeforeEach(func() {
+				encodedJSON := base64.RawURLEncoding.EncodeToString([]byte(`{"server":{"name":"fake-server-name"}}`))
+				jsonStr = &encodedJSON
+			})
+
+			It("returns the server name", func() {
+				name, err := metadataService.GetServerName()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(name).To(Equal("fake-server-name"))
+			})
+
+			ItEnsuresMinimalNetworkSetup(func() (string, error) {
+				return metadataService.GetServerName()
+			})
+		})
+
+		Context("when the URL encoding is corrupt", func() {
+			BeforeEach(func() {
+				// This is std base64 encoding, not url encoding. This should cause a decode err.
+				encodedJSON := base64.StdEncoding.EncodeToString([]byte(`{"server":{"name":"fake-server-name"}}`))
+				jsonStr = &encodedJSON
+			})
+
+			It("returns an error", func() {
+				_, err := metadataService.GetServerName()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Decoding url encoded user data"))
+			})
+		})
+
+		Context("when the JSON is malformed", func() {
+			BeforeEach(func() {
+				encodedJSON := base64.RawURLEncoding.EncodeToString([]byte(`{"server bad json]`))
+				jsonStr = &encodedJSON
+			})
+
+			It("returns an error", func() {
+				_, err := metadataService.GetServerName()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Unmarshalling url decoded user data '{\"server bad json]'"))
+			})
+		})
+
+		Context("when the server name is not present in the JSON", func() {
+			BeforeEach(func() {
+				encodedJSON := base64.RawURLEncoding.EncodeToString([]byte(`{}`))
+				jsonStr = &encodedJSON
+			})
+
+			It("returns an error", func() {
+				name, err := metadataService.GetServerName()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Empty server name"))
+				Expect(name).To(BeEmpty())
+			})
+		})
 	})
 }
