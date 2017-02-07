@@ -144,7 +144,7 @@ var _ = Describe("sync_dns", func() {
 
 		_, err = agentClient.SyncDNS("new-dns-records", "", 1)
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("No recognizable digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
+		Expect(err.Error()).To(ContainSubstring("No digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
 	})
 
 })
