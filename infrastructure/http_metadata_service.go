@@ -238,14 +238,15 @@ func (ms httpMetadataService) getUserData() (UserDataContentsType, error) {
 
 	err = json.Unmarshal(userDataBytes, &userData)
 	if err != nil {
-		decodedUserData, err := base64.RawURLEncoding.DecodeString(strings.Replace(string(userDataBytes), `"`, ``, -1))
+		userDataBytesWithoutQuotes := strings.Replace(string(userDataBytes), `"`, ``, -1)
+		decodedUserData, err := base64.RawURLEncoding.DecodeString(userDataBytesWithoutQuotes)
 		if err != nil {
-			return userData, bosherr.WrapError(err, "Decoding user data response body using base64")
+			return userData, bosherr.WrapError(err, "Decoding url encoded user data")
 		}
 
 		err = json.Unmarshal([]byte(decodedUserData), &userData)
 		if err != nil {
-			return userData, bosherr.WrapErrorf(err, "Unmarshalling decoded user data using base64 '%s'", decodedUserData)
+			return userData, bosherr.WrapErrorf(err, "Unmarshalling url decoded user data '%s'", decodedUserData)
 		}
 	}
 
