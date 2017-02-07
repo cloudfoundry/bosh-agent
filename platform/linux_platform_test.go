@@ -550,7 +550,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
   missingok
   rotate 7
   compress
-  delaycompress
   copytruncate
   size=fake-size
 }
