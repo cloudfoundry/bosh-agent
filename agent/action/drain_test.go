@@ -82,7 +82,7 @@ var _ = Describe("DrainAction", func() {
 					PackageSpecs: map[string]boshas.PackageSpec{
 						"foo": {
 							Name: "foo",
-							Sha1: crypto.MustParseMultipleDigest("sha1:foo-sha1-new"),
+							Sha1: crypto.MustParseMultipleDigest("sha1:foosha1new"),
 						},
 					},
 					RenderedTemplatesArchiveSpec: &boshas.RenderedTemplatesArchiveSpec{},
@@ -347,7 +347,7 @@ var _ = Describe("DrainAction", func() {
 				PackageSpecs: map[string]boshas.PackageSpec{
 					"foo": {
 						Name: "foo",
-						Sha1: crypto.MustParseMultipleDigest("sha1:foo-sha1-new"),
+						Sha1: crypto.MustParseMultipleDigest("sha1:foosha1new"),
 					},
 				},
 			}

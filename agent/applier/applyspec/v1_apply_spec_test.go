@@ -180,7 +180,7 @@ var _ = Describe("V1ApplySpec", func() {
 	Describe("Jobs", func() {
 		It("returns jobs specified in job specs", func() {
 			jobName := "fake-job-legacy-name"
-			sha1 := crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1")
+			sha1 := crypto.MustParseMultipleDigest("sha1:fakerenderedtemplatesarchivesha1")
 			spec := V1ApplySpec{
 				JobSpec: JobSpec{
 					Name:    &jobName,
@@ -200,13 +200,13 @@ var _ = Describe("V1ApplySpec", func() {
 					"fake-package1": {
 						Name:        "fake-package1-name",
 						Version:     "fake-package1-version",
-						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fakepackage1sha1"),
 						BlobstoreID: "fake-package1-blob-id",
 					},
 					"fake-package2": {
 						Name:        "fake-package2-name",
 						Version:     "fake-package2-version",
-						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package2-sha1"),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fakepackage2sha1"),
 						BlobstoreID: "fake-package2-blob-id",
 					},
 				},
@@ -221,7 +221,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fakepackage1sha1"),
 						BlobstoreID:   "fake-package1-blob-id",
 						PathInArchive: "",
 					},
@@ -230,7 +230,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package2-name",
 					Version: "fake-package2-version",
 					Source: models.Source{
-						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-package2-sha1"),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fakepackage2sha1"),
 						BlobstoreID:   "fake-package2-blob-id",
 						PathInArchive: "",
 					},
@@ -248,7 +248,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-job1-name",
 					Version: "fake-job1-version",
 					Source: models.Source{
-						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1"),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fakerenderedtemplatesarchivesha1"),
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job1-name",
 					},
@@ -258,7 +258,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-job2-name",
 					Version: "fake-job2-version",
 					Source: models.Source{
-						Sha1:          crypto.MustParseMultipleDigest("sha1:fake-rendered-templates-archive-sha1"),
+						Sha1:          crypto.MustParseMultipleDigest("sha1:fakerenderedtemplatesarchivesha1"),
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job2-name",
 					},
@@ -280,7 +280,7 @@ var _ = Describe("V1ApplySpec", func() {
 					"fake-package1-name-key": {
 						Name:        "fake-package1-name",
 						Version:     "fake-package1-version",
-						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fakepackage1sha1"),
 						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},
@@ -291,7 +291,7 @@ var _ = Describe("V1ApplySpec", func() {
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
-						Sha1:        crypto.MustParseMultipleDigest("sha1:fake-package1-sha1"),
+						Sha1:        crypto.MustParseMultipleDigest("sha1:fakepackage1sha1"),
 						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},

@@ -72,11 +72,11 @@ var _ = Describe("ConcreteScript", func() {
 			newSpec := exampleSpec()
 
 			s := newSpec.PackageSpecs["foo"]
-			s.Sha1 = crypto.MustParseMultipleDigest("sha1:foo_updated_sha1")
+			s.Sha1 = crypto.MustParseMultipleDigest("sha1:fooupdatedsha1")
 			newSpec.PackageSpecs["foo"] = s
 
 			s = newSpec.PackageSpecs["bar"]
-			s.Sha1 = crypto.MustParseMultipleDigest("sha1:bar_updated_sha1")
+			s.Sha1 = crypto.MustParseMultipleDigest("sha1:barupdatedsha1")
 			newSpec.PackageSpecs["bar"] = s
 
 			params = NewUpdateParams(oldSpec, newSpec)
@@ -252,11 +252,11 @@ var _ = Describe("ConcreteScript", func() {
 			newSpec := exampleSpec()
 
 			s := newSpec.PackageSpecs["foo"]
-			s.Sha1 = crypto.MustParseMultipleDigest("sha1:foo_updated_sha1")
+			s.Sha1 = crypto.MustParseMultipleDigest("sha1:fooupdatedsha1")
 			newSpec.PackageSpecs["foo"] = s
 
 			s = newSpec.PackageSpecs["bar"]
-			s.Sha1 = crypto.MustParseMultipleDigest("sha1:bar_updated_sha1")
+			s.Sha1 = crypto.MustParseMultipleDigest("sha1:barupdatedsha1")
 			newSpec.PackageSpecs["bar"] = s
 
 			params = NewUpdateParams(oldSpec, newSpec)
@@ -340,13 +340,13 @@ var _ = Describe("ConcreteScript", func() {
 				"foo": {
 					Name:        "foo",
 					Version:     "foo_version",
-					Sha1:        crypto.MustParseMultipleDigest("sha1:foo_sha1"),
+					Sha1:        crypto.MustParseMultipleDigest("sha1:foosha1"),
 					BlobstoreID: "foo_blobid",
 				},
 				"bar": {
 					Name:        "bar",
 					Version:     "bar_version",
-					Sha1:        crypto.MustParseMultipleDigest("sha1:bar_sha1"),
+					Sha1:        crypto.MustParseMultipleDigest("sha1:barsha1"),
 					BlobstoreID: "bar_blobid",
 				},
 			},

@@ -9,15 +9,15 @@ import (
 )
 
 type digestVerifiableBlobstore struct {
-	blobstore Blobstore
-	fs boshsys.FileSystem
+	blobstore        Blobstore
+	fs               boshsys.FileSystem
 	createAlgorithms []boshcrypto.Algorithm
 }
 
 func NewDigestVerifiableBlobstore(blobstore Blobstore, fs boshsys.FileSystem, createAlgorithms []boshcrypto.Algorithm) DigestBlobstore {
 	return digestVerifiableBlobstore{
-		blobstore: blobstore,
-		fs: fs,
+		blobstore:        blobstore,
+		fs:               fs,
 		createAlgorithms: createAlgorithms,
 	}
 }
