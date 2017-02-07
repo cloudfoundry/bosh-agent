@@ -416,7 +416,7 @@ func describeHTTPMetadataService() {
 
 				_, err := metadataService.GetRegistryEndpoint()
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal(fmt.Sprintf("Getting user data: Getting user data from url %s/user-data: Request failed, response: Response{ StatusCode: 500, Status: '500 Internal Server Error' }", ts.URL)))
+				Expect(err.Error()).To(Equal(fmt.Sprintf("Getting user data: Getting user data from url %s/user-data: Performing GET request: Request failed, response: Response{ StatusCode: 500, Status: '500 Internal Server Error' }", ts.URL)))
 			})
 
 		})

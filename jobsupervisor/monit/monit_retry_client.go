@@ -34,7 +34,7 @@ func NewMonitRetryClient(
 }
 
 func (r *monitRetryClient) Do(req *http.Request) (*http.Response, error) {
-	requestRetryable := boshhttp.NewRequestRetryable(req, r.delegate, r.logger, nil)
+	requestRetryable := boshhttp.NewRequestRetryable(req, r.delegate, r.logger)
 	timeService := clock.NewClock()
 	retryStrategy := NewMonitRetryStrategy(
 		requestRetryable,

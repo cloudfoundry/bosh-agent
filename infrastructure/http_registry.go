@@ -10,6 +10,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	boshhttpclient "github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -92,7 +93,8 @@ func (r httpRegistry) GetSettings() (boshsettings.Settings, error) {
 	}
 
 	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, identifier)
-	wrapperResponse, err := boshhttp.NewDefaultRetryClient(10, r.retryDelay, r.logger).Get(settingsURL)
+	retryClient := boshhttp.NewRetryClient(boshhttpclient.CreateDefaultClientInsecureSkipVerify(), 10, r.retryDelay, r.logger)
+	wrapperResponse, err := boshhttpclient.NewHTTPClient(retryClient, r.logger).Get(settingsURL)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting settings from url")
 	}
