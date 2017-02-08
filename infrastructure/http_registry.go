@@ -93,8 +93,8 @@ func (r httpRegistry) GetSettings() (boshsettings.Settings, error) {
 	}
 
 	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, identifier)
-	retryClient := boshhttp.NewRetryClient(boshhttpclient.CreateDefaultClientInsecureSkipVerify(), 10, r.retryDelay, r.logger)
-	wrapperResponse, err := boshhttpclient.NewHTTPClient(retryClient, r.logger).Get(settingsURL)
+	client := boshhttp.NewRetryClient(boshhttpclient.CreateDefaultClient(nil), 10, r.retryDelay, r.logger)
+	wrapperResponse, err := boshhttpclient.NewHTTPClient(client, r.logger).Get(settingsURL)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting settings from url")
 	}
