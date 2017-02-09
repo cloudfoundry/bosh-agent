@@ -47,39 +47,39 @@ const (
 `
 
 	startJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Start-Service $_.Name }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Start-Service $_.Name }
 `
 	stopJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Stop-Service $_.Name }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Stop-Service $_.Name }
 `
 	listAllJobsScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name, $_.ProcessId }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name, $_.ProcessId }
 `
 
 	listAllServiceNames = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name }
 `
 
 	deleteAllJobsScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
 `
 	getStatusScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.State }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.State }
 `
 	unmonitorJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Disabled" }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Disabled" }
 `
 	manualStartJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Manual" }
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Manual" }
 `
 
 	waitForDeleteAllScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'").Length
+(Get-CimInstance win32_service -filter "description='` + serviceDescription + `'").Length
 `
 	disableAgentAutoStart = `Set-Service bosh-agent -startuptype "Manual"`
 )
 
-// get-wmiobject win32_service -filter "description='vcap'"
+// Get-CimInstance win32_service -filter "description='vcap'"
 
 type serviceLogMode struct {
 	Mode          string `xml:"mode,attr"`

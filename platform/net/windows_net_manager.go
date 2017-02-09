@@ -85,7 +85,7 @@ foreach($interface in $interfaces) {
 `
 
 	NicSettingsTemplate = `
-$connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '%s'}).netconnectionid
+$connectionName=(Get-CimInstance win32_networkadapter | where-object {$_.MacAddress -eq '%s'}).netconnectionid
 netsh interface ip set address $connectionName static %s %s %s
 `
 )
