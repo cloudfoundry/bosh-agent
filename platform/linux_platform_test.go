@@ -135,29 +135,6 @@ func describeLinuxPlatform() {
 	})
 
 	Describe("CreateUser", func() {
-		It("creates user", func() {
-			expectedUseradd := []string{
-				"useradd",
-				"-m",
-				"-b", "/some/path/to/home",
-				"-s", "/bin/bash",
-				"-p", "bar-pwd",
-				"foo-user",
-			}
-			fs.HomeDirHomePath = "/some/path/to/home/foo-user"
-
-			err := platform.CreateUser("foo-user", "bar-pwd", "/some/path/to/home")
-			Expect(err).NotTo(HaveOccurred())
-
-			basePathStat := fs.GetFileTestStat("/some/path/to/home")
-			Expect(basePathStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
-			Expect(basePathStat.FileMode).To(Equal(os.FileMode(0755)))
-
-			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-			Expect(cmdRunner.RunCommands[0]).To(Equal(expectedUseradd))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "700", "/some/path/to/home/foo-user"}))
-		})
-
 		It("creates user with an empty password", func() {
 			fs.HomeDirHomePath = "/some/path/to/home1/foo-user"
 
@@ -169,7 +146,7 @@ func describeLinuxPlatform() {
 				"foo-user",
 			}
 
-			err := platform.CreateUser("foo-user", "", "/some/path/to/home1")
+			err := platform.CreateUser("foo-user", "/some/path/to/home1")
 			Expect(err).NotTo(HaveOccurred())
 
 			basePathStat := fs.GetFileTestStat("/some/path/to/home1")
@@ -189,7 +166,7 @@ func describeLinuxPlatform() {
 				fakesys.FakeCmdResult{Error: errors.New("some error occurred"), Stdout: "error"},
 			)
 
-			err := platform.CreateUser("foo-user", "", "/some/path/to/home")
+			err := platform.CreateUser("foo-user", "/some/path/to/home")
 			Expect(err).To(HaveOccurred())
 		})
 	})

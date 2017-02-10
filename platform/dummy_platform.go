@@ -111,7 +111,7 @@ func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p dummyPlatform) CreateUser(username, password, basePath string) (err error) {
+func (p dummyPlatform) CreateUser(username, basePath string) (err error) {
 	return
 }
 

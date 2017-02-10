@@ -46,7 +46,6 @@ func (a SSHAction) IsLoggable() bool {
 type SSHParams struct {
 	UserRegex string `json:"user_regex"`
 	User      string
-	Password  string
 	PublicKey string `json:"public_key"`
 }
 
@@ -73,7 +72,7 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 
 	boshSSHPath := path.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 
-	err := a.platform.CreateUser(params.User, params.Password, boshSSHPath)
+	err := a.platform.CreateUser(params.User, boshSSHPath)
 	if err != nil {
 		return result, bosherr.WrapError(err, "Creating user")
 	}

@@ -870,10 +870,9 @@ var _ = Describe("AgentClient", func() {
 
 				Expect(request).To(Equal(AgentRequestMessage{
 					Method:    "ssh",
-					Arguments: []interface{}{"setup", map[string]interface{}{"user_regex": "", "User": "username", "Password": "", "public_key": ""}},
+					Arguments: []interface{}{"setup", map[string]interface{}{"user_regex": "", "User": "username", "public_key": ""}},
 					ReplyTo:   "fake-reply-to-uuid",
 				}))
-
 			})
 		})
 

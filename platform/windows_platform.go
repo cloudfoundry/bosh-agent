@@ -103,7 +103,7 @@ func (p WindowsPlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p WindowsPlatform) CreateUser(username, password, basePath string) (err error) {
+func (p WindowsPlatform) CreateUser(username, basePath string) (err error) {
 	return
 }
 

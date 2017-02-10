@@ -241,19 +241,13 @@ func (p linux) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p linux) CreateUser(username, password, basePath string) error {
+func (p linux) CreateUser(username, basePath string) error {
 	err := p.fs.MkdirAll(basePath, userBaseDirPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Making user base path")
 	}
 
-	args := []string{"-m", "-b", basePath, "-s", "/bin/bash"}
-
-	if password != "" {
-		args = append(args, "-p", password)
-	}
-
-	args = append(args, username)
+	args := []string{"-m", "-b", basePath, "-s", "/bin/bash", username}
 
 	_, _, _, err = p.cmdRunner.RunCommand("useradd", args...)
 	if err != nil {
@@ -269,6 +263,7 @@ func (p linux) CreateUser(username, password, basePath string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Shelling out to chmod")
 	}
+
 	return nil
 }
 

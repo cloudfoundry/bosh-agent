@@ -15,16 +15,6 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-func validatePlatformSetupWithPassword(platform *fakeplatform.FakePlatform, expectedPwd string) {
-	Expect(platform.CreateUserUsername).To(Equal("fake-user"))
-	Expect(platform.CreateUserPassword).To(Equal(expectedPwd))
-	Expect(platform.CreateUserBasePath).To(boshassert.MatchPath("/foo/bosh_ssh"))
-	Expect(platform.AddUserToGroupsGroups["fake-user"]).To(Equal(
-		[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup, boshsettings.SshersGroup},
-	))
-	Expect(platform.SetupSSHPublicKeys["fake-user"]).To(ConsistOf("fake-public-key"))
-}
-
 func buildSSHAction(settingsService boshsettings.Service) (*fakeplatform.FakePlatform, SSHAction) {
 	platform := fakeplatform.NewFakePlatform()
 	dirProvider := boshdirs.NewProvider("/foo")
@@ -56,21 +46,18 @@ var _ = Describe("SSHAction", func() {
 
 	Describe("Run", func() {
 		Context("setupSSH", func() {
-
 			var (
 				response SSHResult
 				params   SSHParams
 				err      error
 
-				SSHParamsPassword string
-				defaultIP         string
+				defaultIP string
 
 				platformPublicKeyValue string
 				platformPublicKeyErr   error
 			)
 
 			BeforeEach(func() {
-				SSHParamsPassword = ""
 				defaultIP = "ww.xx.yy.zz"
 
 				platformPublicKeyValue = ""
@@ -91,7 +78,6 @@ var _ = Describe("SSHAction", func() {
 				params = SSHParams{
 					User:      "fake-user",
 					PublicKey: "fake-public-key",
-					Password:  SSHParamsPassword,
 				}
 
 				response, err = action.Run("setup", params)
@@ -101,6 +87,7 @@ var _ = Describe("SSHAction", func() {
 				BeforeEach(func() {
 					defaultIP = ""
 				})
+
 				It("should return an error", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("No default ip"))
@@ -109,17 +96,12 @@ var _ = Describe("SSHAction", func() {
 
 			Context("with an empty password", func() {
 				It("should create user with an empty password", func() {
-					validatePlatformSetupWithPassword(platform, "")
-					Expect(err).ToNot(HaveOccurred())
-				})
-			})
-
-			Context("with a password", func() {
-				BeforeEach(func() {
-					SSHParamsPassword = "fake-password"
-				})
-				It("should setup with a username and password", func() {
-					validatePlatformSetupWithPassword(platform, "fake-password")
+					Expect(platform.CreateUserUsername).To(Equal("fake-user"))
+					Expect(platform.CreateUserBasePath).To(boshassert.MatchPath("/foo/bosh_ssh"))
+					Expect(platform.AddUserToGroupsGroups["fake-user"]).To(Equal(
+						[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup, boshsettings.SshersGroup},
+					))
+					Expect(platform.SetupSSHPublicKeys["fake-user"]).To(ConsistOf("fake-public-key"))
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -134,7 +116,6 @@ var _ = Describe("SSHAction", func() {
 						HostPublicKey: hostPublicKey,
 					}))
 					Expect(err).To(BeNil())
-
 				})
 			})
 
@@ -142,6 +123,7 @@ var _ = Describe("SSHAction", func() {
 				BeforeEach(func() {
 					platformPublicKeyErr = errors.New("Get Host Public Key Failure")
 				})
+
 				It("should return an error", func() {
 					Expect(response).To(Equal(SSHResult{}))
 					Expect(err).ToNot(BeNil())

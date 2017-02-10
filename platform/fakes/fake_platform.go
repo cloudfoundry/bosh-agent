@@ -34,7 +34,6 @@ type FakePlatform struct {
 	SetupRuntimeConfigurationWasInvoked bool
 
 	CreateUserUsername string
-	CreateUserPassword string
 	CreateUserBasePath string
 
 	AddUserToGroupsGroups             map[string][]string
@@ -229,9 +228,8 @@ func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p *FakePlatform) CreateUser(username, password, basePath string) (err error) {
+func (p *FakePlatform) CreateUser(username, basePath string) (err error) {
 	p.CreateUserUsername = username
-	p.CreateUserPassword = password
 	p.CreateUserBasePath = basePath
 	return
 }

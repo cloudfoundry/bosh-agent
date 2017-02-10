@@ -35,7 +35,7 @@ type Platform interface {
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
 
 	// User management
-	CreateUser(username, password, basePath string) (err error)
+	CreateUser(username, basePath string) (err error)
 	AddUserToGroups(username string, groups []string) (err error)
 	DeleteEphemeralUsersMatching(regex string) (err error)
 
