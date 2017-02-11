@@ -14,6 +14,7 @@ type Digest interface {
 }
 
 var _ Digest = digestImpl{}
+var _ Digest = MultipleDigest{}
 
 type Algorithm interface {
 	CreateDigest(io.Reader) (Digest, error)
