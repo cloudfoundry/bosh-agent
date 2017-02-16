@@ -15,12 +15,14 @@ import (
 	fakehttp "github.com/cloudfoundry/bosh-utils/http/fakes"
 
 	"bytes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"os"
+
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type seekableReadClose struct {
 	Seeked     bool
+	closed     bool
 	content    []byte
 	readCloser io.ReadCloser
 }
@@ -44,7 +46,12 @@ func (s *seekableReadClose) Read(p []byte) (n int, err error) {
 }
 
 func (s *seekableReadClose) Close() error {
-	return errors.New("This should not be called from this context.")
+	if s.closed {
+		return errors.New("Can not close twice")
+	}
+
+	s.closed = true
+	return nil
 }
 
 var _ = Describe("RequestRetryable", func() {
@@ -130,6 +137,12 @@ var _ = Describe("RequestRetryable", func() {
 					Expect(seekableReaderCloser.Seeked).To(BeTrue())
 					Expect(fakeClient.RequestBodies[0]).To(Equal("hello from seekable"))
 				})
+
+				It("closes file handles", func() {
+					_, err := requestRetryable.Attempt()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(seekableReaderCloser.closed).To(BeTrue())
+				})
 			})
 
 			Context("when the response status code is not between 200 and 300", func() {
@@ -169,6 +182,11 @@ var _ = Describe("RequestRetryable", func() {
 						resp := requestRetryable.Response()
 						Expect(resp.StatusCode).To(Equal(200))
 						Expect(readString(resp.Body)).To(Equal("fake-response-body"))
+					})
+
+					It("closes file handles", func() {
+						Expect(err).ToNot(HaveOccurred())
+						Expect(seekableReaderCloser.closed).To(BeTrue())
 					})
 				})
 			})
