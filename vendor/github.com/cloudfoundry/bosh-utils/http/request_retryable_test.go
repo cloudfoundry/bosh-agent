@@ -145,6 +145,26 @@ var _ = Describe("RequestRetryable", func() {
 				})
 			})
 
+			Context("when it returns an error checking if response can be attempted again", func() {
+				BeforeEach(func() {
+					seekableReaderCloser = NewSeekableReadClose([]byte("hello from seekable"))
+					request = &http.Request{
+						Body: seekableReaderCloser,
+					}
+
+					errOnResponseAttemptable := func(*http.Response, error) (bool, error) {
+						return false, errors.New("fake-error")
+					}
+					requestRetryable = NewRequestRetryable(request, fakeClient, logger, errOnResponseAttemptable)
+				})
+
+				It("still closes the request body", func() {
+					_, err := requestRetryable.Attempt()
+					Expect(err).To(HaveOccurred())
+					Expect(seekableReaderCloser.closed).To(BeTrue())
+				})
+			})
+
 			Context("when the response status code is not between 200 and 300", func() {
 				var (
 					isRetryable bool
