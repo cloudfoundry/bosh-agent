@@ -379,6 +379,31 @@ func init() {
 				})
 			})
 
+			Describe("RemoveStaticLibraries", func() {
+				It("removes development tools if settings.env.bosh.remove_static_libraries is true", func() {
+					settingsService.Settings.Env.Bosh.RemoveStaticLibraries = true
+					platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "static_libraries_list"), "/usr/lib/libsupp.a")
+
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveStaticLibrariesCalled).To(BeTrue())
+					Expect(platform.PackageFileListPath).To(Equal(path.Join(dirProvider.EtcDir(), "static_libraries_list")))
+				})
+
+				It("does NOTHING if settings.env.bosh.remove_static_libraries is NOT set", func() {
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveStaticLibrariesCalled).To(BeFalse())
+				})
+
+				It("does NOTHING if if settings.env.bosh.remove_static_libraries is true AND static_libraries_list does NOT exist", func() {
+					settingsService.Settings.Env.Bosh.RemoveStaticLibraries = true
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsRemoveStaticLibrariesCalled).To(BeFalse())
+				})
+			})
+
 			Describe("checking persistent disks", func() {
 				Context("managed persistent disk", func() {
 					BeforeEach(func() {

@@ -175,6 +175,18 @@ func (boot bootstrap) Run() (err error) {
 		}
 	}
 
+	if settings.Env.GetRemoveStaticLibraries() {
+		staticLibrariesListPath := path.Join(boot.dirProvider.EtcDir(), "static_libraries_list")
+
+		if !boot.fs.FileExists(staticLibrariesListPath) {
+			return nil
+		}
+
+		if err = boot.platform.RemoveStaticLibraries(staticLibrariesListPath); err != nil {
+			return bosherr.WrapError(err, "Removing static libraries")
+		}
+	}
+
 	return nil
 }
 

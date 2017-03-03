@@ -301,6 +301,10 @@ func (p WindowsPlatform) RemoveDevTools(packageFileListPath string) error {
 	return nil
 }
 
+func (p WindowsPlatform) RemoveStaticLibraries(packageFileListPath string) error {
+	return nil
+}
+
 func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 	return p.defaultNetworkResolver.GetDefaultNetwork()
 }

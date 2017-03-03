@@ -1415,6 +1415,24 @@ func (p linux) RemoveDevTools(packageFileListPath string) error {
 	return nil
 }
 
+func (p linux) RemoveStaticLibraries(staticLibrariesListFilePath string) error {
+	content, err := p.fs.ReadFileString(staticLibrariesListFilePath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Unable to read static libraries list file: %s", staticLibrariesListFilePath)
+	}
+	content = strings.TrimSpace(content)
+	librariesList := strings.Split(content, "\n")
+
+	for _, library := range librariesList {
+		_, _, _, err = p.cmdRunner.RunCommand("rm", "-rf", library)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Unable to remove static library: %s", library)
+		}
+	}
+
+	return nil
+}
+
 func (p linux) generateDefaultEtcHosts(hostname string) (*bytes.Buffer, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("etc-hosts").Parse(EtcHostsTemplate))

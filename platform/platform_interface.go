@@ -87,4 +87,5 @@ type Platform interface {
 	GetHostPublicKey() (string, error)
 
 	RemoveDevTools(packageFileListPath string) error
+	RemoveStaticLibraries(packageFileListPath string) error
 }

@@ -127,9 +127,11 @@ type FakePlatform struct {
 	IsMountPointResult        bool
 	IsMountPointErr           error
 
-	PackageFileListPath    string
-	IsRemoveDevToolsCalled bool
-	IsRemoveDevToolsError  error
+	PackageFileListPath           string
+	IsRemoveDevToolsCalled        bool
+	IsRemoveDevToolsError         error
+	IsRemoveStaticLibrariesCalled bool
+	IsRemoveStaticLibrariesError  error
 
 	MountedDevicePaths []string
 
@@ -458,6 +460,12 @@ func (p *FakePlatform) RemoveDevTools(packageFileListPath string) error {
 	p.IsRemoveDevToolsCalled = true
 	p.PackageFileListPath = packageFileListPath
 	return p.IsRemoveDevToolsError
+}
+
+func (p *FakePlatform) RemoveStaticLibraries(packageFileListPath string) error {
+	p.IsRemoveStaticLibrariesCalled = true
+	p.PackageFileListPath = packageFileListPath
+	return p.IsRemoveStaticLibrariesError
 }
 
 func (p *FakePlatform) AssociateDisk(name string, settings boshsettings.DiskSettings) error {

@@ -3076,6 +3076,38 @@ unit: sectors
 		})
 	})
 
+	Describe("RemoveStaticLibraries", func() {
+		It("removes listed static libraries", func() {
+			staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
+			fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
+			err := platform.RemoveStaticLibraries(staticLibrariesListPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cmdRunner.RunCommands).To(HaveLen(2))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-rf", "static.a"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"rm", "-rf", "library.a"}))
+		})
+
+		Context("when there is an error reading the static libraries list file", func() {
+			It("should return an error", func() {
+				err := platform.RemoveStaticLibraries("non-existent-path")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Unable to read static libraries list file"))
+			})
+		})
+
+		Context("when there is an error removing a static library", func() {
+			It("should return an error", func() {
+				cmdRunner.AddCmdResult("rm -rf library.a", fakesys.FakeCmdResult{Error: errors.New("oh noes!")})
+				staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
+				fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
+				err := platform.RemoveStaticLibraries(staticLibrariesListPath)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("oh noes!"))
+				Expect(cmdRunner.RunCommands).To(HaveLen(2))
+			})
+		})
+	})
+
 	Describe("SaveDNSRecords", func() {
 		var (
 			dnsRecords boshsettings.DNSRecords
