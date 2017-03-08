@@ -1,5 +1,5 @@
 nats_private_ip = ENV.fetch "NATS_PRIVATE_IP" do
-  puts "NATS_PRIVATE_IP not set"
+  puts "NATS_PRIVATE_IP not set (default is 172.31.180.3 if running locally)."
   nil
 end
 

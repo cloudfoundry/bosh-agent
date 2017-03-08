@@ -171,6 +171,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			logger,
 			defaultNetworkResolver,
 			auditLogger,
+			uuidGenerator,
 		)
 	}
 

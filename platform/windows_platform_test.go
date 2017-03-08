@@ -1,3 +1,5 @@
+// +build windows
+
 package platform_test
 
 import (
@@ -19,6 +21,7 @@ import (
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
 var _ = Describe("WindowsPlatform", func() {
@@ -31,6 +34,7 @@ var _ = Describe("WindowsPlatform", func() {
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
 		platform                   Platform
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+		fakeUUIDGenerator          *fakeuuidgen.FakeGenerator
 		certManager                *fakecert.FakeManager
 		auditLogger                *fakeplat.FakeAuditLogger
 
@@ -49,6 +53,7 @@ var _ = Describe("WindowsPlatform", func() {
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		certManager = new(fakecert.FakeManager)
 		auditLogger = fakeplat.NewFakeAuditLogger()
+		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 	})
 
 	JustBeforeEach(func() {
@@ -63,6 +68,7 @@ var _ = Describe("WindowsPlatform", func() {
 			logger,
 			fakeDefaultNetworkResolver,
 			auditLogger,
+			fakeUUIDGenerator,
 		)
 	})
 
@@ -175,6 +181,51 @@ var _ = Describe("WindowsPlatform", func() {
 			err := platform.DeleteARPEntryWithIP("1.2.3.4")
 
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("SaveDNSRecords", func() {
+		var (
+			dnsRecords boshsettings.DNSRecords
+
+			defaultEtcHosts string
+		)
+
+		BeforeEach(func() {
+			dnsRecords = boshsettings.DNSRecords{
+				Records: [][2]string{
+					{"fake-ip0", "fake-name0"},
+					{"fake-ip1", "fake-name1"},
+				},
+			}
+
+			defaultEtcHosts = strings.Replace(WindowsEtcHostsTemplate, "{{ . }}", "fake-hostname", -1)
+		})
+
+		It("writes the new DNS records in '/etc/hosts'", func() {
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).ToNot(HaveOccurred())
+
+			windir := os.Getenv("windir")
+			hostsFileContents, err := fs.ReadFile(windir + "\\System32\\Drivers\\etc\\hosts")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0\\n"))
+			Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1\\n"))
+		})
+
+		It("renames intermediary /etc/hosts-<uuid> atomically to /etc/hosts", func() {
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(fs.RenameError).ToNot(HaveOccurred())
+
+			// Use '/Windows' to make the fakefilesystem happy...
+			Expect(len(fs.RenameOldPaths)).To(Equal(1))
+			Expect(fs.RenameOldPaths).To(ContainElement("/Windows/System32/Drivers/etc/hosts-fake-uuid-0"))
+
+			Expect(len(fs.RenameNewPaths)).To(Equal(1))
+			Expect(fs.RenameNewPaths).To(ContainElement("/Windows/System32/Drivers/etc/hosts"))
 		})
 	})
 })
