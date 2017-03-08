@@ -185,11 +185,7 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("SaveDNSRecords", func() {
-		var (
-			dnsRecords boshsettings.DNSRecords
-
-			defaultEtcHosts string
-		)
+		var dnsRecords boshsettings.DNSRecords
 
 		BeforeEach(func() {
 			dnsRecords = boshsettings.DNSRecords{
@@ -198,8 +194,6 @@ var _ = Describe("WindowsPlatform", func() {
 					{"fake-ip1", "fake-name1"},
 				},
 			}
-
-			defaultEtcHosts = strings.Replace(WindowsEtcHostsTemplate, "{{ . }}", "fake-hostname", -1)
 		})
 
 		It("writes the new DNS records in '/etc/hosts'", func() {
