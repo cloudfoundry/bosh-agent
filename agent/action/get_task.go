@@ -16,7 +16,7 @@ func NewGetTask(taskService boshtask.Service) (getTask GetTaskAction) {
 	return
 }
 
-func (a GetTaskAction) IsAsynchronous() bool {
+func (a GetTaskAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

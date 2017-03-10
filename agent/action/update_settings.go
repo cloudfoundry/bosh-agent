@@ -28,7 +28,7 @@ func NewUpdateSettings(service boshsettings.Service, platform platform.Platform,
 	}
 }
 
-func (a UpdateSettingsAction) IsAsynchronous() bool {
+func (a UpdateSettingsAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

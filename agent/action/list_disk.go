@@ -26,7 +26,7 @@ func NewListDisk(
 	return
 }
 
-func (a ListDiskAction) IsAsynchronous() bool {
+func (a ListDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

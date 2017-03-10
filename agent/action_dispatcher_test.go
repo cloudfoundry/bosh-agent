@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
@@ -79,6 +80,50 @@ func init() {
 					Expect(logger.DebugWithDetailsCallCount()).To(Equal(0))
 				})
 			})
+		})
+
+		Context("when request contains protocol version", func() {
+			var (
+				req       boshhandler.Request
+				runAction *fakeaction.TestAction
+			)
+
+			type payload struct {
+				ProtocolVersion action.ProtocolVersion `json:"protocol"`
+				Arguments       []interface{}          `json:"arguments"`
+			}
+
+			reqPayloadJSON := func(i int) []byte {
+				protocolVersion := action.ProtocolVersion(i)
+
+				reqPayload := payload{
+					ProtocolVersion: protocolVersion,
+					Arguments:       []interface{}{"fake-payload"},
+				}
+				jsonPayload, err := json.Marshal(&reqPayload)
+				Expect(err).ToNot(HaveOccurred())
+				return jsonPayload
+			}
+
+			BeforeEach(func() {
+
+				runAction = &fakeaction.TestAction{Asynchronous: false}
+				actionFactory.RegisterAction("fake-action", runAction)
+
+			})
+
+			It("passes protocol version zero to IsSynchronous", func() {
+				req = boshhandler.NewRequest("fake-reply", "fake-action", reqPayloadJSON(0))
+				dispatcher.Dispatch(req)
+				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(0)))
+			})
+
+			It("passes protocol version to IsSynchronous", func() {
+				req = boshhandler.NewRequest("fake-reply", "fake-action", reqPayloadJSON(99))
+				dispatcher.Dispatch(req)
+				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(99)))
+			})
+
 		})
 
 		Context("when action is synchronous", func() {

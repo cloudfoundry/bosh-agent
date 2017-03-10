@@ -18,7 +18,7 @@ func NewStop(jobSupervisor boshjobsuper.JobSupervisor) (stop StopAction) {
 	return
 }
 
-func (a StopAction) IsAsynchronous() bool {
+func (a StopAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

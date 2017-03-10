@@ -50,7 +50,7 @@ func NewDrain(
 	}
 }
 
-func (a DrainAction) IsAsynchronous() bool {
+func (a DrainAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

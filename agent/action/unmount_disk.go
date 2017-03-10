@@ -23,7 +23,7 @@ func NewUnmountDisk(
 	return
 }
 
-func (a UnmountDiskAction) IsAsynchronous() bool {
+func (a UnmountDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

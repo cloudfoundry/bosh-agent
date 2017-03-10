@@ -18,7 +18,7 @@ func NewCompilePackage(compiler boshcomp.Compiler) (compilePackage CompilePackag
 	return
 }
 
-func (a CompilePackageAction) IsAsynchronous() bool {
+func (a CompilePackageAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

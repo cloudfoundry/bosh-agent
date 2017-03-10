@@ -34,7 +34,7 @@ func NewGetState(
 	return
 }
 
-func (a GetStateAction) IsAsynchronous() bool {
+func (a GetStateAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

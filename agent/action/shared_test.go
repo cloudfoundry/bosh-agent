@@ -8,13 +8,13 @@ import (
 
 func AssertActionIsAsynchronous(action Action) {
 	It("is asynchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeTrue())
+		Expect(action.IsAsynchronous(ProtocolVersion(1))).To(BeTrue())
 	})
 }
 
 func AssertActionIsNotAsynchronous(action Action) {
 	It("is not asynchronous", func() {
-		Expect(action.IsAsynchronous()).To(BeFalse())
+		Expect(action.IsAsynchronous(ProtocolVersion(1))).To(BeFalse())
 	})
 }
 

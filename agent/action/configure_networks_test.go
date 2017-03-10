@@ -25,7 +25,7 @@ func init() {
 		AssertActionIsResumable(action)
 
 		It("is asynchronous", func() {
-			Expect(action.IsAsynchronous()).To(BeTrue())
+			Expect(action.IsAsynchronous(ProtocolVersion(0))).To(BeTrue())
 		})
 
 		It("is persistent because director expects configure_networks task to become done after agent is restarted", func() {

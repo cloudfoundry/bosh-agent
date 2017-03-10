@@ -45,7 +45,7 @@ type actionWithTypes struct {
 	Arg argumentWithTypes
 }
 
-func (a *actionWithTypes) IsAsynchronous() bool {
+func (a *actionWithTypes) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
@@ -80,7 +80,7 @@ type actionWithGoodRunMethod struct {
 	SliceArgs []string
 }
 
-func (a *actionWithGoodRunMethod) IsAsynchronous() bool {
+func (a *actionWithGoodRunMethod) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
@@ -116,7 +116,7 @@ type actionWithOptionalRunArgument struct {
 	Err   error
 }
 
-func (a *actionWithOptionalRunArgument) IsAsynchronous() bool {
+func (a *actionWithOptionalRunArgument) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
@@ -144,7 +144,7 @@ func (a *actionWithOptionalRunArgument) Cancel() error {
 
 type actionWithoutRunMethod struct{}
 
-func (a *actionWithoutRunMethod) IsAsynchronous() bool {
+func (a *actionWithoutRunMethod) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
@@ -166,7 +166,7 @@ func (a *actionWithoutRunMethod) Cancel() error {
 
 type actionWithOneRunReturnValue struct{}
 
-func (a *actionWithOneRunReturnValue) IsAsynchronous() bool {
+func (a *actionWithOneRunReturnValue) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
@@ -192,7 +192,7 @@ func (a *actionWithOneRunReturnValue) Cancel() error {
 
 type actionWithSecondReturnValueNotError struct{}
 
-func (a *actionWithSecondReturnValueNotError) IsAsynchronous() bool {
+func (a *actionWithSecondReturnValueNotError) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
@@ -221,7 +221,7 @@ type actionWithProtocolVersion struct {
 	SubAction       string
 }
 
-func (a *actionWithProtocolVersion) IsAsynchronous() bool {
+func (a *actionWithProtocolVersion) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
