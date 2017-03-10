@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"encoding/json"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
@@ -87,13 +86,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 		dispatcher.logger.DebugWithDetails(actionDispatcherLogTag, "Payload", req.Payload)
 	}
 
-	type payloadType struct {
-		ProtocolVersion boshaction.ProtocolVersion `json:"protocol"`
-	}
-	var protocolVersion payloadType
-	json.Unmarshal(req.Payload, &protocolVersion)
-
-	if action.IsAsynchronous(protocolVersion.ProtocolVersion) {
+	if action.IsAsynchronous(boshaction.ProtocolVersion(req.ProtocolVersion)) {
 		return dispatcher.dispatchAsynchronousAction(action, req)
 	}
 

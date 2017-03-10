@@ -41,7 +41,7 @@ func init() {
 		It("responds with exception when the method is unknown", func() {
 			actionFactory.RegisterActionErr("fake-action", errors.New("fake-create-error"))
 
-			req := boshhandler.NewRequest("fake-reply", "fake-action", []byte{})
+			req := boshhandler.NewRequest("fake-reply", "fake-action", []byte{}, 0)
 			resp := dispatcher.Dispatch(req)
 			boshassert.MatchesJSONString(GinkgoT(), resp, `{"exception":{"message":"unknown message fake-action"}}`)
 		})
@@ -54,7 +54,7 @@ func init() {
 
 			Context("action is loggable", func() {
 				BeforeEach(func() {
-					req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"))
+					req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), 0)
 					action = &fakeaction.TestAction{Loggable: true}
 					actionFactory.RegisterAction("fake-action", action)
 					dispatcher.Dispatch(req)
@@ -70,7 +70,7 @@ func init() {
 
 			Context("action is not loggable", func() {
 				BeforeEach(func() {
-					req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"))
+					req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), 0)
 					action = &fakeaction.TestAction{Loggable: false}
 					actionFactory.RegisterAction("fake-action", action)
 					dispatcher.Dispatch(req)
@@ -88,23 +88,6 @@ func init() {
 				runAction *fakeaction.TestAction
 			)
 
-			type payload struct {
-				ProtocolVersion action.ProtocolVersion `json:"protocol"`
-				Arguments       []interface{}          `json:"arguments"`
-			}
-
-			reqPayloadJSON := func(i int) []byte {
-				protocolVersion := action.ProtocolVersion(i)
-
-				reqPayload := payload{
-					ProtocolVersion: protocolVersion,
-					Arguments:       []interface{}{"fake-payload"},
-				}
-				jsonPayload, err := json.Marshal(&reqPayload)
-				Expect(err).ToNot(HaveOccurred())
-				return jsonPayload
-			}
-
 			BeforeEach(func() {
 
 				runAction = &fakeaction.TestAction{Asynchronous: false}
@@ -113,13 +96,14 @@ func init() {
 			})
 
 			It("passes protocol version zero to IsSynchronous", func() {
-				req = boshhandler.NewRequest("fake-reply", "fake-action", reqPayloadJSON(0))
+				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), boshhandler.ProtocolVersion(0))
+
 				dispatcher.Dispatch(req)
 				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(0)))
 			})
 
 			It("passes protocol version to IsSynchronous", func() {
-				req = boshhandler.NewRequest("fake-reply", "fake-action", reqPayloadJSON(99))
+				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), boshhandler.ProtocolVersion(99))
 				dispatcher.Dispatch(req)
 				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(99)))
 			})
@@ -132,7 +116,7 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"))
+				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), 0)
 				actionFactory.RegisterAction("fake-action", &fakeaction.TestAction{Asynchronous: false})
 			})
 
@@ -160,7 +144,7 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"))
+				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), 0)
 				action = &fakeaction.TestAction{Asynchronous: true}
 				actionFactory.RegisterAction("fake-action", action)
 			})
