@@ -103,7 +103,7 @@ func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(
 	var err error
 
 	runTask := func() (interface{}, error) {
-		return dispatcher.actionRunner.Run(action, req.GetPayload())
+		return dispatcher.actionRunner.Run(action, req.GetPayload(), boshaction.ProtocolVersion(req.ProtocolVersion))
 	}
 
 	cancelTask := func(_ boshtask.Task) error { return action.Cancel() }
@@ -155,7 +155,7 @@ func (dispatcher concreteActionDispatcher) dispatchSynchronousAction(
 ) boshhandler.Response {
 	dispatcher.logger.Info(actionDispatcherLogTag, "Running sync action %s", req.Method)
 
-	value, err := dispatcher.actionRunner.Run(action, req.GetPayload())
+	value, err := dispatcher.actionRunner.Run(action, req.GetPayload(), boshaction.ProtocolVersion(req.ProtocolVersion))
 	if err != nil {
 		err = bosherr.WrapErrorf(err, "Action Failed %s", req.Method)
 		dispatcher.logger.Error(actionDispatcherLogTag, err.Error())

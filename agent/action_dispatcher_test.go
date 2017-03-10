@@ -82,15 +82,14 @@ func init() {
 			})
 		})
 
-		Context("when request contains protocol version", func() {
+		Context("when request contains protocol version and action is Asynchronous", func() {
 			var (
 				req       boshhandler.Request
 				runAction *fakeaction.TestAction
 			)
 
 			BeforeEach(func() {
-
-				runAction = &fakeaction.TestAction{Asynchronous: false}
+				runAction = &fakeaction.TestAction{Asynchronous: true}
 				actionFactory.RegisterAction("fake-action", runAction)
 
 			})
@@ -99,13 +98,58 @@ func init() {
 				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), boshhandler.ProtocolVersion(0))
 
 				dispatcher.Dispatch(req)
+
+				_, err := taskService.StartedTasks["fake-generated-task-id"].Func()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(actionRunner.RunAction).To(Equal(runAction))
+				Expect(string(actionRunner.RunPayload)).To(Equal("fake-payload"))
+
 				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(0)))
+				Expect(actionRunner.RunProtocolVersion).To(Equal(action.ProtocolVersion(0)))
 			})
 
 			It("passes protocol version to IsSynchronous", func() {
 				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), boshhandler.ProtocolVersion(99))
 				dispatcher.Dispatch(req)
+
+				_, err := taskService.StartedTasks["fake-generated-task-id"].Func()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(actionRunner.RunAction).To(Equal(runAction))
+				Expect(string(actionRunner.RunPayload)).To(Equal("fake-payload"))
+
 				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(99)))
+				Expect(actionRunner.RunProtocolVersion).To(Equal(action.ProtocolVersion(99)))
+			})
+
+		})
+
+		Context("when request contains protocol version and action is Synchronous", func() {
+			var (
+				req       boshhandler.Request
+				runAction *fakeaction.TestAction
+			)
+
+			BeforeEach(func() {
+				runAction = &fakeaction.TestAction{Asynchronous: false}
+				actionFactory.RegisterAction("fake-action", runAction)
+			})
+
+			It("passes protocol version zero to IsSynchronous", func() {
+				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), boshhandler.ProtocolVersion(0))
+				dispatcher.Dispatch(req)
+
+				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(0)))
+				Expect(actionRunner.RunProtocolVersion).To(Equal(action.ProtocolVersion(0)))
+			})
+
+			It("passes protocol version to IsSynchronous", func() {
+				req = boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), boshhandler.ProtocolVersion(99))
+				dispatcher.Dispatch(req)
+
+				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(99)))
+				Expect(actionRunner.RunProtocolVersion).To(Equal(action.ProtocolVersion(99)))
 			})
 
 		})
