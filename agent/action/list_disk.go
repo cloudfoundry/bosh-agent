@@ -26,7 +26,11 @@ func NewListDisk(
 	return
 }
 
-func (a ListDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
+func (a ListDiskAction) IsAsynchronous(version ProtocolVersion) bool {
+	if version >= 3 {
+		return true
+	}
+
 	return false
 }
 
@@ -39,6 +43,11 @@ func (a ListDiskAction) IsLoggable() bool {
 }
 
 func (a ListDiskAction) Run() (interface{}, error) {
+	err := a.settingsService.LoadSettings()
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Refreshing the settings")
+	}
+
 	settings := a.settingsService.GetSettings()
 	diskIDs := []string{}
 
