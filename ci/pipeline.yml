@@ -24,78 +24,9 @@ jobs:
         BOSH_LITE_NAME: {{BOSH_LITE_NAME}}
         BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
         BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
-
-- name: windows-test-unit
-  serial: true
-  plan:
-  - get: bosh-agent
-    trigger: true
-  - task: test-unit
-    file: bosh-agent/ci/tasks/test-unit-windows.yml
-
-- name: windows-test-integration
-  serial: true
-  plan:
-  - get: windows-ami
-  - get: bosh-agent
-    trigger: true
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    params:
-      AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
-      AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
-      AWS_SUBNET: {{WINDOWS_AWS_SUBNET}}
-      AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
-      KEYPAIR_NAME: {{WINDOWS_AWS_KEYPAIR_NAME}}
-      NATS_ELASTIC_IP: {{NATS_ELASTIC_IP}}
-      NATS_PRIVATE_IP: {{NATS_PRIVATE_IP}}
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: {{WINRM_PASSWORD}}
-
-- name: promote
-  public: true
-  serial: true
-  plan:
-    - trigger: true
-      passed: [test-unit, test-integration, windows-test-unit, windows-test-integration]
-      get: bosh-agent
-    - put: bosh-agent-master
-      params:
-        repository: bosh-agent
-
 resources:
 - name: bosh-agent
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh-agent
-    branch: develop
-
-- name: bosh-agent-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: master
-    private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
-- name: windows-ami
-  type: ami-resource
-  source:
-    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
-    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-2012-R2_RTM-English-64Bit-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
-resource_types:
-- name: ami-resource
-  type: docker-image
-  source:
-    repository: pivotalgreenhouse/ami-resource
-    tag: latest
+    branch: {{branch}}
