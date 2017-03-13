@@ -20,7 +20,7 @@ func NewDeleteARPEntries(platform boshplatform.Platform) DeleteARPEntriesAction 
 	}
 }
 
-func (a DeleteARPEntriesAction) IsAsynchronous() bool {
+func (a DeleteARPEntriesAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

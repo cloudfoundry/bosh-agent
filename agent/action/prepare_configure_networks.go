@@ -23,7 +23,7 @@ func NewPrepareConfigureNetworks(
 	}
 }
 
-func (a PrepareConfigureNetworksAction) IsAsynchronous() bool {
+func (a PrepareConfigureNetworksAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

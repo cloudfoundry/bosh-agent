@@ -17,7 +17,7 @@ func NewPrepare(applier boshappl.Applier) (action PrepareAction) {
 	return action
 }
 
-func (a PrepareAction) IsAsynchronous() bool {
+func (a PrepareAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

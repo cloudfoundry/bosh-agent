@@ -35,7 +35,7 @@ func NewSSH(
 	return
 }
 
-func (a SSHAction) IsAsynchronous() bool {
+func (a SSHAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

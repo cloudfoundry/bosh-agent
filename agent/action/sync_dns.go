@@ -38,7 +38,7 @@ func NewSyncDNS(blobstore boshblob.Blobstore, settingsService boshsettings.Servi
 	}
 }
 
-func (a SyncDNS) IsAsynchronous() bool {
+func (a SyncDNS) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

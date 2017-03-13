@@ -10,7 +10,7 @@ func NewPing() PingAction {
 	return PingAction{}
 }
 
-func (a PingAction) IsAsynchronous() bool {
+func (a PingAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

@@ -17,7 +17,7 @@ func NewReleaseApplySpec(platform boshplatform.Platform) (action ReleaseApplySpe
 	return
 }
 
-func (a ReleaseApplySpecAction) IsAsynchronous() bool {
+func (a ReleaseApplySpecAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

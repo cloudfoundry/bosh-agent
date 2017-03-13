@@ -40,7 +40,7 @@ func NewApply(
 	return
 }
 
-func (a ApplyAction) IsAsynchronous() bool {
+func (a ApplyAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

@@ -31,7 +31,7 @@ func NewRunScript(
 	}
 }
 
-func (a RunScriptAction) IsAsynchronous() bool {
+func (a RunScriptAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

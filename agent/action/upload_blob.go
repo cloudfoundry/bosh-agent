@@ -18,7 +18,7 @@ func NewUploadBlobAction(blobManager blobstore.BlobManagerInterface) UploadBlobA
 	return UploadBlobAction{blobManager: blobManager}
 }
 
-func (a UploadBlobAction) IsAsynchronous() bool {
+func (a UploadBlobAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 
