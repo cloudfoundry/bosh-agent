@@ -40,7 +40,7 @@ func NewRunErrand(
 	}
 }
 
-func (a RunErrandAction) IsAsynchronous() bool {
+func (a RunErrandAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

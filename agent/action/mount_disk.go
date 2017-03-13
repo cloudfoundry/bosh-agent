@@ -35,7 +35,7 @@ func NewMountDisk(
 	return
 }
 
-func (a MountDiskAction) IsAsynchronous() bool {
+func (a MountDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

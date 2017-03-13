@@ -16,7 +16,7 @@ func NewConfigureNetworks(agentKiller Killer) (prepareAction ConfigureNetworksAc
 	return
 }
 
-func (a ConfigureNetworksAction) IsAsynchronous() bool {
+func (a ConfigureNetworksAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

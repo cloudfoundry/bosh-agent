@@ -22,7 +22,7 @@ func NewMigrateDisk(
 	return
 }
 
-func (a MigrateDiskAction) IsAsynchronous() bool {
+func (a MigrateDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

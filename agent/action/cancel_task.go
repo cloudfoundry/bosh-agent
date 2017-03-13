@@ -16,7 +16,7 @@ func NewCancelTask(taskService boshtask.Service) (getTask CancelTaskAction) {
 	return
 }
 
-func (a CancelTaskAction) IsAsynchronous() bool {
+func (a CancelTaskAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

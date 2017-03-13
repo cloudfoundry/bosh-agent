@@ -76,7 +76,7 @@ func init() {
 				expectedResp := boshhandler.NewValueResponse("pong")
 				actionDispatcher.DispatchResp = expectedResp
 
-				req := boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"))
+				req := boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"), 0)
 				resp := handler.RunFunc(req)
 
 				Expect(actionDispatcher.DispatchReq).To(Equal(req))

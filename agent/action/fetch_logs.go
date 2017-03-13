@@ -29,7 +29,7 @@ func NewFetchLogs(
 	return
 }
 
-func (a FetchLogsAction) IsAsynchronous() bool {
+func (a FetchLogsAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return true
 }
 

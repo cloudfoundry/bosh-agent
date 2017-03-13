@@ -24,7 +24,7 @@ func NewStart(jobSupervisor boshjobsuper.JobSupervisor, applier boshappl.Applier
 	return
 }
 
-func (a StartAction) IsAsynchronous() bool {
+func (a StartAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 

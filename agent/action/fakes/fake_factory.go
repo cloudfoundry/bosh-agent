@@ -54,9 +54,12 @@ type TestAction struct {
 
 	Canceled  bool
 	CancelErr error
+
+	ProtocolVersion boshaction.ProtocolVersion
 }
 
-func (a *TestAction) IsAsynchronous() bool {
+func (a *TestAction) IsAsynchronous(protocolVersion boshaction.ProtocolVersion) bool {
+	a.ProtocolVersion = protocolVersion
 	return a.Asynchronous
 }
 

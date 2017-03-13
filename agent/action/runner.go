@@ -9,7 +9,7 @@ import (
 )
 
 type Runner interface {
-	Run(action Action, payload []byte) (value interface{}, err error)
+	Run(action Action, payload []byte, protocolVersion ProtocolVersion) (value interface{}, err error)
 	Resume(action Action, payload []byte) (value interface{}, err error)
 }
 
@@ -19,8 +19,8 @@ func NewRunner() Runner {
 
 type concreteRunner struct{}
 
-func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface{}, err error) {
-	protocolVersion, payloadArgs, err := r.extractJSONArguments(payloadBytes)
+func (r concreteRunner) Run(action Action, payloadBytes []byte, protocolVersion ProtocolVersion) (value interface{}, err error) {
+	payloadArgs, err := r.extractJSONArguments(payloadBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Extracting json arguments")
 		return
@@ -53,10 +53,9 @@ func (r concreteRunner) Resume(action Action, payloadBytes []byte) (value interf
 	return action.Resume()
 }
 
-func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (protocolVersion ProtocolVersion, args []interface{}, err error) {
+func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (args []interface{}, err error) {
 	type payloadType struct {
-		ProtocolVersion ProtocolVersion `json:"protocol"`
-		Arguments       []interface{}   `json:"arguments"`
+		Arguments []interface{} `json:"arguments"`
 	}
 	payload := payloadType{}
 
@@ -66,7 +65,6 @@ func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (protocolVersi
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling payload arguments to interface{} types")
 	}
-	protocolVersion = payload.ProtocolVersion
 	args = payload.Arguments
 	return
 }

@@ -28,7 +28,7 @@ func NewPrepareNetworkChange(
 	return
 }
 
-func (a PrepareNetworkChangeAction) IsAsynchronous() bool {
+func (a PrepareNetworkChangeAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
