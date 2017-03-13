@@ -39,7 +39,7 @@ import (
 )
 
 type App interface {
-	Setup(args []string) error
+	Setup(opts Options) error
 	Run() error
 	GetPlatform() boshplatform.Platform
 }
@@ -61,11 +61,7 @@ func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
 	}
 }
 
-func (app *app) Setup(args []string) error {
-	opts, err := ParseOptions(args)
-	if err != nil {
-		return bosherr.WrapError(err, "Parsing options")
-	}
+func (app *app) Setup(opts Options) error {
 
 	config, err := app.loadConfig(opts.ConfigPath)
 	if err != nil {
