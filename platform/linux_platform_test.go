@@ -3097,12 +3097,12 @@ unit: sectors
 
 		Context("when there is an error removing a static library", func() {
 			It("should return an error", func() {
-				cmdRunner.AddCmdResult("rm -rf library.a", fakesys.FakeCmdResult{Error: errors.New("oh noes!")})
+				cmdRunner.AddCmdResult("rm -rf library.a", fakesys.FakeCmdResult{Error: errors.New("oh noes")})
 				staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
 				fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
 				err := platform.RemoveStaticLibraries(staticLibrariesListPath)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("oh noes!"))
+				Expect(err.Error()).To(ContainSubstring("oh noes"))
 				Expect(cmdRunner.RunCommands).To(HaveLen(2))
 			})
 		})

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -e -o pipefail
 
 while getopts ":q:w" opt; do
   case "$opt" in
