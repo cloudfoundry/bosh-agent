@@ -4,7 +4,7 @@ set -e
 
 export BASE=$(pwd)
 export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
-export GOPATH=$(BASE)/gopath
+export GOPATH=${BASE}/gopath
 
 cd gopath/src/github.com/cloudfoundry/bosh-agent
 
@@ -22,8 +22,6 @@ fi
 sed -i 's/\[DEV BUILD\]/'"$version"'/' main/version.go
 bin/build
 
-out/bosh-agent -v
-
-sha1sum out/bosh-agent
+shasum -a 256 out/bosh-agent
 
 cp out/bosh-agent "${BASE}/compiled-${GOOS}/${filename}"

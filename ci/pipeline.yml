@@ -64,8 +64,8 @@ jobs:
       - get: version-semver
         params: {bump: patch}
     - put: version-semver
-        params:
-          file: version-semver/number
+      params:
+        file: version-semver/number
     - put: bosh-agent-master
       params:
         repository: bosh-agent
