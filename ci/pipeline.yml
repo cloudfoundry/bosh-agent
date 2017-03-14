@@ -60,9 +60,21 @@ jobs:
     - trigger: true
       passed: [test-unit, test-integration, windows-test-unit, windows-test-integration]
       get: bosh-agent
+    - get: version-semver
+      params: {bump: patch}
+    - put: version-semver
+        params:
+          file: version-semver/number
     - put: bosh-agent-master
       params:
         repository: bosh-agent
+
+    - task: build-linux
+      file: bosh-agent/ci/tasks/build-linux.yml
+
+    - put: release-bucket-linux
+      params:
+        file: compiled-linux/bosh-agent-*-linux-amd64
 
 resources:
 - name: bosh-agent
@@ -77,6 +89,7 @@ resources:
     uri: git@github.com:cloudfoundry/bosh-agent.git
     branch: master
     private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
+
 - name: windows-ami
   type: ami-resource
   source:
@@ -93,6 +106,27 @@ resources:
         - available
       owners:
       - amazon
+
+- name: release-bucket-linux
+  type: s3
+  source:
+    bucket: releases
+    regexp: bosh-agent-(.*)-(.*)-linux-amd64
+    bucket: {{RELEASE_BUCKET_LINUX}}
+    region_name: {{AWS_S3_BUCKET_REGION}}
+    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
+    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+
+- name: version-semver
+  type: semver
+  source:
+    initial_version: 0.0.1
+    key: agent-current-version
+    bucket: {{SEMVER_BUCKET}}
+    region_name: {{AWS_S3_BUCKET_REGION}}
+    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
+    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+
 resource_types:
 - name: ami-resource
   type: docker-image
