@@ -51,6 +51,11 @@ func startAgent(logger logger.Logger) error {
 		return err
 	}
 
+	if opts.VersionCheck {
+		fmt.Println(VersionLabel)
+		os.Exit(0)
+	}
+
 	sigCh := make(chan os.Signal, 8)
 	signal.Notify(sigCh, syscall.SIGTERM, os.Interrupt, os.Kill)
 	errCh := runAgent(opts, logger)

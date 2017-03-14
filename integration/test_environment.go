@@ -470,14 +470,12 @@ func (t *TestEnvironment) GetFileContents(filePath string) (string, error) {
 }
 
 func (t *TestEnvironment) RunCommand(command string) (string, error) {
-	stdout, _, _, err := t.cmdRunner.RunCommand(
-		"vagrant",
-		"ssh",
-		"-c",
-		command,
-	)
-
+	stdout, _, _, err := t.RunCommand3(command)
 	return stdout, err
+}
+
+func (t *TestEnvironment) RunCommand3(command string) (string, string, int, error) {
+	return t.cmdRunner.RunCommand("vagrant", "ssh", "-c", command)
 }
 
 func (t *TestEnvironment) CreateBlobFromAsset(assetPath, blobID string) error {
