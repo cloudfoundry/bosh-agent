@@ -12,11 +12,11 @@ inputs:
 - name: version-semver
 
 outputs:
-- name: compiled-linux
+- name: compiled-windows
 
 params:
   GOARCH: amd64
-  GOOS:   linux
+  GOOS:   windows
 
 run:
   path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/build.sh
