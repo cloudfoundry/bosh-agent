@@ -90,6 +90,10 @@ func (p Provider) DisksDir() string {
 	return filepath.Join(p.InstanceDir(), "disks")
 }
 
+func (p Provider) InstanceDNSDir() string {
+	return filepath.Join(p.InstanceDir(), "dns")
+}
+
 func (p Provider) BlobsDir() string {
 	return filepath.Join(p.DataDir(), "blobs")
 }
