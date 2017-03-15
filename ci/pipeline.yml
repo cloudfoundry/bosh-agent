@@ -117,7 +117,7 @@ resources:
   type: s3
   source:
     bucket: releases
-    regexp: bosh-agent-(.*)-(.*)-linux-amd64
+    regexp: bosh-agent-(.*)-linux-amd64
     bucket: {{RELEASE_BUCKET_AGENT}}
     region_name: {{AWS_S3_BUCKET_REGION}}
     access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
@@ -127,7 +127,7 @@ resources:
   type: s3
   source:
     bucket: releases
-    regexp: bosh-agent-(.*)-(.*)-windows-amd64.exe
+    regexp: bosh-agent-(.*)-windows-amd64.exe
     bucket: {{RELEASE_BUCKET_AGENT}}
     region_name: {{AWS_S3_BUCKET_REGION}}
     access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
