@@ -20,7 +20,7 @@ cd gopath/src/github.com/cloudfoundry/bosh-agent
 
 git_rev=`git rev-parse --short HEAD`
 
-version="${semver}-${timestamp}-${git_rev}-${go_ver}-${GOOS}-${GOARCH}"
+version="${semver}-${git_rev}-${timestamp}-${go_ver}"
 sed -i 's/\[DEV BUILD\]/'"$version"'/' main/version.go
 
 bin/build
