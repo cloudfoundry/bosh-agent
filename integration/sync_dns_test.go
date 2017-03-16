@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"fmt"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 )
@@ -99,13 +100,20 @@ var _ = Describe("sync_dns", func() {
 		_, err = testEnvironment.RunCommand("sudo ls -la /var/vcap/data/new-dns-records")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = testEnvironment.RunCommand("sudo echo '{\"records\":[[\"216.58.194.206\",\"google.com\"],[\"54.164.223.71\",\"pivotal.io\"]]}' > /tmp/new-dns-records")
+		recordsJSON := `{
+			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
+			"vmKeys": ["id", "instance-group", "az", "network", "deployment", "ip"],
+			"vms": [
+				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
+			]
+		}`
+		_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo echo '%s' > /tmp/new-dns-records", recordsJSON))
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/new-dns-records")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = agentClient.SyncDNS("new-dns-records", "ce1b935edec4e1e85e2440e22332803d0a3f2ce4", 1)
+		_, err = agentClient.SyncDNS("new-dns-records", "f863d94faea2bc64f657b99480523da759ec9235", 1)
 		Expect(err).NotTo(HaveOccurred())
 
 		newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
@@ -114,6 +122,17 @@ var _ = Describe("sync_dns", func() {
 		Expect(newEtcHosts).To(MatchRegexp("216.58.194.206\\s+google.com"))
 		Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
 		Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
+
+		instanceDNSRecords, err := testEnvironment.RunCommand("sudo cat /var/vcap/instance/dns/records.json")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(instanceDNSRecords).To(MatchJSON(`{
+			"version": 1,
+			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
+			"vmKeys": ["id", "instance-group", "az", "network", "deployment", "ip"],
+			"vms": [
+				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
+			]
+		}`))
 	})
 
 	It("does not skip verification if no checksum is sent", func() {

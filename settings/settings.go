@@ -202,7 +202,7 @@ type BoshEnv struct {
 }
 
 type DNSRecords struct {
-	Version uint32      `json:"Version"`
+	Version uint64      `json:"Version"`
 	Records [][2]string `json:"records"`
 }
 

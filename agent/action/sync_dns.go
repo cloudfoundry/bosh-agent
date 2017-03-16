@@ -15,9 +15,10 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
-const localDNSStateFilename = "local_dns_state.json"
+const localDNSStateFilename = "records.json"
 
 type SyncDNS struct {
 	blobstore       boshblob.DigestBlobstore
@@ -92,12 +93,6 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "", bosherr.WrapErrorf(err, "reading %s from blobstore", filePath)
 	}
 
-	dnsRecords := boshsettings.DNSRecords{}
-	err = json.Unmarshal(contents, &dnsRecords)
-	if err != nil {
-		return "", bosherr.WrapError(err, "unmarshalling DNS records")
-	}
-
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -115,10 +110,14 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "synced", nil
 	}
 
+	if err := json.Unmarshal(contents, &localDNSState); err != nil {
+		return "", bosherr.WrapError(err, "unmarshalling DNS records")
+	}
 	localDNSState.Version = version
-	err = syncDNSState.SaveState(localDNSState)
-	if err != nil {
-		return "", bosherr.WrapError(err, "saving local DNS state")
+
+	dnsRecords := boshsettings.DNSRecords{
+		Version: localDNSState.Version,
+		Records: localDNSState.Records,
 	}
 
 	err = a.platform.SaveDNSRecords(dnsRecords, a.settingsService.GetSettings().AgentID)
@@ -126,12 +125,17 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "", bosherr.WrapError(err, "saving DNS records")
 	}
 
+	err = syncDNSState.SaveState(localDNSState)
+	if err != nil {
+		return "", bosherr.WrapError(err, "saving local DNS state")
+	}
+
 	return "synced", nil
 }
 
 func (a SyncDNS) createSyncDNSState() state.SyncDNSState {
-	stateFilePath := filepath.Join(a.platform.GetDirProvider().BaseDir(), localDNSStateFilename)
-	return state.NewSyncDNSState(a.platform.GetFs(), stateFilePath)
+	stateFilePath := filepath.Join(a.platform.GetDirProvider().InstanceDNSDir(), localDNSStateFilename)
+	return state.NewSyncDNSState(a.platform.GetFs(), stateFilePath, boshuuid.NewGenerator())
 }
 
 func (a SyncDNS) isLocalStateGreaterThanOrEqual(version uint64) (bool, error) {

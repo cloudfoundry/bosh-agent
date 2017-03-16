@@ -5,6 +5,7 @@ import (
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 type SyncDNSState interface {
@@ -14,18 +15,23 @@ type SyncDNSState interface {
 }
 
 type LocalDNSState struct {
-	Version uint64 `json:"version"`
+	Version uint64      `json:"version"`
+	Records [][2]string `json:"records"`
+	VMKeys  []string    `json:"vmKeys"`
+	VMs     [][]string  `json:"vms"`
 }
 
 type syncDNSState struct {
-	fs   boshsys.FileSystem
-	path string
+	fs            boshsys.FileSystem
+	path          string
+	uuidGenerator boshuuid.Generator
 }
 
-func NewSyncDNSState(fs boshsys.FileSystem, path string) SyncDNSState {
+func NewSyncDNSState(fs boshsys.FileSystem, path string, generator boshuuid.Generator) SyncDNSState {
 	return &syncDNSState{
-		fs:   fs,
-		path: path,
+		fs:            fs,
+		path:          path,
+		uuidGenerator: generator,
 	}
 }
 
@@ -50,9 +56,19 @@ func (s *syncDNSState) SaveState(localDNSState LocalDNSState) error {
 		return bosherr.WrapError(err, "marshalling blobstore DNS state")
 	}
 
-	err = s.fs.WriteFile(s.path, contents)
+	uuid, err := s.uuidGenerator.Generate()
 	if err != nil {
+		return bosherr.WrapError(err, "generating uuid for temp file")
+	}
+
+	tmpFilePath := s.path + uuid
+
+	if err := s.fs.WriteFile(tmpFilePath, contents); err != nil {
 		return bosherr.WrapError(err, "writing the blobstore DNS state")
+	}
+
+	if err := s.fs.Rename(tmpFilePath, s.path); err != nil {
+		return bosherr.WrapError(err, "renaming")
 	}
 
 	return nil
