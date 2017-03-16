@@ -13,6 +13,8 @@ import (
 	"github.com/pivotal-golang/clock"
 )
 
+const partitionNamePrefix = "bosh-partition"
+
 type partedPartitioner struct {
 	logger      boshlog.Logger
 	cmdRunner   boshsys.CmdRunner
@@ -36,6 +38,11 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 	}
 
 	if p.partitionsMatch(existingPartitions, desiredPartitions, deviceFullSizeInBytes) {
+		return nil
+	}
+
+	if p.areAnyExistingPartitionsCreatedByBosh(existingPartitions) {
+		p.logger.Warn(p.logTag, "An attempt was made to partition a disk which was already partitioned by the agent. Attempt blocked.")
 		return nil
 	}
 
@@ -91,6 +98,17 @@ func (p partedPartitioner) partitionsMatch(existingPartitions []existingPartitio
 	return true
 }
 
+func (p partedPartitioner) areAnyExistingPartitionsCreatedByBosh(existingPartitions []existingPartition) bool {
+	for _, partition := range existingPartitions {
+		if strings.HasPrefix(partition.Name, partitionNamePrefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// For reference on format of outputs: http://lists.alioth.debian.org/pipermail/parted-devel/2006-December/000573.html
 func (p partedPartitioner) getPartitions(devicePath string) (partitions []existingPartition, deviceFullSizeInBytes uint64, err error) {
 	stdout, _, _, err := p.runPartedPrint(devicePath)
 	if err != nil {
@@ -144,6 +162,8 @@ func (p partedPartitioner) getPartitions(devicePath string) (partitions []existi
 			partitionType = PartitionTypeSwap
 		}
 
+		partitionName := partitionInfo[5]
+
 		partitions = append(
 			partitions,
 			existingPartition{
@@ -152,6 +172,7 @@ func (p partedPartitioner) getPartitions(devicePath string) (partitions []existi
 				StartInBytes: uint64(partitionStartInBytes),
 				EndInBytes:   uint64(partitionEndInBytes),
 				Type:         partitionType,
+				Name:         partitionName,
 			},
 		)
 	}
@@ -223,6 +244,7 @@ func (p partedPartitioner) roundDown(numToRound, multiple uint64) uint64 {
 func (p partedPartitioner) createEachPartition(partitions []Partition, deviceFullSizeInBytes uint64, devicePath string) error {
 	partitionStart := uint64(1048576)
 	alignmentInBytes := uint64(1048576)
+
 	for index, partition := range partitions {
 		var partitionEnd uint64
 
@@ -245,7 +267,7 @@ func (p partedPartitioner) createEachPartition(partitions []Partition, deviceFul
 				"unit",
 				"B",
 				"mkpart",
-				"primary",
+				fmt.Sprintf("%s-%d", partitionNamePrefix, index),
 				fmt.Sprintf("%d", partitionStart),
 				fmt.Sprintf("%d", partitionEnd),
 			)

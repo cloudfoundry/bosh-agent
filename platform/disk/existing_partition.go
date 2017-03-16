@@ -6,4 +6,5 @@ type existingPartition struct {
 	StartInBytes uint64
 	EndInBytes   uint64
 	Type         PartitionType
+	Name         string
 }
