@@ -42,8 +42,7 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 	}
 
 	if p.areAnyExistingPartitionsCreatedByBosh(existingPartitions) {
-		p.logger.Warn(p.logTag, "An attempt was made to partition a disk which was already partitioned by the agent. Attempt blocked.")
-		return nil
+		return bosherr.Errorf("'%s' contains a partition created by bosh. No partitioning is allowed.", devicePath)
 	}
 
 	if err = p.createEachPartition(desiredPartitions, deviceFullSizeInBytes, devicePath); err != nil {

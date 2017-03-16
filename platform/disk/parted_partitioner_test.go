@@ -212,7 +212,7 @@ var _ = Describe("PartedPartitioner", func() {
 						)
 					})
 
-					It("does NOT partition the disk", func() {
+					It("does NOT partition the disk, and returns an error", func() {
 						partitions := []Partition{
 							{SizeInBytes: 8589934592}, // (8GiB)
 							{SizeInBytes: 8589934592}, // (8GiB)
@@ -234,10 +234,9 @@ var _ = Describe("PartedPartitioner", func() {
 						// second start=8590983168, end=17180917759, size=8589934592
 
 						err := partitioner.Partition("/dev/sda", partitions)
-						Expect(err).ToNot(HaveOccurred())
+						Expect(err.Error()).To(Equal("'/dev/sda' contains a partition created by bosh. No partitioning is allowed."))
 
 						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(1))
-
 						scrubbedCommands := scrubPartitionNames(fakeCmdRunner.RunCommands)
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 					})
