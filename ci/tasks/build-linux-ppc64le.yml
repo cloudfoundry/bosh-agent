@@ -12,7 +12,7 @@ inputs:
 - name: version-semver
 
 outputs:
-- name: compiled-linux
+- name: compiled-linux-ppc64le
 
 params:
   GOARCH: ppc64le

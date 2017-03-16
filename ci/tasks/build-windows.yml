@@ -12,7 +12,7 @@ inputs:
 - name: version-semver
 
 outputs:
-- name: compiled-windows
+- name: compiled-windows-amd64
 
 params:
   GOARCH: amd64

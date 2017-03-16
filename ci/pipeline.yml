@@ -79,13 +79,13 @@ jobs:
     - aggregate:
       - put: release-bucket-linux
         params:
-          file: compiled-linux/bosh-agent-*-linux-amd64
+          file: compiled-linux-amd64/bosh-agent-*-linux-amd64
       - put: release-bucket-linux-ppc64le
         params:
-          file: compiled-linux/bosh-agent-*-linux-ppc64le
+          file: compiled-linux-ppc64le/bosh-agent-*-linux-ppc64le
       - put: release-bucket-windows
         params:
-          file: compiled-windows/bosh-agent-*-windows-amd64.exe
+          file: compiled-windows-amd64/bosh-agent-*-windows-amd64.exe
 
 resources:
 - name: bosh-agent

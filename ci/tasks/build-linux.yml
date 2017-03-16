@@ -12,7 +12,7 @@ inputs:
 - name: version-semver
 
 outputs:
-- name: compiled-linux
+- name: compiled-linux-amd64
 
 params:
   GOARCH: amd64
