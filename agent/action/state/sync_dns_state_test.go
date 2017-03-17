@@ -139,7 +139,7 @@ var _ = Describe("SyncDNSState", func() {
 					"records": [
 						["rec", "ip"]
 					],
-					"vmKeys": ["id", "instance-group", "az", "network", "deployment", "ip"],
+					"vm_keys": ["id", "instance-group", "az", "network", "deployment", "ip"],
 					"vms": [
 						["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 					]

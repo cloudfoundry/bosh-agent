@@ -17,7 +17,7 @@ type SyncDNSState interface {
 type LocalDNSState struct {
 	Version uint64      `json:"version"`
 	Records [][2]string `json:"records"`
-	VMKeys  []string    `json:"vmKeys"`
+	VMKeys  []string    `json:"vm_keys"`
 	VMs     [][]string  `json:"vms"`
 }
 

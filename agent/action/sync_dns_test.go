@@ -64,7 +64,7 @@ var _ = Describe("SyncDNS", func() {
 									["fake-ip0", "fake-name0"],
 									["fake-ip1", "fake-name1"]
 								],
-								"vmKeys": ["id", "instance-group", "az", "network", "deployment", "ip"],
+								"vm_keys": ["id", "instance-group", "az", "network", "deployment", "ip"],
 								"vms": [
 									["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 								]
@@ -232,7 +232,7 @@ var _ = Describe("SyncDNS", func() {
 									["fake-ip0", "fake-name0"],
 									["fake-ip1", "fake-name1"]
 								],
-								"vmKeys": ["id", "instance-group", "az", "network", "deployment", "ip"],
+								"vm_keys": ["id", "instance-group", "az", "network", "deployment", "ip"],
 								"vms": [
 									["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 								]
@@ -257,7 +257,7 @@ var _ = Describe("SyncDNS", func() {
 									["fake-ip0", "fake-name0"],
 									["fake-ip1", "fake-name1"]
 								],
-								"vmKeys": ["id", "instance-group", "az", "network", "deployment", "ip"],
+								"vm_keys": ["id", "instance-group", "az", "network", "deployment", "ip"],
 								"vms": [
 									["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 								]
