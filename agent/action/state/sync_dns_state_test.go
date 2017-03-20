@@ -71,7 +71,7 @@ var _ = Describe("SyncDNSState", func() {
 				localDNSState = LocalDNSState{
 					Version: 1234,
 					Records: [][2]string{{"rec", "ip"}},
-					VMKeys:  []string{"id", "instance-group", "az", "network", "deployment", "ip"},
+					VMKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
 					VMs:     [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
 				}
 			})
@@ -118,7 +118,7 @@ var _ = Describe("SyncDNSState", func() {
 				localDNSState = LocalDNSState{
 					Version: 1234,
 					Records: [][2]string{{"rec", "ip"}},
-					VMKeys:  []string{"id", "instance-group", "az", "network", "deployment", "ip"},
+					VMKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
 					VMs:     [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
 				}
 				fakeUUIDGenerator.GeneratedUUID = "fake-generated-uuid"
@@ -139,7 +139,7 @@ var _ = Describe("SyncDNSState", func() {
 					"records": [
 						["rec", "ip"]
 					],
-					"vm_keys": ["id", "instance-group", "az", "network", "deployment", "ip"],
+					"vm_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
 					"vms": [
 						["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 					]
