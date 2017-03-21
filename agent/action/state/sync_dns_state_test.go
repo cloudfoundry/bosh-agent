@@ -69,10 +69,10 @@ var _ = Describe("SyncDNSState", func() {
 		Context("when there are failures", func() {
 			BeforeEach(func() {
 				localDNSState = LocalDNSState{
-					Version: 1234,
-					Records: [][2]string{{"rec", "ip"}},
-					VMKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
-					VMs:     [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
+					Version:     1234,
+					Records:     [][2]string{{"rec", "ip"}},
+					RecordKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
+					RecordInfos: [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
 				}
 			})
 
@@ -116,10 +116,10 @@ var _ = Describe("SyncDNSState", func() {
 		Context("when there are no failures", func() {
 			BeforeEach(func() {
 				localDNSState = LocalDNSState{
-					Version: 1234,
-					Records: [][2]string{{"rec", "ip"}},
-					VMKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
-					VMs:     [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
+					Version:     1234,
+					Records:     [][2]string{{"rec", "ip"}},
+					RecordKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
+					RecordInfos: [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
 				}
 				fakeUUIDGenerator.GeneratedUUID = "fake-generated-uuid"
 			})
@@ -139,8 +139,8 @@ var _ = Describe("SyncDNSState", func() {
 					"records": [
 						["rec", "ip"]
 					],
-					"vm_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
-					"vms": [
+					"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
+					"record_infos": [
 						["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 					]
 				}`))

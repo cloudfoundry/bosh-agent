@@ -102,8 +102,8 @@ var _ = Describe("sync_dns", func() {
 
 		recordsJSON := `{
 			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
-			"vm_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
-			"vms": [
+			"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
+			"record_infos": [
 				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 			]
 		}`
@@ -128,8 +128,8 @@ var _ = Describe("sync_dns", func() {
 		Expect(instanceDNSRecords).To(MatchJSON(`{
 			"version": 1,
 			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
-			"vm_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
-			"vms": [
+			"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
+			"record_infos": [
 				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 			]
 		}`))
