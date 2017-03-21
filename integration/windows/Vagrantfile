@@ -229,7 +229,6 @@ Vagrant.configure(2) do |config|
       {file: "fixtures/job-service-wrapper.exe", dest: "c:\\bosh"},
       {file: "fixtures/bosh-blobstore-dav.exe", dest: "c:\\bosh\\"},
       {file: "fixtures/tar.exe", dest: "c:\\bosh\\"},
-      {file: "fixtures/zlib1.dll", dest: "c:\\bosh\\"},
       {file: "fixtures/bosh-agent.exe", dest: "c:\\bosh\\"},
       {file: "fixtures/pipe.exe", dest: "C:\\var\\vcap\\bosh\\bin\\"}
     ]
