@@ -159,6 +159,9 @@ type FakePlatform struct {
 
 	SetupRootDiskCalledTimes int
 	SetupRootDiskError       error
+
+	SetupRecordsJSONPermissionPath string
+	SetupRecordsJSONPermissionErr  error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -486,5 +489,6 @@ func (p *FakePlatform) AssociateDiskArgsForCall(i int) (string, boshsettings.Dis
 }
 
 func (p *FakePlatform) SetupRecordsJSONPermission(path string) error {
-	return nil
+	p.SetupRecordsJSONPermissionPath = path
+	return p.SetupRecordsJSONPermissionErr
 }

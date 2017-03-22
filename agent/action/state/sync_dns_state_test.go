@@ -86,7 +86,7 @@ var _ = Describe("SyncDNSState", func() {
 
 					err = syncDNSState.SaveState(localDNSState)
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("writing the blobstore DNS state"))
+					Expect(err).To(MatchError("writing the blobstore DNS state: fake fail saving error"))
 				})
 			})
 
@@ -113,6 +113,14 @@ var _ = Describe("SyncDNSState", func() {
 
 					err = syncDNSState.SaveState(localDNSState)
 					Expect(err).To(MatchError("renaming: failed to rename"))
+				})
+			})
+
+			Context("when setting the file permissions fails", func() {
+				It("returns an error", func() {
+					fakePlatform.SetupRecordsJSONPermissionErr = errors.New("failed to set permissions")
+					err = syncDNSState.SaveState(localDNSState)
+					Expect(err).To(MatchError("setting permissions of blobstore DNS state: failed to set permissions"))
 				})
 			})
 		})
@@ -148,6 +156,13 @@ var _ = Describe("SyncDNSState", func() {
 						["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 					]
 				}`))
+			})
+
+			It("should set platorm specific permissions", func() {
+				err = syncDNSState.SaveState(localDNSState)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakePlatform.SetupRecordsJSONPermissionPath).To(Equal(path + "fake-generated-uuid"))
 			})
 		})
 	})

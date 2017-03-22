@@ -23,6 +23,7 @@ type LocalDNSState struct {
 }
 
 type syncDNSState struct {
+	platform      boshplatform.Platform
 	fs            boshsys.FileSystem
 	path          string
 	uuidGenerator boshuuid.Generator
@@ -30,6 +31,7 @@ type syncDNSState struct {
 
 func NewSyncDNSState(platform boshplatform.Platform, path string, generator boshuuid.Generator) SyncDNSState {
 	return &syncDNSState{
+		platform:      platform,
 		fs:            platform.GetFs(),
 		path:          path,
 		uuidGenerator: generator,
@@ -64,11 +66,18 @@ func (s *syncDNSState) SaveState(localDNSState LocalDNSState) error {
 
 	tmpFilePath := s.path + uuid
 
-	if err := s.fs.WriteFile(tmpFilePath, contents); err != nil {
+	err = s.fs.WriteFile(tmpFilePath, contents)
+	if err != nil {
 		return bosherr.WrapError(err, "writing the blobstore DNS state")
 	}
 
-	if err := s.fs.Rename(tmpFilePath, s.path); err != nil {
+	err = s.platform.SetupRecordsJSONPermission(tmpFilePath)
+	if err != nil {
+		return bosherr.WrapError(err, "setting permissions of blobstore DNS state")
+	}
+
+	err = s.fs.Rename(tmpFilePath, s.path)
+	if err != nil {
 		return bosherr.WrapError(err, "renaming")
 	}
 
