@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
+	"strings"
 )
 
 var _ = Describe("sync_dns", func() {
@@ -101,6 +102,7 @@ var _ = Describe("sync_dns", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		recordsJSON := `{
+		  "version": 1,
 			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
 			"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
 			"record_infos": [
@@ -110,10 +112,13 @@ var _ = Describe("sync_dns", func() {
 		_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo echo '%s' > /tmp/new-dns-records", recordsJSON))
 		Expect(err).NotTo(HaveOccurred())
 
+		blobDigest, err := testEnvironment.RunCommand("sudo shasum /tmp/new-dns-records | cut -f 1 -d ' '")
+		Expect(err).NotTo(HaveOccurred())
+
 		_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/new-dns-records")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = agentClient.SyncDNS("new-dns-records", "0b555235b4ee9b001e712328c4d61a27913764fa", 1)
+		_, err = agentClient.SyncDNS("new-dns-records", strings.TrimSpace(blobDigest), 1)
 		Expect(err).NotTo(HaveOccurred())
 
 		newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
@@ -134,7 +139,9 @@ var _ = Describe("sync_dns", func() {
 			]
 		}`))
 
-		//TODO: assert that the records.json chown + chmod has taken effect!!!
+		filePerms, err := testEnvironment.RunCommand("ls -l /var/vcap/instance/dns/records.json | cut -d ' ' -f 1,3,4")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(strings.TrimSpace(filePerms)).To(Equal("-rw-r----- root vcap"))
 	})
 
 	It("does not skip verification if no checksum is sent", func() {
@@ -167,5 +174,4 @@ var _ = Describe("sync_dns", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("No digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
 	})
-
 })

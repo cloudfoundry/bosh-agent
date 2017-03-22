@@ -75,7 +75,6 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "", bosherr.WrapErrorf(err, "getting %s from blobstore", blobID)
 	}
 
-	//TODO: can this be constructor injected?
 	fs := a.platform.GetFs()
 
 	defer func() {
@@ -111,8 +110,9 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "", bosherr.WrapError(err, "unmarshalling DNS records")
 	}
 
-	// the version we were told to retrieve should equal what's in the blob. This should be an error if they're not equal...
-	localDNSState.Version = version
+	if localDNSState.Version != version {
+		return "", bosherr.Error("version from unpacked dns blob does not match version supplied by director")
+	}
 
 	dnsRecords := boshsettings.DNSRecords{
 		Version: localDNSState.Version,
