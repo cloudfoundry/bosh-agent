@@ -7,7 +7,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
@@ -15,18 +17,20 @@ var _ = Describe("SyncDNSState", func() {
 	var (
 		localDNSState     LocalDNSState
 		syncDNSState      SyncDNSState
-		fakeFileSystem    *fakes.FakeFileSystem
+		fakeFileSystem    *fakesys.FakeFileSystem
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
+		fakePlatform      *fakeplatform.FakePlatform
 
 		path string
 		err  error
 	)
 
 	BeforeEach(func() {
-		fakeFileSystem = fakes.NewFakeFileSystem()
+		fakePlatform = fakeplatform.NewFakePlatform()
+		fakeFileSystem = fakePlatform.GetFs().(*fakesys.FakeFileSystem)
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 		path = "/blobstore-dns-records.json"
-		syncDNSState = NewSyncDNSState(fakeFileSystem, path, fakeUUIDGenerator)
+		syncDNSState = NewSyncDNSState(fakePlatform, path, fakeUUIDGenerator)
 		err = nil
 		localDNSState = LocalDNSState{}
 	})

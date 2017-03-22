@@ -133,6 +133,8 @@ var _ = Describe("sync_dns", func() {
 				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 			]
 		}`))
+
+		//TODO: assert that the records.json chown + chmod has taken effect!!!
 	})
 
 	It("does not skip verification if no checksum is sent", func() {

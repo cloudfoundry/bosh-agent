@@ -70,15 +70,12 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "synced", nil
 	}
 
-	if err != nil {
-		return "", bosherr.WrapError(err, "Parsing blob digest")
-	}
-
 	filePath, err := a.blobstore.Get(blobID, multiDigest)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "getting %s from blobstore", blobID)
 	}
 
+	//TODO: can this be constructor injected?
 	fs := a.platform.GetFs()
 
 	defer func() {
@@ -113,6 +110,8 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 	if err := json.Unmarshal(contents, &localDNSState); err != nil {
 		return "", bosherr.WrapError(err, "unmarshalling DNS records")
 	}
+
+	// the version we were told to retrieve should equal what's in the blob. This should be an error if they're not equal...
 	localDNSState.Version = version
 
 	dnsRecords := boshsettings.DNSRecords{
@@ -135,7 +134,7 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 
 func (a SyncDNS) createSyncDNSState() state.SyncDNSState {
 	stateFilePath := filepath.Join(a.platform.GetDirProvider().InstanceDNSDir(), localDNSStateFilename)
-	return state.NewSyncDNSState(a.platform.GetFs(), stateFilePath, boshuuid.NewGenerator())
+	return state.NewSyncDNSState(a.platform, stateFilePath, boshuuid.NewGenerator())
 }
 
 func (a SyncDNS) isLocalStateGreaterThanOrEqual(version uint64) (bool, error) {

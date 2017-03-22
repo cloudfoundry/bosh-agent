@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 
+	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
@@ -27,9 +28,9 @@ type syncDNSState struct {
 	uuidGenerator boshuuid.Generator
 }
 
-func NewSyncDNSState(fs boshsys.FileSystem, path string, generator boshuuid.Generator) SyncDNSState {
+func NewSyncDNSState(platform boshplatform.Platform, path string, generator boshuuid.Generator) SyncDNSState {
 	return &syncDNSState{
-		fs:            fs,
+		fs:            platform.GetFs(),
 		path:          path,
 		uuidGenerator: generator,
 	}
