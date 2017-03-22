@@ -113,7 +113,7 @@ var _ = Describe("sync_dns", func() {
 		_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/new-dns-records")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = agentClient.SyncDNS("new-dns-records", "f57ac88ce6264abf9e9589949d1f68c440bb6eb6", 1)
+		_, err = agentClient.SyncDNS("new-dns-records", "0b555235b4ee9b001e712328c4d61a27913764fa", 1)
 		Expect(err).NotTo(HaveOccurred())
 
 		newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
