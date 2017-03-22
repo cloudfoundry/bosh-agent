@@ -3185,4 +3185,54 @@ unit: sectors
 			Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1\\n"))
 		})
 	})
+
+	Describe("SetupDNSRecordFile", func() {
+
+		It("creates a DNS record file with specific permissions", func() {
+			recordsJSONFile, err := platform.GetFs().TempFile("records_json")
+			Expect(err).ToNot(HaveOccurred())
+
+			err = platform.SetupRecordsJSONPermission(recordsJSONFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+
+			basePathStat := fs.GetFileTestStat(recordsJSONFile.Name())
+
+			Expect(basePathStat).ToNot(BeNil())
+			Expect(basePathStat.FileType).To(Equal(fakesys.FakeFileTypeFile))
+			Expect(basePathStat.FileMode).To(Equal(os.FileMode(0640)))
+			Expect(basePathStat.Username).To(Equal("root"))
+			Expect(basePathStat.Groupname).To(Equal("vcap"))
+		})
+
+		Context("when chmod fails", func() {
+			BeforeEach(func() {
+				fs.ChmodErr = errors.New("some chmod error")
+			})
+
+			It("should return error", func() {
+				recordsJSONFile, err := platform.GetFs().TempFile("records_json")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = platform.SetupRecordsJSONPermission(recordsJSONFile.Name())
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Chmoding records JSON file: some chmod error"))
+			})
+		})
+
+		Context("when chown fails", func() {
+			BeforeEach(func() {
+				fs.ChownErr = errors.New("some chown error")
+			})
+
+			It("should return error", func() {
+				recordsJsonFile, err := platform.GetFs().TempFile("records_json")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = platform.SetupRecordsJSONPermission(recordsJsonFile.Name())
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Chowning records JSON file: some chown error"))
+			})
+		})
+	})
+
 }

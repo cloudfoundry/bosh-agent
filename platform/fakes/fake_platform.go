@@ -484,3 +484,7 @@ func (p *FakePlatform) AssociateDisk(name string, settings boshsettings.DiskSett
 func (p *FakePlatform) AssociateDiskArgsForCall(i int) (string, boshsettings.DiskSettings) {
 	return p.AssociateDiskArgs[i].n, p.AssociateDiskArgs[i].s
 }
+
+func (p *FakePlatform) SetupRecordsJSONPermission(path string) error {
+	return nil
+}

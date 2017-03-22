@@ -413,6 +413,18 @@ func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {
 	return
 }
 
+func (p linux) SetupRecordsJSONPermission(path string) error {
+	if err := p.fs.Chmod(path, 0640); err != nil {
+		return bosherr.WrapError(err, "Chmoding records JSON file")
+	}
+
+	if err := p.fs.Chown(path, "root:vcap"); err != nil {
+		return bosherr.WrapError(err, "Chowning records JSON file")
+	}
+
+	return nil
+}
+
 const EtcHostsTemplate = `127.0.0.1 localhost {{ . }}
 
 # The following lines are desirable for IPv6 capable hosts

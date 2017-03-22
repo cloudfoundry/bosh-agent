@@ -483,3 +483,7 @@ func (p dummyPlatform) existingMounts() ([]mount, error) {
 	err = json.Unmarshal(bytes, &mounts)
 	return mounts, err
 }
+
+func (p dummyPlatform) SetupRecordsJSONPermission(path string) error {
+	return nil
+}

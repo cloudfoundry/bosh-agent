@@ -58,6 +58,7 @@ type Platform interface {
 	SetupRuntimeConfiguration() (err error)
 	SetupLogDir() (err error)
 	SetupLoggingAndAuditing() (err error)
+	SetupRecordsJSONPermission(path string) error
 
 	// Disk management
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
