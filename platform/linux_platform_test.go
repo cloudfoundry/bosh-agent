@@ -3225,10 +3225,10 @@ unit: sectors
 			})
 
 			It("should return error", func() {
-				recordsJsonFile, err := platform.GetFs().TempFile("records_json")
+				recordsJSONFile, err := platform.GetFs().TempFile("records_json")
 				Expect(err).ToNot(HaveOccurred())
 
-				err = platform.SetupRecordsJSONPermission(recordsJsonFile.Name())
+				err = platform.SetupRecordsJSONPermission(recordsJSONFile.Name())
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Chowning records JSON file: some chown error"))
 			})
