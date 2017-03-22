@@ -4,11 +4,12 @@ package system
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"os/user"
+	"os"
 )
 
 func (fs *osFileSystem) homeDir(username string) (string, error) {
@@ -26,28 +27,38 @@ func (fs *osFileSystem) currentHomeDir() (string, error) {
 	return fs.HomeDir("")
 }
 
-func (fs *osFileSystem) chown(path, username string) error {
-	uid, err := fs.runCommand(fmt.Sprintf("id -u %s", username))
+func (fs *osFileSystem) chown(path, owner string) error {
+	parts := strings.Split(owner, ":")
+
+	chownUser, err := user.Lookup(parts[0])
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Getting user id for '%s'", username)
+		return bosherr.Errorf("Failed to lookup user '%s'", parts[0])
 	}
 
-	uidAsInt, err := strconv.Atoi(uid)
+	uid, err := strconv.Atoi(chownUser.Uid)
 	if err != nil {
-		return bosherr.WrapError(err, "Converting UID to integer")
+		panic("on POSIX systems uid is always a decimal")
 	}
 
-	gid, err := fs.runCommand(fmt.Sprintf("id -g %s", username))
+	gid, err := strconv.Atoi(chownUser.Gid)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Getting group id for '%s'", username)
+		panic("on POSIX systems uid is always a decimal")
 	}
 
-	gidAsInt, err := strconv.Atoi(gid)
-	if err != nil {
-		return bosherr.WrapError(err, "Converting GID to integer")
+	if len(parts) > 1 {
+		var chownGroup *user.Group
+		chownGroup, err = user.LookupGroup(parts[1])
+		if err != nil {
+			return bosherr.Errorf("Failed to lookup group '%s'", parts[1])
+		}
+
+		gid, err = strconv.Atoi(chownGroup.Gid)
+		if err != nil {
+			panic("on POSIX systems uid is always a decimal")
+		}
 	}
 
-	err = os.Chown(path, uidAsInt, gidAsInt)
+	err = os.Chown(path, uid, gid)
 	if err != nil {
 		return bosherr.WrapError(err, "Doing Chown")
 	}
