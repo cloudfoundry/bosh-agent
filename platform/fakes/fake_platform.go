@@ -162,6 +162,10 @@ type FakePlatform struct {
 
 	SetupRecordsJSONPermissionPath string
 	SetupRecordsJSONPermissionErr  error
+
+	SetPersistentDiskMigrationReadaheadCalled bool
+	SetPersistentDiskMigrationReadaheadValue  int
+	SetPersistentDiskMigrationReadaheadErr    error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -491,4 +495,10 @@ func (p *FakePlatform) AssociateDiskArgsForCall(i int) (string, boshsettings.Dis
 func (p *FakePlatform) SetupRecordsJSONPermission(path string) error {
 	p.SetupRecordsJSONPermissionPath = path
 	return p.SetupRecordsJSONPermissionErr
+}
+
+func (p *FakePlatform) SetPersistentDiskMigrationReadahead(readahead int) error {
+	p.SetPersistentDiskMigrationReadaheadCalled = true
+	p.SetPersistentDiskMigrationReadaheadValue = readahead
+	return p.SetPersistentDiskMigrationReadaheadErr
 }

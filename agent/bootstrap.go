@@ -131,6 +131,11 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up blobs dir")
 	}
 
+	ra := settings.GetPersistentDiskMigrationReadahead()
+	if err = boot.platform.SetPersistentDiskMigrationReadahead(ra); err != nil {
+		return bosherr.WrapError(err, "Setting persistent disk migration readahead")
+	}
+
 	if err = boot.comparePersistentDisk(); err != nil {
 		return bosherr.WrapError(err, "Comparing persistent disks")
 	}

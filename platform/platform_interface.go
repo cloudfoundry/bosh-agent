@@ -59,6 +59,7 @@ type Platform interface {
 	SetupLogDir() (err error)
 	SetupLoggingAndAuditing() (err error)
 	SetupRecordsJSONPermission(path string) error
+	SetPersistentDiskMigrationReadahead(readahead int) error
 
 	// Disk management
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error

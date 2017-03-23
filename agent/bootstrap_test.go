@@ -404,6 +404,16 @@ func init() {
 				})
 			})
 
+			Describe("sets migration readahead", func() {
+				It("propagates disk migration readahead", func() {
+					settingsService.Settings.Env.Bosh.PersistentDiskMigrationReadahead = 1024
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.SetPersistentDiskMigrationReadaheadCalled).To(BeTrue())
+					Expect(platform.SetPersistentDiskMigrationReadaheadValue).To(Equal(1024))
+				})
+			})
+
 			Describe("checking persistent disks", func() {
 				Context("managed persistent disk", func() {
 					BeforeEach(func() {

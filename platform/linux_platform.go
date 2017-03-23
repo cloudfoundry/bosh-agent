@@ -80,6 +80,10 @@ type LinuxOptions struct {
 	// Strategy for resolving ephemeral & persistent disk partitioners;
 	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
 	PartitionerType string
+
+	// When set to > 0 enables overriding the defaut readahead for the duration of
+	// the persistent volume migration. If set to <=0 disables the override.
+	PersistentDiskMigrationReadahead int
 }
 
 type linux struct {
@@ -1154,6 +1158,35 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 		return
 	}
 
+	ra, dev := 0, ""
+	if p.options.PersistentDiskMigrationReadahead > 0 {
+		// override the readahead of the source block device
+		_dev, found, err2 := p.diskManager.GetMounter().IsMountPoint(fromMountPoint)
+		if err2 != nil || !found {
+			err = bosherr.WrapError(err2, "Setting migration readahead: finding device")
+			return
+		}
+		dev = _dev
+
+		stdout, _, _, err2 := p.cmdRunner.RunCommand("blockdev", "--getra", dev)
+		if err2 != nil {
+			err = bosherr.WrapError(err2, "Setting migration readahead: getting current readahead")
+			return
+		}
+		ra, err2 = strconv.Atoi(stdout)
+		if ra < 0 || err2 != nil {
+			err = bosherr.WrapError(err2, "Setting migration readahead: parsing current readahead")
+			return
+		}
+
+		p.logger.Debug(logTag, "Setting readahead of %s: %d -> %d", dev, ra, p.options.PersistentDiskMigrationReadahead)
+		_, _, _, err2 = p.cmdRunner.RunCommand("blockdev", "--setra", fmt.Sprint(p.options.PersistentDiskMigrationReadahead), dev)
+		if err2 != nil {
+			err = bosherr.WrapError(err2, "Setting migration readahead")
+			return
+		}
+	}
+
 	// Golang does not implement a file copy that would allow us to preserve dates...
 	// So we have to shell out to tar to perform the copy instead of delegating to the FileSystem
 	tarCopy := fmt.Sprintf("(tar -C %s -cf - .) | (tar -C %s -xpf -)", fromMountPoint, toMountPoint)
@@ -1161,6 +1194,16 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 	if err != nil {
 		err = bosherr.WrapError(err, "Copying files from old disk to new disk")
 		return
+	}
+
+	if p.options.PersistentDiskMigrationReadahead > 0 {
+		// restore the original readahead of the source device
+		p.logger.Debug(logTag, "Setting readahead of %s: %d -> %d", dev, p.options.PersistentDiskMigrationReadahead, ra)
+		_, _, _, err2 := p.cmdRunner.RunCommand("blockdev", "--setra", fmt.Sprint(ra), dev)
+		if err2 != nil {
+			err = bosherr.WrapError(err2, "Restoring readahead")
+			return
+		}
 	}
 
 	_, err = p.diskManager.GetMounter().Unmount(fromMountPoint)
@@ -1174,6 +1217,11 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 		err = bosherr.WrapError(err, "Remounting new disk on original mountpoint")
 	}
 	return
+}
+
+func (p linux) SetPersistentDiskMigrationReadahead(readahead int) error {
+	p.options.PersistentDiskMigrationReadahead = readahead
+	return nil
 }
 
 func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (bool, error) {

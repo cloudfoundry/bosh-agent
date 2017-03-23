@@ -2685,7 +2685,7 @@ Number  Start   End     Size    File system  Name             Flags
 			mounter = diskManager.FakeMounter
 		})
 
-		It("migrate persistent disk", func() {
+		It("migrates persistent disk", func() {
 			err := platform.MigratePersistentDisk("/from/path", "/to/path")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -2693,6 +2693,38 @@ Number  Start   End     Size    File system  Name             Flags
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}))
+
+			Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("/from/path"))
+			Expect(mounter.RemountFromMountPoint).To(Equal("/to/path"))
+			Expect(mounter.RemountToMountPoint).To(Equal("/from/path"))
+		})
+	})
+
+	Describe("MigratePersistentDiskWithReadaheadOverride", func() {
+		var mounter *fakedisk.FakeMounter
+		BeforeEach(func() {
+			mounter = diskManager.FakeMounter
+			mounter.IsMountPointPartitionPath = "/dev/sdf"
+			mounter.IsMountPointResult = true
+			mounter.IsMountPointErr = nil
+			cmdRunner.AddCmdResult(
+				"blockdev --getra /dev/sdf",
+				fakesys.FakeCmdResult{Stdout: "256"},
+			)
+			options.PersistentDiskMigrationReadahead = 1024
+		})
+
+		It("migrates persistent disk with readahead override", func() {
+			err := platform.MigratePersistentDisk("/from/path", "/to/path")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(mounter.RemountAsReadonlyPath).To(Equal("/from/path"))
+
+			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"blockdev", "--getra", "/dev/sdf"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"blockdev", "--setra", "1024", "/dev/sdf"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"blockdev", "--setra", "256", "/dev/sdf"}))
 
 			Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("/from/path"))
 			Expect(mounter.RemountFromMountPoint).To(Equal("/to/path"))

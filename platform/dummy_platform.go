@@ -487,3 +487,7 @@ func (p dummyPlatform) existingMounts() ([]mount, error) {
 func (p dummyPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
+
+func (p dummyPlatform) SetPersistentDiskMigrationReadahead(_ int) error {
+	return nil
+}

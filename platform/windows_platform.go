@@ -365,3 +365,7 @@ func (p WindowsPlatform) DeleteARPEntryWithIP(ip string) error {
 func (p WindowsPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
+
+func (p WindowsPlatform) SetPersistentDiskMigrationReadahead(_ int) error {
+	return nil
+}

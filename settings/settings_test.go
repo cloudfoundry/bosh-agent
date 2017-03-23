@@ -651,6 +651,7 @@ var _ = Describe("Settings", func() {
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+			Expect(env.Bosh.PersistentDiskMigrationReadahead).To(BeZero())
 		})
 		Context("when swap_size is not specified in the json", func() {
 			It("unmarshalls correctly", func() {
@@ -661,6 +662,17 @@ var _ = Describe("Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(env.GetSwapSizeInBytes()).To(BeNil())
+			})
+		})
+		Context("when persistent_disk_migration_readahead is specified in the json", func() {
+			It("unmarshalls correctly", func() {
+				var env Env
+				envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"], "persistent_disk_migration_readahead": 1024}}`
+
+				err := json.Unmarshal([]byte(envJSON), &env)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(env.Bosh.PersistentDiskMigrationReadahead).To(Equal(1024))
 			})
 		})
 

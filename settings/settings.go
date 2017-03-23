@@ -156,6 +156,10 @@ func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
 	return s.Disks.RawEphemeral
 }
 
+func (s Settings) GetPersistentDiskMigrationReadahead() int {
+	return s.Env.Bosh.PersistentDiskMigrationReadahead
+}
+
 func (s Settings) GetMbusURL() string {
 	if s.Env.Bosh.Mbus != nil && len(s.Env.Bosh.Mbus.URL) > 0 {
 		return s.Env.Bosh.Mbus.URL
@@ -202,13 +206,14 @@ func (e Env) IsNatsTLSSupported() bool {
 }
 
 type BoshEnv struct {
-	Password              string   `json:"password"`
-	KeepRootPassword      bool     `json:"keep_root_password"`
-	RemoveDevTools        bool     `json:"remove_dev_tools"`
-	RemoveStaticLibraries bool     `json:"remove_static_libraries"`
-	AuthorizedKeys        []string `json:"authorized_keys"`
-	SwapSizeInMB          *uint64  `json:"swap_size"`
-	Mbus                  *MBus    `json:"mbus"`
+	Password                         string   `json:"password"`
+	KeepRootPassword                 bool     `json:"keep_root_password"`
+	RemoveDevTools                   bool     `json:"remove_dev_tools"`
+	RemoveStaticLibraries            bool     `json:"remove_static_libraries"`
+	AuthorizedKeys                   []string `json:"authorized_keys"`
+	SwapSizeInMB                     *uint64  `json:"swap_size"`
+	Mbus                             *MBus    `json:"mbus"`
+	PersistentDiskMigrationReadahead int      `json:"persistent_disk_migration_readahead"`
 }
 
 type DNSRecords struct {
