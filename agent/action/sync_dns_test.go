@@ -134,7 +134,6 @@ var _ = Describe("SyncDNS", func() {
 					blobID, fingerPrint := fakeBlobstore.GetArgsForCall(0)
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(multiDigest))
-
 				})
 
 				It("reads the DNS records from the blobstore file", func() {
@@ -216,6 +215,52 @@ var _ = Describe("SyncDNS", func() {
 					})
 				})
 
+				Context("when there is an error reading the local dns state", func() {
+					BeforeEach(func() {
+						err := fakeFileSystem.WriteFileString(stateFilePath, `{"version": 1}`)
+						Expect(err).ToNot(HaveOccurred())
+
+						fakeFileSystem.RegisterReadFileError(stateFilePath, errors.New("fake-read-error"))
+					})
+
+					It("saves DNS records to the platform", func() {
+						response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(response).To(Equal("synced"))
+
+						Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
+						Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+							Version: 2,
+							Records: [][2]string{
+								{"fake-ip0", "fake-name0"},
+								{"fake-ip1", "fake-name1"},
+							},
+						}))
+					})
+				})
+
+				Context("when the the local dns state is corrupt", func() {
+					BeforeEach(func() {
+						err := fakeFileSystem.WriteFileString(stateFilePath, "hot-trash")
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("saves DNS records to the platform", func() {
+						response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(response).To(Equal("synced"))
+
+						Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
+						Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+							Version: 2,
+							Records: [][2]string{
+								{"fake-ip0", "fake-name0"},
+								{"fake-ip1", "fake-name1"},
+							},
+						}))
+					})
+				})
+
 				Context("local DNS state operations", func() {
 					Context("when there is no local DNS state", func() {
 						BeforeEach(func() {
@@ -244,18 +289,6 @@ var _ = Describe("SyncDNS", func() {
 									["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 								]
 							}`))
-						})
-					})
-
-					Context("when loading fails", func() {
-						BeforeEach(func() {
-							fakeFileSystem.RegisterReadFileError(stateFilePath, errors.New("fake-read-error"))
-						})
-
-						It("returns an error", func() {
-							_, err := action.Run("fake-blobstore-id", multiDigest, 2)
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("loading local DNS state"))
 						})
 					})
 
@@ -350,22 +383,5 @@ var _ = Describe("SyncDNS", func() {
 				})
 			})
 		})
-
-		Context("when local DNS state could not be read", func() {
-			BeforeEach(func() {
-				err := fakeFileSystem.WriteFileString(stateFilePath, `{"version": 2}`)
-				Expect(err).ToNot(HaveOccurred())
-
-				fakeFileSystem.ReadFileError = errors.New("fake-read-error")
-				fakeFileSystem.RegisterReadFileError(stateFilePath, fakeFileSystem.ReadFileError)
-			})
-
-			It("returns error", func() {
-				_, err := action.Run("fake-blobstore-id", multiDigest, 2)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("reading local DNS state"))
-			})
-		})
-
 	})
 })

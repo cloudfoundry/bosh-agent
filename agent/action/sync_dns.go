@@ -61,12 +61,7 @@ func (a SyncDNS) Cancel() error {
 }
 
 func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, version uint64) (string, error) {
-	requestVersionStale, err := a.isLocalStateGreaterThanOrEqual(version)
-	if err != nil {
-		return "", bosherr.WrapError(err, "reading local DNS state")
-	}
-
-	if requestVersionStale {
+	if !a.needsUpdateWithLock(version) {
 		return "synced", nil
 	}
 
@@ -92,31 +87,23 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	localDNSState := state.LocalDNSState{}
 	syncDNSState := a.createSyncDNSState()
-	if syncDNSState.StateFileExists() {
-		localDNSState, err = syncDNSState.LoadState()
-		if err != nil {
-			return "", bosherr.WrapError(err, "loading local DNS state")
-		}
-	}
-
-	//Checking again since don't want to keep lock during blobstore operations
-	if localDNSState.Version >= version {
+	if !syncDNSState.NeedsUpdate(version) {
 		return "synced", nil
 	}
 
-	if err := json.Unmarshal(contents, &localDNSState); err != nil {
+	newLocalDNSState := state.LocalDNSState{}
+	if err := json.Unmarshal(contents, &newLocalDNSState); err != nil {
 		return "", bosherr.WrapError(err, "unmarshalling DNS records")
 	}
 
-	if localDNSState.Version != version {
+	if newLocalDNSState.Version != version {
 		return "", bosherr.Error("version from unpacked dns blob does not match version supplied by director")
 	}
 
 	dnsRecords := boshsettings.DNSRecords{
-		Version: localDNSState.Version,
-		Records: localDNSState.Records,
+		Version: newLocalDNSState.Version,
+		Records: newLocalDNSState.Records,
 	}
 
 	err = a.platform.SaveDNSRecords(dnsRecords, a.settingsService.GetSettings().AgentID)
@@ -124,7 +111,7 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "", bosherr.WrapError(err, "saving DNS records")
 	}
 
-	err = syncDNSState.SaveState(localDNSState)
+	err = syncDNSState.SaveState(newLocalDNSState)
 	if err != nil {
 		return "", bosherr.WrapError(err, "saving local DNS state")
 	}
@@ -137,20 +124,9 @@ func (a SyncDNS) createSyncDNSState() state.SyncDNSState {
 	return state.NewSyncDNSState(a.platform, stateFilePath, boshuuid.NewGenerator())
 }
 
-func (a SyncDNS) isLocalStateGreaterThanOrEqual(version uint64) (bool, error) {
+func (a SyncDNS) needsUpdateWithLock(version uint64) bool {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	syncDNSState := a.createSyncDNSState()
-
-	if !syncDNSState.StateFileExists() {
-		return false, nil
-	}
-
-	localDNSState, err := syncDNSState.LoadState()
-	if err != nil {
-		return false, bosherr.WrapError(err, "loading local DNS state")
-	}
-
-	return (localDNSState.Version >= version), nil
+	return a.createSyncDNSState().NeedsUpdate(version)
 }

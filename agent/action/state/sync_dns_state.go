@@ -9,12 +9,6 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
-type SyncDNSState interface {
-	StateFileExists() bool
-	LoadState() (LocalDNSState, error)
-	SaveState(localDNSState LocalDNSState) error
-}
-
 type LocalDNSState struct {
 	Version     uint64      `json:"version"`
 	Records     [][2]string `json:"records"`
@@ -22,7 +16,7 @@ type LocalDNSState struct {
 	RecordInfos [][]string  `json:"record_infos"`
 }
 
-type syncDNSState struct {
+type SyncDNSState struct {
 	platform      boshplatform.Platform
 	fs            boshsys.FileSystem
 	path          string
@@ -30,7 +24,7 @@ type syncDNSState struct {
 }
 
 func NewSyncDNSState(platform boshplatform.Platform, path string, generator boshuuid.Generator) SyncDNSState {
-	return &syncDNSState{
+	return SyncDNSState{
 		platform:      platform,
 		fs:            platform.GetFs(),
 		path:          path,
@@ -38,7 +32,7 @@ func NewSyncDNSState(platform boshplatform.Platform, path string, generator bosh
 	}
 }
 
-func (s *syncDNSState) LoadState() (LocalDNSState, error) {
+func (s SyncDNSState) LoadState() (LocalDNSState, error) {
 	contents, err := s.fs.ReadFile(s.path)
 	if err != nil {
 		return LocalDNSState{}, bosherr.WrapError(err, "reading state file")
@@ -53,7 +47,7 @@ func (s *syncDNSState) LoadState() (LocalDNSState, error) {
 	return bDNSState, nil
 }
 
-func (s *syncDNSState) SaveState(localDNSState LocalDNSState) error {
+func (s SyncDNSState) SaveState(localDNSState LocalDNSState) error {
 	contents, err := json.Marshal(localDNSState)
 	if err != nil {
 		return bosherr.WrapError(err, "marshalling blobstore DNS state")
@@ -84,6 +78,33 @@ func (s *syncDNSState) SaveState(localDNSState LocalDNSState) error {
 	return nil
 }
 
-func (s *syncDNSState) StateFileExists() bool {
-	return s.fs.FileExists(s.path)
+func (s SyncDNSState) NeedsUpdate(newVersion uint64) bool {
+	if !s.fs.FileExists(s.path) {
+		return true
+	}
+
+	version, err := s.loadVersion()
+	if err != nil {
+		return true
+	}
+
+	return version < newVersion
+}
+
+func (s SyncDNSState) loadVersion() (uint64, error) {
+	contents, err := s.fs.ReadFile(s.path)
+	if err != nil {
+		return 0, bosherr.WrapError(err, "reading state file")
+	}
+
+	var localVersion struct {
+		Version uint64 `json:"version"`
+	}
+
+	err = json.Unmarshal(contents, &localVersion)
+	if err != nil {
+		return 0, bosherr.WrapError(err, "unmarshalling state file")
+	}
+
+	return localVersion.Version, nil
 }

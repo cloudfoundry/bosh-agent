@@ -87,15 +87,25 @@ var _ = Describe("SyncDNSState", func() {
 					err = syncDNSState.SaveState(localDNSState)
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError("writing the blobstore DNS state: fake fail saving error"))
+
 				})
 			})
 
-			It("should not override the existing records.json", func() {
-				fakeUUIDGenerator.GeneratedUUID = "fake-generated-uuid"
-				fakeFileSystem.WriteFileErrors[path+"fake-generated-uuid"] = errors.New("failed to write tmp file")
+			Context("when writing to a temp file fails", func() {
+				It("does not override the existing records.json", func() {
+					fakeFileSystem.WriteFile(path, []byte("{}"))
 
-				err = syncDNSState.SaveState(localDNSState)
-				Expect(err).To(MatchError("writing the blobstore DNS state: failed to write tmp file"))
+					fakeUUIDGenerator.GeneratedUUID = "fake-generated-uuid"
+					fakeFileSystem.WriteFileErrors[path+"fake-generated-uuid"] = errors.New("failed to write tmp file")
+
+					err = syncDNSState.SaveState(localDNSState)
+					Expect(err).To(MatchError("writing the blobstore DNS state: failed to write tmp file"))
+
+					contents, err := fakeFileSystem.ReadFile(path)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(contents).To(MatchJSON("{}"))
+				})
 			})
 
 			Context("when generating a uuid fails", func() {
@@ -167,22 +177,38 @@ var _ = Describe("SyncDNSState", func() {
 		})
 	})
 
-	Describe("#StateFileExists", func() {
+	Describe("#NeedsUpdate", func() {
+		It("returns true when state file does not exist", func() {
+			Expect(syncDNSState.NeedsUpdate(0)).To(BeTrue())
+		})
+
 		Context("when state file exists", func() {
 			BeforeEach(func() {
 				fakeFileSystem.WriteFile(path, []byte(`{"version":1}`))
 			})
 
-			It("returns true", func() {
-				exists := syncDNSState.StateFileExists()
-				Expect(exists).To(BeTrue())
+			It("returns true when the state file version is less than the supplied version", func() {
+				Expect(syncDNSState.NeedsUpdate(2)).To(BeTrue())
 			})
-		})
 
-		Context("when state file does not exist", func() {
-			It("returns false", func() {
-				exists := syncDNSState.StateFileExists()
-				Expect(exists).To(BeFalse())
+			It("returns false when the state file version is equal to the supplied version", func() {
+				Expect(syncDNSState.NeedsUpdate(1)).To(BeFalse())
+			})
+
+			It("returns false when the state file version is greater than the supplied version", func() {
+				Expect(syncDNSState.NeedsUpdate(0)).To(BeFalse())
+			})
+
+			It("returns true there is an error loading the state", func() {
+				fakeFileSystem.ReadFileError = errors.New("fake fail reading error")
+
+				Expect(syncDNSState.NeedsUpdate(2)).To(BeTrue())
+			})
+
+			It("returns true when unmarshalling the version fails", func() {
+				fakeFileSystem.WriteFile(path, []byte(`garbage`))
+
+				Expect(syncDNSState.NeedsUpdate(2)).To(BeTrue())
 			})
 		})
 	})
