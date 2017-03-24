@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("SyncDNSState", func() {
 	var (
-		localDNSState     LocalDNSState
+		localDNSState     []byte
 		syncDNSState      SyncDNSState
 		fakeFileSystem    *fakesys.FakeFileSystem
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
@@ -32,54 +32,20 @@ var _ = Describe("SyncDNSState", func() {
 		path = "/blobstore-dns-records.json"
 		syncDNSState = NewSyncDNSState(fakePlatform, path, fakeUUIDGenerator)
 		err = nil
-		localDNSState = LocalDNSState{}
-	})
-
-	Describe("#LoadState", func() {
-		Context("when there is some failure loading", func() {
-			Context("when SyncDNSState file cannot be read", func() {
-				It("should fail loading DNS state", func() {
-					_, err = syncDNSState.LoadState()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("reading state file"))
-				})
-			})
-
-			Context("when SyncDNSState file cannot be unmarshalled", func() {
-				Context("when state file is invalid JSON", func() {
-					It("should fail loading DNS state", func() {
-						fakeFileSystem.WriteFile(path, []byte("fake-state-file"))
-
-						_, err := syncDNSState.LoadState()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("unmarshalling state file"))
-					})
-				})
-			})
-		})
-
-		Context("when there are no failures", func() {
-			It("loads and unmarshalls the DNS state with Version", func() {
-				fakeFileSystem.WriteFile(path, []byte("{\"version\": 1234}"))
-
-				localDNSState, err := syncDNSState.LoadState()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(localDNSState.Version).To(Equal(uint64(1234)))
-			})
-		})
+		localDNSState = []byte(`{
+					"version": 1234,
+					"records": [
+						["rec", "ip"]
+					],
+					"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
+					"record_infos": [
+						["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
+					]
+				}`)
 	})
 
 	Describe("#SaveState", func() {
 		Context("when there are failures", func() {
-			BeforeEach(func() {
-				localDNSState = LocalDNSState{
-					Version:     1234,
-					Records:     [][2]string{{"rec", "ip"}},
-					RecordKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
-					RecordInfos: [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
-				}
-			})
-
 			Context("when saving the marshalled DNS state", func() {
 				It("fails saving the DNS state", func() {
 					fakeFileSystem.WriteFileError = errors.New("fake fail saving error")
@@ -137,12 +103,6 @@ var _ = Describe("SyncDNSState", func() {
 
 		Context("when there are no failures", func() {
 			BeforeEach(func() {
-				localDNSState = LocalDNSState{
-					Version:     1234,
-					Records:     [][2]string{{"rec", "ip"}},
-					RecordKeys:  []string{"id", "instance_group", "az", "network", "deployment", "ip"},
-					RecordInfos: [][]string{{"id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"}},
-				}
 				fakeUUIDGenerator.GeneratedUUID = "fake-generated-uuid"
 			})
 

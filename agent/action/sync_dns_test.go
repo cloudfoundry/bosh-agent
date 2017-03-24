@@ -1,7 +1,6 @@
 package action_test
 
 import (
-	"encoding/json"
 	"errors"
 	"path/filepath"
 
@@ -9,8 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-
-	"github.com/cloudfoundry/bosh-agent/agent/action/state"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -339,10 +336,7 @@ var _ = Describe("SyncDNS", func() {
 
 						contents, err := fakeFileSystem.ReadFile(stateFilePath)
 						Expect(err).ToNot(HaveOccurred())
-						localDNSState := state.LocalDNSState{}
-						err = json.Unmarshal(contents, &localDNSState)
-						Expect(err).ToNot(HaveOccurred())
-						Expect(localDNSState).To(Equal(state.LocalDNSState{Version: 1}))
+						Expect(contents).To(MatchJSON(`{"version": 1}`))
 					})
 				})
 			})

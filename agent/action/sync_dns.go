@@ -92,18 +92,13 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "synced", nil
 	}
 
-	newLocalDNSState := state.LocalDNSState{}
-	if err := json.Unmarshal(contents, &newLocalDNSState); err != nil {
+	dnsRecords := boshsettings.DNSRecords{}
+	if err := json.Unmarshal(contents, &dnsRecords); err != nil {
 		return "", bosherr.WrapError(err, "unmarshalling DNS records")
 	}
 
-	if newLocalDNSState.Version != version {
+	if dnsRecords.Version != version {
 		return "", bosherr.Error("version from unpacked dns blob does not match version supplied by director")
-	}
-
-	dnsRecords := boshsettings.DNSRecords{
-		Version: newLocalDNSState.Version,
-		Records: newLocalDNSState.Records,
 	}
 
 	err = a.platform.SaveDNSRecords(dnsRecords, a.settingsService.GetSettings().AgentID)
@@ -111,7 +106,7 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "", bosherr.WrapError(err, "saving DNS records")
 	}
 
-	err = syncDNSState.SaveState(newLocalDNSState)
+	err = syncDNSState.SaveState(contents)
 	if err != nil {
 		return "", bosherr.WrapError(err, "saving local DNS state")
 	}

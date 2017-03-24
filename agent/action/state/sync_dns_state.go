@@ -9,13 +9,6 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
-type LocalDNSState struct {
-	Version     uint64      `json:"version"`
-	Records     [][2]string `json:"records"`
-	RecordKeys  []string    `json:"record_keys"`
-	RecordInfos [][]string  `json:"record_infos"`
-}
-
 type SyncDNSState struct {
 	platform      boshplatform.Platform
 	fs            boshsys.FileSystem
@@ -32,27 +25,7 @@ func NewSyncDNSState(platform boshplatform.Platform, path string, generator bosh
 	}
 }
 
-func (s SyncDNSState) LoadState() (LocalDNSState, error) {
-	contents, err := s.fs.ReadFile(s.path)
-	if err != nil {
-		return LocalDNSState{}, bosherr.WrapError(err, "reading state file")
-	}
-
-	bDNSState := LocalDNSState{}
-	err = json.Unmarshal(contents, &bDNSState)
-	if err != nil {
-		return LocalDNSState{}, bosherr.WrapError(err, "unmarshalling state file")
-	}
-
-	return bDNSState, nil
-}
-
-func (s SyncDNSState) SaveState(localDNSState LocalDNSState) error {
-	contents, err := json.Marshal(localDNSState)
-	if err != nil {
-		return bosherr.WrapError(err, "marshalling blobstore DNS state")
-	}
-
+func (s SyncDNSState) SaveState(localDNSState []byte) error {
 	uuid, err := s.uuidGenerator.Generate()
 	if err != nil {
 		return bosherr.WrapError(err, "generating uuid for temp file")
@@ -60,7 +33,7 @@ func (s SyncDNSState) SaveState(localDNSState LocalDNSState) error {
 
 	tmpFilePath := s.path + uuid
 
-	err = s.fs.WriteFile(tmpFilePath, contents)
+	err = s.fs.WriteFile(tmpFilePath, localDNSState)
 	if err != nil {
 		return bosherr.WrapError(err, "writing the blobstore DNS state")
 	}
