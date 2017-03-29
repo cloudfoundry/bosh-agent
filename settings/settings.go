@@ -6,9 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
-type DiskAssociations struct {
-	Associations []DiskAssociation `json:"disk_associations"`
-}
+type DiskAssociations []DiskAssociation
 
 type DiskAssociation struct {
 	Name    string `json:"name"`
@@ -36,8 +34,8 @@ type Settings struct {
 }
 
 type UpdateSettings struct {
-	DiskAssociations []DiskAssociation `json:"disk_associations"`
-	TrustedCerts     string            `json:"trusted_certs"`
+	DiskAssociations DiskAssociations `json:"disk_associations"`
+	TrustedCerts     string           `json:"trusted_certs"`
 }
 
 type Source interface {
@@ -158,6 +156,13 @@ func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
 	return s.Disks.RawEphemeral
 }
 
+func (s Settings) GetMbusURL() string {
+	if s.Env.Bosh.Mbus != nil && len(s.Env.Bosh.Mbus.URL) > 0 {
+		return s.Env.Bosh.Mbus.URL
+	}
+	return s.Mbus
+}
+
 type Env struct {
 	Bosh             BoshEnv             `json:"bosh"`
 	PersistentDiskFS disk.FileSystemType `json:"persistent_disk_fs"`
@@ -192,6 +197,10 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 	return &result
 }
 
+func (e Env) IsNatsTLSSupported() bool {
+	return e.Bosh.Mbus != nil
+}
+
 type BoshEnv struct {
 	Password              string   `json:"password"`
 	KeepRootPassword      bool     `json:"keep_root_password"`
@@ -199,6 +208,7 @@ type BoshEnv struct {
 	RemoveStaticLibraries bool     `json:"remove_static_libraries"`
 	AuthorizedKeys        []string `json:"authorized_keys"`
 	SwapSizeInMB          *uint64  `json:"swap_size"`
+	Mbus                  *MBus    `json:"mbus"`
 }
 
 type DNSRecords struct {
@@ -346,6 +356,15 @@ func (n Network) IsVIP() bool {
 	return n.Type == NetworkTypeVIP
 }
 
+type MBus struct {
+	URL string `json:"url"`
+	CA  string `json:"ca"`
+}
+
+func (b MBus) IsTLSEnabled() bool {
+	return len(b.CA) > 0
+}
+
 //{
 //	"agent_id": "bm-xxxxxxxx",
 //	"blobstore": {
@@ -364,6 +383,10 @@ func (n Network) IsVIP() bool {
 //	"env": {
 //		"bosh": {
 //			"password": null
+//			"mbus": {
+//				"url": "nats://localhost:ddd",
+//				"ca": "....."
+//			}
 //      },
 //      "persistent_disk_fs": "xfs"
 //	},
