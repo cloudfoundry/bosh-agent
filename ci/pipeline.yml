@@ -69,6 +69,8 @@ jobs:
     - put: bosh-agent-master
       params:
         repository: bosh-agent
+        tag: version-semver/number
+        tag_prefix: v
     - aggregate:
       - task: build-linux
         file: bosh-agent/ci/tasks/build-linux.yml
