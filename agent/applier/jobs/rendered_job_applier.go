@@ -126,9 +126,11 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		if err != nil {
 			return err
 		} else if info.IsDir() || strings.HasPrefix(path, binPath) {
-			return s.fs.Chmod(path, os.FileMode(0755))
+			s.fs.Chown(path, "root:vcap")
+			return s.fs.Chmod(path, os.FileMode(0750))
 		} else {
-			return s.fs.Chmod(path, os.FileMode(0644))
+			s.fs.Chown(path, "root:vcap")
+			return s.fs.Chmod(path, os.FileMode(0640))
 		}
 	})
 	if err != nil {
