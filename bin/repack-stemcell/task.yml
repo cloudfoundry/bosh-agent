@@ -13,7 +13,7 @@ outputs:
   - name: stemcell
 
 run:
-  path: agent-src/bin/build-stemcell/repack.sh
+  path: agent-src/bin/repack-stemcell/repack.sh
 
 params:
   STEMCELL_URL: "https://s3.amazonaws.com/bosh-core-stemcells/aws/bosh-stemcell-3312.15-aws-xen-ubuntu-trusty-go_agent.tgz"
