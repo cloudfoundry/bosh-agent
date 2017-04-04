@@ -14,6 +14,7 @@ import (
 
 	"github.com/cloudfoundry/yagnats"
 
+	"crypto/x509"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -206,6 +207,13 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 
 	connInfo := new(yagnats.ConnectionInfo)
 	connInfo.Addr = natsURL.Host
+
+	if settings.Env.IsNatsTLSEnabled() {
+		connInfo.CertPool = x509.NewCertPool()
+		if ok := connInfo.CertPool.AppendCertsFromPEM([]byte(settings.Env.Bosh.Mbus.CA)); !ok {
+			return nil, bosherr.Error("Failed to load Mbus CA cert")
+		}
+	}
 
 	user := natsURL.User
 	if user != nil {

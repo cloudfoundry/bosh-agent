@@ -6,8 +6,24 @@ import (
 
 	"github.com/nats-io/nats"
 
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
+
+func (s *YSuite) TestApceraConnectWithOptions(c *C) {
+	opts := DefaultOptions()
+	opts.PingInterval = time.Duration(30) * time.Second
+	urls := []string{"nats://nats:nats@127.0.0.1:4223"}
+
+	client := Must(ConnectWithOptions(urls, opts))
+
+	c.Assert(client.Options().PingInterval, Equals, opts.PingInterval)
+}
+
+func (s *YSuite) TestDefaultOptions(c *C) {
+	opts := DefaultOptions()
+	c.Assert(opts.ReconnectWait, Equals, 500*time.Millisecond)
+	c.Assert(opts.MaxReconnect, Equals, -1)
+}
 
 func (s *YSuite) TestApceraCloseOnNewClient(c *C) {
 	client := Must(Connect([]string{"nats://nats:nats@127.0.0.1:4223"}))

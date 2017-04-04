@@ -197,7 +197,7 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 	return &result
 }
 
-func (e Env) IsNatsTLSSupported() bool {
+func (e Env) IsNatsTLSEnabled() bool {
 	return e.Bosh.Mbus != nil
 }
 
@@ -359,10 +359,6 @@ func (n Network) IsVIP() bool {
 type MBus struct {
 	URL string `json:"url"`
 	CA  string `json:"ca"`
-}
-
-func (b MBus) IsTLSEnabled() bool {
-	return len(b.CA) > 0
 }
 
 //{
