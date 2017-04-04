@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/yagnats"
 	"github.com/cloudfoundry/yagnats/fakeyagnats"
 
+	"crypto/x509"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -309,6 +310,69 @@ func init() {
 						Expect(auditLogger.GetDebugMsgs()).To(BeEmpty())
 						Expect(auditLogger.GetErrMsgs()[0]).To(ContainSubstring(`cs1=Oh noes! cs1Label=statusReason`))
 					})
+				})
+			})
+
+			Context("TLS", func() {
+				var CA = `-----BEGIN CERTIFICATE-----
+MIIDFDCCAfygAwIBAgIRANn247vhGXLev3Ltw8NOIQAwDQYJKoZIhvcNAQELBQAw
+MzEMMAoGA1UEBhMDVVNBMRYwFAYDVQQKEw1DbG91ZCBGb3VuZHJ5MQswCQYDVQQD
+EwJjYTAeFw0xNzA0MDMxOTQyMTVaFw0xODA0MDMxOTQyMTVaMDMxDDAKBgNVBAYT
+A1VTQTEWMBQGA1UEChMNQ2xvdWQgRm91bmRyeTELMAkGA1UEAxMCY2EwggEiMA0G
+CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCpcve+8iQmzj2/dUfGpI55CmZ7aYAr
+CsXsB6ztceewhMKTOo1pgBYT5T3G759Leab4id2JjxJB2sjou7g69pCTWNFkKz0G
+ED2RMGfuMACfISezE5fhSKdNR0vyleSEgvwOcdWa0PP6pTK//iD7p4fyx5HigpWt
+7hxmUTsqzOBOOYv1tw7ZhX6msZ5EL4d58rIbqozz8Hr/5mw/izUr2w0dCuuXTb8k
+qIrh1PjPwBoOW38yXZ/Pyex14NQMiqVqH2gMSwXpZNdVi9whVGrzP3ZAUv5uyICK
+j4KGBFJ+NcFq9VI2lbBUNdCD4MqdzaSA7OSnhaYYku2KUwIlBG9CtQctAgMBAAGj
+IzAhMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEB
+CwUAA4IBAQBLcq6xTPGYhA5Blhbkja3kd7AsWsVOv/HvLnxUJLwY8SLDhDHVndRR
+NvNmmXQOMDZ9tcLUl4Jgoy+u2XnQxTfpvPwT0qX958spcwCo9mQJKuOFcZfNwS8M
+bSTo1k+a33YtB8AWyS0GabG+2PEp/ARptJiQ6OMDKDLFMKK4NqpSl8cXNmPf5bEO
+67qHgr+2xtS4Mkj+EhZJuVpqIU3jL7psIQWdEm7dAy+qmZaB44LT1AMcUINgBsor
+bew6/PW7wNhEW/GWI/Nvef3EsFh80bYHq21eW6RdaSLgwddcmi6ak4CxizPYK57e
+XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
+-----END CERTIFICATE-----`
+				BeforeEach(func() {
+					settingsService.Settings.Env.Bosh.Mbus = &boshsettings.MBus{
+						URL: "tls://fake-username:fake-password@127.0.0.1:1234",
+						CA:  CA,
+					}
+				})
+
+				It("adds Cert pool with an entry to ConnectionInfo.CertPool", func() {
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).ToNot(HaveOccurred())
+					defer handler.Stop()
+
+					certPool := x509.NewCertPool()
+					ok := certPool.AppendCertsFromPEM([]byte(CA))
+					Expect(ok).To(BeTrue())
+
+					Expect(client.ConnectedConnectionProvider()).To(Equal(&yagnats.ConnectionInfo{
+						Addr:     "127.0.0.1:1234",
+						Username: "fake-username",
+						Password: "fake-password",
+						CertPool: certPool,
+					}))
+				})
+
+				It("returns an error if the cert is empty", func() {
+					settingsService.Settings.Env.Bosh.Mbus.CA = ""
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
+					defer handler.Stop()
+				})
+
+				It("returns an error if the cert is invalid", func() {
+					settingsService.Settings.Env.Bosh.Mbus.CA = "Invalid Cert"
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
+					defer handler.Stop()
 				})
 			})
 		})

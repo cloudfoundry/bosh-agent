@@ -1,8 +1,8 @@
 sudo: false
 language: go
 go:
-  - 1.4
   - 1.5
+  - 1.6
   - tip
 
 matrix:
@@ -12,7 +12,7 @@ matrix:
 install:
   - export PATH=$HOME/gopath/bin:$PATH
   - go get -v github.com/nats-io/gnatsd
-  - go get -v launchpad.net/gocheck
+  - go get gopkg.in/check.v1
   - go get -v ./...
   - go build -v ./...
 

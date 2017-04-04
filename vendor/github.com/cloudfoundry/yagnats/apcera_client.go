@@ -18,6 +18,7 @@ type NATSConn interface {
 	AddReconnectedCB(func(*nats.Conn))
 	AddClosedCB(func(*nats.Conn))
 	AddDisconnectedCB(func(*nats.Conn))
+	Options() nats.Options
 }
 
 type apceraNATSWrapper struct {
@@ -28,23 +29,25 @@ type apceraNATSWrapper struct {
 	*sync.Mutex
 }
 
-func Connect(urls []string) (NATSConn, error) {
-	options := nats.DefaultOptions
-	options.Servers = urls
-	options.ReconnectWait = 500 * time.Millisecond
-	options.MaxReconnect = -1
-
+func newApceraClient() *apceraNATSWrapper {
 	reconnectCallbacks := make([]func(*nats.Conn), 0)
 	closedCallbacks := make([]func(*nats.Conn), 0)
 	disconnectedCallbacks := make([]func(*nats.Conn), 0)
 
-	s := &apceraNATSWrapper{
+	return &apceraNATSWrapper{
 		nil,
 		&reconnectCallbacks,
 		&closedCallbacks,
 		&disconnectedCallbacks,
 		&sync.Mutex{},
 	}
+}
+
+func Connect(urls []string) (NATSConn, error) {
+	options := DefaultOptions()
+	options.Servers = urls
+
+	s := newApceraClient()
 
 	options.ReconnectedCB = s.apceraReconnectCB
 	options.ClosedCB = s.apceraClosedCB
@@ -59,12 +62,42 @@ func Connect(urls []string) (NATSConn, error) {
 	return s, nil
 }
 
+func ConnectWithOptions(urls []string, opts nats.Options) (NATSConn, error) {
+	opts.Servers = urls
+	s := newApceraClient()
+
+	opts.ReconnectedCB = s.apceraReconnectCB
+	opts.ClosedCB = s.apceraClosedCB
+	opts.DisconnectedCB = s.apceraDisconnectedCB
+
+	conn, err := opts.Connect()
+	if err != nil {
+		return nil, err
+	}
+
+	s.Conn = conn
+	return s, nil
+
+}
+
+func DefaultOptions() nats.Options {
+	options := nats.DefaultOptions
+	options.ReconnectWait = 500 * time.Millisecond
+	options.MaxReconnect = -1
+
+	return options
+}
+
 func (c *apceraNATSWrapper) AddReconnectedCB(handler func(*nats.Conn)) {
 	c.Lock()
 	defer c.Unlock()
 	callbacks := *c.reconnectCbs
 	callbacks = append(callbacks, handler)
 	c.reconnectCbs = &callbacks
+}
+
+func (c *apceraNATSWrapper) Options() nats.Options {
+	return c.Conn.Opts
 }
 
 func (c *apceraNATSWrapper) AddClosedCB(handler func(*nats.Conn)) {
