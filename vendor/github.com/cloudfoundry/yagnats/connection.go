@@ -2,12 +2,12 @@ package yagnats
 
 import (
 	"bufio"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"net"
 	"sync"
 	"time"
-	"crypto/tls"
-	"crypto/x509"
 )
 
 type Connection struct {
@@ -72,20 +72,19 @@ func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool) *Connect
 			return nil, err
 		}
 
-		// TODO Save Info packet somewhere accessible
 		br := bufio.NewReaderSize(conn, 32768)
 		_, err = Parse(br)
 		if err != nil {
-			return conn, err
+			return nil, err
 		}
 
 		hostname, _, err := net.SplitHostPort(address)
 		if err != nil {
-			return conn, err
+			return nil, err
 		}
 
 		conn = tls.Client(conn, &tls.Config{
-			RootCAs: certPool,
+			RootCAs:    certPool,
 			ServerName: hostname,
 		})
 
@@ -107,7 +106,7 @@ type ConnectionInfo struct {
 
 func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
 	var conn *Connection
-	if c.CertPool == nil || len(c.CertPool.Subjects()) == 0 {
+	if c.CertPool == nil {
 		conn = NewConnection(c.Addr, c.Username, c.Password)
 	} else {
 		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool)

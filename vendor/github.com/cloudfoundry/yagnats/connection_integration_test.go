@@ -1,9 +1,9 @@
 package yagnats
 
 import (
+	"crypto/x509"
 	. "gopkg.in/check.v1"
 	"os/exec"
-	"crypto/x509"
 )
 
 type TLSSuite struct {
@@ -86,15 +86,15 @@ func (t *TLSSuite) TestNewTLSConnection(c *C) {
 	client := NewClient()
 
 	roots := x509.NewCertPool()
-    ok := roots.AppendCertsFromPEM([]byte(CA))
+	ok := roots.AppendCertsFromPEM([]byte(CA))
 	c.Assert(ok, Equals, true)
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4555",
-			Username:        "nats",
-			Password:        "nats",
-			CertPool:        roots,
+		Username: "nats",
+		Password: "nats",
+		CertPool: roots,
 	})
-	c.Assert(err, IsNil	)
+	c.Assert(err, IsNil)
 	t.Client = client
 
 	pingSuccess := client.Ping()
@@ -109,9 +109,23 @@ func (t *TLSSuite) TestNewTLSConnectionWithWrongCA(c *C) {
 	c.Assert(ok, Equals, true)
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4555",
-		Username:        "nats",
-		Password:        "nats",
-		CertPool:        roots,
+		Username: "nats",
+		Password: "nats",
+		CertPool: roots,
+	})
+
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "x509: certificate signed by unknown authority")
+
+}
+
+func (t *TLSSuite) TestNewTLSConnectionWithEmptyCertPool(c *C) {
+	client := NewClient()
+
+	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4555",
+		Username: "nats",
+		Password: "nats",
+		CertPool: x509.NewCertPool(),
 	})
 
 	c.Assert(err, NotNil)
