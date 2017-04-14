@@ -258,6 +258,7 @@ func (app *app) buildApplierAndCompiler(
 	)
 
 	jobApplier := boshaj.NewRenderedJobApplier(
+		dirProvider.BaseDir(),
 		jobsBc,
 		jobSupervisor,
 		packageApplierProvider,

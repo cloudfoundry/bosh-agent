@@ -20,6 +20,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"os"
 )
 
 type unsupportedAlgo struct{}
@@ -92,6 +93,7 @@ func init() {
 			compressor = fakecmd.NewFakeCompressor()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			applier = NewRenderedJobApplier(
+				"/fakebasedir",
 				jobsBc,
 				jobSupervisor,
 				packageApplierProvider,
@@ -338,6 +340,42 @@ func init() {
 				})
 			}
 
+			ItCreatesDirectories := func(act func() error) {
+				It("creates work directories for a job", func() {
+					err := act()
+
+					Expect(err).ToNot(HaveOccurred())
+					stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+					Expect(stat).ToNot(BeNil())
+					Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+					Expect(stat.Username).To(Equal("root"))
+					Expect(stat.Groupname).To(Equal("vcap"))
+
+					stat = fs.GetFileTestStat("/fakebasedir/data/sys/run/" + job.Name)
+					Expect(stat).ToNot(BeNil())
+					Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+					Expect(stat.Username).To(Equal("root"))
+					Expect(stat.Groupname).To(Equal("vcap"))
+
+					stat = fs.GetFileTestStat("/fakebasedir/data/" + job.Name)
+					Expect(stat).ToNot(BeNil())
+					Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+					Expect(stat.Username).To(Equal("root"))
+					Expect(stat.Groupname).To(Equal("vcap"))
+				})
+
+				It("returns error when creating work directories fails", func() {
+					fs.MkdirAllError = errors.New("fake-create-dirs-error")
+					err := act()
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Creating directories for job"))
+				})
+			}
+
 			ItUpdatesPackages := func(act func() error) {
 				var packageApplier *fakepackages.FakeApplier
 
@@ -479,6 +517,7 @@ func init() {
 					})
 
 					ItUpdatesPackages(act)
+					ItCreatesDirectories(act)
 				})
 
 				Context("when job is not installed", func() {
@@ -503,6 +542,73 @@ func init() {
 					ItInstallsJob(act)
 
 					ItUpdatesPackages(act)
+
+					ItCreatesDirectories(act)
+				})
+
+			})
+		})
+
+		Describe("CreateDirectories", func() {
+			var (
+				job models.Job
+			)
+
+			BeforeEach(func() {
+				job, _ = buildJob(jobsBc)
+			})
+
+			It("creates the jobs directories", func() {
+				err := applier.CreateDirectories(job, "/fakebasedir")
+				Expect(err).ToNot(HaveOccurred())
+
+				stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+				Expect(stat).ToNot(BeNil())
+				Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+				Expect(stat.Username).To(Equal("root"))
+				Expect(stat.Groupname).To(Equal("vcap"))
+
+				stat = fs.GetFileTestStat("/fakebasedir/data/sys/run/" + job.Name)
+				Expect(stat).ToNot(BeNil())
+				Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+				Expect(stat.Username).To(Equal("root"))
+				Expect(stat.Groupname).To(Equal("vcap"))
+
+				stat = fs.GetFileTestStat("/fakebasedir/data/" + job.Name)
+				Expect(stat).ToNot(BeNil())
+				Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+				Expect(stat.Username).To(Equal("root"))
+				Expect(stat.Groupname).To(Equal("vcap"))
+			})
+
+			Context("when the filesystem fails to create a dir", func() {
+				BeforeEach(func() {
+					fs.MkdirAllError = errors.New("fs-is-busted")
+				})
+
+				It("promotes the error", func() {
+					err := applier.CreateDirectories(job, "/fakebasedir")
+					Expect(err).To(HaveOccurred())
+
+					stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+					Expect(stat).To(BeNil())
+				})
+			})
+
+			Context("when the filesystem fails to chown a dir", func() {
+				BeforeEach(func() {
+					fs.ChownErr = errors.New("fs-is-busted")
+				})
+
+				It("promotes the error", func() {
+					err := applier.CreateDirectories(job, "/fakebasedir")
+					Expect(err).To(HaveOccurred())
+
+					stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+					Expect(stat).ToNot(BeNil())
 				})
 			})
 		})

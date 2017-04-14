@@ -12,6 +12,7 @@ errors=$(
   $bin/gofiles $bin/env golint                              \
     | grep -v 'should have comment.* or be unexported'      \
     | grep -v '/mocks/'                                     \
+    | grep -v '/jobsfakes/'                                 \
     | grep -v '/fakes/'                                     \
     | grep -v 'vendor/'                                     \
     | grep -v 'should not be capitalized'                   \

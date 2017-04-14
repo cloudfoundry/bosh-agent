@@ -6,7 +6,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 type FakeApplier struct {
@@ -43,11 +42,11 @@ type FakeApplier struct {
 	keepOnlyReturns struct {
 		result1 error
 	}
-	CreateDirectoriesStub        func(job models.Job, provider directories.Provider) error
+	CreateDirectoriesStub        func(job models.Job, baseDir string) error
 	createDirectoriesMutex       sync.RWMutex
 	createDirectoriesArgsForCall []struct {
-		job      models.Job
-		provider directories.Provider
+		job     models.Job
+		baseDir string
 	}
 	createDirectoriesReturns struct {
 		result1 error
@@ -194,16 +193,16 @@ func (fake *FakeApplier) KeepOnlyReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeApplier) CreateDirectories(job models.Job, provider directories.Provider) error {
+func (fake *FakeApplier) CreateDirectories(job models.Job, baseDir string) error {
 	fake.createDirectoriesMutex.Lock()
 	fake.createDirectoriesArgsForCall = append(fake.createDirectoriesArgsForCall, struct {
-		job      models.Job
-		provider directories.Provider
-	}{job, provider})
-	fake.recordInvocation("CreateDirectories", []interface{}{job, provider})
+		job     models.Job
+		baseDir string
+	}{job, baseDir})
+	fake.recordInvocation("CreateDirectories", []interface{}{job, baseDir})
 	fake.createDirectoriesMutex.Unlock()
 	if fake.CreateDirectoriesStub != nil {
-		return fake.CreateDirectoriesStub(job, provider)
+		return fake.CreateDirectoriesStub(job, baseDir)
 	} else {
 		return fake.createDirectoriesReturns.result1
 	}
@@ -215,10 +214,10 @@ func (fake *FakeApplier) CreateDirectoriesCallCount() int {
 	return len(fake.createDirectoriesArgsForCall)
 }
 
-func (fake *FakeApplier) CreateDirectoriesArgsForCall(i int) (models.Job, directories.Provider) {
+func (fake *FakeApplier) CreateDirectoriesArgsForCall(i int) (models.Job, string) {
 	fake.createDirectoriesMutex.RLock()
 	defer fake.createDirectoriesMutex.RUnlock()
-	return fake.createDirectoriesArgsForCall[i].job, fake.createDirectoriesArgsForCall[i].provider
+	return fake.createDirectoriesArgsForCall[i].job, fake.createDirectoriesArgsForCall[i].baseDir
 }
 
 func (fake *FakeApplier) CreateDirectoriesReturns(result1 error) {
