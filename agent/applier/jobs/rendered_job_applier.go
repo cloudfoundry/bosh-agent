@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -20,7 +21,7 @@ import (
 const logTag = "renderedJobApplier"
 
 type renderedJobApplier struct {
-	baseDir                string
+	dirProvider            directories.Provider
 	jobsBc                 boshbc.BundleCollection
 	jobSupervisor          boshjobsuper.JobSupervisor
 	packageApplierProvider packages.ApplierProvider
@@ -31,7 +32,7 @@ type renderedJobApplier struct {
 }
 
 func NewRenderedJobApplier(
-	baseDir string,
+	dirProvider directories.Provider,
 	jobsBc boshbc.BundleCollection,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	packageApplierProvider packages.ApplierProvider,
@@ -41,7 +42,7 @@ func NewRenderedJobApplier(
 	logger boshlog.Logger,
 ) Applier {
 	return &renderedJobApplier{
-		baseDir:                baseDir,
+		dirProvider:            dirProvider,
 		jobsBc:                 jobsBc,
 		jobSupervisor:          jobSupervisor,
 		packageApplierProvider: packageApplierProvider,
@@ -83,7 +84,7 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 		return bosherr.WrapError(err, "Preparing job")
 	}
 
-	if err := s.CreateDirectories(job, s.baseDir); err != nil {
+	if err := job.CreateDirectories(s.fs, s.dirProvider); err != nil {
 		return bosherr.WrapErrorf(err, "Creating directories for job %s", job.Name)
 	}
 
@@ -258,31 +259,6 @@ func (s *renderedJobApplier) KeepOnly(jobs []models.Job) error {
 			if err != nil {
 				return bosherr.WrapError(err, "Uninstalling job bundle")
 			}
-		}
-	}
-
-	return nil
-}
-
-func (s *renderedJobApplier) CreateDirectories(job models.Job, baseDir string) error {
-	dirs := []string{
-		path.Join(baseDir, "data", "sys", "log", job.Name),
-		path.Join(baseDir, "data", "sys", "run", job.Name),
-		path.Join(baseDir, "data", job.Name),
-	}
-
-	for _, dir := range dirs {
-		mode := os.FileMode(0770)
-		if err := s.fs.MkdirAll(dir, mode); err != nil {
-			return bosherr.WrapError(err, "Failed to create dir")
-		}
-
-		if err := s.fs.Chmod(dir, mode); err != nil {
-			return bosherr.WrapError(err, "Failed to chmod dir")
-		}
-
-		if err := s.fs.Chown(dir, "root:vcap"); err != nil {
-			return bosherr.WrapError(err, "Failed to chown dir")
 		}
 	}
 

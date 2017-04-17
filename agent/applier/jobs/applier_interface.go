@@ -11,5 +11,4 @@ type Applier interface {
 	Apply(job models.Job) error
 	Configure(job models.Job, jobIndex int) error
 	KeepOnly(jobs []models.Job) error
-	CreateDirectories(job models.Job, baseDir string) error
 }

@@ -35,7 +35,7 @@ func init() {
 			settingsService = &fakesettings.FakeSettingsService{}
 			dirProvider = boshdir.NewProvider("/var/vcap")
 			fs = fakesys.NewFakeFileSystem()
-			action = NewApply(applier, specService, settingsService, dirProvider.InstanceDir(), fs)
+			action = NewApply(applier, specService, settingsService, dirProvider, fs)
 		})
 
 		AssertActionIsAsynchronous(action)
