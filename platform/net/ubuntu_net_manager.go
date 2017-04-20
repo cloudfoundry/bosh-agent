@@ -86,9 +86,11 @@ func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks)
 }
 
 func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
-	if networks.IsPreconfigured() {
-		// Note in this case IPs are not broadcasted
-		return net.writeResolvConf(networks)
+	if networks.HasLinkName() {
+		err := net.writeResolvConf(networks)
+		if err != nil {
+			return bosherr.WrapError(err, "Writing resolv configuration")
+		}
 	}
 
 	staticConfigs, dhcpConfigs, dnsServers, err := net.ComputeNetworkConfig(networks)
@@ -307,7 +309,8 @@ iface {{ .Name }} inet static
     network {{ .Network }}
     netmask {{ .Netmask }}
 {{ if .IsDefaultForGateway }}    broadcast {{ .Broadcast }}
-    gateway {{ .Gateway }}{{ end }}{{ end }}
+    gateway {{ .Gateway }}{{ end }}{{ range .PostUpRoutes }}
+    post-up route add -net {{ .Network }} netmask {{ .Netmask }} gw {{ .Gateway }}{{ end }}{{ end }}
 {{ if .DNSServers }}
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
 

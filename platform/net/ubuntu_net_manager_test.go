@@ -151,6 +151,40 @@ func describeUbuntuNetManager() {
 				Expect(dnsServers).To(Equal([]string{"54.209.78.6", "127.0.0.5"}))
 			})
 		})
+
+		Context("when link names exists in network settings", func() {
+			It("static interface configuration should be construted by link name", func() {
+				networks := boshsettings.Networks{
+					"default": factory.Network{
+						IP:       "10.10.0.32",
+						Netmask:  "255.255.255.0",
+						Mac:      "aa::bb::cc",
+						Default:  []string{"dns", "gateway"},
+						DNS:      &[]string{"54.209.78.6", "127.0.0.5"},
+						Gateway:  "10.10.0.1",
+						LinkName: "eth0",
+					}.Build(),
+				}
+				stubInterfaces(networks)
+				staticInterfaceConfigurations, dhcpInterfaceConfigurations, dnsServers, err := netManager.ComputeNetworkConfig(networks)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
+					{
+						Name:                "default",
+						Address:             "10.10.0.32",
+						Netmask:             "255.255.255.0",
+						Network:             "10.10.0.0",
+						IsDefaultForGateway: true,
+						Broadcast:           "10.10.0.255",
+						Mac:                 "aa::bb::cc",
+						Gateway:             "10.10.0.1",
+					},
+				}))
+				Expect(dhcpInterfaceConfigurations).To(BeEmpty())
+				Expect(dnsServers).To(Equal([]string{"54.209.78.6", "127.0.0.5"}))
+			})
+		})
 	})
 
 	Describe("SetupNetworking", func() {
@@ -201,27 +235,32 @@ iface ethstatic inet static
 dns-nameservers 8.8.8.8 9.9.9.9`
 		})
 
-		Context("networks is preconfigured", func() {
+		Context("networks with link names", func() {
 			var networks boshsettings.Networks
 			BeforeEach(func() {
-				dhcpNetwork.Preconfigured = true
-				staticNetwork.Preconfigured = true
+				staticNetwork.LinkName = "ethstatic"
 				networks = boshsettings.Networks{
 					"first":  dhcpNetwork,
 					"second": staticNetwork,
 				}
 
-				Expect(networks.IsPreconfigured()).To(BeTrue())
+				Expect(networks.HasLinkName()).To(BeTrue())
 			})
 
 			Context("when there are configured DNS servers", func() {
 				BeforeEach(func() {
 					networks = boshsettings.Networks{
-						"first": dhcpNetwork,
+						"first":  dhcpNetwork,
+						"second": staticNetwork,
 					}
 				})
 
 				It("writes DNS to /etc/resolvconf/resolv.conf.d/base", func() {
+					stubInterfaces(map[string]boshsettings.Network{
+						"ethdhcp":   dhcpNetwork,
+						"ethstatic": staticNetwork,
+					})
+
 					err := netManager.SetupNetworking(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
@@ -275,6 +314,11 @@ nameserver 9.9.9.9
 					})
 
 					It("copies /etc/resolv.conf to .../resolv.conf.d/base", func() {
+						stubInterfaces(map[string]boshsettings.Network{
+							"ethdhcp":   dhcpNetwork,
+							"ethstatic": staticNetwork,
+						})
+
 						err := netManager.SetupNetworking(networks, nil)
 						Expect(err).ToNot(HaveOccurred())
 
@@ -296,6 +340,11 @@ nameserver 9.9.9.9
 			})
 
 			It("forces /etc/resolv.conf to be a symlink", func() {
+				stubInterfaces(map[string]boshsettings.Network{
+					"ethdhcp":   dhcpNetwork,
+					"ethstatic": staticNetwork,
+				})
+
 				err := netManager.SetupNetworking(networks, nil)
 				Expect(err).ToNot(HaveOccurred())
 				linkContents, err := fs.Readlink("/etc/resolv.conf")
@@ -316,14 +365,10 @@ nameserver 9.9.9.9
 			})
 
 			It("writes dns servers in /etc/resolvconf/resolv.conf.d/base", func() {
-				dhcpNetwork.Preconfigured = true
-				staticNetwork.Preconfigured = true
-				networks := boshsettings.Networks{
-					"first":  dhcpNetwork,
-					"second": staticNetwork,
-				}
-
-				Expect(networks.IsPreconfigured()).To(BeTrue())
+				stubInterfaces(map[string]boshsettings.Network{
+					"ethdhcp":   dhcpNetwork,
+					"ethstatic": staticNetwork,
+				})
 
 				err := netManager.SetupNetworking(networks, nil)
 				Expect(err).ToNot(HaveOccurred())
@@ -339,17 +384,15 @@ nameserver 9.9.9.9
 			})
 
 			It("run resolvconf -u to update resolv.conf", func() {
-				dhcpNetwork.Preconfigured = true
-				staticNetwork.Preconfigured = true
-				networks := boshsettings.Networks{
-					"first":  dhcpNetwork,
-					"second": staticNetwork,
-				}
+				stubInterfaces(map[string]boshsettings.Network{
+					"ethdhcp":   dhcpNetwork,
+					"ethstatic": staticNetwork,
+				})
 
 				err := netManager.SetupNetworking(networks, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"resolvconf", "-u"}))
 			})
 		})

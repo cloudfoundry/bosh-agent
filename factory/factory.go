@@ -15,6 +15,8 @@ type Network struct {
 	DNS     *[]string
 
 	Mac string
+
+	LinkName string
 }
 
 func (n Network) Build() settings.Network {
