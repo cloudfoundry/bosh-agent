@@ -41,7 +41,7 @@ func (p HandlerProvider) Get(
 		return
 	}
 
-	mbusURL, err := url.Parse(p.settingsService.GetSettings().GetMbusURL())
+	mbusURL, err := url.Parse(p.settingsService.GetSettings().Mbus)
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing handler URL")
 		return
