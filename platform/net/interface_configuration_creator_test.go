@@ -270,8 +270,7 @@ func describeInterfaceConfigurationCreator() {
 		}
 
 		_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(boshsettings.Networks{"foo": invalidNetwork}, interfacesByMAC)
-
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Invalid ip or netmask"))
+		Expect(err.Error()).To(ContainSubstring("Invalid IP 'not an ip'"))
 	})
 }

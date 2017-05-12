@@ -85,9 +85,58 @@ func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks)
 	return staticConfigs, dhcpConfigs, dnsServers, nil
 }
 
+func (net UbuntuNetManager) enableIPv6() error {
+	const (
+		grubConfPath       = "/boot/grub/grub.conf"
+		grubIPv6DisableOpt = "ipv6.disable=1"
+	)
+
+	grubConf, err := net.fs.ReadFileString(grubConfPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Reading grub")
+	}
+
+	if strings.Contains(grubConf, grubIPv6DisableOpt) {
+		grubConf = strings.Replace(grubConf, grubIPv6DisableOpt, "", -1)
+
+		err = net.fs.WriteFileString(grubConfPath, grubConf)
+		if err != nil {
+			return bosherr.WrapError(err, "Writing grub.conf")
+		}
+
+		net.logger.Info(UbuntuNetManagerLogTag, "Rebooting to enable IPv6 in kernel")
+
+		_, _, _, err = net.cmdRunner.RunCommand("shutdown", "-r", "now")
+		if err != nil {
+			return bosherr.WrapError(err, "Rebooting for IPv6")
+		}
+
+		select {}
+	}
+
+	ipv6Sysctls := []string{
+		"net.ipv6.conf.all.accept_ra=1",
+		"net.ipv6.conf.default.accept_ra=1",
+		"net.ipv6.conf.all.disable_ipv6=0",
+		"net.ipv6.conf.default.disable_ipv6=0",
+		"net.ipv6.conf.default.accept_redirects=1",
+		"net.ipv6.conf.all.accept_redirects=1",
+		"net.ipv6.route.flush=0",
+	}
+
+	for _, sysctl := range ipv6Sysctls {
+		_, _, _, err := net.cmdRunner.RunCommand("sysctl", sysctl)
+		if err != nil {
+			net.logger.Error(UbuntuNetManagerLogTag, "Enabling IPv6 '%s': %s", sysctl, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 	if networks.IsPreconfigured() {
-		// Note in this case IPs are not broadcasted
+		// Note in this case IPs are not broadcast
 		return net.writeResolvConf(networks)
 	}
 
@@ -96,26 +145,32 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return bosherr.WrapError(err, "Computing network configuration")
 	}
 
-	interfacesChanged, err := net.writeNetworkInterfaces(dhcpConfigs, staticConfigs, dnsServers)
+	if StaticInterfaceConfigurations(staticConfigs).HasVersion6() || DHCPInterfaceConfigurations(dhcpConfigs).HasVersion6() {
+		err := net.enableIPv6()
+		if err != nil {
+			return bosherr.WrapError(err, "Enabling IPv6 in kernel")
+		}
+	}
+
+	changed, err := net.writeNetConfigs(dhcpConfigs, staticConfigs, dnsServers, false)
 	if err != nil {
-		return bosherr.WrapError(err, "Writing network configuration")
+		return bosherr.WrapError(err, "Lol")
 	}
 
-	dhcpChanged := false
-	if len(dhcpConfigs) > 0 {
-		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers)
-		if err != nil {
-			return err
-		}
-	}
+	if changed {
+		// err = net.removeDhcpDNSConfiguration()
+		// if err != nil {
+		// 	return err
+		// }
 
-	if interfacesChanged || dhcpChanged {
-		err = net.removeDhcpDNSConfiguration()
+		net.stopNetworkingInterfaces(dhcpConfigs, staticConfigs)
+
+		_, err = net.writeNetConfigs(dhcpConfigs, staticConfigs, dnsServers, true)
 		if err != nil {
-			return err
+			return bosherr.WrapError(err, "Lol")
 		}
 
-		net.restartNetworkingInterfaces(net.ifaceNames(dhcpConfigs, staticConfigs))
+		net.startNetworkingInterfaces(dhcpConfigs, staticConfigs)
 	}
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
@@ -133,6 +188,24 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	net.broadcastIps(append(staticAddresses, dynamicAddresses...), errCh)
 
 	return nil
+}
+
+func (net UbuntuNetManager) writeNetConfigs(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations, dnsServers []string, actuallyWrite bool) (bool, error) {
+	interfacesChanged, err := net.writeNetworkInterfaces(dhcpConfigs, staticConfigs, dnsServers, actuallyWrite)
+	if err != nil {
+		return false, bosherr.WrapError(err, "Writing network configuration")
+	}
+
+	dhcpChanged := false
+
+	if len(dhcpConfigs) > 0 {
+		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers, actuallyWrite)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return (interfacesChanged || dhcpChanged), nil
 }
 
 func (net UbuntuNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
@@ -224,21 +297,31 @@ func (net UbuntuNetManager) broadcastIps(addresses []boship.InterfaceAddress, er
 	}()
 }
 
-func (net UbuntuNetManager) restartNetworkingInterfaces(ifaceNames []string) {
-	net.logger.Debug(UbuntuNetManagerLogTag, "Restarting network interfaces")
+func (net UbuntuNetManager) stopNetworkingInterfaces(dhcpConfigs []DHCPInterfaceConfiguration, staticConfigs []StaticInterfaceConfiguration) {
+	net.logger.Debug(UbuntuNetManagerLogTag, "Stopping network interfaces")
 
+	ifaceNames := net.ifaceNames(dhcpConfigs, staticConfigs)
+
+	// todo tries to kill dhclient6 even though it had ipv4 before
+	// todo restart of agent fails because metadata is accsessible only on ipv4
 	_, _, _, err := net.cmdRunner.RunCommand("ifdown", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err.Error())
 	}
+}
 
-	_, _, _, err = net.cmdRunner.RunCommand("ifup", append([]string{"--force"}, ifaceNames...)...)
+func (net UbuntuNetManager) startNetworkingInterfaces(dhcpConfigs []DHCPInterfaceConfiguration, staticConfigs []StaticInterfaceConfiguration) {
+	net.logger.Debug(UbuntuNetManagerLogTag, "Starting network interfaces")
+
+	ifaceNames := net.ifaceNames(dhcpConfigs, staticConfigs)
+
+	_, _, _, err := net.cmdRunner.RunCommand("ifup", append([]string{"--force"}, ifaceNames...)...)
 	if err != nil {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifup failure: %s", err.Error())
 	}
 }
 
-func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string) (bool, error) {
+func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string, actuallyConverge bool) (bool, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(ubuntuDHCPConfigTemplate))
 
@@ -249,9 +332,10 @@ func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string) (bool, e
 	if err != nil {
 		return false, bosherr.WrapError(err, "Generating config from template")
 	}
-	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
-	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
 
+	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
+
+	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes(), actuallyConverge)
 	if err != nil {
 		return changed, bosherr.WrapErrorf(err, "Writing to %s", dhclientConfigFile)
 	}
@@ -266,7 +350,7 @@ type networkInterfaceConfig struct {
 	HasDNSNameServers bool
 }
 
-func (net UbuntuNetManager) writeNetworkInterfaces(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations, dnsServers []string) (bool, error) {
+func (net UbuntuNetManager) writeNetworkInterfaces(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations, dnsServers []string, actuallyConverge bool) (bool, error) {
 	sort.Stable(dhcpConfigs)
 	sort.Stable(staticConfigs)
 
@@ -286,7 +370,7 @@ func (net UbuntuNetManager) writeNetworkInterfaces(dhcpConfigs DHCPInterfaceConf
 		return false, bosherr.WrapError(err, "Generating config from template")
 	}
 
-	changed, err := net.fs.ConvergeFileContents("/etc/network/interfaces", buffer.Bytes())
+	changed, err := net.fs.ConvergeFileContents("/etc/network/interfaces", buffer.Bytes(), actuallyConverge)
 	if err != nil {
 		return changed, bosherr.WrapError(err, "Writing to /etc/network/interfaces")
 	}
@@ -294,12 +378,18 @@ func (net UbuntuNetManager) writeNetworkInterfaces(dhcpConfigs DHCPInterfaceConf
 	return changed, nil
 }
 
+// todo static configuration for ipv6
+// todo ipv6 14.04 bug:
+// - https://bugs.launchpad.net/ubuntu/+source/ifupdown/+bug/1013597
+// - http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-migrate-ipv6.html#ipv6-dhcpv6-ubuntu-14
 const networkInterfacesTemplate = `# Generated by bosh-agent
 auto lo
 iface lo inet loopback
 {{ range .DHCPConfigs }}
 auto {{ .Name }}
-iface {{ .Name }} inet dhcp
+iface {{ .Name }} inet{{ .Version6 }} dhcp
+    up sysctl net.ipv6.conf.{{ .Name }}.accept_ra=1
+    pre-down ip link set dev {{ .Name }} up
 {{ end }}{{ range .StaticConfigs }}
 auto {{ .Name }}
 iface {{ .Name }} inet static
@@ -309,6 +399,7 @@ iface {{ .Name }} inet static
 {{ if .IsDefaultForGateway }}    broadcast {{ .Broadcast }}
     gateway {{ .Gateway }}{{ end }}{{ end }}
 {{ if .DNSServers }}
+accept_ra 1
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
 
 func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {

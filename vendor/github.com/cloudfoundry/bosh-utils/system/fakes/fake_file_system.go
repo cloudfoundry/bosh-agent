@@ -457,7 +457,7 @@ func (fs *FakeFileSystem) writeDir(path string) error {
 	return nil
 }
 
-func (fs *FakeFileSystem) ConvergeFileContents(path string, content []byte) (bool, error) {
+func (fs *FakeFileSystem) ConvergeFileContents(path string, content []byte, _ bool) (bool, error) {
 	fs.filesLock.Lock()
 	defer fs.filesLock.Unlock()
 

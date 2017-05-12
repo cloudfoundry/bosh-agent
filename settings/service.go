@@ -2,6 +2,7 @@ package settings
 
 import (
 	"encoding/json"
+	gonet "net"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -129,7 +130,7 @@ func (s *settingsService) GetSettings() Settings {
 
 		resolvedNetwork, err := s.resolveNetwork(network)
 		if err != nil {
-			break
+			break // todo suspicious
 		}
 
 		settingsCopy.Networks[networkName] = resolvedNetwork
@@ -147,6 +148,14 @@ func (s *settingsService) InvalidateSettings() error {
 }
 
 func (s *settingsService) resolveNetwork(network Network) (Network, error) {
+	// todo hacky way
+	if len(network.IP) > 0 {
+		ip := gonet.ParseIP(network.IP)
+		if !(ip == nil || ip.To4() != nil) {
+			return network, nil
+		}
+	}
+
 	// Ideally this would be GetNetworkByMACAddress(mac string)
 	// Currently, we are relying that if the default network does not contain
 	// the MAC adddress the InterfaceConfigurationCreator will fail.

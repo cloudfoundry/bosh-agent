@@ -166,7 +166,7 @@ func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, co
 	}
 
 	filePath := ifcfgFilePath(name)
-	changed, err := net.fs.ConvergeFileContents(filePath, buffer.Bytes())
+	changed, err := net.fs.ConvergeFileContents(filePath, buffer.Bytes(), true)
 	if err != nil {
 		return false, bosherr.WrapErrorf(err, "Writing config to '%s'", filePath)
 	}
@@ -268,7 +268,7 @@ func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInte
 		return false, bosherr.WrapError(err, "Generating config from template")
 	}
 	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
-	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
+	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes(), true)
 
 	if err != nil {
 		return changed, bosherr.WrapErrorf(err, "Writing to %s", dhclientConfigFile)

@@ -1,6 +1,8 @@
 package net
 
 import (
+	"net"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -18,6 +20,10 @@ type StaticInterfaceConfiguration struct {
 	Gateway             string
 }
 
+func (c StaticInterfaceConfiguration) Version6() bool {
+	return len(c.Network) == 0 && len(c.Broadcast) == 0
+}
+
 type StaticInterfaceConfigurations []StaticInterfaceConfiguration
 
 func (configs StaticInterfaceConfigurations) Len() int {
@@ -32,8 +38,26 @@ func (configs StaticInterfaceConfigurations) Swap(i, j int) {
 	configs[i], configs[j] = configs[j], configs[i]
 }
 
+func (configs StaticInterfaceConfigurations) HasVersion6() bool {
+	for _, config := range configs {
+		if config.Version6() {
+			return true
+		}
+	}
+	return false
+}
+
 type DHCPInterfaceConfiguration struct {
-	Name string
+	Name    string
+	Address string
+}
+
+func (c DHCPInterfaceConfiguration) Version6() string {
+	ip := net.ParseIP(c.Address)
+	if ip == nil || ip.To4() != nil {
+		return ""
+	}
+	return "6"
 }
 
 type DHCPInterfaceConfigurations []DHCPInterfaceConfiguration
@@ -48,6 +72,15 @@ func (configs DHCPInterfaceConfigurations) Less(i, j int) bool {
 
 func (configs DHCPInterfaceConfigurations) Swap(i, j int) {
 	configs[i], configs[j] = configs[j], configs[i]
+}
+
+func (configs DHCPInterfaceConfigurations) HasVersion6() bool {
+	for _, config := range configs {
+		if len(config.Version6()) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 type InterfaceConfigurationCreator interface {
@@ -72,7 +105,8 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 	if networkSettings.IsDHCP() || networkSettings.Mac == "" {
 		creator.logger.Debug(creator.logTag, "Using dhcp networking")
 		dhcpConfigs = append(dhcpConfigs, DHCPInterfaceConfiguration{
-			Name: ifaceName,
+			Name:    ifaceName,
+			Address: networkSettings.IP,
 		})
 	} else {
 		creator.logger.Debug(creator.logTag, "Using static networking")

@@ -1,9 +1,8 @@
 package infrastructure
 
 import (
-	"fmt"
+	gonet "net"
 	"net/url"
-	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
@@ -24,14 +23,18 @@ func (r registryEndpointResolver) LookupHost(dnsServers []string, endpoint strin
 		return "", bosherr.WrapError(err, "Parsing registry named endpoint")
 	}
 
-	registryHostAndPort := strings.Split(registryURL.Host, ":")
-	registryIP, err := r.delegate.LookupHost(dnsServers, registryHostAndPort[0])
+	host, port, err := gonet.SplitHostPort(registryURL.Host)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Splitting registry host")
+	}
+
+	registryIP, err := r.delegate.LookupHost(dnsServers, host)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Looking up registry")
 	}
 
-	if len(registryHostAndPort) == 2 {
-		registryURL.Host = fmt.Sprintf("%s:%s", registryIP, registryHostAndPort[1])
+	if len(port) > 0 {
+		registryURL.Host = gonet.JoinHostPort(registryIP, port)
 	} else {
 		registryURL.Host = registryIP
 	}

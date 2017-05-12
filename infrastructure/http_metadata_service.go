@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -74,8 +75,9 @@ func NewHTTPMetadataServiceWithCustomRetryDelay(
 		sshKeysPath:     sshKeysPath,
 		resolver:        resolver,
 		platform:        platform,
-		logTag:          "httpMetadataService",
-		logger:          logger,
+
+		logTag: "httpMetadataService",
+		logger: logger,
 	}
 }
 
@@ -93,24 +95,12 @@ func (ms HTTPMetadataService) GetPublicKey() (string, error) {
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.sshKeysPath)
-	resp, err := ms.client.GetCustomized(url, ms.addHeaders())
+	respBytes, err := ms.fetchBytes(fmt.Sprintf("%s%s", ms.metadataHost, ms.sshKeysPath))
 	if err != nil {
-		return "", bosherr.WrapErrorf(err, "Getting open ssh key from url %s", url)
+		return "", bosherr.WrapErrorf(err, "Getting open SSH key")
 	}
 
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			ms.logger.Warn(ms.logTag, "Failed to close response body when getting ssh key: %s", err.Error())
-		}
-	}()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Reading ssh key response body")
-	}
-
-	return string(bytes), nil
+	return string(respBytes), nil
 }
 
 func (ms HTTPMetadataService) GetInstanceID() (string, error) {
@@ -123,24 +113,12 @@ func (ms HTTPMetadataService) GetInstanceID() (string, error) {
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.instanceIDPath)
-	resp, err := ms.client.GetCustomized(url, ms.addHeaders())
+	respBytes, err := ms.fetchBytes(fmt.Sprintf("%s%s", ms.metadataHost, ms.instanceIDPath))
 	if err != nil {
-		return "", bosherr.WrapErrorf(err, "Getting instance id from url %s", url)
+		return "", bosherr.WrapErrorf(err, "Getting instance id")
 	}
 
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			ms.logger.Warn(ms.logTag, "Failed to close response body when getting instance id: %s", err.Error())
-		}
-	}()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Reading instance id response body")
-	}
-
-	return string(bytes), nil
+	return string(respBytes), nil
 }
 
 func (ms HTTPMetadataService) GetValueAtPath(path string) (string, error) {
@@ -153,25 +131,14 @@ func (ms HTTPMetadataService) GetValueAtPath(path string) (string, error) {
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s%s", ms.metadataHost, path)
-	resp, err := ms.client.GetCustomized(url, ms.addHeaders())
+	respBytes, err := ms.fetchBytes(fmt.Sprintf("%s%s", ms.metadataHost, path))
 	if err != nil {
-		return "", bosherr.WrapErrorf(err, "Getting value from url %s", url)
+		return "", bosherr.WrapErrorf(err, "Getting value at path '%s'", path)
 	}
 
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			ms.logger.Warn(ms.logTag, "Failed to close response body when getting value from path: %s", err.Error())
-		}
-	}()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", bosherr.WrapError(err, fmt.Sprintf("Reading response body from %s", url))
-	}
-
-	return string(bytes), nil
+	return string(respBytes), nil
 }
+
 func (ms HTTPMetadataService) GetServerName() (string, error) {
 	userData, err := ms.getUserData()
 	if err != nil {
@@ -207,7 +174,12 @@ func (ms HTTPMetadataService) GetRegistryEndpoint() (string, error) {
 }
 
 func (ms HTTPMetadataService) GetNetworks() (boshsettings.Networks, error) {
-	return nil, nil
+	userData, err := ms.getUserData()
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Getting user data")
+	}
+
+	return userData.Networks, nil
 }
 
 func (ms HTTPMetadataService) IsAvailable() bool { return true }
@@ -220,27 +192,16 @@ func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 		return userData, err
 	}
 
-	userDataURL := fmt.Sprintf("%s%s", ms.metadataHost, ms.userdataPath)
-	userDataResp, err := ms.client.GetCustomized(userDataURL, ms.addHeaders())
+	respBytes, err := ms.fetchBytes(fmt.Sprintf("%s%s", ms.metadataHost, ms.userdataPath))
 	if err != nil {
-		return userData, bosherr.WrapErrorf(err, "Getting user data from url %s", userDataURL)
+		return userData, bosherr.WrapErrorf(err, "Getting user data")
 	}
 
-	defer func() {
-		if err := userDataResp.Body.Close(); err != nil {
-			ms.logger.Warn(ms.logTag, "Failed to close response body when getting user data: %s", err.Error())
-		}
-	}()
-
-	userDataBytes, err := ioutil.ReadAll(userDataResp.Body)
+	err = json.Unmarshal(respBytes, &userData)
 	if err != nil {
-		return userData, bosherr.WrapError(err, "Reading user data response body")
-	}
+		respBytesWithoutQuotes := strings.Replace(string(respBytes), `"`, ``, -1)
 
-	err = json.Unmarshal(userDataBytes, &userData)
-	if err != nil {
-		userDataBytesWithoutQuotes := strings.Replace(string(userDataBytes), `"`, ``, -1)
-		decodedUserData, err := base64.RawURLEncoding.DecodeString(userDataBytesWithoutQuotes)
+		decodedUserData, err := base64.RawURLEncoding.DecodeString(respBytesWithoutQuotes)
 		if err != nil {
 			return userData, bosherr.WrapError(err, "Decoding url encoded user data")
 		}
@@ -278,12 +239,43 @@ func (ms HTTPMetadataService) ensureMinimalNetworkSetup() error {
 	return nil
 }
 
-func (ms HTTPMetadataService) addHeaders() func(*http.Request) {
-	return func(req *http.Request) {
+func (ms HTTPMetadataService) fetchBytes(url string) ([]byte, error) {
+	// todo use proper fs url?
+	cachePath := fmt.Sprintf("/var/vcap/bosh/http-metadata-service-%x", sha1.Sum([]byte(url)))
+
+	cachedRespBytes, err := ms.platform.GetFs().ReadFile(cachePath)
+	if err == nil {
+		return cachedRespBytes, nil
+	}
+
+	addHeaders := func(req *http.Request) {
 		for key, value := range ms.metadataHeaders {
 			req.Header.Add(key, value)
 		}
 	}
+
+	resp, err := ms.client.GetCustomized(url, addHeaders)
+	if err != nil {
+		return nil, bosherr.WrapErrorf(err, "Getting user data over URL '%s'", url)
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			ms.logger.Warn(ms.logTag, "Failed to close response body when getting user data: %s", err.Error())
+		}
+	}()
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Reading user data response body")
+	}
+
+	err = ms.platform.GetFs().WriteFile(cachePath, respBytes)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Caching response body")
+	}
+
+	return respBytes, nil
 }
 
 func createRetryClient(delay time.Duration, logger boshlog.Logger) boshhttpclient.HTTPClient {
