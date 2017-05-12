@@ -171,6 +171,10 @@ func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, host
 	return
 }
 
+func (p WindowsPlatform) SetupIPv6(config boshsettings.IPv6) error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupHostname(hostname string) (err error) {
 	return
 }

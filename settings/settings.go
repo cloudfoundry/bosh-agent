@@ -202,11 +202,17 @@ type BoshEnv struct {
 	Mbus                  struct {
 		Cert CertKeyPair `json:"cert"`
 	} `json:"mbus"`
+
+	IPv6 IPv6 `json:"ipv6"`
 }
 
 type CertKeyPair struct {
 	PrivateKey  string `json:"private_key"`
 	Certificate string `json:"certificate"`
+}
+
+type IPv6 struct {
+	Enable bool `json:"enable"`
 }
 
 type DNSRecords struct {

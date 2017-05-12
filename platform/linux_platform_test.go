@@ -2993,6 +2993,19 @@ unit: sectors
 		})
 	})
 
+	Describe("SetupIPv6", func() {
+		It("delegates to the NetManager", func() {
+			netManager.SetupIPv6Err = errors.New("fake-err")
+
+			err := platform.SetupIPv6(boshsettings.IPv6{Enable: true})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-err"))
+
+			Expect(netManager.SetupIPv6Config).To(Equal(boshsettings.IPv6{Enable: true}))
+			Expect(netManager.SetupIPv6StopCh).To(BeNil())
+		})
+	})
+
 	Describe("SetupNetworking", func() {
 		It("delegates to the NetManager", func() {
 			networks := boshsettings.Networks{}

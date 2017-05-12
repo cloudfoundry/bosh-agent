@@ -152,6 +152,14 @@ func init() {
 				})
 			})
 
+			It("sets up ipv6", func() {
+				settingsService.Settings.Env.Bosh.IPv6.Enable = true
+
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupIPv6Config).To(Equal(boshsettings.IPv6{Enable: true}))
+			})
+
 			It("sets up hostname", func() {
 				settingsService.Settings.AgentID = "foo-bar-baz-123"
 
