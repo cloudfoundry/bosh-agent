@@ -4,12 +4,10 @@ package system
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
+	"errors"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	"os/user"
-	"os"
 )
 
 func (fs *osFileSystem) homeDir(username string) (string, error) {
@@ -28,39 +26,28 @@ func (fs *osFileSystem) currentHomeDir() (string, error) {
 }
 
 func (fs *osFileSystem) chown(path, owner string) error {
-	parts := strings.Split(owner, ":")
-
-	chownUser, err := user.Lookup(parts[0])
-	if err != nil {
-		return bosherr.Errorf("Failed to lookup user '%s'", parts[0])
+	if owner == "" {
+		return errors.New("Failed to lookup user ''")
 	}
 
-	uid, err := strconv.Atoi(chownUser.Uid)
-	if err != nil {
-		panic("on POSIX systems uid is always a decimal")
-	}
+	var group string
+	var err error
 
-	gid, err := strconv.Atoi(chownUser.Gid)
-	if err != nil {
-		panic("on POSIX systems uid is always a decimal")
-	}
+	ownerSplit := strings.Split(owner, ":")
+	user := ownerSplit[0]
 
-	if len(parts) > 1 {
-		var chownGroup *user.Group
-		chownGroup, err = user.LookupGroup(parts[1])
+	if len(ownerSplit) <= 1 {
+		group, err = fs.runCommand(fmt.Sprintf("id -g %s", user))
 		if err != nil {
-			return bosherr.Errorf("Failed to lookup group '%s'", parts[1])
+			return bosherr.WrapErrorf(err, "Failed to lookup user '%s'", user)
 		}
-
-		gid, err = strconv.Atoi(chownGroup.Gid)
-		if err != nil {
-			panic("on POSIX systems uid is always a decimal")
-		}
+	} else {
+		group = ownerSplit[1]
 	}
 
-	err = os.Chown(path, uid, gid)
+	_, err = fs.runCommand(fmt.Sprintf("chown '%s:%s' '%s'", user, group, path))
 	if err != nil {
-		return bosherr.WrapError(err, "Doing Chown")
+		return bosherr.WrapError(err, "Failed to chown")
 	}
 
 	return nil

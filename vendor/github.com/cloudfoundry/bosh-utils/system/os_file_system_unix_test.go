@@ -3,10 +3,10 @@
 package system_test
 
 import (
-	"os"
-	"path/filepath"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"os"
+	"path/filepath"
 
 	"runtime"
 	"syscall"
@@ -94,7 +94,7 @@ var _ = Describe("OS FileSystem", func() {
 
 				err := osFs.Chown(testPath, "root:not-a-group")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Failed to lookup group 'not-a-group'"))
+				Expect(err.Error()).To(ContainSubstring("Failed to chown"))
 			})
 		})
 	})
