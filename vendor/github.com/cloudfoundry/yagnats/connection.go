@@ -6,8 +6,6 @@ import (
 	"net"
 	"sync"
 	"time"
-	"crypto/tls"
-	"crypto/x509"
 )
 
 type Connection struct {
@@ -64,55 +62,15 @@ func NewConnection(addr, user, pass string) *Connection {
 	}
 }
 
-func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool) *Connection {
-	connection := NewConnection(addr, user, pass)
-	connection.dial = func(network, address string) (net.Conn, error) {
-		conn, err := net.DialTimeout(network, address, 5*time.Second)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO Save Info packet somewhere accessible
-		br := bufio.NewReaderSize(conn, 32768)
-		_, err = Parse(br)
-		if err != nil {
-			return conn, err
-		}
-
-		hostname, _, err := net.SplitHostPort(address)
-		if err != nil {
-			return conn, err
-		}
-
-		conn = tls.Client(conn, &tls.Config{
-			RootCAs: certPool,
-			ServerName: hostname,
-		})
-
-		tlsConn := conn.(*tls.Conn)
-		err = tlsConn.Handshake()
-		return tlsConn, err
-	}
-	return connection
-}
-
 type ConnectionInfo struct {
 	Addr     string
 	Username string
 	Password string
 	Dial     func(network, address string) (net.Conn, error)
-
-	CertPool *x509.CertPool
 }
 
 func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
-	var conn *Connection
-	if c.CertPool == nil || len(c.CertPool.Subjects()) == 0 {
-		conn = NewConnection(c.Addr, c.Username, c.Password)
-	} else {
-		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool)
-	}
-
+	conn := NewConnection(c.Addr, c.Username, c.Password)
 	if c.Dial != nil {
 		conn.dial = c.Dial
 	}
@@ -174,6 +132,7 @@ func (c *Connection) Disconnect() {
 
 func (c *Connection) ErrOrOK() error {
 	c.Logger().Debug("connection.err-or-ok.wait")
+
 	select {
 	case err := <-c.errs:
 		c.Logger().Warnd(map[string]interface{}{"error": err.Error()}, "connection.err-or-ok.err")
@@ -262,7 +221,7 @@ func (c *Connection) receivePackets() {
 
 		case *InfoPacket:
 			c.Logger().Debug("connection.packet.info-received")
-		// noop
+			// noop
 
 		case *MsgPacket:
 			c.Logger().Debugd(

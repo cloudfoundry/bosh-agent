@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	. "gopkg.in/check.v1"
+	. "launchpad.net/gocheck"
 )
 
 type CSuite struct {
@@ -76,7 +76,7 @@ func (s *CSuite) TestConnectionDisconnect(c *C) {
 
 	// fill in a fake connection
 	s.Connection.conn = conn
-	c.Assert(conn.Closed, Equals, false)
+	go s.Connection.receivePackets()
 
 	s.Connection.Disconnect()
 

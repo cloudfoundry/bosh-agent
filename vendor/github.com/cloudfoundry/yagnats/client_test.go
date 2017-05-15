@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	. "gopkg.in/check.v1"
+	. "launchpad.net/gocheck"
 )
 
 func Test(t *testing.T) { TestingT(t) }

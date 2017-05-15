@@ -76,10 +76,6 @@ func (f *FakeNATSConn) Ping() bool {
 func (f *FakeNATSConn) Close() {
 }
 
-func (f *FakeNATSConn) Options() nats.Options {
-	return nats.Options{}
-}
-
 func (f *FakeNATSConn) Publish(subject string, payload []byte) error {
 	return f.PublishRequest(subject, "", payload)
 }

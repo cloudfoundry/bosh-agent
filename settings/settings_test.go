@@ -664,7 +664,7 @@ var _ = Describe("Settings", func() {
 			})
 		})
 
-		Context("#IsNatsTLSEnabled", func() {
+		Context("#IsNatsTLSSupported", func() {
 			Context("env JSON provides mbus", func() {
 				It("should return true", func() {
 					var env Env
@@ -672,7 +672,7 @@ var _ = Describe("Settings", func() {
 
 					err := json.Unmarshal([]byte(envJSON), &env)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNatsTLSEnabled()).To(BeTrue())
+					Expect(env.IsNatsTLSSupported()).To(BeTrue())
 				})
 			})
 
@@ -683,7 +683,32 @@ var _ = Describe("Settings", func() {
 
 					err := json.Unmarshal([]byte(envJSON), &env)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNatsTLSEnabled()).To(BeFalse())
+					Expect(env.IsNatsTLSSupported()).To(BeFalse())
+				})
+			})
+		})
+
+		Context("Mbus", func() {
+			Context("#IsTLSEnabled", func() {
+				Context("mbus contains non-empty CA", func() {
+					It("should return true", func() {
+						var mbus MBus
+						mbusJSON := `{"ca": "cert-content"}`
+
+						err := json.Unmarshal([]byte(mbusJSON), &mbus)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(mbus.IsTLSEnabled()).To(BeTrue())
+					})
+				})
+				Context("mbus contains empty CA", func() {
+					It("should return false", func() {
+						var mbus MBus
+						mbusJSON := `{"ca": ""}`
+
+						err := json.Unmarshal([]byte(mbusJSON), &mbus)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(mbus.IsTLSEnabled()).To(BeFalse())
+					})
 				})
 			})
 		})

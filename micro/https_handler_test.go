@@ -107,7 +107,6 @@ var _ = Describe("HTTPSHandler", func() {
 				fs.WriteFileString(blobPath, "Some data")
 
 				httpResponse, err := httpClient.Get(serverURL + "/blobs/a5/123-456-789")
-				Expect(err).ToNot(HaveOccurred())
 
 				defer httpResponse.Body.Close()
 				fileStats, err := fs.FindFileStats(blobPath)
