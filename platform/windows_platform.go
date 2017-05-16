@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -120,8 +122,44 @@ func (p WindowsPlatform) AddUserToGroups(username string, groups []string) (err 
 	return
 }
 
-func (p WindowsPlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
-	return
+func (p WindowsPlatform) findEphemeralUsersMatching(reg *regexp.Regexp) ([]string, error) {
+	stdout, _, _, err := p.cmdRunner.RunCommand("-Command",
+		"Get-WmiObject -Class Win32_UserAccount | foreach { $_.Name }")
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Getting list of users")
+	}
+
+	users := strings.Fields(stdout)
+
+	var matchingUsers []string
+	for _, user := range users {
+		if !strings.HasPrefix(user, boshsettings.EphemeralUserPrefix) {
+			continue
+		}
+		if reg.MatchString(user) {
+			matchingUsers = append(matchingUsers, user)
+		}
+	}
+	return matchingUsers, nil
+}
+
+func (p WindowsPlatform) DeleteEphemeralUsersMatching(pattern string) error {
+	reg, err := regexp.Compile(pattern)
+	if err != nil {
+		return bosherr.WrapError(err, "Compiling regexp")
+	}
+
+	users, err := p.findEphemeralUsersMatching(reg)
+	if err != nil {
+		return bosherr.WrapError(err, "Finding ephemeral users")
+	}
+
+	for _, user := range users {
+		if err := deleteUserProfile(user); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
@@ -130,7 +168,13 @@ func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 
 func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 
-	homedir := filepath.Join("C:\\", "Users", username)
+	drive, ok := os.LookupEnv("SYSTEMDRIVE")
+	if !ok {
+		return bosherr.Error("Looking up SYSTEMDRIVE environment variable")
+	}
+	drive += "\\"
+
+	homedir := filepath.Join(drive, "Users", username)
 	if _, err := p.fs.Stat(homedir); err != nil {
 		return bosherr.WrapErrorf(err, "missing home directory for user: %s", username)
 	}
@@ -147,12 +191,19 @@ func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 	}
 
 	// Grant sshd service read access to the authorized_keys file.
-	_, stderr, _, err := p.cmdRunner.RunCommand("icacls.exe", authkeysPath, "/grant", "NT SERVICE\\SSHD:(R)")
+	//
+	// Do not use the WindowsPlatform.cmdRunner for this - it passes
+	// every command through PowerShell, which breaks this command.
+	//
+	cmd := exec.Command("icacls.exe", authkeysPath, "/grant", "NT SERVICE\\SSHD:(R)")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Setting ACL on authorized_keys file (%s): %s",
-			authkeysPath, stderr)
-	}
+		// Remove authorized_keys file - don't check the error
+		p.fs.RemoveAll(authkeysPath)
 
+		return bosherr.WrapErrorf(err, "Setting ACL on authorized_keys file (%s): %s",
+			authkeysPath, string(out))
+	}
 	return nil
 }
 

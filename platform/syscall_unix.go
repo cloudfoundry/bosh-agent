@@ -9,3 +9,7 @@ var ErrNotImplemented = errors.New("not implemented")
 func createUserProfile(username string) error {
 	return ErrNotImplemented
 }
+
+func deleteUserProfile(username string) error {
+	return ErrNotImplemented
+}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"unsafe"
 
@@ -17,6 +18,7 @@ import (
 var (
 	userenv           = windows.MustLoadDLL("userenv.dll")
 	procCreateProfile = userenv.MustFindProc("CreateProfile")
+	procDeleteProfile = userenv.MustFindProc("DeleteProfileW")
 )
 
 func createProfile(sid, username string) (string, error) {
@@ -46,6 +48,29 @@ func createProfile(sid, username string) (string, error) {
 	}
 	profilePath := syscall.UTF16ToString(pathbuf[0:])
 	return profilePath, nil
+}
+
+func deleteProfile(sid, profilePath string) error {
+	psid, err := syscall.UTF16PtrFromString(sid)
+	if err != nil {
+		return err
+	}
+	ppath, err := syscall.UTF16PtrFromString(profilePath)
+	if err != nil {
+		return err
+	}
+	r1, _, e1 := syscall.Syscall(procDeleteProfile.Addr(), 3,
+		uintptr(unsafe.Pointer(psid)),
+		uintptr(unsafe.Pointer(ppath)),
+		0,
+	)
+	if r1 == 0 {
+		if e1 == 0 {
+			return os.NewSyscallError("DeleteProfile", syscall.EINVAL)
+		}
+		return os.NewSyscallError("DeleteProfile", e1)
+	}
+	return nil
 }
 
 func isSpecial(c byte) bool {
@@ -135,9 +160,9 @@ func userExists(name string) bool {
 	return err == nil && t == syscall.SidTypeUser
 }
 
-func createUserProfile(name string) error {
-	if userExists(name) {
-		return fmt.Errorf("user account already exists: %s", name)
+func createUserProfile(username string) error {
+	if userExists(username) {
+		return fmt.Errorf("user account already exists: %s", username)
 	}
 
 	// Create local user
@@ -145,21 +170,21 @@ func createUserProfile(name string) error {
 	if err != nil {
 		return err
 	}
-	createCmd := exec.Command("NET.exe", "USER", name, password, "/ADD")
+	createCmd := exec.Command("NET.exe", "USER", username, password, "/ADD")
 	createOut, err := createCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%s (%s) (name: %q password: %q): %s",
-			err, createCmd.Args, name, password, string(createOut))
+		return fmt.Errorf("error creating user (%s): %s", err, string(createOut))
 	}
 
 	// Add to Administrators group
-	groupCmd := exec.Command("NET.exe", "LOCALGROUP", "Administrators", name, "/ADD")
+	groupCmd := exec.Command("NET.exe", "LOCALGROUP", "Administrators", username, "/ADD")
 	groupOut, err := groupCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%s (%s): %s", err, groupCmd.Args, string(groupOut))
+		return fmt.Errorf("error adding user to Administrator group (%s): %s",
+			err, string(groupOut))
 	}
 
-	sid, _, _, err := syscall.LookupSID("", name)
+	sid, _, _, err := syscall.LookupSID("", username)
 	if err != nil {
 		return err
 	}
@@ -167,6 +192,34 @@ func createUserProfile(name string) error {
 	if err != nil {
 		return err
 	}
-	_, err = createProfile(ssid, name)
+	_, err = createProfile(ssid, username)
 	return err
+}
+
+func deleteUserProfile(username string) error {
+	sid, _, _, err := syscall.LookupSID("", username)
+	if err != nil {
+		return err
+	}
+	ssid, err := sid.String()
+	if err != nil {
+		return err
+	}
+	drive, ok := os.LookupEnv("SYSTEMDRIVE")
+	if !ok {
+		return errors.New("missing SYSTEMDRIVE environment variable")
+	}
+	drive += "\\"
+	profilePath := filepath.Join(drive, "Users", username)
+	if err := deleteProfile(ssid, profilePath); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("NET.exe", "USER", username, "/DELETE")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error deleting user (%s): %s", err, string(out))
+	}
+
+	return nil
 }
