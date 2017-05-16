@@ -110,7 +110,7 @@ func (p WindowsPlatform) SetupRuntimeConfiguration() (err error) {
 }
 
 func (p WindowsPlatform) CreateUser(username, _ string) error {
-	if err := CreateUserProfile(username); err != nil {
+	if err := createUserProfile(username); err != nil {
 		return bosherr.WrapError(err, "CreateUser: creating user")
 	}
 	return nil
@@ -128,8 +128,32 @@ func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupSSH(publicKey []string, username string) (err error) {
-	return
+func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
+
+	homedir := filepath.Join("C:\\", "Users", username)
+	if _, err := p.fs.Stat(homedir); err != nil {
+		return bosherr.WrapErrorf(err, "missing home directory for user: %s", username)
+	}
+
+	sshdir := filepath.Join(homedir, ".ssh")
+	if err := p.fs.MkdirAll(sshdir, sshDirPermissions); err != nil {
+		return bosherr.WrapError(err, "creating .ssh directory")
+	}
+
+	authkeysPath := filepath.Join(sshdir, "authorized_keys")
+	publicKeyString := strings.Join(publicKey, "\n")
+	if err := p.fs.WriteFileString(authkeysPath, publicKeyString); err != nil {
+		return bosherr.WrapErrorf(err, "Creating authorized_keys file: %s", authkeysPath)
+	}
+
+	// Grant sshd service read access to the authorized_keys file.
+	_, stderr, _, err := p.cmdRunner.RunCommand("icacls.exe", authkeysPath, "/grant", "NT SERVICE\\SSHD:(R)")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Setting ACL on authorized_keys file (%s): %s",
+			authkeysPath, stderr)
+	}
+
+	return nil
 }
 
 func (p WindowsPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
@@ -141,6 +165,7 @@ func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, host
 	if windir == "" {
 		return bosherr.Error("SaveDNSRecords: missing %WINDIR% env variable")
 	}
+
 	etcdir := filepath.Join(windir, "System32", "Drivers", "etc")
 	if err := p.fs.MkdirAll(etcdir, 0755); err != nil {
 		return bosherr.WrapError(err, "SaveDNSRecords: creating etc directory")
@@ -353,7 +378,13 @@ func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 }
 
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
-	return "", nil
+	keypath := filepath.Join("C:\\", "Program Files", "OpenSSH", "ssh_host_rsa_key.pub")
+
+	key, err := p.fs.ReadFileString(keypath)
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "Unable to read host public key file: %s", keypath)
+	}
+	return key, nil
 }
 
 func (p WindowsPlatform) DeleteARPEntryWithIP(ip string) error {

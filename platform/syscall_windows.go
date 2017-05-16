@@ -135,7 +135,7 @@ func userExists(name string) bool {
 	return err == nil && t == syscall.SidTypeUser
 }
 
-func CreateUserProfile(name string) error {
+func createUserProfile(name string) error {
 	if userExists(name) {
 		return fmt.Errorf("user account already exists: %s", name)
 	}

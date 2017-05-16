@@ -6,6 +6,6 @@ import "errors"
 
 var ErrNotImplemented = errors.New("not implemented")
 
-func CreateUserProfile(username string) error {
+func createUserProfile(username string) error {
 	return ErrNotImplemented
 }
