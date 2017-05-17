@@ -1,4 +1,4 @@
-package httpsdispatcher
+package mbus
 
 import (
 	"crypto/subtle"

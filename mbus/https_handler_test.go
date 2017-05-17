@@ -1,4 +1,4 @@
-package micro_test
+package mbus_test
 
 import (
 	"crypto/tls"
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/micro"
+	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 

@@ -183,14 +183,6 @@ func (e Env) GetAuthorizedKeys() []string {
 	return e.Bosh.AuthorizedKeys
 }
 
-func (e Env) GetMbusCertPrivateKey() string {
-	return e.Bosh.Mbus.Cert.PrivateKey
-}
-
-func (e Env) GetMbusCertCertificate() string {
-	return e.Bosh.Mbus.Cert.Certificate
-}
-
 func (e Env) GetSwapSizeInBytes() *uint64 {
 	if e.Bosh.SwapSizeInMB == nil {
 		return nil

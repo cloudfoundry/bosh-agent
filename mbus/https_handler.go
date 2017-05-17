@@ -1,4 +1,4 @@
-package micro
+package mbus
 
 import (
 	"bufio"
@@ -13,7 +13,6 @@ import (
 	"github.com/cloudfoundry/bosh-utils/blobstore"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -25,7 +24,7 @@ const httpsHandlerLogTag = "https_handler"
 type HTTPSHandler struct {
 	parsedURL   *url.URL
 	logger      boshlog.Logger
-	dispatcher  *boshdispatcher.HTTPSDispatcher
+	dispatcher  *HTTPSDispatcher
 	fs          boshsys.FileSystem
 	dirProvider boshdir.Provider
 	auditLogger platform.AuditLogger
@@ -44,7 +43,7 @@ func NewHTTPSHandler(
 		logger:      logger,
 		fs:          fs,
 		dirProvider: dirProvider,
-		dispatcher:  boshdispatcher.NewHTTPSDispatcher(parsedURL, keyPair, logger),
+		dispatcher:  NewHTTPSDispatcher(parsedURL, keyPair, logger),
 		auditLogger: auditLogger,
 	}
 }

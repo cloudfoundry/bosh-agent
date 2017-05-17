@@ -685,8 +685,8 @@ var _ = Describe("Settings", func() {
 			Expect(env.GetKeepRootPassword()).To(BeFalse())
 			Expect(env.GetRemoveDevTools()).To(BeTrue())
 			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
-			Expect(env.GetMbusCertPrivateKey()).To(Equal("fake-private-key-pem"))
-			Expect(env.GetMbusCertCertificate()).To(Equal("fake-certificate-pem"))
+			Expect(env.Bosh.Mbus.Cert.PrivateKey).To(Equal("fake-private-key-pem"))
+			Expect(env.Bosh.Mbus.Cert.Certificate).To(Equal("fake-certificate-pem"))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
 		})
 

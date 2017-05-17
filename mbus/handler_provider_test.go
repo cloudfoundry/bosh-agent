@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/mbus"
-	"github.com/cloudfoundry/bosh-agent/micro"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -52,8 +51,8 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
 			handler, err := provider.Get(platform, dirProvider)
 			Expect(err).ToNot(HaveOccurred())
-			expectedHandler := micro.NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, logger, platform.GetFs(), dirProvider, fakeplatform.NewFakeAuditLogger())
-			httpsHandler, ok := handler.(micro.HTTPSHandler)
+			expectedHandler := NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, logger, platform.GetFs(), dirProvider, fakeplatform.NewFakeAuditLogger())
+			httpsHandler, ok := handler.(HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(httpsHandler).To(Equal(expectedHandler))
 		})
@@ -67,7 +66,7 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Env.Bosh.Mbus.Cert.PrivateKey = "private-key-pem-block"
 
 			handler, err := provider.Get(platform, dirProvider)
-			expectedHandler := micro.NewHTTPSHandler(
+			expectedHandler := NewHTTPSHandler(
 				mbusURL,
 				settingsService.Settings.Env.Bosh.Mbus.Cert,
 				logger,
@@ -75,7 +74,7 @@ var _ = Describe("HandlerProvider", func() {
 				dirProvider,
 				fakeplatform.NewFakeAuditLogger(),
 			)
-			httpsHandler, ok := handler.(micro.HTTPSHandler)
+			httpsHandler, ok := handler.(HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(reflect.DeepEqual(httpsHandler, expectedHandler)).To(BeTrue())
 		})
