@@ -109,8 +109,11 @@ func (p WindowsPlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p WindowsPlatform) CreateUser(username, basePath string) (err error) {
-	return
+func (p WindowsPlatform) CreateUser(username, _ string) error {
+	if err := CreateUserProfile(username); err != nil {
+		return bosherr.WrapError(err, "CreateUser: creating user")
+	}
+	return nil
 }
 
 func (p WindowsPlatform) AddUserToGroups(username string, groups []string) (err error) {
