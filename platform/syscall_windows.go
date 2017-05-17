@@ -16,11 +16,14 @@ import (
 )
 
 var (
-	userenv           = windows.MustLoadDLL("userenv.dll")
-	procCreateProfile = userenv.MustFindProc("CreateProfile")
-	procDeleteProfile = userenv.MustFindProc("DeleteProfileW")
+	userenv                  = windows.MustLoadDLL("userenv.dll")
+	procCreateProfile        = userenv.MustFindProc("CreateProfile")
+	procDeleteProfile        = userenv.MustFindProc("DeleteProfileW")
+	procGetProfilesDirectory = userenv.MustFindProc("GetProfilesDirectoryW")
 )
 
+// createProfile, creates the profile and home directory of the user identified
+// by Security Identifier sid.
 func createProfile(sid, username string) (string, error) {
 	const S_OK = 0x00000000
 	psid, err := syscall.UTF16PtrFromString(sid)
@@ -50,19 +53,17 @@ func createProfile(sid, username string) (string, error) {
 	return profilePath, nil
 }
 
-func deleteProfile(sid, profilePath string) error {
+// deleteProfile, deletes the profile and home directory of the user identified
+// by Security Identifier sid.
+func deleteProfile(sid string) error {
 	psid, err := syscall.UTF16PtrFromString(sid)
 	if err != nil {
 		return err
 	}
-	ppath, err := syscall.UTF16PtrFromString(profilePath)
-	if err != nil {
-		return err
-	}
 	r1, _, e1 := syscall.Syscall(procDeleteProfile.Addr(), 3,
-		uintptr(unsafe.Pointer(psid)),
-		uintptr(unsafe.Pointer(ppath)),
-		0,
+		uintptr(unsafe.Pointer(psid)), // _In_     LPCTSTR lpSidString,
+		0, // _In_opt_ LPCTSTR lpProfilePath,
+		0, // _In_opt_ LPCTSTR lpComputerName
 	)
 	if r1 == 0 {
 		if e1 == 0 {
@@ -71,6 +72,53 @@ func deleteProfile(sid, profilePath string) error {
 		return os.NewSyscallError("DeleteProfile", e1)
 	}
 	return nil
+}
+
+// getProfilesDirectory, returns the path to the root directory where user
+// profiles are stored (typically C:\Users).
+func getProfilesDirectory() (string, error) {
+	var buf [syscall.MAX_PATH]uint16
+	n := uint32(len(buf))
+	r1, _, e1 := syscall.Syscall(procGetProfilesDirectory.Addr(), 2,
+		uintptr(unsafe.Pointer(&buf[0])), // _Out_   LPTSTR  lpProfilesDir,
+		uintptr(unsafe.Pointer(&n)),      // _Inout_ LPDWORD lpcchSize
+		0,
+	)
+	if r1 == 0 {
+		if e1 == 0 {
+			return "", os.NewSyscallError("GetProfilesDirectory", syscall.EINVAL)
+		}
+		return "", os.NewSyscallError("GetProfilesDirectory", e1)
+	}
+	s := syscall.UTF16ToString(buf[0:])
+	return s, nil
+}
+
+// userHomeDirectory returns the home directory for user username.  An error
+// is returned is the user profiles directory cannot be found or if the home
+// directory is invalid.
+//
+// This is a minimal implementation that relies upon Windows naming home
+// directories after user names (i.e. the home directory of user "foo" is
+// C:\Users\foo).  This is the typical behavior when creating local users
+// but is not guaranteed.
+//
+// A more complete implementation may be possible with the LoadUserProfile
+// syscall.
+func userHomeDirectory(username string) (string, error) {
+	path, err := getProfilesDirectory()
+	if err != nil {
+		return "", err
+	}
+	home := filepath.Join(path, username)
+	fi, err := os.Stat(home) // safe to use os pkg here, len(home) < MAX_PATH
+	if err != nil {
+		return "", err
+	}
+	if !fi.IsDir() {
+		return "", fmt.Errorf("not a directory: %s", home)
+	}
+	return home, nil
 }
 
 func isSpecial(c byte) bool {
@@ -205,13 +253,7 @@ func deleteUserProfile(username string) error {
 	if err != nil {
 		return err
 	}
-	drive, ok := os.LookupEnv("SYSTEMDRIVE")
-	if !ok {
-		return errors.New("missing SYSTEMDRIVE environment variable")
-	}
-	drive += "\\"
-	profilePath := filepath.Join(drive, "Users", username)
-	if err := deleteProfile(ssid, profilePath); err != nil {
+	if err := deleteProfile(ssid); err != nil {
 		return err
 	}
 

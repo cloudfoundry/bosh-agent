@@ -13,3 +13,7 @@ func createUserProfile(username string) error {
 func deleteUserProfile(username string) error {
 	return ErrNotImplemented
 }
+
+func userHomeDirectory(username string) (string, error) {
+	return "", ErrNotImplemented
+}

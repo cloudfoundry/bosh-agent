@@ -168,20 +168,14 @@ func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 
 func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 
-	drive, ok := os.LookupEnv("SYSTEMDRIVE")
-	if !ok {
-		return bosherr.Error("Looking up SYSTEMDRIVE environment variable")
-	}
-	drive += "\\"
-
-	homedir := filepath.Join(drive, "Users", username)
-	if _, err := p.fs.Stat(homedir); err != nil {
-		return bosherr.WrapErrorf(err, "missing home directory for user: %s", username)
+	homedir, err := userHomeDirectory(username)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Finding home directory for user: %s", username)
 	}
 
 	sshdir := filepath.Join(homedir, ".ssh")
 	if err := p.fs.MkdirAll(sshdir, sshDirPermissions); err != nil {
-		return bosherr.WrapError(err, "creating .ssh directory")
+		return bosherr.WrapError(err, "Creating .ssh directory")
 	}
 
 	authkeysPath := filepath.Join(sshdir, "authorized_keys")
