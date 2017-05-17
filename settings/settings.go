@@ -183,6 +183,14 @@ func (e Env) GetAuthorizedKeys() []string {
 	return e.Bosh.AuthorizedKeys
 }
 
+func (e Env) GetMbusCertPrivateKey() string {
+	return e.Bosh.Mbus.Cert.PrivateKey
+}
+
+func (e Env) GetMbusCertCertificate() string {
+	return e.Bosh.Mbus.Cert.Certificate
+}
+
 func (e Env) GetSwapSizeInBytes() *uint64 {
 	if e.Bosh.SwapSizeInMB == nil {
 		return nil
@@ -199,6 +207,14 @@ type BoshEnv struct {
 	RemoveStaticLibraries bool     `json:"remove_static_libraries"`
 	AuthorizedKeys        []string `json:"authorized_keys"`
 	SwapSizeInMB          *uint64  `json:"swap_size"`
+	Mbus                  struct {
+		Cert CertKeyPair `json:"cert"`
+	} `json:"mbus"`
+}
+
+type CertKeyPair struct {
+	PrivateKey  string `json:"private_key"`
+	Certificate string `json:"certificate"`
 }
 
 type DNSRecords struct {

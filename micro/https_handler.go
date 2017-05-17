@@ -8,11 +8,13 @@ import (
 	"net/url"
 	"path"
 
+	"github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-utils/blobstore"
+
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
-	"github.com/cloudfoundry/bosh-agent/platform"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -31,18 +33,20 @@ type HTTPSHandler struct {
 
 func NewHTTPSHandler(
 	parsedURL *url.URL,
+	keyPair settings.CertKeyPair,
 	logger boshlog.Logger,
 	fs boshsys.FileSystem,
 	dirProvider boshdir.Provider,
 	auditLogger platform.AuditLogger,
-) (handler HTTPSHandler) {
-	handler.parsedURL = parsedURL
-	handler.logger = logger
-	handler.fs = fs
-	handler.dirProvider = dirProvider
-	handler.dispatcher = boshdispatcher.NewHTTPSDispatcher(parsedURL, logger)
-	handler.auditLogger = auditLogger
-	return
+) HTTPSHandler {
+	return HTTPSHandler{
+		parsedURL:   parsedURL,
+		logger:      logger,
+		fs:          fs,
+		dirProvider: dirProvider,
+		dispatcher:  boshdispatcher.NewHTTPSDispatcher(parsedURL, keyPair, logger),
+		auditLogger: auditLogger,
+	}
 }
 
 func (h HTTPSHandler) Run(handlerFunc boshhandler.Func) error {
@@ -184,11 +188,3 @@ func (h HTTPSHandler) generateCEFLog(r *http.Request, respStatusCode int, respJS
 
 	h.auditLogger.Debug(cefString)
 }
-
-// Utils:
-
-type concreteHTTPHandler struct {
-	Callback func(http.ResponseWriter, *http.Request)
-}
-
-func (e concreteHTTPHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) { e.Callback(rw, r) }
