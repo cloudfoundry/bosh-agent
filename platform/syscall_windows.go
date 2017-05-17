@@ -16,16 +16,19 @@ import (
 )
 
 var (
-	userenv                  = windows.MustLoadDLL("userenv.dll")
-	procCreateProfile        = userenv.MustFindProc("CreateProfile")
-	procDeleteProfile        = userenv.MustFindProc("DeleteProfileW")
-	procGetProfilesDirectory = userenv.MustFindProc("GetProfilesDirectoryW")
+	userenv                  = windows.NewLazySystemDLL("userenv.dll")
+	procCreateProfile        = userenv.NewProc("CreateProfile")
+	procDeleteProfile        = userenv.NewProc("DeleteProfileW")
+	procGetProfilesDirectory = userenv.NewProc("GetProfilesDirectoryW")
 )
 
 // createProfile, creates the profile and home directory of the user identified
 // by Security Identifier sid.
 func createProfile(sid, username string) (string, error) {
 	const S_OK = 0x00000000
+	if err := procCreateProfile.Find(); err != nil {
+		return "", err
+	}
 	psid, err := syscall.UTF16PtrFromString(sid)
 	if err != nil {
 		return "", err
@@ -56,6 +59,9 @@ func createProfile(sid, username string) (string, error) {
 // deleteProfile, deletes the profile and home directory of the user identified
 // by Security Identifier sid.
 func deleteProfile(sid string) error {
+	if err := procDeleteProfile.Find(); err != nil {
+		return err
+	}
 	psid, err := syscall.UTF16PtrFromString(sid)
 	if err != nil {
 		return err
@@ -77,6 +83,9 @@ func deleteProfile(sid string) error {
 // getProfilesDirectory, returns the path to the root directory where user
 // profiles are stored (typically C:\Users).
 func getProfilesDirectory() (string, error) {
+	if err := procGetProfilesDirectory.Find(); err != nil {
+		return "", err
+	}
 	var buf [syscall.MAX_PATH]uint16
 	n := uint32(len(buf))
 	r1, _, e1 := syscall.Syscall(procGetProfilesDirectory.Addr(), 2,
