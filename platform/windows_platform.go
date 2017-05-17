@@ -423,7 +423,12 @@ func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 }
 
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
-	keypath := filepath.Join("C:\\", "Program Files", "OpenSSH", "ssh_host_rsa_key.pub")
+	drive := os.Getenv("SYSTEMDRIVE")
+	if drive == "" {
+		drive = "C:"
+	}
+	drive += "\\"
+	keypath := filepath.Join(drive, "Program Files", "OpenSSH", "ssh_host_rsa_key.pub")
 
 	key, err := p.fs.ReadFileString(keypath)
 	if err != nil {
