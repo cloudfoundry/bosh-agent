@@ -465,6 +465,10 @@ func (p linux) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname strin
 	return nil
 }
 
+func (p linux) SetupIPv6(config boshsettings.IPv6) error {
+	return p.netManager.SetupIPv6(config, nil)
+}
+
 func (p linux) SetupHostname(hostname string) error {
 	if !p.state.Linux.HostsConfigured {
 		_, _, _, err := p.cmdRunner.RunCommand("hostname", hostname)

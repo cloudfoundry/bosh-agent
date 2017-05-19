@@ -914,4 +914,139 @@ iface ethstatic inet static
 			})
 		})
 	})
+
+	Describe("SetupIPv6", func() {
+		var (
+			config boshsettings.IPv6
+			stopCh chan struct{}
+		)
+
+		BeforeEach(func() {
+			config = boshsettings.IPv6{}
+			stopCh = make(chan struct{}, 1)
+		})
+
+		act := func() error { return netManager.SetupIPv6(config, stopCh) }
+
+		Context("when grub.conf disables IPv6", func() {
+			BeforeEach(func() {
+				err := fs.WriteFileString("/boot/grub/grub.conf", "before ipv6.disable=1 after")
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			Context("when IPv6 is enabled by the user", func() {
+				BeforeEach(func() {
+					config.Enable = true
+				})
+
+				It("removes ipv6.disable=1 from grub.conf", func() {
+					stopCh <- struct{}{}
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(fs.ReadFileString("/boot/grub/grub.conf")).To(Equal("before  after"))
+				})
+
+				It("reboots after changing grub.conf and continue waiting until reboot event succeeds", func() {
+					stopCh <- struct{}{}
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
+				})
+
+				It("returns an error if it fails to read grub.conf", func() {
+					fs.ReadFileError = errors.New("fake-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+
+				It("returns an error if update to grub.conf fails", func() {
+					fs.WriteFileError = errors.New("fake-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+
+				It("returns an error if shutdown fails", func() {
+					cmdRunner.AddCmdResult("shutdown -r now", fakesys.FakeCmdResult{
+						Error: errors.New("fake-err"),
+					})
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+			})
+
+			Context("when IPv6 is NOT enabled by the user", func() {
+				BeforeEach(func() {
+					config.Enable = false
+				})
+
+				It("does not change grub.conf", func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(fs.ReadFileString("/boot/grub/grub.conf")).To(Equal("before ipv6.disable=1 after"))
+				})
+
+				It("does not reboot and does not set sysctl", func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(cmdRunner.RunCommands).To(BeEmpty())
+				})
+			})
+		})
+
+		Context("when grub.conf allows IPv6", func() {
+			BeforeEach(func() {
+				err := fs.WriteFileString("/boot/grub/grub.conf", "before after")
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			Context("when IPv6 is enabled by the user", func() {
+				BeforeEach(func() {
+					config.Enable = true
+				})
+
+				It("does not change grub.conf", func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(fs.ReadFileString("/boot/grub/grub.conf")).To(Equal("before after"))
+				})
+
+				It("does not reboot but sets IPv6 sysctl", func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(cmdRunner.RunCommands).To(Equal([][]string{
+						{"sysctl", "net.ipv6.conf.all.accept_ra=1"},
+						{"sysctl", "net.ipv6.conf.default.accept_ra=1"},
+						{"sysctl", "net.ipv6.conf.all.disable_ipv6=0"},
+						{"sysctl", "net.ipv6.conf.default.disable_ipv6=0"},
+					}))
+				})
+
+				It("fails if the underlying sysctl fails", func() {
+					cmdRunner.AddCmdResult("sysctl net.ipv6.conf.all.accept_ra=1", fakesys.FakeCmdResult{
+						Error: errors.New("fake-err"),
+					})
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+			})
+
+			Context("when IPv6 is NOT enabled by the user", func() {
+				BeforeEach(func() {
+					config.Enable = false
+				})
+
+				It("does not change grub.conf", func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(fs.ReadFileString("/boot/grub/grub.conf")).To(Equal("before after"))
+				})
+
+				It("does not reboot and does not set sysctl", func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(cmdRunner.RunCommands).To(BeEmpty())
+				})
+			})
+		})
+	})
 }
