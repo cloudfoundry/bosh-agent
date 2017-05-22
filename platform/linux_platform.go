@@ -930,6 +930,17 @@ func (p linux) SetupLogDir() error {
 		return bosherr.WrapError(err, "Chmoding audit log dir")
 	}
 
+	sysstatDirPath := path.Join(boshRootLogPath, "sysstat")
+	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", sysstatDirPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating sysstat log dir")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0755", sysstatDirPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding sysstat log dir")
+	}
+
 	// change ownership
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:syslog", boshRootLogPath)
 	if err != nil {
