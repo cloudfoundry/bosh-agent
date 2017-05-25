@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cloudfoundry/yagnats.png)](https://travis-ci.org/cloudfoundry/yagnats)
+[![Build Status](https://main.bosh-ci.cf-app.com/api/v1/teams/main/pipelines/yagnats/jobs/test/badge)](https://main.bosh-ci.cf-app.com/api/v1/teams/main/pipelines/yagnats)
 
 Yet Another Go NATS Client
 ==========================
