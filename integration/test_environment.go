@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
-	"github.com/cloudfoundry/bosh-agent/agentclient/http"
+	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	"github.com/cloudfoundry/bosh-utils/logger"
@@ -362,7 +362,7 @@ func (er emptyReader) Read(p []byte) (int, error) {
 	return 0, nil
 }
 
-func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort int) (agentclient.AgentClient, error) {
+func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort int) (*integrationagentclient.IntegrationAgentClient, error) {
 	if t.sshTunnelProc != nil {
 		return nil, fmt.Errorf("Already running")
 	}
@@ -384,7 +384,7 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
 	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
-	client := http.NewAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
+	client := integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
 
 	for i := 1; i < 1000000; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")

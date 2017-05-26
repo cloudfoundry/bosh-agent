@@ -119,15 +119,6 @@ type FakeAgentClient struct {
 	runScriptReturns struct {
 		result1 error
 	}
-	SSHStub        func(cmd string, params agentclient.SSHParams) error
-	sSHMutex       sync.RWMutex
-	sSHArgsForCall []struct {
-		cmd    string
-		params agentclient.SSHParams
-	}
-	sSHReturns struct {
-		result1 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -565,40 +556,6 @@ func (fake *FakeAgentClient) RunScriptReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeAgentClient) SSH(cmd string, params agentclient.SSHParams) error {
-	fake.sSHMutex.Lock()
-	fake.sSHArgsForCall = append(fake.sSHArgsForCall, struct {
-		cmd    string
-		params agentclient.SSHParams
-	}{cmd, params})
-	fake.recordInvocation("SSH", []interface{}{cmd, params})
-	fake.sSHMutex.Unlock()
-	if fake.SSHStub != nil {
-		return fake.SSHStub(cmd, params)
-	} else {
-		return fake.sSHReturns.result1
-	}
-}
-
-func (fake *FakeAgentClient) SSHCallCount() int {
-	fake.sSHMutex.RLock()
-	defer fake.sSHMutex.RUnlock()
-	return len(fake.sSHArgsForCall)
-}
-
-func (fake *FakeAgentClient) SSHArgsForCall(i int) (string, agentclient.SSHParams) {
-	fake.sSHMutex.RLock()
-	defer fake.sSHMutex.RUnlock()
-	return fake.sSHArgsForCall[i].cmd, fake.sSHArgsForCall[i].params
-}
-
-func (fake *FakeAgentClient) SSHReturns(result1 error) {
-	fake.SSHStub = nil
-	fake.sSHReturns = struct {
-		result1 error
-	}{result1}
-}
-
 func (fake *FakeAgentClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -630,8 +587,6 @@ func (fake *FakeAgentClient) Invocations() map[string][][]interface{} {
 	defer fake.updateSettingsMutex.RUnlock()
 	fake.runScriptMutex.RLock()
 	defer fake.runScriptMutex.RUnlock()
-	fake.sSHMutex.RLock()
-	defer fake.sSHMutex.RUnlock()
 	return fake.invocations
 }
 
