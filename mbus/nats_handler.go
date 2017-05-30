@@ -15,11 +15,14 @@ import (
 	"github.com/cloudfoundry/yagnats"
 
 	"crypto/x509"
+	"time"
+
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
 const (
@@ -100,7 +103,16 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		}
 	})
 
-	err = h.client.Connect(connProvider)
+	natsRetryable := boshretry.NewRetryable(func() (bool, error) {
+		err := h.client.Connect(connProvider)
+		if err != nil {
+			return true, bosherr.WrapError(err, "Connecting to NATS")
+		}
+		return false, nil
+	})
+
+	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(6, time.Second, natsRetryable, h.logger)
+	err = attemptRetryStrategy.Try()
 	if err != nil {
 		return bosherr.WrapError(err, "Connecting")
 	}
