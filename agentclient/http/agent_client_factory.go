@@ -3,11 +3,11 @@ package http
 //go:generate mockgen -source=agent_client_factory.go -package=mocks -destination=mocks/mocks.go
 
 import (
-	"crypto/x509"
 	"errors"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -42,9 +42,9 @@ func (f *agentClientFactory) NewSecureAgentClient(directorID, mbusURL, caCert st
 		return nil, errors.New("CA cert required but not provided")
 	}
 
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM([]byte(caCert)); !ok {
-		return nil, errors.New("Could not append CA cert - invalid?")
+	caCertPool, err := crypto.CertPoolFromPEM([]byte(caCert))
+	if err != nil {
+		return nil, err
 	}
 	client := httpclient.CreateDefaultClient(caCertPool)
 	httpClient := httpclient.NewHTTPClient(client, f.logger)

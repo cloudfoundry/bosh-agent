@@ -84,7 +84,7 @@ fvue6FeCS62q1lOmwKsNHi26szI5qY8b6Xj3cNjhDS5pIfg=
 			It("returns an error", func() {
 				agentClient, err := agentClientFactory.NewSecureAgentClient("director-id", "mbus-url", caCert)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Could not append CA cert - invalid?"))
+				Expect(err.Error()).To(ContainSubstring("Missing PEM block"))
 				Expect(agentClient).To(BeNil())
 			})
 		})
