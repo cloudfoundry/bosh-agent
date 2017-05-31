@@ -3,6 +3,8 @@ package http
 //go:generate mockgen -source=agent_client_factory.go -package=mocks -destination=mocks/mocks.go
 
 import (
+	"crypto/x509"
+	"errors"
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
@@ -12,6 +14,7 @@ import (
 
 type AgentClientFactory interface {
 	NewAgentClient(directorID, mbusURL string) agentclient.AgentClient
+	NewSecureAgentClient(directorID, mbusURL, caCert string) (agentclient.AgentClient, error)
 }
 
 type agentClientFactory struct {
@@ -32,4 +35,18 @@ func NewAgentClientFactory(
 func (f *agentClientFactory) NewAgentClient(directorID, mbusURL string) agentclient.AgentClient {
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, f.logger)
 	return NewAgentClient(mbusURL, directorID, f.getTaskDelay, 10, httpClient, f.logger)
+}
+
+func (f *agentClientFactory) NewSecureAgentClient(directorID, mbusURL, caCert string) (agentclient.AgentClient, error) {
+	if caCert == "" {
+		return nil, errors.New("CA cert required but not provided")
+	}
+
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM([]byte(caCert)); !ok {
+		return nil, errors.New("Could not append CA cert - invalid?")
+	}
+	client := httpclient.CreateDefaultClient(caCertPool)
+	httpClient := httpclient.NewHTTPClient(client, f.logger)
+	return NewAgentClient(mbusURL, directorID, f.getTaskDelay, 10, httpClient, f.logger), nil
 }
