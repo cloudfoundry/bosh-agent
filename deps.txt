@@ -4,7 +4,7 @@ github.com/pivotal-golang/clock:3fd3c19
 github.com/pivotal/go-smtpd/smtpd:0af6982
 github.com/cloudfoundry/gosigar:dfaa4d4
 github.com/mitchellh/mapstructure:281073e
-github.com/cloudfoundry/yagnats:d260ee7
+github.com/cloudfoundry/yagnats:437670f
 github.com/github.com/stretchr/testify/assert:2b15294
 github.com/golang/mock/gomock:06883d9
 github.com/golang/protobuf/proto:a66a4fa

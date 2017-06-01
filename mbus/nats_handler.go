@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	responseMaxLength = 1024 * 1024
-	natsHandlerLogTag = "NATS Handler"
+	responseMaxLength        = 1024 * 1024
+	natsHandlerLogTag        = "NATS Handler"
+	natsConnectionMaxRetries = 4
 )
 
 type Handler interface {
@@ -111,7 +112,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		return false, nil
 	})
 
-	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(6, time.Second, natsRetryable, h.logger)
+	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(natsConnectionMaxRetries, time.Second, natsRetryable, h.logger)
 	err = attemptRetryStrategy.Try()
 	if err != nil {
 		return bosherr.WrapError(err, "Connecting")

@@ -375,6 +375,80 @@ XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
 					defer handler.Stop()
 				})
 			})
+
+			Context("when connecting to NATS server fails", func() {
+				BeforeEach(func() {
+					client.SetConnectErrors([]error{
+						errors.New("error"),
+						errors.New("error"),
+					})
+				})
+
+				It("will retry the max number allowed", func() {
+					var receivedRequest boshhandler.Request
+
+					err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+						receivedRequest = req
+						return boshhandler.NewValueResponse("expected value")
+					})
+					defer handler.Stop()
+
+					Expect(err).To(BeNil())
+					Expect(client.GetConnectCallCount()).To(Equal(3))
+
+					Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
+
+					Expect(client.SubscriptionCount()).To(Equal(1))
+					subscriptions := client.Subscriptions("agent.my-agent-id")
+					Expect(len(subscriptions)).To(Equal(1))
+
+					expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
+					subscription := subscriptions[0]
+					subscription.Callback(&yagnats.Message{
+						Subject: "agent.my-agent-id",
+						Payload: expectedPayload,
+					})
+
+					Expect(receivedRequest).To(Equal(boshhandler.Request{
+						ReplyTo: "reply to me!",
+						Method:  "ping",
+						Payload: expectedPayload,
+					}))
+
+					Expect(client.PublishedMessageCount()).To(Equal(1))
+					messages := client.PublishedMessages("reply to me!")
+					Expect(len(messages)).To(Equal(1))
+					Expect(messages[0].Payload).To(Equal([]byte(`{"value":"expected value"}`)))
+				})
+
+				Context("when exhausting all the retries", func() {
+
+					BeforeEach(func() {
+						client.SetConnectErrors([]error{
+							errors.New("Nats Connection Error 1"),
+							errors.New("Nats Connection Error 2"),
+							errors.New("Nats Connection Error 3"),
+							errors.New("Nats Connection Error 4"),
+							errors.New("Nats Connection Error 5"),
+						})
+					})
+
+					It("will return an error", func() {
+						var receivedRequest boshhandler.Request
+
+						err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+							receivedRequest = req
+							return boshhandler.NewValueResponse("expected value")
+						})
+						defer handler.Stop()
+
+						Expect(client.GetConnectCallCount()).To(Equal(4))
+						Expect(err).ToNot(BeNil())
+						Expect(err.Error()).To(ContainSubstring("Nats Connection Error 4"))
+					})
+				})
+
+			})
 		})
 
 		Describe("Send", func() {
