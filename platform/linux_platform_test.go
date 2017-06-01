@@ -1677,6 +1677,15 @@ Number  Start   End     Size    File system  Name             Flags
 				options.UseDefaultTmpDir = false
 			})
 
+			It("returns error when removing root_tmp dir", func() {
+				fs.RemoveAllStub = func(_ string) error {
+					return errors.New("fake-remove-all-error")
+				}
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+			})
+
 			It("creates a root_tmp folder", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())

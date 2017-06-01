@@ -880,6 +880,11 @@ func (p linux) SetupTmpDir() error {
 		return nil
 	}
 
+	err = p.fs.RemoveAll(boshRootTmpPath)
+	if err != nil {
+		return bosherr.WrapError(err, fmt.Sprintf("cleaning up %s", boshRootTmpPath))
+	}
+
 	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", boshRootTmpPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating root tmp dir")
