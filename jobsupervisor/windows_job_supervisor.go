@@ -98,12 +98,22 @@ type serviceEnv struct {
 }
 
 type WindowsServiceWrapperConfig struct {
-	XMLName                xml.Name         `xml:"service"`
-	ID                     string           `xml:"id"`
-	Name                   string           `xml:"name"`
-	Description            string           `xml:"description"`
-	Executable             string           `xml:"executable"`
-	Arguments              []string         `xml:"argument"`
+	XMLName     xml.Name `xml:"service"`
+	ID          string   `xml:"id"`
+	Name        string   `xml:"name"`
+	Description string   `xml:"description"`
+
+	// Start exe and args if no stop arguments are provided
+	Executable string   `xml:"executable"`
+	Arguments  []string `xml:"argument"`
+
+	// Optional stop arguments
+	StopExecutable string   `xml:"stopexecutable,omitempty"`
+	StopArguments  []string `xml:"stopargument"`
+
+	// Replaces Arguments if stop arguments are provided
+	StartArguments []string `xml:"startargument"`
+
 	LogPath                string           `xml:"logpath"`
 	LogMode                serviceLogMode   `xml:"log"`
 	Onfailure              serviceOnfailure `xml:"onfailure"`
@@ -111,11 +121,17 @@ type WindowsServiceWrapperConfig struct {
 	StopParentProcessFirst bool             `xml:"stopparentprocessfirst,omitempty"`
 }
 
+type StopCommand struct {
+	Executable string   `json:"executable"`
+	Args       []string `json:"args"`
+}
+
 type WindowsProcess struct {
 	Name       string            `json:"name"`
 	Executable string            `json:"executable"`
 	Args       []string          `json:"args"`
 	Env        map[string]string `json:"env"`
+	Stop       *StopCommand      `json:"stop,omitempty"`
 }
 
 func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int, machineIP string) *WindowsServiceWrapperConfig {
@@ -125,7 +141,6 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int, mac
 		Name:        p.Name,
 		Description: serviceDescription,
 		Executable:  pipeExePath,
-		Arguments:   args,
 		LogPath:     logPath,
 		LogMode: serviceLogMode{
 			Mode:          "roll-by-size",
@@ -138,6 +153,21 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int, mac
 		},
 		StopParentProcessFirst: false,
 	}
+
+	// If stop args are provided the 'arguments' element
+	// must be named 'startarguments'.
+	if p.Stop != nil && len(p.Stop.Args) != 0 {
+		srcv.StartArguments = args
+		srcv.StopArguments = p.Stop.Args
+		if p.Stop.Executable != "" {
+			srcv.StopExecutable = p.Stop.Executable
+		} else {
+			srcv.StopExecutable = p.Executable // Do not use pipe
+		}
+	} else {
+		srcv.Arguments = args
+	}
+
 	srcv.Env = make([]serviceEnv, 0, len(p.Env))
 	for k, v := range p.Env {
 		srcv.Env = append(srcv.Env, serviceEnv{Name: k, Value: v})
@@ -148,6 +178,7 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int, mac
 		serviceEnv{Name: "__PIPE_NOTIFY_HTTP", Value: fmt.Sprintf("http://localhost:%d", eventPort)},
 		serviceEnv{Name: "__PIPE_MACHINE_IP", Value: machineIP},
 	)
+
 	return srcv
 }
 
