@@ -640,18 +640,69 @@ var _ = Describe("Settings", func() {
 	Describe("Env", func() {
 		It("unmarshal env value correctly", func() {
 			var env Env
-			envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"], "swap_size": 2048}}`
+			envJSON := `{
+  "bosh": {
+    "password": "fake-password",
+    "keep_root_password": false,
+    "remove_dev_tools": true,
+    "authorized_keys": [
+      "fake-key"
+    ],
+    "swap_size": 2048
+  }
+}`
+			err := json.Unmarshal([]byte(envJSON), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.GetPassword()).To(Equal("fake-password"))
+			Expect(env.GetKeepRootPassword()).To(BeFalse())
+			Expect(env.GetRemoveDevTools()).To(BeTrue())
+			Expect(env.Bosh.IPv6).To(Equal(IPv6{}))
+			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
+			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+		})
 
+		It("permits you to specify bootstrap https certs", func() {
+			var env Env
+			envJSON := `{
+  "bosh": {
+    "password": "fake-password",
+    "keep_root_password": false,
+    "remove_dev_tools": true,
+    "authorized_keys": [
+      "fake-key"
+    ],
+    "swap_size": 2048,
+    "mbus": {
+			"cert": {
+				"private_key": "fake-private-key-pem",
+				"certificate": "fake-certificate-pem"
+      }
+    }
+  }
+}`
 			err := json.Unmarshal([]byte(envJSON), &env)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(env.GetPassword()).To(Equal("fake-password"))
 			Expect(env.GetKeepRootPassword()).To(BeFalse())
 			Expect(env.GetRemoveDevTools()).To(BeTrue())
 			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
-			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
-			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+			Expect(env.Bosh.Mbus.Cert.PrivateKey).To(Equal("fake-private-key-pem"))
+			Expect(env.Bosh.Mbus.Cert.Certificate).To(Equal("fake-certificate-pem"))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
 		})
+
+		It("can enable ipv6", func() {
+			env := Env{}
+			err := json.Unmarshal([]byte(`{"bosh": {} }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.IPv6).To(Equal(IPv6{}))
+
+			env = Env{}
+			err = json.Unmarshal([]byte(`{"bosh": {"ipv6": {"enable": true} } }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.IPv6).To(Equal(IPv6{Enable: true}))
+		})
+
 		Context("when swap_size is not specified in the json", func() {
 			It("unmarshalls correctly", func() {
 				var env Env
@@ -661,55 +712,6 @@ var _ = Describe("Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(env.GetSwapSizeInBytes()).To(BeNil())
-			})
-		})
-
-		Context("#IsNatsTLSSupported", func() {
-			Context("env JSON provides mbus", func() {
-				It("should return true", func() {
-					var env Env
-					envJSON := `{"bosh": {"mbus": {}}}`
-
-					err := json.Unmarshal([]byte(envJSON), &env)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNatsTLSSupported()).To(BeTrue())
-				})
-			})
-
-			Context("env JSON does NOT provide mbus", func() {
-				It("should return true", func() {
-					var env Env
-					envJSON := `{"bosh": {}}`
-
-					err := json.Unmarshal([]byte(envJSON), &env)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNatsTLSSupported()).To(BeFalse())
-				})
-			})
-		})
-
-		Context("Mbus", func() {
-			Context("#IsTLSEnabled", func() {
-				Context("mbus contains non-empty CA", func() {
-					It("should return true", func() {
-						var mbus MBus
-						mbusJSON := `{"ca": "cert-content"}`
-
-						err := json.Unmarshal([]byte(mbusJSON), &mbus)
-						Expect(err).NotTo(HaveOccurred())
-						Expect(mbus.IsTLSEnabled()).To(BeTrue())
-					})
-				})
-				Context("mbus contains empty CA", func() {
-					It("should return false", func() {
-						var mbus MBus
-						mbusJSON := `{"ca": ""}`
-
-						err := json.Unmarshal([]byte(mbusJSON), &mbus)
-						Expect(err).NotTo(HaveOccurred())
-						Expect(mbus.IsTLSEnabled()).To(BeFalse())
-					})
-				})
 			})
 		})
 	})
@@ -722,56 +724,6 @@ var _ = Describe("Settings", func() {
 		It("contains the correct keys", func() {
 			err := json.Unmarshal([]byte(updateSettingsJSON), &updateSettings)
 			Expect(err).NotTo(HaveOccurred())
-		})
-	})
-
-	Describe("#GetMbusURL", func() {
-		Context("Env.Bosh.Mbus.URL is populated", func() {
-			It("should return Env.Bosh.Mbus.URL", func() {
-				settings = Settings{
-					Env: Env{
-						Bosh: BoshEnv{
-							Mbus: &MBus{
-								URL: "nats://nested:123",
-							},
-						},
-					},
-				}
-
-				Expect(settings.GetMbusURL()).To(Equal("nats://nested:123"))
-			})
-		})
-
-		Context("Settings.Env.Bosh.Mbus.URL is empty", func() {
-			It("should return Settings.Mbus", func() {
-				settings = Settings{
-					Mbus: "nats://top-level:456",
-					Env: Env{
-						Bosh: BoshEnv{
-							Mbus: &MBus{
-								URL: "",
-							},
-						},
-					},
-				}
-
-				Expect(settings.GetMbusURL()).To(Equal("nats://top-level:456"))
-			})
-		})
-
-		Context("Settings.Env.Bosh.Mbus is nil", func() {
-			It("should return Settings.Mbus", func() {
-				settings = Settings{
-					Mbus: "nats://top-level:456",
-					Env: Env{
-						Bosh: BoshEnv{
-							Mbus: nil,
-						},
-					},
-				}
-
-				Expect(settings.GetMbusURL()).To(Equal("nats://top-level:456"))
-			})
 		})
 	})
 })

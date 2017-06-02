@@ -1,4 +1,4 @@
-package httpsdispatcher_test
+package mbus_test
 
 import (
 	"crypto/tls"
@@ -11,8 +11,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshdispatcher "github.com/cloudfoundry/bosh-agent/httpsdispatcher"
 	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
+	"github.com/cloudfoundry/bosh-agent/mbus"
+	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 const targetURL = "https://user:pass@127.0.0.1:7789"
@@ -32,7 +33,7 @@ func init() {
 
 var _ = Describe("HTTPSDispatcher", func() {
 	var (
-		dispatcher *boshdispatcher.HTTPSDispatcher
+		dispatcher *mbus.HTTPSDispatcher
 		logger     *fakelogger.FakeLogger
 	)
 
@@ -40,7 +41,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		logger = &fakelogger.FakeLogger{}
 		serverURL, err := url.Parse(targetURL)
 		Expect(err).ToNot(HaveOccurred())
-		dispatcher = boshdispatcher.NewHTTPSDispatcher(serverURL, logger)
+		dispatcher = mbus.NewHTTPSDispatcher(serverURL, settings.CertKeyPair{}, logger)
 
 		errChan := make(chan error)
 		go func() {

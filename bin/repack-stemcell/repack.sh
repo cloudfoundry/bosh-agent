@@ -46,13 +46,13 @@ echo "$STEMCELL_SHA1  $stemcell_tgz" | shasum -c -
 		echo -n 0.0.${new_ver} > $mnt_dir/var/vcap/bosh/etc/stemcell_version
 		cp /tmp/build/*/agent-src/bin/bosh-agent $mnt_dir/var/vcap/bosh/bin/bosh-agent
 
-		if [ -z "$BOSH_DEBUG_PUB_KEY" ]; then
+		if [ -n "$BOSH_DEBUG_PUB_KEY" ]; then
 			sudo chroot $mnt_dir /bin/bash <<EOF
-				useradd -m -s /bin/bash bosh_debug -G bosh_sudoers
+				useradd -m -s /bin/bash bosh_debug -G bosh_sudoers,bosh_sshers
 				cd ~bosh_debug
 				mkdir .ssh
 				echo $BOSH_DEBUG_PUB_KEY >> .ssh/authorized_keys
-				chmod go-rw -R .
+				chmod go-rwx -R .
 				chown -R bosh_debug:bosh_debug .
 EOF
     fi
