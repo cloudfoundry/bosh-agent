@@ -6,7 +6,6 @@ import (
 	"github.com/cloudfoundry/yagnats"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshmicro "github.com/cloudfoundry/bosh-agent/micro"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -51,7 +50,8 @@ func (p HandlerProvider) Get(
 	case "nats":
 		handler = NewNatsHandler(p.settingsService, yagnats.NewClient(), p.logger, platform)
 	case "https":
-		handler = boshmicro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider, p.auditLogger)
+		mbusKeyPair := p.settingsService.GetSettings().Env.Bosh.Mbus.Cert
+		handler = NewHTTPSHandler(mbusURL, mbusKeyPair, p.logger, platform.GetFs(), dirProvider, p.auditLogger)
 	default:
 		err = bosherr.Errorf("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
 	}

@@ -334,9 +334,9 @@ bew6/PW7wNhEW/GWI/Nvef3EsFh80bYHq21eW6RdaSLgwddcmi6ak4CxizPYK57e
 XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
 -----END CERTIFICATE-----`
 				BeforeEach(func() {
-					settingsService.Settings.Env.Bosh.Mbus = &boshsettings.MBus{
-						URL: "tls://fake-username:fake-password@127.0.0.1:1234",
+					settingsService.Settings.Env.Bosh.Mbus = boshsettings.MBus{
 						CA:  CA,
+						URL: "tls://fake-username:fake-password@127.0.0.1:1234",
 					}
 				})
 
@@ -355,15 +355,6 @@ XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
 						Password: "fake-password",
 						CertPool: certPool,
 					}))
-				})
-
-				It("returns an error if the cert is empty", func() {
-					settingsService.Settings.Env.Bosh.Mbus.CA = ""
-
-					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
-					defer handler.Stop()
 				})
 
 				It("returns an error if the cert is invalid", func() {

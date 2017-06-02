@@ -157,7 +157,7 @@ func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
 }
 
 func (s Settings) GetMbusURL() string {
-	if s.Env.Bosh.Mbus != nil && len(s.Env.Bosh.Mbus.URL) > 0 {
+	if len(s.Env.Bosh.Mbus.URL) > 0 {
 		return s.Env.Bosh.Mbus.URL
 	}
 	return s.Mbus
@@ -198,7 +198,7 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 }
 
 func (e Env) IsNatsTLSEnabled() bool {
-	return e.Bosh.Mbus != nil
+	return len(e.Bosh.Mbus.CA) > 0
 }
 
 type BoshEnv struct {
@@ -208,7 +208,23 @@ type BoshEnv struct {
 	RemoveStaticLibraries bool     `json:"remove_static_libraries"`
 	AuthorizedKeys        []string `json:"authorized_keys"`
 	SwapSizeInMB          *uint64  `json:"swap_size"`
-	Mbus                  *MBus    `json:"mbus"`
+	Mbus                  MBus     `json:"mbus"`
+	IPv6                  IPv6     `json:"ipv6"`
+}
+
+type MBus struct {
+	Cert CertKeyPair `json:"cert"`
+	URL  string      `json:"url"`
+	CA   string      `json:"ca"`
+}
+
+type CertKeyPair struct {
+	PrivateKey  string `json:"private_key"`
+	Certificate string `json:"certificate"`
+}
+
+type IPv6 struct {
+	Enable bool `json:"enable"`
 }
 
 type DNSRecords struct {
@@ -354,11 +370,6 @@ func (n Network) isDynamic() bool {
 
 func (n Network) IsVIP() bool {
 	return n.Type == NetworkTypeVIP
-}
-
-type MBus struct {
-	URL string `json:"url"`
-	CA  string `json:"ca"`
 }
 
 //{

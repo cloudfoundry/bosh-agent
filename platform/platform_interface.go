@@ -43,6 +43,7 @@ type Platform interface {
 	SetupRootDisk(ephemeralDiskPath string) (err error)
 	SetupSSH(publicKey []string, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
+	SetupIPv6(boshsettings.IPv6) error
 	SetupHostname(hostname string) (err error)
 	SetupNetworking(networks boshsettings.Networks) (err error)
 	SetupLogrotate(groupName, basePath, size string) (err error)

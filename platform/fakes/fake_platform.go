@@ -48,6 +48,9 @@ type FakePlatform struct {
 	UserPasswords         map[string]string
 	SetupHostnameHostname string
 
+	SetupIPv6Config boshsettings.IPv6
+	SetupIPv6Error  error
+
 	SaveDNSRecordsError      error
 	SaveDNSRecordsHostname   string
 	SaveDNSRecordsDNSRecords boshsettings.DNSRecords
@@ -274,6 +277,11 @@ func (p *FakePlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostna
 	p.SaveDNSRecordsDNSRecords = dnsRecords
 	p.SaveDNSRecordsHostname = hostname
 	return p.SaveDNSRecordsError
+}
+
+func (p *FakePlatform) SetupIPv6(config boshsettings.IPv6) error {
+	p.SetupIPv6Config = config
+	return p.SetupIPv6Error
 }
 
 func (p *FakePlatform) SetupHostname(hostname string) (err error) {
