@@ -1458,6 +1458,28 @@ Number  Start   End     Size    File system  Name             Flags
 			mounter = diskManager.FakeMounter
 		})
 
+		It("creates jobs directory in data directory", func() {
+			err := platform.SetupDataDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			sysLogStats := fs.GetFileTestStat("/fake-dir/data/jobs")
+			Expect(sysLogStats).ToNot(BeNil())
+			Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/jobs"}))
+		})
+
+		It("creates packages directory in data directory", func() {
+			err := platform.SetupDataDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			sysLogStats := fs.GetFileTestStat("/fake-dir/data/packages")
+			Expect(sysLogStats).ToNot(BeNil())
+			Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/packages"}))
+		})
+
 		Context("when sys/run is already mounted", func() {
 			BeforeEach(func() {
 				mounter.IsMountPointResult = true
@@ -1535,7 +1557,7 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(sysRunStats).ToNot(BeNil())
 				Expect(sysRunStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(sysRunStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/run"}))
+				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/run"}))
 			})
 
 			It("mounts tmpfs to sys/run", func() {

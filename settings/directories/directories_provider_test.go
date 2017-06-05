@@ -28,6 +28,7 @@ var _ = Describe("Provider", func() {
 		Entry("MonitJobsDir()", p.MonitJobsDir(), "/some/dir/monit/job"),
 		Entry("MonitDir()", p.MonitDir(), "/some/dir/monit"),
 		Entry("JobsDir()", p.JobsDir(), "/some/dir/jobs"),
+		Entry("DataJobsDir()", p.DataJobsDir(), "/some/dir/data/jobs"),
 		Entry("JobBinDir(jobName)", p.JobBinDir("myJob"), "/some/dir/jobs/myJob/bin"),
 		Entry("JobLogDir(jobName)", p.JobLogDir("myJob"), "/some/dir/data/sys/log/myJob"),
 		Entry("JobRunDir(jobName)", p.JobRunDir("myJob"), "/some/dir/data/sys/run/myJob"),

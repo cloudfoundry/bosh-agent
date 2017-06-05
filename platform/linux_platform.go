@@ -35,6 +35,8 @@ const (
 
 	logDirPermissions         = os.FileMode(0750)
 	runDirPermissions         = os.FileMode(0750)
+	jobsDirPermissions        = os.FileMode(0750)
+	packagesDirPermissions    = os.FileMode(0750)
 	userBaseDirPermissions    = os.FileMode(0755)
 	disksDirPermissions       = os.FileMode(0755)
 	userRootLogDirPermissions = os.FileMode(0775)
@@ -769,6 +771,28 @@ func (p linux) SetupDataDir() error {
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", logDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chown %s", logDir)
+	}
+
+	jobsDir := p.dirProvider.DataJobsDir()
+	err = p.fs.MkdirAll(jobsDir, jobsDirPermissions)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", jobsDir)
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", jobsDir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "chown %s", jobsDir)
+	}
+
+	packagesDir := p.dirProvider.PkgDir()
+	err = p.fs.MkdirAll(packagesDir, packagesDirPermissions)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", packagesDir)
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", packagesDir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "chown %s", packagesDir)
 	}
 
 	err = p.setupRunDir(sysDataDir)

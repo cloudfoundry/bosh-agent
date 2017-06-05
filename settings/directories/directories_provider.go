@@ -58,6 +58,10 @@ func (p Provider) JobsDir() string {
 	return filepath.Join(p.BaseDir(), "jobs")
 }
 
+func (p Provider) DataJobsDir() string {
+	return filepath.Join(p.DataDir(), "jobs")
+}
+
 func (p Provider) JobLogDir(jobName string) string {
 	return filepath.Join(p.DataDir(), "sys", "log", jobName)
 }
