@@ -278,6 +278,11 @@ func (p WindowsPlatform) SetupLogDir() error {
 }
 
 func (p WindowsPlatform) SetupBlobsDir() error {
+	blobsDirPath := p.dirProvider.BlobsDir()
+	err := p.fs.MkdirAll(blobsDirPath, blobsDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating blobs dir")
+	}
 	return nil
 }
 
