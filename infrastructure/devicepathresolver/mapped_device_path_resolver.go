@@ -1,24 +1,29 @@
 package devicepathresolver
 
 import (
+	"fmt"
+	"path"
 	"strings"
 	"time"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type mappedDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
+	logger          boshlog.Logger
 }
 
 func NewMappedDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	fs boshsys.FileSystem,
+	logger boshlog.Logger,
 ) DevicePathResolver {
-	return mappedDevicePathResolver{fs: fs, diskWaitTimeout: diskWaitTimeout}
+	return mappedDevicePathResolver{diskWaitTimeout, fs, logger}
 }
 
 func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
@@ -45,6 +50,11 @@ func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 }
 
 func (dpr mappedDevicePathResolver) findPossibleDevice(devicePath string) (string, bool) {
+	err := dpr.scanForSCSIDevices()
+	if err != nil {
+		dpr.logger.Debug("mappedDevicePathResolver", "Failed scanning for SCSI devices", err)
+	}
+
 	needsMapping := strings.HasPrefix(devicePath, "/dev/sd")
 
 	if needsMapping {
@@ -69,4 +79,34 @@ func (dpr mappedDevicePathResolver) findPossibleDevice(devicePath string) (strin
 	}
 
 	return "", false
+}
+
+func (dpr mappedDevicePathResolver) scanForSCSIDevices() error {
+	devicePaths, err := dpr.fs.Glob("/sys/bus/scsi/devices/*:0:0:0/block/*")
+	if err != nil {
+		return err
+	}
+
+	var hostID string
+
+	for _, rootDevicePath := range devicePaths {
+		if path.Base(rootDevicePath) == "sda" {
+			rootDevicePathSplits := strings.Split(rootDevicePath, "/")
+			if len(rootDevicePathSplits) > 5 {
+				scsiPath := rootDevicePathSplits[5]
+				scsiPathSplits := strings.Split(scsiPath, ":")
+				if len(scsiPathSplits) > 0 {
+					hostID = scsiPathSplits[0]
+				}
+			}
+		}
+	}
+
+	if len(hostID) == 0 {
+		return nil
+	}
+
+	scanPath := fmt.Sprintf("/sys/class/scsi_host/host%s/scan", hostID)
+
+	return dpr.fs.WriteFileString(scanPath, "- - -")
 }
