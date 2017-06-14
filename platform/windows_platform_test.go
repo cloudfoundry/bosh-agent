@@ -117,6 +117,29 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 	})
 
+	Describe("SetupBlobsDir", func() {
+		act := func() error {
+			return platform.SetupBlobsDir()
+		}
+
+		It("creates new temp dir", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			fileStats := fs.GetFileTestStat("/fake-dir/data/blobs")
+			Expect(fileStats).NotTo(BeNil())
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+		})
+
+		It("returns error if creating new temp dir errs", func() {
+			fs.MkdirAllError = errors.New("fake-mkdir-error")
+
+			err := act()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
+		})
+	})
+
 	Describe("SetupNetworking", func() {
 		It("delegates to the NetManager", func() {
 			networks := boshsettings.Networks{}

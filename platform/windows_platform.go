@@ -245,6 +245,18 @@ func (p WindowsPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSetti
 }
 
 func (p WindowsPlatform) SetupDataDir() error {
+	dataDir := p.dirProvider.DataDir()
+	sysDataDir := filepath.Join(dataDir, "sys")
+	logDir := filepath.Join(sysDataDir, "log")
+
+	if err := p.fs.MkdirAll(logDir, logDirPermissions); err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", logDir)
+	}
+
+	sysDir := filepath.Join(filepath.Dir(dataDir), "sys")
+	if err := p.fs.Symlink(sysDataDir, sysDir); err != nil {
+		return bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", sysDir, sysDataDir)
+	}
 	return nil
 }
 
