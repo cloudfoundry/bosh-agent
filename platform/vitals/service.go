@@ -32,6 +32,7 @@ func (s concreteService) Get() (vitals Vitals, err error) {
 		cpuStats  boshstats.CPUStats
 		memStats  boshstats.Usage
 		swapStats boshstats.Usage
+		vmStats   boshstats.VMStats
 		diskStats DiskVitals
 	)
 
@@ -65,6 +66,12 @@ func (s concreteService) Get() (vitals Vitals, err error) {
 		return
 	}
 
+	vmStats, err = s.statsCollector.GetVMStats()
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting VM Stats")
+		return
+	}
+
 	vitals = Vitals{
 		Load: createLoadVitals(loadStats),
 		CPU: CPUVitals{
@@ -72,9 +79,10 @@ func (s concreteService) Get() (vitals Vitals, err error) {
 			Sys:  cpuStats.SysPercent().FormatFractionOf100(1),
 			Wait: cpuStats.WaitPercent().FormatFractionOf100(1),
 		},
-		Mem:  createMemVitals(memStats),
-		Swap: createMemVitals(swapStats),
-		Disk: diskStats,
+		Mem:    createMemVitals(memStats),
+		Swap:   createMemVitals(swapStats),
+		Disk:   diskStats,
+		Uptime: UptimeVitals{Seconds: vmStats.Uptime.Seconds},
 	}
 	return
 }
