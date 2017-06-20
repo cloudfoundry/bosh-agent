@@ -50,7 +50,7 @@ func init() {
 			actualSupervisor, err := provider.Get("monit")
 			Expect(err).ToNot(HaveOccurred())
 
-			expectedSupervisor := NewMonitJobSupervisor(
+			monitSupervisor := NewMonitJobSupervisor(
 				platform.Fs,
 				platform.Runner,
 				client,
@@ -64,6 +64,14 @@ func init() {
 				},
 				timeService,
 			)
+
+			expectedSupervisor := NewWrapperJobSupervisor(
+				monitSupervisor,
+				platform.Fs,
+				dirProvider,
+				logger,
+			)
+
 			Expect(actualSupervisor).To(Equal(expectedSupervisor))
 		})
 

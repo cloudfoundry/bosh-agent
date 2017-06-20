@@ -161,3 +161,7 @@ func (d *dummyNatsJobSupervisor) statusHandler(req boshhandler.Request) boshhand
 		return nil
 	}
 }
+
+func (d *dummyNatsJobSupervisor) HealthRecorder(status string) {
+
+}
