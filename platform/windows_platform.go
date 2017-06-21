@@ -184,7 +184,7 @@ func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks) (err er
 }
 
 func (p WindowsPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, err error) {
-	return
+	return p.netManager.GetConfiguredNetworkInterfaces()
 }
 
 func (p WindowsPlatform) GetCertManager() (certManager boshcert.Manager) {

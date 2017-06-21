@@ -3,12 +3,15 @@ package net
 import (
 	"fmt"
 	gonet "net"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/pivotal-golang/clock"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -36,12 +39,6 @@ func (m macAddressDetector) MACAddresses() (map[string]string, error) {
 	return macs, nil
 }
 
-type NetworkInterfaces func() ([]gonet.Interface, error)
-
-func NewNetworkInterfaces() NetworkInterfaces {
-	return gonet.Interfaces
-}
-
 type WindowsNetManager struct {
 	runner                        boshsys.CmdRunner
 	interfaceConfigurationCreator InterfaceConfigurationCreator
@@ -49,6 +46,8 @@ type WindowsNetManager struct {
 	logTag                        string
 	logger                        boshlog.Logger
 	clock                         clock.Clock
+	fs                            boshsys.FileSystem
+	dirProvider                   boshdirs.Provider
 }
 
 func NewWindowsNetManager(
@@ -57,6 +56,8 @@ func NewWindowsNetManager(
 	macAddressDetector MACAddressDetector,
 	logger boshlog.Logger,
 	clock clock.Clock,
+	fs boshsys.FileSystem,
+	dirProvider boshdirs.Provider,
 ) Manager {
 	return WindowsNetManager{
 		runner: runner,
@@ -65,6 +66,8 @@ func NewWindowsNetManager(
 		logTag:                        "WindowsNetManager",
 		logger:                        logger,
 		clock:                         clock,
+		fs:                            fs,
+		dirProvider:                   dirProvider,
 	}
 }
 
@@ -90,8 +93,70 @@ netsh interface ip set address $connectionName static %s %s %s
 `
 )
 
+func (net WindowsNetManager) configuredInterfacesFile() string {
+	return filepath.Join(net.dirProvider.BoshDir(), "configured_interfaces.txt")
+}
+
+// GetConfiguredNetworkInterfaces returns all of the network interfaces if a
+// previous call to SetupNetworking succeeded as indicated by the presence of
+// a file ("configured_interfaces.txt").
+//
+// A file is used because there is no good way to determine if network
+// interfaces are configured on Windows and SetupNetworking may be called
+// during bootstrap so it is possible the agent will have restarted since
+// it the last call.
+//
+// We return all of the network interfaces as we configure DNS for all of the
+// network interfaces.  Apart from DNS, the returned network interfaces may
+// not have been configured.
+//
 func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
-	panic("Not implemented")
+	// TODO (CEV): This function is only used by the ensureMinimalNetworkSetup
+	// of HTTPMetadataService to determine if networks have been configured by
+	// asserting the length of the returned slice is not zero.  On Linux, this
+	// might be okay, but since this function is not accurate on Windows there
+	// is a danger that another function will treat its output as a canonical
+	// list of configured interfaces.  A better solution might be to change
+	// the Platform.GetConfiguredNetworkInterfaces interface to something that
+	// simply reports whether the interfaces have been configured and let each
+	// OS handle determine that their own way.
+
+	net.logger.Info(net.logTag, "Getting Configured Network Interfaces...")
+
+	path := net.configuredInterfacesFile()
+	if _, err := net.fs.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			net.logger.Info(net.logTag, "No network interfaces file")
+			return []string{}, nil
+		}
+		return nil, bosherr.WrapErrorf(err, "Statting dns configuration file: %s", path)
+	}
+
+	net.logger.Info(net.logTag, "Found network interfaces file")
+
+	ifs, err := gonet.Interfaces()
+	if err != nil {
+		return nil, bosherr.WrapErrorf(err, "Getting network interfaces: %s", err)
+	}
+	names := make([]string, 0, len(ifs))
+	for _, f := range ifs {
+		names = append(names, f.Name)
+	}
+	return names, nil
+}
+
+func (net WindowsNetManager) createConfiguredInterfacesFile() error {
+	net.logger.Info(net.logTag, "Creating Configured Network Interfaces file...")
+
+	path := net.configuredInterfacesFile()
+	if _, err := net.fs.Stat(path); os.IsNotExist(err) {
+		f, err := net.fs.OpenFile(path, os.O_CREATE, 0644)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Creating configured interfaces file: %s", err)
+		}
+		f.Close()
+	}
+	return nil
 }
 
 func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks) (
@@ -133,14 +198,19 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, err
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration")
 	}
-	err = net.setupInterfaces(staticConfigs)
-	if err != nil {
+
+	if err := net.setupInterfaces(staticConfigs); err != nil {
 		return err
 	}
 
-	dns := net.setupDNS(dnsServers)
+	if err := net.setupDNS(dnsServers); err != nil {
+		return err
+	}
+	if err := net.createConfiguredInterfacesFile(); err != nil {
+		return bosherr.WrapError(err, "Writing configured network interfaces")
+	}
 	net.clock.Sleep(5 * time.Second)
-	return dns
+	return nil
 }
 
 func (net WindowsNetManager) setupInterfaces(staticConfigs []StaticInterfaceConfiguration) error {
@@ -181,10 +251,14 @@ func (net WindowsNetManager) buildInterfaces(networks boshsettings.Networks) (
 }
 
 func (net WindowsNetManager) setupDNS(dnsServers []string) error {
+	net.logger.Info(net.logTag, "Setting up DNS...")
+
 	var content string
 	if len(dnsServers) > 0 {
+		net.logger.Info(net.logTag, "Setting DNS servers: %v", dnsServers)
 		content = fmt.Sprintf(SetDNSTemplate, strings.Join(dnsServers, `","`))
 	} else {
+		net.logger.Info(net.logTag, "Resetting DNS servers")
 		content = ResetDNSTemplate
 	}
 
