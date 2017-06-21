@@ -411,6 +411,17 @@ func SvcStateString(s svc.State) string {
 }
 
 func (w *windowsJobSupervisor) Processes() ([]Process, error) {
+	// NB (CEV): The process PID retrieved here is the PID of
+	// the service wrapper process (WinSW) not the PID of the
+	// underlying process.
+	//
+	// If we ever decide to populate the CPU or Memory fields
+	// of the returned Processes we must find and include the
+	// service's child processes - as they are what we are
+	// actually interested in, and unless the application is
+	// logging very heavily are what will be responsible for
+	// the majority of system usage.
+
 	stdout, _, _, err := w.cmdRunner.RunCommand("-Command", listAllJobsScript)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Listing windows job process")
