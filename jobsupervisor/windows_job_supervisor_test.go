@@ -42,7 +42,21 @@ const (
 	DefaultEventPort = 2825
 )
 
+var StartStopExe string
+
+var _ = BeforeSuite(func() {
+	var err error
+	StartStopExe, err = gexec.Build("testdata/StartStop/main.go")
+	Expect(err).ToNot(HaveOccurred())
+})
+
 func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
+	// create temp file - used by stop-start jobs
+	f, err := ioutil.TempFile("", "bosh-test-")
+	Expect(err).ToNot(HaveOccurred())
+	tmpFileName := f.Name()
+	f.Close()
+
 	m := map[string]WindowsProcessConfig{
 		"say-hello": WindowsProcessConfig{
 			Processes: []WindowsProcess{
@@ -102,6 +116,19 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 					Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
 					Executable: "powershell",
 					Args:       []string{"/C", "While($true) { Start-Process -NoNewWindow powershell.exe -ArgumentList 'Start-Sleep','50'; Start-Sleep 1 }"},
+				},
+			},
+		},
+		"stop-executable": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
+					Executable: StartStopExe,
+					Args:       []string{"start", tmpFileName},
+					Stop: &StopCommand{
+						Executable: StartStopExe,
+						Args:       []string{"stop", tmpFileName},
+					},
 				},
 			},
 		},
@@ -574,6 +601,23 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 		})
 
+		Describe("StopCommand", func() {
+			It("uses the stop executable to stop the process", func() {
+				conf, err := AddJob("stop-executable")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(jobSupervisor.Start()).To(Succeed())
+				Expect(jobSupervisor.Stop()).To(Succeed())
+
+				for _, proc := range conf.Processes {
+					Eventually(func() (string, error) {
+						st, err := GetServiceState(proc.Name)
+						return SvcStateString(st), err
+					}, DefaultTimeout, DefaultInterval).Should(Equal(SvcStateString(svc.Stopped)))
+				}
+			})
+		})
+
 		Describe("MonitorJobFailures", func() {
 			var cancelServer chan bool
 			var dirProvider boshdirs.Provider
@@ -828,6 +872,51 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				for key, value := range proc.Env {
 					Expect(value).To(Equal(srvcHash[key]))
 				}
+			})
+		})
+
+		Context("when stop arguments or executable are provided", func() {
+			var proc WindowsProcess
+			BeforeEach(func() {
+				proc = WindowsProcess{
+					Name:       "Name",
+					Executable: "Executable",
+					Args:       []string{"Start_1", "Start_2"},
+				}
+			})
+
+			It("uses 'startargument' instead of 'argment'", func() {
+				proc.Stop = &StopCommand{
+					Executable: "STOPPER",
+					Args:       []string{"Stop_1", "Stop_2"},
+				}
+				srvc := proc.ServiceWrapperConfig("LogPath", 0, DefaultMachineIP)
+				Expect(srvc.Arguments).To(HaveLen(0))
+				args := append([]string{proc.Executable}, proc.Args...)
+				Expect(srvc.StartArguments).To(Equal(args))
+				Expect(srvc.StopArguments).To(Equal(proc.Stop.Args))
+				Expect(srvc.StopExecutable).To(Equal(proc.Stop.Executable))
+			})
+
+			// FIXME (CEV & MH): This is temporary workaround until this is fixed
+			// in WinSW.
+			It("it only adds stop executable if stop args are supplied", func() {
+				proc.Stop = &StopCommand{
+					Executable: "STOPPER",
+				}
+				srvc := proc.ServiceWrapperConfig("LogPath", 0, DefaultMachineIP)
+				args := append([]string{proc.Executable}, proc.Args...)
+				Expect(srvc.Arguments).To(Equal(args))
+				Expect(srvc.StartArguments).To(HaveLen(0))
+				Expect(srvc.StopArguments).To(HaveLen(0))
+			})
+
+			It("uses the process executable when no stop executable is provided - not pipe.exe", func() {
+				proc.Stop = &StopCommand{
+					Args: []string{"Stop_1"},
+				}
+				srvc := proc.ServiceWrapperConfig("LogPath", 0, DefaultMachineIP)
+				Expect(srvc.StopExecutable).To(Equal(proc.Executable))
 			})
 		})
 	})

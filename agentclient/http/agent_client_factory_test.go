@@ -21,7 +21,7 @@ var _ = Describe("AgentClientFactory", func() {
 		agentClientFactory = http.NewAgentClientFactory(time.Second, logger)
 	})
 
-	Describe("NewSecureAgentClient", func() {
+	Describe("NewAgentClient", func() {
 		Context("with a valid CA", func() {
 			BeforeEach(func() {
 				caCert = `-----BEGIN CERTIFICATE-----
@@ -57,9 +57,9 @@ fvue6FeCS62q1lOmwKsNHi26szI5qY8b6Xj3cNjhDS5pIfg=
 			})
 
 			It("returns a valid agent client", func() {
-				agentClient, err := agentClientFactory.NewSecureAgentClient("director-id", "mbus-url", caCert)
+				agentClient, err := agentClientFactory.NewAgentClient("director-id", "mbus-url", caCert)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(agentClient).NotTo(BeNil())
+				Expect(agentClient).NotTo(BeNil()) // no accessible fields to check for insecure/secure
 			})
 		})
 
@@ -68,11 +68,10 @@ fvue6FeCS62q1lOmwKsNHi26szI5qY8b6Xj3cNjhDS5pIfg=
 				caCert = ""
 			})
 
-			It("returns an error", func() {
-				agentClient, err := agentClientFactory.NewSecureAgentClient("director-id", "mbus-url", caCert)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("CA cert required but not provided"))
-				Expect(agentClient).To(BeNil())
+			It("returns an insecure client", func() {
+				agentClient, err := agentClientFactory.NewAgentClient("director-id", "mbus-url", caCert)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(agentClient).NotTo(BeNil()) // no accessible fields to check for insecure/secure
 			})
 		})
 
@@ -82,7 +81,7 @@ fvue6FeCS62q1lOmwKsNHi26szI5qY8b6Xj3cNjhDS5pIfg=
 			})
 
 			It("returns an error", func() {
-				agentClient, err := agentClientFactory.NewSecureAgentClient("director-id", "mbus-url", caCert)
+				agentClient, err := agentClientFactory.NewAgentClient("director-id", "mbus-url", caCert)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Missing PEM block"))
 				Expect(agentClient).To(BeNil())

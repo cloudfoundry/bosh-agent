@@ -48,4 +48,5 @@ type JobSupervisor interface {
 	RemoveAllJobs() error
 
 	MonitorJobFailures(handler JobFailureHandler) error
+	HealthRecorder(status string)
 }
