@@ -33,8 +33,6 @@ func NewWrapperJobSupervisor(delegate JobSupervisor, fs system.FileSystem, dirPr
 	}
 }
 
-
-
 func (w *wrapperJobSupervisor) Reload() error {
 	return w.delegate.Reload()
 }
