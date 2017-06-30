@@ -157,9 +157,13 @@ func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
 }
 
 func (s Settings) GetMbusURL() string {
+	if len(s.Env.Bosh.Mbus.URLs) > 0 {
+		return s.Env.Bosh.Mbus.URLs[0]
+	}
 	if len(s.Env.Bosh.Mbus.URL) > 0 {
 		return s.Env.Bosh.Mbus.URL
 	}
+
 	return s.Mbus
 }
 
@@ -215,6 +219,7 @@ type BoshEnv struct {
 type MBus struct {
 	Cert CertKeyPair `json:"cert"`
 	URL  string      `json:"url"`
+	URLs []string    `json:"urls"`
 	CA   string      `json:"ca"`
 }
 
