@@ -761,59 +761,41 @@ var _ = Describe("Settings", func() {
 						Bosh: BoshEnv{
 							Mbus: MBus{
 								URLs: []string{"nats://nested:789"},
-								URL:  "nats://nested:123",
 							},
 						},
 					},
+					Mbus: "nats://top-level:123",
 				}
 
 				Expect(settings.GetMbusURL()).To(Equal("nats://nested:789"))
 			})
 		})
 
-		Context("Settings.Env.Bosh.Mbus.URLs is empty", func() {
-			It("should return Settings.Env.Bosh.Mbus.URL", func() {
-				settings = Settings{
-					Mbus: "nats://top-level:456",
-					Env: Env{
-						Bosh: BoshEnv{
-							Mbus: MBus{
-								URL:  "nats://nested:123",
-								URLs: []string{},
-							},
-						},
-					},
-				}
-
-				Expect(settings.GetMbusURL()).To(Equal("nats://nested:123"))
-			})
-		})
-
-		Context("Env.Bosh.Mbus.URL is populated", func() {
-			It("should return Env.Bosh.Mbus.URL", func() {
-				settings = Settings{
-					Mbus: "nats://top-level:456",
-					Env: Env{
-						Bosh: BoshEnv{
-							Mbus: MBus{
-								URL: "nats://nested:123",
-							},
-						},
-					},
-				}
-
-				Expect(settings.GetMbusURL()).To(Equal("nats://nested:123"))
-			})
-		})
-
-		Context("Settings.Env.Bosh.Mbus.URL is empty", func() {
+		Context("Settings.Env.Bosh.Mbus.URLs is nil", func() {
 			It("should return Settings.Mbus", func() {
 				settings = Settings{
 					Mbus: "nats://top-level:456",
 					Env: Env{
 						Bosh: BoshEnv{
 							Mbus: MBus{
-								URL: "",
+								URLs: nil,
+							},
+						},
+					},
+				}
+
+				Expect(settings.GetMbusURL()).To(Equal("nats://top-level:456"))
+			})
+		})
+
+		Context("Settings.Env.Bosh.Mbus.URLs is zero length", func() {
+			It("should return Settings.Mbus", func() {
+				settings = Settings{
+					Mbus: "nats://top-level:456",
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: []string{},
 							},
 						},
 					},

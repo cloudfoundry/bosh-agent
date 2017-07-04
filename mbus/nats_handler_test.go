@@ -335,8 +335,8 @@ XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
 -----END CERTIFICATE-----`
 				BeforeEach(func() {
 					settingsService.Settings.Env.Bosh.Mbus = boshsettings.MBus{
-						CA:  CA,
-						URL: "tls://fake-username:fake-password@127.0.0.1:1234",
+						CA:   CA,
+						URLs: []string{"tls://fake-username:fake-password@127.0.0.1:1234"},
 					}
 				})
 
