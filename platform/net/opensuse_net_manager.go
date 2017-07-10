@@ -56,6 +56,8 @@ func NewOpensuseNetManager(
 	}
 }
 
+func (net opensuseNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
+
 func (net opensuseNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 	nonVipNetworks := boshsettings.Networks{}
 	for networkName, networkSettings := range networks {
