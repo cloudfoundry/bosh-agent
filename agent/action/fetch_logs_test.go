@@ -42,8 +42,10 @@ var _ = Describe("FetchLogsAction", func() {
 		testLogs := func(logType string, filters []string, expectedFilters []string) {
 			copier.FilteredCopyToTempTempDir = "/fake-temp-dir"
 			compressor.CompressFilesInDirTarballPath = "logs_test.tar"
+			multidigestSha := boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"))
+			sha1 := multidigestSha.String()
 			blobstore.CreateStub = func(fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
-				return "my-blob-id", boshcrypto.MultipleDigest{}, nil
+				return "my-blob-id", multidigestSha, nil
 			}
 
 			logs, err := action.Run(logType, filters)
@@ -65,7 +67,7 @@ var _ = Describe("FetchLogsAction", func() {
 
 			Expect(compressor.CompressFilesInDirTarballPath).To(Equal(blobstore.CreateArgsForCall(0)))
 
-			boshassert.MatchesJSONString(GinkgoT(), logs, `{"blobstore_id":"my-blob-id"}`)
+			boshassert.MatchesJSONString(GinkgoT(), logs, `{"blobstore_id":"my-blob-id","sha1":"`+sha1+`"}`)
 		}
 
 		It("logs errs if given invalid log type", func() {
