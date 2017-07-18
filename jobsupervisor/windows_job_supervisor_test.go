@@ -42,17 +42,28 @@ const (
 	DefaultEventPort = 2825
 )
 
-var StartStopExe string
+var (
+	StartStopExe string
+	TempDir      string
+)
+
+var _ = AfterSuite(func() {
+	os.RemoveAll(TempDir)
+	gexec.CleanupBuildArtifacts()
+})
 
 var _ = BeforeSuite(func() {
 	var err error
+	TempDir, err = ioutil.TempDir("", "bosh-")
+	Expect(err).ToNot(HaveOccurred())
+
 	StartStopExe, err = gexec.Build("testdata/StartStop/main.go")
 	Expect(err).ToNot(HaveOccurred())
 })
 
 func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 	// create temp file - used by stop-start jobs
-	f, err := ioutil.TempFile("", "bosh-test-")
+	f, err := ioutil.TempFile(TempDir, "stopfile-")
 	Expect(err).ToNot(HaveOccurred())
 	tmpFileName := f.Name()
 	f.Close()
@@ -137,6 +148,104 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 	return conf, ok
 }
 
+func concurrentStopConfig() WindowsProcessConfig {
+	// Five jobs that print in a loop
+	const JobCount = 5
+
+	// Two wait jobs that use stop scripts to until the
+	// other jobs have stopped before stopping themselves
+	const WaitCount = 2
+
+	// Job config
+
+	const jobTemplate = `
+	While ($true) {
+		Write-Host "Hello %d"
+		Start-Sleep -Milliseconds 200
+	}`
+
+	var conf WindowsProcessConfig
+	for i := 0; i < JobCount; i++ {
+		p := WindowsProcess{
+			Name:       fmt.Sprintf("job-%d-%d", i, time.Now().UnixNano()),
+			Executable: "powershell",
+			Args:       []string{"-Command", fmt.Sprintf(jobTemplate, i)},
+		}
+		conf.Processes = append(conf.Processes, p)
+	}
+
+	// Wait config
+
+	const waitTemplate = `
+	$n=0
+	While (Test-Path %[1]s) {
+		if ($n++ -gt 60) {
+			Exit 1
+		}
+		Write-Host "File exists: %[1]s"
+		Start-Sleep -Seconds 1
+	}`
+
+	const stopTemplate = `
+	function CountRunning {
+		return (get-wmiobject win32_service -filter "description='vcap'" | Where { $_.State -eq "Running" }).Count
+	}
+	$Limit=60
+	while (CountRunning -gt %[1]d) {
+		if ($Limit-- -eq 0) {
+			Remove-Item -Path %[2]s -Force
+			Exit 1 # Error
+		}
+		Start-Sleep -Seconds 1
+	}
+	Remove-Item -Path %[2]s -Force;`
+
+	createStopFile := func() string {
+		f, err := ioutil.TempFile(TempDir, "stopfile-")
+		Expect(err).ToNot(HaveOccurred())
+		path := f.Name()
+		f.Close()
+		return path
+	}
+
+	writeTemplate := func(name, template string, args ...interface{}) string {
+		// Create a temp directory so that we may specify the file
+		// name and extension - TempFile doesn't let you do this.
+		dirname, err := ioutil.TempDir(TempDir, "")
+		Expect(err).ToNot(HaveOccurred())
+		path := filepath.Join(dirname, name)
+
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		Expect(err).ToNot(HaveOccurred())
+		defer f.Close()
+
+		// Write template to file
+		_, err = fmt.Fprintf(f, template, args...)
+		Expect(err).ToNot(HaveOccurred())
+
+		return path
+	}
+
+	for i := 0; i < WaitCount; i++ {
+		stopFile := createStopFile()
+		waitpath := writeTemplate("wait.ps1", waitTemplate, stopFile)
+		stoppath := writeTemplate("stop.ps1", stopTemplate, WaitCount, stopFile)
+
+		wait := WindowsProcess{
+			Name:       fmt.Sprintf("wait-%d-%d", i, time.Now().UnixNano()),
+			Executable: "powershell",
+			Args:       []string{"-File", waitpath},
+			Stop: &StopCommand{
+				Executable: "powershell",
+				Args:       []string{"-File", stoppath},
+			},
+		}
+		conf.Processes = append(conf.Processes, wait)
+	}
+
+	return conf
+}
+
 func buildPipeExe() error {
 	pathToPipeCLI, err := gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
 	if err != nil {
@@ -181,7 +290,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			fs = boshsys.NewOsFileSystem(logger)
 
 			var err error
-			basePath, err = ioutil.TempDir("", "")
+			basePath, err = ioutil.TempDir(TempDir, "")
 			Expect(err).ToNot(HaveOccurred())
 			fs.MkdirAll(basePath, 0755)
 
@@ -646,6 +755,15 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Consistently(jobSupervisor.Status, wait).Should(Equal("stopped"))
 			})
 
+			It("stops services concurrently", func() {
+				conf := concurrentStopConfig()
+				confPath, err := WriteJobConfig(conf)
+				Expect(err).To(Succeed())
+				Expect(jobSupervisor.AddJob("ConcurrentWait", 0, confPath)).To(Succeed())
+
+				Expect(jobSupervisor.Start()).To(Succeed())
+				Expect(jobSupervisor.Stop()).To(Succeed())
+			})
 		})
 
 		Describe("StopCommand", func() {
