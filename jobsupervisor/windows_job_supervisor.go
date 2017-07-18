@@ -11,16 +11,15 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
 	"golang.org/x/sys/windows/svc"
-	"golang.org/x/sys/windows/svc/mgr"
 
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monitor"
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -38,48 +37,15 @@ const (
 	serviceWrapperConfigFileName    = "job-service-wrapper.xml"
 	serviceWrapperAppConfigFileName = "job-service-wrapper.exe.config"
 	serviceWrapperEventJSONFileName = "job-service-wrapper.wrapper.log.json"
-	serviceWrapperAppConfigBody     = `
+
+	serviceWrapperAppConfigBody = `
 <configuration>
   <startup>
     <supportedRuntime version="v4.0" />
   </startup>
 </configuration>
 `
-
-	startJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Start-Service $_.Name }
-`
-	stopJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Stop-Service $_.Name }
-`
-	listAllJobsScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name, $_.ProcessId }
-`
-
-	listAllServiceNames = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.Name }
-`
-
-	deleteAllJobsScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.delete() }
-`
-	getStatusScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ $_.State }
-`
-	unmonitorJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Disabled" }
-`
-	manualStartJobScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'") | ForEach{ Set-Service $_.Name -startuptype "Manual" }
-`
-
-	waitForDeleteAllScript = `
-(get-wmiobject win32_service -filter "description='` + serviceDescription + `'").Length
-`
-	disableAgentAutoStart = `Set-Service bosh-agent -startuptype "Manual"`
 )
-
-// get-wmiobject win32_service -filter "description='vcap'"
 
 type serviceLogMode struct {
 	Mode          string `xml:"mode,attr"`
@@ -207,6 +173,7 @@ type windowsJobSupervisor struct {
 
 	// state *state.State
 	state supervisorState
+	mgr   *winsvc.Mgr
 }
 
 func (w *windowsJobSupervisor) stateSet(s supervisorState) {
@@ -215,6 +182,10 @@ func (w *windowsJobSupervisor) stateSet(s supervisorState) {
 
 func (w *windowsJobSupervisor) stateIs(s supervisorState) bool {
 	return atomic.LoadInt32((*int32)(&w.state)) == int32(s)
+}
+
+func matchService(description string) bool {
+	return description == serviceDescription
 }
 
 func NewWindowsJobSupervisor(
@@ -243,6 +214,12 @@ func NewWindowsJobSupervisor(
 	}
 	s.monitor = m
 	s.stateSet(stateEnabled)
+
+	mgr, err := winsvc.Connect(matchService)
+	if err != nil {
+		s.logger.Error(s.logTag, "Initializing winsvc.Mgr: %s", err)
+	}
+	s.mgr = mgr
 	return s
 }
 
@@ -257,19 +234,13 @@ func (w *windowsJobSupervisor) Start() error {
 	//
 	// Do this here, as we know the agent has successfully connected
 	// with the director and is healthy.
-	w.cmdRunner.RunCommand("-Command", disableAgentAutoStart)
+	w.mgr.DisableAgentAutoStart()
 
-	_, _, _, err := w.cmdRunner.RunCommand("-Command", manualStartJobScript)
-	if err != nil {
-		return bosherr.WrapError(err, "Starting windows job process")
-	}
-	_, _, _, err = w.cmdRunner.RunCommand("-Command", startJobScript)
-	if err != nil {
+	if err := w.mgr.Start(); err != nil {
 		return bosherr.WrapError(err, "Starting windows job process")
 	}
 
-	err = w.fs.RemoveAll(w.stoppedFilePath())
-	if err != nil {
+	if err := w.fs.RemoveAll(w.stoppedFilePath()); err != nil {
 		return bosherr.WrapError(err, "Removing stopped file")
 	}
 
@@ -278,13 +249,7 @@ func (w *windowsJobSupervisor) Start() error {
 }
 
 func (w *windowsJobSupervisor) Stop() error {
-
-	_, _, _, err := w.cmdRunner.RunCommand("-Command", unmonitorJobScript)
-	if err != nil {
-		return bosherr.WrapError(err, "Disabling services")
-	}
-	_, _, _, err = w.cmdRunner.RunCommand("-Command", stopJobScript)
-	if err != nil {
+	if err := w.mgr.Stop(); err != nil {
 		return bosherr.WrapError(err, "Stopping services")
 	}
 	if err := w.fs.WriteFileString(w.stoppedFilePath(), ""); err != nil {
@@ -294,78 +259,13 @@ func (w *windowsJobSupervisor) Stop() error {
 }
 
 func (w *windowsJobSupervisor) StopAndWait() error {
-	const Timeout = time.Second * 3 // match
-
-	stdout, _, _, err := w.cmdRunner.RunCommand("-Command", listAllServiceNames)
-	if err != nil {
-		return bosherr.WrapError(err, "Disabling services")
-	}
-	names := strings.Split(strings.TrimSpace(stdout), "\r\n")
-	m, err := mgr.Connect()
-	if err != nil {
-		return err // TODO: Wrap
-	}
-	defer m.Disconnect()
-	var svcs []*mgr.Service
-	for _, name := range names {
-		s, err := m.OpenService(name)
-		if err != nil {
-			continue
-		}
-		svcs = append(svcs, s)
-	}
-	defer func() {
-		for _, s := range svcs {
-			s.Close()
-		}
-	}()
-
-	doneCh := make(chan struct{})
-	stopCh := make(chan struct{})
-	defer close(stopCh)
-
-	go func() {
-		tick := time.NewTicker(time.Millisecond * 100)
-		for {
-			select {
-			case <-tick.C:
-				stopped := true
-				for _, s := range svcs {
-					st, err := s.Query()
-					if err != nil || st.State != svc.Stopped {
-						stopped = false
-						break
-					}
-				}
-				if stopped {
-					tick.Stop()
-					close(doneCh)
-					return
-				}
-			case <-stopCh:
-				return
-			}
-		}
-	}()
-
-	err = w.Stop()
-	if err != nil {
-		return err
-	}
-
-	select {
-	case <-doneCh:
-		// Ok
-	case <-time.After(Timeout):
-		return fmt.Errorf("StopAndWait: timed after: %s", Timeout)
-	}
-	return nil
+	// Stop already does this for us
+	return w.Stop()
 }
 
 func (w *windowsJobSupervisor) Unmonitor() error {
 	w.stateSet(stateDisabled)
-	_, _, _, err := w.cmdRunner.RunCommand("-Command", unmonitorJobScript)
-	return err
+	return w.mgr.Unmonitor()
 }
 
 func (w *windowsJobSupervisor) Status() (status string) {
@@ -373,26 +273,19 @@ func (w *windowsJobSupervisor) Status() (status string) {
 		return "stopped"
 	}
 
-	stdout, _, _, err := w.cmdRunner.RunCommand("-Command", getStatusScript)
+	sts, err := w.mgr.Status()
 	if err != nil {
+		fmt.Println("STATUS - ERROR:", err)
 		return "failing"
 	}
-
-	stdout = strings.TrimSpace(stdout)
-	if len(stdout) == 0 {
-		w.logger.Debug(w.logTag, "No statuses reported for job processes")
+	if len(sts) == 0 {
 		return "running"
 	}
-
-	statuses := strings.Split(stdout, "\r\n")
-	w.logger.Debug(w.logTag, "Got statuses %#v", statuses)
-
-	for _, status := range statuses {
-		if status != "Running" {
+	for _, status := range sts {
+		if status.State != svc.Running {
 			return "failing"
 		}
 	}
-
 	return "running"
 }
 
@@ -422,44 +315,14 @@ func (w *windowsJobSupervisor) Processes() ([]Process, error) {
 	// logging very heavily are what will be responsible for
 	// the majority of system usage.
 
-	stdout, _, _, err := w.cmdRunner.RunCommand("-Command", listAllJobsScript)
+	sts, err := w.mgr.Status()
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Listing windows job process")
+		return nil, bosherr.WrapError(err, "Getting windows job process status")
 	}
-
-	m, err := mgr.Connect()
-	if err != nil {
-		return nil, err
+	procs := make([]Process, len(sts))
+	for i, st := range sts {
+		procs[i] = Process{Name: st.Name, State: SvcStateString(st.State)}
 	}
-	defer m.Disconnect()
-
-	var procs []Process
-	lines := strings.Split(stdout, "\n")
-
-	for i := 0; i < len(lines)-1; i += 2 {
-		name := strings.TrimSpace(lines[i])
-		if name == "" {
-			continue
-		}
-		_ = lines[i+1] // pid string
-
-		service, err := m.OpenService(name)
-		if err != nil {
-			return nil, bosherr.WrapErrorf(err, "Opening windows service: %q", name)
-		}
-		defer service.Close()
-		st, err := service.Query()
-		if err != nil {
-			return nil, bosherr.WrapErrorf(err, "Querying windows service: %q", name)
-		}
-
-		p := Process{
-			Name:  name,
-			State: SvcStateString(st.State),
-		}
-		procs = append(procs, p)
-	}
-
 	return procs, nil
 }
 
@@ -533,41 +396,7 @@ func (w *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 }
 
 func (w *windowsJobSupervisor) RemoveAllJobs() error {
-
-	const MaxRetries = 100
-	const RetryInterval = time.Millisecond * 5
-
-	_, _, _, err := w.cmdRunner.RunCommand("-Command", deleteAllJobsScript)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Removing Windows job supervisor services")
-	}
-
-	i := 0
-	start := time.Now()
-	for {
-		stdout, _, _, err := w.cmdRunner.RunCommand("-Command", waitForDeleteAllScript)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Checking if Windows job supervisor services exist")
-		}
-		if strings.TrimSpace(stdout) == "0" {
-			break
-		}
-
-		i++
-		if i == MaxRetries {
-			return bosherr.Errorf("removing Windows job supervisor services after %d attempts",
-				MaxRetries)
-		}
-		w.logger.Debug(w.logTag, "Waiting for services to be deleted: attempt (%d) time (%s)",
-			i, time.Since(start))
-
-		time.Sleep(RetryInterval)
-	}
-
-	w.logger.Debug(w.logTag, "Removed Windows job supervisor services: attempts (%d) time (%s)",
-		i, time.Since(start))
-
-	return nil
+	return w.mgr.Delete()
 }
 
 type windowsServiceEvent struct {

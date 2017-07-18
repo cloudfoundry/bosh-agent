@@ -231,6 +231,100 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			return conf, jobSupervisor.AddJob(jobName, 0, confPath)
 		}
 
+		// AddFlappingJob adds and starts flapping job jobName and waits for it
+		// to fail at least once.
+		AddFlappingJob := func(jobName string) (*WindowsProcessConfig, error) {
+			conf, err := AddJob(jobName)
+			if err != nil {
+				return nil, err
+			}
+			if err := jobSupervisor.Start(); err != nil {
+				return nil, err
+			}
+			m, err := mgr.Connect()
+			if err != nil {
+				return nil, err
+			}
+			defer m.Disconnect()
+
+			var svcs []*mgr.Service
+			defer func() {
+				for _, s := range svcs {
+					s.Close()
+				}
+			}()
+
+			for _, proc := range conf.Processes {
+				s, err := m.OpenService(proc.Name)
+				if err != nil {
+					return nil, err
+				}
+				svcs = append(svcs, s)
+			}
+
+			const Interval = time.Millisecond * 100
+			Eventually(func() (string, error) {
+				var state string
+				for _, s := range svcs {
+					st, err := s.Query()
+					if err != nil {
+						return "", err
+					}
+					state = SvcStateString(st.State)
+					if st.State == svc.Stopped {
+						break
+					}
+				}
+				return state, nil
+			}, DefaultTimeout, Interval).Should(Equal(SvcStateString(svc.Stopped)))
+
+			return &conf, nil
+		}
+
+		GetServiceState := func(serviceName string) (svc.State, error) {
+			m, err := mgr.Connect()
+			if err != nil {
+				return 0, err
+			}
+			defer m.Disconnect()
+			s, err := m.OpenService(serviceName)
+			if err != nil {
+				return 0, err
+			}
+			defer s.Close()
+			st, err := s.Query()
+			if err != nil {
+				return 0, err
+			}
+			return st.State, nil
+		}
+
+		GetServiceInfo := func(svcName string) (svc.Status, mgr.Config, error) {
+			m, err := mgr.Connect()
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+			defer m.Disconnect()
+
+			s, err := m.OpenService(svcName)
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+			defer s.Close()
+
+			status, err := s.Query()
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+
+			conf, err := s.Config()
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+
+			return status, conf, nil
+		}
+
 		AfterEach(func() {
 			Expect(jobSupervisor.Stop()).To(Succeed())
 			Expect(jobSupervisor.RemoveAllJobs()).To(Succeed())
@@ -296,10 +390,11 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				for _, proc := range conf.Processes {
-					stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", proc.Name)
+					status, conf, err := GetServiceInfo(proc.Name)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(stdout).To(ContainSubstring(proc.Name))
-					Expect(stdout).To(ContainSubstring("Stopped"))
+
+					Expect(conf.Description).To(Equal("vcap"))
+					Expect(status.State).To(Equal(svc.Stopped))
 				}
 			})
 
@@ -327,10 +422,9 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(jobSupervisor.Start()).To(Succeed())
 
 				for _, proc := range conf.Processes {
-					stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", proc.Name)
+					state, err := GetServiceState(proc.Name)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(stdout).To(ContainSubstring(proc.Name))
-					Expect(stdout).To(ContainSubstring("Running"))
+					Expect(state).To(Equal(svc.Running))
 				}
 			})
 
@@ -439,33 +533,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(jobSupervisor.Unmonitor()).To(Succeed())
 
 				for _, proc := range conf.Processes {
-					stdout, _, _, err := runner.RunCommand(
-						"/C", "get-wmiobject", "win32_service", "-filter",
-						fmt.Sprintf(`"name='%s'"`, proc.Name), "-property", "StartMode",
-					)
+					_, conf, err := GetServiceInfo(proc.Name)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(stdout).To(ContainSubstring("Disabled"))
+					Expect(uint(conf.StartType)).To(Equal(uint(mgr.StartDisabled)))
 				}
 			})
 		})
-
-		GetServiceState := func(serviceName string) (svc.State, error) {
-			m, err := mgr.Connect()
-			if err != nil {
-				return 0, err
-			}
-			defer m.Disconnect()
-			s, err := m.OpenService(serviceName)
-			if err != nil {
-				return 0, err
-			}
-			defer s.Close()
-			st, err := s.Query()
-			if err != nil {
-				return 0, err
-			}
-			return st.State, nil
-		}
 
 		Describe("StopAndWait", func() {
 			It("waits for the services to be stopped", func() {
@@ -483,18 +556,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			It("stops flapping service", func() {
-				conf, err := AddJob("flapping")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				// Wait for a service to be flapping
-				Expect(len(conf.Processes)).To(BeNumerically(">=", 1))
-				proc := conf.Processes[0]
-				Eventually(func() (string, error) {
-					st, err := GetServiceState(proc.Name)
-					return SvcStateString(st), err
-				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
-
+				conf, err := AddFlappingJob("flapping")
+				Expect(err).To(Succeed())
 				Expect(jobSupervisor.StopAndWait()).To(Succeed())
 
 				Consistently(func() bool {
@@ -551,19 +614,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			It("stops flapping services", func() {
-				conf, err := AddJob("flapping")
+				conf, err := AddFlappingJob("flapping")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				Expect(len(conf.Processes)).To(BeNumerically(">=", 1))
-				proc := conf.Processes[0]
-				Eventually(func() (string, error) {
-					st, err := GetServiceState(proc.Name)
-					return SvcStateString(st), err
-				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
 
 				Expect(jobSupervisor.Stop()).To(Succeed())
 
+				proc := conf.Processes[0]
 				Eventually(func() (string, error) {
 					st, err := GetServiceState(proc.Name)
 					return SvcStateString(st), err
@@ -572,25 +628,16 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Consistently(func() (string, error) {
 					st, err := GetServiceState(proc.Name)
 					return SvcStateString(st), err
-				}, time.Second*6, time.Millisecond*10).Should(Equal(SvcStateString(svc.Stopped)))
+				}, time.Second*6, time.Millisecond*100).Should(Equal(SvcStateString(svc.Stopped)))
 			})
 
 			It("stops flapping services and gives a status of stopped", func() {
-				conf, err := AddJob("flapping")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				procs, err := jobSupervisor.Processes()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(procs)).To(Equal(len(conf.Processes)))
-
 				const wait = time.Second * 6
 				const freq = time.Millisecond * 100
 				const loops = int(time.Second * 10 / freq)
 
-				for i := 0; i < loops && jobSupervisor.Status() != "failing"; i++ {
-					time.Sleep(freq)
-				}
+				_, err := AddFlappingJob("flapping")
+				Expect(err).ToNot(HaveOccurred())
 
 				Expect(jobSupervisor.Stop()).To(Succeed())
 				for i := 0; i < loops && jobSupervisor.Status() != "stopped"; i++ {
@@ -671,17 +718,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				}
 				go jobSupervisor.MonitorJobFailures(failureHandler)
 
-				conf, err := AddJob("flapping")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				Expect(len(conf.Processes)).To(BeNumerically(">=", 1))
-				proc := conf.Processes[0]
-				Eventually(func() (string, error) {
-					st, err := GetServiceState(proc.Name)
-					return SvcStateString(st), err
-				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
-
+				_, err := AddFlappingJob("flapping")
+				Expect(err).To(Succeed())
 				Eventually(alertReceived, time.Second*6).Should(Receive())
 				Expect(handledAlert.ID).To(ContainSubstring("flapping"))
 				Expect(handledAlert.Event).To(Equal("pid failed"))
