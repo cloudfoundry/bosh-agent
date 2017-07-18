@@ -2,6 +2,7 @@ package action
 
 import (
 	"errors"
+	"fmt"
 	"path"
 	"time"
 
@@ -58,18 +59,43 @@ type ErrandResult struct {
 	ExitStatus int    `json:"exit_code"`
 }
 
-func (a RunErrandAction) Run() (ErrandResult, error) {
+func (a RunErrandAction) Run(errandName ...string) (ErrandResult, error) {
 	currentSpec, err := a.specService.Get()
 	if err != nil {
 		return ErrandResult{}, bosherr.WrapError(err, "Getting current spec")
 	}
 
-	if len(currentSpec.JobSpec.Template) == 0 {
-		return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
+	var templateName string
+
+	if len(errandName) == 0 {
+		if len(currentSpec.JobSpec.Template) == 0 {
+			return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
+		}
+
+		templateName = currentSpec.JobSpec.Template
+	} else {
+		if len(currentSpec.JobSpec.JobTemplateSpecs) == 0 {
+			return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
+		}
+
+		foundErrand := false
+		for _, v := range currentSpec.JobSpec.JobTemplateSpecs {
+			if v.Name == errandName[0] {
+				foundErrand = true
+			}
+		}
+
+		if !foundErrand {
+			msg := fmt.Sprintf("Could not find errand %s", errandName)
+			a.logger.Error(runErrandActionLogTag, msg)
+			return ErrandResult{}, bosherr.Error(msg)
+		}
+
+		templateName = errandName[0]
 	}
 
 	command := boshsys.Command{
-		Name: path.Join(a.jobsDir, currentSpec.JobSpec.Template, "bin", "run"),
+		Name: path.Join(a.jobsDir, templateName, "bin", "run"),
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},
