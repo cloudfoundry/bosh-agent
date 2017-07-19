@@ -3,7 +3,6 @@
 package winsvc
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"syscall"
@@ -228,8 +227,8 @@ type TransitionError struct {
 func (e *TransitionError) Error() string {
 	const format = "winsvc: %s: Service %s: State: %s Checkpoint: %d " +
 		"WaitHint: %s TimeElapsed: %s"
-	return fmt.Sprintf(format, e.Msg, e.Name, e.Status.State, e.Status.CheckPoint,
-		e.WaitHint, e.Duration)
+	return fmt.Sprintf(format, e.Msg, e.Name, svcStateString(e.Status.State),
+		e.Status.CheckPoint, e.WaitHint, e.Duration)
 }
 
 // waitPending, waits for service s to transition out of pendingState, which
@@ -258,7 +257,7 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 	checkpoint := start
 	oldCheckpoint := status.CheckPoint
 
-	for i := time.Duration(0); status.State == pendingState; i++ {
+	for status.State == pendingState {
 		waitHint, interval := calculateWaitHint(status)
 		time.Sleep(interval) // sleep before rechecking status
 
@@ -459,58 +458,75 @@ func (m *Mgr) Stop() (first error) {
 	return m.iter(m.doStop)
 }
 
-// Delete, deletes all of the services monitored by Mgr concurrently and waits
-// for the Service Control Manager to remove the services.
-func (m *Mgr) Delete() error {
+func (m *Mgr) doDelete(s *mgr.Service) error {
 	const Timeout = time.Second * 60
 
-	err := m.iter(func(s *mgr.Service) error {
-		if err := s.Delete(); err != nil {
-			return fmt.Errorf("winsvc: deleting service (%s): %s", s.Name, err)
-		}
-		return nil
-	})
+	st, err := querySvc(s)
 	if err != nil {
 		return err
 	}
 
-	// Wait for services to be deleted - be careful to hold service handles
-	// for the shortest duration possible - as this will prevent the service
-	// from being deleted.
+	// Stop the service if it is running.  Services that are not stopped
+	// can be marked for deletion, but are not actually deleted by the
+	// SCM until they stop or the computer restarts.
+	if st.State != svc.Stopped {
+		if err := m.doStop(s); err != nil {
+			return err
+		}
+	}
 
-	// Initial sleep interval, start fast and increase by 1s each iteration
-	// to give the SCM time to remove the services.
+	// Delete the service and immediately close the handle to it
+	if err := s.Delete(); err != nil {
+		return fmt.Errorf("winsvc: deleting service (%s): %s", s.Name, err)
+	}
+	name := s.Name
+	s.Close() // Close the service otherwise it won't be deleted
+
+	// Wait for the service to be deleted - be careful to hold service
+	// handle for the shortest duration possible - as this will prevent
+	// it from being deleted.
+
+	// Initial sleep interval, start fast and increase by 1s each
+	// iteration to give the SCM time to remove the services.
 	interval := time.Second
+
+	// Sleep briefy before the first check, ideally this is long enough
+	// for the service to be deleted on the first check.
+	time.Sleep(time.Millisecond * 100)
 
 	start := time.Now()
 	for {
-		svcs, err := m.services()
+		s, err := m.m.OpenService(name)
 		if err != nil {
-			return err
-		}
-		if len(svcs) == 0 {
 			break
 		}
-		// Immediately close handles
-		for _, s := range svcs {
-			s.Close()
-		}
+		s.Close()
 		if time.Since(start) > Timeout {
-			return errors.New("winsvc: timeout waiting for services to be deleted")
+			return fmt.Errorf("winsvc: timeout waiting to delete service: %s", name)
 		}
 		time.Sleep(interval)
 		if interval < time.Second*10 {
 			interval += time.Second
 		}
 	}
+
 	return nil
 }
 
+// Delete deletes the services monitored by Mgr concurrently and waits for them
+// to be removed by the Service Control Manager.  Running services are stopped
+// before being deleted.
+func (m *Mgr) Delete() error {
+	return m.iter(m.doDelete)
+}
+
+// A ServiceStatus is the status of a service.
 type ServiceStatus struct {
 	Name  string
 	State svc.State
 }
 
+// StateString returns the string representation of the service state.
 func (s *ServiceStatus) StateString() string {
 	return svcStateString(s.State)
 }
