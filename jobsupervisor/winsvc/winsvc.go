@@ -3,6 +3,7 @@
 package winsvc
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"syscall"
@@ -137,16 +138,14 @@ func svcStartTypeString(startType uint32) string {
 func (m *Mgr) setStartType(s *mgr.Service, startType uint32) error {
 	conf, err := s.Config()
 	if err != nil {
-		return fmt.Errorf("winsvc: querying config for service (%s): %s",
-			s.Name, err)
+		return &ServiceError{"querying config for service", s.Name, err}
 	}
 	if conf.StartType == startType {
 		return nil
 	}
 	conf.StartType = startType
 	if err := s.UpdateConfig(conf); err != nil {
-		return fmt.Errorf("winsvc: setting start type of service (%s) to (%s): %s",
-			s.Name, svcStartTypeString(startType), err)
+		return &ServiceError{"updating config for service", s.Name, err}
 	}
 	return nil
 }
@@ -156,7 +155,7 @@ func (m *Mgr) setStartType(s *mgr.Service, startType uint32) error {
 func querySvc(s *mgr.Service) (svc.Status, error) {
 	status, err := s.Query()
 	if err != nil {
-		err = fmt.Errorf("winsvc: querying status of service (%s): %s", s.Name, err)
+		err = &ServiceError{"querying status of service", s.Name, err}
 	}
 	return status, err
 }
@@ -214,23 +213,6 @@ func calculateWaitHint(status svc.Status) (waitHint, interval time.Duration) {
 	return
 }
 
-// A TransitionError is the error returned if a service failed to transition
-// out of a pending state.
-type TransitionError struct {
-	Msg      string
-	Name     string
-	Status   svc.Status
-	WaitHint time.Duration
-	Duration time.Duration
-}
-
-func (e *TransitionError) Error() string {
-	const format = "winsvc: %s: Service %s: State: %s Checkpoint: %d " +
-		"WaitHint: %s TimeElapsed: %s"
-	return fmt.Sprintf(format, e.Msg, e.Name, svcStateString(e.Status.State),
-		e.Status.CheckPoint, e.WaitHint, e.Duration)
-}
-
 // waitPending, waits for service s to transition out of pendingState, which
 // must be either StartPending or StopPending.  A two minute time limit is
 // enforced for the state transition.
@@ -244,7 +226,7 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 
 	if pendingState != svc.StartPending && pendingState != svc.StopPending {
 		// This is a programming error and really should be a panic.
-		return svc.Status{}, fmt.Errorf("winsvc: invalid pending state: %s",
+		return svc.Status{}, errors.New("winsvc: invalid pending state: " +
 			svcStateString(pendingState))
 	}
 
@@ -309,10 +291,9 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 	return status, nil
 }
 
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383(v=vs.85).aspx
-const ERROR_SERVICE_ALREADY_RUNNING = syscall.Errno(0x420)
-
 func (m *Mgr) doStart(s *mgr.Service) error {
+	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383(v=vs.85).aspx
+	const ERROR_SERVICE_ALREADY_RUNNING = syscall.Errno(0x420)
 
 	// Set start type to manual to enable starting the service.
 	if err := m.setStartType(s, mgr.StartManual); err != nil {
@@ -348,7 +329,7 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	if err := s.Start(); err != nil {
 		// Ignore error if the service is running
 		if err != ERROR_SERVICE_ALREADY_RUNNING {
-			return fmt.Errorf("winsvc: starting service (%s): %s", s.Name, err)
+			return &ServiceError{"starting service", s.Name, err}
 		}
 	}
 
@@ -410,7 +391,7 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 
 	status, err = s.Control(svc.Stop)
 	if err != nil {
-		return fmt.Errorf("winsvc: stopping service (%s): %s", s.Name, err)
+		return &ServiceError{"stopping service", s.Name, err}
 	}
 
 	// Check if the returned status is empty
@@ -442,9 +423,8 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 		if status.State == svc.Stopped {
 			break
 		}
-		if time.Since(start) > Timeout {
-			return fmt.Errorf("winsvc: stop service: timeout waiting for service to stop: %s",
-				s.Name)
+		if d := time.Since(start); d > Timeout {
+			return &ServiceError{"stop service", s.Name, &TimeoutError{Timeout, d}}
 		}
 	}
 
@@ -477,7 +457,7 @@ func (m *Mgr) doDelete(s *mgr.Service) error {
 
 	// Delete the service and immediately close the handle to it
 	if err := s.Delete(); err != nil {
-		return fmt.Errorf("winsvc: deleting service (%s): %s", s.Name, err)
+		return &ServiceError{"deleting service", s.Name, err}
 	}
 	name := s.Name
 	s.Close() // Close the service otherwise it won't be deleted
@@ -501,8 +481,8 @@ func (m *Mgr) doDelete(s *mgr.Service) error {
 			break
 		}
 		s.Close()
-		if time.Since(start) > Timeout {
-			return fmt.Errorf("winsvc: timeout waiting to delete service: %s", name)
+		if d := time.Since(start); d > Timeout {
+			return &ServiceError{"deleting service", name, &TimeoutError{Timeout, d}}
 		}
 		time.Sleep(interval)
 		if interval < time.Second*10 {
@@ -575,7 +555,7 @@ func (m *Mgr) DisableAgentAutoStart() error {
 	const name = "bosh-agent"
 	s, err := m.m.OpenService("bosh-agent")
 	if err != nil {
-		return fmt.Errorf("winsvc: opening service (%s): %s", name, err)
+		return &ServiceError{"opening service", name, err}
 	}
 	defer s.Close()
 	return m.setStartType(s, mgr.StartDisabled)
