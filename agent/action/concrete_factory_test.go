@@ -140,6 +140,12 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(NewPing()))
 	})
 
+	It("info", func() {
+		action, err := factory.Create("info")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewInfo()))
+	})
+
 	It("prepare_network_change", func() {
 		action, err := factory.Create("prepare_network_change")
 		Expect(err).ToNot(HaveOccurred())
