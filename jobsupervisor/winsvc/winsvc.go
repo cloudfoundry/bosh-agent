@@ -347,7 +347,7 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	return nil
 }
 
-// Start, starts all of the service monitored by Mgr.
+// Start starts all of the service monitored by Mgr.
 func (m *Mgr) Start() (first error) {
 	return m.iter(m.doStart)
 }
@@ -431,7 +431,7 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 	return nil
 }
 
-// Stop, stops all of the services monitored by Mgr concurrently and waits
+// Stop stops all of the services monitored by Mgr concurrently and waits
 // for the stop to complete. Stopping services with dependent services is
 // not supported.
 func (m *Mgr) Stop() (first error) {
@@ -511,7 +511,7 @@ func (s *ServiceStatus) StateString() string {
 	return svcStateString(s.State)
 }
 
-// Status, returns the name and status for all of the services monitored.
+// Status returns the name and status for all of the services monitored.
 func (m *Mgr) Status() ([]ServiceStatus, error) {
 	svcs, err := m.services()
 	if err != nil {
@@ -543,14 +543,14 @@ func closeServices(svcs []*mgr.Service) (first error) {
 	return
 }
 
-// Unmonitor, disable start for all the Mgr m's services.
+// Unmonitor disable start for all the Mgr m's services.
 func (m *Mgr) Unmonitor() error {
 	return m.iter(func(s *mgr.Service) error {
 		return m.setStartType(s, mgr.StartDisabled)
 	})
 }
 
-// DisableAgentAutoStart, sets the start type of the bosh-agent to disabled.
+// DisableAgentAutoStart sets the start type of the bosh-agent to disabled.
 func (m *Mgr) DisableAgentAutoStart() error {
 	const name = "bosh-agent"
 	s, err := m.m.OpenService("bosh-agent")

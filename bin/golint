@@ -18,7 +18,8 @@ errors=$(
     | grep -v 'underscore in package name'                  \
     | grep -v 'bootstrapper/spec/'                          \
     | grep -v 'platform/cert/fakes/fake_manager.go'         \
-    | grep -v 'jobsupervisor/pipe/syslog/syslog.go'
+    | grep -v 'jobsupervisor/pipe/syslog/syslog.go'         \
+    | grep -v 'jobsupervisor/winsvc'
 )
 set -e
 
