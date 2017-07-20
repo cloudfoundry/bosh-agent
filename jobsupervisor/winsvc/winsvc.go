@@ -18,6 +18,7 @@ import (
 // Mgr is used to manage Windows services.
 type Mgr struct {
 	m     *mgr.Mgr
+	mon   *monitor
 	match func(description string) bool // WARN: DEV ONLY
 }
 
@@ -31,11 +32,12 @@ func Connect(match func(description string) bool) (*Mgr, error) {
 	if match == nil {
 		match = func(_ string) bool { return true }
 	}
-	return &Mgr{m: m, match: match}, nil
+	return &Mgr{m: m, mon: newMonitor(time.Second * 2), match: match}, nil
 }
 
 // Disconnect closes connection to the service control manager m.
 func (m *Mgr) Disconnect() error {
+
 	return m.m.Disconnect()
 }
 
@@ -219,7 +221,7 @@ func calculateWaitHint(status svc.Status) (waitHint, interval time.Duration) {
 //
 // See calculateWaitHint for an explanation of how the service's WaitHint is
 // used to check progress.
-func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
+func (m *Mgr) waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 	// Arbitrary timeout to prevent misbehaving
 	// services from triggering an infinite loop.
 	const Timeout = time.Minute * 2
@@ -238,6 +240,7 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 	start := time.Now()
 	checkpoint := start
 	oldCheckpoint := status.CheckPoint
+	highCPU := 0
 
 	for status.State == pendingState {
 		waitHint, interval := calculateWaitHint(status)
@@ -246,6 +249,9 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 		status, err = querySvc(s)
 		if err != nil {
 			return status, err
+		}
+		if status.State != pendingState {
+			break
 		}
 
 		switch {
@@ -256,14 +262,23 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 
 		// No progress made within the wait hint.
 		case time.Since(checkpoint) > waitHint:
-			err := &TransitionError{
-				Msg:      "no progress waiting for state transition",
-				Name:     s.Name,
-				Status:   status,
-				WaitHint: waitHint,
-				Duration: time.Since(start),
+			// Handle high CPU situations.  This is incredibly crude,
+			// but it works!
+			switch {
+			case m.mon.CPU() > 90:
+				highCPU = 10
+			case highCPU > 0:
+				highCPU--
+			default:
+				err := &TransitionError{
+					Msg:      "no progress waiting for state transition",
+					Name:     s.Name,
+					Status:   status,
+					WaitHint: waitHint,
+					Duration: time.Since(start),
+				}
+				return status, err
 			}
-			return status, err
 
 		// Exceeded our timeout
 		case time.Since(start) > Timeout:
@@ -309,13 +324,13 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	switch status.State {
 	case svc.StopPending:
 		// If a stop is pending, wait for it
-		status, err = waitPending(s, svc.StopPending)
+		status, err = m.waitPending(s, svc.StopPending)
 		if err != nil {
 			return err
 		}
 	case svc.StartPending:
 		// If a start is pending, wait for it
-		status, err = waitPending(s, svc.StartPending)
+		status, err = m.waitPending(s, svc.StartPending)
 		if err != nil {
 			return err
 		}
@@ -334,7 +349,7 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	}
 
 	// Wait for the service to start
-	status, err = waitPending(s, svc.StartPending)
+	status, err = m.waitPending(s, svc.StartPending)
 	if err != nil {
 		return err
 	}
@@ -370,13 +385,13 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 	switch status.State {
 	case svc.StopPending:
 		// If a stop is pending, wait for it
-		status, err = waitPending(s, svc.StopPending)
+		status, err = m.waitPending(s, svc.StopPending)
 		if err != nil {
 			return err
 		}
 	case svc.StartPending:
 		// If a start is pending, wait for it
-		status, err = waitPending(s, svc.StartPending)
+		status, err = m.waitPending(s, svc.StartPending)
 		if err != nil {
 			return err
 		}
@@ -404,7 +419,7 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 
 	// Wait for service to stop
 	if status.State == svc.StopPending {
-		status, err = waitPending(s, svc.StopPending)
+		status, err = m.waitPending(s, svc.StopPending)
 		if err != nil {
 			return err
 		}
