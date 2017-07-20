@@ -110,12 +110,12 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 			{
 				Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
 				Executable: HelloExe,
-				Args:       []string{"-message", "Flapping-2", "-loop", "100ms", "-die", "1s", "-exit", "2"},
+				Args:       []string{"-message", "Flapping-2", "-loop", "100ms", "-die", "1500ms", "-exit", "2"},
 			},
 			{
 				Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
 				Executable: HelloExe,
-				Args:       []string{"-message", "Flapping-3", "-loop", "100ms", "-die", "1s", "-exit", "2"},
+				Args:       []string{"-message", "Flapping-3", "-loop", "100ms", "-die", "2s", "-exit", "2"},
 			},
 		}
 	case "looping":
