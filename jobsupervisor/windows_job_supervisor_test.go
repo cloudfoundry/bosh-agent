@@ -61,13 +61,13 @@ var _ = BeforeSuite(func() {
 	TempDir, err = ioutil.TempDir("", "bosh-")
 	Expect(err).ToNot(HaveOccurred())
 
-	StartStopExe, err = gexec.Build("testdata/StartStop/main.go")
+	StartStopExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/StartStop")
 	Expect(err).ToNot(HaveOccurred())
 
-	HelloExe, err = gexec.Build("testdata/Hello/main.go")
+	HelloExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/Hello")
 	Expect(err).ToNot(HaveOccurred())
 
-	WaitSvcExe, err = gexec.Build("testdata/WaitSvc/main.go")
+	WaitSvcExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/WaitSvc")
 	Expect(err).ToNot(HaveOccurred())
 })
 
