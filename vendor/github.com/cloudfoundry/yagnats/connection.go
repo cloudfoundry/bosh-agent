@@ -64,7 +64,7 @@ func NewConnection(addr, user, pass string) *Connection {
 	}
 }
 
-func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool) *Connection {
+func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool, clientCert *tls.Certificate) *Connection {
 	connection := NewConnection(addr, user, pass)
 	connection.dial = func(network, address string) (net.Conn, error) {
 		conn, err := net.DialTimeout(network, address, 5*time.Second)
@@ -83,10 +83,17 @@ func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool) *Connect
 			return nil, err
 		}
 
-		conn = tls.Client(conn, &tls.Config{
+		config := tls.Config{
 			RootCAs:    certPool,
 			ServerName: hostname,
-		})
+		}
+
+		// When client certificate is provided, we are expecting mutual TLS.
+		if clientCert != nil {
+			config.Certificates = []tls.Certificate{*clientCert}
+		}
+
+		conn = tls.Client(conn, &config)
 
 		tlsConn := conn.(*tls.Conn)
 		err = tlsConn.Handshake()
@@ -101,7 +108,8 @@ type ConnectionInfo struct {
 	Password string
 	Dial     func(network, address string) (net.Conn, error)
 
-	CertPool *x509.CertPool
+	CertPool   *x509.CertPool
+	ClientCert *tls.Certificate
 }
 
 func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
@@ -109,7 +117,7 @@ func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
 	if c.CertPool == nil {
 		conn = NewConnection(c.Addr, c.Username, c.Password)
 	} else {
-		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool)
+		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool, c.ClientCert)
 	}
 
 	if c.Dial != nil {
@@ -261,7 +269,7 @@ func (c *Connection) receivePackets() {
 
 		case *InfoPacket:
 			c.Logger().Debug("connection.packet.info-received")
-		// noop
+			// noop
 
 		case *MsgPacket:
 			c.Logger().Debugd(
