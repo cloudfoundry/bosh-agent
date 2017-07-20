@@ -157,11 +157,11 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 
 func concurrentStopConfig() WindowsProcessConfig {
 	// Five jobs that print in a loop
-	const JobCount = 75
+	const JobCount = 5
 
 	// Two wait jobs that use stop scripts to until the
 	// other jobs have stopped before stopping themselves
-	const WaitCount = 5
+	const WaitCount = 2
 
 	// Job config
 
@@ -717,7 +717,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Consistently(jobSupervisor.Status, wait).Should(Equal("stopped"))
 			})
 
-			FIt("stops services concurrently", func() {
+			It("stops services concurrently", func() {
 				conf := concurrentStopConfig()
 				confPath, err := WriteJobConfig(conf)
 				Expect(err).To(Succeed())
