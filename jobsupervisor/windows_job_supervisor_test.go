@@ -5,6 +5,7 @@ package jobsupervisor_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -13,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +46,8 @@ const (
 
 var (
 	StartStopExe string
+	HelloExe     string
+	WaitSvcExe   string
 	TempDir      string
 )
 
@@ -59,146 +63,119 @@ var _ = BeforeSuite(func() {
 
 	StartStopExe, err = gexec.Build("testdata/StartStop/main.go")
 	Expect(err).ToNot(HaveOccurred())
+
+	HelloExe, err = gexec.Build("testdata/Hello/main.go")
+	Expect(err).ToNot(HaveOccurred())
+
+	WaitSvcExe, err = gexec.Build("testdata/WaitSvc/main.go")
+	Expect(err).ToNot(HaveOccurred())
 })
 
 func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
-	// create temp file - used by stop-start jobs
-	f, err := ioutil.TempFile(TempDir, "stopfile-")
-	Expect(err).ToNot(HaveOccurred())
-	tmpFileName := f.Name()
-	f.Close()
-
-	m := map[string]WindowsProcessConfig{
-		"say-hello": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello 1\"; Start-Sleep 10"},
-				},
-				{
-					Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello 2\"; Start-Sleep 10"},
+	var procs []WindowsProcess
+	switch jobName {
+	case "say-hello":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Hello-1"},
+			},
+			{
+				Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Hello-2"},
+			},
+		}
+	case "say-hello-syslog":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Hello"},
+				Env: map[string]string{
+					"__PIPE_SYSLOG_HOST":      "localhost",
+					"__PIPE_SYSLOG_PORT":      "10202",
+					"__PIPE_SYSLOG_TRANSPORT": "udp",
 				},
 			},
-		},
-		"say-hello-syslog": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello\"; Start-Sleep 10"},
-					Env: map[string]string{
-						"__PIPE_SYSLOG_HOST":      "localhost",
-						"__PIPE_SYSLOG_PORT":      "10202",
-						"__PIPE_SYSLOG_TRANSPORT": "udp",
-					},
-				},
+		}
+	case "flapping":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("flapping-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Flapping-1", "-loop", "100ms", "-die", "1s", "-exit", "2"},
 			},
-		},
-		"flapping": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("flapping-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Flapping-1\"; Start-Sleep 1; exit 2"},
-				},
-				{
-					Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Flapping-2\"; Start-Sleep 1; exit 2"},
-				},
-				{
-					Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Flapping-3\"; Start-Sleep 1; exit 2"},
-				},
+			{
+				Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Flapping-2", "-loop", "100ms", "-die", "1s", "-exit", "2"},
 			},
-		},
-		"looping": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("looping-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "While($true) { Write-Host \"Looping\"; Start-Sleep 1; }"},
-				},
-				{
-					Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "While($true) { Start-Process -NoNewWindow powershell.exe -ArgumentList 'Start-Sleep','50'; Start-Sleep 1 }"},
-				},
+			{
+				Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Flapping-3", "-loop", "100ms", "-die", "1s", "-exit", "2"},
 			},
-		},
-		"stop-executable": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
+		}
+	case "looping":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("looping-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Looping"},
+			},
+			{
+				Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Looping-Subprocess-Creator", "-subproc"},
+			},
+		}
+	case "stop-executable":
+		// create temp file - used by stop-start jobs
+		f, err := ioutil.TempFile(TempDir, "stopfile-")
+		Expect(err).ToNot(HaveOccurred())
+		tmpFileName := f.Name()
+		f.Close()
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
+				Executable: StartStopExe,
+				Args:       []string{"start", tmpFileName},
+				Stop: &StopCommand{
 					Executable: StartStopExe,
-					Args:       []string{"start", tmpFileName},
-					Stop: &StopCommand{
-						Executable: StartStopExe,
-						Args:       []string{"stop", tmpFileName},
-					},
+					Args:       []string{"stop", tmpFileName},
 				},
 			},
-		},
+		}
+	default:
+		return WindowsProcessConfig{}, false
 	}
-	conf, ok := m[jobName]
-	return conf, ok
+
+	return WindowsProcessConfig{Processes: procs}, true
 }
 
 func concurrentStopConfig() WindowsProcessConfig {
 	// Five jobs that print in a loop
-	const JobCount = 5
+	const JobCount = 75
 
 	// Two wait jobs that use stop scripts to until the
 	// other jobs have stopped before stopping themselves
-	const WaitCount = 2
+	const WaitCount = 5
 
 	// Job config
-
-	const jobTemplate = `
-	While ($true) {
-		Write-Host "Hello %d"
-		Start-Sleep -Milliseconds 200
-	}`
 
 	var conf WindowsProcessConfig
 	for i := 0; i < JobCount; i++ {
 		p := WindowsProcess{
 			Name:       fmt.Sprintf("job-%d-%d", i, time.Now().UnixNano()),
-			Executable: "powershell",
-			Args:       []string{"-Command", fmt.Sprintf(jobTemplate, i)},
+			Executable: HelloExe,
+			Args:       []string{"-message", fmt.Sprintf("Job-%d", i)},
 		}
 		conf.Processes = append(conf.Processes, p)
 	}
 
 	// Wait config
-
-	const waitTemplate = `
-	$n=0
-	While (Test-Path %[1]s) {
-		if ($n++ -gt 60) {
-			Exit 1
-		}
-		Write-Host "File exists: %[1]s"
-		Start-Sleep -Seconds 1
-	}`
-
-	const stopTemplate = `
-	function CountRunning {
-		return (get-wmiobject win32_service -filter "description='vcap'" | Where { $_.State -eq "Running" }).Count
-	}
-	$Limit=60
-	while (CountRunning -gt %[1]d) {
-		if ($Limit-- -eq 0) {
-			Remove-Item -Path %[2]s -Force
-			Exit 1 # Error
-		}
-		Start-Sleep -Seconds 1
-	}
-	Remove-Item -Path %[2]s -Force;`
 
 	createStopFile := func() string {
 		f, err := ioutil.TempFile(TempDir, "stopfile-")
@@ -208,36 +185,15 @@ func concurrentStopConfig() WindowsProcessConfig {
 		return path
 	}
 
-	writeTemplate := func(name, template string, args ...interface{}) string {
-		// Create a temp directory so that we may specify the file
-		// name and extension - TempFile doesn't let you do this.
-		dirname, err := ioutil.TempDir(TempDir, "")
-		Expect(err).ToNot(HaveOccurred())
-		path := filepath.Join(dirname, name)
-
-		f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
-		Expect(err).ToNot(HaveOccurred())
-		defer f.Close()
-
-		// Write template to file
-		_, err = fmt.Fprintf(f, template, args...)
-		Expect(err).ToNot(HaveOccurred())
-
-		return path
-	}
-
 	for i := 0; i < WaitCount; i++ {
 		stopFile := createStopFile()
-		waitpath := writeTemplate("wait.ps1", waitTemplate, stopFile)
-		stoppath := writeTemplate("stop.ps1", stopTemplate, WaitCount, stopFile)
-
 		wait := WindowsProcess{
 			Name:       fmt.Sprintf("wait-%d-%d", i, time.Now().UnixNano()),
-			Executable: "powershell",
-			Args:       []string{"-File", waitpath},
+			Executable: WaitSvcExe,
+			Args:       []string{"wait", stopFile},
 			Stop: &StopCommand{
-				Executable: "powershell",
-				Args:       []string{"-File", stoppath},
+				Executable: WaitSvcExe,
+				Args:       []string{"-count", strconv.Itoa(WaitCount), "stop", stopFile},
 			},
 		}
 		conf.Processes = append(conf.Processes, wait)
@@ -371,21 +327,27 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				svcs = append(svcs, s)
 			}
 
-			const Interval = time.Millisecond * 100
-			Eventually(func() (string, error) {
-				var state string
-				for _, s := range svcs {
-					st, err := s.Query()
-					if err != nil {
-						return "", err
+			timeout := time.After(time.Second * 10)
+			tick := time.NewTicker(time.Millisecond * 50)
+			defer tick.Stop()
+
+		OuterLoop:
+			for {
+				select {
+				case <-tick.C:
+					for _, s := range svcs {
+						st, err := s.Query()
+						if err != nil {
+							return nil, err
+						}
+						if st.State == svc.Stopped || st.State == svc.StopPending {
+							break OuterLoop
+						}
 					}
-					state = SvcStateString(st.State)
-					if st.State == svc.Stopped {
-						break
-					}
+				case <-timeout:
+					return nil, errors.New("AddFlappingJob: timed out waiting for job to fail")
 				}
-				return state, nil
-			}, DefaultTimeout, Interval).Should(Equal(SvcStateString(svc.Stopped)))
+			}
 
 			return &conf, nil
 		}
@@ -544,7 +506,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					readLogFile := func() (string, error) {
 						return fs.ReadFileString(path.Join(logDir, "say-hello", proc.Name, "job-service-wrapper.out.log"))
 					}
-					Eventually(readLogFile, DefaultTimeout, DefaultInterval).Should(ContainSubstring(fmt.Sprintf("Hello %d", i+1)))
+					Eventually(readLogFile, DefaultTimeout, DefaultInterval).Should(ContainSubstring(fmt.Sprintf("Hello-%d", i+1)))
 				}
 			})
 
@@ -755,13 +717,18 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Consistently(jobSupervisor.Status, wait).Should(Equal("stopped"))
 			})
 
-			It("stops services concurrently", func() {
+			FIt("stops services concurrently", func() {
 				conf := concurrentStopConfig()
 				confPath, err := WriteJobConfig(conf)
 				Expect(err).To(Succeed())
 				Expect(jobSupervisor.AddJob("ConcurrentWait", 0, confPath)).To(Succeed())
 
+				defer jobSupervisor.RemoveAllJobs()
 				Expect(jobSupervisor.Start()).To(Succeed())
+
+				// WARN WARN WARN
+				time.Sleep(time.Second * 10)
+
 				Expect(jobSupervisor.Stop()).To(Succeed())
 			})
 		})
@@ -800,7 +767,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			AfterEach(func() {
-				cancelServer <- true
+				close(cancelServer)
 			})
 
 			doJobFailureRequest := func(payload string, port int) error {
@@ -828,7 +795,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			It("sends alerts for a flapping service", func() {
 
 				var handledAlert boshalert.MonitAlert
-				alertReceived := make(chan (bool), 1)
+				alertReceived := make(chan bool, 1)
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
 					handledAlert = alert
 					alertReceived <- true
@@ -1077,3 +1044,92 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		})
 	})
 })
+
+/*
+func XXX_testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
+	// create temp file - used by stop-start jobs
+	f, err := ioutil.TempFile(TempDir, "stopfile-")
+	Expect(err).ToNot(HaveOccurred())
+	tmpFileName := f.Name()
+	f.Close()
+
+	m := map[string]WindowsProcessConfig{
+		"say-hello": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Hello-1" & timeout /t 10 /nobreak > NUL`},
+				},
+				{
+					Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Hello-2" & timeout /t 10 /nobreak > NUL`},
+				},
+			},
+		},
+		"say-hello-syslog": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Hello" & timeout /t 10 /nobreak > NUL`},
+					Env: map[string]string{
+						"__PIPE_SYSLOG_HOST":      "localhost",
+						"__PIPE_SYSLOG_PORT":      "10202",
+						"__PIPE_SYSLOG_TRANSPORT": "udp",
+					},
+				},
+			},
+		},
+		"flapping": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("flapping-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & echo "Flapping-1" & timeout /t 2 /nobreak > NUL & EXIT /B 2`},
+				},
+				{
+					Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & echo "Flapping-2" & timeout /t 2 /nobreak > NUL & EXIT /B 2`},
+				},
+				{
+					Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & echo "Flapping-3" & timeout /t 2 /nobreak > NUL & EXIT /B 2`},
+				},
+			},
+		},
+		"looping": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("looping-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Looping" & timeout /t 1 /nobreak > NUL`},
+				},
+				{
+					Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
+					Executable: "powershell.exe",
+					Args:       []string{"/C", "While($true) { Start-Process -NoNewWindow powershell.exe -ArgumentList 'Start-Sleep','50'; Start-Sleep 1 }"},
+				},
+			},
+		},
+		"stop-executable": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
+					Executable: StartStopExe,
+					Args:       []string{"start", tmpFileName},
+					Stop: &StopCommand{
+						Executable: StartStopExe,
+						Args:       []string{"stop", tmpFileName},
+					},
+				},
+			},
+		},
+	}
+	conf, ok := m[jobName]
+	return conf, ok
+}
+*/
