@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -384,10 +386,16 @@ func (w *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 			return bosherr.WrapErrorf(err, "Copying service wrapper in job directory '%s'", processDir)
 		}
 
-		cmdToRun := filepath.Join(processDir, serviceWrapperExeFileName)
+		// The bosh-utils/system CmdRunner executes commands via PowerShell.
+		// It should be avoided whenever we have an .EXE that we can execute
+		// directly - as we do here.
+		//
+		exePath := filepath.Join(processDir, serviceWrapperExeFileName)
+		cmd := exec.Command(exePath, "install")
 
-		_, _, _, err = w.cmdRunner.RunCommand(cmdToRun, "install")
-		if err != nil {
+		// Match the logging behavior of bosh-utils/system CmdRunner
+		w.logger.Debug(w.logTag, "Running command: %s", strings.Join(cmd.Args, " "))
+		if err := cmd.Run(); err != nil {
 			return bosherr.WrapErrorf(err, "Creating service '%s'", process.Name)
 		}
 	}
