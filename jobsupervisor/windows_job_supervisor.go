@@ -305,9 +305,11 @@ func SvcStateString(s svc.State) string {
 }
 
 func (w *windowsJobSupervisor) Processes() ([]Process, error) {
-	// NB (CEV): The process PID retrieved here is the PID of
-	// the service wrapper process (WinSW) not the PID of the
-	// underlying process.
+	// NB (CEV): If we want to get the process PID, you can
+	// get the pid of the service via SERVICE_STATUS_PROCESS,
+	// but this will be the pid of the service wrapper process
+	// (WinSW) not the pid of the underlying processes: pipe,
+	// and the process it's running, which is the 'real' job.
 	//
 	// If we ever decide to populate the CPU or Memory fields
 	// of the returned Processes we must find and include the
