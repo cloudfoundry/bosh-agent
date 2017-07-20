@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"golang.org/x/sys/windows/svc"
@@ -12,6 +13,19 @@ import (
 )
 
 const Timeout = time.Minute * 2
+
+var (
+	SvcCount    int
+	Description string
+	Filename    string
+)
+
+func init() {
+	flag.IntVar(&SvcCount, "count", 1, "Wait until this many services that match "+
+		"the description are left before exiting")
+
+	flag.StringVar(&Description, "description", "vcap_test", "Service description")
+}
 
 func DeleteServices(m *mgr.Mgr) (err error) {
 	if m == nil {
@@ -31,7 +45,7 @@ func DeleteServices(m *mgr.Mgr) (err error) {
 			continue
 		}
 		c, err := s.Config()
-		if err == nil && c.Description == "vcap" {
+		if err == nil && c.Description == Description {
 			s.Delete()
 			st, err := s.Query()
 			if err != nil {
@@ -58,7 +72,7 @@ func ServiceNames(m *mgr.Mgr) ([]string, error) {
 			continue
 		}
 		c, err := s.Config()
-		if err == nil && c.Description == "vcap" {
+		if err == nil && c.Description == Description {
 			names = append(names, name)
 		}
 		s.Close()
@@ -66,7 +80,7 @@ func ServiceNames(m *mgr.Mgr) ([]string, error) {
 	return names, nil
 }
 
-func StopScript(filename string, interval time.Duration) error {
+func StopScript(interval time.Duration) error {
 	m, err := mgr.Connect()
 	if err != nil {
 		return err
@@ -98,11 +112,11 @@ func StopScript(filename string, interval time.Duration) error {
 	return nil
 }
 
-func Wait(filename string, interval time.Duration) error {
+func Wait(interval time.Duration) error {
 	start := time.Now()
 	for {
-		fmt.Printf("Waiting on file: %s\n", filename)
-		if _, err := os.Stat(filename); err != nil {
+		fmt.Printf("Waiting on file: %s\n", Filename)
+		if _, err := os.Stat(Filename); err != nil {
 			return nil
 		}
 		time.Sleep(interval)
@@ -113,41 +127,49 @@ func Wait(filename string, interval time.Duration) error {
 	return nil
 }
 
-var (
-	Mode     string
-	StopFile string
-	SvcCount int
-)
-
-func init() {
-	// flag.StringVar(&Mode, "mode", "", "Mode")
-	// flag.StringVar(&StopFile, "stop", "", "Stop")
-	flag.IntVar(&SvcCount, "count", 1, "Count")
+func Usage() {
+	fmt.Fprintf(os.Stderr, "%s USAGE: [FLAGS] MODE STOPFILE\n", filepath.Base(os.Args[0]))
+	flag.PrintDefaults()
+	os.Exit(1)
 }
 
 func main() {
 	flag.Parse()
+
 	if len(flag.Args()) != 2 {
-		fmt.Fprintln(os.Stderr, "USAGE: MODE STOPFILE [FLAGS]")
-		os.Exit(1)
+		Usage()
 	}
 	mode := flag.Arg(0)
-	name := flag.Arg(1)
+	Filename = flag.Arg(1)
 
+	if mode == "stop" {
+		if SvcCount < 1 {
+			fmt.Fprintln(os.Stderr, "Invalid 'count' argument:", SvcCount)
+			Usage()
+		}
+		if Description == "" {
+			fmt.Fprintln(os.Stderr, "Invalid 'description' argument:", Description)
+			Usage()
+		}
+	}
+
+	fmt.Println("Mode:", mode)
+	fmt.Println("Filename:", Filename)
+	fmt.Println("Description:", Description)
 	fmt.Println("SvcCount:", SvcCount)
 
 	switch mode {
 	case "wait":
-		if err := Wait(name, time.Millisecond*100); err != nil {
+		if err := Wait(time.Millisecond * 100); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(2)
 		}
 	case "stop":
-		if err := os.Remove(name); err != nil {
+		if err := os.Remove(Filename); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(2)
 		}
-		if err := StopScript(name, time.Millisecond*500); err != nil {
+		if err := StopScript(time.Millisecond * 500); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(2)
 		}

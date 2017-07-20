@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -49,14 +50,31 @@ var (
 	HelloExe     string
 	WaitSvcExe   string
 	TempDir      string
+
+	ServiceDescription = GetServiceDescription()
 )
 
 var _ = AfterSuite(func() {
 	os.RemoveAll(TempDir)
 	gexec.CleanupBuildArtifacts()
+
+	match := func(s string) bool {
+		return s == ServiceDescription
+	}
+	m, err := winsvc.Connect(match)
+	Expect(err).To(Succeed())
+	defer m.Disconnect()
+
+	Expect(m.Delete()).To(Succeed())
 })
 
 var _ = BeforeSuite(func() {
+	// Make sure we don't use 'vcap' as the service description,
+	// otherwise we may destroy BOSH deployed Concourse workers.
+	//
+	// This is set in windows_job_supervisor_export_test.go
+	Expect(ServiceDescription).ToNot(Equal("vcap"))
+
 	var err error
 	TempDir, err = ioutil.TempDir("", "bosh-")
 	Expect(err).ToNot(HaveOccurred())
@@ -193,7 +211,11 @@ func concurrentStopConfig() WindowsProcessConfig {
 			Args:       []string{"wait", stopFile},
 			Stop: &StopCommand{
 				Executable: WaitSvcExe,
-				Args:       []string{"-count", strconv.Itoa(WaitCount), "stop", stopFile},
+				Args: []string{
+					"-count", strconv.Itoa(WaitCount),
+					"-description", ServiceDescription,
+					"stop", stopFile,
+				},
 			},
 		}
 		conf.Processes = append(conf.Processes, wait)
@@ -464,7 +486,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					status, conf, err := GetServiceInfo(proc.Name)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(conf.Description).To(Equal("vcap"))
+					Expect(conf.Description).To(Equal(ServiceDescription))
 					Expect(status.State).To(Equal(svc.Stopped))
 				}
 			})

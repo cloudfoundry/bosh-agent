@@ -31,10 +31,9 @@ import (
 )
 
 var pipeExePath = "C:\\var\\vcap\\bosh\\bin\\pipe.exe"
+var serviceDescription = "vcap"
 
 const (
-	serviceDescription = "vcap"
-
 	serviceWrapperExeFileName       = "job-service-wrapper.exe"
 	serviceWrapperConfigFileName    = "job-service-wrapper.xml"
 	serviceWrapperAppConfigFileName = "job-service-wrapper.exe.config"
