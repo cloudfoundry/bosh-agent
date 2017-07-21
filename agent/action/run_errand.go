@@ -2,7 +2,6 @@ package action
 
 import (
 	"errors"
-	"fmt"
 	"path"
 	"time"
 
@@ -74,10 +73,6 @@ func (a RunErrandAction) Run(errandName ...string) (ErrandResult, error) {
 
 		templateName = currentSpec.JobSpec.Template
 	} else {
-		if len(currentSpec.JobSpec.JobTemplateSpecs) == 0 {
-			return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
-		}
-
 		foundErrand := false
 		for _, v := range currentSpec.JobSpec.JobTemplateSpecs {
 			if v.Name == errandName[0] {
@@ -86,9 +81,7 @@ func (a RunErrandAction) Run(errandName ...string) (ErrandResult, error) {
 		}
 
 		if !foundErrand {
-			msg := fmt.Sprintf("Could not find errand %s", errandName)
-			a.logger.Error(runErrandActionLogTag, msg)
-			return ErrandResult{}, bosherr.Error(msg)
+			return ErrandResult{}, bosherr.Errorf("Could not find errand %s", errandName[0])
 		}
 
 		templateName = errandName[0]

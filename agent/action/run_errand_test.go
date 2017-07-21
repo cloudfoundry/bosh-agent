@@ -161,10 +161,10 @@ var _ = Describe("RunErrand", func() {
 					specService.Spec = boshas.V1ApplySpec{}
 				})
 
-				It("returns error stating that job template is required", func() {
+				It("returns error stating the errand cannot be found", func() {
 					_, err := action.Run(errandName)
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("At least one job template is required to run an errand"))
+					Expect(err.Error()).To(Equal("Could not find errand fake-job-name"))
 				})
 
 				It("does not run errand script", func() {
