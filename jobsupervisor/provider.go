@@ -47,10 +47,9 @@ func NewProvider(
 	)
 
 	p.supervisors = map[string]JobSupervisor{
-		"monit":      monitJobSupervisor,
+		"monit":      NewWrapperJobSupervisor(monitJobSupervisor, fs, dirProvider, logger),
 		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
-		// Cannot link to "windows" JobSupervisor
 	}
 
 	return

@@ -1,4 +1,4 @@
-package httpsdispatcher
+package mbus
 
 import (
 	"crypto/subtle"
@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -18,6 +19,7 @@ const httpsDispatcherLogTag = "HTTPS Dispatcher"
 type HTTPSDispatcher struct {
 	httpServer                  *http.Server
 	mux                         *http.ServeMux
+	keyPair                     settings.CertKeyPair
 	listener                    net.Listener
 	logger                      boshlog.Logger
 	baseURL                     *url.URL
@@ -26,7 +28,7 @@ type HTTPSDispatcher struct {
 
 type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
-func NewHTTPSDispatcher(baseURL *url.URL, logger boshlog.Logger) *HTTPSDispatcher {
+func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) *HTTPSDispatcher {
 	tlsConfig := &tls.Config{
 		// SSLv3 is insecure due to BEAST and POODLE attacks
 		MinVersion: tls.VersionTLS10,
@@ -59,6 +61,7 @@ func NewHTTPSDispatcher(baseURL *url.URL, logger boshlog.Logger) *HTTPSDispatche
 	return &HTTPSDispatcher{
 		httpServer:                  httpServer,
 		mux:                         mux,
+		keyPair:                     keyPair,
 		logger:                      logger,
 		baseURL:                     baseURL,
 		expectedAuthorizationHeader: expectedAuthorizationHeader,
@@ -72,9 +75,17 @@ func (h *HTTPSDispatcher) Start() error {
 	}
 	h.listener = tcpListener
 
-	cert, err := tls.LoadX509KeyPair("agent.cert", "agent.key")
-	if err != nil {
-		return bosherr.WrapError(err, "Loading agent SSL cert")
+	var cert tls.Certificate
+	if h.keyPair.Certificate != "" && h.keyPair.PrivateKey != "" {
+		cert, err = tls.X509KeyPair([]byte(h.keyPair.Certificate), []byte(h.keyPair.PrivateKey))
+		if err != nil {
+			return bosherr.WrapError(err, "Loading configured tls certificate")
+		}
+	} else {
+		cert, err = tls.LoadX509KeyPair("agent.cert", "agent.key")
+		if err != nil {
+			return bosherr.WrapError(err, "Loading default tls certificate")
+		}
 	}
 
 	// update the server config with the cert

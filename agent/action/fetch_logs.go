@@ -78,13 +78,13 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 		_ = a.compressor.CleanUp(tarball)
 	}()
 
-	blobID, _, err := a.blobstore.Create(tarball)
+	blobID, multidigestSha, err := a.blobstore.Create(tarball)
 	if err != nil {
 		err = bosherr.WrapError(err, "Create file on blobstore")
 		return
 	}
 
-	value = map[string]string{"blobstore_id": blobID}
+	value = map[string]string{"blobstore_id": blobID, "sha1": multidigestSha.String()}
 	return
 }
 

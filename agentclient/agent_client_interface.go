@@ -1,10 +1,6 @@
 package agentclient
 
-import (
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	"github.com/cloudfoundry/bosh-agent/settings"
-)
+import "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 
 //go:generate mockgen -source=agent_client_interface.go -package=mocks -destination=mocks/mocks.go -imports=.=github.com/cloudfoundry/bosh-agent/agentclient
 
@@ -21,9 +17,7 @@ type AgentClient interface {
 	CompilePackage(packageSource BlobRef, compiledPackageDependencies []BlobRef) (compiledPackageRef BlobRef, err error)
 	DeleteARPEntries(ips []string) error
 	SyncDNS(blobID, sha1 string, version uint64) (string, error)
-	UpdateSettings(settings.UpdateSettings) error
 	RunScript(scriptName string, options map[string]interface{}) error
-	SSH(cmd string, params action.SSHParams) error
 }
 
 type AgentState struct {

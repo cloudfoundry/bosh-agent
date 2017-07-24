@@ -3,6 +3,7 @@ package fakes
 import (
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	"sync"
 )
 
 type FakeJobSupervisor struct {
@@ -29,6 +30,9 @@ type FakeJobSupervisor struct {
 	ProcessesError  error
 
 	JobFailureAlert *boshalert.MonitAlert
+
+	HealthRecorded      int
+	HealthRecordedMutex sync.Mutex
 }
 
 type AddJobArgs struct {
@@ -38,6 +42,10 @@ type AddJobArgs struct {
 }
 
 func NewFakeJobSupervisor() *FakeJobSupervisor {
+	return &FakeJobSupervisor{}
+}
+
+func NewFakeJobSupervisorWithArgs() *FakeJobSupervisor {
 	return &FakeJobSupervisor{}
 }
 
@@ -95,4 +103,18 @@ func (m *FakeJobSupervisor) MonitorJobFailures(handler boshjobsuper.JobFailureHa
 		return handler(*m.JobFailureAlert)
 	}
 	return nil
+}
+
+func (m *FakeJobSupervisor) HealthRecorder(status string) {
+	m.HealthRecordedMutex.Lock()
+	m.HealthRecorded += 1
+	m.HealthRecordedMutex.Unlock()
+}
+
+func (m *FakeJobSupervisor) GetHealthRecorded() int {
+	m.HealthRecordedMutex.Lock()
+	value := m.HealthRecorded
+	m.HealthRecordedMutex.Unlock()
+
+	return value
 }

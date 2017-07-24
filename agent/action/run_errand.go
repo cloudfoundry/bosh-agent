@@ -58,18 +58,37 @@ type ErrandResult struct {
 	ExitStatus int    `json:"exit_code"`
 }
 
-func (a RunErrandAction) Run() (ErrandResult, error) {
+func (a RunErrandAction) Run(errandName ...string) (ErrandResult, error) {
 	currentSpec, err := a.specService.Get()
 	if err != nil {
 		return ErrandResult{}, bosherr.WrapError(err, "Getting current spec")
 	}
 
-	if len(currentSpec.JobSpec.Template) == 0 {
-		return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
+	var templateName string
+
+	if len(errandName) == 0 {
+		if len(currentSpec.JobSpec.Template) == 0 {
+			return ErrandResult{}, bosherr.Error("At least one job template is required to run an errand")
+		}
+
+		templateName = currentSpec.JobSpec.Template
+	} else {
+		foundErrand := false
+		for _, v := range currentSpec.JobSpec.JobTemplateSpecs {
+			if v.Name == errandName[0] {
+				foundErrand = true
+			}
+		}
+
+		if !foundErrand {
+			return ErrandResult{}, bosherr.Errorf("Could not find errand %s", errandName[0])
+		}
+
+		templateName = errandName[0]
 	}
 
 	command := boshsys.Command{
-		Name: path.Join(a.jobsDir, currentSpec.JobSpec.Template, "bin", "run"),
+		Name: path.Join(a.jobsDir, templateName, "bin", "run"),
 		Env: map[string]string{
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},

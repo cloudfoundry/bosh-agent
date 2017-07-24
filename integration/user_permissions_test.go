@@ -1,19 +1,20 @@
 package integration_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/agentclient"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"strings"
+
 	"github.com/cloudfoundry/bosh-agent/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strings"
 )
 
 var _ = Describe("Instance Info", func() {
 	var (
-		agentClient      agentclient.AgentClient
+		agentClient      *integrationagentclient.IntegrationAgentClient
 		registrySettings settings.Settings
 	)
 
@@ -96,7 +97,6 @@ var _ = Describe("Instance Info", func() {
 		})
 
 		It("should contain the correct home directory permissions", func() {
-
 			err := agentClient.SSH("setup", action.SSHParams{
 				User:      "username",
 				PublicKey: "public-key",

@@ -97,6 +97,7 @@ func init() {
 			Context("when heartbeats can be sent", func() {
 				BeforeEach(func() {
 					handler.KeepOnRunning()
+
 				})
 
 				BeforeEach(func() {
@@ -160,6 +161,8 @@ func init() {
 							Message: expectedHb,
 						},
 					}))
+
+					Expect(jobSupervisor.GetHealthRecorded()).To(Equal(1))
 				})
 
 				It("sends periodic heartbeats", func() {
@@ -184,6 +187,7 @@ func init() {
 							Message: expectedHb,
 						}))
 					}
+					Expect(jobSupervisor.GetHealthRecorded()).To(BeNumerically(">=", 3))
 				})
 			})
 

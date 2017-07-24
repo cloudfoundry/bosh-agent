@@ -9,5 +9,6 @@
     <sizeThreshold>10240</sizeThreshold>
     <keepFiles>8</keepFiles>
   </log>
+  <delayedAutoStart/>
   <onfailure action="restart" delay="5 sec"/>
 </service>

@@ -126,26 +126,22 @@ func (m *Monitor) CPU() (cpu CPU, err error) {
 }
 
 func (m *Monitor) monitorLoop() error {
+	m.state.Set(stateRunning)
 	if err := m.updateSystemCPU(); err != nil {
 		m.err = err
 		return m.err
 	}
 	go func() {
 		defer m.state.Set(stateExited)
-		for {
-			select {
-			case <-m.tick.C:
-				if !m.state.Is(stateRunning) {
-					continue
-				}
-				if m.cond != nil {
-					m.cond.Broadcast()
-				}
-				// Hard error
-				if err := m.updateSystemCPU(); err != nil {
-					m.err = err
-					return
-				}
+		for range m.tick.C {
+			// Hard error
+			if err := m.updateSystemCPU(); err != nil {
+				m.err = err
+				return
+			}
+			// TODO: FIX ME
+			if !m.state.Is(stateRunning) {
+				continue
 			}
 		}
 	}()

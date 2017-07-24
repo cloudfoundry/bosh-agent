@@ -16,31 +16,30 @@ func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action Migra
 	action = NewMigrateDisk(platform, dirProvider)
 	return
 }
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		var (
-			action   MigrateDiskAction
-			platform *fakeplatform.FakePlatform
-		)
 
-		BeforeEach(func() {
-			platform, action = buildMigrateDiskAction()
-		})
+var _ = Describe("Testing with Ginkgo", func() {
+	var (
+		action   MigrateDiskAction
+		platform *fakeplatform.FakePlatform
+	)
 
-		AssertActionIsAsynchronous(action)
-		AssertActionIsNotPersistent(action)
-		AssertActionIsLoggable(action)
-
-		AssertActionIsNotResumable(action)
-		AssertActionIsNotCancelable(action)
-
-		It("migrate disk action run", func() {
-			value, err := action.Run()
-			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJSONString(GinkgoT(), value, "{}")
-
-			Expect(platform.MigratePersistentDiskFromMountPoint).To(boshassert.MatchPath("/foo/store"))
-			Expect(platform.MigratePersistentDiskToMountPoint).To(boshassert.MatchPath("/foo/store_migration_target"))
-		})
+	BeforeEach(func() {
+		platform, action = buildMigrateDiskAction()
 	})
-}
+
+	AssertActionIsAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
+
+	AssertActionIsNotResumable(action)
+	AssertActionIsNotCancelable(action)
+
+	It("migrate disk action run", func() {
+		value, err := action.Run()
+		Expect(err).ToNot(HaveOccurred())
+		boshassert.MatchesJSONString(GinkgoT(), value, "{}")
+
+		Expect(platform.MigratePersistentDiskFromMountPoint).To(boshassert.MatchPath("/foo/store"))
+		Expect(platform.MigratePersistentDiskToMountPoint).To(boshassert.MatchPath("/foo/store_migration_target"))
+	})
+})

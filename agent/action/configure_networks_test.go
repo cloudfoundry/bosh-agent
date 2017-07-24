@@ -7,33 +7,31 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func init() {
-	Describe("configureNetworks", func() {
-		var (
-			action ConfigureNetworksAction
-		)
+var _ = Describe("configureNetworks", func() {
+	var (
+		action ConfigureNetworksAction
+	)
 
-		BeforeEach(func() {
-			action = NewConfigureNetworks(fakeactions.NewFakeAgentKiller())
-		})
-
-		AssertActionIsAsynchronous(action)
-		AssertActionIsPersistent(action)
-		AssertActionIsLoggable(action)
-
-		AssertActionIsNotCancelable(action)
-		AssertActionIsResumable(action)
-
-		It("is asynchronous", func() {
-			Expect(action.IsAsynchronous(ProtocolVersion(0))).To(BeTrue())
-		})
-
-		It("is persistent because director expects configure_networks task to become done after agent is restarted", func() {
-			Expect(action.IsPersistent()).To(BeTrue())
-		})
-
-		Describe("Run", func() {
-			// restarts agent process
-		})
+	BeforeEach(func() {
+		action = NewConfigureNetworks(fakeactions.NewFakeAgentKiller())
 	})
-}
+
+	AssertActionIsAsynchronous(action)
+	AssertActionIsPersistent(action)
+	AssertActionIsLoggable(action)
+
+	AssertActionIsNotCancelable(action)
+	AssertActionIsResumable(action)
+
+	It("is asynchronous", func() {
+		Expect(action.IsAsynchronous(ProtocolVersion(0))).To(BeTrue())
+	})
+
+	It("is persistent because director expects configure_networks task to become done after agent is restarted", func() {
+		Expect(action.IsPersistent()).To(BeTrue())
+	})
+
+	Describe("Run", func() {
+		// restarts agent process
+	})
+})

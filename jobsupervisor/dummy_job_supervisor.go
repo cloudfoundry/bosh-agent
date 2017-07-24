@@ -52,3 +52,6 @@ func (s *dummyJobSupervisor) RemoveAllJobs() error {
 func (s *dummyJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	return nil
 }
+
+func (s *dummyJobSupervisor) HealthRecorder(status string) {
+}

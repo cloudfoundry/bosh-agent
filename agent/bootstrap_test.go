@@ -49,17 +49,13 @@ func init() {
 				platform    *fakeplatform.FakePlatform
 				dirProvider boshdir.Provider
 
-				settingsSource  *fakeinf.FakeSettingsSource
 				settingsService *fakesettings.FakeSettingsService
-				updateSettings  *boshsettings.UpdateSettings
 			)
 
 			BeforeEach(func() {
 				platform = fakeplatform.NewFakePlatform()
 				dirProvider = boshdir.NewProvider("/var/vcap")
-				settingsSource = &fakeinf.FakeSettingsSource{}
 				settingsService = &fakesettings.FakeSettingsService{}
-				updateSettings = &boshsettings.UpdateSettings{}
 			})
 
 			bootstrap := func() error {
@@ -150,6 +146,14 @@ func init() {
 						Expect(platform.SetupSSHUsername).To(Equal("vcap"))
 					})
 				})
+			})
+
+			It("sets up ipv6", func() {
+				settingsService.Settings.Env.Bosh.IPv6.Enable = true
+
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupIPv6Config).To(Equal(boshsettings.IPv6{Enable: true}))
 			})
 
 			It("sets up hostname", func() {

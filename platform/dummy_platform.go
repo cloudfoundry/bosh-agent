@@ -147,6 +147,10 @@ func (p dummyPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostna
 	return p.fs.WriteFileString(etcHostsPath, dnsRecordsContents.String())
 }
 
+func (p dummyPlatform) SetupIPv6(config boshsettings.IPv6) error {
+	return nil
+}
+
 func (p dummyPlatform) SetupHostname(hostname string) (err error) {
 	return
 }

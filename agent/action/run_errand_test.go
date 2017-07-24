@@ -20,6 +20,7 @@ var _ = Describe("RunErrand", func() {
 		specService *fakeas.FakeV1Service
 		cmdRunner   *fakesys.FakeCmdRunner
 		action      RunErrandAction
+		errandName  string
 	)
 
 	BeforeEach(func() {
@@ -27,6 +28,7 @@ var _ = Describe("RunErrand", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
+		errandName = "fake-job-name"
 	})
 
 	AssertActionIsAsynchronous(action)
@@ -37,10 +39,44 @@ var _ = Describe("RunErrand", func() {
 
 	Describe("Run", func() {
 		Context("when apply spec is successfully retrieved", func() {
-			Context("when current agent has a job spec template", func() {
+			Context("when working with the old director that does not pass in errand name", func() {
 				BeforeEach(func() {
 					currentSpec := boshas.V1ApplySpec{}
 					currentSpec.JobSpec.Template = "fake-job-name"
+					specService.Spec = currentSpec
+					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						WaitResult: boshsys.Result{
+							Stdout:     "fake-stdout",
+							Stderr:     "fake-stderr",
+							ExitStatus: 0,
+						},
+					})
+				})
+
+				It("returns errand result without error after running an errand", func() {
+					result, err := action.Run()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal(
+						ErrandResult{
+							Stdout:     "fake-stdout",
+							Stderr:     "fake-stderr",
+							ExitStatus: 0,
+						},
+					))
+				})
+			})
+
+			Context("when current agent has a job spec template", func() {
+				BeforeEach(func() {
+					currentSpec := boshas.V1ApplySpec{}
+					currentSpec.JobSpec.JobTemplateSpecs = []boshas.JobTemplateSpec{
+						boshas.JobTemplateSpec{
+							Version: "v1",
+							Name:    "first-job"},
+						boshas.JobTemplateSpec{
+							Version: "v1",
+							Name:    "fake-job-name"},
+					}
 					specService.Spec = currentSpec
 				})
 
@@ -56,7 +92,7 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("returns errand result without error after running an errand", func() {
-						result, err := action.Run()
+						result, err := action.Run(errandName)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
 							ErrandResult{
@@ -68,7 +104,7 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("runs errand script with properly configured environment", func() {
-						_, err := action.Run()
+						_, err := action.Run(errandName)
 						Expect(err).ToNot(HaveOccurred())
 						cmd := cmdRunner.RunComplexCommands[0]
 						env := map[string]string{"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"}
@@ -89,7 +125,7 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("returns errand result without an error", func() {
-						result, err := action.Run()
+						result, err := action.Run(errandName)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
 							ErrandResult{
@@ -112,7 +148,7 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("returns error because script failed to execute", func() {
-						result, err := action.Run()
+						result, err := action.Run(errandName)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-bosh-error"))
 						Expect(result).To(Equal(ErrandResult{}))
@@ -125,14 +161,14 @@ var _ = Describe("RunErrand", func() {
 					specService.Spec = boshas.V1ApplySpec{}
 				})
 
-				It("returns error stating that job template is required", func() {
-					_, err := action.Run()
+				It("returns error stating the errand cannot be found", func() {
+					_, err := action.Run(errandName)
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("At least one job template is required to run an errand"))
+					Expect(err.Error()).To(Equal("Could not find errand fake-job-name"))
 				})
 
 				It("does not run errand script", func() {
-					_, err := action.Run()
+					_, err := action.Run(errandName)
 					Expect(err).To(HaveOccurred())
 					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(0))
 				})
@@ -145,13 +181,13 @@ var _ = Describe("RunErrand", func() {
 			})
 
 			It("returns error stating that job template is required", func() {
-				_, err := action.Run()
+				_, err := action.Run(errandName)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 			})
 
 			It("does not run errand script", func() {
-				_, err := action.Run()
+				_, err := action.Run(errandName)
 				Expect(err).To(HaveOccurred())
 				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(0))
 			})
@@ -161,7 +197,16 @@ var _ = Describe("RunErrand", func() {
 	Describe("Cancel", func() {
 		BeforeEach(func() {
 			currentSpec := boshas.V1ApplySpec{
-				JobSpec: boshas.JobSpec{Template: "fake-job-name"},
+				JobSpec: boshas.JobSpec{
+					JobTemplateSpecs: []boshas.JobTemplateSpec{
+						boshas.JobTemplateSpec{
+							Version: "v1",
+							Name:    "first-job"},
+						boshas.JobTemplateSpec{
+							Version: "v1",
+							Name:    "fake-job-name"},
+					},
+				},
 			}
 			specService.Spec = currentSpec
 		})
@@ -183,7 +228,7 @@ var _ = Describe("RunErrand", func() {
 				err := action.Cancel()
 				Expect(err).ToNot(HaveOccurred())
 
-				_, err = action.Run()
+				_, err = action.Run(errandName)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(process.TerminateNicelyKillGracePeriod).To(Equal(10 * time.Second))
@@ -206,7 +251,7 @@ var _ = Describe("RunErrand", func() {
 					err := action.Cancel()
 					Expect(err).ToNot(HaveOccurred())
 
-					result, err := action.Run()
+					result, err := action.Run(errandName)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
 						ErrandResult{
@@ -236,7 +281,7 @@ var _ = Describe("RunErrand", func() {
 					err := action.Cancel()
 					Expect(err).ToNot(HaveOccurred())
 
-					result, err := action.Run()
+					result, err := action.Run(errandName)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
 						ErrandResult{
@@ -264,7 +309,7 @@ var _ = Describe("RunErrand", func() {
 					err := action.Cancel()
 					Expect(err).ToNot(HaveOccurred())
 
-					result, err := action.Run()
+					result, err := action.Run(errandName)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-bosh-error"))
 					Expect(result).To(Equal(ErrandResult{}))

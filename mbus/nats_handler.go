@@ -199,7 +199,7 @@ func (h *natsHandler) runUntilInterrupted() {
 func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 	settings := h.settingsService.GetSettings()
 
-	natsURL, err := url.Parse(settings.GetMbusURL())
+	natsURL, err := url.Parse(settings.Mbus)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Parsing Nats URL")
 	}
@@ -225,7 +225,7 @@ func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, sta
 
 	settings := h.settingsService.GetSettings()
 
-	natsURL, err := url.Parse(settings.GetMbusURL())
+	natsURL, err := url.Parse(settings.Mbus)
 	if err != nil {
 		h.logger.Error(natsHandlerLogTag, err.Error())
 		return

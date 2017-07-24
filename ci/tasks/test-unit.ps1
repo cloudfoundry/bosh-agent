@@ -22,11 +22,6 @@ if ((Get-Command "go.exe" -ErrorAction SilentlyContinue) -eq $null)
   Write-Host "Go is installed!"
 }
 
-# Change constant for unit test process labels to prevent collisions with
-# bosh deployed Job Supervisor
-$file = Join-Path -Path $PWD jobsupervisor/windows_job_supervisor.go
-(Get-Content $file).replace('serviceDescription = "vcap"', 'serviceDescription = "vcap_test"') | Set-Content $file
-
 go.exe install github.com/cloudfoundry/bosh-agent/vendor/github.com/onsi/ginkgo/ginkgo
 ginkgo.exe -r -race -keepGoing -skipPackage="integration,vendor"
 if ($LastExitCode -ne 0)
