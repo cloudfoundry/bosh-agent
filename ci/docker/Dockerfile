@@ -4,6 +4,7 @@ RUN apt-get update
 RUN apt-get -y upgrade && apt-get clean
 RUN apt-get install -y \
   build-essential \
+  git \
   wget \
   tar \
   libssl-dev \
