@@ -47,13 +47,8 @@ func main() {
 	for {
 		os.Stdout.Write(b)
 		if SubProcess {
-			path, err := os.Executable()
-			if err != nil {
-				os.Stderr.WriteString("Error: " + err.Error())
-				os.Exit(1)
-			}
-			cmd := exec.Command(path, "-loop", "5s")
-			if cmd.Start(); err != nil {
+			cmd := exec.Command(os.Args[0], "-loop", "5s")
+			if err := cmd.Start(); err != nil {
 				os.Stderr.WriteString("Error: " + err.Error())
 				os.Exit(1)
 			}
