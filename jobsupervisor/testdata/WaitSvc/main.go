@@ -121,7 +121,7 @@ func Wait(interval time.Duration) error {
 		}
 		time.Sleep(interval)
 		if time.Since(start) > Timeout {
-			return errors.New("TIMEOUT!")
+			return errors.New("TIMEOUT")
 		}
 	}
 	return nil
