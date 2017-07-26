@@ -49,13 +49,12 @@ func (a GetStateAction) IsLoggable() bool {
 type GetStateV1ApplySpec struct {
 	boshas.V1ApplySpec
 
-	AgentID      string                 `json:"agent_id"`
-	BoshProtocol string                 `json:"bosh_protocol"`
-	JobState     string                 `json:"job_state"`
-	Vitals       *boshvitals.Vitals     `json:"vitals,omitempty"`
-	Processes    []boshjobsuper.Process `json:"processes,omitempty"`
-	VM           boshsettings.VM        `json:"vm"`
-	Ntp          boshntp.Info           `json:"ntp"`
+	AgentID   string                 `json:"agent_id"`
+	JobState  string                 `json:"job_state"`
+	Vitals    *boshvitals.Vitals     `json:"vitals,omitempty"`
+	Processes []boshjobsuper.Process `json:"processes,omitempty"`
+	VM        boshsettings.VM        `json:"vm"`
+	Ntp       boshntp.Info           `json:"ntp"`
 }
 
 func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
@@ -85,7 +84,6 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 	value := GetStateV1ApplySpec{
 		spec,
 		settings.AgentID,
-		"1",
 		a.jobSupervisor.Status(),
 		vitalsReference,
 		processes,
