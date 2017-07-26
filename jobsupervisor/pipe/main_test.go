@@ -1,3 +1,5 @@
+// +build windows
+
 package main
 
 import (
@@ -367,6 +369,13 @@ var _ = Describe("Main", func() {
 
 			// test that stderr was still written to
 			Expect(checkSequenceOutput(&stderr, Start, End)).To(Succeed())
+		})
+	})
+
+	Context("Event Log", func() {
+		It("formats invalid event source names", func() {
+			const source = `C:\Program Files\Foo\Baz.exe`
+			Expect(FormatSourceName(source)).To(Equal("Baz.exe"))
 		})
 	})
 })
