@@ -151,6 +151,18 @@ func watchParent(sigCh chan os.Signal) error {
 	return nil
 }
 
+func closeChannel(haltCh chan struct{}) {
+	// safely close the channel
+	select {
+	case _, open := <-haltCh: // channel likely closed
+		if open {
+			close(haltCh) // nope still open
+		}
+	default: // channel is open
+		close(haltCh)
+	}
+}
+
 func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exitCode int, err error) {
 	exitCode = 1
 	defer func() {
@@ -188,17 +200,33 @@ func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exit
 	if err := cmd.Start(); err != nil {
 		return 1, fmt.Errorf("starting command (%s): %s", path, err)
 	}
-	go func() { cmd.Wait(); close(haltCh) }()
+	go func() {
+		cmd.Wait()
+		closeChannel(haltCh)
+	}()
 
 	// Critical section: make sure we do not miss an exiting process (fast or otherwise).
 	go func(pid int) {
+		select {
+		case <-time.After(time.Millisecond * 250):
+			break // assuming the cmd has started successfully
+		case <-haltCh:
+			return // process exited
+		}
 		tick := time.NewTicker(time.Millisecond * 100)
 		defer tick.Stop()
 		for {
 			select {
 			case <-tick.C:
 				if err := FindProcess(pid); err != nil {
-					close(haltCh)
+					// give wait a moment to return as it sets the ProcessState
+					select {
+					case <-time.After(time.Millisecond * 250):
+						break
+					case <-haltCh:
+						return // wait returned
+					}
+					closeChannel(haltCh)
 					return
 				}
 			case <-haltCh:
