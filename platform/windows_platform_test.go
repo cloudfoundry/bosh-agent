@@ -4,9 +4,16 @@ package platform_test
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"sort"
 	"strings"
+	"sync"
+	"syscall"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,6 +27,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
@@ -267,5 +275,238 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(len(fs.RenameNewPaths)).To(Equal(1))
 			Expect(fs.RenameNewPaths).To(ContainElement("/Windows/System32/Drivers/etc/hosts"))
 		})
+	})
+
+	Describe("GetHostPublicKey", func() {
+		const ExpPublicKey = "PUBLIC RSA KEY"
+
+		setupHostKeys := func(drive string) {
+			if drive == "" {
+				drive = "C:"
+			}
+			drive += "\\"
+
+			dirname := filepath.Join(drive, "Program Files", "OpenSSH")
+			fs.MkdirAll(dirname, 0744)
+			var keyTypes = []string{
+				"dsa",
+				"ecdsa",
+				"ed25519",
+				"rsa",
+			}
+			for _, s := range keyTypes {
+				name := fmt.Sprintf("ssh_host_%s_key", s)
+				path := filepath.Join(dirname, name)
+
+				fs.WriteFileString(path, fmt.Sprintf("PRIVATE %s KEY", strings.ToUpper(s)))
+				path += ".pub"
+				fs.WriteFileString(path, fmt.Sprintf("PUBLIC %s KEY", strings.ToUpper(s)))
+			}
+		}
+
+		It("reads the host RSA key", func() {
+			setupHostKeys(os.Getenv("SYSTEMDRIVE"))
+			key, err := platform.GetHostPublicKey()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(key).To(Equal(ExpPublicKey))
+		})
+
+		It("reads the host key stored in %SYSTEMDRIVE%\\Program Files\\OpenSSH", func() {
+			oldSys := os.Getenv("SYSTEMDRIVE")
+			defer os.Setenv("SYSTEMDRIVE", oldSys)
+			newSys := "K:"
+			os.Setenv("SYSTEMDRIVE", newSys)
+
+			setupHostKeys(newSys)
+
+			key, err := platform.GetHostPublicKey()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(key).To(Equal(ExpPublicKey))
+		})
+	})
+
+	Describe("BOSH SSH Commands", func() {
+		const testUsername = boshsettings.EphemeralUserPrefix + "test_abc123"
+
+		var (
+			platform Platform
+
+			// We're doing this for real - no fakes!
+			logger      = boshlog.NewLogger(boshlog.LevelNone)
+			fs          = boshsys.NewOsFileSystem(logger)
+			dirProvider = boshdirs.NewProvider("/fake-dir")
+			cmdRunner   = boshsys.NewExecCmdRunner(logger)
+
+			deleteUserOnce sync.Once
+		)
+
+		BeforeEach(func() {
+			deleteUserOnce.Do(func() {
+				DeleteUserProfile(testUsername)
+			})
+
+			var (
+				collector                  = &fakestats.FakeCollector{}
+				netManager                 = &fakenet.FakeManager{}
+				devicePathResolver         = fakedpresolv.NewFakeDevicePathResolver()
+				fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+				certManager                = new(fakecert.FakeManager)
+				auditLogger                = fakeplat.NewFakeAuditLogger()
+				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
+			)
+			platform = NewWindowsPlatform(
+				collector,
+				fs,
+				cmdRunner,
+				dirProvider,
+				netManager,
+				certManager,
+				devicePathResolver,
+				logger,
+				fakeDefaultNetworkResolver,
+				auditLogger,
+				fakeUUIDGenerator,
+			)
+		})
+
+		userExists := func(name string) error {
+			_, _, t, err := syscall.LookupSID("", name)
+			if err != nil {
+				return err
+			}
+			if t != syscall.SidTypeUser {
+				return fmt.Errorf("not a user sid: %s", name)
+			}
+			return nil
+		}
+
+		AfterEach(func() {
+			DeleteUserProfile(testUsername)
+			Expect(userExists(testUsername)).ToNot(Succeed())
+		})
+
+		It("can create a user with Admin privileges", func() {
+			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+			Expect(userExists(testUsername)).To(Succeed())
+
+			cmd := exec.Command("NET.exe", "LOCALGROUP", "Administrators")
+			out, err := cmd.CombinedOutput()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(out)).To(ContainSubstring(testUsername))
+		})
+
+		sshdServiceIsInstalled := func() bool {
+			cmd := exec.Command("PowerShell.exe", "-Command", "(Get-Service -Name SSHD).DisplayName")
+			b, err := cmd.CombinedOutput()
+			out := strings.ToUpper(strings.TrimSpace(string(b)))
+			return err == nil && out == "SSHD"
+		}
+
+		It("can insert public keys into the users .ssh\\authorized_keys file", func() {
+			if !sshdServiceIsInstalled() {
+				Skip("This test requires the SSHD service to be installed")
+			}
+
+			keys := []string{
+				"KEY_1",
+				"KEY_2",
+				"KEY_3",
+			}
+			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+			Expect(userExists(testUsername)).To(Succeed())
+
+			Expect(platform.SetupSSH(keys, testUsername)).To(Succeed())
+
+			homedir, err := UserHomeDirectory(testUsername)
+			Expect(err).To(Succeed())
+			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
+
+			b, err := ioutil.ReadFile(keyPath)
+			Expect(err).To(Succeed())
+
+			content := strings.TrimSpace(string(b))
+			for i, line := range strings.Split(content, "\n") {
+				line = strings.TrimSpace(line)
+				Expect(line).To(Equal(keys[i]))
+			}
+
+			out, err := exec.Command("icacls.exe", keyPath).CombinedOutput()
+			Expect(err).To(Succeed())
+			Expect(strings.ToUpper(string(out))).To(ContainSubstring("NT SERVICE\\SSHD:(R)"))
+		})
+
+		It("can delete a users matching a regex", func() {
+			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+			Expect(userExists(testUsername)).To(Succeed())
+
+			homedir, err := UserHomeDirectory(testUsername)
+			Expect(err).To(Succeed())
+
+			// Regex taken from: github.com/cloudfoundry/bosh-cli/director/ssh.go
+			//
+			const regex = "^" + testUsername
+			Expect(platform.DeleteEphemeralUsersMatching(regex)).To(Succeed())
+			Expect(userExists(testUsername)).ToNot(Succeed())
+
+			_, err = os.Stat(homedir)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
+
+var _ = Describe("Windows Syscalls and Helper functions", func() {
+	It("Generates valid Windows passwords", func() {
+		// 100,000 iterations takes about 140ms to run in a VM.
+		for i := 0; i < 100000; i++ {
+			s, err := RandomPassword()
+			Expect(err).To(BeNil())
+			Expect(s).To(HaveLen(14))
+			Expect(s).ToNot(ContainSubstring("/"))
+			Expect(ValidWindowsPassword(s)).To(BeTrue())
+		}
+	})
+
+	expectedUserNames := func() ([]string, error) {
+		cmd := exec.Command("PowerShell", "-Command",
+			"Get-WmiObject -Class Win32_UserAccount | foreach { $_.Name }")
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, err
+		}
+		exp := strings.Fields(string(out))
+		sort.Strings(exp)
+		return exp, nil
+	}
+
+	It("Lists local user accounts", func() {
+		exp, err := expectedUserNames()
+		Expect(err).To(Succeed())
+
+		names, err := LocalAccountNames()
+		Expect(err).To(Succeed())
+
+		sort.Strings(names)
+		Expect(names).To(Equal(exp))
+	})
+
+	It("Does not fail in a tight loop", func() {
+		var wg sync.WaitGroup
+		numCPU := runtime.NumCPU()
+		if numCPU > 4 {
+			numCPU = 4
+		}
+		for i := 0; i < numCPU; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for i := 0; i < 5000; i++ {
+					names, err := LocalAccountNames()
+					Expect(err).To(Succeed())
+					Expect(names).ToNot(HaveLen(0))
+				}
+			}()
+		}
+		wg.Wait()
 	})
 })
