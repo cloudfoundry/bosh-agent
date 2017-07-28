@@ -123,14 +123,10 @@ func (p WindowsPlatform) AddUserToGroups(username string, groups []string) (err 
 }
 
 func (p WindowsPlatform) findEphemeralUsersMatching(reg *regexp.Regexp) ([]string, error) {
-	stdout, _, _, err := p.cmdRunner.RunCommand("-Command",
-		"Get-WmiObject -Class Win32_UserAccount | foreach { $_.Name }")
+	users, err := localAccountNames()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Getting list of users")
 	}
-
-	users := strings.Fields(stdout)
-
 	var matchingUsers []string
 	for _, user := range users {
 		if !strings.HasPrefix(user, boshsettings.EphemeralUserPrefix) {

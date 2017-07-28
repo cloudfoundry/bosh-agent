@@ -17,3 +17,7 @@ func deleteUserProfile(username string) error {
 func userHomeDirectory(username string) (string, error) {
 	return "", ErrNotImplemented
 }
+
+func localAccountNames() ([]string, error) {
+	return nil, ErrNotImplemented
+}

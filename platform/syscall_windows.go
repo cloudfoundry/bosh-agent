@@ -16,10 +16,13 @@ import (
 )
 
 var (
-	userenv                  = windows.NewLazySystemDLL("userenv.dll")
+	userenv  = windows.NewLazySystemDLL("userenv.dll")
+	netapi32 = windows.NewLazySystemDLL("Netapi32.dll")
+
 	procCreateProfile        = userenv.NewProc("CreateProfile")
 	procDeleteProfile        = userenv.NewProc("DeleteProfileW")
 	procGetProfilesDirectory = userenv.NewProc("GetProfilesDirectoryW")
+	procNetUserEnum          = netapi32.NewProc("NetUserEnum")
 )
 
 // createProfile, creates the profile and home directory of the user identified
@@ -273,4 +276,68 @@ func deleteUserProfile(username string) error {
 	}
 
 	return nil
+}
+
+func localAccountNames() ([]string, error) {
+	const MAX_PREFERRED_LENGTH = 0xffffffff
+	const FILTER_NORMAL_ACCOUNT = 2
+
+	if err := procNetUserEnum.Find(); err != nil {
+		return nil, err
+	}
+	var buf *byte
+	var (
+		read   uint32
+		total  uint32
+		resume uint32
+	)
+	r1, _, e1 := syscall.Syscall9(procNetUserEnum.Addr(), 8,
+		0, // local computer
+		0, // user account names
+		FILTER_NORMAL_ACCOUNT,
+		uintptr(unsafe.Pointer(&buf)),
+		MAX_PREFERRED_LENGTH,
+		uintptr(unsafe.Pointer(&read)),
+		uintptr(unsafe.Pointer(&total)),
+		uintptr(unsafe.Pointer(&resume)),
+		0,
+	)
+	if r1 != 0 {
+		if e1 == syscall.ERROR_MORE_DATA {
+			// This shouldn't happen, but in case
+			// it does we need to free the buffer
+			windows.NetApiBufferFree(buf)
+		}
+		if e1 == 0 {
+			return nil, os.NewSyscallError("NetUserEnum", syscall.EINVAL)
+		}
+		return nil, os.NewSyscallError("NetUserEnum", e1)
+	}
+	defer windows.NetApiBufferFree(buf)
+
+	type USER_INFO_0 struct {
+		Name *uint16
+	}
+	type sliceHeader struct {
+		Data uintptr
+		Len  int
+		Cap  int
+	}
+	us := *(*[]USER_INFO_0)(unsafe.Pointer(&sliceHeader{
+		Data: uintptr(unsafe.Pointer(buf)),
+		Len:  int(read),
+		Cap:  int(read),
+	}))
+	names := make([]string, int(read))
+	for i, u := range us {
+		names[i] = toString(u.Name)
+	}
+	return names, nil
+}
+
+func toString(p *uint16) string {
+	if p == nil {
+		return ""
+	}
+	return syscall.UTF16ToString((*[4096]uint16)(unsafe.Pointer(p))[:])
 }
