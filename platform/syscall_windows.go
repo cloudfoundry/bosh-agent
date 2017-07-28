@@ -189,10 +189,24 @@ func generatePassword() (string, error) {
 	if _, err := io.ReadFull(rand.Reader, in); err != nil {
 		return "", err
 	}
-
 	out := make([]byte, ascii85.MaxEncodedLen(len(in)))
 	if n := ascii85.Encode(out, in); n < Length {
 		return "", errors.New("short password")
+	}
+
+	// replace forward slashes as NET USER does not like them
+
+	var char byte // replacement char
+	for _, c := range out {
+		if c != '/' {
+			char = c
+			break
+		}
+	}
+	for i, c := range out {
+		if c == '/' {
+			out[i] = char
+		}
 	}
 	return string(out[:Length]), nil
 }

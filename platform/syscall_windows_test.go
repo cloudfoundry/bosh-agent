@@ -6,4 +6,9 @@ package platform
 var DeleteUserProfile = deleteUserProfile
 
 // Export for testing
-var UserHomeDirectory = userHomeDirectory
+var (
+	UserHomeDirectory    = userHomeDirectory
+	RandomPassword       = randomPassword
+	ValidWindowsPassword = validPassword
+	LocalAccountNames    = localAccountNames
+)
