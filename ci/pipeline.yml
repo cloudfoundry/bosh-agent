@@ -69,8 +69,9 @@ resources:
 - name: bosh-agent
   type: git
   source:
-    uri: https://github.com/cloudfoundry/bosh-agent
+    uri: git@github.com:cloudfoundry/bosh-agent.git
     branch: 2.1.x
+    private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
 
 - name: release-bucket-linux
   type: s3
