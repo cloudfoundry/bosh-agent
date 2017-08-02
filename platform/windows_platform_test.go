@@ -278,6 +278,8 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("GetHostPublicKey", func() {
+		AreSSHServicesRunning = func() error { return nil }
+
 		const ExpPublicKey = "PUBLIC RSA KEY"
 
 		setupHostKeys := func(drive string) {
@@ -322,6 +324,15 @@ var _ = Describe("WindowsPlatform", func() {
 			key, err := platform.GetHostPublicKey()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(key).To(Equal(ExpPublicKey))
+		})
+
+		It("fails if the sshd daemon is not running", func() {
+			setupHostKeys(os.Getenv("SYSTEMDRIVE"))
+			AreSSHServicesRunning = func() error { return errors.New("test") }
+
+			_, err := platform.GetHostPublicKey()
+
+			Expect(err).To(HaveOccurred())
 		})
 	})
 

@@ -9,8 +9,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"unsafe"
+
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/mgr"
 
 	"golang.org/x/sys/windows"
 )
@@ -104,6 +110,61 @@ func getProfilesDirectory() (string, error) {
 	}
 	s := syscall.UTF16ToString(buf[0:])
 	return s, nil
+}
+
+//checks if the windows services needed for ssh are running
+//returns error if the services are not running or does not exist
+//returns nil if the services are running
+func areSSHServicesRunning() error {
+	var wrapError = func(err error, name string) error {
+		return bosherr.WrapErrorf(err, "Checking service: %v", name)
+	}
+	sshdServiceIsInstalled := func() bool {
+		cmd := exec.Command("PowerShell.exe", "-Command", "(Get-Service -Name SSHD).DisplayName")
+		b, err := cmd.CombinedOutput()
+		out := strings.ToUpper(strings.TrimSpace(string(b)))
+		return err == nil && out == "SSHD"
+	}
+	if !sshdServiceIsInstalled() {
+		return bosherr.WrapErrorf(errors.New("sshd is not installed"), "")
+	}
+
+	var isServiceRunning = func(m *mgr.Mgr, name string) error {
+		service, err := m.OpenService(name)
+		if err != nil {
+			return err
+		}
+
+		defer service.Close()
+
+		queryResult, err := service.Query()
+		if err != nil {
+			return err
+		}
+
+		if queryResult.State != svc.Running {
+			return errors.New(fmt.Sprintf("%v is not running. has ssh been enabled on this VM with the enable-ssh job?", name))
+		}
+
+		return nil
+	}
+
+	m, err := mgr.Connect()
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Could not connect to service manager")
+	}
+	defer m.Disconnect()
+
+	err = isServiceRunning(m, "sshd")
+	if err != nil {
+		return wrapError(err, "sshd")
+	}
+	err = isServiceRunning(m, "ssh-agent")
+	if err != nil {
+		return wrapError(err, "ssh-agent")
+	}
+
+	return nil
 }
 
 // userHomeDirectory returns the home directory for user username.  An error

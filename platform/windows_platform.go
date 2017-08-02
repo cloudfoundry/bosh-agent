@@ -442,7 +442,12 @@ func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 	return p.defaultNetworkResolver.GetDefaultNetwork()
 }
 
+var AreSSHServicesRunning = areSSHServicesRunning
+
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
+	if err := AreSSHServicesRunning(); err != nil {
+		return "", bosherr.WrapErrorf(err, "")
+	}
 	drive := os.Getenv("SYSTEMDRIVE")
 	if drive == "" {
 		drive = "C:"

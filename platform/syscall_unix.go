@@ -21,3 +21,11 @@ func userHomeDirectory(username string) (string, error) {
 func localAccountNames() ([]string, error) {
 	return nil, ErrNotImplemented
 }
+
+func isServiceRunning(_ string) error {
+	return ErrNotImplemented
+}
+
+func areSSHServicesRunning() error {
+	return ErrNotImplemented
+}
