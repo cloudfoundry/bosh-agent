@@ -79,6 +79,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Unmonitoring services")
 	}
+	//TODO write health.json
 
 	var scripts []boshscript.Script
 

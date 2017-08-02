@@ -380,3 +380,6 @@ func (m monitJobSupervisor) checkServices() ([]boshmonit.Service, error) {
 
 	return services, nil
 }
+
+func (m monitJobSupervisor) HealthRecorder(status string) {
+}

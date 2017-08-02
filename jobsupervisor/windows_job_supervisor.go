@@ -573,3 +573,6 @@ func (w *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) err
 func (w *windowsJobSupervisor) stoppedFilePath() string {
 	return filepath.Join(w.dirProvider.MonitDir(), "stopped")
 }
+
+func (w *windowsJobSupervisor) HealthRecorder(status string) {
+}

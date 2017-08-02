@@ -1,6 +1,7 @@
 out
 pkg
 gobin/*
+bin/*
 .idea
 .vagrant
 

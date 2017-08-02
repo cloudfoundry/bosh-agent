@@ -13,6 +13,7 @@ import (
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/pivotal-golang/clock"
+	"runtime"
 )
 
 func init() {
@@ -26,6 +27,7 @@ func init() {
 			handler               *fakembus.FakeHandler
 			provider              Provider
 			timeService           clock.Clock
+			jobSupervisorName     string
 		)
 
 		BeforeEach(func() {
@@ -44,27 +46,42 @@ func init() {
 				dirProvider,
 				handler,
 			)
+			if runtime.GOOS == "windows" {
+				jobSupervisorName = "windows"
+			} else {
+				jobSupervisorName = "monit"
+			}
+
 		})
 
-		It("provides a monit job supervisor", func() {
-			actualSupervisor, err := provider.Get("monit")
+		It("provides a monit/windows job supervisor", func() {
+			actualSupervisor, err := provider.Get(jobSupervisorName)
 			Expect(err).ToNot(HaveOccurred())
+			if jobSupervisorName == "monit" {
+				delegateSupervisor := NewMonitJobSupervisor(
+					platform.Fs,
+					platform.Runner,
+					client,
+					logger,
+					dirProvider,
+					jobFailuresServerPort,
+					MonitReloadOptions{
+						MaxTries:               3,
+						MaxCheckTries:          6,
+						DelayBetweenCheckTries: 5 * time.Second,
+					},
+					timeService,
+				)
 
-			expectedSupervisor := NewMonitJobSupervisor(
-				platform.Fs,
-				platform.Runner,
-				client,
-				logger,
-				dirProvider,
-				jobFailuresServerPort,
-				MonitReloadOptions{
-					MaxTries:               3,
-					MaxCheckTries:          6,
-					DelayBetweenCheckTries: 5 * time.Second,
-				},
-				timeService,
-			)
-			Expect(actualSupervisor).To(Equal(expectedSupervisor))
+				expectedSupervisor := NewWrapperJobSupervisor(
+					delegateSupervisor,
+					platform.Fs,
+					dirProvider,
+					logger,
+				)
+
+				Expect(actualSupervisor).To(Equal(expectedSupervisor))
+			}
 		})
 
 		It("provides a dummy job supervisor", func() {
