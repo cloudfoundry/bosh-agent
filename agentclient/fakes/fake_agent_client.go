@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type FakeAgentClient struct {
@@ -102,14 +101,6 @@ type FakeAgentClient struct {
 	syncDNSReturns struct {
 		result1 string
 		result2 error
-	}
-	UpdateSettingsStub        func(settings.UpdateSettings) error
-	updateSettingsMutex       sync.RWMutex
-	updateSettingsArgsForCall []struct {
-		arg1 settings.UpdateSettings
-	}
-	updateSettingsReturns struct {
-		result1 error
 	}
 	RunScriptStub        func(scriptName string, options map[string]interface{}) error
 	runScriptMutex       sync.RWMutex
@@ -499,39 +490,6 @@ func (fake *FakeAgentClient) SyncDNSReturns(result1 string, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *FakeAgentClient) UpdateSettings(arg1 settings.UpdateSettings) error {
-	fake.updateSettingsMutex.Lock()
-	fake.updateSettingsArgsForCall = append(fake.updateSettingsArgsForCall, struct {
-		arg1 settings.UpdateSettings
-	}{arg1})
-	fake.recordInvocation("UpdateSettings", []interface{}{arg1})
-	fake.updateSettingsMutex.Unlock()
-	if fake.UpdateSettingsStub != nil {
-		return fake.UpdateSettingsStub(arg1)
-	} else {
-		return fake.updateSettingsReturns.result1
-	}
-}
-
-func (fake *FakeAgentClient) UpdateSettingsCallCount() int {
-	fake.updateSettingsMutex.RLock()
-	defer fake.updateSettingsMutex.RUnlock()
-	return len(fake.updateSettingsArgsForCall)
-}
-
-func (fake *FakeAgentClient) UpdateSettingsArgsForCall(i int) settings.UpdateSettings {
-	fake.updateSettingsMutex.RLock()
-	defer fake.updateSettingsMutex.RUnlock()
-	return fake.updateSettingsArgsForCall[i].arg1
-}
-
-func (fake *FakeAgentClient) UpdateSettingsReturns(result1 error) {
-	fake.UpdateSettingsStub = nil
-	fake.updateSettingsReturns = struct {
-		result1 error
-	}{result1}
-}
-
 func (fake *FakeAgentClient) RunScript(scriptName string, options map[string]interface{}) error {
 	fake.runScriptMutex.Lock()
 	fake.runScriptArgsForCall = append(fake.runScriptArgsForCall, struct {
@@ -627,8 +585,6 @@ func (fake *FakeAgentClient) Invocations() map[string][][]interface{} {
 	defer fake.deleteARPEntriesMutex.RUnlock()
 	fake.syncDNSMutex.RLock()
 	defer fake.syncDNSMutex.RUnlock()
-	fake.updateSettingsMutex.RLock()
-	defer fake.updateSettingsMutex.RUnlock()
 	fake.runScriptMutex.RLock()
 	defer fake.runScriptMutex.RUnlock()
 	fake.sSHMutex.RLock()
