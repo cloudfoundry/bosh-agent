@@ -11,10 +11,9 @@ github.com/golang/protobuf/proto:a66a4fa
 github.com/nats-io/nats:d996dcd
 github.com/onsi/gomega:d6dbcad
 github.com/cloudfoundry/bosh-init/registry:c99761b
-github.com/cloudfoundry/bosh-utils/...:ff59874
+github.com/cloudfoundry/bosh-utils/...:81d5c17
 github.com/cloudfoundry/bosh-davcli/...:6b59ec2
-golang.org/x/sys/windows:7a56174
-golang.org/x/sys/windows/...:7a56174
+golang.org/x/sys/windows/...:abf9c25
 github.com/tedsuo/ifrit/...:0daf379
 golang.org/x/net/html:3b99394
 golang.org/x/text:f773ec0

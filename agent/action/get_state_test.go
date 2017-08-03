@@ -69,10 +69,9 @@ var _ = Describe("GetState", func() {
 							ResourcePoolSpecs: map[string]interface{}{},
 							PackageSpecs:      map[string]boshas.PackageSpec{},
 						},
-						AgentID:      "my-agent-id",
-						JobState:     "running",
-						BoshProtocol: "1",
-						VM:           boshsettings.VM{Name: "vm-abc-def"},
+						AgentID:  "my-agent-id",
+						JobState: "running",
+						VM:       boshsettings.VM{Name: "vm-abc-def"},
 						Ntp: boshntp.Info{
 							Offset:    "0.34958",
 							Timestamp: "12 Oct 17:37:58",

@@ -12,85 +12,83 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-func init() {
-	Describe("prepareNetworkChange", func() {
-		var (
-			action PrepareNetworkChangeAction
-			fs     *fakesys.FakeFileSystem
+var _ = Describe("prepareNetworkChange", func() {
+	var (
+		action PrepareNetworkChangeAction
+		fs     *fakesys.FakeFileSystem
 
-			settingsService *fakesettings.FakeSettingsService
-		)
+		settingsService *fakesettings.FakeSettingsService
+	)
 
-		BeforeEach(func() {
-			fs = fakesys.NewFakeFileSystem()
-			settingsService = &fakesettings.FakeSettingsService{}
-			action = NewPrepareNetworkChange(fs, settingsService, fakeactions.NewFakeAgentKiller())
-		})
+	BeforeEach(func() {
+		fs = fakesys.NewFakeFileSystem()
+		settingsService = &fakesettings.FakeSettingsService{}
+		action = NewPrepareNetworkChange(fs, settingsService, fakeactions.NewFakeAgentKiller())
+	})
 
-		AssertActionIsNotAsynchronous(action)
-		AssertActionIsNotPersistent(action)
-		AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
 
-		AssertActionIsNotResumable(action)
-		AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(action)
+	AssertActionIsNotCancelable(action)
 
-		It("invalidates settings so that load settings cannot fall back on old settings", func() {
-			resp, err := action.Run()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(resp).To(Equal("ok"))
+	It("invalidates settings so that load settings cannot fall back on old settings", func() {
+		resp, err := action.Run()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp).To(Equal("ok"))
 
-			Expect(settingsService.SettingsWereInvalidated).To(BeTrue())
-		})
+		Expect(settingsService.SettingsWereInvalidated).To(BeTrue())
+	})
 
-		Context("when settings invalidation succeeds", func() {
-			Context("when the network rules file can be removed", func() {
-				It("removes the network rules file", func() {
-					fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
+	Context("when settings invalidation succeeds", func() {
+		Context("when the network rules file can be removed", func() {
+			It("removes the network rules file", func() {
+				fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
 
-					resp, err := action.Run()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp).To(Equal("ok"))
+				resp, err := action.Run()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp).To(Equal("ok"))
 
-					Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeFalse())
-				})
-			})
-
-			Context("when the network rules file cannot be removed", func() {
-				BeforeEach(func() {
-					fs.RemoveAllStub = func(_ string) error {
-						return errors.New("fake-remove-all-error")
-					}
-				})
-
-				It("returns error from removing the network rules file", func() {
-					resp, err := action.Run()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-remove-all-error"))
-
-					Expect(resp).To(BeNil())
-				})
+				Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeFalse())
 			})
 		})
 
-		Context("when settings invalidation fails", func() {
+		Context("when the network rules file cannot be removed", func() {
 			BeforeEach(func() {
-				settingsService.InvalidateSettingsError = errors.New("fake-invalidate-error")
+				fs.RemoveAllStub = func(_ string) error {
+					return errors.New("fake-remove-all-error")
+				}
 			})
 
-			It("returns error early if settings err invalidating", func() {
+			It("returns error from removing the network rules file", func() {
 				resp, err := action.Run()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-invalidate-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-remove-all-error"))
 
 				Expect(resp).To(BeNil())
 			})
-
-			It("does not remove the network rules file", func() {
-				fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
-
-				action.Run()
-				Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeTrue())
-			})
 		})
 	})
-}
+
+	Context("when settings invalidation fails", func() {
+		BeforeEach(func() {
+			settingsService.InvalidateSettingsError = errors.New("fake-invalidate-error")
+		})
+
+		It("returns error early if settings err invalidating", func() {
+			resp, err := action.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-invalidate-error"))
+
+			Expect(resp).To(BeNil())
+		})
+
+		It("does not remove the network rules file", func() {
+			fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
+
+			action.Run()
+			Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeTrue())
+		})
+	})
+})

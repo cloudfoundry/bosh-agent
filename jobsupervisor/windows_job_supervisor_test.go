@@ -5,6 +5,7 @@ package jobsupervisor_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -13,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +23,7 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -42,99 +45,183 @@ const (
 	DefaultEventPort = 2825
 )
 
-var StartStopExe string
+var (
+	StartStopExe string
+	HelloExe     string
+	WaitSvcExe   string
+	TempDir      string
+
+	ServiceDescription = GetServiceDescription()
+)
+
+var _ = AfterSuite(func() {
+	os.RemoveAll(TempDir)
+	gexec.CleanupBuildArtifacts()
+
+	match := func(s string) bool {
+		return s == ServiceDescription
+	}
+	m, err := winsvc.Connect(match)
+	Expect(err).To(Succeed())
+	defer m.Disconnect()
+
+	Expect(m.Delete()).To(Succeed())
+})
 
 var _ = BeforeSuite(func() {
+	// Make sure we don't use 'vcap' as the service description,
+	// otherwise we may destroy BOSH deployed Concourse workers.
+	//
+	// This is set in windows_job_supervisor_export_test.go
+	Expect(ServiceDescription).ToNot(Equal("vcap"))
+
 	var err error
-	StartStopExe, err = gexec.Build("testdata/StartStop/main.go")
+	TempDir, err = ioutil.TempDir("", "bosh-")
+	Expect(err).ToNot(HaveOccurred())
+
+	StartStopExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/StartStop")
+	Expect(err).ToNot(HaveOccurred())
+
+	HelloExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/Hello")
+	Expect(err).ToNot(HaveOccurred())
+
+	WaitSvcExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/WaitSvc")
 	Expect(err).ToNot(HaveOccurred())
 })
 
 func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
-	// create temp file - used by stop-start jobs
-	f, err := ioutil.TempFile("", "bosh-test-")
-	Expect(err).ToNot(HaveOccurred())
-	tmpFileName := f.Name()
-	f.Close()
-
-	m := map[string]WindowsProcessConfig{
-		"say-hello": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello 1\"; Start-Sleep 10"},
-				},
-				{
-					Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello 2\"; Start-Sleep 10"},
+	var procs []WindowsProcess
+	switch jobName {
+	case "say-hello":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Hello-1"},
+			},
+			{
+				Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Hello-2"},
+			},
+		}
+	case "say-hello-syslog":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Hello"},
+				Env: map[string]string{
+					"__PIPE_SYSLOG_HOST":      "localhost",
+					"__PIPE_SYSLOG_PORT":      "10202",
+					"__PIPE_SYSLOG_TRANSPORT": "udp",
 				},
 			},
-		},
-		"say-hello-syslog": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Hello\"; Start-Sleep 10"},
-					Env: map[string]string{
-						"__PIPE_SYSLOG_HOST":      "localhost",
-						"__PIPE_SYSLOG_PORT":      "10202",
-						"__PIPE_SYSLOG_TRANSPORT": "udp",
-					},
-				},
+		}
+	case "flapping":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("flapping-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Flapping-1", "-loop", "100ms", "-die", "1s", "-exit", "2"},
 			},
-		},
-		"flapping": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("flapping-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Flapping-1\"; Start-Sleep 1; exit 2"},
-				},
-				{
-					Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Flapping-2\"; Start-Sleep 1; exit 2"},
-				},
-				{
-					Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "Write-Host \"Flapping-3\"; Start-Sleep 1; exit 2"},
-				},
+			{
+				Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Flapping-2", "-loop", "100ms", "-die", "1500ms", "-exit", "2"},
 			},
-		},
-		"looping": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("looping-1-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "While($true) { Write-Host \"Looping\"; Start-Sleep 1; }"},
-				},
-				{
-					Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
-					Executable: "powershell",
-					Args:       []string{"/C", "While($true) { Start-Process -NoNewWindow powershell.exe -ArgumentList 'Start-Sleep','50'; Start-Sleep 1 }"},
-				},
+			{
+				Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Flapping-3", "-loop", "100ms", "-die", "2s", "-exit", "2"},
 			},
-		},
-		"stop-executable": WindowsProcessConfig{
-			Processes: []WindowsProcess{
-				{
-					Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
+		}
+	case "looping":
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("looping-1-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Looping"},
+			},
+			{
+				Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
+				Executable: HelloExe,
+				Args:       []string{"-message", "Looping-Subprocess-Creator", "-subproc"},
+			},
+		}
+	case "stop-executable":
+		// create temp file - used by stop-start jobs
+		f, err := ioutil.TempFile(TempDir, "stopfile-")
+		Expect(err).ToNot(HaveOccurred())
+		tmpFileName := f.Name()
+		f.Close()
+		procs = []WindowsProcess{
+			{
+				Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
+				Executable: StartStopExe,
+				Args:       []string{"start", tmpFileName},
+				Stop: &StopCommand{
 					Executable: StartStopExe,
-					Args:       []string{"start", tmpFileName},
-					Stop: &StopCommand{
-						Executable: StartStopExe,
-						Args:       []string{"stop", tmpFileName},
-					},
+					Args:       []string{"stop", tmpFileName},
 				},
 			},
-		},
+		}
+	default:
+		return WindowsProcessConfig{}, false
 	}
-	conf, ok := m[jobName]
-	return conf, ok
+
+	return WindowsProcessConfig{Processes: procs}, true
+}
+
+func concurrentStopConfig() WindowsProcessConfig {
+	// Five jobs that print in a loop
+	const JobCount = 5
+
+	// Two wait jobs that use stop scripts to until the
+	// other jobs have stopped before stopping themselves
+	const WaitCount = 2
+
+	// Job config
+
+	var conf WindowsProcessConfig
+	for i := 0; i < JobCount; i++ {
+		p := WindowsProcess{
+			Name:       fmt.Sprintf("job-%d-%d", i, time.Now().UnixNano()),
+			Executable: HelloExe,
+			Args:       []string{"-message", fmt.Sprintf("Job-%d", i)},
+		}
+		conf.Processes = append(conf.Processes, p)
+	}
+
+	// Wait config
+
+	createStopFile := func() string {
+		f, err := ioutil.TempFile(TempDir, "stopfile-")
+		Expect(err).ToNot(HaveOccurred())
+		path := f.Name()
+		f.Close()
+		return path
+	}
+
+	for i := 0; i < WaitCount; i++ {
+		stopFile := createStopFile()
+		wait := WindowsProcess{
+			Name:       fmt.Sprintf("wait-%d-%d", i, time.Now().UnixNano()),
+			Executable: WaitSvcExe,
+			Args:       []string{"wait", stopFile},
+			Stop: &StopCommand{
+				Executable: WaitSvcExe,
+				Args: []string{
+					"-count", strconv.Itoa(WaitCount),
+					"-description", ServiceDescription,
+					"stop", stopFile,
+				},
+			},
+		}
+		conf.Processes = append(conf.Processes, wait)
+	}
+
+	return conf
 }
 
 func buildPipeExe() error {
@@ -181,7 +268,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			fs = boshsys.NewOsFileSystem(logger)
 
 			var err error
-			basePath, err = ioutil.TempDir("", "")
+			basePath, err = ioutil.TempDir(TempDir, "")
 			Expect(err).ToNot(HaveOccurred())
 			fs.MkdirAll(basePath, 0755)
 
@@ -229,6 +316,106 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				return conf, err
 			}
 			return conf, jobSupervisor.AddJob(jobName, 0, confPath)
+		}
+
+		// AddFlappingJob adds and starts flapping job jobName and waits for it
+		// to fail at least once.
+		AddFlappingJob := func(jobName string) (*WindowsProcessConfig, error) {
+			conf, err := AddJob(jobName)
+			if err != nil {
+				return nil, err
+			}
+			if err := jobSupervisor.Start(); err != nil {
+				return nil, err
+			}
+			m, err := mgr.Connect()
+			if err != nil {
+				return nil, err
+			}
+			defer m.Disconnect()
+
+			var svcs []*mgr.Service
+			defer func() {
+				for _, s := range svcs {
+					s.Close()
+				}
+			}()
+
+			for _, proc := range conf.Processes {
+				s, err := m.OpenService(proc.Name)
+				if err != nil {
+					return nil, err
+				}
+				svcs = append(svcs, s)
+			}
+
+			timeout := time.After(time.Second * 10)
+			tick := time.NewTicker(time.Millisecond * 50)
+			defer tick.Stop()
+
+		OuterLoop:
+			for {
+				select {
+				case <-tick.C:
+					for _, s := range svcs {
+						st, err := s.Query()
+						if err != nil {
+							return nil, err
+						}
+						if st.State == svc.Stopped || st.State == svc.StopPending {
+							break OuterLoop
+						}
+					}
+				case <-timeout:
+					return nil, errors.New("AddFlappingJob: timed out waiting for job to fail")
+				}
+			}
+
+			return &conf, nil
+		}
+
+		GetServiceState := func(serviceName string) (svc.State, error) {
+			m, err := mgr.Connect()
+			if err != nil {
+				return 0, err
+			}
+			defer m.Disconnect()
+			s, err := m.OpenService(serviceName)
+			if err != nil {
+				return 0, err
+			}
+			defer s.Close()
+			st, err := s.Query()
+			if err != nil {
+				return 0, err
+			}
+			return st.State, nil
+		}
+
+		GetServiceInfo := func(svcName string) (svc.Status, mgr.Config, error) {
+			m, err := mgr.Connect()
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+			defer m.Disconnect()
+
+			s, err := m.OpenService(svcName)
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+			defer s.Close()
+
+			status, err := s.Query()
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+
+			conf, err := s.Config()
+			if err != nil {
+				return svc.Status{}, mgr.Config{}, err
+			}
+
+			return status, conf, nil
 		}
 
 		AfterEach(func() {
@@ -296,10 +483,11 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				for _, proc := range conf.Processes {
-					stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", proc.Name)
+					status, conf, err := GetServiceInfo(proc.Name)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(stdout).To(ContainSubstring(proc.Name))
-					Expect(stdout).To(ContainSubstring("Stopped"))
+
+					Expect(conf.Description).To(Equal(ServiceDescription))
+					Expect(status.State).To(Equal(svc.Stopped))
 				}
 			})
 
@@ -327,10 +515,9 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(jobSupervisor.Start()).To(Succeed())
 
 				for _, proc := range conf.Processes {
-					stdout, _, _, err := runner.RunCommand("powershell", "/C", "get-service", proc.Name)
+					state, err := GetServiceState(proc.Name)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(stdout).To(ContainSubstring(proc.Name))
-					Expect(stdout).To(ContainSubstring("Running"))
+					Expect(state).To(Equal(svc.Running))
 				}
 			})
 
@@ -341,7 +528,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					readLogFile := func() (string, error) {
 						return fs.ReadFileString(path.Join(logDir, "say-hello", proc.Name, "job-service-wrapper.out.log"))
 					}
-					Eventually(readLogFile, DefaultTimeout, DefaultInterval).Should(ContainSubstring(fmt.Sprintf("Hello %d", i+1)))
+					Eventually(readLogFile, DefaultTimeout, DefaultInterval).Should(ContainSubstring(fmt.Sprintf("Hello-%d", i+1)))
 				}
 			})
 
@@ -439,33 +626,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(jobSupervisor.Unmonitor()).To(Succeed())
 
 				for _, proc := range conf.Processes {
-					stdout, _, _, err := runner.RunCommand(
-						"/C", "get-wmiobject", "win32_service", "-filter",
-						fmt.Sprintf(`"name='%s'"`, proc.Name), "-property", "StartMode",
-					)
+					_, conf, err := GetServiceInfo(proc.Name)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(stdout).To(ContainSubstring("Disabled"))
+					Expect(uint(conf.StartType)).To(Equal(uint(mgr.StartDisabled)))
 				}
 			})
 		})
-
-		GetServiceState := func(serviceName string) (svc.State, error) {
-			m, err := mgr.Connect()
-			if err != nil {
-				return 0, err
-			}
-			defer m.Disconnect()
-			s, err := m.OpenService(serviceName)
-			if err != nil {
-				return 0, err
-			}
-			defer s.Close()
-			st, err := s.Query()
-			if err != nil {
-				return 0, err
-			}
-			return st.State, nil
-		}
 
 		Describe("StopAndWait", func() {
 			It("waits for the services to be stopped", func() {
@@ -483,18 +649,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			It("stops flapping service", func() {
-				conf, err := AddJob("flapping")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				// Wait for a service to be flapping
-				Expect(len(conf.Processes)).To(BeNumerically(">=", 1))
-				proc := conf.Processes[0]
-				Eventually(func() (string, error) {
-					st, err := GetServiceState(proc.Name)
-					return SvcStateString(st), err
-				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
-
+				conf, err := AddFlappingJob("flapping")
+				Expect(err).To(Succeed())
 				Expect(jobSupervisor.StopAndWait()).To(Succeed())
 
 				Consistently(func() bool {
@@ -551,19 +707,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			It("stops flapping services", func() {
-				conf, err := AddJob("flapping")
+				conf, err := AddFlappingJob("flapping")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				Expect(len(conf.Processes)).To(BeNumerically(">=", 1))
-				proc := conf.Processes[0]
-				Eventually(func() (string, error) {
-					st, err := GetServiceState(proc.Name)
-					return SvcStateString(st), err
-				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
 
 				Expect(jobSupervisor.Stop()).To(Succeed())
 
+				proc := conf.Processes[0]
 				Eventually(func() (string, error) {
 					st, err := GetServiceState(proc.Name)
 					return SvcStateString(st), err
@@ -572,25 +721,16 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Consistently(func() (string, error) {
 					st, err := GetServiceState(proc.Name)
 					return SvcStateString(st), err
-				}, time.Second*6, time.Millisecond*10).Should(Equal(SvcStateString(svc.Stopped)))
+				}, time.Second*6, time.Millisecond*100).Should(Equal(SvcStateString(svc.Stopped)))
 			})
 
 			It("stops flapping services and gives a status of stopped", func() {
-				conf, err := AddJob("flapping")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				procs, err := jobSupervisor.Processes()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(procs)).To(Equal(len(conf.Processes)))
-
 				const wait = time.Second * 6
 				const freq = time.Millisecond * 100
 				const loops = int(time.Second * 10 / freq)
 
-				for i := 0; i < loops && jobSupervisor.Status() != "failing"; i++ {
-					time.Sleep(freq)
-				}
+				_, err := AddFlappingJob("flapping")
+				Expect(err).ToNot(HaveOccurred())
 
 				Expect(jobSupervisor.Stop()).To(Succeed())
 				for i := 0; i < loops && jobSupervisor.Status() != "stopped"; i++ {
@@ -599,6 +739,20 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Consistently(jobSupervisor.Status, wait).Should(Equal("stopped"))
 			})
 
+			It("stops services concurrently", func() {
+				conf := concurrentStopConfig()
+				confPath, err := WriteJobConfig(conf)
+				Expect(err).To(Succeed())
+				Expect(jobSupervisor.AddJob("ConcurrentWait", 0, confPath)).To(Succeed())
+
+				defer jobSupervisor.RemoveAllJobs()
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				// WARN WARN WARN
+				time.Sleep(time.Second * 10)
+
+				Expect(jobSupervisor.Stop()).To(Succeed())
+			})
 		})
 
 		Describe("StopCommand", func() {
@@ -635,7 +789,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			AfterEach(func() {
-				cancelServer <- true
+				close(cancelServer)
 			})
 
 			doJobFailureRequest := func(payload string, port int) error {
@@ -663,7 +817,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			It("sends alerts for a flapping service", func() {
 
 				var handledAlert boshalert.MonitAlert
-				alertReceived := make(chan (bool), 1)
+				alertReceived := make(chan bool, 1)
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
 					handledAlert = alert
 					alertReceived <- true
@@ -671,17 +825,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				}
 				go jobSupervisor.MonitorJobFailures(failureHandler)
 
-				conf, err := AddJob("flapping")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(jobSupervisor.Start()).To(Succeed())
-
-				Expect(len(conf.Processes)).To(BeNumerically(">=", 1))
-				proc := conf.Processes[0]
-				Eventually(func() (string, error) {
-					st, err := GetServiceState(proc.Name)
-					return SvcStateString(st), err
-				}, time.Second*6).Should(Equal(SvcStateString(svc.Stopped)))
-
+				_, err := AddFlappingJob("flapping")
+				Expect(err).To(Succeed())
 				Eventually(alertReceived, time.Second*6).Should(Receive())
 				Expect(handledAlert.ID).To(ContainSubstring("flapping"))
 				Expect(handledAlert.Event).To(Equal("pid failed"))
@@ -921,3 +1066,92 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		})
 	})
 })
+
+/*
+func XXX_testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
+	// create temp file - used by stop-start jobs
+	f, err := ioutil.TempFile(TempDir, "stopfile-")
+	Expect(err).ToNot(HaveOccurred())
+	tmpFileName := f.Name()
+	f.Close()
+
+	m := map[string]WindowsProcessConfig{
+		"say-hello": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Hello-1" & timeout /t 10 /nobreak > NUL`},
+				},
+				{
+					Name:       fmt.Sprintf("say-hello-2-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Hello-2" & timeout /t 10 /nobreak > NUL`},
+				},
+			},
+		},
+		"say-hello-syslog": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("say-hello-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Hello" & timeout /t 10 /nobreak > NUL`},
+					Env: map[string]string{
+						"__PIPE_SYSLOG_HOST":      "localhost",
+						"__PIPE_SYSLOG_PORT":      "10202",
+						"__PIPE_SYSLOG_TRANSPORT": "udp",
+					},
+				},
+			},
+		},
+		"flapping": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("flapping-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & echo "Flapping-1" & timeout /t 2 /nobreak > NUL & EXIT /B 2`},
+				},
+				{
+					Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & echo "Flapping-2" & timeout /t 2 /nobreak > NUL & EXIT /B 2`},
+				},
+				{
+					Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & echo "Flapping-3" & timeout /t 2 /nobreak > NUL & EXIT /B 2`},
+				},
+			},
+		},
+		"looping": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("looping-1-%d", time.Now().UnixNano()),
+					Executable: "cmd.exe",
+					Args:       []string{"/C", `@echo off & for /l %x in (1, 1, 10000) do echo "Looping" & timeout /t 1 /nobreak > NUL`},
+				},
+				{
+					Name:       fmt.Sprintf("looping-2-%d", time.Now().UnixNano()),
+					Executable: "powershell.exe",
+					Args:       []string{"/C", "While($true) { Start-Process -NoNewWindow powershell.exe -ArgumentList 'Start-Sleep','50'; Start-Sleep 1 }"},
+				},
+			},
+		},
+		"stop-executable": WindowsProcessConfig{
+			Processes: []WindowsProcess{
+				{
+					Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
+					Executable: StartStopExe,
+					Args:       []string{"start", tmpFileName},
+					Stop: &StopCommand{
+						Executable: StartStopExe,
+						Args:       []string{"stop", tmpFileName},
+					},
+				},
+			},
+		},
+	}
+	conf, ok := m[jobName]
+	return conf, ok
+}
+*/

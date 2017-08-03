@@ -62,7 +62,7 @@ jobs:
         passed: [test-unit, test-integration, windows-test-unit, windows-test-integration]
         get: bosh-agent
       - get: version-semver
-        params: {bump: patch}
+        params: {bump: minor}
     - put: version-semver
       params:
         file: version-semver/number

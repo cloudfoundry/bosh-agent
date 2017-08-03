@@ -3,8 +3,11 @@ package net_test
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	gonet "net"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -14,7 +17,9 @@ import (
 	"github.com/pivotal-golang/clock/fakeclock"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
@@ -46,6 +51,9 @@ var _ = Describe("WindowsNetManager", func() {
 		runner                        *fakesys.FakeCmdRunner
 		netManager                    Manager
 		interfaceConfigurationCreator InterfaceConfigurationCreator
+		fs                            boshsys.FileSystem
+		dirProvider                   boshdirs.Provider
+		tmpDir                        string
 	)
 	macAddressDetector := new(fakeMACAddressDetector)
 
@@ -67,7 +75,28 @@ var _ = Describe("WindowsNetManager", func() {
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
-		netManager = NewWindowsNetManager(runner, interfaceConfigurationCreator, macAddressDetector, logger, clock)
+		fs = boshsys.NewOsFileSystem(logger)
+
+		var err error
+		tmpDir, err = ioutil.TempDir("", "bosh-tests-")
+		Expect(err).ToNot(HaveOccurred())
+		dirProvider = boshdirs.NewProvider(tmpDir)
+		err = fs.MkdirAll(filepath.Join(dirProvider.BoshDir()), 0755)
+		Expect(err).ToNot(HaveOccurred())
+
+		netManager = NewWindowsNetManager(
+			runner,
+			interfaceConfigurationCreator,
+			macAddressDetector,
+			logger,
+			clock,
+			fs,
+			dirProvider,
+		)
+	})
+
+	AfterEach(func() {
+		os.RemoveAll(tmpDir)
 	})
 
 	setupNetworking := func(networks boshsettings.Networks) error {

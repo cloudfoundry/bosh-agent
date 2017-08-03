@@ -43,8 +43,11 @@ func NewFactory(
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
+			// API
+			"ping": NewPing(),
+			"info": NewInfo(),
+
 			// Task management
-			"ping":        NewPing(),
 			"get_task":    NewGetTask(taskService),
 			"cancel_task": NewCancelTask(taskService),
 

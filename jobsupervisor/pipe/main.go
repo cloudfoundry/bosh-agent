@@ -1,3 +1,5 @@
+// +build windows
+
 package main
 
 import (
@@ -16,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe/evtlog"
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe/syslog"
 )
 
@@ -148,6 +151,18 @@ func watchParent(sigCh chan os.Signal) error {
 	return nil
 }
 
+func closeChannel(haltCh chan struct{}) {
+	// safely close the channel
+	select {
+	case _, open := <-haltCh: // channel likely closed
+		if open {
+			close(haltCh) // nope still open
+		}
+	default: // channel is open
+		close(haltCh)
+	}
+}
+
 func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exitCode int, err error) {
 	exitCode = 1
 	defer func() {
@@ -185,17 +200,33 @@ func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exit
 	if err := cmd.Start(); err != nil {
 		return 1, fmt.Errorf("starting command (%s): %s", path, err)
 	}
-	go func() { cmd.Wait(); close(haltCh) }()
+	go func() {
+		cmd.Wait()
+		closeChannel(haltCh)
+	}()
 
 	// Critical section: make sure we do not miss an exiting process (fast or otherwise).
 	go func(pid int) {
+		select {
+		case <-time.After(time.Millisecond * 250):
+			break // assuming the cmd has started successfully
+		case <-haltCh:
+			return // process exited
+		}
 		tick := time.NewTicker(time.Millisecond * 100)
 		defer tick.Stop()
 		for {
 			select {
 			case <-tick.C:
 				if err := FindProcess(pid); err != nil {
-					close(haltCh)
+					// give wait a moment to return as it sets the ProcessState
+					select {
+					case <-time.After(time.Millisecond * 250):
+						break
+					case <-haltCh:
+						return // wait returned
+					}
+					closeChannel(haltCh)
 					return
 				}
 			case <-haltCh:
@@ -298,6 +329,35 @@ func ParseArgs() (path string, args []string, err error) {
 	return
 }
 
+func FormatSourceName(source string) string {
+	// If there are \'s source is likely the path to the executable.
+	if strings.Contains(source, "\\") {
+		source = filepath.Base(source)
+		if strings.Contains(source, "\\") {
+			source = strings.Replace(source, "\\", "_", -1)
+		}
+	}
+	return source
+}
+
+func SetupEventLog(source string) (outw, errw io.Writer, err error) {
+	if err = evtlog.Install(source); err != nil {
+		err = fmt.Errorf("installing event log source (%s): %s", source, err)
+		return
+	}
+	outw, err = evtlog.OpenWriter(evtlog.InformationType, source)
+	if err != nil {
+		err = fmt.Errorf("opening event log for stdout (%s): %s", source, err)
+		return
+	}
+	errw, err = evtlog.OpenWriter(evtlog.ErrorType, source)
+	if err != nil {
+		err = fmt.Errorf("opening event log for stderr (%s): %s", source, err)
+		return
+	}
+	return
+}
+
 func main() {
 	conf := ParseConfig()
 	conf.InitLog()
@@ -318,19 +378,36 @@ func main() {
 		exit(1)
 	}
 
-	var stdout io.Writer = os.Stdout
-	var stderr io.Writer = os.Stderr
+	outw := []io.Writer{os.Stdout}
+	errw := []io.Writer{os.Stderr}
 
-	outw, errw, err := conf.Syslog()
+	evtSource := FormatSourceName(conf.ServiceName)
+	if evtSource != conf.ServiceName {
+		log.Printf("pipe: using (%s) as event source instead of: %s",
+			evtSource, conf.ServiceName)
+	}
+
+	evtout, evterr, err := SetupEventLog(evtSource)
+	if err != nil {
+		log.Printf("pipe: installing event log source (%s): %s", conf.ServiceName, err)
+	} else {
+		outw = append(outw, &BulletproofWriter{w: evtout})
+		errw = append(errw, &BulletproofWriter{w: evterr})
+	}
+
+	sysout, syserr, err := conf.Syslog()
 	switch err {
 	case nil:
-		stdout = io.MultiWriter(os.Stdout, &BulletproofWriter{w: outw})
-		stderr = io.MultiWriter(os.Stderr, &BulletproofWriter{w: errw})
+		outw = append(outw, &BulletproofWriter{w: sysout})
+		errw = append(errw, &BulletproofWriter{w: syserr})
 	case errIncompleteSyslogConfig:
 		log.Println(err) // log and ignore
 	default:
 		log.Printf("syslog: error connecting: %s", err)
 	}
+
+	stdout := io.MultiWriter(outw...)
+	stderr := io.MultiWriter(errw...)
 
 	log.Println("pipe: starting")
 	exitCode, err := conf.Run(path, args, stdout, stderr)

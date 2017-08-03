@@ -248,16 +248,15 @@ func (a *actionWithProtocolVersion) Cancel() error {
 	return nil
 }
 
-func init() {
-	Describe("concreteRunner", func() {
-		It("runner run parses the payload", func() {
-			runner := NewRunner()
+var _ = Describe("concreteRunner", func() {
+	It("runner run parses the payload", func() {
+		runner := NewRunner()
 
-			expectedValue := valueType{ID: 13, Success: true}
-			expectedErr := errors.New("fake-run-error")
+		expectedValue := valueType{ID: 13, Success: true}
+		expectedErr := errors.New("fake-run-error")
 
-			action := &actionWithGoodRunMethod{Value: expectedValue, Err: expectedErr}
-			payload := `{
+		action := &actionWithGoodRunMethod{Value: expectedValue, Err: expectedErr}
+		payload := `{
 				"arguments":[
 					"setup",
 					 123,
@@ -267,49 +266,49 @@ func init() {
 				]
 			}`
 
-			value, err := runner.Run(action, []byte(payload), 0)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("fake-run-error"))
+		value, err := runner.Run(action, []byte(payload), 0)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(Equal("fake-run-error"))
 
-			Expect(value).To(Equal(expectedValue))
-			Expect(err).To(Equal(expectedErr))
+		Expect(value).To(Equal(expectedValue))
+		Expect(err).To(Equal(expectedErr))
 
-			Expect(action.SubAction).To(Equal("setup"))
-			Expect(action.SomeID).To(Equal(123))
-			Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", ID: 12}))
-			Expect(action.SliceArgs).To(Equal([]string{"a", "b", "c"}))
-		})
+		Expect(action.SubAction).To(Equal("setup"))
+		Expect(action.SomeID).To(Equal(123))
+		Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", ID: 12}))
+		Expect(action.SliceArgs).To(Equal([]string{"a", "b", "c"}))
+	})
 
-		It("runner run errs when actions not enough arguments", func() {
-			runner := NewRunner()
+	It("runner run errs when actions not enough arguments", func() {
+		runner := NewRunner()
 
-			expectedValue := valueType{ID: 13, Success: true}
+		expectedValue := valueType{ID: 13, Success: true}
 
-			action := &actionWithGoodRunMethod{Value: expectedValue}
-			payload := `{"arguments":["setup"]}`
+		action := &actionWithGoodRunMethod{Value: expectedValue}
+		payload := `{"arguments":["setup"]}`
 
-			_, err := runner.Run(action, []byte(payload), 0)
-			Expect(err).To(HaveOccurred())
-		})
+		_, err := runner.Run(action, []byte(payload), 0)
+		Expect(err).To(HaveOccurred())
+	})
 
-		It("runner run errs when action arguments types do not match", func() {
-			runner := NewRunner()
+	It("runner run errs when action arguments types do not match", func() {
+		runner := NewRunner()
 
-			expectedValue := valueType{ID: 13, Success: true}
+		expectedValue := valueType{ID: 13, Success: true}
 
-			action := &actionWithGoodRunMethod{Value: expectedValue}
-			payload := `{"arguments":[123, "setup", {"user":"rob","pwd":"rob123","id":12}]}`
+		action := &actionWithGoodRunMethod{Value: expectedValue}
+		payload := `{"arguments":[123, "setup", {"user":"rob","pwd":"rob123","id":12}]}`
 
-			_, err := runner.Run(action, []byte(payload), 0)
-			Expect(err).To(HaveOccurred())
-		})
+		_, err := runner.Run(action, []byte(payload), 0)
+		Expect(err).To(HaveOccurred())
+	})
 
-		It("extracts argument types correctly", func() {
-			runner := NewRunner()
+	It("extracts argument types correctly", func() {
+		runner := NewRunner()
 
-			action := &actionWithTypes{}
+		action := &actionWithTypes{}
 
-			payload := `{
+		payload := `{
 				"arguments":[{
 					"int_type":-1024000,
 					"int32_type":-1024000,
@@ -321,109 +320,108 @@ func init() {
 					"bool_type":false
 				}]
 			}`
-			_, err := runner.Run(action, []byte(payload), 0)
-			Expect(err).ToNot(HaveOccurred())
+		_, err := runner.Run(action, []byte(payload), 0)
+		Expect(err).ToNot(HaveOccurred())
 
-			Expect(action.Arg.IntType).To(Equal(int(-1024000)))
-			Expect(action.Arg.Int32Type).To(Equal(int32(-1024000)))
-			Expect(action.Arg.Int64Type).To(Equal(int64(-1024000)))
-			Expect(action.Arg.Float32Type).To(Equal(float32(100)))
-			Expect(action.Arg.Float64Type).To(Equal(float64(1.024e+06)))
-			Expect(action.Arg.UintType).To(Equal(uint(1024000)))
-			Expect(action.Arg.StringType).To(Equal("fake-string"))
-			Expect(action.Arg.BoolType).To(Equal(false))
-		})
+		Expect(action.Arg.IntType).To(Equal(int(-1024000)))
+		Expect(action.Arg.Int32Type).To(Equal(int32(-1024000)))
+		Expect(action.Arg.Int64Type).To(Equal(int64(-1024000)))
+		Expect(action.Arg.Float32Type).To(Equal(float32(100)))
+		Expect(action.Arg.Float64Type).To(Equal(float64(1.024e+06)))
+		Expect(action.Arg.UintType).To(Equal(uint(1024000)))
+		Expect(action.Arg.StringType).To(Equal("fake-string"))
+		Expect(action.Arg.BoolType).To(Equal(false))
+	})
 
-		It("runner handles optional arguments being passed in", func() {
-			runner := NewRunner()
+	It("runner handles optional arguments being passed in", func() {
+		runner := NewRunner()
 
-			expectedValue := valueType{ID: 13, Success: true}
-			expectedErr := errors.New("fake-run-error")
+		expectedValue := valueType{ID: 13, Success: true}
+		expectedErr := errors.New("fake-run-error")
 
-			action := &actionWithOptionalRunArgument{Value: expectedValue, Err: expectedErr}
-			payload := `{"arguments":["setup", {"user":"rob","pwd":"rob123","id":12}, {"user":"bob","pwd":"bob123","id":13}]}`
+		action := &actionWithOptionalRunArgument{Value: expectedValue, Err: expectedErr}
+		payload := `{"arguments":["setup", {"user":"rob","pwd":"rob123","id":12}, {"user":"bob","pwd":"bob123","id":13}]}`
 
-			value, err := runner.Run(action, []byte(payload), 0)
+		value, err := runner.Run(action, []byte(payload), 0)
 
-			Expect(value).To(Equal(expectedValue))
-			Expect(err).To(Equal(expectedErr))
+		Expect(value).To(Equal(expectedValue))
+		Expect(err).To(Equal(expectedErr))
 
-			Expect(action.SubAction).To(Equal("setup"))
-			assert.Equal(GinkgoT(), action.OptionalArgs, []argsType{
-				{User: "rob", Password: "rob123", ID: 12},
-				{User: "bob", Password: "bob123", ID: 13},
-			})
-		})
-
-		It("runner handles optional arguments when not passed in", func() {
-			runner := NewRunner()
-			action := &actionWithOptionalRunArgument{}
-			payload := `{"arguments":["setup"]}`
-
-			runner.Run(action, []byte(payload), 0)
-
-			Expect(action.SubAction).To(Equal("setup"))
-			Expect(action.OptionalArgs).To(Equal([]argsType{}))
-		})
-
-		It("runner run errs when action does not implement run", func() {
-			runner := NewRunner()
-			_, err := runner.Run(&actionWithoutRunMethod{}, []byte(`{"arguments":[]}`), 0)
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("runner run errs when actions run does not return two values", func() {
-			runner := NewRunner()
-			_, err := runner.Run(&actionWithOneRunReturnValue{}, []byte(`{"arguments":[]}`), 0)
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("runner run errs when actions run second return type is not error", func() {
-			runner := NewRunner()
-			_, err := runner.Run(&actionWithSecondReturnValueNotError{}, []byte(`{"arguments":[]}`), 0)
-			Expect(err).To(HaveOccurred())
-		})
-
-		Describe("Resume", func() {
-			It("calls Resume() on action", func() {
-				runner := NewRunner()
-				testAction := &fakeaction.TestAction{
-					ResumeErr:   errors.New("fake-action-error"),
-					ResumeValue: "fake-action-resume-value",
-				}
-
-				value, err := runner.Resume(testAction, []byte{})
-				Expect(value).To(Equal("fake-action-resume-value"))
-				Expect(err.Error()).To(Equal("fake-action-error"))
-
-				Expect(testAction.Resumed).To(BeTrue())
-			})
-		})
-
-		It("passes protocol version to run method", func() {
-			runner := NewRunner()
-
-			action := &actionWithProtocolVersion{}
-			payload := `{"arguments":["setup"]}`
-
-			_, err := runner.Run(action, []byte(payload), 1)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(action.ProtocolVersion).To(Equal(ProtocolVersion(1)))
-			Expect(action.SubAction).To(Equal("setup"))
-		})
-
-		It("passes protocol version to run method from request ProtocolVersion not the payload", func() {
-			runner := NewRunner()
-
-			action := &actionWithProtocolVersion{}
-			payload := `{"protocol":98,"arguments":["setup"]}`
-
-			_, err := runner.Run(action, []byte(payload), 1)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(action.ProtocolVersion).To(Equal(ProtocolVersion(1)))
-			Expect(action.SubAction).To(Equal("setup"))
+		Expect(action.SubAction).To(Equal("setup"))
+		assert.Equal(GinkgoT(), action.OptionalArgs, []argsType{
+			{User: "rob", Password: "rob123", ID: 12},
+			{User: "bob", Password: "bob123", ID: 13},
 		})
 	})
-}
+
+	It("runner handles optional arguments when not passed in", func() {
+		runner := NewRunner()
+		action := &actionWithOptionalRunArgument{}
+		payload := `{"arguments":["setup"]}`
+
+		runner.Run(action, []byte(payload), 0)
+
+		Expect(action.SubAction).To(Equal("setup"))
+		Expect(action.OptionalArgs).To(Equal([]argsType{}))
+	})
+
+	It("runner run errs when action does not implement run", func() {
+		runner := NewRunner()
+		_, err := runner.Run(&actionWithoutRunMethod{}, []byte(`{"arguments":[]}`), 0)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("runner run errs when actions run does not return two values", func() {
+		runner := NewRunner()
+		_, err := runner.Run(&actionWithOneRunReturnValue{}, []byte(`{"arguments":[]}`), 0)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("runner run errs when actions run second return type is not error", func() {
+		runner := NewRunner()
+		_, err := runner.Run(&actionWithSecondReturnValueNotError{}, []byte(`{"arguments":[]}`), 0)
+		Expect(err).To(HaveOccurred())
+	})
+
+	Describe("Resume", func() {
+		It("calls Resume() on action", func() {
+			runner := NewRunner()
+			testAction := &fakeaction.TestAction{
+				ResumeErr:   errors.New("fake-action-error"),
+				ResumeValue: "fake-action-resume-value",
+			}
+
+			value, err := runner.Resume(testAction, []byte{})
+			Expect(value).To(Equal("fake-action-resume-value"))
+			Expect(err.Error()).To(Equal("fake-action-error"))
+
+			Expect(testAction.Resumed).To(BeTrue())
+		})
+	})
+
+	It("passes protocol version to run method", func() {
+		runner := NewRunner()
+
+		action := &actionWithProtocolVersion{}
+		payload := `{"arguments":["setup"]}`
+
+		_, err := runner.Run(action, []byte(payload), 1)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(action.ProtocolVersion).To(Equal(ProtocolVersion(1)))
+		Expect(action.SubAction).To(Equal("setup"))
+	})
+
+	It("passes protocol version to run method from request ProtocolVersion not the payload", func() {
+		runner := NewRunner()
+
+		action := &actionWithProtocolVersion{}
+		payload := `{"protocol":98,"arguments":["setup"]}`
+
+		_, err := runner.Run(action, []byte(payload), 1)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(action.ProtocolVersion).To(Equal(ProtocolVersion(1)))
+		Expect(action.SubAction).To(Equal("setup"))
+	})
+})

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -109,24 +111,90 @@ func (p WindowsPlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
-func (p WindowsPlatform) CreateUser(username, basePath string) (err error) {
-	return
+func (p WindowsPlatform) CreateUser(username, _ string) error {
+	if err := createUserProfile(username); err != nil {
+		return bosherr.WrapError(err, "CreateUser: creating user")
+	}
+	return nil
 }
 
 func (p WindowsPlatform) AddUserToGroups(username string, groups []string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
-	return
+func (p WindowsPlatform) findEphemeralUsersMatching(reg *regexp.Regexp) ([]string, error) {
+	users, err := localAccountNames()
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Getting list of users")
+	}
+	var matchingUsers []string
+	for _, user := range users {
+		if !strings.HasPrefix(user, boshsettings.EphemeralUserPrefix) {
+			continue
+		}
+		if reg.MatchString(user) {
+			matchingUsers = append(matchingUsers, user)
+		}
+	}
+	return matchingUsers, nil
+}
+
+func (p WindowsPlatform) DeleteEphemeralUsersMatching(pattern string) error {
+	reg, err := regexp.Compile(pattern)
+	if err != nil {
+		return bosherr.WrapError(err, "Compiling regexp")
+	}
+
+	users, err := p.findEphemeralUsersMatching(reg)
+	if err != nil {
+		return bosherr.WrapError(err, "Finding ephemeral users")
+	}
+
+	for _, user := range users {
+		if err := deleteUserProfile(user); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupSSH(publicKey []string, username string) (err error) {
-	return
+func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
+
+	homedir, err := userHomeDirectory(username)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Finding home directory for user: %s", username)
+	}
+
+	sshdir := filepath.Join(homedir, ".ssh")
+	if err := p.fs.MkdirAll(sshdir, sshDirPermissions); err != nil {
+		return bosherr.WrapError(err, "Creating .ssh directory")
+	}
+
+	authkeysPath := filepath.Join(sshdir, "authorized_keys")
+	publicKeyString := strings.Join(publicKey, "\n")
+	if err := p.fs.WriteFileString(authkeysPath, publicKeyString); err != nil {
+		return bosherr.WrapErrorf(err, "Creating authorized_keys file: %s", authkeysPath)
+	}
+
+	// Grant sshd service read access to the authorized_keys file.
+	//
+	// Do not use the WindowsPlatform.cmdRunner for this - it passes
+	// every command through PowerShell, which breaks this command.
+	//
+	cmd := exec.Command("icacls.exe", authkeysPath, "/grant", "NT SERVICE\\SSHD:(R)")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		// Remove authorized_keys file - don't check the error
+		p.fs.RemoveAll(authkeysPath)
+
+		return bosherr.WrapErrorf(err, "Setting ACL on authorized_keys file (%s): %s",
+			authkeysPath, string(out))
+	}
+	return nil
 }
 
 func (p WindowsPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
@@ -138,6 +206,7 @@ func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, host
 	if windir == "" {
 		return bosherr.Error("SaveDNSRecords: missing %WINDIR% env variable")
 	}
+
 	etcdir := filepath.Join(windir, "System32", "Drivers", "etc")
 	if err := p.fs.MkdirAll(etcdir, 0755); err != nil {
 		return bosherr.WrapError(err, "SaveDNSRecords: creating etc directory")
@@ -184,7 +253,7 @@ func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks) (err er
 }
 
 func (p WindowsPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, err error) {
-	return
+	return p.netManager.GetConfiguredNetworkInterfaces()
 }
 
 func (p WindowsPlatform) GetCertManager() (certManager boshcert.Manager) {
@@ -245,6 +314,21 @@ func (p WindowsPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSetti
 }
 
 func (p WindowsPlatform) SetupDataDir() error {
+	dataDir := p.dirProvider.DataDir()
+	sysDataDir := filepath.Join(dataDir, "sys")
+	logDir := filepath.Join(sysDataDir, "log")
+
+	if err := p.fs.MkdirAll(logDir, logDirPermissions); err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", logDir)
+	}
+
+	sysDir := filepath.Join(p.dirProvider.BaseDir(), "sys")
+
+	if !p.fs.FileExists(sysDir) {
+		if err := p.fs.Symlink(sysDataDir, sysDir); err != nil {
+			return bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", sysDir, sysDataDir)
+		}
+	}
 	return nil
 }
 
@@ -359,7 +443,18 @@ func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 }
 
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
-	return "", nil
+	drive := os.Getenv("SYSTEMDRIVE")
+	if drive == "" {
+		drive = "C:"
+	}
+	drive += "\\"
+	keypath := filepath.Join(drive, "Program Files", "OpenSSH", "ssh_host_rsa_key.pub")
+
+	key, err := p.fs.ReadFileString(keypath)
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "Unable to read host public key file: %s", keypath)
+	}
+	return key, nil
 }
 
 func (p WindowsPlatform) DeleteARPEntryWithIP(ip string) error {
