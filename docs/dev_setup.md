@@ -21,10 +21,11 @@ To publish:
 
 ### Blobstores
 
-The Go Agent ships with 4 default blobstores:
+The Go Agent ships with 5 default blobstores:
 
 - Local filesystem
 - S3
+- GCS (Google Cloud Storage)
 - DAV
 - Dummy (for testing)
 
