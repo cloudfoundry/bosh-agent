@@ -26,6 +26,6 @@ func isServiceRunning(_ string) error {
 	return ErrNotImplemented
 }
 
-func areSSHServicesRunning() error {
+func sshEnabled() error {
 	return ErrNotImplemented
 }

@@ -9,16 +9,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"unsafe"
 
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
-
-	"golang.org/x/sys/windows"
 )
 
 var (
@@ -110,61 +106,6 @@ func getProfilesDirectory() (string, error) {
 	}
 	s := syscall.UTF16ToString(buf[0:])
 	return s, nil
-}
-
-//checks if the windows services needed for ssh are running
-//returns error if the services are not running or does not exist
-//returns nil if the services are running
-func areSSHServicesRunning() error {
-	var wrapError = func(err error, name string) error {
-		return bosherr.WrapErrorf(err, "Checking service: %v", name)
-	}
-	sshdServiceIsInstalled := func() bool {
-		cmd := exec.Command("PowerShell.exe", "-Command", "(Get-Service -Name SSHD).DisplayName")
-		b, err := cmd.CombinedOutput()
-		out := strings.ToUpper(strings.TrimSpace(string(b)))
-		return err == nil && out == "SSHD"
-	}
-	if !sshdServiceIsInstalled() {
-		return bosherr.WrapErrorf(errors.New("sshd is not installed"), "")
-	}
-
-	var isServiceRunning = func(m *mgr.Mgr, name string) error {
-		service, err := m.OpenService(name)
-		if err != nil {
-			return err
-		}
-
-		defer service.Close()
-
-		queryResult, err := service.Query()
-		if err != nil {
-			return err
-		}
-
-		if queryResult.State != svc.Running {
-			return errors.New(fmt.Sprintf("%v is not running. has ssh been enabled on this VM with the enable-ssh job?", name))
-		}
-
-		return nil
-	}
-
-	m, err := mgr.Connect()
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Could not connect to service manager")
-	}
-	defer m.Disconnect()
-
-	err = isServiceRunning(m, "sshd")
-	if err != nil {
-		return wrapError(err, "sshd")
-	}
-	err = isServiceRunning(m, "ssh-agent")
-	if err != nil {
-		return wrapError(err, "ssh-agent")
-	}
-
-	return nil
 }
 
 // userHomeDirectory returns the home directory for user username.  An error
@@ -415,4 +356,75 @@ func toString(p *uint16) string {
 		return ""
 	}
 	return syscall.UTF16ToString((*[4096]uint16)(unsafe.Pointer(p))[:])
+}
+
+func serviceDisabled(s *mgr.Service) bool {
+	conf, err := s.Config()
+	return err == nil && conf.StartType == mgr.StartDisabled
+}
+
+// Make the function called by GetHostPublicKey configurable for testing.
+var sshEnabled func() error = checkSSH
+
+// checkSSH checks if the sshd and ssh-agent services are installed and running.
+//
+// The services are installed during stemcell creation, but are disabled.  The
+// job windows-utilities-release/enable_ssh job is used to enable ssh.
+func checkSSH() error {
+	const ERROR_SERVICE_DOES_NOT_EXIST syscall.Errno = 0x424
+
+	const msgFmt = "%s service not running and start type is disabled.  " +
+		"To enable ssh on Windows you must run the enable_ssh job from the " +
+		"windows-utilities-release."
+
+	m, err := mgr.Connect()
+	if err != nil {
+		return fmt.Errorf("opening service control manager: %s", err)
+		return err
+	}
+	defer m.Disconnect()
+
+	sshd, err := m.OpenService("sshd")
+	if err != nil {
+		if err == ERROR_SERVICE_DOES_NOT_EXIST {
+			return errors.New("sshd is not installed")
+		}
+		return fmt.Errorf("opening service sshd: %s", err)
+	}
+	defer sshd.Close()
+
+	agent, err := m.OpenService("ssh-agent")
+	if err != nil {
+		if err == ERROR_SERVICE_DOES_NOT_EXIST {
+			return errors.New("ssh-agent is not installed")
+		}
+		return fmt.Errorf("opening service ssh-agent: %s", err)
+	}
+	defer agent.Close()
+
+	st, err := sshd.Query()
+	if err != nil {
+		return fmt.Errorf("querying status of service (sshd): %s", err)
+	}
+	if st.State != svc.Running {
+		if serviceDisabled(sshd) {
+			return fmt.Errorf(msgFmt, "sshd")
+		}
+		return errors.New("sshd service is not running")
+	}
+
+	// ssh-agent is a dependency of sshd so it should always
+	// be running if sshd is running - check just to make sure.
+	st, err = agent.Query()
+	if err != nil {
+		return fmt.Errorf("querying status of service ssh-agent: %s", err)
+	}
+	if st.State != svc.Running {
+		if serviceDisabled(agent) {
+			return fmt.Errorf(msgFmt, "ssh-agent")
+		}
+		return errors.New("ssh-agent service is not running")
+	}
+
+	return nil
 }

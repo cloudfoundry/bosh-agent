@@ -15,6 +15,8 @@ import (
 	"sync"
 	"syscall"
 
+	"golang.org/x/sys/windows/svc/mgr"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -278,7 +280,15 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("GetHostPublicKey", func() {
-		AreSSHServicesRunning = func() error { return nil }
+		var previous func() error
+
+		BeforeEach(func() {
+			previous = SetSSHEnabled(func() error { return nil })
+		})
+
+		AfterEach(func() {
+			SetSSHEnabled(previous)
+		})
 
 		const ExpPublicKey = "PUBLIC RSA KEY"
 
@@ -328,10 +338,11 @@ var _ = Describe("WindowsPlatform", func() {
 
 		It("fails if the sshd daemon is not running", func() {
 			setupHostKeys(os.Getenv("SYSTEMDRIVE"))
-			AreSSHServicesRunning = func() error { return errors.New("test") }
+
+			previous := SetSSHEnabled(func() error { return errors.New("test") })
+			defer SetSSHEnabled(previous)
 
 			_, err := platform.GetHostPublicKey()
-
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -407,10 +418,17 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 
 		sshdServiceIsInstalled := func() bool {
-			cmd := exec.Command("PowerShell.exe", "-Command", "(Get-Service -Name SSHD).DisplayName")
-			b, err := cmd.CombinedOutput()
-			out := strings.ToUpper(strings.TrimSpace(string(b)))
-			return err == nil && out == "SSHD"
+			m, err := mgr.Connect()
+			if err != nil {
+				return false
+			}
+			defer m.Disconnect()
+			s, err := m.OpenService("sshd")
+			if err != nil {
+				return false
+			}
+			s.Close()
+			return true
 		}
 
 		It("can insert public keys into the users .ssh\\authorized_keys file", func() {
@@ -430,8 +448,8 @@ var _ = Describe("WindowsPlatform", func() {
 
 			homedir, err := UserHomeDirectory(testUsername)
 			Expect(err).To(Succeed())
-			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
 
+			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
 			b, err := ioutil.ReadFile(keyPath)
 			Expect(err).To(Succeed())
 
