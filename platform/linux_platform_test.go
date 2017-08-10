@@ -3210,6 +3210,13 @@ unit: sectors
 			Expect(hostsFileContents).Should(MatchRegexp("fake-ip0\\s+fake-name0\\n"))
 			Expect(hostsFileContents).Should(MatchRegexp("fake-ip1\\s+fake-name1\\n"))
 		})
+
+		It("writes DNS records quietly when asked", func() {
+			err := platform.SaveDNSRecords(dnsRecords, "fake-hostname")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fs.WriteFileCallCount).To(Equal(0))
+			Expect(fs.WriteFileQuietlyCallCount).To(Equal(1))
+		})
 	})
 
 	Describe("SetupDNSRecordFile", func() {

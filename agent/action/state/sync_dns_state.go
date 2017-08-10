@@ -33,7 +33,7 @@ func (s SyncDNSState) SaveState(localDNSState []byte) error {
 
 	tmpFilePath := s.path + uuid
 
-	err = s.fs.WriteFile(tmpFilePath, localDNSState)
+	err = s.fs.WriteFileQuietly(tmpFilePath, localDNSState)
 	if err != nil {
 		return bosherr.WrapError(err, "writing the blobstore DNS state")
 	}

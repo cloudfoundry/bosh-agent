@@ -452,7 +452,7 @@ func (p linux) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname strin
 	}
 
 	etcHostsUUIDFileName := fmt.Sprintf("/etc/hosts-%s", uuid)
-	err = p.fs.WriteFile(etcHostsUUIDFileName, dnsRecordsContents.Bytes())
+	err = p.fs.WriteFileQuietly(etcHostsUUIDFileName, dnsRecordsContents.Bytes())
 	if err != nil {
 		return bosherr.WrapError(err, fmt.Sprintf("Writing to %s", etcHostsUUIDFileName))
 	}
