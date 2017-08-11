@@ -19,7 +19,7 @@ import (
 type Mgr struct {
 	m     *mgr.Mgr
 	mon   *monitor
-	match func(description string) bool // WARN: DEV ONLY
+	match func(description string) bool
 }
 
 // Connect returns a new Mgr that will monitor all services with descriptions
@@ -565,7 +565,7 @@ func (m *Mgr) Unmonitor() error {
 	})
 }
 
-// DisableAgentAutoStart sets the start type of the bosh-agent to disabled.
+// DisableAgentAutoStart sets the start type of the bosh-agent to manual.
 func (m *Mgr) DisableAgentAutoStart() error {
 	const name = "bosh-agent"
 	s, err := m.m.OpenService("bosh-agent")
@@ -573,7 +573,7 @@ func (m *Mgr) DisableAgentAutoStart() error {
 		return &ServiceError{"opening service", name, err}
 	}
 	defer s.Close()
-	return m.setStartType(s, mgr.StartDisabled)
+	return m.setStartType(s, mgr.StartManual)
 }
 
 func svcStateString(s svc.State) string {
