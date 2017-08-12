@@ -28,5 +28,5 @@ type MemoryVitals struct {
 }
 
 type UptimeVitals struct {
-	Seconds uint64 `json:"secs,omitempty"`
+	Secs uint64 `json:"secs,omitempty"`
 }

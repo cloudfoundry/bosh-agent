@@ -38,7 +38,7 @@ func (p dummyStatsCollector) GetDiskStats(devicePath string) (stats DiskStats, e
 	return
 }
 
-func (p dummyStatsCollector) GetVMStats() (stats VMStats, err error) {
-	stats.Uptime.Seconds = 5
+func (p dummyStatsCollector) GetUptimeStats() (stats UptimeStats, err error) {
+	stats.Secs = 5
 	return
 }
