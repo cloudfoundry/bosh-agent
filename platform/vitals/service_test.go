@@ -38,10 +38,8 @@ func buildVitalsService() (statsCollector *fakestats.FakeCollector, service Serv
 			Used:  600 * 1024,
 			Total: 1000 * 1024,
 		},
-		VMStats: boshstats.VMStats{
-			Uptime: boshstats.Seconds{
-				Seconds: 5,
-			},
+		UptimeStats: boshstats.UptimeStats{
+			Secs: 5,
 		},
 		DiskStats: map[string]boshstats.DiskStats{
 			"/": boshstats.DiskStats{

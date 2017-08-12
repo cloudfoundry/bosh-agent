@@ -19,7 +19,7 @@ type FakeCollector struct {
 	SwapStats boshstats.Usage
 	DiskStats map[string]boshstats.DiskStats
 
-	VMStats boshstats.VMStats
+	UptimeStats boshstats.UptimeStats
 }
 
 func (c *FakeCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
@@ -53,7 +53,7 @@ func (c *FakeCollector) GetDiskStats(devicePath string) (stats boshstats.DiskSta
 	return
 }
 
-func (c *FakeCollector) GetVMStats() (stats boshstats.VMStats, err error) {
-	stats = c.VMStats
+func (c *FakeCollector) GetUptimeStats() (stats boshstats.UptimeStats, err error) {
+	stats = c.UptimeStats
 	return
 }
