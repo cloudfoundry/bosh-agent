@@ -145,7 +145,9 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int, mac
 		serviceEnv{Name: "__PIPE_NOTIFY_HTTP", Value: fmt.Sprintf("http://localhost:%d", eventPort)},
 		serviceEnv{Name: "__PIPE_MACHINE_IP", Value: machineIP},
 	)
-
+	if s := os.Getenv("__PIPE_DISABLE_NOTIFY"); s != "" {
+		srcv.Env = append(srcv.Env, serviceEnv{Name: "__PIPE_DISABLE_NOTIFY", Value: s})
+	}
 	return srcv
 }
 

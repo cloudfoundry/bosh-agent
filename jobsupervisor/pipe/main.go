@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -34,6 +35,7 @@ type Config struct {
 	ServiceName     string // "SERVICE_NAME"
 	LogDir          string // "LOG_DIR"
 	NotifyHTTP      string // "NOTIFY_HTTP"
+	DisableNotify   bool   // "DISABLE_NOTIFY"
 	SyslogHost      string // "SYSLOG_HOST"
 	SyslogPort      string // "SYSLOG_PORT"
 	SyslogTransport string // "SYSLOG_TRANSPORT"
@@ -55,6 +57,10 @@ func ParseConfig() *Config {
 	}
 	if c.NotifyHTTP == "" {
 		c.NotifyHTTP = "http://127.0.0.1:2825"
+	}
+	if s := os.Getenv(EnvPrefix + "DISABLE_NOTIFY"); s != "" {
+		disable, err := strconv.ParseBool(s)
+		c.DisableNotify = err == nil && disable
 	}
 	return c
 }
@@ -109,6 +115,9 @@ type Event struct {
 }
 
 func (c *Config) SendEvent(code int) error {
+	if c.DisableNotify {
+		return nil
+	}
 	v := Event{
 		Event:       "pid failed",
 		ProcessName: c.ServiceName,

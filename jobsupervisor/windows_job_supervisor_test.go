@@ -49,6 +49,7 @@ var (
 	StartStopExe string
 	HelloExe     string
 	WaitSvcExe   string
+	FlapStartExe string
 	TempDir      string
 
 	ServiceDescription = GetServiceDescription()
@@ -83,6 +84,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	HelloExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/Hello")
+	Expect(err).ToNot(HaveOccurred())
+
+	FlapStartExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/FlapStart")
 	Expect(err).ToNot(HaveOccurred())
 
 	WaitSvcExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/WaitSvc")
@@ -224,6 +228,39 @@ func concurrentStopConfig() WindowsProcessConfig {
 	return conf
 }
 
+// If the interval is less than 1 the default is used
+func flappingStartConfig(flapCount, jobCount int) (WindowsProcessConfig, error) {
+	var conf WindowsProcessConfig
+
+	if flapCount < 1 {
+		return conf, fmt.Errorf("flappingStartConfig: invalid flap count: %d", flapCount)
+	}
+	if jobCount < 1 {
+		return conf, fmt.Errorf("flappingStartConfig: invalid job count: %d", jobCount)
+	}
+
+	for i := 0; i < jobCount; i++ {
+		f, err := ioutil.TempFile(TempDir, "flapping-")
+		if err != nil {
+			return conf, err
+		}
+		defer f.Close()
+
+		if _, err := f.WriteString(strconv.Itoa(flapCount)); err != nil {
+			return conf, err
+		}
+
+		p := WindowsProcess{
+			Name:       fmt.Sprintf("flap-start-%d-%d", i, time.Now().UnixNano()),
+			Executable: FlapStartExe,
+			Args:       []string{"-file", f.Name()},
+		}
+		conf.Processes = append(conf.Processes, p)
+	}
+
+	return conf, nil
+}
+
 func buildPipeExe() error {
 	pathToPipeCLI, err := gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
 	if err != nil {
@@ -231,6 +268,23 @@ func buildPipeExe() error {
 	}
 	SetPipeExePath(pathToPipeCLI)
 	return nil
+}
+
+type AlertHandler struct {
+	mu    sync.Mutex
+	alert boshalert.MonitAlert
+}
+
+func (a *AlertHandler) Set(alert boshalert.MonitAlert) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.alert = alert
+}
+
+func (a *AlertHandler) Get() boshalert.MonitAlert {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.alert
 }
 
 var _ = Describe("WindowsJobSupervisor", func() {
@@ -372,6 +426,18 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			}
 
 			return &conf, nil
+		}
+
+		AddFlappingStartJob := func(flapCount, jobCount int) (*WindowsProcessConfig, error) {
+			conf, err := flappingStartConfig(flapCount, jobCount)
+			if err != nil {
+				return nil, err
+			}
+			confPath, err := WriteJobConfig(conf)
+			if err != nil {
+				return nil, err
+			}
+			return &conf, jobSupervisor.AddJob("flap-start", 0, confPath)
 		}
 
 		GetServiceState := func(serviceName string) (svc.State, error) {
@@ -574,6 +640,41 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					pipeLogPath := filepath.Join(logDir, "say-hello", proc.Name, "pipe.log")
 					Eventually(fileContains(pipeLogPath, proc.Name), DefaultTimeout, DefaultInterval).Should(Succeed())
 				}
+			})
+		})
+
+		Describe("Start Flapping Jobs", func() {
+
+			testStartFlappingJobs := func(flapCount, jobCount int) {
+				// Prevent Pipe.exe from sending failure notifications as there
+				// is nothing listening and the delay of trying to send the
+				// notification causes WinSW to think the process is actually
+				// running when it is not.  That is because WinSW monitors
+				// pipe.exe - not the underlying process.
+				os.Setenv("__PIPE_DISABLE_NOTIFY", strconv.FormatBool(true))
+				defer os.Unsetenv("__PIPE_DISABLE_NOTIFY")
+
+				conf, err := AddFlappingStartJob(flapCount, jobCount)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(jobSupervisor.Start()).To(Succeed())
+
+				for i := 0; i < 5; i++ {
+					for _, p := range conf.Processes {
+						st, err := GetServiceState(p.Name)
+						Expect(err).To(Succeed())
+						Expect(SvcStateString(st)).To(Equal(SvcStateString(svc.Running)))
+					}
+					time.Sleep(time.Second)
+				}
+			}
+
+			It("starts one flapping service", func() {
+				testStartFlappingJobs(3, 1)
+			})
+
+			It("starts many flapping services", func() {
+				testStartFlappingJobs(1, 5)
 			})
 		})
 
@@ -816,11 +917,11 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			It("sends alerts for a flapping service", func() {
 
-				var handledAlert boshalert.MonitAlert
+				var handledAlert AlertHandler
 				alertReceived := make(chan bool, 1)
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
-					handledAlert = alert
 					alertReceived <- true
+					handledAlert.Set(alert)
 					return
 				}
 				go jobSupervisor.MonitorJobFailures(failureHandler)
@@ -828,15 +929,15 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				_, err := AddFlappingJob("flapping")
 				Expect(err).To(Succeed())
 				Eventually(alertReceived, time.Second*6).Should(Receive())
-				Expect(handledAlert.ID).To(ContainSubstring("flapping"))
-				Expect(handledAlert.Event).To(Equal("pid failed"))
+
+				Expect(handledAlert.Get().ID).To(ContainSubstring("flapping"))
+				Expect(handledAlert.Get().Event).To(Equal("pid failed"))
 			})
 
 			It("receives job failures from the service wrapper via HTTP", func() {
-				var handledAlert boshalert.MonitAlert
-
+				var handledAlert AlertHandler
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
-					handledAlert = alert
+					handledAlert.Set(alert)
 					return
 				}
 
@@ -845,13 +946,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				err := doJobFailureRequest(failureRequest, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(handledAlert).To(Equal(expectedMonitAlert(handledAlert)))
+				alert := handledAlert.Get()
+				Expect(alert).To(Equal(expectedMonitAlert(alert)))
 			})
 
 			It("stops sending failures after a call to Unmonitor", func() {
-				var handledAlert boshalert.MonitAlert
+				var handledAlert AlertHandler
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
-					handledAlert = alert
+					handledAlert.Set(alert)
 					return
 				}
 				go jobSupervisor.MonitorJobFailures(failureHandler)
@@ -863,13 +965,13 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// Should match empty MonitAlert
-				Expect(handledAlert).To(Equal(boshalert.MonitAlert{}))
+				Expect(handledAlert.Get()).To(Equal(boshalert.MonitAlert{}))
 			})
 
 			It("re-monitors all jobs after a call to start", func() {
-				var handledAlert boshalert.MonitAlert
+				var handledAlert AlertHandler
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
-					handledAlert = alert
+					handledAlert.Set(alert)
 					return
 				}
 				go jobSupervisor.MonitorJobFailures(failureHandler)
@@ -881,7 +983,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// Should match empty MonitAlert
-				Expect(handledAlert).To(Equal(boshalert.MonitAlert{}))
+				Expect(handledAlert.Get()).To(Equal(boshalert.MonitAlert{}))
 
 				// Start should re-monitor all jobs
 				Expect(jobSupervisor.Start()).To(Succeed())
@@ -889,14 +991,18 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				err = doJobFailureRequest(failureRequest, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(handledAlert).To(Equal(expectedMonitAlert(handledAlert)))
+				alert := handledAlert.Get()
+				Expect(alert).To(Equal(expectedMonitAlert(alert)))
 			})
 
 			It("ignores unknown requests", func() {
+				var mu sync.Mutex
 				var didHandleAlert bool
 
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+					mu.Lock()
 					didHandleAlert = true
+					mu.Unlock()
 					return
 				}
 
@@ -904,6 +1010,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 				err := doJobFailureRequest(`some bad request`, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
+				mu.Lock()
+				defer mu.Unlock()
 				Expect(didHandleAlert).To(BeFalse())
 				Expect(logErr.Bytes()).To(ContainSubstring("MonitorJobFailures received unknown request"))
 			})
