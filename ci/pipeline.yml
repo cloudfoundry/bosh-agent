@@ -62,12 +62,13 @@ jobs:
         passed: [test-unit, test-integration, windows-test-unit, windows-test-integration]
         get: bosh-agent
       - get: version-semver
-        params: {bump: minor}
+        params: {bump: {{version_bump}}}
     - put: version-semver
       params:
         file: version-semver/number
-    - put: bosh-agent-master
+    - put: bosh-agent
       params:
+        only_tag: true
         repository: bosh-agent
         tag: version-semver/number
         tag_prefix: v
@@ -76,8 +77,6 @@ jobs:
         file: bosh-agent/ci/tasks/build-linux.yml
       - task: build-linux-ppc64le
         file: bosh-agent/ci/tasks/build-linux-ppc64le.yml
-      - task: build-windows
-        file: bosh-agent/ci/tasks/build-windows.yml
     - aggregate:
       - put: release-bucket-linux
         params:
@@ -85,23 +84,13 @@ jobs:
       - put: release-bucket-linux-ppc64le
         params:
           file: compiled-linux-ppc64le/bosh-agent-*-linux-ppc64le
-      - put: release-bucket-windows
-        params:
-          file: compiled-windows-amd64/bosh-agent-*-windows-amd64.exe
 
 resources:
 - name: bosh-agent
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh-agent
-    branch: develop
-
-- name: bosh-agent-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: master
-    private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
+    branch: {{agent_branch}}
 
 - name: windows-ami
   type: ami-resource
@@ -140,21 +129,11 @@ resources:
     access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
     secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
 
-- name: release-bucket-windows
-  type: s3
-  source:
-    bucket: releases
-    regexp: bosh-agent-(.*)-windows-amd64.exe
-    bucket: {{RELEASE_BUCKET_AGENT}}
-    region_name: {{AWS_S3_BUCKET_REGION}}
-    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
-    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
-
 - name: version-semver
   type: semver
   source:
-    initial_version: 0.0.1
-    key: agent-current-version
+    initial_version: {{agent_initial_version}}
+    key: {{agent_version_key}}
     bucket: {{SEMVER_BUCKET}}
     region_name: {{AWS_S3_BUCKET_REGION}}
     access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
