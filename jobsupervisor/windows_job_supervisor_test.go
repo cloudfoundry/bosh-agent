@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sys/windows/svc"
@@ -35,14 +36,22 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-const jobFailuresServerPort = 5000
-
-const DefaultMachineIP = "127.0.0.1"
+func init() {
+	// Make sure we don't use 'vcap' as the service description,
+	// otherwise we may destroy BOSH deployed Concourse workers.
+	//
+	// This is set in windows_job_supervisor_export_test.go
+	if ServiceDescription == "vcap" {
+		panic("ServiceDescription == 'vcap' - This is not allowed for tests!")
+	}
+}
 
 const (
-	DefaultTimeout   = time.Second * 15
-	DefaultInterval  = time.Millisecond * 500
-	DefaultEventPort = 2825
+	jobFailuresServerPort = 5000
+	DefaultMachineIP      = "127.0.0.1"
+	DefaultTimeout        = time.Second * 15
+	DefaultInterval       = time.Millisecond * 500
+	DefaultEventPort      = 2825
 )
 
 var (
@@ -70,12 +79,6 @@ var _ = AfterSuite(func() {
 })
 
 var _ = BeforeSuite(func() {
-	// Make sure we don't use 'vcap' as the service description,
-	// otherwise we may destroy BOSH deployed Concourse workers.
-	//
-	// This is set in windows_job_supervisor_export_test.go
-	Expect(ServiceDescription).ToNot(Equal("vcap"))
-
 	var err error
 	TempDir, err = ioutil.TempDir("", "bosh-")
 	Expect(err).ToNot(HaveOccurred())
@@ -127,17 +130,17 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, bool) {
 			{
 				Name:       fmt.Sprintf("flapping-1-%d", time.Now().UnixNano()),
 				Executable: HelloExe,
-				Args:       []string{"-message", "Flapping-1", "-loop", "100ms", "-die", "1s", "-exit", "2"},
+				Args:       []string{"-message", "Flapping-1", "-loop", "100ms", "-die", "2s", "-exit", "2"},
 			},
 			{
 				Name:       fmt.Sprintf("flapping-2-%d", time.Now().UnixNano()),
 				Executable: HelloExe,
-				Args:       []string{"-message", "Flapping-2", "-loop", "100ms", "-die", "1500ms", "-exit", "2"},
+				Args:       []string{"-message", "Flapping-2", "-loop", "100ms", "-die", "3s", "-exit", "2"},
 			},
 			{
 				Name:       fmt.Sprintf("flapping-3-%d", time.Now().UnixNano()),
 				Executable: HelloExe,
-				Args:       []string{"-message", "Flapping-3", "-loop", "100ms", "-die", "2s", "-exit", "2"},
+				Args:       []string{"-message", "Flapping-3", "-loop", "100ms", "-die", "4s", "-exit", "2"},
 			},
 		}
 	case "looping":
@@ -277,14 +280,15 @@ type AlertHandler struct {
 
 func (a *AlertHandler) Set(alert boshalert.MonitAlert) {
 	a.mu.Lock()
-	defer a.mu.Unlock()
 	a.alert = alert
+	a.mu.Unlock()
 }
 
 func (a *AlertHandler) Get() boshalert.MonitAlert {
 	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.alert
+	alert := a.alert
+	a.mu.Unlock()
+	return alert
 }
 
 var _ = Describe("WindowsJobSupervisor", func() {
@@ -857,6 +861,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		})
 
 		Describe("StopCommand", func() {
+
 			It("uses the stop executable to stop the process", func() {
 				conf, err := AddJob("stop-executable")
 				Expect(err).ToNot(HaveOccurred())
@@ -895,8 +900,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			doJobFailureRequest := func(payload string, port int) error {
 				url := fmt.Sprintf("http://localhost:%d", port)
-				r := bytes.NewReader([]byte(payload))
-				_, err := http.Post(url, "application/json", r)
+				_, err := http.Post(url, "application/json", strings.NewReader(payload))
 				return err
 			}
 
@@ -996,24 +1000,17 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			It("ignores unknown requests", func() {
-				var mu sync.Mutex
-				var didHandleAlert bool
-
+				var didHandleAlert int32
 				failureHandler := func(alert boshalert.MonitAlert) (err error) {
-					mu.Lock()
-					didHandleAlert = true
-					mu.Unlock()
+					atomic.StoreInt32(&didHandleAlert, 1)
 					return
 				}
-
 				go jobSupervisor.MonitorJobFailures(failureHandler)
 
 				err := doJobFailureRequest(`some bad request`, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
-				mu.Lock()
-				defer mu.Unlock()
-				Expect(didHandleAlert).To(BeFalse())
-				Expect(logErr.Bytes()).To(ContainSubstring("MonitorJobFailures received unknown request"))
+				Expect(int(atomic.LoadInt32(&didHandleAlert))).To(Equal(0))
+				Expect(logErr.Bytes()).To(ContainSubstring("MonitorJobFailures: received unknown request"))
 			})
 
 			It("returns an error when it fails to bind", func() {
