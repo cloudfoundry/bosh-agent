@@ -37,6 +37,7 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 
 				routes, err := searcher.SearchRoutes()
 				Expect(err).ToNot(HaveOccurred())
+				Expect(runner.RunCommandsQuietly[0]).To(Equal([]string{"route", "-n"}))
 				Expect(routes).To(Equal([]Route{
 					Route{Destination: "172.16.79.0", Gateway: "0.0.0.0", InterfaceName: "eth0"},
 					Route{Destination: "169.254.0.0", Gateway: "0.0.0.0", InterfaceName: "eth0"},

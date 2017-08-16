@@ -106,12 +106,14 @@ var _ = Describe("SyncDNSState", func() {
 				fakeUUIDGenerator.GeneratedUUID = "fake-generated-uuid"
 			})
 
-			It("saves the state in the path", func() {
+			It("quietly saves the state in the path", func() {
 				err = syncDNSState.SaveState(localDNSState)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeFileSystem.RenameOldPaths[0]).To(Equal(path + "fake-generated-uuid"))
 				Expect(fakeFileSystem.RenameNewPaths[0]).To(Equal(path))
+				Expect(fakeFileSystem.WriteFileQuietlyCallCount).To(Equal(1))
+				Expect(fakeFileSystem.WriteFileCallCount).To(Equal(0))
 
 				contents, err := fakeFileSystem.ReadFile(path)
 				Expect(err).ToNot(HaveOccurred())

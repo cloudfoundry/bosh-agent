@@ -22,7 +22,7 @@ func NewRoutesSearcher(runner boshsys.CmdRunner) RoutesSearcher {
 func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
 	var routes []Route
 
-	stdout, _, _, err := s.runner.RunCommand("route", "-n")
+	stdout, _, _, err := s.runner.RunCommandQuietly("route", "-n")
 	if err != nil {
 		return routes, bosherr.WrapError(err, "Running route")
 	}

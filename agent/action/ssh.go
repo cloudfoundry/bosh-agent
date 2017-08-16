@@ -72,7 +72,14 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 
 	boshSSHPath := path.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 
-	err := a.platform.CreateUser(params.User, boshSSHPath)
+	// this must happen first so unfulfilled prerequistes on windows
+	// can stop the creation of new users
+	publicKey, err := a.platform.GetHostPublicKey()
+	if err != nil {
+		return result, bosherr.WrapError(err, "Getting host public key")
+	}
+
+	err = a.platform.CreateUser(params.User, boshSSHPath)
 	if err != nil {
 		return result, bosherr.WrapError(err, "Creating user")
 	}
@@ -92,11 +99,6 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 	defaultIP, found := settings.Networks.DefaultIP()
 	if !found {
 		return result, errors.New("No default ip could be found")
-	}
-
-	publicKey, err := a.platform.GetHostPublicKey()
-	if err != nil {
-		return result, bosherr.WrapError(err, "Getting host public key")
 	}
 
 	result = SSHResult{

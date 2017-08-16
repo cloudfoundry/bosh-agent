@@ -11,4 +11,9 @@
   </log>
   <delayedAutoStart/>
   <onfailure action="restart" delay="5 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="20 sec"/>
+  <onfailure action="restart" delay="40 sec"/>
+  <onfailure action="restart" delay="80 sec"/>
+  <onfailure action="restart" delay="160 sec"/>
 </service>

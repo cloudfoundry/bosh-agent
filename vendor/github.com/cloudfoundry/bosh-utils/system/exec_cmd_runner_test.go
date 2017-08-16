@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	. "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -314,11 +315,26 @@ var _ = Describe("execCmdRunner", func() {
 		})
 	})
 
-	Describe("CommandExists", func() {
+	Describe("RunCommandWithInput", func() {
 		It("run command with input", func() {
 			stdout, stderr, status, err := runner.RunCommandWithInput("foo\nbar\nbaz", CatExePath)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stdout).To(Equal("foo\nbar\nbaz"))
+			Expect(stderr).To(BeEmpty())
+			Expect(status).To(Equal(0))
+		})
+	})
+
+	Describe("RunCommandQuietly", func() {
+		It("run command with input", func() {
+			logger := &loggerfakes.FakeLogger{}
+			runner = NewExecCmdRunner(logger)
+
+			cmd := GetPlatformCommand("echo")
+			stdout, stderr, status, err := runner.RunCommandQuietly(cmd.Name, cmd.Args...)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(logger.DebugCallCount()).To(Equal(2))
+			Expect(stdout).To(Equal("Hello World!\n"))
 			Expect(stderr).To(BeEmpty())
 			Expect(status).To(Equal(0))
 		})

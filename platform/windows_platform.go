@@ -443,16 +443,33 @@ func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 }
 
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
+
+	if err := sshEnabled(); err != nil {
+		return "", bosherr.WrapError(err, "OpenSSH is not running")
+	}
+
 	drive := os.Getenv("SYSTEMDRIVE")
 	if drive == "" {
 		drive = "C:"
 	}
 	drive += "\\"
-	keypath := filepath.Join(drive, "Program Files", "OpenSSH", "ssh_host_rsa_key.pub")
+
+	sshdir := filepath.Join(drive, "Program Files", "OpenSSH")
+	keypath := filepath.Join(sshdir, "ssh_host_rsa_key.pub")
 
 	key, err := p.fs.ReadFileString(keypath)
 	if err != nil {
-		return "", bosherr.WrapErrorf(err, "Unable to read host public key file: %s", keypath)
+		// Provide a useful error message.
+		//
+		// Do this here otherwise the FakeFileSystem we use for tests
+		// incorrectly complains that the directories we created don't
+		// exist.
+		//
+		if _, err := p.fs.Stat(sshdir); os.IsNotExist(err) {
+			return "", bosherr.WrapErrorf(err, "Reading host public key: "+
+				"expected OpenSSH to be installed at: %s", sshdir)
+		}
+		return "", bosherr.WrapErrorf(err, "Missing host public RSA key: %s", keypath)
 	}
 	return key, nil
 }
