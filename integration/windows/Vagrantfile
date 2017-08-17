@@ -42,6 +42,22 @@ configure_security_settings = <<-SHELL
   Set-ExecutionPolicy -ExecutionPolicy Bypass
 SHELL
 
+extract_fixtures_archive = <<-SHELL
+  Push-Location "C:\\bosh"
+    if (-Not (Test-Path ".\\tar.exe")) {
+      Write-Error "Missing tar.exe"
+      Exit 1
+    }
+    if (-Not (Test-Path ".\\fixtures.tgz")) {
+      Write-Error "Missing fixtures.tgz"
+      Exit 1
+    }
+    .\\tar.exe -xzf fixtures.tgz
+    Move-Item -Path pipe.exe -Destination C:\\var\\vcap\\bosh\\bin\\pipe.exe
+    Remove-Item fixtures.tgz
+  Pop-Location
+SHELL
+
 reset_bosh_directory = <<-SHELL
   if ((Test-Path c:\\bosh\\service_wrapper.exe) -And ($(C:\\bosh\\service_wrapper.exe status) -ne "NonExistent")) {
     if ($(C:\\bosh\\service_wrapper.exe status) -eq "Started") {
@@ -224,13 +240,8 @@ Vagrant.configure(2) do |config|
     agent.vm.provision "shell", inline: reset_bosh_directory
 
     file_list = [
-      {file: "fixtures/service_wrapper.xml", dest: "c:\\bosh\\"},
-      {file: "fixtures/service_wrapper.exe", dest: "c:\\bosh\\"},
-      {file: "fixtures/job-service-wrapper.exe", dest: "c:\\bosh"},
-      {file: "fixtures/bosh-blobstore-dav.exe", dest: "c:\\bosh\\"},
-      {file: "fixtures/tar.exe", dest: "c:\\bosh\\"},
-      {file: "fixtures/bosh-agent.exe", dest: "c:\\bosh\\"},
-      {file: "fixtures/pipe.exe", dest: "C:\\var\\vcap\\bosh\\bin\\"}
+      {file: "fixtures/fixtures.tgz", dest: "c:\\bosh\\"},
+      {file: "fixtures/tar.exe", dest: "c:\\bosh\\"}
     ]
 
     file_list.each do |file_dest|
@@ -238,6 +249,7 @@ Vagrant.configure(2) do |config|
     end
 
     provision_scripts = [
+      extract_fixtures_archive,
       configure_security_settings,
       add_bosh_to_path,
       write_agent_configs,
