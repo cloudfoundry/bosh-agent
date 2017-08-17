@@ -85,6 +85,10 @@ var _ = BeforeSuite(func() {
 		Fail("Environment variable GOPATH not set", 1)
 	}
 
+	if err := utils.BuildAgent(); err != nil {
+		Fail(fmt.Sprintln("Could not build the bosh-agent project.\nError is:", err))
+	}
+
 	dirname := filepath.Join(os.Getenv("GOPATH"),
 		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures")
 	filename := filepath.Join(dirname, "fixtures.tgz")
@@ -94,6 +98,6 @@ var _ = BeforeSuite(func() {
 
 	_, err := utils.StartVagrant(VagrantProvider)
 	if err != nil {
-		Fail(fmt.Sprintln("Could not build the bosh-agent project.\nError is:", err))
+		Fail(fmt.Sprintln("Could not setup and run vagrant.\nError is:", err))
 	}
 })
