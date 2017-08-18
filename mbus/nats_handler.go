@@ -17,6 +17,7 @@ import (
 	"crypto/x509"
 	"time"
 
+	"crypto/tls"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -223,7 +224,7 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 
 	if settings.Env.IsNatsTLSEnabled() {
 		connInfo.CertPool = x509.NewCertPool()
-		if ok := connInfo.CertPool.AppendCertsFromPEM([]byte(settings.Env.Bosh.Mbus.CA)); !ok {
+		if ok := connInfo.CertPool.AppendCertsFromPEM([]byte(settings.Env.Bosh.Mbus.Cert.CA)); !ok {
 			return nil, bosherr.Error("Failed to load Mbus CA cert")
 		}
 	}
@@ -236,6 +237,14 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 		}
 		connInfo.Password = password
 		connInfo.Username = user.Username()
+	}
+
+	if settings.Env.IsMutualTLSEnabled() {
+		clientCertificate, err := tls.X509KeyPair([]byte(settings.Env.Bosh.Mbus.Cert.Certificate), []byte(settings.Env.Bosh.Mbus.Cert.PrivateKey))
+		if err != nil {
+			return nil, bosherr.WrapError(err, "Parsing certificate and private key")
+		}
+		connInfo.ClientCert = &clientCertificate
 	}
 
 	return connInfo, nil

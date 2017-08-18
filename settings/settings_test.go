@@ -721,7 +721,7 @@ var _ = Describe("Settings", func() {
 			Context("env JSON provides mbus & CA is not empty", func() {
 				It("should return true", func() {
 					var env Env
-					envJSON := `{"bosh": {"mbus": {"ca":"some cert value" }}}`
+					envJSON := `{"bosh": {"mbus": {"cert": {"ca":"some cert value" }}}}`
 
 					err := json.Unmarshal([]byte(envJSON), &env)
 					Expect(err).NotTo(HaveOccurred())
@@ -730,13 +730,46 @@ var _ = Describe("Settings", func() {
 			})
 
 			Context("env JSON does NOT provide mbus", func() {
-				It("should return true", func() {
+				It("should return false", func() {
 					var env Env
 					envJSON := `{"bosh": {}}`
 
 					err := json.Unmarshal([]byte(envJSON), &env)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(env.IsNatsTLSEnabled()).To(BeFalse())
+				})
+			})
+		})
+
+		Context("#IsMutualTLSEnabled", func() {
+			Context("env JSON provides mbus & CertKeyPair", func() {
+				It("should return true", func() {
+					envJSON := `{ "bosh": { "mbus": { "cert": { "ca": "some ca value", "private_key": "some private_key value", "certificate": "some certificate value" } } } }`
+
+					var env Env
+					err := json.Unmarshal([]byte(envJSON), &env)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(env.IsMutualTLSEnabled()).To(BeTrue())
+				})
+			})
+			Context("env JSON does NOT provide mbus", func() {
+				It("should return false", func() {
+					envJSON := `{ "bosh": {} }`
+
+					var env Env
+					err := json.Unmarshal([]byte(envJSON), &env)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(env.IsMutualTLSEnabled()).To(BeFalse())
+				})
+			})
+			Context("env JSON provides mbus; PrivateKey and Certificate is empty", func() {
+				It("should return false", func() {
+					envJSON := `{ "bosh": { "mbus": { "cert": { "ca": "some ca value" } } } }`
+
+					var env Env
+					err := json.Unmarshal([]byte(envJSON), &env)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(env.IsMutualTLSEnabled()).To(BeFalse())
 				})
 			})
 		})

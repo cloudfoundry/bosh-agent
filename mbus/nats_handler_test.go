@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/yagnats"
 	"github.com/cloudfoundry/yagnats/fakeyagnats"
 
+	"crypto/tls"
 	"crypto/x509"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
@@ -17,6 +18,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"io/ioutil"
 )
 
 func init() {
@@ -314,28 +316,14 @@ func init() {
 			})
 
 			Context("TLS", func() {
-				var CA = `-----BEGIN CERTIFICATE-----
-MIIDFDCCAfygAwIBAgIRANn247vhGXLev3Ltw8NOIQAwDQYJKoZIhvcNAQELBQAw
-MzEMMAoGA1UEBhMDVVNBMRYwFAYDVQQKEw1DbG91ZCBGb3VuZHJ5MQswCQYDVQQD
-EwJjYTAeFw0xNzA0MDMxOTQyMTVaFw0xODA0MDMxOTQyMTVaMDMxDDAKBgNVBAYT
-A1VTQTEWMBQGA1UEChMNQ2xvdWQgRm91bmRyeTELMAkGA1UEAxMCY2EwggEiMA0G
-CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCpcve+8iQmzj2/dUfGpI55CmZ7aYAr
-CsXsB6ztceewhMKTOo1pgBYT5T3G759Leab4id2JjxJB2sjou7g69pCTWNFkKz0G
-ED2RMGfuMACfISezE5fhSKdNR0vyleSEgvwOcdWa0PP6pTK//iD7p4fyx5HigpWt
-7hxmUTsqzOBOOYv1tw7ZhX6msZ5EL4d58rIbqozz8Hr/5mw/izUr2w0dCuuXTb8k
-qIrh1PjPwBoOW38yXZ/Pyex14NQMiqVqH2gMSwXpZNdVi9whVGrzP3ZAUv5uyICK
-j4KGBFJ+NcFq9VI2lbBUNdCD4MqdzaSA7OSnhaYYku2KUwIlBG9CtQctAgMBAAGj
-IzAhMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEB
-CwUAA4IBAQBLcq6xTPGYhA5Blhbkja3kd7AsWsVOv/HvLnxUJLwY8SLDhDHVndRR
-NvNmmXQOMDZ9tcLUl4Jgoy+u2XnQxTfpvPwT0qX958spcwCo9mQJKuOFcZfNwS8M
-bSTo1k+a33YtB8AWyS0GabG+2PEp/ARptJiQ6OMDKDLFMKK4NqpSl8cXNmPf5bEO
-67qHgr+2xtS4Mkj+EhZJuVpqIU3jL7psIQWdEm7dAy+qmZaB44LT1AMcUINgBsor
-bew6/PW7wNhEW/GWI/Nvef3EsFh80bYHq21eW6RdaSLgwddcmi6ak4CxizPYK57e
-XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
------END CERTIFICATE-----`
+				ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
+
 				BeforeEach(func() {
+
 					settingsService.Settings.Env.Bosh.Mbus = boshsettings.MBus{
-						CA:   CA,
+						Cert: boshsettings.CertKeyPair{
+							CA: string(ValidCA),
+						},
 						URLs: []string{"tls://fake-username:fake-password@127.0.0.1:1234"},
 					}
 				})
@@ -346,7 +334,7 @@ XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
 					defer handler.Stop()
 
 					certPool := x509.NewCertPool()
-					ok := certPool.AppendCertsFromPEM([]byte(CA))
+					ok := certPool.AppendCertsFromPEM(ValidCA)
 					Expect(ok).To(BeTrue())
 
 					Expect(client.ConnectedConnectionProvider()).To(Equal(&yagnats.ConnectionInfo{
@@ -358,11 +346,66 @@ XtrIuun84K30EXBrBdtUqWBwgBtu/HT2
 				})
 
 				It("returns an error if the cert is invalid", func() {
-					settingsService.Settings.Env.Bosh.Mbus.CA = "Invalid Cert"
+					settingsService.Settings.Env.Bosh.Mbus.Cert.CA = "Invalid Cert"
 
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
+					defer handler.Stop()
+				})
+			})
+
+			Context("Mutual TLS", func() {
+				ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
+				ValidCertificate, _ := ioutil.ReadFile("./test_assets/client-cert.pem")
+				ValidPrivateKey, _ := ioutil.ReadFile("./test_assets/client-pkey.pem")
+
+				BeforeEach(func() {
+					settingsService.Settings.Env.Bosh.Mbus = boshsettings.MBus{
+						Cert: boshsettings.CertKeyPair{
+							CA:          string(ValidCA),
+							PrivateKey:  string(ValidPrivateKey),
+							Certificate: string(ValidCertificate),
+						},
+						URLs: []string{"tls://fake-username:fake-password@127.0.0.1:1234"},
+					}
+				})
+
+				It("sets CertPool and ClientCert on ConnectionInfo", func() {
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).ToNot(HaveOccurred())
+					defer handler.Stop()
+
+					certPool := x509.NewCertPool()
+					ok := certPool.AppendCertsFromPEM(ValidCA)
+					Expect(ok).To(BeTrue())
+
+					clientCert, err := tls.LoadX509KeyPair("./test_assets/client-cert.pem", "./test_assets/client-pkey.pem")
+					Expect(err, BeNil())
+					Expect(client.ConnectedConnectionProvider()).To(Equal(&yagnats.ConnectionInfo{
+						Addr:       "127.0.0.1:1234",
+						Username:   "fake-username",
+						Password:   "fake-password",
+						CertPool:   certPool,
+						ClientCert: &clientCert,
+					}))
+				})
+
+				It("returns an error if the client certificate is invalid", func() {
+					settingsService.Settings.Env.Bosh.Mbus.Cert.Certificate = "Invalid Client Certificate"
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Getting connection info: Parsing certificate and private key: tls: failed to find any PEM data in certificate input"))
+					defer handler.Stop()
+				})
+
+				It("returns an error if the private key is invalid", func() {
+					settingsService.Settings.Env.Bosh.Mbus.Cert.PrivateKey = "Invalid Private Key"
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Getting connection info: Parsing certificate and private key: tls: failed to find any PEM data in key input"))
 					defer handler.Stop()
 				})
 			})

@@ -207,7 +207,11 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 }
 
 func (e Env) IsNatsTLSEnabled() bool {
-	return len(e.Bosh.Mbus.CA) > 0
+	return len(e.Bosh.Mbus.Cert.CA) > 0
+}
+
+func (e Env) IsMutualTLSEnabled() bool {
+	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0
 }
 
 type BoshEnv struct {
@@ -225,10 +229,10 @@ type BoshEnv struct {
 type MBus struct {
 	Cert CertKeyPair `json:"cert"`
 	URLs []string    `json:"urls"`
-	CA   string      `json:"ca"`
 }
 
 type CertKeyPair struct {
+	CA          string `json:"ca"`
 	PrivateKey  string `json:"private_key"`
 	Certificate string `json:"certificate"`
 }
