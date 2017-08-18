@@ -89,8 +89,9 @@ resources:
 - name: bosh-agent
   type: git
   source:
-    uri: https://github.com/cloudfoundry/bosh-agent
+    uri: git@github.com:cloudfoundry/bosh-agent.git
     branch: {{agent_branch}}
+    private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
 
 - name: windows-ami
   type: ami-resource
