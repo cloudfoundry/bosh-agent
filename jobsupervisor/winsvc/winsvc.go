@@ -18,7 +18,6 @@ import (
 // Mgr is used to manage Windows services.
 type Mgr struct {
 	m     *mgr.Mgr
-	mon   *monitor
 	match func(description string) bool
 }
 
@@ -32,12 +31,11 @@ func Connect(match func(description string) bool) (*Mgr, error) {
 	if match == nil {
 		match = func(_ string) bool { return true }
 	}
-	return &Mgr{m: m, mon: newMonitor(time.Second * 2), match: match}, nil
+	return &Mgr{m: m, match: match}, nil
 }
 
 // Disconnect closes connection to the service control manager m.
 func (m *Mgr) Disconnect() error {
-
 	return m.m.Disconnect()
 }
 
@@ -49,7 +47,7 @@ func toString(p *uint16) string {
 }
 
 // serviceDescription, returns the description of service s.
-func (m *Mgr) serviceDescription(s *mgr.Service) (string, error) {
+func serviceDescription(s *mgr.Service) (string, error) {
 	var p *windows.SERVICE_DESCRIPTION
 	n := uint32(1024)
 	for {
@@ -82,7 +80,7 @@ func (m *Mgr) services() ([]*mgr.Service, error) {
 		if err != nil {
 			continue // ignore - likely access denied
 		}
-		desc, err := m.serviceDescription(s)
+		desc, err := serviceDescription(s)
 		if err != nil {
 			s.Close()
 			continue // ignore - likely access denied
@@ -137,7 +135,7 @@ func svcStartTypeString(startType uint32) string {
 	return fmt.Sprintf("Invalid Service StartType: %d", startType)
 }
 
-func (m *Mgr) setStartType(s *mgr.Service, startType uint32) error {
+func SetStartType(s *mgr.Service, startType uint32) error {
 	conf, err := s.Config()
 	if err != nil {
 		return &ServiceError{"querying config for service", s.Name, err}
@@ -221,7 +219,7 @@ func calculateWaitHint(status svc.Status) (waitHint, interval time.Duration) {
 //
 // See calculateWaitHint for an explanation of how the service's WaitHint is
 // used to check progress.
-func (m *Mgr) waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
+func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 	// Arbitrary timeout to prevent misbehaving
 	// services from triggering an infinite loop.
 	const Timeout = time.Minute * 2
@@ -265,7 +263,7 @@ func (m *Mgr) waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, e
 			// Handle high CPU situations.  This is incredibly crude,
 			// but it works!
 			switch {
-			case m.mon.CPU() > 90:
+			case cpu.CPU() > 90:
 				highCPU = 10
 			case highCPU > 0:
 				highCPU--
@@ -306,12 +304,12 @@ func (m *Mgr) waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, e
 	return status, nil
 }
 
-func (m *Mgr) doStart(s *mgr.Service) error {
+func doStart(s *mgr.Service) error {
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383(v=vs.85).aspx
 	const ERROR_SERVICE_ALREADY_RUNNING = syscall.Errno(0x420)
 
 	// Set start type to manual to enable starting the service.
-	if err := m.setStartType(s, mgr.StartManual); err != nil {
+	if err := SetStartType(s, mgr.StartManual); err != nil {
 		return err
 	}
 
@@ -322,7 +320,7 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 
 	// Wait to transition out of any pending states
 	if status.State == svc.StopPending || status.State == svc.StartPending {
-		status, err = m.waitPending(s, status.State)
+		status, err = waitPending(s, status.State)
 		if err != nil {
 			return err
 		}
@@ -341,7 +339,7 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	}
 
 	// Wait for the service to start
-	status, err = m.waitPending(s, svc.StartPending)
+	status, err = waitPending(s, svc.StartPending)
 	if err != nil {
 		return err
 	}
@@ -368,13 +366,13 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	return nil
 }
 
-func (m *Mgr) startRetry(s *mgr.Service) error {
+func Start(s *mgr.Service) error {
 	const Retries = 10
 	const Interval = time.Second
 
 	var err error
 	for i := 0; i < Retries; i++ {
-		err = m.doStart(s)
+		err = doStart(s)
 		if err == nil {
 			break
 		}
@@ -388,15 +386,15 @@ func (m *Mgr) startRetry(s *mgr.Service) error {
 
 // Start starts all of the service monitored by Mgr.
 func (m *Mgr) Start() (first error) {
-	return m.iter(m.startRetry)
+	return m.iter(Start)
 }
 
-func (m *Mgr) doStop(s *mgr.Service) error {
+func Stop(s *mgr.Service) error {
 	const Timeout = time.Second * 30
 
 	// Disable service start to prevent flapping services from being
 	// automatically restarted while attempting to stop them.
-	if err := m.setStartType(s, mgr.StartDisabled); err != nil {
+	if err := SetStartType(s, mgr.StartDisabled); err != nil {
 		return err
 	}
 
@@ -407,7 +405,7 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 
 	// Wait to transition out of any pending states
 	if status.State == svc.StopPending || status.State == svc.StartPending {
-		status, err = m.waitPending(s, status.State)
+		status, err = waitPending(s, status.State)
 		if err != nil {
 			return err
 		}
@@ -435,7 +433,7 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 
 	// Wait for service to stop
 	if status.State == svc.StopPending {
-		status, err = m.waitPending(s, svc.StopPending)
+		status, err = waitPending(s, svc.StopPending)
 		if err != nil {
 			return err
 		}
@@ -466,7 +464,7 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 // for the stop to complete. Stopping services with dependent services is
 // not supported.
 func (m *Mgr) Stop() (first error) {
-	return m.iter(m.doStop)
+	return m.iter(Stop)
 }
 
 func (m *Mgr) doDelete(s *mgr.Service) error {
@@ -481,7 +479,7 @@ func (m *Mgr) doDelete(s *mgr.Service) error {
 	// can be marked for deletion, but are not actually deleted by the
 	// SCM until they stop or the computer restarts.
 	if st.State != svc.Stopped {
-		if err := m.doStop(s); err != nil {
+		if err := Stop(s); err != nil {
 			return err
 		}
 	}
@@ -577,7 +575,7 @@ func closeServices(svcs []*mgr.Service) (first error) {
 // Unmonitor disable start for all the Mgr m's services.
 func (m *Mgr) Unmonitor() error {
 	return m.iter(func(s *mgr.Service) error {
-		return m.setStartType(s, mgr.StartDisabled)
+		return SetStartType(s, mgr.StartDisabled)
 	})
 }
 
@@ -589,7 +587,7 @@ func (m *Mgr) DisableAgentAutoStart() error {
 		return &ServiceError{"opening service", name, err}
 	}
 	defer s.Close()
-	return m.setStartType(s, mgr.StartManual)
+	return SetStartType(s, mgr.StartManual)
 }
 
 func svcStateString(s svc.State) string {

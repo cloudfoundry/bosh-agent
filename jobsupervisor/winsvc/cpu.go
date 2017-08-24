@@ -20,11 +20,13 @@ var (
 	procGetSystemTimes = kernel32DLL.NewProc("GetSystemTimes")
 )
 
+var cpu = newMonitor(time.Second * 5)
+
 type monitor struct {
 	user   cpuTime
 	kernel cpuTime
 	idle   cpuTime
-	mu     sync.Mutex
+	mu     sync.RWMutex
 	tick   *time.Ticker
 }
 
@@ -40,13 +42,13 @@ func newMonitor(tick time.Duration) *monitor {
 }
 
 func (m *monitor) CPU() (usage float64) {
-	m.mu.Lock()
+	m.mu.RLock()
 	usage = (m.user.load + m.kernel.load) * 100
-	m.mu.Unlock()
+	m.mu.RUnlock()
 	return
 }
 
-func (m *monitor) Close() error {
+func (m *monitor) Stop() error {
 	if m.tick != nil {
 		m.tick.Stop()
 	}
