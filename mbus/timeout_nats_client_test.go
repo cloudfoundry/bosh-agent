@@ -123,13 +123,14 @@ func init() {
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
+					It("does not panic and releases any lagging timers", func() {
 						delegate.PingStub = func() bool {
 							clock.Increment(299 * time.Second)
 							return false
 						}
 
 						Expect(func() { client.Ping() }).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})
@@ -149,15 +150,14 @@ func init() {
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
+					It("does not panic and releases any lagging timers", func() {
 						delegate.ConnectStub = func(connectionProvider yagnats.ConnectionProvider) error {
 							clock.Increment(299 * time.Second)
 							return nil
 						}
 
-						Expect(func() {
-							client.Connect(&FakeConnectionProvider{})
-						}).ToNot(Panic())
+						Expect(func() { client.Connect(&FakeConnectionProvider{}) }).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})
@@ -176,14 +176,13 @@ func init() {
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
+					It("does not panic and releases any lagging timers", func() {
 						delegate.DisconnectStub = func() {
 							clock.Increment(299 * time.Second)
 						}
 
-						Expect(func() {
-							client.Disconnect()
-						}).ToNot(Panic())
+						Expect(func() { client.Disconnect() }).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})
@@ -201,13 +200,14 @@ func init() {
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
+					It("does not panic and releases any lagging timers", func() {
 						delegate.PublishStub = func(string, []byte) error {
 							clock.Increment(299 * time.Second)
 							return nil
 						}
 
 						Expect(func() { client.Publish("subject", []byte{0}) }).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})
@@ -220,22 +220,19 @@ func init() {
 							return 42, nil
 						}
 
-						Expect(func() {
-							client.Subscribe("subject", func(message *yagnats.Message) {})
-						}).To(Panic())
+						Expect(func() { client.Subscribe("subject", func(message *yagnats.Message) {}) }).To(Panic())
 					})
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
-						delegate.SubscribeStub = func(subject string, callback yagnats.Callback) (int64, error) {
+					It("does not panic and releases any lagging timers", func() {
+						delegate.SubscribeStub = func(string, yagnats.Callback) (int64, error) {
 							clock.Increment(299 * time.Second)
 							return 42, nil
 						}
 
-						Expect(func() {
-							client.Subscribe("subject", func(message *yagnats.Message) {})
-						}).ToNot(Panic())
+						Expect(func() { client.Subscribe("subject", func(*yagnats.Message) {}) }).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})
@@ -243,27 +240,28 @@ func init() {
 			Context("SubscribeWithQueue", func() {
 				Context("when the call takes more than 5min", func() {
 					It("panics", func() {
-						delegate.SubscribeWithQueueStub = func(subject string, queue string, callback yagnats.Callback) (int64, error) {
+						delegate.SubscribeWithQueueStub = func(string, string, yagnats.Callback) (int64, error) {
 							clock.Increment(301 * time.Second)
 							return 42, nil
 						}
 
 						Expect(func() {
-							client.SubscribeWithQueue("subject", "queue", func(message *yagnats.Message) {})
+							client.SubscribeWithQueue("subject", "queue", func(*yagnats.Message) {})
 						}).To(Panic())
 					})
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
-						delegate.SubscribeWithQueueStub = func(subject string, queue string, callback yagnats.Callback) (int64, error) {
+					It("does not panic and releases any lagging timers", func() {
+						delegate.SubscribeWithQueueStub = func(string, string, yagnats.Callback) (int64, error) {
 							clock.Increment(299 * time.Second)
 							return 42, nil
 						}
 
 						Expect(func() {
-							client.SubscribeWithQueue("subject", "queue", func(message *yagnats.Message) {})
+							client.SubscribeWithQueue("subject", "queue", func(*yagnats.Message) {})
 						}).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})
@@ -281,13 +279,14 @@ func init() {
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
+					It("does not panic and releases any lagging timers", func() {
 						delegate.UnsubscribeStub = func(int64) error {
 							clock.Increment(299 * time.Second)
 							return nil
 						}
 
 						Expect(func() { client.Unsubscribe(42) }).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})
@@ -304,12 +303,13 @@ func init() {
 				})
 
 				Context("when the call takes less than 5min", func() {
-					It("does not panic", func() {
+					It("does not panic and releases any lagging timers", func() {
 						delegate.UnsubscribeAllStub = func(string) {
 							clock.Increment(299 * time.Second)
 						}
 
 						Expect(func() { client.UnsubscribeAll("banana") }).ToNot(Panic())
+						Expect(clock.WatcherCount()).To(Equal(0))
 					})
 				})
 			})

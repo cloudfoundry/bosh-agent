@@ -30,6 +30,7 @@ func (c *TimeoutNatsClient) Ping() bool {
 
 	select {
 	case success := <-complete:
+		timeout.Stop()
 		return success
 	case <-timeout.C():
 		panic("Connect call to NATSClient took too long, exiting so connections are reset")
@@ -46,6 +47,7 @@ func (c *TimeoutNatsClient) Connect(connectionProvider yagnats.ConnectionProvide
 
 	select {
 	case err := <-complete:
+		timeout.Stop()
 		return err
 	case <-timeout.C():
 		panic("Connect call to NATSClient took too long, exiting so connections are reset")
@@ -63,6 +65,7 @@ func (c *TimeoutNatsClient) Disconnect() {
 
 	select {
 	case <-complete:
+		timeout.Stop()
 		return
 	case <-timeout.C():
 		panic("Disconnect call to NATSClient took too long, exiting so connections are reset")
@@ -79,6 +82,7 @@ func (c *TimeoutNatsClient) Publish(subject string, payload []byte) error {
 
 	select {
 	case err := <-complete:
+		timeout.Stop()
 		return err
 	case <-timeout.C():
 		panic("Publish call to NATSClient took too long, exiting so connections are reset")
@@ -108,6 +112,7 @@ func (c *TimeoutNatsClient) Subscribe(subject string, callback yagnats.Callback)
 
 	select {
 	case result := <-complete:
+		timeout.Stop()
 		return result.subscriberID, result.err
 	case <-timeout.C():
 		panic("Subscribe call to NATSClient took too long, exiting so connections are reset")
@@ -133,6 +138,7 @@ func (c *TimeoutNatsClient) SubscribeWithQueue(subject, queue string, callback y
 
 	select {
 	case result := <-complete:
+		timeout.Stop()
 		return result.subscriberID, result.err
 	case <-timeout.C():
 		panic("SubscribeWithQueue call to NATSClient took too long, exiting so connections are reset")
@@ -149,6 +155,7 @@ func (c *TimeoutNatsClient) Unsubscribe(subscription int64) error {
 
 	select {
 	case err := <-complete:
+		timeout.Stop()
 		return err
 	case <-timeout.C():
 		panic("Unsubscribe call to NATSClient took too long, exiting so connections are reset")
@@ -166,6 +173,7 @@ func (c *TimeoutNatsClient) UnsubscribeAll(subject string) {
 
 	select {
 	case <-complete:
+		timeout.Stop()
 		return
 	case <-timeout.C():
 		panic("UnsubscribeAll call to NATSClient took too long, exiting so connections are reset")
