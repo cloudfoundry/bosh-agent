@@ -107,8 +107,8 @@ func (p WindowsPlatform) GetAuditLogger() AuditLogger {
 	return p.auditLogger
 }
 
-func (p WindowsPlatform) SetupRuntimeConfiguration() (err error) {
-	return
+func (p WindowsPlatform) SetupRuntimeConfiguration() error {
+	return setupRuntimeConfiguration()
 }
 
 func (p WindowsPlatform) CreateUser(username, _ string) error {
