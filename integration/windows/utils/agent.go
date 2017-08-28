@@ -24,7 +24,7 @@ func BuildAgent() error {
 	if err != nil {
 		return err
 	}
-	gomega.Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
+	gomega.Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 	return nil
 }
 
@@ -37,7 +37,7 @@ func StartVagrant(provider string) (Agent, error) {
 	if err != nil {
 		return Agent{}, err
 	}
-	gomega.Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
+	gomega.Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 	return Agent{
 		ID: agentID,
