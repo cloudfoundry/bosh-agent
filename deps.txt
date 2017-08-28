@@ -14,6 +14,5 @@ github.com/cloudfoundry/bosh-init/registry:c99761b
 github.com/cloudfoundry/bosh-utils/...:3116dcc
 github.com/cloudfoundry/bosh-davcli/...:6b59ec2
 golang.org/x/sys/windows/...:abf9c25
-github.com/tedsuo/ifrit/...:0daf379
 golang.org/x/net/html:3b99394
 golang.org/x/text:f773ec0

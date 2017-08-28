@@ -38,6 +38,9 @@ func buildVitalsService() (statsCollector *fakestats.FakeCollector, service Serv
 			Used:  600 * 1024,
 			Total: 1000 * 1024,
 		},
+		UptimeStats: boshstats.UptimeStats{
+			Secs: 5,
+		},
 		DiskStats: map[string]boshstats.DiskStats{
 			"/": boshstats.DiskStats{
 				DiskUsage:  boshstats.Usage{Used: 100, Total: 200},
@@ -91,6 +94,9 @@ var _ = Describe("Vitals service", func() {
 			"swap": map[string]string{
 				"kb":      "600",
 				"percent": "60",
+			},
+			"uptime": map[string]uint64{
+				"secs": 5,
 			},
 		}
 		if Windows {

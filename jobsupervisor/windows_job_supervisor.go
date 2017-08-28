@@ -4,9 +4,12 @@ package jobsupervisor
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -16,8 +19,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/http_server"
 	"golang.org/x/sys/windows/svc"
 
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monitor"
@@ -145,7 +146,9 @@ func (p *WindowsProcess) ServiceWrapperConfig(logPath string, eventPort int, mac
 		serviceEnv{Name: "__PIPE_NOTIFY_HTTP", Value: fmt.Sprintf("http://localhost:%d", eventPort)},
 		serviceEnv{Name: "__PIPE_MACHINE_IP", Value: machineIP},
 	)
-
+	if s := os.Getenv("__PIPE_DISABLE_NOTIFY"); s != "" {
+		srcv.Env = append(srcv.Env, serviceEnv{Name: "__PIPE_DISABLE_NOTIFY", Value: s})
+	}
 	return srcv
 }
 
@@ -414,40 +417,103 @@ type windowsServiceEvent struct {
 	ExitCode    int    `json:"exitCode"`
 }
 
+type handlerFunc struct {
+	fn      func(handler JobFailureHandler, wr http.ResponseWriter, req *http.Request)
+	handler JobFailureHandler
+}
+
+func (h *handlerFunc) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
+	h.fn(h.handler, wr, req)
+}
+
+func (w *windowsJobSupervisor) handleJobFailure(hn JobFailureHandler, wr http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
+
+	if w.stateIs(stateDisabled) {
+		wr.WriteHeader(http.StatusOK)
+		return
+	}
+	if req.Method != "POST" {
+		w.logger.Warn(w.logTag, "MonitorJobFailures: invalid request method: %s", req.Method)
+		wr.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	if req.URL.Path != "/" {
+		w.logger.Warn(w.logTag, "MonitorJobFailures: invalid request path: %s", req.URL.Path)
+		wr.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	var event windowsServiceEvent
+	err := json.NewDecoder(io.LimitReader(req.Body, 32*1024)).Decode(&event)
+	if err != nil {
+		w.logger.Error(w.logTag, "MonitorJobFailures: received unknown request: %s", err)
+		return
+	}
+	alert := boshalert.MonitAlert{
+		Action:      "Start",
+		Date:        time.Now().Format(time.RFC1123Z),
+		Event:       event.Event,
+		ID:          event.ProcessName,
+		Service:     event.ProcessName,
+		Description: fmt.Sprintf("exited with code %d", event.ExitCode),
+	}
+	hn(alert)
+}
+
 func (w *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
-	hl := http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		if w.stateIs(stateDisabled) {
-			return
+	const CloseTimeout = time.Second * 10
+
+	hn := handlerFunc{
+		fn:      w.handleJobFailure,
+		handler: handler,
+	}
+	server := http.Server{
+		Addr:    fmt.Sprintf("localhost:%d", w.jobFailuresServerPort),
+		Handler: &hn,
+	}
+
+	laddr, err := net.ResolveTCPAddr("tcp", server.Addr)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Resolving TCP address: %s", server.Addr)
+	}
+	w.logger.Info(w.logTag, "MonitorJobFailures: preparing to listen on: %s", laddr)
+
+	listener, err := net.ListenTCP("tcp", laddr)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Listening on TCP address: %s", laddr.String())
+	}
+	defer listener.Close()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.Serve(listener)
+	}()
+
+	select {
+	case err := <-errCh:
+		return bosherr.WrapError(err, "Listen for HTTP")
+	case <-w.cancelServer:
+		w.logger.Info(w.logTag, "MonitorJobFailures: received stop signal, shutting down server")
+
+		if err := server.Shutdown(context.Background()); err != nil {
+			return bosherr.WrapError(err, "MonitorJobFailures: shutting down server")
 		}
-		var event windowsServiceEvent
-		err := json.NewDecoder(r.Body).Decode(&event)
-		if err != nil {
-			w.logger.Error(w.logTag, "MonitorJobFailures received unknown request: %s", err)
-			return
-		}
-		handler(boshalert.MonitAlert{
-			Action:      "Start",
-			Date:        time.Now().Format(time.RFC1123Z),
-			Event:       event.Event,
-			ID:          event.ProcessName,
-			Service:     event.ProcessName,
-			Description: fmt.Sprintf("exited with code %d", event.ExitCode),
-		})
-	})
-	server := http_server.New(fmt.Sprintf("localhost:%d", w.jobFailuresServerPort), hl)
-	process := ifrit.Invoke(server)
-	for {
+		wait := time.NewTimer(CloseTimeout)
+		defer wait.Stop()
 		select {
-		case <-w.cancelServer:
-			process.Signal(os.Kill)
-		case err := <-process.Wait():
-			if err != nil {
-				return bosherr.WrapError(err, "Listen for HTTP")
+		case err := <-errCh:
+			if err != http.ErrServerClosed {
+				return bosherr.WrapError(err, "Closing MonitorJobFailures server")
 			}
-			return nil
+		case <-wait.C:
+			return fmt.Errorf("MonitorJobFailures: Timed out waiting for shutdown after: %s",
+				CloseTimeout)
 		}
 	}
+	w.logger.Info(w.logTag, "MonitorJobFailures: successfully stopped server")
+
+	return nil
 }
 
 func (w *windowsJobSupervisor) stoppedFilePath() string {

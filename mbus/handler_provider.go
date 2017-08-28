@@ -11,6 +11,7 @@ import (
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/pivotal-golang/clock"
 )
 
 type HandlerProvider struct {
@@ -48,7 +49,8 @@ func (p HandlerProvider) Get(
 
 	switch mbusURL.Scheme {
 	case "nats":
-		handler = NewNatsHandler(p.settingsService, yagnats.NewClient(), p.logger, platform)
+		natsClient := NewTimeoutNatsClient(yagnats.NewClient(), clock.NewClock())
+		handler = NewNatsHandler(p.settingsService, natsClient, p.logger, platform)
 	case "https":
 		mbusKeyPair := p.settingsService.GetSettings().Env.Bosh.Mbus.Cert
 		handler = NewHTTPSHandler(mbusURL, mbusKeyPair, p.logger, platform.GetFs(), dirProvider, p.auditLogger)

@@ -321,16 +321,8 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	}
 
 	// Wait to transition out of any pending states
-	switch status.State {
-	case svc.StopPending:
-		// If a stop is pending, wait for it
-		status, err = m.waitPending(s, svc.StopPending)
-		if err != nil {
-			return err
-		}
-	case svc.StartPending:
-		// If a start is pending, wait for it
-		status, err = m.waitPending(s, svc.StartPending)
+	if status.State == svc.StopPending || status.State == svc.StartPending {
+		status, err = m.waitPending(s, status.State)
 		if err != nil {
 			return err
 		}
@@ -353,18 +345,50 @@ func (m *Mgr) doStart(s *mgr.Service) error {
 	if err != nil {
 		return err
 	}
-
+	// Failed to start - return a StartError so we know to retry
 	if status.State != svc.Running {
-		return fmt.Errorf("winsvc: start service: service not started. "+
-			"Name: %s State: %s Checkpoint: %d WaitHint: %d", s.Name,
-			svcStateString(status.State), status.CheckPoint, status.WaitHint)
+		return &StartError{Name: s.Name, Status: status}
+	}
+
+	// Make sure we stay running.  I wish we didn't have to do this, but
+	// we run our processes with pipe.exe, which means that before WinSW
+	// can notice that our process died: pipe.exe must notice it died, do
+	// any logging and exit itself.  This is slow and indeterminate.
+	//
+	for i := 0; i < 5; i++ {
+		time.Sleep(time.Millisecond * 100)
+		status, err = querySvc(s)
+		if err != nil {
+			return err
+		}
+		if status.State != svc.Running {
+			return &StartError{Name: s.Name, Status: status}
+		}
 	}
 	return nil
 }
 
+func (m *Mgr) startRetry(s *mgr.Service) error {
+	const Retries = 10
+	const Interval = time.Second
+
+	var err error
+	for i := 0; i < Retries; i++ {
+		err = m.doStart(s)
+		if err == nil {
+			break
+		}
+		if _, ok := err.(*StartError); !ok {
+			return err
+		}
+		time.Sleep(Interval)
+	}
+	return err
+}
+
 // Start starts all of the service monitored by Mgr.
 func (m *Mgr) Start() (first error) {
-	return m.iter(m.doStart)
+	return m.iter(m.startRetry)
 }
 
 func (m *Mgr) doStop(s *mgr.Service) error {
@@ -382,16 +406,8 @@ func (m *Mgr) doStop(s *mgr.Service) error {
 	}
 
 	// Wait to transition out of any pending states
-	switch status.State {
-	case svc.StopPending:
-		// If a stop is pending, wait for it
-		status, err = m.waitPending(s, svc.StopPending)
-		if err != nil {
-			return err
-		}
-	case svc.StartPending:
-		// If a start is pending, wait for it
-		status, err = m.waitPending(s, svc.StartPending)
+	if status.State == svc.StopPending || status.State == svc.StartPending {
+		status, err = m.waitPending(s, status.State)
 		if err != nil {
 			return err
 		}

@@ -37,3 +37,8 @@ func (p dummyStatsCollector) GetDiskStats(devicePath string) (stats DiskStats, e
 	stats.InodeUsage.Total = 1
 	return
 }
+
+func (p dummyStatsCollector) GetUptimeStats() (stats UptimeStats, err error) {
+	stats.Secs = 5
+	return
+}

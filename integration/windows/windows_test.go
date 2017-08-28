@@ -35,7 +35,7 @@ func natsIP() string {
 }
 
 func natsURI() string {
-	if vagrantProvider == "aws" {
+	if VagrantProvider == "aws" {
 		return fmt.Sprintf("nats://%s:4222", os.Getenv("NATS_ELASTIC_IP"))
 	}
 	return fmt.Sprintf("nats://%s:4222", natsIP())
@@ -43,7 +43,7 @@ func natsURI() string {
 }
 
 func blobstoreURI() string {
-	if vagrantProvider == "aws" {
+	if VagrantProvider == "aws" {
 		return fmt.Sprintf("http://%s:25250", os.Getenv("NATS_ELASTIC_IP"))
 	}
 	return fmt.Sprintf("http://%s:25250", natsIP())

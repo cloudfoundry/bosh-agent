@@ -2,10 +2,11 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -27,6 +28,26 @@ import (
 
 const ServiceName = "jimbob"
 const MachineIP = "1.2.3.4"
+
+func FindOpenPort() (int, error) {
+	const Base = 5000
+	rand.Seed(time.Now().UnixNano())
+
+	for i := 0; i < 50; i++ {
+		port := Base + rand.Intn(10000)
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("localhost:%d", port))
+		if err != nil {
+			return 0, err
+		}
+		l, err := net.ListenUDP("udp", addr)
+		if err != nil {
+			continue
+		}
+		l.Close()
+		return port, nil
+	}
+	return 0, errors.New("could not find open port to listen on")
+}
 
 var _ = Describe("Main", func() {
 	It("should run the echo", func() {
@@ -220,8 +241,9 @@ var _ = Describe("Main", func() {
 			done = make(chan struct{})
 			wg = new(sync.WaitGroup)
 
-			var err error
-			ServerAddr, err = net.ResolveUDPAddr("udp", ":10202")
+			port, err := FindOpenPort()
+			Expect(err).To(Succeed())
+			ServerAddr, err = net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", port))
 			Expect(err).To(Succeed())
 			ServerConn, err = net.ListenUDP("udp", ServerAddr)
 			Expect(err).To(Succeed())

@@ -49,3 +49,17 @@ func (e *TransitionError) Error() string {
 	return fmt.Sprintf(format, e.Msg, e.Name, svcStateString(e.Status.State),
 		e.Status.CheckPoint, e.WaitHint, e.Duration)
 }
+
+// StartError records an error that resulted from a service failing to run
+// after a successful call to start.
+type StartError struct {
+	Name   string
+	Status svc.Status
+}
+
+func (e *StartError) Error() string {
+	// TODO (CEV): Improve error message
+	return fmt.Sprintf("winsvc: start service: service not started. "+
+		"Name: %s State: %s Checkpoint: %d WaitHint: %d", e.Name,
+		svcStateString(e.Status.State), e.Status.CheckPoint, e.Status.WaitHint)
+}

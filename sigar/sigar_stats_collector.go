@@ -108,3 +108,17 @@ func (s *sigarStatsCollector) GetDiskStats(mountedPath string) (stats boshstats.
 
 	return
 }
+
+func (s *sigarStatsCollector) GetUptimeStats() (stats boshstats.UptimeStats, err error) {
+
+	uptime := sigar.Uptime{}
+	err = uptime.Get()
+
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting Sigar Uptime")
+		return
+	}
+
+	stats.Secs = uint64(uptime.Length)
+	return
+}
