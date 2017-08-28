@@ -18,6 +18,16 @@ type Agent struct {
 	tail *gexec.Session
 }
 
+func BuildAgent() error {
+	command := exec.Command("./build_agent.bash")
+	session, err := gexec.Start(command, ginkgo.GinkgoWriter, ginkgo.GinkgoWriter)
+	if err != nil {
+		return err
+	}
+	gomega.Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+	return nil
+}
+
 func StartVagrant(provider string) (Agent, error) {
 	if len(provider) == 0 {
 		provider = "virtualbox"
@@ -27,7 +37,7 @@ func StartVagrant(provider string) (Agent, error) {
 	if err != nil {
 		return Agent{}, err
 	}
-	gomega.Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
+	gomega.Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 	return Agent{
 		ID: agentID,
