@@ -24,6 +24,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	"regexp"
 )
 
 const (
@@ -169,6 +170,20 @@ func (h *natsHandler) Stop() {
 	h.client.Disconnect()
 }
 
+func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+	for _, chain := range verifiedChains {
+		if len(chain) == 0 {
+			continue
+		}
+		commonName := chain[0].Subject.CommonName
+		match, _ := regexp.MatchString("^[a-zA-Z0-9*\\-]*.nats.bosh$", commonName)
+		if match {
+			return nil
+		}
+	}
+	return errors.New("Server Certificate CommonName does not match *.nats.bosh")
+}
+
 func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.Func) {
 	respBytes, req, err := boshhandler.PerformHandlerWithJSON(
 		natsMsg.Payload,
@@ -227,6 +242,7 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 		if ok := connInfo.CertPool.AppendCertsFromPEM([]byte(settings.Env.Bosh.Mbus.Cert.CA)); !ok {
 			return nil, bosherr.Error("Failed to load Mbus CA cert")
 		}
+		connInfo.VerifyPeerCertificate = h.VerifyPeerCertificate
 	}
 
 	user := natsURL.User

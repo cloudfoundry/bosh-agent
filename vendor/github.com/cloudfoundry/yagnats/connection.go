@@ -64,7 +64,7 @@ func NewConnection(addr, user, pass string) *Connection {
 	}
 }
 
-func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool, clientCert *tls.Certificate) *Connection {
+func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool, clientCert *tls.Certificate, verifyPeerCertificate func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error) *Connection {
 	connection := NewConnection(addr, user, pass)
 	connection.dial = func(network, address string) (net.Conn, error) {
 		conn, err := net.DialTimeout(network, address, 5*time.Second)
@@ -84,8 +84,9 @@ func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool, clientCe
 		}
 
 		config := tls.Config{
-			RootCAs:    certPool,
-			ServerName: hostname,
+			RootCAs:               certPool,
+			ServerName:            hostname,
+			VerifyPeerCertificate: verifyPeerCertificate,
 		}
 
 		// When client certificate is provided, we are expecting mutual TLS.
@@ -108,8 +109,9 @@ type ConnectionInfo struct {
 	Password string
 	Dial     func(network, address string) (net.Conn, error)
 
-	CertPool   *x509.CertPool
-	ClientCert *tls.Certificate
+	CertPool              *x509.CertPool
+	ClientCert            *tls.Certificate
+	VerifyPeerCertificate func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error
 }
 
 func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
@@ -117,7 +119,7 @@ func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
 	if c.CertPool == nil {
 		conn = NewConnection(c.Addr, c.Username, c.Password)
 	} else {
-		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool, c.ClientCert)
+		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool, c.ClientCert, c.VerifyPeerCertificate)
 	}
 
 	if c.Dial != nil {

@@ -12,6 +12,7 @@ import (
 
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -337,12 +338,18 @@ func init() {
 					ok := certPool.AppendCertsFromPEM(ValidCA)
 					Expect(ok).To(BeTrue())
 
-					Expect(client.ConnectedConnectionProvider()).To(Equal(&yagnats.ConnectionInfo{
+					result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
+					expected := &yagnats.ConnectionInfo{
 						Addr:     "127.0.0.1:1234",
 						Username: "fake-username",
 						Password: "fake-password",
 						CertPool: certPool,
-					}))
+					}
+					Expect(result.Addr).To(Equal(expected.Addr))
+					Expect(result.Username).To(Equal(expected.Username))
+					Expect(result.Password).To(Equal(expected.Password))
+					Expect(result.CertPool).To(Equal(expected.CertPool))
+					Expect(result.ClientCert).To(Equal(expected.ClientCert))
 				})
 
 				It("returns an error if the cert is invalid", func() {
@@ -352,6 +359,34 @@ func init() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
 					defer handler.Stop()
+				})
+
+				Context("when the VerifyPeerCertificate is called", func() {
+					It("verify certificate common name matches correct pattern", func() {
+						certPath := "test_assets/custom_cert.pem"
+						caPath := "test_assets/ca.pem"
+						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+
+						Expect(err).To(BeNil())
+					})
+
+					It("verify certificate common name does not match the correct pattern", func() {
+						certPath := "test_assets/invalid_cn_cert.pem"
+						caPath := "test_assets/ca.pem"
+						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh"))
+					})
+
+					It("verify certificate common name is missing", func() {
+						certPath := "test_assets/missing_cn_cert.pem"
+						caPath := "test_assets/ca.pem"
+						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh"))
+					})
 				})
 			})
 
@@ -381,14 +416,22 @@ func init() {
 					Expect(ok).To(BeTrue())
 
 					clientCert, err := tls.LoadX509KeyPair("./test_assets/client-cert.pem", "./test_assets/client-pkey.pem")
+
 					Expect(err, BeNil())
-					Expect(client.ConnectedConnectionProvider()).To(Equal(&yagnats.ConnectionInfo{
+
+					result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
+					expected := &yagnats.ConnectionInfo{
 						Addr:       "127.0.0.1:1234",
 						Username:   "fake-username",
 						Password:   "fake-password",
 						CertPool:   certPool,
 						ClientCert: &clientCert,
-					}))
+					}
+					Expect(result.Addr).To(Equal(expected.Addr))
+					Expect(result.Username).To(Equal(expected.Username))
+					Expect(result.Password).To(Equal(expected.Password))
+					Expect(result.CertPool).To(Equal(expected.CertPool))
+					Expect(result.ClientCert).To(Equal(expected.ClientCert))
 				})
 
 				It("returns an error if the client certificate is invalid", func() {
@@ -510,4 +553,35 @@ func init() {
 			})
 		})
 	})
+}
+
+func testVerifyPeerCertificateCallback(client *fakeyagnats.FakeYagnats, handler boshhandler.Handler, certPath string, caPath string) error {
+	ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
+
+	correctCnCert, err := ioutil.ReadFile(certPath)
+	Expect(err).NotTo(HaveOccurred())
+	correctCa, err := ioutil.ReadFile(caPath)
+	Expect(err).NotTo(HaveOccurred())
+
+	certPemBlock, _ := pem.Decode([]byte(correctCnCert))
+	cert, err := x509.ParseCertificate(certPemBlock.Bytes)
+	caPemBlock, _ := pem.Decode([]byte(correctCa))
+	ca, err := x509.ParseCertificate(caPemBlock.Bytes)
+
+	errHandler := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+	Expect(errHandler).ToNot(HaveOccurred())
+	defer handler.Stop()
+
+	certPool := x509.NewCertPool()
+	ok := certPool.AppendCertsFromPEM(ValidCA)
+	Expect(ok).To(BeTrue())
+
+	result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
+	callback := result.VerifyPeerCertificate
+
+	raw := [][]byte{correctCnCert, correctCa}
+	verified := [][]*x509.Certificate{{cert, ca}}
+
+	err = callback(raw, verified)
+	return err
 }
