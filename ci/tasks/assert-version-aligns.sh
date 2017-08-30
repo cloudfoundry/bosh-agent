@@ -7,7 +7,7 @@ export BASE=$(pwd)
 semver=`cat ${BASE}/version-semver/number`
 
 pushd "${BASE}/bosh-agent"
-  git_branch=`git branch --list -r --contains HEAD | cut -d'/' -f2`
+  git_branch=`git branch --list -r --contains HEAD | grep -v 'origin/HEAD' | cut -d'/' -f2`
 popd
 
 echo "detected bosh-agent will build from branch $git_branch ..."
