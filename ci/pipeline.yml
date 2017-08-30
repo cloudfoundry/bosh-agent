@@ -35,6 +35,8 @@ jobs:
         get: bosh-agent
       - get: version-semver
         params: {bump: {{version_bump}}}
+    - task: assert-version-aligns
+      file: bosh-agent/ci/tasks/assert-version-aligns.yml
     - put: version-semver
       params:
         file: version-semver/number
