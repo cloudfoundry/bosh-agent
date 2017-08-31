@@ -154,20 +154,20 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 
 	changed, err := net.writeNetConfigs(dhcpConfigs, staticConfigs, dnsServers, false)
 	if err != nil {
-		return bosherr.WrapError(err, "Lol")
+		return bosherr.WrapError(err, "Lol") // todo dk+cunnie
 	}
 
 	if changed {
-		// err = net.removeDhcpDNSConfiguration()
-		// if err != nil {
-		// 	return err
-		// }
+		err = net.removeDhcpDNSConfiguration()
+		if err != nil {
+			return err
+		}
 
 		net.stopNetworkingInterfaces(dhcpConfigs, staticConfigs)
 
 		_, err = net.writeNetConfigs(dhcpConfigs, staticConfigs, dnsServers, true)
 		if err != nil {
-			return bosherr.WrapError(err, "Lol")
+			return bosherr.WrapError(err, "Lol") // todo dk+cunnie
 		}
 
 		net.startNetworkingInterfaces(dhcpConfigs, staticConfigs)
@@ -345,9 +345,13 @@ func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string, actually
 
 type networkInterfaceConfig struct {
 	DNSServers        []string
-	StaticConfigs     []StaticInterfaceConfiguration
-	DHCPConfigs       []DHCPInterfaceConfiguration
+	StaticConfigs     StaticInterfaceConfigurations
+	DHCPConfigs       DHCPInterfaceConfigurations
 	HasDNSNameServers bool
+}
+
+func (c networkInterfaceConfig) HasVersion6() bool {
+	return c.StaticConfigs.HasVersion6() || c.DHCPConfigs.HasVersion6()
 }
 
 func (net UbuntuNetManager) writeNetworkInterfaces(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations, dnsServers []string, actuallyConverge bool) (bool, error) {
@@ -387,19 +391,20 @@ auto lo
 iface lo inet loopback
 {{ range .DHCPConfigs }}
 auto {{ .Name }}
-iface {{ .Name }} inet{{ .Version6 }} dhcp
+iface {{ .Name }} inet{{ .Version6 }} dhcp{{ if .IsVersion6 }}
     up sysctl net.ipv6.conf.{{ .Name }}.accept_ra=1
     pre-down ip link set dev {{ .Name }} up
+{{ end }}
 {{ end }}{{ range .StaticConfigs }}
 auto {{ .Name }}
-iface {{ .Name }} inet static
-    address {{ .Address }}
-    network {{ .Network }}
-    netmask {{ .Netmask }}
-{{ if .IsDefaultForGateway }}    broadcast {{ .Broadcast }}
-    gateway {{ .Gateway }}{{ end }}{{ end }}
-{{ if .DNSServers }}
-accept_ra 1
+iface {{ .Name }} inet{{ .Version6 }} static
+    address {{ .Address }}{{ if not .IsVersion6 }}
+    network {{ .Network }}{{ end }}
+    netmask {{ .NetmaskOrLen }}{{ if .IsDefaultForGateway }}{{ if not .IsVersion6 }}
+    broadcast {{ .Broadcast }}{{ end }}
+    gateway {{ .Gateway }}{{ end }}
+{{ end }}{{ if .HasVersion6 }}
+accept_ra 1{{ end }}{{ if .DNSServers }}
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
 
 func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {

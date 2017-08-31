@@ -2,6 +2,7 @@ package net
 
 import (
 	"net"
+	"strconv"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -20,8 +21,23 @@ type StaticInterfaceConfiguration struct {
 	Gateway             string
 }
 
-func (c StaticInterfaceConfiguration) Version6() bool {
+func (c StaticInterfaceConfiguration) Version6() string {
+	if c.IsVersion6() {
+		return "6"
+	}
+	return ""
+}
+
+func (c StaticInterfaceConfiguration) IsVersion6() bool {
 	return len(c.Network) == 0 && len(c.Broadcast) == 0
+}
+
+func (c StaticInterfaceConfiguration) NetmaskOrLen() string {
+	if c.IsVersion6() {
+		ones, _ := net.IPMask(net.ParseIP(c.Netmask)).Size()
+		return strconv.Itoa(ones)
+	}
+	return c.Netmask
 }
 
 type StaticInterfaceConfigurations []StaticInterfaceConfiguration
@@ -40,7 +56,7 @@ func (configs StaticInterfaceConfigurations) Swap(i, j int) {
 
 func (configs StaticInterfaceConfigurations) HasVersion6() bool {
 	for _, config := range configs {
-		if config.Version6() {
+		if config.IsVersion6() {
 			return true
 		}
 	}
@@ -58,6 +74,10 @@ func (c DHCPInterfaceConfiguration) Version6() string {
 		return ""
 	}
 	return "6"
+}
+
+func (c DHCPInterfaceConfiguration) IsVersion6() bool {
+	return len(c.Version6()) > 0 // todo
 }
 
 type DHCPInterfaceConfigurations []DHCPInterfaceConfiguration
@@ -115,7 +135,7 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 			return nil, nil, bosherr.WrapError(err, "Calculating Network and Broadcast")
 		}
 
-		staticConfigs = append(staticConfigs, StaticInterfaceConfiguration{
+		conf := StaticInterfaceConfiguration{
 			Name:                ifaceName,
 			Address:             networkSettings.IP,
 			Netmask:             networkSettings.Netmask,
@@ -124,7 +144,8 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 			Broadcast:           broadcastAddress,
 			Mac:                 networkSettings.Mac,
 			Gateway:             networkSettings.Gateway,
-		})
+		}
+		staticConfigs = append(staticConfigs, conf)
 	}
 	return staticConfigs, dhcpConfigs, nil
 }

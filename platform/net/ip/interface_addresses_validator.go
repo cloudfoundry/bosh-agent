@@ -26,14 +26,17 @@ func (i *interfaceAddressesValidator) Validate(desiredInterfaceAddresses []Inter
 
 	for _, desiredInterfaceAddress := range desiredInterfaceAddresses {
 		ifaceName := desiredInterfaceAddress.GetInterfaceName()
+
 		iface, found := i.findInterfaceByName(ifaceName, systemInterfaceAddresses)
 		if !found {
-			return bosherr.WrapErrorf(err, "Validating network interface '%s' IP addresses, no interface configured with that name", ifaceName)
+			return bosherr.Errorf("Validating network interface '%s' IP addresses, no interface configured with that name", ifaceName)
 		}
+
 		desiredIP, _ := desiredInterfaceAddress.GetIP()
 		actualIP, _ := iface.GetIP()
+
 		if desiredIP != actualIP {
-			return bosherr.WrapErrorf(err, "Validating network interface '%s' IP addresses, expected: '%s', actual: '%s'", ifaceName, desiredIP, actualIP)
+			return bosherr.Errorf("Validating network interface '%s' IP addresses, expected: '%s', actual: '%s'", ifaceName, desiredIP, actualIP)
 		}
 	}
 
