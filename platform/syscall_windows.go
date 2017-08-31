@@ -187,6 +187,9 @@ func validPassword(s string) bool {
 }
 
 // generatePassword, returns a 14 char ascii85 encoded password.
+//
+// DO NOT CALL THIS DIRECTLY, use randomPassword instead as it
+// returns a valid Windows password.
 func generatePassword() (string, error) {
 	const Length = 14
 
@@ -499,6 +502,27 @@ func disableWindowsUpdates() error {
 func setupRuntimeConfiguration() error {
 	if err := disableWindowsUpdates(); err != nil {
 		return fmt.Errorf("disabling updates: %s", err)
+	}
+	return nil
+}
+
+func setRandomPassword(username string) error {
+	if !userExists(username) {
+		// Special case, if the Admin account does not exist
+		// or is disabled there is no need to randomize it.
+		if username == "Administrator" {
+			return nil
+		}
+		return fmt.Errorf("user does not exist: %s", username)
+	}
+	passwd, err := randomPassword()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command("NET.exe", "USER", username, passwd)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error setting password for user (%s): %s", err, string(out))
 	}
 	return nil
 }

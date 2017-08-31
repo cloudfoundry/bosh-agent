@@ -198,6 +198,23 @@ func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 }
 
 func (p WindowsPlatform) SetUserPassword(user, encryptedPwd string) (err error) {
+	if user == boshsettings.VCAPUsername || user == boshsettings.RootUsername {
+		//
+		// Only randomize the password once.  Otherwise the password will be
+		// changed every time the agent restarts - breaking jobs/addons that
+		// set the Administrator password.
+		//
+		path := filepath.Join(p.dirProvider.BoshDir(), "randomized_passwords")
+		if p.fs.FileExists(path) {
+			return nil
+		}
+		if err := setRandomPassword("Administrator"); err != nil {
+			return bosherr.WrapError(err, "Randomized Administrator password")
+		}
+		if err := p.fs.WriteFileString(path, ""); err != nil {
+			return bosherr.WrapError(err, "Writing randomized password file")
+		}
+	}
 	return
 }
 
