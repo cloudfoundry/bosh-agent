@@ -68,6 +68,10 @@ jobs:
     - put: version-semver
       params:
         file: version-semver/number
+    - put: bosh-agent-commit-status
+      params:
+        state: success
+        commit: bosh-agent
     - put: bosh-agent-master
       params:
         repository: bosh-agent
@@ -104,6 +108,14 @@ resources:
     uri: git@github.com:cloudfoundry/bosh-agent.git
     branch: master
     private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
+
+- name: bosh-agent-commit-status
+  type: github-status
+  source:
+    repository: cloudfoundry/bosh-agent
+    access_token: {{repo_github_token}}
+    branch: develop
+    context: ci/published
 
 - name: windows-ami
   type: ami-resource
@@ -168,3 +180,8 @@ resource_types:
   source:
     repository: pivotalgreenhouse/ami-resource
     tag: latest
+- name: github-status
+  type: docker-image
+  source:
+    repository: dpb587/github-status-resource
+    tag: master
