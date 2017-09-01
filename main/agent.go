@@ -70,7 +70,7 @@ func startAgent(logger logger.Logger) error {
 }
 
 func main() {
-	asyncLog := boshlog.NewAsyncWriterLogger(boshlog.LevelDebug, os.Stdout, os.Stderr)
+	asyncLog := boshlog.NewAsyncWriterLogger(boshlog.LevelDebug, os.Stderr)
 	logger := newSignalableLogger(asyncLog)
 
 	exitCode := 0

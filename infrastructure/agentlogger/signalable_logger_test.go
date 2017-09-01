@@ -13,18 +13,17 @@ import (
 
 var _ = Describe("Signalable logger debug", func() {
 	Describe("when SIGSEGV is recieved", func() {
-		It("it dumps all goroutines to stderr", func() {
-			errBuf := new(bytes.Buffer)
+		It("it dumps all goroutines to the given buffer", func() {
 			outBuf := new(bytes.Buffer)
 			signalChannel := make(chan os.Signal, 1)
-			writerLogger := logger.NewWriterLogger(logger.LevelError, outBuf, errBuf)
+			writerLogger := logger.NewWriterLogger(logger.LevelError, outBuf)
 			_, doneChannel := agentlogger.NewSignalableLogger(writerLogger, signalChannel)
 
 			signalChannel <- syscall.SIGSEGV
 			<-doneChannel
 
-			Expect(errBuf).To(ContainSubstring("Dumping goroutines"))
-			Expect(errBuf).To(MatchRegexp(`goroutine (\d+) \[(syscall|running)\]`))
+			Expect(outBuf).To(ContainSubstring("Dumping goroutines"))
+			Expect(outBuf).To(MatchRegexp(`goroutine (\d+) \[(syscall|running)\]`))
 		})
 	})
 })

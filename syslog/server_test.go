@@ -152,10 +152,9 @@ var _ = Describe("Server", func() {
 		Expect(err.Error()).To(ContainSubstring("Fail!"))
 	})
 
-	It("logs parsing error to error log if parsing syslog message fails", func() {
-		outBuf := bytes.NewBufferString("")
-		errBuf := newLockedWriter(bytes.NewBufferString(""))
-		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf, errBuf)
+	It("logs parsing error to the log if parsing syslog message fails", func() {
+		outBuf := newLockedWriter(bytes.NewBufferString(""))
+		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf)
 		server = NewServer(serverPort, listenerProvider, logger)
 
 		doneCh := make(chan struct{})
@@ -173,7 +172,7 @@ var _ = Describe("Server", func() {
 		err = server.Stop()
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(string(errBuf.Bytes())).To(
+		Expect(string(outBuf.Bytes())).To(
 			ContainSubstring("Failed to parse syslog message"))
 
 		// Make sure that subsequent messages are still interpreted
@@ -186,9 +185,8 @@ var _ = Describe("Server", func() {
 	It("logs parsing error to error log if parsing fails while scanning for next message", func() {
 		writeCh := make(chan struct{}, 1)
 
-		outBuf := bytes.NewBufferString("")
-		errBuf := newNotifyingWriter(newLockedWriter(bytes.NewBufferString("")), writeCh)
-		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf, errBuf)
+		outBuf := newNotifyingWriter(newLockedWriter(bytes.NewBufferString("")), writeCh)
+		logger := boshlog.NewWriterLogger(boshlog.LevelDebug, outBuf)
 		server = NewServer(serverPort, listenerProvider, logger)
 
 		go server.Start(nil)
@@ -220,7 +218,7 @@ var _ = Describe("Server", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(err.(*net.OpError).Op).To(Equal("write"))
 
-		Expect(string(errBuf.Bytes())).To(
+		Expect(string(outBuf.Bytes())).To(
 			ContainSubstring("Scanner error while parsing syslog message"))
 	})
 })

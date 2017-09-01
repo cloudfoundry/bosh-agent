@@ -25,7 +25,7 @@ var windowsCommands = map[string]Command{
 	},
 	"stderr": Command{
 		Name: "powershell",
-		Args: []string{"[Console]::Error.WriteLine('error-output')"},
+		Args: []string{`"[Console]::Error.WriteLine('error-output')"`},
 	},
 	"exit": Command{
 		Name: fmt.Sprintf("exit %d", ErrExitCode),
