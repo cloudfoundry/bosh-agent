@@ -376,7 +376,7 @@ func init() {
 						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
 
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh"))
+						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
 					})
 
 					It("verify certificate common name is missing", func() {
@@ -385,7 +385,7 @@ func init() {
 						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
 
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh"))
+						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
 					})
 				})
 			})

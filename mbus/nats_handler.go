@@ -176,12 +176,12 @@ func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains []
 			continue
 		}
 		commonName := chain[0].Subject.CommonName
-		match, _ := regexp.MatchString("^[a-zA-Z0-9*\\-]*.nats.bosh$", commonName)
+		match, _ := regexp.MatchString("^[a-zA-Z0-9*\\-]*.nats.bosh-internal$", commonName)
 		if match {
 			return nil
 		}
 	}
-	return errors.New("Server Certificate CommonName does not match *.nats.bosh")
+	return errors.New("Server Certificate CommonName does not match *.nats.bosh-internal")
 }
 
 func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.Func) {

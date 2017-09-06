@@ -12,7 +12,7 @@ variables:
 - name: my_keys
   type: certificate
   options:
-    common_name: default.nats.bosh
+    common_name: default.nats.bosh-internal
     alternative_names: [ localhost ]
     ca: default_ca
 - name: missing_cn
@@ -22,7 +22,7 @@ variables:
 - name: invalid_cn
   type: certificate
   options:
-    common_name: 123-456-789.invalid.bosh
+    common_name: 123-456-789.invalid.bosh-internal
     ca: default_ca
 ```
 
