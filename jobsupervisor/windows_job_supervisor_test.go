@@ -311,7 +311,6 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			jobSupervisor     JobSupervisor
 			runner            boshsys.CmdRunner
 			logOut            *bytes.Buffer
-			logErr            *bytes.Buffer
 		)
 
 		BeforeEach(func() {
@@ -320,9 +319,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			const testExtPath = "testdata/job-service-wrapper"
 
 			logOut = bytes.NewBufferString("")
-			logErr = bytes.NewBufferString("")
 
-			logger = boshlog.NewWriterLogger(boshlog.LevelDebug, logOut, logErr)
+			logger = boshlog.NewWriterLogger(boshlog.LevelDebug, logOut)
 			fs = boshsys.NewOsFileSystem(logger)
 
 			var err error
@@ -1010,7 +1008,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				err := doJobFailureRequest(`some bad request`, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(int(atomic.LoadInt32(&didHandleAlert))).To(Equal(0))
-				Expect(logErr.Bytes()).To(ContainSubstring("MonitorJobFailures: received unknown request"))
+				Expect(logOut.Bytes()).To(ContainSubstring("MonitorJobFailures: received unknown request"))
 			})
 
 			It("returns an error when it fails to bind", func() {

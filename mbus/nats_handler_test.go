@@ -31,7 +31,6 @@ func init() {
 			handler         boshhandler.Handler
 			platform        *fakeplatform.FakePlatform
 			loggerOutBuf    *bytes.Buffer
-			loggerErrBuf    *bytes.Buffer
 		)
 
 		BeforeEach(func() {
@@ -43,8 +42,7 @@ func init() {
 			}
 
 			loggerOutBuf = bytes.NewBufferString("")
-			loggerErrBuf = bytes.NewBufferString("")
-			logger = boshlog.NewWriterLogger(boshlog.LevelError, loggerOutBuf, loggerErrBuf)
+			logger = boshlog.NewWriterLogger(boshlog.LevelError, loggerOutBuf)
 
 			client = fakeyagnats.New()
 			platform = fakeplatform.NewFakePlatform()
@@ -115,7 +113,7 @@ func init() {
 				defer handler.Stop()
 
 				Expect(platform.LastIPDeletedFromARP).To(Equal("127.0.0.1"))
-				Expect(loggerErrBuf).To(ContainSubstring("ERROR - Cleaning ip-mac address cache for: 127.0.0.1"))
+				Expect(loggerOutBuf).To(ContainSubstring("ERROR - Cleaning ip-mac address cache for: 127.0.0.1"))
 				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
