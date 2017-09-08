@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
+	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -76,6 +77,13 @@ var _ = Describe("GenericScript", func() {
 			err := genericScript.Run()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("fake-open-file-error"))
+		})
+
+		It("sets the PATH environment variable", func() {
+			Expect(genericScript.Run()).To(Succeed())
+			Expect(cmdRunner.RunComplexCommands).To(HaveLen(1))
+			cmd := cmdRunner.RunComplexCommands[0]
+			Expect(cmd.Env).To(HaveKeyWithValue("PATH", boshenv.Path()))
 		})
 
 		Context("when command succeeds", func() {

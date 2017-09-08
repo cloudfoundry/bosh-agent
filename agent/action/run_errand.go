@@ -6,6 +6,7 @@ import (
 	"time"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -90,7 +91,7 @@ func (a RunErrandAction) Run(errandName ...string) (ErrandResult, error) {
 	command := boshsys.Command{
 		Name: path.Join(a.jobsDir, templateName, "bin", "run"),
 		Env: map[string]string{
-			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+			"PATH": boshenv.Path(),
 		},
 	}
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -90,7 +91,7 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	command := boshsys.Command{
 		Name: s.path,
 		Env: map[string]string{
-			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+			"PATH": boshenv.Path(),
 		},
 	}
 
