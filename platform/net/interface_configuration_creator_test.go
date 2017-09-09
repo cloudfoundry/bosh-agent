@@ -270,8 +270,100 @@ func describeInterfaceConfigurationCreator() {
 		}
 
 		_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(boshsettings.Networks{"foo": invalidNetwork}, interfacesByMAC)
-
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Creating interface configuration: Calculating Network and Broadcast:"))
+		Expect(err.Error()).To(ContainSubstring("Invalid IP 'not an ip'"))
 	})
 }
+
+var _ = Describe("StaticInterfaceConfiguration", func() {
+	Describe("Version6", func() {
+		It("returns '6' when network and broadcast are empty", func() {
+			Expect(StaticInterfaceConfiguration{}.Version6()).To(Equal("6"))
+		})
+
+		It("returns '' when network and/or broadcast are not empty", func() {
+			Expect(StaticInterfaceConfiguration{Network: "network"}.Version6()).To(Equal(""))
+			Expect(StaticInterfaceConfiguration{Broadcast: "broadcast"}.Version6()).To(Equal(""))
+		})
+	})
+
+	Describe("IsVersion6", func() {
+		It("returns '6' when network and broadcast are empty", func() {
+			Expect(StaticInterfaceConfiguration{}.IsVersion6()).To(BeTrue())
+		})
+
+		It("returns '' when network and/or broadcast are not empty", func() {
+			Expect(StaticInterfaceConfiguration{Network: "network"}.IsVersion6()).To(BeFalse())
+			Expect(StaticInterfaceConfiguration{Broadcast: "broadcast"}.IsVersion6()).To(BeFalse())
+		})
+	})
+
+	Describe("NetmaskOrLen", func() {
+		It("returns number of ones in IPv6 netmask when network and broadcast are empty", func() {
+			Expect(StaticInterfaceConfiguration{Netmask: "ffff:ffff:ff00::"}.NetmaskOrLen()).To(Equal("40"))
+		})
+
+		It("returns provided netmask when network and/or broadcast are not empty", func() {
+			Expect(StaticInterfaceConfiguration{Netmask: "netmask", Network: "network"}.NetmaskOrLen()).To(Equal("netmask"))
+			Expect(StaticInterfaceConfiguration{Netmask: "netmask", Broadcast: "broadcast"}.NetmaskOrLen()).To(Equal("netmask"))
+		})
+	})
+})
+
+var _ = Describe("StaticInterfaceConfigurations", func() {
+	Describe("HasVersion6", func() {
+		It("returns true if there is at least one IPv6 static config", func() {
+			Expect(StaticInterfaceConfigurations{}.HasVersion6()).To(BeFalse())
+
+			Expect(StaticInterfaceConfigurations{
+				StaticInterfaceConfiguration{Network: "network"},
+				StaticInterfaceConfiguration{},
+			}.HasVersion6()).To(BeTrue())
+
+			Expect(StaticInterfaceConfigurations{
+				StaticInterfaceConfiguration{Network: "network"},
+			}.HasVersion6()).To(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("DHCPInterfaceConfiguration", func() {
+	Describe("Version6", func() {
+		It("returns '6' when address is not IPv4 and not empty", func() {
+			Expect(DHCPInterfaceConfiguration{Address: "ff00::"}.Version6()).To(Equal("6"))
+		})
+
+		It("returns '' when address is empty or IPv4", func() {
+			Expect(DHCPInterfaceConfiguration{}.Version6()).To(Equal(""))
+			Expect(DHCPInterfaceConfiguration{Address: "1.2.3.4"}.Version6()).To(Equal(""))
+		})
+	})
+
+	Describe("IsVersion6", func() {
+		It("returns '6' when address is not IPv4 and not empty", func() {
+			Expect(DHCPInterfaceConfiguration{Address: "ff00::"}.IsVersion6()).To(BeTrue())
+		})
+
+		It("returns '' when address is empty or IPv4", func() {
+			Expect(DHCPInterfaceConfiguration{}.IsVersion6()).To(BeFalse())
+			Expect(DHCPInterfaceConfiguration{Address: "1.2.3.4"}.IsVersion6()).To(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("DHCPInterfaceConfigurations", func() {
+	Describe("HasVersion6", func() {
+		It("returns true if there is at least one IPv6 DHCP config", func() {
+			Expect(DHCPInterfaceConfigurations{}.HasVersion6()).To(BeFalse())
+
+			Expect(DHCPInterfaceConfigurations{
+				DHCPInterfaceConfiguration{Address: "ff00::"},
+				DHCPInterfaceConfiguration{},
+			}.HasVersion6()).To(BeTrue())
+
+			Expect(DHCPInterfaceConfigurations{
+				DHCPInterfaceConfiguration{Address: "1.2.3.4"},
+			}.HasVersion6()).To(BeFalse())
+		})
+	})
+})
