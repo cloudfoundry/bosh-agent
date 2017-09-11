@@ -129,6 +129,197 @@ func TestRemoveAll(t *testing.T) {
 	}
 }
 
+func TestRenameLong(t *testing.T) {
+	oldtemp := tempDir(t)
+
+	// Create temp directory so we know it's name is unique,
+	// then delete it - this is our rename target.
+	newtemp := tempDir(t)
+	if err := os.RemoveAll(newtemp); err != nil {
+		t.Fatalf("TestRenameLong: %s", err)
+	}
+
+	long := longPathName()
+	oldpath := filepath.Join(oldtemp, long)
+	newpath := filepath.Join(newtemp, long)
+
+	err := MkdirAll(oldpath, 0755)
+	if err != nil {
+		t.Fatalf("TestRenameLong: %s", err)
+	}
+	defer os.RemoveAll(`\\?\` + oldtemp)
+
+	if err := Rename(oldtemp, newtemp); err != nil {
+		t.Fatalf("TestRenameLong: %s", err)
+	}
+	defer os.RemoveAll(`\\?\` + newtemp)
+
+	if _, err := Stat(oldpath); !os.IsNotExist(err) {
+		t.Fatalf("TestRenameLong: failed to rename directory: %s => %s", oldtemp, newtemp)
+	}
+	if _, err := Stat(newpath); err != nil {
+		t.Fatalf("TestRenameLong: failed to rename directory: %s => %s", oldtemp, newtemp)
+	}
+}
+
+func TestSymlinkLong(t *testing.T) {
+	const Content = "Hello\n"
+
+	oldtemp := tempDir(t)
+	defer os.RemoveAll(`\\?\` + oldtemp)
+
+	// Create temp directory so we know it's name is unique,
+	// then delete it - this is our rename target.
+	newtemp := tempDir(t)
+	if err := os.RemoveAll(newtemp); err != nil {
+		t.Fatalf("TestSymlinkLong: %s", err)
+	}
+	defer os.RemoveAll(`\\?\` + newtemp) // cleanup
+
+	long := longPathName()
+	oldpath := filepath.Join(oldtemp, long)
+	oldfile := filepath.Join(oldpath, "file.txt")
+
+	newpath := filepath.Join(newtemp, long)
+	newfile := filepath.Join(newpath, "file.txt")
+	linkedfile := filepath.Join(newpath, "linked.txt")
+
+	err := MkdirAll(oldpath, 0755)
+	if err != nil {
+		t.Fatalf("TestSymlinkLong: %s", err)
+	}
+
+	// create temp file
+	{
+		f, err := Create(oldfile)
+		if err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+		_, err = f.WriteString(Content)
+		f.Close() // close immediately so that cleanup does not fail
+		if err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+	}
+
+	testFile := func(path string) error {
+		f, err := Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		var buf bytes.Buffer
+		if _, err := buf.ReadFrom(f); err != nil {
+			return err
+		}
+		s := buf.String()
+		if s != Content {
+			return fmt.Errorf("expected content of file (%s) to be: %s got: %s",
+				path, Content, s)
+		}
+		return nil
+	}
+
+	testDir := func() error {
+		if _, err := Stat(newpath); err != nil {
+			return fmt.Errorf("failed to rename directory: %s => %s", oldtemp, newtemp)
+		}
+		if err := testFile(newfile); err != nil {
+			return fmt.Errorf("failed reading file: %s", err)
+		}
+		if err := testFile(linkedfile); err != nil {
+			return fmt.Errorf("failed reading symlinked file: %s", err)
+		}
+		return nil
+	}
+
+	resetDir := func() error {
+		if _, err := Stat(linkedfile); err == nil {
+			if err := Remove(linkedfile); err != nil {
+				return err
+			}
+		}
+		if _, err := Stat(newtemp); err == nil {
+			if err := RemoveAll(newtemp); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// symlink directories (shallow)
+	{
+		if err := Symlink(oldtemp, newtemp); err != nil {
+			t.Fatalf("TestSymlinkLong: creating symlink: %s", err)
+		}
+		// link another file into the symlinked directory
+		if err := Symlink(oldfile, linkedfile); err != nil {
+			t.Fatalf("TestSymlinkLong: creating file symlink in symlinked directory: %s", err)
+		}
+
+		if err := testDir(); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+	}
+
+	// symlink directories (deep)
+	{
+		if err := resetDir(); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+
+		if err := MkdirAll(filepath.Dir(newpath), 0755); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+		if err := Symlink(oldpath, newpath); err != nil {
+			t.Fatalf("TestSymlinkLong: creating symlink: %s", err)
+		}
+		if err := Symlink(oldfile, linkedfile); err != nil {
+			t.Fatalf("TestSymlinkLong: creating file symlink in symlinked directory: %s", err)
+		}
+
+		if err := testDir(); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+	}
+
+	// symlink files
+	{
+		if err := resetDir(); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+
+		if err := MkdirAll(newpath, 0755); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+		if err := Symlink(oldfile, newfile); err != nil {
+			t.Fatalf("TestSymlinkLong: creating symlink: %s", err)
+		}
+		if err := Symlink(oldfile, linkedfile); err != nil {
+			t.Fatalf("TestSymlinkLong: creating symlink: %s", err)
+		}
+
+		if err := testDir(); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+	}
+
+	// symlink a file to a symlinked file
+	{
+		// don't reset the test dir
+
+		doublelink := filepath.Join(newpath, "double.txt")
+		if err := Symlink(linkedfile, doublelink); err != nil {
+			t.Fatalf("TestSymlinkLong: creating symlink: %s", err)
+		}
+		defer os.Remove(doublelink)
+
+		if err := testFile(doublelink); err != nil {
+			t.Fatalf("TestSymlinkLong: %s", err)
+		}
+	}
+}
+
 func TestLeadingSpace(t *testing.T) {
 	const filename = " Leading Space.txt"
 	path := filepath.Join("./testdata/", filename)
@@ -188,7 +379,7 @@ func makeLongFilePath(t *testing.T) string {
 	return path
 }
 
-func TestLongLeadingSlash(t *testing.T) {
+func TestLongNoVolumeName(t *testing.T) {
 	longpath := makeLongFilePath(t)
 	defer os.RemoveAll(`\\?\` + longpath)
 
@@ -204,6 +395,52 @@ func TestLongLeadingSlash(t *testing.T) {
 	unixpath := strings.Replace(testpath, `\`, `/`, -1)
 	if _, err := Stat(unixpath); err != nil {
 		t.Fatalf("TestLeadingSlash (%s): failed to open file with forward slashes (%s): %s", longpath, unixpath, err)
+	}
+
+	// Test with mixed slashes
+	mixedpath := make([]rune, 0, len(testpath))
+	n := 0
+	for _, r := range testpath {
+		if r == '\\' {
+			if n&1 != 0 {
+				r = '/'
+			}
+			n++
+		}
+		mixedpath = append(mixedpath, r)
+	}
+	if _, err := Stat(string(mixedpath)); err != nil {
+		t.Fatalf("TestLeadingSlash (%s): failed to open file with mixed slashes (%s): %s", longpath, string(mixedpath), err)
+	}
+}
+
+func TestLongUnixPath(t *testing.T) {
+	longpath := makeLongFilePath(t)
+	defer os.RemoveAll(`\\?\` + longpath)
+
+	// Remove volume name => \path\to\testdata
+	testpath := strings.TrimPrefix(longpath, filepath.VolumeName(longpath))
+
+	// Test with forward (unix) slashes => /path/to/testdata
+	unixpath := strings.Replace(testpath, `\`, `/`, -1)
+	if _, err := Stat(unixpath); err != nil {
+		t.Fatalf("TestLongUnixPath (%s): failed to open file with forward slashes (%s): %s", longpath, unixpath, err)
+	}
+
+	// Test with mixed slashes => \path/to\testdata
+	mixedpath := make([]rune, 0, len(testpath))
+	n := 0
+	for _, r := range testpath {
+		if r == '\\' {
+			if n&1 != 0 {
+				r = '/'
+			}
+			n++
+		}
+		mixedpath = append(mixedpath, r)
+	}
+	if _, err := Stat(string(mixedpath)); err != nil {
+		t.Fatalf("TestLongUnixPath (%s): failed to open file with mixed slashes (%s): %s", longpath, string(mixedpath), err)
 	}
 }
 
