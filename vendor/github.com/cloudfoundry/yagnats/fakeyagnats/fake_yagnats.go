@@ -16,7 +16,9 @@ type FakeYagnats struct {
 
 	beforeConnectCallback func()
 
-	connectError     error
+	connectErrors    []error
+	connectCallCount int
+
 	unsubscribeError error
 
 	whenSubscribing map[string]func(yagnats.Callback) error
@@ -47,7 +49,7 @@ func (f *FakeYagnats) Reset() {
 
 	f.connectedConnectionProvider = nil
 
-	f.connectError = nil
+	f.connectErrors = []error{}
 	f.unsubscribeError = nil
 
 	f.whenSubscribing = map[string]func(yagnats.Callback) error{}
@@ -85,17 +87,21 @@ func (f *FakeYagnats) Connect(connectionProvider yagnats.ConnectionProvider) err
 	f.Lock()
 	defer f.Unlock()
 
+	f.connectCallCount++
+
 	if f.beforeConnectCallback != nil {
 		f.beforeConnectCallback()
 	}
 
-	if f.connectError != nil {
-		return f.connectError
+	if len(f.connectErrors) > 0 {
+		currentError := f.connectErrors[0]
+		f.connectErrors = f.connectErrors[1:]
+		return currentError
 	}
 
 	f.connectedConnectionProvider = connectionProvider
 
-	return f.connectError
+	return nil
 }
 
 func (f *FakeYagnats) Disconnect() {
@@ -249,4 +255,18 @@ func (f *FakeYagnats) ConnectedConnectionProvider() yagnats.ConnectionProvider {
 	defer f.RUnlock()
 
 	return f.connectedConnectionProvider
+}
+
+func (f *FakeYagnats) SetConnectErrors(connectErrors []error) {
+	f.RLock()
+	defer f.RUnlock()
+
+	f.connectErrors = connectErrors
+}
+
+func (f *FakeYagnats) GetConnectCallCount() int {
+	f.RLock()
+	defer f.RUnlock()
+
+	return f.connectCallCount
 }

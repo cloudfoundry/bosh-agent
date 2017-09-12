@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
@@ -27,7 +27,7 @@ var _ = Describe("clientProvider", func() {
 
 		httpClient := http.DefaultClient
 
-		shortHTTPClient := boshhttp.NewRetryClient(httpClient, 20, 1*time.Second, logger)
+		shortHTTPClient := httpclient.NewRetryClient(httpClient, 20, 1*time.Second, logger)
 		longHTTPClient := NewMonitRetryClient(httpClient, 300, 20, 1*time.Second, logger)
 
 		expectedClient := NewHTTPClient(

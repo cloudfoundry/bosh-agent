@@ -5,7 +5,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/pivotal-golang/clock"
+	"code.cloudfoundry.org/clock"
 
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"

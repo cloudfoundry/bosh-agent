@@ -12,13 +12,12 @@ import (
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshhttp "github.com/cloudfoundry/bosh-utils/http"
-	boshhttpclient "github.com/cloudfoundry/bosh-utils/httpclient"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type HTTPMetadataService struct {
-	client          boshhttpclient.HTTPClient
+	client          *httpclient.HTTPClient
 	metadataHost    string
 	metadataHeaders map[string]string
 	userdataPath    string
@@ -286,9 +285,9 @@ func (ms HTTPMetadataService) addHeaders() func(*http.Request) {
 	}
 }
 
-func createRetryClient(delay time.Duration, logger boshlog.Logger) boshhttpclient.HTTPClient {
-	return boshhttpclient.NewHTTPClient(
-		boshhttp.NewRetryClient(
-			boshhttpclient.CreateDefaultClient(nil), 10, delay, logger),
+func createRetryClient(delay time.Duration, logger boshlog.Logger) *httpclient.HTTPClient {
+	return httpclient.NewHTTPClient(
+		httpclient.NewRetryClient(
+			httpclient.CreateDefaultClient(nil), 10, delay, logger),
 		logger)
 }

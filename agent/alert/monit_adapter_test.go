@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"code.cloudfoundry.org/clock/fakeclock"
 	. "github.com/cloudfoundry/bosh-agent/agent/alert"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	"github.com/pivotal-golang/clock/fakeclock"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )

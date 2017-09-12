@@ -3,7 +3,7 @@ package yagnats
 import (
 	"bufio"
 	"bytes"
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 func (s *YSuite) TestParsePing(c *C) {

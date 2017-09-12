@@ -23,7 +23,7 @@ import (
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 )
 
-//go:generate counterfeiter -o fakes/fake_clock.go ../../vendor/github.com/pivotal-golang/clock Clock
+//go:generate counterfeiter -o fakes/fake_clock.go ../../vendor/code.cloudfoundry.org/clock Clock
 
 var _ = Describe("concreteFactory", func() {
 	var (

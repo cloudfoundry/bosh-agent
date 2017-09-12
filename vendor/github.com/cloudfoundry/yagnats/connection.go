@@ -2,6 +2,8 @@ package yagnats
 
 import (
 	"bufio"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"net"
 	"sync"
@@ -62,15 +64,64 @@ func NewConnection(addr, user, pass string) *Connection {
 	}
 }
 
+func NewTLSConnection(addr, user, pass string, certPool *x509.CertPool, clientCert *tls.Certificate, verifyPeerCertificate func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error) *Connection {
+	connection := NewConnection(addr, user, pass)
+	connection.dial = func(network, address string) (net.Conn, error) {
+		conn, err := net.DialTimeout(network, address, 5*time.Second)
+		if err != nil {
+			return nil, err
+		}
+
+		br := bufio.NewReaderSize(conn, 32768)
+		_, err = Parse(br)
+		if err != nil {
+			return nil, err
+		}
+
+		hostname, _, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, err
+		}
+
+		config := tls.Config{
+			RootCAs:               certPool,
+			ServerName:            hostname,
+			VerifyPeerCertificate: verifyPeerCertificate,
+		}
+
+		// When client certificate is provided, we are expecting mutual TLS.
+		if clientCert != nil {
+			config.Certificates = []tls.Certificate{*clientCert}
+		}
+
+		conn = tls.Client(conn, &config)
+
+		tlsConn := conn.(*tls.Conn)
+		err = tlsConn.Handshake()
+		return tlsConn, err
+	}
+	return connection
+}
+
 type ConnectionInfo struct {
 	Addr     string
 	Username string
 	Password string
 	Dial     func(network, address string) (net.Conn, error)
+
+	CertPool              *x509.CertPool
+	ClientCert            *tls.Certificate
+	VerifyPeerCertificate func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error
 }
 
 func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
-	conn := NewConnection(c.Addr, c.Username, c.Password)
+	var conn *Connection
+	if c.CertPool == nil {
+		conn = NewConnection(c.Addr, c.Username, c.Password)
+	} else {
+		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool, c.ClientCert, c.VerifyPeerCertificate)
+	}
+
 	if c.Dial != nil {
 		conn.dial = c.Dial
 	}
@@ -132,7 +183,6 @@ func (c *Connection) Disconnect() {
 
 func (c *Connection) ErrOrOK() error {
 	c.Logger().Debug("connection.err-or-ok.wait")
-
 	select {
 	case err := <-c.errs:
 		c.Logger().Warnd(map[string]interface{}{"error": err.Error()}, "connection.err-or-ok.err")

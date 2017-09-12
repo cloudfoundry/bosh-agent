@@ -73,6 +73,35 @@ func startNats(port int) *exec.Cmd {
 	return cmd
 }
 
+func startNatsTLS(port int) *exec.Cmd {
+	cmd := exec.Command("gnatsd", "-p", strconv.Itoa(port), "--user", "nats", "--pass", "nats", "--tls", "--tlscert", "./assets/server-cert.pem", "--tlskey", "./assets/server-pkey.pem")
+	err := cmd.Start()
+	if err != nil {
+		fmt.Printf("NATS failed to start: %v\n", err)
+	}
+
+	err = waitUntilNatsUp(port)
+	if err != nil {
+		panic("Cannot connect to NATS")
+	}
+	return cmd
+}
+
+func startNatsMutualTLS(port int) *exec.Cmd {
+	cmd := exec.Command("gnatsd", "-p", strconv.Itoa(port), "--user", "nats", "--pass", "nats", "--tls", "--tlscert", "./assets/server-cert.pem", "--tlskey", "./assets/server-pkey.pem", "--tlsverify", "--tlscacert", "./assets/ca.pem")
+	err := cmd.Start()
+	if err != nil {
+		fmt.Printf("NATS failed to start: %v\n", err)
+	}
+
+	err = waitUntilNatsUp(port)
+
+	if err != nil {
+		panic("Cannot connect to NATS")
+	}
+	return cmd
+}
+
 func stopCmd(cmd *exec.Cmd) {
 	cmd.Process.Kill()
 	cmd.Wait()

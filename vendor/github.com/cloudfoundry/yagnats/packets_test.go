@@ -2,7 +2,7 @@ package yagnats
 
 import (
 	"encoding/json"
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 func (s *YSuite) TestInfoEncode(c *C) {

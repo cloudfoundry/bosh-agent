@@ -3,9 +3,9 @@ package disk
 import (
 	"time"
 
+	"code.cloudfoundry.org/clock"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	"github.com/pivotal-golang/clock"
 )
 
 type partitionStrategy struct {

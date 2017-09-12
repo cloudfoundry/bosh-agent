@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/clock"
 	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"github.com/pivotal-golang/clock"
 )
 
 type ConcreteScript struct {

@@ -21,7 +21,7 @@ func NewIntegrationAgentClient(
 	directorID string,
 	getTaskDelay time.Duration,
 	toleratedErrorCount int,
-	httpClient httpclient.HTTPClient,
+	httpClient *httpclient.HTTPClient,
 	logger boshlog.Logger,
 ) *IntegrationAgentClient {
 	return &IntegrationAgentClient{

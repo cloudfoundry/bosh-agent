@@ -1,10 +1,9 @@
 package registry_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
 func TestRegistry(t *testing.T) {
