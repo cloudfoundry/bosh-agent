@@ -23,7 +23,7 @@ func NewMonitRetryClient(
 	maxOtherAttempts uint,
 	retryDelay time.Duration,
 	logger boshlog.Logger,
-) *monitRetryClient {
+) httpclient.Client {
 	return &monitRetryClient{
 		delegate:               delegate,
 		maxUnavailableAttempts: maxUnavailableAttempts,
