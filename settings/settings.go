@@ -203,7 +203,7 @@ func (e Env) IsNatsTLSEnabled() bool {
 }
 
 func (e Env) IsMutualTLSEnabled() bool {
-	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0
+	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0 && len(e.Bosh.Mbus.Cert.CA) > 0
 }
 
 type BoshEnv struct {

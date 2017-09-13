@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/matchers"
@@ -742,16 +743,6 @@ var _ = Describe("Settings", func() {
 		})
 
 		Context("#IsMutualTLSEnabled", func() {
-			Context("env JSON provides mbus & CertKeyPair", func() {
-				It("should return true", func() {
-					envJSON := `{ "bosh": { "mbus": { "cert": { "ca": "some ca value", "private_key": "some private_key value", "certificate": "some certificate value" } } } }`
-
-					var env Env
-					err := json.Unmarshal([]byte(envJSON), &env)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsMutualTLSEnabled()).To(BeTrue())
-				})
-			})
 			Context("env JSON does NOT provide mbus", func() {
 				It("should return false", func() {
 					envJSON := `{ "bosh": {} }`
@@ -762,16 +753,49 @@ var _ = Describe("Settings", func() {
 					Expect(env.IsMutualTLSEnabled()).To(BeFalse())
 				})
 			})
-			Context("env JSON provides mbus; PrivateKey and Certificate is empty", func() {
-				It("should return false", func() {
-					envJSON := `{ "bosh": { "mbus": { "cert": { "ca": "some ca value" } } } }`
+
+			DescribeTable("env JSON provides mbus",
+				func(cert string, expected bool) {
+					envJSON := `{ "bosh": { "mbus": { "cert": ` + cert + ` } } }`
 
 					var env Env
 					err := json.Unmarshal([]byte(envJSON), &env)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsMutualTLSEnabled()).To(BeFalse())
-				})
-			})
+					Expect(env.IsMutualTLSEnabled()).To(Equal(expected))
+				},
+
+				Entry("empty cert",
+					`{}`,
+					false),
+
+				Entry("only ca provided",
+					`{ "ca": "some value" }`,
+					false),
+
+				Entry("only certificate provided",
+					`{ "certificate": "some value" }`,
+					false),
+
+				Entry("only private_key provided",
+					`{ "private_key": "some value" }`,
+					false),
+
+				Entry("certificate missing",
+					`{ "ca": "some value", "private_key": "some value"}`,
+					false),
+
+				Entry("private_key missing",
+					`{ "ca": "some value", "certficate": "some value" }`,
+					false),
+
+				Entry("ca missing",
+					`{ "certificate": "some value", "private_key": "some value" }`,
+					false),
+
+				Entry("provides ca, certificate, and private_key",
+					`{ "ca": "some value", "certificate": "some value", "private_key": "some value" }`,
+					true),
+			)
 		})
 	})
 
