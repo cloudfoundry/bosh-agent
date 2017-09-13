@@ -1357,36 +1357,8 @@ func (p linux) createEphemeralPartitionsOnRootDevice(desiredSwapSizeInBytes *uin
 		return "", "", newInsufficientSpaceError(remainingSizeInBytes, minRootEphemeralSpaceInBytes)
 	}
 
-	p.logger.Debug(logTag, "Calculating partition sizes of `%s', remaining size: %dB", rootDevicePath, remainingSizeInBytes)
-	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes, desiredSwapSizeInBytes)
-	if err != nil {
-		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
-	}
+	swapPartitionPath, dataPartitionPath, err := p.partitionDisk(remainingSizeInBytes, desiredSwapSizeInBytes, rootDevicePath, rootDeviceNumber+1, p.diskManager.GetRootDevicePartitioner())
 
-	var partitions []boshdisk.Partition
-	var swapPartitionPath string
-	var dataPartitionPath string
-
-	if swapSizeInBytes == 0 {
-		partitions = []boshdisk.Partition{
-			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
-		}
-		swapPartitionPath = ""
-		dataPartitionPath = rootDevicePath + strconv.Itoa(rootDeviceNumber+1)
-	} else {
-		partitions = []boshdisk.Partition{
-			{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
-			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
-		}
-		swapPartitionPath = rootDevicePath + strconv.Itoa(rootDeviceNumber+1)
-		dataPartitionPath = rootDevicePath + strconv.Itoa(rootDeviceNumber+2)
-	}
-
-	for _, partition := range partitions {
-		p.logger.Info(logTag, "Partitioning root device `%s': %s", rootDevicePath, partition)
-	}
-
-	err = p.diskManager.GetRootDevicePartitioner().Partition(rootDevicePath, partitions)
 	if err != nil {
 		return "", "", bosherr.WrapErrorf(err, "Partitioning root device `%s'", rootDevicePath)
 	}
@@ -1402,8 +1374,19 @@ func (p linux) partitionEphemeralDisk(realPath string, desiredSwapSizeInBytes *u
 		return "", "", bosherr.WrapError(err, "Getting device size")
 	}
 
-	p.logger.Debug(logTag, "Calculating ephemeral disk partition sizes of `%s' with total disk size %dB", realPath, diskSizeInBytes)
-	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(diskSizeInBytes, desiredSwapSizeInBytes)
+	swapPartitionPath, dataPartitionPath, err := p.partitionDisk(diskSizeInBytes, desiredSwapSizeInBytes, realPath, 1, p.diskManager.GetPartitioner())
+
+	if err != nil {
+		return "", "", bosherr.WrapErrorf(err, "Partitioning ephemeral disk `%s'", realPath)
+	}
+
+	return swapPartitionPath, dataPartitionPath, nil
+}
+
+func (p linux) partitionDisk(availableSize uint64, desiredSwapSizeInBytes *uint64, partitionPath string, partitionStartCount int, partitioner boshdisk.Partitioner) (string, string, error) {
+	p.logger.Debug(logTag, "Calculating partition sizes of `%s', with available size %dB", partitionPath, availableSize)
+
+	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(availableSize, desiredSwapSizeInBytes)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
 	}
@@ -1417,23 +1400,20 @@ func (p linux) partitionEphemeralDisk(realPath string, desiredSwapSizeInBytes *u
 			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 		}
 		swapPartitionPath = ""
-		dataPartitionPath = realPath + "1"
+		dataPartitionPath = partitionPath + strconv.Itoa(partitionStartCount)
 	} else {
 		partitions = []boshdisk.Partition{
 			{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
 			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 		}
-		swapPartitionPath = realPath + "1"
-		dataPartitionPath = realPath + "2"
+		swapPartitionPath = partitionPath + strconv.Itoa(partitionStartCount)
+		dataPartitionPath = partitionPath + strconv.Itoa(partitionStartCount+1)
 	}
 
-	p.logger.Info(logTag, "Partitioning ephemeral disk `%s' with %s", realPath, partitions)
-	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
-	if err != nil {
-		return "", "", bosherr.WrapErrorf(err, "Partitioning ephemeral disk `%s'", realPath)
-	}
+	p.logger.Info(logTag, "Partitioning `%s' with %s", partitionPath, partitions)
+	err = partitioner.Partition(partitionPath, partitions)
 
-	return swapPartitionPath, dataPartitionPath, nil
+	return swapPartitionPath, dataPartitionPath, err
 }
 
 func (p linux) RemoveDevTools(packageFileListPath string) error {
