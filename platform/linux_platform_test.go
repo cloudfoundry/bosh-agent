@@ -945,6 +945,47 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 									}),
 								)
 							})
+
+							Context("when swap size is specified by user", func() {
+								diskSizeInBytes := 2 * uint64(1024*1024*1024)
+
+								Context("and swap size is non-zero", func() {
+									It("creates swap equal to specified amount", func() {
+										var desiredSwapSize uint64 = 2048
+										act := func() error {
+											return platform.SetupEphemeralDiskWithPath("", &desiredSwapSize)
+										}
+										partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
+
+										err := act()
+										Expect(err).NotTo(HaveOccurred())
+										Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+											{SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
+											{SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
+										}))
+
+									})
+								})
+
+								Context("and swap size is zero", func() {
+									It("does not attempt to create a swap disk", func() {
+										var desiredSwapSize uint64
+										act := func() error {
+											return platform.SetupEphemeralDiskWithPath("", &desiredSwapSize)
+										}
+										partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
+
+										err := act()
+										Expect(err).NotTo(HaveOccurred())
+										Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+											{SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+										}))
+
+										Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/vda2"}))
+										Expect(len(mounter.SwapOnPartitionPaths)).To(Equal(0))
+									})
+								})
+							})
 						})
 
 						Context("when getting root device remaining size fails", func() {
