@@ -167,6 +167,32 @@ var _ = Describe("EphemeralDisk", func() {
 					Expect(partitionTable).To(ContainSubstring("/dev/sdz2 : start=   274432, size=  1960600, Id=83"))
 					Expect(partitionTable).To(ContainSubstring("/dev/sdz3 : start=  2236416, size=  1957888, Id=83"))
 				})
+
+				Context("when swap size is set to 0", func() {
+					BeforeEach(func() {
+						swapSize := uint64(0)
+						registrySettings.Env = boshsettings.Env{
+							Bosh: boshsettings.BoshEnv{
+								SwapSizeInMB: &swapSize,
+							},
+						}
+					})
+
+					It("does not partition a swap device", func() {
+						Eventually(func() string {
+							ephemeralDataDevice, err := testEnvironment.RunCommand(`sudo mount | grep "on /var/vcap/data " | cut -d' ' -f1`)
+							Expect(err).ToNot(HaveOccurred())
+
+							return strings.TrimSpace(ephemeralDataDevice)
+						}, 2*time.Minute, 1*time.Second).Should(Equal("/dev/sdz2"))
+
+						partitionTable, err := testEnvironment.RunCommand("sudo sfdisk -d /dev/sdz")
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(partitionTable).To(ContainSubstring("/dev/sdz1 : start=        1, size=   273104, Id=83"))
+						Expect(partitionTable).To(ContainSubstring("/dev/sdz2 : start=   274432, size=  3919872, Id=83"))
+					})
+				})
 			})
 
 			Context("when root disk can not be used as ephemeral", func() {
