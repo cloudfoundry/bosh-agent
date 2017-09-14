@@ -25,6 +25,10 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
+// Administrator user name, this currently exists for testing, but may be useful
+// if we ever change the Admin user name for security reasons.
+var administratorUserName = "Administrator"
+
 type WindowsPlatform struct {
 	collector              boshstats.Collector
 	fs                     boshsys.FileSystem
@@ -208,7 +212,7 @@ func (p WindowsPlatform) SetUserPassword(user, encryptedPwd string) (err error) 
 		if p.fs.FileExists(path) {
 			return nil
 		}
-		if err := setRandomPassword("Administrator"); err != nil {
+		if err := setRandomPassword(administratorUserName); err != nil {
 			return bosherr.WrapError(err, "Randomized Administrator password")
 		}
 		if err := p.fs.WriteFileString(path, ""); err != nil {

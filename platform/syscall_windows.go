@@ -510,7 +510,7 @@ func setRandomPassword(username string) error {
 	if !userExists(username) {
 		// Special case, if the Admin account does not exist
 		// or is disabled there is no need to randomize it.
-		if username == "Administrator" {
+		if username == administratorUserName {
 			return nil
 		}
 		return fmt.Errorf("user does not exist: %s", username)

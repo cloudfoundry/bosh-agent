@@ -14,14 +14,17 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"unsafe"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc/mgr"
+
+	. "github.com/cloudfoundry/bosh-agent/platform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	. "github.com/cloudfoundry/bosh-agent/platform"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
@@ -33,6 +36,46 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
+
+var (
+	netapi32                  = windows.NewLazySystemDLL("Netapi32.dll")
+	procNetUserChangePassword = netapi32.NewProc("NetUserChangePassword")
+)
+
+// Really: ERROR_INVALID_PASSWORD but use camel case to make golint happy
+const ErrorInvalidPassword = syscall.Errno(86)
+
+// https://msdn.microsoft.com/en-us/library/windows/desktop/aa370650(v=vs.85).aspx
+//
+func NetUserChangePassword(username, oldPassword, newPassword string) error {
+	if err := procNetUserChangePassword.Find(); err != nil {
+		return err
+	}
+	pusr, err := windows.UTF16PtrFromString(username)
+	if err != nil {
+		return err
+	}
+	pold, err := windows.UTF16PtrFromString(oldPassword)
+	if err != nil {
+		return err
+	}
+	pnew, err := windows.UTF16PtrFromString(newPassword)
+	if err != nil {
+		return err
+	}
+	r1, _, _ := syscall.Syscall6(procNetUserChangePassword.Addr(), 4,
+		0, // LPCWSTR domainname
+		uintptr(unsafe.Pointer(pusr)), // LPCWSTR username
+		uintptr(unsafe.Pointer(pold)), // LPCWSTR oldpassword
+		uintptr(unsafe.Pointer(pnew)), // LPCWSTR newpassword
+		0, // unused
+		0, // unused
+	)
+	if r1 != 0 {
+		return syscall.Errno(r1)
+	}
+	return nil
+}
 
 var _ = Describe("WindowsPlatform", func() {
 	var (
@@ -64,9 +107,7 @@ var _ = Describe("WindowsPlatform", func() {
 		certManager = new(fakecert.FakeManager)
 		auditLogger = fakeplat.NewFakeAuditLogger()
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
-	})
 
-	JustBeforeEach(func() {
 		platform = NewWindowsPlatform(
 			collector,
 			fs,
@@ -92,12 +133,17 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("SetupTmpDir", func() {
-		act := func() error {
-			return platform.SetupTmpDir()
-		}
+		var (
+			OrigTMP  = os.Getenv("TMP")
+			OrigTEMP = os.Getenv("TEMP")
+		)
+		AfterEach(func() {
+			os.Setenv("TMP", OrigTMP)
+			os.Setenv("TEMP", OrigTEMP)
+		})
 
 		It("creates new temp dir", func() {
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
@@ -108,13 +154,13 @@ var _ = Describe("WindowsPlatform", func() {
 		It("returns error if creating new temp dir errs", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-error")
 
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
 
 		It("sets TMP and TEMP environment variable so that children of this process will use new temp dir", func() {
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			fakeTmpDir := filepath.FromSlash("/fake-dir/data/tmp")
@@ -347,17 +393,14 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 	})
 
-	Describe("BOSH SSH Commands", func() {
+	Describe("BOSH User Commands", func() {
 		const testUsername = boshsettings.EphemeralUserPrefix + "test_abc123"
 
 		var (
-			platform Platform
-
 			// We're doing this for real - no fakes!
-			logger      = boshlog.NewLogger(boshlog.LevelNone)
-			fs          = boshsys.NewOsFileSystem(logger)
-			dirProvider = boshdirs.NewProvider("/fake-dir")
-			cmdRunner   = boshsys.NewExecCmdRunner(logger)
+			logger    = boshlog.NewLogger(boshlog.LevelNone)
+			fs        = boshsys.NewOsFileSystem(logger)
+			cmdRunner = boshsys.NewExecCmdRunner(logger)
 
 			deleteUserOnce sync.Once
 		)
@@ -366,29 +409,6 @@ var _ = Describe("WindowsPlatform", func() {
 			deleteUserOnce.Do(func() {
 				DeleteUserProfile(testUsername)
 			})
-
-			var (
-				collector                  = &fakestats.FakeCollector{}
-				netManager                 = &fakenet.FakeManager{}
-				devicePathResolver         = fakedpresolv.NewFakeDevicePathResolver()
-				fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
-				certManager                = new(fakecert.FakeManager)
-				auditLogger                = fakeplat.NewFakeAuditLogger()
-				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
-			)
-			platform = NewWindowsPlatform(
-				collector,
-				fs,
-				cmdRunner,
-				dirProvider,
-				netManager,
-				certManager,
-				devicePathResolver,
-				logger,
-				fakeDefaultNetworkResolver,
-				auditLogger,
-				fakeUUIDGenerator,
-			)
 		})
 
 		userExists := func(name string) error {
@@ -407,79 +427,237 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(userExists(testUsername)).ToNot(Succeed())
 		})
 
-		It("can create a user with Admin privileges", func() {
-			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
-			Expect(userExists(testUsername)).To(Succeed())
+		Describe("SSH", func() {
 
-			cmd := exec.Command("NET.exe", "LOCALGROUP", "Administrators")
-			out, err := cmd.CombinedOutput()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(string(out)).To(ContainSubstring(testUsername))
+			var platform Platform
+
+			BeforeEach(func() {
+				var (
+					collector                  = &fakestats.FakeCollector{}
+					netManager                 = &fakenet.FakeManager{}
+					devicePathResolver         = fakedpresolv.NewFakeDevicePathResolver()
+					fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+					certManager                = new(fakecert.FakeManager)
+					auditLogger                = fakeplat.NewFakeAuditLogger()
+					fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
+					dirProvider                = boshdirs.NewProvider("/fake-dir")
+				)
+				platform = NewWindowsPlatform(
+					collector,
+					fs,
+					cmdRunner,
+					dirProvider,
+					netManager,
+					certManager,
+					devicePathResolver,
+					logger,
+					fakeDefaultNetworkResolver,
+					auditLogger,
+					fakeUUIDGenerator,
+				)
+			})
+
+			It("can create a user with Admin privileges", func() {
+				Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+				Expect(userExists(testUsername)).To(Succeed())
+
+				cmd := exec.Command("NET.exe", "LOCALGROUP", "Administrators")
+				out, err := cmd.CombinedOutput()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(out)).To(ContainSubstring(testUsername))
+			})
+
+			sshdServiceIsInstalled := func() bool {
+				m, err := mgr.Connect()
+				if err != nil {
+					return false
+				}
+				defer m.Disconnect()
+				s, err := m.OpenService("sshd")
+				if err != nil {
+					return false
+				}
+				s.Close()
+				return true
+			}
+
+			It("can insert public keys into the users .ssh\\authorized_keys file", func() {
+				if !sshdServiceIsInstalled() {
+					Skip("This test requires the SSHD service to be installed")
+				}
+
+				keys := []string{
+					"KEY_1",
+					"KEY_2",
+					"KEY_3",
+				}
+				Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+				Expect(userExists(testUsername)).To(Succeed())
+
+				Expect(platform.SetupSSH(keys, testUsername)).To(Succeed())
+
+				homedir, err := UserHomeDirectory(testUsername)
+				Expect(err).To(Succeed())
+
+				keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
+				b, err := ioutil.ReadFile(keyPath)
+				Expect(err).To(Succeed())
+
+				content := strings.TrimSpace(string(b))
+				for i, line := range strings.Split(content, "\n") {
+					line = strings.TrimSpace(line)
+					Expect(line).To(Equal(keys[i]))
+				}
+
+				out, err := exec.Command("icacls.exe", keyPath).CombinedOutput()
+				Expect(err).To(Succeed())
+				Expect(strings.ToUpper(string(out))).To(ContainSubstring("NT SERVICE\\SSHD:(R)"))
+			})
+
+			It("can delete a users matching a regex", func() {
+				Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+				Expect(userExists(testUsername)).To(Succeed())
+
+				homedir, err := UserHomeDirectory(testUsername)
+				Expect(err).To(Succeed())
+
+				// Regex taken from: github.com/cloudfoundry/bosh-cli/director/ssh.go
+				//
+				const regex = "^" + testUsername
+				Expect(platform.DeleteEphemeralUsersMatching(regex)).To(Succeed())
+				Expect(userExists(testUsername)).ToNot(Succeed())
+
+				_, err = os.Stat(homedir)
+				Expect(err).To(HaveOccurred())
+			})
 		})
 
-		sshdServiceIsInstalled := func() bool {
-			m, err := mgr.Connect()
-			if err != nil {
-				return false
-			}
-			defer m.Disconnect()
-			s, err := m.OpenService("sshd")
-			if err != nil {
-				return false
-			}
-			s.Close()
-			return true
-		}
+		Describe("Set Random Password", func() {
+			var (
+				platform      Platform
+				tempDir       string
+				lockFile      string
+				previousAdmin string
+			)
 
-		It("can insert public keys into the users .ssh\\authorized_keys file", func() {
-			if !sshdServiceIsInstalled() {
-				Skip("This test requires the SSHD service to be installed")
-			}
+			BeforeEach(func() {
+				previousAdmin = SetAdministratorUserName(testUsername)
 
-			keys := []string{
-				"KEY_1",
-				"KEY_2",
-				"KEY_3",
-			}
-			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
-			Expect(userExists(testUsername)).To(Succeed())
+				var err error
+				tempDir, err = ioutil.TempDir("", "bosh-tests-")
+				Expect(err).ToNot(HaveOccurred())
 
-			Expect(platform.SetupSSH(keys, testUsername)).To(Succeed())
+				var (
+					collector                  = &fakestats.FakeCollector{}
+					netManager                 = &fakenet.FakeManager{}
+					devicePathResolver         = fakedpresolv.NewFakeDevicePathResolver()
+					fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+					certManager                = new(fakecert.FakeManager)
+					auditLogger                = fakeplat.NewFakeAuditLogger()
+					fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
+					dirProvider                = boshdirs.NewProvider(tempDir)
+				)
+				platform = NewWindowsPlatform(
+					collector,
+					fs,
+					cmdRunner,
+					dirProvider,
+					netManager,
+					certManager,
+					devicePathResolver,
+					logger,
+					fakeDefaultNetworkResolver,
+					auditLogger,
+					fakeUUIDGenerator,
+				)
 
-			homedir, err := UserHomeDirectory(testUsername)
-			Expect(err).To(Succeed())
+				lockFile = filepath.Join(platform.GetDirProvider().BoshDir(), "randomized_passwords")
+			})
 
-			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
-			b, err := ioutil.ReadFile(keyPath)
-			Expect(err).To(Succeed())
+			AfterEach(func() {
+				SetAdministratorUserName(previousAdmin)
+				os.RemoveAll(tempDir)
+			})
 
-			content := strings.TrimSpace(string(b))
-			for i, line := range strings.Split(content, "\n") {
-				line = strings.TrimSpace(line)
-				Expect(line).To(Equal(keys[i]))
-			}
+			Context("Called on vcap or root user", func() {
+				It("it does nothing if the Administrator user does not exist", func() {
+					Expect(lockFile).ToNot(BeAnExistingFile())
 
-			out, err := exec.Command("icacls.exe", keyPath).CombinedOutput()
-			Expect(err).To(Succeed())
-			Expect(strings.ToUpper(string(out))).To(ContainSubstring("NT SERVICE\\SSHD:(R)"))
+					Expect(platform.SetUserPassword(boshsettings.VCAPUsername, "Password123!")).To(Succeed())
+					Expect(lockFile).To(BeAnExistingFile())
+					fs.RemoveAll(lockFile)
+
+					Expect(platform.SetUserPassword(boshsettings.RootUsername, "Password123!")).To(Succeed())
+					Expect(lockFile).To(BeAnExistingFile())
+					fs.RemoveAll(lockFile)
+				})
+
+				It("sets a random password on the Administrator user if it exists", func() {
+					// create the testuser
+					Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+					Expect(userExists(testUsername)).To(Succeed())
+
+					rootUsers := []string{
+						boshsettings.VCAPUsername,
+						boshsettings.RootUsername,
+					}
+					for _, root := range rootUsers {
+						Expect(lockFile).ToNot(BeAnExistingFile())
+
+						cmd := exec.Command("NET.exe", "USER", testUsername, "Password123!")
+						Expect(cmd.Run()).To(Succeed())
+
+						Expect(platform.SetUserPassword(root, "")).To(Succeed())
+
+						err := NetUserChangePassword(testUsername, "Password123!", "Foobar123!")
+						Expect(err).ToNot(Succeed(),
+							fmt.Sprintf("Testing with Root user: %s", root))
+						Expect(err).To(Equal(ErrorInvalidPassword),
+							fmt.Sprintf("Testing with Root user: %s", root))
+
+						Expect(lockFile).To(BeAnExistingFile())
+						fs.RemoveAll(lockFile)
+					}
+				})
+
+				It("sets the Admin password only once", func() {
+					Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+					Expect(userExists(testUsername)).To(Succeed())
+
+					Expect(platform.SetUserPassword(boshsettings.VCAPUsername, "")).To(Succeed())
+					Expect(lockFile).To(BeAnExistingFile())
+
+					// Set password to a known value
+					out, err := exec.Command("NET.exe", "USER", testUsername, "Password123!").CombinedOutput()
+					Expect(err).ToNot(HaveOccurred(), "NET.exe output: "+string(out))
+
+					Expect(platform.SetUserPassword(boshsettings.VCAPUsername, "")).To(Succeed())
+
+					// Expect the password to not have changed
+					err = NetUserChangePassword(testUsername, "Password123!", "Foobar123!")
+					Expect(err).ToNot(HaveOccurred(), "The second call to SetUserPassword "+
+						"should NOT have changed the password for user: "+testUsername)
+				})
+			})
+
+			Context("Called on user that is not vcap or root", func() {
+				It("Does NOT change the Administrator user password", func() {
+					Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+					Expect(userExists(testUsername)).To(Succeed())
+
+					out, err := exec.Command("NET.exe", "USER", testUsername, "Password123!").CombinedOutput()
+					Expect(err).ToNot(HaveOccurred(), "NET.exe output: "+string(out))
+
+					Expect(platform.SetUserPassword(testUsername, "")).To(Succeed())
+
+					err = NetUserChangePassword(testUsername, "Password123!", "Foobar123!")
+					Expect(err).To(Succeed())
+
+					Expect(lockFile).ToNot(BeAnExistingFile())
+				})
+			})
 		})
 
-		It("can delete a users matching a regex", func() {
-			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
-			Expect(userExists(testUsername)).To(Succeed())
-
-			homedir, err := UserHomeDirectory(testUsername)
-			Expect(err).To(Succeed())
-
-			// Regex taken from: github.com/cloudfoundry/bosh-cli/director/ssh.go
-			//
-			const regex = "^" + testUsername
-			Expect(platform.DeleteEphemeralUsersMatching(regex)).To(Succeed())
-			Expect(userExists(testUsername)).ToNot(Succeed())
-
-			_, err = os.Stat(homedir)
-			Expect(err).To(HaveOccurred())
-		})
 	})
 })
 

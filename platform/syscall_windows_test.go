@@ -20,3 +20,9 @@ func SetSSHEnabled(new func() error) (previous func() error) {
 	sshEnabled = new
 	return previous
 }
+
+func SetAdministratorUserName(name string) (previous string) {
+	previous = administratorUserName
+	administratorUserName = name
+	return previous
+}
