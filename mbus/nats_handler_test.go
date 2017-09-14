@@ -314,80 +314,6 @@ func init() {
 				})
 			})
 
-			Context("TLS", func() {
-				ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
-
-				BeforeEach(func() {
-
-					settingsService.Settings.Env.Bosh.Mbus = boshsettings.MBus{
-						Cert: boshsettings.CertKeyPair{
-							CA: string(ValidCA),
-						},
-						URLs: []string{"tls://fake-username:fake-password@127.0.0.1:1234"},
-					}
-				})
-
-				It("adds Cert pool with an entry to ConnectionInfo.CertPool", func() {
-					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-					Expect(err).ToNot(HaveOccurred())
-					defer handler.Stop()
-
-					certPool := x509.NewCertPool()
-					ok := certPool.AppendCertsFromPEM(ValidCA)
-					Expect(ok).To(BeTrue())
-
-					result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
-					expected := &yagnats.ConnectionInfo{
-						Addr:     "127.0.0.1:1234",
-						Username: "fake-username",
-						Password: "fake-password",
-						CertPool: certPool,
-					}
-					Expect(result.Addr).To(Equal(expected.Addr))
-					Expect(result.Username).To(Equal(expected.Username))
-					Expect(result.Password).To(Equal(expected.Password))
-					Expect(result.CertPool).To(Equal(expected.CertPool))
-					Expect(result.ClientCert).To(Equal(expected.ClientCert))
-				})
-
-				It("returns an error if the cert is invalid", func() {
-					settingsService.Settings.Env.Bosh.Mbus.Cert.CA = "Invalid Cert"
-
-					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
-					defer handler.Stop()
-				})
-
-				Context("when the VerifyPeerCertificate is called", func() {
-					It("verify certificate common name matches correct pattern", func() {
-						certPath := "test_assets/custom_cert.pem"
-						caPath := "test_assets/ca.pem"
-						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
-
-						Expect(err).To(BeNil())
-					})
-
-					It("verify certificate common name does not match the correct pattern", func() {
-						certPath := "test_assets/invalid_cn_cert.pem"
-						caPath := "test_assets/ca.pem"
-						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
-
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
-					})
-
-					It("verify certificate common name is missing", func() {
-						certPath := "test_assets/missing_cn_cert.pem"
-						caPath := "test_assets/ca.pem"
-						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
-
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
-					})
-				})
-			})
-
 			Context("Mutual TLS", func() {
 				ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
 				ValidCertificate, _ := ioutil.ReadFile("./test_assets/client-cert.pem")
@@ -431,6 +357,14 @@ func init() {
 					Expect(result.CertPool).To(Equal(expected.CertPool))
 					Expect(result.ClientCert).To(Equal(expected.ClientCert))
 				})
+				It("returns an error if the cert is invalid", func() {
+					settingsService.Settings.Env.Bosh.Mbus.Cert.CA = "Invalid Cert"
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
+					defer handler.Stop()
+				})
 
 				It("returns an error if the client certificate is invalid", func() {
 					settingsService.Settings.Env.Bosh.Mbus.Cert.Certificate = "Invalid Client Certificate"
@@ -448,6 +382,34 @@ func init() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Getting connection info: Parsing certificate and private key: tls: failed to find any PEM data in key input"))
 					defer handler.Stop()
+				})
+
+				Context("when the VerifyPeerCertificate is called", func() {
+					It("verify certificate common name matches correct pattern", func() {
+						certPath := "test_assets/custom_cert.pem"
+						caPath := "test_assets/ca.pem"
+						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+
+						Expect(err).To(BeNil())
+					})
+
+					It("verify certificate common name does not match the correct pattern", func() {
+						certPath := "test_assets/invalid_cn_cert.pem"
+						caPath := "test_assets/ca.pem"
+						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
+					})
+
+					It("verify certificate common name is missing", func() {
+						certPath := "test_assets/missing_cn_cert.pem"
+						caPath := "test_assets/ca.pem"
+						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
+					})
 				})
 			})
 

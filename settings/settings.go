@@ -198,10 +198,6 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 	return &result
 }
 
-func (e Env) IsNatsTLSEnabled() bool {
-	return len(e.Bosh.Mbus.Cert.CA) > 0
-}
-
 func (e Env) IsMutualTLSEnabled() bool {
 	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0 && len(e.Bosh.Mbus.Cert.CA) > 0
 }

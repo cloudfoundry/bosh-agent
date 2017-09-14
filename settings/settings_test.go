@@ -718,30 +718,6 @@ var _ = Describe("Settings", func() {
 			})
 		})
 
-		Context("#IsNatsTLSEnabled", func() {
-			Context("env JSON provides mbus & CA is not empty", func() {
-				It("should return true", func() {
-					var env Env
-					envJSON := `{"bosh": {"mbus": {"cert": {"ca":"some cert value" }}}}`
-
-					err := json.Unmarshal([]byte(envJSON), &env)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNatsTLSEnabled()).To(BeTrue())
-				})
-			})
-
-			Context("env JSON does NOT provide mbus", func() {
-				It("should return false", func() {
-					var env Env
-					envJSON := `{"bosh": {}}`
-
-					err := json.Unmarshal([]byte(envJSON), &env)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNatsTLSEnabled()).To(BeFalse())
-				})
-			})
-		})
-
 		Context("#IsMutualTLSEnabled", func() {
 			Context("env JSON does NOT provide mbus", func() {
 				It("should return false", func() {
