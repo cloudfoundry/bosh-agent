@@ -38,42 +38,47 @@ import (
 )
 
 var (
-	netapi32                  = windows.NewLazySystemDLL("Netapi32.dll")
-	procNetUserChangePassword = netapi32.NewProc("NetUserChangePassword")
+	modadvapi32   = windows.NewLazySystemDLL("Advapi32.dll")
+	procLogonUser = modadvapi32.NewProc("LogonUserW")
 )
 
-// Really: ERROR_INVALID_PASSWORD but use camel case to make golint happy
-const ErrorInvalidPassword = syscall.Errno(86)
+const ERROR_LOGON_FAILURE = syscall.Errno(0x52E)
 
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa370650(v=vs.85).aspx
+// Use LogonUser to check if the provided password is correct.
 //
-func NetUserChangePassword(username, oldPassword, newPassword string) error {
-	if err := procNetUserChangePassword.Find(); err != nil {
+// https://msdn.microsoft.com/en-us/library/windows/desktop/aa378184(v=vs.85).aspx
+//
+func ValidUserPassword(username, password string) error {
+	const LOGON32_LOGON_NETWORK = 3
+	const LOGON32_PROVIDER_DEFAULT = 0
+
+	if err := procLogonUser.Find(); err != nil {
 		return err
 	}
-	pusr, err := windows.UTF16PtrFromString(username)
+	puser, err := windows.UTF16PtrFromString(username)
 	if err != nil {
 		return err
 	}
-	pold, err := windows.UTF16PtrFromString(oldPassword)
+	ppass, err := windows.UTF16PtrFromString(password)
 	if err != nil {
 		return err
 	}
-	pnew, err := windows.UTF16PtrFromString(newPassword)
-	if err != nil {
-		return err
-	}
-	r1, _, _ := syscall.Syscall6(procNetUserChangePassword.Addr(), 4,
-		0, // LPCWSTR domainname
-		uintptr(unsafe.Pointer(pusr)), // LPCWSTR username
-		uintptr(unsafe.Pointer(pold)), // LPCWSTR oldpassword
-		uintptr(unsafe.Pointer(pnew)), // LPCWSTR newpassword
-		0, // unused
-		0, // unused
+	var token windows.Handle
+	r1, _, e1 := syscall.Syscall6(procLogonUser.Addr(), 6,
+		uintptr(unsafe.Pointer(puser)),  // LPTSTR  lpszUsername,
+		uintptr(0),                      // LPTSTR  lpszDomain,
+		uintptr(unsafe.Pointer(ppass)),  // LPTSTR  lpszPassword,
+		LOGON32_LOGON_NETWORK,           // DWORD   dwLogonType,
+		LOGON32_PROVIDER_DEFAULT,        // DWORD   dwLogonProvider,
+		uintptr(unsafe.Pointer(&token)), // PHANDLE phToken
 	)
-	if r1 != 0 {
-		return syscall.Errno(r1)
+	if r1 == 0 {
+		if e1 == 0 {
+			return syscall.EINVAL
+		}
+		return e1
 	}
+	windows.CloseHandle(token)
 	return nil
 }
 
@@ -533,6 +538,8 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 
 		Describe("Set Random Password", func() {
+			const testPassword = "Password123!"
+
 			var (
 				platform      Platform
 				tempDir       string
@@ -583,11 +590,11 @@ var _ = Describe("WindowsPlatform", func() {
 				It("it does nothing if the Administrator user does not exist", func() {
 					Expect(lockFile).ToNot(BeAnExistingFile())
 
-					Expect(platform.SetUserPassword(boshsettings.VCAPUsername, "Password123!")).To(Succeed())
+					Expect(platform.SetUserPassword(boshsettings.VCAPUsername, testPassword)).To(Succeed())
 					Expect(lockFile).To(BeAnExistingFile())
 					fs.RemoveAll(lockFile)
 
-					Expect(platform.SetUserPassword(boshsettings.RootUsername, "Password123!")).To(Succeed())
+					Expect(platform.SetUserPassword(boshsettings.RootUsername, testPassword)).To(Succeed())
 					Expect(lockFile).To(BeAnExistingFile())
 					fs.RemoveAll(lockFile)
 				})
@@ -604,15 +611,15 @@ var _ = Describe("WindowsPlatform", func() {
 					for _, root := range rootUsers {
 						Expect(lockFile).ToNot(BeAnExistingFile())
 
-						cmd := exec.Command("NET.exe", "USER", testUsername, "Password123!")
+						cmd := exec.Command("NET.exe", "USER", testUsername, testPassword)
 						Expect(cmd.Run()).To(Succeed())
 
 						Expect(platform.SetUserPassword(root, "")).To(Succeed())
 
-						err := NetUserChangePassword(testUsername, "Password123!", "Foobar123!")
+						err := ValidUserPassword(testUsername, testPassword)
 						Expect(err).ToNot(Succeed(),
 							fmt.Sprintf("Testing with Root user: %s", root))
-						Expect(err).To(Equal(ErrorInvalidPassword),
+						Expect(err).To(Equal(ERROR_LOGON_FAILURE),
 							fmt.Sprintf("Testing with Root user: %s", root))
 
 						Expect(lockFile).To(BeAnExistingFile())
@@ -628,15 +635,14 @@ var _ = Describe("WindowsPlatform", func() {
 					Expect(lockFile).To(BeAnExistingFile())
 
 					// Set password to a known value
-					out, err := exec.Command("NET.exe", "USER", testUsername, "Password123!").CombinedOutput()
+					out, err := exec.Command("NET.exe", "USER", testUsername, testPassword).CombinedOutput()
 					Expect(err).ToNot(HaveOccurred(), "NET.exe output: "+string(out))
 
 					Expect(platform.SetUserPassword(boshsettings.VCAPUsername, "")).To(Succeed())
 
-					// Expect the password to not have changed
-					err = NetUserChangePassword(testUsername, "Password123!", "Foobar123!")
-					Expect(err).ToNot(HaveOccurred(), "The second call to SetUserPassword "+
-						"should NOT have changed the password for user: "+testUsername)
+					Expect(ValidUserPassword(testUsername, testPassword)).To(Succeed(),
+						"The second call to SetUserPassword should NOT have changed the "+
+							"password for user: "+testUsername)
 				})
 			})
 
@@ -645,19 +651,17 @@ var _ = Describe("WindowsPlatform", func() {
 					Expect(platform.CreateUser(testUsername, "")).To(Succeed())
 					Expect(userExists(testUsername)).To(Succeed())
 
-					out, err := exec.Command("NET.exe", "USER", testUsername, "Password123!").CombinedOutput()
+					out, err := exec.Command("NET.exe", "USER", testUsername, testPassword).CombinedOutput()
 					Expect(err).ToNot(HaveOccurred(), "NET.exe output: "+string(out))
 
 					Expect(platform.SetUserPassword(testUsername, "")).To(Succeed())
 
-					err = NetUserChangePassword(testUsername, "Password123!", "Foobar123!")
-					Expect(err).To(Succeed())
+					Expect(ValidUserPassword(testUsername, testPassword)).To(Succeed())
 
 					Expect(lockFile).ToNot(BeAnExistingFile())
 				})
 			})
 		})
-
 	})
 })
 
