@@ -18,8 +18,8 @@ import (
 const opensuseNetManagerLogTag = "opensuseNetManager"
 
 type opensuseNetManager struct {
-	fs                            boshsys.FileSystem
 	cmdRunner                     boshsys.CmdRunner
+	fs                            boshsys.FileSystem
 	routesSearcher                RoutesSearcher
 	ipResolver                    boship.Resolver
 	interfaceConfigurationCreator InterfaceConfigurationCreator
@@ -45,8 +45,8 @@ func NewOpensuseNetManager(
 	logger boshlog.Logger,
 ) Manager {
 	return opensuseNetManager{
-		fs:                            fs,
 		cmdRunner:                     cmdRunner,
+		fs:                            fs,
 		ipResolver:                    ipResolver,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		interfaceAddressesValidator:   interfaceAddressesValidator,
@@ -134,6 +134,7 @@ DHCLIENT_SET_DEFAULT_ROUTE={{ if .SetupDefaultRoute }}yes{{ else }}no{{ end }}
 
 const opensuseStaticIfcfgTemplate = `DEVICE={{ .Name }}
 BOOTPROTO=static
+STARTMODE='auto'
 IPADDR={{ .Address }}
 NETMASK={{ .Netmask }}
 BROADCAST={{ .Broadcast }}
