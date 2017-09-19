@@ -71,10 +71,8 @@ func tarFixtures(fixturesDir, filename string) error {
 	if err := tarWriter.Close(); err != nil {
 		return err
 	}
-	if err := gzipWriter.Close(); err != nil {
-		return err
-	}
-	return nil
+
+	return gzipWriter.Close()
 }
 
 var _ = BeforeSuite(func() {
