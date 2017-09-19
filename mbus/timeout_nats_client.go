@@ -1,8 +1,8 @@
 package mbus
 
 import (
+	"code.cloudfoundry.org/clock"
 	"github.com/cloudfoundry/yagnats"
-	"github.com/pivotal-golang/clock"
 	"time"
 )
 

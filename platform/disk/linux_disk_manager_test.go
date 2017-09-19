@@ -3,11 +3,11 @@ package disk_test
 import (
 	"time"
 
+	"code.cloudfoundry.org/clock"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/clock"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 )

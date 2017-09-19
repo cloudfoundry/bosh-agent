@@ -19,6 +19,7 @@ errors=$(
     | grep -v 'bootstrapper/spec/'                          \
     | grep -v 'platform/cert/fakes/fake_manager.go'         \
     | grep -v 'jobsupervisor/pipe/syslog/syslog.go'         \
+    | grep -v 'platform/windows_platform_test.go'           \
     | grep -v 'platform/syscall_windows.go'                 \
     | grep -v 'jobsupervisor/winsvc'
 )

@@ -3,8 +3,8 @@ package platform
 import (
 	"time"
 
+	"code.cloudfoundry.org/clock"
 	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	"github.com/pivotal-golang/clock"
 
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"

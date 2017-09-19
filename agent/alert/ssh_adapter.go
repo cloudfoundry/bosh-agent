@@ -3,12 +3,12 @@ package alert
 import (
 	"regexp"
 
+	"code.cloudfoundry.org/clock"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
-	"github.com/pivotal-golang/clock"
 )
 
 var syslogMessageExpressions = map[*regexp.Regexp]string{

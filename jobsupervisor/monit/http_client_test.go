@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 
@@ -12,11 +13,21 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	fakehttp "github.com/cloudfoundry/bosh-utils/http/fakes"
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/monitfakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("httpClient", func() {
+	var (
+		shortClient *monitfakes.FakeHTTPClient
+		longClient  *monitfakes.FakeHTTPClient
+	)
+
+	BeforeEach(func() {
+		shortClient = &monitfakes.FakeHTTPClient{}
+		longClient = &monitfakes.FakeHTTPClient{}
+	})
+
 	Describe("StartService", func() {
 		It("start service", func() {
 			var calledMonit bool
@@ -42,25 +53,24 @@ var _ = Describe("httpClient", func() {
 		})
 
 		It("uses the shortClient to send a start request", func() {
-			shortClient := fakehttp.NewFakeClient()
-			longClient := fakehttp.NewFakeClient()
 			client := newFakeClient(shortClient, longClient)
 
-			shortClient.StatusCode = 200
+			shortClient.DoReturns(&http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader(nil))}, nil)
 
 			err := client.StartService("test-service")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(shortClient.CallCount).To(Equal(1))
-			Expect(longClient.CallCount).To(Equal(0))
+			Expect(shortClient.DoCallCount()).To(Equal(1))
+			Expect(longClient.DoCallCount()).To(Equal(0))
 
-			req := shortClient.Requests[0]
+			req := shortClient.DoArgsForCall(0)
 			Expect(req.URL.Host).To(Equal("agent.example.com"))
 			Expect(req.URL.Path).To(Equal("/test-service"))
 			Expect(req.Method).To(Equal("POST"))
 
-			content := shortClient.RequestBodies[0]
-			Expect(content).To(Equal("action=start"))
+			content, err := ioutil.ReadAll(req.Body)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal("action=start"))
 		})
 	})
 
@@ -89,25 +99,24 @@ var _ = Describe("httpClient", func() {
 		})
 
 		It("uses the longClient to send a stop request", func() {
-			shortClient := fakehttp.NewFakeClient()
-			longClient := fakehttp.NewFakeClient()
 			client := newFakeClient(shortClient, longClient)
 
-			longClient.StatusCode = 200
+			longClient.DoReturns(&http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader(nil))}, nil)
 
 			err := client.StopService("test-service")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(shortClient.CallCount).To(Equal(0))
-			Expect(longClient.CallCount).To(Equal(1))
+			Expect(shortClient.DoCallCount()).To(Equal(0))
+			Expect(longClient.DoCallCount()).To(Equal(1))
 
-			req := longClient.Requests[0]
+			req := longClient.DoArgsForCall(0)
 			Expect(req.URL.Host).To(Equal("agent.example.com"))
 			Expect(req.URL.Path).To(Equal("/test-service"))
 			Expect(req.Method).To(Equal("POST"))
 
-			content := longClient.RequestBodies[0]
-			Expect(content).To(Equal("action=stop"))
+			content, err := ioutil.ReadAll(req.Body)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal("action=stop"))
 		})
 	})
 
@@ -137,25 +146,24 @@ var _ = Describe("httpClient", func() {
 		})
 
 		It("uses the longClient to send an unmonitor request", func() {
-			shortClient := fakehttp.NewFakeClient()
-			longClient := fakehttp.NewFakeClient()
 			client := newFakeClient(shortClient, longClient)
 
-			longClient.StatusCode = 200
+			longClient.DoReturns(&http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader(nil))}, nil)
 
 			err := client.UnmonitorService("test-service")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(shortClient.CallCount).To(Equal(0))
-			Expect(longClient.CallCount).To(Equal(1))
+			Expect(shortClient.DoCallCount()).To(Equal(0))
+			Expect(longClient.DoCallCount()).To(Equal(1))
 
-			req := longClient.Requests[0]
+			req := longClient.DoArgsForCall(0)
 			Expect(req.URL.Host).To(Equal("agent.example.com"))
 			Expect(req.URL.Path).To(Equal("/test-service"))
 			Expect(req.Method).To(Equal("POST"))
 
-			content := longClient.RequestBodies[0]
-			Expect(content).To(Equal("action=unmonitor"))
+			content, err := ioutil.ReadAll(req.Body)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(Equal("action=unmonitor"))
 		})
 	})
 
@@ -201,12 +209,12 @@ var _ = Describe("httpClient", func() {
 		})
 
 		It("uses the shortClient to send a status request and parses the response xml", func() {
-			shortClient := fakehttp.NewFakeClient()
-			longClient := fakehttp.NewFakeClient()
 			client := newFakeClient(shortClient, longClient)
 
-			shortClient.StatusCode = 200
-			shortClient.SetMessage(string(readFixture(statusWithMultipleServiceFixturePath)))
+			shortClient.DoReturns(&http.Response{
+				StatusCode: 200,
+				Body:       ioutil.NopCloser(bytes.NewBufferString(string(readFixture(statusWithMultipleServiceFixturePath)))),
+			}, nil)
 
 			status, err := client.Status()
 			Expect(err).ToNot(HaveOccurred())
@@ -225,10 +233,10 @@ var _ = Describe("httpClient", func() {
 			services := status.ServicesInGroup("vcap")
 			Expect(len(services)).To(Equal(len(expectedServices)))
 
-			Expect(shortClient.CallCount).To(Equal(1))
-			Expect(longClient.CallCount).To(Equal(0))
+			Expect(shortClient.DoCallCount()).To(Equal(1))
+			Expect(longClient.DoCallCount()).To(Equal(0))
 
-			req := shortClient.Requests[0]
+			req := shortClient.DoArgsForCall(0)
 			Expect(req.URL.Host).To(Equal("agent.example.com"))
 			Expect(req.URL.Path).To(Equal("/_status2"))
 			Expect(req.Method).To(Equal("GET"))
@@ -249,7 +257,7 @@ func newRealClient(url string) Client {
 	)
 }
 
-func newFakeClient(shortClient, longClient *fakehttp.FakeClient) Client {
+func newFakeClient(shortClient, longClient HTTPClient) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 
 	return NewHTTPClient(

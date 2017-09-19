@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 	"github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
+	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -93,7 +94,7 @@ var _ = Describe("ConcreteScript", func() {
 				Name: "/fake/script",
 				Args: []string{"job_changed", "hash_unchanged", "bar", "foo"},
 				Env: map[string]string{
-					"PATH":                "/usr/sbin:/usr/bin:/sbin:/bin",
+					"PATH":                boshenv.Path(),
 					"BOSH_JOB_STATE":      "{\"persistent_disk\":42}",
 					"BOSH_JOB_NEXT_STATE": "{\"persistent_disk\":42}",
 				},
@@ -101,6 +102,15 @@ var _ = Describe("ConcreteScript", func() {
 
 			Expect(len(runner.RunComplexCommands)).To(Equal(1))
 			Expect(runner.RunComplexCommands[0]).To(Equal(expectedCmd))
+		})
+
+		It("sets the PATH environment variable", func() {
+			runner.AddProcess("/fake/script job_changed hash_unchanged bar foo",
+				&fakesys.FakeProcess{WaitResult: boshsys.Result{Stdout: "1"}})
+			Expect(script.Run()).To(Succeed())
+
+			Expect(len(runner.RunComplexCommands)).To(Equal(1))
+			Expect(runner.RunComplexCommands[0].Env).To(HaveKeyWithValue("PATH", boshenv.Path()))
 		})
 
 		It("sleeps when script returns a positive integer", func() {

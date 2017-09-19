@@ -2,24 +2,24 @@ package integrationagentclient_test
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	agentclienthttp "github.com/cloudfoundry/bosh-agent/agentclient/http"
 	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
-	fakehttpclient "github.com/cloudfoundry/bosh-utils/httpclient/fakes"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("AgentClient", func() {
 	var (
-		fakeHTTPClient *fakehttpclient.FakeHTTPClient
-		agentClient    *integrationagentclient.IntegrationAgentClient
+		server      *ghttp.Server
+		agentClient *integrationagentclient.IntegrationAgentClient
 
 		agentAddress        string
 		replyToAddress      string
@@ -27,16 +27,24 @@ var _ = Describe("AgentClient", func() {
 	)
 
 	BeforeEach(func() {
-		logger := boshlog.NewLogger(boshlog.LevelNone)
-		fakeHTTPClient = fakehttpclient.NewFakeHTTPClient()
+		server = ghttp.NewServer()
 
-		agentAddress = "http://localhost:6305"
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+
+		agentAddress = server.URL()
 		replyToAddress = "fake-reply-to-uuid"
 
 		getTaskDelay := time.Duration(0)
 		toleratedErrorCount = 2
 
-		agentClient = integrationagentclient.NewIntegrationAgentClient(agentAddress, replyToAddress, getTaskDelay, toleratedErrorCount, fakeHTTPClient, logger)
+		agentClient = integrationagentclient.NewIntegrationAgentClient(
+			agentAddress,
+			replyToAddress,
+			getTaskDelay,
+			toleratedErrorCount,
+			httpclient.NewHTTPClient(httpclient.DefaultClient, logger),
+			logger,
+		)
 	})
 
 	Describe("SSH", func() {
@@ -47,7 +55,17 @@ var _ = Describe("AgentClient", func() {
 					Status:  "success",
 				})
 				Expect(err).ToNot(HaveOccurred())
-				fakeHTTPClient.SetPostBehavior(string(sshSuccess), 200, nil)
+				server.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/agent"),
+						ghttp.RespondWith(200, string(sshSuccess)),
+						ghttp.VerifyJSONRepresenting(agentclienthttp.AgentRequestMessage{
+							Method:    "ssh",
+							Arguments: []interface{}{"setup", map[string]interface{}{"user_regex": "", "User": "username", "public_key": ""}},
+							ReplyTo:   "fake-reply-to-uuid",
+						}),
+					),
+				)
 			})
 
 			It("makes a POST request to the endpoint", func() {
@@ -57,25 +75,13 @@ var _ = Describe("AgentClient", func() {
 
 				err := agentClient.SSH("setup", params)
 				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeHTTPClient.PostInputs).To(HaveLen(1))
-				Expect(fakeHTTPClient.PostInputs[0].Endpoint).To(Equal("http://localhost:6305/agent"))
-
-				var request agentclienthttp.AgentRequestMessage
-				err = json.Unmarshal(fakeHTTPClient.PostInputs[0].Payload, &request)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(request).To(Equal(agentclienthttp.AgentRequestMessage{
-					Method:    "ssh",
-					Arguments: []interface{}{"setup", map[string]interface{}{"user_regex": "", "User": "username", "public_key": ""}},
-					ReplyTo:   "fake-reply-to-uuid",
-				}))
+				Expect(server.ReceivedRequests()).To(HaveLen(10))
 			})
 		})
 
 		Context("when POST to agent returns error", func() {
 			BeforeEach(func() {
-				fakeHTTPClient.SetPostBehavior("", http.StatusInternalServerError, errors.New("foo error"))
+				server.AppendHandlers(ghttp.RespondWith(http.StatusInternalServerError, ""))
 			})
 
 			It("returns an error that wraps original error", func() {
@@ -85,8 +91,8 @@ var _ = Describe("AgentClient", func() {
 
 				err := agentClient.SSH("setup", params)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Performing request to agent"))
-				Expect(err.Error()).To(ContainSubstring("foo error"))
+				Expect(err).To(MatchError(ContainSubstring("Performing request to agent")))
+				Expect(err).To(MatchError(ContainSubstring("foo error")))
 			})
 		})
 	})

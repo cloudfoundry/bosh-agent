@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.cloudfoundry.org/clock/fakeclock"
 	"github.com/cloudfoundry/bosh-agent/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
@@ -16,7 +17,6 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/clock/fakeclock"
 )
 
 var _ = Describe("WrapperJobSupervisor", func() {

@@ -7,6 +7,7 @@ import (
 
 	davclient "github.com/cloudfoundry/bosh-davcli/client"
 	davconfig "github.com/cloudfoundry/bosh-davcli/config"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-utils/uuid"
 )
 
@@ -56,7 +57,8 @@ func (b BlobClient) Get(uuid string, destinationPath string) error {
 
 func NewBlobstore(uri string) BlobClient {
 	config := davconfig.Config{Endpoint: uri}
-	client := davclient.NewClient(config, http.DefaultClient)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
+	client := davclient.NewClient(config, http.DefaultClient, logger)
 
 	return BlobClient{
 		dav:           client,

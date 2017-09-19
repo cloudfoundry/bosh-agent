@@ -6,7 +6,7 @@ import (
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -24,14 +24,14 @@ type ClientProvider interface {
 type clientProvider struct {
 	platform        boshplatform.Platform
 	logger          boshlog.Logger
-	shortHTTPClient boshhttp.Client
-	longHTTPClient  boshhttp.Client
+	shortHTTPClient HTTPClient
+	longHTTPClient  HTTPClient
 }
 
 func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientProvider {
 	httpClient := http.DefaultClient
 
-	shortHTTPClient := boshhttp.NewRetryClient(
+	shortHTTPClient := httpclient.NewRetryClient(
 		httpClient,
 		shortRetryStrategyAttempts,
 		retryDelay,

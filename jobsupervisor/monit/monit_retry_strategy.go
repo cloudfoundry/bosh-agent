@@ -1,16 +1,23 @@
 package monit
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
-	boshhttp "github.com/cloudfoundry/bosh-utils/http"
+	"code.cloudfoundry.org/clock"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	"github.com/pivotal-golang/clock"
 )
 
+//go:generate counterfeiter . RequestRetryable
+
+type RequestRetryable interface {
+	Attempt() (bool, error)
+	Response() *http.Response
+}
+
 type monitRetryStrategy struct {
-	retryable boshhttp.RequestRetryable
+	retryable RequestRetryable
 
 	maxUnavailableAttempts uint
 	maxOtherAttempts       uint
@@ -23,7 +30,7 @@ type monitRetryStrategy struct {
 }
 
 func NewMonitRetryStrategy(
-	retryable boshhttp.RequestRetryable,
+	retryable RequestRetryable,
 	maxUnavailableAttempts uint,
 	maxOtherAttempts uint,
 	delay time.Duration,

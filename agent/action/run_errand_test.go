@@ -8,8 +8,10 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
+
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
+	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -107,7 +109,7 @@ var _ = Describe("RunErrand", func() {
 						_, err := action.Run(errandName)
 						Expect(err).ToNot(HaveOccurred())
 						cmd := cmdRunner.RunComplexCommands[0]
-						env := map[string]string{"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"}
+						env := map[string]string{"PATH": boshenv.Path()}
 						Expect(cmd.Env).To(Equal(env))
 					})
 				})

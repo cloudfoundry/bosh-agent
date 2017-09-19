@@ -6,10 +6,10 @@ import (
 
 	"github.com/cloudfoundry/yagnats"
 
+	"code.cloudfoundry.org/clock/fakeclock"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	"github.com/cloudfoundry/bosh-utils/errors"
-	"github.com/pivotal-golang/clock/fakeclock"
 	"reflect"
 	"time"
 )

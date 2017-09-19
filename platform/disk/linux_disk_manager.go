@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"code.cloudfoundry.org/clock"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"github.com/pivotal-golang/clock"
 
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 )

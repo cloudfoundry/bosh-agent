@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -77,7 +78,7 @@ func (s GenericScript) Run() error {
 	command := boshsys.Command{
 		Name: s.path,
 		Env: map[string]string{
-			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+			"PATH": boshenv.Path(),
 		},
 		Stdout: stdoutFile,
 		Stderr: stderrFile,

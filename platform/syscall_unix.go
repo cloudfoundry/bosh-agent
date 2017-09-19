@@ -33,3 +33,7 @@ func sshEnabled() error {
 func setupRuntimeConfiguration() error {
 	return ErrNotImplemented
 }
+
+func setRandomPassword(username string) error {
+	return ErrNotImplemented
+}

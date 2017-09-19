@@ -14,14 +14,17 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"unsafe"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc/mgr"
+
+	. "github.com/cloudfoundry/bosh-agent/platform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	. "github.com/cloudfoundry/bosh-agent/platform"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
@@ -33,6 +36,51 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
+
+var (
+	modadvapi32   = windows.NewLazySystemDLL("Advapi32.dll")
+	procLogonUser = modadvapi32.NewProc("LogonUserW")
+)
+
+const ERROR_LOGON_FAILURE = syscall.Errno(0x52E)
+
+// Use LogonUser to check if the provided password is correct.
+//
+// https://msdn.microsoft.com/en-us/library/windows/desktop/aa378184(v=vs.85).aspx
+//
+func ValidUserPassword(username, password string) error {
+	const LOGON32_LOGON_NETWORK = 3
+	const LOGON32_PROVIDER_DEFAULT = 0
+
+	if err := procLogonUser.Find(); err != nil {
+		return err
+	}
+	puser, err := windows.UTF16PtrFromString(username)
+	if err != nil {
+		return err
+	}
+	ppass, err := windows.UTF16PtrFromString(password)
+	if err != nil {
+		return err
+	}
+	var token windows.Handle
+	r1, _, e1 := syscall.Syscall6(procLogonUser.Addr(), 6,
+		uintptr(unsafe.Pointer(puser)),  // LPTSTR  lpszUsername,
+		uintptr(0),                      // LPTSTR  lpszDomain,
+		uintptr(unsafe.Pointer(ppass)),  // LPTSTR  lpszPassword,
+		LOGON32_LOGON_NETWORK,           // DWORD   dwLogonType,
+		LOGON32_PROVIDER_DEFAULT,        // DWORD   dwLogonProvider,
+		uintptr(unsafe.Pointer(&token)), // PHANDLE phToken
+	)
+	if r1 == 0 {
+		if e1 == 0 {
+			return syscall.EINVAL
+		}
+		return e1
+	}
+	windows.CloseHandle(token)
+	return nil
+}
 
 var _ = Describe("WindowsPlatform", func() {
 	var (
@@ -64,9 +112,7 @@ var _ = Describe("WindowsPlatform", func() {
 		certManager = new(fakecert.FakeManager)
 		auditLogger = fakeplat.NewFakeAuditLogger()
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
-	})
 
-	JustBeforeEach(func() {
 		platform = NewWindowsPlatform(
 			collector,
 			fs,
@@ -92,12 +138,17 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("SetupTmpDir", func() {
-		act := func() error {
-			return platform.SetupTmpDir()
-		}
+		var (
+			OrigTMP  = os.Getenv("TMP")
+			OrigTEMP = os.Getenv("TEMP")
+		)
+		AfterEach(func() {
+			os.Setenv("TMP", OrigTMP)
+			os.Setenv("TEMP", OrigTEMP)
+		})
 
 		It("creates new temp dir", func() {
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
@@ -108,13 +159,13 @@ var _ = Describe("WindowsPlatform", func() {
 		It("returns error if creating new temp dir errs", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-error")
 
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
 
 		It("sets TMP and TEMP environment variable so that children of this process will use new temp dir", func() {
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			fakeTmpDir := filepath.FromSlash("/fake-dir/data/tmp")
@@ -346,27 +397,47 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+})
 
-	Describe("BOSH SSH Commands", func() {
-		const testUsername = boshsettings.EphemeralUserPrefix + "test_abc123"
+var _ = Describe("BOSH User Commands", func() {
+	const testUsername = boshsettings.EphemeralUserPrefix + "test_abc123"
 
-		var (
-			platform Platform
+	var (
+		// We're doing this for real - no fakes!
+		logger    = boshlog.NewLogger(boshlog.LevelNone)
+		fs        = boshsys.NewOsFileSystem(logger)
+		cmdRunner = boshsys.NewExecCmdRunner(logger)
 
-			// We're doing this for real - no fakes!
-			logger      = boshlog.NewLogger(boshlog.LevelNone)
-			fs          = boshsys.NewOsFileSystem(logger)
-			dirProvider = boshdirs.NewProvider("/fake-dir")
-			cmdRunner   = boshsys.NewExecCmdRunner(logger)
+		deleteUserOnce sync.Once
+	)
 
-			deleteUserOnce sync.Once
-		)
+	BeforeEach(func() {
+		deleteUserOnce.Do(func() {
+			DeleteUserProfile(testUsername)
+		})
+	})
+
+	userExists := func(name string) error {
+		_, _, t, err := syscall.LookupSID("", name)
+		if err != nil {
+			return err
+		}
+		if t != syscall.SidTypeUser {
+			return fmt.Errorf("not a user sid: %s", name)
+		}
+		return nil
+	}
+
+	AfterEach(func() {
+		DeleteUserProfile(testUsername)
+		Expect(userExists(testUsername)).ToNot(Succeed())
+	})
+
+	Describe("SSH", func() {
+
+		var platform Platform
 
 		BeforeEach(func() {
-			deleteUserOnce.Do(func() {
-				DeleteUserProfile(testUsername)
-			})
-
 			var (
 				collector                  = &fakestats.FakeCollector{}
 				netManager                 = &fakenet.FakeManager{}
@@ -375,6 +446,7 @@ var _ = Describe("WindowsPlatform", func() {
 				certManager                = new(fakecert.FakeManager)
 				auditLogger                = fakeplat.NewFakeAuditLogger()
 				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
+				dirProvider                = boshdirs.NewProvider("/fake-dir")
 			)
 			platform = NewWindowsPlatform(
 				collector,
@@ -389,22 +461,6 @@ var _ = Describe("WindowsPlatform", func() {
 				auditLogger,
 				fakeUUIDGenerator,
 			)
-		})
-
-		userExists := func(name string) error {
-			_, _, t, err := syscall.LookupSID("", name)
-			if err != nil {
-				return err
-			}
-			if t != syscall.SidTypeUser {
-				return fmt.Errorf("not a user sid: %s", name)
-			}
-			return nil
-		}
-
-		AfterEach(func() {
-			DeleteUserProfile(testUsername)
-			Expect(userExists(testUsername)).ToNot(Succeed())
 		})
 
 		It("can create a user with Admin privileges", func() {
@@ -479,6 +535,132 @@ var _ = Describe("WindowsPlatform", func() {
 
 			_, err = os.Stat(homedir)
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Describe("Set Random Password", func() {
+		const testPassword = "Password123!"
+
+		var (
+			platform      Platform
+			tempDir       string
+			lockFile      string
+			previousAdmin string
+		)
+
+		BeforeEach(func() {
+			previousAdmin = SetAdministratorUserName(testUsername)
+
+			var err error
+			tempDir, err = ioutil.TempDir("", "bosh-tests-")
+			Expect(err).ToNot(HaveOccurred())
+
+			var (
+				collector                  = &fakestats.FakeCollector{}
+				netManager                 = &fakenet.FakeManager{}
+				devicePathResolver         = fakedpresolv.NewFakeDevicePathResolver()
+				fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+				certManager                = new(fakecert.FakeManager)
+				auditLogger                = fakeplat.NewFakeAuditLogger()
+				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
+				dirProvider                = boshdirs.NewProvider(tempDir)
+			)
+			platform = NewWindowsPlatform(
+				collector,
+				fs,
+				cmdRunner,
+				dirProvider,
+				netManager,
+				certManager,
+				devicePathResolver,
+				logger,
+				fakeDefaultNetworkResolver,
+				auditLogger,
+				fakeUUIDGenerator,
+			)
+
+			lockFile = filepath.Join(platform.GetDirProvider().BoshDir(), "randomized_passwords")
+		})
+
+		AfterEach(func() {
+			SetAdministratorUserName(previousAdmin)
+			os.RemoveAll(tempDir)
+		})
+
+		Context("Called on vcap or root user", func() {
+			It("it does nothing if the Administrator user does not exist", func() {
+				Expect(lockFile).ToNot(BeAnExistingFile())
+
+				Expect(platform.SetUserPassword(boshsettings.VCAPUsername, testPassword)).To(Succeed())
+				Expect(lockFile).To(BeAnExistingFile())
+				fs.RemoveAll(lockFile)
+
+				Expect(platform.SetUserPassword(boshsettings.RootUsername, testPassword)).To(Succeed())
+				Expect(lockFile).To(BeAnExistingFile())
+				fs.RemoveAll(lockFile)
+			})
+
+			It("sets a random password on the Administrator user if it exists", func() {
+				// create the testuser
+				Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+				Expect(userExists(testUsername)).To(Succeed())
+
+				rootUsers := []string{
+					boshsettings.VCAPUsername,
+					boshsettings.RootUsername,
+				}
+				for _, root := range rootUsers {
+					Expect(lockFile).ToNot(BeAnExistingFile())
+
+					cmd := exec.Command("NET.exe", "USER", testUsername, testPassword)
+					Expect(cmd.Run()).To(Succeed())
+
+					Expect(platform.SetUserPassword(root, "")).To(Succeed())
+
+					err := ValidUserPassword(testUsername, testPassword)
+					Expect(err).ToNot(Succeed(),
+						fmt.Sprintf("Testing with Root user: %s", root))
+					Expect(err).To(Equal(ERROR_LOGON_FAILURE),
+						fmt.Sprintf("Testing with Root user: %s", root))
+
+					Expect(lockFile).To(BeAnExistingFile())
+					fs.RemoveAll(lockFile)
+				}
+			})
+
+			It("sets the Admin password only once", func() {
+				Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+				Expect(userExists(testUsername)).To(Succeed())
+
+				Expect(platform.SetUserPassword(boshsettings.VCAPUsername, "")).To(Succeed())
+				Expect(lockFile).To(BeAnExistingFile())
+
+				// Set password to a known value
+				out, err := exec.Command("NET.exe", "USER", testUsername, testPassword).CombinedOutput()
+				Expect(err).ToNot(HaveOccurred(), "NET.exe output: "+string(out))
+
+				Expect(platform.SetUserPassword(boshsettings.VCAPUsername, "")).To(Succeed())
+
+				Expect(ValidUserPassword(testUsername, testPassword)).To(Succeed(),
+					"The second call to SetUserPassword should NOT have changed the "+
+						"password for user: "+testUsername)
+			})
+		})
+
+		Context("Called on user that is not vcap or root", func() {
+			It("Does NOT change the Administrator user password", func() {
+				Expect(platform.CreateUser(testUsername, "")).To(Succeed())
+				Expect(userExists(testUsername)).To(Succeed())
+
+				out, err := exec.Command("NET.exe", "USER", testUsername, testPassword).CombinedOutput()
+				Expect(err).ToNot(HaveOccurred(), "NET.exe output: "+string(out))
+
+				Expect(platform.SetUserPassword(testUsername, "")).To(Succeed())
+
+				Expect(ValidUserPassword(testUsername, testPassword)).To(Succeed())
+
+				Expect(lockFile).ToNot(BeAnExistingFile())
+			})
 		})
 	})
 })
