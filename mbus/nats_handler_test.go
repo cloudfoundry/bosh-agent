@@ -357,6 +357,7 @@ func init() {
 					Expect(result.CertPool).To(Equal(expected.CertPool))
 					Expect(result.ClientCert).To(Equal(expected.ClientCert))
 				})
+
 				It("returns an error if the cert is invalid", func() {
 					settingsService.Settings.Env.Bosh.Mbus.Cert.CA = "Invalid Cert"
 

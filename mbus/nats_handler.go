@@ -243,6 +243,12 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 			return nil, bosherr.Error("Failed to load Mbus CA cert")
 		}
 		connInfo.VerifyPeerCertificate = h.VerifyPeerCertificate
+
+		clientCertificate, err := tls.X509KeyPair([]byte(settings.Env.Bosh.Mbus.Cert.Certificate), []byte(settings.Env.Bosh.Mbus.Cert.PrivateKey))
+		if err != nil {
+			return nil, bosherr.WrapError(err, "Parsing certificate and private key")
+		}
+		connInfo.ClientCert = &clientCertificate
 	}
 
 	user := natsURL.User
@@ -253,14 +259,6 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 		}
 		connInfo.Password = password
 		connInfo.Username = user.Username()
-	}
-
-	if settings.Env.IsMutualTLSEnabled() {
-		clientCertificate, err := tls.X509KeyPair([]byte(settings.Env.Bosh.Mbus.Cert.Certificate), []byte(settings.Env.Bosh.Mbus.Cert.PrivateKey))
-		if err != nil {
-			return nil, bosherr.WrapError(err, "Parsing certificate and private key")
-		}
-		connInfo.ClientCert = &clientCertificate
 	}
 
 	return connInfo, nil
