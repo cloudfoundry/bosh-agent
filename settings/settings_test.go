@@ -718,7 +718,7 @@ var _ = Describe("Settings", func() {
 			})
 		})
 
-		Context("#IsMutualTLSEnabled", func() {
+		Context("#IsNATSMutualTLSEnabled", func() {
 			Context("env JSON does NOT provide mbus", func() {
 				It("should return false", func() {
 					envJSON := `{ "bosh": {} }`
@@ -726,7 +726,7 @@ var _ = Describe("Settings", func() {
 					var env Env
 					err := json.Unmarshal([]byte(envJSON), &env)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsMutualTLSEnabled()).To(BeFalse())
+					Expect(env.IsNATSMutualTLSEnabled()).To(BeFalse())
 				})
 			})
 
@@ -737,7 +737,7 @@ var _ = Describe("Settings", func() {
 					var env Env
 					err := json.Unmarshal([]byte(envJSON), &env)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsMutualTLSEnabled()).To(Equal(expected))
+					Expect(env.IsNATSMutualTLSEnabled()).To(Equal(expected))
 				},
 
 				Entry("empty cert",

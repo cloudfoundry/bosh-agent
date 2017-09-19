@@ -237,7 +237,7 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 	connInfo := new(yagnats.ConnectionInfo)
 	connInfo.Addr = natsURL.Host
 
-	if settings.Env.IsMutualTLSEnabled() {
+	if settings.Env.IsNATSMutualTLSEnabled() {
 		connInfo.CertPool = x509.NewCertPool()
 		if ok := connInfo.CertPool.AppendCertsFromPEM([]byte(settings.Env.Bosh.Mbus.Cert.CA)); !ok {
 			return nil, bosherr.Error("Failed to load Mbus CA cert")
