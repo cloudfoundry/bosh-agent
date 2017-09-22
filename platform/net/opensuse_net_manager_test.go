@@ -103,6 +103,7 @@ nameserver 9.9.9.9
 
 			expectedNetworkConfigurationForStatic = `DEVICE=ethstatic
 BOOTPROTO=static
+STARTMODE='auto'
 IPADDR=1.2.3.4
 NETMASK=255.255.255.0
 BROADCAST=1.2.3.255
@@ -152,7 +153,7 @@ WIRELESS_REGULATORY_DOMAIN=''
 
 			// enforce deterministic succession of physical interfaces
 			ifaces := []string{}
-			for iface, _ := range physicalInterfaces {
+			for iface := range physicalInterfaces {
 				ifaces = append(ifaces, iface)
 			}
 			sort.Strings(ifaces)
