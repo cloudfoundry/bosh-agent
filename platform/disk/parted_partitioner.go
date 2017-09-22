@@ -275,6 +275,15 @@ func (p partedPartitioner) createEachPartition(partitions []Partition, deviceFul
 				//TODO: double check the output here. Does it make sense?
 				return true, bosherr.WrapError(err, "Creating partition using parted")
 			}
+
+			_, _, _, err = p.cmdRunner.RunCommand("partprobe", devicePath)
+			if err != nil {
+				p.logger.Error(p.logTag, "Failed to probe for newly created parition: %s", err)
+				return true, bosherr.WrapError(err, "Creating partition using parted")
+			}
+
+			p.cmdRunner.RunCommand("udevadm", "settle")
+
 			p.logger.Info(p.logTag, "Successfully created partition %d on %s", index, devicePath)
 			return false, nil
 		})
