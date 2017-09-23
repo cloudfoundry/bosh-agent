@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -202,19 +203,32 @@ WIRELESS_REGULATORY_DOMAIN=''
 
 			firstDhcpConfig := fs.GetFileTestStat("/etc/sysconfig/network/ifcfg-eth1")
 			Expect(firstDhcpConfig).ToNot(BeNil())
-			Expect(firstDhcpConfig.StringContents()).To(Equal(`DEVICE=eth1
+			secondDhcpConfig := fs.GetFileTestStat("/etc/sysconfig/network/ifcfg-eth2")
+			Expect(secondDhcpConfig).ToNot(BeNil())
+
+			if strings.Contains(firstDhcpConfig.StringContents(), "DHCLIENT_SET_DEFAULT_ROUTE=yes") {
+				Expect(firstDhcpConfig.StringContents()).To(Equal(`DEVICE=eth1
 BOOTPROTO=dhcp
 STARTMODE='auto'
 DHCLIENT_SET_DEFAULT_ROUTE=yes
 `))
-
-			secondDhcpConfig := fs.GetFileTestStat("/etc/sysconfig/network/ifcfg-eth2")
-			Expect(secondDhcpConfig).ToNot(BeNil())
-			Expect(secondDhcpConfig.StringContents()).To(Equal(`DEVICE=eth2
+				Expect(secondDhcpConfig.StringContents()).To(Equal(`DEVICE=eth2
 BOOTPROTO=dhcp
 STARTMODE='auto'
 DHCLIENT_SET_DEFAULT_ROUTE=no
 `))
+			} else {
+				Expect(firstDhcpConfig.StringContents()).To(Equal(`DEVICE=eth1
+BOOTPROTO=dhcp
+STARTMODE='auto'
+DHCLIENT_SET_DEFAULT_ROUTE=no
+`))
+				Expect(secondDhcpConfig.StringContents()).To(Equal(`DEVICE=eth2
+BOOTPROTO=dhcp
+STARTMODE='auto'
+DHCLIENT_SET_DEFAULT_ROUTE=yes
+`))
+			}
 		})
 
 		It("returns errors from glob /sys/class/net/", func() {
