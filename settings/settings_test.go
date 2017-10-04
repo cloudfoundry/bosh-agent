@@ -649,7 +649,25 @@ var _ = Describe("Settings", func() {
     "authorized_keys": [
       "fake-key"
     ],
-    "swap_size": 2048
+    "swap_size": 2048,
+	"blobstores": [
+		{
+			"options": {
+				"bucket_name": "george",
+				"encryption_key": "optional encryption key",
+				"access_key_id": "optional access key id",
+				"secret_access_key": "optional secret access key",
+				"port": 443
+			},
+			"provider": "s3"
+		},
+		{
+			"options": {
+				"blobstore_path": "/var/vcap/micro_bosh/data/cache"
+			},
+			"provider": "local"
+		}
+	]
   }
 }`
 			err := json.Unmarshal([]byte(envJSON), &env)
@@ -660,6 +678,25 @@ var _ = Describe("Settings", func() {
 			Expect(env.Bosh.IPv6).To(Equal(IPv6{}))
 			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+			Expect(env.Bosh.Blobstores).To(Equal(
+				[](Blobstore){
+					Blobstore{
+						Type: "s3",
+						Options: map[string]interface{}{
+							"bucket_name":       "george",
+							"encryption_key":    "optional encryption key",
+							"access_key_id":     "optional access key id",
+							"secret_access_key": "optional secret access key",
+							"port":              443.0,
+						},
+					},
+					Blobstore{
+						Type: "local",
+						Options: map[string]interface{}{
+							"blobstore_path": "/var/vcap/micro_bosh/data/cache",
+						},
+					},
+				}))
 		})
 
 		It("permits you to specify bootstrap https certs", func() {
@@ -716,6 +753,73 @@ var _ = Describe("Settings", func() {
 
 				Expect(env.GetSwapSizeInBytes()).To(BeNil())
 			})
+		})
+
+		Context("#GetBlobstore", func() {
+			blobstoreLocal := Blobstore{
+				Type: "local",
+				Options: map[string]interface{}{
+					"blobstore_path": "/var/vcap/micro_bosh/data/cache",
+				},
+			}
+
+			blobstoreS3 := Blobstore{
+				Type: "s3",
+				Options: map[string]interface{}{
+					"bucket_name":       "george",
+					"encryption_key":    "optional encryption key",
+					"access_key_id":     "optional access key id",
+					"secret_access_key": "optional secret access key",
+					"port":              443.0,
+				},
+			}
+
+			blobstoreGcs := Blobstore{
+				Type: "gcs",
+				Options: map[string]interface{}{
+					"provider": "gcs",
+					"json_key": "|" +
+						"DIRECTOR-BLOBSTORE-SERVICE-ACCOUNT-FILE",
+					"bucket_name":    "test-bosh-bucket",
+					"encryption_key": "BASE64-ENCODED-32-BYTES",
+					"storage_class":  "REGIONAL",
+				},
+			}
+
+			DescribeTable("agent returning the right blobstore configuration",
+				func(settingsBlobstore Blobstore, envBoshBlobstores [](Blobstore), expectedBlobstore Blobstore) {
+					settings := Settings{
+						Blobstore: settingsBlobstore,
+						Env: Env{
+							Bosh: BoshEnv{
+								Blobstores: envBoshBlobstores,
+							},
+						},
+					}
+
+					Expect(settings.GetBlobstore()).To(Equal(expectedBlobstore))
+				},
+
+				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
+					blobstoreLocal,
+					nil,
+					blobstoreLocal),
+
+				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
+					nil,
+					[]Blobstore{blobstoreLocal},
+					blobstoreLocal),
+
+				Entry("setting.Blobstore is missing and env.bosh.Blobstores has multiple entries",
+					nil,
+					[]Blobstore{blobstoreS3, blobstoreGcs},
+					blobstoreS3),
+
+				Entry("setting.Blobstore and env.bosh.Blobstores both are missing",
+					nil,
+					nil,
+					nil),
+			)
 		})
 
 		Context("#IsNATSMutualTLSEnabled", func() {

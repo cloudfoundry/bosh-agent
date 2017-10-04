@@ -121,7 +121,7 @@ func (app *app) Setup(opts Options) error {
 	}
 
 	blobManager := boshblob.NewBlobManager(app.platform.GetFs(), app.dirProvider.BlobsDir())
-	blobstore, err := app.setupBlobstore(settingsService.GetSettings().Blobstore, blobManager)
+	blobstore, err := app.setupBlobstore(settingsService.GetSettings().GetBlobstore(), blobManager)
 
 	if err != nil {
 		return bosherr.WrapError(err, "Getting blobstore")

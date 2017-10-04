@@ -164,6 +164,13 @@ func (s Settings) GetMbusURL() string {
 	return s.Mbus
 }
 
+func (settings Settings) GetBlobstore() Blobstore {
+	if len(settings.Env.Bosh.Blobstores) > 0 {
+		return settings.Env.Bosh.Blobstores[0]
+	}
+	return settings.Blobstore
+}
+
 type Env struct {
 	Bosh             BoshEnv             `json:"bosh"`
 	PersistentDiskFS disk.FileSystemType `json:"persistent_disk_fs"`
@@ -203,14 +210,15 @@ func (e Env) IsNATSMutualTLSEnabled() bool {
 }
 
 type BoshEnv struct {
-	Password              string   `json:"password"`
-	KeepRootPassword      bool     `json:"keep_root_password"`
-	RemoveDevTools        bool     `json:"remove_dev_tools"`
-	RemoveStaticLibraries bool     `json:"remove_static_libraries"`
-	AuthorizedKeys        []string `json:"authorized_keys"`
-	SwapSizeInMB          *uint64  `json:"swap_size"`
-	Mbus                  MBus     `json:"mbus"`
-	IPv6                  IPv6     `json:"ipv6"`
+	Password              string      `json:"password"`
+	KeepRootPassword      bool        `json:"keep_root_password"`
+	RemoveDevTools        bool        `json:"remove_dev_tools"`
+	RemoveStaticLibraries bool        `json:"remove_static_libraries"`
+	AuthorizedKeys        []string    `json:"authorized_keys"`
+	SwapSizeInMB          *uint64     `json:"swap_size"`
+	Mbus                  MBus        `json:"mbus"`
+	IPv6                  IPv6        `json:"ipv6"`
+	Blobstores            []Blobstore `json:"blobstores"`
 }
 
 type MBus struct {
