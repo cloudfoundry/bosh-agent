@@ -7,11 +7,12 @@ import (
 	. "github.com/onsi/gomega"
 
 	"fmt"
+	"regexp"
+
 	fakeboshaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"regexp"
 )
 
 const partitionNamePrefix = "bosh-partition"
@@ -408,7 +409,7 @@ var _ = Describe("PartedPartitioner", func() {
 						fakesys.FakeCmdResult{
 							Stdout: `BYT;
 /dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:512B:8589935104B:8568963072B:ext4::;
+1:512B:8589935104B:8558963072B:ext4::;
 2:8589935105B:17179869697B:8568963072B:ext4::;
 `},
 					)

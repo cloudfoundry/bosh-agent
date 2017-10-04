@@ -13,7 +13,10 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-const partitionNamePrefix = "bosh-partition"
+const (
+	partitionNamePrefix = "bosh-partition"
+	deltaSize           = 100
+)
 
 type partedPartitioner struct {
 	logger      boshlog.Logger
@@ -87,7 +90,7 @@ func (p partedPartitioner) partitionsMatch(existingPartitions []existingPartitio
 		existingPartition := existingPartitions[index]
 		if existingPartition.Type != partition.Type {
 			return false
-		} else if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.convertFromMbToBytes(20)) {
+		} else if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.convertFromMbToBytes(deltaSize)) {
 			return false
 		}
 

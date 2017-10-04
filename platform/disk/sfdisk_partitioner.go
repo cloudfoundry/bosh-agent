@@ -147,7 +147,7 @@ func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsTo
 		switch {
 		case existingPartition.Type != partitionToMatch.Type:
 			return false, nil
-		case !withinDelta(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, p.convertFromMbToBytes(20)):
+		case !withinDelta(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, p.convertFromMbToBytes(deltaSize)):
 			return false, nil
 		}
 
