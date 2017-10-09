@@ -41,7 +41,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/gosigar"
   packages = [".","fakes"]
-  revision = "f4030c18ce1a78252deadef2f5e460b35cce7ae5"
+  revision = "14c0a766933d517675369dae6f551f5c1a10f0d8"
 
 [[projects]]
   branch = "master"
