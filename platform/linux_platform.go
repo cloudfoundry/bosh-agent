@@ -594,7 +594,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string, desiredSwapSizeInByte
 			return bosherr.Error("No ephemeral disk found, cannot use root partition as ephemeral disk")
 		}
 
-		swapPartitionPath, dataPartitionPath, err = p.createEphemeralPartitionsOnRootDevice()
+		swapPartitionPath, dataPartitionPath, err = p.createEphemeralPartitionsOnRootDevice(desiredSwapSizeInBytes)
 		if err != nil {
 			return bosherr.WrapError(err, "Creating ephemeral partitions on root device")
 		}
@@ -1337,7 +1337,7 @@ func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 	return "", 0, bosherr.Error("Getting root partition device")
 }
 
-func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
+func (p linux) createEphemeralPartitionsOnRootDevice(desiredSwapSizeInBytes *uint64) (string, string, error) {
 	p.logger.Info(logTag, "Creating swap & ephemeral partitions on root disk...")
 	p.logger.Debug(logTag, "Determining root device")
 
@@ -1358,14 +1358,28 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 	}
 
 	p.logger.Debug(logTag, "Calculating partition sizes of `%s', remaining size: %dB", rootDevicePath, remainingSizeInBytes)
-	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes, nil)
+	swapSizeInBytes, linuxSizeInBytes, err := p.calculateEphemeralDiskPartitionSizes(remainingSizeInBytes, desiredSwapSizeInBytes)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Calculating partition sizes")
 	}
 
-	partitions := []boshdisk.Partition{
-		{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
-		{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+	var partitions []boshdisk.Partition
+	var swapPartitionPath string
+	var dataPartitionPath string
+
+	if swapSizeInBytes == 0 {
+		partitions = []boshdisk.Partition{
+			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+		}
+		swapPartitionPath = ""
+		dataPartitionPath := rootDevicePath + strconv.Itoa(rootDeviceNumber+1)
+	} else {
+		partitions = []boshdisk.Partition{
+			{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
+			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+		}
+		swapPartitionPath := rootDevicePath + strconv.Itoa(rootDeviceNumber+1)
+		dataPartitionPath := rootDevicePath + strconv.Itoa(rootDeviceNumber+2)
 	}
 
 	for _, partition := range partitions {
@@ -1377,8 +1391,6 @@ func (p linux) createEphemeralPartitionsOnRootDevice() (string, string, error) {
 		return "", "", bosherr.WrapErrorf(err, "Partitioning root device `%s'", rootDevicePath)
 	}
 
-	swapPartitionPath := rootDevicePath + strconv.Itoa(rootDeviceNumber+1)
-	dataPartitionPath := rootDevicePath + strconv.Itoa(rootDeviceNumber+2)
 	return swapPartitionPath, dataPartitionPath, nil
 }
 
