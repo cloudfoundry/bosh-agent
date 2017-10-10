@@ -108,7 +108,10 @@ type ConnectionInfo struct {
 	Username string
 	Password string
 	Dial     func(network, address string) (net.Conn, error)
+	TLSInfo  *ConnectionTLSInfo
+}
 
+type ConnectionTLSInfo struct {
 	CertPool              *x509.CertPool
 	ClientCert            *tls.Certificate
 	VerifyPeerCertificate func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error
@@ -116,10 +119,11 @@ type ConnectionInfo struct {
 
 func (c *ConnectionInfo) ProvideConnection() (*Connection, error) {
 	var conn *Connection
-	if c.CertPool == nil {
+
+	if c.TLSInfo == nil {
 		conn = NewConnection(c.Addr, c.Username, c.Password)
 	} else {
-		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.CertPool, c.ClientCert, c.VerifyPeerCertificate)
+		conn = NewTLSConnection(c.Addr, c.Username, c.Password, c.TLSInfo.CertPool, c.TLSInfo.ClientCert, c.TLSInfo.VerifyPeerCertificate)
 	}
 
 	if c.Dial != nil {

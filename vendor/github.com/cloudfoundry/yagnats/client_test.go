@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"strings"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -587,6 +589,20 @@ func (s *YSuite) TestClientPubSubWithQueueReconnectsWithQueue(c *C) {
 		c.Error("Should not have received message.")
 	case <-time.After(500 * time.Millisecond):
 	}
+}
+
+func (s *YSuite) TestClientConnectOverTLSToNonTLSEnabledServer(c *C) {
+	otherClient := NewClient()
+	err := otherClient.Connect(&ConnectionInfo{
+		Addr:     "127.0.0.1:4223",
+		Username: "nats",
+		Password: "nats",
+		//If TLSInfo is not nil, it will connect over TLS
+		TLSInfo: &ConnectionTLSInfo{},
+	})
+
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "tls: oversized record received with length"), Equals, true)
 }
 
 func waitReceive(c *C, expected string, from chan []byte, ms time.Duration) {

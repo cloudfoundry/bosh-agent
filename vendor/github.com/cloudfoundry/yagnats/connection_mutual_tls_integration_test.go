@@ -32,10 +32,12 @@ func (t *MutualTLSSuite) TestNewMutualTLSConnection(c *C) {
 	c.Assert(ok, Equals, true)
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4556",
-		Username:   "nats",
-		Password:   "nats",
-		CertPool:   roots,
-		ClientCert: &ValidClientCert,
+		Username: "nats",
+		Password: "nats",
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool:   roots,
+			ClientCert: &ValidClientCert,
+		},
 	})
 	c.Assert(err, IsNil)
 	t.Client = client
@@ -52,10 +54,12 @@ func (t *MutualTLSSuite) TestNewMutualTLSConnectionWithWrongCA(c *C) {
 	c.Assert(ok, Equals, true)
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4556",
-		Username:   "nats",
-		Password:   "nats",
-		CertPool:   roots,
-		ClientCert: &ValidClientCert,
+		Username: "nats",
+		Password: "nats",
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool:   roots,
+			ClientCert: &ValidClientCert,
+		},
 	})
 
 	c.Assert(err, NotNil)
@@ -66,10 +70,12 @@ func (t *MutualTLSSuite) TestNewMutualTLSConnectionWithEmptyCertPool(c *C) {
 	client := NewClient()
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4556",
-		Username:   "nats",
-		Password:   "nats",
-		CertPool:   x509.NewCertPool(),
-		ClientCert: &ValidClientCert,
+		Username: "nats",
+		Password: "nats",
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool:   x509.NewCertPool(),
+			ClientCert: &ValidClientCert,
+		},
 	})
 
 	c.Assert(err, NotNil)
@@ -84,10 +90,12 @@ func (t *MutualTLSSuite) TestNewMutualTLSConnectionWithInvalidClientCert(c *C) {
 	c.Assert(ok, Equals, true)
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4556",
-		Username:   "nats",
-		Password:   "nats",
-		CertPool:   roots,
-		ClientCert: &InvalidClientCert,
+		Username: "nats",
+		Password: "nats",
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool:   roots,
+			ClientCert: &InvalidClientCert,
+		},
 	})
 
 	c.Assert(err, NotNil)
@@ -107,7 +115,9 @@ func (t *MutualTLSSuite) TestNewMutualTLSConnectionWithNoClientCert(c *C) {
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4556",
 		Username: "nats",
 		Password: "nats",
-		CertPool: roots,
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool: roots,
+		},
 	})
 
 	c.Assert(err, NotNil)
@@ -125,18 +135,20 @@ func (t *MutualTLSSuite) TestNewMutualTLSConnectionWithVerifyPeerCertificateCall
 	c.Assert(ok, Equals, true)
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4556",
-		Username:   "nats",
-		Password:   "nats",
-		CertPool:   roots,
-		ClientCert: &ValidClientCert,
-		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-			for _, chain := range verifiedChains {
-				org := chain[len(chain)-1].Subject.Organization
-				if len(org) >= 1 && org[0] == "Cloud Foundry" {
-					return nil
+		Username: "nats",
+		Password: "nats",
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool:   roots,
+			ClientCert: &ValidClientCert,
+			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+				for _, chain := range verifiedChains {
+					org := chain[len(chain)-1].Subject.Organization
+					if len(org) >= 1 && org[0] == "Cloud Foundry" {
+						return nil
+					}
 				}
-			}
-			return errors.New("Unexpected organization.")
+				return errors.New("Unexpected organization.")
+			},
 		},
 	})
 	c.Assert(err, IsNil)
@@ -154,18 +166,20 @@ func (t *MutualTLSSuite) TestNewMutualTLSConnectionWithVerifyPeerCertificateCall
 	c.Assert(ok, Equals, true)
 
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4556",
-		Username:   "nats",
-		Password:   "nats",
-		CertPool:   roots,
-		ClientCert: &ValidClientCert,
-		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-			for _, chain := range verifiedChains {
-				org := chain[len(chain)-1].Subject.Organization
-				if len(org) >= 1 && org[0] == "Yagnats" {
-					return nil
+		Username: "nats",
+		Password: "nats",
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool:   roots,
+			ClientCert: &ValidClientCert,
+			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+				for _, chain := range verifiedChains {
+					org := chain[len(chain)-1].Subject.Organization
+					if len(org) >= 1 && org[0] == "Yagnats" {
+						return nil
+					}
 				}
-			}
-			return errors.New("Unexpected organization.")
+				return errors.New("Unexpected organization.")
+			},
 		},
 	})
 	c.Assert(err, NotNil)

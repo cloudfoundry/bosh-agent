@@ -238,17 +238,23 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 	connInfo.Addr = natsURL.Host
 
 	if settings.Env.IsNATSMutualTLSEnabled() {
-		connInfo.CertPool = x509.NewCertPool()
-		if ok := connInfo.CertPool.AppendCertsFromPEM([]byte(settings.Env.Bosh.Mbus.Cert.CA)); !ok {
-			return nil, bosherr.Error("Failed to load Mbus CA cert")
+		connInfo.TLSInfo = &yagnats.ConnectionTLSInfo{}
+
+		caCert := settings.Env.Bosh.Mbus.Cert.CA
+		if caCert != "" {
+			connInfo.TLSInfo.CertPool = x509.NewCertPool()
+			if ok := connInfo.TLSInfo.CertPool.AppendCertsFromPEM([]byte(caCert)); !ok {
+				return nil, bosherr.Error("Failed to load Mbus CA cert")
+			}
 		}
-		connInfo.VerifyPeerCertificate = h.VerifyPeerCertificate
+
+		connInfo.TLSInfo.VerifyPeerCertificate = h.VerifyPeerCertificate
 
 		clientCertificate, err := tls.X509KeyPair([]byte(settings.Env.Bosh.Mbus.Cert.Certificate), []byte(settings.Env.Bosh.Mbus.Cert.PrivateKey))
 		if err != nil {
 			return nil, bosherr.WrapError(err, "Parsing certificate and private key")
 		}
-		connInfo.ClientCert = &clientCertificate
+		connInfo.TLSInfo.ClientCert = &clientCertificate
 	}
 
 	user := natsURL.User

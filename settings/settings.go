@@ -199,7 +199,7 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 }
 
 func (e Env) IsNATSMutualTLSEnabled() bool {
-	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0 && len(e.Bosh.Mbus.Cert.CA) > 0
+	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0
 }
 
 type BoshEnv struct {

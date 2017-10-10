@@ -34,7 +34,9 @@ func (t *TLSSuite) TestNewTLSConnection(c *C) {
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4555",
 		Username: "nats",
 		Password: "nats",
-		CertPool: roots,
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool: roots,
+		},
 	})
 	c.Assert(err, IsNil)
 	t.Client = client
@@ -53,7 +55,9 @@ func (t *TLSSuite) TestNewTLSConnectionWithWrongCA(c *C) {
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4555",
 		Username: "nats",
 		Password: "nats",
-		CertPool: roots,
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool: roots,
+		},
 	})
 
 	c.Assert(err, NotNil)
@@ -67,10 +71,24 @@ func (t *TLSSuite) TestNewTLSConnectionWithEmptyCertPool(c *C) {
 	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4555",
 		Username: "nats",
 		Password: "nats",
-		CertPool: x509.NewCertPool(),
+		TLSInfo: &ConnectionTLSInfo{
+			CertPool: x509.NewCertPool(),
+		},
 	})
 
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "x509: certificate signed by unknown authority")
+}
 
+func (t *TLSSuite) TestNewTLSConnectionWithNoCertPool(c *C) {
+	client := NewClient()
+
+	err := client.Connect(&ConnectionInfo{Addr: "127.0.0.1:4555",
+		Username: "nats",
+		Password: "nats",
+		TLSInfo:  &ConnectionTLSInfo{},
+	})
+
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "x509: certificate signed by unknown authority")
 }

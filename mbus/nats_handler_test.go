@@ -345,20 +345,23 @@ func init() {
 
 					result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
 					expected := &yagnats.ConnectionInfo{
-						Addr:       "127.0.0.1:1234",
-						Username:   "fake-username",
-						Password:   "fake-password",
-						CertPool:   certPool,
-						ClientCert: &clientCert,
+						Addr:     "127.0.0.1:1234",
+						Username: "fake-username",
+						Password: "fake-password",
+						TLSInfo: &yagnats.ConnectionTLSInfo{
+							CertPool:   certPool,
+							ClientCert: &clientCert,
+						},
 					}
+
 					Expect(result.Addr).To(Equal(expected.Addr))
 					Expect(result.Username).To(Equal(expected.Username))
 					Expect(result.Password).To(Equal(expected.Password))
-					Expect(result.CertPool).To(Equal(expected.CertPool))
-					Expect(result.ClientCert).To(Equal(expected.ClientCert))
+					Expect(result.TLSInfo.CertPool).To(Equal(expected.TLSInfo.CertPool))
+					Expect(result.TLSInfo.ClientCert).To(Equal(expected.TLSInfo.ClientCert))
 				})
 
-				It("returns an error if the cert is invalid", func() {
+				It("returns an error if the `ca cert` is provided and invalid", func() {
 					settingsService.Settings.Env.Bosh.Mbus.Cert.CA = "Invalid Cert"
 
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
@@ -410,6 +413,32 @@ func init() {
 
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
+					})
+				})
+
+				Context("when `ca cert` is not passed", func() {
+					It("should not try to append blank `ca cert` (should only rely on system trusted certs)", func() {
+						settingsService.Settings.Env.Bosh.Mbus.Cert.CA = ""
+
+						err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+						Expect(err).NotTo(HaveOccurred())
+						defer handler.Stop()
+
+						clientCert, err := tls.LoadX509KeyPair("./test_assets/client-cert.pem", "./test_assets/client-pkey.pem")
+						Expect(err, BeNil())
+
+						result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
+						expected := &yagnats.ConnectionInfo{
+							Addr:     "127.0.0.1:1234",
+							Username: "fake-username",
+							Password: "fake-password",
+							TLSInfo: &yagnats.ConnectionTLSInfo{
+								ClientCert: &clientCert,
+							},
+						}
+
+						Expect(result.TLSInfo.CertPool).To(BeNil())
+						Expect(result.TLSInfo.ClientCert).To(Equal(expected.TLSInfo.ClientCert))
 					})
 				})
 			})
@@ -538,7 +567,7 @@ func testVerifyPeerCertificateCallback(client *fakeyagnats.FakeYagnats, handler 
 	Expect(ok).To(BeTrue())
 
 	result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
-	callback := result.VerifyPeerCertificate
+	callback := result.TLSInfo.VerifyPeerCertificate
 
 	raw := [][]byte{correctCnCert, correctCa}
 	verified := [][]*x509.Certificate{{cert, ca}}

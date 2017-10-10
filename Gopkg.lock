@@ -47,7 +47,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/yagnats"
   packages = [".","fakeyagnats"]
-  revision = "bac091bd51e15de241c4150d48734c9b2ef6ba7f"
+  revision = "3b3524729b2777c6bc928f73a1c230a9081ee8f2"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"

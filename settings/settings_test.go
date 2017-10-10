@@ -744,10 +744,6 @@ var _ = Describe("Settings", func() {
 					`{}`,
 					false),
 
-				Entry("only ca provided",
-					`{ "ca": "some value" }`,
-					false),
-
 				Entry("only certificate provided",
 					`{ "certificate": "some value" }`,
 					false),
@@ -756,20 +752,8 @@ var _ = Describe("Settings", func() {
 					`{ "private_key": "some value" }`,
 					false),
 
-				Entry("certificate missing",
-					`{ "ca": "some value", "private_key": "some value"}`,
-					false),
-
-				Entry("private_key missing",
-					`{ "ca": "some value", "certficate": "some value" }`,
-					false),
-
-				Entry("ca missing",
+				Entry("provides certificate, and private_key",
 					`{ "certificate": "some value", "private_key": "some value" }`,
-					false),
-
-				Entry("provides ca, certificate, and private_key",
-					`{ "ca": "some value", "certificate": "some value", "private_key": "some value" }`,
 					true),
 			)
 		})
