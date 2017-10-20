@@ -46,6 +46,8 @@ const (
 
 	minRootEphemeralSpaceInBytes = uint64(1024 * 1024 * 1024)
 	maxFdiskPartitionSize        = uint64(2 * 1024 * 1024 * 1024 * 1024)
+
+	startingLogicalSector = uint64(128)
 )
 
 type LinuxOptions struct {
@@ -1238,6 +1240,104 @@ func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64) (uin
 	return swapSizeInBytes, linuxSizeInBytes, nil
 }
 
+func (p linux) getSectorSizes(diskPath string) (logicalSectorSizeInBytes uint64, physicalSectorSizeInBytes uint64, err error) {
+	stdout, _, _, err := p.cmdRunner.RunCommand("blockdev", "--getss", diskPath)
+	if err != nil {
+		return 0, 0, bosherr.WrapError(err, "Shelling out to blockdev when getting logical sector size")
+	}
+
+	logicalSectorSizeInBytes, err = strconv.ParseUint(strings.Trim(stdout, "\n"), 10, 64)
+	if err != nil {
+		return 0, 0, bosherr.WrapError(err, "Converting logical sector size to integer")
+	}
+
+	stdout, _, _, err = p.cmdRunner.RunCommand("blockdev", "--getpbss", diskPath)
+	if err != nil {
+		return 0, 0, bosherr.WrapError(err, "Shelling out to blockdev when getting physical sector size")
+	}
+
+	physicalSectorSizeInBytes, err = strconv.ParseUint(strings.Trim(stdout, "\n"), 10, 64)
+	if err != nil {
+		return 0, 0, bosherr.WrapError(err, "Converting physical sector size to integer")
+	}
+
+	return
+}
+
+func (p linux) getSectorInfoFromPartition(startingSector, logicalSectorSizeInBytes, physicalSectorSizeInBytes, diskSizeInBytes uint64, partition boshdisk.Partition) (*boshdisk.PartitionSectorInfo, uint64, error) {
+	var sectorInfo *boshdisk.PartitionSectorInfo
+
+	numberOfLogicalSectorsInPhysicalSectors := uint64(physicalSectorSizeInBytes / logicalSectorSizeInBytes)
+
+	// Get the total number of logical sectors
+	totalAvailableLogicalSectors := uint64(diskSizeInBytes / logicalSectorSizeInBytes)
+
+	if startingSector >= totalAvailableLogicalSectors {
+		return nil, 0, bosherr.Error("No more sectors remaining for this partition.")
+	}
+
+	remainingSectors := uint64(totalAvailableLogicalSectors - startingSector)
+
+	// Get the total number of logical sectors the partition will cover
+	partitionSize := partition.SizeInBytes
+	desiredLogicalSectorsCoveredByPartition := uint64(partitionSize / logicalSectorSizeInBytes)
+	remainingBytesForPartition := partitionSize % logicalSectorSizeInBytes
+	if remainingBytesForPartition > 0 {
+		// We have leftover bytes. Bump to next logical sector.
+		desiredLogicalSectorsCoveredByPartition++
+	}
+
+	var amountOfLogicalSectorsToFillCurrentPhysicalSector uint64
+	amountOfLogicalSectorsRemaining := uint64(desiredLogicalSectorsCoveredByPartition % numberOfLogicalSectorsInPhysicalSectors)
+	if amountOfLogicalSectorsRemaining > 0 {
+		// We have leftover logical sector(s). Bump to next physical sector.
+		amountOfLogicalSectorsToFillCurrentPhysicalSector = uint64(numberOfLogicalSectorsInPhysicalSectors - amountOfLogicalSectorsRemaining)
+	}
+
+	var actualLogicalSectorsCoveredByPartition uint64
+
+	expectedLogicalSectorsCoveredByPartition := uint64(desiredLogicalSectorsCoveredByPartition + amountOfLogicalSectorsToFillCurrentPhysicalSector)
+	if expectedLogicalSectorsCoveredByPartition < remainingSectors {
+		actualLogicalSectorsCoveredByPartition = expectedLogicalSectorsCoveredByPartition
+	} else {
+		actualLogicalSectorsCoveredByPartition = remainingSectors
+	}
+
+	sectorInfo = &boshdisk.PartitionSectorInfo{
+		Start:         startingSector,
+		SizeInSectors: actualLogicalSectorsCoveredByPartition,
+	}
+
+	nextStartingLogicalSector := startingSector + actualLogicalSectorsCoveredByPartition
+	return sectorInfo, nextStartingLogicalSector, nil
+}
+
+func (p linux) processPartitions(diskPath string, diskSizeInBytes uint64, partitions []boshdisk.Partition) ([]boshdisk.Partition, error) {
+	logicalSectorSizeInBytes, physicalSectorSizeInBytes, err := p.getSectorSizes(diskPath)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Getting disk sector sizes")
+	}
+
+	var updatedPartitions []boshdisk.Partition
+	var startingSector = startingLogicalSector
+
+	if uint64(startingSector*logicalSectorSizeInBytes) > diskSizeInBytes {
+		// When we can't start at our starting sector, fall back to using default.
+		return nil, bosherr.Error("Not enough disk space to accommodate starting sector")
+	}
+
+	for _, partition := range partitions {
+		sectorInfo, nextStartingSector, err := p.getSectorInfoFromPartition(startingSector, logicalSectorSizeInBytes, physicalSectorSizeInBytes, diskSizeInBytes, partition)
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Calculating sector information for partition: '%s'", partition.Type)
+		}
+		updatedPartitions = append(updatedPartitions, boshdisk.Partition{Type: partition.Type, SizeInBytes: partition.SizeInBytes, SectorInfo: sectorInfo})
+		startingSector = nextStartingSector
+	}
+
+	return updatedPartitions, nil
+}
+
 func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 	mounts, err := p.diskManager.GetMountsSearcher().SearchMounts()
 	if err != nil {
@@ -1335,6 +1435,13 @@ func (p linux) partitionEphemeralDisk(realPath string) (string, string, error) {
 	partitions := []boshdisk.Partition{
 		{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
 		{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+	}
+
+	processedPartitions, err := p.processPartitions(realPath, diskSizeInBytes, partitions)
+	if err != nil {
+		p.logger.Error(logTag, err.Error())
+	} else {
+		partitions = processedPartitions
 	}
 
 	p.logger.Info(logTag, "Partitioning ephemeral disk `%s' with %s", realPath, partitions)

@@ -38,25 +38,11 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 		p.logger.Info(p.logTag, "%s already partitioned as expected, skipping", devicePath)
 		return nil
 	}
-	sfdiskPartitionTypes := map[PartitionType]string{
-		PartitionTypeSwap:  "S",
-		PartitionTypeLinux: "L",
-	}
 
-	sfdiskInput := ""
-	for index, partition := range partitions {
-		sfdiskPartitionType := sfdiskPartitionTypes[partition.Type]
-		partitionSize := fmt.Sprintf("%d", p.convertFromBytesToMb(partition.SizeInBytes))
-
-		if index == len(partitions)-1 {
-			partitionSize = ""
-		}
-
-		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
-	}
+	sfdiskInput, sfdiskUnit := p.generateSfdiskInput(partitions)
 
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
-		_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
+		_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", sfdiskUnit, devicePath)
 		if err != nil {
 			p.logger.Error(p.logTag, "Failed with an error: %s", err)
 			return true, bosherr.WrapError(err, "Shelling out to sfdisk")
@@ -218,4 +204,47 @@ func (p sfdiskPartitioner) convertFromMbToBytes(sizeInMb uint64) uint64 {
 
 func (p sfdiskPartitioner) convertFromKbToBytes(sizeInKb uint64) uint64 {
 	return sizeInKb * 1024
+}
+
+func (p sfdiskPartitioner) generateSfdiskInput(partitions []Partition) (string, string) {
+	sfdiskPartitionTypes := map[PartitionType]string{
+		PartitionTypeSwap:  "S",
+		PartitionTypeLinux: "L",
+	}
+	var sfdiskInput string
+	var sfdiskUnit string
+
+	partitionBySector := true
+
+	for _, partition := range partitions {
+		if partition.SectorInfo == nil {
+			partitionBySector = false
+			break
+		}
+	}
+
+	for index, partition := range partitions {
+		sfdiskPartitionType := sfdiskPartitionTypes[partition.Type]
+
+		if partitionBySector {
+			sizeInSectors := fmt.Sprintf("%d", uint64(partition.SectorInfo.SizeInSectors))
+			sfdiskInput = sfdiskInput + fmt.Sprintf("%d,%s,%s\n", uint64(partition.SectorInfo.Start), sizeInSectors, sfdiskPartitionType)
+		} else {
+			partitionSize := fmt.Sprintf("%d", p.convertFromBytesToMb(partition.SizeInBytes))
+
+			if index == len(partitions)-1 {
+				partitionSize = ""
+			}
+
+			sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
+		}
+	}
+
+	if partitionBySector {
+		sfdiskUnit = "-uS"
+	} else {
+		sfdiskUnit = "-uM"
+	}
+
+	return sfdiskInput, sfdiskUnit
 }
