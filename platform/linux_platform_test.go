@@ -102,7 +102,7 @@ func describeLinuxPlatform() {
 		cmdRunner.AddCmdResult("blockdev --getss /dev/xvda", blockdevLogicalSectorSizeResult)
 
 		blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "4096"}
-		cmdRunner.AddCmdResult("blockdev --getpbss /dev/xvda", blockdevPhysicalSectorSizeResult)
+		cmdRunner.AddCmdResult("blockdev --getbsz /dev/xvda", blockdevPhysicalSectorSizeResult)
 	})
 
 	JustBeforeEach(func() {
@@ -827,7 +827,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					cmdRunner.AddCmdResult("blockdev --getss /dev/xvdb", blockdevLogicalSectorSizeResult)
 
 					blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Error: errors.New("Failed to get logical sector size.")}
-					cmdRunner.AddCmdResult("blockdev --getpbss /dev/xvdb", blockdevPhysicalSectorSizeResult)
+					cmdRunner.AddCmdResult("blockdev --getbsz /dev/xvdb", blockdevPhysicalSectorSizeResult)
 				})
 
 				It("it does not return any SectorInfo, and it logs the error message", func() {
@@ -867,7 +867,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					cmdRunner.AddCmdResult("blockdev --getss /dev/xvdb", blockdevLogicalSectorSizeResult)
 
 					blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "not a number"}
-					cmdRunner.AddCmdResult("blockdev --getpbss /dev/xvdb", blockdevPhysicalSectorSizeResult)
+					cmdRunner.AddCmdResult("blockdev --getbsz /dev/xvdb", blockdevPhysicalSectorSizeResult)
 				})
 
 				It("it does not return any SectorInfo, and it logs the error message", func() {

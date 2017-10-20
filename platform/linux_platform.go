@@ -1315,7 +1315,7 @@ func (p linux) getSectorSizes(diskPath string) (logicalSectorSizeInBytes uint64,
 		return 0, 0, bosherr.WrapError(err, "Converting logical sector size to integer")
 	}
 
-	stdout, _, _, err = p.cmdRunner.RunCommand("blockdev", "--getpbss", diskPath)
+	stdout, _, _, err = p.cmdRunner.RunCommand("blockdev", "--getbsz", diskPath)
 	if err != nil {
 		return 0, 0, bosherr.WrapError(err, "Shelling out to blockdev when getting physical sector size")
 	}
