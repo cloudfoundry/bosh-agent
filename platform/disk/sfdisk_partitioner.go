@@ -39,10 +39,16 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 		return nil
 	}
 
-	sfdiskInput, sfdiskUnit := p.generateSfdiskInput(partitions)
+	sfdiskInput, sfdiskUnit, force := p.generateSfdiskInput(partitions)
 
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
-		_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", sfdiskUnit, devicePath)
+		var err error
+		if force {
+			_, _, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "--force", sfdiskUnit, devicePath)
+		} else {
+			_, _, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", sfdiskUnit, devicePath)
+		}
+
 		if err != nil {
 			p.logger.Error(p.logTag, "Failed with an error: %s", err)
 			return true, bosherr.WrapError(err, "Shelling out to sfdisk")
@@ -206,7 +212,7 @@ func (p sfdiskPartitioner) convertFromKbToBytes(sizeInKb uint64) uint64 {
 	return sizeInKb * 1024
 }
 
-func (p sfdiskPartitioner) generateSfdiskInput(partitions []Partition) (string, string) {
+func (p sfdiskPartitioner) generateSfdiskInput(partitions []Partition) (string, string, bool) {
 	sfdiskPartitionTypes := map[PartitionType]string{
 		PartitionTypeSwap:  "S",
 		PartitionTypeLinux: "L",
@@ -228,6 +234,10 @@ func (p sfdiskPartitioner) generateSfdiskInput(partitions []Partition) (string, 
 
 		if partitionBySector {
 			sizeInSectors := fmt.Sprintf("%d", uint64(partition.SectorInfo.SizeInSectors))
+			if index == len(partitions)-1 {
+				sizeInSectors = ""
+			}
+
 			sfdiskInput = sfdiskInput + fmt.Sprintf("%d,%s,%s\n", uint64(partition.SectorInfo.Start), sizeInSectors, sfdiskPartitionType)
 		} else {
 			partitionSize := fmt.Sprintf("%d", p.convertFromBytesToMb(partition.SizeInBytes))
@@ -246,5 +256,5 @@ func (p sfdiskPartitioner) generateSfdiskInput(partitions []Partition) (string, 
 		sfdiskUnit = "-uM"
 	}
 
-	return sfdiskInput, sfdiskUnit
+	return sfdiskInput, sfdiskUnit, partitionBySector
 }
