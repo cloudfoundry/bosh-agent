@@ -302,7 +302,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 				partitioner.Partition("/dev/sda", partitions)
 
 				Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
-				Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{"128,17446744073709551615,S\n17446744073709551734,6000,L\n17446744073709557734,699999,L\n", "sfdisk", "-uS", "/dev/sda"}))
+				Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{"128,17446744073709551615,S\n17446744073709551734,6000,L\n17446744073709557734,,L\n", "sfdisk", "--force", "-uS", "/dev/sda"}))
 			})
 		})
 
