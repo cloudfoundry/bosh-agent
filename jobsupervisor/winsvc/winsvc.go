@@ -222,7 +222,7 @@ func calculateWaitHint(status svc.Status) (waitHint, interval time.Duration) {
 func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 	// Arbitrary timeout to prevent misbehaving
 	// services from triggering an infinite loop.
-	const Timeout = time.Minute * 2
+	const Timeout = time.Minute * 20
 
 	if pendingState != svc.StartPending && pendingState != svc.StopPending {
 		// This is a programming error and really should be a panic.
@@ -236,9 +236,6 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 	}
 
 	start := time.Now()
-	checkpoint := start
-	oldCheckpoint := status.CheckPoint
-	highCPU := 0
 
 	for status.State == pendingState {
 		waitHint, interval := calculateWaitHint(status)
@@ -253,31 +250,6 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 		}
 
 		switch {
-		// The service incremented it's checkpoint, reset timer
-		case status.CheckPoint > oldCheckpoint:
-			checkpoint = time.Now()
-			oldCheckpoint = status.CheckPoint
-
-		// No progress made within the wait hint.
-		case time.Since(checkpoint) > waitHint:
-			// Handle high CPU situations.  This is incredibly crude,
-			// but it works!
-			switch {
-			case cpu.CPU() > 90:
-				highCPU = 10
-			case highCPU > 0:
-				highCPU--
-			default:
-				err := &TransitionError{
-					Msg:      "no progress waiting for state transition",
-					Name:     s.Name,
-					Status:   status,
-					WaitHint: waitHint,
-					Duration: time.Since(start),
-				}
-				return status, err
-			}
-
 		// Exceeded our timeout
 		case time.Since(start) > Timeout:
 			err := &TransitionError{
