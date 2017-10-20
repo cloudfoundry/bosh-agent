@@ -14,6 +14,12 @@ const (
 type Partition struct {
 	SizeInBytes uint64
 	Type        PartitionType
+	SectorInfo  *PartitionSectorInfo
+}
+
+type PartitionSectorInfo struct {
+	Start         uint64
+	SizeInSectors uint64
 }
 
 type Partitioner interface {

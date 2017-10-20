@@ -18,7 +18,7 @@ import (
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
 	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	boshlogfake "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
@@ -30,7 +30,6 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("LinuxPlatform", describeLinuxPlatform)
@@ -52,7 +51,7 @@ func describeLinuxPlatform() {
 		certManager                *fakecert.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
-		fakeAuditLogger            *fakeplat.FakeAuditLogger
+		fakeAuditLogger            *boshlogfake.FakeAuditLogger
 
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
 
@@ -60,11 +59,11 @@ func describeLinuxPlatform() {
 		stateErr error
 		options  LinuxOptions
 
-		logger boshlog.Logger
+		logger *boshlogfake.FakeLogger
 	)
 
 	BeforeEach(func() {
-		logger = boshlog.NewLogger(boshlog.LevelNone)
+		logger = &boshlogfake.FakeLogger{}
 
 		collector = &fakestats.FakeCollector{}
 		fs = fakesys.NewFakeFileSystem()
@@ -82,7 +81,7 @@ func describeLinuxPlatform() {
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
-		fakeAuditLogger = fakeplat.NewFakeAuditLogger()
+		fakeAuditLogger = boshlogfake.NewFakeAuditLogger()
 
 		state, stateErr = NewBootstrapState(fs, "/agent-state.json")
 		Expect(stateErr).NotTo(HaveOccurred())
@@ -98,6 +97,12 @@ func describeLinuxPlatform() {
 		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*", []string{
 			"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
 		})
+
+		blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "512"}
+		cmdRunner.AddCmdResult("blockdev --getss /dev/xvda", blockdevLogicalSectorSizeResult)
+
+		blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "4096"}
+		cmdRunner.AddCmdResult("blockdev --getpbss /dev/xvda", blockdevPhysicalSectorSizeResult)
 	})
 
 	JustBeforeEach(func() {
@@ -237,6 +242,9 @@ bosh_foobar:...`
 			})
 
 			It("runs growpart and resize2fs for the right root device number", func() {
+				blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "512"}
+				cmdRunner.AddCmdResult("blockdev --getss /dev/sda", blockdevLogicalSectorSizeResult)
+
 				err := platform.SetupEphemeralDiskWithPath("/dev/sda", nil)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -254,9 +262,9 @@ bosh_foobar:...`
 				err = platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "2"}))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda2"}))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(5))
+				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"growpart", "/dev/sda", "2"}))
+				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"resize2fs", "-f", "/dev/sda2"}))
 			})
 
 			It("returns error if it can't find the root device", func() {
@@ -677,21 +685,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				Expect(mounter.SwapOnPartitionPaths[0]).To(Equal("/dev/xvda1"))
 			})
 
-			It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
-				memSizeInBytes := uint64(1024 * 1024 * 1024)
-				diskSizeInBytes := 2*memSizeInBytes + 64
-				fakePartitioner := partitioner
-				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
-				collector.MemStats.Total = memSizeInBytes
-
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
-					{SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
-				}))
-			})
-
 			It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
 				memSizeInBytes := uint64(1024 * 1024 * 1024)
 				diskSizeInBytes := 2*memSizeInBytes - 64
@@ -702,9 +695,291 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
-					{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+					{
+						SizeInBytes: diskSizeInBytes / 2,
+						Type:        boshdisk.PartitionTypeSwap,
+						SectorInfo: &boshdisk.PartitionSectorInfo{
+							Start:         128,
+							SizeInSectors: 2097152,
+						},
+					},
+					{
+						SizeInBytes: diskSizeInBytes / 2,
+						Type:        boshdisk.PartitionTypeLinux,
+						SectorInfo: &boshdisk.PartitionSectorInfo{
+							Start:         2097280,
+							SizeInSectors: 2097023,
+						},
+					},
 				}))
+			})
+
+			Context("when there is not enough sectors for partitioning", func() {
+				It("it does not return any SectorInfo, and it logs the error message", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := uint64((128 * 512) + 1)
+
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := act()
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: 32768,
+							Type:        boshdisk.PartitionTypeSwap,
+							SectorInfo:  nil,
+						},
+						{
+							SizeInBytes: 32769,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Calculating sector information for partition: 'swap': No more sectors remaining for this partition`))
+				})
+			})
+
+			Context("when an error occurs while getting the size of disk logical sector", func() {
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Error: errors.New("Failed to get logical sector size.")}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/xvdb", blockdevLogicalSectorSizeResult)
+				})
+
+				It("it does not return any SectorInfo, and it logs the error message", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := uint64((2 * memSizeInBytes) + 64)
+
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: memSizeInBytes,
+							Type:        boshdisk.PartitionTypeSwap,
+							SectorInfo:  nil,
+						},
+						{
+							SizeInBytes: diskSizeInBytes - memSizeInBytes,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Shelling out to blockdev when getting logical sector size`))
+				})
+			})
+
+			Context("when an error occurs while converting the size of disk logical sector", func() {
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "not a number"}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/xvdb", blockdevLogicalSectorSizeResult)
+
+				})
+
+				It("it does not return any SectorInfo, and it logs the error message", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := uint64((2 * memSizeInBytes) + 64)
+
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: memSizeInBytes,
+							Type:        boshdisk.PartitionTypeSwap,
+							SectorInfo:  nil,
+						},
+						{
+							SizeInBytes: diskSizeInBytes - memSizeInBytes,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Converting logical sector size to integer`))
+				})
+			})
+
+			Context("when an error occurs while getting the size of disk physical sector", func() {
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "512"}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/xvdb", blockdevLogicalSectorSizeResult)
+
+					blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Error: errors.New("Failed to get logical sector size.")}
+					cmdRunner.AddCmdResult("blockdev --getpbss /dev/xvdb", blockdevPhysicalSectorSizeResult)
+				})
+
+				It("it does not return any SectorInfo, and it logs the error message", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := uint64((2 * memSizeInBytes) + 64)
+
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: memSizeInBytes,
+							Type:        boshdisk.PartitionTypeSwap,
+							SectorInfo:  nil,
+						},
+						{
+							SizeInBytes: diskSizeInBytes - memSizeInBytes,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Shelling out to blockdev when getting physical sector size`))
+				})
+			})
+
+			Context("when an error occurs while converting the size of disk physical sector", func() {
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "512"}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/xvdb", blockdevLogicalSectorSizeResult)
+
+					blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "not a number"}
+					cmdRunner.AddCmdResult("blockdev --getpbss /dev/xvdb", blockdevPhysicalSectorSizeResult)
+				})
+
+				It("it does not return any SectorInfo, and it logs the error message", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := uint64((2 * memSizeInBytes) + 64)
+
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: memSizeInBytes,
+							Type:        boshdisk.PartitionTypeSwap,
+							SectorInfo:  nil,
+						},
+						{
+							SizeInBytes: diskSizeInBytes - memSizeInBytes,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Converting physical sector size to integer`))
+				})
+			})
+
+			Context("the disk has enough space for swap", func() {
+				It("creates a swap the size of the memory and the rest for data", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := uint64((2 * memSizeInBytes) + 64)
+
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: memSizeInBytes,
+							Type:        boshdisk.PartitionTypeSwap,
+							SectorInfo: &boshdisk.PartitionSectorInfo{
+								Start:         128,
+								SizeInSectors: 2097152,
+							},
+						},
+						{
+							SizeInBytes: diskSizeInBytes - memSizeInBytes,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo: &boshdisk.PartitionSectorInfo{
+								Start:         2097280,
+								SizeInSectors: 2097024,
+							},
+						},
+					}))
+				})
+
+				It("creates a swap the size of the memory and the rest for data, when memory size is not aligned", func() {
+					memSizeInBytes := uint64((1024 * 1024 * 1024) + 3)
+					diskSizeInBytes := uint64((2 * memSizeInBytes) + 64)
+
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: memSizeInBytes,
+							Type:        boshdisk.PartitionTypeSwap,
+							SectorInfo: &boshdisk.PartitionSectorInfo{
+								Start:         128,
+								SizeInSectors: 2097160,
+							},
+						},
+						{
+							SizeInBytes: diskSizeInBytes - memSizeInBytes,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo: &boshdisk.PartitionSectorInfo{
+								Start:         2097288,
+								SizeInSectors: 2097016,
+							},
+						},
+					}))
+				})
+			})
+
+			Context("and swap size is not provided", func() {
+				var diskSizeInBytes uint64 = 4096
+
+				It("uses the default swap size options", func() {
+					act = func() error {
+						return platform.SetupEphemeralDiskWithPath("/dev/xvda")
+					}
+					partitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
+					collector.MemStats.Total = 2048
+
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+						{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+					}))
+				})
 			})
 
 			Context("when swap size is specified by user", func() {
@@ -1287,7 +1562,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				})
 			})
 		})
-
 	})
 
 	Describe("SetupRawEphemeralDisks", func() {

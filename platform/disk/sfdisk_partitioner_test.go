@@ -265,4 +265,81 @@ var _ = Describe("sfdiskPartitioner", func() {
 		Expect(fakeclock.SleepCallCount()).To(Equal(19))
 		Expect(len(runner.RunCommands)).To(Equal(25))
 	})
+
+	Context("when partitions have sector info defined", func() {
+		Context("when ALL partitions have sector info defined", func() {
+			It("sfdisk partitions using sector units", func() {
+				runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskEmptyDump})
+				runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
+
+				partitions := []Partition{
+					{
+						Type:        PartitionTypeSwap,
+						SizeInBytes: 512 * 1024 * 1024,
+						SectorInfo: &PartitionSectorInfo{
+							Start:         128,
+							SizeInSectors: 17446744073709551615,
+						},
+					},
+					{
+						Type:        PartitionTypeLinux,
+						SizeInBytes: 1024 * 1024 * 1024,
+						SectorInfo: &PartitionSectorInfo{
+							Start:         17446744073709551734,
+							SizeInSectors: 6000,
+						},
+					},
+					{
+						Type:        PartitionTypeLinux,
+						SizeInBytes: 1024 * 1024 * 1024,
+						SectorInfo: &PartitionSectorInfo{
+							Start:         17446744073709557734,
+							SizeInSectors: 699999,
+						},
+					},
+				}
+
+				partitioner.Partition("/dev/sda", partitions)
+
+				Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
+				Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{"128,17446744073709551615,S\n17446744073709551734,6000,L\n17446744073709557734,699999,L\n", "sfdisk", "-uS", "/dev/sda"}))
+			})
+		})
+
+		Context("when SOME partitions have sector info defined", func() {
+			It("sfdisk partitions using megabytes units", func() {
+				runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskEmptyDump})
+				runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
+
+				partitions := []Partition{
+					{
+						Type:        PartitionTypeSwap,
+						SizeInBytes: 512 * 1024 * 1024,
+						SectorInfo: &PartitionSectorInfo{
+							Start:         128,
+							SizeInSectors: 17446744073709551615,
+						},
+					},
+					{
+						Type:        PartitionTypeLinux,
+						SizeInBytes: 1024 * 1024 * 1024,
+						SectorInfo:  nil,
+					},
+					{
+						Type:        PartitionTypeLinux,
+						SizeInBytes: 1024 * 1024 * 1024,
+						SectorInfo: &PartitionSectorInfo{
+							Start:         17446744073709557734,
+							SizeInSectors: 699999,
+						},
+					},
+				}
+
+				partitioner.Partition("/dev/sda", partitions)
+
+				Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
+				Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
+			})
+		})
+	})
 })
