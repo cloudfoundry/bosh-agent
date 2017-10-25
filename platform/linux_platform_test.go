@@ -1680,9 +1680,9 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/tmp"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1770", "/tmp"}))
 			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/var/tmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/var/tmp"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1770", "/var/tmp"}))
 		})
 
 		It("creates new temp dir", func() {
@@ -1728,7 +1728,7 @@ Number  Start   End     Size    File system  Name             Flags
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/fake-dir/data/root_tmp"}))
+				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1770", "/fake-dir/data/root_tmp"}))
 			})
 
 			Context("mounting root_tmp into /tmp", func() {
