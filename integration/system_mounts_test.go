@@ -87,7 +87,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1770"))
 				})
 
 				It("binds /var/vcap/data/root_tmp on /var/tmp", func() {
@@ -98,7 +98,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /var/tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1770"))
 				})
 			})
 
@@ -117,11 +117,11 @@ var _ = Describe("SystemMounts", func() {
 
 						result, err := testEnvironment.RunCommand("stat -c %a /tmp")
 						Expect(err).ToNot(HaveOccurred())
-						Expect(strings.TrimSpace(result)).To(Equal("770"))
+						Expect(strings.TrimSpace(result)).To(Equal("1770"))
 
 						result, err = testEnvironment.RunCommand("stat -c %a /var/tmp")
 						Expect(err).ToNot(HaveOccurred())
-						Expect(strings.TrimSpace(result)).To(Equal("770"))
+						Expect(strings.TrimSpace(result)).To(Equal("1770"))
 					}
 
 					waitForAgentAndExpectMounts()
@@ -148,7 +148,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1770"))
 				})
 
 				It("has permission 770 on /var/tmp", func() {
@@ -162,7 +162,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /var/tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1770"))
 				})
 			})
 		})
