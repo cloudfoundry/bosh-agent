@@ -36,11 +36,10 @@ func (s *systemInterfaceAddrs) Get() ([]InterfaceAddress, error) {
 				return []InterfaceAddress{}, bosherr.WrapErrorf(err, "Parsing addresses of interface '%s'", iface.Name)
 			}
 
-			if ipv4 := ip.To4(); ipv4 != nil {
-				interfaceAddrs = append(interfaceAddrs, NewSimpleInterfaceAddress(iface.Name, ipv4.String()))
+			if ip.To4() != nil || ip.IsGlobalUnicast() {
+				interfaceAddrs = append(interfaceAddrs, NewSimpleInterfaceAddress(iface.Name, ip.String()))
 			}
 		}
-
 	}
 
 	return interfaceAddrs, nil

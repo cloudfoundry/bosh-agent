@@ -46,13 +46,11 @@ func (r ipResolver) GetPrimaryIPv4(interfaceName string) (*gonet.IPNet, error) {
 			continue
 		}
 
-		// ignore ipv6
-		if ip.IP.To4() == nil {
-			continue
+		// todo dual stack
+		if ip.IP.To4() != nil || ip.IP.IsGlobalUnicast() {
+			return ip, nil
 		}
-
-		return ip, nil
 	}
 
-	return nil, bosherr.Errorf("Failed to find primary IPv4 address for interface '%s'", interfaceName)
+	return nil, bosherr.Errorf("Failed to find primary address for interface '%s'", interfaceName)
 }

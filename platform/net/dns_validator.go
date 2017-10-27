@@ -1,6 +1,7 @@
 package net
 
 import (
+	gonet "net"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -34,6 +35,14 @@ func (d *dnsValidator) Validate(dnsServers []string) error {
 	for _, dnsServer := range dnsServers {
 		if strings.Contains(resolvConfContents, dnsServer) {
 			return nil
+		}
+
+		canonicalIP := gonet.ParseIP(dnsServer)
+
+		if canonicalIP != nil {
+			if strings.Contains(resolvConfContents, canonicalIP.String()) {
+				return nil
+			}
 		}
 	}
 
