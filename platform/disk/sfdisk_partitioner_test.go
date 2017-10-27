@@ -304,10 +304,33 @@ var _ = Describe("sfdiskPartitioner", func() {
 				Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 				Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{"128,17446744073709551615,S\n17446744073709551734,6000,L\n17446744073709557734,,L\n", "sfdisk", "--force", "-uS", "/dev/sda"}))
 			})
+
+			Context("when there is only one partition", func() {
+				It("the partition will take all disk available space no matter the size specified (persistent disk depends on it)", func() {
+					runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskEmptyDump})
+					runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
+
+					partitions := []Partition{
+						{
+							Type:        PartitionTypeLinux,
+							SizeInBytes: 0,
+							SectorInfo: &PartitionSectorInfo{
+								Start:         128,
+								SizeInSectors: 0,
+							},
+						},
+					}
+
+					partitioner.Partition("/dev/sda", partitions)
+
+					Expect(len(runner.RunCommandsWithInput)).To(Equal(1))
+					Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{"128,,L\n", "sfdisk", "--force", "-uS", "/dev/sda"}))
+				})
+			})
 		})
 
 		Context("when SOME partitions have sector info defined", func() {
-			It("sfdisk partitions using megabytes units", func() {
+			It("sfdisk partitions use megabytes units", func() {
 				runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskEmptyDump})
 				runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
 
