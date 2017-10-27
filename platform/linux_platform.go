@@ -1003,6 +1003,14 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			{Type: boshdisk.PartitionTypeLinux},
 		}
 
+		err := p.validatePersistentDiskSectorsCount(realPath, startingLogicalSector)
+
+		if err == nil {
+			partitions[0].SectorInfo = &boshdisk.PartitionSectorInfo{Start: startingLogicalSector}
+		} else {
+			p.logger.Error(logTag, err.Error())
+		}
+
 		diskSize, err := p.diskManager.GetDiskUtil(realPath).GetBlockDeviceSize()
 
 		p.logger.Debug(logTag, "Persistent disk size to be partitioned is: %d, and error is: %v", diskSize, err)
@@ -1048,6 +1056,23 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 
 	if err != nil {
 		return bosherr.WrapError(err, "Writing managed_disk_settings.json")
+	}
+
+	return nil
+}
+
+func (p linux) validatePersistentDiskSectorsCount(persistentDiskDevicePath string, potentialStartingSector uint64) error {
+	logicalSectorSizeInBytes, _, err := p.getSectorSizes(persistentDiskDevicePath)
+
+	if err != nil {
+		return bosherr.WrapError(err, "Getting persistent disk sector sizes")
+	}
+
+	diskSize, err := p.diskManager.GetDiskUtil(persistentDiskDevicePath).GetBlockDeviceSize()
+
+	if uint64(potentialStartingSector*logicalSectorSizeInBytes) > diskSize || err != nil {
+		// When we can't start at our starting sector, fall back to using default.
+		return bosherr.WrapError(err, "Not enough persistent disk space to accommodate starting sector")
 	}
 
 	return nil

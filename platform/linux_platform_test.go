@@ -2305,16 +2305,136 @@ Number  Start   End     Size    File system  Name             Flags
 
 		Context("when the size of the disk is less than 2 terabytes", func() {
 
-			BeforeEach(func() {
-				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
+			Context("when there is enough space for 128 sectors", func() {
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "512"}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/sdf", blockdevLogicalSectorSizeResult)
+
+					blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "4096"}
+					cmdRunner.AddCmdResult("blockdev --getbsz /dev/sdf", blockdevPhysicalSectorSizeResult)
+
+					diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
+					devicePathResolver.RealDevicePath = "/dev/sdf"
+				})
+
+				It("uses fdisk partitioner with sector partitioning", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(diskManager.PartitionerCalled).To(BeTrue())
+					Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
+					Expect(diskManager.FakePartitioner.PartitionDevicePath).To(Equal("/dev/sdf"))
+					Expect(diskManager.FakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: 0,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo: &boshdisk.PartitionSectorInfo{
+								Start:         128,
+								SizeInSectors: 0,
+							},
+						},
+					}))
+				})
 			})
 
-			It("uses fdisk partitioner", func() {
-				err := act()
-				Expect(err).ToNot(HaveOccurred())
+			Context("when there is an error while getting physical sector size", func() {
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "512"}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/sdf", blockdevLogicalSectorSizeResult)
 
-				Expect(diskManager.PartitionerCalled).To(BeTrue())
-				Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
+					blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Error: errors.New("Failed to get physical sector size.")}
+					cmdRunner.AddCmdResult("blockdev --getbsz /dev/sdf", blockdevPhysicalSectorSizeResult)
+
+					diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
+					devicePathResolver.RealDevicePath = "/dev/sdf"
+				})
+
+				It("uses fdisk partitioner but falls back to NOT using sectors for partitioning and logs error message", func() {
+					err := act()
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(diskManager.PartitionerCalled).To(BeTrue())
+					Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
+					Expect(diskManager.FakePartitioner.PartitionDevicePath).To(Equal("/dev/sdf"))
+					Expect(diskManager.FakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: 0,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Getting persistent disk sector sizes: Shelling out to blockdev when getting physical sector size: Failed to get physical sector size`))
+				})
+			})
+
+			Context("when there is an error while getting logical sector size", func() {
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Error: errors.New("Failed to get logical sector size.")}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/sdf", blockdevLogicalSectorSizeResult)
+
+					diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
+					devicePathResolver.RealDevicePath = "/dev/sdf"
+				})
+
+				It("uses fdisk partitioner but falls back to not using sectors for partitioning and logs error message", func() {
+					err := act()
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(diskManager.PartitionerCalled).To(BeTrue())
+					Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
+					Expect(diskManager.FakePartitioner.PartitionDevicePath).To(Equal("/dev/sdf"))
+					Expect(diskManager.FakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: 0,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Getting persistent disk sector sizes: Shelling out to blockdev when getting logical sector size: Failed to get logical sector size`))
+				})
+			})
+
+			Context("when there is NOT enough space for 128 sectors", func() {
+
+				BeforeEach(func() {
+					blockdevLogicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "512"}
+					cmdRunner.AddCmdResult("blockdev --getss /dev/sdf", blockdevLogicalSectorSizeResult)
+
+					blockdevPhysicalSectorSizeResult := fakesys.FakeCmdResult{Stdout: "4096"}
+					cmdRunner.AddCmdResult("blockdev --getbsz /dev/sdf", blockdevPhysicalSectorSizeResult)
+
+					diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(120 * 512)
+					devicePathResolver.RealDevicePath = "/dev/sdf"
+				})
+
+				It("uses fdisk partitioner but falls back to not using sectors for partitioning and logs error message", func() {
+					err := act()
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(diskManager.PartitionerCalled).To(BeTrue())
+					Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
+					Expect(diskManager.FakePartitioner.PartitionDevicePath).To(Equal("/dev/sdf"))
+					Expect(diskManager.FakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{
+							SizeInBytes: 0,
+							Type:        boshdisk.PartitionTypeLinux,
+							SectorInfo:  nil,
+						},
+					}))
+
+					errorMsgTag, sectorPartitionError, _ := logger.ErrorArgsForCall(0)
+
+					Expect(errorMsgTag).To(Equal("linuxPlatform"))
+					Expect(sectorPartitionError).To(ContainSubstring(`Not enough persistent disk space to accommodate starting sector`))
+				})
 			})
 		})
 
