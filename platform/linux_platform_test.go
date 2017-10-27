@@ -760,7 +760,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
 					collector.MemStats.Total = memSizeInBytes
 
-					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb", nil)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
@@ -798,7 +798,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
 					collector.MemStats.Total = memSizeInBytes
 
-					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb", nil)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
@@ -838,7 +838,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
 					collector.MemStats.Total = memSizeInBytes
 
-					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb", nil)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
@@ -878,7 +878,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvdb"] = diskSizeInBytes
 					collector.MemStats.Total = memSizeInBytes
 
-					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb")
+					err := platform.SetupEphemeralDiskWithPath("/dev/xvdb", nil)
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
@@ -968,7 +968,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 				It("uses the default swap size options", func() {
 					act = func() error {
-						return platform.SetupEphemeralDiskWithPath("/dev/xvda")
+						return platform.SetupEphemeralDiskWithPath("/dev/xvda", nil)
 					}
 					partitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
 					collector.MemStats.Total = 2048
