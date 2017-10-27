@@ -40,7 +40,6 @@ const (
 	userRootLogDirPermissions = os.FileMode(0775)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
 	blobsDirPermissions       = os.FileMode(0700)
-	systemTmpDirPermissions   = os.FileMode(0770)
 
 	sshDirPermissions          = os.FileMode(0700)
 	sshAuthKeysFilePermissions = os.FileMode(0600)
@@ -1014,7 +1013,7 @@ func (p linux) changeTmpDirPermissions(path string) error {
 		return bosherr.WrapErrorf(err, "chown %s", path)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", fmt.Sprintf("%#o", systemTmpDirPermissions), path)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "1770", path)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chmod %s", path)
 	}
