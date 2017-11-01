@@ -499,22 +499,9 @@ func disableWindowsUpdates() error {
 	return nil
 }
 
-func closeWinRMPort() error {
-	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "delete", "rule", "localport=5985", "dir=in", "protocol=TCP", "name=all")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("(%s): %s", err, string(out))
-	}
-
-	return nil
-}
-
 func setupRuntimeConfiguration() error {
 	if err := disableWindowsUpdates(); err != nil {
 		return fmt.Errorf("disabling updates: %s", err)
-	}
-	if err := closeWinRMPort(); err != nil {
-		return fmt.Errorf("closing WinRM port(5985): %s", err)
 	}
 	return nil
 }
