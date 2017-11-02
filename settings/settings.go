@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-agent/platform/disk"
-	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 type DiskAssociations []DiskAssociation
