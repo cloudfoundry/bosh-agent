@@ -7,6 +7,13 @@ type FakeMounter struct {
 	MountMountOptions   [][]string
 	MountErr            error
 
+	MountFilesystemCalled         bool
+	MountFilesystemPartitionPaths []string
+	MountFilesystemMountPoints    []string
+	MountFilesystemFstypes        []string
+	MountFilesystemMountOptions   [][]string
+	MountFilesystemErr            error
+
 	RemountInPlaceCalled       bool
 	RemountInPlaceMountPoints  []string
 	RemountInPlaceMountOptions [][]string
@@ -45,6 +52,15 @@ func (m *FakeMounter) Mount(partitionPath, mountPoint string, mountOptions ...st
 	m.MountMountPoints = append(m.MountMountPoints, mountPoint)
 	m.MountMountOptions = append(m.MountMountOptions, mountOptions)
 	return m.MountErr
+}
+
+func (m *FakeMounter) MountFilesystem(partitionPath, mountPoint, fstype string, mountOptions ...string) error {
+	m.MountFilesystemCalled = true
+	m.MountFilesystemPartitionPaths = append(m.MountFilesystemPartitionPaths, partitionPath)
+	m.MountFilesystemMountPoints = append(m.MountFilesystemMountPoints, mountPoint)
+	m.MountFilesystemFstypes = append(m.MountFilesystemFstypes, fstype)
+	m.MountFilesystemMountOptions = append(m.MountFilesystemMountOptions, mountOptions)
+	return m.MountFilesystemErr
 }
 
 func (m *FakeMounter) RemountAsReadonly(mountPoint string) (err error) {

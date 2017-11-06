@@ -23,42 +23,61 @@ var _ = Describe("linuxBindMounter", func() {
 		mounter = NewLinuxBindMounter(delegateMounter)
 	})
 
-	Describe("Mount", func() {
+	Describe("MountFilesystem", func() {
 		Context("when mounting regular directory", func() {
-			It("delegates to mounter and adds --bind option to mount as a bind-mount", func() {
-				delegateMounter.MountErr = delegateErr
+			It("delegates to mounter and adds 'bind' option to mount as a bind-mount", func() {
+				delegateMounter.MountFilesystemErr = delegateErr
 
-				err := mounter.Mount("fake-partition-path", "fake-mount-path", "fake-opt1")
+				err := mounter.MountFilesystem("fake-partition-path", "fake-mount-path", "awesomefs", "fake-opt1")
 
 				// Outputs
 				Expect(err).To(Equal(delegateErr))
 
 				// Inputs
-				Expect(delegateMounter.MountPartitionPaths).To(Equal([]string{"fake-partition-path"}))
-				Expect(delegateMounter.MountMountPoints).To(Equal([]string{"fake-mount-path"}))
-				Expect(delegateMounter.MountMountOptions).To(Equal([][]string{{"fake-opt1", "--bind"}}))
+				Expect(delegateMounter.MountFilesystemPartitionPaths).To(Equal([]string{"fake-partition-path"}))
+				Expect(delegateMounter.MountFilesystemMountPoints).To(Equal([]string{"fake-mount-path"}))
+				Expect(delegateMounter.MountFilesystemFstypes).To(Equal([]string{"awesomefs"}))
+				Expect(delegateMounter.MountFilesystemMountOptions).To(Equal([][]string{{"fake-opt1", "bind"}}))
 			})
 		})
 
 		Context("when mounting tmpfs", func() {
-			It("delegates to mounter and does not adds --bind option to mount as a bind-mount", func() {
-				delegateMounter.MountErr = delegateErr
+			It("delegates to mounter and does not add 'bind' option to mount as a bind-mount", func() {
+				delegateMounter.MountFilesystemErr = delegateErr
 
-				err := mounter.Mount("tmpfs", "fake-mount-path", "fake-opt1")
+				err := mounter.MountFilesystem("somesrc", "fake-mount-path", "tmpfs", "fake-opt1")
 
 				// Outputs
 				Expect(err).To(Equal(delegateErr))
 
 				// Inputs
-				Expect(delegateMounter.MountPartitionPaths).To(Equal([]string{"tmpfs"}))
-				Expect(delegateMounter.MountMountPoints).To(Equal([]string{"fake-mount-path"}))
-				Expect(delegateMounter.MountMountOptions).To(Equal([][]string{{"fake-opt1"}}))
+				Expect(delegateMounter.MountFilesystemPartitionPaths).To(Equal([]string{"somesrc"}))
+				Expect(delegateMounter.MountFilesystemMountPoints).To(Equal([]string{"fake-mount-path"}))
+				Expect(delegateMounter.MountFilesystemFstypes).To(Equal([]string{"tmpfs"}))
+				Expect(delegateMounter.MountFilesystemMountOptions).To(Equal([][]string{{"fake-opt1"}}))
 			})
 		})
 	})
 
+	Describe("Mount", func() {
+		It("delegates to mounter with empty string filesystem type (so that it can be inferred)", func() {
+			delegateMounter.MountFilesystemErr = delegateErr
+
+			err := mounter.Mount("fake-partition-path", "fake-mount-path", "fake-opt1")
+
+			// Outputs
+			Expect(err).To(Equal(delegateErr))
+
+			// Inputs
+			Expect(delegateMounter.MountFilesystemPartitionPaths).To(Equal([]string{"fake-partition-path"}))
+			Expect(delegateMounter.MountFilesystemMountPoints).To(Equal([]string{"fake-mount-path"}))
+			Expect(delegateMounter.MountFilesystemFstypes).To(Equal([]string{""}))
+			Expect(delegateMounter.MountFilesystemMountOptions).To(Equal([][]string{{"fake-opt1", "bind"}}))
+		})
+	})
+
 	Describe("RemountAsReadonly", func() {
-		It("does not delegate to mounter because remount with --bind does not work", func() {
+		It("does not delegate to mounter because remount with 'bind' does not work", func() {
 			err := mounter.RemountAsReadonly("fake-path")
 			Expect(err).To(BeNil())
 			Expect(delegateMounter.RemountAsReadonlyCalled).To(BeFalse())
@@ -66,7 +85,7 @@ var _ = Describe("linuxBindMounter", func() {
 	})
 
 	Describe("Remount", func() {
-		It("delegates to mounter and adds --bind option to mount as a bind-mount", func() {
+		It("delegates to mounter and adds 'bind' option to mount as a bind-mount", func() {
 			delegateMounter.RemountErr = delegateErr
 
 			err := mounter.Remount("fake-from-path", "fake-to-path", "fake-opt1")
@@ -77,7 +96,7 @@ var _ = Describe("linuxBindMounter", func() {
 			// Inputs
 			Expect(delegateMounter.RemountFromMountPoint).To(Equal("fake-from-path"))
 			Expect(delegateMounter.RemountToMountPoint).To(Equal("fake-to-path"))
-			Expect(delegateMounter.RemountMountOptions).To(Equal([]string{"fake-opt1", "--bind"}))
+			Expect(delegateMounter.RemountMountOptions).To(Equal([]string{"fake-opt1", "bind"}))
 		})
 	})
 

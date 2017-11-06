@@ -1583,10 +1583,11 @@ Number  Start   End     Size    File system  Name             Flags
 				err := platform.SetupDataDir()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
-				Expect(mounter.MountPartitionPaths[0]).To(Equal("tmpfs"))
-				Expect(mounter.MountMountPoints[0]).To(Equal("/fake-dir/data/sys/run"))
-				Expect(mounter.MountMountOptions[0]).To(Equal([]string{"-t", "tmpfs", "-o", "size=1m"}))
+				Expect(len(mounter.MountFilesystemPartitionPaths)).To(Equal(1))
+				Expect(mounter.MountFilesystemPartitionPaths[0]).To(Equal("tmpfs"))
+				Expect(mounter.MountFilesystemMountPoints[0]).To(Equal("/fake-dir/data/sys/run"))
+				Expect(mounter.MountFilesystemFstypes[0]).To(Equal("tmpfs"))
+				Expect(mounter.MountFilesystemMountOptions[0]).To(Equal([]string{"size=1m"}))
 			})
 
 			It("returns an error if creation of mount point fails", func() {
@@ -1598,7 +1599,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns an error if mounting tmpfs fails", func() {
-				mounter.MountErr = errors.New("fake-mount-error")
+				mounter.MountFilesystemErr = errors.New("fake-mount-error")
 
 				err := platform.SetupDataDir()
 				Expect(err).To(HaveOccurred())
@@ -1621,17 +1622,17 @@ Number  Start   End     Size    File system  Name             Flags
 			It("mounts the /home dir", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mounter.MountCalled).To(BeTrue())
-				Expect(mounter.MountPartitionPaths).To(ContainElement("/home"))
-				Expect(mounter.MountMountPoints).To(ContainElement("/home"))
-				Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
+				Expect(mounter.MountFilesystemCalled).To(BeTrue())
+				Expect(mounter.MountFilesystemPartitionPaths).To(ContainElement("/home"))
+				Expect(mounter.MountFilesystemMountPoints).To(ContainElement("/home"))
+				Expect(mounter.MountFilesystemMountOptions).To(ContainElement([]string{"bind"}))
 				Expect(mounter.RemountInPlaceCalled).To(BeTrue())
 				Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/home"))
-				Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev"}))
+				Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"nodev"}))
 			})
 
 			It("return error if it cannot mount", func() {
-				mounter.MountErr = errors.New("fake-mount-error")
+				mounter.MountFilesystemErr = errors.New("fake-mount-error")
 				err := act()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
@@ -1643,7 +1644,7 @@ Number  Start   End     Size    File system  Name             Flags
 				err := act()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-remount-error"))
-				Expect(mounter.MountCalled).To(BeTrue())
+				Expect(mounter.MountFilesystemCalled).To(BeTrue())
 			})
 		})
 
@@ -1741,13 +1742,13 @@ Number  Start   End     Size    File system  Name             Flags
 						err := act()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_tmp"))
-						Expect(mounter.MountMountPoints).To(ContainElement("/tmp"))
-						Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
+						Expect(mounter.MountFilesystemPartitionPaths).To(ContainElement("/fake-dir/data/root_tmp"))
+						Expect(mounter.MountFilesystemMountPoints).To(ContainElement("/tmp"))
+						Expect(mounter.MountFilesystemMountOptions).To(ContainElement([]string{"bind"}))
 
 						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
 						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/tmp"))
-						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"nodev", "noexec", "nosuid"}))
 					})
 
 					It("changes permissions for the system /tmp folder", func() {
@@ -1786,7 +1787,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
 						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/tmp"))
-						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"nodev", "noexec", "nosuid"}))
 					})
 
 					It("does not create new tmp filesystem", func() {
@@ -1844,14 +1845,14 @@ Number  Start   End     Size    File system  Name             Flags
 						err := act()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(len(mounter.MountPartitionPaths)).To(Equal(2))
-						Expect(mounter.MountPartitionPaths[1]).To(Equal("/fake-dir/data/root_tmp"))
-						Expect(mounter.MountMountPoints[1]).To(Equal("/var/tmp"))
-						Expect(mounter.MountMountOptions[1]).To(ConsistOf("--bind"))
+						Expect(len(mounter.MountFilesystemPartitionPaths)).To(Equal(2))
+						Expect(mounter.MountFilesystemPartitionPaths[1]).To(Equal("/fake-dir/data/root_tmp"))
+						Expect(mounter.MountFilesystemMountPoints[1]).To(Equal("/var/tmp"))
+						Expect(mounter.MountFilesystemMountOptions[1]).To(ConsistOf("bind"))
 
 						Expect(mounter.RemountInPlaceCalled).To(Equal(true))
 						Expect(mounter.RemountInPlaceMountPoints).To(ContainElement("/var/tmp"))
-						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"-o", "nodev", "-o", "noexec", "-o", "nosuid"}))
+						Expect(mounter.RemountInPlaceMountOptions).To(ContainElement([]string{"nodev", "noexec", "nosuid"}))
 					})
 
 					It("changes permissions for the system /var/tmp folder", func() {
@@ -1937,8 +1938,8 @@ Number  Start   End     Size    File system  Name             Flags
 				It("mounts unmounted tmp dirs", func() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					Expect(mounter.MountMountPoints).To(ContainElement("/var/tmp"))
-					Expect(mounter.MountMountPoints).ToNot(ContainElement("/tmp"))
+					Expect(mounter.MountFilesystemMountPoints).To(ContainElement("/var/tmp"))
+					Expect(mounter.MountFilesystemMountPoints).ToNot(ContainElement("/tmp"))
 				})
 			})
 		})
@@ -2049,9 +2050,9 @@ Number  Start   End     Size    File system  Name             Flags
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(mounter.MountPartitionPaths).To(ContainElement("/fake-dir/data/root_log"))
-					Expect(mounter.MountMountPoints).To(ContainElement("/var/log"))
-					Expect(mounter.MountMountOptions).To(ContainElement([]string{"--bind"}))
+					Expect(mounter.MountFilesystemPartitionPaths).To(ContainElement("/fake-dir/data/root_log"))
+					Expect(mounter.MountFilesystemMountPoints).To(ContainElement("/var/log"))
+					Expect(mounter.MountFilesystemMountOptions).To(ContainElement([]string{"bind"}))
 				})
 			})
 
@@ -2158,7 +2159,7 @@ Number  Start   End     Size    File system  Name             Flags
 	Describe("MountPersistentDisk", func() {
 		act := func() error {
 			return platform.MountPersistentDisk(
-				boshsettings.DiskSettings{ID: "fake-unique-id", Path: "fake-volume-id"},
+				boshsettings.DiskSettings{ID: "fake-unique-id", Path: "fake-volume-id", MountOptions: []string{"mntOpt1", "mntOpt2"}},
 				"/mnt/point",
 			)
 		}
@@ -2253,7 +2254,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(fs.GetFileTestStat("/fake-dir/store_migration_target").FileType).To(Equal(fakesys.FakeFileTypeDir))
 						Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
 						Expect(mounter.MountMountPoints).To(Equal([]string{"/fake-dir/store_migration_target"}))
-						Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+						Expect(mounter.MountMountOptions).To(Equal([][]string{{"mntOpt1", "mntOpt2"}}))
 					})
 				})
 			})
@@ -2310,7 +2311,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Expect(err).ToNot(HaveOccurred())
 					Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
 					Expect(mounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
-					Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+					Expect(mounter.MountMountOptions).To(Equal([][]string{{"mntOpt1", "mntOpt2"}}))
 				})
 
 				It("generates the managed disk settings file", func() {
@@ -2434,7 +2435,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Expect(err).ToNot(HaveOccurred())
 					Expect(mounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
 					Expect(mounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
-					Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+					Expect(mounter.MountMountOptions).To(Equal([][]string{{"mntOpt1", "mntOpt2"}}))
 				})
 			})
 
@@ -2467,7 +2468,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
 					Expect(mounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path"})) // no '1' because no partition
 					Expect(mounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
-					Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
+					Expect(mounter.MountMountOptions).To(Equal([][]string{{"mntOpt1", "mntOpt2"}}))
 				})
 
 				It("returns error when mounting fails", func() {

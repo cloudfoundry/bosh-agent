@@ -2,13 +2,13 @@ package disk
 
 import (
 	"path"
+	"strconv"
+	"strings"
 
 	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"strconv"
-	"strings"
 )
 
 type diskUtil struct {

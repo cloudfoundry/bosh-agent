@@ -9,12 +9,16 @@ func NewLinuxBindMounter(delegateMounter Mounter) Mounter {
 }
 
 func (m linuxBindMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) error {
+	return m.MountFilesystem(partitionPath, mountPoint, "", mountOptions...)
+}
+
+func (m linuxBindMounter) MountFilesystem(partitionPath, mountPoint, fstype string, mountOptions ...string) error {
 	// Filesystems should not be bind mounted
-	if partitionPath != "tmpfs" {
-		mountOptions = append(mountOptions, "--bind")
+	if fstype != "tmpfs" {
+		mountOptions = append(mountOptions, "bind")
 	}
 
-	return m.delegateMounter.Mount(partitionPath, mountPoint, mountOptions...)
+	return m.delegateMounter.MountFilesystem(partitionPath, mountPoint, fstype, mountOptions...)
 }
 
 func (m linuxBindMounter) RemountAsReadonly(mountPoint string) error {
@@ -24,7 +28,7 @@ func (m linuxBindMounter) RemountAsReadonly(mountPoint string) error {
 }
 
 func (m linuxBindMounter) Remount(fromMountPoint, toMountPoint string, mountOptions ...string) error {
-	mountOptions = append(mountOptions, "--bind")
+	mountOptions = append(mountOptions, "bind")
 	return m.delegateMounter.Remount(fromMountPoint, toMountPoint, mountOptions...)
 }
 

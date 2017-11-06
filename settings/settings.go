@@ -79,6 +79,7 @@ type DiskSettings struct {
 	HostDeviceID   string
 	Path           string
 	FileSystemType disk.FileSystemType
+	MountOptions   []string
 }
 
 type VM struct {
@@ -115,6 +116,7 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 			}
 
 			diskSettings.FileSystemType = s.Env.PersistentDiskFS
+			diskSettings.MountOptions = s.Env.PersistentDiskMountOptions
 			return diskSettings, true
 		}
 	}
@@ -172,8 +174,9 @@ func (s Settings) GetBlobstore() Blobstore {
 }
 
 type Env struct {
-	Bosh             BoshEnv             `json:"bosh"`
-	PersistentDiskFS disk.FileSystemType `json:"persistent_disk_fs"`
+	Bosh                       BoshEnv             `json:"bosh"`
+	PersistentDiskFS           disk.FileSystemType `json:"persistent_disk_fs"`
+	PersistentDiskMountOptions []string            `json:"persistent_disk_mount_options"`
 }
 
 func (e Env) GetPassword() string {

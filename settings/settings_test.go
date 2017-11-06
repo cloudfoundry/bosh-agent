@@ -56,8 +56,8 @@ var _ = Describe("Settings", func() {
 			})
 
 			Context("when Env is provided", func() {
-				It("gets filesystem type from env", func() {
-					settingsJSON := `{"env": {"persistent_disk_fs": "xfs"}}`
+				It("gets persistent disk settings from env", func() {
+					settingsJSON := `{"env": {"persistent_disk_fs": "xfs", "persistent_disk_mount_options": ["opt1", "opt2"]}}`
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
@@ -71,6 +71,7 @@ var _ = Describe("Settings", func() {
 						Lun:            "fake-disk-lun",
 						HostDeviceID:   "fake-disk-host-device-id",
 						FileSystemType: "xfs",
+						MountOptions:   []string{"opt1", "opt2"},
 					}))
 				})
 

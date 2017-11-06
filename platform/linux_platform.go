@@ -798,7 +798,7 @@ func (p linux) setupRunDir(sysDir string) error {
 			return bosherr.WrapErrorf(err, "Making %s dir", runDir)
 		}
 
-		err = p.diskManager.GetMounter().Mount("tmpfs", runDir, "-t", "tmpfs", "-o", "size=1m")
+		err = p.diskManager.GetMounter().MountFilesystem("tmpfs", runDir, "tmpfs", "size=1m")
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", runDir)
 		}
@@ -823,7 +823,7 @@ func (p linux) SetupHomeDir() error {
 		if err != nil {
 			return bosherr.WrapError(err, "Setup home dir, mounting home")
 		}
-		err = mounter.RemountInPlace("/home", "-o", "nodev")
+		err = mounter.RemountInPlace("/home", "nodev")
 		if err != nil {
 			return bosherr.WrapError(err, "Setup home dir, remount in place")
 		}
@@ -1004,7 +1004,7 @@ func (p linux) bindMountDir(mountSource, mountPoint string) error {
 		return err
 	}
 
-	return bindMounter.RemountInPlace(mountPoint, "-o", "nodev", "-o", "noexec", "-o", "nosuid")
+	return bindMounter.RemountInPlace(mountPoint, "nodev", "noexec", "nosuid")
 }
 
 func (p linux) changeTmpDirPermissions(path string) error {
@@ -1092,7 +1092,7 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		realPath = partitionPath
 	}
 
-	err = p.diskManager.GetMounter().Mount(realPath, mountPoint)
+	err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
 
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
