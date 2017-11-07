@@ -34,7 +34,7 @@ func SetAdministratorUserName(name string) (previous string) {
 	return previous
 }
 
-var _ = FDescribe("closeWinRMPort", func() {
+var _ = Describe("closeWinRMPort", func() {
 
 	var itAddsABlockingRule = func() {
 		err := closeWinRMPort()
