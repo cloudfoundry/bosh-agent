@@ -3,6 +3,7 @@
 package platform
 
 import (
+	"fmt"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo"
@@ -36,51 +37,60 @@ func SetAdministratorUserName(name string) (previous string) {
 
 var _ = Describe("closeWinRMPort", func() {
 
-	var itAddsABlockingRule = func() {
-		err := closeWinRMPort()
+	var itAddsABlockingRule = func(port int) {
+		err := closeWinRMPort(port)
 		Expect(err).ToNot(HaveOccurred())
 
-		cmd := exec.Command("Powershell", "-Command", "Get-NetFirewallRule | where { $_.Action -eq \"Block\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq 5985 }")
-		out, err := cmd.CombinedOutput()
+		cmd := fmt.Sprintf("Get-NetFirewallRule | where { $_.Action -eq \"Block\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }", port)
+		out, err := exec.Command("Powershell", "-Command", cmd).CombinedOutput()
 		s := string(out)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(s).ToNot(BeEmpty())
 	}
-	cmd := exec.Command("Powershell", "-Command", "Get-NetFirewallRule | where { $_.Action -eq \"Allow\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq 5985 }")
-	Context("Firewall rule allowing port 5985 exists", func() {
 
-		BeforeEach(func() {
-			deleteAllWinRMFirewallRules()
+	var testWinRMForPort = func(port int) {
 
-			err := setWinrmFirewall("allow")
-			Expect(err).ToNot(HaveOccurred())
+		Context(fmt.Sprintf("for port %d", port), func() {
+
+			BeforeEach(func() {
+				deleteWinRMFirewallRule(port)
+			})
+
+			JustBeforeEach(func() {
+				err := closeWinRMPort(port)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			Context("firewall rule allowing inbound traffic on the port exists", func() {
+
+				BeforeEach(func() {
+					err := setWinrmFirewall("allow", port)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("removes the firewall rule", func() {
+					cmd := fmt.Sprintf("Get-NetFirewallRule | where { $_.Action -eq \"Allow\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }", port)
+					out, err := exec.Command("Powershell", "-Command", cmd).CombinedOutput()
+					s := string(out)
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(s).To(BeEmpty())
+				})
+
+				It("creates a firewall rule to block inbound traffic on the port", func() {
+					itAddsABlockingRule(port)
+				})
+			})
+
+			Context("firewall rule allowing inbound traffic on the port does NOT exist", func() {
+				It("creates a firewall rule to block inbound traffic on the port", func() {
+					itAddsABlockingRule(port)
+				})
+			})
 		})
+	}
 
-		It("closes the port", func() {
-			err := closeWinRMPort()
-			Expect(err).ToNot(HaveOccurred())
-
-			out, err := cmd.CombinedOutput()
-			s := string(out)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(s).To(BeEmpty())
-		})
-
-		It("adds a blocking rule", itAddsABlockingRule)
-	})
-
-	Context("Firewall rule allowing port 5985 does NOT exist", func() {
-		BeforeEach(func() {
-			deleteAllWinRMFirewallRules()
-		})
-
-		It("does not error", func() {
-			err := closeWinRMPort()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("adds a blocking rule", itAddsABlockingRule)
-	})
+	testWinRMForPort(5985)
+	testWinRMForPort(5986)
 })
