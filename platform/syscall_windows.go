@@ -5,13 +5,14 @@ import (
 	"encoding/ascii85"
 	"errors"
 	"fmt"
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
 	"unsafe"
+
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -498,10 +499,10 @@ func disableWindowsUpdates() error {
 	return nil
 }
 
-func closeWinRMPort() error {
-	deleteAllWinRMFirewallRules()
+func closeWinRMPort(port int) error {
+	deleteWinRMFirewallRule(port)
 
-	err := setWinrmFirewall("Block")
+	err := setWinrmFirewall("Block", port)
 	if err != nil {
 		return fmt.Errorf("could not set winrm firewall: %s", err)
 	}
@@ -509,15 +510,22 @@ func closeWinRMPort() error {
 	return nil
 }
 
-func setWinrmFirewall(action string) error {
-	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "add", "rule", "name=Port5985", "dir=in", fmt.Sprintf("action=%v", action), "localport=5985", "protocol=TCP")
+func closeWinRMPorts() error {
+	if err := closeWinRMPort(5985); err != nil {
+		return err
+	}
+	return closeWinRMPort(5986)
+}
+
+func setWinrmFirewall(action string, port int) error {
+	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "add", "rule", fmt.Sprintf("name=Port%d", port), "dir=in", fmt.Sprintf("action=%v", action), fmt.Sprintf("localport=%d", port), "protocol=TCP")
 	_, err := cmd.CombinedOutput()
 
 	return err
 }
 
-func deleteAllWinRMFirewallRules() error {
-	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "delete", "rule", "localport=5985", "dir=in", "protocol=TCP", "name=all")
+func deleteWinRMFirewallRule(port int) error {
+	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "delete", "rule", fmt.Sprintf("localport=%d", port), "dir=in", "protocol=TCP", "name=all")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("(%s): %s", err, string(out))
@@ -529,8 +537,8 @@ func setupRuntimeConfiguration() error {
 	if err := disableWindowsUpdates(); err != nil {
 		return fmt.Errorf("disabling updates: %s", err)
 	}
-	if err := closeWinRMPort(); err != nil {
-		return fmt.Errorf("closing WinRM port(5985): %s", err)
+	if err := closeWinRMPorts(); err != nil {
+		return fmt.Errorf("closing WinRM port(5985,5986): %s", err)
 	}
 	return nil
 }
