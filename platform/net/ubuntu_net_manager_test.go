@@ -913,6 +913,7 @@ iface ethstatic inet static
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth0", "aa:bb", true))
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth1", "cc:dd", true))
 				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth2", "ee:ff", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-ens4", "yy:zz", true))
 				fs.SetGlob("/sys/class/net/*", interfacePaths)
 			})
 
@@ -933,6 +934,13 @@ iface ethstatic inet static
 					Stdout:     "",
 					Stderr:     "ifup: interface fake-eth2 already configured",
 					ExitStatus: 0,
+				})
+
+				cmdRunner.AddCmdResult("ifup --no-act fake-ens4", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "unknown interface fake-ens4",
+					ExitStatus: 1,
+					Error:      errors.New("unconfigured device"),
 				})
 
 				interfaces, err := netManager.GetConfiguredNetworkInterfaces()

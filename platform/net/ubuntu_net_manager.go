@@ -185,7 +185,7 @@ func (net UbuntuNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 	for _, iface := range interfacesByMacAddress {
 		_, stderr, _, err := net.cmdRunner.RunCommand("ifup", "--no-act", iface)
 		if err != nil {
-			return interfaces, bosherr.WrapErrorf(err, "Getting interface status: '%s'", stderr)
+			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure to up interface: %s", err)
 		}
 
 		if !strings.Contains(stderr, "unknown interface") {
