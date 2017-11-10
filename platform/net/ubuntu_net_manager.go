@@ -3,6 +3,7 @@ package net
 import (
 	"bytes"
 	"path"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -188,7 +189,9 @@ func (net UbuntuNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure to up interface: %s", err)
 		}
 
-		if !strings.Contains(stderr, "unknown interface") {
+		re := regexp.MustCompile("[uU]nknown interface")
+
+		if !re.MatchString(stderr) {
 			interfaces = append(interfaces, iface)
 		}
 	}

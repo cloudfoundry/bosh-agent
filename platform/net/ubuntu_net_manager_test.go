@@ -938,7 +938,7 @@ iface ethstatic inet static
 
 				cmdRunner.AddCmdResult("ifup --no-act fake-ens4", fakesys.FakeCmdResult{
 					Stdout:     "",
-					Stderr:     "unknown interface fake-ens4",
+					Stderr:     "Unknown interface fake-ens4",
 					ExitStatus: 1,
 					Error:      errors.New("unconfigured device"),
 				})
