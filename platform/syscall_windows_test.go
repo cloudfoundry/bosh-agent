@@ -21,76 +21,55 @@ var (
 	DeleteUserProfile = deleteUserProfile
 )
 
-// SetSSHEnabled sets the function called by GetHostPublicKey to determine if
-// ssh is enabled.
-func SetSSHEnabled(new func() error) (previous func() error) {
-	previous = sshEnabled
-	sshEnabled = new
-	return previous
-}
+const firewallRuleByActionAndPortTemplate = "Get-NetFirewallRule | where { $_.Action -eq \"%s\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }"
 
-func SetAdministratorUserName(name string) (previous string) {
-	previous = administratorUserName
-	administratorUserName = name
-	return previous
-}
+func testWinRMForPort(port int) func() {
+	return func() {
+		BeforeEach(func() {
+			deleteWinRMFirewallRule(port)
+		})
 
-var _ = Describe("closeWinRMPort", func() {
+		JustBeforeEach(func() {
+			executeErr := closeWinRMPort(port)
+			Expect(executeErr).ToNot(HaveOccurred())
+		})
 
-	var itAddsABlockingRule = func(port int) {
-		err := closeWinRMPort(port)
-		Expect(err).ToNot(HaveOccurred())
-
-		cmd := fmt.Sprintf("Get-NetFirewallRule | where { $_.Action -eq \"Block\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }", port)
-		out, err := exec.Command("Powershell", "-Command", cmd).CombinedOutput()
-		s := string(out)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(s).ToNot(BeEmpty())
-	}
-
-	var testWinRMForPort = func(port int) {
-
-		Context(fmt.Sprintf("for port %d", port), func() {
-
+		Context("firewall rule allowing inbound traffic on the port exists", func() {
 			BeforeEach(func() {
-				deleteWinRMFirewallRule(port)
-			})
-
-			JustBeforeEach(func() {
-				err := closeWinRMPort(port)
+				err := setWinrmFirewall("allow", port)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			Context("firewall rule allowing inbound traffic on the port exists", func() {
+			It("removes the firewall rule", func() {
+				cmd := fmt.Sprintf(firewallRuleByActionAndPortTemplate, "Allow", port)
+				out, err := exec.Command("Powershell", "-Command", cmd).CombinedOutput()
 
-				BeforeEach(func() {
-					err := setWinrmFirewall("allow", port)
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("removes the firewall rule", func() {
-					cmd := fmt.Sprintf("Get-NetFirewallRule | where { $_.Action -eq \"Allow\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }", port)
-					out, err := exec.Command("Powershell", "-Command", cmd).CombinedOutput()
-					s := string(out)
-
-					Expect(err).NotTo(HaveOccurred())
-					Expect(s).To(BeEmpty())
-				})
-
-				It("creates a firewall rule to block inbound traffic on the port", func() {
-					itAddsABlockingRule(port)
-				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(out)).To(BeEmpty())
 			})
 
-			Context("firewall rule allowing inbound traffic on the port does NOT exist", func() {
-				It("creates a firewall rule to block inbound traffic on the port", func() {
-					itAddsABlockingRule(port)
-				})
+			It("creates a firewall rule to block inbound traffic on the port", func() {
+				cmd := fmt.Sprintf(firewallRuleByActionAndPortTemplate, "Block", port)
+				out, err := exec.Command("Powershell", "-Command", cmd).CombinedOutput()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(out)).ToNot(BeEmpty())
+			})
+		})
+
+		Context("firewall rule allowing inbound traffic on the port does NOT exist", func() {
+			It("creates a firewall rule to block inbound traffic on the port", func() {
+				cmd := fmt.Sprintf(firewallRuleByActionAndPortTemplate, "Block", port)
+				out, err := exec.Command("Powershell", "-Command", cmd).CombinedOutput()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(out)).ToNot(BeEmpty())
 			})
 		})
 	}
+}
 
-	testWinRMForPort(5985)
-	testWinRMForPort(5986)
+var _ = Describe("closeWinRMPort", func() {
+	Context("test port 5985", testWinRMForPort(5985))
+	Context("test port 5986", testWinRMForPort(5986))
 })

@@ -16,7 +16,6 @@ import (
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
-	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )
 
@@ -367,71 +366,6 @@ func toString(p *uint16) string {
 func serviceDisabled(s *mgr.Service) bool {
 	conf, err := s.Config()
 	return err == nil && conf.StartType == mgr.StartDisabled
-}
-
-// Make the function called by GetHostPublicKey configurable for testing.
-var sshEnabled func() error = checkSSH
-
-// checkSSH checks if the sshd and ssh-agent services are installed and running.
-//
-// The services are installed during stemcell creation, but are disabled.  The
-// job windows-utilities-release/enable_ssh job is used to enable ssh.
-func checkSSH() error {
-	const ERROR_SERVICE_DOES_NOT_EXIST syscall.Errno = 0x424
-
-	const msgFmt = "%s service not running and start type is disabled.  " +
-		"To enable ssh on Windows you must run the enable_ssh job from the " +
-		"windows-utilities-release."
-
-	m, err := mgr.Connect()
-	if err != nil {
-		return fmt.Errorf("opening service control manager: %s", err)
-	}
-	defer m.Disconnect()
-
-	sshd, err := m.OpenService("sshd")
-	if err != nil {
-		if err == ERROR_SERVICE_DOES_NOT_EXIST {
-			return errors.New("sshd is not installed")
-		}
-		return fmt.Errorf("opening service sshd: %s", err)
-	}
-	defer sshd.Close()
-
-	agent, err := m.OpenService("ssh-agent")
-	if err != nil {
-		if err == ERROR_SERVICE_DOES_NOT_EXIST {
-			return errors.New("ssh-agent is not installed")
-		}
-		return fmt.Errorf("opening service ssh-agent: %s", err)
-	}
-	defer agent.Close()
-
-	st, err := sshd.Query()
-	if err != nil {
-		return fmt.Errorf("querying status of service (sshd): %s", err)
-	}
-	if st.State != svc.Running {
-		if serviceDisabled(sshd) {
-			return fmt.Errorf(msgFmt, "sshd")
-		}
-		return errors.New("sshd service is not running")
-	}
-
-	// ssh-agent is a dependency of sshd so it should always
-	// be running if sshd is running - check just to make sure.
-	st, err = agent.Query()
-	if err != nil {
-		return fmt.Errorf("querying status of service ssh-agent: %s", err)
-	}
-	if st.State != svc.Running {
-		if serviceDisabled(agent) {
-			return fmt.Errorf(msgFmt, "ssh-agent")
-		}
-		return errors.New("ssh-agent service is not running")
-	}
-
-	return nil
 }
 
 func disableWindowsUpdates() error {
