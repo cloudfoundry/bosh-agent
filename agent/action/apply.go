@@ -9,6 +9,8 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -29,13 +31,13 @@ func NewApply(
 	applier boshappl.Applier,
 	specService boshas.V1Service,
 	settingsService boshsettings.Service,
-	instanceDir string,
+	dirProvider directories.Provider,
 	fs boshsys.FileSystem,
 ) (action ApplyAction) {
 	action.applier = applier
 	action.specService = specService
 	action.settingsService = settingsService
-	action.instanceDir = instanceDir
+	action.instanceDir = dirProvider.InstanceDir()
 	action.fs = fs
 	return
 }
