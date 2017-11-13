@@ -3,7 +3,7 @@ package applyspec
 import (
 	"encoding/json"
 
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 )
 
 type V1ApplySpec struct {
