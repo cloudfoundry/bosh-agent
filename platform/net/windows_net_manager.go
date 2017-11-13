@@ -82,6 +82,13 @@ const (
 
 	GetIPv4InterfaceJSON = `ConvertTo-Json (Get-DnsClientServerAddress | where { $_.AddressFamily -eq 2 }) `
 
+	ResetDNSHostList = `
+[array]$interfaces = Get-DNSClientServerAddress
+foreach($interface in $interfaces) {
+	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
+}
+`
+
 	NicSettingsTemplate = `
 $connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '%s'}).netconnectionid
 netsh interface ip set address $connectionName static %s %s %s
@@ -284,6 +291,12 @@ func (net WindowsNetManager) setupDNS(dnsServers []string) error {
 			if err != nil {
 				return bosherr.WrapError(err, "Setting DNS servers")
 			}
+		}
+	} else {
+		net.logger.Info(net.logTag, "Resetting DNS servers")
+		_, _, _, err := net.runner.RunCommand("-Command", ResetDNSHostList)
+		if err != nil {
+			return bosherr.WrapError(err, "Setting DNS servers")
 		}
 	}
 
