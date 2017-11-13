@@ -12,8 +12,8 @@ import (
 
 const (
 	fileBundleLogTag = "FileBundle"
-	installDirsPerms = os.FileMode(0755)
-	enableDirPerms   = os.FileMode(0755)
+	installDirsPerms = os.FileMode(0750)
+	enableDirPerms   = os.FileMode(0750)
 )
 
 type FileBundle struct {
@@ -44,9 +44,19 @@ func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, erro
 		return nil, "", bosherr.WrapError(err, "Setting permissions on source directory")
 	}
 
+	err = b.fs.Chown(sourcePath, "root:vcap")
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Setting ownership on source directory")
+	}
+
 	err = b.fs.MkdirAll(path.Dir(b.installPath), installDirsPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating parent installation directory")
+	}
+
+	err = b.fs.Chown(path.Dir(b.installPath), "root:vcap")
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Setting ownership on parent installation directory")
 	}
 
 	// Rename MUST be the last possibly-failing operation
@@ -67,6 +77,10 @@ func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error)
 	err := b.fs.MkdirAll(b.installPath, installDirsPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating installation directory")
+	}
+	err = b.fs.Chown(b.installPath, "root:vcap")
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Setting ownership on installation directory")
 	}
 
 	return b.fs, b.installPath, nil
@@ -95,6 +109,11 @@ func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {
 	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), enableDirPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "failed to create enable dir")
+	}
+
+	err = b.fs.Chown(filepath.Dir(b.enablePath), "root:vcap")
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Setting ownership on source directory")
 	}
 
 	err = b.fs.Symlink(b.installPath, b.enablePath)

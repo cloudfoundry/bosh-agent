@@ -69,7 +69,9 @@ var _ = Describe("FileBundle", func() {
 			fileStats := fs.GetFileTestStat(installPath)
 			Expect(fileStats).ToNot(BeNil())
 			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-			Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(fileStats.Username).To(Equal("root"))
+			Expect(fileStats.Groupname).To(Equal("vcap"))
 		})
 
 		It("is idempotent", func() {
@@ -124,7 +126,9 @@ var _ = Describe("FileBundle", func() {
 			fileStats := fs.GetFileTestStat(installPath)
 			Expect(fileStats).ToNot(BeNil())
 			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-			Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(fileStats.Username).To(Equal("root"))
+			Expect(fileStats.Groupname).To(Equal("vcap"))
 		})
 
 		It("return error when bundle cannot be installed", func() {
@@ -204,7 +208,9 @@ var _ = Describe("FileBundle", func() {
 				fileStats = fs.GetFileTestStat("/") // dir holding symlink
 				Expect(fileStats).NotTo(BeNil())
 				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-				Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
+				Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+				Expect(fileStats.Username).To(Equal("root"))
+				Expect(fileStats.Groupname).To(Equal("vcap"))
 			})
 
 			It("is idempotent", func() {
