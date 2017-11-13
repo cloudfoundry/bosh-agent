@@ -97,6 +97,17 @@ func (net WindowsNetManager) configuredInterfacesFile() string {
 	return filepath.Join(net.dirProvider.BoshDir(), "configured_interfaces.txt")
 }
 
+func (net WindowsNetManager) configuredInterfacesFileExists() bool {
+	lockFile := net.configuredInterfacesFile()
+
+	_, err := os.Stat(lockFile)
+	if err == nil || os.IsExist(err) {
+		return true
+	}
+
+	return false
+}
+
 // GetConfiguredNetworkInterfaces returns all of the network interfaces if a
 // previous call to SetupNetworking succeeded as indicated by the presence of
 // a file ("configured_interfaces.txt").
@@ -123,13 +134,9 @@ func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) 
 
 	net.logger.Info(net.logTag, "Getting Configured Network Interfaces...")
 
-	path := net.configuredInterfacesFile()
-	if _, err := net.fs.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			net.logger.Info(net.logTag, "No network interfaces file")
-			return []string{}, nil
-		}
-		return nil, bosherr.WrapErrorf(err, "Statting dns configuration file: %s", path)
+	if !net.configuredInterfacesFileExists() {
+		net.logger.Info(net.logTag, "No network interfaces file")
+		return []string{}, nil
 	}
 
 	net.logger.Info(net.logTag, "Found network interfaces file")
@@ -203,9 +210,14 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, err
 		return err
 	}
 
+	if net.configuredInterfacesFileExists() {
+		return nil
+	}
+
 	if err := net.setupDNS(dnsServers); err != nil {
 		return err
 	}
+
 	if err := net.createConfiguredInterfacesFile(); err != nil {
 		return bosherr.WrapError(err, "Writing configured network interfaces")
 	}

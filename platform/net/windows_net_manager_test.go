@@ -141,6 +141,14 @@ var _ = Describe("WindowsNetManager", func() {
 				ContainElement([]string{"-Command", fmt.Sprintf(NicSettingsTemplate, network2.Mac, network2.IP, network2.Netmask, "")}))
 		})
 
+		It("creates a lock file", func() {
+			err := setupNetworking(boshsettings.Networks{"net1": network1})
+			Expect(err).ToNot(HaveOccurred())
+
+			lockFile := filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
+			Expect(lockFile).To(BeAnExistingFile())
+		})
+
 		It("ignores VIP networks", func() {
 			err := setupNetworking(boshsettings.Networks{"vip": vip})
 			Expect(err).ToNot(HaveOccurred())
@@ -157,6 +165,44 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"static-1": network1})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Configuring interface: fake-err"))
+
+			lockFile := filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
+			Expect(lockFile).ToNot(BeAnExistingFile())
+		})
+	})
+
+	Describe("lock file", func() {
+		network := boshsettings.Network{
+			Type:    "manual",
+			DNS:     []string{"8.8.8.8"},
+			Default: []string{"gateway", "dns"},
+		}
+
+		Context("when the lock file exists", func() {
+			BeforeEach(func() {
+				lockFile := filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
+
+				_, err := fs.OpenFile(lockFile, os.O_CREATE, 0644)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("does not configure DNS", func() {
+				err := setupNetworking(boshsettings.Networks{"net1": network})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(runner.RunCommands).NotTo(ContainElement(
+					[]string{"-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
+			})
+		})
+
+		Context("when the lock file does not exist", func() {
+			It("configures DNS", func() {
+				err := setupNetworking(boshsettings.Networks{"net1": network})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(runner.RunCommands).To(ContainElement(
+					[]string{"-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
+			})
 		})
 	})
 
