@@ -1,7 +1,6 @@
 package net
 
 import (
-	"encoding/json"
 	"fmt"
 	gonet "net"
 	"os"
@@ -51,11 +50,6 @@ type WindowsNetManager struct {
 	dirProvider                   boshdirs.Provider
 }
 
-type WindowsNetworkInterface struct {
-	InterfaceAlias  string   `json:"InterfaceAlias"`
-	ServerAddresses []string `json:"ServerAddresses"`
-}
-
 func NewWindowsNetManager(
 	runner boshsys.CmdRunner,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
@@ -78,11 +72,15 @@ func NewWindowsNetManager(
 }
 
 const (
-	SetInterfaceHostListTemplate = `Set-DnsClientServerAddress -InterfaceAlias "%s" -ServerAddresses %s`
+	SetDNSTemplate = `
+[array]$interfaces = Get-DNSClientServerAddress
+$dns = @("%s")
+foreach($interface in $interfaces) {
+	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ServerAddresses ($dns -join ",")
+}
+`
 
-	GetIPv4InterfaceJSON = `ConvertTo-Json (Get-DnsClientServerAddress | where { $_.AddressFamily -eq 2 }) `
-
-	ResetDNSHostList = `
+	ResetDNSTemplate = `
 [array]$interfaces = Get-DNSClientServerAddress
 foreach($interface in $interfaces) {
 	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
@@ -156,7 +154,7 @@ func (net WindowsNetManager) createConfiguredInterfacesFile() error {
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Creating configured interfaces file: %s", err)
 		}
-		return f.Close()
+		f.Close()
 	}
 	return nil
 }
@@ -252,53 +250,21 @@ func (net WindowsNetManager) buildInterfaces(networks boshsettings.Networks) (
 	return staticConfigs, dhcpConfigs, nil
 }
 
-func contains(stringList []string, el string) bool {
-	if len(stringList) > 0 {
-		for _, item := range stringList {
-			if el == item {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func (net WindowsNetManager) setupDNS(dnsServers []string) error {
 	net.logger.Info(net.logTag, "Setting up DNS...")
 
+	var content string
 	if len(dnsServers) > 0 {
-		interfaceListOutput, _, _, err := net.runner.RunCommand("-Command", GetIPv4InterfaceJSON)
-		var ipv4Interfaces []WindowsNetworkInterface
-		err = json.Unmarshal([]byte(interfaceListOutput), &ipv4Interfaces)
-		if err != nil {
-			return bosherr.WrapError(err, "Failed parsing network interface JSON")
-		}
-
 		net.logger.Info(net.logTag, "Setting DNS servers: %v", dnsServers)
-		for _, ipv4Interface := range ipv4Interfaces {
-			interfaceAlias := ipv4Interface.InterfaceAlias
-			dnsHostList := ipv4Interface.ServerAddresses
-			for _, newDNSServer := range dnsServers {
-				if !contains(dnsHostList, newDNSServer) {
-					dnsHostList = append(dnsHostList, newDNSServer)
-				}
-			}
-			setDNSHostList := fmt.Sprintf(
-				SetInterfaceHostListTemplate,
-				interfaceAlias,
-				strings.Join(dnsHostList, `,`))
-			_, _, _, err = net.runner.RunCommand("-Command", setDNSHostList)
-			if err != nil {
-				return bosherr.WrapError(err, "Setting DNS servers")
-			}
-		}
+		content = fmt.Sprintf(SetDNSTemplate, strings.Join(dnsServers, `","`))
 	} else {
 		net.logger.Info(net.logTag, "Resetting DNS servers")
-		_, _, _, err := net.runner.RunCommand("-Command", ResetDNSHostList)
-		if err != nil {
-			return bosherr.WrapError(err, "Setting DNS servers")
-		}
+		content = ResetDNSTemplate
 	}
 
+	_, _, _, err := net.runner.RunCommand("-Command", content)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting DNS servers")
+	}
 	return nil
 }
