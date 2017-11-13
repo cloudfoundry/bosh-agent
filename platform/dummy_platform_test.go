@@ -9,6 +9,8 @@ import (
 
 	"encoding/json"
 
+	"os"
+
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -20,7 +22,6 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"os"
 )
 
 type mount struct {
@@ -89,7 +90,7 @@ func describeDummyPlatform() {
 		var mountsPath, managedSettingsPath, formattedDisksPath string
 
 		BeforeEach(func() {
-			diskSettings = boshsettings.DiskSettings{ID: "somediskid"}
+			diskSettings = boshsettings.DiskSettings{ID: "somediskid", MountOptions: []string{"mountOption1", "mountOption2"}}
 			mountsPath = filepath.Join(dirProvider.BoshDir(), "mounts.json")
 			managedSettingsPath = filepath.Join(dirProvider.BoshDir(), "managed_disk_settings.json")
 			formattedDisksPath = filepath.Join(dirProvider.BoshDir(), "formatted_disks.json")
@@ -103,7 +104,7 @@ func describeDummyPlatform() {
 			Expect(err).NotTo(HaveOccurred())
 
 			mountsContent, _ = fs.ReadFileString(mountsPath)
-			Expect(mountsContent).To(Equal(`[{"MountDir":"/dev/potato","DiskCid":"somediskid"}]`))
+			Expect(mountsContent).To(Equal(`[{"MountDir":"/dev/potato","MountOptions":["mountOption1","mountOption2"],"DiskCid":"somediskid"}]`))
 		})
 
 		It("Updates the managed disk settings", func() {

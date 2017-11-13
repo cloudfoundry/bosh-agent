@@ -29,6 +29,10 @@ func NewLinuxMounter(
 }
 
 func (m linuxMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) error {
+	return m.MountFilesystem(partitionPath, mountPoint, "", mountOptions...)
+}
+
+func (m linuxMounter) MountFilesystem(partitionPath, mountPoint, fstype string, mountOptions ...string) error {
 	shouldMount, err := m.shouldMount(partitionPath, mountPoint)
 	if !shouldMount {
 		return err
@@ -39,7 +43,13 @@ func (m linuxMounter) Mount(partitionPath, mountPoint string, mountOptions ...st
 	}
 
 	mountArgs := []string{partitionPath, mountPoint}
-	mountArgs = append(mountArgs, mountOptions...)
+	if fstype != "" {
+		mountArgs = append(mountArgs, "-t", fstype)
+	}
+
+	for _, mountOption := range mountOptions {
+		mountArgs = append(mountArgs, "-o", mountOption)
+	}
 
 	_, _, _, err = m.runner.RunCommand("mount", mountArgs...)
 	if err != nil {
@@ -50,7 +60,7 @@ func (m linuxMounter) Mount(partitionPath, mountPoint string, mountOptions ...st
 }
 
 func (m linuxMounter) RemountAsReadonly(mountPoint string) error {
-	return m.Remount(mountPoint, mountPoint, "-o", "ro")
+	return m.Remount(mountPoint, mountPoint, "ro")
 }
 
 func (m linuxMounter) Remount(fromMountPoint, toMountPoint string, mountOptions ...string) error {
@@ -150,7 +160,7 @@ func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (bool, error
 		case mount.PartitionPath == partitionPath && mount.MountPoint != mountPoint && partitionPath != "tmpfs":
 			return false, bosherr.Errorf("Device %s is already mounted to %s, can't mount to %s",
 				mount.PartitionPath, mount.MountPoint, mountPoint)
-		case mount.MountPoint == mountPoint:
+		case mount.MountPoint == mountPoint && partitionPath != "":
 			return false, bosherr.Errorf("Device %s is already mounted to %s, can't mount %s",
 				mount.PartitionPath, mount.MountPoint, partitionPath)
 		}
@@ -165,14 +175,5 @@ func (m linuxMounter) RemountInPlace(mountPoint string, mountOptions ...string) 
 		return bosherr.WrapErrorf(err, "Error finding existing mount point %s", mountPoint)
 	}
 
-	mountArgs := []string{mountPoint, mountPoint}
-	mountOptions = append(mountOptions, "-o", "remount")
-	mountArgs = append(mountArgs, mountOptions...)
-
-	_, _, _, err = m.runner.RunCommand("mount", mountArgs...)
-	if err != nil {
-		return bosherr.WrapError(err, "Shelling out to mount")
-	}
-
-	return nil
+	return m.Mount("", mountPoint, append([]string{"remount"}, mountOptions...)...)
 }

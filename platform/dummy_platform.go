@@ -21,8 +21,9 @@ import (
 )
 
 type mount struct {
-	MountDir string
-	DiskCid  string
+	MountDir     string
+	MountOptions []string
+	DiskCid      string
 }
 
 type formattedDisk struct {
@@ -263,7 +264,11 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 
 	p.fs.WriteFile(filepath.Join(p.dirProvider.BoshDir(), "formatted_disks.json"), diskJSON)
 
-	mounts = append(mounts, mount{MountDir: mountPoint, DiskCid: diskSettings.ID})
+	mounts = append(mounts, mount{
+		MountDir:     mountPoint,
+		MountOptions: diskSettings.MountOptions,
+		DiskCid:      diskSettings.ID,
+	})
 	mountsJSON, err := json.Marshal(mounts)
 	if err != nil {
 		return err
