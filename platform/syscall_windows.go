@@ -433,10 +433,13 @@ func disableWindowsUpdates() error {
 	return nil
 }
 
-func closeWinRMPort(port int) error {
-	deleteWinRMFirewallRule(port)
+func CloseWinRMPort(port int) error {
+	err := DeleteWinRMFirewallRule(port)
+	if err != nil {
+		return err
+	}
 
-	err := setWinrmFirewall("Block", port)
+	err = SetWinRMFirewall("Block", port)
 	if err != nil {
 		return fmt.Errorf("could not set winrm firewall: %s", err)
 	}
@@ -445,20 +448,20 @@ func closeWinRMPort(port int) error {
 }
 
 func closeWinRMPorts() error {
-	if err := closeWinRMPort(5985); err != nil {
+	if err := CloseWinRMPort(5985); err != nil {
 		return err
 	}
-	return closeWinRMPort(5986)
+	return CloseWinRMPort(5986)
 }
 
-func setWinrmFirewall(action string, port int) error {
+func SetWinRMFirewall(action string, port int) error {
 	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "add", "rule", fmt.Sprintf("name=Port%d", port), "dir=in", fmt.Sprintf("action=%v", action), fmt.Sprintf("localport=%d", port), "protocol=TCP")
 	_, err := cmd.CombinedOutput()
 
 	return err
 }
 
-func deleteWinRMFirewallRule(port int) error {
+func DeleteWinRMFirewallRule(port int) error {
 	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "delete", "rule", fmt.Sprintf("localport=%d", port), "dir=in", "protocol=TCP", "name=all")
 	out, err := cmd.CombinedOutput()
 	if err != nil {

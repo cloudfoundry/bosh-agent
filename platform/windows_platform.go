@@ -588,3 +588,14 @@ func SetSSHEnabled(new func() error) (previous func() error) {
 	sshEnabled = new
 	return previous
 }
+
+var (
+	// Export for testing
+	UserHomeDirectory    = userHomeDirectory
+	RandomPassword       = randomPassword
+	ValidWindowsPassword = validPassword
+	LocalAccountNames    = localAccountNames
+
+	// Export for test cleanup
+	DeleteUserProfile = deleteUserProfile
+)

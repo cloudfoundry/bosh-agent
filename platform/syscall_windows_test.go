@@ -1,42 +1,37 @@
 // +build windows
 
-package platform
+package platform_test
 
 import (
 	"fmt"
 	"os/exec"
 
+	. "github.com/cloudfoundry/bosh-agent/platform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var (
-	// Export for testing
-	UserHomeDirectory    = userHomeDirectory
-	RandomPassword       = randomPassword
-	ValidWindowsPassword = validPassword
-	LocalAccountNames    = localAccountNames
-
-	// Export for test cleanup
-	DeleteUserProfile = deleteUserProfile
-)
-
 const firewallRuleByActionAndPortTemplate = "Get-NetFirewallRule | where { $_.Action -eq \"%s\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }"
+
+var (
+	executeErr error
+	port       int
+)
 
 func testWinRMForPort(port int) func() {
 	return func() {
 		BeforeEach(func() {
-			deleteWinRMFirewallRule(port)
+			DeleteWinRMFirewallRule(port)
 		})
 
 		JustBeforeEach(func() {
-			executeErr := closeWinRMPort(port)
+			executeErr = CloseWinRMPort(port)
 			Expect(executeErr).ToNot(HaveOccurred())
 		})
 
 		Context("firewall rule allowing inbound traffic on the port exists", func() {
 			BeforeEach(func() {
-				err := setWinrmFirewall("allow", port)
+				err := SetWinRMFirewall("allow", port)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -69,7 +64,33 @@ func testWinRMForPort(port int) func() {
 	}
 }
 
-var _ = Describe("closeWinRMPort", func() {
+var _ = FDescribe("CloseWinRMPort", func() {
 	Context("test port 5985", testWinRMForPort(5985))
 	Context("test port 5986", testWinRMForPort(5986))
+
+	Context("when the port is invalid", func() {
+		JustBeforeEach(func() {
+			executeErr = CloseWinRMPort(port)
+		})
+
+		Context("and the port is -1", func() {
+			BeforeEach(func() {
+				port = -1
+			})
+
+			It("returns an error", func() {
+				Expect(executeErr.Error()).To(MatchRegexp(`\(.+\): .+`))
+			})
+		})
+
+		Context("and the port is too large", func() {
+			BeforeEach(func() {
+				port = 65536
+			})
+
+			It("returns an error", func() {
+				Expect(executeErr.Error()).To(MatchRegexp(`\(.+\): .+`))
+			})
+		})
+	})
 })
