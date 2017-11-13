@@ -21,7 +21,7 @@ fi
 
 echo "will only continue if version to promote matches $version_must_match ..."
 
-if ! [[ $semver =~ $version_must_match ]]; then
+if ! [[ "${semver}-umask" =~ $version_must_match ]]; then
   echo "version $semver DOES NOT ALIGN with branch $git_branch -- promote step canceled!"
   exit 1
 fi
