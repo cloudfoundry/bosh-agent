@@ -208,15 +208,14 @@ func (p WindowsPlatform) SetUserPassword(user, encryptedPwd string) (err error) 
 		// changed every time the agent restarts - breaking jobs/addons that
 		// set the Administrator password.
 		//
-		path := filepath.Join(p.dirProvider.BoshDir(), "randomized_passwords")
-		if p.fs.FileExists(path) {
+		if boshnet.LockFileExistsForRandomizedPasswords(p.fs, p.dirProvider) {
 			return nil
 		}
 		if err := setRandomPassword(administratorUserName); err != nil {
 			return bosherr.WrapError(err, "Randomized Administrator password")
 		}
-		if err := p.fs.WriteFileString(path, ""); err != nil {
-			return bosherr.WrapError(err, "Writing randomized password file")
+		if err := boshnet.WriteLockFileForRandomizedPasswords(p.fs, p.dirProvider); err != nil {
+			return bosherr.WrapError(err, "Could not set user password")
 		}
 	}
 	return

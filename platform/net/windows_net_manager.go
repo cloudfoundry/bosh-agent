@@ -3,8 +3,6 @@ package net
 import (
 	"fmt"
 	gonet "net"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -93,21 +91,6 @@ netsh interface ip set address $connectionName static %s %s %s
 `
 )
 
-func (net WindowsNetManager) configuredInterfacesFile() string {
-	return filepath.Join(net.dirProvider.BoshDir(), "configured_interfaces.txt")
-}
-
-func (net WindowsNetManager) configuredInterfacesFileExists() bool {
-	lockFile := net.configuredInterfacesFile()
-
-	_, err := os.Stat(lockFile)
-	if err == nil || os.IsExist(err) {
-		return true
-	}
-
-	return false
-}
-
 // GetConfiguredNetworkInterfaces returns all of the network interfaces if a
 // previous call to SetupNetworking succeeded as indicated by the presence of
 // a file ("configured_interfaces.txt").
@@ -134,7 +117,7 @@ func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) 
 
 	net.logger.Info(net.logTag, "Getting Configured Network Interfaces...")
 
-	if !net.configuredInterfacesFileExists() {
+	if !LockFileExistsForConfiguredInterfaces(net.dirProvider) {
 		net.logger.Info(net.logTag, "No network interfaces file")
 		return []string{}, nil
 	}
@@ -150,20 +133,6 @@ func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) 
 		names = append(names, f.Name)
 	}
 	return names, nil
-}
-
-func (net WindowsNetManager) createConfiguredInterfacesFile() error {
-	net.logger.Info(net.logTag, "Creating Configured Network Interfaces file...")
-
-	path := net.configuredInterfacesFile()
-	if _, err := net.fs.Stat(path); os.IsNotExist(err) {
-		f, err := net.fs.OpenFile(path, os.O_CREATE, 0644)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Creating configured interfaces file: %s", err)
-		}
-		f.Close()
-	}
-	return nil
 }
 
 func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks) (
@@ -210,7 +179,7 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, err
 		return err
 	}
 
-	if net.configuredInterfacesFileExists() {
+	if LockFileExistsForConfiguredInterfaces(net.dirProvider) {
 		return nil
 	}
 
@@ -218,7 +187,7 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, err
 		return err
 	}
 
-	if err := net.createConfiguredInterfacesFile(); err != nil {
+	if err := writeLockFileForConfiguredInterfaces(net.logger, net.logTag, net.dirProvider, net.fs); err != nil {
 		return bosherr.WrapError(err, "Writing configured network interfaces")
 	}
 	net.clock.Sleep(5 * time.Second)
