@@ -4,11 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"path/filepath"
+	"time"
+
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	"path/filepath"
-	"time"
 )
 
 var _ = Describe("apply", func() {
@@ -128,15 +129,15 @@ var _ = Describe("apply", func() {
 
 		output, err := testEnvironment.RunCommand("stat /var/vcap/data/sys/run/foobar")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1000/    vcap)"))
+		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/sys/log/foobar")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1000/    vcap)"))
+		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/foobar")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1000/    vcap)"))
+		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 
 		err = testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
@@ -150,20 +151,20 @@ var _ = Describe("apply", func() {
 		Eventually(func() error {
 			_, err = testEnvironment.RunCommand("stat /var/vcap/data/sys/run/foobar")
 			return err
-			//Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1000/    vcap)"))
+			//Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 		}, 2*time.Minute, 1*time.Second).ShouldNot(HaveOccurred())
 
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/sys/run/foobar")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1000/    vcap)"))
+		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/sys/log/foobar")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1000/    vcap)"))
+		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/foobar")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1000/    vcap)"))
+		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 	})
 
 })
