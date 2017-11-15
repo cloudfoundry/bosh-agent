@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	ephemeralDiskPermissions  = os.FileMode(0750)
+	ephemeralDiskPermissions  = os.FileMode(0755)
 	persistentDiskPermissions = os.FileMode(0700)
 
 	logDirPermissions         = os.FileMode(0750)
@@ -752,10 +752,20 @@ func (p linux) scrubEphemeralDisk(contents []string) error {
 func (p linux) SetupDataDir() error {
 	dataDir := p.dirProvider.DataDir()
 
+	_, _, _, err := p.cmdRunner.RunCommand("chown", "root:root", dataDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning /var/vcap/data dir")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", strconv.FormatInt(int64(ephemeralDiskPermissions), 8), dataDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding /var/vcap/data dir")
+	}
+
 	sysDataDir := path.Join(dataDir, "sys")
 
 	logDir := path.Join(sysDataDir, "log")
-	err := p.fs.MkdirAll(logDir, logDirPermissions)
+	err = p.fs.MkdirAll(logDir, logDirPermissions)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Making %s dir", logDir)
 	}
