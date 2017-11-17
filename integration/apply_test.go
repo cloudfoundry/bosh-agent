@@ -143,6 +143,10 @@ var _ = Describe("apply", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(ContainSubstring("Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 
+		output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
+
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/bar")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(ContainSubstring("Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))

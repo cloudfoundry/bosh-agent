@@ -1476,7 +1476,7 @@ Number  Start   End     Size    File system  Name             Flags
 			sysLogStats := fs.GetFileTestStat("/fake-dir/data/packages")
 			Expect(sysLogStats).ToNot(BeNil())
 			Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
-			Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0755)))
 			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/packages"}))
 		})
 

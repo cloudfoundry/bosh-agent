@@ -36,7 +36,7 @@ const (
 	logDirPermissions         = os.FileMode(0750)
 	runDirPermissions         = os.FileMode(0750)
 	jobsDirPermissions        = os.FileMode(0750)
-	packagesDirPermissions    = os.FileMode(0750)
+	packagesDirPermissions    = os.FileMode(0755)
 	userBaseDirPermissions    = os.FileMode(0755)
 	disksDirPermissions       = os.FileMode(0755)
 	userRootLogDirPermissions = os.FileMode(0775)
