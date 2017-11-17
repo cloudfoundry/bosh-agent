@@ -78,7 +78,7 @@ var _ = Describe("apply", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	FIt("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
+	It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
 		_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
 
