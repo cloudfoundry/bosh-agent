@@ -8,6 +8,8 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
+	"os"
+
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -243,6 +245,7 @@ func (app *app) buildApplierAndCompiler(
 		dirProvider.DataDir(),
 		dirProvider.BaseDir(),
 		"jobs",
+		os.FileMode(0750),
 		fileSystem,
 		app.logger,
 	)

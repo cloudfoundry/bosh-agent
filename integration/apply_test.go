@@ -78,7 +78,7 @@ var _ = Describe("apply", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
+	FIt("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
 		_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -138,6 +138,30 @@ var _ = Describe("apply", func() {
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/foobar")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(ContainSubstring("Access: (0770/drwxrwx---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
+
+		output, err = testEnvironment.RunCommand("stat /var/vcap/packages")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
+
+		output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/bar")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
+
+		output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/foo")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
+
+		output, err = testEnvironment.RunCommand("stat /var/vcap/jobs")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
+
+		output, err = testEnvironment.RunCommand("stat /var/vcap/data/jobs/foobar")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("Access: (0750/drwxr-x---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
+
+		output, err = testEnvironment.RunCommand("stat /var/vcap/data/jobs/foobar/*")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("Access: (0750/drwxr-x---)  Uid: (    0/    root)   Gid: ( 1002/    vcap)"))
 
 		err = testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())

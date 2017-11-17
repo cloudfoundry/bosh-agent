@@ -12,25 +12,26 @@ import (
 
 const (
 	fileBundleLogTag = "FileBundle"
-	installDirsPerms = os.FileMode(0750)
-	enableDirPerms   = os.FileMode(0750)
 )
 
 type FileBundle struct {
 	installPath string
 	enablePath  string
+	fileMode    os.FileMode
 	fs          boshsys.FileSystem
 	logger      boshlog.Logger
 }
 
 func NewFileBundle(
 	installPath, enablePath string,
+	fileMode os.FileMode,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) FileBundle {
 	return FileBundle{
 		installPath: installPath,
 		enablePath:  enablePath,
+		fileMode:    fileMode,
 		fs:          fs,
 		logger:      logger,
 	}
@@ -39,7 +40,7 @@ func NewFileBundle(
 func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, error) {
 	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
 
-	err := b.fs.Chmod(sourcePath, installDirsPerms)
+	err := b.fs.Chmod(sourcePath, b.fileMode)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Setting permissions on source directory")
 	}
@@ -49,7 +50,7 @@ func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, erro
 		return nil, "", bosherr.WrapError(err, "Setting ownership on source directory")
 	}
 
-	err = b.fs.MkdirAll(path.Dir(b.installPath), installDirsPerms)
+	err = b.fs.MkdirAll(path.Dir(b.installPath), b.fileMode)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating parent installation directory")
 	}
@@ -74,7 +75,7 @@ func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error)
 
 	// MkdirAll MUST be the last possibly-failing operation
 	// because IsInstalled() relies on installPath presence.
-	err := b.fs.MkdirAll(b.installPath, installDirsPerms)
+	err := b.fs.MkdirAll(b.installPath, b.fileMode)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating installation directory")
 	}
@@ -106,7 +107,7 @@ func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {
 		return nil, "", bosherr.Error("bundle must be installed")
 	}
 
-	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), enableDirPerms)
+	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), b.fileMode)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "failed to create enable dir")
 	}

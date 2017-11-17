@@ -27,7 +27,7 @@ var _ = Describe("FileBundle", func() {
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		fileBundle = NewFileBundle(installPath, enablePath, fs, logger)
+		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, logger)
 	})
 
 	createSourcePath := func() string {
@@ -310,7 +310,7 @@ var _ = Describe("FileBundle", func() {
 				_, _, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 
-				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, fs, logger)
+				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, os.FileMode(0750), fs, logger)
 
 				otherSourcePath := createSourcePath()
 				_, _, err = newerFileBundle.Install(otherSourcePath)
