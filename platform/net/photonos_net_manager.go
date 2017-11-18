@@ -1,11 +1,9 @@
 package net
 
 import (
-	"bytes"
-	"path"
 	"strings"
-	"text/template"
-
+	"strconv"
+	ipnet "net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -69,22 +67,12 @@ func (net photonosNetManager) SetupNetworking(networks boshsettings.Networks, er
 	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
 
-	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)
+	err = net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network configuration")
 	}
 
-	dhcpChanged := false
-	if len(dhcpInterfaceConfigurations) > 0 {
-		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers, dhcpInterfaceConfigurations)
-		if err != nil {
-			return err
-		}
-	}
-
-	if interfacesChanged || dhcpChanged {
-		net.restartNetworkingInterfaces()
-	}
+	net.restartNetworkingInterfaces()
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticInterfaceConfigurations, dhcpInterfaceConfigurations)
 
@@ -112,102 +100,63 @@ func (net photonosNetManager) GetConfiguredNetworkInterfaces() ([]string, error)
 	}
 
 	for _, iface := range interfacesByMacAddress {
-		if net.fs.FileExists(ifcfgFilePathP(iface)) {
-			interfaces = append(interfaces, iface)
-		}
+		interfaces = append(interfaces, iface)
 	}
 
 	return interfaces, nil
 }
 
-const photonosDHCPIfcfgTemplate = `DEVICE={{ .Name }}
-BOOTPROTO=dhcp
-ONBOOT=yes
-PEERDNS=yes
-`
-
-const photonosStaticIfcfgTemplate = `DEVICE={{ .Name }}
-BOOTPROTO=static
-IPADDR={{ .Address }}
-NETMASK={{ .Netmask }}
-BROADCAST={{ .Broadcast }}{{if .IsDefaultForGateway}}
-GATEWAY={{ .Gateway }}{{end}}
-ONBOOT=yes
-PEERDNS=no{{ range .DNSServers }}
-DNS{{ .Index }}={{ .Address }}{{ end }}
-`
-
-type photonosStaticIfcfg struct {
-	*StaticInterfaceConfiguration
-	DNSServers []dnsConfigP
+func (net photonosNetManager) maskToCIDR (netMask string) int {
+        maskSize := ipnet.IPMask(ipnet.ParseIP(netMask).To4())
+	cidr, _ := maskSize.Size()
+	return cidr
 }
 
-type dnsConfigP struct {
-	Index   int
-	Address string
-}
+func (net photonosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) error {
 
-func newDNSConfigsP(dnsServers []string) []dnsConfigP {
-	dnsConfigs := []dnsConfigP{}
-	for i := range dnsServers {
-		dnsConfigs = append(dnsConfigs, dnsConfigP{Index: i + 1, Address: dnsServers[i]})
-	}
-	return dnsConfigs
-}
+	for _, interfaceConfigInfo := range staticInterfaceConfigurations {
 
-func ifcfgFilePathP(name string) string {
-	return path.Join("/etc/sysconfig/network-scripts", "ifcfg-"+name)
-}
-
-func (net photonosNetManager) writeIfcfgFile(name string, t *template.Template, config interface{}) (bool, error) {
-	buffer := bytes.NewBuffer([]byte{})
-
-	err := t.Execute(buffer, config)
-	if err != nil {
-		return false, bosherr.WrapErrorf(err, "Generating '%s' config from template", name)
-	}
-
-	filePath := ifcfgFilePathP(name)
-	changed, err := net.fs.ConvergeFileContents(filePath, buffer.Bytes())
-	if err != nil {
-		return false, bosherr.WrapErrorf(err, "Writing config to '%s'", filePath)
-	}
-
-	return changed, nil
-}
-
-func (net photonosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
-	anyInterfaceChanged := false
-
-	staticConfig := photonosStaticIfcfg{}
-	staticConfig.DNSServers = newDNSConfigsP(dnsServers)
-	staticTemplate := template.Must(template.New("ifcfg").Parse(photonosStaticIfcfgTemplate))
-
-	for i := range staticInterfaceConfigurations {
-		staticConfig.StaticInterfaceConfiguration = &staticInterfaceConfigurations[i]
-
-		changed, err := net.writeIfcfgFile(staticConfig.StaticInterfaceConfiguration.Name, staticTemplate, staticConfig)
+		_, _, _, err := net.cmdRunner.RunCommand("netmgr", "ip4_address", "--set", "--interface", interfaceConfigInfo.Name,
+                                                              "--mode", "static", "--addr", interfaceConfigInfo.Address + "/" + strconv.Itoa(net.maskToCIDR(interfaceConfigInfo.Netmask)),
+                                                              "--gateway", interfaceConfigInfo.Gateway)
 		if err != nil {
-			return false, bosherr.WrapError(err, "Writing static config")
+			return bosherr.WrapErrorf(err, "Setting Address '%s' and Gateway '%s' failed", interfaceConfigInfo.Name, interfaceConfigInfo.Gateway)
 		}
 
-		anyInterfaceChanged = anyInterfaceChanged || changed
+		_, _, _, err = net.cmdRunner.RunCommand("netmgr", "link_info", "--set", "--interface", interfaceConfigInfo.Name,
+                                                              "--macaddr", interfaceConfigInfo.Mac)
+		if err != nil {
+			return bosherr.WrapError(err, "Setting Mac Address failed")
+		}
 	}
 
-	dhcpTemplate := template.Must(template.New("ifcfg").Parse(photonosDHCPIfcfgTemplate))
+	for _, dhcpConfig := range dhcpInterfaceConfigurations {
 
-	for i := range dhcpInterfaceConfigurations {
-		config := &dhcpInterfaceConfigurations[i]
-
-		changed, err := net.writeIfcfgFile(config.Name, dhcpTemplate, config)
+		_, _, _, err := net.cmdRunner.RunCommand("netmgr", "ip4_address", "--set", "--interface", dhcpConfig.Name,
+                                                              "--mode", "dhcp")
 		if err != nil {
-			return false, bosherr.WrapError(err, "Writing dhcp config")
+			return bosherr.WrapErrorf(err, "Setting DHCP as IP option for the interface '%s' failed", dhcpConfig.Name)
 		}
 
-		anyInterfaceChanged = anyInterfaceChanged || changed
 	}
 
-	return anyInterfaceChanged, nil
+	for i, dnsServer := range dnsServers {
+		if i == 0 {
+			_, _, _, err := net.cmdRunner.RunCommand("netmgr", "dns_servers", "--set", "--mode", "static",
+                                                              "--servers", dnsServer)
+			if err != nil {
+				return bosherr.WrapErrorf(err, "Setting DNS Server failed")
+			}
+		} else {
+			_, _, _, err := net.cmdRunner.RunCommand("netmgr", "dns_servers", "--add", "--servers", dnsServer)
+
+			if err != nil {
+				return bosherr.WrapErrorf(err, "Setting DNS Server failed")
+			}
+		}
+	}
+	return nil
+
 }
 
 func (net photonosNetManager) buildInterfaces(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
@@ -237,80 +186,31 @@ func (net photonosNetManager) broadcastIps(addresses []boship.InterfaceAddress, 
 func (net photonosNetManager) restartNetworkingInterfaces() {
 	net.logger.Debug(photonosNetManagerLogTag, "Restarting network interfaces")
 
-	_, _, _, err := net.cmdRunner.RunCommand("service", "network", "restart")
+	_, _, _, err := net.cmdRunner.RunCommand("systemctl", "restart", "systemd-networkd")
 	if err != nil {
 		net.logger.Error(photonosNetManagerLogTag, "Ignoring network restart failure: %s", err.Error())
 	}
 }
 
-// DHCP Config file - /etc/dhcp3/dhclient.conf
-const photonosDHCPConfigTemplate = `# Generated by bosh-agent
-
-option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
-
-send host-name "<hostname>";
-
-request subnet-mask, broadcast-address, time-offset, routers,
-	domain-name, domain-name-servers, domain-search, host-name,
-	netbios-name-servers, netbios-scope, interface-mtu,
-	rfc3442-classless-static-routes, ntp-servers;
-{{ if . }}
-prepend domain-name-servers {{ . }};{{ end }}
-`
-
-func (net photonosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration) (bool, error) {
-	buffer := bytes.NewBuffer([]byte{})
-	t := template.Must(template.New("dhcp-config").Parse(photonosDHCPConfigTemplate))
-
-	// Keep DNS servers in the order specified by the network
-	// because they are added by a *single* DHCP's prepend command
-	dnsServersList := strings.Join(dnsServers, ", ")
-	err := t.Execute(buffer, dnsServersList)
-	if err != nil {
-		return false, bosherr.WrapError(err, "Generating config from template")
-	}
-	dhclientConfigFile := "/etc/dhcp/dhclient.conf"
-	changed, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
-
-	if err != nil {
-		return changed, bosherr.WrapErrorf(err, "Writing to %s", dhclientConfigFile)
-	}
-
-	for i := range dhcpInterfaceConfigurations {
-		name := dhcpInterfaceConfigurations[i].Name
-		interfaceDhclientConfigFile := path.Join("/etc/dhcp/", "dhclient-"+name+".conf")
-		err = net.fs.Symlink(dhclientConfigFile, interfaceDhclientConfigFile)
-		if err != nil {
-			return changed, bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", interfaceDhclientConfigFile, dhclientConfigFile)
-		}
-	}
-
-	return changed, nil
-}
-
 func (net photonosNetManager) detectMacAddresses() (map[string]string, error) {
 	addresses := map[string]string{}
 
-	filePaths, err := net.fs.Glob("/sys/class/net/*")
+	stdout, _, _, err := net.cmdRunner.RunCommand("netmgr", "link_info", "--get")
 	if err != nil {
-		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
+		return addresses, bosherr.WrapError(err, "Getting link info from netmgr failed")
 	}
 
+	linkSlice := strings.Split(stdout, "\n")
 	var macAddress string
-	for _, filePath := range filePaths {
-		isPhysicalDevice := net.fs.FileExists(path.Join(filePath, "device"))
-
-		if isPhysicalDevice {
-			macAddress, err = net.fs.ReadFileString(path.Join(filePath, "address"))
-			if err != nil {
-				return addresses, bosherr.WrapError(err, "Reading mac address from file")
-			}
-
-			macAddress = strings.Trim(macAddress, "\n")
-
-			interfaceName := path.Base(filePath)
-			addresses[macAddress] = interfaceName
+	var interfaceInfo []string
+	for i, linkInfo := range linkSlice {
+		if i == 0 || i == len(linkSlice)-1 {
+			continue
 		}
+                interfaceInfo = strings.Split(linkInfo, "\t")
+		macAddress = strings.Trim(interfaceInfo[1], " ")
+		interfaceName := strings.Trim(interfaceInfo[0], " ")
+		addresses[macAddress] = interfaceName
 	}
 
 	return addresses, nil
