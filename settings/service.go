@@ -60,7 +60,6 @@ func (s *settingsService) PublicSSHKeyForUsername(username string) (string, erro
 }
 
 func (s *settingsService) LoadSettings() error {
-	s.logger.Debug(settingsServiceLogTag,"LoadSettings")
 	s.logger.Debug(settingsServiceLogTag, "Loading settings from fetcher")
 
 	newSettings, fetchErr := s.settingsSource.Settings()
@@ -110,7 +109,6 @@ func (s *settingsService) LoadSettings() error {
 
 // GetSettings returns setting even if it fails to resolve IPs for dynamic networks.
 func (s *settingsService) GetSettings() Settings {
-	s.logger.Info(settingsServiceLogTag, "GetSettings")
 	s.settingsMutex.Lock()
 
 	settingsCopy := s.settings
