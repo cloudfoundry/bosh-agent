@@ -62,7 +62,7 @@ func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
 }
 
 func (app *app) Setup(opts Options) error {
-
+	app.logger.Info(app.logTag, "Setup")
 	config, err := app.loadConfig(opts.ConfigPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Loading config")
@@ -220,6 +220,7 @@ func (app *app) Setup(opts Options) error {
 }
 
 func (app *app) Run() error {
+	app.logger.Info(app.logTag, "Run")
 	err := app.agent.Run()
 	if err != nil {
 		return bosherr.WrapError(err, "Running agent")

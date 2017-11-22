@@ -17,12 +17,13 @@ import (
 const mainLogTag = "main"
 
 func runAgent(opts boshapp.Options, logger logger.Logger) chan error {
+	logger.Info(mainLogTag, "runAgent")
 	errCh := make(chan error, 1)
 
 	go func() {
 		defer logger.HandlePanic("Main")
 
-		logger.Debug(mainLogTag, "Starting agent")
+		logger.Info(mainLogTag, "Starting agent")
 
 		fs := boshsys.NewOsFileSystem(logger)
 		app := boshapp.New(logger, fs)
@@ -45,6 +46,7 @@ func runAgent(opts boshapp.Options, logger logger.Logger) chan error {
 }
 
 func startAgent(logger logger.Logger) error {
+	logger.Info(mainLogTag, "startAgent")
 	opts, err := boshapp.ParseOptions(os.Args)
 	if err != nil {
 		logger.Error(mainLogTag, "Parsing options %s", err.Error())
