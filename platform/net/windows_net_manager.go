@@ -113,12 +113,12 @@ func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) 
 			return nil, bosherr.WrapError(err, "Writing configured network interfaces")
 		}
 
-		initial_networks := boshsettings.Networks{
+		initialNetworks := boshsettings.Networks{
 			"eth0": {
 				Type: boshsettings.NetworkTypeDynamic,
 			},
 		}
-		if err := net.setupNetworkInterfaces(initial_networks); err != nil {
+		if err := net.setupNetworkInterfaces(initialNetworks); err != nil {
 			return nil,bosherr.WrapError(err, "Setting up windows DHCP network")
 		}
 	}
@@ -168,11 +168,7 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, err
 		return bosherr.WrapError(err, "Computing network configuration for dns")
 	}
 
-	if err := net.setupDNS(dnsServers); err != nil {
-		return err
-	}
-
-	return nil
+	return net.setupDNS(dnsServers)
 }
 
 func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks) (
