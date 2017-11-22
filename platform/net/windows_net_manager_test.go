@@ -129,16 +129,6 @@ var _ = Describe("WindowsNetManager", func() {
 				ContainElement([]string{"-Command", fmt.Sprintf(NicSettingsTemplate, network2.Mac, network2.IP, network2.Netmask, "")}))
 		})
 
-		It("creates a lock file", func() {
-			setUpMACs(macAddressDetector, network1)
-
-			err := setupNetworking(boshsettings.Networks{"net1": network1})
-			Expect(err).ToNot(HaveOccurred())
-
-			lockFile := filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
-			Expect(lockFile).To(BeAnExistingFile())
-		})
-
 		It("ignores VIP networks", func() {
 			err := setupNetworking(boshsettings.Networks{"vip": vip})
 			Expect(err).ToNot(HaveOccurred())
@@ -154,7 +144,7 @@ var _ = Describe("WindowsNetManager", func() {
 
 			err := setupNetworking(boshsettings.Networks{"static-1": network1})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Configuring interface: fake-err"))
+			Expect(err.Error()).To(ContainSubstring("Configuring interface: fake-err"))
 
 			lockFile := filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
 			Expect(lockFile).ToNot(BeAnExistingFile())
@@ -176,7 +166,7 @@ var _ = Describe("WindowsNetManager", func() {
 
 		Context("when the lock file exists", func() {
 			BeforeEach(func() {
-				lockFile := filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
+				lockFile := filepath.Join(dirProvider.BoshDir(), "dns")
 
 				_, err := fs.OpenFile(lockFile, os.O_CREATE, 0644)
 				Expect(err).ToNot(HaveOccurred())
