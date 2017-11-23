@@ -1,37 +1,42 @@
 // +build windows
 
-package platform_test
+package platform
 
 import (
 	"fmt"
 	"os/exec"
 
-	. "github.com/cloudfoundry/bosh-agent/platform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-const firewallRuleByActionAndPortTemplate = "Get-NetFirewallRule | where { $_.Action -eq \"%s\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }"
-
 var (
-	executeErr error
-	port       int
+	// Export for testing
+	UserHomeDirectory    = userHomeDirectory
+	RandomPassword       = randomPassword
+	ValidWindowsPassword = validPassword
+	LocalAccountNames    = localAccountNames
+
+	// Export for test cleanup
+	DeleteUserProfile = deleteUserProfile
 )
+
+const firewallRuleByActionAndPortTemplate = "Get-NetFirewallRule | where { $_.Action -eq \"%s\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq %d }"
 
 func testWinRMForPort(port int) func() {
 	return func() {
 		BeforeEach(func() {
-			DeleteWinRMFirewallRule(port)
+			deleteWinRMFirewallRule(port)
 		})
 
 		JustBeforeEach(func() {
-			executeErr = CloseWinRMPort(port)
+			executeErr := closeWinRMPort(port)
 			Expect(executeErr).ToNot(HaveOccurred())
 		})
 
 		Context("firewall rule allowing inbound traffic on the port exists", func() {
 			BeforeEach(func() {
-				err := SetWinRMFirewall("allow", port)
+				err := setWinrmFirewall("allow", port)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -64,33 +69,7 @@ func testWinRMForPort(port int) func() {
 	}
 }
 
-var _ = FDescribe("CloseWinRMPort", func() {
+var _ = Describe("closeWinRMPort", func() {
 	Context("test port 5985", testWinRMForPort(5985))
 	Context("test port 5986", testWinRMForPort(5986))
-
-	Context("when the port is invalid", func() {
-		JustBeforeEach(func() {
-			executeErr = CloseWinRMPort(port)
-		})
-
-		Context("and the port is -1", func() {
-			BeforeEach(func() {
-				port = -1
-			})
-
-			It("returns an error", func() {
-				Expect(executeErr.Error()).To(MatchRegexp(`\(.+\): .+`))
-			})
-		})
-
-		Context("and the port is too large", func() {
-			BeforeEach(func() {
-				port = 65536
-			})
-
-			It("returns an error", func() {
-				Expect(executeErr.Error()).To(MatchRegexp(`\(.+\): .+`))
-			})
-		})
-	})
 })
