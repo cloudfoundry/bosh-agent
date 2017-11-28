@@ -72,12 +72,19 @@ type Disks struct {
 }
 
 type DiskSettings struct {
-	ID             string
-	DeviceID       string
-	VolumeID       string
-	Lun            string
-	HostDeviceID   string
-	Path           string
+	ID           string
+	DeviceID     string
+	VolumeID     string
+	Lun          string
+	HostDeviceID string
+	Path         string
+
+	// iscsi related
+	InitiatorName string
+	Username      string
+	Target        string
+	Password      string
+
 	FileSystemType disk.FileSystemType
 	MountOptions   []string
 }
@@ -109,6 +116,20 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 				if hostDeviceID, ok := hashSettings["host_device_id"]; ok {
 					diskSettings.HostDeviceID = hostDeviceID.(string)
 				}
+
+				if username, ok := hashSettings["username"]; ok {
+					diskSettings.Username = username.(string)
+				}
+				if password, ok := hashSettings["password"]; ok {
+					diskSettings.Password = password.(string)
+				}
+				if initiator, ok := hashSettings["initiator_name"]; ok {
+					diskSettings.InitiatorName = initiator.(string)
+				}
+				if target, ok := hashSettings["target"]; ok {
+					diskSettings.Target = target.(string)
+				}
+
 			} else {
 				// Old CPIs return disk path (string) or volume id (string) as disk settings
 				diskSettings.Path = settings.(string)

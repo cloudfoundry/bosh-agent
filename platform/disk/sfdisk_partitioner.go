@@ -76,6 +76,11 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 			return bosherr.WrapError(err, "Shelling out to restart open-iscsi")
 		}
 
+		_, _, _, err = p.cmdRunner.RunCommand("/etc/init.d/multipath-tools", "restart")
+		if err != nil {
+			return bosherr.WrapError(err, "Restarting multipath after restarting open-iscsi")
+		}
+
 		detectPartitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 			output, _, _, err := p.cmdRunner.RunCommand("dmsetup", "ls")
 			if err != nil {
