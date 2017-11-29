@@ -7,7 +7,6 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
@@ -110,10 +109,9 @@ var _ = Describe("concreteFactory", func() {
 	})
 
 	It("get_state", func() {
-		ntpService := boshntp.NewConcreteService(platform.GetFs(), platform.GetDirProvider())
 		action, err := factory.Create("get_state")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewGetState(settingsService, specService, jobSupervisor, platform.GetVitalsService(), ntpService)))
+		Expect(action).To(Equal(NewGetState(settingsService, specService, jobSupervisor, platform.GetVitalsService())))
 	})
 
 	It("list_disk", func() {

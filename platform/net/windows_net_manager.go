@@ -119,7 +119,7 @@ func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) 
 			},
 		}
 		if err := net.setupNetworkInterfaces(initialNetworks); err != nil {
-			return nil,bosherr.WrapError(err, "Setting up windows DHCP network")
+			return nil, bosherr.WrapError(err, "Setting up windows DHCP network")
 		}
 	}
 
@@ -151,7 +151,7 @@ func (net WindowsNetManager) setupNetworkInterfaces(networks boshsettings.Networ
 }
 
 func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
-	if err :=net.setupNetworkInterfaces(networks); err!=nil {
+	if err := net.setupNetworkInterfaces(networks); err != nil {
 		return bosherr.WrapError(err, "setting up network interfaces")
 	}
 
