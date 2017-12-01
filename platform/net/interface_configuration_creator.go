@@ -169,7 +169,7 @@ func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(netwo
 }
 
 func (creator interfaceConfigurationCreator) createMultipleInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
-	if len(interfacesByMAC) < len(networks) {
+	if !networks.HasInterfaceAlias() && len(interfacesByMAC) < len(networks) {
 		return nil, nil, bosherr.Errorf("Number of network settings '%d' is greater than the number of network devices '%d'", len(networks), len(interfacesByMAC))
 	}
 
@@ -193,6 +193,18 @@ func (creator interfaceConfigurationCreator) createMultipleInterfaceConfiguratio
 		staticConfigs, dhcpConfigs, err = creator.createInterfaceConfiguration(staticConfigs, dhcpConfigs, ifaceName, networkSettings)
 		if err != nil {
 			return nil, nil, bosherr.WrapError(err, "Creating interface configuration")
+		}
+	}
+
+	for _, networkSettings = range networks {
+		if networkSettings.Mac != "" {
+			continue
+		}
+		if networkSettings.Alias != "" {
+			staticConfigs, dhcpConfigs, err = creator.createInterfaceConfiguration(staticConfigs, dhcpConfigs, networkSettings.Alias, networkSettings)
+			if err != nil {
+				return nil, nil, bosherr.WrapError(err, "Creating interface configuration using alias")
+			}
 		}
 	}
 
