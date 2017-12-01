@@ -251,6 +251,14 @@ const (
 	NetworkTypeVIP     NetworkType = "vip"
 )
 
+type Route struct {
+	Destination string
+	Gateway     string
+	Netmask     string
+}
+
+type Routes []Route
+
 type Network struct {
 	Type NetworkType `json:"type"`
 
@@ -266,6 +274,7 @@ type Network struct {
 	Mac string `json:"mac"`
 
 	Preconfigured bool `json:"preconfigured"`
+	Routes Routes `json:"routes,omitempty"`
 }
 
 type Networks map[string]Network

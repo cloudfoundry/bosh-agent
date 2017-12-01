@@ -19,6 +19,7 @@ type StaticInterfaceConfiguration struct {
 	IsDefaultForGateway bool
 	Mac                 string
 	Gateway             string
+	PostUpRoutes        boshsettings.Routes
 }
 
 func (c StaticInterfaceConfiguration) Version6() string {
@@ -64,8 +65,9 @@ func (configs StaticInterfaceConfigurations) HasVersion6() bool {
 }
 
 type DHCPInterfaceConfiguration struct {
-	Name    string
-	Address string
+	Name         string
+	PostUpRoutes boshsettings.Routes
+	Address      string
 }
 
 func (c DHCPInterfaceConfiguration) Version6() string {
@@ -128,8 +130,9 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 	if networkSettings.IsDHCP() || networkSettings.Mac == "" {
 		creator.logger.Debug(creator.logTag, "Using dhcp networking")
 		dhcpConfigs = append(dhcpConfigs, DHCPInterfaceConfiguration{
-			Name:    ifaceName,
-			Address: networkSettings.IP,
+			Name:         ifaceName,
+			PostUpRoutes: networkSettings.Routes,
+			Address:      networkSettings.IP,
 		})
 	} else {
 		creator.logger.Debug(creator.logTag, "Using static networking")
@@ -147,6 +150,7 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 			Broadcast:           broadcastAddress,
 			Mac:                 networkSettings.Mac,
 			Gateway:             networkSettings.Gateway,
+			PostUpRoutes:        networkSettings.Routes,
 		}
 		staticConfigs = append(staticConfigs, conf)
 	}
