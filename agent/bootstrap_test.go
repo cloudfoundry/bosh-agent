@@ -332,19 +332,6 @@ func init() {
 				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["vcap"]))
 			})
 
-			It("sets ntp", func() {
-				settingsService.Settings.Ntp = []string{
-					"0.north-america.pool.ntp.org",
-					"1.north-america.pool.ntp.org",
-				}
-
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(2).To(Equal(len(platform.SetTimeWithNtpServersServers)))
-				Expect("0.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[0]))
-				Expect("1.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[1]))
-			})
-
 			It("setups up monit user", func() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
@@ -355,6 +342,44 @@ func init() {
 				err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.StartMonitStarted).To(BeTrue())
+			})
+
+			Describe("NTP settings", func() {
+				BeforeEach(func() {
+					settingsService.Settings.Ntp = []string{
+						"0.north-america.pool.ntp.org",
+						"1.north-america.pool.ntp.org",
+					}
+
+					settingsService.Settings.Env.Bosh.Ntp = nil
+				})
+
+				Context("when env.bosh.ntp is NOT present", func() {
+					It("falls back to root ntp key in settings", func() {
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(2).To(Equal(len(platform.SetTimeWithNtpServersServers)))
+						Expect("0.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[0]))
+						Expect("1.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[1]))
+					})
+				})
+
+				Context("when env.bosh.ntp is present", func() {
+					BeforeEach(func() {
+						settingsService.Settings.Env.Bosh.Ntp = []string{
+							"2.north-america.pool.ntp.org",
+							"3.north-america.pool.ntp.org",
+						}
+					})
+
+					It("uses env.bosh.ntp values", func() {
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(2).To(Equal(len(platform.SetTimeWithNtpServersServers)))
+						Expect("2.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[0]))
+						Expect("3.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[1]))
+					})
+				})
 			})
 
 			Describe("RemoveDevTools", func() {
