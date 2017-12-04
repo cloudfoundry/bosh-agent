@@ -811,10 +811,56 @@ var _ = Describe("Settings", func() {
 					[]Blobstore{blobstoreLocal},
 					blobstoreLocal),
 
+				Entry("setting.Blobstore is present and env.bosh.Blobstores is provided with a single entry",
+					blobstoreGcs,
+					[]Blobstore{blobstoreLocal},
+					blobstoreLocal),
+
 				Entry("setting.Blobstore is missing and env.bosh.Blobstores has multiple entries",
 					nil,
 					[]Blobstore{blobstoreS3, blobstoreGcs},
 					blobstoreS3),
+
+				Entry("setting.Blobstore and env.bosh.Blobstores both are missing",
+					nil,
+					nil,
+					nil),
+			)
+		})
+
+		Context("#GetNtpServers", func() {
+			ntpSetOne := []string{"a", "b", "c"}
+
+			ntpSetTwo := []string{"d", "e", "f"}
+
+			DescribeTable("agent returning the right blobstore configuration",
+				func(settingsNtp []string, envBoshNtp []string, expectedNtpServers []string) {
+					settings := Settings{
+						Ntp: settingsNtp,
+						Env: Env{
+							Bosh: BoshEnv{
+								Ntp: envBoshNtp,
+							},
+						},
+					}
+
+					Expect(settings.GetNtpServers()).To(Equal(expectedNtpServers))
+				},
+
+				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
+					ntpSetOne,
+					nil,
+					ntpSetOne),
+
+				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
+					nil,
+					ntpSetTwo,
+					ntpSetTwo),
+
+				Entry("setting.Blobstore is present and env.bosh.Blobstores is present",
+					ntpSetOne,
+					ntpSetTwo,
+					ntpSetTwo),
 
 				Entry("setting.Blobstore and env.bosh.Blobstores both are missing",
 					nil,
