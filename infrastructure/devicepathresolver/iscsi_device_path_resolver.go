@@ -2,6 +2,8 @@ package devicepathresolver
 
 import (
 	"fmt"
+	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -12,8 +14,6 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"path"
-	"path/filepath"
 )
 
 // iscsiDevicePathResolver resolves device path by performing Open-iscsi discovery
@@ -50,19 +50,19 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 	var lastDiskID string
 
 	if diskSettings.InitiatorName == "" {
-		return "", false, bosherr.Errorf("ISCSI InitiatorName is not set")
+		return "", false, bosherr.Errorf("iSCSI InitiatorName is not set")
 	}
 
 	if diskSettings.Username == "" {
-		return "", false, bosherr.Errorf("ISCSI Username is not set")
+		return "", false, bosherr.Errorf("iSCSI Username is not set")
 	}
 
 	if diskSettings.Password == "" {
-		return "", false, bosherr.Errorf("ISCSI Password is not set")
+		return "", false, bosherr.Errorf("iSCSI Password is not set")
 	}
 
 	if diskSettings.Target == "" {
-		return "", false, bosherr.Errorf("ISCSI Iface Ipaddress is not set")
+		return "", false, bosherr.Errorf("iSCSI Iface Ipaddress is not set")
 	}
 
 	existingPaths := []string{}
@@ -83,13 +83,18 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 		lines := strings.Split(strings.Trim(result, "\n"), "\n")
 		ispr.logger.Debug(ispr.logTag, "lines: '%+v'", lines)
 		for _, line := range lines {
-			if match, _ := regexp.MatchString("-part1", line); match {
-				exitingPath := path.Join("/dev/mapper", strings.Split(strings.Fields(line)[0], "-")[0])
-				ispr.logger.Debug(ispr.logTag, "exitingPath in lines: '%+v'", exitingPath)
+			exist, err := regexp.MatchString("-part1", line)
+			if err != nil {
+				return "", false, bosherr.WrapError(err, "There is a problem with your regexp: '-part1'. That is used to find existing device")
+			}
+			if exist {
+				existingPath := path.Join("/dev/mapper", strings.Split(strings.Fields(line)[0], "-")[0])
+				ispr.logger.Debug(ispr.logTag, "ExistingPath in lines: '%+v'", existingPath)
 				if lastDiskID == diskSettings.ID {
-					return exitingPath, false, nil
+					ispr.logger.Info(ispr.logTag, "Found existing path '%s'", existingPath)
+					return existingPath, false, nil
 				}
-				existingPaths = append(existingPaths, exitingPath)
+				existingPaths = append(existingPaths, existingPath)
 			}
 		}
 	}
@@ -101,7 +106,7 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 
 	err = ispr.openiscsi.Setup(diskSettings.InitiatorName, diskSettings.Username, diskSettings.Password)
 	if err != nil {
-		return "", false, bosherr.WrapError(err, "Could not setup Open-iscsi")
+		return "", false, bosherr.WrapError(err, "Could not setup Open-iSCSI")
 	}
 
 	err = ispr.openiscsi.Discovery(diskSettings.Target)
@@ -136,11 +141,15 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 
 		lines := strings.Split(strings.Trim(result, "\n"), "\n")
 		for _, line := range lines {
-			if match, _ := regexp.MatchString("-part1", line); !match {
+			exist, err := regexp.MatchString("-part1", line)
+			if err != nil {
+				return "", false, bosherr.WrapError(err, "There is a problem with your regexp: '-part1'. That is used to find existing device")
+			}
+			if !exist {
 				matchedPath := path.Join("/dev/mapper", strings.Fields(line)[0])
 
 				if len(existingPaths) == 0 {
-					ispr.logger.Debug(ispr.logTag, "Found real path '%s'", matchedPath)
+					ispr.logger.Info(ispr.logTag, "Found real path '%s'", matchedPath)
 					return matchedPath, false, nil
 				}
 
@@ -148,7 +157,7 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 					if matchedPath == existingPath {
 						continue
 					} else {
-						ispr.logger.Debug(ispr.logTag, "Found real path '%s'", matchedPath)
+						ispr.logger.Info(ispr.logTag, "Found real path '%s'", matchedPath)
 						return matchedPath, false, nil
 					}
 				}

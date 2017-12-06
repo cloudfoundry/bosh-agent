@@ -10,7 +10,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-type ConcreteOpenIscsiAdmin struct {
+type concreteOpenIscsiAdmin struct {
 	fs     boshsys.FileSystem
 	runner boshsys.CmdRunner
 	logger boshlog.Logger
@@ -18,7 +18,7 @@ type ConcreteOpenIscsiAdmin struct {
 }
 
 func NewConcreteOpenIscsiAdmin(fs boshsys.FileSystem, runner boshsys.CmdRunner, logger boshlog.Logger) OpenIscsi {
-	return ConcreteOpenIscsiAdmin{
+	return concreteOpenIscsiAdmin{
 		fs:     fs,
 		runner: runner,
 		logger: logger,
@@ -26,8 +26,8 @@ func NewConcreteOpenIscsiAdmin(fs boshsys.FileSystem, runner boshsys.CmdRunner, 
 	}
 }
 
-func (iscsi ConcreteOpenIscsiAdmin) Setup(iqn, username, password string) (err error) {
-	iscsi.logger.Debug(iscsi.logtag, "Setup Open-iscsi, initializing /etc/iscsi/initiatorname.iscsi,iscsid.conf")
+func (iscsi concreteOpenIscsiAdmin) Setup(iqn, username, password string) (err error) {
+	iscsi.logger.Info(iscsi.logtag, "Setup Open-iscsi, initializing /etc/iscsi/initiatorname.iscsi,iscsid.conf")
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("Open-iscsi-initiator").Parse(initiatorNameIscsiTemplate))
 
@@ -107,26 +107,26 @@ node.session.iscsi.MaxBurstLength = 16776192
 node.conn[0].iscsi.MaxRecvDataSegmentLength = 65536
 `
 
-func (iscsi ConcreteOpenIscsiAdmin) Start() (err error) {
-	iscsi.logger.Debug(iscsi.logtag, "Start Open-iscsi deamon")
+func (iscsi concreteOpenIscsiAdmin) Start() (err error) {
+	iscsi.logger.Info(iscsi.logtag, "Start Open-iscsi deamon")
 	_, _, _, err = iscsi.runner.RunCommand("/etc/init.d/open-iscsi", "start")
 	return
 }
 
-func (iscsi ConcreteOpenIscsiAdmin) Stop() (err error) {
-	iscsi.logger.Debug(iscsi.logtag, "Stop Open-iscsi deamon")
+func (iscsi concreteOpenIscsiAdmin) Stop() (err error) {
+	iscsi.logger.Info(iscsi.logtag, "Stop Open-iscsi deamon")
 	_, _, _, err = iscsi.runner.RunCommand("/etc/init.d/open-iscsi", "stop")
 	return
 }
 
-func (iscsi ConcreteOpenIscsiAdmin) Restart() (err error) {
-	iscsi.logger.Debug(iscsi.logtag, "Restart Open-iscsi deamon")
+func (iscsi concreteOpenIscsiAdmin) Restart() (err error) {
+	iscsi.logger.Info(iscsi.logtag, "Restart Open-iscsi deamon")
 	_, _, _, err = iscsi.runner.RunCommand("/etc/init.d/open-iscsi", "restart")
 	return
 }
 
-func (iscsi ConcreteOpenIscsiAdmin) Discovery(ipAddress string) (err error) {
-	iscsi.logger.Debug(iscsi.logtag, "Discovering lun against %s", ipAddress)
+func (iscsi concreteOpenIscsiAdmin) Discovery(ipAddress string) (err error) {
+	iscsi.logger.Info(iscsi.logtag, "Discovering lun against %s", ipAddress)
 	_, _, _, err = iscsi.runner.RunCommand(
 		"iscsiadm",
 		"-m",
@@ -139,8 +139,8 @@ func (iscsi ConcreteOpenIscsiAdmin) Discovery(ipAddress string) (err error) {
 	return
 }
 
-func (iscsi ConcreteOpenIscsiAdmin) Login() (err error) {
-	iscsi.logger.Debug(iscsi.logtag, "Iscsiadm session login")
+func (iscsi concreteOpenIscsiAdmin) Login() (err error) {
+	iscsi.logger.Info(iscsi.logtag, "Iscsiadm session login")
 	_, _, _, err = iscsi.runner.RunCommand(
 		"iscsiadm",
 		"-m",
@@ -150,8 +150,8 @@ func (iscsi ConcreteOpenIscsiAdmin) Login() (err error) {
 	return
 }
 
-func (iscsi ConcreteOpenIscsiAdmin) Logout() (err error) {
-	iscsi.logger.Debug(iscsi.logtag, "Iscsiadm session logout")
+func (iscsi concreteOpenIscsiAdmin) Logout() (err error) {
+	iscsi.logger.Info(iscsi.logtag, "Iscsiadm session logout")
 	_, _, _, err = iscsi.runner.RunCommand(
 		"iscsiadm",
 		"-m",

@@ -40,12 +40,12 @@ func (mpr multipathDevicePathResolver) GetRealDevicePath(diskSettings boshsettin
 		timeout,
 	)
 
-	mpr.logger.Debug(mpr.logTag, "Using iscsi resolver to get device real path")
+	mpr.logger.Debug(mpr.logTag, "Using iSCSI resolver to get device real path")
 
 	realPath, timeout, err = mpr.iscsiDevicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
 		return "", timeout, bosherr.WrapError(err, "Resolving mapped device path")
 	}
 
-	return realPath, false, nil
+	return realPath, timeout, nil
 }
