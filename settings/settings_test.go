@@ -836,10 +836,10 @@ var _ = Describe("Settings", func() {
 			DescribeTable("agent returning the right ntp configuration",
 				func(settingsNtp []string, envBoshNtp []string, expectedNtpServers []string) {
 					settings := Settings{
-						Ntp: settingsNtp,
+						NTP: settingsNtp,
 						Env: Env{
 							Bosh: BoshEnv{
-								Ntp: envBoshNtp,
+								NTP: envBoshNtp,
 							},
 						},
 					}

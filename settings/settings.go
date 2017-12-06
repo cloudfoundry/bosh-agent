@@ -28,7 +28,7 @@ type Settings struct {
 	Disks     Disks     `json:"disks"`
 	Env       Env       `json:"env"`
 	Networks  Networks  `json:"networks"`
-	Ntp       []string  `json:"ntp"`
+	NTP       []string  `json:"ntp"`
 	Mbus      string    `json:"mbus"`
 	VM        VM        `json:"vm"`
 }
@@ -174,10 +174,10 @@ func (s Settings) GetBlobstore() Blobstore {
 }
 
 func (s Settings) GetNtpServers() []string {
-	if len(s.Env.Bosh.Ntp) > 0 {
-		return s.Env.Bosh.Ntp
+	if len(s.Env.Bosh.NTP) > 0 {
+		return s.Env.Bosh.NTP
 	}
-	return s.Ntp
+	return s.NTP
 }
 
 type Env struct {
@@ -229,7 +229,7 @@ type BoshEnv struct {
 	Mbus                  MBus        `json:"mbus"`
 	IPv6                  IPv6        `json:"ipv6"`
 	Blobstores            []Blobstore `json:"blobstores"`
-	Ntp                   []string    `json:"ntp"`
+	NTP                   []string    `json:"ntp"`
 }
 
 type MBus struct {

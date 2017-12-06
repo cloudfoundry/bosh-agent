@@ -346,12 +346,12 @@ func init() {
 
 			Describe("NTP settings", func() {
 				BeforeEach(func() {
-					settingsService.Settings.Ntp = []string{
+					settingsService.Settings.NTP = []string{
 						"0.north-america.pool.ntp.org",
 						"1.north-america.pool.ntp.org",
 					}
 
-					settingsService.Settings.Env.Bosh.Ntp = nil
+					settingsService.Settings.Env.Bosh.NTP = nil
 				})
 
 				Context("when env.bosh.ntp is NOT present", func() {
@@ -366,7 +366,7 @@ func init() {
 
 				Context("when env.bosh.ntp is present", func() {
 					BeforeEach(func() {
-						settingsService.Settings.Env.Bosh.Ntp = []string{
+						settingsService.Settings.Env.Bosh.NTP = []string{
 							"2.north-america.pool.ntp.org",
 							"3.north-america.pool.ntp.org",
 						}
