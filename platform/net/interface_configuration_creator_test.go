@@ -152,11 +152,11 @@ func describeInterfaceConfigurationCreator() {
 				})
 			})
 
-			Context("And the network has a alias", func() {
+			Context("And the network has an alias", func() {
 				BeforeEach(func() {
-					staticNetwork.Alias = "static-interface-name"
+					staticNetwork.Alias = "static-interface-alias"
 					networks["foo"] = staticNetwork
-					interfacesByMAC["fake-static-mac-address"] = "any-interface-name"
+					interfacesByMAC["fake-static-mac-address"] = "any-interface-alias"
 				})
 
 				It("creates an interface configuration when matching interface exists", func() {
@@ -165,7 +165,7 @@ func describeInterfaceConfigurationCreator() {
 
 					Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
 						StaticInterfaceConfiguration{
-							Name:                "any-interface-name",
+							Name:                "any-interface-alias",
 							Address:             "1.2.3.4",
 							Netmask:             "255.255.255.0",
 							Network:             "1.2.3.0",
@@ -268,7 +268,7 @@ func describeInterfaceConfigurationCreator() {
 				})
 			})
 
-			Context("when static network has alias, dhcp network is not allowd to have alias", func() {
+			Context("when static network has alias, dhcp network is not allowed to have alias", func() {
 				BeforeEach(func() {
 					staticNetwork.Alias = "static-interface-name"
 					staticNetworkWithoutMAC.Alias = "static-interface-name:1"

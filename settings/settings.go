@@ -267,7 +267,7 @@ type Network struct {
 
 	Preconfigured bool `json:"preconfigured"`
 
-	Alias  string `json:"alias,omitempty"`
+	Alias string `json:"alias,omitempty"`
 }
 
 type Networks map[string]Network

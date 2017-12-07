@@ -142,11 +142,10 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
 
-	// Skip the validation of virtual interfaces(like eth0:0, eth0:1... )
 	staticAddressesWithoutVirtual := []boship.InterfaceAddress{}
 	r, err := regexp.Compile(`:\d+`)
 	if err != nil {
-		return bosherr.WrapError(err, "There is a problem with your regexp.")
+		return bosherr.WrapError(err, "There is a problem with your regexp: ':\\d+'. That is used to skip validation of virtual interfaces(e.g., eth0:0, eth0:1)")
 	}
 	for _, addr := range staticAddresses {
 		if r.MatchString(addr.GetInterfaceName()) == true {
