@@ -102,6 +102,11 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return net.writeResolvConf(networks)
 	}
 
+	// Specific for softlayer networking
+	if networks.HasInterfaceAlias() {
+		net.writeResolvConf(networks)
+	}
+
 	staticConfigs, dhcpConfigs, dnsServers, err := net.ComputeNetworkConfig(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration")
@@ -137,7 +142,19 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
 
-	err = net.interfaceAddressesValidator.Validate(staticAddresses)
+	staticAddressesWithoutVirtual := []boship.InterfaceAddress{}
+	r, err := regexp.Compile(`:\d+`)
+	if err != nil {
+		return bosherr.WrapError(err, "There is a problem with your regexp: ':\\d+'. That is used to skip validation of virtual interfaces(e.g., eth0:0, eth0:1)")
+	}
+	for _, addr := range staticAddresses {
+		if r.MatchString(addr.GetInterfaceName()) == true {
+			continue
+		} else {
+			staticAddressesWithoutVirtual = append(staticAddressesWithoutVirtual, addr)
+		}
+	}
+	err = net.interfaceAddressesValidator.Validate(staticAddressesWithoutVirtual)
 	if err != nil {
 		return bosherr.WrapError(err, "Validating static network configuration")
 	}
@@ -147,7 +164,7 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return bosherr.WrapError(err, "Validating dns configuration")
 	}
 
-	net.broadcastIps(append(staticAddresses, dynamicAddresses...), errCh)
+	net.broadcastIps(append(staticAddressesWithoutVirtual, dynamicAddresses...), errCh)
 
 	return nil
 }

@@ -973,4 +973,64 @@ var _ = Describe("Settings", func() {
 			})
 		})
 	})
+
+	Describe("HasInterfaceAlias", func() {
+		Context("when networks is empty", func() {
+			It("returns found=false", func() {
+				networks := Networks{}
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeFalse())
+			})
+		})
+
+
+		Context("with a single network", func() {
+			It("returns found=true", func() {
+				networks := Networks{
+					"first": Network{
+						Type: "dynamic",
+						Alias: "fake-alias",
+					},
+				}
+
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeTrue())
+			})
+		})
+
+		Context("with multiple networks", func() {
+			It("returns found=true if one of networks is set", func() {
+				networks := Networks{
+					"first": Network{
+						Type: "dynamic",
+					},
+					"second": Network{
+						Type: "dynamic",
+					},
+					"third": Network{
+						Type: "dynamic",
+						Alias: "fake-alias",
+					},
+				}
+
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeTrue())
+			})
+
+			It("returns found=false if the network is vip", func() {
+				networks := Networks{
+					"first": Network{
+						Type: "vip",
+						Alias: "fake-alias",
+					},
+					"second": Network{
+						Type: "dynamic",
+					},
+				}
+
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeFalse())
+			})
+		})
+	})
 })

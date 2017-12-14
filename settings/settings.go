@@ -274,6 +274,8 @@ type Network struct {
 	Mac string `json:"mac"`
 
 	Preconfigured bool `json:"preconfigured"`
+
+	Alias string `json:"alias,omitempty"`
 }
 
 type Networks map[string]Network
@@ -340,6 +342,21 @@ func (n Networks) IPs() (ips []string) {
 		}
 	}
 	return
+}
+
+func (n Networks) HasInterfaceAlias() bool {
+	for _, network := range n {
+		if network.IsVIP() {
+			// Skip VIP networks since we do not configure interfaces for them
+			continue
+		}
+
+		if network.Alias != "" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (n Networks) IsPreconfigured() bool {

@@ -151,6 +151,34 @@ func describeInterfaceConfigurationCreator() {
 					})
 				})
 			})
+
+			Context("And the network has an alias", func() {
+				BeforeEach(func() {
+					staticNetwork.Alias = "static-interface-alias"
+					networks["foo"] = staticNetwork
+					interfacesByMAC["fake-static-mac-address"] = "any-interface-alias"
+				})
+
+				It("creates an interface configuration when matching interface exists", func() {
+					staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(staticInterfaceConfigurations).To(Equal([]StaticInterfaceConfiguration{
+						StaticInterfaceConfiguration{
+							Name:                "any-interface-alias",
+							Address:             "1.2.3.4",
+							Netmask:             "255.255.255.0",
+							Network:             "1.2.3.0",
+							IsDefaultForGateway: false,
+							Broadcast:           "1.2.3.255",
+							Mac:                 "fake-static-mac-address",
+							Gateway:             "3.4.5.6",
+						},
+					}))
+
+					Expect(len(dhcpInterfaceConfigurations)).To(Equal(0))
+				})
+			})
 		})
 
 		Context("Multiple networks", func() {
@@ -239,6 +267,49 @@ func describeInterfaceConfigurationCreator() {
 					})
 				})
 			})
+
+			// The sub-interface cannot request another IP address because it is using the same MAC address as the physical interface,
+			// and since DHCP requests are by MAC address, you can't get two IPs for the same interface.
+			Context("when static network has an alias and dhcp network does not have an alias", func() {
+				BeforeEach(func() {
+					staticNetwork.Alias = "static-interface-name"
+					staticNetworkWithoutMAC.Alias = "static-interface-name:1"
+					staticNetworkWithoutMAC.IP = "1.2.3.5"
+					networks["foo"] = staticNetwork
+					networks["bar"] = dhcpNetwork
+					networks["baz"] = staticNetworkWithoutMAC
+					interfacesByMAC[staticNetwork.Mac] = "static-interface-name"
+					interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+				})
+
+				It("creates interface configurations for each network when matching interfaces exist", func() {
+					staticInterfaceConfigurations, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(staticInterfaceConfigurations).To(ConsistOf([]StaticInterfaceConfiguration{
+						{
+							Name:                "static-interface-name",
+							Address:             "1.2.3.4",
+							Netmask:             "255.255.255.0",
+							Network:             "1.2.3.0",
+							Broadcast:           "1.2.3.255",
+							IsDefaultForGateway: false,
+							Mac:                 "fake-static-mac-address",
+							Gateway:             "3.4.5.6",
+						},
+						{
+							Name:                "static-interface-name:1",
+							Address:             "1.2.3.5",
+							Netmask:             "255.255.255.0",
+							Network:             "1.2.3.0",
+							Broadcast:           "1.2.3.255",
+							IsDefaultForGateway: false,
+							Gateway:             "3.4.5.6",
+						},
+					}))
+				})
+			})
+
 		})
 
 		Context("when the number of networks does not match the number of devices", func() {
