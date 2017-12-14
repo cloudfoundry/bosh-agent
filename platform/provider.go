@@ -12,6 +12,7 @@ import (
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
+	boshiscsi "github.com/cloudfoundry/bosh-agent/platform/openiscsi"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
@@ -116,6 +117,12 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		scsiVolumeIDPathResolver := devicepathresolver.NewSCSIVolumeIDDevicePathResolver(500*time.Millisecond, fs)
 		scsiLunPathResolver := devicepathresolver.NewSCSILunDevicePathResolver(50000*time.Millisecond, fs, logger)
 		devicePathResolver = devicepathresolver.NewScsiDevicePathResolver(scsiVolumeIDPathResolver, scsiIDPathResolver, scsiLunPathResolver)
+	case "iscsi":
+		identityPathResolver := devicepathresolver.NewIdentityDevicePathResolver()
+		iscsiAdm := boshiscsi.NewConcreteOpenIscsiAdmin(fs, runner, logger)
+		iscsiPathResolver := devicepathresolver.NewIscsiDevicePathResolver(50000*time.Millisecond, runner, iscsiAdm, fs, dirProvider, logger)
+		devicePathResolver = devicepathresolver.NewMultipathDevicePathResolver(identityPathResolver, iscsiPathResolver, logger)
+
 	default:
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}
