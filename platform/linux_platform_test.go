@@ -3134,25 +3134,68 @@ unit: sectors
 	})
 
 	Describe("RemoveDevTools", func() {
+		var devToolsListPath string
+
+		BeforeEach(func() {
+			fs.WriteFileString("/fake-dir/dummy-compiler", "dummy")
+
+			devToolsListPath = path.Join(dirProvider.EtcDir(), "dev_tools_file_list")
+			fs.WriteFileString(devToolsListPath, "/fake-dir/dummy-compiler")
+		})
+
 		It("removes listed packages", func() {
-			devToolsListPath := path.Join(dirProvider.EtcDir(), "dev_tools_file_list")
-			fs.WriteFileString(devToolsListPath, "dummy-compiler")
 			err := platform.RemoveDevTools(devToolsListPath)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-rf", "dummy-compiler"}))
+			Expect(fs.FileExists("/fake-dir/dummy-compiler")).To(BeFalse())
+		})
+
+		Context("when presented with a dir", func() {
+			It("does not remove it", func() {
+				p, err := fs.TempDir("do-not-delete")
+				Expect(err).NotTo(HaveOccurred())
+
+				fs.WriteFileString(devToolsListPath, p)
+				err = platform.RemoveDevTools(devToolsListPath)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fs.FileExists(p)).To(BeTrue())
+			})
+		})
+
+		Context("when an error occurs", func() {
+			Context("when the file cannot be removed", func() {
+				It("returns an error", func() {
+					fs.RemoveAllStub = func(s string) error { return errors.New("boom") }
+
+					err := platform.RemoveDevTools(devToolsListPath)
+					Expect(err).To(MatchError(ContainSubstring("Failed to remove development tools")))
+				})
+			})
 		})
 	})
 
 	Describe("RemoveStaticLibraries", func() {
 		It("removes listed static libraries", func() {
+			fs.WriteFileString("/fake-dir/dummy-lib/dummy.a", "not-a-lib")
+
 			staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
-			fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
+			fs.WriteFileString(staticLibrariesListPath, "/fake-dir/dummy-lib/dummy.a")
 			err := platform.RemoveStaticLibraries(staticLibrariesListPath)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(cmdRunner.RunCommands).To(HaveLen(2))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-rf", "static.a"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"rm", "-rf", "library.a"}))
+			Expect(fs.FileExists("/fake-dir/dummy-lib/dummy.a")).To(BeFalse())
+		})
+
+		Context("when presented with a dir", func() {
+			It("does not remove it", func() {
+				p, err := fs.TempDir("dir-not-be-deleted")
+				Expect(err).NotTo(HaveOccurred())
+
+				staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
+				fs.WriteFileString(staticLibrariesListPath, p)
+
+				err = platform.RemoveStaticLibraries(staticLibrariesListPath)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fs.FileExists(p)).To(BeTrue())
+			})
 		})
 
 		Context("when there is an error reading the static libraries list file", func() {
@@ -3165,21 +3208,21 @@ unit: sectors
 
 		Context("when there is an error removing a static library", func() {
 			It("should return an error", func() {
-				cmdRunner.AddCmdResult("rm -rf library.a", fakesys.FakeCmdResult{Error: errors.New("oh noes")})
+				fs.WriteFileString("/fake-dir/dummy-lib/dummy.a", "not-a-lib")
+
+				fs.RemoveAllStub = func(s string) error { return errors.New("boom") }
 				staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
-				fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
+
+				fs.WriteFileString(staticLibrariesListPath, "/fake-dir/dummy-lib/dummy.a")
 				err := platform.RemoveStaticLibraries(staticLibrariesListPath)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("oh noes"))
-				Expect(cmdRunner.RunCommands).To(HaveLen(2))
+				Expect(err).To(MatchError(ContainSubstring("Failed to remove static libraries")))
 			})
 		})
 	})
 
 	Describe("SaveDNSRecords", func() {
 		var (
-			dnsRecords boshsettings.DNSRecords
-
+			dnsRecords      boshsettings.DNSRecords
 			defaultEtcHosts string
 		)
 

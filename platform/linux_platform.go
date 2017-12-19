@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"golang.org/x/sync/errgroup"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -1423,11 +1426,31 @@ func (p linux) RemoveDevTools(packageFileListPath string) error {
 	content = strings.TrimSpace(content)
 	pkgFileList := strings.Split(content, "\n")
 
+	g, _ := errgroup.WithContext(context.Background())
+
 	for _, pkgFile := range pkgFileList {
-		_, _, _, err = p.cmdRunner.RunCommand("rm", "-rf", pkgFile)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Unable to remove package file: %s", pkgFile)
-		}
+		pf := pkgFile
+
+		g.Go(func() error {
+			if !p.fs.FileExists(pf) {
+				return nil
+			}
+
+			info, err := p.fs.Stat(pf)
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			return p.fs.RemoveAll(pf)
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return bosherr.WrapError(err, "Failed to remove development tools")
 	}
 
 	return nil
@@ -1441,11 +1464,31 @@ func (p linux) RemoveStaticLibraries(staticLibrariesListFilePath string) error {
 	content = strings.TrimSpace(content)
 	librariesList := strings.Split(content, "\n")
 
+	g, _ := errgroup.WithContext(context.Background())
+
 	for _, library := range librariesList {
-		_, _, _, err = p.cmdRunner.RunCommand("rm", "-rf", library)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Unable to remove static library: %s", library)
-		}
+		l := library
+
+		g.Go(func() error {
+			if !p.fs.FileExists(l) {
+				return nil
+			}
+
+			info, err := p.fs.Stat(l)
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			return p.fs.RemoveAll(l)
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return bosherr.WrapError(err, "Failed to remove static libraries")
 	}
 
 	return nil
