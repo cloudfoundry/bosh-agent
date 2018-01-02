@@ -105,21 +105,22 @@ netsh interface ip set address $connectionName static %s %s %s
 // not have been configured.
 //
 func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
-	// TODO (CEV): This function is only used by the ensureMinimalNetworkSetup
-	// of HTTPMetadataService to determine if networks have been configured by
-	// asserting the length of the returned slice is not zero.  On Linux, this
-	// might be okay, but since this function is not accurate on Windows there
-	// is a danger that another function will treat its output as a canonical
-	// list of configured interfaces.  A better solution might be to change
-	// the Platform.GetConfiguredNetworkInterfaces interface to something that
-	// simply reports whether the interfaces have been configured and let each
-	// OS handle determine that their own way.
-
 	net.logger.Info(net.logTag, "Getting Configured Network Interfaces...")
 
 	if !LockFileExistsForConfiguredInterfaces(net.dirProvider) {
 		net.logger.Info(net.logTag, "No network interfaces file")
-		return []string{}, nil
+		if err := writeLockFileForConfiguredInterfaces(net.logger, net.logTag, net.dirProvider, net.fs); err != nil {
+			return nil, bosherr.WrapError(err, "Writing configured network interfaces")
+		}
+
+		initialNetworks := boshsettings.Networks{
+			"eth0": {
+				Type: boshsettings.NetworkTypeDynamic,
+			},
+		}
+		if err := net.setupNetworkInterfaces(initialNetworks); err != nil {
+			return nil, bosherr.WrapError(err, "Setting up windows DHCP network")
+		}
 	}
 
 	net.logger.Info(net.logTag, "Found network interfaces file")
@@ -133,6 +134,41 @@ func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) 
 		names = append(names, f.Name)
 	}
 	return names, nil
+}
+
+func (net WindowsNetManager) setupNetworkInterfaces(networks boshsettings.Networks) error {
+	staticConfigs, _, _, err := net.ComputeNetworkConfig(networks)
+	if err != nil {
+		return bosherr.WrapError(err, "Computing network configuration")
+	}
+
+	if err := net.setupInterfaces(staticConfigs); err != nil {
+		return err
+	}
+
+	net.clock.Sleep(5 * time.Second)
+	return nil
+}
+
+func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
+	if err := net.setupNetworkInterfaces(networks); err != nil {
+		return bosherr.WrapError(err, "setting up network interfaces")
+	}
+
+	if LockFileExistsForDNS(net.fs, net.dirProvider) {
+		return nil
+	}
+
+	if err := WriteLockFileForDNS(net.fs, net.dirProvider); err != nil {
+		return bosherr.WrapError(err, "writing dns lockfile")
+	}
+
+	_, _, dnsServers, err := net.ComputeNetworkConfig(networks)
+	if err != nil {
+		return bosherr.WrapError(err, "Computing network configuration for dns")
+	}
+
+	return net.setupDNS(dnsServers)
 }
 
 func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks) (
@@ -161,38 +197,6 @@ func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks
 }
 
 func (net WindowsNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
-
-func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
-	nonVipNetworks := boshsettings.Networks{}
-	for networkName, networkSettings := range networks {
-		if networkSettings.IsVIP() {
-			continue
-		}
-		nonVipNetworks[networkName] = networkSettings
-	}
-	staticConfigs, _, dnsServers, err := net.ComputeNetworkConfig(networks)
-	if err != nil {
-		return bosherr.WrapError(err, "Computing network configuration")
-	}
-
-	if err := net.setupInterfaces(staticConfigs); err != nil {
-		return err
-	}
-
-	if LockFileExistsForConfiguredInterfaces(net.dirProvider) {
-		return nil
-	}
-
-	if err := net.setupDNS(dnsServers); err != nil {
-		return err
-	}
-
-	if err := writeLockFileForConfiguredInterfaces(net.logger, net.logTag, net.dirProvider, net.fs); err != nil {
-		return bosherr.WrapError(err, "Writing configured network interfaces")
-	}
-	net.clock.Sleep(5 * time.Second)
-	return nil
-}
 
 func (net WindowsNetManager) setupInterfaces(staticConfigs []StaticInterfaceConfiguration) error {
 	for _, conf := range staticConfigs {

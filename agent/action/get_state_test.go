@@ -11,8 +11,6 @@ import (
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
-	fakentp "github.com/cloudfoundry/bosh-agent/platform/ntp/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -34,13 +32,7 @@ var _ = Describe("GetState", func() {
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		vitalsService = fakevitals.NewFakeService()
-		ntpService := &fakentp.FakeService{
-			GetOffsetNTPOffset: boshntp.Info{
-				Offset:    "0.34958",
-				Timestamp: "12 Oct 17:37:58",
-			},
-		}
-		action = NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService)
+		action = NewGetState(settingsService, specService, jobSupervisor, vitalsService)
 	})
 
 	AssertActionIsNotAsynchronous(action)
@@ -72,10 +64,6 @@ var _ = Describe("GetState", func() {
 						AgentID:  "my-agent-id",
 						JobState: "running",
 						VM:       boshsettings.VM{Name: "vm-abc-def"},
-						Ntp: boshntp.Info{
-							Offset:    "0.34958",
-							Timestamp: "12 Oct 17:37:58",
-						},
 					}
 					expectedSpec.Deployment = "fake-deployment"
 

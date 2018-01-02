@@ -268,7 +268,7 @@ func describeHTTPRegistry() {
 								},
 							},
 							Mbus: "https://vcap:b00tstrap@0.0.0.0:6868",
-							Ntp: []string{
+							NTP: []string{
 								"0.north-america.pool.ntp.org",
 								"1.north-america.pool.ntp.org",
 							},

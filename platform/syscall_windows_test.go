@@ -2,12 +2,7 @@
 
 package platform
 
-import (
-	"os/exec"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-)
+import ()
 
 var (
 	// Export for testing
@@ -33,54 +28,3 @@ func SetAdministratorUserName(name string) (previous string) {
 	administratorUserName = name
 	return previous
 }
-
-var _ = Describe("closeWinRMPort", func() {
-
-	var itAddsABlockingRule = func() {
-		err := closeWinRMPort()
-		Expect(err).ToNot(HaveOccurred())
-
-		cmd := exec.Command("Powershell", "-Command", "Get-NetFirewallRule | where { $_.Action -eq \"Block\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq 5985 }")
-		out, err := cmd.CombinedOutput()
-		s := string(out)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(s).ToNot(BeEmpty())
-	}
-	cmd := exec.Command("Powershell", "-Command", "Get-NetFirewallRule | where { $_.Action -eq \"Allow\" } | Get-NetFirewallPortFilter | where { $_.LocalPort -eq 5985 }")
-	Context("Firewall rule allowing port 5985 exists", func() {
-
-		BeforeEach(func() {
-			deleteAllWinRMFirewallRules()
-
-			err := setWinrmFirewall("allow")
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("closes the port", func() {
-			err := closeWinRMPort()
-			Expect(err).ToNot(HaveOccurred())
-
-			out, err := cmd.CombinedOutput()
-			s := string(out)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(s).To(BeEmpty())
-		})
-
-		It("adds a blocking rule", itAddsABlockingRule)
-	})
-
-	Context("Firewall rule allowing port 5985 does NOT exist", func() {
-		BeforeEach(func() {
-			deleteAllWinRMFirewallRules()
-		})
-
-		It("does not error", func() {
-			err := closeWinRMPort()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("adds a blocking rule", itAddsABlockingRule)
-	})
-})

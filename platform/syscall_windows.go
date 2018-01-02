@@ -5,13 +5,14 @@ import (
 	"encoding/ascii85"
 	"errors"
 	"fmt"
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
 	"unsafe"
+
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -498,39 +499,9 @@ func disableWindowsUpdates() error {
 	return nil
 }
 
-func closeWinRMPort() error {
-	deleteAllWinRMFirewallRules()
-
-	err := setWinrmFirewall("Block")
-	if err != nil {
-		return fmt.Errorf("could not set winrm firewall: %s", err)
-	}
-
-	return nil
-}
-
-func setWinrmFirewall(action string) error {
-	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "add", "rule", "name=Port5985", "dir=in", fmt.Sprintf("action=%v", action), "localport=5985", "protocol=TCP")
-	_, err := cmd.CombinedOutput()
-
-	return err
-}
-
-func deleteAllWinRMFirewallRules() error {
-	cmd := exec.Command("NETSH.exe", "advfirewall", "firewall", "delete", "rule", "localport=5985", "dir=in", "protocol=TCP", "name=all")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("(%s): %s", err, string(out))
-	}
-	return nil
-}
-
 func setupRuntimeConfiguration() error {
 	if err := disableWindowsUpdates(); err != nil {
 		return fmt.Errorf("disabling updates: %s", err)
-	}
-	if err := closeWinRMPort(); err != nil {
-		return fmt.Errorf("closing WinRM port(5985): %s", err)
 	}
 	return nil
 }

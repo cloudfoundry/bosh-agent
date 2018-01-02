@@ -93,7 +93,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up networking")
 	}
 
-	if err = boot.platform.SetTimeWithNtpServers(settings.Ntp); err != nil {
+	if err = boot.platform.SetTimeWithNtpServers(settings.GetNtpServers()); err != nil {
 		return bosherr.WrapError(err, "Setting up NTP servers")
 	}
 

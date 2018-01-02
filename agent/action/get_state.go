@@ -5,7 +5,6 @@ import (
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshntp "github.com/cloudfoundry/bosh-agent/platform/ntp"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -16,7 +15,6 @@ type GetStateAction struct {
 	specService     boshas.V1Service
 	jobSupervisor   boshjobsuper.JobSupervisor
 	vitalsService   boshvitals.Service
-	ntpService      boshntp.Service
 }
 
 func NewGetState(
@@ -24,13 +22,11 @@ func NewGetState(
 	specService boshas.V1Service,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	vitalsService boshvitals.Service,
-	ntpService boshntp.Service,
 ) (action GetStateAction) {
 	action.settingsService = settingsService
 	action.specService = specService
 	action.jobSupervisor = jobSupervisor
 	action.vitalsService = vitalsService
-	action.ntpService = ntpService
 	return
 }
 
@@ -54,7 +50,6 @@ type GetStateV1ApplySpec struct {
 	Vitals    *boshvitals.Vitals     `json:"vitals,omitempty"`
 	Processes []boshjobsuper.Process `json:"processes,omitempty"`
 	VM        boshsettings.VM        `json:"vm"`
-	Ntp       boshntp.Info           `json:"ntp"`
 }
 
 func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
@@ -88,7 +83,6 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 		vitalsReference,
 		processes,
 		settings.VM,
-		a.ntpService.GetInfo(),
 	}
 
 	if value.NetworkSpecs == nil {

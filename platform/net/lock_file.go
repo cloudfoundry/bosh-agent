@@ -20,6 +20,10 @@ func getLockFilePathForRandomizedPasswords(dirProvider boshdir.Provider) string 
 	return filepath.Join(dirProvider.BoshDir(), "randomized_passwords")
 }
 
+func getLockFilePathForDNS(dirProvider boshdir.Provider) string {
+	return filepath.Join(dirProvider.BoshDir(), "dns")
+}
+
 func LockFileExistsForConfiguredInterfaces(dirProvider boshdirs.Provider) bool {
 	lockFile := getLockFilePathForConfiguredInterfaces(dirProvider)
 
@@ -29,6 +33,10 @@ func LockFileExistsForConfiguredInterfaces(dirProvider boshdirs.Provider) bool {
 	}
 
 	return false
+}
+
+func LockFileExistsForDNS(fs boshsys.FileSystem, dirProvider boshdir.Provider) bool {
+	return fs.FileExists(getLockFilePathForDNS(dirProvider))
 }
 
 func LockFileExistsForRandomizedPasswords(fs boshsys.FileSystem, dirProvider boshdir.Provider) bool {
@@ -45,6 +53,13 @@ func writeLockFileForConfiguredInterfaces(logger boshlog.Logger, logTag string, 
 			return bosherr.WrapErrorf(err, "Creating configured interfaces file: %s", err)
 		}
 		f.Close()
+	}
+	return nil
+}
+
+func WriteLockFileForDNS(fs boshsys.FileSystem, dirProvider boshdir.Provider) error {
+	if err := fs.WriteFileString(getLockFilePathForDNS(dirProvider), ""); err != nil {
+		return bosherr.WrapError(err, "Writing DNS password file")
 	}
 	return nil
 }
