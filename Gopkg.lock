@@ -35,13 +35,19 @@
   branch = "master"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = ["assert","blobstore","blobstore/fakes","crypto","errors","fileutil","fileutil/fakes","httpclient","logger","logger/loggerfakes","retrystrategy","retrystrategy/fakes","system","system/fakes","uuid","uuid/fakes"]
-  revision = "a960ab178e64b43d19051be6fd2891ff695bb206"
+  revision = "ed55b4546683cfb2a9c6177ba1bfaa8ee6b37782"
 
 [[projects]]
   branch = "master"
   name = "github.com/cloudfoundry/gosigar"
   packages = [".","fakes"]
   revision = "14c0a766933d517675369dae6f551f5c1a10f0d8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/socks5-proxy"
+  packages = ["."]
+  revision = "4c5a6f4a4516f42756f84f04cc5b523f471c9387"
 
 [[projects]]
   branch = "master"
@@ -54,6 +60,12 @@
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/genevievelesperance/go-socks5"
+  packages = ["."]
+  revision = "f07e0bb84629ba30f60da69274cd1d9dbb4a1d08"
 
 [[projects]]
   name = "github.com/golang/mock"
@@ -141,8 +153,14 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["curve25519","ed25519","ed25519/internal/edwards25519","ssh"]
+  revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/net"
-  packages = ["html","html/atom","html/charset","proxy"]
+  packages = ["context","html","html/atom","html/charset","proxy"]
   revision = "b129b8e0fbeb39c8358e51a07ab6c50ad415e72e"
 
 [[projects]]
