@@ -66,7 +66,8 @@ func (s *settingsService) LoadSettings() error {
 	if fetchErr != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed loading settings via fetcher: %v", fetchErr)
 
-		existingSettingsJSON, readError := s.fs.ReadFile(s.settingsPath)
+		opts := boshsys.ReadOpts{Quiet: true}
+		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.settingsPath, opts)
 		if readError != nil {
 			s.logger.Error(settingsServiceLogTag, "Failed reading settings from file %s", readError.Error())
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
@@ -99,7 +100,7 @@ func (s *settingsService) LoadSettings() error {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}
 
-	err = s.fs.WriteFile(s.settingsPath, newSettingsJSON)
+	err = s.fs.WriteFileQuietly(s.settingsPath, newSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing setting json")
 	}
