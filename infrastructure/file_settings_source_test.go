@@ -62,6 +62,12 @@ var _ = Describe("FileSettingsSource", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(settings).To(Equal(expectedSettings))
 				})
+
+				It("should read from the file quietly", func() {
+					_, err := source.Settings()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
+				})
 			})
 
 			Context("settings have invalid format", func() {
