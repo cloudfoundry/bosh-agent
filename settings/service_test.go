@@ -12,8 +12,6 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"io"
-	"sync"
 )
 
 func init() {
@@ -318,30 +316,4 @@ func init() {
 			})
 		})
 	})
-}
-
-type writableBuffer interface {
-	io.Writer
-	Bytes() []byte
-}
-
-type lockedWriter struct {
-	writableBuffer
-	lock sync.Mutex
-}
-
-func newLockedWriter(writer writableBuffer) *lockedWriter {
-	return &lockedWriter{writableBuffer: writer}
-}
-
-func (buf *lockedWriter) Write(b []byte) (int, error) {
-	buf.lock.Lock()
-	defer buf.lock.Unlock()
-	return buf.writableBuffer.Write(b)
-}
-
-func (buf *lockedWriter) Bytes() []byte {
-	buf.lock.Lock()
-	defer buf.lock.Unlock()
-	return buf.writableBuffer.Bytes()
 }
