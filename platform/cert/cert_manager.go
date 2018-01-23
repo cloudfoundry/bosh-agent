@@ -83,6 +83,18 @@ func NewOpensuseOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, t
 	}
 }
 
+func NewPhotonOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeout time.Duration, logger logger.Logger) Manager {
+	return &certManager{
+		fs:            fs,
+		runner:        runner,
+		path:          "/etc/pki/tls/certs/",
+		updateCmdPath: "/bin/make-ca.sh",
+		logger:        logger,
+		logTag:        "PhotonOSCertManager",
+		updateTimeout: timeout,
+	}
+}
+
 func NewDummyCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeout time.Duration, logger logger.Logger) Manager {
 	return &certManager{
 		fs:            fs,
