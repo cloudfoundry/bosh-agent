@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"net"
 	"path/filepath"
 	"time"
 
@@ -29,7 +28,6 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
-	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -200,8 +198,6 @@ func (app *app) Setup(opts Options) error {
 		actionRunner,
 	)
 
-	syslogServer := boshsyslog.NewServer(33331, net.Listen, app.logger)
-
 	app.agent = boshagent.New(
 		app.logger,
 		mbusHandler,
@@ -209,7 +205,6 @@ func (app *app) Setup(opts Options) error {
 		actionDispatcher,
 		jobSupervisor,
 		specService,
-		syslogServer,
 		time.Second*30,
 		settingsService,
 		uuidGen,

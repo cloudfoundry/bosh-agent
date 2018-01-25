@@ -11,7 +11,6 @@ import (
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
@@ -29,7 +28,6 @@ type Agent struct {
 	heartbeatInterval time.Duration
 	jobSupervisor     boshjobsuper.JobSupervisor
 	specService       boshas.V1Service
-	syslogServer      boshsyslog.Server
 	settingsService   boshsettings.Service
 	uuidGenerator     boshuuid.Generator
 	timeService       clock.Clock
@@ -42,7 +40,6 @@ func New(
 	actionDispatcher ActionDispatcher,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
-	syslogServer boshsyslog.Server,
 	heartbeatInterval time.Duration,
 	settingsService boshsettings.Service,
 	uuidGenerator boshuuid.Generator,
@@ -56,7 +53,6 @@ func New(
 		heartbeatInterval: heartbeatInterval,
 		jobSupervisor:     jobSupervisor,
 		specService:       specService,
-		syslogServer:      syslogServer,
 		settingsService:   settingsService,
 		uuidGenerator:     uuidGenerator,
 		timeService:       timeService,
@@ -76,13 +72,6 @@ func (a Agent) Run() error {
 		err := a.jobSupervisor.MonitorJobFailures(a.handleJobFailure(errCh))
 		if err != nil {
 			errCh <- err
-		}
-	}()
-
-	go func() {
-		err := a.syslogServer.Start(a.handleSyslogMsg(errCh))
-		if err != nil {
-			a.logger.Warn(agentLogTag, "Failed to start syslogServer: %s", err.Error())
 		}
 	}()
 
@@ -187,31 +176,5 @@ func (a Agent) handleJobFailure(errCh chan error) boshjobsuper.JobFailureHandler
 		}
 
 		return nil
-	}
-}
-
-func (a Agent) handleSyslogMsg(errCh chan error) boshsyslog.CallbackFunc {
-	return func(msg boshsyslog.Msg) {
-		alertAdapter := boshalert.NewSSHAdapter(
-			msg,
-			a.settingsService,
-			a.uuidGenerator,
-			a.timeService,
-			a.logger,
-		)
-		if alertAdapter.IsIgnorable() {
-			a.logger.Debug(agentLogTag, "Ignored ssh event: ", msg.Content)
-			return
-		}
-
-		alert, err := alertAdapter.Alert()
-		if err != nil {
-			errCh <- bosherr.WrapError(err, "Adapting SSH alert")
-		}
-
-		err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Alert, alert)
-		if err != nil {
-			errCh <- bosherr.WrapError(err, "Sending SSH alert")
-		}
 	}
 }

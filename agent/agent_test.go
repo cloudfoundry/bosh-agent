@@ -20,8 +20,6 @@ import (
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
-	fakesyslog "github.com/cloudfoundry/bosh-agent/syslog/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
@@ -35,7 +33,6 @@ func init() {
 			actionDispatcher *fakeagent.FakeActionDispatcher
 			jobSupervisor    *fakejobsuper.FakeJobSupervisor
 			specService      *fakeas.FakeV1Service
-			syslogServer     *fakesyslog.FakeServer
 			settingsService  *fakesettings.FakeSettingsService
 			uuidGenerator    *fakeuuid.FakeGenerator
 			timeService      *fakeclock.FakeClock
@@ -49,7 +46,6 @@ func init() {
 			actionDispatcher = &fakeagent.FakeActionDispatcher{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			specService = fakeas.NewFakeV1Service()
-			syslogServer = &fakesyslog.FakeServer{}
 			settingsService = &fakesettings.FakeSettingsService{}
 			uuidGenerator = &fakeuuid.FakeGenerator{}
 			timeService = fakeclock.NewFakeClock(time.Now())
@@ -60,7 +56,6 @@ func init() {
 				actionDispatcher,
 				jobSupervisor,
 				specService,
-				syslogServer,
 				5*time.Millisecond,
 				settingsService,
 				uuidGenerator,
@@ -140,7 +135,6 @@ func init() {
 						actionDispatcher,
 						jobSupervisor,
 						specService,
-						syslogServer,
 						5*time.Hour,
 						settingsService,
 						uuidGenerator,
@@ -247,40 +241,6 @@ func init() {
 					Title:     "fake-service - fake-event - fake-action",
 					Summary:   "fake-description",
 					CreatedAt: int64(1306076861),
-				}
-
-				Expect(handler.SendInputs()).To(ContainElement(fakembus.SendInput{
-					Target:  boshhandler.HealthMonitor,
-					Topic:   boshhandler.Alert,
-					Message: expectedAlert,
-				}))
-			})
-
-			It("sends ssh alerts to health manager", func() {
-				handler.KeepOnRunning()
-
-				syslogMsg := boshsyslog.Msg{Content: "disconnected by user"}
-				syslogServer.StartFirstSyslogMsg = &syslogMsg
-
-				uuidGenerator.GeneratedUUID = "fake-uuid"
-
-				// Fail the first time handler.Send is called for an alert (ignore heartbeats)
-				handler.SendCallback = func(input fakembus.SendInput) {
-					if input.Topic == boshhandler.Alert {
-						handler.SendErr = errors.New("stop")
-					}
-				}
-
-				err := agent.Run()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("stop"))
-
-				expectedAlert := boshalert.Alert{
-					ID:        "fake-uuid",
-					Severity:  boshalert.SeverityWarning,
-					Title:     "SSH Logout",
-					Summary:   "disconnected by user",
-					CreatedAt: timeService.Now().Unix(),
 				}
 
 				Expect(handler.SendInputs()).To(ContainElement(fakembus.SendInput{
