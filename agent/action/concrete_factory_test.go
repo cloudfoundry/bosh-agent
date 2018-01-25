@@ -80,7 +80,7 @@ var _ = Describe("concreteFactory", func() {
 	It("apply", func() {
 		action, err := factory.Create("apply")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewApply(applier, specService, settingsService, boshdir.NewProvider("/var/vcap").InstanceDir(), platform.GetFs())))
+		Expect(action).To(Equal(NewApply(applier, specService, settingsService, boshdir.NewProvider("/var/vcap"), platform.GetFs())))
 	})
 
 	It("drain", func() {

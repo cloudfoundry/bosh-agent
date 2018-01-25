@@ -6,19 +6,22 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"io"
+
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
-	"io"
+	"os"
 )
 
 type unsupportedAlgo struct{}
@@ -90,7 +93,9 @@ func init() {
 			fs = fakesys.NewFakeFileSystem()
 			compressor = fakecmd.NewFakeCompressor()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
+			dirProvider := directories.NewProvider("/fakebasedir")
 			applier = NewRenderedJobApplier(
+				dirProvider,
 				jobsBc,
 				jobSupervisor,
 				packageApplierProvider,
@@ -245,8 +250,8 @@ func init() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(int(binDirStats.FileMode)).To(Equal(0755))
-					Expect(int(configDirStats.FileMode)).To(Equal(0755))
+					Expect(int(binDirStats.FileMode)).To(Equal(0750))
+					Expect(int(configDirStats.FileMode)).To(Equal(0750))
 				})
 
 				It("sets executable bit for files in bin", func() {
@@ -273,14 +278,14 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 
 					// bin files are executable
-					Expect(int(binTest1Stats.FileMode)).To(Equal(0755))
-					Expect(int(binTest2Stats.FileMode)).To(Equal(0755))
+					Expect(int(binTest1Stats.FileMode)).To(Equal(0750))
+					Expect(int(binTest2Stats.FileMode)).To(Equal(0750))
 
 					// non-bin files are not made executable
-					Expect(int(configTestStats.FileMode)).ToNot(Equal(0755))
+					Expect(int(configTestStats.FileMode)).ToNot(Equal(0750))
 				})
 
-				It("sets 644 permissions for files in config", func() {
+				It("sets 640 permissions for files in config", func() {
 					compressor.DecompressFileToDirCallBack = func() {
 						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/config1", []byte{})
 						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/config2", []byte{})
@@ -302,8 +307,74 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 
 					// permission for config files should be readable by all
-					Expect(int(config1Stats.FileMode)).To(Equal(0644))
-					Expect(int(config2Stats.FileMode)).To(Equal(0644))
+					Expect(int(config1Stats.FileMode)).To(Equal(0640))
+					Expect(int(config2Stats.FileMode)).To(Equal(0640))
+				})
+
+				It("sets root:vcap ownership for all files in the tree", func() {
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/test", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/monit", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/templates/test", []byte{})
+					}
+
+					var binTestStats, configTestStats, monitStats, templateTestStats *fakesys.FakeFileStats
+
+					bundle.InstallCallBack = func() {
+						binTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin/test")
+						configTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config/test")
+						monitStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/monit")
+						templateTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/templates/test")
+					}
+
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(binTestStats.Username).To(Equal("root"))
+					Expect(binTestStats.Groupname).To(Equal("vcap"))
+					Expect(monitStats.Username).To(Equal("root"))
+					Expect(monitStats.Groupname).To(Equal("vcap"))
+					Expect(templateTestStats.Username).To(Equal("root"))
+					Expect(templateTestStats.Groupname).To(Equal("vcap"))
+					Expect(configTestStats.Username).To(Equal("root"))
+					Expect(configTestStats.Groupname).To(Equal("vcap"))
+				})
+			}
+
+			ItCreatesDirectories := func(act func() error) {
+				It("creates work directories for a job", func() {
+					err := act()
+
+					Expect(err).ToNot(HaveOccurred())
+					stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+					Expect(stat).ToNot(BeNil())
+					Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+					Expect(stat.Username).To(Equal("root"))
+					Expect(stat.Groupname).To(Equal("vcap"))
+
+					stat = fs.GetFileTestStat("/fakebasedir/data/sys/run/" + job.Name)
+					Expect(stat).ToNot(BeNil())
+					Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+					Expect(stat.Username).To(Equal("root"))
+					Expect(stat.Groupname).To(Equal("vcap"))
+
+					stat = fs.GetFileTestStat("/fakebasedir/data/" + job.Name)
+					Expect(stat).ToNot(BeNil())
+					Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+					Expect(stat.Username).To(Equal("root"))
+					Expect(stat.Groupname).To(Equal("vcap"))
+				})
+
+				It("returns error when creating work directories fails", func() {
+					fs.MkdirAllError = errors.New("fake-create-dirs-error")
+					err := act()
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Creating directories for job"))
 				})
 			}
 
@@ -448,6 +519,7 @@ func init() {
 					})
 
 					ItUpdatesPackages(act)
+					ItCreatesDirectories(act)
 				})
 
 				Context("when job is not installed", func() {
@@ -472,7 +544,10 @@ func init() {
 					ItInstallsJob(act)
 
 					ItUpdatesPackages(act)
+
+					ItCreatesDirectories(act)
 				})
+
 			})
 		})
 

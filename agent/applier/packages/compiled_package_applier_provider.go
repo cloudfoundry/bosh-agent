@@ -8,6 +8,7 @@ import (
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"os"
 )
 
 type compiledPackageApplierProvider struct {
@@ -51,10 +52,10 @@ func (p compiledPackageApplierProvider) Root() Applier {
 // (e.g manages /var/vcap/jobs/job-name/packages/pkg-a -> /var/vcap/data/packages/pkg-a)
 func (p compiledPackageApplierProvider) JobSpecific(jobName string) Applier {
 	enablePath := path.Join(p.jobSpecificEnablePath, jobName)
-	packagesBc := boshbc.NewFileBundleCollection(p.installPath, enablePath, p.name, p.fs, p.logger)
+	packagesBc := boshbc.NewFileBundleCollection(p.installPath, enablePath, p.name, os.FileMode(0755), p.fs, p.logger)
 	return NewCompiledPackageApplier(packagesBc, false, p.blobstore, p.compressor, p.fs, p.logger)
 }
 
 func (p compiledPackageApplierProvider) RootBundleCollection() boshbc.BundleCollection {
-	return boshbc.NewFileBundleCollection(p.installPath, p.rootEnablePath, p.name, p.fs, p.logger)
+	return boshbc.NewFileBundleCollection(p.installPath, p.rootEnablePath, p.name, os.FileMode(0755), p.fs, p.logger)
 }

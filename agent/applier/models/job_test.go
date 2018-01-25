@@ -5,24 +5,116 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/crypto"
+	"github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"os"
+
+	"errors"
 )
 
 var _ = Describe("Job", func() {
+	var job Job
+	BeforeEach(func() {
+		job = Job{
+			Name: "fake-name",
+		}
+	})
+
 	Describe("BundleName", func() {
 		It("returns name", func() {
-			job := Job{Name: "fake-name"}
 			Expect(job.BundleName()).To(Equal("fake-name"))
 		})
 	})
 
 	Describe("BundleVersion", func() {
-		It("returns version plus sha1 of source to make jobs unique", func() {
-			job := Job{
+		BeforeEach(func() {
+			job = Job{
 				Version: "fake-version",
 				Source:  Source{Sha1: crypto.NewDigest(crypto.DigestAlgorithmSHA1, "fake-sha1")},
 			}
+		})
+
+		It("returns version plus sha1 of source to make jobs unique", func() {
 			Expect(job.BundleVersion()).To(Equal("fake-version-fake-sha1"))
+		})
+	})
+
+	Describe("CreateDirectories", func() {
+		var (
+			fs          *fakesys.FakeFileSystem
+			dirProvider directories.Provider
+		)
+
+		BeforeEach(func() {
+			fs = fakes.NewFakeFileSystem()
+			dirProvider = directories.NewProvider("/fakebasedir")
+		})
+
+		It("creates the jobs directories", func() {
+			err := job.CreateDirectories(fs, dirProvider)
+			Expect(err).ToNot(HaveOccurred())
+
+			stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+			Expect(stat).ToNot(BeNil())
+			Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+			Expect(stat.Username).To(Equal("root"))
+			Expect(stat.Groupname).To(Equal("vcap"))
+
+			stat = fs.GetFileTestStat("/fakebasedir/data/sys/run/" + job.Name)
+			Expect(stat).ToNot(BeNil())
+			Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+			Expect(stat.Username).To(Equal("root"))
+			Expect(stat.Groupname).To(Equal("vcap"))
+
+			stat = fs.GetFileTestStat("/fakebasedir/data/" + job.Name)
+			Expect(stat).ToNot(BeNil())
+			Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+			Expect(stat.Username).To(Equal("root"))
+			Expect(stat.Groupname).To(Equal("vcap"))
+		})
+
+		Context("when the filesystem fails to create a dir", func() {
+			BeforeEach(func() {
+				fs.MkdirAllError = errors.New("fs-is-busted")
+			})
+
+			It("promotes the error", func() {
+				err := job.CreateDirectories(fs, dirProvider)
+				Expect(err).To(HaveOccurred())
+
+				stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+				Expect(stat).To(BeNil())
+			})
+		})
+
+		Context("when the filesystem fails to chown a dir", func() {
+			BeforeEach(func() {
+				fs.ChownErr = errors.New("fs-is-busted")
+			})
+
+			It("promotes the error", func() {
+				err := job.CreateDirectories(fs, dirProvider)
+				Expect(err).To(HaveOccurred())
+
+				stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+				Expect(stat).ToNot(BeNil())
+			})
+		})
+
+		Context("when an invalid jobname is provided", func() {
+			BeforeEach(func() {
+				job.Name = ""
+			})
+
+			It("should return an error", func() {
+				err := job.CreateDirectories(fs, dirProvider)
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 })

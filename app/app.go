@@ -7,6 +7,8 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
+	"os"
+
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
@@ -100,10 +102,17 @@ func (app *app) Setup(opts Options) error {
 		app.logger,
 	)
 
+	specFilePath := filepath.Join(app.dirProvider.BoshDir(), "spec.json")
+	specService := boshas.NewConcreteV1Service(
+		app.platform.GetFs(),
+		specFilePath,
+	)
+
 	boot := boshagent.NewBootstrap(
 		app.platform,
 		app.dirProvider,
 		settingsService,
+		specService,
 		app.logger,
 	)
 
@@ -157,12 +166,6 @@ func (app *app) Setup(opts Options) error {
 		app.logger,
 		app.platform.GetFs(),
 		app.dirProvider.BoshDir(),
-	)
-
-	specFilePath := filepath.Join(app.dirProvider.BoshDir(), "spec.json")
-	specService := boshas.NewConcreteV1Service(
-		app.platform.GetFs(),
-		specFilePath,
 	)
 
 	jobScriptProvider := boshscript.NewConcreteJobScriptProvider(
@@ -237,6 +240,7 @@ func (app *app) buildApplierAndCompiler(
 		dirProvider.DataDir(),
 		dirProvider.BaseDir(),
 		"jobs",
+		os.FileMode(0750),
 		fileSystem,
 		app.logger,
 	)
@@ -253,6 +257,7 @@ func (app *app) buildApplierAndCompiler(
 	)
 
 	jobApplier := boshaj.NewRenderedJobApplier(
+		dirProvider,
 		jobsBc,
 		jobSupervisor,
 		packageApplierProvider,

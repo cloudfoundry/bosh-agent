@@ -9,6 +9,7 @@ import (
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"os"
 )
 
 type testBundle struct {
@@ -33,6 +34,7 @@ var _ = Describe("FileBundleCollection", func() {
 			"/fake-collection-path/data",
 			"/fake-collection-path",
 			"fake-collection-name",
+			os.FileMode(0750),
 			fs,
 			logger,
 		)
@@ -51,6 +53,7 @@ var _ = Describe("FileBundleCollection", func() {
 			expectedBundle := NewFileBundle(
 				"/fake-collection-path/data/fake-collection-name/fake-bundle-name/faf990988742db852eec285122b5c4e7180e7be5",
 				"/fake-collection-path/fake-collection-name/fake-bundle-name",
+				os.FileMode(0750),
 				fs,
 				logger,
 			)
@@ -93,18 +96,21 @@ var _ = Describe("FileBundleCollection", func() {
 				NewFileBundle(
 					installPath+"/fake-bundle-1-name/fake-bundle-1-version-1",
 					enablePath+"/fake-bundle-1-name",
+					os.FileMode(0750),
 					fs,
 					logger,
 				),
 				NewFileBundle(
 					installPath+"/fake-bundle-1-name/fake-bundle-1-version-2",
 					enablePath+"/fake-bundle-1-name",
+					os.FileMode(0750),
 					fs,
 					logger,
 				),
 				NewFileBundle(
 					installPath+"/fake-bundle-2-name/fake-bundle-2-version-1",
 					enablePath+"/fake-bundle-2-name",
+					os.FileMode(0750),
 					fs,
 					logger,
 				),

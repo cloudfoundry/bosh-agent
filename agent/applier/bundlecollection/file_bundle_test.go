@@ -27,7 +27,7 @@ var _ = Describe("FileBundle", func() {
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		fileBundle = NewFileBundle(installPath, enablePath, fs, logger)
+		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, logger)
 	})
 
 	createSourcePath := func() string {
@@ -69,7 +69,9 @@ var _ = Describe("FileBundle", func() {
 			fileStats := fs.GetFileTestStat(installPath)
 			Expect(fileStats).ToNot(BeNil())
 			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-			Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(fileStats.Username).To(Equal("root"))
+			Expect(fileStats.Groupname).To(Equal("vcap"))
 		})
 
 		It("is idempotent", func() {
@@ -124,7 +126,9 @@ var _ = Describe("FileBundle", func() {
 			fileStats := fs.GetFileTestStat(installPath)
 			Expect(fileStats).ToNot(BeNil())
 			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-			Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(fileStats.Username).To(Equal("root"))
+			Expect(fileStats.Groupname).To(Equal("vcap"))
 		})
 
 		It("return error when bundle cannot be installed", func() {
@@ -204,7 +208,9 @@ var _ = Describe("FileBundle", func() {
 				fileStats = fs.GetFileTestStat("/") // dir holding symlink
 				Expect(fileStats).NotTo(BeNil())
 				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-				Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
+				Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+				Expect(fileStats.Username).To(Equal("root"))
+				Expect(fileStats.Groupname).To(Equal("vcap"))
 			})
 
 			It("is idempotent", func() {
@@ -304,7 +310,7 @@ var _ = Describe("FileBundle", func() {
 				_, _, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 
-				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, fs, logger)
+				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, os.FileMode(0750), fs, logger)
 
 				otherSourcePath := createSourcePath()
 				_, _, err = newerFileBundle.Install(otherSourcePath)
