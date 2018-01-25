@@ -30,7 +30,7 @@ func init() {
 
 		buildService := func() (Service, *fakesys.FakeFileSystem) {
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			service := NewService(fs, "/setting/path.json", fakeSettingsSource, fakeDefaultNetworkResolver, logger)
+			service := NewService(fs, "/setting/path.json", "/setting/persistent_hints.json", fakeSettingsSource, fakeDefaultNetworkResolver, logger)
 			return service, fs
 		}
 
@@ -191,6 +191,176 @@ func init() {
 						Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
 
 						Expect(service.GetSettings()).To(Equal(Settings{}))
+					})
+				})
+			})
+		})
+
+		Describe("GetPersistentDiskHints", func() {
+			var (
+				fetchedSettings Settings
+				fetcherFuncErr  error
+				service         Service
+			)
+
+			BeforeEach(func() {
+				fetchedSettings = Settings{}
+				fetcherFuncErr = nil
+			})
+
+			JustBeforeEach(func() {
+				fakeSettingsSource.SettingsValue = fetchedSettings
+				fakeSettingsSource.SettingsErr = fetcherFuncErr
+				service, fs = buildService()
+			})
+
+			Context("disk hints file does not exist on disk", func() {
+				It("returns empty map of disk hints", func() {
+					diskHints, err := service.GetPersistentDiskHints()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(diskHints).To(Equal(make(map[string]DiskSettings)))
+				})
+			})
+
+			Context("disk hints file exists", func() {
+				BeforeEach(func() {
+					err := fs.WriteFileQuietly("/setting/persistent_hints.json", []byte("{}"))
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("loads persistent hints from disk", func() {
+					service.GetPersistentDiskHints()
+					Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
+				})
+
+				Context("has invalid hints saved on disk", func() {
+					var existingHintsOnDisk []DiskSettings // The correct format is map[string]DiskSettings but we want to write out an incorrect format.
+
+					BeforeEach(func() {
+						service, fs = buildService()
+						existingHintsOnDisk = []DiskSettings{
+							{ID: "1", Path: "abc"},
+							{ID: "2", Path: "def"},
+							{ID: "3", Path: "ghi"},
+						}
+						jsonString, err := json.Marshal(existingHintsOnDisk)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = fs.WriteFileQuietly("/setting/persistent_hints.json", jsonString)
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("returns error", func() {
+						_, err := service.GetPersistentDiskHints()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Unmarshalling persistent disk hints from file"))
+					})
+				})
+
+				Context("has valid hints saved on disk", func() {
+					var existingHintsOnDisk map[string]DiskSettings
+
+					BeforeEach(func() {
+						service, fs = buildService()
+						existingHintsOnDisk = map[string]DiskSettings{
+							"1": {ID: "1", Path: "abc"},
+							"2": {ID: "2", Path: "def"},
+							"3": {ID: "3", Path: "ghi"},
+						}
+						jsonString, err := json.Marshal(existingHintsOnDisk)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = fs.WriteFileQuietly("/setting/persistent_hints.json", jsonString)
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("returns all disk hints", func() {
+						diskHints, err := service.GetPersistentDiskHints()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(diskHints).To(Equal(existingHintsOnDisk))
+					})
+				})
+			})
+		})
+
+		Describe("SavePersistentDiskHint", func() {
+			var (
+				service             Service
+				existingHintsOnDisk map[string]DiskSettings
+			)
+
+			BeforeEach(func() {
+				service, fs = buildService()
+			})
+
+			Context("persistent disk hints file does not exist", func() {
+				It("creates persistent disk hints on disk using provided hint", func() {
+					diskSettings := DiskSettings{ID: "2", DeviceID: "def"}
+					existingHintsOnDisk = make(map[string]DiskSettings)
+					existingHintsOnDisk["2"] = diskSettings
+
+					err := service.SavePersistentDiskHint(diskSettings)
+					Expect(err).NotTo(HaveOccurred())
+
+					jsonString, err := json.Marshal(existingHintsOnDisk)
+					Expect(err).NotTo(HaveOccurred())
+
+					fileContent, err := fs.ReadFile("/setting/persistent_hints.json")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fileContent).To(Equal(jsonString))
+				})
+			})
+
+			Context("persistent disk hints file exists", func() {
+				Context("has invalid hints saved on disk", func() {
+					var existingHintsOnDisk []DiskSettings // The correct format is map[string]DiskSettings but we want to write out an incorrect format.
+
+					BeforeEach(func() {
+						service, fs = buildService()
+						existingHintsOnDisk = []DiskSettings{
+							{ID: "1", Path: "abc"},
+							{ID: "2", Path: "def"},
+							{ID: "3", Path: "ghi"},
+						}
+						jsonString, err := json.Marshal(existingHintsOnDisk)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = fs.WriteFileQuietly("/setting/persistent_hints.json", jsonString)
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("returns error", func() {
+						diskSettings := DiskSettings{ID: "2", DeviceID: "def"}
+						err := service.SavePersistentDiskHint(diskSettings)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Unmarshalling persistent disk hints from file"))
+					})
+				})
+
+				Context("has valid hints saved on disk", func() {
+					var existingHintsOnDisk map[string]DiskSettings
+
+					BeforeEach(func() {
+						existingHintsOnDisk = map[string]DiskSettings{"1": {ID: "1", Path: "abc"}}
+						jsonString, err := json.Marshal(existingHintsOnDisk)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = fs.WriteFileQuietly("/setting/persistent_hints.json", jsonString)
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("reads and updates persistent disk hints on disk with provided hint", func() {
+						diskSettings := DiskSettings{ID: "2", DeviceID: "def"}
+						err := service.SavePersistentDiskHint(diskSettings)
+						Expect(err).NotTo(HaveOccurred())
+
+						existingHintsOnDisk["2"] = diskSettings
+						jsonString, err := json.Marshal(existingHintsOnDisk)
+						Expect(err).NotTo(HaveOccurred())
+
+						fileContent, err := fs.ReadFile("/setting/persistent_hints.json")
+						Expect(err).NotTo(HaveOccurred())
+						Expect(fileContent).To(Equal(jsonString))
 					})
 				})
 			})

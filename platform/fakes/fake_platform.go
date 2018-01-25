@@ -136,7 +136,8 @@ type FakePlatform struct {
 	IsRemoveStaticLibrariesCalled bool
 	IsRemoveStaticLibrariesError  error
 
-	MountedDevicePaths []string
+	MountedDevicePaths         []string
+	IsPersistentDiskMountedErr error
 
 	StartMonitStarted           bool
 	SetupMonitUserSetup         bool
@@ -416,9 +417,10 @@ func (p *FakePlatform) IsMountPoint(path string) (string, bool, error) {
 }
 
 func (p *FakePlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error) {
+	err = p.IsPersistentDiskMountedErr
 	for _, mountedPath := range p.MountedDevicePaths {
 		if mountedPath == diskSettings.Path {
-			return true, nil
+			return true, err
 		}
 	}
 	return
