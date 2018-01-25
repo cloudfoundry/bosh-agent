@@ -59,6 +59,7 @@ func (a MountDiskAction) Run(diskCid string, hints ...interface{}) (interface{},
 
 	if len(hints) > 0 {
 		diskSettings = settings.PersistentDiskSettingsFromHint(diskCid, hints[0])
+		a.settingsService.SavePersistentDiskHint(diskSettings)
 	} else {
 		var found bool
 		diskSettings, found = settings.PersistentDiskSettings(diskCid)

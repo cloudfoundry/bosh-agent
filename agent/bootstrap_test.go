@@ -897,6 +897,7 @@ func init() {
 
 			JustBeforeEach(func() {
 				settingsPath := filepath.Join("bosh", "settings.json")
+				persistentDiskHintsPath := filepath.Join("bosh", "persistent_disk_hints.json")
 
 				var settings boshsettings.Settings
 				json.Unmarshal([]byte(settingsJSON), &settings)
@@ -909,6 +910,7 @@ func init() {
 				settingsService := boshsettings.NewService(
 					platform.GetFs(),
 					settingsPath,
+					persistentDiskHintsPath,
 					settingsSource,
 					platform,
 					logger,

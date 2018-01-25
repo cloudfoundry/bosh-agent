@@ -422,6 +422,32 @@ var _ = Describe("Settings", func() {
 			})
 		})
 
+		Context("when the disk settings are an invalid hash", func() {
+			BeforeEach(func() {
+				settings = Settings{
+					Disks: Disks{
+						Ephemeral: []interface{}{
+							"fake-disk-device-id",
+							"fake-disk-volume-id",
+							"fake-disk-path",
+							"fake-disk-lun",
+							"fake-disk-host-device-id",
+						},
+					},
+				}
+			})
+
+			It("does not crash converting values and disk setting properties are empty", func() {
+				Expect(settings.EphemeralDiskSettings()).To(Equal(DiskSettings{
+					DeviceID:     "",
+					VolumeID:     "",
+					Path:         "",
+					Lun:          "",
+					HostDeviceID: "",
+				}))
+			})
+		})
+
 		Context("when path is not provided", func() {
 			BeforeEach(func() {
 				settings = Settings{
