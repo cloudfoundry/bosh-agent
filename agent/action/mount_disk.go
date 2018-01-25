@@ -47,9 +47,7 @@ func (a MountDiskAction) IsLoggable() bool {
 	return true
 }
 
-func (a MountDiskAction) Run(diskCid string, hints ...interface{}) (interface{}, error) {
-	var diskSettings boshsettings.DiskSettings
-
+func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 	err := a.settingsService.LoadSettings()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Refreshing the settings")
@@ -57,15 +55,9 @@ func (a MountDiskAction) Run(diskCid string, hints ...interface{}) (interface{},
 
 	settings := a.settingsService.GetSettings()
 
-	if len(hints) > 0 {
-		diskSettings = settings.PersistentDiskSettingsFromHint(diskCid, hints[0])
-	} else {
-		var found bool
-		diskSettings, found = settings.PersistentDiskSettings(diskCid)
-
-		if !found {
-			return nil, bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskCid)
-		}
+	diskSettings, found := settings.PersistentDiskSettings(diskCid)
+	if !found {
+		return nil, bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskCid)
 	}
 
 	mountPoint := a.dirProvider.StoreDir()
