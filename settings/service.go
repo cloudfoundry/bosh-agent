@@ -15,10 +15,6 @@ type Service interface {
 	// GetSettings does not return error because without settings Agent cannot start.
 	GetSettings() Settings
 
-	GetPersistentDiskHints() (map[string]DiskSettings, error)
-
-	SavePersistentDiskHint(DiskSettings) error
-
 	PublicSSHKeyForUsername(string) (string, error)
 
 	InvalidateSettings() error
@@ -27,15 +23,13 @@ type Service interface {
 const settingsServiceLogTag = "settingsService"
 
 type settingsService struct {
-	fs                      boshsys.FileSystem
-	settingsPath            string
-	settings                Settings
-	settingsMutex           sync.Mutex
-	persistentDiskHintsPath string
-	persistentDiskHintMutex sync.Mutex
-	settingsSource          Source
-	defaultNetworkResolver  DefaultNetworkResolver
-	logger                  boshlog.Logger
+	fs                     boshsys.FileSystem
+	settingsPath           string
+	settings               Settings
+	settingsMutex          sync.Mutex
+	settingsSource         Source
+	defaultNetworkResolver DefaultNetworkResolver
+	logger                 boshlog.Logger
 }
 
 type DefaultNetworkResolver interface {
@@ -47,19 +41,17 @@ type DefaultNetworkResolver interface {
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
-	persistentDiskHintPath string,
 	settingsSource Source,
 	defaultNetworkResolver DefaultNetworkResolver,
 	logger boshlog.Logger,
-) Service {
+) (service Service) {
 	return &settingsService{
-		fs:                      fs,
-		settingsPath:            settingsPath,
-		settings:                Settings{},
-		persistentDiskHintsPath: persistentDiskHintPath,
-		settingsSource:          settingsSource,
-		defaultNetworkResolver:  defaultNetworkResolver,
-		logger:                  logger,
+		fs:                     fs,
+		settingsPath:           settingsPath,
+		settings:               Settings{},
+		settingsSource:         settingsSource,
+		defaultNetworkResolver: defaultNetworkResolver,
+		logger:                 logger,
 	}
 }
 
@@ -111,35 +103,6 @@ func (s *settingsService) LoadSettings() error {
 	err = s.fs.WriteFileQuietly(s.settingsPath, newSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing setting json")
-	}
-
-	return nil
-}
-
-func (s *settingsService) GetPersistentDiskHints() (map[string]DiskSettings, error) {
-	s.persistentDiskHintMutex.Lock()
-	defer s.persistentDiskHintMutex.Unlock()
-	return s.getPersistentDiskHintsWithoutLocking()
-}
-
-func (s *settingsService) SavePersistentDiskHint(persistentDiskSettings DiskSettings) error {
-	s.persistentDiskHintMutex.Lock()
-	defer s.persistentDiskHintMutex.Unlock()
-	persistentDiskHints, err := s.getPersistentDiskHintsWithoutLocking()
-	if err != nil {
-		return bosherr.WrapError(err, "Reading all persistent disk hints")
-	}
-
-	persistentDiskHints[persistentDiskSettings.ID] = persistentDiskSettings
-
-	newPersistentDiskHintsJSON, err := json.Marshal(persistentDiskHints)
-	if err != nil {
-		return bosherr.WrapError(err, "Marshalling persistent disk hints json")
-	}
-
-	err = s.fs.WriteFile(s.persistentDiskHintsPath, newPersistentDiskHintsJSON)
-	if err != nil {
-		return bosherr.WrapError(err, "Writing persistent disk hints settings json")
 	}
 
 	return nil
@@ -201,22 +164,4 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	network.Resolved = true
 
 	return network, nil
-}
-
-func (s *settingsService) getPersistentDiskHintsWithoutLocking() (map[string]DiskSettings, error) {
-	persistentDiskHints := make(map[string]DiskSettings)
-
-	if s.fs.FileExists(s.persistentDiskHintsPath) {
-		opts := boshsys.ReadOpts{Quiet: true}
-		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.persistentDiskHintsPath, opts)
-		if readError != nil {
-			return nil, bosherr.WrapError(readError, "Reading persistent disk hints from file")
-		}
-
-		err := json.Unmarshal(existingSettingsJSON, &persistentDiskHints)
-		if err != nil {
-			return nil, bosherr.WrapError(err, "Unmarshalling persistent disk hints from file")
-		}
-	}
-	return persistentDiskHints, nil
 }

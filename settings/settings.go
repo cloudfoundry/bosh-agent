@@ -120,10 +120,10 @@ func (s Settings) EphemeralDiskSettings() DiskSettings {
 			if hostDeviceID, ok := hashSettings["host_device_id"]; ok {
 				diskSettings.HostDeviceID = hostDeviceID.(string)
 			}
-		} else if stringSetting, ok := s.Disks.Ephemeral.(string); ok {
+		} else {
 			// Old CPIs return disk path (string) or volume id (string) as disk settings
-			diskSettings.Path = stringSetting
-			diskSettings.VolumeID = stringSetting
+			diskSettings.Path = s.Disks.Ephemeral.(string)
+			diskSettings.VolumeID = s.Disks.Ephemeral.(string)
 		}
 	}
 

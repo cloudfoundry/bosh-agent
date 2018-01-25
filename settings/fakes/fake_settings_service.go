@@ -11,17 +11,10 @@ type FakeSettingsService struct {
 	LoadSettingsError  error
 	SettingsWereLoaded bool
 
-	GetPersistentDiskHintsError   error
-	PersistentDiskHintsWereLoaded bool
-
 	InvalidateSettingsError error
 	SettingsWereInvalidated bool
 
-	PersistentDiskHints map[string]boshsettings.DiskSettings
-	Settings            boshsettings.Settings
-
-	GetPersistentDiskHintsCallCount int
-	SavePersistentDiskHintCallCount int
+	Settings boshsettings.Settings
 }
 
 func (service *FakeSettingsService) InvalidateSettings() error {
@@ -40,15 +33,4 @@ func (service *FakeSettingsService) LoadSettings() error {
 
 func (service FakeSettingsService) GetSettings() boshsettings.Settings {
 	return service.Settings
-}
-
-func (service *FakeSettingsService) GetPersistentDiskHints() (map[string]boshsettings.DiskSettings, error) {
-	service.GetPersistentDiskHintsCallCount++
-	service.PersistentDiskHintsWereLoaded = true
-	return service.PersistentDiskHints, service.GetPersistentDiskHintsError
-}
-
-func (service *FakeSettingsService) SavePersistentDiskHint(_ boshsettings.DiskSettings) error {
-	service.SavePersistentDiskHintCallCount++
-	return nil
 }
