@@ -52,19 +52,15 @@ var _ = Describe("bootstrap", func() {
 			platform    *fakeplatform.FakePlatform
 			dirProvider boshdir.Provider
 
-			settingsSource  *fakeinf.FakeSettingsSource
 			settingsService *fakesettings.FakeSettingsService
 			specService     *fakes.FakeV1Service
-			updateSettings  *boshsettings.UpdateSettings
 		)
 
 		BeforeEach(func() {
 			platform = fakeplatform.NewFakePlatform()
 			dirProvider = boshdir.NewProvider("/var/vcap")
-			settingsSource = &fakeinf.FakeSettingsSource{}
 			settingsService = &fakesettings.FakeSettingsService{}
 			specService = fakes.NewFakeV1Service()
-			updateSettings = &boshsettings.UpdateSettings{}
 
 			specService.Spec = applyspec.V1ApplySpec{
 				RenderedTemplatesArchiveSpec: &applyspec.RenderedTemplatesArchiveSpec{},
