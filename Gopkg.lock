@@ -81,12 +81,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/jeromer/syslogparser"
-  packages = [".","rfc3164"]
-  revision = "0e4ae46ea3f08de351074b643d649d5d00661a3c"
-
-[[projects]]
-  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "d0303fe809921458f417bcf828397a65db30a7e4"
@@ -184,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8fc85ed37c3390ab56269e10940ea7a17d37e83cf6145e96aefa7907965b36d1"
+  inputs-digest = "5dca3cdf30db12d83d30ec047de088aca65c650fb56e40954539fad6790a7386"
   solver-name = "gps-cdcl"
   solver-version = 1

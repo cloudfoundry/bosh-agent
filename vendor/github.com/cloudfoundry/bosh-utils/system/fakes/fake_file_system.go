@@ -603,8 +603,6 @@ func (fs *FakeFileSystem) Rename(oldPath, newPath string) error {
 	newStats.Content = stats.Content
 	newStats.FileMode = stats.FileMode
 	newStats.FileType = stats.FileType
-	newStats.Username = stats.Username
-	newStats.Groupname = stats.Groupname
 	newStats.Flags = stats.Flags
 
 	// Ignore error from RemoveAll
