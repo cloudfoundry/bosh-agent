@@ -9,11 +9,12 @@ go get -u github.com/golang/lint/golint
 
 set +e # golint will fail on the issues we filter out
 errors=$(
-  $bin/gofiles $bin/env golint                              \
-    | grep -v \
+  $bin/gofiles $bin/env golint                        \
+    | grep -v                                         \
      -e 'should have comment.* or be unexported'      \
      -e '/mocks/'                                     \
      -e '/fakes/'                                     \
+     -e '/jobsfakes/'                                 \
      -e 'should not be capitalized'                   \
      -e 'underscore in package name'                  \
      -e 'bootstrapper/spec/'                          \

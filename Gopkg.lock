@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = ["assert","blobstore","blobstore/fakes","crypto","errors","fileutil","fileutil/fakes","httpclient","logger","logger/loggerfakes","retrystrategy","retrystrategy/fakes","system","system/fakes","uuid","uuid/fakes"]
-  revision = "ed55b4546683cfb2a9c6177ba1bfaa8ee6b37782"
+  revision = "d052b28175edc3636cbf528dcdd5ad47ae587f6c"
 
 [[projects]]
   branch = "master"
@@ -78,12 +78,6 @@
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   revision = "17ce1425424ab154092bbb43af630bd647f3bb0d"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/jeromer/syslogparser"
-  packages = [".","rfc3164"]
-  revision = "0e4ae46ea3f08de351074b643d649d5d00661a3c"
 
 [[projects]]
   branch = "master"
@@ -184,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8fc85ed37c3390ab56269e10940ea7a17d37e83cf6145e96aefa7907965b36d1"
+  inputs-digest = "5dca3cdf30db12d83d30ec047de088aca65c650fb56e40954539fad6790a7386"
   solver-name = "gps-cdcl"
   solver-version = 1

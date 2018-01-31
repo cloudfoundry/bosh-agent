@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/charlievieth/fs"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -48,13 +49,20 @@ func writeLockFileForConfiguredInterfaces(logger boshlog.Logger, logTag string, 
 
 	path := getLockFilePathForConfiguredInterfaces(dirProvider)
 	if _, err := fs.Stat(path); os.IsNotExist(err) {
-		f, err := fs.OpenFile(path, os.O_CREATE, 0644)
+		err := writeLockFileHelper(path)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Creating configured interfaces file: %s", err)
 		}
-		f.Close()
 	}
 	return nil
+}
+
+func writeLockFileHelper(path string) error {
+	f, err := fs.OpenFile(path, os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	return f.Close()
 }
 
 func WriteLockFileForDNS(fs boshsys.FileSystem, dirProvider boshdir.Provider) error {

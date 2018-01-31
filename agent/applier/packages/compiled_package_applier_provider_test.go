@@ -10,6 +10,7 @@ import (
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"os"
 )
 
 var _ = Describe("compiledPackageApplierProvider", func() {
@@ -45,6 +46,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 					"fake-install-path",
 					"fake-root-enable-path",
 					"fake-name",
+					os.FileMode(0755),
 					fs,
 					logger,
 				),
@@ -65,6 +67,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 					"fake-install-path",
 					"fake-job-specific-enable-path/fake-job-name",
 					"fake-name",
+					os.FileMode(0755),
 					fs,
 					logger,
 				),

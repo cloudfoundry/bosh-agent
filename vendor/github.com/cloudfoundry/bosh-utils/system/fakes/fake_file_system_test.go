@@ -176,6 +176,33 @@ var _ = Describe("FakeFileSystem", func() {
 		})
 	})
 
+	Describe("Rename", func() {
+		It("renames", func() {
+			file, err := fs.OpenFile("foobarbaz", 1, 0600)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = file.Write([]byte("asdf"))
+			Expect(err).ToNot(HaveOccurred())
+			err = file.Close()
+			Expect(err).ToNot(HaveOccurred())
+
+			err = fs.Chown("foobarbaz", "root:vcap")
+			Expect(err).ToNot(HaveOccurred())
+
+			oldStat := fs.GetFileTestStat("foobarbaz")
+
+			err = fs.Rename("foobarbaz", "foobar")
+			Expect(err).ToNot(HaveOccurred())
+
+			newStat := fs.GetFileTestStat("foobar")
+			Expect(newStat.Content).To(Equal(oldStat.Content))
+			Expect(newStat.FileMode).To(Equal(oldStat.FileMode))
+			Expect(newStat.FileType).To(Equal(oldStat.FileType))
+			Expect(newStat.Username).To(Equal(oldStat.Username))
+			Expect(newStat.Groupname).To(Equal(oldStat.Groupname))
+			Expect(newStat.Flags).To(Equal(oldStat.Flags))
+		})
+	})
+
 	Describe("Symlink", func() {
 		It("creates", func() {
 			err := fs.Symlink("foobarbaz", "foobar")
