@@ -183,13 +183,16 @@ func (net WindowsNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) e
 
 func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 	nonVipNetworks := boshsettings.Networks{}
+	net.logger.Info(net.logTag, "Setting up networking...")
 	for networkName, networkSettings := range networks {
+		net.logger.Info(net.logTag, fmt.Sprintf("Network name = %s\t Network settings = %#v", networkName, networkSettings))
 		if networkSettings.IsVIP() {
 			continue
 		}
 		nonVipNetworks[networkName] = networkSettings
 	}
 	staticConfigs, _, dnsServers, err := net.ComputeNetworkConfig(networks)
+	net.logger.Info(net.logTag, fmt.Sprintf("Static (network) configs = %#v", staticConfigs))
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration")
 	}
