@@ -307,7 +307,7 @@ func stringArrayContains(stringArray []string, str string) bool {
 }
 
 func (n Networks) DefaultIP() (ip string, found bool) {
-	for networkName, networkSettings := range n {
+	for _, networkSettings := range n {
 		if ip == "" {
 			ip = networkSettings.IP
 		}
