@@ -96,7 +96,13 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 
 	settings := a.settingsService.GetSettings()
 
+	for networkName, networkSettings := range settings.Networks {
+		net.logger.Info(net.logTag, fmt.Sprintf("SSH.Run(): Network name = %s\t Network settings = %#v", networkName, networkSettings))
+	}
+
 	defaultIP, found := settings.Networks.DefaultIP()
+	net.logger.Info(net.logTag, fmt.Sprintf("SSH.Run(): defaultIP = %s", defaultIP))
+
 	if !found {
 		return result, errors.New("No default ip could be found")
 	}

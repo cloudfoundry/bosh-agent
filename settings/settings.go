@@ -308,7 +308,6 @@ func stringArrayContains(stringArray []string, str string) bool {
 
 func (n Networks) DefaultIP() (ip string, found bool) {
 	for networkName, networkSettings := range n {
-		net.logger.Info(net.logTag, fmt.Sprintf("Network name = %s\t Network settings = %#v", networkName, networkSettings))
 		if ip == "" {
 			ip = networkSettings.IP
 		}
