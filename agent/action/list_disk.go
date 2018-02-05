@@ -90,8 +90,6 @@ func (a ListDiskAction) Run() (interface{}, error) {
 		}
 	}
 
-	a.logger.Debug("list-disk-action", "returning mounted disks %v", diskIDs)
-
 	return diskIDs, nil
 }
 

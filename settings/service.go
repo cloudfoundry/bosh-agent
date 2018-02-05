@@ -17,6 +17,10 @@ type Service interface {
 
 	GetPersistentDiskHints() (map[string]DiskSettings, error)
 
+	GetPersistentDiskHint(diskID string) (DiskSettings, bool, error)
+
+	RemovePersistentDiskHint(diskID string) error
+
 	SavePersistentDiskHint(DiskSettings) error
 
 	PublicSSHKeyForUsername(string) (string, error)
@@ -120,6 +124,51 @@ func (s *settingsService) GetPersistentDiskHints() (map[string]DiskSettings, err
 	s.persistentDiskHintMutex.Lock()
 	defer s.persistentDiskHintMutex.Unlock()
 	return s.getPersistentDiskHintsWithoutLocking()
+}
+
+func (s *settingsService) GetPersistentDiskHint(diskID string) (DiskSettings, bool, error) {
+	s.persistentDiskHintMutex.Lock()
+	defer s.persistentDiskHintMutex.Unlock()
+	persistentDiskHints, err := s.getPersistentDiskHintsWithoutLocking()
+	if err != nil {
+		return DiskSettings{}, false, bosherr.WrapError(err, "Reading all persistent disk hints")
+	}
+
+	diskSettings, ok := persistentDiskHints[diskID]
+
+	if ok {
+		return diskSettings, true, nil
+	}
+
+	return DiskSettings{}, false, nil
+}
+
+func (s *settingsService) RemovePersistentDiskHint(diskID string) error {
+	s.persistentDiskHintMutex.Lock()
+	defer s.persistentDiskHintMutex.Unlock()
+
+	if !s.fs.FileExists(s.persistentDiskHintsPath) {
+		return bosherr.Error("Cannot delete disk hint from file that does not exist")
+	}
+
+	diskSettings, err := s.getPersistentDiskHintsWithoutLocking()
+	if err != nil {
+		return bosherr.WrapError(err, "Cannot remove entry from file due to read error")
+	}
+
+	delete(diskSettings, diskID)
+
+	newPersistentDiskHintsJSON, err := json.Marshal(diskSettings)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling persistent disk hints json")
+	}
+
+	err = s.fs.WriteFile(s.persistentDiskHintsPath, newPersistentDiskHintsJSON)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing persistent disk hints settings json")
+	}
+
+	return nil
 }
 
 func (s *settingsService) SavePersistentDiskHint(persistentDiskSettings DiskSettings) error {

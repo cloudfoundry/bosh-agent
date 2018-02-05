@@ -263,7 +263,7 @@ var _ = Describe("Settings", func() {
 			})
 
 			It("converts it to disk settings", func() {
-				diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+				diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
 				Expect(diskSettings).To(Equal(DiskSettings{
 					ID:       "hint-fake-disk-id",
 					VolumeID: "/path/to/device/hint",
@@ -288,7 +288,7 @@ var _ = Describe("Settings", func() {
 			})
 
 			It("returns disk settings with disk hint info", func() {
-				diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+				diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
 				Expect(diskSettings).To(Equal(DiskSettings{
 					ID:           "hint-fake-disk-id",
 					DeviceID:     "hint-fake-disk-device-id",
@@ -305,7 +305,7 @@ var _ = Describe("Settings", func() {
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+					diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
 					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemXFS))
 					Expect(diskSettings).To(Equal(DiskSettings{
 						ID:             "hint-fake-disk-id",
@@ -324,7 +324,7 @@ var _ = Describe("Settings", func() {
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+					diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
 					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemDefault))
 					Expect(diskSettings).To(Equal(DiskSettings{
 						ID:             "hint-fake-disk-id",
@@ -343,7 +343,7 @@ var _ = Describe("Settings", func() {
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+					diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
 					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemType("blahblah")))
 					Expect(diskSettings).To(Equal(DiskSettings{
 						ID:             "hint-fake-disk-id",
@@ -365,7 +365,7 @@ var _ = Describe("Settings", func() {
 			})
 
 			It("does NOT set device related properties in the disk settings", func() {
-				diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", nil)
+				diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", nil)
 				Expect(diskSettings).To(Equal(DiskSettings{
 					ID:           "hint-fake-disk-id",
 					VolumeID:     "",

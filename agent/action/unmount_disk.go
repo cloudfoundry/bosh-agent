@@ -14,6 +14,10 @@ type UnmountDiskAction struct {
 	platform        boshplatform.Platform
 }
 
+type valueType struct {
+	Message string `json:"message"`
+}
+
 func NewUnmountDisk(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
@@ -36,12 +40,26 @@ func (a UnmountDiskAction) IsLoggable() bool {
 }
 
 func (a UnmountDiskAction) Run(diskID string) (value interface{}, err error) {
+	usedDiskHint := false
 	settings := a.settingsService.GetSettings()
 
 	diskSettings, found := settings.PersistentDiskSettings(diskID)
+
 	if !found {
-		err = bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskID)
-		return
+		diskPersistentSettings, found, errorDiskHints := a.settingsService.GetPersistentDiskHint(diskID)
+
+		if errorDiskHints == nil {
+			if found {
+				diskSettings = diskPersistentSettings
+				usedDiskHint = true
+			} else {
+				err = bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskID)
+				return
+			}
+		} else {
+			err = bosherr.Errorf("Persistent disk with volume id '%s' could not be found.  Lookup error: %v", diskID, errorDiskHints)
+			return
+		}
 	}
 
 	didUnmount, err := a.platform.UnmountPersistentDisk(diskSettings)
@@ -54,10 +72,12 @@ func (a UnmountDiskAction) Run(diskID string) (value interface{}, err error) {
 
 	if didUnmount {
 		msg = fmt.Sprintf("Unmounted partition of %+v", diskSettings)
-	}
-
-	type valueType struct {
-		Message string `json:"message"`
+		if usedDiskHint {
+			err = a.settingsService.RemovePersistentDiskHint(diskID)
+			if err != nil {
+				err = bosherr.Errorf("Could not delete disk hint for disk ID %s. Error: %v", diskID, err)
+			}
+		}
 	}
 
 	value = valueType{Message: msg}

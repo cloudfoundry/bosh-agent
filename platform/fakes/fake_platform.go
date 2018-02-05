@@ -93,6 +93,7 @@ type FakePlatform struct {
 	MountPersistentDiskErr        error
 
 	UnmountPersistentDiskDidUnmount bool
+	UnmountPersistentDiskErr        error
 	UnmountPersistentDiskSettings   boshsettings.DiskSettings
 
 	GetFileContentsFromCDROMPath        string
@@ -365,6 +366,7 @@ func (p *FakePlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 func (p *FakePlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error) {
 	p.UnmountPersistentDiskSettings = diskSettings
 	didUnmount = p.UnmountPersistentDiskDidUnmount
+	err = p.UnmountPersistentDiskErr
 	return
 }
 

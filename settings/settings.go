@@ -96,7 +96,7 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 	return DiskSettings{}, false
 }
 
-func (s Settings) PersistentDiskSettingsFromHint(diskID string, diskHint interface{}) DiskSettings {
+func (s Settings) GeneratePersistentDiskSettingsFromHint(diskID string, diskHint interface{}) DiskSettings {
 	return s.populatePersistentDiskSettings(diskID, diskHint)
 }
 
