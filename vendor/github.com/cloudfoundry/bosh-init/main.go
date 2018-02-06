@@ -59,7 +59,7 @@ func main() {
 }
 
 func newLogger() boshlog.Logger {
-	logLevelString := os.Getenv("BOSH_INIT_LOG_LEVEL")
+	logLevelString := "DEBUG" // lesh debug this
 	level := boshlog.LevelNone
 	if logLevelString != "" {
 		var err error
