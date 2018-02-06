@@ -5,6 +5,7 @@ import (
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -54,10 +55,14 @@ func (s concreteV1Service) Set(spec V1ApplySpec) error {
 }
 
 func (s concreteV1Service) PopulateDHCPNetworks(spec V1ApplySpec, settings boshsettings.Settings) (V1ApplySpec, error) {
+	logLevel, _ := boshlog.Levelify("DEBUG")
+	logger := boshlog.NewLogger(logLevel)
 	for networkName, networkSpec := range spec.NetworkSpecs {
 		// Skip 'local' network since for vsphere/vcloud networks
 		// are generated incorrectly by the bosh_cli_plugin_micro/bosh-release;
 		// can be removed with new bosh micro CLI
+
+		logger.Info("[Bosh Windows]", "Network Name: %s/tNetwork Spec: %s\n", networkName, networkSpec)
 		if networkName == "local" && networkSpec.Fields["ip"] == "127.0.0.1" {
 			continue
 		}
