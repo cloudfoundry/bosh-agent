@@ -26,11 +26,11 @@ func main() {
 	}
 
 	natsIP := os.Args[1]
-	agentId := os.Args[2]
-	replyToId := os.Args[3]
+	agentID := os.Args[2]
+	replyToID := os.Args[3]
 	requestCommandName := os.Args[4]
 	requestCommandArgumentsString := os.Args[5]
-	fmt.Printf("Requesting access to agent '%v'\nreply to is '%v'\nwith request command '%v'\nwith request command arguments '%v'\n", agentId, replyToId, requestCommandName, requestCommandArgumentsString)
+	fmt.Printf("Requesting access to agent '%v'\nreply to is '%v'\nwith request command '%v'\nwith request command arguments '%v'\n", agentID, replyToID, requestCommandName, requestCommandArgumentsString)
 
 	bs, err := ioutil.ReadFile("./nats_server_ca.pem")
 	if err != nil {
@@ -55,12 +55,12 @@ func main() {
 	}
 	defer nc.Close()
 
-	payload := []byte(`{"protocol":3,"method":"` + requestCommandName + `","arguments":` + requestCommandArgumentsString + `,"reply_to":"` + replyToId + `"}`)
+	payload := []byte(`{"protocol":3,"method":"` + requestCommandName + `","arguments":` + requestCommandArgumentsString + `,"reply_to":"` + replyToID + `"}`)
 	fmt.Printf("\nusing payload %s\n", payload)
 	// payload := []byte(`{"protocol":3,"method":"mount_disk","arguments":["fake_disk_id_for_acceptance", "/device-path"],"reply_to":"director.da40148a-ea98-4b69-8395-fa47b1cc8387.c2674c03-f8e8-454a-a3d8-8d8994b4596d.92c4791c-9534-43a3-8dfb-2c9b72e280a8"}`)
 	// payload := []byte(`{"protocol":3,"method":"mount_disk","arguments":["fake_disk_id_for_acceptance", {"path": "/device-path"}],"reply_to":"director.da40148a-ea98-4b69-8395-fa47b1cc8387.c2674c03-f8e8-454a-a3d8-8d8994b4596d.92c4791c-9534-43a3-8dfb-2c9b72e280a8"}`)
 
-	msg, err := nc.Request(agentId, payload, 10000*time.Millisecond)
+	msg, err := nc.Request(agentID, payload, 10000*time.Millisecond)
 	if err != nil {
 		fmt.Printf("Error: request %s\n", err)
 		return
