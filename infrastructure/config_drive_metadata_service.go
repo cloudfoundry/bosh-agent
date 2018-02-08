@@ -100,6 +100,13 @@ func (ms *configDriveMetadataService) GetNetworks() (boshsettings.Networks, erro
 	return ms.userDataContents.Networks, nil
 }
 
+func (ms *configDriveMetadataService) GetSettings() (boshsettings.Settings, error) {
+	if ms.userDataContents.Settings.AgentID == "" {
+		return boshsettings.Settings{}, bosherr.Error("Metadata does not provide settings")
+	}
+	return ms.userDataContents.Settings, nil
+}
+
 func (ms *configDriveMetadataService) IsAvailable() bool {
 	if len(ms.diskPaths) == 0 {
 		ms.logger.Warn(ms.logTag, "Disk paths are not given")

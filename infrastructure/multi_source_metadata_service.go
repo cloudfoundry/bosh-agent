@@ -33,6 +33,10 @@ func (ms *MultiSourceMetadataService) GetNetworks() (boshsettings.Networks, erro
 	return ms.getSelectedService().GetNetworks()
 }
 
+func (ms *MultiSourceMetadataService) GetSettings() (boshsettings.Settings, error) {
+	return ms.getSelectedService().GetSettings()
+}
+
 func (ms *MultiSourceMetadataService) IsAvailable() bool {
 	return true
 }

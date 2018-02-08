@@ -22,6 +22,9 @@ type FakeMetadataService struct {
 	Networks    boshsettings.Networks
 	NetworksErr error
 
+	Settings    boshsettings.Settings
+	SettingsErr error
+
 	Available bool
 }
 
@@ -47,6 +50,10 @@ func (ms FakeMetadataService) GetRegistryEndpoint() (string, error) {
 
 func (ms FakeMetadataService) GetNetworks() (boshsettings.Networks, error) {
 	return ms.Networks, ms.NetworksErr
+}
+
+func (ms FakeMetadataService) GetSettings() (boshsettings.Settings, error) {
+	return ms.Settings, ms.SettingsErr
 }
 
 func (ms FakeMetadataService) IsAvailable() bool {

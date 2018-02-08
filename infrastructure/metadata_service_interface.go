@@ -11,6 +11,7 @@ type MetadataService interface {
 	GetServerName() (string, error)
 	GetRegistryEndpoint() (string, error)
 	GetNetworks() (boshsettings.Networks, error)
+	GetSettings() (boshsettings.Settings, error)
 }
 
 type MetadataServiceOptions struct {
@@ -32,6 +33,7 @@ type UserDataContentsType struct {
 		Nameserver []string
 	}
 	Networks boshsettings.Networks
+	Settings boshsettings.Settings
 }
 
 type DynamicMetadataService interface {

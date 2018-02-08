@@ -507,4 +507,92 @@ func describeHTTPMetadataService() {
 			})
 		})
 	})
+
+	Describe("GetSettings", func() {
+
+		Context("When the metadata service user data contains settings", func() {
+			var (
+				ts          *httptest.Server
+				registryURL *string
+			)
+
+			handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
+
+				Expect(r.Method).To(Equal("GET"))
+				Expect(r.URL.Path).To(Equal("/user-data"))
+				Expect(r.Header.Get("key")).To(Equal("value"))
+
+				jsonStr := fmt.Sprintf(`
+{
+	"settings":{
+		"agent_id":"%s",
+		"mbus": "%s"
+	}
+}
+`, "Agent-Foo", "Agent-Mbus")
+
+				w.Write([]byte(jsonStr))
+			}
+
+			BeforeEach(func() {
+				url := "http://fake-registry.com"
+				registryURL = &url
+
+				handler := http.HandlerFunc(handlerFunc)
+				ts = httptest.NewServer(handler)
+				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
+			})
+
+			AfterEach(func() {
+				ts.Close()
+			})
+
+			It("will return the settings object", func() {
+				settings, err := metadataService.GetSettings()
+				Expect(err).To(BeNil())
+				Expect(settings).To(Equal(boshsettings.Settings{
+					AgentID: "Agent-Foo",
+					Mbus:    "Agent-Mbus",
+				}))
+			})
+		})
+
+		Context("When the metadata service user data does NOT contain settings", func() {
+			var (
+				ts          *httptest.Server
+				registryURL *string
+			)
+
+			handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
+
+				Expect(r.Method).To(Equal("GET"))
+				Expect(r.URL.Path).To(Equal("/user-data"))
+				Expect(r.Header.Get("key")).To(Equal("value"))
+
+				jsonStr := fmt.Sprintf(`{}`)
+
+				w.Write([]byte(jsonStr))
+			}
+
+			BeforeEach(func() {
+				url := "http://fake-registry.com"
+				registryURL = &url
+
+				handler := http.HandlerFunc(handlerFunc)
+				ts = httptest.NewServer(handler)
+				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
+			})
+
+			AfterEach(func() {
+				ts.Close()
+			})
+
+			It("will return an error", func() {
+				_, err := metadataService.GetSettings()
+				Expect(err.Error()).To(Equal("Metadata does not provide settings"))
+			})
+		})
+	})
 }

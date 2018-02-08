@@ -7,6 +7,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-utils/errors"
 )
 
 var _ = Describe("MultiSourceMetadataService", describeMultiSourceMetadataService)
@@ -26,6 +27,10 @@ func describeMultiSourceMetadataService() {
 			ServerName:       "fake-server-name-1",
 			RegistryEndpoint: "fake-registry-endpoint-1",
 			Networks:         boshsettings.Networks{"net-1": boshsettings.Network{}},
+			Settings: boshsettings.Settings{
+				AgentID: "Agent-Foo",
+				Mbus:    "Agent-Mbus",
+			},
 		}
 
 		service2 = fakeinf.FakeMetadataService{
@@ -73,6 +78,29 @@ func describeMultiSourceMetadataService() {
 				registryEndpoint, err := metadataService.GetRegistryEndpoint()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(registryEndpoint).To(Equal("fake-registry-endpoint-1"))
+			})
+		})
+
+		Describe("GetSettings", func() {
+			Context("selected metadata service did not return an error", func() {
+				It("returns settings", func() {
+					settings, err := metadataService.GetSettings()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(settings.AgentID).To(Equal("Agent-Foo"))
+				})
+			})
+
+			Context("selected metadata service returned an error", func() {
+				BeforeEach(func() {
+					service1.SettingsErr = errors.Error("Foo Bar")
+					metadataService = NewMultiSourceMetadataService(service1, service2)
+				})
+
+				It("returns the error", func() {
+					_, err := metadataService.GetSettings()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Foo Bar"))
+				})
 			})
 		})
 

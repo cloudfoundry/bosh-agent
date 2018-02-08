@@ -211,6 +211,20 @@ func (ms HTTPMetadataService) GetNetworks() (boshsettings.Networks, error) {
 
 func (ms HTTPMetadataService) IsAvailable() bool { return true }
 
+func (ms HTTPMetadataService) GetSettings() (boshsettings.Settings, error) {
+	userData, err := ms.getUserData()
+	if err != nil {
+		return boshsettings.Settings{}, bosherr.WrapError(err, "Getting user data")
+	}
+
+	settings := userData.Settings
+
+	if settings.AgentID == "" {
+		return boshsettings.Settings{}, bosherr.Error("Metadata does not provide settings")
+	}
+	return settings, nil
+}
+
 func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 	var userData UserDataContentsType
 
