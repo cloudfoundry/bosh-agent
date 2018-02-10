@@ -87,8 +87,9 @@ func NewPhotonOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, tim
 	return &certManager{
 		fs:            fs,
 		runner:        runner,
-		path:          "/etc/pki/tls/certs/",
-		updateCmdPath: "/bin/make-ca.sh",
+		path:          "/etc/ssl/certs/",
+		updateCmdPath: "/usr/bin/c_rehash",
+		updateCmdArgs: []string{"/etc/ssl/certs"},
 		logger:        logger,
 		logTag:        "PhotonOSCertManager",
 		updateTimeout: timeout,
@@ -170,6 +171,13 @@ func (c *certManager) UpdateCertificates(certs string) error {
 	_, _, _, err = c.runner.RunCommand(c.updateCmdPath, c.updateCmdArgs...)
 	if err != nil {
 		return bosherr.WrapError(err, "Running command to update certificates without retries")
+	}
+
+	if strings.Compare(c.logTag, "PhotonOSCertManager") == 0 {
+		_, _, _, err = c.runner.RunCommand("cat", fmt.Sprintf("%s*.pem > /etc/pki/tls/certs/ca-bundle.crt", c.path))
+		if err != nil {
+			return bosherr.WrapError(err, "Running command to create bundle")
+		}
 	}
 
 	c.logger.Debug(c.logTag, "Successfully updated new certificate files.")

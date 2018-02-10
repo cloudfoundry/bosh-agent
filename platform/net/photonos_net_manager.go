@@ -4,15 +4,15 @@
 package net
 
 import (
-	"strings"
-	"strconv"
-	ipnet "net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	ipnet "net"
+	"strconv"
+	"strings"
 )
 
 const photonosNetManagerLogTag = "photonosNetManager"
@@ -109,8 +109,8 @@ func (net photonosNetManager) GetConfiguredNetworkInterfaces() ([]string, error)
 	return interfaces, nil
 }
 
-func (net photonosNetManager) maskToCIDR (netMask string) int {
-        maskSize := ipnet.IPMask(ipnet.ParseIP(netMask).To4())
+func (net photonosNetManager) maskToCIDR(netMask string) int {
+	maskSize := ipnet.IPMask(ipnet.ParseIP(netMask).To4())
 	cidr, _ := maskSize.Size()
 	return cidr
 }
@@ -120,14 +120,14 @@ func (net photonosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations
 	for _, interfaceConfigInfo := range staticInterfaceConfigurations {
 
 		_, _, _, err := net.cmdRunner.RunCommand("netmgr", "ip4_address", "--set", "--interface", interfaceConfigInfo.Name,
-                                                              "--mode", "static", "--addr", interfaceConfigInfo.Address + "/" + strconv.Itoa(net.maskToCIDR(interfaceConfigInfo.Netmask)),
-                                                              "--gateway", interfaceConfigInfo.Gateway)
+			"--mode", "static", "--addr", interfaceConfigInfo.Address+"/"+strconv.Itoa(net.maskToCIDR(interfaceConfigInfo.Netmask)),
+			"--gateway", interfaceConfigInfo.Gateway)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Setting Address '%s' and Gateway '%s' failed", interfaceConfigInfo.Name, interfaceConfigInfo.Gateway)
 		}
 
 		_, _, _, err = net.cmdRunner.RunCommand("netmgr", "link_info", "--set", "--interface", interfaceConfigInfo.Name,
-                                                              "--macaddr", interfaceConfigInfo.Mac)
+			"--macaddr", interfaceConfigInfo.Mac)
 		if err != nil {
 			return bosherr.WrapError(err, "Setting Mac Address failed")
 		}
@@ -136,7 +136,7 @@ func (net photonosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations
 	for _, dhcpConfig := range dhcpInterfaceConfigurations {
 
 		_, _, _, err := net.cmdRunner.RunCommand("netmgr", "ip4_address", "--set", "--interface", dhcpConfig.Name,
-                                                              "--mode", "dhcp")
+			"--mode", "dhcp")
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Setting DHCP as IP option for the interface '%s' failed", dhcpConfig.Name)
 		}
@@ -146,7 +146,7 @@ func (net photonosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations
 	for i, dnsServer := range dnsServers {
 		if i == 0 {
 			_, _, _, err := net.cmdRunner.RunCommand("netmgr", "dns_servers", "--set", "--mode", "static",
-                                                              "--servers", dnsServer)
+				"--servers", dnsServer)
 			if err != nil {
 				return bosherr.WrapErrorf(err, "Setting DNS Server failed")
 			}
@@ -210,7 +210,7 @@ func (net photonosNetManager) detectMacAddresses() (map[string]string, error) {
 		if i == 0 || i == len(linkSlice)-1 {
 			continue
 		}
-                interfaceInfo = strings.Split(linkInfo, "\t")
+		interfaceInfo = strings.Split(linkInfo, "\t")
 		macAddress = strings.Trim(interfaceInfo[1], " ")
 		interfaceName := strings.Trim(interfaceInfo[0], " ")
 		addresses[macAddress] = interfaceName
