@@ -82,6 +82,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, kernelIPv6, logger)
 	opensuseNetManager := boshnet.NewOpensuseNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
+	photonosNetManager := boshnet.NewPhotonosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
@@ -97,6 +98,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
 	windowsCertManager := boshcert.NewWindowsCertManager(fs, runner, dirProvider, logger)
 	opensuseCertManager := boshcert.NewOpensuseOSCertManager(fs, runner, 0, logger)
+	photonosCertManager := boshcert.NewPhotonOSCertManager(fs, runner, 0, logger)
 
 	routesSearcher := boshnet.NewRoutesSearcher(runner)
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
@@ -222,6 +224,29 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		)
 	}
 
+	var photonos = func() Platform {
+		return NewLinuxPlatform(
+			fs,
+			runner,
+			statsCollector,
+			compressor,
+			copier,
+			dirProvider,
+			vitalsService,
+			linuxCdutil,
+			linuxDiskManager,
+			photonosNetManager,
+			photonosCertManager,
+			monitRetryStrategy,
+			devicePathResolver,
+			bootstrapState,
+			options.Linux,
+			logger,
+			defaultNetworkResolver,
+			uuidGenerator,
+			auditLogger,
+		)
+	}
 	return provider{
 		platforms: map[string]func() Platform{
 			"ubuntu":   ubuntu,
@@ -229,6 +254,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			"dummy":    dummy,
 			"windows":  windows,
 			"opensuse": opensuse,
+			"photonos": photonos,
 		},
 	}
 }
