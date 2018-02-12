@@ -34,6 +34,7 @@ func (s ComplexSettingsSource) PublicSSHKeyForUsername(string) (string, error) {
 func (s ComplexSettingsSource) Settings() (boshsettings.Settings, error) {
 	settings, err := s.GetMetadataService().GetSettings()
 	if err == nil && settings.AgentID != "" {
+		s.logger.Debug(s.logTag, "Got settings from metadata service, not contacting registry.")
 		return settings, nil
 	}
 

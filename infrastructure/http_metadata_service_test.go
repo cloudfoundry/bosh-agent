@@ -27,7 +27,7 @@ func describeHTTPMetadataService() {
 		dnsResolver     *fakeinf.FakeDNSResolver
 		platform        *fakeplat.FakePlatform
 		logger          boshlog.Logger
-		metadataService MetadataService
+		metadataService DynamicMetadataService
 	)
 
 	BeforeEach(func() {
@@ -504,6 +504,90 @@ func describeHTTPMetadataService() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Empty server name"))
 				Expect(name).To(BeEmpty())
+			})
+		})
+	})
+
+	Describe("#GetValueAtPath", func() {
+		var (
+			ts               *httptest.Server
+			registryURL      *string
+			metadataResponse string
+		)
+
+		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+			defer GinkgoRecover()
+
+			Expect(r.Method).To(Equal("GET"))
+			Expect(r.URL.Path).To(Equal("/user-data"))
+			Expect(r.Header.Get("key")).To(Equal("value"))
+
+			metadataResponse = `{"settings":{"some_setting_hash"}}`
+
+			w.Write([]byte(metadataResponse))
+		}
+
+		BeforeEach(func() {
+			url := "http://fake-registry.com"
+			registryURL = &url
+
+			handler := http.HandlerFunc(handlerFunc)
+			ts = httptest.NewServer(handler)
+			metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
+		})
+
+		AfterEach(func() {
+			ts.Close()
+		})
+
+		Context("path is empty", func() {
+			It("returns error", func() {
+				_, err := metadataService.GetValueAtPath("")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Can not retrieve metadata value for empty path"))
+			})
+		})
+
+		Context("path is not empty", func() {
+			Context("non-minimal network setup", func() {
+				var (
+					errMessage string
+				)
+
+				BeforeEach(func() {
+					platform.GetConfiguredNetworkInterfacesInterfaces = []string{}
+				})
+
+				It("propagates error if network config is not loaded", func() {
+					errMessage = "Network config error"
+					platform.GetConfiguredNetworkInterfacesErr = errors.New(errMessage)
+
+					_, err := metadataService.GetValueAtPath("/user-data")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring(errMessage))
+					Expect(platform.SetupNetworkingCalled).To(Equal(false))
+				})
+
+				It("adds network if config is not present", func() {
+					_, err := metadataService.GetValueAtPath("/user-data")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(platform.SetupNetworkingCalled).To(Equal(true))
+				})
+
+				It("propagates error when DHCP network setup fails", func() {
+					errMessage = "DHCP setup error"
+					platform.SetupNetworkingErr = errors.New(errMessage)
+
+					_, err := metadataService.GetValueAtPath("/user-data")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring(errMessage))
+				})
+			})
+
+			It("returns response body if could read response properly", func() {
+				response, err := metadataService.GetValueAtPath("/user-data")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(response).To(Equal(metadataResponse))
 			})
 		})
 	})
