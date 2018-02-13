@@ -206,7 +206,6 @@ var _ = Describe("FileMetadataService", func() {
 					Expect(err.Error()).To(Equal("Metadata does not provide settings"))
 				})
 			})
-
 		})
 
 		Context("when metadata service file does not exist", func() {
@@ -217,7 +216,7 @@ var _ = Describe("FileMetadataService", func() {
 			It("returns error", func() {
 				_, err := metadataService.GetSettings()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Reading user data: Not found: open fake-userdata-file-path: no such file or directory"))
+				Expect(err.Error()).To(ContainSubstring("Reading user data: Not found: open fake-userdata-file-path"))
 			})
 		})
 
