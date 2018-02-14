@@ -35,6 +35,7 @@ jobs:
 
 - name: windows-test-integration-1709
   serial: true
+  serial_groups: [windows-integration]
   plan:
   - get: windows-ami-1709
   - get: bosh-agent
@@ -58,6 +59,7 @@ jobs:
 
 - name: windows-test-integration-2012R2
   serial: true
+  serial_groups: [windows-integration]
   plan:
   - get: windows-ami-2012R2
   - get: bosh-agent
