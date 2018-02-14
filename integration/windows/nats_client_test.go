@@ -318,7 +318,7 @@ func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, e
 
 func (n *NatsClient) WaitForTask(id string, timeout time.Duration) (*http.TaskResponse, error) {
 	if timeout <= 0 {
-		timeout = time.Second * 5
+		timeout = time.Second * 20
 	}
 	const finished = "finished" // TaskResponse final state
 	start := time.Now()

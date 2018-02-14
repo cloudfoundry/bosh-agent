@@ -98,7 +98,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	windowsCertManager := boshcert.NewWindowsCertManager(fs, runner, dirProvider, logger)
 	opensuseCertManager := boshcert.NewOpensuseOSCertManager(fs, runner, 0, logger)
 
-	routesSearcher := boshnet.NewRoutesSearcher(runner)
+	interfaceManager := boshnet.NewInterfaceManager()
+
+	routesSearcher := boshnet.NewRoutesSearcher(runner, interfaceManager)
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 
 	monitRetryable := NewMonitRetryable(runner)

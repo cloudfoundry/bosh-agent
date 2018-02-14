@@ -936,7 +936,7 @@ var _ = Describe("bootstrap", func() {
 			devicePathResolver := devicepathresolver.NewIdentityDevicePathResolver()
 
 			fakeUUIDGenerator := boshuuid.NewGenerator()
-			routesSearcher := boshnet.NewRoutesSearcher(runner)
+			routesSearcher := boshnet.NewRoutesSearcher(runner, nil)
 			defaultNetworkResolver = boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 			state, err := boshplatform.NewBootstrapState(fs, "/tmp/agent_state.json")
 			Expect(err).NotTo(HaveOccurred())

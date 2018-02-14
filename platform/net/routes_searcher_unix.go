@@ -15,7 +15,7 @@ type cmdRoutesSearcher struct {
 	runner boshsys.CmdRunner
 }
 
-func NewRoutesSearcher(runner boshsys.CmdRunner) RoutesSearcher {
+func NewRoutesSearcher(runner boshsys.CmdRunner, _ InterfaceManager) RoutesSearcher {
 	return cmdRoutesSearcher{runner}
 }
 
