@@ -112,6 +112,13 @@ var _ = Describe("RunErrand", func() {
 						env := map[string]string{"PATH": boshenv.Path()}
 						Expect(cmd.Env).To(Equal(env))
 					})
+
+					It("runs errand script as shell script", func() {
+						_, err := action.Run(errandName)
+						Expect(err).ToNot(HaveOccurred())
+						cmd := cmdRunner.RunComplexCommands[0]
+						Expect(cmd.IsScript).To(BeTrue())
+					})
 				})
 
 				Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {

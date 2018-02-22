@@ -89,7 +89,8 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	updatedPkgs := params.UpdatedPackages()
 
 	command := boshsys.Command{
-		Name: s.path,
+		Name:     s.path,
+		IsScript: true,
 		Env: map[string]string{
 			"PATH": boshenv.Path(),
 		},

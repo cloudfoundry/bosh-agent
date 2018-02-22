@@ -89,7 +89,8 @@ func (a RunErrandAction) Run(errandName ...string) (ErrandResult, error) {
 	}
 
 	command := boshsys.Command{
-		Name: path.Join(a.jobsDir, templateName, "bin", "run"),
+		Name:     path.Join(a.jobsDir, templateName, "bin", "run"),
+		IsScript: true,
 		Env: map[string]string{
 			"PATH": boshenv.Path(),
 		},

@@ -25,11 +25,11 @@ var windowsCommands = map[string]Command{
 	},
 	"stderr": Command{
 		Name: "powershell",
-		Args: []string{`"[Console]::Error.WriteLine('error-output')"`},
+		Args: []string{"[Console]::Error.WriteLine('error-output')"},
 	},
 	"exit": Command{
-		Name: fmt.Sprintf("exit %d", ErrExitCode),
-		Args: []string{},
+		Name: "powershell",
+		Args: []string{fmt.Sprintf("exit %d", ErrExitCode)},
 	},
 	"ls": Command{
 		Name:       "powershell",
@@ -235,6 +235,19 @@ var _ = Describe("execCmdRunner", func() {
 			Expect(envVars).To(HaveKeyWithValue("_BAR", "alpha=first"))
 		})
 
+		It("executes scripts", func() {
+			cmd := Command{
+				Name:     "test_assets/script",
+				IsScript: true,
+			}
+
+			stdout, stderr, status, err := runner.RunComplexCommand(cmd)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stdout).To(MatchRegexp(`^it works\r?\n$`))
+			Expect(stderr).To(BeEmpty())
+			Expect(status).To(Equal(0))
+		})
+
 		It("run complex command with stdin", func() {
 			input := "This is STDIN\nWith another line."
 			cmd := Command{
@@ -380,11 +393,7 @@ var _ = Describe("execCmdRunner", func() {
 		It("run command with error with args", func() {
 			stdout, stderr, status, err := runner.RunCommand(FalseExePath, "second arg")
 			Expect(err).To(HaveOccurred())
-			errMsg := fmt.Sprintf("Running command: '%s second arg', stdout: '', stderr: '': exit status 1", FalseExePath)
-			if runtime.GOOS == "windows" {
-				errMsg = fmt.Sprintf("Running command: 'powershell %s second arg', stdout: '', stderr: '': exit status 1", FalseExePath)
-			}
-			Expect(err.Error()).To(Equal(errMsg))
+			Expect(err.Error()).To(Equal(fmt.Sprintf("Running command: '%s second arg', stdout: '', stderr: '': exit status 1", FalseExePath)))
 			Expect(stderr).To(BeEmpty())
 			Expect(stdout).To(BeEmpty())
 			Expect(status).To(Equal(1))

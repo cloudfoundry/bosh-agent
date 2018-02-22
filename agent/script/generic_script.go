@@ -76,7 +76,8 @@ func (s GenericScript) Run() error {
 	}()
 
 	command := boshsys.Command{
-		Name: s.path,
+		Name:     s.path,
+		IsScript: true,
 		Env: map[string]string{
 			"PATH": boshenv.Path(),
 		},

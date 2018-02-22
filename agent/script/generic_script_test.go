@@ -79,6 +79,13 @@ var _ = Describe("GenericScript", func() {
 			Expect(err.Error()).To(Equal("fake-open-file-error"))
 		})
 
+		It("executes as a script", func() {
+			Expect(genericScript.Run()).To(Succeed())
+			Expect(cmdRunner.RunComplexCommands).To(HaveLen(1))
+			cmd := cmdRunner.RunComplexCommands[0]
+			Expect(cmd.IsScript).To(BeTrue())
+		})
+
 		It("sets the PATH environment variable", func() {
 			Expect(genericScript.Run()).To(Succeed())
 			Expect(cmdRunner.RunComplexCommands).To(HaveLen(1))

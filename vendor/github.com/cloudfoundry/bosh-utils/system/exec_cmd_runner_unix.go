@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func newExecCmd(name string, args ...string) *exec.Cmd {
+func newExecCmd(isScript bool, name string, args ...string) *exec.Cmd {
 	return exec.Command(name, args...)
 }
 

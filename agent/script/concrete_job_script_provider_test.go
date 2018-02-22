@@ -40,8 +40,7 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 			script := scriptProvider.NewScript("myjob", "the-best-hook-ever")
 			Expect(script.Tag()).To(Equal("myjob"))
 
-			expPath := "/the/base/dir/jobs/myjob/bin/the-best-hook-ever" + boshscript.ScriptExt
-			Expect(script.Path()).To(boshassert.MatchPath(expPath))
+			Expect(script.Path()).To(boshassert.MatchPath("/the/base/dir/jobs/myjob/bin/the-best-hook-ever"))
 		})
 	})
 
@@ -51,8 +50,7 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 			script := scriptProvider.NewDrainScript("foo", params)
 			Expect(script.Tag()).To(Equal("foo"))
 
-			expPath := "/the/base/dir/jobs/foo/bin/drain" + boshscript.ScriptExt
-			Expect(script.Path()).To(boshassert.MatchPath(expPath))
+			Expect(script.Path()).To(boshassert.MatchPath("/the/base/dir/jobs/foo/bin/drain"))
 			Expect(script.(boshdrain.ConcreteScript).Params()).To(Equal(params))
 		})
 	})

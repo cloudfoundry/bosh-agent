@@ -19,6 +19,9 @@ type Command struct {
 	// Don't echo stdout/stderr
 	Quiet bool
 
+	// If invoking a shell script (for platform-specific behaviors)
+	IsScript bool
+
 	Stdin io.Reader
 
 	// Full stdout and stderr will be captured to memory

@@ -91,8 +91,9 @@ var _ = Describe("ConcreteScript", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedCmd := boshsys.Command{
-				Name: "/fake/script",
-				Args: []string{"job_changed", "hash_unchanged", "bar", "foo"},
+				Name:     "/fake/script",
+				Args:     []string{"job_changed", "hash_unchanged", "bar", "foo"},
+				IsScript: true,
 				Env: map[string]string{
 					"PATH":                boshenv.Path(),
 					"BOSH_JOB_STATE":      "{\"persistent_disk\":42}",

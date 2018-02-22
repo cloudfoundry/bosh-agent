@@ -64,7 +64,7 @@ func (r execCmdRunner) CommandExists(cmdName string) bool {
 }
 
 func (r execCmdRunner) buildComplexCommand(cmd Command) *exec.Cmd {
-	execCmd := newExecCmd(cmd.Name, cmd.Args...)
+	execCmd := newExecCmd(cmd.IsScript, cmd.Name, cmd.Args...)
 
 	if cmd.Stdin != nil {
 		execCmd.Stdin = cmd.Stdin
