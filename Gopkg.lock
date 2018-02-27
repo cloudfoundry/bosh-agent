@@ -70,7 +70,7 @@
     "uuid",
     "uuid/fakes"
   ]
-  revision = "d052b28175edc3636cbf528dcdd5ad47ae587f6c"
+  revision = "d73926502f7c96f67854a6dfe73ce607907d2593"
 
 [[projects]]
   branch = "master"
@@ -245,8 +245,7 @@
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
-    "ssh",
-    "ssh/terminal"
+    "ssh"
   ]
   revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
 

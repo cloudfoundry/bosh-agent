@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
+	"github.com/cloudfoundry/bosh-agent/agent/script/cmd"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -75,14 +75,10 @@ func (s GenericScript) Run() error {
 		_ = stderrFile.Close()
 	}()
 
-	command := boshsys.Command{
-		Name: s.path,
-		Env: map[string]string{
-			"PATH": boshenv.Path(),
-		},
-		Stdout: stdoutFile,
-		Stderr: stderrFile,
-	}
+	command := cmd.BuildCommand(s.path)
+	command.Stdout = stdoutFile
+	command.Stderr = stderrFile
+
 	_, _, _, err = s.runner.RunComplexCommand(command)
 
 	return err
