@@ -10,7 +10,7 @@ import (
 func (c concreteCompiler) runPackagingCommand(compilePath, enablePath string, pkg Package) error {
 	command := boshsys.Command{
 		Name: "powershell",
-		Args: []string{"-command", fmt.Sprintf(`"iex (get-content -raw %s)"`, PackagingScriptName)},
+		Args: []string{"-command", fmt.Sprintf("iex (get-content -raw %s)", PackagingScriptName)},
 		Env: map[string]string{
 			"BOSH_COMPILE_TARGET":  compilePath,
 			"BOSH_INSTALL_TARGET":  enablePath,
