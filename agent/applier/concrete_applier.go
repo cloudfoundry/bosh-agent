@@ -7,6 +7,7 @@ import (
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-cli/work"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
@@ -16,6 +17,7 @@ type concreteApplier struct {
 	logrotateDelegate LogrotateDelegate
 	jobSupervisor     boshjobsuper.JobSupervisor
 	dirProvider       boshdirs.Provider
+	settings          boshsettings.Settings
 }
 
 func NewConcreteApplier(
@@ -24,6 +26,7 @@ func NewConcreteApplier(
 	logrotateDelegate LogrotateDelegate,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	dirProvider boshdirs.Provider,
+	settings boshsettings.Settings,
 ) Applier {
 	return &concreteApplier{
 		jobApplier:        jobApplier,
@@ -31,22 +34,47 @@ func NewConcreteApplier(
 		logrotateDelegate: logrotateDelegate,
 		jobSupervisor:     jobSupervisor,
 		dirProvider:       dirProvider,
+		settings:          settings,
 	}
 }
 
 func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
-	for _, job := range desiredApplySpec.Jobs() {
-		err := a.jobApplier.Prepare(job)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Preparing job %s", job.Name)
-		}
+	var tasks []func() error
+	pool := work.Pool{
+		Count: *a.settings.Env.GetParallel(),
 	}
 
+	for _, job := range desiredApplySpec.Jobs() {
+		job := job
+		tasks = append(tasks, func() error {
+			jobErr := a.jobApplier.Prepare(job)
+			if jobErr != nil {
+				return bosherr.WrapErrorf(jobErr, "Preparing job %s", job.Name)
+			}
+			return nil
+		})
+	}
+
+	err := pool.ParallelDo(tasks...)
+	if err != nil {
+		return err
+	}
+
+	tasks = make([]func() error, 0)
 	for _, pkg := range desiredApplySpec.Packages() {
-		err := a.packageApplier.Prepare(pkg)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Preparing package %s", pkg.Name)
-		}
+		pkg := pkg
+		tasks = append(tasks, func() error {
+			pkgErr := a.packageApplier.Prepare(pkg)
+			if pkgErr != nil {
+				return bosherr.WrapErrorf(pkgErr, "Preparing package %s", pkg.Name)
+			}
+			return nil
+		})
+	}
+
+	err = pool.ParallelDo(tasks...)
+	if err != nil {
+		return err
 	}
 
 	return nil

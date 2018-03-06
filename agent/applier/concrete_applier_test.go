@@ -3,6 +3,7 @@ package applier_test
 import (
 	"errors"
 	"path/filepath"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,6 +18,7 @@ import (
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
@@ -58,6 +60,7 @@ func init() {
 			logRotateDelegate *FakeLogRotateDelegate
 			jobSupervisor     *fakejobsuper.FakeJobSupervisor
 			applier           Applier
+			settingsService   boshsettings.Service
 		)
 
 		BeforeEach(func() {
@@ -65,12 +68,14 @@ func init() {
 			packageApplier = fakepackages.NewFakeApplier()
 			logRotateDelegate = &FakeLogRotateDelegate{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			settingsService = &fakesettings.FakeSettingsService{}
 			applier = NewConcreteApplier(
 				jobApplier,
 				packageApplier,
 				logRotateDelegate,
 				jobSupervisor,
 				boshdirs.NewProvider("/fake-base-dir"),
+				settingsService.GetSettings(),
 			)
 		})
 
@@ -119,6 +124,45 @@ func init() {
 				)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-prepare-package-error"))
+			})
+
+			It("prepares jobs in parallel", func() {
+				jobs := []models.Job{buildJob(), buildJob(), buildJob()}
+				jobApplier.PrepareStub = func(job models.Job) error {
+					time.Sleep(1500 * time.Millisecond)
+					return nil
+				}
+				startTime := time.Now()
+				err := applier.Prepare(
+					&fakeas.FakeApplySpec{JobResults: jobs},
+				)
+				cmdDuration := time.Since(startTime)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(jobApplier.PrepareCallCount()).To(Equal(3))
+				Expect(jobs).To(ContainElement(jobApplier.PrepareArgsForCall(0)))
+				Expect(jobs).To(ContainElement(jobApplier.PrepareArgsForCall(1)))
+				Expect(jobs).To(ContainElement(jobApplier.PrepareArgsForCall(2)))
+				Expect(int64(cmdDuration / time.Millisecond)).To(BeNumerically("<", 2000))
+			})
+
+			It("prepares packages in parallel", func() {
+				pkg1 := buildPackage()
+				pkg2 := buildPackage()
+				pkg3 := buildPackage()
+				packageApplier.PrepareStub = func(pkg models.Package) error {
+					time.Sleep(1500 * time.Millisecond)
+					return nil
+				}
+				startTime := time.Now()
+				err := applier.Prepare(
+					&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2, pkg3}},
+				)
+				cmdDuration := time.Since(startTime)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(packageApplier.PreparedPackages).To(ContainElement(pkg1))
+				Expect(packageApplier.PreparedPackages).To(ContainElement(pkg2))
+				Expect(packageApplier.PreparedPackages).To(ContainElement(pkg3))
+				Expect(int64(cmdDuration / time.Millisecond)).To(BeNumerically("<", 2000))
 			})
 		})
 
