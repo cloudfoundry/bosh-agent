@@ -287,8 +287,8 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"static-1": network})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(Equal(
-				[][]string{{"powershell", "-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}}))
+			Expect(runner.RunCommands).To(ContainElement(
+				[]string{"powershell", "-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
 		})
 
 		It("resets DNS without any DNS servers if there are multiple networks", func() {
@@ -309,8 +309,7 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"man-1": network1, "man-2": network2})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(Equal(
-				[][]string{{"powershell", "-Command", ResetDNSTemplate}}))
+			Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", ResetDNSTemplate}))
 		})
 	})
 
@@ -332,7 +331,7 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"static-1": network1, "vip-1": network2})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(Equal([][]string{{"powershell", "-Command", ResetDNSTemplate}}))
+			Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", ResetDNSTemplate}))
 		})
 	})
 
@@ -341,7 +340,18 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(Equal([][]string{{"powershell", "-Command", ResetDNSTemplate}}))
+			Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", ResetDNSTemplate}))
+		})
+	})
+
+	Describe("Setting HTTP Service", func() {
+		Context("when calling SetupNetworking", func() {
+			It("starts the HTTP service using Set-Service", func() {
+				err := setupNetworking(boshsettings.Networks{})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", "Start-Service http"}))
+			})
 		})
 	})
 })
