@@ -52,6 +52,47 @@ var _ = Describe("Job", func() {
 			dirProvider = directories.NewProvider("/fakebasedir")
 		})
 
+		Context("when directory already exists", func() {
+			BeforeEach(func() {
+				err := fs.MkdirAll("/fakebasedir/data/sys/log/"+job.Name, 0600)
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.Chown("/fakebasedir/data/sys/log/"+job.Name, "maximus:maximus")
+				Expect(err).ToNot(HaveOccurred())
+				fs.MkdirAllCallCount = 0
+				fs.ChownCallCount = 0
+			})
+
+			It("should not MkdirAll, chmod, chown for existing directories", func() {
+				err := job.CreateDirectories(fs, dirProvider)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fs.MkdirAllCallCount).To(Equal(2))
+				Expect(fs.ChmodCallCount).To(Equal(2))
+				Expect(fs.ChownCallCount).To(Equal(2))
+
+				stat := fs.GetFileTestStat("/fakebasedir/data/sys/log/" + job.Name)
+				Expect(stat).ToNot(BeNil())
+				Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(stat.FileMode).To(Equal(os.FileMode(0600)))
+				Expect(stat.Username).To(Equal("maximus"))
+				Expect(stat.Groupname).To(Equal("maximus"))
+
+				stat = fs.GetFileTestStat("/fakebasedir/data/" + job.Name)
+				Expect(stat).ToNot(BeNil())
+				Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+				Expect(stat.Username).To(Equal("root"))
+				Expect(stat.Groupname).To(Equal("vcap"))
+
+				stat = fs.GetFileTestStat("/fakebasedir/data/sys/run/" + job.Name)
+				Expect(stat).ToNot(BeNil())
+				Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(stat.FileMode).To(Equal(os.FileMode(0770)))
+				Expect(stat.Username).To(Equal("root"))
+				Expect(stat.Groupname).To(Equal("vcap"))
+			})
+		})
+
 		It("creates the jobs directories", func() {
 			err := job.CreateDirectories(fs, dirProvider)
 			Expect(err).ToNot(HaveOccurred())
