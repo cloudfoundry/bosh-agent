@@ -34,6 +34,7 @@ type JobDirectoryCreator interface {
 	MkdirAll(path string, perm os.FileMode) error
 	Chown(path, username string) error
 	Chmod(path string, perm os.FileMode) error
+	FileExists(path string) bool
 }
 
 type JobDirectoryProvider interface {
@@ -54,6 +55,10 @@ func (s Job) CreateDirectories(jobDirectoryCreator JobDirectoryCreator, jobDirPr
 	}
 
 	for _, dir := range dirs {
+		if jobDirectoryCreator.FileExists(dir) {
+			continue
+		}
+
 		mode := os.FileMode(0770)
 		if err := jobDirectoryCreator.MkdirAll(dir, mode); err != nil {
 			return bosherr.WrapError(err, "Failed to create dir")
