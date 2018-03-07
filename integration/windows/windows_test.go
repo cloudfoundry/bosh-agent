@@ -23,7 +23,7 @@ const (
 	agentGUID       = "123-456-789"
 	agentID         = "agent." + agentGUID
 	senderID        = "director.987-654-321"
-	DefaultTimeout  = time.Second * 30
+	DefaultTimeout  = time.Second * 60
 	DefaultInterval = time.Second
 )
 
