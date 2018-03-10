@@ -129,7 +129,7 @@ func (c *HTTPClient) GetCustomized(endpoint string, f func(*http.Request)) (*htt
 
 	response, err := c.client.Do(request)
 	if err != nil {
-		return nil, bosherr.WrapError(scrubErrorOutput(err), "Performing GET request")
+		return response, bosherr.WrapError(scrubErrorOutput(err), "Performing GET request")
 	}
 
 	return response, nil

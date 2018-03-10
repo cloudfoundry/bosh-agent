@@ -95,6 +95,10 @@ func (ms HTTPMetadataService) GetPublicKey() (string, error) {
 	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.sshKeysPath)
 	resp, err := ms.client.GetCustomized(url, ms.addHeaders())
 	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			ms.logger.Warn(ms.logTag, "There is no setting ssh key: %s", err.Error())
+			return "", nil
+		}
 		return "", bosherr.WrapErrorf(err, "Getting open ssh key from url %s", url)
 	}
 
