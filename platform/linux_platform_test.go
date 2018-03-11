@@ -2753,6 +2753,67 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(mounter.RemountFromMountPoint).To(Equal("/to/path"))
 			Expect(mounter.RemountToMountPoint).To(Equal("/from/path"))
 		})
+
+		Context("when device path resolution type is iscsi", func() {
+			BeforeEach(func() {
+				mountsSearcher := diskManager.FakeMountsSearcher
+
+				mountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+					{PartitionPath: "/dev/mapper/from-device-path-part1", MountPoint: "/from/path"},
+					{PartitionPath: "/dev/mapper/to-device-path-part1", MountPoint: "/to/path"},
+				}
+				cmdRunner.AddCmdResult("multipath -ll", fakesys.FakeCmdResult{
+					Stdout: `to-device-path  dm-2 NETAPP  ,LUN C-Mode
+from-device-path  dm-0 NETAPP  ,LUN C-Mode
+`,
+					Stderr: "",
+					Error:  nil,
+				})
+			})
+
+			It("migrate persistent disk", func() {
+				var platformWithISCSIType Platform
+
+				options.DevicePathResolutionType = "iscsi"
+				platformWithISCSIType = NewLinuxPlatform(
+					fs,
+					cmdRunner,
+					collector,
+					compressor,
+					copier,
+					dirProvider,
+					vitalsService,
+					cdutil,
+					diskManager,
+					netManager,
+					certManager,
+					monitRetryStrategy,
+					devicePathResolver,
+					state,
+					options,
+					logger,
+					fakeDefaultNetworkResolver,
+					fakeUUIDGenerator,
+					fakeAuditLogger,
+				)
+
+				err := platformWithISCSIType.MigratePersistentDisk("/from/path", "/to/path")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(mounter.RemountAsReadonlyPath).To(Equal("/from/path"))
+
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}))
+
+				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("/from/path"))
+				Expect(mounter.RemountFromMountPoint).To(Equal("/to/path"))
+				Expect(mounter.RemountToMountPoint).To(Equal("/from/path"))
+
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"multipath", "-ll"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"multipath", "-f", "from-device-path"}))
+
+			})
+		})
 	})
 
 	Describe("IsPersistentDiskMounted", func() {
