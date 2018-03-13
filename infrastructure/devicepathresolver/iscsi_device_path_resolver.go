@@ -47,55 +47,29 @@ func NewIscsiDevicePathResolver(
 }
 
 func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
-	var lastDiskID string
-
-	if diskSettings.InitiatorName == "" {
-		return "", false, bosherr.Errorf("iSCSI InitiatorName is not set")
-	}
-
-	if diskSettings.Username == "" {
-		return "", false, bosherr.Errorf("iSCSI Username is not set")
-	}
-
-	if diskSettings.Password == "" {
-		return "", false, bosherr.Errorf("iSCSI Password is not set")
-	}
-
-	if diskSettings.Target == "" {
-		return "", false, bosherr.Errorf("iSCSI Iface Ipaddress is not set")
-	}
-
-	existingPaths := []string{}
-
-	result, _, _, err := ispr.runner.RunCommand("dmsetup", "ls")
+	err := ispr.checkISCSISettings(diskSettings.ISCSISettings)
 	if err != nil {
-		return "", false, bosherr.WrapError(err, "Could not determining device mapper entries")
+		return "", false, bosherr.WrapError(err, "Checking disk settings")
 	}
 
-	lastDiskID, err = ispr.lastMountedCid()
+	// fetch existing path if disk is last mounted
+	lastDiskID, err := ispr.lastMountedCid()
 	if err != nil {
 		return "", false, bosherr.WrapError(err, "Fetching last mounted disk CID")
 	}
 
 	ispr.logger.Debug(ispr.logTag, "Last mounted disk CID: '%s'", lastDiskID)
 
-	if !strings.Contains(result, "No devices found") {
-		lines := strings.Split(strings.Trim(result, "\n"), "\n")
-		ispr.logger.Debug(ispr.logTag, "lines: '%+v'", lines)
-		for _, line := range lines {
-			exist, err := regexp.MatchString("-part1", line)
-			if err != nil {
-				return "", false, bosherr.WrapError(err, "There is a problem with your regexp: '-part1'. That is used to find existing device")
-			}
-			if exist {
-				existingPath := path.Join("/dev/mapper", strings.Split(strings.Fields(line)[0], "-")[0])
-				ispr.logger.Debug(ispr.logTag, "ExistingPath in lines: '%+v'", existingPath)
-				if lastDiskID == diskSettings.ID {
-					ispr.logger.Info(ispr.logTag, "Found existing path '%s'", existingPath)
-					return existingPath, false, nil
-				}
-				existingPaths = append(existingPaths, existingPath)
-			}
+	mappedDevices, err := ispr.getMappedDevices()
+	if err != nil {
+		return "", false, bosherr.WrapError(err, "Getting mapped devices")
+	}
+
+	var existingPaths []string
+	if len(mappedDevices) > 0 {
+		existingPaths, err = ispr.getDevicePaths(mappedDevices, true)
+		if err != nil {
+			return "", false, bosherr.WrapError(err, "Getting existing paths")
 		}
 	}
 
@@ -104,64 +78,144 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 		return "", false, bosherr.WrapError(err, "More than 2 persistent disks attached")
 	}
 
-	err = ispr.openiscsi.Setup(diskSettings.InitiatorName, diskSettings.Username, diskSettings.Password)
-	if err != nil {
-		return "", false, bosherr.WrapError(err, "Could not setup Open-iSCSI")
+	if lastDiskID == diskSettings.ID && len(existingPaths) > 0 {
+		ispr.logger.Info(ispr.logTag, "Found existing path '%s'", existingPaths[0])
+		return existingPaths[0], false, nil
 	}
 
-	err = ispr.openiscsi.Discovery(diskSettings.Target)
+	err = ispr.connectTarget(diskSettings.ISCSISettings)
 	if err != nil {
-		return "", false, bosherr.WrapError(err, fmt.Sprintf("Could not discovery lun against portal %s", diskSettings.Target))
+		return "", false, bosherr.WrapError(err, "connecting iSCSI target")
+	}
+
+	// Combine paths to whole string to filter target path
+	exstingPathString := strings.Join(existingPaths, ",")
+	realPath, err := ispr.getDevicePathAfterConnectTarget(exstingPathString)
+	if err != nil {
+		if strings.Contains(err.Error(), "Timed out to get real iSCSI device path") {
+			return "", true, bosherr.WrapError(err, "get device path after connect iSCSI target")
+		}
+		return "", false, bosherr.WrapError(err, "get device path after connect iSCSI target")
+	}
+
+	return realPath, false, nil
+}
+
+func (ispr iscsiDevicePathResolver) checkISCSISettings(iSCSISettings boshsettings.ISCSISettings) error {
+	if iSCSISettings.InitiatorName == "" {
+		return bosherr.Errorf("iSCSI InitiatorName is not set")
+	}
+
+	if iSCSISettings.Username == "" {
+		return bosherr.Errorf("iSCSI Username is not set")
+	}
+
+	if iSCSISettings.Password == "" {
+		return bosherr.Errorf("iSCSI Password is not set")
+	}
+
+	if iSCSISettings.Target == "" {
+		return bosherr.Errorf("iSCSI Target is not set")
+	}
+	return nil
+}
+
+func (ispr iscsiDevicePathResolver) getMappedDevices() ([]string, error) {
+	var devices []string
+	result, _, _, err := ispr.runner.RunCommand("dmsetup", "ls")
+	if err != nil {
+		return devices, bosherr.WrapError(err, "listing mapped devices")
+	}
+
+	if strings.Contains(result, "No devices found") {
+		return devices, nil
+	}
+
+	devices = strings.Split(strings.Trim(result, "\n"), "\n")
+	ispr.logger.Debug(ispr.logTag, "devices: '%+v'", devices)
+
+	return devices, nil
+}
+
+// getDevicePaths: to find iSCSI device paths
+// a "–part1" suffix device based on origin multipath device
+// last mounted disk already have this device, new disk doesn't have this device yet
+func (ispr iscsiDevicePathResolver) getDevicePaths(devices []string, shouldExist bool) ([]string, error) {
+	var paths []string
+	for _, device := range devices {
+		exist, err := regexp.MatchString("-part1", device)
+		if err != nil {
+			return paths, bosherr.WrapError(err, "There is a problem with your regexp: '-part1'. That is used to find existing device")
+		}
+		if exist == shouldExist {
+			matchedPath := path.Join("/dev/mapper", strings.Split(strings.Fields(device)[0], "-")[0])
+			ispr.logger.Debug(ispr.logTag, "path in device list: '%+v'", matchedPath)
+			paths = append(paths, matchedPath)
+		}
+	}
+
+	return paths, nil
+}
+
+func (ispr iscsiDevicePathResolver) connectTarget(iSCSISettings boshsettings.ISCSISettings) error {
+	err := ispr.openiscsi.Setup(iSCSISettings.InitiatorName, iSCSISettings.Username, iSCSISettings.Password)
+	if err != nil {
+		return bosherr.WrapError(err, "Could not setup Open-iSCSI")
+	}
+
+	err = ispr.openiscsi.Discovery(iSCSISettings.Target)
+	if err != nil {
+		return bosherr.WrapError(err, fmt.Sprintf("Could not discovery lun against portal %s", iSCSISettings.Target))
 	}
 
 	err = ispr.openiscsi.Login()
 	if err != nil {
-		return "", false, bosherr.WrapError(err, "Could not login all sessions")
+		return bosherr.WrapError(err, "Could not login all sessions")
 	}
 
+	return nil
+}
+
+func (ispr iscsiDevicePathResolver) getDevicePathAfterConnectTarget(existingPath string) (string, error) {
 	stopAfter := time.Now().Add(ispr.diskWaitTimeout)
 
 	for {
-		ispr.logger.Debug(ispr.logTag, "Waiting for device to appear")
+		ispr.logger.Debug(ispr.logTag, "Waiting for iSCSI device to appear")
 
 		if time.Now().After(stopAfter) {
-			return "", true, bosherr.Errorf("Timed out getting real device path by portal '%s'", diskSettings.Target)
+			return "", bosherr.Errorf("Timed out to get real iSCSI device path")
 		}
 
 		time.Sleep(5 * time.Second)
 
-		result, _, _, err := ispr.runner.RunCommand("dmsetup", "ls")
+		mappedDevices, err := ispr.getMappedDevices()
 		if err != nil {
-			return "", false, bosherr.WrapError(err, "Could not determining device mapper entries")
+			return "", bosherr.WrapError(err, "Getting mapped devices")
 		}
 
-		if strings.Contains(result, "No devices found") {
-			continue
-		}
-
-		lines := strings.Split(strings.Trim(result, "\n"), "\n")
-		for _, line := range lines {
-			exist, err := regexp.MatchString("-part1", line)
+		var realPaths []string
+		if len(mappedDevices) > 0 {
+			realPaths, err = ispr.getDevicePaths(mappedDevices, false)
 			if err != nil {
-				return "", false, bosherr.WrapError(err, "There is a problem with your regexp: '-part1'. That is used to find existing device")
+				return "", bosherr.WrapError(err, "Getting real paths")
 			}
-			if !exist {
-				matchedPath := path.Join("/dev/mapper", strings.Fields(line)[0])
 
-				if len(existingPaths) == 0 {
-					ispr.logger.Info(ispr.logTag, "Found real path '%s'", matchedPath)
-					return matchedPath, false, nil
-				}
+			if existingPath == "" && len(realPaths) == 1 {
+				ispr.logger.Info(ispr.logTag, "Found real path '%s'", realPaths[0])
+				return realPaths[0], nil
+			}
 
-				for _, existingPath := range existingPaths {
-					if matchedPath == existingPath {
-						continue
-					} else {
-						ispr.logger.Info(ispr.logTag, "Found real path '%s'", matchedPath)
-						return matchedPath, false, nil
-					}
+			for _, realPath := range realPaths {
+				if strings.Contains(existingPath, realPath) {
+					continue
+				} else {
+					ispr.logger.Info(ispr.logTag, "Found real path '%s'", realPath)
+					return realPath, nil
 				}
 			}
+
+		} else {
+			continue
 		}
 	}
 }

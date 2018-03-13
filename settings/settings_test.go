@@ -251,6 +251,41 @@ var _ = Describe("Settings", func() {
 				}))
 			})
 		})
+
+		Context("when the disk settings contain iSCSI settings", func() {
+			BeforeEach(func() {
+				settings = Settings{
+					Disks: Disks{
+						Persistent: map[string]interface{}{
+							"fake-disk-id": map[string]interface{}{
+								"id": "fake-disk-device-id",
+								"iscsi_settings": map[string]interface{}{
+									"initiator_name": "fake-initiator-name",
+									"username":       "fake-username",
+									"target":         "fake-target",
+									"password":       "fake-password",
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("returns disk settings", func() {
+				diskSettings, found := settings.PersistentDiskSettings("fake-disk-id")
+				Expect(found).To(BeTrue())
+				Expect(diskSettings).To(Equal(DiskSettings{
+					ID:       "fake-disk-id",
+					DeviceID: "fake-disk-device-id",
+					ISCSISettings: ISCSISettings{
+						InitiatorName: "fake-initiator-name",
+						Username:      "fake-username",
+						Target:        "fake-target",
+						Password:      "fake-password",
+					},
+				}))
+			})
+		})
 	})
 
 	Describe("EphemeralDiskSettings", func() {

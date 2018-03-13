@@ -80,13 +80,17 @@ type DiskSettings struct {
 	Path         string
 
 	// iscsi related
+	ISCSISettings ISCSISettings
+
+	FileSystemType disk.FileSystemType
+	MountOptions   []string
+}
+
+type ISCSISettings struct {
 	InitiatorName string
 	Username      string
 	Target        string
 	Password      string
-
-	FileSystemType disk.FileSystemType
-	MountOptions   []string
 }
 
 type VM struct {
@@ -117,17 +121,21 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 					diskSettings.HostDeviceID = hostDeviceID.(string)
 				}
 
-				if username, ok := hashSettings["username"]; ok {
-					diskSettings.Username = username.(string)
-				}
-				if password, ok := hashSettings["password"]; ok {
-					diskSettings.Password = password.(string)
-				}
-				if initiator, ok := hashSettings["initiator_name"]; ok {
-					diskSettings.InitiatorName = initiator.(string)
-				}
-				if target, ok := hashSettings["target"]; ok {
-					diskSettings.Target = target.(string)
+				if iSCSISettings, ok := hashSettings["iscsi_settings"]; ok {
+					if hashISCSISettings, ok := iSCSISettings.(map[string]interface{}); ok {
+						if username, ok := hashISCSISettings["username"]; ok {
+							diskSettings.ISCSISettings.Username = username.(string)
+						}
+						if password, ok := hashISCSISettings["password"]; ok {
+							diskSettings.ISCSISettings.Password = password.(string)
+						}
+						if initiator, ok := hashISCSISettings["initiator_name"]; ok {
+							diskSettings.ISCSISettings.InitiatorName = initiator.(string)
+						}
+						if target, ok := hashISCSISettings["target"]; ok {
+							diskSettings.ISCSISettings.Target = target.(string)
+						}
+					}
 				}
 
 			} else {

@@ -43,10 +43,12 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 
 		pathResolver = NewIscsiDevicePathResolver(500*time.Millisecond, runner, openiscsi, fs, dirProvider, boshlog.NewLogger(boshlog.LevelNone))
 		diskSettings = boshsettings.DiskSettings{
-			InitiatorName: initiatorName,
-			Username:      username,
-			Target:        target,
-			Password:      password,
+			ISCSISettings: boshsettings.ISCSISettings{
+				InitiatorName: initiatorName,
+				Username:      username,
+				Target:        target,
+				Password:      password,
+			},
 		}
 	})
 
@@ -89,7 +91,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Timed out getting real device path"))
+				Expect(err.Error()).To(ContainSubstring("Timed out to get real iSCSI device path"))
 
 				Expect(path).To(Equal(""))
 				Expect(timeout).To(BeTrue())
@@ -160,7 +162,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 			})
 
 			It("returns an error when iSCSI Username is not set", func() {
-				diskSettings.InitiatorName = initiatorName
+				diskSettings.ISCSISettings.InitiatorName = initiatorName
 
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
@@ -171,8 +173,8 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 			})
 
 			It("returns an error when iSCSI Password is not set", func() {
-				diskSettings.InitiatorName = initiatorName
-				diskSettings.Username = username
+				diskSettings.ISCSISettings.InitiatorName = initiatorName
+				diskSettings.ISCSISettings.Username = username
 
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
@@ -182,14 +184,14 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				Expect(timeout).To(BeFalse())
 			})
 
-			It("returns an error when iSCSI Iface Ipaddress is not set", func() {
-				diskSettings.InitiatorName = initiatorName
-				diskSettings.Username = username
-				diskSettings.Password = password
+			It("returns an error when iSCSI Target is not set", func() {
+				diskSettings.ISCSISettings.InitiatorName = initiatorName
+				diskSettings.ISCSISettings.Username = username
+				diskSettings.ISCSISettings.Password = password
 
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("iSCSI Iface Ipaddress is not set"))
+				Expect(err.Error()).To(ContainSubstring("iSCSI Target is not set"))
 
 				Expect(path).To(Equal(""))
 				Expect(timeout).To(BeFalse())
@@ -307,7 +309,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 
 			path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Could not determining device mapper entries"))
+			Expect(err.Error()).To(ContainSubstring("listing mapped devices"))
 
 			Expect(path).To(Equal(""))
 			Expect(timeout).To(BeFalse())
