@@ -129,16 +129,17 @@ var _ = Describe("RetryClients", func() {
 				})
 			}
 
+			redirectCodes := map[int]bool{301: true, 302: true, 303: true, 307: true, 308: true}
+
 			for code := 200; code < 400; code++ {
 				code := code
-				if code >= 301 && code <= 303 {
+				if redirectCodes[code] {
 					continue
 				}
 				It(fmt.Sprintf("attempts once if request is %d", code), func() {
-					server.AppendHandlers(ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/"),
+					server.RouteToHandler("GET", "/",
 						ghttp.RespondWith(code, "fake-response-body"),
-					))
+					)
 
 					req, err := http.NewRequest("GET", server.URL(), nil)
 					Expect(err).NotTo(HaveOccurred())
@@ -151,7 +152,7 @@ var _ = Describe("RetryClients", func() {
 				})
 			}
 
-			for code := 301; code <= 303; code++ {
+			for code := range redirectCodes {
 				code := code
 				It(fmt.Sprintf("follows redirects if response is %d", code), func() {
 					server.AppendHandlers(ghttp.CombineHandlers(

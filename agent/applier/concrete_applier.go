@@ -7,8 +7,8 @@ import (
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-cli/work"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/work"
 )
 
 type concreteApplier struct {
@@ -55,12 +55,6 @@ func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
 		})
 	}
 
-	err := pool.ParallelDo(tasks...)
-	if err != nil {
-		return err
-	}
-
-	tasks = make([]func() error, 0)
 	for _, pkg := range desiredApplySpec.Packages() {
 		pkg := pkg
 		tasks = append(tasks, func() error {
@@ -72,7 +66,7 @@ func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
 		})
 	}
 
-	err = pool.ParallelDo(tasks...)
+	err := pool.ParallelDo(tasks...)
 	if err != nil {
 		return err
 	}
