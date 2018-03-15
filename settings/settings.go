@@ -215,6 +215,14 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 	return &result
 }
 
+func (e Env) GetParallel() *int {
+	result := 5
+	if e.Bosh.Parallel != nil {
+		result = int(*e.Bosh.Parallel)
+	}
+	return &result
+}
+
 func (e Env) IsNATSMutualTLSEnabled() bool {
 	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0
 }
@@ -230,6 +238,7 @@ type BoshEnv struct {
 	IPv6                  IPv6        `json:"ipv6"`
 	Blobstores            []Blobstore `json:"blobstores"`
 	NTP                   []string    `json:"ntp"`
+	Parallel              *int        `json:"parallel"`
 }
 
 type MBus struct {

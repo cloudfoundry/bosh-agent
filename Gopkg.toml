@@ -1,5 +1,10 @@
 required = ["github.com/onsi/ginkgo/ginkgo"]
 
+[prune]
+  unused-packages = true
+  non-go = true
+  go-tests = true
+
 [[constraint]]
   name = "github.com/cloudfoundry/bosh-davcli"
   version = "0.0.23"

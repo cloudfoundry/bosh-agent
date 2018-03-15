@@ -17,6 +17,7 @@ import (
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
@@ -58,6 +59,7 @@ func init() {
 			logRotateDelegate *FakeLogRotateDelegate
 			jobSupervisor     *fakejobsuper.FakeJobSupervisor
 			applier           Applier
+			settingsService   boshsettings.Service
 		)
 
 		BeforeEach(func() {
@@ -65,12 +67,14 @@ func init() {
 			packageApplier = fakepackages.NewFakeApplier()
 			logRotateDelegate = &FakeLogRotateDelegate{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			settingsService = &fakesettings.FakeSettingsService{}
 			applier = NewConcreteApplier(
 				jobApplier,
 				packageApplier,
 				logRotateDelegate,
 				jobSupervisor,
 				boshdirs.NewProvider("/fake-base-dir"),
+				settingsService.GetSettings(),
 			)
 		})
 
@@ -106,7 +110,7 @@ func init() {
 					&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}},
 				)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(packageApplier.PreparedPackages).To(Equal([]models.Package{pkg1, pkg2}))
+				Expect(packageApplier.PreparedPackages).To(ConsistOf(pkg1, pkg2))
 			})
 
 			It("returns error when preparing packages fails", func() {

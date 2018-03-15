@@ -73,9 +73,10 @@
     "system",
     "system/fakes",
     "uuid",
-    "uuid/fakes"
+    "uuid/fakes",
+    "work"
   ]
-  revision = "7eb8282e12d43aa68f989489c3138d549e8ff1b2"
+  revision = "c6a922e299b8eb5eaadad8a2842e3ab7e043dc5d"
 
 [[projects]]
   branch = "master"
@@ -312,6 +313,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6b8c73acfb75dae7a09b81ee2d06d513bbced88ce3e6dbc261cc1bd143bd338f"
+  inputs-digest = "8c8f4048b5628851c8bd9ce1292d2d03abf7bae1089b547aab286430e9ecf783"
   solver-name = "gps-cdcl"
   solver-version = 1

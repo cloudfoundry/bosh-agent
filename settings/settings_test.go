@@ -651,6 +651,7 @@ var _ = Describe("Settings", func() {
       "fake-key"
     ],
     "swap_size": 2048,
+    "parallel": 10,
 	"blobstores": [
 		{
 			"options": {
@@ -679,6 +680,7 @@ var _ = Describe("Settings", func() {
 			Expect(env.Bosh.IPv6).To(Equal(IPv6{}))
 			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+			Expect(*env.GetParallel()).To(Equal(10))
 			Expect(env.Bosh.Blobstores).To(Equal(
 				[](Blobstore){
 					Blobstore{
@@ -753,6 +755,18 @@ var _ = Describe("Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(env.GetSwapSizeInBytes()).To(BeNil())
+			})
+		})
+
+		Context("when parallel is not specified in the json", func() {
+			It("sets to the default value", func() {
+				var env Env
+				envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"]}}`
+
+				err := json.Unmarshal([]byte(envJSON), &env)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(*env.GetParallel()).To(Equal(5))
 			})
 		})
 

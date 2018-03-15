@@ -1,5 +1,9 @@
 required = ["github.com/onsi/ginkgo/ginkgo"]
 
+[prune]
+  unused-packages = true
+  non-go = true
+
 [[constraint]]
   name = "github.com/bmatcuk/doublestar"
   version = "1.0.9"
