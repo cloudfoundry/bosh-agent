@@ -112,6 +112,38 @@ var _ = Describe("PartedPartitioner", func() {
 				})
 			})
 
+			Context("when there is a non-gpt partition table", func() {
+				BeforeEach(func() {
+					fakeCmdRunner.AddCmdResult(
+						"parted -m /dev/sda unit B print",
+						fakesys.FakeCmdResult{
+							Stdout: `BYT;
+/dev/xvdf:221190815744B:xvd:512:512:msdos:Xen Virtual Block Device;
+`})
+					fakeCmdRunner.AddCmdResult(
+						"parted -m /dev/sda unit B print",
+						fakesys.FakeCmdResult{
+							Stdout: `BYT;
+/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
+`})
+					fakeCmdRunner.AddCmdResult(
+						"parted -s /dev/sda mklabel gpt",
+						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0})
+				})
+
+				It("makes a gpt label and then creates partitions using parted", func() {
+					partitions := []Partition{
+						{SizeInBytes: 8589934592}, // (8GiB)
+						{SizeInBytes: 8589934592}, // (8GiB)
+					}
+
+					err := partitioner.Partition("/dev/sda", partitions)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"}))
+				})
+			})
+
 			Context("when there are no partitions", func() {
 				BeforeEach(func() {
 					fakeCmdRunner.AddCmdResult(
