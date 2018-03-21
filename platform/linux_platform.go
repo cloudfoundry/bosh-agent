@@ -75,7 +75,7 @@ type LinuxOptions struct {
 	SkipDiskSetup bool
 
 	// Strategy for resolving device paths;
-	// possible values: virtio, scsi, ""
+	// possible values: virtio, scsi, iscsi, ""
 	DevicePathResolutionType string
 
 	// Strategy for resolving ephemeral & persistent disk partitioners;
@@ -1201,6 +1201,26 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 		return
 	}
 
+	// Find iSCSI device id of fromMountPoint
+	var iscsiID string
+	if p.options.DevicePathResolutionType == "iscsi" {
+		mounts, err := p.diskManager.GetMountsSearcher().SearchMounts()
+		if err != nil {
+			err = bosherr.WrapError(err, "Search persistent disk as readonly")
+			return err
+		}
+
+		for _, mount := range mounts {
+			if mount.MountPoint == fromMountPoint {
+				r := regexp.MustCompile(`\/dev\/mapper\/(.*?)-part1`)
+				matches := r.FindStringSubmatch(mount.PartitionPath)
+				if len(matches) > 1 {
+					iscsiID = matches[1]
+				}
+			}
+		}
+	}
+
 	_, err = p.diskManager.GetMounter().Unmount(fromMountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmounting old persistent disk")
@@ -1211,6 +1231,11 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 	if err != nil {
 		err = bosherr.WrapError(err, "Remounting new disk on original mountpoint")
 	}
+
+	if p.options.DevicePathResolutionType == "iscsi" && iscsiID != "" {
+		p.flushMultipathDevice(iscsiID)
+	}
+
 	return
 }
 
@@ -1485,6 +1510,23 @@ func (p linux) generateDefaultEtcHosts(hostname string) (*bytes.Buffer, error) {
 	}
 
 	return buffer, nil
+}
+
+func (p linux) flushMultipathDevice(id string) error {
+	p.logger.Debug(logTag, "Flush multipath device: %s", id)
+	result, _, _, err := p.cmdRunner.RunCommand("multipath", "-ll")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Get multipath information")
+	}
+
+	if strings.Contains(result, id) {
+		_, _, _, err := p.cmdRunner.RunCommand("multipath", "-f", id)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Flush multipath device")
+		}
+	}
+
+	return nil
 }
 
 type insufficientSpaceError struct {

@@ -32,6 +32,13 @@ var _ = Describe("UnmountDiskAction", func() {
 							"path":           "/dev/sdf",
 							"lun":            "0",
 							"host_device_id": "fake-host-device-id",
+							"iscsi_settings": map[string]interface{}{
+								"initiator_name": "fake-initiator-name",
+								"username":       "fake-username",
+								"password":       "fake-password",
+								"target":         "fake-target",
+							},
+
 						},
 					},
 				},
@@ -49,6 +56,12 @@ var _ = Describe("UnmountDiskAction", func() {
 			FileSystemType: "ext4",
 			Lun:            "0",
 			HostDeviceID:   "fake-host-device-id",
+			ISCSISettings: boshsettings.ISCSISettings{
+				InitiatorName: "fake-initiator-name",
+				Username:      "fake-username",
+				Password:      "fake-password",
+				Target:        "fake-target",
+			},
 		}
 	})
 
@@ -64,7 +77,7 @@ var _ = Describe("UnmountDiskAction", func() {
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf FileSystemType:ext4 MountOptions:[]}"}`)
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[]}"}`)
 
 		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
 	})
@@ -74,7 +87,7 @@ var _ = Describe("UnmountDiskAction", func() {
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf FileSystemType:ext4 MountOptions:[]} is not mounted"}`)
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[]} is not mounted"}`)
 
 		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
 	})
