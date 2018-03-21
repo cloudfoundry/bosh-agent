@@ -66,11 +66,9 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 	}
 
 	var existingPaths []string
-	if len(mappedDevices) > 0 {
-		existingPaths, err = ispr.getDevicePaths(mappedDevices, true)
-		if err != nil {
-			return "", false, bosherr.WrapError(err, "Getting existing paths")
-		}
+	existingPaths, err = ispr.getDevicePaths(mappedDevices, true)
+	if err != nil {
+		return "", false, bosherr.WrapError(err, "Getting existing paths")
 	}
 
 	ispr.logger.Debug(ispr.logTag, "Existing real paths '%+v'", existingPaths)
@@ -177,24 +175,21 @@ func (ispr iscsiDevicePathResolver) connectTarget(iSCSISettings boshsettings.ISC
 }
 
 func (ispr iscsiDevicePathResolver) getDevicePathAfterConnectTarget(existingPath string) (string, error) {
-	stopAfter := time.Now().Add(ispr.diskWaitTimeout)
+	ispr.logger.Debug(ispr.logTag, "Waiting for iSCSI device to appear")
+
+	timer := time.NewTimer(ispr.diskWaitTimeout)
 
 	for {
-		ispr.logger.Debug(ispr.logTag, "Waiting for iSCSI device to appear")
-
-		if time.Now().After(stopAfter) {
+		select {
+		case <-timer.C:
 			return "", bosherr.Errorf("Timed out to get real iSCSI device path")
-		}
+		default:
+			mappedDevices, err := ispr.getMappedDevices()
+			if err != nil {
+				return "", bosherr.WrapError(err, "Getting mapped devices")
+			}
 
-		time.Sleep(5 * time.Second)
-
-		mappedDevices, err := ispr.getMappedDevices()
-		if err != nil {
-			return "", bosherr.WrapError(err, "Getting mapped devices")
-		}
-
-		var realPaths []string
-		if len(mappedDevices) > 0 {
+			var realPaths []string
 			realPaths, err = ispr.getDevicePaths(mappedDevices, false)
 			if err != nil {
 				return "", bosherr.WrapError(err, "Getting real paths")
@@ -213,10 +208,9 @@ func (ispr iscsiDevicePathResolver) getDevicePathAfterConnectTarget(existingPath
 					return realPath, nil
 				}
 			}
-
-		} else {
-			continue
 		}
+
+		time.Sleep(5 * time.Second)
 	}
 }
 

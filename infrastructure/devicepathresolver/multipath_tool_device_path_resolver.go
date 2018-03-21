@@ -33,6 +33,10 @@ func (mpr multipathDevicePathResolver) GetRealDevicePath(diskSettings boshsettin
 		return realPath, false, nil
 	}
 
+	if timeout {
+		return "", timeout, bosherr.WrapError(err, "Resolving id device path")
+	}
+
 	mpr.logger.Debug(mpr.logTag,
 		"Failed to get device real path by disk ID: '%s'. Error: '%s', timeout: '%t'",
 		diskSettings.ID,
