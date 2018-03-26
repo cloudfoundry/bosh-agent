@@ -2,6 +2,7 @@ package devicepathresolver_test
 
 import (
 	"errors"
+	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -22,12 +23,13 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 		target        string
 		password      string
 
-		runner       *fakesys.FakeCmdRunner
-		openiscsi    *fakeopeniscsi.FakeOpenIscsi
-		fs           *fakesys.FakeFileSystem
-		dirProvider  boshdirs.Provider
-		diskSettings boshsettings.DiskSettings
-		pathResolver DevicePathResolver
+		runner                  *fakesys.FakeCmdRunner
+		openiscsi               *fakeopeniscsi.FakeOpenIscsi
+		fs                      *fakesys.FakeFileSystem
+		dirProvider             boshdirs.Provider
+		diskSettings            boshsettings.DiskSettings
+		pathResolver            DevicePathResolver
+		managedDiskSettingsPath string
 	)
 
 	BeforeEach(func() {
@@ -50,6 +52,10 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				Password:      password,
 			},
 		}
+
+		// Setup the managed_disk_settings.json
+		managedDiskSettingsPath = filepath.Join(dirProvider.BoshDir(), "managed_disk_settings.json")
+		fs.WriteFileString(managedDiskSettingsPath, "12345678")
 	})
 
 	Describe("GetRealDevicePath", func() {
@@ -58,7 +64,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				// for the pathResolver call to find devices
 				runner.AddCmdResult(
 					"dmsetup ls",
-					fakesys.FakeCmdResult{Stdout: "No devices found"},
+					fakesys.FakeCmdResult{Error: nil, Stdout: "No devices found"},
 				)
 
 				openiscsi.SetupReturns(nil)
@@ -111,7 +117,6 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				)
 
 				diskSettings.ID = "12345678"
-				fs.WriteFileString("/fake-base-dir/bosh/managed_disk_settings.json", "12345678")
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -122,7 +127,6 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 
 		Context("when more than 2 persistent disks are attached", func() {
 			It("returns an error", func() {
-
 				// for the pathResolver call to find devices
 				runner.AddCmdResult(
 					"dmsetup ls",
@@ -136,7 +140,6 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				)
 
 				diskSettings.ID = "22345678"
-				fs.WriteFileString("/fake-base-dir/bosh/managed_disk_settings.json", "12345678")
 
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
@@ -213,15 +216,8 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 		})
 
 		It("returns an error if reading file fails", func() {
-			// for the pathResolver call to find devices
-			runner.AddCmdResult(
-				"dmsetup ls",
-				fakesys.FakeCmdResult{Stdout: "No devices found"},
-			)
-
 			diskSettings.ID = "22345678"
-			fs.WriteFileString("/fake-base-dir/bosh/managed_disk_settings.json", "12345678")
-			fs.RegisterReadFileError("/fake-base-dir/bosh/managed_disk_settings.json", errors.New("fake-fs-error"))
+			fs.RegisterReadFileError(managedDiskSettingsPath, errors.New("fake-fs-error"))
 
 			path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 			Expect(err).To(HaveOccurred())
