@@ -68,5 +68,15 @@ func (net KernelIPv6Impl) Enable(stopCh <-chan struct{}) error {
 		}
 	}
 
+	err = net.fs.MkdirAll("/run/sysctl.d", 0755)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating /run/sysctl.d")
+	}
+
+	err = net.fs.WriteFileString("/run/sysctl.d/70-bosh-sysctl.conf", strings.Join(ipv6Sysctls, "\n"))
+	if err != nil {
+		return bosherr.WrapError(err, "Writing to /run/sysctl.d/70-bosh-sysctl.conf")
+	}
+
 	return nil
 }

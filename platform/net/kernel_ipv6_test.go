@@ -102,6 +102,14 @@ var _ = Describe("KernelIPv6", func() {
 				}))
 			})
 
+			It("writes sysctl commands to disk", func() {
+				Expect(act()).ToNot(HaveOccurred())
+				Expect(fs.ReadFileString("/run/sysctl.d/70-bosh-sysctl.conf")).To(Equal(`net.ipv6.conf.all.accept_ra=1
+net.ipv6.conf.default.accept_ra=1
+net.ipv6.conf.all.disable_ipv6=0
+net.ipv6.conf.default.disable_ipv6=0`))
+			})
+
 			It("fails if the underlying sysctl fails", func() {
 				cmdRunner.AddCmdResult("sysctl net.ipv6.conf.all.accept_ra=1", fakesys.FakeCmdResult{
 					Error: errors.New("fake-err"),

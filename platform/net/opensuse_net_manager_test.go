@@ -11,6 +11,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
+	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -26,6 +27,7 @@ func describeOpensuseNetManager() {
 		cmdRunner                     *fakesys.FakeCmdRunner
 		ipResolver                    *fakeip.FakeResolver
 		interfaceAddrsProvider        *fakeip.FakeInterfaceAddressesProvider
+		kernelIPv6                    *fakenet.FakeKernelIPv6
 		addressBroadcaster            *fakearp.FakeAddressBroadcaster
 		netManager                    Manager
 		interfaceConfigurationCreator InterfaceConfigurationCreator
@@ -41,6 +43,7 @@ func describeOpensuseNetManager() {
 		interfaceAddrsValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
 		dnsValidator := NewDNSValidator(fs)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
+		kernelIPv6 = &fakenet.FakeKernelIPv6{}
 		netManager = NewOpensuseNetManager(
 			fs,
 			cmdRunner,
@@ -49,6 +52,7 @@ func describeOpensuseNetManager() {
 			interfaceAddrsValidator,
 			dnsValidator,
 			addressBroadcaster,
+			kernelIPv6,
 			logger,
 		)
 	})

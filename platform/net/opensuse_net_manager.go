@@ -26,6 +26,7 @@ type opensuseNetManager struct {
 	interfaceAddressesValidator   boship.InterfaceAddressesValidator
 	dnsValidator                  DNSValidator
 	addressBroadcaster            bosharp.AddressBroadcaster
+	kernelIPv6                    KernelIPv6
 	logger                        boshlog.Logger
 }
 
@@ -42,6 +43,7 @@ func NewOpensuseNetManager(
 	interfaceAddressesValidator boship.InterfaceAddressesValidator,
 	dnsValidator DNSValidator,
 	addressBroadcaster bosharp.AddressBroadcaster,
+	kernelIPv6 KernelIPv6,
 	logger boshlog.Logger,
 ) Manager {
 	return opensuseNetManager{
@@ -52,11 +54,17 @@ func NewOpensuseNetManager(
 		interfaceAddressesValidator:   interfaceAddressesValidator,
 		dnsValidator:                  dnsValidator,
 		addressBroadcaster:            addressBroadcaster,
+		kernelIPv6:                    kernelIPv6,
 		logger:                        logger,
 	}
 }
 
-func (net opensuseNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
+func (net opensuseNetManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan struct{}) error {
+	if config.Enable {
+		return net.kernelIPv6.Enable(stopCh)
+	}
+	return nil
+}
 
 func (net opensuseNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 	if networks.IsPreconfigured() {
@@ -67,6 +75,13 @@ func (net opensuseNetManager) SetupNetworking(networks boshsettings.Networks, er
 	staticConfigs, dhcpConfigs, dnsServers, err := net.computeNetworkConfig(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration")
+	}
+
+	if StaticInterfaceConfigurations(staticConfigs).HasVersion6() {
+		err := net.kernelIPv6.Enable(make(chan struct{}))
+		if err != nil {
+			return bosherr.WrapError(err, "Enabling IPv6 in kernel")
+		}
 	}
 
 	interfacesChanged, err := net.writeNetworkInterfaces(dhcpConfigs, staticConfigs, dnsServers)
