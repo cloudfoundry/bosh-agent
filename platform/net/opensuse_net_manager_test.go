@@ -113,8 +113,6 @@ IPADDR=1.2.3.4
 NETMASK=255.255.255.0
 BROADCAST=1.2.3.255
 GATEWAY=3.4.5.6
-DNS1=8.8.8.8
-DNS2=9.9.9.9
 `
 
 			expectedNetworkConfigurationForDHCP = `DEVICE=ethdhcp
@@ -420,7 +418,7 @@ WIRELESS_REGULATORY_DOMAIN=''
 
 			dhcpConfig := fs.GetFileTestStat("/etc/sysconfig/network/config")
 			Expect(dhcpConfig).ToNot(BeNil())
-			Expect(dhcpConfig.StringContents()).To(ContainSubstring(`NETCONFIG_DNS_STATIC_SERVERS="1.2.3.4 8.8.8.8 9.9.9.9"`))
+			Expect(dhcpConfig.StringContents()).To(ContainSubstring(`NETCONFIG_DNS_STATIC_SERVERS="8.8.8.8 9.9.9.9 1.2.3.4"`))
 		})
 
 		It("returns an error if it can't write a dhcp configuration", func() {
