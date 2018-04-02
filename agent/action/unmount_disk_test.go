@@ -38,7 +38,6 @@ var _ = Describe("UnmountDiskAction", func() {
 								"password":       "fake-password",
 								"target":         "fake-target",
 							},
-
 						},
 					},
 				},
