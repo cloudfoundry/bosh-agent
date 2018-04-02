@@ -92,15 +92,18 @@ func (r httpRegistry) GetSettings() (boshsettings.Settings, error) {
 	}
 
 	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, identifier)
+
 	client := httpclient.NewRetryClient(httpclient.CreateDefaultClient(nil), 10, r.retryDelay, r.logger)
+
 	wrapperResponse, err := httpclient.NewHTTPClient(client, r.logger).Get(settingsURL)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting settings from url")
 	}
+	defer wrapperResponse.Body.Close()
 
-	defer func() {
-		_ = wrapperResponse.Body.Close()
-	}()
+	if !isSuccessful(wrapperResponse) {
+		return settings, fmt.Errorf("invalid status: %d", wrapperResponse.StatusCode)
+	}
 
 	wrapperBytes, err := ioutil.ReadAll(wrapperResponse.Body)
 	if err != nil {

@@ -10,12 +10,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"time"
+
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	"time"
 )
 
 var _ = Describe("httpRegistry", describeHTTPRegistry)
@@ -394,7 +395,7 @@ func describeHTTPRegistry() {
 				It("returns settings fetched from http server", func() {
 					_, err := registry.GetSettings()
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Response{ StatusCode: 500, Status: '500 Internal Server Error' }"))
+					Expect(err.Error()).To(ContainSubstring("invalid status: 500"))
 				})
 			})
 
