@@ -28,9 +28,9 @@ var _ = Describe("GetStateRetryable", func() {
 			})
 
 			It("returns an error", func() {
-				isRetryable, err := getStateRetryable.Attempt()
+				shouldRetry, err := getStateRetryable.Attempt()
 				Expect(err).To(HaveOccurred())
-				Expect(isRetryable).To(BeFalse())
+				Expect(shouldRetry).To(BeFalse())
 				Expect(err.Error()).To(ContainSubstring("fake-get-state-error"))
 				Expect(fakeAgentClient.GetStateCallCount()).To(Equal(1))
 			})
@@ -42,9 +42,9 @@ var _ = Describe("GetStateRetryable", func() {
 			})
 
 			It("returns retryable error", func() {
-				isRetryable, err := getStateRetryable.Attempt()
+				shouldRetry, err := getStateRetryable.Attempt()
 				Expect(err).To(HaveOccurred())
-				Expect(isRetryable).To(BeTrue())
+				Expect(shouldRetry).To(BeTrue())
 				Expect(fakeAgentClient.GetStateCallCount()).To(Equal(1))
 			})
 		})
@@ -55,9 +55,9 @@ var _ = Describe("GetStateRetryable", func() {
 			})
 
 			It("returns no error", func() {
-				isRetryable, err := getStateRetryable.Attempt()
+				shouldRetry, err := getStateRetryable.Attempt()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(isRetryable).To(BeTrue())
+				Expect(shouldRetry).To(BeFalse())
 				Expect(fakeAgentClient.GetStateCallCount()).To(Equal(1))
 			})
 		})

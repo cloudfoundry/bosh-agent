@@ -33,10 +33,10 @@ var _ = Describe("MonitRetryable", func() {
 			})
 
 			It("is retryable and returns err", func() {
-				isRetryable, err := monitRetryable.Attempt()
+				shouldRetry, err := monitRetryable.Attempt()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-start-monit-error"))
-				Expect(isRetryable).To(BeTrue())
+				Expect(shouldRetry).To(BeTrue())
 				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sv", "start", "monit"}))
 			})
