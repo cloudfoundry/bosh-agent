@@ -71,7 +71,13 @@
     "uuid/fakes",
     "work"
   ]
-  revision = "e95ffcbfce9bddbd1485476f030a1817f2678e6b"
+  revision = "f4c293340f7527c63b0679a8eb6d4c25a70b31ef"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/go-socks5"
+  packages = ["."]
+  revision = "54f73bdb8a8e85a6611d3d29ab9bbf98c2a060d7"
 
 [[projects]]
   branch = "master"
@@ -86,7 +92,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
-  revision = "4c5a6f4a4516f42756f84f04cc5b523f471c9387"
+  revision = "3c6b4eec9c2d16c1dac4c42bdb5f755ba09daff8"
 
 [[projects]]
   branch = "master"
@@ -102,12 +108,6 @@
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/genevievelesperance/go-socks5"
-  packages = ["."]
-  revision = "f07e0bb84629ba30f60da69274cd1d9dbb4a1d08"
 
 [[projects]]
   name = "github.com/golang/mock"
