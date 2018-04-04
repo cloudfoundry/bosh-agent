@@ -985,6 +985,22 @@ func (p linux) SetupLogDir() error {
 		return bosherr.WrapError(err, "Chmoding sysstat log dir")
 	}
 
+	lastlogPath := path.Join(boshRootLogPath, "lastlog")
+	_, _, _, err = p.cmdRunner.RunCommand("touch", lastlogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Touching lastlog")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chgrp", "utmp", lastlogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chgrping lastlog")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "664", lastlogPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chmoding lastlog")
+	}
+
 	// change ownership
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:syslog", boshRootLogPath)
 	if err != nil {
@@ -997,6 +1013,11 @@ func (p linux) SetupLogDir() error {
 	}
 
 	err = p.ensureFile(fmt.Sprintf("%s/wtmp", boshRootLogPath), "root:utmp", "0664")
+	if err != nil {
+		return err
+	}
+
+	err = p.ensureFile(fmt.Sprintf("%s/lastlog", boshRootLogPath), "root:utmp", "0664")
 	if err != nil {
 		return err
 	}
