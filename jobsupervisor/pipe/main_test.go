@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe/syslog"
@@ -224,7 +225,7 @@ var _ = Describe("Main", func() {
 		})
 	})
 
-	Context("syslog provided", func() {
+	Context("UDP syslog provided", func() {
 		const Interval = time.Millisecond * 100
 		const Start = 1
 		const End = 5
@@ -389,6 +390,24 @@ var _ = Describe("Main", func() {
 
 			// test that stderr was still written to
 			Expect(checkSequenceOutput(&stderr, Start, End)).To(Succeed())
+		})
+	})
+
+	Context("slow TCP syslog provided", func() {
+		const SlowTCPDestination = "198.18.0.254"
+
+		It("times out and continues", func() {
+			cmd := exec.Command(pathToPipeCLI, ExitCodePath, "-exitcode", "0")
+			cmd.Env = cmdEnv(
+				joinEnv("SYSLOG_HOST", SlowTCPDestination),
+				joinEnv("SYSLOG_PORT", "1234"),
+				joinEnv("SYSLOG_TRANSPORT", "tcp"),
+			)
+
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session, "5s").Should(gexec.Exit(0))
 		})
 	})
 })

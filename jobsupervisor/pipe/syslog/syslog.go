@@ -134,7 +134,7 @@ func (w *Writer) connect() (err error) {
 	}
 
 	var c net.Conn
-	c, err = net.Dial(w.network, w.raddr)
+	c, err = net.DialTimeout(w.network, w.raddr, time.Second)
 	if err == nil {
 		w.conn = &netConn{conn: c}
 		if w.hostname == "" {
