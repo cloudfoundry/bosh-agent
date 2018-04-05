@@ -2,11 +2,12 @@
 
 set -e -o pipefail
 
-bin=$(dirname $0)
+bin=$(dirname "$0")
 
-base=$( cd ${bin}/.. && pwd )
-if [ ! -d $base/tmp ]; then
-  mkdir -p $base/tmp
+base=$( cd "${bin}"/.. && pwd )
+
+if [ ! -d "${base}"/tmp ]; then
+  mkdir -p "${base}"/tmp
 fi
 
 cleanup() {
@@ -36,7 +37,7 @@ fi
 cd $base
 echo -e "\n Running agent integration tests..."
 $bin/env go clean -r github.com/cloudfoundry/bosh-agent/
-vagrant up $@
+vagrant up "$@"
 
 vagrant ssh-config > $base/tmp/vagrant-config
 
