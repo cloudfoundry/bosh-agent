@@ -1,4 +1,11 @@
 ---
+groups:
+- name: bosh-utils:2.47.x
+  jobs:
+  - test-unit
+  - test-integration
+  - promote
+
 jobs:
 - name: test-unit
   public: true
