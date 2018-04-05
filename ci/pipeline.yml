@@ -1,4 +1,11 @@
 ---
+groups:
+- name: bosh-agent:2.30.x
+  jobs:
+  - test-unit
+  - test-integration
+  - promote
+
 jobs:
 - name: test-unit
   public: true
