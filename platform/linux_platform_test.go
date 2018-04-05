@@ -1328,7 +1328,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				})
 			})
 		})
-
 	})
 
 	Describe("SetupRawEphemeralDisks", func() {
@@ -1689,17 +1688,22 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("SetupTmpDir", func() {
-		act := func() error {
-			return platform.SetupTmpDir()
-		}
+		var (
+			mounter        *fakedisk.FakeMounter
+			originalTMPDir string
+		)
 
-		var mounter *fakedisk.FakeMounter
 		BeforeEach(func() {
+			originalTMPDir = os.Getenv("TMPDIR")
 			mounter = diskManager.FakeMounter
 		})
 
+		AfterEach(func() {
+			Expect(os.Setenv("TMPDIR", originalTMPDir)).To(Succeed())
+		})
+
 		It("changes permissions on /tmp", func() {
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
@@ -1709,7 +1713,7 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 
 		It("creates new temp dir", func() {
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
@@ -1721,19 +1725,15 @@ Number  Start   End     Size    File system  Name             Flags
 		It("returns error if creating new temp dir errs", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-error")
 
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
 
 		It("sets TMPDIR environment variable so that children of this process will use new temp dir", func() {
-			err := act()
+			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(os.Getenv("TMPDIR")).To(Equal("/fake-dir/data/tmp"))
-		})
-
-		It("returns error if setting TMPDIR errs", func() {
-			// uses os package; no way to trigger err
 		})
 
 		Context("when UseDefaultTmpDir option is set to false", func() {
@@ -1742,13 +1742,13 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("creates a root_tmp folder", func() {
-				err := act()
+				err := platform.SetupTmpDir()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"mkdir", "-p", "/fake-dir/data/root_tmp"}))
 			})
 
 			It("changes permissions on the new bind mount folder", func() {
-				err := act()
+				err := platform.SetupTmpDir()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1770", "/fake-dir/data/root_tmp"}))
@@ -1761,7 +1761,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("bind mounts it in /tmp", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(mounter.MountFilesystemPartitionPaths).To(ContainElement("/fake-dir/data/root_tmp"))
@@ -1774,7 +1774,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("changes permissions for the system /tmp folder", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
@@ -1795,15 +1795,16 @@ Number  Start   End     Size    File system  Name             Flags
 						BeforeEach(func() {
 							mounter.RemountInPlaceErr = errors.New("remount error")
 						})
+
 						It("returns an error", func() {
-							err := act()
+							err := platform.SetupTmpDir()
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(Equal("remount error"))
 						})
 					})
 
 					It("returns without an error", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/tmp"))
 						Expect(err).ToNot(HaveOccurred())
 
@@ -1813,7 +1814,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not create new tmp filesystem", func() {
-						act()
+						platform.SetupTmpDir()
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -1821,7 +1822,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not try to mount root_tmp into /tmp", func() {
-						act()
+						platform.SetupTmpDir()
 						Expect(mounter.MountMountPoints).ToNot(ContainElement("/tmp"))
 					})
 				})
@@ -1837,13 +1838,13 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("returns error", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
 					})
 
 					It("does not create new tmp filesystem", func() {
-						act()
+						platform.SetupTmpDir()
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -1851,7 +1852,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not try to mount /tmp", func() {
-						act()
+						platform.SetupTmpDir()
 						Expect(mounter.MountMountPoints).ToNot(ContainElement("/tmp"))
 					})
 				})
@@ -1864,7 +1865,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("bind mounts it in /var/tmp", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(len(mounter.MountFilesystemPartitionPaths)).To(Equal(2))
@@ -1878,7 +1879,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("changes permissions for the system /var/tmp folder", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/var/tmp"}))
@@ -1896,14 +1897,14 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("returns without an error", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/tmp"))
 						Expect(mounter.IsMountedArgsForCall(1)).To(Equal("/var/tmp"))
 						Expect(err).ToNot(HaveOccurred())
 					})
 
 					It("does not create new tmp filesystem", func() {
-						act()
+						platform.SetupTmpDir()
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -1911,7 +1912,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not try to mount root_tmp into /var/tmp", func() {
-						act()
+						platform.SetupTmpDir()
 						Expect(mounter.MountMountPoints).ToNot(ContainElement("/var/tmp"))
 					})
 				})
@@ -1927,13 +1928,13 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("returns error", func() {
-						err := act()
+						err := platform.SetupTmpDir()
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
 					})
 
 					It("does not create new tmp filesystem", func() {
-						act()
+						platform.SetupTmpDir()
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -1941,7 +1942,7 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not try to mount /var/tmp", func() {
-						act()
+						platform.SetupTmpDir()
 						Expect(mounter.MountMountPoints).ToNot(ContainElement("/var/tmp"))
 					})
 				})
@@ -1958,7 +1959,7 @@ Number  Start   End     Size    File system  Name             Flags
 				})
 
 				It("mounts unmounted tmp dirs", func() {
-					err := act()
+					err := platform.SetupTmpDir()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(mounter.MountFilesystemMountPoints).To(ContainElement("/var/tmp"))
 					Expect(mounter.MountFilesystemMountPoints).ToNot(ContainElement("/tmp"))
@@ -1972,12 +1973,12 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns without an error", func() {
-				err := act()
+				err := platform.SetupTmpDir()
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("does not create new tmp filesystem", func() {
-				act()
+				platform.SetupTmpDir()
 				for _, cmd := range cmdRunner.RunCommands {
 					Expect(cmd[0]).ToNot(Equal("truncate"))
 					Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -1985,7 +1986,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("does not try to mount anything", func() {
-				act()
+				platform.SetupTmpDir()
 				Expect(len(mounter.MountPartitionPaths)).To(Equal(0))
 			})
 		})
