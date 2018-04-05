@@ -132,7 +132,7 @@ func (p sfdiskPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, erro
 func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsToMatch []Partition) (bool, error) {
 	existingPartitions, err := p.getPartitions(devicePath)
 	if err != nil {
-		return false, bosherr.WrapErrorf(err, "Getting partitions for %s", devicePath)
+		return false, err
 	}
 	if len(existingPartitions) < len(partitionsToMatch) {
 		return false, nil
@@ -140,7 +140,7 @@ func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsTo
 
 	remainingDiskSpace, err := p.GetDeviceSizeInBytes(devicePath)
 	if err != nil {
-		return false, bosherr.WrapErrorf(err, "Getting device size for %s", devicePath)
+		return false, err
 	}
 
 	for index, partitionToMatch := range partitionsToMatch {
@@ -179,6 +179,10 @@ func (p sfdiskPartitioner) getPartitions(devicePath string) ([]Partition, error)
 
 	for _, partitionLine := range partitionLines {
 		partitionPath, partitionType := extractPartitionPathAndType(partitionLine)
+		if partitionType == PartitionTypeGPT {
+			return nil, ErrGPTPartitionEncountered
+		}
+
 		partition := Partition{Type: partitionType}
 
 		if partition.Type != PartitionTypeEmpty {
@@ -200,6 +204,7 @@ var partitionTypesMap = map[string]PartitionType{
 	"82": PartitionTypeSwap,
 	"83": PartitionTypeLinux,
 	"0":  PartitionTypeEmpty,
+	"ee": PartitionTypeGPT,
 }
 
 func extractPartitionPathAndType(line string) (partitionPath string, partitionType PartitionType) {

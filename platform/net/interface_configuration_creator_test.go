@@ -291,7 +291,6 @@ func describeInterfaceConfigurationCreator() {
 				})
 			})
 
-
 			Context("when static network has postup routes, dhcp network has no postup routes", func() {
 				BeforeEach(func() {
 					staticNetwork.Routes = []boshsettings.Route{

@@ -12,8 +12,8 @@ import (
 	"text/template"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	"github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
@@ -47,7 +47,6 @@ const (
 	sshAuthKeysFilePermissions = os.FileMode(0600)
 
 	minRootEphemeralSpaceInBytes = uint64(1024 * 1024 * 1024)
-	maxFdiskPartitionSize        = uint64(2 * 1024 * 1024 * 1024 * 1024)
 )
 
 type LinuxOptions struct {
@@ -91,7 +90,7 @@ type linux struct {
 	copier                 boshcmd.Copier
 	dirProvider            boshdirs.Provider
 	vitalsService          boshvitals.Service
-	cdutil                 boshdevutil.DeviceUtil
+	cdutil                 cdrom.CDUtil
 	diskManager            boshdisk.Manager
 	netManager             boshnet.Manager
 	certManager            boshcert.Manager
@@ -113,7 +112,7 @@ func NewLinuxPlatform(
 	copier boshcmd.Copier,
 	dirProvider boshdirs.Provider,
 	vitalsService boshvitals.Service,
-	cdutil boshdevutil.DeviceUtil,
+	cdutil cdrom.CDUtil,
 	diskManager boshdisk.Manager,
 	netManager boshnet.Manager,
 	certManager boshcert.Manager,
@@ -202,7 +201,7 @@ func (p linux) GetFileContentsFromCDROM(fileName string) (content []byte, err er
 }
 
 func (p linux) GetFilesContentsFromDisk(diskPath string, fileNames []string) ([][]byte, error) {
-	return p.diskManager.GetDiskUtil(diskPath).GetFilesContents(fileNames)
+	return p.diskManager.GetUtil().GetFilesContents(diskPath, fileNames)
 }
 
 func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
@@ -1083,18 +1082,7 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			{Type: boshdisk.PartitionTypeLinux},
 		}
 
-		diskSize, err := p.diskManager.GetDiskUtil(realPath).GetBlockDeviceSize()
-
-		p.logger.Debug(logTag, "Persistent disk size to be partitioned is: %d, and error is: %v", diskSize, err)
-
-		if err != nil || diskSize < maxFdiskPartitionSize {
-			p.logger.Debug(logTag, "fdisk partitioner was chosen")
-			err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
-		} else {
-			p.logger.Debug(logTag, "parted partitioner was chosen")
-			err = p.diskManager.GetPartedPartitioner().Partition(realPath, partitions)
-		}
-
+		err := p.diskManager.GetPersistentDevicePartitioner().Partition(realPath, partitions)
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")
 		}
@@ -1417,12 +1405,12 @@ func (p linux) createEphemeralPartitionsOnRootDevice(desiredSwapSizeInBytes *uin
 func (p linux) partitionEphemeralDisk(realPath string, desiredSwapSizeInBytes *uint64) (string, string, error) {
 	p.logger.Info(logTag, "Creating swap & ephemeral partitions on ephemeral disk...")
 	p.logger.Debug(logTag, "Getting device size of `%s'", realPath)
-	diskSizeInBytes, err := p.diskManager.GetPartitioner().GetDeviceSizeInBytes(realPath)
+	diskSizeInBytes, err := p.diskManager.GetEphemeralDevicePartitioner().GetDeviceSizeInBytes(realPath)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Getting device size")
 	}
 
-	swapPartitionPath, dataPartitionPath, err := p.partitionDisk(diskSizeInBytes, desiredSwapSizeInBytes, realPath, 1, p.diskManager.GetPartitioner())
+	swapPartitionPath, dataPartitionPath, err := p.partitionDisk(diskSizeInBytes, desiredSwapSizeInBytes, realPath, 1, p.diskManager.GetEphemeralDevicePartitioner())
 
 	if err != nil {
 		return "", "", bosherr.WrapErrorf(err, "Partitioning ephemeral disk `%s'", realPath)

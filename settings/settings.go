@@ -319,8 +319,8 @@ type Network struct {
 
 	Mac string `json:"mac"`
 
-	Preconfigured bool `json:"preconfigured"`
-	Routes Routes `json:"routes,omitempty"`
+	Preconfigured bool   `json:"preconfigured"`
+	Routes        Routes `json:"routes,omitempty"`
 }
 
 type Networks map[string]Network

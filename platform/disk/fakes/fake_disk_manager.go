@@ -1,50 +1,41 @@
 package fakes
 
 import (
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
-	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
 type FakeDiskManager struct {
-	FakePartitioner           *FakePartitioner
-	FakePartedPartitioner     *FakePartitioner
+	FakeEphemeralPartitioner  *FakePartitioner
+	FakePersistentPartitioner *FakePartitioner
 	FakeFormatter             *FakeFormatter
 	FakeMounter               *FakeMounter
 	FakeMountsSearcher        *FakeMountsSearcher
 	FakeRootDevicePartitioner *FakePartitioner
-	FakeDiskUtil              *fakedevutil.FakeDeviceUtil
-	DiskUtilDiskPath          string
-	PartedPartitionerCalled   bool
-	PartitionerCalled         bool
+	FakeDiskUtil              *FakeDiskUtil
 }
 
 func NewFakeDiskManager() *FakeDiskManager {
 	return &FakeDiskManager{
-		FakePartitioner:           NewFakePartitioner(),
-		FakePartedPartitioner:     NewFakePartitioner(),
+		FakeEphemeralPartitioner:  NewFakePartitioner(),
+		FakePersistentPartitioner: NewFakePartitioner(),
 		FakeFormatter:             &FakeFormatter{},
 		FakeMounter:               &FakeMounter{},
 		FakeMountsSearcher:        &FakeMountsSearcher{},
 		FakeRootDevicePartitioner: NewFakePartitioner(),
-		FakeDiskUtil:              fakedevutil.NewFakeDeviceUtil(),
-		PartedPartitionerCalled:   false,
-		PartitionerCalled:         false,
+		FakeDiskUtil:              NewFakeDiskUtil(),
 	}
-}
-
-func (m *FakeDiskManager) GetPartitioner() boshdisk.Partitioner {
-	m.PartitionerCalled = true
-	return m.FakePartitioner
-}
-
-func (m *FakeDiskManager) GetPartedPartitioner() boshdisk.Partitioner {
-	m.PartedPartitionerCalled = true
-	return m.FakePartedPartitioner
 }
 
 func (m *FakeDiskManager) GetRootDevicePartitioner() boshdisk.Partitioner {
 	return m.FakeRootDevicePartitioner
+}
+
+func (m *FakeDiskManager) GetEphemeralDevicePartitioner() boshdisk.Partitioner {
+	return m.FakeEphemeralPartitioner
+}
+
+func (m *FakeDiskManager) GetPersistentDevicePartitioner() boshdisk.Partitioner {
+	return m.FakePersistentPartitioner
 }
 
 func (m *FakeDiskManager) GetFormatter() boshdisk.Formatter {
@@ -59,7 +50,6 @@ func (m *FakeDiskManager) GetMountsSearcher() boshdisk.MountsSearcher {
 	return m.FakeMountsSearcher
 }
 
-func (m *FakeDiskManager) GetDiskUtil(diskPath string) boshdevutil.DeviceUtil {
-	m.DiskUtilDiskPath = diskPath
+func (m *FakeDiskManager) GetUtil() boshdisk.Util {
 	return m.FakeDiskUtil
 }

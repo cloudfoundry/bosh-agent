@@ -1,6 +1,6 @@
 package fakes
 
-type FakeDeviceUtil struct {
+type FakeCDUtil struct {
 	GetFilesContentsFileNames []string
 	GetFilesContentsError     error
 	GetFilesContentsContents  [][]byte
@@ -9,16 +9,16 @@ type FakeDeviceUtil struct {
 	GetBlockDeviceSizeSize  uint64
 }
 
-func NewFakeDeviceUtil() (util *FakeDeviceUtil) {
-	util = &FakeDeviceUtil{}
+func NewFakeCDUtil() (util *FakeCDUtil) {
+	util = &FakeCDUtil{}
 	return
 }
 
-func (util *FakeDeviceUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
+func (util *FakeCDUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
 	util.GetFilesContentsFileNames = fileNames
 	return util.GetFilesContentsContents, util.GetFilesContentsError
 }
 
-func (util *FakeDeviceUtil) GetBlockDeviceSize() (size uint64, err error) {
+func (util *FakeCDUtil) GetBlockDeviceSize() (size uint64, err error) {
 	return util.GetBlockDeviceSizeSize, util.GetBlockDeviceSizeError
 }

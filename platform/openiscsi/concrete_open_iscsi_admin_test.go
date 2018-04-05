@@ -28,13 +28,12 @@ var _ = Describe("concreteOpenIscsiAdmin", func() {
 		var (
 			initiatorName string
 			username      string
-			target        string
 			password      string
 		)
+
 		BeforeEach(func() {
 			initiatorName = "iqn.2007-05.com.fake-domain:fake-username"
 			username = "fake-username"
-			target = "11.11.22.22"
 			password = "fake-password"
 		})
 

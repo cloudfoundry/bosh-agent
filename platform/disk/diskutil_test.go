@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -16,7 +15,7 @@ import (
 
 var _ = Describe("Diskutil", func() {
 	var (
-		diskUtil      boshdevutil.DeviceUtil
+		diskUtil      Util
 		mounter       *fakedisk.FakeMounter
 		fs            *fakesys.FakeFileSystem
 		fakeCmdRunner *fakesys.FakeCmdRunner
@@ -26,13 +25,13 @@ var _ = Describe("Diskutil", func() {
 		mounter = &fakedisk.FakeMounter{}
 		fs = fakesys.NewFakeFileSystem()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		diskUtil = NewDiskUtil("fake-disk-path", fakeCmdRunner, mounter, fs, logger)
+		diskUtil = NewUtil(fakeCmdRunner, mounter, fs, logger)
 	})
 
 	Describe("GetFileContents", func() {
 		Context("when disk path does not exist", func() {
 			It("returns an error if diskpath does not exist", func() {
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("disk path 'fake-disk-path' does not exist"))
 			})
@@ -47,7 +46,7 @@ var _ = Describe("Diskutil", func() {
 			})
 
 			It("mounts disk path to temporary directory", func() {
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(mounter.MountPartitionPaths).To(ContainElement("fake-disk-path"))
@@ -55,7 +54,7 @@ var _ = Describe("Diskutil", func() {
 			})
 
 			It("returns contents of files on a disk", func() {
-				contents, err := diskUtil.GetFilesContents([]string{"fake-file-path-1", "fake-file-path-2"})
+				contents, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1", "fake-file-path-2"})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(contents)).To(Equal(2))
 				Expect(string(contents[0])).To(Equal("fake-contents-1"))
@@ -63,14 +62,14 @@ var _ = Describe("Diskutil", func() {
 			})
 
 			It("unmount disk path", func() {
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("fake-tempdir"))
 			})
 
 			It("cleans up temporary directory after reading settings", func() {
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fs.FileExists("fake-tempdir")).To(BeFalse())
@@ -79,7 +78,7 @@ var _ = Describe("Diskutil", func() {
 			It("returns error if it fails to create temporary mount directory", func() {
 				fs.TempDirError = errors.New("fake-tempdir-error")
 
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-tempdir-error"))
 			})
@@ -87,14 +86,14 @@ var _ = Describe("Diskutil", func() {
 			It("returns error if it fails to mount disk path", func() {
 				mounter.MountErr = errors.New("fake-mount-error")
 
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
 			})
 
 			It("returns an error if it fails to read the file", func() {
 				fs.ReadFileError = errors.New("fake-read-error")
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-read-error"))
 			})
@@ -102,7 +101,7 @@ var _ = Describe("Diskutil", func() {
 			It("returns error if it fails to unmount disk path", func() {
 				mounter.UnmountErr = errors.New("fake-unmount-error")
 
-				_, err := diskUtil.GetFilesContents([]string{"fake-file-path-1"})
+				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-unmount-error"))
 			})

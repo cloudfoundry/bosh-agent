@@ -15,8 +15,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/platform"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
+	fakecdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom/fakes"
 	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
-	fakedevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil/fakes"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
@@ -44,7 +44,7 @@ func describeLinuxPlatform() {
 		dirProvider                boshdirs.Provider
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
 		platform                   Platform
-		cdutil                     *fakedevutil.FakeDeviceUtil
+		cdutil                     *fakecdrom.FakeCDUtil
 		compressor                 boshcmd.Compressor
 		copier                     boshcmd.Copier
 		vitalsService              boshvitals.Service
@@ -71,7 +71,7 @@ func describeLinuxPlatform() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		diskManager = fakedisk.NewFakeDiskManager()
 		dirProvider = boshdirs.NewProvider("/fake-dir")
-		cdutil = fakedevutil.NewFakeDeviceUtil()
+		cdutil = fakecdrom.NewFakeCDUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewGenericCpCopier(fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
@@ -570,7 +570,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		)
 
 		BeforeEach(func() {
-			partitioner = diskManager.FakePartitioner
+			partitioner = diskManager.FakeEphemeralPartitioner
 			formatter = diskManager.FakeFormatter
 			mounter = diskManager.FakeMounter
 		})
@@ -2193,55 +2193,9 @@ Number  Start   End     Size    File system  Name             Flags
 			mounter     *fakedisk.FakeMounter
 		)
 		BeforeEach(func() {
-			partitioner = diskManager.FakePartitioner
+			partitioner = diskManager.FakePersistentPartitioner
 			formatter = diskManager.FakeFormatter
 			mounter = diskManager.FakeMounter
-		})
-
-		Context("when the size of the disk is larger than or equal to 2 terabytes", func() {
-
-			BeforeEach(func() {
-				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255552)
-			})
-
-			It("uses parted partitioner", func() {
-				err := act()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(diskManager.PartedPartitionerCalled).To(BeTrue())
-				Expect(diskManager.PartitionerCalled).To(BeFalse())
-			})
-		})
-
-		Context("when the size of the disk is less than 2 terabytes", func() {
-
-			BeforeEach(func() {
-				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(2199023255551)
-			})
-
-			It("uses fdisk partitioner", func() {
-				err := act()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(diskManager.PartitionerCalled).To(BeTrue())
-				Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
-			})
-		})
-
-		Context("when the lsblk command returns an error", func() {
-
-			BeforeEach(func() {
-				diskManager.FakeDiskUtil.GetBlockDeviceSizeSize = uint64(3199023255556)
-				diskManager.FakeDiskUtil.GetBlockDeviceSizeError = errors.New("Some error")
-			})
-
-			It("uses fdisk partitioner", func() {
-				err := act()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(diskManager.PartitionerCalled).To(BeTrue())
-				Expect(diskManager.PartedPartitionerCalled).To(BeFalse())
-			})
 		})
 
 		Context("when device real path contains /dev/mapper/ and is successfully resolved", func() {
@@ -2728,7 +2682,7 @@ Number  Start   End     Size    File system  Name             Flags
 			)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(diskManager.DiskUtilDiskPath).To(Equal("fake-disk-path"))
+			Expect(diskManager.FakeDiskUtil.GetFilesContentsDiskPath).To(Equal("fake-disk-path"))
 			Expect(diskManager.FakeDiskUtil.GetFilesContentsFileNames).To(Equal(
 				[]string{"fake-file-path-1", "fake-file-path-2"},
 			))
