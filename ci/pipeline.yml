@@ -1,4 +1,12 @@
 ---
+groups:
+- name: bosh-agent:2.1.x
+  jobs:
+    - test-unit
+    - windows-test-unit
+    - test-integration
+    - promote
+
 jobs:
 - name: test-unit
   public: true
