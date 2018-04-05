@@ -120,5 +120,52 @@ net.ipv6.conf.default.disable_ipv6=0`))
 				Expect(err.Error()).To(ContainSubstring("fake-err"))
 			})
 		})
+
+		Context("when grub2 is used and disables IPv6", func() {
+			BeforeEach(func() {
+				err := fs.WriteFileString("/etc/default/grub", "before ipv6.disable=1 after")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/usr/sbin/grub2-mkconfig", "stub")
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("removes ipv6.disable=1 from grub.conf", func() {
+				stopCh <- struct{}{}
+				Expect(act()).ToNot(HaveOccurred())
+				Expect(fs.ReadFileString("/etc/default/grub")).To(Equal("before  after"))
+			})
+
+			It("reboots after changing /etc/default/grub and continue waiting until reboot event succeeds", func() {
+				stopCh <- struct{}{}
+				Expect(act()).ToNot(HaveOccurred())
+				Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
+			})
+
+			It("returns an error if it fails to read /etc/default/grub", func() {
+				fs.ReadFileError = errors.New("fake-err")
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-err"))
+			})
+
+			It("returns an error if update to /etc/default/grub fails", func() {
+				fs.WriteFileError = errors.New("fake-err")
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-err"))
+			})
+
+			It("returns an error if shutdown fails", func() {
+				cmdRunner.AddCmdResult("shutdown -r now", fakesys.FakeCmdResult{
+					Error: errors.New("fake-err"),
+				})
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-err"))
+			})
+		})
 	})
 })
