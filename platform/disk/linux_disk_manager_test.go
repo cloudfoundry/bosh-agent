@@ -50,7 +50,7 @@ var _ = Describe("NewLinuxDiskManager", func() {
 		It("returns disk manager configured to use sfdisk", func() {
 			opts := LinuxDiskManagerOpts{}
 			diskManager := NewLinuxDiskManager(logger, runner, fs, opts)
-			Expect(diskManager.GetPartitioner()).To(Equal(NewSfdiskPartitioner(logger, runner, clock.NewClock())))
+			Expect(diskManager.GetEphemeralDevicePartitioner()).To(Equal(NewSfdiskPartitioner(logger, runner, clock.NewClock())))
 		})
 	})
 
@@ -58,7 +58,7 @@ var _ = Describe("NewLinuxDiskManager", func() {
 		It("returns disk manager configured to use parted", func() {
 			opts := LinuxDiskManagerOpts{PartitionerType: "parted"}
 			diskManager := NewLinuxDiskManager(logger, runner, fs, opts)
-			Expect(diskManager.GetPartitioner()).To(Equal(NewPartedPartitioner(logger, runner, clock.NewClock())))
+			Expect(diskManager.GetEphemeralDevicePartitioner()).To(Equal(NewPartedPartitioner(logger, runner, clock.NewClock())))
 		})
 	})
 
