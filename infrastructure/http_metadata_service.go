@@ -222,14 +222,13 @@ func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 	userDataURL := fmt.Sprintf("%s%s", ms.metadataHost, ms.userdataPath)
 	userDataResp, err := ms.client.GetCustomized(userDataURL, ms.addHeaders())
 	if err != nil {
-		return userData, bosherr.WrapErrorf(err, "Getting user data from url %s", userDataURL)
+		return userData, bosherr.WrapErrorf(err, "request failed from url %s", userDataURL)
 	}
+	defer userDataResp.Body.Close()
 
-	defer func() {
-		if err := userDataResp.Body.Close(); err != nil {
-			ms.logger.Warn(ms.logTag, "Failed to close response body when getting user data: %s", err.Error())
-		}
-	}()
+	if !isSuccessful(userDataResp) {
+		return userData, fmt.Errorf("invalid status from url %s: %d", userDataURL, userDataResp.StatusCode)
+	}
 
 	userDataBytes, err := ioutil.ReadAll(userDataResp.Body)
 	if err != nil {
@@ -290,4 +289,8 @@ func createRetryClient(delay time.Duration, logger boshlog.Logger) *httpclient.H
 		httpclient.NewRetryClient(
 			httpclient.CreateDefaultClient(nil), 10, delay, logger),
 		logger)
+}
+
+func isSuccessful(resp *http.Response) bool {
+	return resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices
 }

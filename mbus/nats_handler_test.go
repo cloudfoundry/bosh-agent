@@ -13,13 +13,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"io/ioutil"
+
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	"io/ioutil"
 )
 
 func init() {
@@ -501,10 +502,7 @@ func init() {
 					})
 
 					It("will return an error", func() {
-						var receivedRequest boshhandler.Request
-
-						err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
-							receivedRequest = req
+						err := handler.Start(func(boshhandler.Request) (resp boshhandler.Response) {
 							return boshhandler.NewValueResponse("expected value")
 						})
 						defer handler.Stop()

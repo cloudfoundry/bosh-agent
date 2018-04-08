@@ -26,9 +26,9 @@ var _ = Describe("PingRetryable", func() {
 		})
 
 		It("tells the agent client to ping", func() {
-			isRetryable, err := pingRetryable.Attempt()
+			shouldRetry, err := pingRetryable.Attempt()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(isRetryable).To(BeTrue())
+			Expect(shouldRetry).To(BeFalse())
 			Expect(fakeAgentClient.PingCallCount()).To(Equal(1))
 		})
 
@@ -38,9 +38,9 @@ var _ = Describe("PingRetryable", func() {
 			})
 
 			It("returns an error", func() {
-				isRetryable, err := pingRetryable.Attempt()
+				shouldRetry, err := pingRetryable.Attempt()
 				Expect(err).To(HaveOccurred())
-				Expect(isRetryable).To(BeTrue())
+				Expect(shouldRetry).To(BeTrue())
 				Expect(err.Error()).To(ContainSubstring("fake-agent-client-ping-error"))
 			})
 		})
@@ -51,9 +51,9 @@ var _ = Describe("PingRetryable", func() {
 			})
 
 			It("returns stops retrying and returns the error", func() {
-				isRetryable, err := pingRetryable.Attempt()
+				shouldRetry, err := pingRetryable.Attempt()
 				Expect(err).To(HaveOccurred())
-				Expect(isRetryable).To(BeFalse())
+				Expect(shouldRetry).To(BeFalse())
 				Expect(err.Error()).To(ContainSubstring("some error with x509: stuff"))
 			})
 
@@ -66,9 +66,9 @@ var _ = Describe("PingRetryable", func() {
 				})
 
 				It("stops retrying and returns the error", func() {
-					isRetryable, err := pingRetryable.Attempt()
+					shouldRetry, err := pingRetryable.Attempt()
 					Expect(err).To(HaveOccurred())
-					Expect(isRetryable).To(BeFalse())
+					Expect(shouldRetry).To(BeFalse())
 					Expect(err.Error()).To(ContainSubstring("x509: certificate is not authorized to sign other certificates"))
 				})
 			})

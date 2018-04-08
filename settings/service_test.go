@@ -87,6 +87,16 @@ func init() {
 					})
 				})
 
+				Context("when logging settings.json write information", func() {
+					It("should remain quiet about the contents of the settings.json in the log", func() {
+						err := service.LoadSettings()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fs.WriteFileQuietlyCallCount).To(Equal(1))
+						Expect(fs.WriteFileCallCount).To(Equal(0))
+					})
+				})
+
 				Context("when settings contain at most one dynamic network", func() {
 					It("updates the service with settings from the fetcher", func() {
 						err := service.LoadSettings()
@@ -134,6 +144,13 @@ func init() {
 								Netmask: "fake-resolved-netmask",
 								Gateway: "fake-resolved-gateway",
 							}
+						})
+
+						It("should remain quiet about the contents of the settings.json in the log", func() {
+							err := service.LoadSettings()
+							Expect(err).NotTo(HaveOccurred())
+
+							Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
 						})
 
 						It("returns settings from the settings file with resolved network", func() {

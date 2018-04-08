@@ -1,6 +1,8 @@
 package fakes
 
 import (
+	"sync"
+
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 )
 
@@ -15,6 +17,8 @@ type FakeApplier struct {
 
 	KeptOnlyPackages []models.Package
 	KeepOnlyErr      error
+	applyMutex       sync.Mutex
+	PrepareStub      func(pkg models.Package) error
 }
 
 func NewFakeApplier() *FakeApplier {
@@ -24,8 +28,13 @@ func NewFakeApplier() *FakeApplier {
 }
 
 func (s *FakeApplier) Prepare(pkg models.Package) error {
+	s.applyMutex.Lock()
 	s.ActionsCalled = append(s.ActionsCalled, "Prepare")
 	s.PreparedPackages = append(s.PreparedPackages, pkg)
+	s.applyMutex.Unlock()
+	if s.PrepareStub != nil {
+		return s.PrepareStub(pkg)
+	}
 	return s.PrepareError
 }
 

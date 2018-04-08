@@ -20,7 +20,7 @@ var _ = Describe("cmdRoutesSeacher", func() {
 
 	BeforeEach(func() {
 		runner = fakesys.NewFakeCmdRunner()
-		searcher = NewRoutesSearcher(runner)
+		searcher = NewRoutesSearcher(runner, nil)
 	})
 
 	Describe("SearchRoutes", func() {

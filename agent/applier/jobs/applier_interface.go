@@ -1,8 +1,10 @@
 package jobs
 
 import (
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 )
+
+// go:generate counterfeiter . Applier
 
 type Applier interface {
 	Prepare(job models.Job) error

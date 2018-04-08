@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
+	"github.com/cloudfoundry/bosh-agent/agent/script/cmd"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -88,12 +88,7 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()
 
-	command := boshsys.Command{
-		Name: s.path,
-		Env: map[string]string{
-			"PATH": boshenv.Path(),
-		},
-	}
+	command := cmd.BuildCommand(s.path)
 
 	jobState, err := params.JobState()
 	if err != nil {

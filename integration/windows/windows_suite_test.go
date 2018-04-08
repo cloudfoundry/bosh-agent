@@ -16,6 +16,16 @@ import (
 )
 
 var VagrantProvider = os.Getenv("VAGRANT_PROVIDER")
+var OsVersion = getOsVersion()
+
+func getOsVersion() string {
+	osVersion := os.Getenv("WINDOWS_OS_VERSION")
+	if osVersion == "" {
+		osVersion = "2012R2"
+	}
+
+	return osVersion
+}
 
 func TestWindows(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -94,7 +104,8 @@ var _ = BeforeSuite(func() {
 		Fail(fmt.Sprintln("Creating fixtures TGZ::", err))
 	}
 
-	_, err := utils.StartVagrant(VagrantProvider)
+	_, err := utils.StartVagrant(VagrantProvider, OsVersion)
+
 	if err != nil {
 		Fail(fmt.Sprintln("Could not setup and run vagrant.\nError is:", err))
 	}

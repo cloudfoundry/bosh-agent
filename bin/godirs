@@ -4,12 +4,13 @@ set -e -o pipefail
 
 cd $(dirname $0)/..
 
-find * -type d -maxdepth 0 \
-    | grep -v '^\.'                 \
-    | grep -v '^Godeps'             \
-    | grep -v '^bin'                \
-    | grep -v '^ci'                 \
-    | grep -v '^out'                \
-    | grep -v '^tmp'                \
-    | grep -v '^gobin'              \
+find * -type d -maxdepth 0 -and \( \
+        -not -path 'Godeps'             \
+        -not -path 'bin'                \
+        -not -path 'ci'                 \
+        -not -path 'out'                \
+        -not -path 'tmp'                \
+        -not -path 'gobin'              \
+        -not -path 'vendor'              \
+    \) \
     | xargs $@

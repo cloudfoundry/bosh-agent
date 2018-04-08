@@ -2,11 +2,12 @@ package app
 
 import (
 	"fmt"
-	"net"
 	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/clock"
+
+	"os"
 
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
@@ -29,7 +30,6 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
-	boshsyslog "github.com/cloudfoundry/bosh-agent/syslog"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -102,10 +102,17 @@ func (app *app) Setup(opts Options) error {
 		app.logger,
 	)
 
+	specFilePath := filepath.Join(app.dirProvider.BoshDir(), "spec.json")
+	specService := boshas.NewConcreteV1Service(
+		app.platform.GetFs(),
+		specFilePath,
+	)
+
 	boot := boshagent.NewBootstrap(
 		app.platform,
 		app.dirProvider,
 		settingsService,
+		specService,
 		app.logger,
 	)
 
@@ -149,7 +156,7 @@ func (app *app) Setup(opts Options) error {
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
-	applier, compiler := app.buildApplierAndCompiler(app.dirProvider, blobstore, jobSupervisor)
+	applier, compiler := app.buildApplierAndCompiler(app.dirProvider, blobstore, jobSupervisor, settingsService.GetSettings())
 
 	uuidGen := boshuuid.NewGenerator()
 
@@ -159,12 +166,6 @@ func (app *app) Setup(opts Options) error {
 		app.logger,
 		app.platform.GetFs(),
 		app.dirProvider.BoshDir(),
-	)
-
-	specFilePath := filepath.Join(app.dirProvider.BoshDir(), "spec.json")
-	specService := boshas.NewConcreteV1Service(
-		app.platform.GetFs(),
-		specFilePath,
 	)
 
 	jobScriptProvider := boshscript.NewConcreteJobScriptProvider(
@@ -200,8 +201,6 @@ func (app *app) Setup(opts Options) error {
 		actionRunner,
 	)
 
-	syslogServer := boshsyslog.NewServer(33331, net.Listen, app.logger)
-
 	app.agent = boshagent.New(
 		app.logger,
 		mbusHandler,
@@ -209,7 +208,6 @@ func (app *app) Setup(opts Options) error {
 		actionDispatcher,
 		jobSupervisor,
 		specService,
-		syslogServer,
 		time.Second*30,
 		settingsService,
 		uuidGen,
@@ -235,6 +233,7 @@ func (app *app) buildApplierAndCompiler(
 	dirProvider boshdirs.Provider,
 	blobstore boshblob.DigestBlobstore,
 	jobSupervisor boshjobsuper.JobSupervisor,
+	settings boshsettings.Settings,
 ) (boshapplier.Applier, boshcomp.Compiler) {
 	fileSystem := app.platform.GetFs()
 
@@ -242,6 +241,7 @@ func (app *app) buildApplierAndCompiler(
 		dirProvider.DataDir(),
 		dirProvider.BaseDir(),
 		"jobs",
+		os.FileMode(0750),
 		fileSystem,
 		app.logger,
 	)
@@ -258,6 +258,7 @@ func (app *app) buildApplierAndCompiler(
 	)
 
 	jobApplier := boshaj.NewRenderedJobApplier(
+		dirProvider,
 		jobsBc,
 		jobSupervisor,
 		packageApplierProvider,
@@ -273,6 +274,7 @@ func (app *app) buildApplierAndCompiler(
 		app.platform,
 		jobSupervisor,
 		dirProvider,
+		settings,
 	)
 
 	cmdRunner := boshrunner.NewFileLoggingCmdRunner(

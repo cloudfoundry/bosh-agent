@@ -251,6 +251,41 @@ var _ = Describe("Settings", func() {
 				}))
 			})
 		})
+
+		Context("when the disk settings contain iSCSI settings", func() {
+			BeforeEach(func() {
+				settings = Settings{
+					Disks: Disks{
+						Persistent: map[string]interface{}{
+							"fake-disk-id": map[string]interface{}{
+								"id": "fake-disk-device-id",
+								"iscsi_settings": map[string]interface{}{
+									"initiator_name": "fake-initiator-name",
+									"username":       "fake-username",
+									"target":         "fake-target",
+									"password":       "fake-password",
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("returns disk settings", func() {
+				diskSettings, found := settings.PersistentDiskSettings("fake-disk-id")
+				Expect(found).To(BeTrue())
+				Expect(diskSettings).To(Equal(DiskSettings{
+					ID:       "fake-disk-id",
+					DeviceID: "fake-disk-device-id",
+					ISCSISettings: ISCSISettings{
+						InitiatorName: "fake-initiator-name",
+						Username:      "fake-username",
+						Target:        "fake-target",
+						Password:      "fake-password",
+					},
+				}))
+			})
+		})
 	})
 
 	Describe("EphemeralDiskSettings", func() {
@@ -651,6 +686,7 @@ var _ = Describe("Settings", func() {
       "fake-key"
     ],
     "swap_size": 2048,
+    "parallel": 10,
 	"blobstores": [
 		{
 			"options": {
@@ -679,6 +715,7 @@ var _ = Describe("Settings", func() {
 			Expect(env.Bosh.IPv6).To(Equal(IPv6{}))
 			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+			Expect(*env.GetParallel()).To(Equal(10))
 			Expect(env.Bosh.Blobstores).To(Equal(
 				[](Blobstore){
 					Blobstore{
@@ -756,6 +793,18 @@ var _ = Describe("Settings", func() {
 			})
 		})
 
+		Context("when parallel is not specified in the json", func() {
+			It("sets to the default value", func() {
+				var env Env
+				envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"]}}`
+
+				err := json.Unmarshal([]byte(envJSON), &env)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(*env.GetParallel()).To(Equal(5))
+			})
+		})
+
 		Context("#GetBlobstore", func() {
 			blobstoreLocal := Blobstore{
 				Type: "local",
@@ -811,12 +860,58 @@ var _ = Describe("Settings", func() {
 					[]Blobstore{blobstoreLocal},
 					blobstoreLocal),
 
+				Entry("setting.Blobstore is present and env.bosh.Blobstores is provided with a single entry",
+					blobstoreGcs,
+					[]Blobstore{blobstoreLocal},
+					blobstoreLocal),
+
 				Entry("setting.Blobstore is missing and env.bosh.Blobstores has multiple entries",
 					nil,
 					[]Blobstore{blobstoreS3, blobstoreGcs},
 					blobstoreS3),
 
 				Entry("setting.Blobstore and env.bosh.Blobstores both are missing",
+					nil,
+					nil,
+					nil),
+			)
+		})
+
+		Context("#GetNtpServers", func() {
+			ntpSetOne := []string{"a", "b", "c"}
+
+			ntpSetTwo := []string{"d", "e", "f"}
+
+			DescribeTable("agent returning the right ntp configuration",
+				func(settingsNtp []string, envBoshNtp []string, expectedNtpServers []string) {
+					settings := Settings{
+						NTP: settingsNtp,
+						Env: Env{
+							Bosh: BoshEnv{
+								NTP: envBoshNtp,
+							},
+						},
+					}
+
+					Expect(settings.GetNtpServers()).To(Equal(expectedNtpServers))
+				},
+
+				Entry("setting.ntp provided and env.bosh.ntp is missing",
+					ntpSetOne,
+					nil,
+					ntpSetOne),
+
+				Entry("setting.ntp is missing and env.bosh.ntp is present",
+					nil,
+					ntpSetTwo,
+					ntpSetTwo),
+
+				Entry("setting.ntp is present and env.bosh.ntp is present",
+					ntpSetOne,
+					ntpSetTwo,
+					ntpSetTwo),
+
+				Entry("setting.ntp and env.bosh.ntp both are missing",
 					nil,
 					nil,
 					nil),

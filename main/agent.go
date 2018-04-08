@@ -9,6 +9,7 @@ import (
 
 	boshapp "github.com/cloudfoundry/bosh-agent/app"
 	"github.com/cloudfoundry/bosh-agent/infrastructure/agentlogger"
+	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -25,6 +26,10 @@ func runAgent(opts boshapp.Options, logger logger.Logger) chan error {
 		logger.Debug(mainLogTag, "Starting agent")
 
 		fs := boshsys.NewOsFileSystem(logger)
+		if opts.PlatformName == "dummy" {
+			fs = platform.DummyWrapFs(fs)
+		}
+
 		app := boshapp.New(logger, fs)
 
 		err := app.Setup(opts)

@@ -28,7 +28,7 @@ type Settings struct {
 	Disks     Disks     `json:"disks"`
 	Env       Env       `json:"env"`
 	Networks  Networks  `json:"networks"`
-	Ntp       []string  `json:"ntp"`
+	NTP       []string  `json:"ntp"`
 	Mbus      string    `json:"mbus"`
 	VM        VM        `json:"vm"`
 }
@@ -72,14 +72,25 @@ type Disks struct {
 }
 
 type DiskSettings struct {
-	ID             string
-	DeviceID       string
-	VolumeID       string
-	Lun            string
-	HostDeviceID   string
-	Path           string
+	ID           string
+	DeviceID     string
+	VolumeID     string
+	Lun          string
+	HostDeviceID string
+	Path         string
+
+	// iscsi related
+	ISCSISettings ISCSISettings
+
 	FileSystemType disk.FileSystemType
 	MountOptions   []string
+}
+
+type ISCSISettings struct {
+	InitiatorName string
+	Username      string
+	Target        string
+	Password      string
 }
 
 type VM struct {
@@ -109,6 +120,24 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 				if hostDeviceID, ok := hashSettings["host_device_id"]; ok {
 					diskSettings.HostDeviceID = hostDeviceID.(string)
 				}
+
+				if iSCSISettings, ok := hashSettings["iscsi_settings"]; ok {
+					if hashISCSISettings, ok := iSCSISettings.(map[string]interface{}); ok {
+						if username, ok := hashISCSISettings["username"]; ok {
+							diskSettings.ISCSISettings.Username = username.(string)
+						}
+						if password, ok := hashISCSISettings["password"]; ok {
+							diskSettings.ISCSISettings.Password = password.(string)
+						}
+						if initiator, ok := hashISCSISettings["initiator_name"]; ok {
+							diskSettings.ISCSISettings.InitiatorName = initiator.(string)
+						}
+						if target, ok := hashISCSISettings["target"]; ok {
+							diskSettings.ISCSISettings.Target = target.(string)
+						}
+					}
+				}
+
 			} else {
 				// Old CPIs return disk path (string) or volume id (string) as disk settings
 				diskSettings.Path = settings.(string)
@@ -173,6 +202,13 @@ func (s Settings) GetBlobstore() Blobstore {
 	return s.Blobstore
 }
 
+func (s Settings) GetNtpServers() []string {
+	if len(s.Env.Bosh.NTP) > 0 {
+		return s.Env.Bosh.NTP
+	}
+	return s.NTP
+}
+
 type Env struct {
 	Bosh                       BoshEnv             `json:"bosh"`
 	PersistentDiskFS           disk.FileSystemType `json:"persistent_disk_fs"`
@@ -208,6 +244,14 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 	return &result
 }
 
+func (e Env) GetParallel() *int {
+	result := 5
+	if e.Bosh.Parallel != nil {
+		result = int(*e.Bosh.Parallel)
+	}
+	return &result
+}
+
 func (e Env) IsNATSMutualTLSEnabled() bool {
 	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0
 }
@@ -222,6 +266,8 @@ type BoshEnv struct {
 	Mbus                  MBus        `json:"mbus"`
 	IPv6                  IPv6        `json:"ipv6"`
 	Blobstores            []Blobstore `json:"blobstores"`
+	NTP                   []string    `json:"ntp"`
+	Parallel              *int        `json:"parallel"`
 }
 
 type MBus struct {
@@ -251,6 +297,14 @@ const (
 	NetworkTypeVIP     NetworkType = "vip"
 )
 
+type Route struct {
+	Destination string
+	Gateway     string
+	Netmask     string
+}
+
+type Routes []Route
+
 type Network struct {
 	Type NetworkType `json:"type"`
 
@@ -265,7 +319,8 @@ type Network struct {
 
 	Mac string `json:"mac"`
 
-	Preconfigured bool `json:"preconfigured"`
+	Preconfigured bool   `json:"preconfigured"`
+	Routes        Routes `json:"routes,omitempty"`
 
 	Alias string `json:"alias,omitempty"`
 }

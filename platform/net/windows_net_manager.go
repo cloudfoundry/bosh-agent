@@ -168,6 +168,11 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, err
 		return bosherr.WrapError(err, "Computing network configuration for dns")
 	}
 
+	_, _, _, err = net.runner.RunCommand("powershell", "-Command", "Start-Service http")
+	if err != nil {
+		return bosherr.WrapError(err, "Starting HTTP service")
+	}
+
 	return net.setupDNS(dnsServers)
 }
 
@@ -207,7 +212,7 @@ func (net WindowsNetManager) setupInterfaces(staticConfigs []StaticInterfaceConf
 
 		content := fmt.Sprintf(NicSettingsTemplate, conf.Mac, conf.Address, conf.Netmask, gateway)
 
-		_, _, _, err := net.runner.RunCommand("-Command", content)
+		_, _, _, err := net.runner.RunCommand("powershell", "-Command", content)
 		if err != nil {
 			return bosherr.WrapError(err, "Configuring interface")
 		}
@@ -247,7 +252,7 @@ func (net WindowsNetManager) setupDNS(dnsServers []string) error {
 		content = ResetDNSTemplate
 	}
 
-	_, _, _, err := net.runner.RunCommand("-Command", content)
+	_, _, _, err := net.runner.RunCommand("powershell", "-Command", content)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting DNS servers")
 	}

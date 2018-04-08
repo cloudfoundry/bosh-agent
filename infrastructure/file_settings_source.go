@@ -41,7 +41,7 @@ func (s *FileSettingsSource) PublicSSHKeyForUsername(string) (string, error) {
 func (s *FileSettingsSource) Settings() (boshsettings.Settings, error) {
 	var settings boshsettings.Settings
 
-	contents, err := s.fs.ReadFile(s.settingsFilePath)
+	contents, err := s.fs.ReadFileWithOpts(s.settingsFilePath, boshsys.ReadOpts{Quiet: true})
 	if err != nil {
 		return settings, bosherr.WrapErrorf(
 			err, "Reading from file '%s'", s.settingsFilePath)

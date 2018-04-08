@@ -11,12 +11,13 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	fakejobs "github.com/cloudfoundry/bosh-agent/agent/applier/jobs/fakes"
+	fakejobs "github.com/cloudfoundry/bosh-agent/agent/applier/jobs/jobsfakes"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
@@ -58,19 +59,22 @@ func init() {
 			logRotateDelegate *FakeLogRotateDelegate
 			jobSupervisor     *fakejobsuper.FakeJobSupervisor
 			applier           Applier
+			settingsService   boshsettings.Service
 		)
 
 		BeforeEach(func() {
-			jobApplier = fakejobs.NewFakeApplier()
+			jobApplier = &fakejobs.FakeApplier{}
 			packageApplier = fakepackages.NewFakeApplier()
 			logRotateDelegate = &FakeLogRotateDelegate{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			settingsService = &fakesettings.FakeSettingsService{}
 			applier = NewConcreteApplier(
 				jobApplier,
 				packageApplier,
 				logRotateDelegate,
 				jobSupervisor,
 				boshdirs.NewProvider("/fake-base-dir"),
+				settingsService.GetSettings(),
 			)
 		})
 
@@ -82,13 +86,14 @@ func init() {
 					&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
 				)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(jobApplier.PreparedJobs).To(Equal([]models.Job{job}))
+				Expect(jobApplier.PrepareCallCount()).To(Equal(1))
+				Expect(jobApplier.PrepareArgsForCall(0)).To(Equal(job))
 			})
 
 			It("returns error when preparing jobs fails", func() {
 				job := buildJob()
 
-				jobApplier.PrepareError = errors.New("fake-prepare-job-error")
+				jobApplier.PrepareReturns(errors.New("fake-prepare-job-error"))
 
 				err := applier.Prepare(
 					&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
@@ -105,7 +110,7 @@ func init() {
 					&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}},
 				)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(packageApplier.PreparedPackages).To(Equal([]models.Package{pkg1, pkg2}))
+				Expect(packageApplier.PreparedPackages).To(ConsistOf(pkg1, pkg2))
 			})
 
 			It("returns error when preparing packages fails", func() {
@@ -122,7 +127,6 @@ func init() {
 		})
 
 		Describe("Configure jobs", func() {
-
 			It("reloads job supervisor", func() {
 				job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
 				job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
@@ -134,7 +138,7 @@ func init() {
 				Expect(jobSupervisor.Reloaded).To(BeTrue())
 			})
 
-			It("configures jobs", func() {
+			It("configures jobs in reverse order", func() {
 				job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
 				job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 				jobs := []models.Job{job1, job2}
@@ -142,7 +146,11 @@ func init() {
 				err := applier.ConfigureJobs(&fakeas.FakeApplySpec{JobResults: jobs})
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(jobApplier.ConfiguredJobs).To(ConsistOf(job1, job2))
+				Expect(jobApplier.ConfigureCallCount()).To(Equal(2))
+				job, _ := jobApplier.ConfigureArgsForCall(0)
+				Expect(job).To(Equal(job2))
+				job, _ = jobApplier.ConfigureArgsForCall(1)
+				Expect(job).To(Equal(job1))
 			})
 		})
 
@@ -165,7 +173,9 @@ func init() {
 				)
 
 				// check that jobs were not applied before removing all other jobs
-				Expect(jobApplier.AppliedJobs).To(Equal([]models.Job{}))
+
+				Expect(jobApplier.ApplyCallCount()).To(Equal(0))
+
 			})
 
 			It("returns error if removing all jobs from job supervisor fails", func() {
@@ -183,14 +193,16 @@ func init() {
 					&fakeas.FakeApplySpec{},
 					&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
 				)
+
 				Expect(err).ToNot(HaveOccurred())
-				Expect(jobApplier.AppliedJobs).To(Equal([]models.Job{job}))
+				Expect(jobApplier.ApplyCallCount()).To(Equal(1))
+				Expect(jobApplier.ApplyArgsForCall(0)).To(Equal(job))
 			})
 
 			It("apply errs when applying jobs errs", func() {
 				job := buildJob()
 
-				jobApplier.ApplyError = errors.New("fake-apply-job-error")
+				jobApplier.ApplyReturns(errors.New("fake-apply-job-error"))
 
 				err := applier.Apply(
 					&fakeas.FakeApplySpec{},
@@ -210,11 +222,12 @@ func init() {
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(jobApplier.KeepOnlyJobs).To(Equal([]models.Job{currentJob, desiredJob}))
+				Expect(jobApplier.KeepOnlyCallCount()).To(Equal(1))
+				Expect(jobApplier.KeepOnlyArgsForCall(0)).To(Equal([]models.Job{currentJob, desiredJob}))
 			})
 
 			It("returns error when jobApplier fails to keep only the jobs in the desired and current specs", func() {
-				jobApplier.KeepOnlyErr = errors.New("fake-keep-only-error")
+				jobApplier.KeepOnlyReturns(errors.New("fake-keep-only-error"))
 
 				currentJob := buildJob()
 				desiredJob := buildJob()
@@ -285,7 +298,8 @@ func init() {
 
 				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{JobResults: jobs})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(jobApplier.ConfiguredJobs).To(BeEmpty())
+
+				Expect(jobApplier.ConfigureCallCount()).To(Equal(0))
 
 				Expect(jobSupervisor.Reloaded).To(BeTrue())
 			})

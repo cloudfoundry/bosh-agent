@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
+	applyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -24,6 +25,7 @@ type bootstrap struct {
 	platform        boshplatform.Platform
 	dirProvider     boshdir.Provider
 	settingsService boshsettings.Service
+	specService     applyspec.V1Service
 	logger          boshlog.Logger
 }
 
@@ -31,6 +33,7 @@ func NewBootstrap(
 	platform boshplatform.Platform,
 	dirProvider boshdir.Provider,
 	settingsService boshsettings.Service,
+	specService applyspec.V1Service,
 	logger boshlog.Logger,
 ) Bootstrap {
 	return bootstrap{
@@ -38,6 +41,7 @@ func NewBootstrap(
 		platform:        platform,
 		dirProvider:     dirProvider,
 		settingsService: settingsService,
+		specService:     specService,
 		logger:          logger,
 	}
 }
@@ -93,7 +97,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up networking")
 	}
 
-	if err = boot.platform.SetTimeWithNtpServers(settings.Ntp); err != nil {
+	if err = boot.platform.SetTimeWithNtpServers(settings.GetNtpServers()); err != nil {
 		return bosherr.WrapError(err, "Setting up NTP servers")
 	}
 
@@ -156,6 +160,18 @@ func (boot bootstrap) Run() (err error) {
 			if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
 				return bosherr.WrapError(err, "Mounting persistent disk")
 			}
+		}
+	}
+
+	v1Spec, err := boot.specService.Get()
+	if err != nil {
+		return bosherr.WrapError(err, "Cannot get v1spec from SpecService")
+	}
+
+	for _, job := range v1Spec.Jobs() {
+		err = job.CreateDirectories(boot.fs, boot.dirProvider)
+		if err != nil {
+			return bosherr.WrapError(err, "Cannot create directories for jobs")
 		}
 	}
 

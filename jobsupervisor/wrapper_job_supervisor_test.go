@@ -6,12 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"path/filepath"
-	"time"
 
-	"code.cloudfoundry.org/clock/fakeclock"
 	"github.com/cloudfoundry/bosh-agent/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -22,33 +19,18 @@ import (
 var _ = Describe("WrapperJobSupervisor", func() {
 
 	var (
-		fs                    *fakesys.FakeFileSystem
-		runner                *fakesys.FakeCmdRunner
-		client                *fakemonit.FakeMonitClient
-		logger                boshlog.Logger
-		dirProvider           boshdir.Provider
-		jobFailuresServerPort int
-		fakeSupervisor        *fakes.FakeJobSupervisor
-		wrapper               JobSupervisor
-		timeService           *fakeclock.FakeClock
+		fs             *fakesys.FakeFileSystem
+		logger         boshlog.Logger
+		dirProvider    boshdir.Provider
+		fakeSupervisor *fakes.FakeJobSupervisor
+		wrapper        JobSupervisor
 	)
-
-	var jobFailureServerPort = 5000
-
-	getJobFailureServerPort := func() int {
-		jobFailureServerPort++
-		return jobFailureServerPort
-	}
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		fs.MkdirAll("/var/vcap/instance", 666)
-		runner = fakesys.NewFakeCmdRunner()
-		client = fakemonit.NewFakeMonitClient()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider = boshdir.NewProvider("/var/vcap")
-		jobFailuresServerPort = getJobFailureServerPort()
-		timeService = fakeclock.NewFakeClock(time.Now())
 
 		fakeSupervisor = fakes.NewFakeJobSupervisor()
 

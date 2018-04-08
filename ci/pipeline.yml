@@ -1,4 +1,14 @@
 ---
+groups:
+- name: bosh-agent
+  jobs:
+  - test-unit
+  - test-integration
+  - windows-test-unit
+  - windows-test-integration-1709
+  - windows-test-integration-2012R2
+  - promote
+
 jobs:
 - name: test-unit
   public: true
@@ -33,15 +43,18 @@ jobs:
   - task: test-unit
     file: bosh-agent/ci/tasks/test-unit-windows.yml
 
-- name: windows-test-integration
+- name: windows-test-integration-1709
   serial: true
+  serial_groups: [windows-integration]
   plan:
-  - get: windows-ami
+  - get: windows-ami-1709
   - get: bosh-agent
     trigger: true
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
+    input_mapping:
+      windows-ami: windows-ami-1709
     params:
       AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
       AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
@@ -52,6 +65,31 @@ jobs:
       NATS_PRIVATE_IP: {{NATS_PRIVATE_IP}}
       VAGRANT_PROVIDER: aws
       WINRM_PASSWORD: {{WINRM_PASSWORD}}
+      WINDOWS_OS_VERSION: 1709
+
+- name: windows-test-integration-2012R2
+  serial: true
+  serial_groups: [windows-integration]
+  plan:
+  - get: windows-ami-2012R2
+  - get: bosh-agent
+    trigger: true
+  - task: test-integration
+    privileged: true
+    file: bosh-agent/ci/tasks/test-integration-windows.yml
+    input_mapping:
+      windows-ami: windows-ami-2012R2
+    params:
+      AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
+      AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
+      AWS_SUBNET: {{WINDOWS_AWS_SUBNET}}
+      AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
+      KEYPAIR_NAME: {{WINDOWS_AWS_KEYPAIR_NAME}}
+      NATS_ELASTIC_IP: {{NATS_ELASTIC_IP}}
+      NATS_PRIVATE_IP: {{NATS_PRIVATE_IP}}
+      VAGRANT_PROVIDER: aws
+      WINRM_PASSWORD: {{WINRM_PASSWORD}}
+      WINDOWS_OS_VERSION: 2012R2
 
 - name: promote
   public: true
@@ -59,7 +97,7 @@ jobs:
   plan:
     - aggregate:
       - trigger: true
-        passed: [test-unit, test-integration, windows-test-unit, windows-test-integration]
+        passed: [test-unit, test-integration, windows-test-unit, windows-test-integration-1709, windows-test-integration-2012R2]
         get: bosh-agent
       - get: version-semver
         params: {bump: minor}
@@ -117,7 +155,19 @@ resources:
     branch: develop
     context: ci/published
 
-- name: windows-ami
+- name: windows-ami-1709
+  type: ami-resource
+  source:
+    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
+    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
+    region: us-east-1
+    search_options:
+      filters:
+      - name: image-id
+        values:
+        - ami-1ed2d664
+
+- name: windows-ami-2012R2
   type: ami-resource
   source:
     access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}

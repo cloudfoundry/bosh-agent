@@ -49,11 +49,11 @@ func NewMonitRetryStrategy(
 
 func (m *monitRetryStrategy) Try() error {
 	var err error
-	var isRetryable bool
+	var shouldRetry bool
 
 	for m.hasMoreAttempts() {
-		isRetryable, err = m.retryable.Attempt()
-		if !isRetryable {
+		shouldRetry, err = m.retryable.Attempt()
+		if !shouldRetry {
 			break
 		}
 

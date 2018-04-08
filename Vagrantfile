@@ -25,7 +25,12 @@ Vagrant.configure('2') do |config|
 
   agent_dir = '/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent'
 
-  config.vm.synced_folder '.', agent_dir, type: "rsync"
+  # We need to override the rsync args to exlucde "--copy-links".
+  # This is due to the fact that `dep` does not prune symlinks from the vendor directory.
+  # A vendored dependency has a broken symlink for test, which breaks `rsync`.
+  # See https://github.com/golang/dep/issues/1625 for more context
+  config.vm.synced_folder '.', agent_dir, type: "rsync",
+    rsync__args: ["--verbose", "--archive", "--delete", "-z"]
 
 #  config.vm.synced_folder Dir.pwd, '/vagrant', disabled: true
   config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"

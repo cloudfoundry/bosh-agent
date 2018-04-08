@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -20,6 +21,7 @@ import (
 const logTag = "renderedJobApplier"
 
 type renderedJobApplier struct {
+	dirProvider            directories.Provider
 	jobsBc                 boshbc.BundleCollection
 	jobSupervisor          boshjobsuper.JobSupervisor
 	packageApplierProvider packages.ApplierProvider
@@ -30,6 +32,7 @@ type renderedJobApplier struct {
 }
 
 func NewRenderedJobApplier(
+	dirProvider directories.Provider,
 	jobsBc boshbc.BundleCollection,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	packageApplierProvider packages.ApplierProvider,
@@ -39,6 +42,7 @@ func NewRenderedJobApplier(
 	logger boshlog.Logger,
 ) Applier {
 	return &renderedJobApplier{
+		dirProvider:            dirProvider,
 		jobsBc:                 jobsBc,
 		jobSupervisor:          jobSupervisor,
 		packageApplierProvider: packageApplierProvider,
@@ -78,6 +82,10 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 	err := s.Prepare(job)
 	if err != nil {
 		return bosherr.WrapError(err, "Preparing job")
+	}
+
+	if err := job.CreateDirectories(s.fs, s.dirProvider); err != nil {
+		return bosherr.WrapErrorf(err, "Creating directories for job %s", job.Name)
 	}
 
 	jobBundle, err := s.jobsBc.Get(job)
@@ -126,9 +134,17 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		if err != nil {
 			return err
 		} else if info.IsDir() || strings.HasPrefix(path, binPath) {
-			return s.fs.Chmod(path, os.FileMode(0755))
+			err := s.fs.Chown(path, "root:vcap")
+			if err != nil {
+				return bosherr.WrapError(err, "Failed to chown dir")
+			}
+			return s.fs.Chmod(path, os.FileMode(0750))
 		} else {
-			return s.fs.Chmod(path, os.FileMode(0644))
+			err := s.fs.Chown(path, "root:vcap")
+			if err != nil {
+				return bosherr.WrapError(err, "Failed to chown dir")
+			}
+			return s.fs.Chmod(path, os.FileMode(0640))
 		}
 	})
 	if err != nil {

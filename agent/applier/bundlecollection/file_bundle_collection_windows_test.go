@@ -1,10 +1,12 @@
 package bundlecollection_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"os"
 	"path"
 	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -25,6 +27,7 @@ var _ = Describe("FileBundleCollection", func() {
 			`C:\fake-collection-path\data`,
 			`C:\fake-collection-path`,
 			`fake-collection-name`,
+			os.FileMode(0750),
 			fs,
 			logger,
 		)
@@ -43,6 +46,7 @@ var _ = Describe("FileBundleCollection", func() {
 			expectedBundle := NewFileBundle(
 				`C:/fake-collection-path/data/fake-collection-name/fake-bundle-name/faf990988742db852eec285122b5c4e7180e7be5`,
 				`C:/fake-collection-path/fake-collection-name/fake-bundle-name`,
+				os.FileMode(0750),
 				fs,
 				logger,
 			)
@@ -85,18 +89,21 @@ var _ = Describe("FileBundleCollection", func() {
 				NewFileBundle(
 					cleanPath(installPath+`\fake-bundle-1-name\fake-bundle-1-version-1`),
 					cleanPath(enablePath+`\fake-bundle-1-name`),
+					os.FileMode(0750),
 					fs,
 					logger,
 				),
 				NewFileBundle(
 					cleanPath(installPath+`\fake-bundle-1-name\fake-bundle-1-version-2`),
 					cleanPath(enablePath+`\fake-bundle-1-name`),
+					os.FileMode(0750),
 					fs,
 					logger,
 				),
 				NewFileBundle(
 					cleanPath(installPath+`\fake-bundle-1-name\fake-bundle-2-version-1`),
 					cleanPath(enablePath+`\fake-bundle-1-name`),
+					os.FileMode(0750),
 					fs,
 					logger,
 				),

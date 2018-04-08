@@ -274,7 +274,7 @@ func init() {
 					cmd := runner.RunCommands[0]
 					if runtime.GOOS == "windows" {
 						expectedCmd.Name = "powershell"
-						expectedCmd.Args = []string{"-command", fmt.Sprintf(`"iex (get-content -raw %s)"`, PackagingScriptName)}
+						expectedCmd.Args = []string{"-command", fmt.Sprintf("iex (get-content -raw %s)", PackagingScriptName)}
 					} else {
 						expectedCmd.Name = "bash"
 						expectedCmd.Args = []string{"-x", PackagingScriptName}

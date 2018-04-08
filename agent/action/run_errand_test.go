@@ -15,6 +15,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"runtime"
 )
 
 var _ = Describe("RunErrand", func() {
@@ -23,6 +24,7 @@ var _ = Describe("RunErrand", func() {
 		cmdRunner   *fakesys.FakeCmdRunner
 		action      RunErrandAction
 		errandName  string
+		fullCommand string
 	)
 
 	BeforeEach(func() {
@@ -31,6 +33,11 @@ var _ = Describe("RunErrand", func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
 		errandName = "fake-job-name"
+		if runtime.GOOS == "windows" {
+			fullCommand = "powershell /fake-jobs-dir/fake-job-name/bin/run"
+		} else {
+			fullCommand = "/fake-jobs-dir/fake-job-name/bin/run"
+		}
 	})
 
 	AssertActionIsAsynchronous(action)
@@ -46,7 +53,7 @@ var _ = Describe("RunErrand", func() {
 					currentSpec := boshas.V1ApplySpec{}
 					currentSpec.JobSpec.Template = "fake-job-name"
 					specService.Spec = currentSpec
-					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 						WaitResult: boshsys.Result{
 							Stdout:     "fake-stdout",
 							Stderr:     "fake-stderr",
@@ -84,7 +91,7 @@ var _ = Describe("RunErrand", func() {
 
 				Context("when errand script exits with non-0 exit code (execution of script is ok)", func() {
 					BeforeEach(func() {
-						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								Stdout:     "fake-stdout",
 								Stderr:     "fake-stderr",
@@ -116,7 +123,7 @@ var _ = Describe("RunErrand", func() {
 
 				Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
 					BeforeEach(func() {
-						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								Stdout:     "fake-stdout",
 								Stderr:     "fake-stderr",
@@ -141,7 +148,7 @@ var _ = Describe("RunErrand", func() {
 
 				Context("when errand script fails to execute", func() {
 					BeforeEach(func() {
-						cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+						cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 							WaitResult: boshsys.Result{
 								ExitStatus: -1,
 								Error:      errors.New("fake-bosh-error"),
@@ -225,7 +232,7 @@ var _ = Describe("RunErrand", func() {
 					},
 				}
 
-				cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", process)
+				cmdRunner.AddProcess(fullCommand, process)
 
 				err := action.Cancel()
 				Expect(err).ToNot(HaveOccurred())
@@ -238,7 +245,7 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script exits with non-0 exit code (execution of script is ok)", func() {
 				BeforeEach(func() {
-					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								Stdout:     "fake-stdout",
@@ -267,7 +274,7 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script fails with non-0 exit code (execution of script is ok)", func() {
 				BeforeEach(func() {
-					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								Stdout:     "fake-stdout",
@@ -297,7 +304,7 @@ var _ = Describe("RunErrand", func() {
 
 			Context("when errand script fails to execute", func() {
 				BeforeEach(func() {
-					cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+					cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 						TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 							p.WaitCh <- boshsys.Result{
 								ExitStatus: -1,
@@ -321,7 +328,7 @@ var _ = Describe("RunErrand", func() {
 
 		Context("when action was cancelled already", func() {
 			BeforeEach(func() {
-				cmdRunner.AddProcess("/fake-jobs-dir/fake-job-name/bin/run", &fakesys.FakeProcess{
+				cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 					TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
 						p.WaitCh <- boshsys.Result{
 							ExitStatus: -1,
