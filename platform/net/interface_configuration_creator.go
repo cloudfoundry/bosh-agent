@@ -125,7 +125,7 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration, ifaceName string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	creator.logger.Debug(creator.logTag, "Creating network configuration with settings: %s", networkSettings)
 
-	if networkSettings.IsDHCP() || networkSettings.Mac == "" {
+	if (networkSettings.IsDHCP() || networkSettings.Mac == "") && networkSettings.Alias == "" {
 		creator.logger.Debug(creator.logTag, "Using dhcp networking")
 		dhcpConfigs = append(dhcpConfigs, DHCPInterfaceConfiguration{
 			Name:    ifaceName,
