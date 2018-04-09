@@ -24,3 +24,6 @@ test/micro_bosh
 *metadata.json
 *.log
 bin/bosh-agent
+
+# Ignore symlinks https://github.com/golang/dep/issues/1625 for more context
+vendor/github.com/bmatcuk/doublestar/test/*
