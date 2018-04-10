@@ -2362,6 +2362,15 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0664", "/fake-dir/data/root_log/wtmp"}))
 		})
 
+		It("touches, chgrps and chmods lastlog", func() {
+			err := act()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"touch", "/fake-dir/data/root_log/lastlog"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chgrp", "utmp", "/fake-dir/data/root_log/lastlog"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0664", "/fake-dir/data/root_log/lastlog"}))
+		})
+
 		Context("mounting root_log into /var/log", func() {
 			Context("when /var/log is not a mount point", func() {
 				BeforeEach(func() {
