@@ -97,6 +97,10 @@ func (ms HTTPMetadataService) GetPublicKey() (string, error) {
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting open ssh key from url %s", url)
 	}
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
+		ms.logger.Warn(ms.logTag, "The open ssh keys path is not present: %s.", url)
+		return "", nil
+	}
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
