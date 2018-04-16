@@ -2306,69 +2306,59 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(err).NotTo(HaveOccurred())
 			testFileStat := fs.GetFileTestStat("/fake-dir/data/root_log")
 			Expect(testFileStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
-			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0775)))
+			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0770)))
+			Expect(testFileStat.Username).To(Equal("root"))
+			Expect(testFileStat.Groupname).To(Equal("syslog"))
 		})
 
-		It("sets the permission on /var/log to 770", func() {
+		It("creates an audit directory with permissions", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0770", "/fake-dir/data/root_log"}))
+			auditStat := fs.GetFileTestStat("/fake-dir/data/root_log/audit")
+			Expect(os.FileMode(0750)).To(Equal(auditStat.FileMode))
 		})
 
-		It("creates an audit dir in root_log folder", func() {
-			err := act()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"mkdir", "-p", "/fake-dir/data/root_log/audit"}))
-		})
-
-		It("changes permissions on the audit directory", func() {
+		It("creates an sysstat directory with permissions", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0750", "/fake-dir/data/root_log/audit"}))
-		})
-
-		It("creates an sysstat dir in root_log folder", func() {
-			err := act()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"mkdir", "-p", "/fake-dir/data/root_log/sysstat"}))
-		})
-
-		It("changes permissions on the sysstat directory", func() {
-			err := act()
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0755", "/fake-dir/data/root_log/sysstat"}))
-		})
-
-		It("changes ownership on the new bind mount folder", func() {
-			err := act()
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:syslog", "/fake-dir/data/root_log"}))
+			sysstatStat := fs.GetFileTestStat("/fake-dir/data/root_log/sysstat")
+			Expect(os.FileMode(0755)).To(Equal(sysstatStat.FileMode))
 		})
 
 		It("touches, chmods and chowns wtmp and btmp files", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"touch", "/fake-dir/data/root_log/btmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:utmp", "/fake-dir/data/root_log/btmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0600", "/fake-dir/data/root_log/btmp"}))
+			btmpPath := "/fake-dir/data/root_log/btmp"
+			btmpStat := fs.GetFileTestStat(btmpPath)
 
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"touch", "/fake-dir/data/root_log/wtmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:utmp", "/fake-dir/data/root_log/wtmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0664", "/fake-dir/data/root_log/wtmp"}))
+			Expect(btmpStat).NotTo(BeNil())
+			Expect(os.FileMode(0600)).To(Equal(btmpStat.FileMode))
+			Expect("root").To(Equal(btmpStat.Username))
+			Expect("utmp").To(Equal(btmpStat.Groupname))
+
+			wtmpPath := "/fake-dir/data/root_log/wtmp"
+			wtmpStat := fs.GetFileTestStat(wtmpPath)
+
+			Expect(wtmpStat).NotTo(BeNil())
+			Expect(os.FileMode(0664)).To(Equal(wtmpStat.FileMode))
+			Expect("root").To(Equal(wtmpStat.Username))
+			Expect("utmp").To(Equal(wtmpStat.Groupname))
 		})
 
-		It("touches, chgrps and chmods lastlog", func() {
+		It("touches, chowns and chmods lastlog", func() {
 			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"touch", "/fake-dir/data/root_log/lastlog"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chgrp", "utmp", "/fake-dir/data/root_log/lastlog"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "0664", "/fake-dir/data/root_log/lastlog"}))
+			lastlogPath := "/fake-dir/data/root_log/lastlog"
+			lastlogStat := fs.GetFileTestStat(lastlogPath)
+
+			Expect(lastlogStat).NotTo(BeNil())
+			Expect(os.FileMode(0664)).To(Equal(lastlogStat.FileMode))
+			Expect("root").To(Equal(lastlogStat.Username))
+			Expect("utmp").To(Equal(lastlogStat.Groupname))
 		})
 
 		Context("mounting root_log into /var/log", func() {

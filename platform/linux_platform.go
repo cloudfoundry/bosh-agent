@@ -39,7 +39,7 @@ const (
 	packagesDirPermissions    = os.FileMode(0755)
 	userBaseDirPermissions    = os.FileMode(0755)
 	disksDirPermissions       = os.FileMode(0755)
-	userRootLogDirPermissions = os.FileMode(0775)
+	userRootLogDirPermissions = os.FileMode(0770)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
 	blobsDirPermissions       = os.FileMode(0700)
 
@@ -953,71 +953,32 @@ func (p linux) SetupLogDir() error {
 
 	boshRootLogPath := path.Join(p.dirProvider.DataDir(), "root_log")
 
-	err := p.fs.MkdirAll(boshRootLogPath, userRootLogDirPermissions)
-	if err != nil {
-		return bosherr.WrapError(err, "Creating root log dir")
-	}
-
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", boshRootLogPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Chmoding /var/log dir")
-	}
-
-	auditDirPath := path.Join(boshRootLogPath, "audit")
-	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", auditDirPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Creating audit log dir")
-	}
-
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0750", auditDirPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Chmoding audit log dir")
-	}
-
-	sysstatDirPath := path.Join(boshRootLogPath, "sysstat")
-	_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", sysstatDirPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Creating sysstat log dir")
-	}
-
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0755", sysstatDirPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Chmoding sysstat log dir")
-	}
-
-	lastlogPath := path.Join(boshRootLogPath, "lastlog")
-	_, _, _, err = p.cmdRunner.RunCommand("touch", lastlogPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Touching lastlog")
-	}
-
-	_, _, _, err = p.cmdRunner.RunCommand("chgrp", "utmp", lastlogPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Chgrping lastlog")
-	}
-
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "664", lastlogPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Chmoding lastlog")
-	}
-
-	// change ownership
-	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:syslog", boshRootLogPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Chowning root log dir")
-	}
-
-	err = p.ensureFile(fmt.Sprintf("%s/btmp", boshRootLogPath), "root:utmp", "0600")
+	err := p.ensureDir(boshRootLogPath, "root:syslog", userRootLogDirPermissions)
 	if err != nil {
 		return err
 	}
 
-	err = p.ensureFile(fmt.Sprintf("%s/wtmp", boshRootLogPath), "root:utmp", "0664")
+	err = p.ensureDir(path.Join(boshRootLogPath, "audit"), "root:syslog", 0750)
 	if err != nil {
 		return err
 	}
 
-	err = p.ensureFile(fmt.Sprintf("%s/lastlog", boshRootLogPath), "root:utmp", "0664")
+	err = p.ensureDir(path.Join(boshRootLogPath, "sysstat"), "root:syslog", 0755)
+	if err != nil {
+		return err
+	}
+
+	err = p.ensureFile(path.Join(boshRootLogPath, "btmp"), "root:utmp", 0600)
+	if err != nil {
+		return err
+	}
+
+	err = p.ensureFile(path.Join(boshRootLogPath, "wtmp"), "root:utmp", 0664)
+	if err != nil {
+		return err
+	}
+
+	err = p.ensureFile(path.Join(boshRootLogPath, "lastlog"), "root:utmp", 0664)
 	if err != nil {
 		return err
 	}
@@ -1030,20 +991,40 @@ func (p linux) SetupLogDir() error {
 	return nil
 }
 
-func (p linux) ensureFile(path, owner, mode string) error {
-	_, _, _, err := p.cmdRunner.RunCommand("touch", path)
+func (p linux) ensureDir(path string, owner string, mode os.FileMode) error {
+	err := p.fs.MkdirAll(path, mode)
 	if err != nil {
-		return bosherr.WrapError(err, fmt.Sprintf("Touching '%s' file", path))
+		return bosherr.WrapErrorf(err, "Creating '%s' dir", path)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chown", owner, path)
+	// Explicitly set mode. Mkdirall doesn't change it if the dir already exists
+	err = p.fs.Chmod(path, mode)
 	if err != nil {
-		return bosherr.WrapError(err, fmt.Sprintf("Chowning '%s' file", path))
+		return bosherr.WrapErrorf(err, "Chmoding '%s' dir", path)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", mode, path)
+	err = p.fs.Chown(path, owner)
 	if err != nil {
-		return bosherr.WrapError(err, fmt.Sprintf("Chmoding '%s' file", path))
+		return bosherr.WrapErrorf(err, "Chowning '%s' dir", path)
+	}
+
+	return nil
+}
+
+func (p linux) ensureFile(path string, owner string, mode os.FileMode) error {
+	err := p.fs.WriteFileString(path, "")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Creating '%s' file", path)
+	}
+
+	err = p.fs.Chown(path, "root:utmp")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Chowning '%s' file", path)
+	}
+
+	err = p.fs.Chmod(path, mode)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Chmoding '%s' file", path)
 	}
 
 	return nil
