@@ -1,5 +1,4 @@
 out
-pkg
 gobin/*
 .idea
 .vagrant
