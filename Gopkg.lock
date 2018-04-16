@@ -8,7 +8,7 @@
     ".",
     "fakeclock"
   ]
-  revision = "2269160ae1757f96bbb8c6475e6fa36c805e73e0"
+  revision = "e9dc86bbf0e5bbe6bf7ff5a6f71e048959b61f71"
 
 [[projects]]
   name = "github.com/Microsoft/go-winio"
@@ -40,8 +40,8 @@
     "client",
     "config"
   ]
-  revision = "294c88120d21a59450da0bd106938e56a45ecf16"
-  version = "v0.0.24"
+  revision = "8754f7a5ee7e57a22a5fb3161c149e1de108786a"
+  version = "v0.0.28"
 
 [[projects]]
   name = "github.com/cloudfoundry/bosh-init"
@@ -71,7 +71,7 @@
     "uuid/fakes",
     "work"
   ]
-  revision = "87d3668a74af6d395aae97a3764aac279abbaf42"
+  revision = "2c869a1a0ccef38c01c41d833db6eb02a23bd6e6"
 
 [[projects]]
   branch = "master"
@@ -84,9 +84,10 @@
   name = "github.com/cloudfoundry/gosigar"
   packages = [
     ".",
-    "fakes"
+    "fakes",
+    "sys/windows"
   ]
-  revision = "14c0a766933d517675369dae6f551f5c1a10f0d8"
+  revision = "1375283248c3c5fa82163113c0ef15e79390f644"
 
 [[projects]]
   branch = "master"
@@ -112,20 +113,20 @@
 [[projects]]
   name = "github.com/golang/mock"
   packages = ["gomock"]
-  revision = "13f360950a79f5864a972c786a10a50e44b69541"
-  version = "v1.0.0"
+  revision = "c34cdb4725f4c3844d095133c6e40e448b86589b"
+  version = "v1.1.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "17ce1425424ab154092bbb43af630bd647f3bb0d"
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "d0303fe809921458f417bcf828397a65db30a7e4"
+  revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
 
 [[projects]]
   name = "github.com/nats-io/go-nats"
@@ -133,14 +134,14 @@
     "encoders/builtin",
     "util"
   ]
-  revision = "29f9728a183bf3fa7e809e14edac00b33be72088"
-  version = "v1.3.0"
+  revision = "062418ea1c2181f52dc0f954f6204370519a868b"
+  version = "v1.5.0"
 
 [[projects]]
   name = "github.com/nats-io/nats"
   packages = ["."]
-  revision = "29f9728a183bf3fa7e809e14edac00b33be72088"
-  version = "v1.3.0"
+  revision = "062418ea1c2181f52dc0f954f6204370519a868b"
+  version = "v1.5.0"
 
 [[projects]]
   name = "github.com/nats-io/nuid"
@@ -206,20 +207,26 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "c893efa28eb45626cdaa76c9f653b62488858837"
-  version = "v1.2.0"
+  revision = "003f63b7f4cff3fc95357005358af2de0f5fe152"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/pivotal-cf/paraphernalia"
   packages = ["secure/tlsconfig"]
-  revision = "e34e13867a42f12943d6d5448e90b294dc85601d"
+  revision = "a64ae2051c20c5cde13292a41db01029566134ba"
 
 [[projects]]
   branch = "master"
   name = "github.com/pivotal/go-smtpd"
   packages = ["smtpd"]
   revision = "0af6982457e5e683c4e238a1abf5dcd73b014504"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -230,14 +237,14 @@
 [[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
-  version = "v1.0.4"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
-  version = "v1.1.4"
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
@@ -246,10 +253,12 @@
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "poly1305",
     "ssh",
     "ssh/terminal"
   ]
-  revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
+  revision = "d6449816ce06963d9d136eee5a56fca5b0616e7e"
 
 [[projects]]
   branch = "master"
@@ -259,9 +268,10 @@
     "html",
     "html/atom",
     "html/charset",
+    "internal/socks",
     "proxy"
   ]
-  revision = "b129b8e0fbeb39c8358e51a07ab6c50ad415e72e"
+  revision = "a35a21de978d84ffc92f010a153705b170b2f9d1"
 
 [[projects]]
   branch = "master"
@@ -273,10 +283,9 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "033028a6b48fc0a55d5e5b4465cba74afb6d7fee"
+  revision = "2f57af4873d00d535c5c9028850aa2152e6a5566"
 
 [[projects]]
-  branch = "master"
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -297,13 +306,14 @@
     "transform",
     "unicode/cldr"
   ]
-  revision = "acd49d43e9b95df46670431bf5c7ae59586daad8"
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
