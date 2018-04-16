@@ -8,8 +8,26 @@ groups:
   - windows-test-integration-1709
   - windows-test-integration-2012R2
   - promote
+  - bump-deps
 
 jobs:
+- name: bump-deps
+  public: true
+  plan:
+    - get: daily-at-10am-utc
+      trigger: true
+    - get: bosh-agent
+    - task: bump-deps
+      file: bosh-agent/ci/tasks/bump-deps.yml
+    - task: test-unit
+      input_mapping:
+        bosh-agent: bumped-bosh-agent
+      file: bosh-agent/ci/tasks/test-unit.yml
+    - put: bosh-agent
+      params:
+        repository: bumped-bosh-agent
+        rebase: true
+
 - name: test-unit
   public: true
   plan:
@@ -223,6 +241,13 @@ resources:
     region_name: {{AWS_S3_BUCKET_REGION}}
     access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
     secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+
+- name: daily-at-10am-utc
+  type: time
+  source:
+    start: 3:00 -0700
+    stop: 4:30 -0700
+    interval: 24h
 
 resource_types:
 - name: ami-resource
