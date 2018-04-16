@@ -155,8 +155,9 @@ resources:
 - name: bosh-agent
   type: git
   source:
-    uri: https://github.com/cloudfoundry/bosh-agent
+    uri: git@github.com:cloudfoundry/bosh-agent.git
     branch: develop
+    private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
 
 - name: bosh-agent-master
   type: git
