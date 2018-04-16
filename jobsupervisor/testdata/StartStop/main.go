@@ -29,7 +29,7 @@ func main() {
 			f.Close()
 		}
 		tick := time.NewTicker(time.Second)
-		for _ = range tick.C {
+		for range tick.C {
 			if _, err := os.Stat(filename); os.IsNotExist(err) {
 				fmt.Println("Exiting now...")
 				return
