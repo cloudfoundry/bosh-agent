@@ -14,6 +14,8 @@ type Network struct {
 	Default []string
 	DNS     *[]string
 
+	Alias string
+
 	Mac string
 }
 
