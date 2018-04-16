@@ -102,11 +102,6 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return net.writeResolvConf(networks)
 	}
 
-	// Specific for softlayer networking
-	if networks.HasInterfaceAlias() {
-		net.writeResolvConf(networks)
-	}
-
 	staticConfigs, dhcpConfigs, dnsServers, err := net.ComputeNetworkConfig(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration")

@@ -1007,9 +1007,9 @@ iface ethstatic inet static
 
 		Context("when manual networks were configured with portable IP", func() {
 			var (
-				portableNetwork  boshsettings.Network
-				staticNetwork  boshsettings.Network
-				staticNetwork1 boshsettings.Network
+				portableNetwork boshsettings.Network
+				staticNetwork   boshsettings.Network
+				staticNetwork1  boshsettings.Network
 			)
 			BeforeEach(func() {
 				portableNetwork = boshsettings.Network{

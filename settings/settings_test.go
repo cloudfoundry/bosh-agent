@@ -1032,12 +1032,11 @@ var _ = Describe("Settings", func() {
 			})
 		})
 
-
 		Context("with a single network", func() {
 			It("returns found=true", func() {
 				networks := Networks{
 					"first": Network{
-						Type: "dynamic",
+						Type:  "dynamic",
 						Alias: "fake-alias",
 					},
 				}
@@ -1057,7 +1056,7 @@ var _ = Describe("Settings", func() {
 						Type: "dynamic",
 					},
 					"third": Network{
-						Type: "dynamic",
+						Type:  "dynamic",
 						Alias: "fake-alias",
 					},
 				}
@@ -1069,7 +1068,7 @@ var _ = Describe("Settings", func() {
 			It("returns found=false if the network is vip", func() {
 				networks := Networks{
 					"first": Network{
-						Type: "vip",
+						Type:  "vip",
 						Alias: "fake-alias",
 					},
 					"second": Network{
