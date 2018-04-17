@@ -102,7 +102,7 @@
     ".",
     "fakeyagnats"
   ]
-  revision = "3b3524729b2777c6bc928f73a1c230a9081ee8f2"
+  revision = "7928a07c627b46fcab182588201c7e10abc83e8b"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -271,7 +271,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "a35a21de978d84ffc92f010a153705b170b2f9d1"
+  revision = "8d16fa6dc9a85c1cd3ed24ad08ff21cf94f10888"
 
 [[projects]]
   branch = "master"
@@ -283,7 +283,7 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "2f57af4873d00d535c5c9028850aa2152e6a5566"
+  revision = "b126b21c05a91c856b027c16779c12e3bf236954"
 
 [[projects]]
   name = "golang.org/x/text"
