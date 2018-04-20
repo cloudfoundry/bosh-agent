@@ -283,7 +283,7 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "3ccc7e5779793fd54564baf60c51bf017955e0ba"
+  revision = "a2a45943ae67364d56c5d7d62dee78cff16c8dc8"
 
 [[projects]]
   name = "golang.org/x/text"
