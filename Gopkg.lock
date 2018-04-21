@@ -258,7 +258,7 @@
     "ssh",
     "ssh/terminal"
   ]
-  revision = "d6449816ce06963d9d136eee5a56fca5b0616e7e"
+  revision = "e73bf333ef8920dbb52ad18d4bd38ad9d9bc76d7"
 
 [[projects]]
   branch = "master"
@@ -271,7 +271,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "d41e8174641f662c5a2d1c7a5f9e828788eb8706"
+  revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
 
 [[projects]]
   branch = "master"
@@ -283,7 +283,7 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "a2a45943ae67364d56c5d7d62dee78cff16c8dc8"
+  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
 
 [[projects]]
   name = "golang.org/x/text"
