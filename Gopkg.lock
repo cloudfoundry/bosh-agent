@@ -19,8 +19,8 @@
 [[projects]]
   name = "github.com/Microsoft/hcsshim"
   packages = ["."]
-  revision = "45ef15484298b76abeb9513ea0ea0abd2b5b84b3"
-  version = "v0.6.8"
+  revision = "8fccb44c85288f54389c412b2ec466e4481fd252"
+  version = "v0.6.9"
 
 [[projects]]
   name = "github.com/bmatcuk/doublestar"
@@ -258,7 +258,7 @@
     "ssh",
     "ssh/terminal"
   ]
-  revision = "e73bf333ef8920dbb52ad18d4bd38ad9d9bc76d7"
+  revision = "2b6c08872f4b66da917bb4ce98df4f0307330f78"
 
 [[projects]]
   branch = "master"
