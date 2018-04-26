@@ -81,6 +81,7 @@ type Writer struct {
 
 	b   []byte // buffer for formatted messages
 	pid int    // cached process pid
+	writeChannel chan []byte
 }
 
 type netConn struct {
@@ -112,15 +113,18 @@ func DialHostname(network, raddr string, priority Priority, tag, hostname string
 		hostname: hostname,
 		network:  network,
 		raddr:    raddr,
+		writeChannel: make(chan []byte),
 	}
 
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
+
 	err := w.connect()
 	if err != nil {
 		return nil, err
 	}
+
 	return w, err
 }
 
@@ -140,6 +144,13 @@ func (w *Writer) connect() (err error) {
 		if w.hostname == "" {
 			w.hostname = c.LocalAddr().String()
 		}
+		go func(writer *Writer) {
+			for {
+				select {
+					writer.conn.conn.Write(<- writer.writeChannel)
+				}
+			}
+		}(w)
 	}
 	return
 }
@@ -225,16 +236,25 @@ func (w *Writer) writeAndRetry(p Priority, s string) (n int, err error) {
 	w.mu.Lock()
 	if w.conn != nil {
 		msg = w.format(pr, w.hostname, w.tag, s)
-		if n, err = w.conn.write(msg); err == nil {
-			w.mu.Unlock()
-			return
+		select {
+			case w.writeChannel <- msg:
+			default:
 		}
+		//if n, err = w.conn.write(msg); err == nil {
+		//	w.mu.Unlock()
+		//	return
+		//}
 	}
 	if err = w.connect(); err == nil {
-		if msg == nil {
-			msg = w.format(pr, w.hostname, w.tag, s)
+		msg = w.format(pr, w.hostname, w.tag, s)
+		select {
+			case w.writeChannel <- msg:
+			default:
 		}
-		n, err = w.conn.write(msg)
+		//if msg == nil {
+		//	msg = w.format(pr, w.hostname, w.tag, s)
+		//}
+		//n, err = w.conn.write(msg)
 	}
 	w.mu.Unlock()
 	return
@@ -288,9 +308,9 @@ func (w *Writer) format(p Priority, hostname, tag, msg string) []byte {
 	return b
 }
 
-func (n *netConn) write(p []byte) (int, error) {
-	return n.conn.Write(p)
-}
+//func (n *netConn) write(p []byte) (int, error) {
+//
+//}
 
 func (n *netConn) close() error {
 	return n.conn.Close()
