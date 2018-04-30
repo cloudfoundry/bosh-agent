@@ -1,13 +1,15 @@
 FROM ubuntu:14.04
 
-RUN apt-get update
-RUN apt-get -y upgrade && apt-get clean
-RUN apt-get install -y \
-  build-essential \
-  git \
-  wget \
-  tar \
-  libssl-dev \
+RUN \
+  apt-get update \
+  && apt-get -y upgrade \
+  && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    libssl-dev \
+    tar \
+    wget \
   && apt-get clean
 
 # package manager provides 1.4.3, which is too old for vagrant-aws
