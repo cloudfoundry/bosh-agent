@@ -10,6 +10,7 @@ RUN \
     git \
     jq \
     libssl-dev \
+    rsync \
     tar \
     wget \
   && apt-get clean
