@@ -606,10 +606,8 @@ func describeHTTPMetadataService() {
 
 				jsonStr := fmt.Sprintf(`
 {
-	"settings":{
-		"agent_id":"%s",
-		"mbus": "%s"
-	}
+	"agent_id":"%s",
+	"mbus": "%s"
 }
 `, "Agent-Foo", "Agent-Mbus")
 

@@ -293,10 +293,8 @@ func describeConfigDriveMetadataService() {
 	"server":{"name":"%s"},
 	"registry":{"endpoint":"%s"},
 	"dns":{"nameserver":["%s"]},
-	"settings":{
-		"agent_id":"%s",
-		"mbus": "%s"
-	}
+	"agent_id":"%s",
+	"mbus": "%s"
 }`,
 					"fake-server-name",
 					"http://fake-registry.com",

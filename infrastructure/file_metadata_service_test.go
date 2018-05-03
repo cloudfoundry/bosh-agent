@@ -172,10 +172,8 @@ var _ = Describe("FileMetadataService", func() {
 				userDataContents := `
 				{
 					"registry":{"endpoint":"fake-registry-endpoint"},
-					"settings":{
-						"agent_id":"Agent-Foo",
-						"mbus": "Agent-Mbus"
-					}
+					"agent_id":"Agent-Foo",
+					"mbus": "Agent-Mbus"
 				}`
 
 				fs.WriteFileString("fake-userdata-file-path", userDataContents)
@@ -192,9 +190,7 @@ var _ = Describe("FileMetadataService", func() {
 					userDataContents := `
 					{
 						"registry":{"endpoint":"fake-registry-endpoint"},
-						"settings":{
-							"mbus": "Agent-Mbus"
-						}
+						"mbus": "Agent-Mbus"
 					}`
 
 					fs.WriteFileString("fake-userdata-file-path", userDataContents)

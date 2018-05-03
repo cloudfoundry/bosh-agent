@@ -23,6 +23,8 @@ type MetadataServiceProvider interface {
 }
 
 type UserDataContentsType struct {
+	boshsettings.Settings
+
 	Registry struct {
 		Endpoint string
 	}
@@ -32,8 +34,6 @@ type UserDataContentsType struct {
 	DNS struct {
 		Nameserver []string
 	}
-	Networks boshsettings.Networks
-	Settings boshsettings.Settings
 }
 
 type DynamicMetadataService interface {
