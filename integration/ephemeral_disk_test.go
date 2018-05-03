@@ -16,7 +16,6 @@ var _ = Describe("EphemeralDisk", func() {
 	)
 
 	Context("mounted on /var/vcap/data", func() {
-
 		BeforeEach(func() {
 			err := testEnvironment.StopAgent()
 			Expect(err).ToNot(HaveOccurred())

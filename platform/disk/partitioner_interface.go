@@ -9,6 +9,7 @@ const (
 	PartitionTypeLinux   PartitionType = "linux"
 	PartitionTypeEmpty   PartitionType = "empty"
 	PartitionTypeUnknown PartitionType = "unknown"
+	PartitionTypeGPT     PartitionType = "gpt"
 )
 
 type Partition struct {

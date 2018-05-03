@@ -10,6 +10,7 @@ import (
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"runtime"
 )
 
 var _ = Describe("GenericScript", func() {
@@ -19,6 +20,7 @@ var _ = Describe("GenericScript", func() {
 		genericScript boshscript.GenericScript
 		stdoutLogPath string
 		stderrLogPath string
+		fullCommand   string
 	)
 
 	BeforeEach(func() {
@@ -34,6 +36,11 @@ var _ = Describe("GenericScript", func() {
 			stdoutLogPath,
 			stderrLogPath,
 		)
+		if runtime.GOOS == "windows" {
+			fullCommand = "powershell /path-to-script"
+		} else {
+			fullCommand = "/path-to-script"
+		}
 	})
 
 	Describe("Tag", func() {
@@ -88,7 +95,7 @@ var _ = Describe("GenericScript", func() {
 
 		Context("when command succeeds", func() {
 			BeforeEach(func() {
-				cmdRunner.AddCmdResult("/path-to-script", fakesys.FakeCmdResult{
+				cmdRunner.AddCmdResult(fullCommand, fakesys.FakeCmdResult{
 					Stdout:     "fake-stdout",
 					Stderr:     "fake-stderr",
 					ExitStatus: 0,
@@ -115,7 +122,7 @@ var _ = Describe("GenericScript", func() {
 
 		Context("when command fails", func() {
 			BeforeEach(func() {
-				cmdRunner.AddCmdResult("/path-to-script", fakesys.FakeCmdResult{
+				cmdRunner.AddCmdResult(fullCommand, fakesys.FakeCmdResult{
 					Stdout:     "fake-stdout",
 					Stderr:     "fake-stderr",
 					ExitStatus: 1,

@@ -1,5 +1,10 @@
 required = ["github.com/onsi/ginkgo/ginkgo"]
 
+[prune]
+  unused-packages = true
+  non-go = true
+  go-tests = true
+
 [[constraint]]
   name = "github.com/cloudfoundry/bosh-davcli"
   version = "0.0.23"
@@ -26,10 +31,6 @@ required = ["github.com/onsi/ginkgo/ginkgo"]
 
 [[constraint]]
   branch = "master"
-  name = "github.com/jeromer/syslogparser"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/mitchellh/mapstructure"
 
 [[constraint]]
@@ -43,10 +44,6 @@ required = ["github.com/onsi/ginkgo/ginkgo"]
 [[constraint]]
   name = "github.com/onsi/gomega"
   version = "1.2.0"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/pivotal-golang/clock"
 
 [[constraint]]
   branch = "master"

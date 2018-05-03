@@ -37,8 +37,11 @@ func (c *windowsCertManager) createBackup() error {
 		if err != nil {
 			return err
 		}
-		_, _, _, err := c.runner.RunCommand("powershell", "-Command",
-			fmt.Sprintf(`"Get-ChildItem %s | Export-Certificate -Type SST -FilePath %s"`, rootCertStore, c.backupPath))
+		_, _, _, err := c.runner.RunCommand(
+			"powershell",
+			"-Command",
+			fmt.Sprintf("Get-ChildItem %s | Export-Certificate -Type SST -FilePath %s", rootCertStore, c.backupPath),
+		)
 		if err != nil {
 			return err
 		}
@@ -47,7 +50,11 @@ func (c *windowsCertManager) createBackup() error {
 }
 
 func (c *windowsCertManager) resetCerts() error {
-	_, _, _, err := c.runner.RunCommand("powershell", "-Command", fmt.Sprintf(`Remove-Item %s\*`, rootCertStore))
+	_, _, _, err := c.runner.RunCommand(
+		"powershell",
+		"-Command",
+		fmt.Sprintf(`Remove-Item %s\*`, rootCertStore),
+	)
 	if err != nil {
 		return err
 	}

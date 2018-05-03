@@ -38,14 +38,14 @@ $bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
 echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk/errcheck/issues/75 is resolved"
 # $bin/test-unhandled-errors
 
-echo -e "\n Testing packages..."
-$bin/env ginkgo $WATCH -r $race -skipPackage="integration,vendor" $dir
-
 echo -e "\n Running build script for windows to confirm everything compiles..."
 GOOS=windows $bin/build
 
 echo -e "\n Running build script to confirm everything compiles..."
 $bin/build
+
+echo -e "\n Testing packages..."
+$bin/env ginkgo $WATCH -r $race -skipPackage="integration,vendor" $dir
 
 echo -e "\n Checking with golint..."
 $bin/golint

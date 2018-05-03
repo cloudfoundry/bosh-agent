@@ -7,20 +7,23 @@ import (
 	"code.cloudfoundry.org/clock"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-
-	boshdevutil "github.com/cloudfoundry/bosh-agent/platform/deviceutil"
 )
 
 type linuxDiskManager struct {
-	partitioner           Partitioner
+	ephemeralPartitioner  Partitioner
 	rootDevicePartitioner Partitioner
-	partedPartitioner     Partitioner
-	formatter             Formatter
-	mounter               Mounter
-	mountsSearcher        MountsSearcher
-	fs                    boshsys.FileSystem
-	logger                boshlog.Logger
-	runner                boshsys.CmdRunner
+	persistentPartitioner Partitioner
+
+	diskUtil Util
+
+	formatter Formatter
+
+	mounter        Mounter
+	mountsSearcher MountsSearcher
+
+	fs     boshsys.FileSystem
+	logger boshlog.Logger
+	runner boshsys.CmdRunner
 }
 
 type LinuxDiskManagerOpts struct {
@@ -55,38 +58,43 @@ func NewLinuxDiskManager(
 		mounter = NewLinuxBindMounter(mounter)
 	}
 
-	var partitioner Partitioner
+	var ephemeralPartitioner, persistentPartitioner Partitioner
+
+	diskUtil := NewUtil(runner, mounter, fs, logger)
+	partedPartitioner := NewPartedPartitioner(logger, runner, clock.NewClock())
+	sfDiskPartitioner := NewSfdiskPartitioner(logger, runner, clock.NewClock())
 
 	switch opts.PartitionerType {
 	case "parted":
-		partitioner = NewPartedPartitioner(logger, runner, clock.NewClock())
+		ephemeralPartitioner = partedPartitioner
+		persistentPartitioner = partedPartitioner
 	case "":
-		partitioner = NewSfdiskPartitioner(logger, runner, clock.NewClock())
+		ephemeralPartitioner = sfDiskPartitioner
+		persistentPartitioner = NewPersistentDevicePartitioner(sfDiskPartitioner, partedPartitioner, diskUtil, logger)
 	default:
 		panic(fmt.Sprintf("Unknown partitioner type '%s'", opts.PartitionerType))
 	}
 
 	return linuxDiskManager{
-		partitioner:           partitioner,
+		ephemeralPartitioner:  ephemeralPartitioner,
+		persistentPartitioner: persistentPartitioner,
 		rootDevicePartitioner: NewRootDevicePartitioner(logger, runner, uint64(20*1024*1024)),
-		partedPartitioner:     NewPartedPartitioner(logger, runner, clock.NewClock()),
 		formatter:             NewLinuxFormatter(runner, fs),
 		mounter:               mounter,
 		mountsSearcher:        mountsSearcher,
 		fs:                    fs,
 		logger:                logger,
 		runner:                runner,
+		diskUtil:              diskUtil,
 	}
 }
 
-func (m linuxDiskManager) GetPartitioner() Partitioner           { return m.partitioner }
-func (m linuxDiskManager) GetPartedPartitioner() Partitioner     { return m.partedPartitioner }
-func (m linuxDiskManager) GetRootDevicePartitioner() Partitioner { return m.rootDevicePartitioner }
+func (m linuxDiskManager) GetRootDevicePartitioner() Partitioner       { return m.rootDevicePartitioner }
+func (m linuxDiskManager) GetEphemeralDevicePartitioner() Partitioner  { return m.ephemeralPartitioner }
+func (m linuxDiskManager) GetPersistentDevicePartitioner() Partitioner { return m.persistentPartitioner }
 
 func (m linuxDiskManager) GetFormatter() Formatter           { return m.formatter }
 func (m linuxDiskManager) GetMounter() Mounter               { return m.mounter }
 func (m linuxDiskManager) GetMountsSearcher() MountsSearcher { return m.mountsSearcher }
 
-func (m linuxDiskManager) GetDiskUtil(diskPath string) boshdevutil.DeviceUtil {
-	return NewDiskUtil(diskPath, m.runner, m.mounter, m.fs, m.logger)
-}
+func (m linuxDiskManager) GetUtil() Util { return m.diskUtil }

@@ -137,7 +137,19 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
 
-	err = net.interfaceAddressesValidator.Validate(staticAddresses)
+	var staticAddressesWithoutVirtual []boship.InterfaceAddress
+	r, err := regexp.Compile(`:\d+`)
+	if err != nil {
+		return bosherr.WrapError(err, "There is a problem with your regexp: ':\\d+'. That is used to skip validation of virtual interfaces(e.g., eth0:0, eth0:1)")
+	}
+	for _, addr := range staticAddresses {
+		if r.MatchString(addr.GetInterfaceName()) == true {
+			continue
+		} else {
+			staticAddressesWithoutVirtual = append(staticAddressesWithoutVirtual, addr)
+		}
+	}
+	err = net.interfaceAddressesValidator.Validate(staticAddressesWithoutVirtual)
 	if err != nil {
 		return bosherr.WrapError(err, "Validating static network configuration")
 	}
@@ -147,7 +159,7 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return bosherr.WrapError(err, "Validating dns configuration")
 	}
 
-	net.broadcastIps(append(staticAddresses, dynamicAddresses...), errCh)
+	net.broadcastIps(append(staticAddressesWithoutVirtual, dynamicAddresses...), errCh)
 
 	return nil
 }
@@ -359,7 +371,8 @@ auto lo
 iface lo inet loopback
 {{ range .DHCPConfigs }}
 auto {{ .Name }}
-iface {{ .Name }} inet dhcp
+iface {{ .Name }} inet dhcp{{ range .PostUpRoutes }}
+post-up route add -net {{ .Destination }} netmask {{ .Netmask }} gw {{ .Gateway }}{{ end }}
 {{ end }}{{ range .StaticConfigs }}
 auto {{ .Name }}
 iface {{ .Name }} inet{{ .Version6 }} static
@@ -367,7 +380,9 @@ iface {{ .Name }} inet{{ .Version6 }} static
     network {{ .Network }}{{ end }}
     netmask {{ .NetmaskOrLen }}{{ if .IsDefaultForGateway }}{{ if not .IsVersion6 }}
     broadcast {{ .Broadcast }}{{ end }}
-    gateway {{ .Gateway }}{{ end }}
+    gateway {{ .Gateway }}{{ end }}{{ if .IsVersion6 }}{{ range .PostUpRoutes }}
+    post-up route -A inet6 add -net {{ .Destination }} netmask {{ .Netmask }} gw {{ .Gateway }}{{ end }}{{ else }}{{ range .PostUpRoutes }}
+    post-up route add -net {{ .Destination }} netmask {{ .Netmask }} gw {{ .Gateway }}{{ end }}{{ end }}
 {{ end }}{{ if .HasVersion6 }}
 accept_ra 1{{ end }}{{ if .DNSServers }}
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`

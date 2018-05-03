@@ -54,6 +54,15 @@ unit: sectors
 /dev/mapper/xxxxxx4 : start=        0, size=        0, Id= 0
 `
 
+const devSdaSfdiskDumpGPTPartition = `# partition table of /dev/sda
+unit: sectors
+
+/dev/sda1 : start=        1, size= xxxx, Id=ee
+/dev/sda2 : start=     xxxx, size= xxxx, Id=83
+/dev/sda3 : start=        0, size=    0, Id= 0
+/dev/sda4 : start=        0, size=    0, Id= 0
+`
+
 const expectedDmSetupLs = `
 xxxxxx-part1	(252:1)
 xxxxxx	(252:0)
@@ -88,6 +97,24 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
+	})
+
+	Context("when one of the partitions is of type GPT", func() {
+		BeforeEach(func() {
+			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpGPTPartition})
+		})
+
+		It("returns a ErrGPTPartitionEncountered", func() {
+			partitions := []Partition{
+				{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
+				{Type: PartitionTypeLinux, SizeInBytes: 1024 * 1024 * 1024},
+				{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
+			}
+
+			err := partitioner.Partition("/dev/sda", partitions)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(ErrGPTPartitionEncountered))
+		})
 	})
 
 	Context("when we get an error occurs", func() {
@@ -149,7 +176,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/mapper/xxxxxx"}))
-		Expect(22).To(Equal(len(runner.RunCommands)))
+		Expect(23).To(Equal(len(runner.RunCommands)))
 		Expect(runner.RunCommands[1]).To(Equal([]string{"/etc/init.d/open-iscsi", "restart"}))
 	})
 
@@ -263,6 +290,6 @@ var _ = Describe("sfdiskPartitioner", func() {
 		err := partitioner.Partition("/dev/mapper/xxxxxx", partitions)
 		Expect(err).To(BeNil())
 		Expect(fakeclock.SleepCallCount()).To(Equal(19))
-		Expect(len(runner.RunCommands)).To(Equal(25))
+		Expect(len(runner.RunCommands)).To(Equal(26))
 	})
 })

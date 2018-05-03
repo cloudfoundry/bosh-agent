@@ -23,7 +23,7 @@ const (
 	agentGUID       = "123-456-789"
 	agentID         = "agent." + agentGUID
 	senderID        = "director.987-654-321"
-	DefaultTimeout  = time.Second * 30
+	DefaultTimeout  = time.Second * 60
 	DefaultInterval = time.Second
 )
 
@@ -47,6 +47,27 @@ func blobstoreURI() string {
 		return fmt.Sprintf("http://%s:25250", os.Getenv("NATS_ELASTIC_IP"))
 	}
 	return fmt.Sprintf("http://%s:25250", natsIP())
+}
+
+func getNetworkProperty(key string, natsClient *NatsClient) string {
+	message := fmt.Sprintf(`{"method":"get_state","arguments":["full"],"reply_to":"%s"}`, senderID)
+	rawResponse, err := natsClient.SendRawMessage(message)
+	Expect(err).NotTo(HaveOccurred())
+
+	response := map[string]action.GetStateV1ApplySpec{}
+	err = json.Unmarshal(rawResponse, &response)
+	Expect(err).NotTo(HaveOccurred())
+
+	for _, spec := range response["value"].NetworkSpecs {
+		field, ok := spec.Fields[key]
+		if !ok {
+			return ""
+		}
+		if val, ok := field.(string); ok {
+			return val
+		}
+	}
+	return ""
 }
 
 var _ = Describe("An Agent running on Windows", func() {
@@ -268,32 +289,12 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("Includes the default IP in the 'get_state' response", func() {
-		getNetworkProperty := func(key string) func() string {
-			return func() string {
-				message := fmt.Sprintf(`{"method":"get_state","arguments":["full"],"reply_to":"%s"}`, senderID)
-				rawResponse, err := natsClient.SendRawMessage(message)
-				Expect(err).NotTo(HaveOccurred())
-
-				response := map[string]action.GetStateV1ApplySpec{}
-				err = json.Unmarshal(rawResponse, &response)
-				Expect(err).NotTo(HaveOccurred())
-
-				for _, spec := range response["value"].NetworkSpecs {
-					field, ok := spec.Fields[key]
-					if !ok {
-						return ""
-					}
-					if val, ok := field.(string); ok {
-						return val
-					}
-				}
-				return ""
-			}
+		getNetwork := func(key string) string {
+			return getNetworkProperty(key, natsClient)
 		}
-
-		Eventually(getNetworkProperty("ip"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
-		Eventually(getNetworkProperty("gateway"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
-		Eventually(getNetworkProperty("netmask"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
+		Eventually(getNetwork("ip"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
+		Eventually(getNetwork("gateway"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
+		Eventually(getNetwork("netmask"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
 	})
 
 	It("can compile longpath complex pakcage", func() {
@@ -304,5 +305,32 @@ var _ = Describe("An Agent running on Windows", func() {
 		)
 		_, err := natsClient.CompilePackage("longpath-package")
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	Context("when there are multiple networks", func() {
+		BeforeEach(func() {
+			if OsVersion == "2012R2" {
+				Skip("Cannot create virtual interfaces in 2012R2")
+			}
+			natsClient.PrepareJob("add-network-interface")
+
+			err := natsClient.RunScript("run")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			natsClient.PrepareJob("remove-network-interface")
+
+			err := natsClient.RunScript("run")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("chooses correct IP for default network", func() {
+			getNetwork := func(key string) string {
+				return getNetworkProperty(key, natsClient)
+			}
+			Eventually(getNetwork("ip"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
+			Expect(getNetwork("ip")).ToNot(HavePrefix("172."))
+		})
 	})
 })

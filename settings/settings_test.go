@@ -251,6 +251,41 @@ var _ = Describe("Settings", func() {
 				}))
 			})
 		})
+
+		Context("when the disk settings contain iSCSI settings", func() {
+			BeforeEach(func() {
+				settings = Settings{
+					Disks: Disks{
+						Persistent: map[string]interface{}{
+							"fake-disk-id": map[string]interface{}{
+								"id": "fake-disk-device-id",
+								"iscsi_settings": map[string]interface{}{
+									"initiator_name": "fake-initiator-name",
+									"username":       "fake-username",
+									"target":         "fake-target",
+									"password":       "fake-password",
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("returns disk settings", func() {
+				diskSettings, found := settings.PersistentDiskSettings("fake-disk-id")
+				Expect(found).To(BeTrue())
+				Expect(diskSettings).To(Equal(DiskSettings{
+					ID:       "fake-disk-id",
+					DeviceID: "fake-disk-device-id",
+					ISCSISettings: ISCSISettings{
+						InitiatorName: "fake-initiator-name",
+						Username:      "fake-username",
+						Target:        "fake-target",
+						Password:      "fake-password",
+					},
+				}))
+			})
+		})
 	})
 
 	Describe("PersistentDiskSettingsFromHints", func() {
@@ -802,6 +837,7 @@ var _ = Describe("Settings", func() {
       "fake-key"
     ],
     "swap_size": 2048,
+    "parallel": 10,
 	"blobstores": [
 		{
 			"options": {
@@ -830,6 +866,7 @@ var _ = Describe("Settings", func() {
 			Expect(env.Bosh.IPv6).To(Equal(IPv6{}))
 			Expect(env.GetAuthorizedKeys()).To(ConsistOf("fake-key"))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+			Expect(*env.GetParallel()).To(Equal(10))
 			Expect(env.Bosh.Blobstores).To(Equal(
 				[](Blobstore){
 					Blobstore{
@@ -904,6 +941,18 @@ var _ = Describe("Settings", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(env.GetSwapSizeInBytes()).To(BeNil())
+			})
+		})
+
+		Context("when parallel is not specified in the json", func() {
+			It("sets to the default value", func() {
+				var env Env
+				envJSON := `{"bosh": {"password": "fake-password", "keep_root_password": false, "remove_dev_tools": true, "authorized_keys": ["fake-key"]}}`
+
+				err := json.Unmarshal([]byte(envJSON), &env)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(*env.GetParallel()).To(Equal(5))
 			})
 		})
 
@@ -1121,6 +1170,65 @@ var _ = Describe("Settings", func() {
 				}
 
 				Expect(settings.GetMbusURL()).To(Equal("nats://top-level:456"))
+			})
+		})
+	})
+
+	Describe("HasInterfaceAlias", func() {
+		Context("when networks is empty", func() {
+			It("returns found=false", func() {
+				networks := Networks{}
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeFalse())
+			})
+		})
+
+		Context("with a single network", func() {
+			It("returns found=true", func() {
+				networks := Networks{
+					"first": Network{
+						Type:  "dynamic",
+						Alias: "fake-alias",
+					},
+				}
+
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeTrue())
+			})
+		})
+
+		Context("with multiple networks", func() {
+			It("returns found=true if one of networks is set", func() {
+				networks := Networks{
+					"first": Network{
+						Type: "dynamic",
+					},
+					"second": Network{
+						Type: "dynamic",
+					},
+					"third": Network{
+						Type:  "dynamic",
+						Alias: "fake-alias",
+					},
+				}
+
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeTrue())
+			})
+
+			It("returns found=false if the network is vip", func() {
+				networks := Networks{
+					"first": Network{
+						Type:  "vip",
+						Alias: "fake-alias",
+					},
+					"second": Network{
+						Type: "dynamic",
+					},
+				}
+
+				found := networks.HasInterfaceAlias()
+				Expect(found).To(BeFalse())
 			})
 		})
 	})

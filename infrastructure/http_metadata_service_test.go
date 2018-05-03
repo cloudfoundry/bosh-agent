@@ -16,6 +16,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	"encoding/base64"
+
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
@@ -406,7 +407,6 @@ func describeHTTPMetadataService() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(endpoint).To(Equal("http://fake-registry.com"))
 			})
-
 		})
 
 		Context("when server returns an HTTP Response with status code !=2xx (as defined by the request retryable) more than 10 times", func() {
@@ -416,12 +416,9 @@ func describeHTTPMetadataService() {
 				metadataService = NewHTTPMetadataServiceWithCustomRetryDelay(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger, 0*time.Second)
 
 				_, err := metadataService.GetRegistryEndpoint()
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal(fmt.Sprintf("Getting user data: Getting user data from url %s/user-data: Performing GET request: Request failed, response: Response{ StatusCode: 500, Status: '500 Internal Server Error' }", ts.URL)))
+				Expect(err).To(MatchError(fmt.Sprintf("Getting user data: invalid status from url %s/user-data: 500", ts.URL)))
 			})
-
 		})
-
 	})
 
 	Describe("GetServerName from url encoded user data", func() {

@@ -72,12 +72,7 @@ func (c httpClient) StartService(serviceName string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Sending start request to monit")
 	}
-
-	defer func() {
-		if err = response.Body.Close(); err != nil {
-			c.logger.Warn("http-client", "Failed to close monit start POST response body: %s", err.Error())
-		}
-	}()
+	defer response.Body.Close()
 
 	err = c.validateResponse(response)
 	if err != nil {
@@ -94,12 +89,7 @@ func (c httpClient) StopService(serviceName string) error {
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Sending stop request for service '%s'", serviceName)
 	}
-
-	defer func() {
-		if err = response.Body.Close(); err != nil {
-			c.logger.Warn("http-client", "Failed to close monit stop POST response body: %s", err.Error())
-		}
-	}()
+	defer response.Body.Close()
 
 	err = c.validateResponse(response)
 	if err != nil {
@@ -114,12 +104,7 @@ func (c httpClient) UnmonitorService(serviceName string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Sending unmonitor request to monit")
 	}
-
-	defer func() {
-		if err = response.Body.Close(); err != nil {
-			c.logger.Warn("http-client", "Failed to close monit unmonitor POST response body: %s", err.Error())
-		}
-	}()
+	defer response.Body.Close()
 
 	err = c.validateResponse(response)
 	if err != nil {

@@ -72,14 +72,25 @@ type Disks struct {
 }
 
 type DiskSettings struct {
-	ID             string
-	DeviceID       string
-	VolumeID       string
-	Lun            string
-	HostDeviceID   string
-	Path           string
+	ID           string
+	DeviceID     string
+	VolumeID     string
+	Lun          string
+	HostDeviceID string
+	Path         string
+
+	// iscsi related
+	ISCSISettings ISCSISettings
+
 	FileSystemType disk.FileSystemType
 	MountOptions   []string
+}
+
+type ISCSISettings struct {
+	InitiatorName string
+	Username      string
+	Target        string
+	Password      string
 }
 
 type VM struct {
@@ -177,6 +188,23 @@ func (s Settings) populatePersistentDiskSettings(diskID string, settingsInfo int
 		if hostDeviceID, ok := hashSettings["host_device_id"]; ok {
 			diskSettings.HostDeviceID = hostDeviceID.(string)
 		}
+
+		if iSCSISettings, ok := hashSettings["iscsi_settings"]; ok {
+			if hashISCSISettings, ok := iSCSISettings.(map[string]interface{}); ok {
+				if username, ok := hashISCSISettings["username"]; ok {
+					diskSettings.ISCSISettings.Username = username.(string)
+				}
+				if password, ok := hashISCSISettings["password"]; ok {
+					diskSettings.ISCSISettings.Password = password.(string)
+				}
+				if initiator, ok := hashISCSISettings["initiator_name"]; ok {
+					diskSettings.ISCSISettings.InitiatorName = initiator.(string)
+				}
+				if target, ok := hashISCSISettings["target"]; ok {
+					diskSettings.ISCSISettings.Target = target.(string)
+				}
+			}
+		}
 	} else if stringSetting, ok := settingsInfo.(string); ok {
 		// Old CPIs return disk path (string) or volume id (string) as disk settings
 		diskSettings.Path = stringSetting
@@ -224,6 +252,14 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 	return &result
 }
 
+func (e Env) GetParallel() *int {
+	result := 5
+	if e.Bosh.Parallel != nil {
+		result = int(*e.Bosh.Parallel)
+	}
+	return &result
+}
+
 func (e Env) IsNATSMutualTLSEnabled() bool {
 	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0
 }
@@ -239,6 +275,7 @@ type BoshEnv struct {
 	IPv6                  IPv6        `json:"ipv6"`
 	Blobstores            []Blobstore `json:"blobstores"`
 	NTP                   []string    `json:"ntp"`
+	Parallel              *int        `json:"parallel"`
 }
 
 type MBus struct {
@@ -268,6 +305,14 @@ const (
 	NetworkTypeVIP     NetworkType = "vip"
 )
 
+type Route struct {
+	Destination string
+	Gateway     string
+	Netmask     string
+}
+
+type Routes []Route
+
 type Network struct {
 	Type NetworkType `json:"type"`
 
@@ -282,7 +327,10 @@ type Network struct {
 
 	Mac string `json:"mac"`
 
-	Preconfigured bool `json:"preconfigured"`
+	Preconfigured bool   `json:"preconfigured"`
+	Routes        Routes `json:"routes,omitempty"`
+
+	Alias string `json:"alias,omitempty"`
 }
 
 type Networks map[string]Network
@@ -349,6 +397,21 @@ func (n Networks) IPs() (ips []string) {
 		}
 	}
 	return
+}
+
+func (n Networks) HasInterfaceAlias() bool {
+	for _, network := range n {
+		if network.IsVIP() {
+			// Skip VIP networks since we do not configure interfaces for them
+			continue
+		}
+
+		if network.Alias != "" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (n Networks) IsPreconfigured() bool {

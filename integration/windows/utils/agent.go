@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	"os/exec"
 	"time"
 
@@ -28,11 +29,12 @@ func BuildAgent() error {
 	return nil
 }
 
-func StartVagrant(provider string) (Agent, error) {
+func StartVagrant(provider string, osVersion string) (Agent, error) {
 	if len(provider) == 0 {
 		provider = "virtualbox"
 	}
 	command := exec.Command("./setup_vagrant.bash", provider)
+	command.Env = append(os.Environ(), "WINDOWS_OS_VERSION="+osVersion)
 	session, err := gexec.Start(command, ginkgo.GinkgoWriter, ginkgo.GinkgoWriter)
 	if err != nil {
 		return Agent{}, err
