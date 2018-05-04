@@ -10,7 +10,6 @@ import (
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	bosherrors "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ListDisk", func() {
@@ -19,7 +18,6 @@ var _ = Describe("ListDisk", func() {
 		platform        *fakeplatform.FakePlatform
 		logger          boshlog.Logger
 		action          ListDiskAction
-		fs              *fakesys.FakeFileSystem
 	)
 
 	BeforeEach(func() {
@@ -27,7 +25,6 @@ var _ = Describe("ListDisk", func() {
 		platform = fakeplatform.NewFakePlatform()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		action = NewListDisk(settingsService, platform, logger)
-		fs = fakesys.NewFakeFileSystem()
 	})
 
 	AssertActionIsSynchronousForVersion(action, 1)

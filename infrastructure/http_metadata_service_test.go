@@ -508,7 +508,6 @@ func describeHTTPMetadataService() {
 	Describe("#GetValueAtPath", func() {
 		var (
 			ts               *httptest.Server
-			registryURL      *string
 			metadataResponse string
 		)
 
@@ -525,9 +524,6 @@ func describeHTTPMetadataService() {
 		}
 
 		BeforeEach(func() {
-			url := "http://fake-registry.com"
-			registryURL = &url
-
 			handler := http.HandlerFunc(handlerFunc)
 			ts = httptest.NewServer(handler)
 			metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
@@ -593,8 +589,7 @@ func describeHTTPMetadataService() {
 
 		Context("When the metadata service user data contains settings", func() {
 			var (
-				ts          *httptest.Server
-				registryURL *string
+				ts *httptest.Server
 			)
 
 			handlerFunc := func(w http.ResponseWriter, r *http.Request) {
@@ -615,9 +610,6 @@ func describeHTTPMetadataService() {
 			}
 
 			BeforeEach(func() {
-				url := "http://fake-registry.com"
-				registryURL = &url
-
 				handler := http.HandlerFunc(handlerFunc)
 				ts = httptest.NewServer(handler)
 				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
@@ -639,8 +631,7 @@ func describeHTTPMetadataService() {
 
 		Context("When the metadata service user data does NOT contain settings", func() {
 			var (
-				ts          *httptest.Server
-				registryURL *string
+				ts *httptest.Server
 			)
 
 			handlerFunc := func(w http.ResponseWriter, r *http.Request) {
@@ -656,9 +647,6 @@ func describeHTTPMetadataService() {
 			}
 
 			BeforeEach(func() {
-				url := "http://fake-registry.com"
-				registryURL = &url
-
 				handler := http.HandlerFunc(handlerFunc)
 				ts = httptest.NewServer(handler)
 				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
