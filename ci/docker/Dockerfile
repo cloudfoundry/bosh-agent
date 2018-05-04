@@ -8,6 +8,7 @@ RUN \
     build-essential \
     curl \
     git \
+    jq \
     libssl-dev \
     rsync \
     tar \
