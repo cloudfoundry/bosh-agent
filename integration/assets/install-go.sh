@@ -2,21 +2,24 @@
 
 set -ex
 
-GOPATH=/home/vagrant/go
-export GOROOT=/usr/local/go
-export PATH=$GOROOT/bin:$PATH
-GO_ARCHIVE_URL=https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
-GO_ARCHIVE=$GOPATH/src/github.com/cloudfoundry/bosh-agent/tmp/$(basename $GO_ARCHIVE_URL)
+# golang {
+pushd /usr/local
+  GO_INFO=$(curl 'https://golang.org/dl/?mode=json' | jq '.[0].files[] | select(.os == "linux" and .arch == "amd64")')
+  GO_TAR="$(echo "$GO_INFO" | jq -r '.filename')"
+  GO_SHA="$(echo "$GO_INFO" | jq -r '.sha256')"
+  curl -fSL https://storage.googleapis.com/golang/$GO_TAR -o $GO_TAR
+  echo $GO_SHA $GO_TAR | sha256sum -c -
+  tar -xzf $GO_TAR
+  rm -f $GO_TAR
 
-echo "Downloading go..."
-mkdir -p $(dirname $GOROOT)
-mkdir -p $GOPATH/src/github.com/cloudfoundry/bosh-agent/tmp
-wget -q $GO_ARCHIVE_URL -O $GO_ARCHIVE
-tar xf $GO_ARCHIVE -C $(dirname $GOROOT)
+  export PATH=/usr/local/go/bin:$PATH
+  export GOPATH=/home/vagrant/go
+  export GOROOT=/usr/local/go
+popd
+#}
+
 chmod -R a+w $GOROOT
 
 if [ ! -d $TMPDIR ]; then
   mkdir -p $TMPDIR
 fi
-
-rm -f $GO_ARCHIVE

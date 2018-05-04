@@ -1,5 +1,6 @@
-FROM ubuntu:14.04
+FROM ubuntu
 
+# basic deps {
 RUN \
   apt-get update \
   && apt-get -y upgrade \
@@ -7,31 +8,36 @@ RUN \
     build-essential \
     curl \
     git \
+    jq \
     libssl-dev \
+    rsync \
     tar \
     wget \
   && apt-get clean
+# }
 
+# vagrant {
 # package manager provides 1.4.3, which is too old for vagrant-aws
 RUN cd /tmp && wget -q https://releases.hashicorp.com/vagrant/2.0.2/vagrant_2.0.2_x86_64.deb \
  && echo "df8dfb0176d62f0d20d11caec51e53bad57ea2bcc3877427841658702906754f vagrant_2.0.2_x86_64.deb" | sha256sum -c - \
  && dpkg -i vagrant_2.0.2_x86_64.deb
 RUN vagrant plugin install vagrant-aws
+# }
 
 # golang {
-ARG GO_VERSION=1.9.2
-ARG GO_SHA=de874549d9a8d8d8062be05808509c09a88a248e77ec14eb77453530829ac02b
-
-ENV GO_TAR=go$GO_VERSION.linux-amd64.tar.gz
-
 WORKDIR /usr/local
+
+RUN \
+  GO_INFO=$(curl 'https://golang.org/dl/?mode=json' | jq '.[0].files[] | select(.os == "linux" and .arch == "amd64")') && \
+  GO_TAR="$(echo "$GO_INFO" | jq -r '.filename')" && \
+  GO_SHA="$(echo "$GO_INFO" | jq -r '.sha256')" && \ 
+  curl -fSL https://storage.googleapis.com/golang/$GO_TAR -o $GO_TAR \
+  && echo $GO_SHA $GO_TAR | sha256sum -c - \
+  && tar -xzf $GO_TAR \
+  && rm -f $GO_TAR
 
 ENV \
   PATH=/usr/local/go/bin:$PATH \
   GOPATH=/root/go \
   GOROOT=/usr/local/go
-
-RUN curl -fSL https://storage.googleapis.com/golang/$GO_TAR -o $GO_TAR \
-  && echo $GO_SHA $GO_TAR | sha256sum -c - \
-  && tar -xzf $GO_TAR
-# }
+#}
