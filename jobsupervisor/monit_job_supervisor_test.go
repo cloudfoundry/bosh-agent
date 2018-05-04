@@ -106,8 +106,9 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := monit.Reload()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(runner.RunCommands)).To(Equal(1))
-			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
+			Expect(len(runner.RunCommands)).To(Equal(2))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
+			Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
 			Expect(client.StatusCalledTimes).To(Equal(4))
 		})
 
@@ -127,10 +128,16 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := monit.Reload()
 			Expect(err).To(HaveOccurred())
 
-			Expect(len(runner.RunCommands)).To(Equal(3))
-			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
-			Expect(runner.RunCommands[1]).To(Equal([]string{"monit", "reload"}))
-			Expect(runner.RunCommands[2]).To(Equal([]string{"monit", "reload"}))
+			Expect(len(runner.RunCommands)).To(Equal(6))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
+			Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
+
+			Expect(runner.RunCommands[2]).To(Equal([]string{"sv", "kill", "monit"}))
+			Expect(runner.RunCommands[3]).To(Equal([]string{"sv", "start", "monit"}))
+
+			Expect(runner.RunCommands[4]).To(Equal([]string{"sv", "kill", "monit"}))
+			Expect(runner.RunCommands[5]).To(Equal([]string{"sv", "start", "monit"}))
+
 			Expect(client.StatusCalledTimes).To(Equal(1 + 30)) // old incarnation + new incarnation checks
 		})
 
@@ -147,9 +154,53 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := monit.Reload()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(runner.RunCommands)).To(Equal(1))
-			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
+			Expect(len(runner.RunCommands)).To(Equal(2))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
+			Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
 			Expect(client.StatusCalledTimes).To(Equal(3))
+		})
+
+		Context("when fetching the incarnation fails", func() {
+			Context("before reloading monit", func() {
+				BeforeEach(func() {
+					client.StatusErr = errors.New("boom")
+				})
+
+				It("returns the error", func() {
+					err := monit.Reload()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("after reloading monit", func() {
+				BeforeEach(func() {
+					client.StatusStub = func() (boshmonit.Status, error) {
+						if client.StatusCalledTimes == 1 {
+							return fakemonit.FakeMonitStatus{Incarnation: 2}, nil
+						}
+
+						return nil, errors.New("boom")
+					}
+				})
+
+				It("continues to retry fetching the incarnation", func() {
+					err := monit.Reload()
+					Expect(err).To(HaveOccurred())
+
+					Expect(len(runner.RunCommands)).To(Equal(6))
+
+					Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
+					Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
+
+					Expect(runner.RunCommands[2]).To(Equal([]string{"sv", "kill", "monit"}))
+					Expect(runner.RunCommands[3]).To(Equal([]string{"sv", "start", "monit"}))
+
+					Expect(runner.RunCommands[4]).To(Equal([]string{"sv", "kill", "monit"}))
+					Expect(runner.RunCommands[5]).To(Equal([]string{"sv", "start", "monit"}))
+
+					Expect(client.StatusCalledTimes).To(Equal(1 + 30)) // old incarnation + new incarnation checks
+				})
+			})
 		})
 	})
 

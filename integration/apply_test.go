@@ -194,5 +194,4 @@ var _ = Describe("apply", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 	})
-
 })

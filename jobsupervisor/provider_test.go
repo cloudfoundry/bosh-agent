@@ -6,6 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"runtime"
+
 	"code.cloudfoundry.org/clock"
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
@@ -13,7 +15,6 @@ import (
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	"runtime"
 )
 
 func init() {
@@ -67,8 +68,8 @@ func init() {
 					jobFailuresServerPort,
 					MonitReloadOptions{
 						MaxTries:               3,
-						MaxCheckTries:          6,
-						DelayBetweenCheckTries: 5 * time.Second,
+						MaxCheckTries:          10,
+						DelayBetweenCheckTries: 1 * time.Second,
 					},
 					timeService,
 				)

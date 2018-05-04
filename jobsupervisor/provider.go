@@ -40,8 +40,8 @@ func NewProvider(
 		jobSupervisorListenPort,
 		MonitReloadOptions{
 			MaxTries:               3,
-			MaxCheckTries:          6,
-			DelayBetweenCheckTries: 5 * time.Second,
+			MaxCheckTries:          10,
+			DelayBetweenCheckTries: 1 * time.Second,
 		},
 		timeService,
 	)
