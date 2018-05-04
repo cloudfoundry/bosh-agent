@@ -4,6 +4,8 @@ set -ex
 
 # golang {
 pushd /usr/local
+  apt-get install -y jq
+  apt-get clean
   GO_INFO=$(curl 'https://golang.org/dl/?mode=json' | jq '.[0].files[] | select(.os == "linux" and .arch == "amd64")')
   GO_TAR="$(echo "$GO_INFO" | jq -r '.filename')"
   GO_SHA="$(echo "$GO_INFO" | jq -r '.sha256')"
