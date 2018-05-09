@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
@@ -93,7 +93,7 @@ var _ = Describe("WindowsPlatform", func() {
 		platform                   Platform
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		fakeUUIDGenerator          *fakeuuidgen.FakeGenerator
-		certManager                *fakecert.FakeManager
+		certManager                *certfakes.FakeManager
 		auditLogger                *fakeplat.FakeAuditLogger
 
 		logger boshlog.Logger
@@ -109,7 +109,7 @@ var _ = Describe("WindowsPlatform", func() {
 		netManager = &fakenet.FakeManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
-		certManager = new(fakecert.FakeManager)
+		certManager = new(certfakes.FakeManager)
 		auditLogger = fakeplat.NewFakeAuditLogger()
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 
@@ -443,7 +443,7 @@ var _ = Describe("BOSH User Commands", func() {
 				netManager                 = &fakenet.FakeManager{}
 				devicePathResolver         = fakedpresolv.NewFakeDevicePathResolver()
 				fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
-				certManager                = new(fakecert.FakeManager)
+				certManager                = new(certfakes.FakeManager)
 				auditLogger                = fakeplat.NewFakeAuditLogger()
 				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
 				dirProvider                = boshdirs.NewProvider("/fake-dir")
@@ -560,7 +560,7 @@ var _ = Describe("BOSH User Commands", func() {
 				netManager                 = &fakenet.FakeManager{}
 				devicePathResolver         = fakedpresolv.NewFakeDevicePathResolver()
 				fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
-				certManager                = new(fakecert.FakeManager)
+				certManager                = new(certfakes.FakeManager)
 				auditLogger                = fakeplat.NewFakeAuditLogger()
 				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
 				dirProvider                = boshdirs.NewProvider(tempDir)

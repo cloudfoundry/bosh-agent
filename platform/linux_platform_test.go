@@ -16,7 +16,7 @@ import (
 
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	fakecdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom/fakes"
-	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
@@ -49,7 +49,7 @@ func describeLinuxPlatform() {
 		copier                     boshcmd.Copier
 		vitalsService              boshvitals.Service
 		netManager                 *fakenet.FakeManager
-		certManager                *fakecert.FakeManager
+		certManager                *certfakes.FakeManager
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		fakeAuditLogger            *fakeplat.FakeAuditLogger
@@ -76,7 +76,7 @@ func describeLinuxPlatform() {
 		copier = boshcmd.NewGenericCpCopier(fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
 		netManager = &fakenet.FakeManager{}
-		certManager = new(fakecert.FakeManager)
+		certManager = new(certfakes.FakeManager)
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
