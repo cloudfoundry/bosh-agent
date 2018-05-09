@@ -12,8 +12,7 @@ import (
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
-	fakedrain "github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
-	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	"github.com/cloudfoundry/bosh-utils/crypto"
@@ -24,19 +23,19 @@ var _ = Describe("DrainAction", func() {
 	var (
 		notifier          *fakenotif.FakeNotifier
 		specService       *fakeas.FakeV1Service
-		jobScriptProvider *fakescript.FakeJobScriptProvider
-		fakeScripts       map[string]*fakedrain.FakeScript
+		jobScriptProvider *scriptfakes.FakeJobScriptProvider
+		fakeScripts       map[string]*scriptfakes.FakeCancellableScript
 		jobSupervisor     *fakejobsuper.FakeJobSupervisor
 		action            DrainAction
 		logger            boshlog.Logger
 	)
 
 	BeforeEach(func() {
-		fakeScripts = make(map[string]*fakedrain.FakeScript)
+		fakeScripts = make(map[string]*scriptfakes.FakeCancellableScript)
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		notifier = fakenotif.NewFakeNotifier()
 		specService = fakeas.NewFakeV1Service()
-		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
+		jobScriptProvider = &scriptfakes.FakeJobScriptProvider{}
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		action = NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)
 	})
@@ -45,9 +44,7 @@ var _ = Describe("DrainAction", func() {
 		jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
 			_, exists := fakeScripts[jobName]
 			if !exists {
-				fakeScript := fakedrain.NewFakeScript(jobName)
-				fakeScript.Params = params
-				fakeScripts[jobName] = fakeScript
+				fakeScripts[jobName] = &scriptfakes.FakeCancellableScript{}
 			}
 			return fakeScripts[jobName]
 		}
@@ -61,11 +58,11 @@ var _ = Describe("DrainAction", func() {
 
 	Describe("Run", func() {
 		var (
-			parallelScript *fakescript.FakeCancellableScript
+			parallelScript *scriptfakes.FakeCancellableScript
 		)
 
 		BeforeEach(func() {
-			parallelScript = &fakescript.FakeCancellableScript{}
+			parallelScript = &scriptfakes.FakeCancellableScript{}
 			jobScriptProvider.NewParallelScriptReturns(parallelScript)
 		})
 
@@ -126,10 +123,10 @@ var _ = Describe("DrainAction", func() {
 
 					Context("when new apply spec is provided", func() {
 						It("runs drain script with update params in parallel", func() {
-							fooScript := &fakescript.FakeCancellableScript{}
+							fooScript := &scriptfakes.FakeCancellableScript{}
 							fooScript.TagReturns("foo")
 
-							barScript := &fakescript.FakeCancellableScript{}
+							barScript := &scriptfakes.FakeCancellableScript{}
 							barScript.TagReturns("bar")
 
 							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
@@ -239,10 +236,10 @@ var _ = Describe("DrainAction", func() {
 
 					Context("when job shutdown notification succeeds", func() {
 						It("runs drain script with shutdown params in parallel", func() {
-							fooScript := &fakescript.FakeCancellableScript{}
+							fooScript := &scriptfakes.FakeCancellableScript{}
 							fooScript.TagReturns("foo")
 
-							barScript := &fakescript.FakeCancellableScript{}
+							barScript := &scriptfakes.FakeCancellableScript{}
 							barScript.TagReturns("bar")
 
 							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
@@ -342,7 +339,7 @@ var _ = Describe("DrainAction", func() {
 
 	Describe("Cancel", func() {
 		var (
-			parallelScript *fakescript.FakeCancellableScript
+			parallelScript *scriptfakes.FakeCancellableScript
 			newSpec        = boshas.V1ApplySpec{
 				PackageSpecs: map[string]boshas.PackageSpec{
 					"foo": {
@@ -354,9 +351,9 @@ var _ = Describe("DrainAction", func() {
 		)
 
 		BeforeEach(func() {
-			parallelScript = &fakescript.FakeCancellableScript{}
+			parallelScript = &scriptfakes.FakeCancellableScript{}
 			jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
-				return fakedrain.NewFakeScript("fake-tag")
+				return &scriptfakes.FakeCancellableScript{}
 			}
 			jobScriptProvider.NewParallelScriptReturns(parallelScript)
 			currentSpec := boshas.V1ApplySpec{}

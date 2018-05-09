@@ -10,19 +10,19 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("RunScript", func() {
 	var (
-		fakeJobScriptProvider *fakescript.FakeJobScriptProvider
+		fakeJobScriptProvider *scriptfakes.FakeJobScriptProvider
 		specService           *fakeapplyspec.FakeV1Service
 		action                RunScriptAction
 	)
 
 	BeforeEach(func() {
-		fakeJobScriptProvider = &fakescript.FakeJobScriptProvider{}
+		fakeJobScriptProvider = &scriptfakes.FakeJobScriptProvider{}
 		specService = fakeapplyspec.NewFakeV1Service()
 		specService.Spec.RenderedTemplatesArchiveSpec = &applyspec.RenderedTemplatesArchiveSpec{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
@@ -40,10 +40,10 @@ var _ = Describe("RunScript", func() {
 		act := func() (map[string]string, error) { return action.Run("run-me", map[string]interface{}{}) }
 
 		Context("when current spec can be retrieved", func() {
-			var parallelScript *fakescript.FakeCancellableScript
+			var parallelScript *scriptfakes.FakeCancellableScript
 
 			BeforeEach(func() {
-				parallelScript = &fakescript.FakeCancellableScript{}
+				parallelScript = &scriptfakes.FakeCancellableScript{}
 				fakeJobScriptProvider.NewParallelScriptReturns(parallelScript)
 			})
 
@@ -54,11 +54,11 @@ var _ = Describe("RunScript", func() {
 
 			It("runs specified job scripts in parallel", func() {
 				createFakeJob("fake-job-1")
-				script1 := &fakescript.FakeScript{}
+				script1 := &scriptfakes.FakeScript{}
 				script1.TagReturns("fake-job-1")
 
 				createFakeJob("fake-job-2")
-				script2 := &fakescript.FakeScript{}
+				script2 := &scriptfakes.FakeScript{}
 				script2.TagReturns("fake-job-2")
 
 				fakeJobScriptProvider.NewScriptStub = func(jobName, scriptName string) boshscript.Script {
