@@ -84,6 +84,8 @@ type DiskSettings struct {
 
 	FileSystemType disk.FileSystemType
 	MountOptions   []string
+
+	Partitioner string
 }
 
 type ISCSISettings struct {
@@ -146,6 +148,8 @@ func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 
 			diskSettings.FileSystemType = s.Env.PersistentDiskFS
 			diskSettings.MountOptions = s.Env.PersistentDiskMountOptions
+			diskSettings.Partitioner = s.Env.PersistentDiskPartitioner
+
 			return diskSettings, true
 		}
 	}
@@ -213,6 +217,7 @@ type Env struct {
 	Bosh                       BoshEnv             `json:"bosh"`
 	PersistentDiskFS           disk.FileSystemType `json:"persistent_disk_fs"`
 	PersistentDiskMountOptions []string            `json:"persistent_disk_mount_options"`
+	PersistentDiskPartitioner  string              `json:"persistent_disk_partitioner"`
 }
 
 func (e Env) GetPassword() string {

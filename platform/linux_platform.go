@@ -1082,7 +1082,12 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			{Type: boshdisk.PartitionTypeLinux},
 		}
 
-		err := p.diskManager.GetPersistentDevicePartitioner().Partition(realPath, partitions)
+		partitioner, err := p.diskManager.GetPersistentDevicePartitioner(diskSetting.Partitioner)
+		if err != nil {
+			return bosherr.WrapError(err, "Selecting partitioner")
+		}
+
+		err = partitioner.Partition(realPath, partitions)
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")
 		}
