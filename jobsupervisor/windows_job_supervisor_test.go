@@ -273,6 +273,93 @@ func buildPipeExe() error {
 	return nil
 }
 
+// addFlappingJob adds and starts flapping job jobName and waits for it
+// to fail at least once.
+func addFlappingJob(jobSupervisor JobSupervisor, jobDir string, fs boshsys.FileSystem) (*WindowsProcessConfig, error) {
+	jobName := "flapping"
+	conf, err := testWindowsConfigs(jobName)
+	if err != nil {
+		return &conf, err
+	}
+	confPath, err := writeJobConfig(jobDir, fs, conf)
+	if err != nil {
+		return &conf, err
+	}
+
+	err = jobSupervisor.AddJob(jobName, 0, confPath)
+	if err != nil {
+		return nil, err
+	}
+	if err := jobSupervisor.Start(); err != nil {
+		return nil, err
+	}
+	m, err := mgr.Connect()
+	if err != nil {
+		return nil, err
+	}
+	defer m.Disconnect()
+
+	var svcs []*mgr.Service
+	defer func() {
+		for _, s := range svcs {
+			s.Close()
+		}
+	}()
+
+	for _, proc := range conf.Processes {
+		s, err := m.OpenService(proc.Name)
+		if err != nil {
+			return nil, err
+		}
+		svcs = append(svcs, s)
+	}
+
+	timeout := time.After(time.Second * 10)
+	tick := time.NewTicker(time.Millisecond * 50)
+	defer tick.Stop()
+
+OuterLoop:
+	for {
+		select {
+		case <-tick.C:
+			for _, s := range svcs {
+				st, err := s.Query()
+				if err != nil {
+					return nil, err
+				}
+				if st.State == svc.Stopped || st.State == svc.StopPending {
+					break OuterLoop
+				}
+			}
+		case <-timeout:
+			return nil, errors.New("addFlappingJob: timed out waiting for job to fail")
+		}
+	}
+
+	return &conf, nil
+}
+
+func newJobSupervisor(basePath string, logger boshlog.Logger, fs boshsys.FileSystem) (JobSupervisor, error) {
+	dirProvider := boshdirs.NewProvider(basePath)
+	runner := boshsys.NewExecCmdRunner(logger)
+	supervisor := NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort,
+		make(chan bool), DefaultMachineIP)
+
+	return supervisor, supervisor.RemoveAllJobs()
+}
+
+func writeJobConfig(jobDir string, fs boshsys.FileSystem, configContents WindowsProcessConfig) (string, error) {
+	processConfigContents, err := json.Marshal(configContents)
+	if err != nil {
+		return "", err
+	}
+
+	processConfigPath := filepath.Join(jobDir, "monit")
+
+	err = fs.WriteFile(processConfigPath, processConfigContents)
+	return processConfigPath, err
+}
+
 type AlertHandler struct {
 	mu    sync.Mutex
 	alert boshalert.MonitAlert
@@ -300,17 +387,15 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		})
 
 		var (
-			once              sync.Once
-			fs                boshsys.FileSystem
-			logger            boshlog.Logger
-			basePath          string
-			logDir            string
-			exePath           string
-			jobDir            string
-			processConfigPath string
-			jobSupervisor     JobSupervisor
-			runner            boshsys.CmdRunner
-			logOut            *bytes.Buffer
+			once          sync.Once
+			fs            boshsys.FileSystem
+			logger        boshlog.Logger
+			basePath      string
+			logDir        string
+			exePath       string
+			jobDir        string
+			jobSupervisor JobSupervisor
+			logOut        *bytes.Buffer
 		)
 
 		BeforeEach(func() {
@@ -340,33 +425,13 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			logDir = path.Join(basePath, "sys", "log")
-		})
-
-		WriteJobConfig := func(configContents WindowsProcessConfig) (string, error) {
-			dirProvider := boshdirs.NewProvider(basePath)
-			runner = boshsys.NewExecCmdRunner(logger)
-			jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort,
-				make(chan bool), DefaultMachineIP)
-			if err := jobSupervisor.RemoveAllJobs(); err != nil {
-				return "", err
-			}
-			processConfigContents, err := json.Marshal(configContents)
-			if err != nil {
-				return "", err
-			}
 
 			jobDir, err = fs.TempDir("testWindowsJobSupervisor")
-			if err != nil {
-				return "", err
-			}
-			processConfigPath = filepath.Join(jobDir, "monit")
+			Expect(err).ToNot(HaveOccurred())
 
-			err = fs.WriteFile(processConfigPath, processConfigContents)
-			if err != nil {
-				return "", err
-			}
-			return processConfigPath, err
-		}
+			jobSupervisor, err = newJobSupervisor(basePath, logger, fs)
+			Expect(err).ToNot(HaveOccurred())
+		})
 
 		GetServiceState := func(serviceName string) (svc.State, error) {
 			m, err := mgr.Connect()
@@ -431,7 +496,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				conf, err = testWindowsConfigs(jobName)
 				Expect(err).ToNot(HaveOccurred())
 
-				confPath, err := WriteJobConfig(conf)
+				confPath, err := writeJobConfig(jobDir, fs, conf)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(jobSupervisor.AddJob(jobName, 0, confPath)).To(Succeed())
@@ -518,7 +583,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				// Context("when monit file contains only whitespace characters", func() {
 				// 	It("does not return an error", func() {
 				// 		conf, _ := testWindowsConfigs("say-hello")
-				// 		confPath, _ := WriteJobConfig(conf)
+				// 		confPath, _ := writeJobConfig(jobDir, fs, conf)
 				// 		string, err := fs.ReadFileString(confPath)
 				// 		print(string)
 				// 		Expect(err).To(HaveOccurred())
@@ -798,7 +863,6 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			var (
 				flapCount int
 				jobCount  int
-				jobName   string
 				conf      WindowsProcessConfig
 			)
 
@@ -814,7 +878,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 					conf, err := flappingStartConfig(flapCount, jobCount)
 					Expect(err).ToNot(HaveOccurred())
-					confPath, err := WriteJobConfig(conf)
+					confPath, err := writeJobConfig(jobDir, fs, conf)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(jobSupervisor.AddJob("flap-start", 0, confPath)).To(Succeed())
@@ -845,64 +909,16 @@ var _ = Describe("WindowsJobSupervisor", func() {
 						jobCount = 5
 					})
 
-					It("start successfully", func() {})
+					It("starts them successfully", func() {})
 				})
 			})
 
 			Context("Change me 2", func() {
-				JustBeforeEach(func() {
-					// Adds and starts flapping job jobName and waits for it to fail at least once
-					var err error
-					conf, err = testWindowsConfigs(jobName)
-					Expect(err).ToNot(HaveOccurred())
-
-					confPath, err := WriteJobConfig(conf)
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(jobSupervisor.AddJob(jobName, 0, confPath)).To(Succeed())
-					Expect(jobSupervisor.Start()).To(Succeed())
-
-					m, err := mgr.Connect()
-					Expect(err).ToNot(HaveOccurred())
-
-					defer m.Disconnect()
-
-					var svcs []*mgr.Service
-					defer func() {
-						for _, s := range svcs {
-							s.Close()
-						}
-					}()
-
-					for _, proc := range conf.Processes {
-						s, err := m.OpenService(proc.Name)
-						Expect(err).ToNot(HaveOccurred())
-						svcs = append(svcs, s)
-					}
-
-					timeout := time.After(time.Second * 10)
-					tick := time.NewTicker(time.Millisecond * 50)
-					defer tick.Stop()
-
-				OuterLoop:
-					for {
-						select {
-						case <-tick.C:
-							for _, s := range svcs {
-								st, err := s.Query()
-								Expect(err).ToNot(HaveOccurred())
-								if st.State == svc.Stopped || st.State == svc.StopPending {
-									break OuterLoop
-								}
-							}
-						case <-timeout:
-							Fail("timed out waiting for job to fail")
-						}
-					}
-				})
-
 				BeforeEach(func() {
-					jobName = "flapping"
+					myConf, err := addFlappingJob(jobSupervisor, jobDir, fs)
+					Expect(err).ToNot(HaveOccurred())
+
+					conf = *myConf
 				})
 
 				Context("StopAndWait", func() {
@@ -944,9 +960,11 @@ var _ = Describe("WindowsJobSupervisor", func() {
 						const loops = int(time.Second * 10 / freq)
 
 						Expect(jobSupervisor.Stop()).To(Succeed())
+
 						for i := 0; i < loops && jobSupervisor.Status() != "stopped"; i++ {
 							time.Sleep(freq)
 						}
+
 						Consistently(jobSupervisor.Status, wait).Should(Equal("stopped"))
 					})
 				})
@@ -956,11 +974,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		Describe("Concurrent Jobs", func() {
 			It("stops services concurrently", func() {
 				conf := concurrentStopConfig()
-				confPath, err := WriteJobConfig(conf)
-				Expect(err).To(Succeed())
-				Expect(jobSupervisor.AddJob("ConcurrentWait", 0, confPath)).To(Succeed())
+				confPath, err := writeJobConfig(jobDir, fs, conf)
+				Expect(err).ToNot(HaveOccurred())
 
-				defer jobSupervisor.RemoveAllJobs()
+				Expect(jobSupervisor.AddJob("ConcurrentWait", 0, confPath)).To(Succeed())
 				Expect(jobSupervisor.Start()).To(Succeed())
 
 				// WARN WARN WARN
@@ -981,7 +998,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			BeforeEach(func() {
 				dirProvider = boshdirs.NewProvider(basePath)
-				runner = boshsys.NewExecCmdRunner(logger)
+				runner := boshsys.NewExecCmdRunner(logger)
 				cancelServer = make(chan bool)
 				jobSupervisor = NewWindowsJobSupervisor(runner, dirProvider, fs, logger, jobFailuresServerPort,
 					cancelServer, DefaultMachineIP)
@@ -1012,72 +1029,6 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				}
 			}
 
-			// AddFlappingJob adds and starts flapping job jobName and waits for it
-			// to fail at least once.
-			AddFlappingJob := func(jobName string) (*WindowsProcessConfig, error) {
-				conf, err := testWindowsConfigs(jobName)
-				if err != nil {
-					return &conf, err
-				}
-
-				confPath, err := WriteJobConfig(conf)
-				if err != nil {
-					return &conf, err
-				}
-
-				err = jobSupervisor.AddJob(jobName, 0, confPath)
-				if err != nil {
-					return nil, err
-				}
-				if err := jobSupervisor.Start(); err != nil {
-					return nil, err
-				}
-				m, err := mgr.Connect()
-				if err != nil {
-					return nil, err
-				}
-				defer m.Disconnect()
-
-				var svcs []*mgr.Service
-				defer func() {
-					for _, s := range svcs {
-						s.Close()
-					}
-				}()
-
-				for _, proc := range conf.Processes {
-					s, err := m.OpenService(proc.Name)
-					if err != nil {
-						return nil, err
-					}
-					svcs = append(svcs, s)
-				}
-
-				timeout := time.After(time.Second * 10)
-				tick := time.NewTicker(time.Millisecond * 50)
-				defer tick.Stop()
-
-			OuterLoop:
-				for {
-					select {
-					case <-tick.C:
-						for _, s := range svcs {
-							st, err := s.Query()
-							if err != nil {
-								return nil, err
-							}
-							if st.State == svc.Stopped || st.State == svc.StopPending {
-								break OuterLoop
-							}
-						}
-					case <-timeout:
-						return nil, errors.New("AddFlappingJob: timed out waiting for job to fail")
-					}
-				}
-
-				return &conf, nil
-			}
-
 			It("sends alerts for a flapping service", func() {
 				var handledAlert AlertHandler
 
@@ -1090,7 +1041,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 				go jobSupervisor.MonitorJobFailures(failureHandler)
 
-				_, err := AddFlappingJob("flapping")
+				_, err := addFlappingJob(jobSupervisor, jobDir, fs)
 				Expect(err).To(Succeed())
 				Eventually(alertReceived, time.Second*6).Should(Receive())
 
