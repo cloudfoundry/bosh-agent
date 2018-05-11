@@ -484,10 +484,65 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			Expect(fs.RemoveAll(logDir)).To(Succeed())
 		})
 
+		Describe("AddJob", func() {
+			var (
+				jobName  string
+				conf     WindowsProcessConfig
+				confPath string
+			)
+
+			BeforeEach(func() {
+				jobName = "say-hello"
+			})
+
+			JustBeforeEach(func() {
+				Expect(jobSupervisor.AddJob(jobName, 0, confPath)).To(Succeed())
+			})
+
+			Context("when the monit file is non-empty", func() {
+				BeforeEach(func() {
+					var err error
+
+					conf, err = testWindowsConfigs(jobName)
+					Expect(err).ToNot(HaveOccurred())
+
+					confPath, err = writeJobConfig(jobDir, fs, conf)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("creates a service with vcap description", func() {
+					for _, proc := range conf.Processes {
+						status, conf, err := GetServiceInfo(proc.Name)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(conf.Description).To(Equal(ServiceDescription))
+						Expect(status.State).To(Equal(svc.Stopped))
+					}
+				})
+			})
+
+			Context("when monit file is empty", func() {
+				BeforeEach(func() {
+					Expect(fs.WriteFileString(confPath, "")).To(Succeed())
+				})
+
+				It("does not return an error", func() {})
+			})
+
+			Context("when monit file contains only whitespace characters", func() {
+				BeforeEach(func() {
+					Expect(fs.WriteFileString(confPath, " \t ")).To(Succeed())
+				})
+
+				It("does not return an error", func() {})
+			})
+		})
+
 		Describe("Non-Flapping Jobs", func() {
 			var (
-				jobName string
-				conf    WindowsProcessConfig
+				jobName  string
+				conf     WindowsProcessConfig
+				confPath string
 			)
 
 			JustBeforeEach(func() {
@@ -496,7 +551,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				conf, err = testWindowsConfigs(jobName)
 				Expect(err).ToNot(HaveOccurred())
 
-				confPath, err := writeJobConfig(jobDir, fs, conf)
+				confPath, err = writeJobConfig(jobDir, fs, conf)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(jobSupervisor.AddJob(jobName, 0, confPath)).To(Succeed())
@@ -551,48 +606,6 @@ var _ = Describe("WindowsJobSupervisor", func() {
 						Expect(int(p.Memory.Kb)).To(Equal(0))
 					}
 				})
-			})
-
-			Describe("AddJob", func() {
-				BeforeEach(func() {
-					jobName = "say-hello"
-				})
-
-				It("creates a service with vcap description", func() {
-					for _, proc := range conf.Processes {
-						status, conf, err := GetServiceInfo(proc.Name)
-						Expect(err).ToNot(HaveOccurred())
-
-						Expect(conf.Description).To(Equal(ServiceDescription))
-						Expect(status.State).To(Equal(svc.Stopped))
-					}
-				})
-
-				// Context("when monit file is empty", func() {
-				// 	BeforeEach(func() {
-				// 		Expect(fs.WriteFileString(processConfigPath, "")).To(Succeed())
-				// 	})
-				//
-				// 	It("does not return an error", func() {
-				// 		, err := AddJob("say-hello")
-				//
-				// 		Expect(err).ToNot(HaveOccurred())
-				// 	})
-				// })
-				//
-				// Context("when monit file contains only whitespace characters", func() {
-				// 	It("does not return an error", func() {
-				// 		conf, _ := testWindowsConfigs("say-hello")
-				// 		confPath, _ := writeJobConfig(jobDir, fs, conf)
-				// 		string, err := fs.ReadFileString(confPath)
-				// 		print(string)
-				// 		Expect(err).To(HaveOccurred())
-				// 		// Expect(fs.WriteFileString(processConfigPath, "   ")).To(Succeed())
-				// 		// _, err := AddJob("say-hello")
-				// 		//
-				// 		// Expect(err).To(HaveOccurred())
-				// 	})
-				// })
 			})
 
 			Describe("Start", func() {
