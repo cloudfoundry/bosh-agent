@@ -40,8 +40,8 @@
     "client",
     "config"
   ]
-  revision = "8754f7a5ee7e57a22a5fb3161c149e1de108786a"
-  version = "v0.0.28"
+  revision = "9768c92c6afe01df434697ad7afff0153687751d"
+  version = "v0.0.30"
 
 [[projects]]
   name = "github.com/cloudfoundry/bosh-init"
@@ -71,7 +71,7 @@
     "uuid/fakes",
     "work"
   ]
-  revision = "33ed1a85e211b44617ebe8957f0991cdbd72ba8f"
+  revision = "b1888b0758ab1c20b935e761179b5de766186da5"
 
 [[projects]]
   branch = "master"
@@ -126,7 +126,7 @@
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
+  revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
 
 [[projects]]
   name = "github.com/nats-io/go-nats"
@@ -185,8 +185,8 @@
     "reporters/stenographer/support/go-isatty",
     "types"
   ]
-  revision = "9eda700730cba42af70d53180f9dcce9266bc2bc"
-  version = "v1.4.0"
+  revision = "fa5fabab2a1bfbd924faf4c067d07ae414e2aedf"
+  version = "v1.5.0"
 
 [[projects]]
   name = "github.com/onsi/gomega"
@@ -258,7 +258,7 @@
     "ssh",
     "ssh/terminal"
   ]
-  revision = "4ec37c66abab2c7e02ae775328b2ff001c3f025a"
+  revision = "2d027ae1dddd4694d54f7a8b6cbe78dca8720226"
 
 [[projects]]
   branch = "master"
@@ -271,7 +271,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "d11bb6cd8e3c4e60239c9cb20ef68586d74500d0"
+  revision = "2491c5de3490fced2f6cff376127c667efeed857"
 
 [[projects]]
   branch = "master"
@@ -283,7 +283,7 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "7db1c3b1a98089d0071c84f646ff5c96aad43682"
+  revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
 
 [[projects]]
   name = "golang.org/x/text"
