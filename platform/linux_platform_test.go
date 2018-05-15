@@ -4,9 +4,11 @@ package platform_test
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -385,6 +387,167 @@ bosh_foobar:...`
 				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 			})
 		})
+
+		Context("when disk is NVMe", func() {
+			BeforeEach(func() {
+				mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
+					PartitionPath: "/dev/nvme0n1p1",
+					MountPoint:    "/",
+				}}
+
+				devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+					return diskSettings.Path, false, nil
+				}
+			})
+
+			Context("when growpart is installed", func() {
+				BeforeEach(func() {
+					cmdRunner.CommandExistsValue = true
+					options.CreatePartitionIfNoEphemeralDisk = false
+				})
+
+				It("runs growpart and resize2fs", func() {
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p1"},
+					)
+
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/nvme0n1", "1"}))
+					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme0n1p1"}))
+				})
+
+				It("runs growpart and resize2fs for the right root device number", func() {
+					err := platform.SetupEphemeralDiskWithPath("/dev/nvme0n1", nil)
+					Expect(err).NotTo(HaveOccurred())
+
+					mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
+						PartitionPath: "/dev/nvme0n1p2",
+						MountPoint:    "/",
+					}}
+
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p2",
+						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p2"},
+					)
+
+					err = platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/nvme0n1", "2"}))
+					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme0n1p2"}))
+				})
+
+				It("returns error if it can't find the root device", func() {
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
+					)
+
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).To(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				})
+
+				It("returns an error if growing the partiton fails", func() {
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p1"},
+					)
+
+					cmdRunner.AddCmdResult(
+						"growpart /dev/nvme0n1 1",
+						fakesys.FakeCmdResult{Error: errors.New("fake-growpart-error")},
+					)
+
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).To(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				})
+
+				It("returns error if resizing the filesystem fails", func() {
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p1"},
+					)
+
+					cmdRunner.AddCmdResult(
+						"resize2fs -f /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: errors.New("fake-resize2fs-error")},
+					)
+
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).To(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				})
+
+				It("skips growing root fs if no ephemerial disk is provided", func() {
+					var platformWithNoEphemeralDisk Platform
+
+					options.CreatePartitionIfNoEphemeralDisk = true
+					platformWithNoEphemeralDisk = NewLinuxPlatform(
+						fs,
+						cmdRunner,
+						collector,
+						compressor,
+						copier,
+						dirProvider,
+						vitalsService,
+						cdutil,
+						diskManager,
+						netManager,
+						certManager,
+						monitRetryStrategy,
+						devicePathResolver,
+						state,
+						options,
+						logger,
+						fakeDefaultNetworkResolver,
+						fakeUUIDGenerator,
+						fakeAuditLogger,
+					)
+					err := platformWithNoEphemeralDisk.SetupRootDisk("")
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				})
+			})
+
+			Context("when growpart is not installed", func() {
+				BeforeEach(func() {
+					cmdRunner.CommandExistsValue = false
+					options.CreatePartitionIfNoEphemeralDisk = false
+				})
+
+				It("does not return error if growpart is not installed and skips growing fs", func() {
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				})
+			})
+
+			Context("when SkipDiskSetup is true", func() {
+				BeforeEach(func() {
+					options.SkipDiskSetup = true
+					cmdRunner.CommandExistsValue = true
+				})
+
+				It("does nothing", func() {
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				})
+			})
+		})
 	})
 
 	Describe("SetupSSH", func() {
@@ -612,169 +775,192 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			itSetsUpEphemeralDisk(act)
 
-			It("returns error if creating data dir fails", func() {
-				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
-				Expect(partitioner.PartitionCalled).To(BeFalse())
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
-			It("returns err when the data directory cannot be globbed", func() {
-				fs.GlobErr = errors.New("fake-glob-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Globbing ephemeral disk mount point `/fake-dir/data/*'"))
-				Expect(err.Error()).To(ContainSubstring("fake-glob-err"))
-				Expect(partitioner.PartitionCalled).To(BeFalse())
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
-			It("returns err when mem stats are unavailable", func() {
-				collector.MemStatsErr = errors.New("fake-memstats-error")
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Calculating partition sizes"))
-				Expect(err.Error()).To(ContainSubstring("fake-memstats-error"))
-				Expect(partitioner.PartitionCalled).To(BeFalse())
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
-			It("returns an error when partitioning fails", func() {
-				partitioner.PartitionErr = errors.New("fake-partition-error")
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Partitioning ephemeral disk `/dev/xvda'"))
-				Expect(err.Error()).To(ContainSubstring("fake-partition-error"))
-				Expect(formatter.FormatCalled).To(BeFalse())
-				Expect(mounter.MountCalled).To(BeFalse())
-			})
-
-			It("formats swap and data partitions", func() {
-				collector.MemStats.Total = uint64(1024 * 1024)
-				partitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = uint64(1024 * 1024)
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(len(formatter.FormatPartitionPaths)).To(Equal(2))
-				Expect(formatter.FormatPartitionPaths[0]).To(Equal("/dev/xvda1"))
-				Expect(formatter.FormatPartitionPaths[1]).To(Equal("/dev/xvda2"))
-
-				Expect(len(formatter.FormatFsTypes)).To(Equal(2))
-				Expect(formatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemSwap))
-				Expect(formatter.FormatFsTypes[1]).To(Equal(boshdisk.FileSystemExt4))
-			})
-
-			It("mounts swap and data partitions", func() {
-				collector.MemStats.Total = uint64(1024 * 1024)
-				partitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = uint64(1024 * 1024)
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(len(mounter.MountMountPoints)).To(Equal(1))
-				Expect(mounter.MountMountPoints[0]).To(Equal("/fake-dir/data"))
-				Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
-				Expect(mounter.MountPartitionPaths[0]).To(Equal("/dev/xvda2"))
-
-				Expect(len(mounter.SwapOnPartitionPaths)).To(Equal(1))
-				Expect(mounter.SwapOnPartitionPaths[0]).To(Equal("/dev/xvda1"))
-			})
-
-			It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
-				memSizeInBytes := uint64(1024 * 1024 * 1024)
-				diskSizeInBytes := 2*memSizeInBytes + 64
-				fakePartitioner := partitioner
-				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
-				collector.MemStats.Total = memSizeInBytes
-
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
-					{SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
-				}))
-			})
-
-			It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
-				memSizeInBytes := uint64(1024 * 1024 * 1024)
-				diskSizeInBytes := 2*memSizeInBytes - 64
-				fakePartitioner := partitioner
-				fakePartitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
-				collector.MemStats.Total = memSizeInBytes
-
-				err := act()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-					{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
-					{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
-				}))
-			})
-
-			Context("when swap size is specified by user", func() {
-				var diskSizeInBytes uint64 = 4096
-
-				Context("and swap size is non-zero", func() {
-					It("creates swap equal to specified amount", func() {
-						var desiredSwapSize uint64 = 2048
-						act = func() error {
-							return platform.SetupEphemeralDiskWithPath("/dev/xvda", &desiredSwapSize)
-						}
-						partitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
-
-						err := act()
-						Expect(err).NotTo(HaveOccurred())
-						Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-							{SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
-							{SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
-						}))
-
-					})
-				})
-
-				Context("and swap size is zero", func() {
-					It("does not attempt to create a swap disk", func() {
-						var desiredSwapSize uint64
-						act = func() error {
-							return platform.SetupEphemeralDiskWithPath("/dev/xvda", &desiredSwapSize)
-						}
-						partitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
-
-						err := act()
-						Expect(err).NotTo(HaveOccurred())
-						Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-							{SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
-						}))
-
-						Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/xvda1"}))
-						Expect(len(mounter.SwapOnPartitionPaths)).To(Equal(0))
-					})
-				})
-
-			})
-
-			Context("and swap size is not provided", func() {
-				var diskSizeInBytes uint64 = 4096
-
-				It("uses the default swap size options", func() {
-					act = func() error {
-						return platform.SetupEphemeralDiskWithPath("/dev/xvda", nil)
+			itTestsSetUpEphemeralDisk := func(act func() error, devicePath string) {
+				partitionPath := func(devicePath string, paritionNumber int) string {
+					switch {
+					case strings.Contains(devicePath, "/dev/nvme"):
+						return fmt.Sprintf("%sp%s", devicePath, strconv.Itoa(paritionNumber))
+					default:
+						return fmt.Sprintf("%s%s", devicePath, strconv.Itoa(paritionNumber))
 					}
-					partitioner.GetDeviceSizeInBytesSizes["/dev/xvda"] = diskSizeInBytes
-					collector.MemStats.Total = 2048
+				}
+
+				It("returns error if creating data dir fails", func() {
+					fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+					Expect(partitioner.PartitionCalled).To(BeFalse())
+					Expect(formatter.FormatCalled).To(BeFalse())
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+
+				It("returns err when the data directory cannot be globbed", func() {
+					fs.GlobErr = errors.New("fake-glob-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Globbing ephemeral disk mount point `/fake-dir/data/*'"))
+					Expect(err.Error()).To(ContainSubstring("fake-glob-err"))
+					Expect(partitioner.PartitionCalled).To(BeFalse())
+					Expect(formatter.FormatCalled).To(BeFalse())
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+
+				It("returns err when mem stats are unavailable", func() {
+					collector.MemStatsErr = errors.New("fake-memstats-error")
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Calculating partition sizes"))
+					Expect(err.Error()).To(ContainSubstring("fake-memstats-error"))
+					Expect(partitioner.PartitionCalled).To(BeFalse())
+					Expect(formatter.FormatCalled).To(BeFalse())
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+
+				It("returns an error when partitioning fails", func() {
+					partitioner.PartitionErr = errors.New("fake-partition-error")
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("Partitioning ephemeral disk '%s'", devicePath)))
+					Expect(err.Error()).To(ContainSubstring("fake-partition-error"))
+					Expect(formatter.FormatCalled).To(BeFalse())
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+
+				It("formats swap and data partitions", func() {
+					collector.MemStats.Total = uint64(1024 * 1024)
+					partitioner.GetDeviceSizeInBytesSizes[devicePath] = uint64(1024 * 1024)
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(len(formatter.FormatPartitionPaths)).To(Equal(2))
+					Expect(formatter.FormatPartitionPaths[0]).To(Equal(partitionPath(devicePath, 1)))
+					Expect(formatter.FormatPartitionPaths[1]).To(Equal(partitionPath(devicePath, 2)))
+
+					Expect(len(formatter.FormatFsTypes)).To(Equal(2))
+					Expect(formatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemSwap))
+					Expect(formatter.FormatFsTypes[1]).To(Equal(boshdisk.FileSystemExt4))
+				})
+
+				It("mounts swap and data partitions", func() {
+					collector.MemStats.Total = uint64(1024 * 1024)
+					partitioner.GetDeviceSizeInBytesSizes[devicePath] = uint64(1024 * 1024)
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(len(mounter.MountMountPoints)).To(Equal(1))
+					Expect(mounter.MountMountPoints[0]).To(Equal("/fake-dir/data"))
+					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
+					Expect(mounter.MountPartitionPaths[0]).To(Equal(partitionPath(devicePath, 2)))
+
+					Expect(len(mounter.SwapOnPartitionPaths)).To(Equal(1))
+					Expect(mounter.SwapOnPartitionPaths[0]).To(Equal(partitionPath(devicePath, 1)))
+				})
+
+				It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := 2*memSizeInBytes + 64
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
 
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+						{SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
+						{SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+					}))
+				})
+
+				It("creates equal swap and data partitions when disk is twice the memory or smaller", func() {
+					memSizeInBytes := uint64(1024 * 1024 * 1024)
+					diskSizeInBytes := 2*memSizeInBytes - 64
+					fakePartitioner := partitioner
+					fakePartitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
+					collector.MemStats.Total = memSizeInBytes
+
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
 						{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
 						{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 					}))
 				})
+
+				Context("when swap size is specified by user", func() {
+					var diskSizeInBytes uint64 = 4096
+
+					Context("and swap size is non-zero", func() {
+						It("creates swap equal to specified amount", func() {
+							var desiredSwapSize uint64 = 2048
+							act = func() error {
+								return platform.SetupEphemeralDiskWithPath(devicePath, &desiredSwapSize)
+							}
+							partitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
+
+							err := act()
+							Expect(err).NotTo(HaveOccurred())
+							Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+								{SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
+								{SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
+							}))
+
+						})
+					})
+
+					Context("and swap size is zero", func() {
+						It("does not attempt to create a swap disk", func() {
+							var desiredSwapSize uint64
+							act = func() error {
+								return platform.SetupEphemeralDiskWithPath(devicePath, &desiredSwapSize)
+							}
+							partitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
+
+							err := act()
+							Expect(err).NotTo(HaveOccurred())
+							Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+								{SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+							}))
+
+							Expect(formatter.FormatPartitionPaths).To(Equal([]string{partitionPath(devicePath, 1)}))
+							Expect(len(mounter.SwapOnPartitionPaths)).To(Equal(0))
+						})
+					})
+
+				})
+
+				Context("and swap size is not provided", func() {
+					var diskSizeInBytes uint64 = 4096
+
+					It("uses the default swap size options", func() {
+						act = func() error {
+							return platform.SetupEphemeralDiskWithPath(devicePath, nil)
+						}
+						partitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
+						collector.MemStats.Total = 2048
+
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+							{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+							{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+						}))
+					})
+				})
+			}
+
+			itTestsSetUpEphemeralDisk(act, "/dev/xvda")
+
+			Context("and is NVMe", func() {
+				act = func() error {
+					return platform.SetupEphemeralDiskWithPath("/dev/nvme1n1", nil)
+				}
+
+				itSetsUpEphemeralDisk(act)
+
+				itTestsSetUpEphemeralDisk(act, "/dev/nvme1n1")
 			})
 		})
 
@@ -2179,7 +2365,7 @@ Number  Start   End     Size    File system  Name             Flags
 			mntPoint = "/mnt/point"
 		})
 
-		Context("when device real path contains /dev/mapper/ and is successfully resolved", func() {
+		Context("when device real path starts with /dev/mapper/ and is successfully resolved", func() {
 			BeforeEach(func() {
 				devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
 			})
@@ -2309,6 +2495,113 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(diskManager.GetPersistentDevicePartitionerCallCount()).To(Equal(1))
 						Expect(diskManager.GetPersistentDevicePartitionerArgsForCall(0)).To(Equal("cool-partitioner"))
 					})
+				})
+			})
+		})
+
+		Context("when device real path starts with /dev/nvme and is successfully resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RealDevicePath = "/dev/nvme2n1"
+			})
+
+			Context("when store directory is already mounted", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointResult = true
+				})
+
+				Context("when mounting the same device", func() {
+					BeforeEach(func() {
+						mounter.IsMountPointPartitionPath = "/dev/nvme2n1p1"
+					})
+
+					It("skips mounting", func() {
+						err := platform.MountPersistentDisk(diskSettings, mntPoint)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(mounter.MountCalled).To(BeFalse())
+					})
+				})
+
+				Context("when mounting a different device", func() {
+					BeforeEach(func() {
+						mounter.IsMountPointPartitionPath = "/dev/nvme3n1p1"
+					})
+
+					It("mounts the store migration directory", func() {
+						err := platform.MountPersistentDisk(diskSettings, mntPoint)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(fs.GetFileTestStat("/fake-dir/store_migration_target").FileType).To(Equal(fakesys.FakeFileTypeDir))
+						Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/nvme2n1p1"}))
+						Expect(mounter.MountMountPoints).To(Equal([]string{"/fake-dir/store_migration_target"}))
+						Expect(mounter.MountMountOptions).To(Equal([][]string{{"mntOpt1", "mntOpt2"}}))
+					})
+				})
+			})
+
+			Context("when failing to determine if store directory is mounted", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointErr = errors.New("fake-is-mount-point-err")
+				})
+
+				It("returns an error", func() {
+					err := platform.MountPersistentDisk(diskSettings, mntPoint)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-mount-point-err"))
+					Expect(mounter.MountCalled).To(BeFalse())
+				})
+			})
+
+			Context("when UsePreformattedPersistentDisk set to false", func() {
+				It("creates the mount directory with the correct permissions", func() {
+					err := platform.MountPersistentDisk(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					mountPoint := fs.GetFileTestStat("/mnt/point")
+					Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
+				})
+
+				It("returns error when creating mount directory fails", func() {
+					fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+					err := platform.MountPersistentDisk(diskSettings, mntPoint)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+				})
+
+				It("partitions the disk", func() {
+					err := platform.MountPersistentDisk(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+					Expect(partitioner.PartitionDevicePath).To(Equal("/dev/nvme2n1"))
+					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
+				})
+
+				It("formats the disk", func() {
+					err := platform.MountPersistentDisk(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/nvme2n1p1"}))
+					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+				})
+
+				It("mounts the disk", func() {
+					err := platform.MountPersistentDisk(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(mounter.MountPartitionPaths).To(Equal([]string{"/dev/nvme2n1p1"}))
+					Expect(mounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
+					Expect(mounter.MountMountOptions).To(Equal([][]string{{"mntOpt1", "mntOpt2"}}))
+				})
+
+				It("generates the managed disk settings file", func() {
+					err := platform.MountPersistentDisk(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					var contents string
+					managedSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+
+					contents, err = platform.GetFs().ReadFileString(managedSettingsPath)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(contents).To(Equal("fake-unique-id"))
 				})
 			})
 		})
@@ -2490,8 +2783,35 @@ Number  Start   End     Size    File system  Name             Flags
 	})
 
 	Describe("UnmountPersistentDisk", func() {
-		act := func() (bool, error) {
-			return platform.UnmountPersistentDisk(boshsettings.DiskSettings{Path: "fake-device-path"})
+		ItUnmountsPersistentDisk := func(expectedUnmountMountPoint string) {
+			It("returs true without an error if unmounting succeeded", func() {
+				mounter.UnmountDidUnmount = true
+
+				didUnmount, err := platform.UnmountPersistentDisk(boshsettings.DiskSettings{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(didUnmount).To(BeTrue())
+				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
+			})
+
+			It("returs false without an error if was already unmounted", func() {
+				mounter.UnmountDidUnmount = false
+
+				didUnmount, err := platform.UnmountPersistentDisk(boshsettings.DiskSettings{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(didUnmount).To(BeFalse())
+				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
+			})
+
+			It("returns error if unmounting fails", func() {
+				mounter.UnmountDidUnmount = false
+				mounter.UnmountErr = errors.New("fake-unmount-err")
+
+				didUnmount, err := platform.UnmountPersistentDisk(boshsettings.DiskSettings{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-unmount-err"))
+				Expect(didUnmount).To(BeFalse())
+				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
+			})
 		}
 
 		Context("when device real path contains /dev/mapper/ and can be resolved", func() {
@@ -2499,78 +2819,25 @@ Number  Start   End     Size    File system  Name             Flags
 				devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
 			})
 
-			ItUnmountsPersistentDisk := func(expectedUnmountMountPoint string) {
-				It("returs true without an error if unmounting succeeded", func() {
-					mounter.UnmountDidUnmount = true
-
-					didUnmount, err := act()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(didUnmount).To(BeTrue())
-					Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
-				})
-
-				It("returs false without an error if was already unmounted", func() {
-					mounter.UnmountDidUnmount = false
-
-					didUnmount, err := act()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(didUnmount).To(BeFalse())
-					Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
-				})
-
-				It("returns error if unmounting fails", func() {
-					mounter.UnmountDidUnmount = false
-					mounter.UnmountErr = errors.New("fake-unmount-err")
-
-					didUnmount, err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-unmount-err"))
-					Expect(didUnmount).To(BeFalse())
-					Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
-				})
-			}
-
 			Context("UsePreformattedPersistentDisk is set to false", func() {
 				ItUnmountsPersistentDisk("/dev/mapper/fake-real-device-path-part1") // note partition '-part1'
 			})
+		})
 
+		Context("when device real path contains /dev/nvme and can be resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RealDevicePath = "/dev/nvme2n1"
+			})
+
+			Context("UsePreformattedPersistentDisk is set to false", func() {
+				ItUnmountsPersistentDisk("/dev/nvme2n1p1") // note partition 'p1'
+			})
 		})
 
 		Context("when device path can be resolved", func() {
 			BeforeEach(func() {
 				devicePathResolver.RealDevicePath = "fake-real-device-path"
 			})
-
-			ItUnmountsPersistentDisk := func(expectedUnmountMountPoint string) {
-				It("returs true without an error if unmounting succeeded", func() {
-					mounter.UnmountDidUnmount = true
-
-					didUnmount, err := act()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(didUnmount).To(BeTrue())
-					Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
-				})
-
-				It("returs false without an error if was already unmounted", func() {
-					mounter.UnmountDidUnmount = false
-
-					didUnmount, err := act()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(didUnmount).To(BeFalse())
-					Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
-				})
-
-				It("returns error if unmounting fails", func() {
-					mounter.UnmountDidUnmount = false
-					mounter.UnmountErr = errors.New("fake-unmount-err")
-
-					didUnmount, err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-unmount-err"))
-					Expect(didUnmount).To(BeFalse())
-					Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
-				})
-			}
 
 			Context("UsePreformattedPersistentDisk is set to false", func() {
 				ItUnmountsPersistentDisk("fake-real-device-path1") // note partition '1'
@@ -2592,7 +2859,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns error", func() {
-				isMounted, err := act()
+				isMounted, err := platform.UnmountPersistentDisk(boshsettings.DiskSettings{Path: "fake-device-path"})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
 				Expect(isMounted).To(BeFalse())
@@ -2606,7 +2873,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("does not return error", func() {
-				isMounted, err := act()
+				isMounted, err := platform.UnmountPersistentDisk(boshsettings.DiskSettings{Path: "fake-device-path"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMounted).To(BeFalse())
 			})
@@ -2836,6 +3103,51 @@ from-device-path  dm-0 NETAPP  ,LUN C-Mode
 
 			Context("UsePreformattedPersistentDisk is set to false", func() {
 				ItChecksPersistentDiskMountPoint("/dev/mapper/fake-real-device-path-part1") // note partition '-part1'
+			})
+		})
+
+		Context("when device real path starts with /dev/nvme and can be resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RealDevicePath = "/dev/nvme2n1"
+			})
+
+			ItChecksPersistentDiskMountPoint := func(expectedCheckedMountPoint string) {
+				Context("when checking persistent disk mount point succeeds", func() {
+					It("returns true if mount point exists", func() {
+						mounter.IsMountedResult = true
+
+						isMounted, err := act()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(isMounted).To(BeTrue())
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
+					})
+
+					It("returns false if mount point does not exist", func() {
+						mounter.IsMountedResult = false
+
+						isMounted, err := act()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(isMounted).To(BeFalse())
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
+					})
+				})
+
+				Context("checking persistent disk mount points fails", func() {
+					It("returns error", func() {
+						mounter.IsMountedResult = false
+						mounter.IsMountedErr = errors.New("fake-is-mounted-err")
+
+						isMounted, err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-is-mounted-err"))
+						Expect(isMounted).To(BeFalse())
+						Expect(mounter.IsMountedArgsForCall(0)).To(Equal(expectedCheckedMountPoint))
+					})
+				})
+			}
+
+			Context("UsePreformattedPersistentDisk is set to false", func() {
+				ItChecksPersistentDiskMountPoint("/dev/nvme2n1p1") // note partition 'p1'
 			})
 		})
 
