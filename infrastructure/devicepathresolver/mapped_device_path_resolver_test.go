@@ -127,7 +127,7 @@ var _ = Describe("mappedDevicePathResolver", func() {
 			})
 		})
 
-		FContext("when path is a symlink", func() {
+		Context("when path is a symlink", func() {
 			BeforeEach(func() {
 				Expect(fs.WriteFile("/dev/xvdba", []byte{})).To(Succeed())
 				Expect(fs.MkdirAll("/dev/disk/by-label", 0755)).To(Succeed())
