@@ -10,6 +10,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/disk/diskfakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -884,11 +885,23 @@ var _ = Describe("bootstrap", func() {
 				CreatePartitionIfNoEphemeralDisk: true,
 			}
 
-			diskManager := fakedisk.NewFakeDiskManager()
-			diskManager.FakeMountsSearcher.SearchMountsMounts = []boshdisk.Mount{
+			mountSearcher := &fakedisk.FakeMountsSearcher{}
+			mountSearcher.SearchMountsMounts = []boshdisk.Mount{
 				{MountPoint: "/", PartitionPath: "rootfs"},
 				{MountPoint: "/", PartitionPath: "/dev/vda1"},
 			}
+
+			rootDevicePartitioner := fakedisk.NewFakePartitioner()
+			rootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
+
+			formatter := &fakedisk.FakeFormatter{}
+			mounter := &fakedisk.FakeMounter{}
+
+			diskManager := &diskfakes.FakeManager{}
+			diskManager.GetMountsSearcherReturns(mountSearcher)
+			diskManager.GetRootDevicePartitionerReturns(rootDevicePartitioner)
+			diskManager.GetFormatterReturns(formatter)
+			diskManager.GetMounterReturns(mounter)
 
 			// for the GrowRootFS call to findRootDevicePath
 			runner.AddCmdResult(
@@ -901,8 +914,6 @@ var _ = Describe("bootstrap", func() {
 				"readlink -f /dev/vda1",
 				fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
 			)
-
-			diskManager.FakeRootDevicePartitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
 
 			udev := boshudev.NewConcreteUdevDevice(runner, logger)
 			linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)

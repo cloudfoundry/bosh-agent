@@ -7,7 +7,7 @@ import (
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
-	fakecert "github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	fakevitals "github.com/cloudfoundry/bosh-agent/platform/vitals/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -183,7 +183,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.GetFileContentsFromDiskFileNames = [][]string{}
 	platform.GetFileContentsFromDiskContents = map[string][]byte{}
 	platform.GetFileContentsFromDiskErrs = map[string]error{}
-	platform.certManager = new(fakecert.FakeManager)
+	platform.certManager = new(certfakes.FakeManager)
 	platform.SetupRawEphemeralDisksCallCount = 0
 	platform.SetupRawEphemeralDisksDevices = nil
 	platform.SetupRawEphemeralDisksErr = nil

@@ -6,19 +6,20 @@ import (
 
 	"errors"
 
+	"path/filepath"
+
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/platform/cert/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	"github.com/cloudfoundry/bosh-utils/logger"
-	"path/filepath"
 )
 
 var _ = Describe("UpdateSettings", func() {
 	var (
 		action            UpdateSettingsAction
-		certManager       *fakes.FakeManager
+		certManager       *certfakes.FakeManager
 		settingsService   *fakesettings.FakeSettingsService
 		log               logger.Logger
 		platform          *fakeplatform.FakePlatform
@@ -27,7 +28,7 @@ var _ = Describe("UpdateSettings", func() {
 
 	BeforeEach(func() {
 		log = logger.NewLogger(logger.LevelNone)
-		certManager = new(fakes.FakeManager)
+		certManager = new(certfakes.FakeManager)
 		settingsService = &fakesettings.FakeSettingsService{}
 		platform = fakeplatform.NewFakePlatform()
 		action = NewUpdateSettings(settingsService, platform, certManager, log)
@@ -71,7 +72,7 @@ var _ = Describe("UpdateSettings", func() {
 	Context("when updating the certificates fails", func() {
 		BeforeEach(func() {
 			log = logger.NewLogger(logger.LevelNone)
-			certManager = new(fakes.FakeManager)
+			certManager = new(certfakes.FakeManager)
 			certManager.UpdateCertificatesReturns(errors.New("Error"))
 			action = NewUpdateSettings(settingsService, platform, certManager, log)
 		})

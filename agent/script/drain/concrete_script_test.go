@@ -12,7 +12,7 @@ import (
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
-	"github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain/drainfakes"
 	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -36,7 +36,7 @@ var _ = Describe("ConcreteScript", func() {
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
-		params = &fakes.FakeScriptParams{}
+		params = &drainfakes.FakeScriptParams{}
 		fakeClock = &fakeaction.FakeClock{}
 		if runtime.GOOS == "windows" {
 			jobChangedFullCommand = "powershell /fake/script job_changed hash_unchanged bar foo"
@@ -217,7 +217,7 @@ var _ = Describe("ConcreteScript", func() {
 
 			Context("when cannot get the job state", func() {
 				BeforeEach(func() {
-					fakeParams := &fakes.FakeScriptParams{}
+					fakeParams := &drainfakes.FakeScriptParams{}
 					fakeParams.JobStateReturns("", errors.New("fake-job-state-err"))
 					params = fakeParams
 				})
@@ -267,7 +267,7 @@ var _ = Describe("ConcreteScript", func() {
 
 			Context("when cannot get the job next state", func() {
 				BeforeEach(func() {
-					fakeParams := &fakes.FakeScriptParams{}
+					fakeParams := &drainfakes.FakeScriptParams{}
 					fakeParams.JobNextStateReturns("", errors.New("fake-job-next-state-err"))
 					params = fakeParams
 				})

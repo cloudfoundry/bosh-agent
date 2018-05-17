@@ -40,8 +40,8 @@
     "client",
     "config"
   ]
-  revision = "8754f7a5ee7e57a22a5fb3161c149e1de108786a"
-  version = "v0.0.28"
+  revision = "9768c92c6afe01df434697ad7afff0153687751d"
+  version = "v0.0.30"
 
 [[projects]]
   name = "github.com/cloudfoundry/bosh-init"
@@ -71,7 +71,7 @@
     "uuid/fakes",
     "work"
   ]
-  revision = "2c869a1a0ccef38c01c41d833db6eb02a23bd6e6"
+  revision = "725aefa177b0b855fe54825e8251378d587738d8"
 
 [[projects]]
   branch = "master"
@@ -87,7 +87,7 @@
     "fakes",
     "sys/windows"
   ]
-  revision = "1375283248c3c5fa82163113c0ef15e79390f644"
+  revision = "1ae413b7c6bfc5aef587524f72d2c861bcab79f4"
 
 [[projects]]
   branch = "master"
@@ -126,7 +126,7 @@
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
+  revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
 
 [[projects]]
   name = "github.com/nats-io/go-nats"
@@ -185,8 +185,8 @@
     "reporters/stenographer/support/go-isatty",
     "types"
   ]
-  revision = "9eda700730cba42af70d53180f9dcce9266bc2bc"
-  version = "v1.4.0"
+  revision = "fa5fabab2a1bfbd924faf4c067d07ae414e2aedf"
+  version = "v1.5.0"
 
 [[projects]]
   name = "github.com/onsi/gomega"
@@ -207,8 +207,8 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "003f63b7f4cff3fc95357005358af2de0f5fe152"
-  version = "v1.3.0"
+  revision = "62bff4df71bdbc266561a0caee19f0594b17c240"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -258,7 +258,7 @@
     "ssh",
     "ssh/terminal"
   ]
-  revision = "1f94bef427e370e425e55b172f3b5e300ef38304"
+  revision = "425cc7d9a76e079f290e1d4bd1250d7b5b235cfa"
 
 [[projects]]
   branch = "master"
@@ -271,7 +271,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "640f4622ab692b87c2f3a94265e6f579fe38263d"
+  revision = "2491c5de3490fced2f6cff376127c667efeed857"
 
 [[projects]]
   branch = "master"
@@ -283,7 +283,7 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "78d5f264b493f125018180c204871ecf58a2dce1"
+  revision = "7c87d13f8e835d2fb3a70a2912c811ed0c1d241b"
 
 [[projects]]
   name = "golang.org/x/text"
