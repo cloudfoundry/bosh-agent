@@ -1,6 +1,8 @@
 package devicepathresolver
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -29,7 +31,10 @@ func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 		return "", false, bosherr.Error("Getting real device path: path is missing")
 	}
 
-	realPath, found := dpr.findPossibleDevice(devicePath)
+	realPath, found, err := dpr.findPossibleDevice(devicePath)
+	if err != nil {
+		return "", false, bosherr.Errorf("Getting real device path: %s", err.Error())
+	}
 
 	for !found {
 		if time.Now().After(stopAfter) {
@@ -38,13 +43,16 @@ func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 
 		time.Sleep(100 * time.Millisecond)
 
-		realPath, found = dpr.findPossibleDevice(devicePath)
+		realPath, found, err = dpr.findPossibleDevice(devicePath)
+		if err != nil {
+			return "", false, bosherr.Errorf("Getting real device path: %s", err.Error())
+		}
 	}
 
 	return realPath, false, nil
 }
 
-func (dpr mappedDevicePathResolver) findPossibleDevice(devicePath string) (string, bool) {
+func (dpr mappedDevicePathResolver) findPossibleDevice(devicePath string) (string, bool, error) {
 	needsMapping := strings.HasPrefix(devicePath, "/dev/sd")
 
 	if needsMapping {
@@ -59,14 +67,26 @@ func (dpr mappedDevicePathResolver) findPossibleDevice(devicePath string) (strin
 		for _, prefix := range possiblePrefixes {
 			path := prefix + pathSuffix
 			if dpr.fs.FileExists(path) {
-				return path, true
+				return path, true, nil
 			}
 		}
-	} else {
-		if dpr.fs.FileExists(devicePath) {
-			return devicePath, true
+	} else if dpr.fs.FileExists(devicePath) {
+		stat, err := dpr.fs.Lstat(devicePath)
+		if err == nil && stat.Mode()&os.ModeSymlink == os.ModeSymlink {
+			link, err := dpr.fs.Readlink(devicePath)
+			if err != nil {
+				return "", false, err
+			}
+
+			if strings.Contains(link, "..") {
+				link = filepath.Join(devicePath, "..", link)
+			}
+
+			return filepath.Clean(link), true, nil
 		}
+
+		return devicePath, true, nil
 	}
 
-	return "", false
+	return "", false, nil
 }

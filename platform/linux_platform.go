@@ -354,11 +354,7 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 		}
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand(
-		"resize2fs",
-		"-f",
-		fmt.Sprintf("%s%d", rootDevicePath, rootDeviceNumber),
-	)
+	_, _, _, err = p.cmdRunner.RunCommand("resize2fs", "-f", p.partitionPath(rootDevicePath, rootDeviceNumber))
 
 	if err != nil {
 		return bosherr.WrapError(err, "resize2fs")
@@ -1058,11 +1054,7 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	}
 	p.logger.Info(logTag, "realPath = %s, devicePath = %s, isMountPoint = %t", realPath, devicePath, isMountPoint)
 
-	partitionPath := realPath + "1"
-	if strings.Contains(realPath, "/dev/mapper/") {
-		partitionPath = realPath + "-part1"
-	}
-
+	partitionPath := p.partitionPath(realPath, 1)
 	if isMountPoint {
 		if partitionPath == devicePath {
 			p.logger.Info(logTag, "device: %s is already mounted on %s, skipping mounting", devicePath, mountPoint)
@@ -1138,11 +1130,7 @@ func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bo
 	}
 
 	if !p.options.UsePreformattedPersistentDisk {
-		if strings.Contains(realPath, "/dev/mapper/") {
-			realPath = realPath + "-part1"
-		} else {
-			realPath += "1"
-		}
+		realPath = p.partitionPath(realPath, 1)
 	}
 
 	return p.diskManager.GetMounter().Unmount(realPath)
@@ -1244,11 +1232,7 @@ func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (
 	}
 
 	if !p.options.UsePreformattedPersistentDisk {
-		if strings.Contains(realPath, "/dev/mapper/") {
-			realPath = realPath + "-part1"
-		} else {
-			realPath += "1"
-		}
+		realPath = p.partitionPath(realPath, 1)
 	}
 
 	return p.diskManager.GetMounter().IsMounted(realPath)
@@ -1350,7 +1334,7 @@ func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 	}
 
 	for _, mount := range mounts {
-		if mount.MountPoint == "/" && strings.HasPrefix(mount.PartitionPath, "/dev/") {
+		if mount.IsRoot() {
 			p.logger.Debug(logTag, "Found root partition: `%s'", mount.PartitionPath)
 
 			stdout, _, _, err := p.cmdRunner.RunCommand("readlink", "-f", mount.PartitionPath)
@@ -1360,17 +1344,24 @@ func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 			rootPartition := strings.Trim(stdout, "\n")
 			p.logger.Debug(logTag, "Symlink is: `%s'", rootPartition)
 
-			validRootPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
-			if !validRootPartition.MatchString(rootPartition) {
-				return "", 0, bosherr.Error("Root partition has an invalid name" + rootPartition)
+			validNVMeRootPartition := regexp.MustCompile(`^/dev/[a-z]+\dn\dp\d$`)
+			validSCSIRootPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
+
+			isValidNVMePath := validNVMeRootPartition.MatchString(rootPartition)
+			isValidSCSIPath := validSCSIRootPartition.MatchString(rootPartition)
+			if !isValidNVMePath && !isValidSCSIPath {
+				return "", 0, bosherr.Errorf("Root partition has an invalid name%s", rootPartition)
+			}
+
+			devPath := rootPartition[:len(rootPartition)-1]
+			if isValidNVMePath {
+				devPath = rootPartition[:len(rootPartition)-2]
 			}
 
 			devNum, err := strconv.Atoi(rootPartition[len(rootPartition)-1:])
 			if err != nil {
 				return "", 0, bosherr.WrapError(err, "Parsing device number failed")
 			}
-
-			devPath := rootPartition[:len(rootPartition)-1]
 
 			return devPath, devNum, nil
 		}
@@ -1416,9 +1407,8 @@ func (p linux) partitionEphemeralDisk(realPath string, desiredSwapSizeInBytes *u
 	}
 
 	swapPartitionPath, dataPartitionPath, err := p.partitionDisk(diskSizeInBytes, desiredSwapSizeInBytes, realPath, 1, p.diskManager.GetEphemeralDevicePartitioner())
-
 	if err != nil {
-		return "", "", bosherr.WrapErrorf(err, "Partitioning ephemeral disk `%s'", realPath)
+		return "", "", bosherr.WrapErrorf(err, "Partitioning ephemeral disk '%s'", realPath)
 	}
 
 	return swapPartitionPath, dataPartitionPath, nil
@@ -1441,14 +1431,14 @@ func (p linux) partitionDisk(availableSize uint64, desiredSwapSizeInBytes *uint6
 			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 		}
 		swapPartitionPath = ""
-		dataPartitionPath = partitionPath + strconv.Itoa(partitionStartCount)
+		dataPartitionPath = p.partitionPath(partitionPath, partitionStartCount)
 	} else {
 		partitions = []boshdisk.Partition{
 			{SizeInBytes: swapSizeInBytes, Type: boshdisk.PartitionTypeSwap},
 			{SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 		}
-		swapPartitionPath = partitionPath + strconv.Itoa(partitionStartCount)
-		dataPartitionPath = partitionPath + strconv.Itoa(partitionStartCount+1)
+		swapPartitionPath = p.partitionPath(partitionPath, partitionStartCount)
+		dataPartitionPath = p.partitionPath(partitionPath, partitionStartCount+1)
 	}
 
 	p.logger.Info(logTag, "Partitioning `%s' with %s", partitionPath, partitions)
@@ -1491,6 +1481,17 @@ func (p linux) RemoveStaticLibraries(staticLibrariesListFilePath string) error {
 	}
 
 	return nil
+}
+
+func (p linux) partitionPath(devicePath string, partitionNumber int) string {
+	switch {
+	case strings.HasPrefix(devicePath, "/dev/nvme"):
+		return fmt.Sprintf("%sp%s", devicePath, strconv.Itoa(partitionNumber))
+	case strings.HasPrefix(devicePath, "/dev/mapper/"):
+		return fmt.Sprintf("%s-part%s", devicePath, strconv.Itoa(partitionNumber))
+	default:
+		return fmt.Sprintf("%s%s", devicePath, strconv.Itoa(partitionNumber))
+	}
 }
 
 func (p linux) generateDefaultEtcHosts(hostname string) (*bytes.Buffer, error) {
