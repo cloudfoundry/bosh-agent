@@ -8,7 +8,7 @@
     ".",
     "fakeclock"
   ]
-  revision = "e9dc86bbf0e5bbe6bf7ff5a6f71e048959b61f71"
+  revision = "02e53af36e6c978af692887ed449b74026d76fec"
 
 [[projects]]
   name = "github.com/Microsoft/go-winio"
@@ -71,7 +71,7 @@
     "uuid/fakes",
     "work"
   ]
-  revision = "725aefa177b0b855fe54825e8251378d587738d8"
+  revision = "fad7a5ad622c066cf1b36eb44b9612cec680e48c"
 
 [[projects]]
   branch = "master"
@@ -258,7 +258,7 @@
     "ssh",
     "ssh/terminal"
   ]
-  revision = "425cc7d9a76e079f290e1d4bd1250d7b5b235cfa"
+  revision = "1a580b3eff7814fc9b40602fd35256c63b50f491"
 
 [[projects]]
   branch = "master"
