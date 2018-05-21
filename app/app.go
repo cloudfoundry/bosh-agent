@@ -120,18 +120,18 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Running bootstrap")
 	}
 
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, auditLogger)
-
-	mbusHandler, err := mbusHandlerProvider.Get(app.platform, app.dirProvider)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting mbus handler")
-	}
-
 	blobManager := boshblob.NewBlobManager(app.platform.GetFs(), app.dirProvider.BlobsDir())
 	blobstore, err := app.setupBlobstore(settingsService.GetSettings().GetBlobstore(), blobManager)
 
 	if err != nil {
 		return bosherr.WrapError(err, "Getting blobstore")
+	}
+
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, auditLogger)
+
+	mbusHandler, err := mbusHandlerProvider.Get(app.platform, blobManager)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting mbus handler")
 	}
 
 	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger)
