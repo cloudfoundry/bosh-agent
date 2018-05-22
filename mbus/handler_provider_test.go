@@ -11,8 +11,8 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -20,23 +20,23 @@ var _ = Describe("HandlerProvider", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
 		platform        *fakeplatform.FakePlatform
-		dirProvider     boshdir.Provider
 		logger          boshlog.Logger
 		provider        HandlerProvider
+		blobManager     *fakeblobstore.FakeBlobManagerInterface
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		platform = fakeplatform.NewFakePlatform()
-		dirProvider = boshdir.NewProvider("/var/vcap")
 		provider = NewHandlerProvider(settingsService, logger, fakeplatform.NewFakeAuditLogger())
+		blobManager = &fakeblobstore.FakeBlobManagerInterface{}
 	})
 
 	Describe("Get", func() {
 		It("returns nats handler", func() {
 			settingsService.Settings.Mbus = "nats://lol"
-			handler, err := provider.Get(platform, dirProvider)
+			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
 
 			// yagnats.NewClient returns new object every time
@@ -49,9 +49,9 @@ var _ = Describe("HandlerProvider", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
-			handler, err := provider.Get(platform, dirProvider)
+			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
-			expectedHandler := NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, logger, platform.GetFs(), dirProvider, fakeplatform.NewFakeAuditLogger())
+			expectedHandler := NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, fakeplatform.NewFakeAuditLogger())
 			httpsHandler, ok := handler.(HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(httpsHandler).To(Equal(expectedHandler))
@@ -65,13 +65,12 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Env.Bosh.Mbus.Cert.Certificate = "certificate-pem-block"
 			settingsService.Settings.Env.Bosh.Mbus.Cert.PrivateKey = "private-key-pem-block"
 
-			handler, err := provider.Get(platform, dirProvider)
+			handler, err := provider.Get(platform, blobManager)
 			expectedHandler := NewHTTPSHandler(
 				mbusURL,
 				settingsService.Settings.Env.Bosh.Mbus.Cert,
+				blobManager,
 				logger,
-				platform.GetFs(),
-				dirProvider,
 				fakeplatform.NewFakeAuditLogger(),
 			)
 			httpsHandler, ok := handler.(HTTPSHandler)
@@ -81,7 +80,7 @@ var _ = Describe("HandlerProvider", func() {
 
 		It("returns an error if not supported", func() {
 			settingsService.Settings.Mbus = "unknown-scheme://lol"
-			_, err := provider.Get(platform, dirProvider)
+			_, err := provider.Get(platform, blobManager)
 			Expect(err).To(HaveOccurred())
 		})
 	})

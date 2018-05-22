@@ -33,7 +33,6 @@ var _ = Describe("Provider", func() {
 		Entry("JobLogDir(jobName)", p.JobLogDir("myJob"), "/some/dir/data/sys/log/myJob"),
 		Entry("JobRunDir(jobName)", p.JobRunDir("myJob"), "/some/dir/data/sys/run/myJob"),
 		Entry("JobDir(jobName)", p.JobDir("myJob"), "/some/dir/data/myJob"),
-		Entry("MicroStore()", p.MicroStore(), "/some/dir/micro_bosh/data/cache"),
 		Entry("SettingsDir()", p.SettingsDir(), "/some/dir/bosh/settings"),
 		Entry("TmpDir()", p.TmpDir(), "/some/dir/data/tmp"),
 		Entry("LogsDir()", p.LogsDir(), "/some/dir/sys/log"),

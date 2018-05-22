@@ -9,7 +9,7 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -34,7 +34,7 @@ func NewHandlerProvider(
 
 func (p HandlerProvider) Get(
 	platform boshplatform.Platform,
-	dirProvider boshdir.Provider,
+	blobManager blobstore.BlobManagerInterface,
 ) (handler boshhandler.Handler, err error) {
 	if p.handler != nil {
 		handler = p.handler
@@ -53,7 +53,7 @@ func (p HandlerProvider) Get(
 		handler = NewNatsHandler(p.settingsService, natsClient, p.logger, platform)
 	case "https":
 		mbusKeyPair := p.settingsService.GetSettings().Env.Bosh.Mbus.Cert
-		handler = NewHTTPSHandler(mbusURL, mbusKeyPair, p.logger, platform.GetFs(), dirProvider, p.auditLogger)
+		handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, p.logger, p.auditLogger)
 	default:
 		err = bosherr.Errorf("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
 	}
