@@ -44,6 +44,11 @@ vagrant ssh-config > $base/tmp/vagrant-config
 echo -e "\n Installing ginkgo..."
 $bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
 
+echo -e "\n Rebuilding agent..."
+vagrant rsync
+vagrant ssh -c "sudo /home/vagrant/go/src/github.com/cloudfoundry/bosh-agent/integration/assets/install-agent.sh"
+vagrant ssh -c "sudo /home/vagrant/go/src/github.com/cloudfoundry/bosh-agent/integration/assets/install-fake-registry.sh"
+
 echo -e "\n Running tests..."
 focus=""
 if [ ! -z "$BOSH_AGENT_INTEGRATION_FOCUS" ]; then
