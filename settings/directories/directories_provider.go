@@ -78,10 +78,6 @@ func (p Provider) JobBinDir(jobName string) string {
 	return filepath.Join(p.JobsDir(), jobName, "bin")
 }
 
-func (p Provider) MicroStore() string {
-	return filepath.Join(p.BaseDir(), "micro_bosh", "data", "cache")
-}
-
 func (p Provider) SettingsDir() string {
 	return filepath.Join(p.BoshDir(), "settings")
 }
