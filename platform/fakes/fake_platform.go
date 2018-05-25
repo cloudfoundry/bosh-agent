@@ -165,6 +165,8 @@ type FakePlatform struct {
 
 	SetupRecordsJSONPermissionPath string
 	SetupRecordsJSONPermissionErr  error
+
+	ShutdownCalled bool
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -499,4 +501,10 @@ func (p *FakePlatform) AssociateDiskArgsForCall(i int) (string, boshsettings.Dis
 func (p *FakePlatform) SetupRecordsJSONPermission(path string) error {
 	p.SetupRecordsJSONPermissionPath = path
 	return p.SetupRecordsJSONPermissionErr
+}
+
+func (p *FakePlatform) Shutdown() error {
+	p.ShutdownCalled = true
+
+	return nil
 }

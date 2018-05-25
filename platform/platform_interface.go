@@ -90,4 +90,6 @@ type Platform interface {
 
 	RemoveDevTools(packageFileListPath string) error
 	RemoveStaticLibraries(packageFileListPath string) error
+
+	Shutdown() error
 }

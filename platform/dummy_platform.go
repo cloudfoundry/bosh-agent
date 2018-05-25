@@ -496,3 +496,7 @@ func (p dummyPlatform) existingMounts() ([]mount, error) {
 func (p dummyPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
+
+func (p dummyPlatform) Shutdown() error {
+	return nil
+}

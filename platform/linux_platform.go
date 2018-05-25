@@ -1538,3 +1538,12 @@ func newInsufficientSpaceError(spaceFound, spaceRequired uint64) insufficientSpa
 func (i insufficientSpaceError) Error() string {
 	return fmt.Sprintf("Insufficient remaining disk space (%dB) for ephemeral partition (min: %dB)", i.spaceFound, i.spaceRequired)
 }
+
+func (p linux) Shutdown() error {
+	_, _, _, err := p.cmdRunner.RunCommand("shutdown", "-P", "0")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Failed to shutdown")
+	}
+
+	return nil
+}

@@ -3474,6 +3474,25 @@ unit: sectors
 		})
 	})
 
+	Describe("Shutdown", func() {
+		It("shuts the system down", func() {
+			err := platform.Shutdown()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"shutdown", "-P", "0"}))
+		})
+
+		It("fails if shutdown command failed", func() {
+			result := fakesys.FakeCmdResult{
+				Error: errors.New("shutdown: Unable to shutdown system"),
+			}
+			cmdRunner.AddCmdResult("shutdown -P 0", result)
+
+			err := platform.Shutdown()
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
 	Describe("RemoveDevTools", func() {
 		It("removes listed packages", func() {
 			devToolsListPath := path.Join(dirProvider.EtcDir(), "dev_tools_file_list")

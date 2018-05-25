@@ -53,6 +53,7 @@ func NewFactory(
 			"ssh":             NewSSH(settingsService, platform, dirProvider, logger),
 			"fetch_logs":      NewFetchLogs(compressor, copier, blobstore, dirProvider),
 			"update_settings": NewUpdateSettings(settingsService, platform, certManager, logger),
+			"shutdown":        NewShutdown(platform),
 
 			// Job management
 			"prepare":    NewPrepare(applier),

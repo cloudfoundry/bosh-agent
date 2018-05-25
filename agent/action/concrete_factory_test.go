@@ -218,6 +218,12 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(NewDeleteARPEntries(platform)))
 	})
 
+	It("shutdown", func() {
+		action, err := factory.Create("shutdown")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewShutdown(platform)))
+	})
+
 	It("sync_dns", func() {
 		action, err := factory.Create("sync_dns")
 		Expect(err).ToNot(HaveOccurred())
