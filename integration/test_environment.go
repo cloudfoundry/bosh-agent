@@ -479,7 +479,7 @@ func (t *TestEnvironment) RunCommand3(command string) (string, string, int, erro
 }
 
 func (t *TestEnvironment) CreateBlobFromAsset(assetPath, blobID string) error {
-	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data")
+	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/blobs")
 	if err != nil {
 		return err
 	}
@@ -488,7 +488,7 @@ func (t *TestEnvironment) CreateBlobFromAsset(assetPath, blobID string) error {
 		"vagrant",
 		"ssh",
 		"-c",
-		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/%s", t.assetsDir(), assetPath, blobID),
+		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/blobs/%s", t.assetsDir(), assetPath, blobID),
 	)
 
 	return err

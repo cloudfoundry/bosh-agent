@@ -327,6 +327,15 @@ func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobMan
 		app.logger,
 	)
 
+	if blobstoreSettings.Type == boshblob.BlobstoreTypeLocal {
+		dir := app.dirProvider.BlobsDir()
+		app.logger.Debug(app.logTag, fmt.Sprintf("Resetting local blobstore path to %s", dir))
+
+		blobstoreSettings.Options = map[string]interface{}{
+			"blobstore_path": dir,
+		}
+	}
+
 	blobstore, err := blobstoreProvider.Get(blobstoreSettings.Type, blobstoreSettings.Options)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Getting blobstore")
