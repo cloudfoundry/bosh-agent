@@ -115,6 +115,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up root disk")
 	}
 
+	if err = boot.platform.SetupRAMDisk(); err != nil {
+		return bosherr.WrapError(err, "Setting up RAM disk")
+	}
+
 	if err = boot.platform.SetupLogDir(); err != nil {
 		return bosherr.WrapError(err, "Setting up log dir")
 	}

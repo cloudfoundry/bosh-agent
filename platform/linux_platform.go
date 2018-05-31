@@ -922,6 +922,32 @@ func (p linux) SetupTmpDir() error {
 	return nil
 }
 
+func (p linux) SetupRAMDisk() error {
+	for _, mnt := range []string{"/dev/shm", "/run/shm"} {
+		err := p.remountNoExec(mnt)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p linux) remountNoExec(mountPt string) error {
+	mounter := p.diskManager.GetMounter()
+
+	_, mounted, err := mounter.IsMountPoint(mountPt)
+	if err != nil {
+		return err
+	}
+
+	if mounted {
+		return mounter.RemountInPlace(mountPt, "noexec")
+	}
+
+	return nil
+}
+
 func (p linux) SetupLogDir() error {
 	logDir := "/var/log"
 

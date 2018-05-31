@@ -216,6 +216,10 @@ func (p dummyPlatform) SetupLogDir() error {
 	return nil
 }
 
+func (p dummyPlatform) SetupRAMDisk() error {
+	return nil
+}
+
 func (p dummyPlatform) SetupBlobsDir() error {
 
 	blobsDir := p.dirProvider.BlobsDir()

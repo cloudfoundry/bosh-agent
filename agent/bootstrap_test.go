@@ -416,6 +416,25 @@ var _ = Describe("bootstrap", func() {
 			})
 		})
 
+		It("sets up the RAM disk", func() {
+			err := bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(platform.SetupRAMDiskCallCount()).To(Equal(1))
+		})
+
+		Context("when setting up the RAM disk", func() {
+			BeforeEach(func() {
+				platform.SetupRAMDiskReturns(errors.New("ramdisk-failure"))
+			})
+
+			It("returns an error if setting up the RAM disk fails", func() {
+				err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(platform.SetupRAMDiskCallCount()).To(Equal(1))
+				Expect(err.Error()).To(ContainSubstring("ramdisk-failure"))
+			})
+		})
+
 		Context("setting user passwords", func() {
 			BeforeEach(func() {
 				settingsService.Settings.Env.Bosh.KeepRootPassword = false

@@ -356,6 +356,10 @@ func (p WindowsPlatform) SetupHomeDir() error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupRAMDisk() error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupTmpDir() error {
 	boshTmpDir := p.dirProvider.TmpDir()
 

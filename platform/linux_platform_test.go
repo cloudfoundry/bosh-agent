@@ -2192,6 +2192,110 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
+	Describe("SetupRAMDisk", func() {
+		Context("when /dev/shm exists as a mount", func() {
+			BeforeEach(func() {
+				mounter.IsMountPointStub = func(path string) (string, bool, error) {
+					if path == "/dev/shm" {
+						return "something", true, nil
+					}
+
+					return "", false, nil
+				}
+			})
+
+			It("remounts /dev/shm with the noexec flag", func() {
+				err := platform.SetupRAMDisk()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(mounter.IsMountPointCallCount()).To(Equal(2))
+				Expect(mounter.IsMountPointArgsForCall(0)).To(Equal("/dev/shm"))
+				Expect(mounter.IsMountPointArgsForCall(1)).To(Equal("/run/shm"))
+
+				Expect(mounter.RemountInPlaceCallCount()).To(Equal(1))
+				mntPt, options := mounter.RemountInPlaceArgsForCall(0)
+				Expect(mntPt).To(Equal("/dev/shm"))
+				Expect(options).To(Equal([]string{"noexec"}))
+			})
+
+			Context("when remounting /dev/shm fails", func() {
+				BeforeEach(func() {
+					mounter.RemountInPlaceReturns(errors.New("boom"))
+				})
+
+				It("returns an error", func() {
+					err := platform.SetupRAMDisk()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
+
+		Context("when /run/shm exists as a mount", func() {
+			BeforeEach(func() {
+				mounter.IsMountPointStub = func(path string) (string, bool, error) {
+					if path == "/run/shm" {
+						return "something", true, nil
+					}
+
+					return "", false, nil
+				}
+			})
+
+			It("remounts /run/shm with the noexec flag", func() {
+				err := platform.SetupRAMDisk()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(mounter.IsMountPointCallCount()).To(Equal(2))
+				Expect(mounter.IsMountPointArgsForCall(0)).To(Equal("/dev/shm"))
+				Expect(mounter.IsMountPointArgsForCall(1)).To(Equal("/run/shm"))
+
+				Expect(mounter.RemountInPlaceCallCount()).To(Equal(1))
+				mntPt, options := mounter.RemountInPlaceArgsForCall(0)
+				Expect(mntPt).To(Equal("/run/shm"))
+				Expect(options).To(Equal([]string{"noexec"}))
+			})
+
+			Context("when remounting /run/shm fails", func() {
+				BeforeEach(func() {
+					mounter.RemountInPlaceReturns(errors.New("boom"))
+				})
+
+				It("returns an error", func() {
+					err := platform.SetupRAMDisk()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
+
+		Context("when neither /dev/shm or /run/shm exist as a mount point", func() {
+			BeforeEach(func() {
+				mounter.IsMountPointReturns("", false, nil)
+			})
+
+			It("does not remount anything", func() {
+				err := platform.SetupRAMDisk()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(mounter.IsMountPointCallCount()).To(Equal(2))
+				Expect(mounter.IsMountPointArgsForCall(0)).To(Equal("/dev/shm"))
+				Expect(mounter.IsMountPointArgsForCall(1)).To(Equal("/run/shm"))
+
+				Expect(mounter.RemountInPlaceCallCount()).To(Equal(0))
+			})
+		})
+
+		Context("when detecting the mount point fails", func() {
+			BeforeEach(func() {
+				mounter.IsMountPointReturns("", false, errors.New("boom"))
+			})
+
+			It("returns an error", func() {
+				err := platform.SetupRAMDisk()
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("SetupLogDir", func() {
 		act := func() error {
 			return platform.SetupLogDir()
