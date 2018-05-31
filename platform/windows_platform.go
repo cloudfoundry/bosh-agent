@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -44,6 +45,7 @@ type WindowsPlatform struct {
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 	auditLogger            AuditLogger
 	uuidGenerator          boshuuid.Generator
+	logger                 boshlog.Logger
 }
 
 func NewWindowsPlatform(
@@ -75,6 +77,7 @@ func NewWindowsPlatform(
 		defaultNetworkResolver: defaultNetworkResolver,
 		auditLogger:            auditLogger,
 		uuidGenerator:          uuidGenerator,
+		logger:                 logger,
 	}
 }
 
@@ -330,6 +333,35 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) error {
 	if devicePath == "" {
+		return nil
+	}
+
+	checkFreeSpaceAction := &powershellAction{
+		commandArgs: []string{
+			"Get-Disk",
+			devicePath,
+			"|",
+			"Select",
+			"-ExpandProperty",
+			"LargestFreeExtent",
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to get free disk space on disk %s: %%s", devicePath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	freeSpaceOutput, err := checkFreeSpaceAction.run()
+
+	if err != nil {
+		return err
+	}
+
+	freeSpace, _ := strconv.Atoi(strings.TrimSpace(freeSpaceOutput))
+	if freeSpace < 1024*1024 {
+		p.logger.Warn(
+			"WindowsPlatform",
+			"Unable to create ephemeral partition on disk %s, as there isn't enough free space",
+			devicePath,
+		)
 		return nil
 	}
 

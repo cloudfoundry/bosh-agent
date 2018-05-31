@@ -35,6 +35,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var (
@@ -97,11 +98,13 @@ var _ = Describe("WindowsPlatform", func() {
 		certManager                *certfakes.FakeManager
 		auditLogger                *fakeplat.FakeAuditLogger
 
-		logger boshlog.Logger
+		logger    boshlog.Logger
+		logBuffer *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
-		logger = boshlog.NewLogger(boshlog.LevelNone)
+		logBuffer = gbytes.NewBuffer()
+		logger = boshlog.NewWriterLogger(boshlog.LevelDebug, logBuffer)
 
 		collector = &fakestats.FakeCollector{}
 		fs = fakesys.NewFakeFileSystem()
@@ -459,6 +462,17 @@ At line:1 char:50
    MSFT_Partition) [Add-PartitionAccessPath], CimException
     + FullyQualifiedErrorId : StorageWMI 5,Add-PartitionAccessPath
 `
+			getDiskError = `Get-Disk : No MSFT_Disk objects found with property 'Number' equal to '0'.
+Verify the value of the property and retry.
+At line:1 char:1
++ Get-Disk 0
++ ~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (0:UInt32) [Get-Disk], CimJobExc
+   eption
+    + FullyQualifiedErrorId : CmdletizationQuery_NotFound_Number,Get-Disk
+`
+			largeRemainingDiskOutput = `31404851200
+`
 			newLineOutput = `
 `
 		)
@@ -489,6 +503,10 @@ At line:1 char:50
 			addAccessPathCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
 
 			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
 				getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir),
 				fakesys.FakeCmdResult{Stdout: newLineOutput},
 			)
@@ -514,20 +532,74 @@ At line:1 char:50
 
 		It("does nothing if partition exists on root disk with accesspath to data dir", func() {
 			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
 				getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
-			Expect(err).NotTo(HaveOccurred())
 
+			Expect(err).NotTo(HaveOccurred())
 			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
+		})
+
+		It("logs a warning and doesn't create a partition if there is less than 1MB of free disk space", func() {
+			smallRemainingDiskOutput := fmt.Sprintf(`%s
+`, (1024*1024)-1)
+
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: smallRemainingDiskOutput},
+			)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logBuffer).To(gbytes.Say(
+				"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
+			))
+			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
+		})
+
+		It("returns an error when getting free disk space command fails", func() {
+			cmdRunnerError := errors.New("It went wrong")
+			expandedCommand := getDiskLargestFreeExtentCommand(diskNumber)
+
+			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError.Error()),
+			))
+		})
+
+		It("returns an error when Get-Disk command returns non-zero exit code", func() {
+			cmdStderr := getDiskError
+
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
+			)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to get free disk space on disk %s: %s", diskNumber, cmdStderr),
+			))
 		})
 
 		It("returns an error when Getting existing partition check command fails", func() {
 			cmdRunnerError := errors.New("It went wrong")
 			expandedCommand := getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir)
 
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -540,6 +612,10 @@ At line:1 char:50
 		It("returns an error when New-Partition command returns non-zero exit code", func() {
 			cmdStderr := partitionError
 
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
 			cmdRunner.AddCmdResult(newPartitionCommand(diskNumber), fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197})
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -551,6 +627,10 @@ At line:1 char:50
 			cmdRunnerError := errors.New("It went wrong")
 			expandedCommand := newPartitionCommand(diskNumber)
 
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -567,6 +647,10 @@ At line:1 char:50
 			partitionNumberOutput = fmt.Sprintf(`%s
 `, partitionNumber)
 
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
 			cmdRunner.AddCmdResult(
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
@@ -586,6 +670,10 @@ At line:1 char:50
 			expandedCommand := formatVolumeCommand(diskNumber, partitionNumber)
 
 			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
@@ -599,6 +687,10 @@ At line:1 char:50
 		})
 
 		It(`returns an error when creating C:\var\vcap\data fails`, func() {
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
 			cmdRunner.AddCmdResult(
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
@@ -614,6 +706,10 @@ At line:1 char:50
 
 		It("Returns an error when Add-PartitionAccessPath fails", func() {
 			cmdStderr := accessPathError
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
 			cmdRunner.AddCmdResult(
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
@@ -633,6 +729,10 @@ At line:1 char:50
 			cmdRunnerError := errors.New("Failure")
 			expandedCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
 
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
 			cmdRunner.AddCmdResult(
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
@@ -674,6 +774,10 @@ func getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir string) s
 		diskNumber,
 		dataDir,
 	)
+}
+
+func getDiskLargestFreeExtentCommand(diskNumber string) string {
+	return fmt.Sprintf(`powershell.exe Get-Disk %s | Select -ExpandProperty LargestFreeExtent`, diskNumber)
 }
 
 var _ = Describe("BOSH User Commands", func() {

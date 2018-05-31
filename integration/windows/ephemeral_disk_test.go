@@ -9,162 +9,220 @@ import (
 	"strings"
 	"time"
 
+	"strconv"
+
 	"github.com/masterzen/winrm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("EphemeralDisk", func() {
+	const dataDir = `C:\var\vcap\data\`
+
 	var (
-		client          *winrm.Client
 		partitionNumber string
+		agent           *windowsEnvironment
 	)
 
 	BeforeEach(func() {
 		endpoint := winrm.NewEndpoint(os.Getenv("AGENT_ELASTIC_IP"), 5985, false, false, nil, nil, nil, 0)
-		var err error
-		client, err = winrm.NewClient(endpoint, "vagrant", "Password123!")
+		client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
 		Expect(err).NotTo(HaveOccurred())
 		partitionNumber = ""
+
+		agent = &windowsEnvironment{
+			dataDir: dataDir,
+			client:  client,
+		}
 	})
 
 	AfterEach(func() {
-		if client != nil {
-			ensureBoshAgentStopped(client)
-			ensureFolderDoesntExist(client, "C:\\var\\vcap\\data")
+		if agent != nil {
+			agent.ensureAgentServiceStopped()
+			agent.ensureDataDirDoesntExist()
 
 			if partitionNumber != "" {
-				runPowershellCommand(
-					client,
+				agent.runPowershellCommand(
 					fmt.Sprintf("Remove-Partition -DiskNumber 0 -PartitionNumber %s -Confirm:$false", partitionNumber),
 				)
 			}
-			runPowershellCommand(
-				client,
-				"Resize-Partition -DriveLetter C -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMax",
-			)
+			agent.ensureRootPartitionAtMaxSize()
 
-			runPowershellCommand(client, "cp c:\\bosh\\agent-configuration\\agent.json c:\\bosh\\agent.json")
-			runPowershellCommand(client, "c:\\bosh\\service_wrapper.exe start")
+			agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\agent.json c:\\bosh\\agent.json")
+			agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 		}
 	})
 
 	It("when root disk can be used as ephemeral, creates a partition on root disk", func() {
-		ensureBoshAgentStopped(client)
-		ensureFolderDoesntExist(client, "C:\\var\\vcap\\data")
+		agent.ensureAgentServiceStopped()
+		agent.ensureDataDirDoesntExist()
+		agent.shrinkRootPartition()
+		agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
 
-		shrinkRootPartition(client)
-		runPowershellCommand(client, "cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
-		runPowershellCommand(client, "c:\\bosh\\service_wrapper.exe start")
+		agent.ensureVolumeHasDataDir("0")
 
-		ensureVolumeHasAccessPathOnDisk(client, `C:\var\vcap\data\`, "0")
-
-		partitionNumber = getPartitionNumberForAccessPath(client, `C:\var\vcap\data\`)
+		partitionNumber = agent.getDataDirPartitionNumber()
 
 	})
 
 	It("when root disk partition is already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
-		ensureBoshAgentStopped(client)
-		ensureFolderDoesntExist(client, "C:\\var\\vcap\\data")
+		agent.ensureAgentServiceStopped()
+		agent.ensureDataDirDoesntExist()
+		agent.shrinkRootPartition()
+		agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
 
-		shrinkRootPartition(client)
-		runPowershellCommand(client, "cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
-		runPowershellCommand(client, "c:\\bosh\\service_wrapper.exe start")
+		agent.ensureVolumeHasDataDir("0")
 
-		ensureVolumeHasAccessPathOnDisk(client, `C:\var\vcap\data\`, "0")
+		partitionNumber = agent.getDataDirPartitionNumber()
 
-		partitionNumber = getPartitionNumberForAccessPath(client, `C:\var\vcap\data\`)
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 
-		runPowershellCommand(client, "c:\\bosh\\service_wrapper.exe restart")
+		Consistently(agent.agentProcessRunningFunc(), 60*time.Second).Should(
+			BeTrue(),
+			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
+		)
+	})
 
-		Consistently(
-			func() bool {
-				exitCode, err := client.Run(
-					winrm.Powershell("Get-Process -ProcessName bosh-agent"),
-					ioutil.Discard, ioutil.Discard,
-				)
-				return exitCode == 0 && err == nil
-			},
-			60*time.Second,
-		).Should(BeTrue(), fmt.Sprint(`Expected bosh-agent to be running after restart`))
+	It("when there is no remaining space on the root disk, no partititon is created, a warning is logged", func() {
+		agent.ensureAgentServiceStopped()
+		agent.ensureDataDirDoesntExist()
+
+		agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+
+		Consistently(agent.agentProcessRunningFunc(), 60*time.Second).Should(
+			BeTrue(),
+			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
+		)
+		Expect(agent.partitionWithDataDirExists("0")).To(BeFalse())
+
+		expectedLogMessage := fmt.Sprintf(
+			"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
+		)
+		matchingLogOutput := agent.runPowershellCommand(fmt.Sprintf(
+			`Select-String -Path C:\var\vcap\bosh\log\service_wrapper.err.log -Pattern "%s"`,
+			expectedLogMessage,
+		))
+		Expect(strings.TrimSpace(matchingLogOutput)).NotTo(BeEmpty())
 	})
 })
 
-func shrinkRootPartition(client *winrm.Client) {
-	runPowershellCommand(
-		client,
+type windowsEnvironment struct {
+	client  *winrm.Client
+	dataDir string
+}
+
+func (e *windowsEnvironment) shrinkRootPartition() {
+	e.runPowershellCommandWithOffset(
+		1,
 		"Get-Partition -DriveLetter C | Resize-Partition -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMin",
 	)
 }
 
-func getPartitionNumberForAccessPath(client *winrm.Client, accessPath string) string {
-	return strings.TrimSpace(runPowershellCommand(
-		client,
-		fmt.Sprintf(`Get-Partition | Where AccessPaths -Contains "%s" | Select -ExpandProperty PartitionNumber`, accessPath),
+func (e *windowsEnvironment) ensureRootPartitionAtMaxSize() {
+	freeSpaceOutput := e.runPowershellCommandWithOffset(
+		1,
+		"Get-Disk $(Get-Partition -DriveLetter C | Select -ExpandProperty DiskNumber) | Select -ExpandProperty LargestFreeExtent",
+	)
+
+	freeSpace, err := strconv.Atoi(strings.TrimSpace(freeSpaceOutput))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	if freeSpace > 0 {
+		e.runPowershellCommandWithOffset(
+			1,
+			"Resize-Partition -DriveLetter C -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMax",
+		)
+	}
+}
+
+func (e *windowsEnvironment) getDataDirPartitionNumber() string {
+	return strings.TrimSpace(e.runPowershellCommandWithOffset(
+		1,
+		fmt.Sprintf(`Get-Partition | Where AccessPaths -Contains "%s" | Select -ExpandProperty PartitionNumber`, e.dataDir),
 	))
 }
 
-func ensureVolumeHasAccessPathOnDisk(client *winrm.Client, accessPath, diskNumber string) {
-	EventuallyWithOffset(
-		1,
-		func() bool {
-			stdout := runPowershellCommand(
-				client,
-				fmt.Sprintf(
-					`Get-Partition | where AccessPaths -Contains "%s" | format-list -property DiskNumber`,
-					accessPath,
-				),
-			)
+func (e *windowsEnvironment) partitionWithDataDirExists(diskNumber string) bool {
+	return e.partitionWithDataDirExistsWithOffset(1, diskNumber)
+}
 
-			matched, err := regexp.MatchString(fmt.Sprintf(`DiskNumber : %s`, diskNumber), stdout)
-			Expect(err).NotTo(HaveOccurred())
-			return matched
-		},
-		60*time.Second,
-	).Should(
-		BeTrue(),
+func (e *windowsEnvironment) partitionWithDataDirExistsWithOffset(offset int, diskNumber string) bool {
+	stdout := e.runPowershellCommandWithOffset(
+		offset+1,
 		fmt.Sprintf(
-			`Expected partition with access path %s to be present on disk %s`,
-			accessPath, diskNumber,
+			`Get-Partition | where AccessPaths -Contains "%s" | Select -ExpandProperty DiskNumber`,
+			e.dataDir,
 		),
+	)
+
+	return strings.TrimSpace(stdout) == diskNumber
+}
+
+func (e *windowsEnvironment) partitionWithDataDirExistsFuncWithOffset(offset int, diskNumber string) func() bool {
+	return func() bool {
+		return e.partitionWithDataDirExistsWithOffset(offset+1, diskNumber)
+	}
+}
+
+func (e *windowsEnvironment) partitionWithDataDirExistsFunc(diskNumber string) func() bool {
+	return e.partitionWithDataDirExistsFuncWithOffset(1, diskNumber)
+}
+
+func (e *windowsEnvironment) ensureVolumeHasDataDir(diskNumber string) {
+	EventuallyWithOffset(1, e.partitionWithDataDirExistsFunc(diskNumber), 60*time.Second).Should(
+		BeTrue(),
+		fmt.Sprintf(`Expected partition with access path %s to be present on disk %s`, e.dataDir, diskNumber),
 	)
 }
 
-func ensureBoshAgentStopped(client *winrm.Client) {
-	stdout := runPowershellCommand(client, "Get-Service -Name bosh-agent | Format-List -Property Status")
+func (e *windowsEnvironment) ensureAgentServiceStopped() {
+	stdout := e.runPowershellCommandWithOffset(1, "Get-Service -Name bosh-agent | Format-List -Property Status")
 
 	running, err := regexp.MatchString("Running", stdout)
-	Expect(err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	if running {
-		runPowershellCommand(client, "c:\\bosh\\service_wrapper.exe stop")
+		e.runPowershellCommandWithOffset(1, "c:\\bosh\\service_wrapper.exe stop")
 	}
 }
 
-func ensureFolderDoesntExist(client *winrm.Client, path string) {
-	testPathOutput := runPowershellCommand(client, "Test-Path -Path %s", path)
+func (e *windowsEnvironment) ensureDataDirDoesntExist() {
+	testPathOutput := e.runPowershellCommand("Test-Path -Path %s", e.dataDir)
 
 	exists := strings.TrimSpace(testPathOutput) == "True"
 	if exists {
-		runPowershellCommand(client, "Remove-Item %s -Force -Recurse", path)
+		e.runPowershellCommandWithOffset(1, "Remove-Item %s -Force -Recurse", e.dataDir)
 	}
 }
 
-func runPowershellCommand(client *winrm.Client, cmd string, cmdFmtArgs ...interface{}) string {
+func (e *windowsEnvironment) agentProcessRunningFunc() func() bool {
+	return func() bool {
+		exitCode, err := e.client.Run(
+			winrm.Powershell("Get-Process -ProcessName bosh-agent"),
+			ioutil.Discard, ioutil.Discard,
+		)
+		return exitCode == 0 && err == nil
+	}
+}
+
+func (e *windowsEnvironment) runPowershellCommandWithOffset(offset int, cmd string, cmdFmtArgs ...interface{}) string {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	exitCode, err := client.Run(winrm.Powershell(fmt.Sprintf(cmd, cmdFmtArgs...)), stdout, stderr)
+	exitCode, err := e.client.Run(winrm.Powershell(fmt.Sprintf(cmd, cmdFmtArgs...)), stdout, stderr)
 
 	outString := stdout.String()
 	errString := stderr.String()
 
-	Expect(err).NotTo(
+	ExpectWithOffset(offset+1, err).NotTo(
 		HaveOccurred(),
 		fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, outString, errString),
 	)
-	Expect(exitCode).To(
+	ExpectWithOffset(offset+1, exitCode).To(
 		BeZero(),
 		fmt.Sprintf(
 			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`,
@@ -176,4 +234,8 @@ func runPowershellCommand(client *winrm.Client, cmd string, cmdFmtArgs ...interf
 	)
 
 	return outString
+}
+
+func (e *windowsEnvironment) runPowershellCommand(cmd string, cmdFmtArgs ...interface{}) string {
+	return e.runPowershellCommandWithOffset(1, cmd, cmdFmtArgs...)
 }
