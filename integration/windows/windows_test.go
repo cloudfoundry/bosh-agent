@@ -75,7 +75,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		fs              boshsys.FileSystem
 		natsClient      *NatsClient
 		blobstoreClient utils.BlobClient
-		cmdRunner       CmdRunner
+		cmdRunner       boshsys.CmdRunner
 	)
 
 	BeforeEach(func() {
