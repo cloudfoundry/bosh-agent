@@ -108,7 +108,7 @@ var _ = Describe("compile_package", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 
-		out, err := testEnvironment.RunCommand("sudo zgrep 'dummy contents of dummy package file' /var/vcap/data/* | wc -l")
+		out, err := testEnvironment.RunCommand(`sudo /bin/bash -c "zgrep 'dummy contents of dummy package file' /var/vcap/data/blobs/* | wc -l"`)
 		Expect(err).NotTo(HaveOccurred(), out)
 		// we expect both the original, uncompiled copy and the compiled copy of the package to exist
 		Expect(strings.Trim(out, "\n")).To(Equal("2"))
