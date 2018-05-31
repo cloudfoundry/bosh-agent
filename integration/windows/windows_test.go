@@ -336,11 +336,14 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("can reset the system time using a specified NTP server", func() {
-		cmdRunner.RunCommand("time", "12:12:12.0")
-		cmdRunner.RunCommand("w32tm", "/resync")
+		_, _, exitCode, _ := cmdRunner.RunCommand("time", "12:12:12.0")
+		Expect(exitCode).To(Equal(0))
+		_, _, exitCode, _ = cmdRunner.RunCommand("w32tm", "/resync")
+		Expect(exitCode).To(Equal(0))
+
 		stdout, stderr, exitCode, err := cmdRunner.RunCommand("time", "/t")
 
-		Expect(stdout).NotTo(Equal("TEST12:12 PM"))
+		Expect(stdout).To(Equal("TEST12:12 PM"))
 		Expect(stderr).To(BeEmpty())
 		Expect(exitCode).To(Equal(0))
 		Expect(err).NotTo(HaveOccurred())
