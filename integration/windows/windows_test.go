@@ -340,7 +340,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		cmdRunner.RunCommand("w32tm", "/resync")
 		stdout, stderr, exitCode, err := cmdRunner.RunCommand("time", "/t")
 
-		Expect(stdout).NotTo(Equal("12:12 PM"))
+		Expect(stdout).NotTo(Equal("TEST12:12 PM"))
 		Expect(stderr).To(BeEmpty())
 		Expect(exitCode).To(Equal(0))
 		Expect(err).NotTo(HaveOccurred())
