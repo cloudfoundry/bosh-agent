@@ -82,11 +82,11 @@ var _ = Describe("apply", func() {
 		_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "blobs/abc0")
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
 		Expect(err).NotTo(HaveOccurred())
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "blobs/abc1")
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
 		Expect(err).NotTo(HaveOccurred())
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "blobs/abc2")
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
 		Expect(err).NotTo(HaveOccurred())
 
 		applySpec := applyspec.ApplySpec{
