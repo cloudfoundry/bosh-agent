@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	bosherrors "github.com/cloudfoundry/bosh-utils/errors"
@@ -15,16 +15,24 @@ import (
 var _ = Describe("ListDisk", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
-		platform        *fakeplatform.FakePlatform
+		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
 		action          ListDiskAction
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		platform = fakeplatform.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		action = NewListDisk(settingsService, platform, logger)
+
+		platform.IsPersistentDiskMountedStub = func(settings boshsettings.DiskSettings) (bool, error) {
+			if settings.Path == "/dev/sdb" || settings.Path == "/dev/sdc" {
+				return true, nil
+			}
+
+			return false, nil
+		}
 	})
 
 	AssertActionIsSynchronousForVersion(action, 1)
@@ -38,8 +46,6 @@ var _ = Describe("ListDisk", func() {
 	AssertActionIsNotCancelable(action)
 
 	It("list disk run", func() {
-		platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
-
 		settingsService.Settings.Disks = boshsettings.Disks{
 			Persistent: map[string]interface{}{
 				"volume-1": "/dev/sda",
@@ -65,7 +71,6 @@ var _ = Describe("ListDisk", func() {
 		})
 
 		It("should return an error", func() {
-			platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
 			settingsService.Settings.Disks = boshsettings.Disks{
 				Persistent: map[string]interface{}{
 					"volume-1": "/dev/sda",
@@ -79,5 +84,4 @@ var _ = Describe("ListDisk", func() {
 			Expect(err.Error()).To(ContainSubstring("Refreshing the settings: fake loadsettings error"))
 		})
 	})
-
 })

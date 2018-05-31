@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/disk/diskfakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
@@ -16,13 +16,13 @@ import (
 var _ = Describe("Diskutil", func() {
 	var (
 		diskUtil      Util
-		mounter       *fakedisk.FakeMounter
+		mounter       *diskfakes.FakeMounter
 		fs            *fakesys.FakeFileSystem
 		fakeCmdRunner *fakesys.FakeCmdRunner
 	)
 
 	BeforeEach(func() {
-		mounter = &fakedisk.FakeMounter{}
+		mounter = &diskfakes.FakeMounter{}
 		fs = fakesys.NewFakeFileSystem()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		diskUtil = NewUtil(fakeCmdRunner, mounter, fs, logger)
@@ -49,8 +49,11 @@ var _ = Describe("Diskutil", func() {
 				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(mounter.MountPartitionPaths).To(ContainElement("fake-disk-path"))
-				Expect(mounter.MountMountPoints).To(ContainElement("fake-tempdir"))
+				Expect(mounter.MountCallCount()).To(Equal(1))
+				partition, mntPt, options := mounter.MountArgsForCall(0)
+				Expect(partition).To(Equal("fake-disk-path"))
+				Expect(mntPt).To(Equal("fake-tempdir"))
+				Expect(options).To(BeEmpty())
 			})
 
 			It("returns contents of files on a disk", func() {
@@ -65,7 +68,8 @@ var _ = Describe("Diskutil", func() {
 				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(mounter.UnmountPartitionPathOrMountPoint).To(Equal("fake-tempdir"))
+				Expect(mounter.UnmountCallCount()).To(Equal(1))
+				Expect(mounter.UnmountArgsForCall(0)).To(Equal("fake-tempdir"))
 			})
 
 			It("cleans up temporary directory after reading settings", func() {
@@ -84,7 +88,7 @@ var _ = Describe("Diskutil", func() {
 			})
 
 			It("returns error if it fails to mount disk path", func() {
-				mounter.MountErr = errors.New("fake-mount-error")
+				mounter.MountReturns(errors.New("fake-mount-error"))
 
 				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).To(HaveOccurred())
@@ -99,7 +103,7 @@ var _ = Describe("Diskutil", func() {
 			})
 
 			It("returns error if it fails to unmount disk path", func() {
-				mounter.UnmountErr = errors.New("fake-unmount-error")
+				mounter.UnmountReturns(false, errors.New("fake-unmount-error"))
 
 				_, err := diskUtil.GetFilesContents("fake-disk-path", []string{"fake-file-path-1"})
 				Expect(err).To(HaveOccurred())

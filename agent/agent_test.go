@@ -17,8 +17,9 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/platform/vitals/vitalsfakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
@@ -29,7 +30,7 @@ func init() {
 		var (
 			logger           boshlog.Logger
 			handler          *fakembus.FakeHandler
-			platform         *fakeplatform.FakePlatform
+			platform         *platformfakes.FakePlatform
 			actionDispatcher *fakeagent.FakeActionDispatcher
 			jobSupervisor    *fakejobsuper.FakeJobSupervisor
 			specService      *fakeas.FakeV1Service
@@ -37,18 +38,23 @@ func init() {
 			uuidGenerator    *fakeuuid.FakeGenerator
 			timeService      *fakeclock.FakeClock
 			agent            Agent
+			vitalService     *vitalsfakes.FakeService
 		)
 
 		BeforeEach(func() {
 			logger = boshlog.NewLogger(boshlog.LevelNone)
 			handler = &fakembus.FakeHandler{}
-			platform = fakeplatform.NewFakePlatform()
+			platform = &platformfakes.FakePlatform{}
 			actionDispatcher = &fakeagent.FakeActionDispatcher{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			specService = fakeas.NewFakeV1Service()
 			settingsService = &fakesettings.FakeSettingsService{}
 			uuidGenerator = &fakeuuid.FakeGenerator{}
 			timeService = fakeclock.NewFakeClock(time.Now())
+			vitalService = &vitalsfakes.FakeService{}
+
+			platform.GetVitalsServiceReturns(vitalService)
+
 			agent = New(
 				logger,
 				handler,
@@ -108,9 +114,9 @@ func init() {
 
 					jobSupervisor.StatusStatus = "fake-state"
 
-					platform.FakeVitalsService.GetVitals = boshvitals.Vitals{
+					vitalService.GetReturns(boshvitals.Vitals{
 						Load: []string{"a", "b", "c"},
-					}
+					}, nil)
 				})
 
 				expectedJobName := "fake-job"
@@ -200,7 +206,7 @@ func init() {
 
 			Context("when the agent fails to get vitals for a heartbeat", func() {
 				BeforeEach(func() {
-					platform.FakeVitalsService.GetErr = errors.New("fake-vitals-service-error")
+					vitalService.GetReturns(boshvitals.Vitals{}, errors.New("fake-vitals-service-error"))
 					handler.KeepOnRunning()
 				})
 

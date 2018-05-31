@@ -1,23 +1,23 @@
 package infrastructure_test
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"time"
 
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-
-	"encoding/base64"
-
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
 var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)
@@ -26,7 +26,7 @@ func describeHTTPMetadataService() {
 	var (
 		metadataHeaders map[string]string
 		dnsResolver     *fakeinf.FakeDNSResolver
-		platform        *fakeplat.FakePlatform
+		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
 		metadataService MetadataService
 	)
@@ -35,7 +35,7 @@ func describeHTTPMetadataService() {
 		metadataHeaders = make(map[string]string)
 		metadataHeaders["key"] = "value"
 		dnsResolver = &fakeinf.FakeDNSResolver{}
-		platform = fakeplat.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		metadataService = NewHTTPMetadataService("fake-metadata-host", metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
 	})
@@ -43,15 +43,16 @@ func describeHTTPMetadataService() {
 	ItEnsuresMinimalNetworkSetup := func(subject func() (string, error)) {
 		Context("when no networks are configured", func() {
 			BeforeEach(func() {
-				platform.GetConfiguredNetworkInterfacesInterfaces = []string{}
+				platform.GetConfiguredNetworkInterfacesReturns([]string{}, nil)
 			})
 
 			It("sets up DHCP network", func() {
 				_, err := subject()
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(platform.SetupNetworkingCalled).To(BeTrue())
-				Expect(platform.SetupNetworkingNetworks).To(Equal(boshsettings.Networks{
+				Expect(platform.SetupNetworkingCallCount()).To(Equal(1))
+				networks := platform.SetupNetworkingArgsForCall(0)
+				Expect(networks).To(Equal(boshsettings.Networks{
 					"eth0": boshsettings.Network{
 						Type: "dynamic",
 					},
@@ -60,7 +61,7 @@ func describeHTTPMetadataService() {
 
 			Context("when setting up DHCP fails", func() {
 				BeforeEach(func() {
-					platform.SetupNetworkingErr = errors.New("fake-network-error")
+					platform.SetupNetworkingReturns(errors.New("fake-network-error"))
 				})
 
 				It("returns an error", func() {

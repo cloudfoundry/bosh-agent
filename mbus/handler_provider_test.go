@@ -4,22 +4,25 @@ import (
 	gourl "net/url"
 	"reflect"
 
-	"github.com/cloudfoundry/yagnats"
+	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/mbus"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/yagnats"
+
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("HandlerProvider", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
-		platform        *fakeplatform.FakePlatform
+		platform        *platformfakes.FakePlatform
+		auditLogger     *platformfakes.FakeAuditLogger
 		logger          boshlog.Logger
 		provider        HandlerProvider
 		blobManager     *fakeblobstore.FakeBlobManagerInterface
@@ -28,8 +31,9 @@ var _ = Describe("HandlerProvider", func() {
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		platform = fakeplatform.NewFakePlatform()
-		provider = NewHandlerProvider(settingsService, logger, fakeplatform.NewFakeAuditLogger())
+		platform = &platformfakes.FakePlatform{}
+		auditLogger = &platformfakes.FakeAuditLogger{}
+		provider = NewHandlerProvider(settingsService, logger, auditLogger)
 		blobManager = &fakeblobstore.FakeBlobManagerInterface{}
 	})
 
@@ -51,7 +55,7 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
 			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
-			expectedHandler := NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, fakeplatform.NewFakeAuditLogger())
+			expectedHandler := NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, auditLogger)
 			httpsHandler, ok := handler.(HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(httpsHandler).To(Equal(expectedHandler))
@@ -71,7 +75,7 @@ var _ = Describe("HandlerProvider", func() {
 				settingsService.Settings.Env.Bosh.Mbus.Cert,
 				blobManager,
 				logger,
-				fakeplatform.NewFakeAuditLogger(),
+				auditLogger,
 			)
 			httpsHandler, ok := handler.(HTTPSHandler)
 			Expect(ok).To(BeTrue())

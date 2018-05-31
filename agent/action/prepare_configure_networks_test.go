@@ -3,23 +3,24 @@ package action_test
 import (
 	"errors"
 
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 )
 
 var _ = Describe("prepareConfigureNetworks", func() {
 	var (
 		action          PrepareConfigureNetworksAction
-		platform        *fakeplatform.FakePlatform
+		platform        *platformfakes.FakePlatform
 		settingsService *fakesettings.FakeSettingsService
 	)
 
 	BeforeEach(func() {
-		platform = fakeplatform.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 		settingsService = &fakesettings.FakeSettingsService{}
 		action = NewPrepareConfigureNetworks(platform, settingsService)
 	})
@@ -46,17 +47,20 @@ var _ = Describe("prepareConfigureNetworks", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp).To(Equal("ok"))
 
-				Expect(platform.PrepareForNetworkingChangeCalled).To(BeTrue())
+				Expect(platform.PrepareForNetworkingChangeCallCount()).To(Equal(1))
 			})
 
-			It("returns error if preparing for networking change fails", func() {
-				platform.PrepareForNetworkingChangeErr = errors.New("fake-prepare-error")
+			Context("when preparing for networking change fails", func() {
+				BeforeEach(func() {
+					platform.PrepareForNetworkingChangeReturns(errors.New("fake-prepare-error"))
+				})
 
-				resp, err := action.Run()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-prepare-error"))
-
-				Expect(resp).To(Equal(""))
+				It("returns error if preparing for networking change fails", func() {
+					resp, err := action.Run()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-prepare-error"))
+					Expect(resp).To(Equal(""))
+				})
 			})
 		})
 
@@ -77,7 +81,7 @@ var _ = Describe("prepareConfigureNetworks", func() {
 				_, err := action.Run()
 				Expect(err).To(HaveOccurred())
 
-				Expect(platform.PrepareForNetworkingChangeCalled).To(BeFalse())
+				Expect(platform.PrepareForNetworkingChangeCallCount()).To(Equal(0))
 			})
 		})
 	})

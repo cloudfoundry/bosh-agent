@@ -10,10 +10,13 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	"github.com/cloudfoundry/bosh-utils/logger"
+
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 var _ = Describe("UpdateSettings", func() {
@@ -22,15 +25,20 @@ var _ = Describe("UpdateSettings", func() {
 		certManager       *certfakes.FakeManager
 		settingsService   *fakesettings.FakeSettingsService
 		log               logger.Logger
-		platform          *fakeplatform.FakePlatform
+		platform          *platformfakes.FakePlatform
 		newUpdateSettings boshsettings.UpdateSettings
+		fileSystem        *fakesys.FakeFileSystem
 	)
 
 	BeforeEach(func() {
 		log = logger.NewLogger(logger.LevelNone)
 		certManager = new(certfakes.FakeManager)
 		settingsService = &fakesettings.FakeSettingsService{}
-		platform = fakeplatform.NewFakePlatform()
+
+		platform = &platformfakes.FakePlatform{}
+		fileSystem = fakesys.NewFakeFileSystem()
+		platform.GetFsReturns(fileSystem)
+
 		action = NewUpdateSettings(settingsService, platform, certManager, log)
 		newUpdateSettings = boshsettings.UpdateSettings{}
 	})
@@ -59,7 +67,7 @@ var _ = Describe("UpdateSettings", func() {
 
 	Context("when it cannot write the update settings file", func() {
 		BeforeEach(func() {
-			platform.Fs.WriteFileError = errors.New("Fake write error")
+			fileSystem.WriteFileError = errors.New("Fake write error")
 		})
 
 		It("returns an error", func() {
@@ -162,6 +170,7 @@ var _ = Describe("UpdateSettings", func() {
 
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result).To(Equal("updated"))
+		Expect(platform.AssociateDiskCallCount()).To(Equal(2))
 
 		actualDiskName, actualDiskSettings := platform.AssociateDiskArgsForCall(0)
 		Expect(actualDiskName).To(Equal(diskAssociation.Name))
@@ -173,8 +182,6 @@ var _ = Describe("UpdateSettings", func() {
 			HostDeviceID: "fake-disk-host-device-id",
 			Path:         "fake-disk-path",
 		}))
-
-		Expect(platform.AssociateDiskCallCount).To(Equal(2))
 
 		actualDiskName, actualDiskSettings = platform.AssociateDiskArgsForCall(1)
 		Expect(actualDiskName).To(Equal(diskAssociation2.Name))

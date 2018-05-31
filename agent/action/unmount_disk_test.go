@@ -1,27 +1,28 @@
 package action_test
 
 import (
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
-
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("UnmountDiskAction", func() {
 	var (
-		platform *fakeplatform.FakePlatform
+		platform *platformfakes.FakePlatform
 		action   UnmountDiskAction
 
 		expectedDiskSettings boshsettings.DiskSettings
 	)
 
 	BeforeEach(func() {
-		platform = fakeplatform.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 
 		settingsService := &fakesettings.FakeSettingsService{
 			Settings: boshsettings.Settings{
@@ -72,23 +73,25 @@ var _ = Describe("UnmountDiskAction", func() {
 	AssertActionIsNotCancelable(action)
 
 	It("unmount disk when the disk is mounted", func() {
-		platform.UnmountPersistentDiskDidUnmount = true
+		platform.UnmountPersistentDiskReturns(true, nil)
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
 		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[] Partitioner:}"}`)
 
-		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
+		Expect(platform.UnmountPersistentDiskCallCount()).To(Equal(1))
+		Expect(platform.UnmountPersistentDiskArgsForCall(0)).To(Equal(expectedDiskSettings))
 	})
 
 	It("unmount disk when the disk is not mounted", func() {
-		platform.UnmountPersistentDiskDidUnmount = false
+		platform.UnmountPersistentDiskReturns(false, nil)
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
 		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[] Partitioner:} is not mounted"}`)
 
-		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
+		Expect(platform.UnmountPersistentDiskCallCount()).To(Equal(1))
+		Expect(platform.UnmountPersistentDiskArgsForCall(0)).To(Equal(expectedDiskSettings))
 	})
 
 	It("unmount disk when device path not found", func() {

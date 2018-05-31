@@ -2,24 +2,24 @@ package mbus_test
 
 import (
 	"bytes"
-	"errors"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"github.com/cloudfoundry/yagnats"
-	"github.com/cloudfoundry/yagnats/fakeyagnats"
-
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"io/ioutil"
 
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+	"github.com/cloudfoundry/yagnats"
+	"github.com/cloudfoundry/yagnats/fakeyagnats"
+
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+
+	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -30,7 +30,8 @@ func init() {
 			client          *fakeyagnats.FakeYagnats
 			logger          boshlog.Logger
 			handler         boshhandler.Handler
-			platform        *fakeplatform.FakePlatform
+			platform        *platformfakes.FakePlatform
+			auditLogger     *platformfakes.FakeAuditLogger
 			loggerOutBuf    *bytes.Buffer
 		)
 
@@ -46,7 +47,9 @@ func init() {
 			logger = boshlog.NewWriterLogger(boshlog.LevelError, loggerOutBuf)
 
 			client = fakeyagnats.New()
-			platform = fakeplatform.NewFakePlatform()
+			platform = &platformfakes.FakePlatform{}
+			auditLogger = &platformfakes.FakeAuditLogger{}
+			platform.GetAuditLoggerReturns(auditLogger)
 			handler = NewNatsHandler(settingsService, client, logger, platform)
 		})
 
@@ -91,7 +94,7 @@ func init() {
 				})
 				defer handler.Stop()
 
-				Expect(platform.LastIPDeletedFromARP).To(Equal("127.0.0.1"))
+				Expect(platform.DeleteARPEntryWithIPArgsForCall(0)).To(Equal("127.0.0.1"))
 				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
@@ -102,18 +105,18 @@ func init() {
 				})
 				defer handler.Stop()
 
-				Expect(platform.LastIPDeletedFromARP).To(BeEmpty())
+				Expect(platform.DeleteARPEntryWithIPCallCount()).To(Equal(0))
 				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
 			It("logs error and proceeds if it fails to clean up ip-mac address cache for nats", func() {
-				platform.DeleteARPEntryWithIPErr = errors.New("failed to run")
+				platform.DeleteARPEntryWithIPReturns(errors.New("failed to run"))
 				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					return nil
 				})
 				defer handler.Stop()
 
-				Expect(platform.LastIPDeletedFromARP).To(Equal("127.0.0.1"))
+				Expect(platform.DeleteARPEntryWithIPArgsForCall(0)).To(Equal("127.0.0.1"))
 				Expect(loggerOutBuf).To(ContainSubstring("ERROR - Cleaning ip-mac address cache for: 127.0.0.1"))
 				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
@@ -263,9 +266,8 @@ func init() {
 						Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 					})
 
-					auditLogger := platform.GetAuditLogger().(*fakeplatform.FakeAuditLogger)
-
-					Expect(auditLogger.GetDebugMsgs()[0]).To(ContainSubstring("CEF:0|CloudFoundry|BOSH|1|agent_api|ping|1|duser=reply to me! src=127.0.0.1 spt=1234"))
+					msg := `CEF:0|CloudFoundry|BOSH|1|agent_api|ping|1|duser=reply to me! src=127.0.0.1 spt=1234`
+					Expect(auditLogger.DebugArgsForCall(0)).To(ContainSubstring(msg))
 				})
 
 				Context("when NATs handler has an error", func() {
@@ -282,10 +284,10 @@ func init() {
 							Payload: []byte(`bad json`),
 						})
 
-						auditLogger := platform.GetAuditLogger().(*fakeplatform.FakeAuditLogger)
-
-						Expect(auditLogger.GetDebugMsgs()).To(BeEmpty())
-						Expect(auditLogger.GetErrMsgs()[0]).To(ContainSubstring(`cs1=Unmarshalling JSON payload: invalid character 'b' looking for beginning of value cs1Label=statusReason`))
+						Expect(auditLogger.DebugCallCount()).To(Equal(0))
+						Expect(auditLogger.ErrCallCount()).To(Equal(1))
+						msg := `cs1=Unmarshalling JSON payload: invalid character 'b' looking for beginning of value cs1Label=statusReason`
+						Expect(auditLogger.ErrArgsForCall(0)).To(ContainSubstring(msg))
 					})
 				})
 
@@ -307,10 +309,10 @@ func init() {
 							Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 						})
 
-						auditLogger := platform.GetAuditLogger().(*fakeplatform.FakeAuditLogger)
-
-						Expect(auditLogger.GetDebugMsgs()).To(BeEmpty())
-						Expect(auditLogger.GetErrMsgs()[0]).To(ContainSubstring(`cs1=Oh noes! cs1Label=statusReason`))
+						Expect(auditLogger.DebugCallCount()).To(Equal(0))
+						Expect(auditLogger.ErrCallCount()).To(Equal(1))
+						msg := `cs1=Oh noes! cs1Label=statusReason`
+						Expect(auditLogger.ErrArgsForCall(0)).To(ContainSubstring(msg))
 					})
 				})
 			})

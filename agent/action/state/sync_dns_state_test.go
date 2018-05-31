@@ -7,9 +7,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
@@ -19,15 +19,17 @@ var _ = Describe("SyncDNSState", func() {
 		syncDNSState      SyncDNSState
 		fakeFileSystem    *fakesys.FakeFileSystem
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
-		fakePlatform      *fakeplatform.FakePlatform
+		fakePlatform      *platformfakes.FakePlatform
 
 		path string
 		err  error
 	)
 
 	BeforeEach(func() {
-		fakePlatform = fakeplatform.NewFakePlatform()
-		fakeFileSystem = fakePlatform.GetFs().(*fakesys.FakeFileSystem)
+		fakePlatform = &platformfakes.FakePlatform{}
+		fakeFileSystem = fakesys.NewFakeFileSystem()
+		fakePlatform.GetFsReturns(fakeFileSystem)
+
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 		path = "/blobstore-dns-records.json"
 		syncDNSState = NewSyncDNSState(fakePlatform, path, fakeUUIDGenerator)
@@ -93,8 +95,11 @@ var _ = Describe("SyncDNSState", func() {
 			})
 
 			Context("when setting the file permissions fails", func() {
+				BeforeEach(func() {
+					fakePlatform.SetupRecordsJSONPermissionReturns(errors.New("failed to set permissions"))
+				})
+
 				It("returns an error", func() {
-					fakePlatform.SetupRecordsJSONPermissionErr = errors.New("failed to set permissions")
 					err = syncDNSState.SaveState(localDNSState)
 					Expect(err).To(MatchError("setting permissions of blobstore DNS state: failed to set permissions"))
 				})
@@ -133,8 +138,8 @@ var _ = Describe("SyncDNSState", func() {
 			It("should set platorm specific permissions", func() {
 				err = syncDNSState.SaveState(localDNSState)
 				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakePlatform.SetupRecordsJSONPermissionPath).To(Equal(path + "fake-generated-uuid"))
+				Expect(fakePlatform.SetupRecordsJSONPermissionCallCount()).To(Equal(1))
+				Expect(fakePlatform.SetupRecordsJSONPermissionArgsForCall(0)).To(Equal(path + "fake-generated-uuid"))
 			})
 		})
 	})

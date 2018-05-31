@@ -1,21 +1,26 @@
 package action_test
 
 import (
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ReleaseApplySpec", func() {
 	var (
-		platform *fakeplatform.FakePlatform
-		action   ReleaseApplySpecAction
+		platform   *platformfakes.FakePlatform
+		action     ReleaseApplySpecAction
+		fileSystem *fakesys.FakeFileSystem
 	)
 
 	BeforeEach(func() {
-		platform = fakeplatform.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
+		fileSystem = fakesys.NewFakeFileSystem()
+		platform.GetFsReturns(fileSystem)
 		action = NewReleaseApplySpec(platform)
 	})
 
@@ -27,7 +32,7 @@ var _ = Describe("ReleaseApplySpec", func() {
 	AssertActionIsNotCancelable(action)
 
 	It("run", func() {
-		err := platform.GetFs().WriteFileString("/var/vcap/micro/apply_spec.json", `{"json":["objects"]}`)
+		err := fileSystem.WriteFileString("/var/vcap/micro/apply_spec.json", `{"json":["objects"]}`)
 		Expect(err).ToNot(HaveOccurred())
 
 		value, err := action.Run()

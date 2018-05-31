@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
@@ -18,14 +18,14 @@ import (
 var _ = Describe("MountDiskAction", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
-		platform        *fakeplatform.FakePlatform
+		platform        *platformfakes.FakePlatform
 		action          MountDiskAction
 		logger          boshlog.Logger
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		platform = fakeplatform.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 		dirProvider := boshdirs.NewProvider("/fake-base-dir")
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		action = NewMountDisk(settingsService, platform, dirProvider, logger)
@@ -56,19 +56,24 @@ var _ = Describe("MountDiskAction", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(result).To(Equal(map[string]string{}))
 
-						Expect(platform.MountPersistentDiskSettings).To(Equal(boshsettings.DiskSettings{
+						Expect(platform.MountPersistentDiskCallCount()).To(Equal(1))
+
+						diskSettings, mntPt := platform.MountPersistentDiskArgsForCall(0)
+						Expect(diskSettings).To(Equal(boshsettings.DiskSettings{
 							ID:       "fake-disk-cid",
 							VolumeID: "fake-volume-id",
 							Path:     "fake-device-path",
 						}))
-						Expect(platform.MountPersistentDiskMountPoint).To(boshassert.MatchPath("/fake-base-dir/store"))
+						Expect(mntPt).To(boshassert.MatchPath("/fake-base-dir/store"))
 					})
 				})
 
 				Context("when mounting fails", func() {
-					It("returns error after trying to mount store directory", func() {
-						platform.MountPersistentDiskErr = errors.New("fake-mount-persistent-disk-err")
+					BeforeEach(func() {
+						platform.MountPersistentDiskReturns(errors.New("fake-mount-persistent-disk-err"))
+					})
 
+					It("returns error after trying to mount store directory", func() {
 						_, err := action.Run("fake-disk-cid")
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))

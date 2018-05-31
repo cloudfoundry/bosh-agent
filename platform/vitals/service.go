@@ -10,6 +10,8 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
+//go:generate counterfeiter . Service
+
 type Service interface {
 	Get() (vitals Vitals, err error)
 }

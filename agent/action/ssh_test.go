@@ -1,48 +1,44 @@
 package action_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"errors"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-func buildSSHAction(settingsService boshsettings.Service) (*fakeplatform.FakePlatform, SSHAction) {
-	platform := fakeplatform.NewFakePlatform()
-	dirProvider := boshdirs.NewProvider("/foo")
-	logger := boshlog.NewLogger(boshlog.LevelNone)
-	action := NewSSH(settingsService, platform, dirProvider, logger)
-	return platform, action
-}
-
 var _ = Describe("SSHAction", func() {
 	var (
-		platform        *fakeplatform.FakePlatform
+		platform        *platformfakes.FakePlatform
 		settingsService boshsettings.Service
 		action          SSHAction
 	)
 
-	Context("Action setup", func() {
-		BeforeEach(func() {
-			settingsService = &fakesettings.FakeSettingsService{}
-			platform, action = buildSSHAction(settingsService)
-		})
+	BeforeEach(func() {
+		settingsService = &fakesettings.FakeSettingsService{}
 
-		AssertActionIsNotAsynchronous(action)
-		AssertActionIsNotPersistent(action)
-		AssertActionIsLoggable(action)
-
-		AssertActionIsNotResumable(action)
-		AssertActionIsNotCancelable(action)
+		platform = &platformfakes.FakePlatform{}
+		dirProvider := boshdirs.NewProvider("/foo")
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		action = NewSSH(settingsService, platform, dirProvider, logger)
 	})
+
+	AssertActionIsNotAsynchronous(action)
+	AssertActionIsNotPersistent(action)
+	AssertActionIsLoggable(action)
+
+	AssertActionIsNotResumable(action)
+	AssertActionIsNotCancelable(action)
 
 	Describe("Run", func() {
 		Context("setupSSH", func() {
@@ -70,16 +66,16 @@ var _ = Describe("SSHAction", func() {
 					"fake-net": boshsettings.Network{IP: defaultIP},
 				}
 
-				platform, action = buildSSHAction(settingsService)
-
-				platform.GetHostPublicKeyValue = platformPublicKeyValue
-				platform.GetHostPublicKeyError = platformPublicKeyErr
+				platform.GetHostPublicKeyReturns(platformPublicKeyValue, platformPublicKeyErr)
 
 				params = SSHParams{
 					User:      "fake-user",
 					PublicKey: "fake-public-key",
 				}
 
+				dirProvider := boshdirs.NewProvider("/foo")
+				logger := boshlog.NewLogger(boshlog.LevelNone)
+				action = NewSSH(settingsService, platform, dirProvider, logger)
 				response, err = action.Run("setup", params)
 			})
 
@@ -96,13 +92,24 @@ var _ = Describe("SSHAction", func() {
 
 			Context("with an empty password", func() {
 				It("should create user with an empty password", func() {
-					Expect(platform.CreateUserUsername).To(Equal("fake-user"))
-					Expect(platform.CreateUserBasePath).To(boshassert.MatchPath("/foo/bosh_ssh"))
-					Expect(platform.AddUserToGroupsGroups["fake-user"]).To(Equal(
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(platform.CreateUserCallCount()).To(Equal(1))
+					username, userPath := platform.CreateUserArgsForCall(0)
+					Expect(username).To(Equal("fake-user"))
+					Expect(userPath).To(boshassert.MatchPath("/foo/bosh_ssh"))
+
+					Expect(platform.AddUserToGroupsCallCount()).To(Equal(1))
+					user, groups := platform.AddUserToGroupsArgsForCall(0)
+					Expect(user).To(Equal("fake-user"))
+					Expect(groups).To(Equal(
 						[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup, boshsettings.SudoersGroup, boshsettings.SshersGroup},
 					))
-					Expect(platform.SetupSSHPublicKeys["fake-user"]).To(ConsistOf("fake-public-key"))
-					Expect(err).ToNot(HaveOccurred())
+
+					Expect(platform.SetupSSHCallCount()).To(Equal(1))
+					publicKeys, user := platform.SetupSSHArgsForCall(0)
+					Expect(user).To(Equal("fake-user"))
+					Expect(publicKeys).To(ConsistOf("fake-public-key"))
 				})
 			})
 
@@ -135,7 +142,9 @@ var _ = Describe("SSHAction", func() {
 			It("should delete ephemeral user", func() {
 				response, err := action.Run("cleanup", SSHParams{UserRegex: "^foobar.*"})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(platform.DeleteEphemeralUsersMatchingRegex).To(Equal("^foobar.*"))
+
+				Expect(platform.DeleteEphemeralUsersMatchingCallCount()).To(Equal(1))
+				Expect(platform.DeleteEphemeralUsersMatchingArgsForCall(0)).To(Equal("^foobar.*"))
 
 				// Make sure empty ip field is not included in the response
 				boshassert.MatchesJSONMap(GinkgoT(), response, map[string]interface{}{

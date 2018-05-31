@@ -24,6 +24,9 @@ type AuditLoggerProvider interface {
 	ProvideErrorLogger() (*log.Logger, error)
 }
 
+//go:generate counterfeiter . Platform
+//go:generate counterfeiter . AuditLogger
+
 type Platform interface {
 	GetFs() boshsys.FileSystem
 	GetRunner() boshsys.CmdRunner
