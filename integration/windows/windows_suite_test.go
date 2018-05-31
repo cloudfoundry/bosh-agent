@@ -48,6 +48,7 @@ func tarFixtures(fixturesDir, filename string) error {
 		"pipe.exe",
 		"agent-configuration/agent.json",
 		"agent-configuration/root-partition-agent.json",
+		"agent-configuration/root-partition-agent-ephemeral-disabled.json",
 		"agent-configuration/settings.json",
 	}
 

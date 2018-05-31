@@ -44,7 +44,8 @@ type provider struct {
 }
 
 type Options struct {
-	Linux LinuxOptions
+	Linux   LinuxOptions
+	Windows WindowsOptions
 }
 
 func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock, auditLogger AuditLogger) Provider {
@@ -188,7 +189,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			windowsNetManager,
 			windowsCertManager,
 			devicePathResolver,
-			options.Linux,
+			options,
 			logger,
 			defaultNetworkResolver,
 			auditLogger,

@@ -30,6 +30,11 @@ import (
 // if we ever change the Admin user name for security reasons.
 var administratorUserName = "Administrator"
 
+type WindowsOptions struct {
+	// Feature flag during ephemeral disk support rollout
+	EnableEphemeralDiskMounting bool
+}
+
 type WindowsPlatform struct {
 	collector              boshstats.Collector
 	fs                     boshsys.FileSystem
@@ -40,7 +45,7 @@ type WindowsPlatform struct {
 	vitalsService          boshvitals.Service
 	netManager             boshnet.Manager
 	devicePathResolver     boshdpresolv.DevicePathResolver
-	options                LinuxOptions
+	options                Options
 	certManager            boshcert.Manager
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 	auditLogger            AuditLogger
@@ -56,7 +61,7 @@ func NewWindowsPlatform(
 	netManager boshnet.Manager,
 	certManager boshcert.Manager,
 	devicePathResolver boshdpresolv.DevicePathResolver,
-	options LinuxOptions,
+	options Options,
 	logger boshlog.Logger,
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
 	auditLogger AuditLogger,
@@ -332,7 +337,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 }
 
 func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) error {
-	if devicePath == "" {
+	if devicePath == "" || !p.options.Windows.EnableEphemeralDiskMounting {
 		return nil
 	}
 
@@ -543,7 +548,7 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 }
 
 func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string) {
-	if diskSettings.Path == "" && p.options.CreatePartitionIfNoEphemeralDisk {
+	if diskSettings.Path == "" && p.options.Linux.CreatePartitionIfNoEphemeralDisk {
 		diskPath = "0"
 	}
 

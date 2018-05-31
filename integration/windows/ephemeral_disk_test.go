@@ -109,6 +109,33 @@ var _ = Describe("EphemeralDisk", func() {
 		))
 		Expect(strings.TrimSpace(matchingLogOutput)).NotTo(BeEmpty())
 	})
+
+	It("when the EphemeralDiskFeature flag is not set doesn't create any partitions, or send any warnings", func() {
+		agent.ensureAgentServiceStopped()
+		agent.ensureDataDirDoesntExist()
+		agent.shrinkRootPartition()
+		agent.runPowershellCommand(
+			"cp c:\\bosh\\agent-configuration\\root-partition-agent-ephemeral-disabled.json c:\\bosh\\agent.json",
+		)
+		agent.runPowershellCommand(`Remove-Item C:\var\vcap\bosh\log\service_wrapper.err.log`)
+
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+
+		Consistently(agent.agentProcessRunningFunc(), 60*time.Second).Should(
+			BeTrue(),
+			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
+		)
+		Expect(agent.partitionWithDataDirExists("0")).To(BeFalse())
+
+		unexpectedLogMessage := fmt.Sprintf(
+			"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
+		)
+		matchingLogOutput := agent.runPowershellCommand(fmt.Sprintf(
+			`Select-String -Path C:\var\vcap\bosh\log\service_wrapper.err.log -Pattern "%s"`,
+			unexpectedLogMessage,
+		))
+		Expect(strings.TrimSpace(matchingLogOutput)).To(BeEmpty())
+	})
 })
 
 type windowsEnvironment struct {

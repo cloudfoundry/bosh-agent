@@ -3,9 +3,6 @@
     "Linux": {
       "CreatePartitionIfNoEphemeralDisk": true,
       "DevicePathResolutionType": "virtio"
-    },
-    "Windows": {
-      "EnableEphemeralDiskMounting": true
     }
   },
   "Infrastructure": {

@@ -91,7 +91,7 @@ var _ = Describe("WindowsPlatform", func() {
 		dirProvider                boshdirs.Provider
 		netManager                 *fakenet.FakeManager
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
-		options                    LinuxOptions
+		options                    Options
 		platform                   Platform
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		fakeUUIDGenerator          *fakeuuidgen.FakeGenerator
@@ -112,7 +112,7 @@ var _ = Describe("WindowsPlatform", func() {
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		netManager = &fakenet.FakeManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
-		options = LinuxOptions{}
+		options = Options{}
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		certManager = new(certfakes.FakeManager)
 		auditLogger = fakeplat.NewFakeAuditLogger()
@@ -419,8 +419,10 @@ var _ = Describe("WindowsPlatform", func() {
 				netManager,
 				certManager,
 				devicePathResolver,
-				LinuxOptions{
-					CreatePartitionIfNoEphemeralDisk: true,
+				Options{
+					Linux: LinuxOptions{
+						CreatePartitionIfNoEphemeralDisk: true,
+					},
 				},
 				logger,
 				fakeDefaultNetworkResolver,
@@ -487,6 +489,25 @@ At line:1 char:1
 			partitionNumberOutput = fmt.Sprintf(`%s
 `, partitionNumber)
 			dataDir = fmt.Sprintf(`C:%s\`, dirProvider.DataDir())
+
+			platform = NewWindowsPlatform(
+				collector,
+				fs,
+				cmdRunner,
+				dirProvider,
+				netManager,
+				certManager,
+				devicePathResolver,
+				Options{
+					Windows: WindowsOptions{
+						EnableEphemeralDiskMounting: true,
+					},
+				},
+				logger,
+				fakeDefaultNetworkResolver,
+				auditLogger,
+				fakeUUIDGenerator,
+			)
 		})
 
 		It("does nothing when path is empty", func() {
@@ -558,7 +579,7 @@ At line:1 char:1
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(logBuffer).To(gbytes.Say(
+			Eventually(logBuffer).Should(gbytes.Say(
 				"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
 			))
 			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
@@ -744,6 +765,31 @@ At line:1 char:1
 
 			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
 		})
+
+		It("when the ephemeral disk mounting feature flag is not present doesn't do anything", func() {
+			platform = NewWindowsPlatform(
+				collector,
+				fs,
+				cmdRunner,
+				dirProvider,
+				netManager,
+				certManager,
+				devicePathResolver,
+				Options{},
+				logger,
+				fakeDefaultNetworkResolver,
+				auditLogger,
+				fakeUUIDGenerator,
+			)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			Consistently(logBuffer).ShouldNot(gbytes.Say(
+				"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
+			))
+			Expect(cmdRunner.RunCommands).To(BeEmpty())
+		})
 	})
 })
 
@@ -837,7 +883,7 @@ var _ = Describe("BOSH User Commands", func() {
 				netManager,
 				certManager,
 				devicePathResolver,
-				LinuxOptions{},
+				Options{},
 				logger,
 				fakeDefaultNetworkResolver,
 				auditLogger,
@@ -955,7 +1001,7 @@ var _ = Describe("BOSH User Commands", func() {
 				netManager,
 				certManager,
 				devicePathResolver,
-				LinuxOptions{},
+				Options{},
 				logger,
 				fakeDefaultNetworkResolver,
 				auditLogger,
