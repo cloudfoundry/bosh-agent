@@ -11,6 +11,33 @@
   revision = "02e53af36e6c978af692887ed449b74026d76fec"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/Azure/go-ntlmssp"
+  packages = ["."]
+  revision = "4b934ac9dad38d389d34f0b98d98b2467c422012"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/ChrisTrenkamp/goxpath"
+  packages = [
+    ".",
+    "internal/execxp",
+    "internal/execxp/findutil",
+    "internal/execxp/intfns",
+    "internal/xsort",
+    "lexer",
+    "parser",
+    "parser/pathexpr",
+    "tree",
+    "tree/xmltree",
+    "tree/xmltree/xmlbuilder",
+    "tree/xmltree/xmlele",
+    "tree/xmltree/xmlnode",
+    "xconst"
+  ]
+  revision = "c385f95c6022e7756e91beac5f5510872f7dcb7d"
+
+[[projects]]
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
   revision = "7da180ee92d8bd8bb8c37fc560e673e6557c392f"
@@ -121,6 +148,29 @@
   packages = ["proto"]
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/masterzen/azure-sdk-for-go"
+  packages = [
+    "core/http",
+    "core/tls"
+  ]
+  revision = "ee4f0065d00cd12b542f18f5bc45799e88163b12"
+
+[[projects]]
+  name = "github.com/masterzen/simplexml"
+  packages = ["dom"]
+  revision = "95ba30457eb1121fa27753627c774c7cd4e90083"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/masterzen/winrm"
+  packages = [
+    ".",
+    "soap"
+  ]
+  revision = "7e40f93ae939004a1ef3bd5ff5c88c756ee762bb"
 
 [[projects]]
   branch = "master"
@@ -254,6 +304,7 @@
     "ed25519",
     "ed25519/internal/edwards25519",
     "internal/chacha20",
+    "md4",
     "poly1305",
     "ssh",
     "ssh/terminal"
@@ -318,6 +369,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8c8f4048b5628851c8bd9ce1292d2d03abf7bae1089b547aab286430e9ecf783"
+  inputs-digest = "6582e9fa9c9be04e7e5c6ba1bfbc29fc10a9aed6b2c52a2874c81315a7e9d3f2"
   solver-name = "gps-cdcl"
   solver-version = 1

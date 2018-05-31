@@ -188,6 +188,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			windowsNetManager,
 			windowsCertManager,
 			devicePathResolver,
+			options.Linux,
 			logger,
 			defaultNetworkResolver,
 			auditLogger,

@@ -90,6 +90,7 @@ var _ = Describe("WindowsPlatform", func() {
 		dirProvider                boshdirs.Provider
 		netManager                 *fakenet.FakeManager
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
+		options                    LinuxOptions
 		platform                   Platform
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		fakeUUIDGenerator          *fakeuuidgen.FakeGenerator
@@ -108,6 +109,7 @@ var _ = Describe("WindowsPlatform", func() {
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		netManager = &fakenet.FakeManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
+		options = LinuxOptions{}
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		certManager = new(certfakes.FakeManager)
 		auditLogger = fakeplat.NewFakeAuditLogger()
@@ -121,6 +123,7 @@ var _ = Describe("WindowsPlatform", func() {
 			netManager,
 			certManager,
 			devicePathResolver,
+			options,
 			logger,
 			fakeDefaultNetworkResolver,
 			auditLogger,
@@ -397,7 +400,281 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("GetEphemeralDiskPath", func() {
+		It("returns empty string when disk settings path is empty", func() {
+			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+			Expect(diskPath).To(Equal(""))
+		})
+
+		It("returns 0 when disk settings path is empty and CreatePartitionIfNoEphemeralDisk is true", func() {
+			platform = NewWindowsPlatform(
+				collector,
+				fs,
+				cmdRunner,
+				dirProvider,
+				netManager,
+				certManager,
+				devicePathResolver,
+				LinuxOptions{
+					CreatePartitionIfNoEphemeralDisk: true,
+				},
+				logger,
+				fakeDefaultNetworkResolver,
+				auditLogger,
+				fakeUUIDGenerator,
+			)
+
+			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+			Expect(diskPath).To(Equal("0"))
+		})
+	})
+
+	Describe("SetupEphemeralDiskWithPath", func() {
+		const (
+			partitionError = `new-partition : Not enough available capacity
+At line:1 char:1
++ new-partition -DiskNumber 0 -UseMaximumSize
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (StorageWMI:ROOT/Microsoft/Windows
+   /Storage/MSFT_Disk) [New-Partition], CimException
+    + FullyQualifiedErrorId : StorageWMI 40000,New-Partition`
+			formatError = `get-partition : No MSFT_Partition objects found with property 'DiskNumber'
+equal to '4'.  Verify the value of the property and retry.
+At line:1 char:1
++ Get-Partition -DiskNumber 4 | Select-Object -Last 1 | Format-Volume
+-FileSystem  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (4:UInt32) [Get-Partition], CimJ
+   obException
+    + FullyQualifiedErrorId : CmdletizationQuery_NotFound_DiskNumber,Get-Parti
+   tion`
+			accessPathError = `add-partitionaccesspath : Invalid Parameter
+At line:1 char:50
++ get-partition -disknumber 0 -partitionnumber 3 | add-partitionaccesspath
+-access ...
++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (StorageWMI:ROOT/Microsoft/.../
+   MSFT_Partition) [Add-PartitionAccessPath], CimException
+    + FullyQualifiedErrorId : StorageWMI 5,Add-PartitionAccessPath
+`
+			newLineOutput = `
+`
+		)
+
+		var (
+			diskNumber, partitionNumber, partitionNumberOutput, dataDir string
+		)
+
+		BeforeEach(func() {
+			diskNumber = "0"
+			partitionNumber = "3"
+			partitionNumberOutput = fmt.Sprintf(`%s
+`, partitionNumber)
+			dataDir = fmt.Sprintf(`C:%s\`, dirProvider.DataDir())
+		})
+
+		It("does nothing when path is empty", func() {
+			diskNumber = ""
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+		})
+
+		It("partitions the root disk when disk is 0", func() {
+			partitionCommand := newPartitionCommand(diskNumber)
+			formatCommand := formatVolumeCommand(diskNumber, partitionNumber)
+			addAccessPathCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
+
+			cmdRunner.AddCmdResult(
+				getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir),
+				fakesys.FakeCmdResult{Stdout: newLineOutput},
+			)
+			cmdRunner.AddCmdResult(partitionCommand, fakesys.FakeCmdResult{Stdout: partitionNumberOutput})
+			cmdRunner.AddCmdResult(formatCommand, fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(addAccessPathCommand, fakesys.FakeCmdResult{})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(partitionCommand, " "))))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(formatCommand, " "))))
+
+			Expect(fs.MkdirAllCallCount).To(Equal(1))
+
+			Expect(fs.GetFileTestStat(dataDir)).To(
+				Equal(&fakesys.FakeFileStats{FileMode: 0600, FileType: fakesys.FakeFileTypeDir}),
+			)
+
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(addAccessPathCommand, " "))))
+		})
+
+		It("does nothing if partition exists on root disk with accesspath to data dir", func() {
+			cmdRunner.AddCmdResult(
+				getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
+		})
+
+		It("returns an error when Getting existing partition check command fails", func() {
+			cmdRunnerError := errors.New("It went wrong")
+			expandedCommand := getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir)
+
+			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError.Error()),
+			))
+		})
+
+		It("returns an error when New-Partition command returns non-zero exit code", func() {
+			cmdStderr := partitionError
+
+			cmdRunner.AddCmdResult(newPartitionCommand(diskNumber), fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(fmt.Sprintf("Failed to create partition on disk 0: %s", cmdStderr)))
+		})
+
+		It("returns an error when running new-partition command fails", func() {
+			cmdRunnerError := errors.New("It went wrong")
+			expandedCommand := newPartitionCommand(diskNumber)
+
+			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError.Error()),
+			))
+		})
+
+		It("returns an error when attempting to format returns a non-zero exit code", func() {
+			cmdStderr := formatError
+			diskNumber = "4"
+			partitionNumber = "8"
+			partitionNumberOutput = fmt.Sprintf(`%s
+`, partitionNumber)
+
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(
+				formatVolumeCommand(diskNumber, partitionNumber),
+				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
+			)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(fmt.Sprintf("Failed to format partition 8 on disk 4: %s", cmdStderr)))
+		})
+
+		It("returns an error when attempting to format command fails", func() {
+			cmdRunnerError := errors.New("It went wrong")
+			expandedCommand := formatVolumeCommand(diskNumber, partitionNumber)
+
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError.Error()),
+			))
+		})
+
+		It(`returns an error when creating C:\var\vcap\data fails`, func() {
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
+
+			mkdirErr := errors.New("So wrong")
+			fs.RegisterMkdirAllError(dataDir, mkdirErr)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			Expect(err).To(MatchError(fmt.Sprintf(`Failed to create %s: %s`, dataDir, mkdirErr)))
+		})
+
+		It("Returns an error when Add-PartitionAccessPath fails", func() {
+			cmdStderr := accessPathError
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir),
+				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to mount partition %s on disk %s at %s: %s", partitionNumber, diskNumber, dataDir, cmdStderr),
+			))
+		})
+
+		It("returns an error when attempting to add partition access path command fails", func() {
+			cmdRunnerError := errors.New("Failure")
+			expandedCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
+
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
+		})
+	})
 })
+
+func newPartitionCommand(diskNumber string) string {
+	return fmt.Sprintf(
+		"powershell.exe New-Partition -DiskNumber %s -UseMaximumSize | Select -ExpandProperty PartitionNumber",
+		diskNumber,
+	)
+}
+
+func formatVolumeCommand(diskNumber, partitionNumber string) string {
+	return fmt.Sprintf(
+		"powershell.exe Get-Partition -DiskNumber %s -PartitionNumber %s | Format-Volume -FileSystem NTFS -Confirm:$false",
+		diskNumber, partitionNumber,
+	)
+}
+
+func addPartitionAccessPathCommand(diskNumber, partitionNumber, accessPath string) string {
+	return fmt.Sprintf(
+		"powershell.exe Add-PartitionAccessPath -DiskNumber %s -PartitionNumber %s -AccessPath %s",
+		diskNumber, partitionNumber, accessPath,
+	)
+}
+
+func getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir string) string {
+	return fmt.Sprintf(
+		`powershell.exe Get-Partition -DiskNumber %s | where AccessPaths -Contains "%s" | Select -ExpandProperty PartitionNumber`,
+		diskNumber,
+		dataDir,
+	)
+}
 
 var _ = Describe("BOSH User Commands", func() {
 	const testUsername = boshsettings.EphemeralUserPrefix + "test_abc123"
@@ -456,6 +733,7 @@ var _ = Describe("BOSH User Commands", func() {
 				netManager,
 				certManager,
 				devicePathResolver,
+				LinuxOptions{},
 				logger,
 				fakeDefaultNetworkResolver,
 				auditLogger,
@@ -573,6 +851,7 @@ var _ = Describe("BOSH User Commands", func() {
 				netManager,
 				certManager,
 				devicePathResolver,
+				LinuxOptions{},
 				logger,
 				fakeDefaultNetworkResolver,
 				auditLogger,

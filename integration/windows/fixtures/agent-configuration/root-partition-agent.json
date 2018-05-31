@@ -1,0 +1,19 @@
+{
+  "Platform": {
+    "Linux": {
+      "CreatePartitionIfNoEphemeralDisk": true,
+      "DevicePathResolutionType": "virtio"
+    }
+  },
+  "Infrastructure": {
+    "Settings": {
+      "Sources": [
+        {
+          "Type": "File",
+          "SettingsPath": "C:\\bosh\\settings.json"
+        }
+      ],
+      "UseRegistry": true
+    }
+  }
+}
