@@ -263,6 +263,7 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(cmdRunner.RunCommands[1]).To(ContainElement(ContainSubstring("stop")))
 			ntpServers := strings.Join(servers, " ")
 			Expect(cmdRunner.RunCommands[2]).To(ContainElement(ContainSubstring(ntpServers)))
+			Expect(cmdRunner.RunCommands[2]).To(ContainElement(ContainSubstring("powershell.exe")))
 			Expect(cmdRunner.RunCommands[3]).To(ContainElement(ContainSubstring("start")))
 			Expect(cmdRunner.RunCommands[4]).To(ContainElement(ContainSubstring("/update")))
 			Expect(cmdRunner.RunCommands[5]).To(ContainElement(ContainSubstring("/resync")))
