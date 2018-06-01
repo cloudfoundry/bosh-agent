@@ -306,7 +306,12 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 	_, _, _, _ = p.cmdRunner.RunCommand("net", "stop", "w32time")
 	manualPeerList := fmt.Sprintf("/manualpeerlist:\"%s\"", ntpServers)
-	_, stderr, _, err = p.cmdRunner.RunCommand("w32tm", "/config", "/syncfromflags:manual", manualPeerList)
+	_, stderr, _, err = p.cmdRunner.RunCommand(
+		"powershell.exe",
+		"w32tm",
+		"/config",
+		"/syncfromflags:manual",
+		manualPeerList)
 	if err != nil {
 		err = bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
 		return
