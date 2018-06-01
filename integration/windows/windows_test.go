@@ -339,7 +339,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		_, _, _, _ = cmdRunner.RunCommand("time", "12:12:12.0")
 		_, _, _, _ = cmdRunner.RunCommand("w32tm", "/resync")
 
-		stdout, stderr, exitCode, err := cmdRunner.RunCommand("time", "/t")
+		stdout, stderr, exitCode, err := cmdRunner.RunCommand("powershell.exe", "time", "/t")
 
 		Expect(stdout).To(Equal("TEST_FAIL 12:12 PM"))
 		Expect(stderr).To(BeEmpty())
