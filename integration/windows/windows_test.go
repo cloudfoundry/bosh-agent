@@ -75,6 +75,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		fs              boshsys.FileSystem
 		natsClient      *NatsClient
 		blobstoreClient utils.BlobClient
+		cmdRunner       boshsys.CmdRunner
 	)
 
 	BeforeEach(func() {
@@ -83,7 +84,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		blobstoreClient = utils.NewBlobstore(blobstoreURI())
 
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		cmdRunner := boshsys.NewExecCmdRunner(logger)
+		cmdRunner = boshsys.NewExecCmdRunner(logger)
 		fs = boshsys.NewOsFileSystem(logger)
 		compressor := boshfileutil.NewTarballCompressor(cmdRunner, fs)
 
@@ -332,5 +333,19 @@ var _ = Describe("An Agent running on Windows", func() {
 			Eventually(getNetwork("ip"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
 			Expect(getNetwork("ip")).ToNot(HavePrefix("172."))
 		})
+	})
+
+	It("can reset the system time using an NTP server", func() {
+		_, _, exitCode, _ := cmdRunner.RunCommand("time", "12:12:12.0")
+		Expect(exitCode).To(Equal(0))
+		_, _, exitCode, _ = cmdRunner.RunCommand("w32tm", "/resync")
+		Expect(exitCode).To(Equal(0))
+
+		stdout, stderr, exitCode, err := cmdRunner.RunCommand("time", "/t")
+
+		Expect(stdout).To(Equal("TEST_FAIL 12:12 PM"))
+		Expect(stderr).To(BeEmpty())
+		Expect(exitCode).To(Equal(0))
+		Expect(err).NotTo(HaveOccurred())
 	})
 })
