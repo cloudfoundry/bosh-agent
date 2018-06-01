@@ -2192,7 +2192,7 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 	})
 
-	Describe("SetupRAMDisk", func() {
+	Describe("SetupSharedMemory", func() {
 		Context("when /dev/shm exists as a mount", func() {
 			BeforeEach(func() {
 				mounter.IsMountPointStub = func(path string) (string, bool, error) {
@@ -2204,8 +2204,8 @@ Number  Start   End     Size    File system  Name             Flags
 				}
 			})
 
-			It("remounts /dev/shm with the noexec flag", func() {
-				err := platform.SetupRAMDisk()
+			It("remounts /dev/shm with security flags", func() {
+				err := platform.SetupSharedMemory()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(mounter.IsMountPointCallCount()).To(Equal(2))
@@ -2215,7 +2215,7 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(mounter.RemountInPlaceCallCount()).To(Equal(1))
 				mntPt, options := mounter.RemountInPlaceArgsForCall(0)
 				Expect(mntPt).To(Equal("/dev/shm"))
-				Expect(options).To(Equal([]string{"noexec"}))
+				Expect(options).To(Equal([]string{"noexec", "nodev", "nosuid"}))
 			})
 
 			Context("when remounting /dev/shm fails", func() {
@@ -2224,7 +2224,7 @@ Number  Start   End     Size    File system  Name             Flags
 				})
 
 				It("returns an error", func() {
-					err := platform.SetupRAMDisk()
+					err := platform.SetupSharedMemory()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -2241,8 +2241,8 @@ Number  Start   End     Size    File system  Name             Flags
 				}
 			})
 
-			It("remounts /run/shm with the noexec flag", func() {
-				err := platform.SetupRAMDisk()
+			It("remounts /run/shm with security flags", func() {
+				err := platform.SetupSharedMemory()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(mounter.IsMountPointCallCount()).To(Equal(2))
@@ -2252,7 +2252,7 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(mounter.RemountInPlaceCallCount()).To(Equal(1))
 				mntPt, options := mounter.RemountInPlaceArgsForCall(0)
 				Expect(mntPt).To(Equal("/run/shm"))
-				Expect(options).To(Equal([]string{"noexec"}))
+				Expect(options).To(Equal([]string{"noexec", "nodev", "nosuid"}))
 			})
 
 			Context("when remounting /run/shm fails", func() {
@@ -2261,7 +2261,7 @@ Number  Start   End     Size    File system  Name             Flags
 				})
 
 				It("returns an error", func() {
-					err := platform.SetupRAMDisk()
+					err := platform.SetupSharedMemory()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -2273,7 +2273,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("does not remount anything", func() {
-				err := platform.SetupRAMDisk()
+				err := platform.SetupSharedMemory()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(mounter.IsMountPointCallCount()).To(Equal(2))
@@ -2290,7 +2290,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns an error", func() {
-				err := platform.SetupRAMDisk()
+				err := platform.SetupSharedMemory()
 				Expect(err).To(HaveOccurred())
 			})
 		})

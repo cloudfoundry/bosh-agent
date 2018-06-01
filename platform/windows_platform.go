@@ -356,7 +356,7 @@ func (p WindowsPlatform) SetupHomeDir() error {
 	return nil
 }
 
-func (p WindowsPlatform) SetupRAMDisk() error {
+func (p WindowsPlatform) SetupSharedMemory() error {
 	return nil
 }
 

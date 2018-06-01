@@ -922,9 +922,9 @@ func (p linux) SetupTmpDir() error {
 	return nil
 }
 
-func (p linux) SetupRAMDisk() error {
+func (p linux) SetupSharedMemory() error {
 	for _, mnt := range []string{"/dev/shm", "/run/shm"} {
-		err := p.remountNoExec(mnt)
+		err := p.remountWithSecurityFlags(mnt)
 		if err != nil {
 			return err
 		}
@@ -933,7 +933,7 @@ func (p linux) SetupRAMDisk() error {
 	return nil
 }
 
-func (p linux) remountNoExec(mountPt string) error {
+func (p linux) remountWithSecurityFlags(mountPt string) error {
 	mounter := p.diskManager.GetMounter()
 
 	_, mounted, err := mounter.IsMountPoint(mountPt)
@@ -942,7 +942,7 @@ func (p linux) remountNoExec(mountPt string) error {
 	}
 
 	if mounted {
-		return mounter.RemountInPlace(mountPt, "noexec")
+		return mounter.RemountInPlace(mountPt, "noexec", "nodev", "nosuid")
 	}
 
 	return nil

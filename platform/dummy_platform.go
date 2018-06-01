@@ -216,7 +216,7 @@ func (p dummyPlatform) SetupLogDir() error {
 	return nil
 }
 
-func (p dummyPlatform) SetupRAMDisk() error {
+func (p dummyPlatform) SetupSharedMemory() error {
 	return nil
 }
 

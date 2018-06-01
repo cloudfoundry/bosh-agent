@@ -54,7 +54,7 @@ type Platform interface {
 	SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error)
 	SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error)
 	SetupDataDir() (err error)
-	SetupRAMDisk() (err error)
+	SetupSharedMemory() (err error)
 	SetupTmpDir() (err error)
 	SetupHomeDir() (err error)
 	SetupBlobsDir() (err error)

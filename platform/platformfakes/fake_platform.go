@@ -246,13 +246,13 @@ type FakePlatform struct {
 	setupDataDirReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupRAMDiskStub        func() (err error)
-	setupRAMDiskMutex       sync.RWMutex
-	setupRAMDiskArgsForCall []struct{}
-	setupRAMDiskReturns     struct {
+	SetupSharedMemoryStub        func() (err error)
+	setupSharedMemoryMutex       sync.RWMutex
+	setupSharedMemoryArgsForCall []struct{}
+	setupSharedMemoryReturns     struct {
 		result1 error
 	}
-	setupRAMDiskReturnsOnCall map[int]struct {
+	setupSharedMemoryReturnsOnCall map[int]struct {
 		result1 error
 	}
 	SetupTmpDirStub        func() (err error)
@@ -1599,42 +1599,42 @@ func (fake *FakePlatform) SetupDataDirReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) SetupRAMDisk() (err error) {
-	fake.setupRAMDiskMutex.Lock()
-	ret, specificReturn := fake.setupRAMDiskReturnsOnCall[len(fake.setupRAMDiskArgsForCall)]
-	fake.setupRAMDiskArgsForCall = append(fake.setupRAMDiskArgsForCall, struct{}{})
-	fake.recordInvocation("SetupRAMDisk", []interface{}{})
-	fake.setupRAMDiskMutex.Unlock()
-	if fake.SetupRAMDiskStub != nil {
-		return fake.SetupRAMDiskStub()
+func (fake *FakePlatform) SetupSharedMemory() (err error) {
+	fake.setupSharedMemoryMutex.Lock()
+	ret, specificReturn := fake.setupSharedMemoryReturnsOnCall[len(fake.setupSharedMemoryArgsForCall)]
+	fake.setupSharedMemoryArgsForCall = append(fake.setupSharedMemoryArgsForCall, struct{}{})
+	fake.recordInvocation("SetupSharedMemory", []interface{}{})
+	fake.setupSharedMemoryMutex.Unlock()
+	if fake.SetupSharedMemoryStub != nil {
+		return fake.SetupSharedMemoryStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.setupRAMDiskReturns.result1
+	return fake.setupSharedMemoryReturns.result1
 }
 
-func (fake *FakePlatform) SetupRAMDiskCallCount() int {
-	fake.setupRAMDiskMutex.RLock()
-	defer fake.setupRAMDiskMutex.RUnlock()
-	return len(fake.setupRAMDiskArgsForCall)
+func (fake *FakePlatform) SetupSharedMemoryCallCount() int {
+	fake.setupSharedMemoryMutex.RLock()
+	defer fake.setupSharedMemoryMutex.RUnlock()
+	return len(fake.setupSharedMemoryArgsForCall)
 }
 
-func (fake *FakePlatform) SetupRAMDiskReturns(result1 error) {
-	fake.SetupRAMDiskStub = nil
-	fake.setupRAMDiskReturns = struct {
+func (fake *FakePlatform) SetupSharedMemoryReturns(result1 error) {
+	fake.SetupSharedMemoryStub = nil
+	fake.setupSharedMemoryReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakePlatform) SetupRAMDiskReturnsOnCall(i int, result1 error) {
-	fake.SetupRAMDiskStub = nil
-	if fake.setupRAMDiskReturnsOnCall == nil {
-		fake.setupRAMDiskReturnsOnCall = make(map[int]struct {
+func (fake *FakePlatform) SetupSharedMemoryReturnsOnCall(i int, result1 error) {
+	fake.SetupSharedMemoryStub = nil
+	if fake.setupSharedMemoryReturnsOnCall == nil {
+		fake.setupSharedMemoryReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.setupRAMDiskReturnsOnCall[i] = struct {
+	fake.setupSharedMemoryReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -3052,8 +3052,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.setupRawEphemeralDisksMutex.RUnlock()
 	fake.setupDataDirMutex.RLock()
 	defer fake.setupDataDirMutex.RUnlock()
-	fake.setupRAMDiskMutex.RLock()
-	defer fake.setupRAMDiskMutex.RUnlock()
+	fake.setupSharedMemoryMutex.RLock()
+	defer fake.setupSharedMemoryMutex.RUnlock()
 	fake.setupTmpDirMutex.RLock()
 	defer fake.setupTmpDirMutex.RUnlock()
 	fake.setupHomeDirMutex.RLock()
