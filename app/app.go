@@ -327,14 +327,7 @@ func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobMan
 		app.logger,
 	)
 
-	if blobstoreSettings.Type == boshblob.BlobstoreTypeLocal {
-		dir := app.dirProvider.BlobsDir()
-		app.logger.Debug(app.logTag, fmt.Sprintf("Resetting local blobstore path to %s", dir))
-
-		blobstoreSettings.Options = map[string]interface{}{
-			"blobstore_path": dir,
-		}
-	}
+	blobstoreSettings = app.patchBlobstoreOptions(blobstoreSettings)
 
 	blobstore, err := blobstoreProvider.Get(blobstoreSettings.Type, blobstoreSettings.Options)
 	if err != nil {
@@ -342,4 +335,33 @@ func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobMan
 	}
 
 	return boshagentblobstore.NewCascadingBlobstore(blobstore, blobManager, app.logger), nil
+}
+
+func (app *app) patchBlobstoreOptions(blobstoreSettings boshsettings.Blobstore) boshsettings.Blobstore {
+	if blobstoreSettings.Type != boshblob.BlobstoreTypeLocal {
+		return blobstoreSettings
+	}
+
+	blobstorePath, ok := blobstoreSettings.Options["blobstore_path"]
+	if !ok {
+		return blobstoreSettings
+	}
+
+	pathStr, ok := blobstorePath.(string)
+	if !ok {
+		return blobstoreSettings
+	}
+
+	if pathStr != "/var/vcap/micro_bosh/data/cache" {
+		return blobstoreSettings
+	}
+
+	dir := app.dirProvider.BlobsDir()
+	app.logger.Debug(app.logTag, fmt.Sprintf("Resetting local blobstore path to %s", dir))
+
+	blobstoreSettings.Options = map[string]interface{}{
+		"blobstore_path": dir,
+	}
+
+	return blobstoreSettings
 }

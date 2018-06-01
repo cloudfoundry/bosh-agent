@@ -42,7 +42,8 @@ var _ = Describe("compile_package", func() {
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
-					"blobstore_path": "/var/vcap/data/micro_bosh", // ignored
+					// this path should get rewritten internally to /var/vcap/data/blobs
+					"blobstore_path": "/var/vcap/micro_bosh/data/cache",
 				},
 			},
 
