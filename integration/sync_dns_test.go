@@ -43,7 +43,7 @@ var _ = Describe("sync_dns", func() {
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
-					"blobstore_path": "/var/vcap/data/blobs", // ignored
+					"blobstore_path": "/var/vcap/data/blobs",
 				},
 			},
 
