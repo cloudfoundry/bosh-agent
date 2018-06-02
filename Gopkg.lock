@@ -93,7 +93,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
-  revision = "75791c35e37dfa939d956361aaf9569e66c0e318"
+  revision = "3659db090cb23a57807b53e2f8580b2427dc2659"
 
 [[projects]]
   branch = "master"
@@ -258,7 +258,7 @@
     "ssh",
     "ssh/terminal"
   ]
-  revision = "a3beeb748656e13e54256fd2cde19e058f41f60f"
+  revision = "5ba7f63082460102a45837dbd1827e10f9479ac0"
 
 [[projects]]
   branch = "master"
@@ -271,7 +271,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "dfa909b99c79129e1100513e5cd36307665e5723"
+  revision = "1e491301e022f8f977054da4c2d852decd59571f"
 
 [[projects]]
   branch = "master"
