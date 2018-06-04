@@ -181,7 +181,7 @@ Vagrant.configure(2) do |config|
       aws.subnet_id = subnet_id
       aws.user_data = setup_aws_winrm_user
       aws.associate_public_ip = true
-      aws.block_device_mapping = [{ 'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 60 }]
+      aws.block_device_mapping = [{ 'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 70 }]
       aws.elastic_ip = agent_elastic_ip
     end
 
