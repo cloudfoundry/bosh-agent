@@ -25,6 +25,10 @@ var _ = Describe("EphemeralDisk", func() {
 	)
 
 	BeforeEach(func() {
+		if OsVersion != "2012R2" {
+			Skip("Ephemeral disk mounting only configured for 2012R2")
+		}
+
 		endpoint := winrm.NewEndpoint(os.Getenv("AGENT_ELASTIC_IP"), 5985, false, false, nil, nil, nil, 0)
 		client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
 		Expect(err).NotTo(HaveOccurred())
