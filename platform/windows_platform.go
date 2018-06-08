@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -29,6 +30,11 @@ import (
 // if we ever change the Admin user name for security reasons.
 var administratorUserName = "Administrator"
 
+type WindowsOptions struct {
+	// Feature flag during ephemeral disk support rollout
+	EnableEphemeralDiskMounting bool
+}
+
 type WindowsPlatform struct {
 	collector              boshstats.Collector
 	fs                     boshsys.FileSystem
@@ -39,10 +45,12 @@ type WindowsPlatform struct {
 	vitalsService          boshvitals.Service
 	netManager             boshnet.Manager
 	devicePathResolver     boshdpresolv.DevicePathResolver
+	options                Options
 	certManager            boshcert.Manager
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 	auditLogger            AuditLogger
 	uuidGenerator          boshuuid.Generator
+	logger                 boshlog.Logger
 }
 
 func NewWindowsPlatform(
@@ -53,6 +61,7 @@ func NewWindowsPlatform(
 	netManager boshnet.Manager,
 	certManager boshcert.Manager,
 	devicePathResolver boshdpresolv.DevicePathResolver,
+	options Options,
 	logger boshlog.Logger,
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
 	auditLogger AuditLogger,
@@ -69,9 +78,11 @@ func NewWindowsPlatform(
 		devicePathResolver:     devicePathResolver,
 		vitalsService:          boshvitals.NewService(collector, dirProvider),
 		certManager:            certManager,
+		options:                options,
 		defaultNetworkResolver: defaultNetworkResolver,
 		auditLogger:            auditLogger,
 		uuidGenerator:          uuidGenerator,
+		logger:                 logger,
 	}
 }
 
@@ -306,7 +317,12 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 	_, _, _, _ = p.cmdRunner.RunCommand("net", "stop", "w32time")
 	manualPeerList := fmt.Sprintf("/manualpeerlist:\"%s\"", ntpServers)
-	_, stderr, _, err = p.cmdRunner.RunCommand("w32tm", "/config", "/syncfromflags:manual", manualPeerList)
+	_, stderr, _, err = p.cmdRunner.RunCommand(
+		"powershell.exe",
+		"w32tm",
+		"/config",
+		"/syncfromflags:manual",
+		manualPeerList)
 	if err != nil {
 		err = bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
 		return
@@ -325,8 +341,138 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error) {
-	return
+func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) error {
+	if devicePath == "" || !p.options.Windows.EnableEphemeralDiskMounting {
+		return nil
+	}
+
+	checkFreeSpaceAction := &powershellAction{
+		commandArgs: []string{
+			"Get-Disk",
+			devicePath,
+			"|",
+			"Select",
+			"-ExpandProperty",
+			"LargestFreeExtent",
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to get free disk space on disk %s: %%s", devicePath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	freeSpaceOutput, err := checkFreeSpaceAction.run()
+
+	if err != nil {
+		return err
+	}
+
+	freeSpace, _ := strconv.Atoi(strings.TrimSpace(freeSpaceOutput))
+	if freeSpace < 1024*1024 {
+		p.logger.Warn(
+			"WindowsPlatform",
+			"Unable to create ephemeral partition on disk %s, as there isn't enough free space",
+			devicePath,
+		)
+		return nil
+	}
+
+	dataPath := fmt.Sprintf(`C:%s\`, p.dirProvider.DataDir())
+
+	checkForExistingPartitionCommand := []string{
+		"Get-Partition",
+		"-DiskNumber",
+		devicePath,
+		"|",
+		"where",
+		"AccessPaths",
+		"-Contains",
+		fmt.Sprintf(`"%s"`, dataPath),
+		"|",
+		"Select",
+		"-ExpandProperty",
+		"PartitionNumber",
+	}
+	stdout, _, exitStatus, err := p.cmdRunner.RunCommand(
+		powerShellCmd,
+		checkForExistingPartitionCommand...,
+	)
+
+	if exitStatus == 0 && strings.TrimSpace(stdout) != "" {
+		return nil
+	}
+
+	if err != nil {
+		return fmt.Errorf("Failed to run command \"%s\": %s", strings.Join(
+			append([]string{powerShellCmd}, checkForExistingPartitionCommand...), " "), err)
+	}
+
+	partitionVolumeAction := &powershellAction{
+		commandArgs: []string{
+			"New-Partition",
+			"-DiskNumber",
+			devicePath,
+			"-UseMaximumSize",
+			"|",
+			"Select",
+			"-ExpandProperty",
+			"PartitionNumber",
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to create partition on disk %s: %%s", devicePath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	partitionNumberOutput, err := partitionVolumeAction.run()
+	if err != nil {
+		return err
+	}
+
+	partitionNumber := strings.TrimSpace(partitionNumberOutput)
+	formatVolumeAction := &powershellAction{
+		commandArgs: []string{
+			"Get-Partition",
+			"-DiskNumber",
+			devicePath,
+			"-PartitionNumber",
+			partitionNumber,
+			"|",
+			"Format-Volume",
+			"-FileSystem",
+			"NTFS",
+			"-Confirm:$false",
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to format partition %s on disk %s: %%s", partitionNumber, devicePath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	_, err = formatVolumeAction.run()
+	if err != nil {
+		return err
+	}
+
+	err = p.fs.MkdirAll(dataPath, 0600)
+	if err != nil {
+		return fmt.Errorf(`Failed to create %s: %s`, dataPath, err)
+	}
+
+	mountVolumeAction := &powershellAction{
+		commandArgs: []string{
+			"Add-PartitionAccessPath",
+			"-DiskNumber",
+			devicePath,
+			"-PartitionNumber",
+			partitionNumber,
+			"-AccessPath",
+			dataPath,
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to mount partition %s on disk %s at %s: %%s", partitionNumber, devicePath, dataPath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	_, err = mountVolumeAction.run()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p WindowsPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error) {
@@ -353,6 +499,10 @@ func (p WindowsPlatform) SetupDataDir() error {
 }
 
 func (p WindowsPlatform) SetupHomeDir() error {
+	return nil
+}
+
+func (p WindowsPlatform) SetupSharedMemory() error {
 	return nil
 }
 
@@ -402,8 +552,12 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 	return
 }
 
-func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
-	return ""
+func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string) {
+	if diskSettings.Path == "" && p.options.Linux.CreatePartitionIfNoEphemeralDisk {
+		diskPath = "0"
+	}
+
+	return diskPath
 }
 
 func (p WindowsPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
@@ -505,4 +659,31 @@ func (p WindowsPlatform) DeleteARPEntryWithIP(ip string) error {
 
 func (p WindowsPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
+}
+
+func (p WindowsPlatform) Shutdown() error {
+	return nil
+}
+
+const powerShellCmd = "powershell.exe"
+
+type powershellAction struct {
+	commandArgs       []string
+	commandFailureFmt string
+	cmdRunner         boshsys.CmdRunner
+}
+
+func (a *powershellAction) run() (string, error) {
+	stdout, stderr, exitStatus, err := a.cmdRunner.RunCommand(powerShellCmd, a.commandArgs...)
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to run command \"%s\": %s", strings.Join(
+			append([]string{powerShellCmd}, a.commandArgs...), " "), err)
+	}
+
+	if exitStatus != 0 {
+		return "", fmt.Errorf(a.commandFailureFmt, stderr)
+	}
+
+	return stdout, nil
 }

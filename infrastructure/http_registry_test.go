@@ -6,15 +6,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -27,12 +28,12 @@ func describeHTTPRegistry() {
 	var (
 		metadataService *fakeinf.FakeMetadataService
 		registry        Registry
-		platform        *fakeplat.FakePlatform
+		platform        *platformfakes.FakePlatform
 	)
 
 	BeforeEach(func() {
 		metadataService = &fakeinf.FakeMetadataService{}
-		platform = &fakeplat.FakePlatform{}
+		platform = &platformfakes.FakePlatform{}
 		registry = NewHTTPRegistry(metadataService, platform, false, logger)
 	})
 
@@ -79,8 +80,8 @@ func describeHTTPRegistry() {
 						_, err := registry.GetSettings()
 						Expect(err).ToNot(HaveOccurred())
 
-						Expect(platform.SetupNetworkingCalled).To(BeTrue())
-						Expect(platform.SetupNetworkingNetworks).To(Equal(networkSettings))
+						Expect(platform.SetupNetworkingCallCount()).To(Equal(1))
+						Expect(platform.SetupNetworkingArgsForCall(0)).To(Equal(networkSettings))
 					})
 				})
 
@@ -91,7 +92,7 @@ func describeHTTPRegistry() {
 						_, err := registry.GetSettings()
 						Expect(err).ToNot(HaveOccurred())
 
-						Expect(platform.SetupNetworkingCalled).To(BeFalse())
+						Expect(platform.SetupNetworkingCallCount()).To(Equal(0))
 					})
 				})
 
@@ -114,7 +115,7 @@ func describeHTTPRegistry() {
 							"net2": boshsettings.Network{IP: "2.3.4.5"},
 						}
 						metadataService.Networks = networkSettings
-						platform.SetupNetworkingErr = errors.New("fake-setup-networking-error")
+						platform.SetupNetworkingReturns(errors.New("fake-setup-networking-error"))
 
 						_, err := registry.GetSettings()
 						Expect(err).To(HaveOccurred())

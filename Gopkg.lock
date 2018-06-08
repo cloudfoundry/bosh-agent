@@ -8,7 +8,34 @@
     ".",
     "fakeclock"
   ]
-  revision = "e9dc86bbf0e5bbe6bf7ff5a6f71e048959b61f71"
+  revision = "02e53af36e6c978af692887ed449b74026d76fec"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/Azure/go-ntlmssp"
+  packages = ["."]
+  revision = "4b934ac9dad38d389d34f0b98d98b2467c422012"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/ChrisTrenkamp/goxpath"
+  packages = [
+    ".",
+    "internal/execxp",
+    "internal/execxp/findutil",
+    "internal/execxp/intfns",
+    "internal/xsort",
+    "lexer",
+    "parser",
+    "parser/pathexpr",
+    "tree",
+    "tree/xmltree",
+    "tree/xmltree/xmlbuilder",
+    "tree/xmltree/xmlele",
+    "tree/xmltree/xmlnode",
+    "xconst"
+  ]
+  revision = "c385f95c6022e7756e91beac5f5510872f7dcb7d"
 
 [[projects]]
   name = "github.com/Microsoft/go-winio"
@@ -40,8 +67,8 @@
     "client",
     "config"
   ]
-  revision = "8754f7a5ee7e57a22a5fb3161c149e1de108786a"
-  version = "v0.0.28"
+  revision = "9768c92c6afe01df434697ad7afff0153687751d"
+  version = "v0.0.30"
 
 [[projects]]
   name = "github.com/cloudfoundry/bosh-init"
@@ -71,7 +98,7 @@
     "uuid/fakes",
     "work"
   ]
-  revision = "2c869a1a0ccef38c01c41d833db6eb02a23bd6e6"
+  revision = "b082aa9a81950fa8df1a969575319417b1e073f4"
 
 [[projects]]
   branch = "master"
@@ -87,13 +114,13 @@
     "fakes",
     "sys/windows"
   ]
-  revision = "1375283248c3c5fa82163113c0ef15e79390f644"
+  revision = "0bb2fe4a1c0cdce8cbe6bfe2c9d375cab4cc15c7"
 
 [[projects]]
   branch = "master"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
-  revision = "3c6b4eec9c2d16c1dac4c42bdb5f755ba09daff8"
+  revision = "3659db090cb23a57807b53e2f8580b2427dc2659"
 
 [[projects]]
   branch = "master"
@@ -124,9 +151,32 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/masterzen/azure-sdk-for-go"
+  packages = [
+    "core/http",
+    "core/tls"
+  ]
+  revision = "ee4f0065d00cd12b542f18f5bc45799e88163b12"
+
+[[projects]]
+  name = "github.com/masterzen/simplexml"
+  packages = ["dom"]
+  revision = "95ba30457eb1121fa27753627c774c7cd4e90083"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/masterzen/winrm"
+  packages = [
+    ".",
+    "soap"
+  ]
+  revision = "7e40f93ae939004a1ef3bd5ff5c88c756ee762bb"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
+  revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
 
 [[projects]]
   name = "github.com/nats-io/go-nats"
@@ -185,8 +235,8 @@
     "reporters/stenographer/support/go-isatty",
     "types"
   ]
-  revision = "9eda700730cba42af70d53180f9dcce9266bc2bc"
-  version = "v1.4.0"
+  revision = "fa5fabab2a1bfbd924faf4c067d07ae414e2aedf"
+  version = "v1.5.0"
 
 [[projects]]
   name = "github.com/onsi/gomega"
@@ -207,8 +257,8 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "003f63b7f4cff3fc95357005358af2de0f5fe152"
-  version = "v1.3.0"
+  revision = "62bff4df71bdbc266561a0caee19f0594b17c240"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -254,11 +304,12 @@
     "ed25519",
     "ed25519/internal/edwards25519",
     "internal/chacha20",
+    "md4",
     "poly1305",
     "ssh",
     "ssh/terminal"
   ]
-  revision = "1f94bef427e370e425e55b172f3b5e300ef38304"
+  revision = "5ba7f63082460102a45837dbd1827e10f9479ac0"
 
 [[projects]]
   branch = "master"
@@ -271,7 +322,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "640f4622ab692b87c2f3a94265e6f579fe38263d"
+  revision = "1e491301e022f8f977054da4c2d852decd59571f"
 
 [[projects]]
   branch = "master"
@@ -283,7 +334,7 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "78d5f264b493f125018180c204871ecf58a2dce1"
+  revision = "c11f84a56e43e20a78cee75a7c034031ecf57d1f"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -318,6 +369,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8c8f4048b5628851c8bd9ce1292d2d03abf7bae1089b547aab286430e9ecf783"
+  inputs-digest = "6582e9fa9c9be04e7e5c6ba1bfbc29fc10a9aed6b2c52a2874c81315a7e9d3f2"
   solver-name = "gps-cdcl"
   solver-version = 1

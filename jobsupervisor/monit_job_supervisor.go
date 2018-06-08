@@ -76,21 +76,26 @@ func (m monitJobSupervisor) Reload() error {
 	// so it's ideal for MaxCheckTries * DelayBetweenCheckTries to be greater than 1 sec
 	// because monit incarnation id is just a timestamp with 1 sec resolution.
 	for reloadI := 0; reloadI < m.reloadOptions.MaxTries; reloadI++ {
-		// Exit code or output cannot be trusted
-		_, _, _, err := m.runner.RunCommand("monit", "reload")
+		// Due to limitations in the version of monit that we are currently using,
+		// it is faster to reload the agent through `sv kill monit`. This is due to
+		// the fact that a reload only occurs after a heartbeat which occurs every
+		// 10 seconds.
+		_, _, _, err := m.runner.RunCommand("sv", "kill", "monit")
 		if err != nil {
-			m.logger.Error(monitJobSupervisorLogTag, "Failed to reload monit %s", err.Error())
+			m.logger.Error(monitJobSupervisorLogTag, "Failed to kill monit while reloading: %s", err.Error())
+			continue
+		}
+
+		// Idempotently start monit to ensure that monit is being started after
+		// `sv kill`.
+		_, _, _, err = m.runner.RunCommand("sv", "start", "monit")
+		if err != nil {
+			m.logger.Error(monitJobSupervisorLogTag, "Failed to start monit while reloading: %s", err.Error())
+			continue
 		}
 
 		for checkI := 0; checkI < m.reloadOptions.MaxCheckTries; checkI++ {
-			currentIncarnation, err = m.getIncarnation()
-			if err != nil {
-				return bosherr.WrapError(err, "Getting monit incarnation")
-			}
-
-			// Incarnation id can decrease or increase because
-			// monit uses time(...) and system time can be changed
-			if oldIncarnation != currentIncarnation {
+			if m.incarnationChanged(oldIncarnation) {
 				return nil
 			}
 
@@ -108,6 +113,22 @@ func (m monitJobSupervisor) Reload() error {
 		"Failed to reload monit: before=%d after=%d",
 		oldIncarnation, currentIncarnation,
 	)
+}
+
+func (m monitJobSupervisor) incarnationChanged(incarnation int) bool {
+	currentIncarnation, err := m.getIncarnation()
+	if err != nil {
+		m.logger.Debug(monitJobSupervisorLogTag, "Failed fetching monit incarnation: %s", err.Error())
+		return false
+	}
+
+	// Incarnation id can decrease or increase because
+	// monit uses time(...) and system time can be changed
+	if incarnation != currentIncarnation {
+		return true
+	}
+
+	return false
 }
 
 func (m monitJobSupervisor) Start() error {

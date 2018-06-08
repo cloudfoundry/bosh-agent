@@ -1,0 +1,38 @@
+{
+  "agent_id": "123-456-789",
+  "blobstore": {
+    "provider": "dav",
+    "options": {
+      "endpoint": "http://{{.NatsPrivateIP}}:25250"
+    }
+  },
+  "disks": {
+    "system": "/dev/xvda",
+    "ephemeral": {{.EphemeralDiskConfig}},
+    "persistent": {},
+    "raw_ephemeral": null
+  },
+  "env": {
+    "bosh": {
+      "password": ""
+    }
+  },
+  "networks": {
+    "diego1": {
+      "type": "",
+      "ip": "10.10.10.11",
+      "netmask": "255.255.255.0",
+      "gateway": "10.10.10.1",
+      "resolved": false,
+      "use_dhcp": true,
+      "default": ["dns", "gateway"],
+      "mac": "",
+      "preconfigured": false
+    }
+  },
+  "mbus": "nats://{{.NatsPrivateIP}}:4222",
+  "vm": {
+    "name": "vm-1f1aaed4-b479-4cf5-b73e-a7cbf0abf4ae"
+  },
+  "trusted_certs": ""
+}

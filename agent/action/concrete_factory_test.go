@@ -1,10 +1,12 @@
 package action_test
 
 import (
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -13,13 +15,12 @@ import (
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
-	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 //go:generate counterfeiter -o fakes/fake_clock.go ../../vendor/code.cloudfoundry.org/clock Clock
@@ -27,7 +28,7 @@ import (
 var _ = Describe("concreteFactory", func() {
 	var (
 		settingsService   *fakesettings.FakeSettingsService
-		platform          *fakeplatform.FakePlatform
+		platform          *platformfakes.FakePlatform
 		blobstore         *fakeblobstore.FakeDigestBlobstore
 		blobManager       *fakeblobstore.FakeBlobManagerInterface
 		taskService       *faketask.FakeService
@@ -39,11 +40,17 @@ var _ = Describe("concreteFactory", func() {
 		jobScriptProvider boshscript.JobScriptProvider
 		factory           Factory
 		logger            boshlog.Logger
+		fileSystem        *fakesys.FakeFileSystem
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		platform = fakeplatform.NewFakePlatform()
+
+		platform = &platformfakes.FakePlatform{}
+		fileSystem = fakesys.NewFakeFileSystem()
+		platform.GetFsReturns(fileSystem)
+		platform.GetDirProviderReturns(boshdir.NewProvider("/var/vcap"))
+
 		blobstore = &fakeblobstore.FakeDigestBlobstore{}
 		blobManager = &fakeblobstore.FakeBlobManagerInterface{}
 		taskService = &faketask.FakeService{}
@@ -52,7 +59,7 @@ var _ = Describe("concreteFactory", func() {
 		compiler = fakecomp.NewFakeCompiler()
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
-		jobScriptProvider = &fakescript.FakeJobScriptProvider{}
+		jobScriptProvider = &scriptfakes.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		factory = NewFactory(
@@ -80,7 +87,13 @@ var _ = Describe("concreteFactory", func() {
 	It("apply", func() {
 		action, err := factory.Create("apply")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewApply(applier, specService, settingsService, boshdir.NewProvider("/var/vcap"), platform.GetFs())))
+		Expect(action).To(BeEquivalentTo(NewApply(
+			applier,
+			specService,
+			settingsService,
+			boshdir.NewProvider("/var/vcap"),
+			fileSystem,
+		)))
 	})
 
 	It("drain", func() {
@@ -198,6 +211,12 @@ var _ = Describe("concreteFactory", func() {
 		action, err := factory.Create("delete_arp_entries")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewDeleteARPEntries(platform)))
+	})
+
+	It("shutdown", func() {
+		action, err := factory.Create("shutdown")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewShutdown(platform)))
 	})
 
 	It("sync_dns", func() {

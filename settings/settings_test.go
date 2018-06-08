@@ -57,7 +57,13 @@ var _ = Describe("Settings", func() {
 
 			Context("when Env is provided", func() {
 				It("gets persistent disk settings from env", func() {
-					settingsJSON := `{"env": {"persistent_disk_fs": "xfs", "persistent_disk_mount_options": ["opt1", "opt2"]}}`
+					settingsJSON := `{
+						"env": {
+							"persistent_disk_fs": "xfs",
+							"persistent_disk_mount_options": ["opt1", "opt2"],
+							"persistent_disk_partitioner": "parted"
+						}
+					}`
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
@@ -72,6 +78,7 @@ var _ = Describe("Settings", func() {
 						HostDeviceID:   "fake-disk-host-device-id",
 						FileSystemType: "xfs",
 						MountOptions:   []string{"opt1", "opt2"},
+						Partitioner:    "parted",
 					}))
 				})
 
@@ -288,131 +295,6 @@ var _ = Describe("Settings", func() {
 		})
 	})
 
-	Describe("PersistentDiskSettingsFromHints", func() {
-		Context("when the disk hint is a string", func() {
-			var diskHint string
-
-			BeforeEach(func() {
-				settings = Settings{}
-				diskHint = "/path/to/device/hint"
-			})
-
-			It("converts it to disk settings", func() {
-				diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
-				Expect(diskSettings).To(Equal(DiskSettings{
-					ID:       "hint-fake-disk-id",
-					VolumeID: "/path/to/device/hint",
-					Path:     "/path/to/device/hint",
-				}))
-			})
-		})
-
-		Context("when the disk hint is a hash", func() {
-			var diskHint map[string]interface{}
-
-			BeforeEach(func() {
-				settings = Settings{}
-
-				diskHint = map[string]interface{}{
-					"volume_id":      "hint-fake-disk-volume-id",
-					"id":             "hint-fake-disk-device-id",
-					"path":           "hint-fake-disk-path",
-					"lun":            "hint-fake-disk-lun",
-					"host_device_id": "hint-fake-disk-host-device-id",
-				}
-			})
-
-			It("returns disk settings with disk hint info", func() {
-				diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
-				Expect(diskSettings).To(Equal(DiskSettings{
-					ID:           "hint-fake-disk-id",
-					DeviceID:     "hint-fake-disk-device-id",
-					VolumeID:     "hint-fake-disk-volume-id",
-					Path:         "hint-fake-disk-path",
-					Lun:          "hint-fake-disk-lun",
-					HostDeviceID: "hint-fake-disk-host-device-id",
-				}))
-			})
-
-			Context("when settings Env is provided", func() {
-				It("gets file system type and mount options from env", func() {
-					settingsJSON := `{"env": {"persistent_disk_fs": "xfs", "persistent_disk_mount_options": ["hint-opt1", "hint-opt2"]}}`
-
-					err := json.Unmarshal([]byte(settingsJSON), &settings)
-					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
-					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemXFS))
-					Expect(diskSettings).To(Equal(DiskSettings{
-						ID:             "hint-fake-disk-id",
-						DeviceID:       "hint-fake-disk-device-id",
-						VolumeID:       "hint-fake-disk-volume-id",
-						Path:           "hint-fake-disk-path",
-						Lun:            "hint-fake-disk-lun",
-						HostDeviceID:   "hint-fake-disk-host-device-id",
-						FileSystemType: disk.FileSystemXFS,
-						MountOptions:   []string{"hint-opt1", "hint-opt2"},
-					}))
-				})
-
-				It("does not crash if env does not have a filesystem type or a persistent_disk_mount_options", func() {
-					settingsJSON := `{"env": {"bosh": {"password": "secret"}}}`
-
-					err := json.Unmarshal([]byte(settingsJSON), &settings)
-					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
-					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemDefault))
-					Expect(diskSettings).To(Equal(DiskSettings{
-						ID:             "hint-fake-disk-id",
-						DeviceID:       "hint-fake-disk-device-id",
-						VolumeID:       "hint-fake-disk-volume-id",
-						Path:           "hint-fake-disk-path",
-						Lun:            "hint-fake-disk-lun",
-						HostDeviceID:   "hint-fake-disk-host-device-id",
-						FileSystemType: "",
-						MountOptions:   nil,
-					}))
-				})
-
-				It("does not crash if env has a bad fs", func() {
-					settingsJSON := `{"env": {"persistent_disk_fs": "blahblah"}}`
-
-					err := json.Unmarshal([]byte(settingsJSON), &settings)
-					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
-					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemType("blahblah")))
-					Expect(diskSettings).To(Equal(DiskSettings{
-						ID:             "hint-fake-disk-id",
-						DeviceID:       "hint-fake-disk-device-id",
-						VolumeID:       "hint-fake-disk-volume-id",
-						Path:           "hint-fake-disk-path",
-						Lun:            "hint-fake-disk-lun",
-						HostDeviceID:   "hint-fake-disk-host-device-id",
-						FileSystemType: "blahblah",
-						MountOptions:   nil,
-					}))
-				})
-			})
-		})
-
-		Context("when the disk settings is nil", func() {
-			BeforeEach(func() {
-				settings = Settings{}
-			})
-
-			It("does NOT set device related properties in the disk settings", func() {
-				diskSettings := settings.GeneratePersistentDiskSettingsFromHint("hint-fake-disk-id", nil)
-				Expect(diskSettings).To(Equal(DiskSettings{
-					ID:           "hint-fake-disk-id",
-					VolumeID:     "",
-					Path:         "",
-					DeviceID:     "",
-					Lun:          "",
-					HostDeviceID: "",
-				}))
-			})
-		})
-	})
-
 	Describe("EphemeralDiskSettings", func() {
 		Context("when the disk settings are a string", func() {
 			BeforeEach(func() {
@@ -453,32 +335,6 @@ var _ = Describe("Settings", func() {
 					Path:         "fake-disk-path",
 					Lun:          "fake-disk-lun",
 					HostDeviceID: "fake-disk-host-device-id",
-				}))
-			})
-		})
-
-		Context("when the disk settings are an invalid hash", func() {
-			BeforeEach(func() {
-				settings = Settings{
-					Disks: Disks{
-						Ephemeral: []interface{}{
-							"fake-disk-device-id",
-							"fake-disk-volume-id",
-							"fake-disk-path",
-							"fake-disk-lun",
-							"fake-disk-host-device-id",
-						},
-					},
-				}
-			})
-
-			It("does not crash converting values and disk setting properties are empty", func() {
-				Expect(settings.EphemeralDiskSettings()).To(Equal(DiskSettings{
-					DeviceID:     "",
-					VolumeID:     "",
-					Path:         "",
-					Lun:          "",
-					HostDeviceID: "",
 				}))
 			})
 		})

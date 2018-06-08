@@ -13,10 +13,16 @@ import (
 	. "github.com/onsi/gomega"
 
 	"testing"
+	"text/template"
 )
 
 var VagrantProvider = os.Getenv("VAGRANT_PROVIDER")
 var OsVersion = getOsVersion()
+
+type BoshAgentSettings struct {
+	NatsPrivateIP       string
+	EphemeralDiskConfig string
+}
 
 func getOsVersion() string {
 	osVersion := os.Getenv("WINDOWS_OS_VERSION")
@@ -40,6 +46,10 @@ func tarFixtures(fixturesDir, filename string) error {
 		"bosh-blobstore-dav.exe",
 		"bosh-agent.exe",
 		"pipe.exe",
+		"agent-configuration/agent.json",
+		"agent-configuration/root-partition-agent.json",
+		"agent-configuration/root-partition-agent-ephemeral-disabled.json",
+		"agent-configuration/settings.json",
 	}
 
 	archive, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
@@ -62,6 +72,7 @@ func tarFixtures(fixturesDir, filename string) error {
 		if err != nil {
 			return err
 		}
+		hdr.Name = name
 
 		if err := tarWriter.WriteHeader(hdr); err != nil {
 			return err
@@ -86,7 +97,8 @@ func tarFixtures(fixturesDir, filename string) error {
 }
 
 var _ = BeforeSuite(func() {
-	if _, ok := os.LookupEnv("NATS_PRIVATE_IP"); !ok {
+	natsPrivateIP, ok := os.LookupEnv("NATS_PRIVATE_IP")
+	if !ok {
 		Fail("Environment variable NATS_PRIVATE_IP not set (default is 172.31.180.3 if running locally)", 1)
 	}
 	if os.Getenv("GOPATH") == "" {
@@ -99,12 +111,29 @@ var _ = BeforeSuite(func() {
 
 	dirname := filepath.Join(os.Getenv("GOPATH"),
 		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures")
+
+	agentSettings := BoshAgentSettings{
+		NatsPrivateIP:       natsPrivateIP,
+		EphemeralDiskConfig: `""`,
+	}
+	settingsTmpl, err := template.ParseFiles(
+		filepath.Join(dirname, "templates", "agent-configuration", "settings.json.tmpl"),
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	outputFile, err := os.Create(filepath.Join(dirname, "agent-configuration", "settings.json"))
+	Expect(err).NotTo(HaveOccurred())
+	defer outputFile.Close()
+
+	err = settingsTmpl.Execute(outputFile, agentSettings)
+	Expect(err).NotTo(HaveOccurred())
+
 	filename := filepath.Join(dirname, "fixtures.tgz")
 	if err := tarFixtures(dirname, filename); err != nil {
 		Fail(fmt.Sprintln("Creating fixtures TGZ::", err))
 	}
 
-	_, err := utils.StartVagrant(VagrantProvider, OsVersion)
+	_, err = utils.StartVagrant(VagrantProvider, OsVersion)
 
 	if err != nil {
 		Fail(fmt.Sprintln("Could not setup and run vagrant.\nError is:", err))

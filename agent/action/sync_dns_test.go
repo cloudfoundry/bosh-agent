@@ -4,19 +4,19 @@ import (
 	"errors"
 	"path/filepath"
 
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
 	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("SyncDNS", func() {
@@ -24,7 +24,7 @@ var _ = Describe("SyncDNS", func() {
 		action               SyncDNS
 		fakeBlobstore        *fakeblobstore.FakeDigestBlobstore
 		fakeSettingsService  *fakesettings.FakeSettingsService
-		fakePlatform         *fakeplatform.FakePlatform
+		fakePlatform         *platformfakes.FakePlatform
 		fakeFileSystem       *fakesys.FakeFileSystem
 		logger               *fakelogger.FakeLogger
 		fakeDNSRecordsString string
@@ -34,8 +34,9 @@ var _ = Describe("SyncDNS", func() {
 		logger = &fakelogger.FakeLogger{}
 		fakeBlobstore = &fakeblobstore.FakeDigestBlobstore{}
 		fakeSettingsService = &fakesettings.FakeSettingsService{}
-		fakePlatform = fakeplatform.NewFakePlatform()
-		fakeFileSystem = fakePlatform.GetFs().(*fakesys.FakeFileSystem)
+		fakePlatform = &platformfakes.FakePlatform{}
+		fakeFileSystem = fakesys.NewFakeFileSystem()
+		fakePlatform.GetFsReturns(fakeFileSystem)
 
 		action = NewSyncDNS(fakeBlobstore, fakeSettingsService, fakePlatform, logger)
 	})
@@ -178,14 +179,16 @@ var _ = Describe("SyncDNS", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
-					Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
-					Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+					Expect(fakePlatform.SaveDNSRecordsCallCount()).To(Equal(1))
+					dnsRecords, agentID := fakePlatform.SaveDNSRecordsArgsForCall(0)
+					Expect(dnsRecords).To(Equal(boshsettings.DNSRecords{
 						Version: 2,
 						Records: [][2]string{
 							{"fake-ip0", "fake-name0"},
 							{"fake-ip1", "fake-name1"},
 						},
 					}))
+					Expect(agentID).To(Equal(""))
 				})
 
 				Context("when there is no local DNS state", func() {
@@ -201,14 +204,16 @@ var _ = Describe("SyncDNS", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(response).To(Equal("synced"))
 
-						Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
-						Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+						Expect(fakePlatform.SaveDNSRecordsCallCount()).To(Equal(1))
+						dnsRecords, agentID := fakePlatform.SaveDNSRecordsArgsForCall(0)
+						Expect(dnsRecords).To(Equal(boshsettings.DNSRecords{
 							Version: 2,
 							Records: [][2]string{
 								{"fake-ip0", "fake-name0"},
 								{"fake-ip1", "fake-name1"},
 							},
 						}))
+						Expect(agentID).To(Equal(""))
 					})
 				})
 
@@ -225,14 +230,16 @@ var _ = Describe("SyncDNS", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(response).To(Equal("synced"))
 
-						Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
-						Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+						Expect(fakePlatform.SaveDNSRecordsCallCount()).To(Equal(1))
+						dnsRecords, agentID := fakePlatform.SaveDNSRecordsArgsForCall(0)
+						Expect(dnsRecords).To(Equal(boshsettings.DNSRecords{
 							Version: 2,
 							Records: [][2]string{
 								{"fake-ip0", "fake-name0"},
 								{"fake-ip1", "fake-name1"},
 							},
 						}))
+						Expect(agentID).To(Equal(""))
 					})
 				})
 
@@ -247,14 +254,16 @@ var _ = Describe("SyncDNS", func() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(response).To(Equal("synced"))
 
-						Expect(fakePlatform.SaveDNSRecordsError).To(BeNil())
-						Expect(fakePlatform.SaveDNSRecordsDNSRecords).To(Equal(boshsettings.DNSRecords{
+						Expect(fakePlatform.SaveDNSRecordsCallCount()).To(Equal(1))
+						dnsRecords, agentID := fakePlatform.SaveDNSRecordsArgsForCall(0)
+						Expect(dnsRecords).To(Equal(boshsettings.DNSRecords{
 							Version: 2,
 							Records: [][2]string{
 								{"fake-ip0", "fake-name0"},
 								{"fake-ip1", "fake-name1"},
 							},
 						}))
+						Expect(agentID).To(Equal(""))
 					})
 				})
 
@@ -317,8 +326,7 @@ var _ = Describe("SyncDNS", func() {
 
 				Context("when platform fails to save DNS records", func() {
 					BeforeEach(func() {
-						fakePlatform.SaveDNSRecordsError = errors.New("fake-error")
-
+						fakePlatform.SaveDNSRecordsReturns(errors.New("fake-error"))
 						err := fakeFileSystem.WriteFileString(stateFilePath, `{"version": 1}`)
 						Expect(err).ToNot(HaveOccurred())
 					})

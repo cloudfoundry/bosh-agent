@@ -11,10 +11,10 @@ import (
 
 type linuxDiskManager struct {
 	ephemeralPartitioner  Partitioner
-	rootDevicePartitioner Partitioner
+	partedPartitioner     Partitioner
 	persistentPartitioner Partitioner
-
-	diskUtil Util
+	rootDevicePartitioner Partitioner
+	diskUtil              Util
 
 	formatter Formatter
 
@@ -36,7 +36,7 @@ func NewLinuxDiskManager(
 	runner boshsys.CmdRunner,
 	fs boshsys.FileSystem,
 	opts LinuxDiskManagerOpts,
-) (manager Manager) {
+) Manager {
 	var mounter Mounter
 	var mountsSearcher MountsSearcher
 
@@ -77,21 +77,33 @@ func NewLinuxDiskManager(
 
 	return linuxDiskManager{
 		ephemeralPartitioner:  ephemeralPartitioner,
-		persistentPartitioner: persistentPartitioner,
-		rootDevicePartitioner: NewRootDevicePartitioner(logger, runner, uint64(20*1024*1024)),
+		diskUtil:              diskUtil,
 		formatter:             NewLinuxFormatter(runner, fs),
-		mounter:               mounter,
-		mountsSearcher:        mountsSearcher,
 		fs:                    fs,
 		logger:                logger,
+		mounter:               mounter,
+		mountsSearcher:        mountsSearcher,
+		partedPartitioner:     partedPartitioner,
+		persistentPartitioner: persistentPartitioner,
+		rootDevicePartitioner: NewRootDevicePartitioner(logger, runner, uint64(20*1024*1024)),
 		runner:                runner,
-		diskUtil:              diskUtil,
 	}
 }
 
-func (m linuxDiskManager) GetRootDevicePartitioner() Partitioner       { return m.rootDevicePartitioner }
-func (m linuxDiskManager) GetEphemeralDevicePartitioner() Partitioner  { return m.ephemeralPartitioner }
-func (m linuxDiskManager) GetPersistentDevicePartitioner() Partitioner { return m.persistentPartitioner }
+func (m linuxDiskManager) GetRootDevicePartitioner() Partitioner      { return m.rootDevicePartitioner }
+func (m linuxDiskManager) GetEphemeralDevicePartitioner() Partitioner { return m.ephemeralPartitioner }
+
+func (m linuxDiskManager) GetPersistentDevicePartitioner(partitionerType string) (Partitioner, error) {
+	switch partitionerType {
+	case "parted":
+		return m.partedPartitioner, nil
+	case "":
+		return m.persistentPartitioner, nil
+	default:
+		return nil, fmt.Errorf("Unknown partitioner type '%s'", partitionerType)
+
+	}
+}
 
 func (m linuxDiskManager) GetFormatter() Formatter           { return m.formatter }
 func (m linuxDiskManager) GetMounter() Mounter               { return m.mounter }

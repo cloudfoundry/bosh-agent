@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("InstanceMetadataSettingsSource", describeInstanceMetadataSettingsSource)
@@ -19,7 +19,7 @@ func describeInstanceMetadataSettingsSource() {
 	var (
 		metadataHeaders map[string]string
 		settingsPath    string
-		platform        *fakeplat.FakePlatform
+		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
 		metadataSource  *InstanceMetadataSettingsSource
 	)
@@ -28,7 +28,7 @@ func describeInstanceMetadataSettingsSource() {
 		metadataHeaders = make(map[string]string)
 		metadataHeaders["key"] = "value"
 		settingsPath = "/computeMetadata/v1/instance/attributes/bosh_settings"
-		platform = fakeplat.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		metadataSource = NewInstanceMetadataSettingsSource("http://fake-metadata-host", metadataHeaders, settingsPath, platform, logger)
 	})

@@ -22,6 +22,8 @@ type Script interface {
 	Run() error
 }
 
+//go:generate counterfeiter . CancellableScript
+
 type CancellableScript interface {
 	Script
 	Cancel() error

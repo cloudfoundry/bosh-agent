@@ -1,23 +1,23 @@
 package infrastructure_test
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"time"
 
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-
-	"encoding/base64"
-
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
 var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)
@@ -26,16 +26,16 @@ func describeHTTPMetadataService() {
 	var (
 		metadataHeaders map[string]string
 		dnsResolver     *fakeinf.FakeDNSResolver
-		platform        *fakeplat.FakePlatform
+		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
-		metadataService DynamicMetadataService
+		metadataService MetadataService
 	)
 
 	BeforeEach(func() {
 		metadataHeaders = make(map[string]string)
 		metadataHeaders["key"] = "value"
 		dnsResolver = &fakeinf.FakeDNSResolver{}
-		platform = fakeplat.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		metadataService = NewHTTPMetadataService("fake-metadata-host", metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
 	})
@@ -43,15 +43,16 @@ func describeHTTPMetadataService() {
 	ItEnsuresMinimalNetworkSetup := func(subject func() (string, error)) {
 		Context("when no networks are configured", func() {
 			BeforeEach(func() {
-				platform.GetConfiguredNetworkInterfacesInterfaces = []string{}
+				platform.GetConfiguredNetworkInterfacesReturns([]string{}, nil)
 			})
 
 			It("sets up DHCP network", func() {
 				_, err := subject()
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(platform.SetupNetworkingCalled).To(BeTrue())
-				Expect(platform.SetupNetworkingNetworks).To(Equal(boshsettings.Networks{
+				Expect(platform.SetupNetworkingCallCount()).To(Equal(1))
+				networks := platform.SetupNetworkingArgsForCall(0)
+				Expect(networks).To(Equal(boshsettings.Networks{
 					"eth0": boshsettings.Network{
 						Type: "dynamic",
 					},
@@ -60,7 +61,7 @@ func describeHTTPMetadataService() {
 
 			Context("when setting up DHCP fails", func() {
 				BeforeEach(func() {
-					platform.SetupNetworkingErr = errors.New("fake-network-error")
+					platform.SetupNetworkingReturns(errors.New("fake-network-error"))
 				})
 
 				It("returns an error", func() {
@@ -501,164 +502,6 @@ func describeHTTPMetadataService() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Empty server name"))
 				Expect(name).To(BeEmpty())
-			})
-		})
-	})
-
-	Describe("#GetValueAtPath", func() {
-		var (
-			ts               *httptest.Server
-			metadataResponse string
-		)
-
-		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
-			defer GinkgoRecover()
-
-			Expect(r.Method).To(Equal("GET"))
-			Expect(r.URL.Path).To(Equal("/user-data"))
-			Expect(r.Header.Get("key")).To(Equal("value"))
-
-			metadataResponse = `{"settings":{"some_setting_hash"}}`
-
-			w.Write([]byte(metadataResponse))
-		}
-
-		BeforeEach(func() {
-			handler := http.HandlerFunc(handlerFunc)
-			ts = httptest.NewServer(handler)
-			metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
-		})
-
-		AfterEach(func() {
-			ts.Close()
-		})
-
-		Context("path is empty", func() {
-			It("returns error", func() {
-				_, err := metadataService.GetValueAtPath("")
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Can not retrieve metadata value for empty path"))
-			})
-		})
-
-		Context("path is not empty", func() {
-			Context("non-minimal network setup", func() {
-				var (
-					errMessage string
-				)
-
-				BeforeEach(func() {
-					platform.GetConfiguredNetworkInterfacesInterfaces = []string{}
-				})
-
-				It("propagates error if network config is not loaded", func() {
-					errMessage = "Network config error"
-					platform.GetConfiguredNetworkInterfacesErr = errors.New(errMessage)
-
-					_, err := metadataService.GetValueAtPath("/user-data")
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring(errMessage))
-					Expect(platform.SetupNetworkingCalled).To(Equal(false))
-				})
-
-				It("adds network if config is not present", func() {
-					_, err := metadataService.GetValueAtPath("/user-data")
-					Expect(err).ToNot(HaveOccurred())
-					Expect(platform.SetupNetworkingCalled).To(Equal(true))
-				})
-
-				It("propagates error when DHCP network setup fails", func() {
-					errMessage = "DHCP setup error"
-					platform.SetupNetworkingErr = errors.New(errMessage)
-
-					_, err := metadataService.GetValueAtPath("/user-data")
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring(errMessage))
-				})
-			})
-
-			It("returns response body if could read response properly", func() {
-				response, err := metadataService.GetValueAtPath("/user-data")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(response).To(Equal(metadataResponse))
-			})
-		})
-	})
-
-	Describe("GetSettings", func() {
-
-		Context("When the metadata service user data contains settings", func() {
-			var (
-				ts *httptest.Server
-			)
-
-			handlerFunc := func(w http.ResponseWriter, r *http.Request) {
-				defer GinkgoRecover()
-
-				Expect(r.Method).To(Equal("GET"))
-				Expect(r.URL.Path).To(Equal("/user-data"))
-				Expect(r.Header.Get("key")).To(Equal("value"))
-
-				jsonStr := fmt.Sprintf(`
-{
-	"agent_id":"%s",
-	"mbus": "%s"
-}
-`, "Agent-Foo", "Agent-Mbus")
-
-				w.Write([]byte(jsonStr))
-			}
-
-			BeforeEach(func() {
-				handler := http.HandlerFunc(handlerFunc)
-				ts = httptest.NewServer(handler)
-				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
-			})
-
-			AfterEach(func() {
-				ts.Close()
-			})
-
-			It("will return the settings object", func() {
-				settings, err := metadataService.GetSettings()
-				Expect(err).To(BeNil())
-				Expect(settings).To(Equal(boshsettings.Settings{
-					AgentID: "Agent-Foo",
-					Mbus:    "Agent-Mbus",
-				}))
-			})
-		})
-
-		Context("When the metadata service user data does NOT contain settings", func() {
-			var (
-				ts *httptest.Server
-			)
-
-			handlerFunc := func(w http.ResponseWriter, r *http.Request) {
-				defer GinkgoRecover()
-
-				Expect(r.Method).To(Equal("GET"))
-				Expect(r.URL.Path).To(Equal("/user-data"))
-				Expect(r.Header.Get("key")).To(Equal("value"))
-
-				jsonStr := fmt.Sprintf(`{}`)
-
-				w.Write([]byte(jsonStr))
-			}
-
-			BeforeEach(func() {
-				handler := http.HandlerFunc(handlerFunc)
-				ts = httptest.NewServer(handler)
-				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", dnsResolver, platform, logger)
-			})
-
-			AfterEach(func() {
-				ts.Close()
-			})
-
-			It("will return an error", func() {
-				_, err := metadataService.GetSettings()
-				Expect(err.Error()).To(Equal("Metadata does not provide settings"))
 			})
 		})
 	})

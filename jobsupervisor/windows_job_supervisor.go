@@ -338,7 +338,7 @@ func (w *windowsJobSupervisor) AddJob(jobName string, jobIndex int, configPath s
 		return err
 	}
 
-	if len(configFileContents) == 0 {
+	if strings.TrimSpace(string(configFileContents)) == "" {
 		w.logger.Debug(w.logTag, "Skipping job configuration for %q, empty monit config file %q", jobName, configPath)
 		return nil
 	}

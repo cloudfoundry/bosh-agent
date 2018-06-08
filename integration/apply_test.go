@@ -43,7 +43,7 @@ var _ = Describe("apply", func() {
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
-					"blobstore_path": "/var/vcap/data",
+					"blobstore_path": "ignored",
 				},
 			},
 
@@ -82,11 +82,11 @@ var _ = Describe("apply", func() {
 		_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "blobs/abc0")
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
 		Expect(err).NotTo(HaveOccurred())
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "blobs/abc1")
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
 		Expect(err).NotTo(HaveOccurred())
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "blobs/abc2")
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
 		Expect(err).NotTo(HaveOccurred())
 
 		applySpec := applyspec.ApplySpec{
@@ -193,6 +193,23 @@ var _ = Describe("apply", func() {
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/foobar")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-	})
 
+		By("using /var/vcap/bosh/blobs as the local blobstore", func() {
+			output, err = testEnvironment.RunCommand("stat /var/vcap/data/blobs")
+			Expect(output).To(MatchRegexp("Access: \\(0700/drwx------\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
+			Expect(err).NotTo(HaveOccurred())
+
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/blobs/abc0")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(MatchRegexp("Size: 519"))
+
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/blobs/abc1")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(MatchRegexp("Size: 295"))
+
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/blobs/abc2")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(MatchRegexp("Size: 230"))
+		})
+	})
 })

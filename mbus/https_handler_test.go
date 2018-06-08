@@ -17,7 +17,7 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	"github.com/cloudfoundry/bosh-agent/platform/fakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-utils/blobstore"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -29,6 +29,7 @@ var _ = Describe("HTTPSHandler", func() {
 		fs              *fakesys.FakeFileSystem
 		receivedRequest boshhandler.Request
 		httpClient      http.Client
+		blobManager     blobstore.BlobManagerInterface
 	)
 	AfterEach(func() {
 		handler.Stop()
@@ -41,9 +42,8 @@ var _ = Describe("HTTPSHandler", func() {
 			mbusURL, _ := url.Parse(serverURL)
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			fs = fakesys.NewFakeFileSystem()
-			dirProvider := boshdir.NewProvider("/var/vcap")
+			blobManager = blobstore.NewBlobManager(fs, "/var/vcap/data/blobs")
 
-			//this test will start to fail on 15 May 2018. see test-assets/readme
 			configCert, err := ioutil.ReadFile("test_assets/custom_cert.pem")
 			Expect(err).NotTo(HaveOccurred())
 			configPrivateKey, err := ioutil.ReadFile("test_assets/custom_key.pem")
@@ -54,7 +54,7 @@ var _ = Describe("HTTPSHandler", func() {
 				PrivateKey:  string(configPrivateKey),
 			}
 
-			handler = NewHTTPSHandler(mbusURL, mbusKeyPair, logger, fs, dirProvider, fakes.NewFakeAuditLogger())
+			handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
 
 			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 				receivedRequest = req
@@ -99,8 +99,8 @@ var _ = Describe("HTTPSHandler", func() {
 			mbusURL, _ := url.Parse(serverURL)
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			fs = fakesys.NewFakeFileSystem()
-			dirProvider := boshdir.NewProvider("/var/vcap")
-			handler = NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, logger, fs, dirProvider, fakes.NewFakeAuditLogger())
+			blobManager = blobstore.NewBlobManager(fs, "/var/vcap/data/blobs")
+			handler = NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, fakes.NewFakeAuditLogger())
 
 			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 				receivedRequest = req
@@ -146,7 +146,7 @@ var _ = Describe("HTTPSHandler", func() {
 		Describe("blob access", func() {
 			Describe("GET /blobs", func() {
 				It("returns data from file system", func() {
-					fs.WriteFileString("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
+					fs.WriteFileString("/var/vcap/data/blobs/123-456-789", "Some data")
 
 					httpResponse, err := httpClient.Get(serverURL + "/blobs/a5/123-456-789")
 					for err != nil {
@@ -162,7 +162,7 @@ var _ = Describe("HTTPSHandler", func() {
 				})
 
 				It("closes the underlying file", func() {
-					blobPath := "/var/vcap/micro_bosh/data/cache/123-456-789"
+					blobPath := "/var/vcap/data/blobs/123-456-789"
 
 					fs.WriteFileString(blobPath, "Some data")
 
@@ -214,7 +214,7 @@ var _ = Describe("HTTPSHandler", func() {
 
 			Describe("PUT /blobs", func() {
 				It("updates the blob on the file system", func() {
-					fs.WriteFileString("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
+					fs.WriteFileString("/var/vcap/data/blobs/123-456-789", "Some data")
 
 					putBody := `Updated data`
 					putPayload := strings.NewReader(putBody)
@@ -228,14 +228,14 @@ var _ = Describe("HTTPSHandler", func() {
 					defer httpResponse.Body.Close()
 					Expect(httpResponse.StatusCode).To(Equal(201))
 
-					contents, err := fs.ReadFileString("/var/vcap/micro_bosh/data/cache/123-456-789")
+					contents, err := fs.ReadFileString("/var/vcap/data/blobs/123-456-789")
 					Expect(err).ToNot(HaveOccurred())
 					Expect(contents).To(Equal("Updated data"))
 				})
 
 				Context("when an incorrect username and password is provided", func() {
 					It("returns a 401", func() {
-						fs.WriteFileString("/var/vcap/micro_bosh/data/cache/123-456-789", "Some data")
+						fs.WriteFileString("/var/vcap/data/blobs/123-456-789", "Some data")
 
 						putBody := `Updated data`
 						putPayload := strings.NewReader(putBody)

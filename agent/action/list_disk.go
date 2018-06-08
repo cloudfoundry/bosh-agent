@@ -48,14 +48,8 @@ func (a ListDiskAction) Run() (interface{}, error) {
 		return nil, bosherr.WrapError(err, "Refreshing the settings")
 	}
 
-	diskHints, err := a.settingsService.GetPersistentDiskHints()
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Refreshing the disk hint settings")
-	}
-
 	settings := a.settingsService.GetSettings()
 	diskIDs := []string{}
-	usedIDs := map[string]bool{}
 
 	for diskID := range settings.Disks.Persistent {
 		var isMounted bool
@@ -68,23 +62,6 @@ func (a ListDiskAction) Run() (interface{}, error) {
 
 		if isMounted {
 			diskIDs = append(diskIDs, diskID)
-			usedIDs[diskID] = true
-		} else {
-			a.logger.Debug("list-disk-action", "Volume '%s' not mounted", diskID)
-		}
-	}
-
-	for diskID, diskSettings := range diskHints {
-		isMounted, err := a.platform.IsPersistentDiskMounted(diskSettings)
-		if err != nil {
-			return nil, bosherr.WrapErrorf(err, "Checking whether device %+v is mounted", diskSettings)
-		}
-
-		if isMounted {
-			if _, present := usedIDs[diskID]; !present {
-				diskIDs = append(diskIDs, diskID)
-				usedIDs[diskID] = true
-			}
 		} else {
 			a.logger.Debug("list-disk-action", "Volume '%s' not mounted", diskID)
 		}

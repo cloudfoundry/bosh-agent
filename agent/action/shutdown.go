@@ -1,0 +1,42 @@
+package action
+
+import (
+	"errors"
+
+	"github.com/cloudfoundry/bosh-agent/platform"
+)
+
+type ShutdownAction struct {
+	platform platform.Platform
+}
+
+func NewShutdown(platform platform.Platform) ShutdownAction {
+	return ShutdownAction{
+		platform: platform,
+	}
+}
+
+func (a ShutdownAction) IsAsynchronous(_ ProtocolVersion) bool {
+	return false
+}
+
+func (a ShutdownAction) IsPersistent() bool {
+	return false
+}
+
+func (a ShutdownAction) IsLoggable() bool {
+	return true
+}
+
+func (a ShutdownAction) Run() (string, error) {
+	a.platform.Shutdown()
+	return "", nil
+}
+
+func (a ShutdownAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
+}
+
+func (a ShutdownAction) Cancel() error {
+	return errors.New("not supported")
+}

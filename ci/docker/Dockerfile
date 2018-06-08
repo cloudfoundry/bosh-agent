@@ -23,20 +23,5 @@ RUN cd /tmp && wget -q https://releases.hashicorp.com/vagrant/2.0.2/vagrant_2.0.
 RUN vagrant plugin install vagrant-aws
 # }
 
-# golang {
-WORKDIR /usr/local
-
-RUN \
-  GO_INFO=$(curl 'https://golang.org/dl/?mode=json' | jq '.[0].files[] | select(.os == "linux" and .arch == "amd64")') && \
-  GO_TAR="$(echo "$GO_INFO" | jq -r '.filename')" && \
-  GO_SHA="$(echo "$GO_INFO" | jq -r '.sha256')" && \ 
-  curl -fSL https://storage.googleapis.com/golang/$GO_TAR -o $GO_TAR \
-  && echo $GO_SHA $GO_TAR | sha256sum -c - \
-  && tar -xzf $GO_TAR \
-  && rm -f $GO_TAR
-
-ENV \
-  PATH=/usr/local/go/bin:$PATH \
-  GOPATH=/root/go \
-  GOROOT=/usr/local/go
-#}
+COPY --from=golang:1 /usr/local/go /usr/local/go
+ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH

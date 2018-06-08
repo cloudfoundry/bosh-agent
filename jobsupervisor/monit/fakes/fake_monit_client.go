@@ -20,6 +20,7 @@ type FakeMonitClient struct {
 
 	StatusStatus FakeMonitStatus
 	StatusErr    error
+	StatusStub   func() (boshmonit.Status, error)
 
 	Incarnations      []int
 	StatusCalledTimes int
@@ -50,6 +51,11 @@ func (c *FakeMonitClient) UnmonitorService(name string) error {
 }
 
 func (c *FakeMonitClient) Status() (boshmonit.Status, error) {
+	if c.StatusStub != nil {
+		c.StatusCalledTimes++
+		return c.StatusStub()
+	}
+
 	s := c.StatusStatus
 	if len(c.Incarnations) > 0 {
 		s.Incarnation = c.Incarnations[c.StatusCalledTimes]

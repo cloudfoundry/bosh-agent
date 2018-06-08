@@ -115,6 +115,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up root disk")
 	}
 
+	if err = boot.platform.SetupSharedMemory(); err != nil {
+		return bosherr.WrapError(err, "Setting up Shared Memory")
+	}
+
 	if err = boot.platform.SetupLogDir(); err != nil {
 		return bosherr.WrapError(err, "Setting up log dir")
 	}

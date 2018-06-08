@@ -3,20 +3,22 @@ package infrastructure_test
 import (
 	"errors"
 
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("RegistryProvider", func() {
 	var (
 		metadataService  *fakeinf.FakeMetadataService
-		platform         *fakeplat.FakePlatform
+		platform         *platformfakes.FakePlatform
 		useServerName    bool
 		fs               *fakesys.FakeFileSystem
 		registryProvider RegistryProvider
@@ -25,7 +27,7 @@ var _ = Describe("RegistryProvider", func() {
 
 	BeforeEach(func() {
 		metadataService = &fakeinf.FakeMetadataService{}
-		platform = &fakeplat.FakePlatform{}
+		platform = &platformfakes.FakePlatform{}
 		useServerName = false
 		fs = fakesys.NewFakeFileSystem()
 	})

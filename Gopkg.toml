@@ -60,3 +60,19 @@ required = ["github.com/onsi/ginkgo/ginkgo"]
 [[constraint]]
   branch = "master"
   name = "golang.org/x/sys"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/masterzen/winrm"
+
+[[override]]
+  branch = "master"
+  name = "github.com/masterzen/azure-sdk-for-go"
+
+[[override]]
+  name = "github.com/masterzen/simplexml"
+  revision = "95ba30457eb1121fa27753627c774c7cd4e90083"
+
+[[override]]
+  name = "github.com/ChrisTrenkamp/goxpath"
+  branch = "master"

@@ -7,15 +7,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"errors"
+
 	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("mappedDevicePathResolver", func() {
 	var (
-		fs           boshsys.FileSystem
+		fs           *fakesys.FakeFileSystem
 		diskSettings boshsettings.DiskSettings
 		resolver     DevicePathResolver
 	)
@@ -125,6 +126,58 @@ var _ = Describe("mappedDevicePathResolver", func() {
 				Expect(timedOut).To(BeFalse())
 			})
 		})
+
+		Context("when path is a symlink", func() {
+			BeforeEach(func() {
+				Expect(fs.WriteFile("/dev/xvdba", []byte{})).To(Succeed())
+				Expect(fs.MkdirAll("/dev/disk/by-label", 0755)).To(Succeed())
+
+				diskSettings = boshsettings.DiskSettings{
+					Path: "/dev/disk/by-label/my-disk-label",
+				}
+			})
+
+			Context("and resolves to absolute path", func() {
+				BeforeEach(func() {
+					Expect(fs.Symlink("/dev/xvdba", "/dev/disk/by-label/my-disk-label")).To(Succeed())
+				})
+
+				It("returns the resolved path", func() {
+					realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+					Expect(realPath).To(Equal("/dev/xvdba"))
+					Expect(err).ToNot(HaveOccurred())
+					Expect(timedOut).To(BeFalse())
+				})
+			})
+
+			Context("and resolves to a relative path", func() {
+				BeforeEach(func() {
+					Expect(fs.Symlink("../../xvdba", "/dev/disk/by-label/my-disk-label")).To(Succeed())
+				})
+
+				It("returns the resolved path", func() {
+					realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+					Expect(realPath).To(Equal("/dev/xvdba"))
+					Expect(err).ToNot(HaveOccurred())
+					Expect(timedOut).To(BeFalse())
+				})
+			})
+
+			Context("and ReadLink fails", func() {
+				BeforeEach(func() {
+					Expect(fs.Symlink("/dev/xvdba", "/dev/disk/by-label/my-disk-label")).To(Succeed())
+					fs.ReadlinkError = errors.New("can't read symlink")
+				})
+
+				It("returns error", func() {
+					_, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Getting real device path: can't read symlink"))
+					Expect(timedOut).To(BeFalse())
+				})
+			})
+		})
+
 		Context("when path does not exist", func() {
 			BeforeEach(func() {
 				diskSettings = boshsettings.DiskSettings{

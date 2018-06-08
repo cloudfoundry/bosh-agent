@@ -26,7 +26,6 @@ func NewCascadingBlobstore(
 }
 
 func (b cascadingBlobstore) Get(blobID string, digest boshcrypto.Digest) (string, error) {
-
 	if b.blobManager.BlobExists(blobID) {
 		blobPath, err := b.blobManager.GetPath(blobID, digest)
 

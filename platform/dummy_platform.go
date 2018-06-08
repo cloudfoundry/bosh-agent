@@ -216,6 +216,10 @@ func (p dummyPlatform) SetupLogDir() error {
 	return nil
 }
 
+func (p dummyPlatform) SetupSharedMemory() error {
+	return nil
+}
+
 func (p dummyPlatform) SetupBlobsDir() error {
 
 	blobsDir := p.dirProvider.BlobsDir()
@@ -494,5 +498,9 @@ func (p dummyPlatform) existingMounts() ([]mount, error) {
 }
 
 func (p dummyPlatform) SetupRecordsJSONPermission(path string) error {
+	return nil
+}
+
+func (p dummyPlatform) Shutdown() error {
 	return nil
 }

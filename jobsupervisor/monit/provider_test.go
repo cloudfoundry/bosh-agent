@@ -4,23 +4,24 @@ import (
 	"net/http"
 	"time"
 
+	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("clientProvider", func() {
+	var platform *platformfakes.FakePlatform
+
 	It("Get", func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		platform := fakeplatform.NewFakePlatform()
+		platform = &platformfakes.FakePlatform{}
 
-		platform.GetMonitCredentialsUsername = "fake-user"
-		platform.GetMonitCredentialsPassword = "fake-pass"
+		platform.GetMonitCredentialsReturns("fake-user", "fake-pass", nil)
 
 		client, err := NewProvider(platform, logger).Get()
 		Expect(err).ToNot(HaveOccurred())

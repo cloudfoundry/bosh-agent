@@ -2,14 +2,14 @@ package integration_test
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"fmt"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	"strings"
 )
 
 var _ = Describe("sync_dns", func() {
@@ -43,7 +43,7 @@ var _ = Describe("sync_dns", func() {
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
-					"blobstore_path": "/var/vcap/data",
+					"blobstore_path": "/var/vcap/data/blobs",
 				},
 			},
 
@@ -115,7 +115,7 @@ var _ = Describe("sync_dns", func() {
 		blobDigest, err := testEnvironment.RunCommand("sudo shasum /tmp/new-dns-records | cut -f 1 -d ' '")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/new-dns-records")
+		_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/blobs/new-dns-records")
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = agentClient.SyncDNS("new-dns-records", strings.TrimSpace(blobDigest), 1)

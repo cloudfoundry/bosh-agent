@@ -1,12 +1,14 @@
 package integration_test
 
 import (
+	"fmt"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	"strings"
 )
 
 var _ = Describe("compile_package", func() {
@@ -40,7 +42,8 @@ var _ = Describe("compile_package", func() {
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
-					"blobstore_path": "/var/vcap/data",
+					// this path should get rewritten internally to /var/vcap/data/blobs
+					"blobstore_path": "/var/vcap/micro_bosh/data/cache",
 				},
 			},
 
@@ -75,6 +78,24 @@ var _ = Describe("compile_package", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("compiles and stores it to the blobstore", func() {
+		err := testEnvironment.CreateBlobFromAsset("dummy_package.tgz", "123")
+		Expect(err).NotTo(HaveOccurred())
+
+		result, err := agentClient.CompilePackage(agentclient.BlobRef{
+			Name:        "fake",
+			Version:     "1",
+			BlobstoreID: "123",
+			SHA1:        "236cbd31a483c3594061b00a84a80c1c182b3b20",
+		}, []agentclient.BlobRef{})
+
+		Expect(err).NotTo(HaveOccurred())
+
+		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat /var/vcap/data/blobs/%s", result.BlobstoreID))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(MatchRegexp("regular file"))
+	})
+
 	It("allows passing bare sha1 for legacy support", func() {
 		err := testEnvironment.CreateBlobFromAsset("dummy_package.tgz", "123")
 		Expect(err).NotTo(HaveOccurred())
@@ -88,7 +109,7 @@ var _ = Describe("compile_package", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 
-		out, err := testEnvironment.RunCommand("sudo zgrep 'dummy contents of dummy package file' /var/vcap/data/* | wc -l")
+		out, err := testEnvironment.RunCommand(`sudo /bin/bash -c "zgrep 'dummy contents of dummy package file' /var/vcap/data/blobs/* | wc -l"`)
 		Expect(err).NotTo(HaveOccurred(), out)
 		// we expect both the original, uncompiled copy and the compiled copy of the package to exist
 		Expect(strings.Trim(out, "\n")).To(Equal("2"))

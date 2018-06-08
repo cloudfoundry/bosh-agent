@@ -97,7 +97,6 @@ func (app *app) Setup(opts Options) error {
 	settingsService := boshsettings.NewService(
 		app.platform.GetFs(),
 		filepath.Join(app.dirProvider.BoshDir(), "settings.json"),
-		filepath.Join(app.dirProvider.BoshDir(), "persistent_disk_hints.json"),
 		settingsSource,
 		app.platform,
 		app.logger,
@@ -121,18 +120,18 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Running bootstrap")
 	}
 
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, auditLogger)
-
-	mbusHandler, err := mbusHandlerProvider.Get(app.platform, app.dirProvider)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting mbus handler")
-	}
-
 	blobManager := boshblob.NewBlobManager(app.platform.GetFs(), app.dirProvider.BlobsDir())
 	blobstore, err := app.setupBlobstore(settingsService.GetSettings().GetBlobstore(), blobManager)
 
 	if err != nil {
 		return bosherr.WrapError(err, "Getting blobstore")
+	}
+
+	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, auditLogger)
+
+	mbusHandler, err := mbusHandlerProvider.Get(app.platform, blobManager)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting mbus handler")
 	}
 
 	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger)
@@ -328,10 +327,41 @@ func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobMan
 		app.logger,
 	)
 
+	blobstoreSettings = app.patchBlobstoreOptions(blobstoreSettings)
+
 	blobstore, err := blobstoreProvider.Get(blobstoreSettings.Type, blobstoreSettings.Options)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Getting blobstore")
 	}
 
 	return boshagentblobstore.NewCascadingBlobstore(blobstore, blobManager, app.logger), nil
+}
+
+func (app *app) patchBlobstoreOptions(blobstoreSettings boshsettings.Blobstore) boshsettings.Blobstore {
+	if blobstoreSettings.Type != boshblob.BlobstoreTypeLocal {
+		return blobstoreSettings
+	}
+
+	blobstorePath, ok := blobstoreSettings.Options["blobstore_path"]
+	if !ok {
+		return blobstoreSettings
+	}
+
+	pathStr, ok := blobstorePath.(string)
+	if !ok {
+		return blobstoreSettings
+	}
+
+	if pathStr != "/var/vcap/micro_bosh/data/cache" {
+		return blobstoreSettings
+	}
+
+	dir := app.dirProvider.BlobsDir()
+	app.logger.Debug(app.logTag, fmt.Sprintf("Resetting local blobstore path to %s", dir))
+
+	blobstoreSettings.Options = map[string]interface{}{
+		"blobstore_path": dir,
+	}
+
+	return blobstoreSettings
 }
