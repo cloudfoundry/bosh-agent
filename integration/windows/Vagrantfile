@@ -105,8 +105,7 @@ if ((Get-Command "bosh-agent.exe" -ErrorAction SilentlyContinue) -eq $null)
 SHELL
 
 put_modules_in_path = <<-SHELL
-  mkdir 'C:\\Program Files\\WindowsPowerShell\\Modules\\psFixture'
-  Move-Item C:\\bosh\\psFixture.* 'C:\\Program Files\\WindowsPowerShell\\Modules\\psFixture'
+  Move-Item C:\\bosh\\psFixture 'C:\\Program Files\\WindowsPowerShell\\Modules'
 SHELL
 
 initialize_agent_service = <<-SHELL
