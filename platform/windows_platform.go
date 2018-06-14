@@ -346,6 +346,23 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return nil
 	}
 
+	dataPath := fmt.Sprintf(`C:%s\`, p.dirProvider.DataDir())
+
+	checkProtectDirCmdlet := &powershellAction{
+		commandArgs: []string{
+			"Get-Command",
+			"Protect-Dir",
+		},
+		commandFailureFmt: fmt.Sprintf("Cannot protect %s. Protect-Dir cmd does not exist: %%s", dataPath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	_, err := checkProtectDirCmdlet.run()
+
+	if err != nil {
+		return err
+	}
+
 	checkFreeSpaceAction := &powershellAction{
 		commandArgs: []string{
 			"Get-Disk",
@@ -374,8 +391,6 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		)
 		return nil
 	}
-
-	dataPath := fmt.Sprintf(`C:%s\`, p.dirProvider.DataDir())
 
 	checkForExistingPartitionCommand := []string{
 		"Get-Partition",
@@ -444,6 +459,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	}
 
 	_, err = formatVolumeAction.run()
+
 	if err != nil {
 		return err
 	}
@@ -468,6 +484,22 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	}
 
 	_, err = mountVolumeAction.run()
+	if err != nil {
+		return err
+	}
+
+	protectDataDirAction := &powershellAction{
+		commandArgs: []string{
+			"Protect-Dir",
+			dataPath,
+			"-disableInheritance",
+			"$false",
+		},
+		commandFailureFmt: fmt.Sprintf(""),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	_, err = protectDataDirAction.run()
 	if err != nil {
 		return err
 	}

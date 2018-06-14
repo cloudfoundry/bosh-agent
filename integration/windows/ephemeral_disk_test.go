@@ -222,7 +222,7 @@ func (e *windowsEnvironment) ensureAgentServiceStopped() {
 }
 
 func (e *windowsEnvironment) ensureDataDirDoesntExist() {
-	testPathOutput := e.runPowershellCommand("Test-Path -Path %s", e.dataDir)
+	testPathOutput := e.runPowershellCommandWithOffset(1, "Test-Path -Path %s", e.dataDir)
 
 	exists := strings.TrimSpace(testPathOutput) == "True"
 	if exists {

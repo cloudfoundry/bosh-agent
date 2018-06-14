@@ -50,6 +50,8 @@ func tarFixtures(fixturesDir, filename string) error {
 		"agent-configuration/root-partition-agent.json",
 		"agent-configuration/root-partition-agent-ephemeral-disabled.json",
 		"agent-configuration/settings.json",
+		"psFixture/psFixture.psd1",
+		"psFixture/psFixture.psm1",
 	}
 
 	archive, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)

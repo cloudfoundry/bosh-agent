@@ -42,6 +42,11 @@ agent_elastic_ip = ENV.fetch "AGENT_ELASTIC_IP" do
   nil
 end
 
+os_version = ENV.fetch "WINDOWS_OS_VERSION" do
+  puts "WINDOWS_OS_VERSION not set"
+  nil
+end
+
 configure_security_settings = <<-SHELL
   Set-ExecutionPolicy -ExecutionPolicy Bypass
 SHELL
@@ -99,6 +104,11 @@ if ((Get-Command "bosh-agent.exe" -ErrorAction SilentlyContinue) -eq $null)
 }
 SHELL
 
+put_modules_in_path = <<-SHELL
+  mkdir 'C:\\Program Files\\WindowsPowerShell\\Modules\\psFixture'
+  Move-Item C:\\bosh\\psFixture.* 'C:\\Program Files\\WindowsPowerShell\\Modules\\psFixture'
+SHELL
+
 initialize_agent_service = <<-SHELL
   Move-Item C:\\bosh\\job-service-wrapper.exe C:\\var\\vcap\\bosh\\bin\\job-service-wrapper.exe -Force
 
@@ -153,7 +163,7 @@ SHELL
 
 Vagrant.configure(2) do |config|
   config.vm.provider :aws do |aws, override|
-    aws.instance_type = "m3.medium"
+    aws.instance_type = "m4.large"
     override.vm.synced_folder ".", "/vagrant", disabled: true
   end
 
@@ -165,7 +175,7 @@ Vagrant.configure(2) do |config|
       # Private buckets:
       # https://s3.amazonaws.com/windows-bosh-private/bosh-agent.windows-integration-2012R2.box
       # https://s3.amazonaws.com/windows-bosh-private/bosh-agent.windows-integration-1709.box
-      override.vm.box = "windows-integration-#{ENV['WINDOWS_OS_VERSION']}"
+      override.vm.box = "windows-integration-#{os_version}"
       v.cpus = 4
     end
 
@@ -174,7 +184,7 @@ Vagrant.configure(2) do |config|
       override.vm.box = "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box"
       override.winrm.password = winrm_password
       override.winrm.username = winrm_username
-      aws.instance_type = "m3.xlarge"
+      aws.instance_type = "m4.large"
       aws.access_key_id = access_key_id
       aws.secret_access_key = secret_key_id
       aws.keypair_name = keypair_name
@@ -203,7 +213,8 @@ Vagrant.configure(2) do |config|
       apply_default_agent_config,
       configure_security_settings,
       add_bosh_to_path,
-      initialize_agent_service
+      initialize_agent_service,
+      put_modules_in_path
     ]
 
     agent.vm.provision "shell", inline: provision_scripts.join("\n")
