@@ -293,8 +293,8 @@
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
-  version = "v1.2.1"
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
 
 [[projects]]
   branch = "master"
@@ -304,12 +304,13 @@
     "ed25519",
     "ed25519/internal/edwards25519",
     "internal/chacha20",
+    "internal/subtle",
     "md4",
     "poly1305",
     "ssh",
     "ssh/terminal"
   ]
-  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
+  revision = "a8fb68e7206f8c78be19b432c58eb52a6aa34462"
 
 [[projects]]
   branch = "master"
@@ -322,7 +323,7 @@
     "internal/socks",
     "proxy"
   ]
-  revision = "1e491301e022f8f977054da4c2d852decd59571f"
+  revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
 
 [[projects]]
   branch = "master"
@@ -334,7 +335,7 @@
     "windows/svc",
     "windows/svc/mgr"
   ]
-  revision = "9527bec2660bd847c050fda93a0f0c6dee0800bb"
+  revision = "6c888cc515d3ed83fc103cf1d84468aad274b0a7"
 
 [[projects]]
   name = "golang.org/x/text"
