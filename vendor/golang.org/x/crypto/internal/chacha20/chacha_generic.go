@@ -9,8 +9,6 @@ package chacha20
 import (
 	"crypto/cipher"
 	"encoding/binary"
-
-	"golang.org/x/crypto/internal/subtle"
 )
 
 // assert that *Cipher implements cipher.Stream
@@ -20,10 +18,10 @@ var _ cipher.Stream = (*Cipher)(nil)
 // and nonce. A *Cipher implements the cipher.Stream interface.
 type Cipher struct {
 	key     [8]uint32
-	counter uint32 // incremented after each block
 	nonce   [3]uint32
-	buf     [bufSize]byte // buffer for unused keystream bytes
-	len     int           // number of unused keystream bytes at end of buf
+	counter uint32   // incremented after each block
+	buf     [64]byte // buffer for unused keystream bytes
+	len     int      // number of unused keystream bytes at end of buf
 }
 
 // New creates a new ChaCha20 stream cipher with the given key and nonce.
@@ -43,13 +41,6 @@ func New(key [8]uint32, nonce [3]uint32) *Cipher {
 // the src buffers was passed in a single run. That is, Cipher
 // maintains state and does not reset at each XORKeyStream call.
 func (s *Cipher) XORKeyStream(dst, src []byte) {
-	if len(dst) < len(src) {
-		panic("chacha20: output smaller than input")
-	}
-	if subtle.InexactOverlap(dst[:len(src)], src) {
-		panic("chacha20: invalid buffer overlap")
-	}
-
 	// xor src with buffered keystream first
 	if s.len != 0 {
 		buf := s.buf[len(s.buf)-s.len:]
@@ -70,10 +61,6 @@ func (s *Cipher) XORKeyStream(dst, src []byte) {
 	}
 
 	if len(src) == 0 {
-		return
-	}
-	if haveAsm {
-		s.xorKeyStreamAsm(dst, src)
 		return
 	}
 
