@@ -639,7 +639,7 @@ iface ethstatic inet static
 
 option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
 
-send host-name "<hostname>";
+send host-name = gethostname();
 
 request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
@@ -670,7 +670,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 
 option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
 
-send host-name "<hostname>";
+send host-name = gethostname();
 
 request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
@@ -712,7 +712,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 
 option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
 
-send host-name "<hostname>";
+send host-name = gethostname();
 
 request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
@@ -760,7 +760,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 
 option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
 
-send host-name "<hostname>";
+send host-name = gethostname();
 
 request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
