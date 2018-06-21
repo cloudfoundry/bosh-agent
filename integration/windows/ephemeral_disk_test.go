@@ -11,6 +11,8 @@ import (
 
 	"strconv"
 
+	"path/filepath"
+
 	"github.com/masterzen/winrm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -53,7 +55,7 @@ var _ = Describe("EphemeralDisk", func() {
 			agent.ensureRootPartitionAtMaxSize()
 
 			agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\agent.json c:\\bosh\\agent.json")
-			agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+			agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 		}
 	})
 
@@ -66,9 +68,9 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		agent.ensureVolumeHasDataDir("0")
-
 		partitionNumber = agent.getDataDirPartitionNumber()
 
+		agent.assertDataACLed()
 	})
 
 	It("when root disk partition is already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
@@ -91,7 +93,7 @@ var _ = Describe("EphemeralDisk", func() {
 		)
 	})
 
-	It("when there is no remaining space on the root disk, no partititon is created, a warning is logged", func() {
+	It("when there is no remaining space on the root disk, no partition is created, a warning is logged", func() {
 		agent.ensureAgentServiceStopped()
 		agent.ensureDataDirDoesntExist()
 
@@ -269,4 +271,13 @@ func (e *windowsEnvironment) runPowershellCommandWithOffset(offset int, cmd stri
 
 func (e *windowsEnvironment) runPowershellCommand(cmd string, cmdFmtArgs ...interface{}) string {
 	return e.runPowershellCommandWithOffset(1, cmd, cmdFmtArgs...)
+}
+
+func (e *windowsEnvironment) assertDataACLed() {
+	testFile := filepath.Join(e.dataDir + "testfile")
+
+	e.runPowershellCommandWithOffset(1, "echo 'content' >> %s", testFile)
+	dataACLerrors := e.runPowershellCommandWithOffset(1, "Check-Acls %s ", e.dataDir)
+	aclErrsCount := len(strings.TrimSpace(dataACLerrors))
+	ExpectWithOffset(1, aclErrsCount == 0).To(BeTrue(), fmt.Sprintf("Expected data directory to have correct ACLs. Counted %s errors.", dataACLerrors))
 }

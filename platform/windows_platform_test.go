@@ -445,7 +445,7 @@ At line:1 char:1
     + CategoryInfo          : NotSpecified: (StorageWMI:ROOT/Microsoft/Windows
    /Storage/MSFT_Disk) [New-Partition], CimException
     + FullyQualifiedErrorId : StorageWMI 40000,New-Partition`
-			formatError = `get-partition : No MSFT_Partition objects found with property 'DiskNumber'
+			getPartitionError = `get-partition : No MSFT_Partition objects found with property 'DiskNumber'
 equal to '4'.  Verify the value of the property and retry.
 At line:1 char:1
 + Get-Partition -DiskNumber 4 | Select-Object -Last 1 | Format-Volume
@@ -487,6 +487,21 @@ At line:1 char:1
 + ~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : ObjectNotFound: (Protect-Dir:String) [Get-Command], CommandNotFoundException
     + FullyQualifiedErrorId : CommandNotFoundException,Microsoft.PowerShell.Commands.GetCommandCommand
+`
+			accessPathOutput = `\\?\Volume{89850305-7327-11e8-80be-d2c3c2124585}\
+`
+			accessPath = `\\?\Volume{89850305-7327-11e8-80be-d2c3c2124585}\`
+
+			protectDirError = `At line:1 char:62
++ $acPath = Get-Acl -LiteralPath \\?\Volume{89850305-7327-11e8-80be-d2c ...
++                                                              ~
+You must provide a value expression following the '-' operator.
+At line:1 char:62
++ ... et-Acl -LiteralPath \\?\Volume{89850305-7327-11e8-80be-d2c3c2124585}\
++                                                       ~~~~~~~~~~~~~~~~~
+Unexpected token '80be-d2c3c2124585' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedValueExpression
 `
 		)
 
@@ -533,7 +548,8 @@ At line:1 char:1
 			partitionCommand := newPartitionCommand(diskNumber)
 			formatCommand := formatVolumeCommand(diskNumber, partitionNumber)
 			addAccessPathCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
-			protectDataDirCommand := protectDirCmd(dataDir)
+			getAccessPathCommand := getPartitionAccessPathCommand(partitionNumber)
+			protectDataDirCommand := protectDirCmd(accessPath)
 
 			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(
@@ -545,6 +561,7 @@ At line:1 char:1
 				fakesys.FakeCmdResult{Stdout: newLineOutput},
 			)
 			cmdRunner.AddCmdResult(partitionCommand, fakesys.FakeCmdResult{Stdout: partitionNumberOutput})
+			cmdRunner.AddCmdResult(getAccessPathCommand, fakesys.FakeCmdResult{Stdout: accessPathOutput})
 			cmdRunner.AddCmdResult(formatCommand, fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(addAccessPathCommand, fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(protectDataDirCommand, fakesys.FakeCmdResult{})
@@ -554,6 +571,7 @@ At line:1 char:1
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(partitionCommand, " "))))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(getAccessPathCommand, " "))))
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(formatCommand, " "))))
 
 			Expect(fs.MkdirAllCallCount).To(Equal(1))
@@ -696,8 +714,55 @@ At line:1 char:1
 			))
 		})
 
+		It("returns an error when Get-Partition AccessPaths command returns non-zero exit code", func() {
+			cmdStderr := getPartitionError
+
+			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(
+				getPartitionAccessPathCommand(partitionNumber),
+				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
+			)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(fmt.Sprintf("Failed to retrieve AccessPaths for partition %s: %s", partitionNumber, cmdStderr)))
+		})
+
+		It("returns an error when running get-partition for accesspaths command fails", func() {
+			cmdRunnerError := errors.New("It went wrong")
+			expandedCommand := getPartitionAccessPathCommand(partitionNumber)
+
+			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(
+				getPartitionAccessPathCommand(partitionNumber),
+				fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
+			)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError.Error()),
+			))
+		})
+
 		It("returns an error when attempting to format returns a non-zero exit code", func() {
-			cmdStderr := formatError
+			cmdStderr := getPartitionError
 			diskNumber = "4"
 			partitionNumber = "8"
 			partitionNumberOutput = fmt.Sprintf(`%s
@@ -712,6 +777,7 @@ At line:1 char:1
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(
 				formatVolumeCommand(diskNumber, partitionNumber),
 				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
@@ -735,6 +801,7 @@ At line:1 char:1
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -754,6 +821,7 @@ At line:1 char:1
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
 
 			mkdirErr := errors.New("So wrong")
@@ -774,6 +842,7 @@ At line:1 char:1
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir),
 				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197})
@@ -798,7 +867,57 @@ At line:1 char:1
 				newPartitionCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
+		})
+
+		It("Returns an error when Protect-Dir fails", func() {
+			cmdStderr := protectDirError
+			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{Stdout: accessPathOutput})
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{Stdout: accessPathOutput})
+			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir),
+				fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(protectDirCmd(accessPath), fakesys.FakeCmdResult{ExitStatus: 197, Stderr: cmdStderr})
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(MatchError(
+				fmt.Sprintf("Failed to protect dir %s : %s", accessPath, cmdStderr),
+			))
+		})
+
+		It("returns an error when calling protect-dir command fails", func() {
+			cmdRunnerError := errors.New("Failure")
+			addAccessCmd := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
+			expandedCommand := protectDirCmd(accessPath)
+
+			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
+				newPartitionCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
+			)
+			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{Stdout: accessPathOutput})
+			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(addAccessCmd, fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -862,10 +981,17 @@ func getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir string) s
 	)
 }
 
-func protectDirCmd(dataDir string) string {
+func getPartitionAccessPathCommand(partitionNumber string) string {
 	return fmt.Sprintf(
-		`powershell.exe Protect-Dir %s -disableInheritance $false`,
-		dataDir,
+		`powershell.exe Get-Partition -PartitionNumber %s | Select -ExpandProperty AccessPaths`,
+		partitionNumber,
+	)
+}
+
+func protectDirCmd(accessPath string) string {
+	return fmt.Sprintf(
+		`powershell.exe Protect-Dir '%s' -DisableInheritance $false`,
+		accessPath,
 	)
 }
 
