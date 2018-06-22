@@ -484,7 +484,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return err
 	}
 
-	err = p.fs.MkdirAll(dataPath, 0600)
+	err = p.fs.MkdirAll(dataPath, 0750)
 	if err != nil {
 		return fmt.Errorf(`Failed to create %s: %s`, dataPath, err)
 	}

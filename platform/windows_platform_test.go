@@ -577,7 +577,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(fs.MkdirAllCallCount).To(Equal(1))
 
 			Expect(fs.GetFileTestStat(dataDir)).To(
-				Equal(&fakesys.FakeFileStats{FileMode: 0600, FileType: fakesys.FakeFileTypeDir}),
+				Equal(&fakesys.FakeFileStats{FileMode: 0750, FileType: fakesys.FakeFileTypeDir}),
 			)
 
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(addAccessPathCommand, " "))))
