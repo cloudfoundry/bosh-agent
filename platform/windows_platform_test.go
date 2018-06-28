@@ -480,7 +480,7 @@ At line:1 char:1
 `
 
 			protectDirMissingError = `
-Get-Command : The term 'Protect-Dir' is not recognized as the name of a cmdlet, function, script file, or operable program.
+Get-Command : The term 'Protect-MountedDir' is not recognized as the name of a cmdlet, function, script file, or operable program.
 Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
 At line:1 char:1
 + Get-Command Protect-Dir
@@ -488,17 +488,14 @@ At line:1 char:1
     + CategoryInfo          : ObjectNotFound: (Protect-Dir:String) [Get-Command], CommandNotFoundException
     + FullyQualifiedErrorId : CommandNotFoundException,Microsoft.PowerShell.Commands.GetCommandCommand
 `
-			accessPathOutput = `\\?\Volume{89850305-7327-11e8-80be-d2c3c2124585}\
-`
-			accessPath = `\\?\Volume{89850305-7327-11e8-80be-d2c3c2124585}\`
 
 			protectDirError = `At line:1 char:62
-+ $acPath = Get-Acl -LiteralPath \\?\Volume{89850305-7327-11e8-80be-d2c ...
++ $acPath = Get-Acl -LiteralPath C:\\fake-dir\\data\\
 +                                                              ~
 You must provide a value expression following the '-' operator.
 At line:1 char:62
-+ ... et-Acl -LiteralPath \\?\Volume{89850305-7327-11e8-80be-d2c3c2124585}\
-+                                                       ~~~~~~~~~~~~~~~~~
++ ... et-Acl -LiteralPath C:\\fake-dir\\data\\
++                         ~~~~~~~~~~~~~~~~~
 Unexpected token '80be-d2c3c2124585' in expression or statement.
     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
     + FullyQualifiedErrorId : ExpectedValueExpression
@@ -536,6 +533,24 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			)
 		})
 
+		prepareSuccessfulFakeCommands := func(diskNumber, partitionNumber, dataDir string) {
+			cmdRunner.AddCmdResult(checkProtectDirExistsCommand(), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(
+				getDiskLargestFreeExtentCommand(diskNumber),
+				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+			)
+			cmdRunner.AddCmdResult(
+				getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir),
+				fakesys.FakeCmdResult{Stdout: newLineOutput},
+			)
+			partitionNumberOutput = fmt.Sprintf(`%s
+`, partitionNumber)
+			cmdRunner.AddCmdResult(newPartitionCommand(diskNumber), fakesys.FakeCmdResult{Stdout: partitionNumberOutput})
+			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(protectDirCmd(dataDir), fakesys.FakeCmdResult{})
+		}
+
 		It("does nothing when path is empty", func() {
 			diskNumber = ""
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -545,34 +560,16 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 
 		It("partitions the root disk when disk is 0", func() {
-			partitionCommand := newPartitionCommand(diskNumber)
-			formatCommand := formatVolumeCommand(diskNumber, partitionNumber)
-			addAccessPathCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
-			getAccessPathCommand := getPartitionAccessPathCommand(partitionNumber)
-			protectDataDirCommand := protectDirCmd(accessPath)
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir),
-				fakesys.FakeCmdResult{Stdout: newLineOutput},
-			)
-			cmdRunner.AddCmdResult(partitionCommand, fakesys.FakeCmdResult{Stdout: partitionNumberOutput})
-			cmdRunner.AddCmdResult(getAccessPathCommand, fakesys.FakeCmdResult{Stdout: accessPathOutput})
-			cmdRunner.AddCmdResult(formatCommand, fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(addAccessPathCommand, fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(protectDataDirCommand, fakesys.FakeCmdResult{})
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(partitionCommand, " "))))
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(getAccessPathCommand, " "))))
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(formatCommand, " "))))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(
+				strings.Split(formatVolumeCommand(diskNumber, partitionNumber), " "),
+			)))
 
 			Expect(fs.MkdirAllCallCount).To(Equal(1))
 
@@ -580,20 +577,18 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				Equal(&fakesys.FakeFileStats{FileMode: 0750, FileType: fakesys.FakeFileTypeDir}),
 			)
 
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(addAccessPathCommand, " "))))
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(protectDataDirCommand, " "))))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(
+				strings.Split(addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir), " "),
+			)))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(protectDirCmd(dataDir), " "))))
 		})
 
 		It("does nothing if partition exists on root disk with accesspath to data dir", func() {
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
 			cmdRunner.AddCmdResult(
 				getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir),
 				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
 			)
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
@@ -604,13 +599,12 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		It("logs a warning and doesn't create a partition if there is less than 1MB of free disk space", func() {
 			smallRemainingDiskOutput := fmt.Sprintf(`%s
 `, (1024*1024)-1)
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(
 				getDiskLargestFreeExtentCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: smallRemainingDiskOutput},
 			)
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -622,13 +616,13 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 		It("returns an error a warning when Protect-Dir cmdlet is missing", func() {
 			cmdRunner.AddCmdResult(
-				checkProtectDirExists(),
+				checkProtectDirExistsCommand(),
 				fakesys.FakeCmdResult{ExitStatus: 1, Stderr: protectDirMissingError},
 			)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 			Expect(err).To(MatchError(
-				fmt.Sprintf("Cannot protect %s. Protect-Dir cmd does not exist: %s", dataDir, protectDirMissingError),
+				fmt.Sprintf("Cannot protect %s. Protect-MountedDir cmd does not exist: %s", dataDir, protectDirMissingError),
 			))
 
 		})
@@ -637,9 +631,9 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			cmdRunnerError := errors.New("It went wrong")
 			expandedCommand := getDiskLargestFreeExtentCommand(diskNumber)
 
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(
@@ -649,13 +643,12 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 		It("returns an error when Get-Disk command returns non-zero exit code", func() {
 			cmdStderr := getDiskError
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(
 				getDiskLargestFreeExtentCommand(diskNumber),
 				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
 			)
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(
@@ -667,13 +660,9 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			cmdRunnerError := errors.New("It went wrong")
 			expandedCommand := getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir)
 
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(
@@ -683,14 +672,9 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 		It("returns an error when New-Partition command returns non-zero exit code", func() {
 			cmdStderr := partitionError
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
 			cmdRunner.AddCmdResult(newPartitionCommand(diskNumber), fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(fmt.Sprintf("Failed to create partition on disk 0: %s", cmdStderr)))
@@ -699,61 +683,9 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		It("returns an error when running new-partition command fails", func() {
 			cmdRunnerError := errors.New("It went wrong")
 			expandedCommand := newPartitionCommand(diskNumber)
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
-
-			Expect(err).To(MatchError(
-				fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError.Error()),
-			))
-		})
-
-		It("returns an error when Get-Partition AccessPaths command returns non-zero exit code", func() {
-			cmdStderr := getPartitionError
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(
-				getPartitionAccessPathCommand(partitionNumber),
-				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
-			)
-
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
-
-			Expect(err).To(MatchError(fmt.Sprintf("Failed to retrieve AccessPaths for partition %s: %s", partitionNumber, cmdStderr)))
-		})
-
-		It("returns an error when running get-partition for accesspaths command fails", func() {
-			cmdRunnerError := errors.New("It went wrong")
-			expandedCommand := getPartitionAccessPathCommand(partitionNumber)
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(
-				getPartitionAccessPathCommand(partitionNumber),
-				fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
-			)
-
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(
@@ -765,24 +697,13 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			cmdStderr := getPartitionError
 			diskNumber = "4"
 			partitionNumber = "8"
-			partitionNumberOutput = fmt.Sprintf(`%s
-`, partitionNumber)
 
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(
 				formatVolumeCommand(diskNumber, partitionNumber),
 				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
 			)
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(fmt.Sprintf("Failed to format partition 8 on disk 4: %s", cmdStderr)))
@@ -791,19 +712,9 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		It("returns an error when attempting to format command fails", func() {
 			cmdRunnerError := errors.New("It went wrong")
 			expandedCommand := formatVolumeCommand(diskNumber, partitionNumber)
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(
@@ -812,41 +723,23 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 
 		It(`returns an error when creating C:\var\vcap\data fails`, func() {
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
-
 			mkdirErr := errors.New("So wrong")
 			fs.RegisterMkdirAllError(dataDir, mkdirErr)
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
 			Expect(err).To(MatchError(fmt.Sprintf(`Failed to create %s: %s`, dataDir, mkdirErr)))
 		})
 
 		It("Returns an error when Add-PartitionAccessPath fails", func() {
 			cmdStderr := accessPathError
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
+				addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir),
+				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
 			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir),
-				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(
@@ -857,69 +750,32 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		It("returns an error when attempting to add partition access path command fails", func() {
 			cmdRunnerError := errors.New("Failure")
 			expandedCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
 		})
 
-		It("Returns an error when Protect-Dir fails", func() {
+		It("Returns an error when Protect-MountedDir fails", func() {
 			cmdStderr := protectDirError
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{Stdout: accessPathOutput})
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{Stdout: accessPathOutput})
-			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir),
-				fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(protectDirCmd(accessPath), fakesys.FakeCmdResult{ExitStatus: 197, Stderr: cmdStderr})
+			cmdRunner.AddCmdResult(protectDirCmd(dataDir), fakesys.FakeCmdResult{ExitStatus: 197, Stderr: cmdStderr})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(
-				fmt.Sprintf("Failed to protect dir %s : %s", accessPath, cmdStderr),
+				fmt.Sprintf("Failed to protect dir %s : %s", dataDir, cmdStderr),
 			))
 		})
 
 		It("returns an error when calling protect-dir command fails", func() {
 			cmdRunnerError := errors.New("Failure")
-			addAccessCmd := addPartitionAccessPathCommand(diskNumber, partitionNumber, dataDir)
-			expandedCommand := protectDirCmd(accessPath)
-
-			cmdRunner.AddCmdResult(checkProtectDirExists(), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(
-				getDiskLargestFreeExtentCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
-			)
-			cmdRunner.AddCmdResult(
-				newPartitionCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionNumberOutput},
-			)
-			cmdRunner.AddCmdResult(getPartitionAccessPathCommand(partitionNumber), fakesys.FakeCmdResult{Stdout: accessPathOutput})
-			cmdRunner.AddCmdResult(formatVolumeCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(addAccessCmd, fakesys.FakeCmdResult{})
+			expandedCommand := protectDirCmd(dataDir)
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
@@ -981,17 +837,11 @@ func getPartitionForDiskNumberAndAccessPathCommand(diskNumber, dataDir string) s
 	)
 }
 
-func getPartitionAccessPathCommand(partitionNumber string) string {
+func protectDirCmd(dataDir string) string {
+	removedTrailingSlash := strings.TrimRight(dataDir, "\\")
 	return fmt.Sprintf(
-		`powershell.exe Get-Partition -PartitionNumber %s | Select -ExpandProperty AccessPaths`,
-		partitionNumber,
-	)
-}
-
-func protectDirCmd(accessPath string) string {
-	return fmt.Sprintf(
-		`powershell.exe Protect-Dir '%s' -DisableInheritance $false`,
-		accessPath,
+		`powershell.exe Protect-MountedDir '%s'`,
+		removedTrailingSlash,
 	)
 }
 
@@ -999,8 +849,8 @@ func getDiskLargestFreeExtentCommand(diskNumber string) string {
 	return fmt.Sprintf(`powershell.exe Get-Disk %s | Select -ExpandProperty LargestFreeExtent`, diskNumber)
 }
 
-func checkProtectDirExists() string {
-	return "powershell.exe Get-Command Protect-Dir"
+func checkProtectDirExistsCommand() string {
+	return "powershell.exe Get-Command Protect-MountedDir"
 }
 
 var _ = Describe("BOSH User Commands", func() {
