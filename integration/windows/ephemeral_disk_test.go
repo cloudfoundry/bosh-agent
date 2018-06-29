@@ -27,10 +27,6 @@ var _ = Describe("EphemeralDisk", func() {
 	)
 
 	BeforeEach(func() {
-		if OsVersion != "2012R2" {
-			Skip("Ephemeral disk mounting only configured for 2012R2")
-		}
-
 		endpoint := winrm.NewEndpoint(os.Getenv("AGENT_ELASTIC_IP"), 5985, false, false, nil, nil, nil, 0)
 		client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
 		Expect(err).NotTo(HaveOccurred())
@@ -152,7 +148,7 @@ type windowsEnvironment struct {
 func (e *windowsEnvironment) shrinkRootPartition() {
 	e.runPowershellCommandWithOffset(
 		1,
-		"Get-Partition -DriveLetter C | Resize-Partition -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMin",
+		"Get-Partition -DriveLetter C | Resize-Partition -Size $((Get-PartitionSupportedSize -DriveLetter C).SizeMin + 10000000000)",
 	)
 }
 
@@ -277,7 +273,10 @@ func (e *windowsEnvironment) assertDataACLed() {
 	testFile := filepath.Join(e.dataDir + "testfile")
 
 	e.runPowershellCommandWithOffset(1, "echo 'content' >> %s", testFile)
-	dataACLerrors := e.runPowershellCommandWithOffset(1, "Check-Acls %s ", e.dataDir)
-	aclErrsCount := len(strings.TrimSpace(dataACLerrors))
-	ExpectWithOffset(1, aclErrsCount == 0).To(BeTrue(), fmt.Sprintf("Expected data directory to have correct ACLs. Counted %s errors.", dataACLerrors))
+	checkACLsOutput := e.runPowershellCommandWithOffset(1, "Check-Acls %s", e.dataDir)
+	aclErrsCount := strings.Count(checkACLsOutput, "Error")
+	ExpectWithOffset(1, aclErrsCount == 0).To(
+		BeTrue(),
+		fmt.Sprintf("Expected data directory to have correct ACLs. Counted %d errors.", aclErrsCount),
+	)
 }
