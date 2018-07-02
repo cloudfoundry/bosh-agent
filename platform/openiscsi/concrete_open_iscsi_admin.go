@@ -3,6 +3,8 @@ package openiscsi
 import (
 	"bytes"
 	"path"
+	"regexp"
+	"strings"
 	"text/template"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -148,6 +150,29 @@ func (iscsi concreteOpenIscsiAdmin) Login() (err error) {
 		"-l",
 	)
 	return
+}
+
+func (iscsi concreteOpenIscsiAdmin) IsLoggedin() (bool, error) {
+	stdout, stderr, _, err := iscsi.runner.RunCommand(
+		"iscsiadm",
+		"-m",
+		"session",
+	)
+	if err != nil {
+		if strings.Contains(stderr, "No active sessions.") {
+			return false, nil
+		}
+		return false, bosherr.WrapError(err, "Checking all current sessions logged in")
+	}
+
+	r, err := regexp.Compile(`^tcp: \[\d+\]`)
+	if err != nil {
+		return false, bosherr.WrapError(err, "There is a problem with your regexp: '^tcp: \\[\\d+\\]'. That is used to check iscsi session(e.g., tcp: [sid] portal target)")
+	}
+	if r.MatchString(stdout) {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (iscsi concreteOpenIscsiAdmin) Logout() (err error) {

@@ -59,6 +59,17 @@ type FakeOpenIscsi struct {
 	discoveryReturnsOnCall map[int]struct {
 		result1 error
 	}
+	IsLoggedinStub        func() (bool, error)
+	isLoggedinMutex       sync.RWMutex
+	isLoggedinArgsForCall []struct{}
+	isLoggedinReturns     struct {
+		result1 bool
+		result2 error
+	}
+	isLoggedinReturnsOnCall map[int]struct {
+		result1 bool
+		result2 error
+	}
 	LoginStub        func() (err error)
 	loginMutex       sync.RWMutex
 	loginArgsForCall []struct{}
@@ -299,6 +310,49 @@ func (fake *FakeOpenIscsi) DiscoveryReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeOpenIscsi) IsLoggedin() (bool, error) {
+	fake.isLoggedinMutex.Lock()
+	ret, specificReturn := fake.isLoggedinReturnsOnCall[len(fake.isLoggedinArgsForCall)]
+	fake.isLoggedinArgsForCall = append(fake.isLoggedinArgsForCall, struct{}{})
+	fake.recordInvocation("IsLoggedin", []interface{}{})
+	fake.isLoggedinMutex.Unlock()
+	if fake.IsLoggedinStub != nil {
+		return fake.IsLoggedinStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.isLoggedinReturns.result1, fake.isLoggedinReturns.result2
+}
+
+func (fake *FakeOpenIscsi) IsLoggedinCallCount() int {
+	fake.isLoggedinMutex.RLock()
+	defer fake.isLoggedinMutex.RUnlock()
+	return len(fake.isLoggedinArgsForCall)
+}
+
+func (fake *FakeOpenIscsi) IsLoggedinReturns(result1 bool, result2 error) {
+	fake.IsLoggedinStub = nil
+	fake.isLoggedinReturns = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeOpenIscsi) IsLoggedinReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.IsLoggedinStub = nil
+	if fake.isLoggedinReturnsOnCall == nil {
+		fake.isLoggedinReturnsOnCall = make(map[int]struct {
+			result1 bool
+			result2 error
+		})
+	}
+	fake.isLoggedinReturnsOnCall[i] = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeOpenIscsi) Login() (err error) {
 	fake.loginMutex.Lock()
 	ret, specificReturn := fake.loginReturnsOnCall[len(fake.loginArgsForCall)]
@@ -392,6 +446,8 @@ func (fake *FakeOpenIscsi) Invocations() map[string][][]interface{} {
 	defer fake.restartMutex.RUnlock()
 	fake.discoveryMutex.RLock()
 	defer fake.discoveryMutex.RUnlock()
+	fake.isLoggedinMutex.RLock()
+	defer fake.isLoggedinMutex.RUnlock()
 	fake.loginMutex.RLock()
 	defer fake.loginMutex.RUnlock()
 	fake.logoutMutex.RLock()
