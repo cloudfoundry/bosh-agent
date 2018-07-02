@@ -186,7 +186,7 @@ resources:
       filters:
       - name: image-id
         values:
-        - ami-1ed2d664
+        - ami-8c95d3f3
 
 - name: windows-ami-2012R2
   type: ami-resource

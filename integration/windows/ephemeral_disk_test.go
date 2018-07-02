@@ -148,7 +148,7 @@ type windowsEnvironment struct {
 func (e *windowsEnvironment) shrinkRootPartition() {
 	e.runPowershellCommandWithOffset(
 		1,
-		"Get-Partition -DriveLetter C | Resize-Partition -Size $((Get-PartitionSupportedSize -DriveLetter C).SizeMin + 10000000000)",
+		"Get-Partition -DriveLetter C | Resize-Partition -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMin",
 	)
 }
 
