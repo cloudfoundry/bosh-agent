@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -195,20 +194,6 @@ func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 		return bosherr.WrapErrorf(err, "Creating authorized_keys file: %s", authkeysPath)
 	}
 
-	// Grant sshd service read access to the authorized_keys file.
-	//
-	// Do not use the WindowsPlatform.cmdRunner for this - it passes
-	// every command through PowerShell, which breaks this command.
-	//
-	cmd := exec.Command("icacls.exe", authkeysPath, "/grant", "NT SERVICE\\SSHD:(R)")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		// Remove authorized_keys file - don't check the error
-		p.fs.RemoveAll(authkeysPath)
-
-		return bosherr.WrapErrorf(err, "Setting ACL on authorized_keys file (%s): %s",
-			authkeysPath, string(out))
-	}
 	return nil
 }
 
@@ -705,8 +690,8 @@ func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 	}
 	drive += "\\"
 
-	sshdir := filepath.Join(drive, "Program Files", "OpenSSH")
-	keypath := filepath.Join(sshdir, "ssh_host_rsa_key.pub")
+	sshdir := filepath.Join(drive, "ProgramData", "ssh")
+	keypath := filepath.Join(sshdir, "ssh_host_ecdsa_key.pub")
 
 	key, err := p.fs.ReadFileString(keypath)
 	if err != nil {
