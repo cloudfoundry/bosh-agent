@@ -63,6 +63,6 @@ func RetrievePublicIP(vmName string) (string, error) {
 	}
 	gomega.Eventually(session, 20*time.Second).Should(gexec.Exit(0))
 
-	hostnameMatcher, err := regexp.Compile(`HostName\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
+	hostnameMatcher, err := regexp.Compile(`HostName\s([a-zA-Z0-9\.-]*)\n`)
 	return hostnameMatcher.FindStringSubmatch(stdout.String())[1], nil
 }
