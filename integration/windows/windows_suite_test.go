@@ -16,8 +16,11 @@ import (
 	"text/template"
 )
 
-var VagrantProvider = os.Getenv("VAGRANT_PROVIDER")
-var OsVersion = getOsVersion()
+var (
+	VagrantProvider             = os.Getenv("VAGRANT_PROVIDER")
+	OsVersion                   = getOsVersion()
+	AgentPublicIP, NATSPublicIP string
+)
 
 type BoshAgentSettings struct {
 	NatsPrivateIP       string
@@ -99,10 +102,6 @@ func tarFixtures(fixturesDir, filename string) error {
 }
 
 var _ = BeforeSuite(func() {
-	natsPrivateIP, ok := os.LookupEnv("NATS_PRIVATE_IP")
-	if !ok {
-		Fail("Environment variable NATS_PRIVATE_IP not set (default is 172.31.180.3 if running locally)", 1)
-	}
 	if os.Getenv("GOPATH") == "" {
 		Fail("Environment variable GOPATH not set", 1)
 	}
@@ -113,6 +112,10 @@ var _ = BeforeSuite(func() {
 
 	dirname := filepath.Join(os.Getenv("GOPATH"),
 		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures")
+
+	err := utils.StartVagrant("nats", VagrantProvider, OsVersion)
+	natsPrivateIP, err := utils.RetrievePrivateIP("nats")
+	Expect(err).NotTo(HaveOccurred())
 
 	agentSettings := BoshAgentSettings{
 		NatsPrivateIP:       natsPrivateIP,
@@ -135,7 +138,13 @@ var _ = BeforeSuite(func() {
 		Fail(fmt.Sprintln("Creating fixtures TGZ::", err))
 	}
 
-	_, err = utils.StartVagrant(VagrantProvider, OsVersion)
+	err = utils.StartVagrant("agent", VagrantProvider, OsVersion)
+
+	AgentPublicIP, err = utils.RetrievePublicIP("agent")
+	Expect(err).NotTo(HaveOccurred())
+
+	NATSPublicIP, err = utils.RetrievePublicIP("nats")
+	Expect(err).NotTo(HaveOccurred())
 
 	if err != nil {
 		Fail(fmt.Sprintln("Could not setup and run vagrant.\nError is:", err))

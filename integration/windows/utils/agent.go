@@ -5,19 +5,16 @@ import (
 	"os/exec"
 	"time"
 
+	"bytes"
+
+	"regexp"
+
+	"fmt"
+
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
-
-const (
-	agentID = "123-456-789"
-)
-
-type Agent struct {
-	ID   string
-	tail *gexec.Session
-}
 
 func BuildAgent() error {
 	command := exec.Command("./build_agent.bash")
@@ -29,21 +26,45 @@ func BuildAgent() error {
 	return nil
 }
 
-func StartVagrant(provider string, osVersion string) (Agent, error) {
+func StartVagrant(vmName, provider string, osVersion string) error {
 	if len(provider) == 0 {
 		provider = "virtualbox"
 	}
-	command := exec.Command("./setup_vagrant.bash", provider)
+	command := exec.Command("vagrant", "up", vmName, fmt.Sprintf("--provider=%s", provider), "--provision")
 	command.Env = append(os.Environ(), "WINDOWS_OS_VERSION="+osVersion)
 	session, err := gexec.Start(command, ginkgo.GinkgoWriter, ginkgo.GinkgoWriter)
 	if err != nil {
-		return Agent{}, err
+		return err
 	}
 	gomega.Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
-	return Agent{
-		ID: agentID,
-	}, nil
+	return nil
+}
+
+func RetrievePrivateIP(vmName string) (string, error) {
+	command := exec.Command("vagrant", "ssh", vmName, "-c", `hostname -I`)
+	stdout := new(bytes.Buffer)
+	session, err := gexec.Start(command, stdout, ginkgo.GinkgoWriter)
+	if err != nil {
+		return "", err
+	}
+	gomega.Eventually(session, 20*time.Second).Should(gexec.Exit(0))
+
+	privateIPMatcher, err := regexp.Compile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
+	return privateIPMatcher.FindString(stdout.String()), nil
+}
+
+func RetrievePublicIP(vmName string) (string, error) {
+	command := exec.Command("vagrant", "ssh-config", vmName)
+	stdout := new(bytes.Buffer)
+	session, err := gexec.Start(command, stdout, ginkgo.GinkgoWriter)
+	if err != nil {
+		return "", err
+	}
+	gomega.Eventually(session, 20*time.Second).Should(gexec.Exit(0))
+
+	hostnameMatcher, err := regexp.Compile(`HostName\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
+	return hostnameMatcher.FindStringSubmatch(stdout.String())[1], nil
 }
 
 func (a Agent) Stop() {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -27,7 +26,7 @@ var _ = Describe("EphemeralDisk", func() {
 	)
 
 	BeforeEach(func() {
-		endpoint := winrm.NewEndpoint(os.Getenv("AGENT_ELASTIC_IP"), 5985, false, false, nil, nil, nil, 0)
+		endpoint := winrm.NewEndpoint(AgentPublicIP, 5985, false, false, nil, nil, nil, 0)
 		client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
 		Expect(err).NotTo(HaveOccurred())
 		partitionNumber = ""
