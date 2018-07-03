@@ -66,6 +66,3 @@ func RetrievePublicIP(vmName string) (string, error) {
 	hostnameMatcher, err := regexp.Compile(`HostName\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})`)
 	return hostnameMatcher.FindStringSubmatch(stdout.String())[1], nil
 }
-
-func (a Agent) Stop() {
-}
