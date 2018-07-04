@@ -37,7 +37,8 @@ echo "$STEMCELL_SHA1  $stemcell_tgz" | shasum -c -
 		sudo tar czvf $stemcell_dir/image *
 	)
 
-	sudo sed -i.bak "s/version: .*/version: 0.0.${new_ver}/" stemcell.MF
+	sudo sed -i.bak "s/^version: .*/version: 0.0.${new_ver}/" stemcell.MF
+	sudo bash -c "echo api_version: 2 >> stemcell.MF"
 	sudo tar czvf $stemcell_tgz *
 )
 
