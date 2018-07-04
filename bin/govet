@@ -2,6 +2,6 @@
 
 set -e -o pipefail
 
-go list ./... | xargs go vet
+go list ./... | grep -v github.com/cloudfoundry/bosh-agent/vendor | xargs go vet
 
 echo -e "\n go vet success"

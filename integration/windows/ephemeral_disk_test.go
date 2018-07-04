@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"strconv"
+
+	"path/filepath"
 
 	"github.com/masterzen/winrm"
 	. "github.com/onsi/ginkgo"
@@ -25,11 +26,7 @@ var _ = Describe("EphemeralDisk", func() {
 	)
 
 	BeforeEach(func() {
-		if OsVersion != "2012R2" {
-			Skip("Ephemeral disk mounting only configured for 2012R2")
-		}
-
-		endpoint := winrm.NewEndpoint(os.Getenv("AGENT_ELASTIC_IP"), 5985, false, false, nil, nil, nil, 0)
+		endpoint := winrm.NewEndpoint(AgentPublicIP, 5985, false, false, nil, nil, nil, 0)
 		client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
 		Expect(err).NotTo(HaveOccurred())
 		partitionNumber = ""
@@ -53,7 +50,7 @@ var _ = Describe("EphemeralDisk", func() {
 			agent.ensureRootPartitionAtMaxSize()
 
 			agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\agent.json c:\\bosh\\agent.json")
-			agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+			agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 		}
 	})
 
@@ -66,9 +63,9 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		agent.ensureVolumeHasDataDir("0")
-
 		partitionNumber = agent.getDataDirPartitionNumber()
 
+		agent.assertDataACLed()
 	})
 
 	It("when root disk partition is already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
@@ -91,7 +88,7 @@ var _ = Describe("EphemeralDisk", func() {
 		)
 	})
 
-	It("when there is no remaining space on the root disk, no partititon is created, a warning is logged", func() {
+	It("when there is no remaining space on the root disk, no partition is created, a warning is logged", func() {
 		agent.ensureAgentServiceStopped()
 		agent.ensureDataDirDoesntExist()
 
@@ -222,7 +219,7 @@ func (e *windowsEnvironment) ensureAgentServiceStopped() {
 }
 
 func (e *windowsEnvironment) ensureDataDirDoesntExist() {
-	testPathOutput := e.runPowershellCommand("Test-Path -Path %s", e.dataDir)
+	testPathOutput := e.runPowershellCommandWithOffset(1, "Test-Path -Path %s", e.dataDir)
 
 	exists := strings.TrimSpace(testPathOutput) == "True"
 	if exists {
@@ -269,4 +266,16 @@ func (e *windowsEnvironment) runPowershellCommandWithOffset(offset int, cmd stri
 
 func (e *windowsEnvironment) runPowershellCommand(cmd string, cmdFmtArgs ...interface{}) string {
 	return e.runPowershellCommandWithOffset(1, cmd, cmdFmtArgs...)
+}
+
+func (e *windowsEnvironment) assertDataACLed() {
+	testFile := filepath.Join(e.dataDir + "testfile")
+
+	e.runPowershellCommandWithOffset(1, "echo 'content' >> %s", testFile)
+	checkACLsOutput := e.runPowershellCommandWithOffset(1, "Check-Acls %s", e.dataDir)
+	aclErrsCount := strings.Count(checkACLsOutput, "Error")
+	ExpectWithOffset(1, aclErrsCount == 0).To(
+		BeTrue(),
+		fmt.Sprintf("Expected data directory to have correct ACLs. Counted %d errors.", aclErrsCount),
+	)
 }

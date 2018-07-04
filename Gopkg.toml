@@ -76,3 +76,7 @@ required = ["github.com/onsi/ginkgo/ginkgo"]
 [[override]]
   name = "github.com/ChrisTrenkamp/goxpath"
   branch = "master"
+
+[[override]]
+  name = "golang.org/x/crypto"
+  revision = "12dd70caea0268ac0d6c2707d0611ef601e7c64e"

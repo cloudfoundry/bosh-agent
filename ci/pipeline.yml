@@ -63,7 +63,6 @@ jobs:
 
 - name: windows-test-integration-1709
   serial: true
-  serial_groups: [windows-integration]
   plan:
   - get: windows-ami-1709
   - get: bosh-agent
@@ -79,16 +78,12 @@ jobs:
       AWS_SUBNET: {{WINDOWS_AWS_SUBNET}}
       AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
       KEYPAIR_NAME: {{WINDOWS_AWS_KEYPAIR_NAME}}
-      NATS_ELASTIC_IP: {{NATS_ELASTIC_IP}}
-      NATS_PRIVATE_IP: {{NATS_PRIVATE_IP}}
-      AGENT_ELASTIC_IP: {{AGENT_ELASTIC_IP}}
       VAGRANT_PROVIDER: aws
       WINRM_PASSWORD: {{WINRM_PASSWORD}}
       WINDOWS_OS_VERSION: 1709
 
 - name: windows-test-integration-2012R2
   serial: true
-  serial_groups: [windows-integration]
   plan:
   - get: windows-ami-2012R2
   - get: bosh-agent
@@ -104,9 +99,6 @@ jobs:
       AWS_SUBNET: {{WINDOWS_AWS_SUBNET}}
       AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
       KEYPAIR_NAME: {{WINDOWS_AWS_KEYPAIR_NAME}}
-      NATS_ELASTIC_IP: {{NATS_ELASTIC_IP}}
-      NATS_PRIVATE_IP: {{NATS_PRIVATE_IP}}
-      AGENT_ELASTIC_IP: {{AGENT_ELASTIC_IP}}
       VAGRANT_PROVIDER: aws
       WINRM_PASSWORD: {{WINRM_PASSWORD}}
       WINDOWS_OS_VERSION: 2012R2
@@ -186,7 +178,7 @@ resources:
       filters:
       - name: image-id
         values:
-        - ami-1ed2d664
+        - ami-8c95d3f3
 
 - name: windows-ami-2012R2
   type: ami-resource

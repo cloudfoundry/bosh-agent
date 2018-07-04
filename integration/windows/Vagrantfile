@@ -1,8 +1,3 @@
-nats_private_ip = ENV.fetch "NATS_PRIVATE_IP" do
-  puts "NATS_PRIVATE_IP not set (default is 172.31.180.3 if running locally)."
-  nil
-end
-
 winrm_username = "vagrant"
 winrm_password = ENV.fetch "WINRM_PASSWORD" do
   puts "WINRM_PASSWORD not set, using 'vagrant'"
@@ -15,10 +10,6 @@ access_key_id = ENV.fetch "AWS_ACCESS_KEY" do
 end
 secret_key_id = ENV.fetch "AWS_SECRET_KEY" do
   puts "AWS_SECRET_KEY not set"
-  nil
-end
-nats_elastic_ip = ENV.fetch "NATS_ELASTIC_IP" do
-  puts "NATS_ELASTIC_IP not set"
   nil
 end
 subnet_id = ENV.fetch "AWS_SUBNET" do
@@ -37,8 +28,9 @@ private_key_path = ENV.fetch "PRIVATE_KEY_PATH" do
 	puts "PRIVATE_KEY_PATH not set"
 	nil
 end
-agent_elastic_ip = ENV.fetch "AGENT_ELASTIC_IP" do
-  puts "AGENT_ELASTIC_IP not set"
+
+os_version = ENV.fetch "WINDOWS_OS_VERSION" do
+  puts "WINDOWS_OS_VERSION not set"
   nil
 end
 
@@ -99,6 +91,10 @@ if ((Get-Command "bosh-agent.exe" -ErrorAction SilentlyContinue) -eq $null)
 }
 SHELL
 
+put_modules_in_path = <<-SHELL
+  Move-Item C:\\bosh\\psFixture 'C:\\Program Files\\WindowsPowerShell\\Modules'
+SHELL
+
 initialize_agent_service = <<-SHELL
   Move-Item C:\\bosh\\job-service-wrapper.exe C:\\var\\vcap\\bosh\\bin\\job-service-wrapper.exe -Force
 
@@ -153,7 +149,7 @@ SHELL
 
 Vagrant.configure(2) do |config|
   config.vm.provider :aws do |aws, override|
-    aws.instance_type = "m3.medium"
+    aws.instance_type = "m4.large"
     override.vm.synced_folder ".", "/vagrant", disabled: true
   end
 
@@ -165,7 +161,7 @@ Vagrant.configure(2) do |config|
       # Private buckets:
       # https://s3.amazonaws.com/windows-bosh-private/bosh-agent.windows-integration-2012R2.box
       # https://s3.amazonaws.com/windows-bosh-private/bosh-agent.windows-integration-1709.box
-      override.vm.box = "windows-integration-#{ENV['WINDOWS_OS_VERSION']}"
+      override.vm.box = "windows-integration-#{os_version}"
       v.cpus = 4
     end
 
@@ -174,7 +170,7 @@ Vagrant.configure(2) do |config|
       override.vm.box = "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box"
       override.winrm.password = winrm_password
       override.winrm.username = winrm_username
-      aws.instance_type = "m3.xlarge"
+      aws.instance_type = "m4.large"
       aws.access_key_id = access_key_id
       aws.secret_access_key = secret_key_id
       aws.keypair_name = keypair_name
@@ -182,7 +178,6 @@ Vagrant.configure(2) do |config|
       aws.user_data = setup_aws_winrm_user
       aws.associate_public_ip = true
       aws.block_device_mapping = [{ 'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 70 }]
-      aws.elastic_ip = agent_elastic_ip
     end
 
     agent.vm.provision "shell", inline: reset_bosh_directory
@@ -203,7 +198,8 @@ Vagrant.configure(2) do |config|
       apply_default_agent_config,
       configure_security_settings,
       add_bosh_to_path,
-      initialize_agent_service
+      initialize_agent_service,
+      put_modules_in_path
     ]
 
     agent.vm.provision "shell", inline: provision_scripts.join("\n")
@@ -213,7 +209,6 @@ Vagrant.configure(2) do |config|
   config.vm.define "nats" do |nats|
     nats.vm.provider :virtualbox do |v, override|
       override.vm.box = "ubuntu/trusty64"
-      override.vm.network "private_network", ip: nats_private_ip
       override.vm.provision "shell", inline: install_blobstore_server
     end
 
@@ -224,9 +219,8 @@ Vagrant.configure(2) do |config|
       aws.secret_access_key = secret_key_id
       aws.keypair_name = keypair_name
       aws.subnet_id = subnet_id
-      aws.elastic_ip = nats_elastic_ip
-      aws.private_ip_address = nats_private_ip
       aws.user_data = install_blobstore_server
+      aws.associate_public_ip = true
 
       override.ssh.username = "ubuntu"
       override.ssh.private_key_path = private_key_path

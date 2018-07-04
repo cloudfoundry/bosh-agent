@@ -346,6 +346,23 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return nil
 	}
 
+	dataPath := fmt.Sprintf(`C:%s\`, p.dirProvider.DataDir())
+
+	checkProtectDirCmdlet := &powershellAction{
+		commandArgs: []string{
+			"Get-Command",
+			"Protect-MountedDir",
+		},
+		commandFailureFmt: fmt.Sprintf("Cannot protect %s. Protect-MountedDir cmd does not exist: %%s", dataPath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	_, err := checkProtectDirCmdlet.run()
+
+	if err != nil {
+		return err
+	}
+
 	checkFreeSpaceAction := &powershellAction{
 		commandArgs: []string{
 			"Get-Disk",
@@ -374,8 +391,6 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		)
 		return nil
 	}
-
-	dataPath := fmt.Sprintf(`C:%s\`, p.dirProvider.DataDir())
 
 	checkForExistingPartitionCommand := []string{
 		"Get-Partition",
@@ -426,6 +441,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	}
 
 	partitionNumber := strings.TrimSpace(partitionNumberOutput)
+
 	formatVolumeAction := &powershellAction{
 		commandArgs: []string{
 			"Get-Partition",
@@ -444,11 +460,12 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	}
 
 	_, err = formatVolumeAction.run()
+
 	if err != nil {
 		return err
 	}
 
-	err = p.fs.MkdirAll(dataPath, 0600)
+	err = p.fs.MkdirAll(dataPath, 0750)
 	if err != nil {
 		return fmt.Errorf(`Failed to create %s: %s`, dataPath, err)
 	}
@@ -468,6 +485,20 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	}
 
 	_, err = mountVolumeAction.run()
+	if err != nil {
+		return err
+	}
+
+	protectDataDirAction := &powershellAction{
+		commandArgs: []string{
+			"Protect-MountedDir",
+			fmt.Sprintf(`'%s'`, strings.TrimRight(dataPath, "\\")),
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to protect dir %s : %%s", dataPath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	_, err = protectDataDirAction.run()
 	if err != nil {
 		return err
 	}
