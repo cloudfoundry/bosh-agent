@@ -505,7 +505,7 @@ var _ = Describe("AgentClient", func() {
 						ghttp.RespondWith(200, `{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`),
 						ghttp.VerifyJSONRepresenting(AgentRequestMessage{
 							Method:    "mount_disk",
-							Arguments: []interface{}{"fake-disk-cid"},
+							Arguments: []interface{}{"fake-disk-cid", "/dev/sdf"},
 							ReplyTo:   replyToAddress,
 						}),
 					),
@@ -529,14 +529,8 @@ var _ = Describe("AgentClient", func() {
 				)
 			})
 
-			It("makes a POST request to the endpoint", func() {
-				err := agentClient.MountDisk("fake-disk-cid")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(server.ReceivedRequests()).To(HaveLen(4))
-			})
-
-			It("waits for the task to be finished", func() {
-				err := agentClient.MountDisk("fake-disk-cid")
+			It("makes a POST request to the endpoint and waits for the task to be finished", func() {
+				err := agentClient.MountDisk("fake-disk-cid", "/dev/sdf")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(server.ReceivedRequests()).To(HaveLen(4))
 			})
@@ -587,7 +581,7 @@ var _ = Describe("AgentClient", func() {
 			})
 
 			It("returns an error", func() {
-				err := agentClient.MountDisk("fake-disk-cid")
+				err := agentClient.MountDisk("fake-disk-cid", "")
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(ContainSubstring("status code: 500")))
 			})
@@ -602,7 +596,7 @@ var _ = Describe("AgentClient", func() {
 			})
 
 			It("returns an error", func() {
-				err := agentClient.MountDisk("fake-disk-cid")
+				err := agentClient.MountDisk("fake-disk-cid", "")
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(ContainSubstring("bad request")))
 			})
