@@ -67,6 +67,13 @@ var _ = Describe("MountDiskAction", func() {
 							}))
 							Expect(mntPt).To(boshassert.MatchPath("/fake-base-dir/store"))
 						})
+
+						It("does not save disk hint", func() {
+							result, err := action.Run("fake-disk-cid")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(result).To(Equal(map[string]string{}))
+							Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(0))
+						})
 					})
 
 					Context("when mounting fails", func() {
@@ -78,6 +85,7 @@ var _ = Describe("MountDiskAction", func() {
 							_, err := action.Run("fake-disk-cid")
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))
+							Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(0))
 						})
 					})
 				})
@@ -125,6 +133,20 @@ var _ = Describe("MountDiskAction", func() {
 						}))
 						Expect(mntPt).To(boshassert.MatchPath("/fake-base-dir/store"))
 					})
+
+					It("saves disk hint if mount succeeds", func() {
+						_, err := action.Run("hint-fake-disk-cid", diskHint)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
+					})
+
+					It("saves disk hint if mount fails", func() {
+						platform.MountPersistentDiskReturns(errors.New("fake-mount-persistent-disk-err"))
+						_, err := action.Run("hint-fake-disk-cid", diskHint)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))
+						Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
+					})
 				})
 
 				Context("when the hint is a map", func() {
@@ -151,6 +173,20 @@ var _ = Describe("MountDiskAction", func() {
 							HostDeviceID: "hint-fake-disk-host-device-id",
 						}))
 						Expect(mntPt).To(boshassert.MatchPath("/fake-base-dir/store"))
+					})
+
+					It("saves disk hint if mount succeeds", func() {
+						_, err := action.Run("hint-fake-disk-cid", diskHint)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
+					})
+
+					It("saves disk hint if mount fails", func() {
+						platform.MountPersistentDiskReturns(errors.New("fake-mount-persistent-disk-err"))
+						_, err := action.Run("hint-fake-disk-cid", diskHint)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))
+						Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
 					})
 				})
 			})

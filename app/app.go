@@ -97,6 +97,7 @@ func (app *app) Setup(opts Options) error {
 	settingsService := boshsettings.NewService(
 		app.platform.GetFs(),
 		filepath.Join(app.dirProvider.BoshDir(), "settings.json"),
+		filepath.Join(app.dirProvider.BoshDir(), "persistent_disk_hints.json"),
 		settingsSource,
 		app.platform,
 		app.logger,
