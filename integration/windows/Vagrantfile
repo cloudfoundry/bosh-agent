@@ -56,7 +56,7 @@ SHELL
 
 apply_default_agent_config = <<-SHELL
   Copy-Item C:\\bosh\\agent-configuration\\agent.json C:\\bosh\\agent.json -Force
-  Copy-Item C:\\bosh\\agent-configuration\\settings.json C:\\bosh\\settings.json -Force
+  Copy-Item C:\\bosh\\agent-configuration\\root-disk-settings.json C:\\bosh\\settings.json -Force
 SHELL
 
 reset_bosh_directory = <<-SHELL
@@ -177,7 +177,10 @@ Vagrant.configure(2) do |config|
       aws.subnet_id = subnet_id
       aws.user_data = setup_aws_winrm_user
       aws.associate_public_ip = true
-      aws.block_device_mapping = [{ 'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 70 }]
+      aws.block_device_mapping = [
+        { 'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 70 },
+        { 'DeviceName' => '/dev/sdb', 'Ebs.VolumeSize' => 10 }
+      ]
     end
 
     agent.vm.provision "shell", inline: reset_bosh_directory

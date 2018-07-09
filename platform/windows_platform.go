@@ -363,33 +363,46 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return err
 	}
 
-	checkFreeSpaceAction := &powershellAction{
-		commandArgs: []string{
-			"Get-Disk",
-			devicePath,
-			"|",
-			"Select",
-			"-ExpandProperty",
-			"LargestFreeExtent",
-		},
-		commandFailureFmt: fmt.Sprintf("Failed to get free disk space on disk %s: %%s", devicePath),
-		cmdRunner:         p.cmdRunner,
-	}
+	if devicePath != "0" {
+		getExistingPartitionCountAction := &powershellAction{
+			commandArgs: []string{
+				"Get-Disk",
+				"-Number",
+				devicePath,
+				"|",
+				"Select",
+				"-ExpandProperty",
+				"NumberOfPartitions",
+			},
+			commandFailureFmt: fmt.Sprintf("Failed to get existing partition count for disk %s: %%s", devicePath),
+			cmdRunner:         p.cmdRunner,
+		}
 
-	freeSpaceOutput, err := checkFreeSpaceAction.run()
+		stdout, err := getExistingPartitionCountAction.run()
 
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	freeSpace, _ := strconv.Atoi(strings.TrimSpace(freeSpaceOutput))
-	if freeSpace < 1024*1024 {
-		p.logger.Warn(
-			"WindowsPlatform",
-			"Unable to create ephemeral partition on disk %s, as there isn't enough free space",
-			devicePath,
-		)
-		return nil
+		if strings.TrimSpace(stdout) == "0" {
+			initializeDiskAction := &powershellAction{
+				commandArgs: []string{
+					"Initialize-Disk",
+					"-Number",
+					devicePath,
+					"-PartitionStyle",
+					"GPT",
+				},
+				commandFailureFmt: fmt.Sprintf("Failed to initialize disk %s: %%s", devicePath),
+				cmdRunner:         p.cmdRunner,
+			}
+
+			_, err = initializeDiskAction.run()
+
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	checkForExistingPartitionCommand := []string{
@@ -418,6 +431,35 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	if err != nil {
 		return fmt.Errorf("Failed to run command \"%s\": %s", strings.Join(
 			append([]string{powerShellCmd}, checkForExistingPartitionCommand...), " "), err)
+	}
+
+	checkFreeSpaceAction := &powershellAction{
+		commandArgs: []string{
+			"Get-Disk",
+			devicePath,
+			"|",
+			"Select",
+			"-ExpandProperty",
+			"LargestFreeExtent",
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to get free disk space on disk %s: %%s", devicePath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	freeSpaceOutput, err := checkFreeSpaceAction.run()
+
+	if err != nil {
+		return err
+	}
+
+	freeSpace, _ := strconv.Atoi(strings.TrimSpace(freeSpaceOutput))
+	if freeSpace < 1024*1024 {
+		p.logger.Warn(
+			"WindowsPlatform",
+			"Unable to create ephemeral partition on disk %s, as there isn't enough free space",
+			devicePath,
+		)
+		return nil
 	}
 
 	partitionVolumeAction := &powershellAction{
@@ -586,6 +628,10 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string) {
 	if diskSettings.Path == "" && p.options.Linux.CreatePartitionIfNoEphemeralDisk {
 		diskPath = "0"
+	}
+
+	if diskSettings.Path != "" {
+		diskPath = "1"
 	}
 
 	return diskPath

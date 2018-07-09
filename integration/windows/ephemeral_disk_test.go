@@ -22,6 +22,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 	var (
 		partitionNumber string
+		diskNumber      string
 		agent           *windowsEnvironment
 	)
 
@@ -30,6 +31,7 @@ var _ = Describe("EphemeralDisk", func() {
 		client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
 		Expect(err).NotTo(HaveOccurred())
 		partitionNumber = ""
+		diskNumber = "0"
 
 		agent = &windowsEnvironment{
 			dataDir: dataDir,
@@ -44,12 +46,22 @@ var _ = Describe("EphemeralDisk", func() {
 
 			if partitionNumber != "" {
 				agent.runPowershellCommand(
-					fmt.Sprintf("Remove-Partition -DiskNumber 0 -PartitionNumber %s -Confirm:$false", partitionNumber),
+					fmt.Sprintf(
+						"Remove-Partition -DiskNumber %s -PartitionNumber %s -Confirm:$false",
+						diskNumber,
+						partitionNumber,
+					),
+				)
+			}
+			if diskNumber != "0" {
+				agent.runPowershellCommand(
+					fmt.Sprintf("Clear-Disk -Number %s -Confirm:$false", diskNumber),
 				)
 			}
 			agent.ensureRootPartitionAtMaxSize()
 
 			agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\agent.json c:\\bosh\\agent.json")
+			agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\root-disk-settings.json c:\\bosh\\settings.json")
 			agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 		}
 	})
@@ -109,6 +121,44 @@ var _ = Describe("EphemeralDisk", func() {
 			expectedLogMessage,
 		))
 		Expect(strings.TrimSpace(matchingLogOutput)).NotTo(BeEmpty())
+	})
+
+	It("when a second disk is attached, partition is created on that disk", func() {
+		agent.ensureAgentServiceStopped()
+		agent.ensureDataDirDoesntExist()
+
+		agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+		agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\second-disk-settings.json c:\\bosh\\settings.json")
+
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+
+		diskNumber = "1"
+		agent.ensureVolumeHasDataDir("1")
+		partitionNumber = agent.getDataDirPartitionNumber()
+
+		agent.assertDataACLed()
+	})
+
+	It("when a second disk is attached and already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
+		agent.ensureAgentServiceStopped()
+		agent.ensureDataDirDoesntExist()
+
+		agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+		agent.runPowershellCommand("cp c:\\bosh\\agent-configuration\\second-disk-settings.json c:\\bosh\\settings.json")
+
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+
+		diskNumber = "1"
+		agent.ensureVolumeHasDataDir("1")
+		partitionNumber = agent.getDataDirPartitionNumber()
+
+		agent.runPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
+
+		Consistently(agent.agentProcessRunningFunc(), 60*time.Second).Should(
+			BeTrue(),
+			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
+		)
+		agent.ensureVolumeHasDataDir("1")
 	})
 
 	It("when the EphemeralDiskFeature flag is not set doesn't create any partitions, or send any warnings", func() {
@@ -202,7 +252,7 @@ func (e *windowsEnvironment) partitionWithDataDirExistsFunc(diskNumber string) f
 }
 
 func (e *windowsEnvironment) ensureVolumeHasDataDir(diskNumber string) {
-	EventuallyWithOffset(1, e.partitionWithDataDirExistsFunc(diskNumber), 60*time.Second).Should(
+	EventuallyWithOffset(1, e.partitionWithDataDirExistsFunc(diskNumber), 2*time.Minute).Should(
 		BeTrue(),
 		fmt.Sprintf(`Expected partition with access path %s to be present on disk %s`, e.dataDir, diskNumber),
 	)

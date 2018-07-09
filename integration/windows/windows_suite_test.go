@@ -20,6 +20,10 @@ var (
 	VagrantProvider             = os.Getenv("VAGRANT_PROVIDER")
 	OsVersion                   = getOsVersion()
 	AgentPublicIP, NATSPublicIP string
+	dirname                     = filepath.Join(
+		os.Getenv("GOPATH"),
+		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures",
+	)
 )
 
 type BoshAgentSettings struct {
@@ -52,7 +56,8 @@ func tarFixtures(fixturesDir, filename string) error {
 		"agent-configuration/agent.json",
 		"agent-configuration/root-partition-agent.json",
 		"agent-configuration/root-partition-agent-ephemeral-disabled.json",
-		"agent-configuration/settings.json",
+		"agent-configuration/root-disk-settings.json",
+		"agent-configuration/second-disk-settings.json",
 		"psFixture/psFixture.psd1",
 		"psFixture/psFixture.psm1",
 	}
@@ -110,28 +115,12 @@ var _ = BeforeSuite(func() {
 		Fail(fmt.Sprintln("Could not build the bosh-agent project.\nError is:", err))
 	}
 
-	dirname := filepath.Join(os.Getenv("GOPATH"),
-		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures")
-
 	err := utils.StartVagrant("nats", VagrantProvider, OsVersion)
 	natsPrivateIP, err := utils.RetrievePrivateIP("nats")
 	Expect(err).NotTo(HaveOccurred())
 
-	agentSettings := BoshAgentSettings{
-		NatsPrivateIP:       natsPrivateIP,
-		EphemeralDiskConfig: `""`,
-	}
-	settingsTmpl, err := template.ParseFiles(
-		filepath.Join(dirname, "templates", "agent-configuration", "settings.json.tmpl"),
-	)
-	Expect(err).NotTo(HaveOccurred())
-
-	outputFile, err := os.Create(filepath.Join(dirname, "agent-configuration", "settings.json"))
-	Expect(err).NotTo(HaveOccurred())
-	defer outputFile.Close()
-
-	err = settingsTmpl.Execute(outputFile, agentSettings)
-	Expect(err).NotTo(HaveOccurred())
+	templateSettings(natsPrivateIP, `""`, "root-disk-settings.json")
+	templateSettings(natsPrivateIP, `"/dev/sdb"`, "second-disk-settings.json")
 
 	filename := filepath.Join(dirname, "fixtures.tgz")
 	if err := tarFixtures(dirname, filename); err != nil {
@@ -150,3 +139,20 @@ var _ = BeforeSuite(func() {
 		Fail(fmt.Sprintln("Could not setup and run vagrant.\nError is:", err))
 	}
 })
+
+func templateSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
+	agentSettings := BoshAgentSettings{
+		NatsPrivateIP:       natsPrivateIP,
+		EphemeralDiskConfig: ephemeralDiskConfig,
+	}
+	settingsTmpl, err := template.ParseFiles(
+		filepath.Join(dirname, "templates", "agent-configuration", "settings.json.tmpl"),
+	)
+	Expect(err).NotTo(HaveOccurred())
+	outputFile, err := os.Create(filepath.Join(dirname, "agent-configuration", filename))
+	defer outputFile.Close()
+
+	Expect(err).NotTo(HaveOccurred())
+	err = settingsTmpl.Execute(outputFile, agentSettings)
+	Expect(err).NotTo(HaveOccurred())
+}
