@@ -1,4 +1,4 @@
-package windows
+package windows_test
 
 import (
 	"bytes"

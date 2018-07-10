@@ -15,8 +15,6 @@ import (
 
 	"testing"
 	"text/template"
-
-	"github.com/cloudfoundry/bosh-agent/integration/windows"
 )
 
 var (
@@ -27,7 +25,7 @@ var (
 		os.Getenv("GOPATH"),
 		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures",
 	)
-	agent *windows.WindowsEnvironment
+	agent *WindowsEnvironment
 )
 
 type BoshAgentSettings struct {
@@ -122,6 +120,7 @@ var _ = BeforeSuite(func() {
 	err := utils.StartVagrant("nats", VagrantProvider, OsVersion)
 	natsPrivateIP, err := utils.RetrievePrivateIP("nats")
 	Expect(err).NotTo(HaveOccurred())
+	Expect(natsPrivateIP).NotTo(BeEmpty(), "Couldn't retrieve NATS private IP")
 
 	templateSettings(natsPrivateIP, `""`, "root-disk-settings.json")
 	templateSettings(natsPrivateIP, `"/dev/sdb"`, "second-disk-settings.json")
@@ -147,7 +146,7 @@ var _ = BeforeSuite(func() {
 	client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
 	Expect(err).NotTo(HaveOccurred())
 
-	agent = &windows.WindowsEnvironment{
+	agent = &WindowsEnvironment{
 		Client: client,
 	}
 	agent.EnsureDiskCleared("1")
