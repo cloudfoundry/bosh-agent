@@ -9,11 +9,14 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
+	"github.com/masterzen/winrm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"testing"
 	"text/template"
+
+	"github.com/cloudfoundry/bosh-agent/integration/windows"
 )
 
 var (
@@ -24,6 +27,7 @@ var (
 		os.Getenv("GOPATH"),
 		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures",
 	)
+	agent *windows.WindowsEnvironment
 )
 
 type BoshAgentSettings struct {
@@ -138,6 +142,15 @@ var _ = BeforeSuite(func() {
 	if err != nil {
 		Fail(fmt.Sprintln("Could not setup and run vagrant.\nError is:", err))
 	}
+
+	endpoint := winrm.NewEndpoint(AgentPublicIP, 5985, false, false, nil, nil, nil, 0)
+	client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
+	Expect(err).NotTo(HaveOccurred())
+
+	agent = &windows.WindowsEnvironment{
+		Client: client,
+	}
+	agent.EnsureDiskCleared("1")
 })
 
 func templateSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
