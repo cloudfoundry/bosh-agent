@@ -60,6 +60,7 @@ func tarFixtures(fixturesDir, filename string) error {
 		"agent-configuration/root-partition-agent-ephemeral-disabled.json",
 		"agent-configuration/root-disk-settings.json",
 		"agent-configuration/second-disk-settings.json",
+		"agent-configuration/second-disk-digit-settings.json",
 		"psFixture/psFixture.psd1",
 		"psFixture/psFixture.psm1",
 	}
@@ -124,6 +125,7 @@ var _ = BeforeSuite(func() {
 
 	templateSettings(natsPrivateIP, `""`, "root-disk-settings.json")
 	templateSettings(natsPrivateIP, `"/dev/sdb"`, "second-disk-settings.json")
+	templateSettings(natsPrivateIP, `"1"`, "second-disk-digit-settings.json")
 
 	filename := filepath.Join(dirname, "fixtures.tgz")
 	if err := tarFixtures(dirname, filename); err != nil {

@@ -4,6 +4,8 @@ set -e -o pipefail
 
 bin=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
 base=$( cd ${bin}/.. && pwd )
+ENV_LOCAL=${bin}/env.windows.local
+ENV_LOCAL_TEMPLATE=${bin}/env.windows.template
 
 if [ ! -d $base/tmp ]; then
   mkdir -p $base/tmp
@@ -32,6 +34,13 @@ echo "${AWS_SSH_KEY}" > $tmpfile
 export PRIVATE_KEY_PATH=$tmpfile
 
 cd $base
+if [ -f ${ENV_LOCAL} ]; then
+    echo -e "\n ${ENV_LOCAL} detected. Sourcing contents"
+    source ${ENV_LOCAL}
+else
+    echo -e "\n Running integration test with existing env. Edit ${ENV_LOCAL_TEMPLATE} to run integration tests locally."
+fi
+
 echo -e "\n Running agent integration tests..."
 $bin/env go clean -r github.com/cloudfoundry/bosh-agent/
 
