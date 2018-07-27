@@ -178,6 +178,44 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.EnsureVolumeHasDataDir("1")
 	})
 
+	It("when a third disk is attached, partition is created on that disk", func() {
+		agent.EnsureAgentServiceStopped()
+		agent.EnsureDataDirDoesntExist()
+
+		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\third-disk-settings.json c:\\bosh\\settings.json")
+
+		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+
+		diskNumber = "2"
+		agent.EnsureVolumeHasDataDir("2")
+		partitionNumber = agent.GetDataDirPartitionNumber()
+
+		agent.AssertDataACLed()
+	})
+
+	It("when a third disk is attached and already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
+		agent.EnsureAgentServiceStopped()
+		agent.EnsureDataDirDoesntExist()
+
+		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\third-disk-settings.json c:\\bosh\\settings.json")
+
+		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+
+		diskNumber = "2"
+		agent.EnsureVolumeHasDataDir("2")
+		partitionNumber = agent.GetDataDirPartitionNumber()
+
+		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
+
+		Consistently(agent.AgentProcessRunningFunc(), 60*time.Second).Should(
+			BeTrue(),
+			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
+		)
+		agent.EnsureVolumeHasDataDir("2")
+	})
+
 	It("when the EphemeralDiskFeature flag is not set doesn't create any partitions, or send any warnings", func() {
 		agent.EnsureAgentServiceStopped()
 		agent.EnsureDataDirDoesntExist()

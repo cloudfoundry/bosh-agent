@@ -179,7 +179,8 @@ Vagrant.configure(2) do |config|
       aws.associate_public_ip = true
       aws.block_device_mapping = [
         { 'DeviceName' => '/dev/sda1', 'Ebs.VolumeSize' => 70 },
-        { 'DeviceName' => '/dev/sdb', 'Ebs.VolumeSize' => 10 }
+        { 'DeviceName' => '/dev/sdb', 'Ebs.VolumeSize' => 10 },
+        { 'DeviceName' => '/dev/sdc', 'Ebs.VolumeSize' => 10 }
       ]
     end
 

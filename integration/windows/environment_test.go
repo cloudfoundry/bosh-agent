@@ -22,10 +22,47 @@ type WindowsEnvironment struct {
 }
 
 func (e *WindowsEnvironment) ShrinkRootPartition() {
-	e.RunPowershellCommandWithOffset(
-		1,
-		"Get-Partition -DriveLetter C | Resize-Partition -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMin",
-	)
+	retryableFailure := "Resize-Partition : Size Not Supported"
+	retryableError := "net/http: timeout awaiting response headers"
+
+	cmd := "Get-Partition -DriveLetter C | Resize-Partition -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMin"
+
+	for i := 0; i < 5; i++ {
+		stdout, stderr, err, exitCode := e.RunPowershellCommandWithOffsetAndResponses(
+			1,
+			cmd,
+		)
+
+		if err != nil {
+			if strings.Contains(err.Error(), retryableError) {
+				fmt.Sprintf("WinRM timed out on attempt %d of 5, waiting 5 seconds to retry command: %s\n", i+1, cmd)
+				time.Sleep(5 * time.Second)
+				continue
+			} else {
+				ExpectWithOffset(1, err).NotTo(
+					HaveOccurred(),
+					fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, stdout, stderr),
+				)
+			}
+		}
+
+		if exitCode != 0 {
+			if strings.Contains(stderr, retryableFailure) {
+				fmt.Sprintf("Failed to shrink disk on attempt %d of 5, waiting 5 seconds to retry\n", i+1)
+				time.Sleep(5 * time.Second)
+				continue
+			} else {
+				ExpectWithOffset(1, exitCode).To(
+					BeZero(),
+					fmt.Sprintf(
+						`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, stdout, stderr,
+					),
+				)
+			}
+		}
+
+		break
+	}
 }
 
 func (e *WindowsEnvironment) EnsureRootPartitionAtMaxSize() {
@@ -115,13 +152,7 @@ func (e *WindowsEnvironment) AgentProcessRunningFunc() func() bool {
 }
 
 func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string, cmdFmtArgs ...interface{}) string {
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-
-	exitCode, err := e.Client.Run(winrm.Powershell(fmt.Sprintf(cmd, cmdFmtArgs...)), stdout, stderr)
-
-	outString := stdout.String()
-	errString := stderr.String()
+	outString, errString, err, exitCode := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd, cmdFmtArgs...)
 
 	ExpectWithOffset(offset+1, err).NotTo(
 		HaveOccurred(),
@@ -130,15 +161,28 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd stri
 	ExpectWithOffset(offset+1, exitCode).To(
 		BeZero(),
 		fmt.Sprintf(
-			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`,
-			cmd,
-			exitCode,
-			stdout.String(),
-			stderr.String(),
+			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, outString, errString,
 		),
 	)
 
 	return outString
+}
+
+func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(
+	offset int,
+	cmd string,
+	cmdFmtArgs ...interface{},
+) (string, string, error, int) {
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	exitCode, err := e.Client.Run(winrm.Powershell(fmt.Sprintf(cmd, cmdFmtArgs...)), stdout, stderr)
+
+	outString := stdout.String()
+	errString := stderr.String()
+
+	return outString, errString, err, exitCode
 }
 
 func (e *WindowsEnvironment) RunPowershellCommand(cmd string, cmdFmtArgs ...interface{}) string {

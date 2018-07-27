@@ -439,6 +439,11 @@ var _ = Describe("WindowsPlatform", func() {
 			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "/dev/sdb"})
 			Expect(diskPath).To(Equal("1"))
 		})
+
+		It("returns 2 when disk settings path is /dev/sdc", func() {
+			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "/dev/sdc"})
+			Expect(diskPath).To(Equal("2"))
+		})
 	})
 
 	Describe("SetupEphemeralDiskWithPath", func() {

@@ -631,7 +631,15 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 	}
 
 	if diskSettings.Path != "" {
-		diskPath = "1"
+		matchInt, _ := regexp.MatchString(`\d`, diskSettings.Path)
+		if matchInt {
+			diskPath = diskSettings.Path
+		} else {
+			alphs := []byte("abcdefghijklmnopq")
+
+			lastChar := diskSettings.Path[len(diskSettings.Path)-1:]
+			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, byte(lastChar[0])))
+		}
 	}
 
 	return diskPath

@@ -61,6 +61,7 @@ func tarFixtures(fixturesDir, filename string) error {
 		"agent-configuration/root-disk-settings.json",
 		"agent-configuration/second-disk-settings.json",
 		"agent-configuration/second-disk-digit-settings.json",
+		"agent-configuration/third-disk-settings.json",
 		"psFixture/psFixture.psd1",
 		"psFixture/psFixture.psm1",
 	}
@@ -126,6 +127,7 @@ var _ = BeforeSuite(func() {
 	templateSettings(natsPrivateIP, `""`, "root-disk-settings.json")
 	templateSettings(natsPrivateIP, `"/dev/sdb"`, "second-disk-settings.json")
 	templateSettings(natsPrivateIP, `"1"`, "second-disk-digit-settings.json")
+	templateSettings(natsPrivateIP, `"/dev/sdc"`, "third-disk-settings.json")
 
 	filename := filepath.Join(dirname, "fixtures.tgz")
 	if err := tarFixtures(dirname, filename); err != nil {
@@ -145,7 +147,12 @@ var _ = BeforeSuite(func() {
 	}
 
 	endpoint := winrm.NewEndpoint(AgentPublicIP, 5985, false, false, nil, nil, nil, 0)
-	client, err := winrm.NewClient(endpoint, "vagrant", "Password123!")
+	client, err := winrm.NewClientWithParameters(
+		endpoint,
+		"vagrant",
+		"Password123!",
+		winrm.NewParameters("PT5M", "en-US", 153600),
+	)
 	Expect(err).NotTo(HaveOccurred())
 
 	agent = &WindowsEnvironment{
