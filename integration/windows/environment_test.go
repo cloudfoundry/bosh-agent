@@ -28,7 +28,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 	cmd := "Get-Partition -DriveLetter C | Resize-Partition -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMin"
 
 	for i := 0; i < 5; i++ {
-		stdout, stderr, err, exitCode := e.RunPowershellCommandWithOffsetAndResponses(
+		stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(
 			1,
 			cmd,
 		)
@@ -152,7 +152,7 @@ func (e *WindowsEnvironment) AgentProcessRunningFunc() func() bool {
 }
 
 func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string, cmdFmtArgs ...interface{}) string {
-	outString, errString, err, exitCode := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd, cmdFmtArgs...)
+	outString, errString, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd, cmdFmtArgs...)
 
 	ExpectWithOffset(offset+1, err).NotTo(
 		HaveOccurred(),
@@ -172,7 +172,7 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(
 	offset int,
 	cmd string,
 	cmdFmtArgs ...interface{},
-) (string, string, error, int) {
+) (string, string, int, error) {
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -182,7 +182,7 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(
 	outString := stdout.String()
 	errString := stderr.String()
 
-	return outString, errString, err, exitCode
+	return outString, errString, exitCode, err
 }
 
 func (e *WindowsEnvironment) RunPowershellCommand(cmd string, cmdFmtArgs ...interface{}) string {
