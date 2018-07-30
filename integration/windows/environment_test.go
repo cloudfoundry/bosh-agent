@@ -35,7 +35,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 
 		if err != nil {
 			if strings.Contains(err.Error(), retryableError) {
-				fmt.Sprintf("WinRM timed out on attempt %d of 5, waiting 5 seconds to retry command: %s\n", i+1, cmd)
+				fmt.Printf("WinRM timed out on attempt %d of 5, waiting 5 seconds to retry command: %s\n", i+1, cmd)
 				time.Sleep(5 * time.Second)
 				continue
 			} else {
@@ -48,7 +48,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 
 		if exitCode != 0 {
 			if strings.Contains(stderr, retryableFailure) {
-				fmt.Sprintf("Failed to shrink disk on attempt %d of 5, waiting 5 seconds to retry\n", i+1)
+				fmt.Printf("Failed to shrink disk on attempt %d of 5, waiting 5 seconds to retry\n", i+1)
 				time.Sleep(5 * time.Second)
 				continue
 			} else {
