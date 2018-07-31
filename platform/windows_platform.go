@@ -343,6 +343,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) error {
 	if devicePath == "" || !p.options.Windows.EnableEphemeralDiskMounting {
+		p.logger.Debug("WindowsPlatform", "Not attempting to mount ephemeral disk with devicePath `%s`", devicePath)
 		return nil
 	}
 
@@ -626,6 +627,8 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 }
 
 func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string) {
+	p.logger.Debug("WindowsPlatform", "Identifying ephemeral disk path, diskSettings.Path: `%s`", diskSettings.Path)
+
 	if diskSettings.Path == "" && p.options.Linux.CreatePartitionIfNoEphemeralDisk {
 		diskPath = "0"
 	}
@@ -641,6 +644,8 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, byte(lastChar[0])))
 		}
 	}
+
+	p.logger.Debug("WindowsPlatform", "Identified Disk Path as `%s`", diskPath)
 
 	return diskPath
 }

@@ -176,9 +176,14 @@ resources:
     region: us-east-1
     search_options:
       filters:
-      - name: image-id
+      - name: name
         values:
-        - ami-8c95d3f3
+        - Windows_Server-1709-English-Core-Base*
+      - name: state
+        values:
+        - available
+      owners:
+      - amazon
 
 - name: windows-ami-2012R2
   type: ami-resource
