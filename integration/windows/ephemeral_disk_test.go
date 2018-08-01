@@ -183,7 +183,6 @@ var _ = Describe("EphemeralDisk", func() {
 
 		agent.EnsureAgentServiceStopped()
 		agent.EnsureDataDirDoesntExist()
-		agent.EnsureDiskCleared(diskNumber)
 
 		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
 		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\third-disk-settings.json c:\\bosh\\settings.json")

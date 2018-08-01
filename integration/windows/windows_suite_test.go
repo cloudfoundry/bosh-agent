@@ -158,7 +158,11 @@ var _ = BeforeSuite(func() {
 	agent = &WindowsEnvironment{
 		Client: client,
 	}
+
+	// We do this so that both 2012R2 and 1709 run ephemeral disk tests against raw disks.
+	// 2012R2 additional disks start formatted on AWS for some reason.
 	agent.EnsureDiskCleared("1")
+	agent.EnsureDiskCleared("2")
 })
 
 func templateSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
