@@ -17,6 +17,10 @@ import (
 
 const dataDir = `C:\var\vcap\data\`
 
+type ByteSize float64
+
+const GB = 1024 * 1024 * 1024
+
 type WindowsEnvironment struct {
 	Client *winrm.Client
 }
@@ -24,10 +28,13 @@ type WindowsEnvironment struct {
 func (e *WindowsEnvironment) ShrinkRootPartition() {
 	retryableFailure := "Resize-Partition : Size Not Supported"
 	retryableError := "net/http: timeout awaiting response headers"
+	retryableSizeMin := "Resize-Partition : Not enough available capacity"
 
-	cmd := "Get-Partition -DriveLetter C | Resize-Partition -Size $(Get-PartitionSupportedSize -DriveLetter C).SizeMin"
+	sizeMinBuffer := 0
+	cmdFmtString := "Get-Partition -DriveLetter C | Resize-Partition -Size $((Get-PartitionSupportedSize -DriveLetter C).SizeMin + %d)"
 
 	for i := 0; i < 5; i++ {
+		cmd := fmt.Sprintf(cmdFmtString, sizeMinBuffer)
 		stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(
 			1,
 			cmd,
@@ -50,6 +57,11 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 			if strings.Contains(stderr, retryableFailure) {
 				fmt.Printf("Failed to shrink disk on attempt %d of 5, waiting 5 seconds to retry\n", i+1)
 				time.Sleep(5 * time.Second)
+				continue
+			} else if strings.Contains(stderr, retryableSizeMin) {
+				fmt.Printf("Failed to shrink disk on attempt %d of 5, waiting 5 seconds to retry\n", i+1)
+				time.Sleep(5 * time.Second)
+				sizeMinBuffer += 2 * GB
 				continue
 			} else {
 				ExpectWithOffset(1, exitCode).To(
