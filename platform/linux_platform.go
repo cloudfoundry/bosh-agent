@@ -1467,8 +1467,22 @@ func (p linux) partitionDisk(availableSize uint64, desiredSwapSizeInBytes *uint6
 		dataPartitionPath = p.partitionPath(partitionPath, partitionStartCount+1)
 	}
 
-	p.logger.Info(logTag, "Partitioning `%s' with %s", partitionPath, partitions)
-	err = partitioner.Partition(partitionPath, partitions)
+	if !p.state.Linux.EphemeralDiskPartitioned {
+		p.logger.Info(logTag, "Partitioning `%s' with %s", partitionPath, partitions)
+		err = partitioner.Partition(partitionPath, partitions)
+
+		// Only set EphemeralDiskPartitioned to true when ScrubEphemeralDisk is set to true
+		if p.options.ScrubEphemeralDisk {
+			p.logger.Info(logTag, "Setting EphemeralDiskPartitioned to true")
+			p.state.Linux.EphemeralDiskPartitioned = true
+			err = p.state.SaveState()
+			if err != nil {
+				p.logger.Warn(logTag, "Setting EphemeralDiskPartitioned to true: %s", err.Error())
+			}
+		}
+	} else {
+		p.logger.Info(logTag, "Skipping to partition `%s'", partitionPath)
+	}
 
 	return swapPartitionPath, dataPartitionPath, err
 }

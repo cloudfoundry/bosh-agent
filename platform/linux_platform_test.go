@@ -763,6 +763,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(partitioner.PartitionCalled).To(BeTrue())
+				Expect(state.Linux.EphemeralDiskPartitioned).To(BeFalse())
 				Expect(formatter.FormatCalled).To(BeTrue())
 				Expect(mounter.MountCallCount()).To(Equal(1))
 			})
@@ -1523,8 +1524,44 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 							Expect(agentVersionStats).ToNot(BeNil())
 							Expect(agentVersionStats.StringContents()).To(Equal("1239"))
 						})
+
+						It("set EphemeralDiskPartitioned to true", func() {
+							Expect(state.Linux.EphemeralDiskPartitioned).To(BeFalse())
+
+							err := act()
+							Expect(err).ToNot(HaveOccurred())
+
+							Expect(state.Linux.EphemeralDiskPartitioned).To(BeTrue())
+						})
+
+						Context("when EphemeralDiskPartitioned is true", func() {
+							BeforeEach(func() {
+								state.Linux.EphemeralDiskPartitioned = true
+							})
+
+							It("does nothing", func() {
+								err := act()
+								Expect(err).ToNot(HaveOccurred())
+								Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+							})
+						})
 					})
 				})
+			})
+		})
+
+		Context("when EphemeralDiskPartitioned is true", func() {
+			BeforeEach(func() {
+				state.Linux.EphemeralDiskPartitioned = true
+			})
+
+			It("makes sure ephemeral directory is there but does nothing else", func() {
+				swapSize := uint64(0)
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda", &swapSize)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(partitioner.PartitionCalled).To(BeFalse())
+				Expect(state.Linux.EphemeralDiskPartitioned).To(BeTrue())
 			})
 		})
 	})
