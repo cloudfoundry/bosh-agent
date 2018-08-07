@@ -57,6 +57,8 @@ func (a MountDiskAction) Run(diskCid string, hints ...interface{}) (interface{},
 
 	settings := a.settingsService.GetSettings()
 
+	hints = a.pruneNil(hints)
+
 	if len(hints) > 0 {
 		diskSettings = settings.PersistentDiskSettingsFromHint(diskCid, hints[0])
 		a.settingsService.SavePersistentDiskHint(diskSettings)
@@ -85,4 +87,13 @@ func (a MountDiskAction) Resume() (interface{}, error) {
 
 func (a MountDiskAction) Cancel() error {
 	return errors.New("not supported")
+}
+
+func (a MountDiskAction) pruneNil(hints []interface{}) []interface{} {
+	for i := len(hints) - 1; i >= 0; i-- {
+		if hints[i] == nil {
+			hints = append(hints[:i], hints[i+1:]...)
+		}
+	}
+	return hints
 }
