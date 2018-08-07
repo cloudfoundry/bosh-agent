@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -16,12 +17,14 @@ import (
 var _ = Describe("FileBundleCollection", func() {
 	var (
 		fs                   *fakesys.FakeFileSystem
+		fakeClock            *fakes.FakeClock
 		logger               boshlog.Logger
 		fileBundleCollection FileBundleCollection
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
+		fakeClock = new(fakes.FakeClock)
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		fileBundleCollection = NewFileBundleCollection(
 			`C:\fake-collection-path\data`,
@@ -29,6 +32,7 @@ var _ = Describe("FileBundleCollection", func() {
 			`fake-collection-name`,
 			os.FileMode(0750),
 			fs,
+			fakeClock,
 			logger,
 		)
 	})
@@ -48,6 +52,7 @@ var _ = Describe("FileBundleCollection", func() {
 				`C:/fake-collection-path/fake-collection-name/fake-bundle-name`,
 				os.FileMode(0750),
 				fs,
+				fakeClock,
 				logger,
 			)
 
@@ -91,6 +96,7 @@ var _ = Describe("FileBundleCollection", func() {
 					cleanPath(enablePath+`\fake-bundle-1-name`),
 					os.FileMode(0750),
 					fs,
+					fakeClock,
 					logger,
 				),
 				NewFileBundle(
@@ -98,6 +104,7 @@ var _ = Describe("FileBundleCollection", func() {
 					cleanPath(enablePath+`\fake-bundle-1-name`),
 					os.FileMode(0750),
 					fs,
+					fakeClock,
 					logger,
 				),
 				NewFileBundle(
@@ -105,6 +112,7 @@ var _ = Describe("FileBundleCollection", func() {
 					cleanPath(enablePath+`\fake-bundle-1-name`),
 					os.FileMode(0750),
 					fs,
+					fakeClock,
 					logger,
 				),
 			}

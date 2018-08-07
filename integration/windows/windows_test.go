@@ -297,13 +297,19 @@ var _ = Describe("An Agent running on Windows", func() {
 		Eventually(getNetwork("netmask"), DefaultTimeout, DefaultInterval).ShouldNot(BeEmpty())
 	})
 
-	It("can compile longpath complex pakcage", func() {
-		const (
-			blobName     = "blob.tar"
-			fileName     = "output.txt"
-			fileContents = "i'm a compiled package!"
-		)
+	It("can compile longpath complex package", func() {
 		_, err := natsClient.CompilePackage("longpath-package")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("can cleanup package compilation dependencies when they are initially still in use", func() {
+		blobref, err := natsClient.CompilePackage("go")
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = natsClient.CompilePackageWithDeps(
+			"execution-lock",
+			map[string]MarshalableBlobRef{"go": *blobref},
+		)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

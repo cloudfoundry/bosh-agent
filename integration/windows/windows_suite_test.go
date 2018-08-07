@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"net/http"
+
 	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	"github.com/masterzen/winrm"
 	. "github.com/onsi/ginkgo"
@@ -163,6 +165,10 @@ var _ = BeforeSuite(func() {
 	// 2012R2 additional disks start formatted on AWS for some reason.
 	agent.EnsureDiskCleared("1")
 	agent.EnsureDiskCleared("2")
+
+	goSourcePath := filepath.Join(dirname, "templates", "go", "go1.7.1.windows-amd64.zip")
+	os.RemoveAll(goSourcePath)
+	downloadFile(goSourcePath, "https://dl.google.com/go/go1.7.1.windows-amd64.zip")
 })
 
 func templateSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
@@ -180,4 +186,23 @@ func templateSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
 	Expect(err).NotTo(HaveOccurred())
 	err = settingsTmpl.Execute(outputFile, agentSettings)
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func downloadFile(localPath, sourceUrl string) error {
+	f, err := os.OpenFile(localPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	res, err := http.Get(sourceUrl)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if _, err := io.Copy(f, res.Body); err != nil {
+		return err
+	}
+
+	return nil
 }

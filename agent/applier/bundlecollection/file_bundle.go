@@ -5,6 +5,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"code.cloudfoundry.org/clock"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -15,25 +16,28 @@ const (
 )
 
 type FileBundle struct {
-	installPath string
-	enablePath  string
-	fileMode    os.FileMode
-	fs          boshsys.FileSystem
-	logger      boshlog.Logger
+	installPath  string
+	enablePath   string
+	fileMode     os.FileMode
+	fs           boshsys.FileSystem
+	timeProvider clock.Clock
+	logger       boshlog.Logger
 }
 
 func NewFileBundle(
 	installPath, enablePath string,
 	fileMode os.FileMode,
 	fs boshsys.FileSystem,
+	timeProvider clock.Clock,
 	logger boshlog.Logger,
 ) FileBundle {
 	return FileBundle{
-		installPath: installPath,
-		enablePath:  enablePath,
-		fileMode:    fileMode,
-		fs:          fs,
-		logger:      logger,
+		installPath:  installPath,
+		enablePath:   enablePath,
+		fileMode:     fileMode,
+		fs:           fs,
+		timeProvider: timeProvider,
+		logger:       logger,
 	}
 }
 
@@ -141,12 +145,4 @@ func (b FileBundle) Disable() error {
 	}
 
 	return nil
-}
-
-func (b FileBundle) Uninstall() error {
-	b.logger.Debug(fileBundleLogTag, "Uninstalling %v", b)
-
-	// RemoveAll MUST be the last possibly-failing operation
-	// because IsInstalled() relies on installPath presence.
-	return b.fs.RemoveAll(b.installPath)
 }

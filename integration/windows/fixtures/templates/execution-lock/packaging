@@ -1,0 +1,6 @@
+trap {
+  write-error $_
+  exit 1
+}
+
+Start-Process "C:\var\vcap\packages\go\go\bin\go.exe" -ArgumentList "run hibernate.go"
