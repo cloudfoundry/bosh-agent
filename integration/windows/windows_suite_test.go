@@ -126,10 +126,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(natsPrivateIP).NotTo(BeEmpty(), "Couldn't retrieve NATS private IP")
 
-	templateSettings(natsPrivateIP, `""`, "root-disk-settings.json")
-	templateSettings(natsPrivateIP, `"/dev/sdb"`, "second-disk-settings.json")
-	templateSettings(natsPrivateIP, `"1"`, "second-disk-digit-settings.json")
-	templateSettings(natsPrivateIP, `"/dev/sdc"`, "third-disk-settings.json")
+	templateEphemeralDiskSettings(natsPrivateIP, `""`, "root-disk-settings.json")
+	templateEphemeralDiskSettings(natsPrivateIP, `"/dev/sdb"`, "second-disk-settings.json")
+	templateEphemeralDiskSettings(natsPrivateIP, `"1"`, "second-disk-digit-settings.json")
+	templateEphemeralDiskSettings(natsPrivateIP, `{"path": "/dev/sdc"}`, "third-disk-settings.json")
 
 	filename := filepath.Join(dirname, "fixtures.tgz")
 	if err := tarFixtures(dirname, filename); err != nil {
@@ -171,7 +171,7 @@ var _ = BeforeSuite(func() {
 	downloadFile(goSourcePath, "https://dl.google.com/go/go1.7.1.windows-amd64.zip")
 })
 
-func templateSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
+func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
 	agentSettings := BoshAgentSettings{
 		NatsPrivateIP:       natsPrivateIP,
 		EphemeralDiskConfig: ephemeralDiskConfig,
