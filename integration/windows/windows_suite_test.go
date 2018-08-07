@@ -188,14 +188,14 @@ func templateSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func downloadFile(localPath, sourceUrl string) error {
+func downloadFile(localPath, sourceURL string) error {
 	f, err := os.OpenFile(localPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	res, err := http.Get(sourceUrl)
+	res, err := http.Get(sourceURL)
 	if err != nil {
 		return err
 	}
