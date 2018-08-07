@@ -1122,10 +1122,6 @@ var _ = Describe("BOSH User Commands", func() {
 				line = strings.TrimSpace(line)
 				Expect(line).To(Equal(keys[i]))
 			}
-
-			out, err := exec.Command("icacls.exe", keyPath).CombinedOutput()
-			Expect(err).To(Succeed())
-			Expect(strings.ToUpper(string(out))).To(ContainSubstring("NT SERVICE\\SSHD:(R)"))
 		})
 
 		It("can delete a users matching a regex", func() {
