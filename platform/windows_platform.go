@@ -705,7 +705,7 @@ func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 			return "", bosherr.WrapErrorf(err, "Reading host public key: "+
 				"expected OpenSSH to be installed at: %s", sshdir)
 		}
-		return "", bosherr.WrapErrorf(err, "Missing host public RSA key: %s", keypath)
+		return "", bosherr.WrapErrorf(err, "Missing host public ECDSA key: %s", keypath)
 	}
 	return key, nil
 }
