@@ -348,7 +348,7 @@ var _ = Describe("WindowsPlatform", func() {
 			SetSSHEnabled(previous)
 		})
 
-		const ExpPublicKey = "PUBLIC RSA KEY"
+		const ExpPublicKey = "PUBLIC ECDSA KEY"
 
 		setupHostKeys := func(drive string) {
 			if drive == "" {
@@ -356,7 +356,7 @@ var _ = Describe("WindowsPlatform", func() {
 			}
 			drive += "\\"
 
-			dirname := filepath.Join(drive, "Program Files", "OpenSSH")
+			dirname := filepath.Join(drive, "ProgramData", "ssh")
 			fs.MkdirAll(dirname, 0744)
 			var keyTypes = []string{
 				"dsa",
@@ -374,14 +374,14 @@ var _ = Describe("WindowsPlatform", func() {
 			}
 		}
 
-		It("reads the host RSA key", func() {
+		It("reads the host ECDSA key", func() {
 			setupHostKeys(os.Getenv("SYSTEMDRIVE"))
 			key, err := platform.GetHostPublicKey()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(key).To(Equal(ExpPublicKey))
 		})
 
-		It("reads the host key stored in %SYSTEMDRIVE%\\Program Files\\OpenSSH", func() {
+		It("reads the host key stored in %SYSTEMDRIVE%\\ProgramData\\ssh", func() {
 			oldSys := os.Getenv("SYSTEMDRIVE")
 			defer os.Setenv("SYSTEMDRIVE", oldSys)
 			newSys := "K:"
