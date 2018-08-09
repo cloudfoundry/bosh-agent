@@ -372,7 +372,7 @@ func serviceDisabled(s *mgr.Service) bool {
 // Make the function called by GetHostPublicKey configurable for testing.
 var sshEnabled func() error = checkSSH
 
-// checkSSH checks if the sshd and ssh-agent services are installed and running.
+// checkSSH checks if the sshd service is installed and running.
 //
 // The services are installed during stemcell creation, but are disabled.  The
 // job windows-utilities-release/enable_ssh job is used to enable ssh.
@@ -398,15 +398,6 @@ func checkSSH() error {
 	}
 	defer sshd.Close()
 
-	agent, err := m.OpenService("ssh-agent")
-	if err != nil {
-		if err == ERROR_SERVICE_DOES_NOT_EXIST {
-			return errors.New("ssh-agent is not installed")
-		}
-		return fmt.Errorf("opening service ssh-agent: %s", err)
-	}
-	defer agent.Close()
-
 	st, err := sshd.Query()
 	if err != nil {
 		return fmt.Errorf("querying status of service (sshd): %s", err)
@@ -416,19 +407,6 @@ func checkSSH() error {
 			return fmt.Errorf(msgFmt, "sshd")
 		}
 		return errors.New("sshd service is not running")
-	}
-
-	// ssh-agent is a dependency of sshd so it should always
-	// be running if sshd is running - check just to make sure.
-	st, err = agent.Query()
-	if err != nil {
-		return fmt.Errorf("querying status of service ssh-agent: %s", err)
-	}
-	if st.State != svc.Running {
-		if serviceDisabled(agent) {
-			return fmt.Errorf(msgFmt, "ssh-agent")
-		}
-		return errors.New("ssh-agent service is not running")
 	}
 
 	return nil

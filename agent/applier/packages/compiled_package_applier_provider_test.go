@@ -4,13 +4,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"os"
+
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"os"
 )
 
 var _ = Describe("compiledPackageApplierProvider", func() {
@@ -18,6 +20,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 		blobstore  *fakeblob.FakeDigestBlobstore
 		compressor *fakecmd.FakeCompressor
 		fs         *fakesys.FakeFileSystem
+		fakeClock  *fakes.FakeClock
 		logger     boshlog.Logger
 		provider   ApplierProvider
 	)
@@ -26,6 +29,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 		blobstore = &fakeblob.FakeDigestBlobstore{}
 		compressor = fakecmd.NewFakeCompressor()
 		fs = fakesys.NewFakeFileSystem()
+		fakeClock = new(fakes.FakeClock)
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		provider = NewCompiledPackageApplierProvider(
 			"fake-install-path",
@@ -35,6 +39,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 			blobstore,
 			compressor,
 			fs,
+			fakeClock,
 			logger,
 		)
 	})
@@ -48,6 +53,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 					"fake-name",
 					os.FileMode(0755),
 					fs,
+					fakeClock,
 					logger,
 				),
 				true,
@@ -69,6 +75,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 					"fake-name",
 					os.FileMode(0755),
 					fs,
+					fakeClock,
 					logger,
 				),
 

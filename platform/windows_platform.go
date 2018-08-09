@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -195,20 +194,6 @@ func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 		return bosherr.WrapErrorf(err, "Creating authorized_keys file: %s", authkeysPath)
 	}
 
-	// Grant sshd service read access to the authorized_keys file.
-	//
-	// Do not use the WindowsPlatform.cmdRunner for this - it passes
-	// every command through PowerShell, which breaks this command.
-	//
-	cmd := exec.Command("icacls.exe", authkeysPath, "/grant", "NT SERVICE\\SSHD:(R)")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		// Remove authorized_keys file - don't check the error
-		p.fs.RemoveAll(authkeysPath)
-
-		return bosherr.WrapErrorf(err, "Setting ACL on authorized_keys file (%s): %s",
-			authkeysPath, string(out))
-	}
 	return nil
 }
 
@@ -343,6 +328,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) error {
 	if devicePath == "" || !p.options.Windows.EnableEphemeralDiskMounting {
+		p.logger.Debug("WindowsPlatform", "Not attempting to mount ephemeral disk with devicePath `%s`", devicePath)
 		return nil
 	}
 
@@ -361,6 +347,76 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 
 	if err != nil {
 		return err
+	}
+
+	if devicePath != "0" {
+		getExistingPartitionCountAction := &powershellAction{
+			commandArgs: []string{
+				"Get-Disk",
+				"-Number",
+				devicePath,
+				"|",
+				"Select",
+				"-ExpandProperty",
+				"NumberOfPartitions",
+			},
+			commandFailureFmt: fmt.Sprintf("Failed to get existing partition count for disk %s: %%s", devicePath),
+			cmdRunner:         p.cmdRunner,
+		}
+
+		stdout, err := getExistingPartitionCountAction.run()
+
+		if err != nil {
+			return err
+		}
+
+		if strings.TrimSpace(stdout) == "0" {
+			initializeDiskAction := &powershellAction{
+				commandArgs: []string{
+					"Initialize-Disk",
+					"-Number",
+					devicePath,
+					"-PartitionStyle",
+					"GPT",
+				},
+				commandFailureFmt: fmt.Sprintf("Failed to initialize disk %s: %%s", devicePath),
+				cmdRunner:         p.cmdRunner,
+			}
+
+			_, err = initializeDiskAction.run()
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	checkForExistingPartitionCommand := []string{
+		"Get-Partition",
+		"-DiskNumber",
+		devicePath,
+		"|",
+		"where",
+		"AccessPaths",
+		"-Contains",
+		fmt.Sprintf(`"%s"`, dataPath),
+		"|",
+		"Select",
+		"-ExpandProperty",
+		"PartitionNumber",
+	}
+	stdout, _, exitStatus, err := p.cmdRunner.RunCommand(
+		powerShellCmd,
+		checkForExistingPartitionCommand...,
+	)
+
+	if exitStatus == 0 && strings.TrimSpace(stdout) != "" {
+		return nil
+	}
+
+	if err != nil {
+		return fmt.Errorf("Failed to run command \"%s\": %s", strings.Join(
+			append([]string{powerShellCmd}, checkForExistingPartitionCommand...), " "), err)
 	}
 
 	checkFreeSpaceAction := &powershellAction{
@@ -390,34 +446,6 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 			devicePath,
 		)
 		return nil
-	}
-
-	checkForExistingPartitionCommand := []string{
-		"Get-Partition",
-		"-DiskNumber",
-		devicePath,
-		"|",
-		"where",
-		"AccessPaths",
-		"-Contains",
-		fmt.Sprintf(`"%s"`, dataPath),
-		"|",
-		"Select",
-		"-ExpandProperty",
-		"PartitionNumber",
-	}
-	stdout, _, exitStatus, err := p.cmdRunner.RunCommand(
-		powerShellCmd,
-		checkForExistingPartitionCommand...,
-	)
-
-	if exitStatus == 0 && strings.TrimSpace(stdout) != "" {
-		return nil
-	}
-
-	if err != nil {
-		return fmt.Errorf("Failed to run command \"%s\": %s", strings.Join(
-			append([]string{powerShellCmd}, checkForExistingPartitionCommand...), " "), err)
 	}
 
 	partitionVolumeAction := &powershellAction{
@@ -584,9 +612,25 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 }
 
 func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string) {
+	p.logger.Debug("WindowsPlatform", "Identifying ephemeral disk path, diskSettings.Path: `%s`", diskSettings.Path)
+
 	if diskSettings.Path == "" && p.options.Linux.CreatePartitionIfNoEphemeralDisk {
 		diskPath = "0"
 	}
+
+	if diskSettings.Path != "" {
+		matchInt, _ := regexp.MatchString(`\d`, diskSettings.Path)
+		if matchInt {
+			diskPath = diskSettings.Path
+		} else {
+			alphs := []byte("abcdefghijklmnopq")
+
+			lastChar := diskSettings.Path[len(diskSettings.Path)-1:]
+			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, byte(lastChar[0])))
+		}
+	}
+
+	p.logger.Debug("WindowsPlatform", "Identified Disk Path as `%s`", diskPath)
 
 	return diskPath
 }
@@ -659,8 +703,8 @@ func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 	}
 	drive += "\\"
 
-	sshdir := filepath.Join(drive, "Program Files", "OpenSSH")
-	keypath := filepath.Join(sshdir, "ssh_host_rsa_key.pub")
+	sshdir := filepath.Join(drive, "ProgramData", "ssh")
+	keypath := filepath.Join(sshdir, "ssh_host_ecdsa_key.pub")
 
 	key, err := p.fs.ReadFileString(keypath)
 	if err != nil {
@@ -674,7 +718,7 @@ func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 			return "", bosherr.WrapErrorf(err, "Reading host public key: "+
 				"expected OpenSSH to be installed at: %s", sshdir)
 		}
-		return "", bosherr.WrapErrorf(err, "Missing host public RSA key: %s", keypath)
+		return "", bosherr.WrapErrorf(err, "Missing host public ECDSA key: %s", keypath)
 	}
 	return key, nil
 }

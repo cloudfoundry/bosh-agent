@@ -157,7 +157,13 @@ func (app *app) Setup(opts Options) error {
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
-	applier, compiler := app.buildApplierAndCompiler(app.dirProvider, blobstore, jobSupervisor, settingsService.GetSettings())
+	applier, compiler := app.buildApplierAndCompiler(
+		app.dirProvider,
+		blobstore,
+		jobSupervisor,
+		settingsService.GetSettings(),
+		timeService,
+	)
 
 	uuidGen := boshuuid.NewGenerator()
 
@@ -235,6 +241,7 @@ func (app *app) buildApplierAndCompiler(
 	blobstore boshblob.DigestBlobstore,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	settings boshsettings.Settings,
+	timeService clock.Clock,
 ) (boshapplier.Applier, boshcomp.Compiler) {
 	fileSystem := app.platform.GetFs()
 
@@ -244,6 +251,7 @@ func (app *app) buildApplierAndCompiler(
 		"jobs",
 		os.FileMode(0750),
 		fileSystem,
+		timeService,
 		app.logger,
 	)
 
@@ -255,6 +263,7 @@ func (app *app) buildApplierAndCompiler(
 		blobstore,
 		app.platform.GetCompressor(),
 		fileSystem,
+		timeService,
 		app.logger,
 	)
 

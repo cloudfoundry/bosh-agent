@@ -3,12 +3,14 @@ package packages
 import (
 	"path"
 
+	"os"
+
+	"code.cloudfoundry.org/clock"
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"os"
 )
 
 type compiledPackageApplierProvider struct {
@@ -17,10 +19,11 @@ type compiledPackageApplierProvider struct {
 	jobSpecificEnablePath string
 	name                  string
 
-	blobstore  boshblob.DigestBlobstore
-	compressor boshcmd.Compressor
-	fs         boshsys.FileSystem
-	logger     boshlog.Logger
+	blobstore    boshblob.DigestBlobstore
+	compressor   boshcmd.Compressor
+	fs           boshsys.FileSystem
+	timeProvider clock.Clock
+	logger       boshlog.Logger
 }
 
 func NewCompiledPackageApplierProvider(
@@ -28,17 +31,19 @@ func NewCompiledPackageApplierProvider(
 	blobstore boshblob.DigestBlobstore,
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
+	timeProvider clock.Clock,
 	logger boshlog.Logger,
 ) ApplierProvider {
 	return compiledPackageApplierProvider{
 		installPath:           installPath,
 		rootEnablePath:        rootEnablePath,
 		jobSpecificEnablePath: jobSpecificEnablePath,
-		name:       name,
-		blobstore:  blobstore,
-		compressor: compressor,
-		fs:         fs,
-		logger:     logger,
+		name:         name,
+		blobstore:    blobstore,
+		compressor:   compressor,
+		fs:           fs,
+		timeProvider: timeProvider,
+		logger:       logger,
 	}
 }
 
@@ -52,10 +57,26 @@ func (p compiledPackageApplierProvider) Root() Applier {
 // (e.g manages /var/vcap/jobs/job-name/packages/pkg-a -> /var/vcap/data/packages/pkg-a)
 func (p compiledPackageApplierProvider) JobSpecific(jobName string) Applier {
 	enablePath := path.Join(p.jobSpecificEnablePath, jobName)
-	packagesBc := boshbc.NewFileBundleCollection(p.installPath, enablePath, p.name, os.FileMode(0755), p.fs, p.logger)
+	packagesBc := boshbc.NewFileBundleCollection(
+		p.installPath,
+		enablePath,
+		p.name,
+		os.FileMode(0755),
+		p.fs,
+		p.timeProvider,
+		p.logger,
+	)
 	return NewCompiledPackageApplier(packagesBc, false, p.blobstore, p.compressor, p.fs, p.logger)
 }
 
 func (p compiledPackageApplierProvider) RootBundleCollection() boshbc.BundleCollection {
-	return boshbc.NewFileBundleCollection(p.installPath, p.rootEnablePath, p.name, os.FileMode(0755), p.fs, p.logger)
+	return boshbc.NewFileBundleCollection(
+		p.installPath,
+		p.rootEnablePath,
+		p.name,
+		os.FileMode(0755),
+		p.fs,
+		p.timeProvider,
+		p.logger,
+	)
 }

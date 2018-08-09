@@ -8,13 +8,17 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
+//go:generate counterfeiter -o fakes/fake_clock.go /code.cloudfoundry.org/clock Clock
+
 var _ = Describe("FileBundle", func() {
 	var (
 		fs          *fakesys.FakeFileSystem
+		fakeClock   *fakes.FakeClock
 		logger      boshlog.Logger
 		sourcePath  string
 		installPath string
@@ -24,10 +28,11 @@ var _ = Describe("FileBundle", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
+		fakeClock = new(fakes.FakeClock)
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, logger)
+		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, fakeClock, logger)
 	})
 
 	createSourcePath := func() string {
@@ -310,7 +315,7 @@ var _ = Describe("FileBundle", func() {
 				_, _, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 
-				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, os.FileMode(0750), fs, logger)
+				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, os.FileMode(0750), fs, fakeClock, logger)
 
 				otherSourcePath := createSourcePath()
 				_, _, err = newerFileBundle.Install(otherSourcePath)

@@ -72,8 +72,6 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		return "", nil, bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
 	}
 
-	defer c.fs.RemoveAll(compilePath)
-
 	defer func() {
 		e := c.fs.RemoveAll(compilePath)
 		if e != nil && err == nil {

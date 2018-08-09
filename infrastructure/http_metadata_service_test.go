@@ -133,6 +133,45 @@ func describeHTTPMetadataService() {
 		})
 	})
 
+	Describe("GetEmptyPublicKey", func() {
+		var (
+			ts          *httptest.Server
+			sshKeysPath string
+		)
+
+		BeforeEach(func() {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer GinkgoRecover()
+
+				Expect(r.Method).To(Equal("GET"))
+				Expect(r.URL.Path).To(Equal("/ssh-keys"))
+				Expect(r.Header.Get("key")).To(Equal("value"))
+			})
+			ts = httptest.NewServer(handler)
+		})
+
+		AfterEach(func() {
+			ts.Close()
+		})
+
+		Context("when the ssh keys path is present but key value is empty", func() {
+			BeforeEach(func() {
+				sshKeysPath = "/ssh-keys"
+				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", sshKeysPath, dnsResolver, platform, logger)
+			})
+
+			It("returns empty public key", func() {
+				publicKey, err := metadataService.GetPublicKey()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(publicKey).To(BeEmpty())
+			})
+
+			ItEnsuresMinimalNetworkSetup(func() (string, error) {
+				return metadataService.GetPublicKey()
+			})
+		})
+	})
+
 	Describe("GetInstanceID", func() {
 		var (
 			ts             *httptest.Server

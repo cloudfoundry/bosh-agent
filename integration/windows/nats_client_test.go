@@ -11,8 +11,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient"
-
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
@@ -239,12 +237,19 @@ func (n *NatsClient) PrepareJob(jobName string) {
 	Expect(err).ToNot(HaveOccurred())
 }
 
+type MarshalableBlobRef struct {
+	Name        string
+	Version     string
+	BlobstoreID string `json:"blobstore_id"`
+	SHA1        string
+}
+
 type CompileTemplate struct {
 	BlobstoreID  string
 	SHA1         string
 	Name         string
 	Version      string
-	Dependencies map[string]agentclient.BlobRef
+	Dependencies map[string]MarshalableBlobRef
 }
 
 func (c CompileTemplate) Arguments() []interface{} {
@@ -257,7 +262,11 @@ func (c CompileTemplate) Arguments() []interface{} {
 	}
 }
 
-func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, error) {
+func (n *NatsClient) CompilePackage(packageName string) (*MarshalableBlobRef, error) {
+	return n.CompilePackageWithDeps(packageName, nil)
+}
+
+func (n *NatsClient) CompilePackageWithDeps(packageName string, deps map[string]MarshalableBlobRef) (*MarshalableBlobRef, error) {
 	tarSha1, blobID, err := n.uploadPackage(packageName)
 	if err != nil {
 		return nil, err
@@ -268,7 +277,7 @@ func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, e
 		SHA1:         tarSha1,
 		Name:         packageName,
 		Version:      "1.2.3",
-		Dependencies: nil,
+		Dependencies: deps,
 	}
 
 	command := NatCommand{
@@ -286,7 +295,7 @@ func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, e
 	}
 
 	taskID := pkgResponse["value"]["agent_task_id"]
-	response, err := n.WaitForTask(taskID, -1)
+	response, err := n.WaitForTask(taskID, time.Minute*5)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +316,7 @@ func (n *NatsClient) CompilePackage(packageName string) (*agentclient.BlobRef, e
 	if !ok {
 		return nil, fmt.Errorf(`CompilePackage missing 'sha1' field: %#v`, result)
 	}
-	compiledPackageRef := agentclient.BlobRef{
+	compiledPackageRef := MarshalableBlobRef{
 		Name:        template.Name,
 		Version:     template.Version,
 		SHA1:        sha1,
