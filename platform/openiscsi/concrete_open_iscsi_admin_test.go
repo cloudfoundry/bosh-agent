@@ -179,13 +179,6 @@ node.conn[0].iscsi.MaxRecvDataSegmentLength = 65536
 	})
 
 	Describe("IsLoggedin", func() {
-		var (
-			target string
-		)
-		BeforeEach(func() {
-			target = "11.11.22.22"
-		})
-
 		It("returns true when has active sessions", func() {
 			runner.AddCmdResult(
 				"iscsiadm -m session",
