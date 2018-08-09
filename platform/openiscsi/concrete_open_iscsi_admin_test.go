@@ -178,6 +178,44 @@ node.conn[0].iscsi.MaxRecvDataSegmentLength = 65536
 		})
 	})
 
+	Describe("IsLoggedin", func() {
+		var (
+			target string
+		)
+		BeforeEach(func() {
+			target = "11.11.22.22"
+		})
+
+		It("returns true when has active sessions", func() {
+			runner.AddCmdResult(
+				"iscsiadm -m session",
+				fakesys.FakeCmdResult{Stdout: "tcp: [29] 11.11.22.22:1111,2222 iqn.icssi.icssivendor:dc0101"},
+			)
+			hasBeenLoggedin, err := iscsiAdm.IsLoggedin()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasBeenLoggedin).To(BeTrue())
+		})
+
+		It("returns false when No active sessions", func() {
+			runner.AddCmdResult(
+				"iscsiadm -m session",
+				fakesys.FakeCmdResult{Stderr: "No active sessions.", ExitStatus: 21},
+			)
+			hasBeenLoggedin, err := iscsiAdm.IsLoggedin()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasBeenLoggedin).To(BeFalse())
+		})
+
+		It("returns error when No active sessions", func() {
+			runner.AddCmdResult(
+				"iscsiadm -m session",
+				fakesys.FakeCmdResult{Error: errors.New("fake-cmd-error")},
+			)
+			_, err := iscsiAdm.IsLoggedin()
+			Expect(err.Error()).To(ContainSubstring("fake-cmd-error"))
+		})
+	})
+
 	Describe("Login", func() {
 		It("iscsiadm login successfully", func() {
 			err := iscsiAdm.Login()

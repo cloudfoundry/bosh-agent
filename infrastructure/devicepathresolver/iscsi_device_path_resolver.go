@@ -166,6 +166,17 @@ func (ispr iscsiDevicePathResolver) connectTarget(iSCSISettings boshsettings.ISC
 		return bosherr.WrapError(err, fmt.Sprintf("Could not discovery lun against portal %s", iSCSISettings.Target))
 	}
 
+	hasBeenLoggedin, err := ispr.openiscsi.IsLoggedin()
+	if err != nil {
+		return bosherr.WrapError(err, "Could not check all sessions")
+	}
+	if hasBeenLoggedin {
+		err = ispr.openiscsi.Logout()
+		if err != nil {
+			return bosherr.WrapError(err, "Could not logout all sessions")
+		}
+	}
+
 	err = ispr.openiscsi.Login()
 	if err != nil {
 		return bosherr.WrapError(err, "Could not login all sessions")
