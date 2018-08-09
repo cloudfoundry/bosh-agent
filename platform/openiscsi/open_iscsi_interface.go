@@ -8,6 +8,7 @@ type OpenIscsi interface {
 	Stop() (err error)
 	Restart() (err error)
 	Discovery(ipAddress string) (err error)
+	IsLoggedin() (bool, error)
 	Login() (err error)
 	Logout() (err error)
 }
