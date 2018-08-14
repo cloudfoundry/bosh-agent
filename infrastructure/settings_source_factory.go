@@ -9,6 +9,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type Options struct {
@@ -29,11 +30,12 @@ type SourceOptions interface {
 }
 
 type HTTPSourceOptions struct {
-	URI            string
-	Headers        map[string]string
-	UserDataPath   string
-	InstanceIDPath string
-	SSHKeysPath    string
+	URI                        string
+	Headers                    map[string]string
+	UserDataPath               string
+	InstanceIDPath             string
+	SSHKeysPath                string
+	HTTPRegistryCachePreferred bool
 }
 
 func (o HTTPSourceOptions) sourceOptionsInterface() {}
@@ -65,28 +67,35 @@ type CDROMSourceOptions struct {
 func (o CDROMSourceOptions) sourceOptionsInterface() {}
 
 type InstanceMetadataSourceOptions struct {
-	URI          string
-	Headers      map[string]string
-	SettingsPath string
+	URI                         string
+	Headers                     map[string]string
+	SettingsPath                string
+	HTTPRegistryAccessCachePath bool
 }
 
 func (o InstanceMetadataSourceOptions) sourceOptionsInterface() {}
 
 type SettingsSourceFactory struct {
-	options  SettingsOptions
-	platform boshplat.Platform
-	logger   boshlog.Logger
+	fs                boshsys.FileSystem
+	userdataCachePath string
+	options           SettingsOptions
+	platform          boshplat.Platform
+	logger            boshlog.Logger
 }
 
 func NewSettingsSourceFactory(
+	fs boshsys.FileSystem,
+	userdataCachePath string,
 	options SettingsOptions,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
 ) SettingsSourceFactory {
 	return SettingsSourceFactory{
-		options:  options,
-		platform: platform,
-		logger:   logger,
+		fs:                fs,
+		userdataCachePath: userdataCachePath,
+		options:           options,
+		platform:          platform,
+		logger:            logger,
 	}
 }
 
@@ -109,16 +118,36 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 
 		switch typedOpts := opts.(type) {
 		case HTTPSourceOptions:
-			metadataService = NewHTTPMetadataService(
-				typedOpts.URI,
-				typedOpts.Headers,
-				typedOpts.UserDataPath,
-				typedOpts.InstanceIDPath,
-				typedOpts.SSHKeysPath,
-				resolver,
-				f.platform,
-				f.logger,
-			)
+			if typedOpts.HTTPRegistryCachePreferred {
+				httpMetadataService := NewHTTPMetadataServiceInstance(
+					typedOpts.URI,
+					typedOpts.Headers,
+					typedOpts.UserDataPath,
+					typedOpts.InstanceIDPath,
+					typedOpts.SSHKeysPath,
+					resolver,
+					f.platform,
+					f.logger,
+				)
+				metadataService = NewCachingMetadataService(
+					f.userdataCachePath,
+					resolver,
+					f.fs,
+					f.logger,
+					httpMetadataService,
+				)
+			} else {
+				metadataService = NewHTTPMetadataService(
+					typedOpts.URI,
+					typedOpts.Headers,
+					typedOpts.UserDataPath,
+					typedOpts.InstanceIDPath,
+					typedOpts.SSHKeysPath,
+					resolver,
+					f.platform,
+					f.logger,
+				)
+			}
 
 		case ConfigDriveSourceOptions:
 			metadataService = NewConfigDriveMetadataService(

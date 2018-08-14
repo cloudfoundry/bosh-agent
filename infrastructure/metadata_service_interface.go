@@ -23,15 +23,15 @@ type MetadataServiceProvider interface {
 
 type UserDataContentsType struct {
 	Registry struct {
-		Endpoint string
-	}
+		Endpoint string `json:"endpoint,omitempty"`
+	} `json:"registry"`
 	Server struct {
-		Name string // Name given by CPI e.g. vm-384sd4-r7re9e...
-	}
+		Name string `json:"name,omitempty"` // Name given by CPI e.g. vm-384sd4-r7re9e...
+	} `json:"server"`
 	DNS struct {
-		Nameserver []string
-	}
-	Networks boshsettings.Networks
+		Nameserver []string `json:"nameserver,omitempty"`
+	} `json:"dns"`
+	Networks boshsettings.Networks `json:"networks,omitempty"`
 }
 
 type DynamicMetadataService interface {

@@ -12,9 +12,11 @@ import (
 )
 
 type InstanceMetadataSettingsSource struct {
-	metadataHost    string
-	metadataHeaders map[string]string
-	settingsPath    string
+	metadataHost      string
+	metadataHeaders   map[string]string
+	settingsPath      string
+	UserdataCache     bool
+	userdataCachePath string
 
 	platform boshplatform.Platform
 	logger   boshlog.Logger
