@@ -261,13 +261,28 @@ var _ = Describe("PartedPartitioner", func() {
 							{SizeInBytes: 8589934592}, // (8GiB)
 						}
 
+						fakeCmdRunner.AddCmdResult(
+							"blkid",
+							fakesys.FakeCmdResult{
+								Stdout: `/dev/sda1: UUID="25ecbd23-9e44-4b71-a3d4-aa25550bd225" TYPE="ext4"
+`,
+							},
+						)
+
+						fakeCmdRunner.AddCmdResult(
+							"wipefs -a /dev/sda1",
+							fakesys.FakeCmdResult{},
+						)
+
 						err := partitioner.Partition("/dev/sda", partitions)
 						Expect(err).To(BeNil())
 
-						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(8))
+						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(10))
 						scrubbedCommands := scrubPartitionNames(fakeCmdRunner.RunCommands)
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "/dev/sda", "rm", "1"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"blkid"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda1"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "1048576", "8590983167"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "8590983168", "17180917759"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"partprobe", "/dev/sda"}))
@@ -275,6 +290,28 @@ var _ = Describe("PartedPartitioner", func() {
 					})
 
 					It("Repartition the first disk and set ephemeralDiskPartitioned to true when ephemeralDiskPartitioned is set to false", func() {
+						fakeCmdRunner.AddCmdResult(
+							"parted -m /dev/sda unit B print",
+							fakesys.FakeCmdResult{
+								Stdout: `BYT;
+/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
+1:512B:2048576B:199680B:ext4:bosh-partition-0:;
+`},
+						)
+
+						fakeCmdRunner.AddCmdResult(
+							"blkid",
+							fakesys.FakeCmdResult{
+								Stdout: `/dev/sda1: UUID="25ecbd23-9e44-4b71-a3d4-aa25550bd225" TYPE="ext4"
+`,
+							},
+						)
+
+						fakeCmdRunner.AddCmdResult(
+							"wipefs -a /dev/sda1",
+							fakesys.FakeCmdResult{},
+						)
+
 						fakeCmdRunner.AddCmdResult(
 							"parted -m /dev/sda unit B print",
 							fakesys.FakeCmdResult{
@@ -292,26 +329,91 @@ var _ = Describe("PartedPartitioner", func() {
 						err := partitioner.Partition("/dev/sda", partitions)
 						Expect(err).To(BeNil())
 
-						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(8))
+						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(10))
 						scrubbedCommands := scrubPartitionNames(fakeCmdRunner.RunCommands)
 
 						err = partitioner.Partition("/dev/sda", partitions)
 						Expect(err.Error()).To(Equal("'/dev/sda' contains a partition created by bosh. No partitioning is allowed."))
-						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(9))
+						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(11))
 						scrubbedCommands = scrubPartitionNames(fakeCmdRunner.RunCommands)
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "/dev/sda", "rm", "1"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"blkid"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda1"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "1048576", "8590983167"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "8590983168", "17180917759"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"partprobe", "/dev/sda"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"udevadm", "settle"}))
 					})
 
-					It("Return error when removing when ephemeralDiskPartitioned is set to false", func() {
+					It("Repartition successfully Return error when erasing old signatures when ephemeralDiskPartitioned is set to false", func() {
 						partitions := []Partition{
 							{SizeInBytes: 8589934592}, // (8GiB)
 							{SizeInBytes: 8589934592}, // (8GiB)
 						}
+
+						fakeCmdRunner.AddCmdResult(
+							"blkid",
+							fakesys.FakeCmdResult{
+								Stdout: `/dev/sda1: UUID="25ecbd23-9e44-4b71-a3d4-aa25550bd225" TYPE="ext4"
+`,
+							},
+						)
+
+						fakeCmdRunner.AddCmdResult(
+							"wipefs -a /dev/sda1",
+							fakesys.FakeCmdResult{
+								Error: errors.New("fake-cmd-error"),
+							},
+						)
+
+						fakeCmdRunner.AddCmdResult(
+							"wipefs -a /dev/sda1",
+							fakesys.FakeCmdResult{},
+						)
+
+						fakeCmdRunner.AddCmdResult(
+							"parted -m /dev/sda unit B print",
+							fakesys.FakeCmdResult{
+								Stdout: `BYT;
+/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
+1:512B:2048576B:199680B:ext4:bosh-partition-0:;
+`},
+						)
+
+						err := partitioner.Partition("/dev/sda", partitions)
+						Expect(err).To(BeNil())
+
+						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(11))
+						scrubbedCommands := scrubPartitionNames(fakeCmdRunner.RunCommands)
+						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "/dev/sda", "rm", "1"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"blkid"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda1"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "1048576", "8590983167"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "8590983168", "17180917759"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"partprobe", "/dev/sda"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"udevadm", "settle"}))
+					})
+
+					It("Repartition successfully when occurring command error once when ephemeralDiskPartitioned is set to false", func() {
+						partitions := []Partition{
+							{SizeInBytes: 8589934592}, // (8GiB)
+							{SizeInBytes: 8589934592}, // (8GiB)
+						}
+
+						fakeCmdRunner.AddCmdResult(
+							"blkid",
+							fakesys.FakeCmdResult{
+								Stdout: `/dev/sda1: UUID="25ecbd23-9e44-4b71-a3d4-aa25550bd225" TYPE="ext4"
+`,
+							},
+						)
+
+						fakeCmdRunner.AddCmdResult(
+							"wipefs -a /dev/sda1",
+							fakesys.FakeCmdResult{},
+						)
 
 						fakeCmdRunner.AddCmdResult(
 							"parted /dev/sda rm 1",
@@ -327,9 +429,11 @@ var _ = Describe("PartedPartitioner", func() {
 						err := partitioner.Partition("/dev/sda", partitions)
 						Expect(err).To(BeNil())
 
-						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(9))
+						Expect(len(fakeCmdRunner.RunCommands)).To(Equal(11))
 						scrubbedCommands := scrubPartitionNames(fakeCmdRunner.RunCommands)
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"blkid"}))
+						Expect(scrubbedCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda1"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "/dev/sda", "rm", "1"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "1048576", "8590983167"}))
 						Expect(scrubbedCommands).To(ContainElement([]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-x", "8590983168", "17180917759"}))

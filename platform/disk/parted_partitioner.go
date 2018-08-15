@@ -355,6 +355,34 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 }
 
 func (p partedPartitioner) removeEachPartition(partitions []existingPartition, devicePath string) error {
+	partitionPaths, err := p.getPartitionPaths(devicePath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Getting partition paths of disk `%s'", devicePath)
+	}
+
+	for _, partitionPath := range partitionPaths {
+		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+			_, _, _, err := p.cmdRunner.RunCommand(
+				"wipefs",
+				"-a",
+				partitionPath,
+			)
+			if err != nil {
+				return true, bosherr.WrapError(err, fmt.Sprintf("Erasing partition `%s' ", partitionPath))
+			}
+
+			p.logger.Info(p.logTag, "Successfully erased path `%s' from partition `%s'", partitionPath, devicePath)
+			return false, nil
+		})
+
+		partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+		err := partitionRetryStrategy.Try()
+
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Removing partitions `%s' paths", devicePath)
+		}
+	}
+
 	for _, partition := range partitions {
 		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 			_, _, _, err := p.cmdRunner.RunCommand(
@@ -379,4 +407,21 @@ func (p partedPartitioner) removeEachPartition(partitions []existingPartition, d
 		}
 	}
 	return nil
+}
+
+func (p partedPartitioner) getPartitionPaths(devicePath string) ([]string, error) {
+	stdout, _, _, err := p.cmdRunner.RunCommand("blkid")
+	if err != nil {
+		return []string{}, err
+	}
+
+	pathRegExp := devicePath + "."
+	re := regexp.MustCompile(pathRegExp)
+	match := re.FindAllString(stdout, -1)
+
+	if nil == match {
+		return []string{}, nil
+	}
+
+	return match, nil
 }
