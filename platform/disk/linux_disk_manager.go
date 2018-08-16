@@ -36,6 +36,7 @@ func NewLinuxDiskManager(
 	runner boshsys.CmdRunner,
 	fs boshsys.FileSystem,
 	opts LinuxDiskManagerOpts,
+	ephemeralPartitioned bool,
 ) Manager {
 	var mounter Mounter
 	var mountsSearcher MountsSearcher
@@ -61,7 +62,7 @@ func NewLinuxDiskManager(
 	var ephemeralPartitioner, persistentPartitioner Partitioner
 
 	diskUtil := NewUtil(runner, mounter, fs, logger)
-	partedPartitioner := NewPartedPartitioner(logger, runner, clock.NewClock())
+	partedPartitioner := NewPartedPartitioner(logger, runner, clock.NewClock(), ephemeralPartitioned)
 	sfDiskPartitioner := NewSfdiskPartitioner(logger, runner, clock.NewClock())
 
 	switch opts.PartitionerType {

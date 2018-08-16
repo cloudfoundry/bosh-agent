@@ -19,33 +19,45 @@ const (
 )
 
 type partedPartitioner struct {
-	logger      boshlog.Logger
-	cmdRunner   boshsys.CmdRunner
-	logTag      string
-	timeService clock.Clock
+	logger                   boshlog.Logger
+	cmdRunner                boshsys.CmdRunner
+	logTag                   string
+	timeService              clock.Clock
+	ephemeralDiskPartitioned bool
 }
 
-func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, timeService clock.Clock) Partitioner {
-	return partedPartitioner{
-		logger:      logger,
-		cmdRunner:   cmdRunner,
-		logTag:      "PartedPartitioner",
-		timeService: timeService,
+func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, timeService clock.Clock, diskPartitioned bool) Partitioner {
+	return &partedPartitioner{
+		logger:                   logger,
+		cmdRunner:                cmdRunner,
+		logTag:                   "PartedPartitioner",
+		timeService:              timeService,
+		ephemeralDiskPartitioned: diskPartitioned,
 	}
 }
 
-func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Partition) error {
+func (p *partedPartitioner) Partition(devicePath string, desiredPartitions []Partition) error {
 	existingPartitions, deviceFullSizeInBytes, err := p.getPartitions(devicePath)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Getting existing partitions of `%s'", devicePath)
 	}
 
 	if p.partitionsMatch(existingPartitions, desiredPartitions, deviceFullSizeInBytes) {
+		p.logger.Info(p.logTag, "%s already partitioned as expected, skipping", devicePath)
 		return nil
 	}
 
 	if p.areAnyExistingPartitionsCreatedByBosh(existingPartitions) {
-		return bosherr.Errorf("'%s' contains a partition created by bosh. No partitioning is allowed.", devicePath)
+		if p.ephemeralDiskPartitioned {
+			return bosherr.Errorf("'%s' contains a partition created by bosh. No partitioning is allowed.", devicePath)
+		}
+
+		p.logger.Debug(p.logTag, "Cleanup partitions of `%s'", devicePath)
+		err = p.removeEachPartition(existingPartitions, devicePath)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Removing existing partitions of `%s'", devicePath)
+		}
+		p.ephemeralDiskPartitioned = true
 	}
 
 	if err = p.createEachPartition(desiredPartitions, deviceFullSizeInBytes, devicePath); err != nil {
@@ -61,7 +73,7 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 	return nil
 }
 
-func (p partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
+func (p *partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
 	stdout, _, _, err := p.cmdRunner.RunCommand("lsblk", "--nodeps", "-nb", "-o", "SIZE", devicePath)
 	if err != nil {
 		return 0, bosherr.WrapErrorf(err, "Getting block device size of '%s'", devicePath)
@@ -340,4 +352,76 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 
 	detectPartitionRetryStrategy := NewPartitionStrategy(detectPartitionRetryable, p.timeService, p.logger)
 	return detectPartitionRetryStrategy.Try()
+}
+
+func (p partedPartitioner) removeEachPartition(partitions []existingPartition, devicePath string) error {
+	partitionPaths, err := p.getPartitionPaths(devicePath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Getting partition paths of disk `%s'", devicePath)
+	}
+
+	for _, partitionPath := range partitionPaths {
+		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+			_, _, _, err := p.cmdRunner.RunCommand(
+				"wipefs",
+				"-a",
+				partitionPath,
+			)
+			if err != nil {
+				return true, bosherr.WrapError(err, fmt.Sprintf("Erasing partition `%s' ", partitionPath))
+			}
+
+			p.logger.Info(p.logTag, "Successfully erased path `%s' from partition `%s'", partitionPath, devicePath)
+			return false, nil
+		})
+
+		partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+		err := partitionRetryStrategy.Try()
+
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Removing partitions `%s' paths", devicePath)
+		}
+	}
+
+	for _, partition := range partitions {
+		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+			_, _, _, err := p.cmdRunner.RunCommand(
+				"parted",
+				devicePath,
+				"rm",
+				strconv.Itoa(partition.Index),
+			)
+			if err != nil {
+				return true, bosherr.WrapError(err, "Removing partition using parted")
+			}
+
+			p.logger.Info(p.logTag, "Successfully removed partition %s from %s", partition.Name, devicePath)
+			return false, nil
+		})
+
+		partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+		err := partitionRetryStrategy.Try()
+
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Removing partitions of disk `%s'", devicePath)
+		}
+	}
+	return nil
+}
+
+func (p partedPartitioner) getPartitionPaths(devicePath string) ([]string, error) {
+	stdout, _, _, err := p.cmdRunner.RunCommand("blkid")
+	if err != nil {
+		return []string{}, err
+	}
+
+	pathRegExp := devicePath + "."
+	re := regexp.MustCompile(pathRegExp)
+	match := re.FindAllString(stdout, -1)
+
+	if nil == match {
+		return []string{}, nil
+	}
+
+	return match, nil
 }
