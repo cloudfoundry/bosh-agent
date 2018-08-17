@@ -76,7 +76,7 @@ var _ = Describe("UnmountDiskAction", func() {
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[]}"}`)
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[] Partitioner:}"}`)
 
 		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
 	})
@@ -86,7 +86,7 @@ var _ = Describe("UnmountDiskAction", func() {
 
 		result, err := action.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[]} is not mounted"}`)
+		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[] Partitioner:} is not mounted"}`)
 
 		Expect(platform.UnmountPersistentDiskSettings).To(Equal(expectedDiskSettings))
 	})

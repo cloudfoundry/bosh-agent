@@ -18,7 +18,6 @@ errors=$(
      -e 'should not be capitalized'                   \
      -e 'underscore in package name'                  \
      -e 'bootstrapper/spec/'                          \
-     -e 'platform/cert/fakes/fake_manager.go'         \
      -e 'jobsupervisor/pipe/syslog/syslog.go'         \
      -e 'platform/windows_platform_test.go'           \
      -e 'platform/syscall_windows.go'                 \

@@ -9,8 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	fakedrainscript "github.com/cloudfoundry/bosh-agent/agent/script/drain/fakes"
-	fakescript "github.com/cloudfoundry/bosh-agent/agent/script/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -61,10 +60,10 @@ var _ = Describe("ParallelScript", func() {
 		})
 
 		Context("when script exists", func() {
-			var existingScript *fakescript.FakeScript
+			var existingScript *scriptfakes.FakeScript
 
 			BeforeEach(func() {
-				existingScript = &fakescript.FakeScript{}
+				existingScript = &scriptfakes.FakeScript{}
 				existingScript.TagReturns("fake-job-1")
 				existingScript.PathReturns("path/to/script1")
 				existingScript.ExistsReturns(true)
@@ -92,10 +91,10 @@ var _ = Describe("ParallelScript", func() {
 		})
 
 		Context("when script does not exist", func() {
-			var nonExistingScript *fakescript.FakeScript
+			var nonExistingScript *scriptfakes.FakeScript
 
 			BeforeEach(func() {
-				nonExistingScript = &fakescript.FakeScript{}
+				nonExistingScript = &scriptfakes.FakeScript{}
 				nonExistingScript.ExistsReturns(false)
 				scripts = append(scripts, nonExistingScript)
 			})
@@ -107,17 +106,17 @@ var _ = Describe("ParallelScript", func() {
 		})
 
 		Context("when running scripts concurrently", func() {
-			var existingScript1 *fakescript.FakeScript
-			var existingScript2 *fakescript.FakeScript
+			var existingScript1 *scriptfakes.FakeScript
+			var existingScript2 *scriptfakes.FakeScript
 
 			BeforeEach(func() {
-				existingScript1 = &fakescript.FakeScript{}
+				existingScript1 = &scriptfakes.FakeScript{}
 				existingScript1.TagReturns("fake-job-1")
 				existingScript1.PathReturns("path/to/script1")
 				existingScript1.ExistsReturns(true)
 				scripts = append(scripts, existingScript1)
 
-				existingScript2 = &fakescript.FakeScript{}
+				existingScript2 = &scriptfakes.FakeScript{}
 				existingScript2.TagReturns("fake-job-2")
 				existingScript2.PathReturns("path/to/script2")
 				existingScript2.ExistsReturns(true)
@@ -219,10 +218,10 @@ var _ = Describe("ParallelScript", func() {
 		})
 
 		Context("when script exists and is not cancelable", func() {
-			var existingScript *fakescript.FakeScript
+			var existingScript *scriptfakes.FakeScript
 
 			BeforeEach(func() {
-				existingScript = &fakescript.FakeScript{}
+				existingScript = &scriptfakes.FakeScript{}
 				existingScript.TagReturns("fake-job-1")
 				existingScript.PathReturns("path/to/script1")
 				existingScript.ExistsReturns(true)
@@ -237,11 +236,8 @@ var _ = Describe("ParallelScript", func() {
 		})
 
 		Context("when script exists and is cancelable", func() {
-			var existingScript *fakedrainscript.FakeScript
-
 			BeforeEach(func() {
-				existingScript = fakedrainscript.NewFakeScript("fake-tag")
-				scripts = append(scripts, existingScript)
+				scripts = append(scripts, &scriptfakes.FakeCancellableScript{})
 			})
 
 			It("succeeds", func() {
@@ -251,13 +247,15 @@ var _ = Describe("ParallelScript", func() {
 		})
 
 		Context("when run cancelable scripts in parallel", func() {
-			var existingScript1 *fakedrainscript.FakeScript
-			var existingScript2 *fakedrainscript.FakeScript
+			var existingScript1 *scriptfakes.FakeCancellableScript
+			var existingScript2 *scriptfakes.FakeCancellableScript
 
 			BeforeEach(func() {
-				existingScript1 = fakedrainscript.NewFakeScript("fake-job1")
+				existingScript1 = &scriptfakes.FakeCancellableScript{}
+				existingScript1.ExistsReturns(true)
 				scripts = append(scripts, existingScript1)
-				existingScript2 = fakedrainscript.NewFakeScript("fake-job2")
+				existingScript2 = &scriptfakes.FakeCancellableScript{}
+				existingScript2.ExistsReturns(true)
 				scripts = append(scripts, existingScript2)
 			})
 
@@ -266,12 +264,9 @@ var _ = Describe("ParallelScript", func() {
 				Expect(err).ToNot(HaveOccurred())
 				err = parallelScript.Cancel()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(existingScript1.WasCanceled).To(BeTrue())
-				Expect(existingScript2.WasCanceled).To(BeTrue())
-
+				Expect(existingScript1.CancelCallCount()).To(Equal(1))
+				Expect(existingScript2.CancelCallCount()).To(Equal(1))
 			})
-
 		})
-
 	})
 })
