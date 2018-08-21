@@ -116,7 +116,6 @@ func (e *WindowsEnvironment) EnsureLinkTargettedToDisk(path, diskNumber string) 
 	e.WaitForLinkWithOffset(1, path)
 
 	diskLetter := e.GetDriveLetterForLinkWithOffset(1, path)
-	fmt.Sprintf(diskLetter)
 	actualDiskNumber := agent.GetDiskNumberForDrive(diskLetter)
 	ExpectWithOffset(1, actualDiskNumber).To(Equal(diskNumber))
 }
@@ -128,7 +127,6 @@ func (e *WindowsEnvironment) WaitForLink(path string) {
 func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
 	EventuallyWithOffset(offset+1, func() bool {
 		target, _ := e.Linker.IsLinked(path)
-		fmt.Sprintf("Ran IsLinked, result: %s\n", target)
 		return target != ""
 	}, 4*time.Minute, 5*time.Second).Should(BeTrue())
 }

@@ -13,7 +13,7 @@ import (
 const newLine = `
 `
 
-var _ = FDescribe("Linker", func() {
+var _ = Describe("Linker", func() {
 	var (
 		cmdRunner *fakes.FakeCmdRunner
 		linker    *disk.Linker

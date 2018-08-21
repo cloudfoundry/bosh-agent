@@ -26,11 +26,13 @@ import (
 )
 
 //go:generate counterfeiter -o fakes/fake_windows_disk_formatter.go . WindowsDiskFormatter
+
 type WindowsDiskFormatter interface {
 	Format(diskNumber, partitionNumber string) error
 }
 
 //go:generate counterfeiter -o fakes/fake_windows_disk_linker.go . WindowsDiskLinker
+
 type WindowsDiskLinker interface {
 	IsLinked(location string) (target string, err error)
 }
