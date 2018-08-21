@@ -11,13 +11,13 @@ import (
 
 var _ = Describe("EphemeralDisk", func() {
 	var (
-		partitionNumber string
 		diskNumber      string
+		diskLetter      string
 	)
 
 	BeforeEach(func() {
-		partitionNumber = ""
 		diskNumber = "0"
+		diskLetter = ""
 	})
 
 	AfterEach(func() {
@@ -25,14 +25,8 @@ var _ = Describe("EphemeralDisk", func() {
 			agent.EnsureAgentServiceStopped()
 			agent.EnsureDataDirDoesntExist()
 
-			if partitionNumber != "" {
-				agent.RunPowershellCommand(
-					fmt.Sprintf(
-						"Remove-Partition -DiskNumber %s -PartitionNumber %s -Confirm:$false",
-						diskNumber,
-						partitionNumber,
-					),
-				)
+			if diskLetter != "" {
+				agent.RunPowershellCommand(fmt.Sprintf("Remove-Partition -DriveLetter %s -Confirm:$false", diskLetter))
 			}
 			if diskNumber != "0" {
 				agent.EnsureDiskCleared(diskNumber)
@@ -53,8 +47,8 @@ var _ = Describe("EphemeralDisk", func() {
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
-		agent.EnsureVolumeHasDataDir("0")
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.AssertDataACLed()
 	})
@@ -67,9 +61,8 @@ var _ = Describe("EphemeralDisk", func() {
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
-		agent.EnsureVolumeHasDataDir("0")
-
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 
@@ -77,6 +70,9 @@ var _ = Describe("EphemeralDisk", func() {
 			BeTrue(),
 			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
 		)
+
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
 	})
 
 	It("when there is no remaining space on the root disk, no partition is created, a warning is logged", func() {
@@ -90,7 +86,7 @@ var _ = Describe("EphemeralDisk", func() {
 			BeTrue(),
 			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
 		)
-		Expect(agent.PartitionWithDataDirExists("0")).To(BeFalse())
+		Expect(agent.PartitionCount("0")).To(Equal(1))
 
 		expectedLogMessage := fmt.Sprintf(
 			"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
@@ -112,8 +108,8 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		diskNumber = "1"
-		agent.EnsureVolumeHasDataDir("1")
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.AssertDataACLed()
 	})
@@ -128,8 +124,8 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		diskNumber = "1"
-		agent.EnsureVolumeHasDataDir("1")
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 
@@ -137,7 +133,8 @@ var _ = Describe("EphemeralDisk", func() {
 			BeTrue(),
 			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
 		)
-		agent.EnsureVolumeHasDataDir("1")
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
 	})
 
 	It("when a second disk is attached and identified by index, partition is created on that disk", func() {
@@ -150,8 +147,8 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		diskNumber = "1"
-		agent.EnsureVolumeHasDataDir("1")
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.AssertDataACLed()
 	})
@@ -166,8 +163,8 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		diskNumber = "1"
-		agent.EnsureVolumeHasDataDir("1")
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 
@@ -175,7 +172,8 @@ var _ = Describe("EphemeralDisk", func() {
 			BeTrue(),
 			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
 		)
-		agent.EnsureVolumeHasDataDir("1")
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
 	})
 
 	It("when a third disk is attached, partition is created on that disk", func() {
@@ -189,8 +187,8 @@ var _ = Describe("EphemeralDisk", func() {
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
-		agent.EnsureVolumeHasDataDir(diskNumber)
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.AssertDataACLed()
 	})
@@ -205,8 +203,8 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		diskNumber = "2"
-		agent.EnsureVolumeHasDataDir(diskNumber)
-		partitionNumber = agent.GetDataDirPartitionNumber()
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
 
@@ -214,7 +212,8 @@ var _ = Describe("EphemeralDisk", func() {
 			BeTrue(),
 			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
 		)
-		agent.EnsureVolumeHasDataDir(diskNumber)
+		agent.EnsureLinkTargettedToDisk(dataDir, diskNumber)
+		Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
 	})
 
 	It("when the EphemeralDiskFeature flag is not set doesn't create any partitions, or send any warnings", func() {
@@ -232,7 +231,7 @@ var _ = Describe("EphemeralDisk", func() {
 			BeTrue(),
 			fmt.Sprint(`Expected bosh-agent to continue running after restart`),
 		)
-		Expect(agent.PartitionWithDataDirExists("0")).To(BeFalse())
+		Expect(agent.PartitionCount("0")).To(Equal(1))
 
 		unexpectedLogMessage := fmt.Sprintf(
 			"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",

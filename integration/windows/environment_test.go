@@ -12,17 +12,17 @@ import (
 
 	"github.com/masterzen/winrm"
 
+	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 	. "github.com/onsi/gomega"
 )
 
 const dataDir = `C:\var\vcap\data\`
 
-type ByteSize float64
-
 const GB = 1024 * 1024 * 1024
 
 type WindowsEnvironment struct {
 	Client *winrm.Client
+	Linker *disk.Linker
 }
 
 func (e *WindowsEnvironment) ShrinkRootPartition() {
@@ -94,44 +94,43 @@ func (e *WindowsEnvironment) EnsureRootPartitionAtMaxSize() {
 	}
 }
 
-func (e *WindowsEnvironment) GetDataDirPartitionNumber() string {
+func (e *WindowsEnvironment) GetDriveLetterForLink(path string) string {
+	return e.GetDriveLetterForLinkWithOffset(1, path)
+}
+
+func (e *WindowsEnvironment) GetDriveLetterForLinkWithOffset(offset int, path string) string {
+	target, err := e.Linker.IsLinked(path)
+
+	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
+	return strings.Split(target, ":")[0]
+}
+
+func (e *WindowsEnvironment) GetDiskNumberForDrive(driveLetter string) string {
 	return strings.TrimSpace(e.RunPowershellCommandWithOffset(
 		1,
-		fmt.Sprintf(`Get-Partition | Where AccessPaths -Contains "%s" | Select -ExpandProperty PartitionNumber`, dataDir),
+		fmt.Sprintf(`Get-Partition -DriveLetter %s | Select -ExpandProperty DiskNumber`, driveLetter),
 	))
 }
 
-func (e *WindowsEnvironment) PartitionWithDataDirExists(diskNumber string) bool {
-	return e.PartitionWithDataDirExistsWithOffset(1, diskNumber)
+func (e *WindowsEnvironment) EnsureLinkTargettedToDisk(path, diskNumber string) {
+	e.WaitForLinkWithOffset(1, path)
+
+	diskLetter := e.GetDriveLetterForLinkWithOffset(1, path)
+	fmt.Sprintf(diskLetter)
+	actualDiskNumber := agent.GetDiskNumberForDrive(diskLetter)
+	ExpectWithOffset(1, actualDiskNumber).To(Equal(diskNumber))
 }
 
-func (e *WindowsEnvironment) PartitionWithDataDirExistsWithOffset(offset int, diskNumber string) bool {
-	stdout := e.RunPowershellCommandWithOffset(
-		offset+1,
-		fmt.Sprintf(
-			`Get-Partition | where AccessPaths -Contains "%s" | Select -ExpandProperty DiskNumber`,
-			dataDir,
-		),
-	)
-
-	return strings.TrimSpace(stdout) == diskNumber
+func (e *WindowsEnvironment) WaitForLink(path string) {
+	e.WaitForLinkWithOffset(1, path)
 }
 
-func (e *WindowsEnvironment) PartitionWithDataDirExistsFuncWithOffset(offset int, diskNumber string) func() bool {
-	return func() bool {
-		return e.PartitionWithDataDirExistsWithOffset(offset+1, diskNumber)
-	}
-}
-
-func (e *WindowsEnvironment) PartitionWithDataDirExistsFunc(diskNumber string) func() bool {
-	return e.PartitionWithDataDirExistsFuncWithOffset(1, diskNumber)
-}
-
-func (e *WindowsEnvironment) EnsureVolumeHasDataDir(diskNumber string) {
-	EventuallyWithOffset(1, e.PartitionWithDataDirExistsFunc(diskNumber), 2*time.Minute).Should(
-		BeTrue(),
-		fmt.Sprintf(`Expected partition with access path %s to be present on disk %s`, dataDir, diskNumber),
-	)
+func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
+	EventuallyWithOffset(offset+1, func() bool {
+		target, _ := e.Linker.IsLinked(path)
+		fmt.Sprintf("Ran IsLinked, result: %s\n", target)
+		return target != ""
+	}, 4*time.Minute, 5*time.Second).Should(BeTrue())
 }
 
 func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
@@ -149,7 +148,7 @@ func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
 
 	exists := strings.TrimSpace(testPathOutput) == "True"
 	if exists {
-		e.RunPowershellCommandWithOffset(1, "Remove-Item %s -Force -Recurse", dataDir)
+		e.RunPowershellCommandWithOffset(1, fmt.Sprintf("cmd.exe /c rmdir /s /q %s", dataDir))
 	}
 }
 
@@ -213,7 +212,11 @@ func (e *WindowsEnvironment) AssertDataACLed() {
 	)
 }
 
-func (e *WindowsEnvironment) EnsureDiskClearedWithOffset(offset int, diskNumber string) {
+func (e *WindowsEnvironment) PartitionCount(diskNumber string) int {
+	return e.PartitionCountWithOffset(1, diskNumber)
+}
+
+func (e *WindowsEnvironment) PartitionCountWithOffset(offset int, diskNumber string) int {
 	partitionCountOutput := e.RunPowershellCommandWithOffset(
 		offset+1,
 		"Get-Disk -Number %s | Select -ExpandProperty NumberOfPartitions",
@@ -222,7 +225,12 @@ func (e *WindowsEnvironment) EnsureDiskClearedWithOffset(offset int, diskNumber 
 
 	partitionCount, err := strconv.Atoi(strings.TrimSpace(partitionCountOutput))
 	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
-	if partitionCount > 0 {
+
+	return partitionCount
+}
+
+func (e *WindowsEnvironment) EnsureDiskClearedWithOffset(offset int, diskNumber string) {
+	if e.PartitionCountWithOffset(offset+1, diskNumber) > 0 {
 		e.RunPowershellCommandWithOffset(offset+1, "Clear-Disk -Number %s -Confirm:$false -RemoveData", diskNumber)
 	}
 }

@@ -6,26 +6,26 @@ function Write-Log {
     Write-Host $Message
 }
 
-function Protect-MountedDir {
+function Protect-Path {
     Param(
         [string]$path = $(Throw "Provide a directory to set ACL on"),
         [bool]$disableInheritance=$True
     )
 
     Write-Log "Protect-Dir: Grant Administrator"
-    cmd.exe /c cacls.exe $path /E /M /P Administrators:F
+    cmd.exe /c cacls.exe $path /E /P Administrators:F
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
 
     Write-Log "Protect-Dir: Remove BUILTIN\Users"
-    cmd.exe /c cacls.exe $path /E /M /R "BUILTIN\Users"
+    cmd.exe /c cacls.exe $path /E /R "BUILTIN\Users"
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
 
     Write-Log "Protect-Dir: Remove BUILTIN\IIS_IUSRS"
-    cmd.exe /c cacls.exe $path /E /M /R "BUILTIN\IIS_IUSRS"
+    cmd.exe /c cacls.exe $path /E /R "BUILTIN\IIS_IUSRS"
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }

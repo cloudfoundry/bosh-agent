@@ -25,6 +25,16 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
+//go:generate counterfeiter -o fakes/fake_windows_disk_formatter.go . WindowsDiskFormatter
+type WindowsDiskFormatter interface {
+	Format(diskNumber, partitionNumber string) error
+}
+
+//go:generate counterfeiter -o fakes/fake_windows_disk_linker.go . WindowsDiskLinker
+type WindowsDiskLinker interface {
+	IsLinked(location string) (target string, err error)
+}
+
 // Administrator user name, this currently exists for testing, but may be useful
 // if we ever change the Admin user name for security reasons.
 var administratorUserName = "Administrator"
@@ -49,6 +59,8 @@ type WindowsPlatform struct {
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 	auditLogger            AuditLogger
 	uuidGenerator          boshuuid.Generator
+	formatter              WindowsDiskFormatter
+	linker                 WindowsDiskLinker
 	logger                 boshlog.Logger
 }
 
@@ -65,6 +77,8 @@ func NewWindowsPlatform(
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
 	auditLogger AuditLogger,
 	uuidGenerator boshuuid.Generator,
+	formatter WindowsDiskFormatter,
+	linker WindowsDiskLinker,
 ) Platform {
 	return &WindowsPlatform{
 		fs:                     fs,
@@ -81,6 +95,8 @@ func NewWindowsPlatform(
 		defaultNetworkResolver: defaultNetworkResolver,
 		auditLogger:            auditLogger,
 		uuidGenerator:          uuidGenerator,
+		formatter:              formatter,
+		linker:                 linker,
 		logger:                 logger,
 	}
 }
@@ -334,16 +350,16 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 
 	dataPath := fmt.Sprintf(`C:%s\`, p.dirProvider.DataDir())
 
-	checkProtectDirCmdlet := &powershellAction{
+	checkProtectPathCmdlet := &powershellAction{
 		commandArgs: []string{
 			"Get-Command",
-			"Protect-MountedDir",
+			"Protect-Path",
 		},
-		commandFailureFmt: fmt.Sprintf("Cannot protect %s. Protect-MountedDir cmd does not exist: %%s", dataPath),
+		commandFailureFmt: fmt.Sprintf("Cannot protect %s. Protect-Path cmd does not exist: %%s", dataPath),
 		cmdRunner:         p.cmdRunner,
 	}
 
-	_, err := checkProtectDirCmdlet.run()
+	_, err := checkProtectPathCmdlet.run()
 
 	if err != nil {
 		return err
@@ -391,32 +407,14 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		}
 	}
 
-	checkForExistingPartitionCommand := []string{
-		"Get-Partition",
-		"-DiskNumber",
-		devicePath,
-		"|",
-		"where",
-		"AccessPaths",
-		"-Contains",
-		fmt.Sprintf(`"%s"`, dataPath),
-		"|",
-		"Select",
-		"-ExpandProperty",
-		"PartitionNumber",
-	}
-	stdout, _, exitStatus, err := p.cmdRunner.RunCommand(
-		powerShellCmd,
-		checkForExistingPartitionCommand...,
-	)
-
-	if exitStatus == 0 && strings.TrimSpace(stdout) != "" {
-		return nil
-	}
+	existingTarget, err := p.linker.IsLinked(dataPath)
 
 	if err != nil {
-		return fmt.Errorf("Failed to run command \"%s\": %s", strings.Join(
-			append([]string{powerShellCmd}, checkForExistingPartitionCommand...), " "), err)
+		return err
+	}
+
+	if existingTarget != "" {
+		return nil
 	}
 
 	checkFreeSpaceAction := &powershellAction{
@@ -470,32 +468,9 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 
 	partitionNumber := strings.TrimSpace(partitionNumberOutput)
 
-	formatVolumeAction := &powershellAction{
-		commandArgs: []string{
-			"Get-Partition",
-			"-DiskNumber",
-			devicePath,
-			"-PartitionNumber",
-			partitionNumber,
-			"|",
-			"Format-Volume",
-			"-FileSystem",
-			"NTFS",
-			"-Confirm:$false",
-		},
-		commandFailureFmt: fmt.Sprintf("Failed to format partition %s on disk %s: %%s", partitionNumber, devicePath),
-		cmdRunner:         p.cmdRunner,
-	}
-
-	_, err = formatVolumeAction.run()
-
+	err = p.formatter.Format(devicePath, partitionNumber)
 	if err != nil {
 		return err
-	}
-
-	err = p.fs.MkdirAll(dataPath, 0750)
-	if err != nil {
-		return fmt.Errorf(`Failed to create %s: %s`, dataPath, err)
 	}
 
 	mountVolumeAction := &powershellAction{
@@ -505,10 +480,9 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 			devicePath,
 			"-PartitionNumber",
 			partitionNumber,
-			"-AccessPath",
-			dataPath,
+			"-AssignDriveLetter",
 		},
-		commandFailureFmt: fmt.Sprintf("Failed to mount partition %s on disk %s at %s: %%s", partitionNumber, devicePath, dataPath),
+		commandFailureFmt: fmt.Sprintf("Failed to assign drive letter to partition %s for device %s: %%s", partitionNumber, devicePath),
 		cmdRunner:         p.cmdRunner,
 	}
 
@@ -517,12 +491,53 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return err
 	}
 
+	getDriveLetterAction := &powershellAction{
+		commandArgs: []string{
+			"Get-Partition",
+			"-DiskNumber",
+			devicePath,
+			"-PartitionNumber",
+			partitionNumber,
+			"|",
+			"Select",
+			"-ExpandProperty",
+			"DriveLetter",
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to retrieve drive letter for partition %s on disk %s: %%s", partitionNumber, devicePath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	driveLetterOutput, err := getDriveLetterAction.run()
+	if err != nil {
+		return err
+	}
+
+	driveLetter := strings.TrimSpace(driveLetterOutput)
+
+	mkLinkAction := &powershellAction{
+		commandArgs: []string{
+			"cmd.exe",
+			"/c",
+			"mklink",
+			"/D",
+			dataPath,
+			fmt.Sprintf("%s:", driveLetter),
+		},
+		commandFailureFmt: fmt.Sprintf("Failed to link %s to %s: %%s", driveLetter, dataPath),
+		cmdRunner:         p.cmdRunner,
+	}
+
+	_, err = mkLinkAction.run()
+	if err != nil {
+		return err
+	}
+
 	protectDataDirAction := &powershellAction{
 		commandArgs: []string{
-			"Protect-MountedDir",
+			"Protect-Path",
 			fmt.Sprintf(`'%s'`, strings.TrimRight(dataPath, "\\")),
 		},
-		commandFailureFmt: fmt.Sprintf("Failed to protect dir %s : %%s", dataPath),
+		commandFailureFmt: fmt.Sprintf("Failed to protect path %s : %%s", dataPath),
 		cmdRunner:         p.cmdRunner,
 	}
 

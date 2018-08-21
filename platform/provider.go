@@ -16,6 +16,7 @@ import (
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	boshwindisk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherror "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -59,6 +60,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	auditLogger.StartLogging()
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, diskManagerOpts)
+	windowsDiskFormatter := &boshwindisk.WindowsFormatter{Runner: runner}
+	windowsDiskLinker := &boshwindisk.Linker{Runner: runner}
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 	linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
@@ -194,6 +197,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			defaultNetworkResolver,
 			auditLogger,
 			uuidGenerator,
+			windowsDiskFormatter,
+			windowsDiskLinker,
 		)
 	}
 
