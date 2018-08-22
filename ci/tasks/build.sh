@@ -27,4 +27,4 @@ bin/build
 
 shasum -a 256 out/bosh-agent
 
-cp out/bosh-agent "${BASE}/compiled-${GOOS}-${GOARCH}/${filename}"
+cp out/bosh-agent "${BASE}/${DIRNAME}/${filename}"

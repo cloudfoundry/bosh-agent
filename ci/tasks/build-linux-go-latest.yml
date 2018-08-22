@@ -16,6 +16,7 @@ outputs:
 - name: compiled-linux-amd64-go-latest
 
 params:
+  DIRNAME: compiled-linux-amd64-go-latest
   GOARCH: amd64
   GOOS:   linux
 
