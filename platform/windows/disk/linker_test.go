@@ -41,6 +41,21 @@ var _ = Describe("Linker", func() {
 		Expect(target).To(Equal(expectedTarget))
 	})
 
+	It("returns nothing when the link does not exist", func() {
+		expectedTarget := ""
+		badLocation := `c:\road\to\nowhere`
+
+		cmdRunner.AddCmdResult(
+			findItemTargetCommand(badLocation),
+			fakes.FakeCmdResult{ExitStatus: 1, Stdout: fmt.Sprintf("%s%s", expectedTarget, newLine)},
+		)
+
+		target, err := linker.IsLinked(badLocation)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(target).To(Equal(expectedTarget))
+	})
+
 	It("when the isLinked command fails to run, returns a wrapped error", func() {
 		cmdRunnerError := errors.New("It went wrong")
 		cmdRunner.AddCmdResult(
