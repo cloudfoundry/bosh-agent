@@ -11,11 +11,15 @@ import (
 
 var _ = Describe("EphemeralDisk", func() {
 	var (
-		diskNumber      string
-		diskLetter      string
+		diskNumber string
+		diskLetter string
 	)
 
 	BeforeEach(func() {
+		if OsVersion == "2012R2" {
+			Skip("Currently not supporting ephemeral disks on 2012R2")
+		}
+
 		diskNumber = "0"
 		diskLetter = ""
 	})
