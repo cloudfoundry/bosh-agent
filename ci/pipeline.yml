@@ -4,6 +4,8 @@ groups:
   jobs:
   - test-unit
   - test-integration
+  - test-unit-go-1.8
+  - test-integration-go-1.8
   - windows-test-unit
   - windows-test-integration-1803
   - windows-test-integration-1709
@@ -45,6 +47,31 @@ jobs:
     - task: test-integration
       privileged: true
       file: bosh-agent/ci/tasks/test-integration.yml
+      params:
+        BOSH_AWS_ACCESS_KEY_ID: {{BOSH_AWS_ACCESS_KEY_ID}}
+        BOSH_AWS_SECRET_ACCESS_KEY: {{BOSH_AWS_SECRET_ACCESS_KEY}}
+        BOSH_LITE_KEYPAIR: {{BOSH_LITE_KEYPAIR}}
+        BOSH_LITE_SUBNET_ID: {{BOSH_LITE_SUBNET_ID}}
+        BOSH_LITE_NAME: {{BOSH_LITE_NAME}}
+        BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
+        BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
+
+- name: test-unit-go-1.8
+  public: true
+  plan:
+    - get: bosh-agent
+      trigger: true
+    - task: test-unit-go-1.8
+      file: bosh-agent/ci/tasks/test-unit-go-1.8.yml
+
+- name: test-integration-go-1.8
+  public: false
+  plan:
+    - get: bosh-agent
+      trigger: true
+    - task: test-integration-go-1.8
+      privileged: true
+      file: bosh-agent/ci/tasks/test-integration-go-1.8.yml
       params:
         BOSH_AWS_ACCESS_KEY_ID: {{BOSH_AWS_ACCESS_KEY_ID}}
         BOSH_AWS_SECRET_ACCESS_KEY: {{BOSH_AWS_SECRET_ACCESS_KEY}}
@@ -131,7 +158,7 @@ jobs:
   plan:
     - aggregate:
       - trigger: true
-        passed: [test-unit, test-integration, windows-test-unit, windows-test-integration-1709, windows-test-integration-1803, windows-test-integration-2012R2]
+        passed: [test-unit-go-1.8, test-integration-go-1.8, test-unit, test-integration, windows-test-unit, windows-test-integration-1709, windows-test-integration-1803, windows-test-integration-2012R2]
         get: bosh-agent
       - get: version-semver
         params: {bump: minor}
@@ -150,22 +177,32 @@ jobs:
         tag: version-semver/number
         tag_prefix: v
     - aggregate:
+      - task: build-linux-go-1.8
+        file: bosh-agent/ci/tasks/build-linux-go-1.8.yml
+      - task: build-linux-ppc64le-go-1.8
+        file: bosh-agent/ci/tasks/build-linux-ppc64le-go-1.8.yml
+      - task: build-windows
+        file: bosh-agent/ci/tasks/build-windows.yml
       - task: build-linux
         file: bosh-agent/ci/tasks/build-linux.yml
       - task: build-linux-ppc64le
         file: bosh-agent/ci/tasks/build-linux-ppc64le.yml
-      - task: build-windows
-        file: bosh-agent/ci/tasks/build-windows.yml
     - aggregate:
+      - put: release-bucket-linux-go-1.8
+        params:
+          file: compiled-linux-amd64-go-1.8/bosh-agent-*-linux-amd64
+      - put: release-bucket-linux-ppc64le-go-1.8
+        params:
+          file: compiled-linux-ppc64le-go-1.8/bosh-agent-*-linux-ppc64le
+      - put: release-bucket-windows
+        params:
+          file: compiled-windows-amd64/bosh-agent-*-windows-amd64.exe
       - put: release-bucket-linux
         params:
           file: compiled-linux-amd64/bosh-agent-*-linux-amd64
       - put: release-bucket-linux-ppc64le
         params:
           file: compiled-linux-ppc64le/bosh-agent-*-linux-ppc64le
-      - put: release-bucket-windows
-        params:
-          file: compiled-windows-amd64/bosh-agent-*-windows-amd64.exe
 
 resources:
 - name: bosh-agent
@@ -241,11 +278,31 @@ resources:
       owners:
       - amazon
 
-- name: release-bucket-linux
+- name: release-bucket-linux-go-1.8
   type: s3
   source:
     bucket: releases
+    regexp: go-1.8/bosh-agent-(.*)-linux-amd64
+    bucket: {{RELEASE_BUCKET_AGENT}}
+    region_name: {{AWS_S3_BUCKET_REGION}}
+    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
+    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+
+- name: release-bucket-linux
+  type: s3
+  source:
+    bucket: releases-go-latest
     regexp: bosh-agent-(.*)-linux-amd64
+    bucket: {{RELEASE_BUCKET_AGENT}}
+    region_name: {{AWS_S3_BUCKET_REGION}}
+    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
+    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+
+- name: release-bucket-linux-ppc64le-go-1.8
+  type: s3
+  source:
+    bucket: releases
+    regexp: go-1.8/bosh-agent-(.*)-linux-ppc64le
     bucket: {{RELEASE_BUCKET_AGENT}}
     region_name: {{AWS_S3_BUCKET_REGION}}
     access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
