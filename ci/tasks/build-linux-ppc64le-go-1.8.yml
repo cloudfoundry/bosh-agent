@@ -5,7 +5,7 @@ image_resource:
   type: docker-image
   source:
     repository: bosh/agent
-    tag: latest
+    tag: go1.8.3
 
 inputs:
 - name: bosh-agent
@@ -13,10 +13,10 @@ inputs:
 - name: version-semver
 
 outputs:
-- name: compiled-linux-ppc64le-go-latest
+- name: compiled-linux-ppc64le-go-1.8
 
 params:
-  DIRNAME: compiled-linux-ppc64le-go-latest
+  DIRNAME: compiled-linux-ppc64le-go-1.8
   GOARCH: ppc64le
   GOOS:   linux
 
