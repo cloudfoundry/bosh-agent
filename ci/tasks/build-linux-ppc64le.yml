@@ -16,6 +16,7 @@ outputs:
 - name: compiled-linux-ppc64le
 
 params:
+  DIRNAME: compiled-linux-ppc64le
   GOARCH: ppc64le
   GOOS:   linux
 
