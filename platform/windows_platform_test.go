@@ -503,17 +503,17 @@ At line:1 char:1
 			newLineOutput = `
 `
 
-			protectDirMissingError = `
-Get-Command : The term 'Protect-MountedDir' is not recognized as the name of a cmdlet, function, script file, or operable program.
+			protectPathMissingError = `
+Get-Command : The term 'Protect-Path' is not recognized as the name of a cmdlet, function, script file, or operable program.
 Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
 At line:1 char:1
-+ Get-Command Protect-Dir
++ Get-Command Protect-Path
 + ~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (Protect-Dir:String) [Get-Command], CommandNotFoundException
+    + CategoryInfo          : ObjectNotFound: (Protect-Path:String) [Get-Command], CommandNotFoundException
     + FullyQualifiedErrorId : CommandNotFoundException,Microsoft.PowerShell.Commands.GetCommandCommand
 `
 
-			protectDirError = `At line:1 char:62
+			protectPathError = `At line:1 char:62
 + $acPath = Get-Acl -LiteralPath C:\\fake-dir\\data\\
 +                                                              ~
 You must provide a value expression following the '-' operator.
@@ -560,7 +560,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 
 		prepareSuccessfulFakeCommands := func(diskNumber, partitionNumber, dataDir, driveLetter string) {
-			cmdRunner.AddCmdResult(checkProtectDirExistsCommand(), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(checkProtectPathExistsCommand(), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(
 				getDiskLargestFreeExtentCommand(diskNumber),
 				fakesys.FakeCmdResult{Stdout: largeRemainingDiskOutput},
@@ -583,7 +583,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				fakesys.FakeCmdResult{Stdout: driveLetterOutput},
 			)
 			cmdRunner.AddCmdResult(makelinkCommand(dataDir, driveLetter), fakesys.FakeCmdResult{})
-			cmdRunner.AddCmdResult(protectDirCmd(dataDir), fakesys.FakeCmdResult{})
+			cmdRunner.AddCmdResult(protectPathCmd(dataDir), fakesys.FakeCmdResult{})
 		}
 
 		It("does nothing when path is empty", func() {
@@ -610,7 +610,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(
 				strings.Split(addPartitionAccessPathCommand(diskNumber, partitionNumber), " "),
 			)))
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(protectDirCmd(dataDir), " "))))
+			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(protectPathCmd(dataDir), " "))))
 			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(initializeDiskCommand(diskNumber), " "))))
 			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(getExistingPartitionCountCommand(diskNumber), " "))))
 		})
@@ -625,7 +625,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
 			Expect(cmdRunner.RunCommands).To(Equal([][]string{
-				strings.Split(checkProtectDirExistsCommand(), " "),
+				strings.Split(checkProtectPathExistsCommand(), " "),
 				strings.Split(getExistingPartitionCountCommand(diskNumber), " "),
 				strings.Split(initializeDiskCommand(diskNumber), " "),
 				strings.Split(getDiskLargestFreeExtentCommand(diskNumber), " "),
@@ -633,7 +633,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				strings.Split(addPartitionAccessPathCommand(diskNumber, partitionNumber), " "),
 				strings.Split(getDriveLetter(diskNumber, partitionNumber), " "),
 				strings.Split(makelinkCommand(dataDir, driveLetter), " "),
-				strings.Split(protectDirCmd(dataDir), " "),
+				strings.Split(protectPathCmd(dataDir), " "),
 			}))
 
 			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
@@ -687,15 +687,15 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
 		})
 
-		It("returns an error a warning when Protect-Dir cmdlet is missing", func() {
+		It("returns an error a warning when Protect-Path cmdlet is missing", func() {
 			cmdRunner.AddCmdResult(
-				checkProtectDirExistsCommand(),
-				fakesys.FakeCmdResult{ExitStatus: 1, Stderr: protectDirMissingError},
+				checkProtectPathExistsCommand(),
+				fakesys.FakeCmdResult{ExitStatus: 1, Stderr: protectPathMissingError},
 			)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 			Expect(err).To(MatchError(
-				fmt.Sprintf("Cannot protect %s. Protect-Path cmd does not exist: %s", dataDir, protectDirMissingError),
+				fmt.Sprintf("Cannot protect %s. Protect-Path cmd does not exist: %s", dataDir, protectPathMissingError),
 			))
 
 		})
@@ -856,9 +856,9 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
 		})
 
-		It("Returns an error when Protect-MountedDir fails", func() {
-			cmdStderr := protectDirError
-			cmdRunner.AddCmdResult(protectDirCmd(dataDir), fakesys.FakeCmdResult{ExitStatus: 197, Stderr: cmdStderr})
+		It("Returns an error when Protect-Path fails", func() {
+			cmdStderr := protectPathError
+			cmdRunner.AddCmdResult(protectPathCmd(dataDir), fakesys.FakeCmdResult{ExitStatus: 197, Stderr: cmdStderr})
 
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -868,9 +868,9 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			))
 		})
 
-		It("returns an error when calling protect-dir command fails", func() {
+		It("returns an error when calling protect-path command fails", func() {
 			cmdRunnerError := errors.New("Failure")
-			expandedCommand := protectDirCmd(dataDir)
+			expandedCommand := protectPathCmd(dataDir)
 			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
 
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
@@ -942,7 +942,7 @@ func makelinkCommand(dataPath, driveLetter string) string {
 	return fmt.Sprintf(`powershell.exe cmd.exe /c mklink /D %s %s:`, dataPath, driveLetter)
 }
 
-func protectDirCmd(dataDir string) string {
+func protectPathCmd(dataDir string) string {
 	removedTrailingSlash := strings.TrimRight(dataDir, "\\")
 	return fmt.Sprintf(
 		`powershell.exe Protect-Path '%s'`,
@@ -954,7 +954,7 @@ func getDiskLargestFreeExtentCommand(diskNumber string) string {
 	return fmt.Sprintf(`powershell.exe Get-Disk %s | Select -ExpandProperty LargestFreeExtent`, diskNumber)
 }
 
-func checkProtectDirExistsCommand() string {
+func checkProtectPathExistsCommand() string {
 	return "powershell.exe Get-Command Protect-Path"
 }
 

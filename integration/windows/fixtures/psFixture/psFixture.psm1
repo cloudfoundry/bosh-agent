@@ -12,26 +12,26 @@ function Protect-Path {
         [bool]$disableInheritance=$True
     )
 
-    Write-Log "Protect-Dir: Grant Administrator"
+    Write-Log "Protect-Path: Grant Administrator"
     cmd.exe /c cacls.exe $path /E /P Administrators:F
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
 
-    Write-Log "Protect-Dir: Remove BUILTIN\Users"
+    Write-Log "Protect-Path: Remove BUILTIN\Users"
     cmd.exe /c cacls.exe $path /E /R "BUILTIN\Users"
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
 
-    Write-Log "Protect-Dir: Remove BUILTIN\IIS_IUSRS"
+    Write-Log "Protect-Path: Remove BUILTIN\IIS_IUSRS"
     cmd.exe /c cacls.exe $path /E /R "BUILTIN\IIS_IUSRS"
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
 
     if ($disableInheritance) {
-        Write-Log "Protect-Dir: Disable Inheritance"
+        Write-Log "Protect-Path: Disable Inheritance"
         $acl = Get-ACL -LiteralPath $path
         $acl.SetAccessRuleProtection($True, $True)
         Set-Acl -LiteralPath $path -AclObject $acl
