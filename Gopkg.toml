@@ -14,7 +14,7 @@ required = ["github.com/onsi/ginkgo/ginkgo"]
   version = "0.0.103"
 
 [[constraint]]
-  branch = "master"
+  branch = "test-dep"
   name = "github.com/cloudfoundry/bosh-utils"
 
 [[constraint]]

@@ -48,95 +48,89 @@ type client struct {
 	httpClient httpclient.Client
 }
 
-func (c client) Get(path string) (io.ReadCloser, error) {
+func (c client) Get(path string) (content io.ReadCloser, err error) {
 	req, err := c.createReq("GET", path, nil)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, bosherr.WrapErrorf(err, "Getting dav blob %s", path)
+		err = bosherr.WrapErrorf(err, "Getting dav blob %s", path)
+		return
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Getting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, c.readAndTruncateBody(resp))
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("Getting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, c.readAndTruncateBody(resp))
+		return
 	}
 
-	return resp.Body, nil
+	content = resp.Body
+	return
 }
 
-func (c client) Put(path string, content io.ReadCloser, contentLength int64) error {
+func (c client) Put(path string, content io.ReadCloser, contentLength int64) (err error) {
 	req, err := c.createReq("PUT", path, content)
 	if err != nil {
-		return err
+		return
 	}
 	defer content.Close()
-
 	req.ContentLength = contentLength
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Putting dav blob %s", path)
+		err = bosherr.WrapErrorf(err, "Putting dav blob %s", path)
+		return
 	}
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("Putting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, c.readAndTruncateBody(resp))
+	if resp.StatusCode != 201 && resp.StatusCode != 204 {
+		err = fmt.Errorf("Putting dav blob %s: Wrong response code: %d; body: %s", path, resp.StatusCode, c.readAndTruncateBody(resp))
+		return
 	}
 
-	return nil
+	return
 }
 
-func (c client) Exists(path string) error {
+func (c client) Exists(path string) (err error) {
 	req, err := c.createReq("HEAD", path, nil)
 	if err != nil {
-		return err
+		return
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Checking if dav blob %s exists", path)
+		if resp != nil && resp.StatusCode == 404 {
+			err = fmt.Errorf("%s not found", path)
+		}
+		err = bosherr.WrapErrorf(err, "Checking if dav blob %s exists", path)
+		return
 	}
 
-	if resp.StatusCode == http.StatusNotFound {
-		err := fmt.Errorf("%s not found", path)
-		return bosherr.WrapErrorf(err, "Checking if dav blob %s exists", path)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		err := fmt.Errorf("invalid status: %d", resp.StatusCode)
-		return bosherr.WrapErrorf(err, "Checking if dav blob %s exists", path)
-	}
-
-	return nil
+	return
 }
 
-func (c client) Delete(path string) error {
+func (c client) Delete(path string) (err error) {
 	req, err := c.createReq("DELETE", path, nil)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Creating delete request for blob '%s'", path)
+		err = bosherr.WrapErrorf(err, "Creating delete request for blob '%s'", path)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Deleting blob '%s'", path)
+		if resp != nil && resp.StatusCode == 404 {
+			err = nil
+		} else {
+			err = bosherr.WrapErrorf(err, "Deleting blob '%s'", path)
+		}
 	}
 
-	if resp.StatusCode == http.StatusNotFound {
-		return nil
-	}
-
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		err := fmt.Errorf("invalid status: %d", resp.StatusCode)
-		return bosherr.WrapErrorf(err, "Deleting blob '%s'", path)
-	}
-
-	return nil
+	return
 }
 
-func (c client) createReq(method, blobID string, body io.Reader) (*http.Request, error) {
+func (c client) createReq(method, blobID string, body io.Reader) (req *http.Request, err error) {
 	blobURL, err := url.Parse(c.config.Endpoint)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	digester := sha1.New()
@@ -150,13 +144,13 @@ func (c client) createReq(method, blobID string, body io.Reader) (*http.Request,
 
 	blobURL.Path = newPath
 
-	req, err := http.NewRequest(method, blobURL.String(), body)
+	req, err = http.NewRequest(method, blobURL.String(), body)
 	if err != nil {
-		return req, err
+		return
 	}
 
 	req.SetBasicAuth(c.config.User, c.config.Password)
-	return req, nil
+	return
 }
 
 func (c client) readAndTruncateBody(resp *http.Response) string {
