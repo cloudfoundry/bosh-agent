@@ -305,10 +305,26 @@ var _ = Describe("bootstrap", func() {
 			})
 		})
 
-		It("sets up data dir", func() {
-			err := bootstrap()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(platform.SetupDataDirCallCount()).To(Equal(1))
+		Describe("setting up the data dir", func() {
+			It("sets up data dir", func() {
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupDataDirCallCount()).To(Equal(1))
+			})
+
+			Context("when there are job directory specific feature flags", func() {
+				It("passes those through to the platform", func() {
+					settingsService.Settings.Env.Bosh.JobDir = boshsettings.JobDir{
+						TmpFs:     true,
+						TmpFsSize: "100M",
+					}
+
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.SetupDataDirCallCount()).To(Equal(1))
+					Expect(platform.SetupDataDirArgsForCall(0)).To(Equal(boshsettings.JobDir{TmpFs: true, TmpFsSize: "100M"}))
+				})
+			})
 		})
 
 		Context("when setting up the data dir fails", func() {

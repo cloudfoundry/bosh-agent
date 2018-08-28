@@ -270,6 +270,7 @@ type BoshEnv struct {
 	SwapSizeInMB          *uint64     `json:"swap_size"`
 	Mbus                  MBus        `json:"mbus"`
 	IPv6                  IPv6        `json:"ipv6"`
+	JobDir                JobDir      `json:"job_dir"`
 	Blobstores            []Blobstore `json:"blobstores"`
 	NTP                   []string    `json:"ntp"`
 	Parallel              *int        `json:"parallel"`
@@ -288,6 +289,13 @@ type CertKeyPair struct {
 
 type IPv6 struct {
 	Enable bool `json:"enable"`
+}
+
+type JobDir struct {
+	TmpFs bool `json:"tmpfs"`
+
+	// Passed to mount directly
+	TmpFsSize string `json:"tmpfs_size"`
 }
 
 type DNSRecords struct {

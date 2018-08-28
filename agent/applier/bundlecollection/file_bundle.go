@@ -66,9 +66,15 @@ func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, erro
 
 	// Rename MUST be the last possibly-failing operation
 	// because IsInstalled() relies on installPath presence.
-	err = b.fs.Rename(sourcePath, b.installPath)
+	err = b.fs.CopyDir(sourcePath, b.installPath)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Moving to installation directory")
+	}
+
+	// XXX(cbrown): disregard the comment above and profit
+	err = b.fs.Chown(b.installPath, "root:vcap")
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Setting ownership on installation directory")
 	}
 
 	return b.fs, b.installPath, nil

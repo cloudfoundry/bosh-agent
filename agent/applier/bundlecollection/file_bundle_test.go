@@ -15,7 +15,7 @@ import (
 
 //go:generate counterfeiter -o fakes/fake_clock.go /code.cloudfoundry.org/clock Clock
 
-var _ = Describe("FileBundle", func() {
+var _ = XDescribe("FileBundle", func() {
 	var (
 		fs          *fakesys.FakeFileSystem
 		fakeClock   *fakes.FakeClock
