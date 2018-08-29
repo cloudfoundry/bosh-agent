@@ -670,7 +670,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 
 		It("logs a warning and doesn't create a partition if there is less than 1MB of free disk space", func() {
-			smallRemainingDiskOutput := fmt.Sprintf(`%s
+			smallRemainingDiskOutput := fmt.Sprintf(`%d
 `, (1024*1024)-1)
 			cmdRunner.AddCmdResult(
 				getDiskLargestFreeExtentCommand(diskNumber),
