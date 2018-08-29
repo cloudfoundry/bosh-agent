@@ -229,7 +229,13 @@ bosh_foobar:...`
 	})
 
 	Describe("SetupRootDisk", func() {
+		var (
+			labelPrefix string
+		)
+
 		BeforeEach(func() {
+			labelPrefix = "fake-agent-id"
+
 			mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
 				PartitionPath: "/dev/sda1",
 				MountPoint:    "/",
@@ -261,7 +267,7 @@ bosh_foobar:...`
 			})
 
 			It("runs growpart and resize2fs for the right root device number", func() {
-				err := platform.SetupEphemeralDiskWithPath("/dev/sda", nil)
+				err := platform.SetupEphemeralDiskWithPath("/dev/sda", nil, labelPrefix)
 				Expect(err).NotTo(HaveOccurred())
 
 				mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
@@ -421,7 +427,7 @@ bosh_foobar:...`
 				})
 
 				It("runs growpart and resize2fs for the right root device number", func() {
-					err := platform.SetupEphemeralDiskWithPath("/dev/nvme0n1", nil)
+					err := platform.SetupEphemeralDiskWithPath("/dev/nvme0n1", nil, labelPrefix)
 					Expect(err).NotTo(HaveOccurred())
 
 					mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
@@ -747,6 +753,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 	})
 
 	Describe("SetupEphemeralDiskWithPath", func() {
+		var (
+			labelPrefix string
+		)
+
+		BeforeEach(func() {
+			labelPrefix = "fake-agent-id"
+		})
+
 		itSetsUpEphemeralDisk := func(act func() error) {
 			It("sets up ephemeral disk with path", func() {
 				err := act()
@@ -770,7 +784,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 		Context("when ephemeral disk path is provided", func() {
 			act := func() error {
-				return platform.SetupEphemeralDiskWithPath("/dev/xvda", nil)
+				return platform.SetupEphemeralDiskWithPath("/dev/xvda", nil, labelPrefix)
 			}
 
 			itSetsUpEphemeralDisk(act)
@@ -871,8 +885,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-						{SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
-						{SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+						{NamePrefix: labelPrefix, SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
+						{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 					}))
 				})
 
@@ -886,8 +900,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-						{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
-						{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+						{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+						{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 					}))
 				})
 
@@ -898,15 +912,15 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						It("creates swap equal to specified amount", func() {
 							var desiredSwapSize uint64 = 2048
 							act = func() error {
-								return platform.SetupEphemeralDiskWithPath(devicePath, &desiredSwapSize)
+								return platform.SetupEphemeralDiskWithPath(devicePath, &desiredSwapSize, labelPrefix)
 							}
 							partitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
 
 							err := act()
 							Expect(err).NotTo(HaveOccurred())
 							Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-								{SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
-								{SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
+								{NamePrefix: labelPrefix, SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
+								{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
 							}))
 
 						})
@@ -916,14 +930,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						It("does not attempt to create a swap disk", func() {
 							var desiredSwapSize uint64
 							act = func() error {
-								return platform.SetupEphemeralDiskWithPath(devicePath, &desiredSwapSize)
+								return platform.SetupEphemeralDiskWithPath(devicePath, &desiredSwapSize, labelPrefix)
 							}
 							partitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
 
 							err := act()
 							Expect(err).NotTo(HaveOccurred())
 							Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-								{SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+								{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 							}))
 
 							Expect(formatter.FormatPartitionPaths).To(Equal([]string{partitionPath(devicePath, 1)}))
@@ -937,7 +951,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 					It("uses the default swap size options", func() {
 						act = func() error {
-							return platform.SetupEphemeralDiskWithPath(devicePath, nil)
+							return platform.SetupEphemeralDiskWithPath(devicePath, nil, labelPrefix)
 						}
 						partitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
 						collector.MemStats.Total = 2048
@@ -945,8 +959,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-							{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
-							{SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+							{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+							{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 						}))
 					})
 				})
@@ -956,7 +970,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			Context("and is NVMe", func() {
 				act = func() error {
-					return platform.SetupEphemeralDiskWithPath("/dev/nvme1n1", nil)
+					return platform.SetupEphemeralDiskWithPath("/dev/nvme1n1", nil, labelPrefix)
 				}
 
 				itSetsUpEphemeralDisk(act)
@@ -967,7 +981,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 		Context("when ephemeral disk path is not provided", func() {
 			act := func() error {
-				return platform.SetupEphemeralDiskWithPath("", nil)
+				return platform.SetupEphemeralDiskWithPath("", nil, labelPrefix)
 			}
 
 			Context("when agent should partition ephemeral disk on root disk", func() {
@@ -1108,12 +1122,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: memSizeInBytes,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: diskSizeInBytes - memSizeInBytes,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
@@ -1131,12 +1147,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
@@ -1150,15 +1168,15 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 									It("creates swap equal to specified amount", func() {
 										var desiredSwapSize uint64 = 2048
 										act := func() error {
-											return platform.SetupEphemeralDiskWithPath("", &desiredSwapSize)
+											return platform.SetupEphemeralDiskWithPath("", &desiredSwapSize, labelPrefix)
 										}
 										partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 
 										err := act()
 										Expect(err).NotTo(HaveOccurred())
 										Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-											{SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
-											{SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
+											{NamePrefix: labelPrefix, SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
+											{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
 										}))
 
 									})
@@ -1168,14 +1186,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 									It("does not attempt to create a swap disk", func() {
 										var desiredSwapSize uint64
 										act := func() error {
-											return platform.SetupEphemeralDiskWithPath("", &desiredSwapSize)
+											return platform.SetupEphemeralDiskWithPath("", &desiredSwapSize, labelPrefix)
 										}
 										partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = diskSizeInBytes
 
 										err := act()
 										Expect(err).NotTo(HaveOccurred())
 										Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-											{SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+											{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 										}))
 
 										Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/vda2"}))
@@ -1267,12 +1285,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: memSizeInBytes,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: diskSizeInBytes - memSizeInBytes,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
@@ -1290,12 +1310,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
+										NamePrefix:  labelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
@@ -1367,7 +1389,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 			It("makes sure ephemeral directory is there but does nothing else", func() {
 				swapSize := uint64(0)
-				err := platform.SetupEphemeralDiskWithPath("/dev/xvda", &swapSize)
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda", &swapSize, labelPrefix)
 				Expect(err).ToNot(HaveOccurred())
 
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
@@ -1388,7 +1410,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 			})
 
 			act := func() error {
-				return platform.SetupEphemeralDiskWithPath("/dev/xvda", nil)
+				return platform.SetupEphemeralDiskWithPath("/dev/xvda", nil, labelPrefix)
 			}
 
 			It("returns err when the data directory cannot be globbed", func() {

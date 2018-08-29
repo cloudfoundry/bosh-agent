@@ -51,7 +51,7 @@ type Platform interface {
 	SetupNetworking(networks boshsettings.Networks) (err error)
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string) (err error)
-	SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error)
+	SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64, labelPrefix string) (err error)
 	SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error)
 	SetupDataDir(boshsettings.JobDir) (err error)
 	SetupSharedMemory() (err error)

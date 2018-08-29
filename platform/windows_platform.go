@@ -338,7 +338,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) error {
+func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64, labelPrefix string) error {
 	const minimumDiskSizeToPartition = 1024 * 1024
 
 	if devicePath == "" || !p.options.Windows.EnableEphemeralDiskMounting {

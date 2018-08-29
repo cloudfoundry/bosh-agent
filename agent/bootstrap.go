@@ -7,7 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
-	applyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -105,7 +105,7 @@ func (boot bootstrap) Run() (err error) {
 
 	ephemeralDiskPath := boot.platform.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
 	desiredSwapSizeInBytes := settings.Env.GetSwapSizeInBytes()
-	if err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath, desiredSwapSizeInBytes); err != nil {
+	if err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath, desiredSwapSizeInBytes, settings.AgentID); err != nil {
 		return bosherr.WrapError(err, "Setting up ephemeral disk")
 	}
 

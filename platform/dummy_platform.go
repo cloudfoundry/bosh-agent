@@ -176,7 +176,7 @@ func (p dummyPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error) {
+func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64, labelPrefix string) (err error) {
 	return
 }
 
