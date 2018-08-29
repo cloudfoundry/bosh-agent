@@ -40,10 +40,10 @@ var _ = Describe("ConfigDrive", func() {
 		})
 
 		It("config drive is being unmounted", func() {
-			Eventually(func() string {
-				result, _ := testEnvironment.RunCommand("sudo mount | grep -c /dev/loop2")
-				return strings.TrimSpace(result)
-			}, 5*time.Second, 1*time.Second).Should(Equal("0"))
+			Eventually(func() int {
+				result, _ := testEnvironment.RunCommand("sudo mount")
+				return strings.Count(result, "/dev/loop2")
+			}, 5*time.Second, 1*time.Second).Should(BeZero())
 		})
 	})
 })
