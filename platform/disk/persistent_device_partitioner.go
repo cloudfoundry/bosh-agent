@@ -57,6 +57,10 @@ func (p *PersistentDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (u
 	return p.sfDiskPartitioner.GetDeviceSizeInBytes(devicePath)
 }
 
+func (p *PersistentDevicePartitioner) GetPartitions(devicePath string) (partitions []ExistingPartition, deviceFullSizeInBytes uint64, err error) {
+	return p.partedPartitioner.GetPartitions(devicePath)
+}
+
 func IsGPTError(err error) bool {
 	return err == ErrGPTPartitionEncountered
 }

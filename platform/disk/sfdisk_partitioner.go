@@ -129,8 +129,49 @@ func (p sfdiskPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, erro
 	return p.convertFromKbToBytes(sizeInKb), nil
 }
 
+func (p sfdiskPartitioner) GetPartitions(devicePath string) (partitions []ExistingPartition, deviceFullSizeInBytes uint64, err error) {
+	deviceFullSizeInBytes, err = p.GetDeviceSizeInBytes(devicePath)
+	if err != nil {
+		return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Getting device size")
+	}
+
+	stdout, _, _, err := p.cmdRunner.RunCommand("sfdisk", "-d", devicePath)
+	if err != nil {
+		return partitions, deviceFullSizeInBytes, bosherr.WrapError(err, "Shelling out to sfdisk when getting partitions")
+	}
+
+	allLines := strings.Split(stdout, "\n")
+	if len(allLines) < 4 {
+		return partitions, deviceFullSizeInBytes, nil
+	}
+
+	partitionLines := allLines[3 : len(allLines)-1]
+
+	for _, partitionLine := range partitionLines {
+		partitionPath, partitionType := extractPartitionPathAndType(partitionLine)
+		if partitionType == PartitionTypeGPT {
+			return partitions, deviceFullSizeInBytes, ErrGPTPartitionEncountered
+		}
+
+		partition := ExistingPartition{Type: partitionType}
+
+		if partition.Type != PartitionTypeEmpty {
+			if strings.Contains(partitionPath, "/dev/mapper/") {
+				partitionPath = partitionPath[0:len(partitionPath)-1] + "-part1"
+			}
+			size, err := p.GetDeviceSizeInBytes(partitionPath)
+			if err == nil {
+				partition.SizeInBytes = size
+			}
+		}
+
+		partitions = append(partitions, partition)
+	}
+	return partitions, deviceFullSizeInBytes, nil
+}
+
 func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsToMatch []Partition) (bool, error) {
-	existingPartitions, err := p.getPartitions(devicePath)
+	existingPartitions, _, err := p.GetPartitions(devicePath)
 	if err != nil {
 		return false, err
 	}
@@ -160,44 +201,6 @@ func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsTo
 	}
 
 	return true, nil
-}
-
-func (p sfdiskPartitioner) getPartitions(devicePath string) ([]Partition, error) {
-	stdout, _, _, err := p.cmdRunner.RunCommand("sfdisk", "-d", devicePath)
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Shelling out to sfdisk when getting partitions")
-	}
-
-	partitions := []Partition{}
-
-	allLines := strings.Split(stdout, "\n")
-	if len(allLines) < 4 {
-		return partitions, nil
-	}
-
-	partitionLines := allLines[3 : len(allLines)-1]
-
-	for _, partitionLine := range partitionLines {
-		partitionPath, partitionType := extractPartitionPathAndType(partitionLine)
-		if partitionType == PartitionTypeGPT {
-			return nil, ErrGPTPartitionEncountered
-		}
-
-		partition := Partition{Type: partitionType}
-
-		if partition.Type != PartitionTypeEmpty {
-			if strings.Contains(partitionPath, "/dev/mapper/") {
-				partitionPath = partitionPath[0:len(partitionPath)-1] + "-part1"
-			}
-			size, err := p.GetDeviceSizeInBytes(partitionPath)
-			if err == nil {
-				partition.SizeInBytes = size
-			}
-		}
-
-		partitions = append(partitions, partition)
-	}
-	return partitions, nil
 }
 
 var partitionTypesMap = map[string]PartitionType{
