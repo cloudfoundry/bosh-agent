@@ -4,7 +4,7 @@ set -ex
 
 # golang {
 pushd /usr/local
-  curl -Lo /usr/local/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+  curl -fsSLo /usr/local/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
   chmod +x /usr/local/bin/jq
   GO_INFO=$(
     curl -s 'https://golang.org/dl/?mode=json' | \
@@ -12,7 +12,7 @@ pushd /usr/local
   )
   GO_TAR="$(echo "$GO_INFO" | jq -r '.filename')"
   GO_SHA="$(echo "$GO_INFO" | jq -r '.sha256')"
-  curl -fSL https://storage.googleapis.com/golang/$GO_TAR -o $GO_TAR
+  curl -fsSLo $GO_TAR https://storage.googleapis.com/golang/$GO_TAR
   echo $GO_SHA $GO_TAR | sha256sum -c -
   tar -xzf $GO_TAR
   rm -f $GO_TAR
