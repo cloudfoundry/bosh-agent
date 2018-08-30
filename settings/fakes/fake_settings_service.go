@@ -14,10 +14,6 @@ type FakeSettingsService struct {
 	GetPersistentDiskHintsError   error
 	PersistentDiskHintsWereLoaded bool
 
-	GetPersistentDiskHintResult boshsettings.DiskSettings
-	GetPersistentDiskHintError  error
-	PersistentDiskHintWasFound  bool
-
 	RemovePersistentDiskHintsError error
 
 	InvalidateSettingsError error
@@ -53,10 +49,6 @@ func (service *FakeSettingsService) GetPersistentDiskHints() (map[string]boshset
 	service.GetPersistentDiskHintsCallCount++
 	service.PersistentDiskHintsWereLoaded = true
 	return service.PersistentDiskHints, service.GetPersistentDiskHintsError
-}
-
-func (service *FakeSettingsService) GetPersistentDiskHint(diskID string) (boshsettings.DiskSettings, bool, error) {
-	return service.GetPersistentDiskHintResult, service.PersistentDiskHintWasFound, service.GetPersistentDiskHintError
 }
 
 func (service *FakeSettingsService) RemovePersistentDiskHint(diskID string) error {

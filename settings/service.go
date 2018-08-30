@@ -19,6 +19,8 @@ type Service interface {
 
 	SavePersistentDiskHint(DiskSettings) error
 
+	RemovePersistentDiskHint(string) error
+
 	PublicSSHKeyForUsername(string) (string, error)
 
 	InvalidateSettings() error
@@ -122,24 +124,35 @@ func (s *settingsService) GetPersistentDiskHints() (map[string]DiskSettings, err
 	return s.getPersistentDiskHintsWithoutLocking()
 }
 
+func (s *settingsService) RemovePersistentDiskHint(diskID string) error {
+	s.persistentDiskHintMutex.Lock()
+	defer s.persistentDiskHintMutex.Unlock()
+
+	persistentDiskHints, err := s.getPersistentDiskHintsWithoutLocking()
+	if err != nil {
+		return bosherr.WrapError(err, "Cannot remove entry from file due to read error")
+	}
+
+	delete(persistentDiskHints, diskID)
+	if err := s.savePersistentDiskHintsWithoutLocking(persistentDiskHints); err != nil {
+		return bosherr.WrapError(err, "Saving persistent disk hints")
+	}
+
+	return nil
+}
+
 func (s *settingsService) SavePersistentDiskHint(persistentDiskSettings DiskSettings) error {
 	s.persistentDiskHintMutex.Lock()
 	defer s.persistentDiskHintMutex.Unlock()
+
 	persistentDiskHints, err := s.getPersistentDiskHintsWithoutLocking()
 	if err != nil {
 		return bosherr.WrapError(err, "Reading all persistent disk hints")
 	}
 
 	persistentDiskHints[persistentDiskSettings.ID] = persistentDiskSettings
-
-	newPersistentDiskHintsJSON, err := json.Marshal(persistentDiskHints)
-	if err != nil {
-		return bosherr.WrapError(err, "Marshalling persistent disk hints json")
-	}
-
-	err = s.fs.WriteFile(s.persistentDiskHintsPath, newPersistentDiskHintsJSON)
-	if err != nil {
-		return bosherr.WrapError(err, "Writing persistent disk hints settings json")
+	if err := s.savePersistentDiskHintsWithoutLocking(persistentDiskHints); err != nil {
+		return bosherr.WrapError(err, "Saving persistent disk hints")
 	}
 
 	return nil
@@ -201,6 +214,20 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	network.Resolved = true
 
 	return network, nil
+}
+
+func (s *settingsService) savePersistentDiskHintsWithoutLocking(persistentDiskHints map[string]DiskSettings) error {
+	newPersistentDiskHintsJSON, err := json.Marshal(persistentDiskHints)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling persistent disk hints json")
+	}
+
+	err = s.fs.WriteFile(s.persistentDiskHintsPath, newPersistentDiskHintsJSON)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing persistent disk hints settings json")
+	}
+
+	return nil
 }
 
 func (s *settingsService) getPersistentDiskHintsWithoutLocking() (map[string]DiskSettings, error) {

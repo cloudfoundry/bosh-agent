@@ -366,6 +366,116 @@ func init() {
 			})
 		})
 
+		Describe("RemovePersistentDiskHint", func() {
+			var (
+				service Service
+			)
+
+			BeforeEach(func() {
+				service, fs = buildService()
+			})
+
+			Context("persistent disk hints file does not exist", func() {
+				It("completes without error", func() {
+					err := service.RemovePersistentDiskHint("anything")
+					Expect(err).ToNot(HaveOccurred())
+				})
+			})
+
+			Context("persistent disk hints file exists", func() {
+				Context("has invalid hints saved on disk", func() {
+					var existingHintsOnDisk []DiskSettings // The correct format is map[string]DiskSettings but we want to write out an incorrect format.
+
+					BeforeEach(func() {
+						service, fs = buildService()
+						existingHintsOnDisk = []DiskSettings{
+							{ID: "1", Path: "abc"},
+							{ID: "2", Path: "def"},
+							{ID: "3", Path: "ghi"},
+						}
+						jsonString, err := json.Marshal(existingHintsOnDisk)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = fs.WriteFileQuietly("/setting/persistent_hints.json", jsonString)
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("returns error", func() {
+						err := service.RemovePersistentDiskHint("1")
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Cannot remove entry from file due to read error"))
+						Expect(err.Error()).To(ContainSubstring("Unmarshalling persistent disk hints from file"))
+					})
+				})
+
+				Context("has valid hints saved on disk", func() {
+
+					Context("file has single entry", func() {
+						var existingHintsOnDisk map[string]DiskSettings
+
+						BeforeEach(func() {
+							existingHintsOnDisk = map[string]DiskSettings{"1": {ID: "1", Path: "abc"}}
+							jsonString, err := json.Marshal(existingHintsOnDisk)
+							Expect(err).NotTo(HaveOccurred())
+
+							err = fs.WriteFileQuietly("/setting/persistent_hints.json", jsonString)
+							Expect(err).ToNot(HaveOccurred())
+						})
+
+						It("does not do anything if id does not exist in file and does not return an error", func() {
+							err := service.RemovePersistentDiskHint("anything")
+							Expect(err).NotTo(HaveOccurred())
+
+							jsonString, err := json.Marshal(existingHintsOnDisk)
+							Expect(err).NotTo(HaveOccurred())
+
+							fileContent, err := fs.ReadFile("/setting/persistent_hints.json")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(fileContent).To(Equal(jsonString))
+						})
+
+						It("the file is still valid after the last entry is deleted", func() {
+							err := service.RemovePersistentDiskHint("1")
+							Expect(err).NotTo(HaveOccurred())
+
+							err = service.RemovePersistentDiskHint("anything")
+							Expect(err).NotTo(HaveOccurred())
+						})
+					})
+
+					Context("file has multiple entries", func() {
+						var existingHintsOnDisk map[string]DiskSettings
+
+						BeforeEach(func() {
+							existingHintsOnDisk = map[string]DiskSettings{
+								"1": {ID: "1", Path: "abc"},
+								"2": {ID: "2", Path: "abc"},
+								"3": {ID: "3", Path: "abc"},
+							}
+							jsonString, err := json.Marshal(existingHintsOnDisk)
+							Expect(err).NotTo(HaveOccurred())
+
+							err = fs.WriteFileQuietly("/setting/persistent_hints.json", jsonString)
+							Expect(err).ToNot(HaveOccurred())
+						})
+
+						It("deletes the hint if it exists in the file", func() {
+							err := service.RemovePersistentDiskHint("1")
+							Expect(err).NotTo(HaveOccurred())
+
+							delete(existingHintsOnDisk, "1")
+							jsonString, err := json.Marshal(existingHintsOnDisk)
+							Expect(err).NotTo(HaveOccurred())
+
+							fileContent, err := fs.ReadFile("/setting/persistent_hints.json")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(fileContent).To(Equal(jsonString))
+						})
+					})
+				})
+			})
+		})
+
 		Describe("InvalidateSettings", func() {
 			It("removes the settings file", func() {
 				fakeSettingsSource.SettingsValue = Settings{}
