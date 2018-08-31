@@ -12,7 +12,7 @@ type Linker struct {
 	Runner boshsys.CmdRunner
 }
 
-func (l *Linker) IsLinked(location string) (target string, err error) {
+func (l *Linker) LinkTarget(location string) (target string, err error) {
 	isLinkedCommand := fmt.Sprintf(
 		"powershell.exe Get-Item %s -ErrorAction Ignore | Select -ExpandProperty Target -ErrorAction Ignore",
 		location,

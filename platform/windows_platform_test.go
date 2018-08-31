@@ -601,8 +601,8 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
 
-			Expect(linker.IsLinkedCallCount()).To(Equal(1))
-			Expect(linker.IsLinkedArgsForCall(0)).To(Equal(dataDir))
+			Expect(linker.LinkTargetCallCount()).To(Equal(1))
+			Expect(linker.LinkTargetArgsForCall(0)).To(Equal(dataDir))
 			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
 
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(
@@ -639,7 +639,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 		It("does nothing if partition exists and is linked to data dir", func() {
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			linker.IsLinkedReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
+			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
@@ -656,7 +656,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				fakesys.FakeCmdResult{Stdout: zeroRemainingDiskOutput},
 			)
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			linker.IsLinkedReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
+			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
@@ -728,13 +728,13 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 
 		It("returns an error when Getting existing partition check command fails", func() {
-			isLinkedError := errors.New("It went wrong")
+			LinkTargetError := errors.New("It went wrong")
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			linker.IsLinkedReturns("", isLinkedError)
+			linker.LinkTargetReturns("", LinkTargetError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
-			Expect(err).To(Equal(isLinkedError))
+			Expect(err).To(Equal(LinkTargetError))
 		})
 
 		It("returns an error when Get-Disk NumberOfPartitions command return non-zero exit code", func() {

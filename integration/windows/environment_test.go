@@ -99,7 +99,7 @@ func (e *WindowsEnvironment) GetDriveLetterForLink(path string) string {
 }
 
 func (e *WindowsEnvironment) GetDriveLetterForLinkWithOffset(offset int, path string) string {
-	target, err := e.Linker.IsLinked(path)
+	target, err := e.Linker.LinkTarget(path)
 
 	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
 	return strings.Split(target, ":")[0]
@@ -126,7 +126,7 @@ func (e *WindowsEnvironment) WaitForLink(path string) {
 
 func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
 	EventuallyWithOffset(offset+1, func() bool {
-		target, _ := e.Linker.IsLinked(path)
+		target, _ := e.Linker.LinkTarget(path)
 		return target != ""
 	}, 4*time.Minute, 5*time.Second).Should(BeTrue())
 }
