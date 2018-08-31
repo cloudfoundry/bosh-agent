@@ -6,7 +6,7 @@
     Copyright = '(c) 2017 BOSH'
     Description = 'Fixtures for bosh agent on windows'
     PowerShellVersion = '4.0'
-    FunctionsToExport = @(,'Protect-MountedDir', 'Check-Acls')
+    FunctionsToExport = @(,'Protect-Path', 'Check-Acls')
     CmdletsToExport = @()
     VariablesToExport = '*'
     AliasesToExport = @()

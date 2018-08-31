@@ -17,6 +17,8 @@ import (
 
 	"testing"
 	"text/template"
+
+	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
 var (
@@ -159,6 +161,11 @@ var _ = BeforeSuite(func() {
 
 	agent = &WindowsEnvironment{
 		Client: client,
+		Linker: &disk.Linker{
+			Runner: &utils.WinRMCommandRunner{
+				Client: client,
+			},
+		},
 	}
 
 	// We do this so that both 2012R2 and 1709 run ephemeral disk tests against raw disks.

@@ -15,6 +15,7 @@ outputs:
 - name: compiled-windows-amd64
 
 params:
+  DIRNAME: compiled-windows-amd64
   GOARCH: amd64
   GOOS:   windows
 

@@ -3,6 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,6 +16,8 @@ import (
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/kevinburke/ssh_config"
+	"golang.org/x/crypto/ssh"
 )
 
 type TestEnvironment struct {
@@ -24,17 +27,24 @@ type TestEnvironment struct {
 	logger           logger.Logger
 	agentClient      agentclient.AgentClient
 	deviceMap        map[int]string
+	sshClient        *ssh.Client
 }
 
 func NewTestEnvironment(
 	cmdRunner boshsys.CmdRunner,
-) *TestEnvironment {
+) (*TestEnvironment, error) {
+	client, err := dialSSHClient(cmdRunner)
+	if err != nil {
+		return nil, err
+	}
+
 	return &TestEnvironment{
 		cmdRunner:        cmdRunner,
 		currentDeviceNum: 2,
 		logger:           logger.NewLogger(logger.LevelDebug),
 		deviceMap:        make(map[int]string),
-	}
+		sshClient:        client,
+	}, nil
 }
 
 func (t *TestEnvironment) SetupConfigDrive() error {
@@ -470,8 +480,16 @@ func (t *TestEnvironment) GetFileContents(filePath string) (string, error) {
 }
 
 func (t *TestEnvironment) RunCommand(command string) (string, error) {
-	stdout, _, _, err := t.RunCommand3(command)
-	return stdout, err
+	s, err := t.sshClient.NewSession()
+	if err != nil {
+		return "", err
+	}
+	defer s.Close()
+	out, err := s.Output(command)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
 }
 
 func (t *TestEnvironment) RunCommand3(command string) (string, string, int, error) {
@@ -500,4 +518,48 @@ func (t *TestEnvironment) agentDir() string {
 
 func (t *TestEnvironment) assetsDir() string {
 	return fmt.Sprintf("%s/integration/assets", t.agentDir())
+}
+
+func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
+	stdout, _, _, err := cmdRunner.RunCommand("vagrant", "ssh-config")
+	if err != nil {
+		return nil, err
+	}
+
+	config, err := ssh_config.Decode(strings.NewReader(stdout))
+	if err != nil {
+		return nil, err
+	}
+	user, err := config.Get("default", "User")
+	if err != nil {
+		return nil, err
+	}
+	addr, err := config.Get("default", "HostName")
+	if err != nil {
+		return nil, err
+	}
+	port, err := config.Get("default", "Port")
+	if err != nil {
+		return nil, err
+	}
+	keyPath, err := config.Get("default", "IdentityFile")
+	if err != nil {
+		return nil, err
+	}
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return nil, err
+	}
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return ssh.Dial("tcp", fmt.Sprintf("%s:%s", addr, port), &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	})
 }

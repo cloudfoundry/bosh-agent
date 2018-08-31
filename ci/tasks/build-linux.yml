@@ -5,7 +5,7 @@ image_resource:
   type: docker-image
   source:
     repository: bosh/agent
-    tag: go1.8.3
+    tag: latest
 
 inputs:
 - name: bosh-agent
@@ -16,6 +16,7 @@ outputs:
 - name: compiled-linux-amd64
 
 params:
+  DIRNAME: compiled-linux-amd64
   GOARCH: amd64
   GOOS:   linux
 
