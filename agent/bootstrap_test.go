@@ -26,6 +26,7 @@ import (
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -58,12 +59,15 @@ var _ = Describe("bootstrap", func() {
 			specService     *fakes.FakeV1Service
 
 			ephemeralDiskPath string
+			logger            *fakelogger.FakeLogger
 		)
 
 		BeforeEach(func() {
 			platform = &platformfakes.FakePlatform{}
 			dirProvider = boshdir.NewProvider("/var/vcap")
-			settingsService = &fakesettings.FakeSettingsService{}
+			settingsService = &fakesettings.FakeSettingsService{
+				PersistentDiskHints: make(map[string]boshsettings.DiskSettings),
+			}
 			specService = fakes.NewFakeV1Service()
 
 			ephemeralDiskPath = "/dev/sda"
@@ -81,10 +85,10 @@ var _ = Describe("bootstrap", func() {
 					},
 				},
 			}
+			logger = &fakelogger.FakeLogger{}
 		})
 
 		bootstrap := func() error {
-			logger := boshlog.NewLogger(boshlog.LevelNone)
 			return NewBootstrap(platform, dirProvider, settingsService, specService, logger).Run()
 		}
 
@@ -840,9 +844,28 @@ var _ = Describe("bootstrap", func() {
 
 				platform.IsPersistentDiskMountableReturns(true, nil)
 			})
+			Context("when mounting persistent disk fail", func() {
+				BeforeEach(func() {
+					diskCid := "vol-123"
+					managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+					fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+
+					platform.MountPersistentDiskReturns(errors.New("Mount fail"))
+				})
+				It("should return error", func() {
+					err := bootstrap()
+					Expect(err).To(HaveOccurred())
+					Expect(platform.MountPersistentDiskCallCount()).To(Equal(1))
+					Expect(err.Error()).To(Equal("Mounting persistent disk: Mount fail"))
+				})
+			})
 
 			Context("when checking if the persistent disk is mountable fails", func() {
 				BeforeEach(func() {
+					diskCid := "vol-123"
+					managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+					fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+
 					platform.IsPersistentDiskMountableReturns(false, errors.New("boom"))
 				})
 
@@ -850,7 +873,9 @@ var _ = Describe("bootstrap", func() {
 					err := bootstrap()
 					Expect(err).To(HaveOccurred())
 					Expect(platform.MountPersistentDiskCallCount()).To(Equal(0))
+					Expect(err.Error()).To(Equal("Checking if persistent disk is partitioned: boom"))
 				})
+
 			})
 
 			Context("when there are no persistent disks", func() {
@@ -904,6 +929,70 @@ var _ = Describe("bootstrap", func() {
 						err := bootstrap()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(platform.MountPersistentDiskCallCount()).To(Equal(0))
+					})
+				})
+			})
+
+			Context("when setting service returns an error getting persistent disk hints", func() {
+				BeforeEach(func() {
+					settingsService.GetPersistentDiskHintsError = errors.New("Reading persistent disk hints from file")
+				})
+
+				It("should log a warning", func() {
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(logger.WarnCallCount()).To(Equal(1))
+					logTag, logMessage, _ := logger.WarnArgsForCall(0)
+					Expect(logTag).To(Equal("bootstrap"))
+					Expect(logMessage).To(Equal("Getting persistent disk settings: Reading persistent disk hints from file"))
+				})
+			})
+
+			Context("when setting service returns a map of persistent disk hints", func() {
+				BeforeEach(func() {
+					settingsService.PersistentDiskHints = map[string]boshsettings.DiskSettings{
+						"disk-id-123exs3243": {
+							ID:       "123",
+							Path:     "/dev/sdf",
+							VolumeID: "42",
+						},
+					}
+
+					settingsService.Settings.Disks = boshsettings.Disks{
+						Persistent: map[string]interface{}{
+							"vol-123": map[string]interface{}{
+								"volume_id": "2",
+								"path":      "/dev/sdb",
+							},
+						},
+					}
+					platform.IsPersistentDiskMountableReturns(true, nil)
+				})
+
+				It("should use both disk", func() {
+					err := bootstrap()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(platform.IsPersistentDiskMountableCallCount()).To(Equal(0))
+				})
+
+				Context("when the last mounted cid information is present", func() {
+					BeforeEach(func() {
+						diskCid := "disk-id-123exs3243"
+						managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+						fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					})
+
+					It("mounts persistent disk", func() {
+						err := bootstrap()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(platform.MountPersistentDiskCallCount()).To(Equal(1))
+						diskSettings, storeDir := platform.MountPersistentDiskArgsForCall(0)
+						Expect(diskSettings).To(Equal(boshsettings.DiskSettings{
+							ID:       "123",
+							VolumeID: "42",
+							Path:     "/dev/sdf",
+						}))
+						Expect(storeDir).To(Equal(dirProvider.StoreDir()))
 					})
 				})
 			})
