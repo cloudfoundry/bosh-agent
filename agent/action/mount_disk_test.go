@@ -147,6 +147,19 @@ var _ = Describe("MountDiskAction", func() {
 						Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))
 						Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
 					})
+
+					// Should be same for all disk hints input types; string, hash
+					Context("when saving disk hints fails", func() {
+						BeforeEach(func() {
+							settingsService.SavePersistentDiskHintErr = errors.New("Reading all persistent disk hints")
+						})
+						It("should raise error", func() {
+							_, err := action.Run("hint-fake-disk-cid", diskHint)
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("Saving disk hints failed"))
+							Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
+						})
+					})
 				})
 
 				Context("when the hint is a map", func() {

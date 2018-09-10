@@ -61,7 +61,10 @@ func (a MountDiskAction) Run(diskCid string, hints ...interface{}) (interface{},
 
 	if len(hints) > 0 {
 		diskSettings = settings.PersistentDiskSettingsFromHint(diskCid, hints[0])
-		a.settingsService.SavePersistentDiskHint(diskSettings)
+		err = a.settingsService.SavePersistentDiskHint(diskSettings)
+		if err != nil {
+			return nil, bosherr.WrapError(err, "Saving disk hints failed")
+		}
 	} else {
 		var found bool
 		diskSettings, found = settings.PersistentDiskSettings(diskCid)
