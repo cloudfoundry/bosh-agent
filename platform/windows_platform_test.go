@@ -9,8 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
-	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -603,8 +601,8 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
 
-			Expect(linker.IsLinkedCallCount()).To(Equal(1))
-			Expect(linker.IsLinkedArgsForCall(0)).To(Equal(dataDir))
+			Expect(linker.LinkTargetCallCount()).To(Equal(1))
+			Expect(linker.LinkTargetArgsForCall(0)).To(Equal(dataDir))
 			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
 
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(
@@ -641,7 +639,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 		It("does nothing if partition exists and is linked to data dir", func() {
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			linker.IsLinkedReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
+			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
@@ -658,7 +656,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				fakesys.FakeCmdResult{Stdout: zeroRemainingDiskOutput},
 			)
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			linker.IsLinkedReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
+			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
@@ -730,13 +728,13 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 
 		It("returns an error when Getting existing partition check command fails", func() {
-			isLinkedError := errors.New("It went wrong")
+			LinkTargetError := errors.New("It went wrong")
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			linker.IsLinkedReturns("", isLinkedError)
+			linker.LinkTargetReturns("", LinkTargetError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
-			Expect(err).To(Equal(isLinkedError))
+			Expect(err).To(Equal(LinkTargetError))
 		})
 
 		It("returns an error when Get-Disk NumberOfPartitions command return non-zero exit code", func() {
@@ -1239,62 +1237,5 @@ var _ = Describe("BOSH User Commands", func() {
 				Expect(lockFile).ToNot(BeAnExistingFile())
 			})
 		})
-	})
-})
-
-var _ = Describe("Windows Syscalls and Helper functions", func() {
-	It("Generates valid Windows passwords", func() {
-		// 100,000 iterations takes about 140ms to run in a VM.
-		for i := 0; i < 100000; i++ {
-			s, err := RandomPassword()
-			Expect(err).To(BeNil())
-			Expect(s).To(HaveLen(14))
-			Expect(s).ToNot(ContainSubstring("/"))
-			Expect(ValidWindowsPassword(s)).To(BeTrue())
-		}
-	})
-
-	expectedUserNames := func() ([]string, error) {
-		cmd := exec.Command("PowerShell", "-Command",
-			"Get-WmiObject -Class Win32_UserAccount | foreach { $_.Name }")
-
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			return nil, err
-		}
-		exp := strings.Fields(string(out))
-		sort.Strings(exp)
-		return exp, nil
-	}
-
-	It("Lists local user accounts", func() {
-		exp, err := expectedUserNames()
-		Expect(err).To(Succeed())
-
-		names, err := LocalAccountNames()
-		Expect(err).To(Succeed())
-
-		sort.Strings(names)
-		Expect(names).To(Equal(exp))
-	})
-
-	It("Does not fail in a tight loop", func() {
-		var wg sync.WaitGroup
-		numCPU := runtime.NumCPU()
-		if numCPU > 4 {
-			numCPU = 4
-		}
-		for i := 0; i < numCPU; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for i := 0; i < 5000; i++ {
-					names, err := LocalAccountNames()
-					Expect(err).To(Succeed())
-					Expect(names).ToNot(HaveLen(0))
-				}
-			}()
-		}
-		wg.Wait()
 	})
 })

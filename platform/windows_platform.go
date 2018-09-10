@@ -34,7 +34,7 @@ type WindowsDiskFormatter interface {
 //go:generate counterfeiter -o fakes/fake_windows_disk_linker.go . WindowsDiskLinker
 
 type WindowsDiskLinker interface {
-	IsLinked(location string) (target string, err error)
+	LinkTarget(location string) (target string, err error)
 }
 
 // Administrator user name, this currently exists for testing, but may be useful
@@ -409,7 +409,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		}
 	}
 
-	existingTarget, err := p.linker.IsLinked(dataPath)
+	existingTarget, err := p.linker.LinkTarget(dataPath)
 
 	if err != nil {
 		return err

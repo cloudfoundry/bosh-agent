@@ -35,7 +35,7 @@ var _ = Describe("Linker", func() {
 			fakes.FakeCmdResult{Stdout: fmt.Sprintf("%s%s", expectedTarget, newLine)},
 		)
 
-		target, err := linker.IsLinked(location)
+		target, err := linker.LinkTarget(location)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(target).To(Equal(expectedTarget))
@@ -50,7 +50,7 @@ var _ = Describe("Linker", func() {
 			fakes.FakeCmdResult{ExitStatus: 1, Stdout: fmt.Sprintf("%s%s", expectedTarget, newLine)},
 		)
 
-		target, err := linker.IsLinked(badLocation)
+		target, err := linker.LinkTarget(badLocation)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(target).To(Equal(expectedTarget))
@@ -63,7 +63,7 @@ var _ = Describe("Linker", func() {
 			fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 		)
 
-		_, err := linker.IsLinked(location)
+		_, err := linker.LinkTarget(location)
 		Expect(err).To(MatchError(fmt.Sprintf(
 			"Failed to run command \"%s\": It went wrong",
 			findItemTargetCommand(location),
