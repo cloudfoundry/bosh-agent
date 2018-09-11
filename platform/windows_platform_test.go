@@ -27,6 +27,7 @@ import (
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
+	fakedisk "github.com/cloudfoundry/bosh-agent/platform/windows/disk/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -96,10 +97,12 @@ var _ = Describe("WindowsPlatform", func() {
 		certManager                *certfakes.FakeManager
 		auditLogger                *fakeplat.FakeAuditLogger
 
-		formatter *fakeplat.FakeWindowsDiskFormatter
-		linker    *fakeplat.FakeWindowsDiskLinker
-		logger    boshlog.Logger
-		logBuffer *gbytes.Buffer
+		diskManager *fakeplat.FakeWindowsDiskManager
+		formatter   *fakedisk.FakeWindowsDiskFormatter
+		linker      *fakedisk.FakeWindowsDiskLinker
+		partitioner *fakedisk.FakeWindowsDiskPartitioner
+		logger      boshlog.Logger
+		logBuffer   *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -117,8 +120,15 @@ var _ = Describe("WindowsPlatform", func() {
 		certManager = new(certfakes.FakeManager)
 		auditLogger = fakeplat.NewFakeAuditLogger()
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
-		formatter = new(fakeplat.FakeWindowsDiskFormatter)
-		linker = new(fakeplat.FakeWindowsDiskLinker)
+		diskManager = new(fakeplat.FakeWindowsDiskManager)
+		formatter = new(fakedisk.FakeWindowsDiskFormatter)
+		linker = new(fakedisk.FakeWindowsDiskLinker)
+		partitioner = new(fakedisk.FakeWindowsDiskPartitioner)
+
+		partitioner.GetCountOnDiskReturns("0", nil)
+		diskManager.GetFormatterReturns(formatter)
+		diskManager.GetLinkerReturns(linker)
+		diskManager.GetPartitionerReturns(partitioner)
 
 		platform = NewWindowsPlatform(
 			collector,
@@ -133,8 +143,7 @@ var _ = Describe("WindowsPlatform", func() {
 			fakeDefaultNetworkResolver,
 			auditLogger,
 			fakeUUIDGenerator,
-			formatter,
-			linker,
+			diskManager,
 		)
 	})
 
@@ -433,8 +442,7 @@ var _ = Describe("WindowsPlatform", func() {
 				fakeDefaultNetworkResolver,
 				auditLogger,
 				fakeUUIDGenerator,
-				formatter,
-				linker,
+				diskManager,
 			)
 
 			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
@@ -525,13 +533,12 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		)
 
 		var (
-			diskNumber, partitionNumber, partitionCount, dataDir, driveLetter string
+			diskNumber, partitionNumber, dataDir, driveLetter string
 		)
 
 		BeforeEach(func() {
 			diskNumber = "0"
 			partitionNumber = "3"
-			partitionCount = "0"
 			driveLetter = "E"
 			dataDir = fmt.Sprintf(`C:%s\`, dirProvider.DataDir())
 
@@ -552,8 +559,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				fakeDefaultNetworkResolver,
 				auditLogger,
 				fakeUUIDGenerator,
-				formatter,
-				linker,
+				diskManager,
 			)
 		})
 
@@ -566,12 +572,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			partitionNumberOutput := fmt.Sprintf(`%s
 `, partitionNumber)
 			cmdRunner.AddCmdResult(initializeDiskCommand(diskNumber), fakesys.FakeCmdResult{})
-			partitionCountOutput := fmt.Sprintf(`%s
-`, partitionCount)
-			cmdRunner.AddCmdResult(
-				getExistingPartitionCountCommand(diskNumber),
-				fakesys.FakeCmdResult{Stdout: partitionCountOutput},
-			)
 			cmdRunner.AddCmdResult(newPartitionCommand(diskNumber), fakesys.FakeCmdResult{Stdout: partitionNumberOutput})
 			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
 			driveLetterOutput := fmt.Sprintf(`%s
@@ -580,7 +580,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				getDriveLetter(diskNumber, partitionNumber),
 				fakesys.FakeCmdResult{Stdout: driveLetterOutput},
 			)
-			cmdRunner.AddCmdResult(makelinkCommand(dataDir, driveLetter), fakesys.FakeCmdResult{})
 			cmdRunner.AddCmdResult(protectPathCmd(dataDir), fakesys.FakeCmdResult{})
 		}
 
@@ -603,6 +602,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 			Expect(linker.LinkTargetCallCount()).To(Equal(1))
 			Expect(linker.LinkTargetArgsForCall(0)).To(Equal(dataDir))
+			expectLinkCalledWithArgs(linker, dataDir, driveLetter)
 			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
 
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(
@@ -610,12 +610,15 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			)))
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(protectPathCmd(dataDir), " "))))
 			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(initializeDiskCommand(diskNumber), " "))))
-			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(getExistingPartitionCountCommand(diskNumber), " "))))
+			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(0))
 		})
 
 		It("partitions an attached disk when disk is 1", func() {
 			diskNumber = "1"
 			partitionNumber = "1"
+
+			partitioner.GetCountOnDiskReturns("0", nil)
+
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -624,27 +627,43 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
 			Expect(cmdRunner.RunCommands).To(Equal([][]string{
 				strings.Split(checkProtectPathExistsCommand(), " "),
-				strings.Split(getExistingPartitionCountCommand(diskNumber), " "),
 				strings.Split(initializeDiskCommand(diskNumber), " "),
 				strings.Split(getDiskLargestFreeExtentCommand(diskNumber), " "),
 				strings.Split(newPartitionCommand(diskNumber), " "),
 				strings.Split(addPartitionAccessPathCommand(diskNumber, partitionNumber), " "),
 				strings.Split(getDriveLetter(diskNumber, partitionNumber), " "),
-				strings.Split(makelinkCommand(dataDir, driveLetter), " "),
 				strings.Split(protectPathCmd(dataDir), " "),
 			}))
 
 			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
+			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(1))
+			Expect(partitioner.GetCountOnDiskArgsForCall(0)).To(Equal(diskNumber))
 		})
 
-		It("does nothing if partition exists and is linked to data dir", func() {
+		It("does nothing if partition exists on disk 0 and is linked to data dir", func() {
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
+			partitioner.GetCountOnDiskReturns("1", nil)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(newPartitionCommand(diskNumber), " "))))
+		})
+
+		It("doesn't initialize disk if a partition exists on disk 1", func() {
+			diskNumber = "1"
+			partitionNumber = "1"
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
+			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
+			partitioner.GetCountOnDiskReturns("1", nil)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdRunner.RunCommands).NotTo(ContainElement(Equal(strings.Split(initializeDiskCommand(diskNumber), " "))))
+			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(1))
+			Expect(partitioner.GetCountOnDiskArgsForCall(0)).To(Equal(diskNumber))
 		})
 
 		It("doesn't warn about low disk space if partition exists and is linked to data dir", func() {
@@ -737,31 +756,17 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(err).To(Equal(LinkTargetError))
 		})
 
-		It("returns an error when Get-Disk NumberOfPartitions command return non-zero exit code", func() {
+		It("returns an error when getting the count of existing partitions returns an error", func() {
 			diskNumber = "1"
 			partitionNumber = "1"
 
-			cmdStderr := getDiskError
-			cmdRunner.AddCmdResult(getExistingPartitionCountCommand(diskNumber), fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197})
+			partitionCountError := errors.New("Something failed")
+			partitioner.GetCountOnDiskReturns("", partitionCountError)
 
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
-			Expect(err).To(MatchError(fmt.Sprintf("Failed to get existing partition count for disk %s: %s", diskNumber, cmdStderr)))
-		})
-
-		It("returns an error when Get-Disk NumberOfPartitions command fails", func() {
-			diskNumber = "1"
-			partitionNumber = "1"
-
-			cmdRunnerError := errors.New("It went wrong")
-			expandedCommand := getExistingPartitionCountCommand(diskNumber)
-			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
-
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
-
-			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError.Error())))
+			Expect(err).To(Equal(partitionCountError))
 		})
 
 		It("returns an error when Initialize-Disk command return non-zero exit code", func() {
@@ -854,6 +859,16 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
 		})
 
+		It("returns an error when Getting existing partition check command fails", func() {
+			LinkError := errors.New("It went wrong")
+			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
+			linker.LinkReturns(LinkError)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(Equal(LinkError))
+		})
+
 		It("Returns an error when Protect-Path fails", func() {
 			cmdStderr := protectPathError
 			cmdRunner.AddCmdResult(protectPathCmd(dataDir), fakesys.FakeCmdResult{ExitStatus: 197, Stderr: cmdStderr})
@@ -891,8 +906,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 				fakeDefaultNetworkResolver,
 				auditLogger,
 				fakeUUIDGenerator,
-				formatter,
-				linker,
+				diskManager,
 			)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -905,10 +919,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 	})
 })
-
-func getExistingPartitionCountCommand(diskNumber string) string {
-	return fmt.Sprintf("powershell.exe Get-Disk -Number %s | Select -ExpandProperty NumberOfPartitions", diskNumber)
-}
 
 func initializeDiskCommand(diskNumber string) string {
 	return fmt.Sprintf("powershell.exe Initialize-Disk -Number %s -PartitionStyle GPT", diskNumber)
@@ -936,10 +946,6 @@ func getDriveLetter(diskNumber, partitionNumber string) string {
 	)
 }
 
-func makelinkCommand(dataPath, driveLetter string) string {
-	return fmt.Sprintf(`powershell.exe cmd.exe /c mklink /D %s %s:`, dataPath, driveLetter)
-}
-
 func protectPathCmd(dataDir string) string {
 	removedTrailingSlash := strings.TrimRight(dataDir, "\\")
 	return fmt.Sprintf(
@@ -957,7 +963,7 @@ func checkProtectPathExistsCommand() string {
 }
 
 func expectFormatterCalledWithArgs(
-	formatter *fakeplat.FakeWindowsDiskFormatter,
+	formatter *fakedisk.FakeWindowsDiskFormatter,
 	expectedDiskNumber,
 	expectedPartitionNumber string,
 ) {
@@ -966,6 +972,13 @@ func expectFormatterCalledWithArgs(
 	diskNumber, partitionNumber := formatter.FormatArgsForCall(0)
 	ExpectWithOffset(1, diskNumber).To(Equal(expectedDiskNumber))
 	ExpectWithOffset(1, partitionNumber).To(Equal(expectedPartitionNumber))
+}
+
+func expectLinkCalledWithArgs(linker *fakedisk.FakeWindowsDiskLinker, expectedLocation, expectedDriveLetter string) {
+	Expect(linker.LinkCallCount()).To(Equal(1))
+	linkLocation, linkTarget := linker.LinkArgsForCall(0)
+	Expect(linkLocation).To(Equal(expectedLocation))
+	Expect(linkTarget).To(Equal(fmt.Sprintf("%s:", expectedDriveLetter)))
 }
 
 var _ = Describe("BOSH User Commands", func() {
@@ -1016,8 +1029,7 @@ var _ = Describe("BOSH User Commands", func() {
 				auditLogger                = fakeplat.NewFakeAuditLogger()
 				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
 				dirProvider                = boshdirs.NewProvider("/fake-dir")
-				formatter                  = new(fakeplat.FakeWindowsDiskFormatter)
-				linker                     = new(fakeplat.FakeWindowsDiskLinker)
+				diskManager                = new(fakeplat.FakeWindowsDiskManager)
 			)
 			platform = NewWindowsPlatform(
 				collector,
@@ -1032,8 +1044,7 @@ var _ = Describe("BOSH User Commands", func() {
 				fakeDefaultNetworkResolver,
 				auditLogger,
 				fakeUUIDGenerator,
-				formatter,
-				linker,
+				diskManager,
 			)
 		})
 
@@ -1134,8 +1145,7 @@ var _ = Describe("BOSH User Commands", func() {
 				auditLogger                = fakeplat.NewFakeAuditLogger()
 				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
 				dirProvider                = boshdirs.NewProvider(tempDir)
-				formatter                  = new(fakeplat.FakeWindowsDiskFormatter)
-				linker                     = new(fakeplat.FakeWindowsDiskLinker)
+				diskManager                = new(fakeplat.FakeWindowsDiskManager)
 			)
 			platform = NewWindowsPlatform(
 				collector,
@@ -1150,8 +1160,7 @@ var _ = Describe("BOSH User Commands", func() {
 				fakeDefaultNetworkResolver,
 				auditLogger,
 				fakeUUIDGenerator,
-				formatter,
-				linker,
+				diskManager,
 			)
 
 			lockFile = filepath.Join(platform.GetDirProvider().BoshDir(), "randomized_passwords")

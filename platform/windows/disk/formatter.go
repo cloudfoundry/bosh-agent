@@ -8,11 +8,11 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-type WindowsFormatter struct {
+type Formatter struct {
 	Runner boshsys.CmdRunner
 }
 
-func (f *WindowsFormatter) Format(diskNumber, partitionNumber string) error {
+func (f *Formatter) Format(diskNumber, partitionNumber string) error {
 	formatCommand := formatVolumeCommand(diskNumber, partitionNumber)
 	formatCommandArgs := strings.Split(formatCommand, " ")
 

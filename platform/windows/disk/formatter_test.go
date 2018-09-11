@@ -12,16 +12,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("WindowsFormatter", func() {
+var _ = Describe("Formatter", func() {
 	var (
-		formatter *disk.WindowsFormatter
+		formatter *disk.Formatter
 		cmdRunner *fakes.FakeCmdRunner
 	)
 
 	BeforeEach(func() {
 		cmdRunner = fakes.NewFakeCmdRunner()
 
-		formatter = &disk.WindowsFormatter{
+		formatter = &disk.Formatter{
 			Runner: cmdRunner,
 		}
 	})

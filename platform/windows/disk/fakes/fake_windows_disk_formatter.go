@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
 type FakeWindowsDiskFormatter struct {
@@ -97,4 +97,4 @@ func (fake *FakeWindowsDiskFormatter) recordInvocation(key string, args []interf
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ platform.WindowsDiskFormatter = new(FakeWindowsDiskFormatter)
+var _ disk.WindowsDiskFormatter = new(FakeWindowsDiskFormatter)
