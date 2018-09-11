@@ -18,6 +18,7 @@ type WindowsDiskLinker interface {
 }
 
 //go:generate counterfeiter -o fakes/fake_windows_disk_partitioner.go . WindowsDiskPartitioner
+
 type WindowsDiskPartitioner interface {
 	GetCountOnDisk(diskNumber string) (string, error)
 }

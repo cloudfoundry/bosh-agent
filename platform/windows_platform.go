@@ -27,6 +27,7 @@ import (
 )
 
 //go:generate counterfeiter -o fakes/fake_windows_disk_manager.go . WindowsDiskManager
+
 type WindowsDiskManager interface {
 	GetFormatter() disk.WindowsDiskFormatter
 	GetLinker() disk.WindowsDiskLinker
