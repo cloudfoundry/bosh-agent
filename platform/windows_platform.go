@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
@@ -403,26 +402,12 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return nil
 	}
 
-	checkFreeSpaceAction := &powershellAction{
-		commandArgs: []string{
-			"Get-Disk",
-			devicePath,
-			"|",
-			"Select",
-			"-ExpandProperty",
-			"LargestFreeExtent",
-		},
-		commandFailureFmt: fmt.Sprintf("Failed to get free disk space on disk %s: %%s", devicePath),
-		cmdRunner:         p.cmdRunner,
-	}
-
-	freeSpaceOutput, err := checkFreeSpaceAction.run()
+	freeSpace, err := partitioner.GetFreeSpaceOnDisk(devicePath)
 
 	if err != nil {
 		return err
 	}
 
-	freeSpace, _ := strconv.Atoi(strings.TrimSpace(freeSpaceOutput))
 	if freeSpace < 1024*1024 {
 		p.logger.Warn(
 			"WindowsPlatform",

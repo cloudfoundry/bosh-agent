@@ -21,6 +21,7 @@ type WindowsDiskLinker interface {
 
 type WindowsDiskPartitioner interface {
 	GetCountOnDisk(diskNumber string) (string, error)
+	GetFreeSpaceOnDisk(diskNumber string) (int, error)
 }
 
 type Manager struct {
