@@ -197,6 +197,8 @@ func (p partedPartitioner) convertFromKbToBytes(sizeInKb uint64) uint64 {
 func (p partedPartitioner) runPartedPrint(devicePath string) (stdout, stderr string, exitStatus int, err error) {
 	stdout, stderr, exitStatus, err = p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
 
+	defer p.cmdRunner.RunCommand("udevadm", "settle")
+
 	// If the error is not having a partition table, create one
 	if strings.Contains(fmt.Sprintf("%s\n%s", stdout, stderr), "unrecognised disk label") {
 		stdout, stderr, exitStatus, err = p.getPartitionTable(devicePath)
