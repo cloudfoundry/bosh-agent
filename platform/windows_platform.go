@@ -31,6 +31,7 @@ type WindowsDiskManager interface {
 	GetFormatter() disk.WindowsDiskFormatter
 	GetLinker() disk.WindowsDiskLinker
 	GetPartitioner() disk.WindowsDiskPartitioner
+	GetProtector() disk.WindowsDiskProtector
 }
 
 // Administrator user name, this currently exists for testing, but may be useful
@@ -338,6 +339,8 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 }
 
 func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) error {
+	const minimumDiskSizeToPartition = 1024 * 1024
+
 	if devicePath == "" || !p.options.Windows.EnableEphemeralDiskMounting {
 		p.logger.Debug("WindowsPlatform", "Not attempting to mount ephemeral disk with devicePath `%s`", devicePath)
 		return nil
@@ -345,19 +348,9 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 
 	dataPath := fmt.Sprintf(`C:%s\`, p.dirProvider.DataDir())
 
-	checkProtectPathCmdlet := &powershellAction{
-		commandArgs: []string{
-			"Get-Command",
-			"Protect-Path",
-		},
-		commandFailureFmt: fmt.Sprintf("Cannot protect %s. Protect-Path cmd does not exist: %%s", dataPath),
-		cmdRunner:         p.cmdRunner,
-	}
-
-	_, err := checkProtectPathCmdlet.run()
-
-	if err != nil {
-		return err
+	protector := p.diskManager.GetProtector()
+	if !protector.CommandExists() {
+		return fmt.Errorf("cannot protect %s. %s cmd does not exist.", dataPath, disk.ProtectCmdlet)
 	}
 
 	partitioner := p.diskManager.GetPartitioner()
@@ -370,20 +363,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		}
 
 		if existingPartitionCount == "0" {
-			initializeDiskAction := &powershellAction{
-				commandArgs: []string{
-					"Initialize-Disk",
-					"-Number",
-					devicePath,
-					"-PartitionStyle",
-					"GPT",
-				},
-				commandFailureFmt: fmt.Sprintf("Failed to initialize disk %s: %%s", devicePath),
-				cmdRunner:         p.cmdRunner,
-			}
-
-			_, err = initializeDiskAction.run()
-
+			err = partitioner.InitializeDisk(devicePath)
 			if err != nil {
 				return err
 			}
@@ -408,7 +388,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return err
 	}
 
-	if freeSpace < 1024*1024 {
+	if freeSpace < minimumDiskSizeToPartition {
 		p.logger.Warn(
 			"WindowsPlatform",
 			"Unable to create ephemeral partition on disk %s, as there isn't enough free space",

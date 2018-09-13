@@ -36,6 +36,15 @@ type FakeWindowsDiskManager struct {
 	getPartitionerReturnsOnCall map[int]struct {
 		result1 disk.WindowsDiskPartitioner
 	}
+	GetProtectorStub        func() disk.WindowsDiskProtector
+	getProtectorMutex       sync.RWMutex
+	getProtectorArgsForCall []struct{}
+	getProtectorReturns     struct {
+		result1 disk.WindowsDiskProtector
+	}
+	getProtectorReturnsOnCall map[int]struct {
+		result1 disk.WindowsDiskProtector
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -160,6 +169,46 @@ func (fake *FakeWindowsDiskManager) GetPartitionerReturnsOnCall(i int, result1 d
 	}{result1}
 }
 
+func (fake *FakeWindowsDiskManager) GetProtector() disk.WindowsDiskProtector {
+	fake.getProtectorMutex.Lock()
+	ret, specificReturn := fake.getProtectorReturnsOnCall[len(fake.getProtectorArgsForCall)]
+	fake.getProtectorArgsForCall = append(fake.getProtectorArgsForCall, struct{}{})
+	fake.recordInvocation("GetProtector", []interface{}{})
+	fake.getProtectorMutex.Unlock()
+	if fake.GetProtectorStub != nil {
+		return fake.GetProtectorStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.getProtectorReturns.result1
+}
+
+func (fake *FakeWindowsDiskManager) GetProtectorCallCount() int {
+	fake.getProtectorMutex.RLock()
+	defer fake.getProtectorMutex.RUnlock()
+	return len(fake.getProtectorArgsForCall)
+}
+
+func (fake *FakeWindowsDiskManager) GetProtectorReturns(result1 disk.WindowsDiskProtector) {
+	fake.GetProtectorStub = nil
+	fake.getProtectorReturns = struct {
+		result1 disk.WindowsDiskProtector
+	}{result1}
+}
+
+func (fake *FakeWindowsDiskManager) GetProtectorReturnsOnCall(i int, result1 disk.WindowsDiskProtector) {
+	fake.GetProtectorStub = nil
+	if fake.getProtectorReturnsOnCall == nil {
+		fake.getProtectorReturnsOnCall = make(map[int]struct {
+			result1 disk.WindowsDiskProtector
+		})
+	}
+	fake.getProtectorReturnsOnCall[i] = struct {
+		result1 disk.WindowsDiskProtector
+	}{result1}
+}
+
 func (fake *FakeWindowsDiskManager) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -169,6 +218,8 @@ func (fake *FakeWindowsDiskManager) Invocations() map[string][][]interface{} {
 	defer fake.getLinkerMutex.RUnlock()
 	fake.getPartitionerMutex.RLock()
 	defer fake.getPartitionerMutex.RUnlock()
+	fake.getProtectorMutex.RLock()
+	defer fake.getProtectorMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

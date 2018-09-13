@@ -34,6 +34,17 @@ type FakeWindowsDiskPartitioner struct {
 		result1 int
 		result2 error
 	}
+	InitializeDiskStub        func(diskNumber string) error
+	initializeDiskMutex       sync.RWMutex
+	initializeDiskArgsForCall []struct {
+		diskNumber string
+	}
+	initializeDiskReturns struct {
+		result1 error
+	}
+	initializeDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -140,6 +151,54 @@ func (fake *FakeWindowsDiskPartitioner) GetFreeSpaceOnDiskReturnsOnCall(i int, r
 	}{result1, result2}
 }
 
+func (fake *FakeWindowsDiskPartitioner) InitializeDisk(diskNumber string) error {
+	fake.initializeDiskMutex.Lock()
+	ret, specificReturn := fake.initializeDiskReturnsOnCall[len(fake.initializeDiskArgsForCall)]
+	fake.initializeDiskArgsForCall = append(fake.initializeDiskArgsForCall, struct {
+		diskNumber string
+	}{diskNumber})
+	fake.recordInvocation("InitializeDisk", []interface{}{diskNumber})
+	fake.initializeDiskMutex.Unlock()
+	if fake.InitializeDiskStub != nil {
+		return fake.InitializeDiskStub(diskNumber)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.initializeDiskReturns.result1
+}
+
+func (fake *FakeWindowsDiskPartitioner) InitializeDiskCallCount() int {
+	fake.initializeDiskMutex.RLock()
+	defer fake.initializeDiskMutex.RUnlock()
+	return len(fake.initializeDiskArgsForCall)
+}
+
+func (fake *FakeWindowsDiskPartitioner) InitializeDiskArgsForCall(i int) string {
+	fake.initializeDiskMutex.RLock()
+	defer fake.initializeDiskMutex.RUnlock()
+	return fake.initializeDiskArgsForCall[i].diskNumber
+}
+
+func (fake *FakeWindowsDiskPartitioner) InitializeDiskReturns(result1 error) {
+	fake.InitializeDiskStub = nil
+	fake.initializeDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeWindowsDiskPartitioner) InitializeDiskReturnsOnCall(i int, result1 error) {
+	fake.InitializeDiskStub = nil
+	if fake.initializeDiskReturnsOnCall == nil {
+		fake.initializeDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.initializeDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeWindowsDiskPartitioner) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -147,6 +206,8 @@ func (fake *FakeWindowsDiskPartitioner) Invocations() map[string][][]interface{}
 	defer fake.getCountOnDiskMutex.RUnlock()
 	fake.getFreeSpaceOnDiskMutex.RLock()
 	defer fake.getFreeSpaceOnDiskMutex.RUnlock()
+	fake.initializeDiskMutex.RLock()
+	defer fake.initializeDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

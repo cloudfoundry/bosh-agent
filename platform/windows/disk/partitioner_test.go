@@ -55,35 +55,18 @@ At line:1 char:1
 
 		})
 
-		It("when the command fails to run, returns a wrapped error", func() {
+		It("when the command fails returns a wrapped error", func() {
 			cmdRunnerError := errors.New("It went wrong")
-			freeSpaceCommand := partitionFreeSpaceCommand(diskNumber)
-
 			cmdRunner.AddCmdResult(
-				freeSpaceCommand,
+				partitionFreeSpaceCommand(diskNumber),
 				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 			)
 
 			_, err := partitioner.GetFreeSpaceOnDisk(diskNumber)
 			Expect(err).To(MatchError(fmt.Sprintf(
-				"Failed to run command \"%s\": It went wrong",
-				freeSpaceCommand,
-			)))
-		})
-
-		It("when command runs but returns non-zero exit code, returns the command standard error", func() {
-			freeSpaceCommand := partitionFreeSpaceCommand(diskNumber)
-
-			cmdRunner.AddCmdResult(
-				freeSpaceCommand,
-				fakes.FakeCmdResult{ExitStatus: 197, Stderr: cmdStandardError, Error: commandExitError},
-			)
-
-			_, err := partitioner.GetFreeSpaceOnDisk(diskNumber)
-			Expect(err).To(MatchError(fmt.Sprintf(
-				"Command \"%s\" exited with failure: %s",
-				freeSpaceCommand,
-				cmdStandardError,
+				"failed to find free space on disk %s: %s",
+				diskNumber,
+				cmdRunnerError.Error(),
 			)))
 		})
 
@@ -125,44 +108,54 @@ At line:1 char:1
 			Expect(partitionCount).To(Equal(expectedPartitionCount))
 		})
 
-		It("when the command fails to run, returns a wrapped error", func() {
+		It("when the command fails returns a wrapped error", func() {
 			cmdRunnerError := errors.New("It went wrong")
-			countCommand := partitionCountCommand(diskNumber)
-
 			cmdRunner.AddCmdResult(
-				countCommand,
+				partitionCountCommand(diskNumber),
 				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 			)
 
 			_, err := partitioner.GetCountOnDisk(diskNumber)
 			Expect(err).To(MatchError(fmt.Sprintf(
-				"Failed to run command \"%s\": It went wrong",
-				countCommand,
+				"failed to get existing partition count for disk %s: %s",
+				diskNumber,
+				cmdRunnerError.Error(),
 			)))
 		})
+	})
 
-		It("when command runs but returns non-zero exit code, returns the command standard error", func() {
-			countCommand := partitionCountCommand(diskNumber)
+	Describe("InitializeDisk", func() {
+		It("makes the request to initialize the given disk", func() {
+			expectedCommand := initializeDiskCommand(diskNumber)
 
+			cmdRunner.AddCmdResult(expectedCommand, fakes.FakeCmdResult{})
+
+			err := partitioner.InitializeDisk(diskNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdRunner.RunCommands).To(Equal([][]string{strings.Split(expectedCommand, " ")}))
+		})
+
+		It("when the command fails returns a wrapped error", func() {
+			cmdRunnerError := errors.New("It went wrong")
 			cmdRunner.AddCmdResult(
-				countCommand,
-				fakes.FakeCmdResult{ExitStatus: 197, Stderr: cmdStandardError, Error: commandExitError},
+				initializeDiskCommand(diskNumber),
+				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 			)
 
-			_, err := partitioner.GetCountOnDisk(diskNumber)
-			Expect(err).To(MatchError(fmt.Sprintf(
-				"Command \"%s\" exited with failure: %s",
-				countCommand,
-				cmdStandardError,
-			)))
+			err := partitioner.InitializeDisk(diskNumber)
+			Expect(err).To(MatchError(fmt.Sprintf("failed to initialize disk %s: %s", diskNumber, cmdRunnerError)))
 		})
 	})
 })
 
 func partitionCountCommand(diskNumber string) string {
-	return fmt.Sprintf("powershell.exe Get-Disk -Number %s | Select -ExpandProperty NumberOfPartitions", diskNumber)
+	return fmt.Sprintf("Get-Disk -Number %s | Select -ExpandProperty NumberOfPartitions", diskNumber)
 }
 
 func partitionFreeSpaceCommand(diskNumber string) string {
-	return fmt.Sprintf("powershell.exe Get-Disk %s | Select -ExpandProperty LargestFreeExtent", diskNumber)
+	return fmt.Sprintf("Get-Disk %s | Select -ExpandProperty LargestFreeExtent", diskNumber)
+}
+
+func initializeDiskCommand(diskNumber string) string {
+	return fmt.Sprintf("Initialize-Disk -Number %s -PartitionStyle GPT", diskNumber)
 }

@@ -1,6 +1,7 @@
 package disk
 
 import (
+	"github.com/cloudfoundry/bosh-agent/platform/windows/powershell"
 	"github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -22,31 +23,55 @@ type WindowsDiskLinker interface {
 type WindowsDiskPartitioner interface {
 	GetCountOnDisk(diskNumber string) (string, error)
 	GetFreeSpaceOnDisk(diskNumber string) (int, error)
+	InitializeDisk(diskNumber string) error
+}
+
+//go:generate counterfeiter -o fakes/fake_windows_disk_protector.go . WindowsDiskProtector
+
+type WindowsDiskProtector interface {
+	CommandExists() bool
 }
 
 type Manager struct {
 	formatter   WindowsDiskFormatter
 	linker      WindowsDiskLinker
 	partitioner WindowsDiskPartitioner
+	protector   WindowsDiskProtector
 }
 
 func NewWindowsDiskManager(cmdRunner system.CmdRunner) *Manager {
+	var runner system.CmdRunner
+
+	switch cmdRunner.(type) {
+	case *powershell.Runner:
+		runner = cmdRunner
+	default:
+		runner = &powershell.Runner{
+			BaseCmdRunner: cmdRunner,
+		}
+	}
+
 	formatter := &Formatter{
-		Runner: cmdRunner,
+		Runner: runner,
 	}
 
 	linker := &Linker{
-		Runner: cmdRunner,
+		Runner: runner,
 	}
 
 	partitioner := &Partitioner{
-		Runner: cmdRunner,
+		Runner: runner,
+	}
+
+	protector := &Protector{
+		Runner: runner,
 	}
 
 	return &Manager{
 		formatter:   formatter,
 		linker:      linker,
 		partitioner: partitioner,
+		protector:   protector,
 	}
 }
 
@@ -60,4 +85,8 @@ func (m *Manager) GetLinker() WindowsDiskLinker {
 
 func (m *Manager) GetPartitioner() WindowsDiskPartitioner {
 	return m.partitioner
+}
+
+func (m *Manager) GetProtector() WindowsDiskProtector {
+	return m.protector
 }

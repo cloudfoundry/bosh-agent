@@ -59,7 +59,7 @@ var _ = Describe("Linker", func() {
 			Expect(target).To(Equal(expectedTarget))
 		})
 
-		It("when the isLinked command fails to run, returns a wrapped error", func() {
+		It("when the LinkTarget command fails to run, returns a wrapped error", func() {
 			cmdRunnerError := errors.New("It went wrong")
 			linkTargetCommand := findItemTargetCommand(location)
 			cmdRunner.AddCmdResult(
@@ -69,8 +69,8 @@ var _ = Describe("Linker", func() {
 
 			_, err := linker.LinkTarget(location)
 			Expect(err).To(MatchError(fmt.Sprintf(
-				"Failed to run command \"%s\": It went wrong",
-				linkTargetCommand,
+				"failed to check for existing symbolic link: %s",
+				cmdRunnerError.Error(),
 			)))
 		})
 	})
@@ -93,59 +93,22 @@ var _ = Describe("Linker", func() {
 			Expect(cmdRunner.RunCommands[0]).To(Equal(strings.Split(expectedCommand, " ")))
 		})
 
-		It("when the command fails to run, returns a wrapped error", func() {
+		It("when the link command fails returns a wrapped error", func() {
 			cmdRunnerError := errors.New("It went wrong")
-			linkCommand := createLinkCommand(location, target)
-
 			cmdRunner.AddCmdResult(
-				linkCommand,
+				createLinkCommand(location, target),
 				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 			)
 
 			err := linker.Link(location, target)
-			Expect(err).To(MatchError(fmt.Sprintf(
-				"Failed to run command \"%s\": It went wrong",
-				linkCommand,
-			)))
-		})
-
-		It("when the command syntax is incorrect, it returns an error including syntax help message", func() {
-			linkCommand := createLinkCommand("", target)
-			cmdStderr := `The syntax of the command is incorrect.
-Creates a symbolic link.
-
-MKLINK [[/D] | [/H] | [/J]] Link Target
-
-				/D			Creates a directory symbolic link.  Default is a file
-								symbolic link.
-				/H      Creates a hard link instead of a symbolic link.
-				/J      Creates a Directory Junction.
-				Link    Specifies the new symbolic link name.
-				Target  Specifies the path (relative or absolute) that the new link
-								refers to.`
-
-			cmdRunner.AddCmdResult(
-				linkCommand,
-				fakes.FakeCmdResult{
-					ExitStatus: 1,
-					Stderr:     cmdStderr,
-					Error:      commandExitError,
-				},
-			)
-
-			err := linker.Link("", target)
-			Expect(err).To(MatchError(fmt.Sprintf(
-				"Command \"%s\" exited with failure: %s",
-				linkCommand,
-				cmdStderr,
-			)))
+			Expect(err).To(MatchError(fmt.Sprintf("failed to create symbolic link: %s", cmdRunnerError.Error())))
 		})
 	})
 })
 
 func findItemTargetCommand(location string) string {
 	return fmt.Sprintf(
-		"powershell.exe Get-Item %s -ErrorAction Ignore | Select -ExpandProperty Target -ErrorAction Ignore",
+		"Get-Item %s -ErrorAction Ignore | Select -ExpandProperty Target -ErrorAction Ignore",
 		location,
 	)
 }

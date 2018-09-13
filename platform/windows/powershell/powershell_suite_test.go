@@ -1,4 +1,4 @@
-package disk_test
+package powershell_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestDisk(t *testing.T) {
+func TestPowershell(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Disk Suite")
+	RunSpecs(t, "Powershell Suite")
 }
