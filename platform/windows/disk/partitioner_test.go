@@ -146,6 +146,34 @@ At line:1 char:1
 			Expect(err).To(MatchError(fmt.Sprintf("failed to initialize disk %s: %s", diskNumber, cmdRunnerError)))
 		})
 	})
+
+	Describe("PartitionDisk", func() {
+		It("makes the request to create a new parition and returns the generated partition number", func() {
+			expectedCommand := partitionDiskCommand(diskNumber)
+			expectedPartitionNumber := "2"
+			cmdRunner.AddCmdResult(expectedCommand, fakes.FakeCmdResult{Stdout: fmt.Sprintf(`%s
+`, expectedPartitionNumber)})
+
+			partitionNumber, err := partitioner.PartitionDisk(diskNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(partitionNumber).To(Equal(expectedPartitionNumber))
+			Expect(cmdRunner.RunCommands).To(Equal([][]string{strings.Split(expectedCommand, " ")}))
+		})
+
+		It("returns a wrapped error with no partition number when the command fails", func() {
+			cmdRunnerError := errors.New("Failed to partition")
+			cmdRunner.AddCmdResult(
+				partitionDiskCommand(diskNumber),
+				fakes.FakeCmdResult{Error: cmdRunnerError},
+			)
+
+			partitionNumber, err := partitioner.PartitionDisk(diskNumber)
+			Expect(partitionNumber).To(BeEmpty())
+			Expect(err).To(MatchError(
+				fmt.Sprintf("failed to create partition on disk %s: %s", diskNumber, cmdRunnerError),
+			))
+		})
+	})
 })
 
 func partitionCountCommand(diskNumber string) string {
@@ -158,4 +186,11 @@ func partitionFreeSpaceCommand(diskNumber string) string {
 
 func initializeDiskCommand(diskNumber string) string {
 	return fmt.Sprintf("Initialize-Disk -Number %s -PartitionStyle GPT", diskNumber)
+}
+
+func partitionDiskCommand(diskNumber string) string {
+	return fmt.Sprintf(
+		"New-Partition -DiskNumber %s -UseMaximumSize | Select -ExpandProperty PartitionNumber",
+		diskNumber,
+	)
 }

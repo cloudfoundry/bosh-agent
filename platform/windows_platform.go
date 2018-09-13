@@ -357,7 +357,6 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 
 	if devicePath != "0" {
 		existingPartitionCount, err := partitioner.GetCountOnDisk(devicePath)
-
 		if err != nil {
 			return err
 		}
@@ -373,7 +372,6 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	linker := p.diskManager.GetLinker()
 
 	existingTarget, err := linker.LinkTarget(dataPath)
-
 	if err != nil {
 		return err
 	}
@@ -383,7 +381,6 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 	}
 
 	freeSpace, err := partitioner.GetFreeSpaceOnDisk(devicePath)
-
 	if err != nil {
 		return err
 	}
@@ -397,27 +394,10 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return nil
 	}
 
-	partitionVolumeAction := &powershellAction{
-		commandArgs: []string{
-			"New-Partition",
-			"-DiskNumber",
-			devicePath,
-			"-UseMaximumSize",
-			"|",
-			"Select",
-			"-ExpandProperty",
-			"PartitionNumber",
-		},
-		commandFailureFmt: fmt.Sprintf("Failed to create partition on disk %s: %%s", devicePath),
-		cmdRunner:         p.cmdRunner,
-	}
-
-	partitionNumberOutput, err := partitionVolumeAction.run()
+	partitionNumber, err := partitioner.PartitionDisk(devicePath)
 	if err != nil {
 		return err
 	}
-
-	partitionNumber := strings.TrimSpace(partitionNumberOutput)
 
 	formatter := p.diskManager.GetFormatter()
 

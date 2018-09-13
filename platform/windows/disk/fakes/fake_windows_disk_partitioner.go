@@ -45,6 +45,19 @@ type FakeWindowsDiskPartitioner struct {
 	initializeDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
+	PartitionDiskStub        func(diskNumber string) (string, error)
+	partitionDiskMutex       sync.RWMutex
+	partitionDiskArgsForCall []struct {
+		diskNumber string
+	}
+	partitionDiskReturns struct {
+		result1 string
+		result2 error
+	}
+	partitionDiskReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -199,6 +212,57 @@ func (fake *FakeWindowsDiskPartitioner) InitializeDiskReturnsOnCall(i int, resul
 	}{result1}
 }
 
+func (fake *FakeWindowsDiskPartitioner) PartitionDisk(diskNumber string) (string, error) {
+	fake.partitionDiskMutex.Lock()
+	ret, specificReturn := fake.partitionDiskReturnsOnCall[len(fake.partitionDiskArgsForCall)]
+	fake.partitionDiskArgsForCall = append(fake.partitionDiskArgsForCall, struct {
+		diskNumber string
+	}{diskNumber})
+	fake.recordInvocation("PartitionDisk", []interface{}{diskNumber})
+	fake.partitionDiskMutex.Unlock()
+	if fake.PartitionDiskStub != nil {
+		return fake.PartitionDiskStub(diskNumber)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.partitionDiskReturns.result1, fake.partitionDiskReturns.result2
+}
+
+func (fake *FakeWindowsDiskPartitioner) PartitionDiskCallCount() int {
+	fake.partitionDiskMutex.RLock()
+	defer fake.partitionDiskMutex.RUnlock()
+	return len(fake.partitionDiskArgsForCall)
+}
+
+func (fake *FakeWindowsDiskPartitioner) PartitionDiskArgsForCall(i int) string {
+	fake.partitionDiskMutex.RLock()
+	defer fake.partitionDiskMutex.RUnlock()
+	return fake.partitionDiskArgsForCall[i].diskNumber
+}
+
+func (fake *FakeWindowsDiskPartitioner) PartitionDiskReturns(result1 string, result2 error) {
+	fake.PartitionDiskStub = nil
+	fake.partitionDiskReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeWindowsDiskPartitioner) PartitionDiskReturnsOnCall(i int, result1 string, result2 error) {
+	fake.PartitionDiskStub = nil
+	if fake.partitionDiskReturnsOnCall == nil {
+		fake.partitionDiskReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.partitionDiskReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeWindowsDiskPartitioner) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -208,6 +272,8 @@ func (fake *FakeWindowsDiskPartitioner) Invocations() map[string][][]interface{}
 	defer fake.getFreeSpaceOnDiskMutex.RUnlock()
 	fake.initializeDiskMutex.RLock()
 	defer fake.initializeDiskMutex.RUnlock()
+	fake.partitionDiskMutex.RLock()
+	defer fake.partitionDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -24,6 +24,7 @@ type WindowsDiskPartitioner interface {
 	GetCountOnDisk(diskNumber string) (string, error)
 	GetFreeSpaceOnDisk(diskNumber string) (int, error)
 	InitializeDisk(diskNumber string) error
+	PartitionDisk(diskNumber string) (string, error)
 }
 
 //go:generate counterfeiter -o fakes/fake_windows_disk_protector.go . WindowsDiskProtector

@@ -71,3 +71,21 @@ func (p *Partitioner) InitializeDisk(diskNumber string) error {
 
 	return nil
 }
+
+func (p *Partitioner) PartitionDisk(diskNumber string) (string, error) {
+	stdout, _, _, err := p.Runner.RunCommand(
+		"New-Partition",
+		"-DiskNumber",
+		diskNumber,
+		"-UseMaximumSize",
+		"|",
+		"Select",
+		"-ExpandProperty",
+		"PartitionNumber",
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to create partition on disk %s: %s", diskNumber, err)
+	}
+
+	return strings.TrimSpace(stdout), nil
+}
