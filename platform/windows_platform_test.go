@@ -502,6 +502,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 			partitioner.GetFreeSpaceOnDiskReturns(31404851200, nil)
 			partitioner.PartitionDiskReturns(partitionNumber, nil)
+			partitioner.AssignDriveLetterReturns(driveLetter, nil)
 
 			platform = NewWindowsPlatform(
 				collector,
@@ -525,13 +526,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		})
 
 		prepareSuccessfulFakeCommands := func(diskNumber, partitionNumber, dataDir, driveLetter string) {
-			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber), fakesys.FakeCmdResult{})
-			driveLetterOutput := fmt.Sprintf(`%s
-`, driveLetter)
-			cmdRunner.AddCmdResult(
-				getDriveLetter(diskNumber, partitionNumber),
-				fakesys.FakeCmdResult{Stdout: driveLetterOutput},
-			)
 			cmdRunner.AddCmdResult(protectPathCmd(dataDir), fakesys.FakeCmdResult{})
 		}
 
@@ -553,8 +547,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(protector.CommandExistsCallCount()).To(Equal(1))
 			Expect(partitioner.InitializeDiskCallCount()).To(Equal(0))
 
-			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
-
 			Expect(linker.LinkTargetCallCount()).To(Equal(1))
 			Expect(linker.LinkTargetArgsForCall(0)).To(Equal(dataDir))
 
@@ -564,12 +556,11 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(partitioner.PartitionDiskCallCount()).To(Equal(1))
 			Expect(partitioner.PartitionDiskArgsForCall(0)).To(Equal(diskNumber))
 
+			expectAssignDriveLetterCalledWithArgs(partitioner, diskNumber, partitionNumber)
+
 			expectLinkCalledWithArgs(linker, dataDir, driveLetter)
 			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
 
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(
-				strings.Split(addPartitionAccessPathCommand(diskNumber, partitionNumber), " "),
-			)))
 			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(protectPathCmd(dataDir), " "))))
 			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(0))
 		})
@@ -586,10 +577,8 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 1))
+			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 0))
 			Expect(cmdRunner.RunCommands).To(Equal([][]string{
-				strings.Split(addPartitionAccessPathCommand(diskNumber, partitionNumber), " "),
-				strings.Split(getDriveLetter(diskNumber, partitionNumber), " "),
 				strings.Split(protectPathCmd(dataDir), " "),
 			}))
 
@@ -605,6 +594,8 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 			Expect(partitioner.PartitionDiskCallCount()).To(Equal(1))
 			Expect(partitioner.PartitionDiskArgsForCall(0)).To(Equal(diskNumber))
+
+			expectAssignDriveLetterCalledWithArgs(partitioner, diskNumber, partitionNumber)
 		})
 
 		It("does nothing if partition exists on disk 0 and is linked to data dir", func() {
@@ -726,33 +717,14 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(err).To(Equal(formatError))
 		})
 
-		It("Returns an error when Add-PartitionAccessPath fails", func() {
-			cmdStderr := accessPathError
-			cmdRunner.AddCmdResult(
-				addPartitionAccessPathCommand(diskNumber, partitionNumber),
-				fakesys.FakeCmdResult{Stderr: cmdStderr, ExitStatus: 197},
-			)
-
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
-
-			Expect(err).To(MatchError(
-				fmt.Sprintf(
-					"Failed to assign drive letter to partition %s for device %s: %s",
-					partitionNumber, diskNumber, cmdStderr,
-				),
-			))
-		})
-
 		It("returns an error when attempting to add partition access path command fails", func() {
-			cmdRunnerError := errors.New("Failure")
-			expandedCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber)
-			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
+			assignDriveLetterError := errors.New("failure")
+			partitioner.AssignDriveLetterReturns("", assignDriveLetterError)
 
 			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
-			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
+			Expect(err).To(Equal(assignDriveLetterError))
 		})
 
 		It("returns an error when Getting existing partition check command fails", func() {
@@ -856,6 +828,18 @@ func expectLinkCalledWithArgs(linker *fakedisk.FakeWindowsDiskLinker, expectedLo
 	linkLocation, linkTarget := linker.LinkArgsForCall(0)
 	Expect(linkLocation).To(Equal(expectedLocation))
 	Expect(linkTarget).To(Equal(fmt.Sprintf("%s:", expectedDriveLetter)))
+}
+
+func expectAssignDriveLetterCalledWithArgs(
+	partitioner *fakedisk.FakeWindowsDiskPartitioner,
+	expectedDiskNumber,
+	expectedPartitionNumber string,
+) {
+
+	ExpectWithOffset(1, partitioner.AssignDriveLetterCallCount()).To(Equal(1))
+	diskNumber, partitionNumber := partitioner.AssignDriveLetterArgsForCall(0)
+	Expect(diskNumber).To(Equal(expectedDiskNumber))
+	Expect(partitionNumber).To(Equal(expectedPartitionNumber))
 }
 
 var _ = Describe("BOSH User Commands", func() {

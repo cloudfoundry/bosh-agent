@@ -58,6 +58,20 @@ type FakeWindowsDiskPartitioner struct {
 		result1 string
 		result2 error
 	}
+	AssignDriveLetterStub        func(diskNumber, partitionNumber string) (string, error)
+	assignDriveLetterMutex       sync.RWMutex
+	assignDriveLetterArgsForCall []struct {
+		diskNumber      string
+		partitionNumber string
+	}
+	assignDriveLetterReturns struct {
+		result1 string
+		result2 error
+	}
+	assignDriveLetterReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -263,6 +277,58 @@ func (fake *FakeWindowsDiskPartitioner) PartitionDiskReturnsOnCall(i int, result
 	}{result1, result2}
 }
 
+func (fake *FakeWindowsDiskPartitioner) AssignDriveLetter(diskNumber string, partitionNumber string) (string, error) {
+	fake.assignDriveLetterMutex.Lock()
+	ret, specificReturn := fake.assignDriveLetterReturnsOnCall[len(fake.assignDriveLetterArgsForCall)]
+	fake.assignDriveLetterArgsForCall = append(fake.assignDriveLetterArgsForCall, struct {
+		diskNumber      string
+		partitionNumber string
+	}{diskNumber, partitionNumber})
+	fake.recordInvocation("AssignDriveLetter", []interface{}{diskNumber, partitionNumber})
+	fake.assignDriveLetterMutex.Unlock()
+	if fake.AssignDriveLetterStub != nil {
+		return fake.AssignDriveLetterStub(diskNumber, partitionNumber)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.assignDriveLetterReturns.result1, fake.assignDriveLetterReturns.result2
+}
+
+func (fake *FakeWindowsDiskPartitioner) AssignDriveLetterCallCount() int {
+	fake.assignDriveLetterMutex.RLock()
+	defer fake.assignDriveLetterMutex.RUnlock()
+	return len(fake.assignDriveLetterArgsForCall)
+}
+
+func (fake *FakeWindowsDiskPartitioner) AssignDriveLetterArgsForCall(i int) (string, string) {
+	fake.assignDriveLetterMutex.RLock()
+	defer fake.assignDriveLetterMutex.RUnlock()
+	return fake.assignDriveLetterArgsForCall[i].diskNumber, fake.assignDriveLetterArgsForCall[i].partitionNumber
+}
+
+func (fake *FakeWindowsDiskPartitioner) AssignDriveLetterReturns(result1 string, result2 error) {
+	fake.AssignDriveLetterStub = nil
+	fake.assignDriveLetterReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeWindowsDiskPartitioner) AssignDriveLetterReturnsOnCall(i int, result1 string, result2 error) {
+	fake.AssignDriveLetterStub = nil
+	if fake.assignDriveLetterReturnsOnCall == nil {
+		fake.assignDriveLetterReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.assignDriveLetterReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeWindowsDiskPartitioner) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -274,6 +340,8 @@ func (fake *FakeWindowsDiskPartitioner) Invocations() map[string][][]interface{}
 	defer fake.initializeDiskMutex.RUnlock()
 	fake.partitionDiskMutex.RLock()
 	defer fake.partitionDiskMutex.RUnlock()
+	fake.assignDriveLetterMutex.RLock()
+	defer fake.assignDriveLetterMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

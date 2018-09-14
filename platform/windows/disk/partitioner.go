@@ -89,3 +89,44 @@ func (p *Partitioner) PartitionDisk(diskNumber string) (string, error) {
 
 	return strings.TrimSpace(stdout), nil
 }
+
+func (p *Partitioner) AssignDriveLetter(diskNumber, partitionNumber string) (string, error) {
+	_, _, _, err := p.Runner.RunCommand(
+		"Add-PartitionAccessPath",
+		"-DiskNumber",
+		diskNumber,
+		"-PartitionNumber",
+		partitionNumber,
+		"-AssignDriveLetter",
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to add partition access path to partition %s on disk %s: %s",
+			partitionNumber,
+			diskNumber,
+			err,
+		)
+	}
+
+	stdout, _, _, err := p.Runner.RunCommand(
+		"Get-Partition",
+		"-DiskNumber",
+		diskNumber,
+		"-PartitionNumber",
+		partitionNumber,
+		"|",
+		"Select",
+		"-ExpandProperty",
+		"DriveLetter",
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to find drive letter for partition %s on disk %s: %s",
+			partitionNumber,
+			diskNumber,
+			err,
+		)
+	}
+
+	return strings.TrimSpace(stdout), nil
+}

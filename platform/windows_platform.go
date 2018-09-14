@@ -406,46 +406,10 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return err
 	}
 
-	mountVolumeAction := &powershellAction{
-		commandArgs: []string{
-			"Add-PartitionAccessPath",
-			"-DiskNumber",
-			devicePath,
-			"-PartitionNumber",
-			partitionNumber,
-			"-AssignDriveLetter",
-		},
-		commandFailureFmt: fmt.Sprintf("Failed to assign drive letter to partition %s for device %s: %%s", partitionNumber, devicePath),
-		cmdRunner:         p.cmdRunner,
-	}
-
-	_, err = mountVolumeAction.run()
+	driveLetter, err := partitioner.AssignDriveLetter(devicePath, partitionNumber)
 	if err != nil {
 		return err
 	}
-
-	getDriveLetterAction := &powershellAction{
-		commandArgs: []string{
-			"Get-Partition",
-			"-DiskNumber",
-			devicePath,
-			"-PartitionNumber",
-			partitionNumber,
-			"|",
-			"Select",
-			"-ExpandProperty",
-			"DriveLetter",
-		},
-		commandFailureFmt: fmt.Sprintf("Failed to retrieve drive letter for partition %s on disk %s: %%s", partitionNumber, devicePath),
-		cmdRunner:         p.cmdRunner,
-	}
-
-	driveLetterOutput, err := getDriveLetterAction.run()
-	if err != nil {
-		return err
-	}
-
-	driveLetter := strings.TrimSpace(driveLetterOutput)
 
 	err = linker.Link(dataPath, fmt.Sprintf("%s:", driveLetter))
 	if err != nil {

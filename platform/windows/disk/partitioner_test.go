@@ -174,6 +174,66 @@ At line:1 char:1
 			))
 		})
 	})
+
+	Describe("AssignDriveLetter", func() {
+		var partitionNumber string
+
+		BeforeEach(func() {
+			partitionNumber = "2"
+		})
+
+		It("makes the request to add a partition path to given disk and partition returning the drive letter", func() {
+			expectedDriveLetter := "G"
+			addPartitionPathCommand := addPartitionAccessPathCommand(diskNumber, partitionNumber)
+			getDriveCommand := getDriveLetterCommand(diskNumber, partitionNumber)
+			cmdRunner.AddCmdResult(addPartitionPathCommand, fakes.FakeCmdResult{})
+			cmdRunner.AddCmdResult(getDriveCommand, fakes.FakeCmdResult{Stdout: fmt.Sprintf(`%s
+`, expectedDriveLetter)})
+
+			driveLetter, err := partitioner.AssignDriveLetter(diskNumber, partitionNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(driveLetter).To(Equal(expectedDriveLetter))
+			Expect(cmdRunner.RunCommands).To(Equal([][]string{
+				strings.Split(addPartitionPathCommand, " "),
+				strings.Split(getDriveCommand, " "),
+			}))
+		})
+
+		It("returns a wrapped error when the request to add a partition path fails", func() {
+			addPartitionPathError := errors.New("failed to add path")
+			cmdRunner.AddCmdResult(
+				addPartitionAccessPathCommand(diskNumber, partitionNumber),
+				fakes.FakeCmdResult{Error: addPartitionPathError},
+			)
+
+			driveLetter, err := partitioner.AssignDriveLetter(diskNumber, partitionNumber)
+			Expect(err).To(MatchError(fmt.Sprintf(
+				"failed to add partition access path to partition %s on disk %s: %s",
+				partitionNumber,
+				diskNumber,
+				addPartitionPathError,
+			)))
+			Expect(driveLetter).To(Equal(""))
+		})
+
+		It("return a wrapped error when the request to discover the drive letter fails", func() {
+			getDriveLetterError := errors.New("failed to discover drive letter")
+			cmdRunner.AddCmdResult(addPartitionAccessPathCommand(diskNumber, partitionNumber), fakes.FakeCmdResult{})
+			cmdRunner.AddCmdResult(
+				getDriveLetterCommand(diskNumber, partitionNumber),
+				fakes.FakeCmdResult{Error: getDriveLetterError},
+			)
+
+			driveLetter, err := partitioner.AssignDriveLetter(diskNumber, partitionNumber)
+			Expect(err).To(MatchError(fmt.Sprintf(
+				"failed to find drive letter for partition %s on disk %s: %s",
+				partitionNumber,
+				diskNumber,
+				getDriveLetterError,
+			)))
+			Expect(driveLetter).To(Equal(""))
+		})
+	})
 })
 
 func partitionCountCommand(diskNumber string) string {
@@ -192,5 +252,21 @@ func partitionDiskCommand(diskNumber string) string {
 	return fmt.Sprintf(
 		"New-Partition -DiskNumber %s -UseMaximumSize | Select -ExpandProperty PartitionNumber",
 		diskNumber,
+	)
+}
+
+func addPartitionAccessPathCommand(diskNumber, partitionNumber string) string {
+	return fmt.Sprintf(
+		"Add-PartitionAccessPath -DiskNumber %s -PartitionNumber %s -AssignDriveLetter",
+		diskNumber,
+		partitionNumber,
+	)
+}
+
+func getDriveLetterCommand(diskNumber, partitionNumber string) string {
+	return fmt.Sprintf(
+		"Get-Partition -DiskNumber %s -PartitionNumber %s | Select -ExpandProperty DriveLetter",
+		diskNumber,
+		partitionNumber,
 	)
 }
