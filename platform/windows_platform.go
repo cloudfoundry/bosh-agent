@@ -416,16 +416,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 		return err
 	}
 
-	protectDataDirAction := &powershellAction{
-		commandArgs: []string{
-			"Protect-Path",
-			fmt.Sprintf(`'%s'`, strings.TrimRight(dataPath, "\\")),
-		},
-		commandFailureFmt: fmt.Sprintf("Failed to protect path %s : %%s", dataPath),
-		cmdRunner:         p.cmdRunner,
-	}
-
-	_, err = protectDataDirAction.run()
+	err = protector.ProtectPath(dataPath)
 	if err != nil {
 		return err
 	}
@@ -637,27 +628,4 @@ func (p WindowsPlatform) SetupRecordsJSONPermission(path string) error {
 
 func (p WindowsPlatform) Shutdown() error {
 	return nil
-}
-
-const powerShellCmd = "powershell.exe"
-
-type powershellAction struct {
-	commandArgs       []string
-	commandFailureFmt string
-	cmdRunner         boshsys.CmdRunner
-}
-
-func (a *powershellAction) run() (string, error) {
-	stdout, stderr, exitStatus, err := a.cmdRunner.RunCommand(powerShellCmd, a.commandArgs...)
-
-	if err != nil {
-		return "", fmt.Errorf("Failed to run command \"%s\": %s", strings.Join(
-			append([]string{powerShellCmd}, a.commandArgs...), " "), err)
-	}
-
-	if exitStatus != 0 {
-		return "", fmt.Errorf(a.commandFailureFmt, stderr)
-	}
-
-	return stdout, nil
 }

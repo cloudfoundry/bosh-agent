@@ -32,6 +32,7 @@ type WindowsDiskPartitioner interface {
 
 type WindowsDiskProtector interface {
 	CommandExists() bool
+	ProtectPath(path string) error
 }
 
 type Manager struct {

@@ -17,6 +17,17 @@ type FakeWindowsDiskProtector struct {
 	commandExistsReturnsOnCall map[int]struct {
 		result1 bool
 	}
+	ProtectPathStub        func(path string) error
+	protectPathMutex       sync.RWMutex
+	protectPathArgsForCall []struct {
+		path string
+	}
+	protectPathReturns struct {
+		result1 error
+	}
+	protectPathReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -61,11 +72,61 @@ func (fake *FakeWindowsDiskProtector) CommandExistsReturnsOnCall(i int, result1 
 	}{result1}
 }
 
+func (fake *FakeWindowsDiskProtector) ProtectPath(path string) error {
+	fake.protectPathMutex.Lock()
+	ret, specificReturn := fake.protectPathReturnsOnCall[len(fake.protectPathArgsForCall)]
+	fake.protectPathArgsForCall = append(fake.protectPathArgsForCall, struct {
+		path string
+	}{path})
+	fake.recordInvocation("ProtectPath", []interface{}{path})
+	fake.protectPathMutex.Unlock()
+	if fake.ProtectPathStub != nil {
+		return fake.ProtectPathStub(path)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.protectPathReturns.result1
+}
+
+func (fake *FakeWindowsDiskProtector) ProtectPathCallCount() int {
+	fake.protectPathMutex.RLock()
+	defer fake.protectPathMutex.RUnlock()
+	return len(fake.protectPathArgsForCall)
+}
+
+func (fake *FakeWindowsDiskProtector) ProtectPathArgsForCall(i int) string {
+	fake.protectPathMutex.RLock()
+	defer fake.protectPathMutex.RUnlock()
+	return fake.protectPathArgsForCall[i].path
+}
+
+func (fake *FakeWindowsDiskProtector) ProtectPathReturns(result1 error) {
+	fake.ProtectPathStub = nil
+	fake.protectPathReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeWindowsDiskProtector) ProtectPathReturnsOnCall(i int, result1 error) {
+	fake.ProtectPathStub = nil
+	if fake.protectPathReturnsOnCall == nil {
+		fake.protectPathReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.protectPathReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeWindowsDiskProtector) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.commandExistsMutex.RLock()
 	defer fake.commandExistsMutex.RUnlock()
+	fake.protectPathMutex.RLock()
+	defer fake.protectPathMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

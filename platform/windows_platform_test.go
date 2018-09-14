@@ -466,30 +466,6 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("SetupEphemeralDiskWithPath", func() {
-		const (
-			accessPathError = `add-partitionaccesspath : Invalid Parameter
-At line:1 char:50
-+ get-partition -disknumber 0 -partitionnumber 3 | add-partitionaccesspath
--access ...
-+
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidArgument: (StorageWMI:ROOT/Microsoft/.../
-   MSFT_Partition) [Add-PartitionAccessPath], CimException
-    + FullyQualifiedErrorId : StorageWMI 5,Add-PartitionAccessPath
-`
-			protectPathError = `At line:1 char:62
-+ $acPath = Get-Acl -LiteralPath C:\\fake-dir\\data\\
-+                                                              ~
-You must provide a value expression following the '-' operator.
-At line:1 char:62
-+ ... et-Acl -LiteralPath C:\\fake-dir\\data\\
-+                         ~~~~~~~~~~~~~~~~~
-Unexpected token '80be-d2c3c2124585' in expression or statement.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : ExpectedValueExpression
-`
-		)
-
 		var (
 			diskNumber, partitionNumber, dataDir, driveLetter string
 		)
@@ -525,26 +501,21 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			)
 		})
 
-		prepareSuccessfulFakeCommands := func(diskNumber, partitionNumber, dataDir, driveLetter string) {
-			cmdRunner.AddCmdResult(protectPathCmd(dataDir), fakesys.FakeCmdResult{})
-		}
-
 		It("does nothing when path is empty", func() {
 			diskNumber = ""
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			Expect(diskManager.Invocations()).To(BeEmpty())
 		})
 
 		It("partitions the root disk when disk is 0", func() {
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(protector.CommandExistsCallCount()).To(Equal(1))
+			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(0))
 			Expect(partitioner.InitializeDiskCallCount()).To(Equal(0))
 
 			Expect(linker.LinkTargetCallCount()).To(Equal(1))
@@ -556,13 +527,14 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(partitioner.PartitionDiskCallCount()).To(Equal(1))
 			Expect(partitioner.PartitionDiskArgsForCall(0)).To(Equal(diskNumber))
 
+			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
+
 			expectAssignDriveLetterCalledWithArgs(partitioner, diskNumber, partitionNumber)
 
 			expectLinkCalledWithArgs(linker, dataDir, driveLetter)
-			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
 
-			Expect(cmdRunner.RunCommands).To(ContainElement(Equal(strings.Split(protectPathCmd(dataDir), " "))))
-			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(0))
+			Expect(protector.ProtectPathCallCount()).To(Equal(1))
+			Expect(protector.ProtectPathArgsForCall(0)).To(Equal(dataDir))
 		})
 
 		It("partitions an attached disk when disk is 1", func() {
@@ -572,34 +544,18 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			partitioner.GetCountOnDiskReturns("0", nil)
 			partitioner.PartitionDiskReturns(partitionNumber, nil)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(cmdRunner.RunCommands)).To(BeNumerically(">", 0))
-			Expect(cmdRunner.RunCommands).To(Equal([][]string{
-				strings.Split(protectPathCmd(dataDir), " "),
-			}))
 
-			Expect(partitioner.GetFreeSpaceOnDiskCallCount()).To(Equal(1))
-			Expect(partitioner.GetFreeSpaceOnDiskArgsForCall(0)).To(Equal(diskNumber))
-
-			Expect(partitioner.InitializeDiskCallCount()).To(Equal(1))
-			Expect(partitioner.InitializeDiskArgsForCall(0)).To(Equal(diskNumber))
-
-			expectFormatterCalledWithArgs(formatter, diskNumber, partitionNumber)
 			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(1))
 			Expect(partitioner.GetCountOnDiskArgsForCall(0)).To(Equal(diskNumber))
 
-			Expect(partitioner.PartitionDiskCallCount()).To(Equal(1))
-			Expect(partitioner.PartitionDiskArgsForCall(0)).To(Equal(diskNumber))
-
-			expectAssignDriveLetterCalledWithArgs(partitioner, diskNumber, partitionNumber)
+			Expect(partitioner.InitializeDiskCallCount()).To(Equal(1))
+			Expect(partitioner.InitializeDiskArgsForCall(0)).To(Equal(diskNumber))
 		})
 
 		It("does nothing if partition exists on disk 0 and is linked to data dir", func() {
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 			partitioner.GetCountOnDiskReturns("1", nil)
 
@@ -612,7 +568,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		It("doesn't initialize disk if a partition exists on disk 1", func() {
 			diskNumber = "1"
 			partitionNumber = "1"
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 			partitioner.GetCountOnDiskReturns("1", nil)
 
@@ -626,7 +581,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 
 		It("doesn't warn about low disk space if partition exists and is linked to data dir", func() {
 			partitioner.GetFreeSpaceOnDiskReturns(0, nil)
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -641,7 +595,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 		It("logs a warning and doesn't create a partition if there is less than 1MB of free disk space", func() {
 			partitioner.GetFreeSpaceOnDiskReturns((1024*1024)-1, nil)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -651,7 +604,7 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(partitioner.PartitionDiskCallCount()).To(Equal(0))
 		})
 
-		It("returns an error a warning when Protect-Path cmdlet is missing", func() {
+		It("returns an error when Protect-Path cmdlet is missing", func() {
 			protector.CommandExistsReturns(false)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -664,7 +617,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			expectedError := errors.New("It went wrong")
 			partitioner.GetFreeSpaceOnDiskReturns(0, expectedError)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(Equal(expectedError))
@@ -677,7 +629,6 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			partitionCountError := errors.New("Something failed")
 			partitioner.GetCountOnDiskReturns("", partitionCountError)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(Equal(partitionCountError))
@@ -687,28 +638,33 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			diskNumber = "1"
 			partitionNumber = "1"
 
-			cmdRunnerError := errors.New("It went wrong")
-			partitioner.InitializeDiskReturns(cmdRunnerError)
+			initializeDiskError := errors.New("It went wrong")
+			partitioner.InitializeDiskReturns(initializeDiskError)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
-			Expect(err).To(Equal(cmdRunnerError))
+			Expect(err).To(Equal(initializeDiskError))
+		})
+
+		It("returns an error when LinkTarget command fails", func() {
+			linkTargetError := errors.New("failure")
+			linker.LinkTargetReturns("", linkTargetError)
+
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+
+			Expect(err).To(Equal(linkTargetError))
 		})
 
 		It("returns an error when partition disk command fails", func() {
-			cmdRunnerError := errors.New("It went wrong")
-			partitioner.PartitionDiskReturns("", cmdRunnerError)
+			partitionDiskError := errors.New("It went wrong")
+			partitioner.PartitionDiskReturns("", partitionDiskError)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
-			Expect(err).To(Equal(cmdRunnerError))
+			Expect(err).To(Equal(partitionDiskError))
 		})
 
 		It("returns an error when format command fails", func() {
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-
 			formatError := errors.New("A failure occurred")
 			formatter.FormatReturns(formatError)
 
@@ -717,19 +673,17 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(err).To(Equal(formatError))
 		})
 
-		It("returns an error when attempting to add partition access path command fails", func() {
+		It("returns an error when attempting to assign a drive letter fails", func() {
 			assignDriveLetterError := errors.New("failure")
 			partitioner.AssignDriveLetterReturns("", assignDriveLetterError)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
 			Expect(err).To(Equal(assignDriveLetterError))
 		})
 
-		It("returns an error when Getting existing partition check command fails", func() {
+		It("returns an error when creating a symlink fails", func() {
 			LinkError := errors.New("It went wrong")
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			linker.LinkReturns(LinkError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
@@ -737,27 +691,13 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Expect(err).To(Equal(LinkError))
 		})
 
-		It("Returns an error when Protect-Path fails", func() {
-			cmdStderr := protectPathError
-			cmdRunner.AddCmdResult(protectPathCmd(dataDir), fakesys.FakeCmdResult{ExitStatus: 197, Stderr: cmdStderr})
+		It("returns an error protecting path command fails", func() {
+			protectPathError := errors.New("Failure")
+			protector.ProtectPathReturns(protectPathError)
 
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
 
-			Expect(err).To(MatchError(
-				fmt.Sprintf("Failed to protect path %s : %s", dataDir, cmdStderr),
-			))
-		})
-
-		It("returns an error when calling protect-path command fails", func() {
-			cmdRunnerError := errors.New("Failure")
-			expandedCommand := protectPathCmd(dataDir)
-			cmdRunner.AddCmdResult(expandedCommand, fakesys.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError})
-
-			prepareSuccessfulFakeCommands(diskNumber, partitionNumber, dataDir, driveLetter)
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
-
-			Expect(err).To(MatchError(fmt.Sprintf("Failed to run command \"%s\": %s", expandedCommand, cmdRunnerError)))
+			Expect(err).To(Equal(protectPathError))
 		})
 
 		It("when the ephemeral disk mounting feature flag is not present doesn't do anything", func() {
@@ -783,33 +723,11 @@ Unexpected token '80be-d2c3c2124585' in expression or statement.
 			Consistently(logBuffer).ShouldNot(gbytes.Say(
 				"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
 			))
-			Expect(cmdRunner.RunCommands).To(BeEmpty())
+
+			Expect(diskManager.Invocations()).To(BeEmpty())
 		})
 	})
 })
-
-func addPartitionAccessPathCommand(diskNumber, partitionNumber string) string {
-	return fmt.Sprintf(
-		"powershell.exe Add-PartitionAccessPath -DiskNumber %s -PartitionNumber %s -AssignDriveLetter",
-		diskNumber, partitionNumber,
-	)
-}
-
-func getDriveLetter(diskNumber, partitionNumber string) string {
-	return fmt.Sprintf(
-		`powershell.exe Get-Partition -DiskNumber %s -PartitionNumber %s | Select -ExpandProperty DriveLetter`,
-		diskNumber,
-		partitionNumber,
-	)
-}
-
-func protectPathCmd(dataDir string) string {
-	removedTrailingSlash := strings.TrimRight(dataDir, "\\")
-	return fmt.Sprintf(
-		`powershell.exe Protect-Path '%s'`,
-		removedTrailingSlash,
-	)
-}
 
 func expectFormatterCalledWithArgs(
 	formatter *fakedisk.FakeWindowsDiskFormatter,
