@@ -150,6 +150,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/kevinburke/ssh_config"
+  packages = ["."]
+  revision = "9fc7bb800b555d63157c65a904c86a2cc7b4e795"
+  version = "0.4"
+
+[[projects]]
   branch = "master"
   name = "github.com/masterzen/azure-sdk-for-go"
   packages = [
@@ -261,6 +267,12 @@
   version = "v1.4.0"
 
 [[projects]]
+  name = "github.com/pelletier/go-buffruneio"
+  packages = ["."]
+  revision = "c37440a7cf42ac63b919c752ca73a85067e05992"
+  version = "v0.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/pivotal-cf/paraphernalia"
   packages = ["secure/tlsconfig"]
@@ -368,6 +380,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "116317458d86894977b4b6446d019d5cb1cd0389278dde1bfd9aa18a0779e820"
+  inputs-digest = "95f95a3134d3acabf81c0ffe22dfe855e15a87e84210e2dfa5721801cbdbc1b4"
   solver-name = "gps-cdcl"
   solver-version = 1
