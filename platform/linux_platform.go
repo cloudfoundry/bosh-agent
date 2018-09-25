@@ -54,10 +54,6 @@ type LinuxOptions struct {
 	// is not going to be overlayed over /tmp to limit /tmp dir size
 	UseDefaultTmpDir bool
 
-	// When set to true the agent will scrub ephemeral disk if agent version is
-	// different with stemcell version
-	ScrubEphemeralDisk bool
-
 	// When set to true persistent disk will be assumed to be pre-formatted;
 	// otherwise agent will partition and format it right before mounting
 	UsePreformattedPersistentDisk bool
@@ -629,18 +625,6 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string, desiredSwapSizeInByte
 		return bosherr.WrapError(err, "Mounting data partition")
 	}
 
-	if p.options.ScrubEphemeralDisk {
-		contents, err := p.fs.Glob(mountPointGlob)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Globbing ephemeral disk mount point '%s'", mountPointGlob)
-		}
-
-		err = p.scrubEphemeralDisk(contents)
-		if err != nil {
-			return bosherr.WrapError(err, "Scrubbing ephemeral disk")
-		}
-	}
-
 	return nil
 }
 
@@ -695,51 +679,6 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 
 		if err != nil {
 			return bosherr.WrapError(err, "Setting up raw ephemeral disks")
-		}
-	}
-
-	return nil
-}
-
-func (p linux) scrubEphemeralDisk(contents []string) error {
-	agentVersionFilePath := path.Join(p.dirProvider.DataDir(), ".bosh", "agent_version")
-	stemcellVersionFilePath := path.Join(p.dirProvider.EtcDir(), "stemcell_version")
-	stemcellVersion, err := p.fs.ReadFileString(stemcellVersionFilePath)
-	if err != nil {
-		return bosherr.WrapError(err, "Reading stemcell version file")
-	}
-
-	if !p.fs.FileExists(agentVersionFilePath) {
-		// need to remove contents when it is upgrading from a stemcell without scrubEphemeralDisk enabled
-		for _, content := range contents {
-			err = p.fs.RemoveAll(content)
-			if err != nil {
-				return bosherr.WrapErrorf(err, "Removing '%s'", content)
-			}
-		}
-
-		err = p.fs.WriteFileString(agentVersionFilePath, stemcellVersion)
-		if err != nil {
-			return bosherr.WrapError(err, "Writting agent version file")
-		}
-	} else {
-		agentVersion, err := p.fs.ReadFileString(agentVersionFilePath)
-		if err != nil {
-			return bosherr.WrapError(err, "Reading agent version file")
-		}
-
-		if agentVersion != stemcellVersion {
-			for _, content := range contents {
-				err = p.fs.RemoveAll(content)
-				if err != nil {
-					return bosherr.WrapErrorf(err, "Removing '%s'", content)
-				}
-			}
-
-			err = p.fs.WriteFileString(agentVersionFilePath, stemcellVersion)
-			if err != nil {
-				return bosherr.WrapErrorf(err, "Updating agent version file '%s'", agentVersionFilePath)
-			}
 		}
 	}
 
