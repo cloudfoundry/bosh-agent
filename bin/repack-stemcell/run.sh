@@ -10,6 +10,6 @@ cd "${bin}"/../..
 
 mv out/bosh-agent bin/bosh-agent # necessary so that fly -x can be used
 
-time fly -t production execute -p -i agent-src=. -o stemcell=out/ -c ./bin/repack-stemcell/task.yml
+time fly -t aws execute -p -i agent-src=/Users/cpi/go/src/github.com/cloudfoundry/bosh-agent -o stemcell=/Users/cpi/go/src/github.com/cloudfoundry/bosh-agent/out -c ./bin/repack-stemcell/task.yml
 
 ls -la out/stemcell.tgz

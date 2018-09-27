@@ -61,7 +61,9 @@ EOF
 		tar czvf $stemcell_dir/image *
 	)
 
-	sed -i.bak "s/version: .*/version: 0.0.${new_ver}/" stemcell.MF
+#	sed -i.bak "s/version: .*/version: 0.0.${new_ver}/" stemcell.MF
+	sed -i.bak "s/^version: .*/version: 0.0.${new_ver}/" stemcell.MF
+	bash -c "echo api_version: 2 >> stemcell.MF"
 	tar czvf $stemcell_tgz *
 )
 

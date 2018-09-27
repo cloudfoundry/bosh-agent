@@ -16,6 +16,6 @@ run:
   path: agent-src/bin/repack-stemcell/repack.sh
 
 params:
-  STEMCELL_URL: "https://s3.amazonaws.com/bosh-core-stemcells/aws/bosh-stemcell-3312.15-aws-xen-ubuntu-trusty-go_agent.tgz"
-  STEMCELL_SHA1: "d5252cdd6b07763ed989fcfeff47d06afa164065"
+  STEMCELL_URL: "https://s3.amazonaws.com/bosh-core-stemcells/openstack/bosh-stemcell-97.18-openstack-kvm-ubuntu-xenial-go_agent-raw.tgz"
+  STEMCELL_SHA1: "3cb04a22dfc264b04c524d97a0155791c5ad9c9f"
   BOSH_DEBUG_PUB_KEY: ""

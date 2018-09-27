@@ -22,7 +22,8 @@ test/micro_bosh
 *.box
 *metadata.json
 *.log
-bin/bosh-agent
+# temporarily not ignored because we need it in the concourse container
+# bin/bosh-agent
 
 # Ignore symlinks https://github.com/golang/dep/issues/1625 for more context
 vendor/github.com/bmatcuk/doublestar/test/*
