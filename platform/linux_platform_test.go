@@ -754,7 +754,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
 				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
+				Expect(dataDir.FileMode).To(Equal(os.FileMode(0755)))
 			})
 
 			It("creates new partition even if the data directory is not empty", func() {
@@ -1372,7 +1372,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
 				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
+				Expect(dataDir.FileMode).To(Equal(os.FileMode(0755)))
 
 				Expect(partitioner.PartitionCalled).To(BeFalse())
 				Expect(formatter.FormatCalled).To(BeFalse())
@@ -1727,8 +1727,10 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(sysLogStats).ToNot(BeNil())
 				Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:root", "/fake-dir/data"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "755", "/fake-dir/data"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
+				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
 			})
 
 			It("creates symlink from sys to data/sys", func() {
@@ -1769,8 +1771,10 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(sysLogStats).ToNot(BeNil())
 				Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:root", "/fake-dir/data"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "755", "/fake-dir/data"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
+				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
 			})
 
 			It("creates symlink from sys to data/sys", func() {
