@@ -366,7 +366,7 @@ var _ = Describe("WindowsPlatform", func() {
 			SetSSHEnabled(previous)
 		})
 
-		const ExpPublicKey = "PUBLIC ECDSA KEY"
+		const ExpPublicKey = "PUBLIC RSA KEY"
 
 		setupHostKeys := func(drive string) {
 			if drive == "" {
@@ -392,7 +392,7 @@ var _ = Describe("WindowsPlatform", func() {
 			}
 		}
 
-		It("reads the host ECDSA key", func() {
+		It("reads the host RSA key", func() {
 			setupHostKeys(os.Getenv("SYSTEMDRIVE"))
 			key, err := platform.GetHostPublicKey()
 			Expect(err).ToNot(HaveOccurred())
