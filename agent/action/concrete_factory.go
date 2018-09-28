@@ -72,10 +72,11 @@ func NewFactory(
 			"upload_blob": NewUploadBlobAction(blobManager),
 
 			// Disk management
-			"list_disk":    NewListDisk(settingsService, platform, logger),
-			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settingsService, platform, dirProvider, logger),
-			"unmount_disk": NewUnmountDisk(settingsService, platform),
+			"list_disk":              NewListDisk(settingsService, platform, logger),
+			"migrate_disk":           NewMigrateDisk(platform, dirProvider),
+			"mount_disk":             NewMountDisk(settingsService, platform, dirProvider, logger),
+			"unmount_disk":           NewUnmountDisk(settingsService, platform),
+			"update_persistent_disk": NewUpdatePersistentDiskAction(settingsService),
 
 			// ARP cache management
 			"delete_arp_entries": NewDeleteARPEntries(platform),

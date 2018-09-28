@@ -25,7 +25,8 @@ type FakeSettingsService struct {
 	GetPersistentDiskHintsCallCount    int
 	RemovePersistentDiskHintsCallCount int
 	SavePersistentDiskHintCallCount    int
-	SavePersistentDiskHintErr        error
+	SavePersistentDiskHintErr          error
+	SavePersistentDiskHintLastArg      boshsettings.DiskSettings
 }
 
 func (service *FakeSettingsService) InvalidateSettings() error {
@@ -57,8 +58,9 @@ func (service *FakeSettingsService) RemovePersistentDiskHint(diskID string) erro
 	return service.RemovePersistentDiskHintsError
 }
 
-func (service *FakeSettingsService) SavePersistentDiskHint(_ boshsettings.DiskSettings) error {
+func (service *FakeSettingsService) SavePersistentDiskHint(settings boshsettings.DiskSettings) error {
 	service.SavePersistentDiskHintCallCount++
+	service.SavePersistentDiskHintLastArg = settings
 	if service.SavePersistentDiskHintErr != nil {
 		return service.SavePersistentDiskHintErr
 	}
