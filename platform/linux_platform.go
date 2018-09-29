@@ -1494,6 +1494,10 @@ func (p linux) partitionDisk(availableSize uint64, desiredSwapSizeInBytes *uint6
 	var swapPartitionPath string
 	var dataPartitionPath string
 
+	if len(labelPrefix) >= 36 {
+		// Keep first 24 chars to avoid too long GPT partition names
+		labelPrefix = labelPrefix[0:23]
+	}
 	if swapSizeInBytes == 0 {
 		partitions = []boshdisk.Partition{
 			{NamePrefix: labelPrefix, SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
