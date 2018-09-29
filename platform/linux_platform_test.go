@@ -963,7 +963,24 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 							{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 						}))
 					})
+
+					It("creates swap and data partitions when label prefix larger than 36", func() {
+						labelPrefix = "12345678-1234-abcd-1234-1234abcd5678"
+						act = func() error {
+							return platform.SetupEphemeralDiskWithPath(devicePath, nil, labelPrefix)
+						}
+						partitioner.GetDeviceSizeInBytesSizes[devicePath] = diskSizeInBytes
+						collector.MemStats.Total = 2048
+
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
+							{NamePrefix: labelPrefix[0:23], SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+							{NamePrefix: labelPrefix[0:23], SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+						}))
+					})
 				})
+
 			}
 
 			itTestsSetUpEphemeralDisk(act, "/dev/xvda")
