@@ -2,7 +2,6 @@ package bundlecollection
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 
 	"code.cloudfoundry.org/clock"
@@ -39,39 +38,6 @@ func NewFileBundle(
 		timeProvider: timeProvider,
 		logger:       logger,
 	}
-}
-
-func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, error) {
-	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
-
-	err := b.fs.Chmod(sourcePath, b.fileMode)
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Setting permissions on source directory")
-	}
-
-	err = b.fs.Chown(sourcePath, "root:vcap")
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Setting ownership on source directory")
-	}
-
-	err = b.fs.MkdirAll(path.Dir(b.installPath), b.fileMode)
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Creating parent installation directory")
-	}
-
-	err = b.fs.Chown(path.Dir(b.installPath), "root:vcap")
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Setting ownership on parent installation directory")
-	}
-
-	// Rename MUST be the last possibly-failing operation
-	// because IsInstalled() relies on installPath presence.
-	err = b.fs.Rename(sourcePath, b.installPath)
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Moving to installation directory")
-	}
-
-	return b.fs, b.installPath, nil
 }
 
 func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error) {

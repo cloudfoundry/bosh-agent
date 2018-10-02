@@ -96,14 +96,6 @@ var _ = Describe("FileBundle", func() {
 			Expect(fs.RenameNewPaths[0]).To(Equal(installPath))
 		})
 
-		It("returns error when moving source to install path fails", func() {
-			fs.RenameError = errors.New("fake-rename-error")
-
-			_, _, err := fileBundle.Install(sourcePath)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-rename-error"))
-		})
-
 		It("returns error when it fails to change permissions", func() {
 			fs.ChmodErr = errors.New("fake-chmod-error")
 
