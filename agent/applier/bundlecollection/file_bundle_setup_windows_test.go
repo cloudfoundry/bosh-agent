@@ -106,7 +106,13 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 	Describe("Install", func() {
 		It("succeeds when the first few calls to Rename fails", func() {
 			fs.RenameError = errors.New("rename-error")
-			time.AfterFunc(10*time.Second, func() {
+
+			expectedStartTime := time.Unix(1000, 0)
+			failingRenames := 5
+
+			fakeClock.NowReturns(expectedStartTime)
+			fakeClock.SinceReturns(1 * time.Second)
+			fakeClock.SinceExecutesOnCall(failingRenames, func() {
 				fs.RenameError = nil
 			})
 
