@@ -108,13 +108,20 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 			fs.RenameError = errors.New("rename-error")
 
 			expectedStartTime := time.Unix(1000, 0)
-			failingRenames := 5
+			failingRenames := 0
+			currentDuration := 0 * time.Second
 
 			fakeClock.NowReturns(expectedStartTime)
 			fakeClock.SinceReturns(1 * time.Second)
-			fakeClock.SinceExecutesOnCall(failingRenames, func() {
-				fs.RenameError = nil
-			})
+
+			fakeClock.SinceStub = func(t time.Time) time.Duration {
+				failingRenames++
+				if failingRenames == 5 {
+					fs.RenameError = nil
+				}
+				currentDuration = currentDuration + 1*time.Second
+				return currentDuration
+			}
 
 			_, path, err := fileBundle.Install(sourcePath)
 

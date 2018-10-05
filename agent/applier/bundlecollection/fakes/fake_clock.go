@@ -34,10 +34,6 @@ type FakeClock struct {
 	sinceReturnsOnCall map[int]struct {
 		result1 time.Duration
 	}
-
-	sinceExecutesOnCall map[int]struct {
-		f func()
-	}
 	AfterStub        func(d time.Duration) <-chan time.Time
 	afterMutex       sync.RWMutex
 	afterArgsForCall []struct {
@@ -142,7 +138,6 @@ func (fake *FakeClock) SleepArgsForCall(i int) time.Duration {
 func (fake *FakeClock) Since(t time.Time) time.Duration {
 	fake.sinceMutex.Lock()
 	ret, specificReturn := fake.sinceReturnsOnCall[len(fake.sinceArgsForCall)]
-	function, specificFunction := fake.sinceExecutesOnCall[len(fake.sinceArgsForCall)]
 	fake.sinceArgsForCall = append(fake.sinceArgsForCall, struct {
 		t time.Time
 	}{t})
@@ -150,9 +145,6 @@ func (fake *FakeClock) Since(t time.Time) time.Duration {
 	fake.sinceMutex.Unlock()
 	if fake.SinceStub != nil {
 		return fake.SinceStub(t)
-	}
-	if specificFunction {
-		function.f()
 	}
 	if specificReturn {
 		return ret.result1
@@ -189,18 +181,6 @@ func (fake *FakeClock) SinceReturnsOnCall(i int, result1 time.Duration) {
 	fake.sinceReturnsOnCall[i] = struct {
 		result1 time.Duration
 	}{result1}
-}
-
-func (fake *FakeClock) SinceExecutesOnCall(i int, f func()) {
-	fake.SinceStub = nil
-	if fake.sinceExecutesOnCall == nil {
-		fake.sinceExecutesOnCall = make(map[int]struct {
-			f func()
-		})
-	}
-	fake.sinceExecutesOnCall[i] = struct {
-		f func()
-	}{f}
 }
 
 func (fake *FakeClock) After(d time.Duration) <-chan time.Time {
