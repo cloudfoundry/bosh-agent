@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"strings"
+
 	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo"
@@ -28,52 +30,89 @@ var _ = Describe("Linker", func() {
 		location = `C:\my\location`
 	})
 
-	It("returns the linked destination when the link exists", func() {
-		expectedTarget := `D:\`
-		cmdRunner.AddCmdResult(
-			findItemTargetCommand(location),
-			fakes.FakeCmdResult{Stdout: fmt.Sprintf("%s%s", expectedTarget, newLine)},
-		)
+	Describe("LinkTarget", func() {
+		It("returns the linked destination when the link exists", func() {
+			expectedTarget := `D:\`
+			cmdRunner.AddCmdResult(
+				findItemTargetCommand(location),
+				fakes.FakeCmdResult{Stdout: fmt.Sprintf("%s%s", expectedTarget, newLine)},
+			)
 
-		target, err := linker.LinkTarget(location)
+			target, err := linker.LinkTarget(location)
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(target).To(Equal(expectedTarget))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(target).To(Equal(expectedTarget))
+		})
+
+		It("returns nothing when the link does not exist", func() {
+			expectedTarget := ""
+			badLocation := `c:\road\to\nowhere`
+
+			cmdRunner.AddCmdResult(
+				findItemTargetCommand(badLocation),
+				fakes.FakeCmdResult{ExitStatus: 1, Stdout: fmt.Sprintf("%s%s", expectedTarget, newLine)},
+			)
+
+			target, err := linker.LinkTarget(badLocation)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(target).To(Equal(expectedTarget))
+		})
+
+		It("when the LinkTarget command fails to run, returns a wrapped error", func() {
+			cmdRunnerError := errors.New("It went wrong")
+			linkTargetCommand := findItemTargetCommand(location)
+			cmdRunner.AddCmdResult(
+				linkTargetCommand,
+				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
+			)
+
+			_, err := linker.LinkTarget(location)
+			Expect(err).To(MatchError(fmt.Sprintf(
+				"failed to check for existing symbolic link: %s",
+				cmdRunnerError.Error(),
+			)))
+		})
 	})
 
-	It("returns nothing when the link does not exist", func() {
-		expectedTarget := ""
-		badLocation := `c:\road\to\nowhere`
+	Describe("Link", func() {
+		var target string
 
-		cmdRunner.AddCmdResult(
-			findItemTargetCommand(badLocation),
-			fakes.FakeCmdResult{ExitStatus: 1, Stdout: fmt.Sprintf("%s%s", expectedTarget, newLine)},
-		)
+		BeforeEach(func() {
+			target = "F:"
+		})
 
-		target, err := linker.LinkTarget(badLocation)
+		It("makes the request to create symlink", func() {
+			expectedCommand := createLinkCommand(location, target)
 
-		Expect(err).NotTo(HaveOccurred())
-		Expect(target).To(Equal(expectedTarget))
-	})
+			cmdRunner.AddCmdResult(expectedCommand, fakes.FakeCmdResult{})
 
-	It("when the isLinked command fails to run, returns a wrapped error", func() {
-		cmdRunnerError := errors.New("It went wrong")
-		cmdRunner.AddCmdResult(
-			findItemTargetCommand(location),
-			fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
-		)
+			err := linker.Link(location, target)
+			Expect(err).NotTo(HaveOccurred())
 
-		_, err := linker.LinkTarget(location)
-		Expect(err).To(MatchError(fmt.Sprintf(
-			"Failed to run command \"%s\": It went wrong",
-			findItemTargetCommand(location),
-		)))
+			Expect(cmdRunner.RunCommands[0]).To(Equal(strings.Split(expectedCommand, " ")))
+		})
+
+		It("when the link command fails returns a wrapped error", func() {
+			cmdRunnerError := errors.New("It went wrong")
+			cmdRunner.AddCmdResult(
+				createLinkCommand(location, target),
+				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
+			)
+
+			err := linker.Link(location, target)
+			Expect(err).To(MatchError(fmt.Sprintf("failed to create symbolic link: %s", cmdRunnerError.Error())))
+		})
 	})
 })
 
 func findItemTargetCommand(location string) string {
 	return fmt.Sprintf(
-		"powershell.exe Get-Item %s -ErrorAction Ignore | Select -ExpandProperty Target -ErrorAction Ignore",
+		"Get-Item %s -ErrorAction Ignore | Select -ExpandProperty Target -ErrorAction Ignore",
 		location,
 	)
+}
+
+func createLinkCommand(location, driveLetter string) string {
+	return fmt.Sprintf("cmd.exe /c mklink /d %s %s", location, driveLetter)
 }

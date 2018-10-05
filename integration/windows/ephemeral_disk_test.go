@@ -13,10 +13,11 @@ var _ = Describe("EphemeralDisk", func() {
 	var (
 		diskNumber string
 		diskLetter string
+		skip       = OsVersion == "2012R2"
 	)
 
 	BeforeEach(func() {
-		if OsVersion == "2012R2" {
+		if skip {
 			Skip("Currently not supporting ephemeral disks on 2012R2")
 		}
 
@@ -25,7 +26,7 @@ var _ = Describe("EphemeralDisk", func() {
 	})
 
 	AfterEach(func() {
-		if agent != nil {
+		if agent != nil && !skip {
 			agent.EnsureAgentServiceStopped()
 			agent.EnsureDataDirDoesntExist()
 

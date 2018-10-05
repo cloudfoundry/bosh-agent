@@ -60,8 +60,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	auditLogger.StartLogging()
 
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, diskManagerOpts)
-	windowsDiskFormatter := &boshwindisk.WindowsFormatter{Runner: runner}
-	windowsDiskLinker := &boshwindisk.Linker{Runner: runner}
+	windowsDiskManager := boshwindisk.NewWindowsDiskManager(runner)
 	udev := boshudev.NewConcreteUdevDevice(runner, logger)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 	linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
@@ -197,8 +196,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			defaultNetworkResolver,
 			auditLogger,
 			uuidGenerator,
-			windowsDiskFormatter,
-			windowsDiskLinker,
+			windowsDiskManager,
 		)
 	}
 

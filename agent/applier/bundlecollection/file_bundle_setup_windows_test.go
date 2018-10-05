@@ -87,7 +87,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 
 			fakeClock.NowReturns(expectedStartTime)
 			fakeClock.SinceReturns(1 * time.Second)
-			fakeClock.SinceReturnsOnCall(failingRemoveAlls, BundleUninstallTimeout+(1*time.Second))
+			fakeClock.SinceReturnsOnCall(failingRemoveAlls, BundleSetupTimeout+(1*time.Second))
 
 			_, _, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
@@ -99,7 +99,51 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 			for i := 0; i < failingRemoveAlls; i++ {
 				Expect(fakeClock.SinceArgsForCall(i)).To(Equal(expectedStartTime))
 			}
-			Expect(fsRemoveAllCount).To(Equal(failingRemoveAlls))
+			Expect(fsRemoveAllCount).To(Equal(failingRemoveAlls - 1))
+		})
+	})
+
+	Describe("Install", func() {
+		It("succeeds when the first few calls to Rename fails", func() {
+			fs.RenameError = errors.New("rename-error")
+
+			expectedStartTime := time.Unix(1000, 0)
+			failingRenames := 5
+
+			fakeClock.NowReturns(expectedStartTime)
+			fakeClock.SinceReturns(1 * time.Second)
+			fakeClock.SinceExecutesOnCall(failingRenames, func() {
+				fs.RenameError = nil
+			})
+
+			_, path, err := fileBundle.Install(sourcePath)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fs.FileExists(installPath)).To(BeTrue())
+			Expect(path).To(Equal(installPath))
+
+			Expect(fs.RenameOldPaths[0]).To(Equal(sourcePath))
+			Expect(fs.RenameNewPaths[0]).To(Equal(installPath))
+		})
+
+		It("fails when repeatedly attempting Rename fails", func() {
+			fs.RenameError = errors.New("fake-rename-error")
+
+			expectedStartTime := time.Unix(1000, 0)
+			failingRenames := 5
+
+			fakeClock.NowReturns(expectedStartTime)
+			fakeClock.SinceReturns(1 * time.Second)
+			fakeClock.SinceReturnsOnCall(failingRenames, BundleSetupTimeout+(1*time.Second))
+
+			_, _, err := fileBundle.Install(sourcePath)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-rename-error"))
+
+			Expect(fakeClock.SinceCallCount()).To(Equal(failingRenames + 1))
+			for i := 0; i < failingRenames; i++ {
+				Expect(fakeClock.SinceArgsForCall(i)).To(Equal(expectedStartTime))
+			}
 		})
 	})
 })

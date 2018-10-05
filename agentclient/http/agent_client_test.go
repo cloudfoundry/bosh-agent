@@ -251,6 +251,81 @@ var _ = Describe("AgentClient", func() {
 		})
 	})
 
+	Describe("Drain", func() {
+		Context("when agent responds with a value", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/agent"),
+						ghttp.RespondWith(200, `{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`),
+						ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+							Method:    "drain",
+							Arguments: []interface{}{"shutdown", map[string]interface{}{}},
+							ReplyTo:   replyToAddress,
+						}),
+					),
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/agent"),
+						ghttp.RespondWith(200, `{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`),
+						ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+							Method:    "get_task",
+							Arguments: []interface{}{"fake-agent-task-id"},
+							ReplyTo:   replyToAddress,
+						}),
+					),
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/agent"),
+						ghttp.RespondWith(200, `{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`),
+						ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+							Method:    "get_task",
+							Arguments: []interface{}{"fake-agent-task-id"},
+							ReplyTo:   replyToAddress,
+						}),
+					),
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/agent"),
+						ghttp.RespondWith(200, `{"value":15}`),
+					),
+				)
+			})
+
+			It("makes a POST request to the endpoint and waits for the task to be finished", func() {
+				response, err := agentClient.Drain("shutdown")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(server.ReceivedRequests()).To(HaveLen(4))
+				Expect(response).To(Equal(int64(15)))
+			})
+		})
+
+		Context("when agent does not respond with 200", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.RespondWith(http.StatusInternalServerError, ""))
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.Drain("shutdown")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("status code: 500")))
+			})
+		})
+
+		Context("when agent responds with exception", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"exception":{"message":"bad request"}}`),
+				))
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.Drain("shutdown")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("bad request")))
+			})
+		})
+	})
+
 	Describe("Apply", func() {
 		var (
 			spec applyspec.ApplySpec
