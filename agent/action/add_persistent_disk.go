@@ -6,17 +6,17 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
-type UpdatePersistentDiskAction struct {
+type AddPersistentDiskAction struct {
 	settingsService boshsettings.Service
 }
 
-func NewUpdatePersistentDiskAction(settingsService boshsettings.Service) UpdatePersistentDiskAction {
-	return UpdatePersistentDiskAction{
+func NewAddPersistentDiskAction(settingsService boshsettings.Service) AddPersistentDiskAction {
+	return AddPersistentDiskAction{
 		settingsService: settingsService,
 	}
 }
 
-func (a UpdatePersistentDiskAction) Run(diskCID string, diskHint interface{}) (interface{}, error) {
+func (a AddPersistentDiskAction) Run(diskCID string, diskHint interface{}) (interface{}, error) {
 	err := a.settingsService.LoadSettings()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Refreshing the settings")
@@ -29,25 +29,25 @@ func (a UpdatePersistentDiskAction) Run(diskCID string, diskHint interface{}) (i
 		return "", bosherr.WrapError(err, "Saving persistent disk hints")
 	}
 
-	return "updated_persistent_disk", nil
+	return "added_persistent_disk", nil
 }
 
-func (a UpdatePersistentDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
+func (a AddPersistentDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
 	return false
 }
 
-func (a UpdatePersistentDiskAction) IsPersistent() bool {
+func (a AddPersistentDiskAction) IsPersistent() bool {
 	return false
 }
 
-func (a UpdatePersistentDiskAction) IsLoggable() bool {
+func (a AddPersistentDiskAction) IsLoggable() bool {
 	return true
 }
 
-func (a UpdatePersistentDiskAction) Resume() (interface{}, error) {
+func (a AddPersistentDiskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
 
-func (a UpdatePersistentDiskAction) Cancel() error {
+func (a AddPersistentDiskAction) Cancel() error {
 	return errors.New("not supported")
 }

@@ -8,22 +8,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-var _ = Describe("UpdatePersistentDiskAction", func() {
+var _ = Describe("AddPersistentDiskAction", func() {
 	var (
-		action          UpdatePersistentDiskAction
+		action          AddPersistentDiskAction
 		settingsService *fakesettings.FakeSettingsService
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		action = NewUpdatePersistentDiskAction(settingsService)
+		action = NewAddPersistentDiskAction(settingsService)
 	})
 
 	It("updates persistent disk settings", func() {
 		result, err := action.Run("diskCID", "/dev/sdb")
 
 		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(Equal("updated_persistent_disk"))
+		Expect(result).To(Equal("added_persistent_disk"))
 		Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
 		Expect(settingsService.SavePersistentDiskHintLastArg).To(Equal(settings.DiskSettings{
 			ID:       "diskCID",
