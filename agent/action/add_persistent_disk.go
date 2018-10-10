@@ -29,11 +29,11 @@ func (a AddPersistentDiskAction) Run(diskCID string, diskHint interface{}) (inte
 		return "", bosherr.WrapError(err, "Saving persistent disk hints")
 	}
 
-	return "added_persistent_disk", nil
+	return map[string]string{}, nil
 }
 
 func (a AddPersistentDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
-	return false
+	return true
 }
 
 func (a AddPersistentDiskAction) IsPersistent() bool {

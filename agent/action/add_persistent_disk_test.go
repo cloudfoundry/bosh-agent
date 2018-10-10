@@ -23,7 +23,7 @@ var _ = Describe("AddPersistentDiskAction", func() {
 		result, err := action.Run("diskCID", "/dev/sdb")
 
 		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(Equal("added_persistent_disk"))
+		Expect(result).To(Equal(map[string]string{}))
 		Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
 		Expect(settingsService.SavePersistentDiskHintLastArg).To(Equal(settings.DiskSettings{
 			ID:       "diskCID",
