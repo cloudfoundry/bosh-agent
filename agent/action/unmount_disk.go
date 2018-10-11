@@ -63,10 +63,6 @@ func (a UnmountDiskAction) Run(diskID string) (value interface{}, err error) {
 	msg := fmt.Sprintf("Partition of %+v is not mounted", diskSettings)
 
 	if didUnmount {
-		err = a.settingsService.RemovePersistentDiskHint(diskID)
-		if err != nil {
-			err = bosherr.Errorf("Could not delete disk hint for disk ID %s. Error: %v", diskID, err)
-		}
 		msg = fmt.Sprintf("Unmounted partition of %+v", diskSettings)
 	}
 
