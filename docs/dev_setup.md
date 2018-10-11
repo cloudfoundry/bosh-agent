@@ -73,22 +73,15 @@ Install tools used by the BOSH Agent test suite:
 All dependencies:
 
 ```
-./update-dep github.com/cloudfoundry/bosh-utils/...
+dep ensure
 ```
 
 An example for a single dependency:
 
 ```
-./update-dep github.com/pivotal-golang/clock/fakeclock
+dep ensure github.com/pivotal-golang/clock/fakeclock
 ```
-
-The script will pull latest package version and copy its files to vendor directory. Note, that it does not pull dependecies recursively from package unless they are vendored.
-
-For development purposes, delete package from vendor use it from your $GOPATH. Once everything works in other package push changes in that package to github and run ./update-dep to add latest version.
-
-Every vendored packaged is recorded in deps.txt with git/hg sha of the package for references. The known issue if subpackages are being vendored and later full package is being vendored subpackage references are not deleted in deps.txt.
-
-To delete package  `rm -rf vendor/path_to_package` and delete reference in deps.txt.
+See [dep readme](https://github.com/golang/dep#dep) for more information.
 
 #### Running tests
 
