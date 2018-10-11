@@ -175,6 +175,12 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(NewStop(jobSupervisor)))
 	})
 
+	It("remove_persistent_disk", func() {
+		action, err := factory.Create("remove_persistent_disk")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewRemovePersistentDiskAction(settingsService)))
+	})
+
 	It("unmount_disk", func() {
 		action, err := factory.Create("unmount_disk")
 		Expect(err).ToNot(HaveOccurred())

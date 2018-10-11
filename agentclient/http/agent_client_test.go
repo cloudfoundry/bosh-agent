@@ -611,6 +611,42 @@ var _ = Describe("AgentClient", func() {
 			})
 		})
 
+		Describe("RemovePersistentDisk", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`),
+					ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+						Method:    "remove_persistent_disk",
+						Arguments: []interface{}{"fake-disk-cid"},
+						ReplyTo:   replyToAddress,
+					}),
+				))
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`),
+					ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+						Method:    "get_task",
+						Arguments: []interface{}{"fake-agent-task-id"},
+						ReplyTo:   replyToAddress,
+					}),
+				))
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value":{"agent_task_id":"fake-agent-task-id","state":"running"}}`),
+				))
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value":{}}`),
+				))
+			})
+			It("makes a POST request to the endpoint", func() {
+				err := agentClient.RemovePersistentDisk("fake-disk-cid")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(server.ReceivedRequests()).To(HaveLen(4))
+			})
+		})
+
 		Describe("UnmountDisk", func() {
 			Context("when agent responds with a value", func() {
 				BeforeEach(func() {
