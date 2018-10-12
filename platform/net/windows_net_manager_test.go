@@ -123,10 +123,11 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"net1": network1, "net2": network2, "vip": vip})
 			Expect(err).ToNot(HaveOccurred())
 
+
 			Expect(runner.RunCommands).To(
-				ContainElement([]string{"powershell", "-Command", fmt.Sprintf(NicSettingsTemplate, network1.Mac, network1.IP, network1.Netmask, network1.Gateway)}))
+				ContainElement([]string{"powershell", "-Command", fmt.Sprintf(NicSettingsTemplate, macAddressDetector.macs[network1.Mac], network1.IP, network1.Netmask, network1.Gateway)}))
 			Expect(runner.RunCommands).To(
-				ContainElement([]string{"powershell", "-Command", fmt.Sprintf(NicSettingsTemplate, network2.Mac, network2.IP, network2.Netmask, "")}))
+				ContainElement([]string{"powershell", "-Command", fmt.Sprintf(NicSettingsTemplate, macAddressDetector.macs[network2.Mac], network2.IP, network2.Netmask, "")}))
 		})
 
 		It("ignores VIP networks", func() {
@@ -138,7 +139,7 @@ var _ = Describe("WindowsNetManager", func() {
 		It("returns an error when configuring fails", func() {
 			setUpMACs(macAddressDetector, network1)
 			runner.AddCmdResult(
-				"powershell -Command "+fmt.Sprintf(NicSettingsTemplate, network1.Mac, network1.IP, network1.Netmask, network1.Gateway),
+				"powershell -Command "+fmt.Sprintf(NicSettingsTemplate, macAddressDetector.macs[network1.Mac], network1.IP, network1.Netmask, network1.Gateway),
 				fakesys.FakeCmdResult{Error: errors.New("fake-err")},
 			)
 

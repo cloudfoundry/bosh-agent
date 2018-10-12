@@ -86,8 +86,7 @@ foreach($interface in $interfaces) {
 `
 
 	NicSettingsTemplate = `
-$connectionName=(get-wmiobject win32_networkadapter | where-object {$_.MacAddress -eq '%s'}).netconnectionid
-netsh interface ip set address $connectionName static %s %s %s
+netsh interface ip set address %q static %s %s %s
 `
 )
 
@@ -210,7 +209,7 @@ func (net WindowsNetManager) setupInterfaces(staticConfigs []StaticInterfaceConf
 			gateway = conf.Gateway
 		}
 
-		content := fmt.Sprintf(NicSettingsTemplate, conf.Mac, conf.Address, conf.Netmask, gateway)
+		content := fmt.Sprintf(NicSettingsTemplate, conf.Name, conf.Address, conf.Netmask, gateway)
 
 		_, _, _, err := net.runner.RunCommand("powershell", "-Command", content)
 		if err != nil {
