@@ -22,14 +22,14 @@ var _ = Describe("RemovePersistentDiskAction", func() {
 		result, err := action.Run("diskCID")
 
 		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(Equal("removed_persistent_disk"))
-		Expect(settingsService.RemovePersistentDiskHintCallCount).To(Equal(1))
-		Expect(settingsService.RemovePersistentDiskHintLastArg).To(Equal("diskCID"))
+		Expect(result).To(Equal(map[string]string{}))
+		Expect(settingsService.RemovePersistentDiskSettingsCallCount).To(Equal(1))
+		Expect(settingsService.RemovePersistentDiskSettingsLastArg).To(Equal("diskCID"))
 	})
 
 	Context("when removing settings fails", func() {
 		BeforeEach(func() {
-			settingsService.RemovePersistentDiskHintError = errors.New("Could not remove")
+			settingsService.RemovePersistentDiskSettingsError = errors.New("Could not remove")
 		})
 
 		It("should raise error", func() {

@@ -46,24 +46,13 @@ func (a UpdateSettingsAction) Run(newUpdateSettings boshsettings.UpdateSettings)
 		return "", err
 	}
 
-	currentSettings := a.settingsService.GetSettings()
-
 	for _, diskAssociation := range newUpdateSettings.DiskAssociations {
-		diskSettingsToAssociate, found := currentSettings.PersistentDiskSettings(diskAssociation.DiskCID)
-		if !found {
-			persistentDiskSettings, err := a.settingsService.GetPersistentDiskHints()
-			if err != nil {
-				return "", bosherr.Errorf("Getting persistent disk settings")
-			}
-
-			if settings, hasDiskSettings := persistentDiskSettings[diskAssociation.DiskCID]; hasDiskSettings {
-				diskSettingsToAssociate = settings
-			} else {
-				return "", bosherr.Errorf("Persistent disk settings contains no disk with CID: %s", diskAssociation.DiskCID)
-			}
+		diskSettingsToAssociate, err := a.settingsService.GetPersistentDiskSettings(diskAssociation.DiskCID)
+		if err != nil {
+			return "", bosherr.WrapError(err, "Fetching disk settings")
 		}
 
-		err := a.platform.AssociateDisk(diskAssociation.Name, diskSettingsToAssociate)
+		err = a.platform.AssociateDisk(diskAssociation.Name, diskSettingsToAssociate)
 		if err != nil {
 			return "", err
 		}

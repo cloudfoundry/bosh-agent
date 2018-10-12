@@ -25,7 +25,7 @@ func (a AddPersistentDiskAction) Run(diskCID string, diskHint interface{}) (inte
 	currentSettings := a.settingsService.GetSettings()
 
 	diskSetting := currentSettings.PersistentDiskSettingsFromHint(diskCID, diskHint)
-	if err := a.settingsService.SavePersistentDiskHint(diskSetting); err != nil {
+	if err := a.settingsService.SavePersistentDiskSettings(diskSetting); err != nil {
 		return "", bosherr.WrapError(err, "Saving persistent disk hints")
 	}
 

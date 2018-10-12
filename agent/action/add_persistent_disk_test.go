@@ -24,8 +24,8 @@ var _ = Describe("AddPersistentDiskAction", func() {
 
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result).To(Equal(map[string]string{}))
-		Expect(settingsService.SavePersistentDiskHintCallCount).To(Equal(1))
-		Expect(settingsService.SavePersistentDiskHintLastArg).To(Equal(settings.DiskSettings{
+		Expect(settingsService.SavePersistentDiskSettingsCallCount).To(Equal(1))
+		Expect(settingsService.SavePersistentDiskSettingsLastArg).To(Equal(settings.DiskSettings{
 			ID:       "diskCID",
 			Path:     "/dev/sdb",
 			VolumeID: "/dev/sdb",
@@ -34,7 +34,7 @@ var _ = Describe("AddPersistentDiskAction", func() {
 
 	Context("when saving settings fails", func() {
 		BeforeEach(func() {
-			settingsService.SavePersistentDiskHintErr = errors.New("Could not save")
+			settingsService.SavePersistentDiskSettingsErr = errors.New("Could not save")
 		})
 
 		It("should raise error", func() {

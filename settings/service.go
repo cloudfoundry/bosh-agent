@@ -15,11 +15,13 @@ type Service interface {
 	// GetSettings does not return error because without settings Agent cannot start.
 	GetSettings() Settings
 
-	GetPersistentDiskHints() (map[string]DiskSettings, error)
+	GetPersistentDiskSettings(diskCID string) (DiskSettings, error)
 
-	SavePersistentDiskHint(DiskSettings) error
+	GetAllPersistentDiskSettings() (map[string]DiskSettings, error)
 
-	RemovePersistentDiskHint(string) error
+	SavePersistentDiskSettings(DiskSettings) error
+
+	RemovePersistentDiskSettings(string) error
 
 	PublicSSHKeyForUsername(string) (string, error)
 
@@ -29,15 +31,15 @@ type Service interface {
 const settingsServiceLogTag = "settingsService"
 
 type settingsService struct {
-	fs                      boshsys.FileSystem
-	settingsPath            string
-	settings                Settings
-	settingsMutex           sync.Mutex
-	persistentDiskHintsPath string
-	persistentDiskHintMutex sync.Mutex
-	settingsSource          Source
-	defaultNetworkResolver  DefaultNetworkResolver
-	logger                  boshlog.Logger
+	fs                          boshsys.FileSystem
+	settingsPath                string
+	settings                    Settings
+	settingsMutex               sync.Mutex
+	persistentDiskSettingsPath  string
+	persistentDiskSettingsMutex sync.Mutex
+	settingsSource              Source
+	defaultNetworkResolver      DefaultNetworkResolver
+	logger                      boshlog.Logger
 }
 
 type DefaultNetworkResolver interface {
@@ -49,19 +51,19 @@ type DefaultNetworkResolver interface {
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
-	persistentDiskHintPath string,
+	persistentDiskSettingsPath string,
 	settingsSource Source,
 	defaultNetworkResolver DefaultNetworkResolver,
 	logger boshlog.Logger,
 ) Service {
 	return &settingsService{
-		fs:                      fs,
-		settingsPath:            settingsPath,
-		settings:                Settings{},
-		persistentDiskHintsPath: persistentDiskHintPath,
-		settingsSource:          settingsSource,
-		defaultNetworkResolver:  defaultNetworkResolver,
-		logger:                  logger,
+		fs:                         fs,
+		settingsPath:               settingsPath,
+		settings:                   Settings{},
+		persistentDiskSettingsPath: persistentDiskSettingsPath,
+		settingsSource:             settingsSource,
+		defaultNetworkResolver:     defaultNetworkResolver,
+		logger:                     logger,
 	}
 }
 
@@ -118,41 +120,73 @@ func (s *settingsService) LoadSettings() error {
 	return nil
 }
 
-func (s *settingsService) GetPersistentDiskHints() (map[string]DiskSettings, error) {
-	s.persistentDiskHintMutex.Lock()
-	defer s.persistentDiskHintMutex.Unlock()
-	return s.getPersistentDiskHintsWithoutLocking()
+func (s *settingsService) GetAllPersistentDiskSettings() (map[string]DiskSettings, error) {
+	s.persistentDiskSettingsMutex.Lock()
+	defer s.persistentDiskSettingsMutex.Unlock()
+
+	allPersistentDiskSettings := map[string]DiskSettings{}
+
+	settings := s.GetSettings()
+
+	for diskCID, settings := range settings.Disks.Persistent {
+		allPersistentDiskSettings[diskCID] = s.settings.populatePersistentDiskSettings(diskCID, settings)
+	}
+
+	persistentDiskSettings, err := s.getPersistentDiskSettingsWithoutLocking()
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Reading persistent disk settings")
+	}
+
+	for diskCID, settings := range persistentDiskSettings {
+		allPersistentDiskSettings[diskCID] = settings
+	}
+
+	return allPersistentDiskSettings, nil
 }
 
-func (s *settingsService) RemovePersistentDiskHint(diskID string) error {
-	s.persistentDiskHintMutex.Lock()
-	defer s.persistentDiskHintMutex.Unlock()
+func (s *settingsService) GetPersistentDiskSettings(diskCID string) (DiskSettings, error) {
+	allDiskSettings, err := s.GetAllPersistentDiskSettings()
+	if err != nil {
+		return DiskSettings{}, bosherr.WrapError(err, "Getting all persistent disk settings")
+	}
 
-	persistentDiskHints, err := s.getPersistentDiskHintsWithoutLocking()
+	settings, hasDiskSettings := allDiskSettings[diskCID]
+	if !hasDiskSettings {
+		return DiskSettings{}, bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskCID)
+	}
+
+	return settings, nil
+}
+
+func (s *settingsService) RemovePersistentDiskSettings(diskID string) error {
+	s.persistentDiskSettingsMutex.Lock()
+	defer s.persistentDiskSettingsMutex.Unlock()
+
+	persistentDiskSettings, err := s.getPersistentDiskSettingsWithoutLocking()
 	if err != nil {
 		return bosherr.WrapError(err, "Cannot remove entry from file due to read error")
 	}
 
-	delete(persistentDiskHints, diskID)
-	if err := s.savePersistentDiskHintsWithoutLocking(persistentDiskHints); err != nil {
-		return bosherr.WrapError(err, "Saving persistent disk hints")
+	delete(persistentDiskSettings, diskID)
+	if err := s.savePersistentDiskSettingsWithoutLocking(persistentDiskSettings); err != nil {
+		return bosherr.WrapError(err, "Saving persistent disk settings")
 	}
 
 	return nil
 }
 
-func (s *settingsService) SavePersistentDiskHint(persistentDiskSettings DiskSettings) error {
-	s.persistentDiskHintMutex.Lock()
-	defer s.persistentDiskHintMutex.Unlock()
+func (s *settingsService) SavePersistentDiskSettings(newDiskSettings DiskSettings) error {
+	s.persistentDiskSettingsMutex.Lock()
+	defer s.persistentDiskSettingsMutex.Unlock()
 
-	persistentDiskHints, err := s.getPersistentDiskHintsWithoutLocking()
+	persistentDiskSettings, err := s.getPersistentDiskSettingsWithoutLocking()
 	if err != nil {
-		return bosherr.WrapError(err, "Reading all persistent disk hints")
+		return bosherr.WrapError(err, "Reading all persistent disk settings")
 	}
 
-	persistentDiskHints[persistentDiskSettings.ID] = persistentDiskSettings
-	if err := s.savePersistentDiskHintsWithoutLocking(persistentDiskHints); err != nil {
-		return bosherr.WrapError(err, "Saving persistent disk hints")
+	persistentDiskSettings[newDiskSettings.ID] = newDiskSettings
+	if err := s.savePersistentDiskSettingsWithoutLocking(persistentDiskSettings); err != nil {
+		return bosherr.WrapError(err, "Saving persistent disk settings")
 	}
 
 	return nil
@@ -216,34 +250,34 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	return network, nil
 }
 
-func (s *settingsService) savePersistentDiskHintsWithoutLocking(persistentDiskHints map[string]DiskSettings) error {
-	newPersistentDiskHintsJSON, err := json.Marshal(persistentDiskHints)
+func (s *settingsService) savePersistentDiskSettingsWithoutLocking(persistentDiskSettings map[string]DiskSettings) error {
+	newPersistentDiskSettingsJSON, err := json.Marshal(persistentDiskSettings)
 	if err != nil {
-		return bosherr.WrapError(err, "Marshalling persistent disk hints json")
+		return bosherr.WrapError(err, "Marshalling persistent disk settings json")
 	}
 
-	err = s.fs.WriteFile(s.persistentDiskHintsPath, newPersistentDiskHintsJSON)
+	err = s.fs.WriteFile(s.persistentDiskSettingsPath, newPersistentDiskSettingsJSON)
 	if err != nil {
-		return bosherr.WrapError(err, "Writing persistent disk hints settings json")
+		return bosherr.WrapError(err, "Writing persistent disk settings settings json")
 	}
 
 	return nil
 }
 
-func (s *settingsService) getPersistentDiskHintsWithoutLocking() (map[string]DiskSettings, error) {
-	persistentDiskHints := make(map[string]DiskSettings)
+func (s *settingsService) getPersistentDiskSettingsWithoutLocking() (map[string]DiskSettings, error) {
+	persistentDiskSettings := make(map[string]DiskSettings)
 
-	if s.fs.FileExists(s.persistentDiskHintsPath) {
+	if s.fs.FileExists(s.persistentDiskSettingsPath) {
 		opts := boshsys.ReadOpts{Quiet: true}
-		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.persistentDiskHintsPath, opts)
+		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.persistentDiskSettingsPath, opts)
 		if readError != nil {
-			return nil, bosherr.WrapError(readError, "Reading persistent disk hints from file")
+			return nil, bosherr.WrapError(readError, "Reading persistent disk settings from file")
 		}
 
-		err := json.Unmarshal(existingSettingsJSON, &persistentDiskHints)
+		err := json.Unmarshal(existingSettingsJSON, &persistentDiskSettings)
 		if err != nil {
-			return nil, bosherr.WrapError(err, "Unmarshalling persistent disk hints from file")
+			return nil, bosherr.WrapError(err, "Unmarshalling persistent disk settings from file")
 		}
 	}
-	return persistentDiskHints, nil
+	return persistentDiskSettings, nil
 }

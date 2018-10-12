@@ -36,22 +36,10 @@ func (a UnmountDiskAction) IsLoggable() bool {
 }
 
 func (a UnmountDiskAction) Run(diskID string) (value interface{}, err error) {
-	settings := a.settingsService.GetSettings()
-
-	diskHints, err := a.settingsService.GetPersistentDiskHints()
+	diskSettings, err := a.settingsService.GetPersistentDiskSettings(diskID)
 	if err != nil {
-		err = bosherr.WrapError(err, fmt.Sprintf("Unmounting disk %s", diskID))
+		err = bosherr.WrapError(err, "Getting persistent disk settings")
 		return
-	}
-
-	diskSettings, found := diskHints[diskID]
-
-	if !found {
-		diskSettings, found = settings.PersistentDiskSettings(diskID)
-		if !found {
-			err = bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskID)
-			return
-		}
 	}
 
 	didUnmount, err := a.platform.UnmountPersistentDisk(diskSettings)

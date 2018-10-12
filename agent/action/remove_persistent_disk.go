@@ -23,11 +23,11 @@ func (a RemovePersistentDiskAction) Run(diskCID string) (interface{}, error) {
 		return nil, bosherr.WrapError(err, "Refreshing the settings")
 	}
 
-	if err := a.settingsService.RemovePersistentDiskHint(diskCID); err != nil {
+	if err := a.settingsService.RemovePersistentDiskSettings(diskCID); err != nil {
 		return "", bosherr.WrapError(err, "Removing persistent disk hints")
 	}
 
-	return "removed_persistent_disk", nil
+	return map[string]string{}, nil
 }
 
 func (a RemovePersistentDiskAction) IsAsynchronous(_ ProtocolVersion) bool {

@@ -305,9 +305,9 @@ var _ = Describe("Settings", func() {
 			})
 
 			It("converts it to disk settings", func() {
-				diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+				diskSettings := settings.PersistentDiskSettingsFromHint("fake-disk-id", diskHint)
 				Expect(diskSettings).To(Equal(DiskSettings{
-					ID:       "hint-fake-disk-id",
+					ID:       "fake-disk-id",
 					VolumeID: "/path/to/device/hint",
 					Path:     "/path/to/device/hint",
 				}))
@@ -321,43 +321,43 @@ var _ = Describe("Settings", func() {
 				settings = Settings{}
 
 				diskHint = map[string]interface{}{
-					"volume_id":      "hint-fake-disk-volume-id",
-					"id":             "hint-fake-disk-device-id",
-					"path":           "hint-fake-disk-path",
-					"lun":            "hint-fake-disk-lun",
-					"host_device_id": "hint-fake-disk-host-device-id",
+					"volume_id":      "fake-disk-volume-id",
+					"id":             "fake-disk-device-id",
+					"path":           "fake-disk-path",
+					"lun":            "fake-disk-lun",
+					"host_device_id": "fake-disk-host-device-id",
 				}
 			})
 
 			It("returns disk settings with disk hint info", func() {
-				diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+				diskSettings := settings.PersistentDiskSettingsFromHint("fake-disk-id", diskHint)
 				Expect(diskSettings).To(Equal(DiskSettings{
-					ID:           "hint-fake-disk-id",
-					DeviceID:     "hint-fake-disk-device-id",
-					VolumeID:     "hint-fake-disk-volume-id",
-					Path:         "hint-fake-disk-path",
-					Lun:          "hint-fake-disk-lun",
-					HostDeviceID: "hint-fake-disk-host-device-id",
+					ID:           "fake-disk-id",
+					DeviceID:     "fake-disk-device-id",
+					VolumeID:     "fake-disk-volume-id",
+					Path:         "fake-disk-path",
+					Lun:          "fake-disk-lun",
+					HostDeviceID: "fake-disk-host-device-id",
 				}))
 			})
 
 			Context("when settings Env is provided", func() {
 				It("gets file system type and mount options from env", func() {
-					settingsJSON := `{"env": {"persistent_disk_fs": "xfs", "persistent_disk_mount_options": ["hint-opt1", "hint-opt2"]}}`
+					settingsJSON := `{"env": {"persistent_disk_fs": "xfs", "persistent_disk_mount_options": ["opt1", "opt2"]}}`
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+					diskSettings := settings.PersistentDiskSettingsFromHint("fake-disk-id", diskHint)
 					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemXFS))
 					Expect(diskSettings).To(Equal(DiskSettings{
-						ID:             "hint-fake-disk-id",
-						DeviceID:       "hint-fake-disk-device-id",
-						VolumeID:       "hint-fake-disk-volume-id",
-						Path:           "hint-fake-disk-path",
-						Lun:            "hint-fake-disk-lun",
-						HostDeviceID:   "hint-fake-disk-host-device-id",
+						ID:             "fake-disk-id",
+						DeviceID:       "fake-disk-device-id",
+						VolumeID:       "fake-disk-volume-id",
+						Path:           "fake-disk-path",
+						Lun:            "fake-disk-lun",
+						HostDeviceID:   "fake-disk-host-device-id",
 						FileSystemType: disk.FileSystemXFS,
-						MountOptions:   []string{"hint-opt1", "hint-opt2"},
+						MountOptions:   []string{"opt1", "opt2"},
 					}))
 				})
 
@@ -366,15 +366,15 @@ var _ = Describe("Settings", func() {
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+					diskSettings := settings.PersistentDiskSettingsFromHint("fake-disk-id", diskHint)
 					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemDefault))
 					Expect(diskSettings).To(Equal(DiskSettings{
-						ID:             "hint-fake-disk-id",
-						DeviceID:       "hint-fake-disk-device-id",
-						VolumeID:       "hint-fake-disk-volume-id",
-						Path:           "hint-fake-disk-path",
-						Lun:            "hint-fake-disk-lun",
-						HostDeviceID:   "hint-fake-disk-host-device-id",
+						ID:             "fake-disk-id",
+						DeviceID:       "fake-disk-device-id",
+						VolumeID:       "fake-disk-volume-id",
+						Path:           "fake-disk-path",
+						Lun:            "fake-disk-lun",
+						HostDeviceID:   "fake-disk-host-device-id",
 						FileSystemType: "",
 						MountOptions:   nil,
 					}))
@@ -385,15 +385,15 @@ var _ = Describe("Settings", func() {
 
 					err := json.Unmarshal([]byte(settingsJSON), &settings)
 					Expect(err).NotTo(HaveOccurred())
-					diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", diskHint)
+					diskSettings := settings.PersistentDiskSettingsFromHint("fake-disk-id", diskHint)
 					Expect(settings.Env.PersistentDiskFS).To(Equal(disk.FileSystemType("blahblah")))
 					Expect(diskSettings).To(Equal(DiskSettings{
-						ID:             "hint-fake-disk-id",
-						DeviceID:       "hint-fake-disk-device-id",
-						VolumeID:       "hint-fake-disk-volume-id",
-						Path:           "hint-fake-disk-path",
-						Lun:            "hint-fake-disk-lun",
-						HostDeviceID:   "hint-fake-disk-host-device-id",
+						ID:             "fake-disk-id",
+						DeviceID:       "fake-disk-device-id",
+						VolumeID:       "fake-disk-volume-id",
+						Path:           "fake-disk-path",
+						Lun:            "fake-disk-lun",
+						HostDeviceID:   "fake-disk-host-device-id",
 						FileSystemType: "blahblah",
 						MountOptions:   nil,
 					}))
@@ -407,9 +407,9 @@ var _ = Describe("Settings", func() {
 			})
 
 			It("does NOT set device related properties in the disk settings", func() {
-				diskSettings := settings.PersistentDiskSettingsFromHint("hint-fake-disk-id", nil)
+				diskSettings := settings.PersistentDiskSettingsFromHint("fake-disk-id", nil)
 				Expect(diskSettings).To(Equal(DiskSettings{
-					ID:           "hint-fake-disk-id",
+					ID:           "fake-disk-id",
 					VolumeID:     "",
 					Path:         "",
 					DeviceID:     "",

@@ -145,27 +145,16 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up blobs dir")
 	}
 
+	if err := boot.checkLastMountedCid(settings); err != nil {
+		return bosherr.WrapError(err, "Checking last mounted CID")
+	}
+
+	if err = boot.mountLastMountedDisk(); err != nil {
+		return bosherr.WrapError(err, "Mounting last mounted disk")
+	}
+
 	if err = boot.comparePersistentDisk(); err != nil {
 		return bosherr.WrapError(err, "Comparing persistent disks")
-	}
-
-	lastDiskID, err := boot.lastMountedCid()
-	if err != nil {
-		return bosherr.WrapError(err, "Fetching last mounted disk CID")
-	}
-
-	for diskID, diskSettings := range boot.getPersistentDiskSettings() {
-		if diskID == lastDiskID {
-			isPartitioned, err := boot.platform.IsPersistentDiskMountable(diskSettings)
-			if err != nil {
-				return bosherr.WrapError(err, "Checking if persistent disk is partitioned")
-			}
-			if isPartitioned {
-				if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
-					return bosherr.WrapError(err, "Mounting persistent disk")
-				}
-			}
-		}
 	}
 
 	v1Spec, err := boot.specService.Get()
@@ -216,12 +205,7 @@ func (boot bootstrap) Run() (err error) {
 }
 
 func (boot bootstrap) comparePersistentDisk() error {
-	settings := boot.settingsService.GetSettings()
 	updateSettingsPath := filepath.Join(boot.platform.GetDirProvider().BoshDir(), "update_settings.json")
-
-	if err := boot.checkLastMountedCid(settings); err != nil {
-		return err
-	}
 
 	var updateSettings boshsettings.UpdateSettings
 
@@ -237,15 +221,19 @@ func (boot bootstrap) comparePersistentDisk() error {
 	}
 
 	for _, diskAssociation := range updateSettings.DiskAssociations {
-		if _, ok := settings.PersistentDiskSettings(diskAssociation.DiskCID); !ok {
+		_, err := boot.settingsService.GetPersistentDiskSettings(diskAssociation.DiskCID)
+		if err != nil {
 			return fmt.Errorf("Disk %s is not attached", diskAssociation.DiskCID)
 		}
 	}
 
-	if len(settings.Disks.Persistent) > 1 {
-		if len(settings.Disks.Persistent) > len(updateSettings.DiskAssociations) {
-			return errors.New("Unexpected disk attached")
-		}
+	allSettings, err := boot.settingsService.GetAllPersistentDiskSettings()
+	if err != nil {
+		return errors.New("Reading all persistent disk settings")
+	}
+
+	if len(allSettings) > 1 && len(allSettings) > len(updateSettings.DiskAssociations) {
+		return errors.New("Unexpected disk attached")
 	}
 
 	return nil
@@ -275,19 +263,22 @@ func (boot bootstrap) checkLastMountedCid(settings boshsettings.Settings) error 
 		return bosherr.WrapError(err, "Fetching last mounted disk CID")
 	}
 
-	if len(settings.Disks.Persistent) == 0 || lastMountedCid == "" {
+	if lastMountedCid == "" {
 		return nil
 	}
 
-	if _, ok := settings.PersistentDiskSettings(lastMountedCid); !ok {
-		diskHints, err := boot.settingsService.GetPersistentDiskHints()
-		if err != nil {
-			return bosherr.WrapError(err, "Getting persistent disk hints")
-		}
-		_, found := diskHints[lastMountedCid]
-		if !found {
-			return bosherr.Error("Attached disk disagrees with previous mount")
-		}
+	allDiskSettings, err := boot.settingsService.GetAllPersistentDiskSettings()
+	if err != nil {
+		return bosherr.WrapError(err, "Reading persistent disk settings")
+	}
+
+	if len(allDiskSettings) == 0 {
+		return nil
+	}
+
+	_, err = boot.settingsService.GetPersistentDiskSettings(lastMountedCid)
+	if err != nil {
+		return bosherr.WrapError(err, "Attached disk disagrees with previous mount")
 	}
 
 	return nil
@@ -309,18 +300,31 @@ func (boot bootstrap) lastMountedCid() (string, error) {
 
 	return "", nil
 }
-func (boot bootstrap) getPersistentDiskSettings() map[string]boshsettings.DiskSettings {
-	diskHints, err := boot.settingsService.GetPersistentDiskHints()
+
+func (boot bootstrap) mountLastMountedDisk() error {
+	lastDiskID, err := boot.lastMountedCid()
 	if err != nil {
-		boot.logger.Warn(boot.logTag, bosherr.WrapError(err, "Getting persistent disk settings").Error())
-		diskHints = make(map[string]boshsettings.DiskSettings)
+		return bosherr.WrapError(err, "Fetching last mounted disk CID")
 	}
-	settings := boot.settingsService.GetSettings()
-	for diskID := range settings.Disks.Persistent {
-		diskHint, found := settings.PersistentDiskSettings(diskID)
-		if found {
-			diskHints[diskID] = diskHint
+
+	if lastDiskID == "" {
+		return nil
+	}
+
+	diskSettings, err := boot.settingsService.GetPersistentDiskSettings(lastDiskID)
+	if err != nil {
+		return bosherr.WrapError(err, "Fetching disk settings")
+	}
+
+	isPartitioned, err := boot.platform.IsPersistentDiskMountable(diskSettings)
+	if err != nil {
+		return bosherr.WrapError(err, "Checking if persistent disk is partitioned")
+	}
+
+	if isPartitioned {
+		if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
+			return bosherr.WrapError(err, "Mounting persistent disk")
 		}
 	}
-	return diskHints
+	return nil
 }

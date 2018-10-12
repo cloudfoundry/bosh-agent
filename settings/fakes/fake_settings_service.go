@@ -11,23 +11,24 @@ type FakeSettingsService struct {
 	LoadSettingsError  error
 	SettingsWereLoaded bool
 
-	GetPersistentDiskHintsError   error
-	PersistentDiskHintsWereLoaded bool
+	GetPersistentDiskSettingsError    error
+	GetAllPersistentDiskSettingsError error
+	PersistentDiskSettingsWereLoaded  bool
 
-	RemovePersistentDiskHintError error
+	RemovePersistentDiskSettingsError error
 
 	InvalidateSettingsError error
 	SettingsWereInvalidated bool
 
-	PersistentDiskHints map[string]boshsettings.DiskSettings
-	Settings            boshsettings.Settings
+	PersistentDiskSettings map[string]boshsettings.DiskSettings
+	Settings               boshsettings.Settings
 
-	GetPersistentDiskHintsCallCount   int
-	RemovePersistentDiskHintCallCount int
-	RemovePersistentDiskHintLastArg   string
-	SavePersistentDiskHintCallCount   int
-	SavePersistentDiskHintErr         error
-	SavePersistentDiskHintLastArg     boshsettings.DiskSettings
+	GetPersistentDiskSettingsCallCount    int
+	RemovePersistentDiskSettingsCallCount int
+	RemovePersistentDiskSettingsLastArg   string
+	SavePersistentDiskSettingsCallCount   int
+	SavePersistentDiskSettingsErr         error
+	SavePersistentDiskSettingsLastArg     boshsettings.DiskSettings
 }
 
 func (service *FakeSettingsService) InvalidateSettings() error {
@@ -48,23 +49,27 @@ func (service FakeSettingsService) GetSettings() boshsettings.Settings {
 	return service.Settings
 }
 
-func (service *FakeSettingsService) GetPersistentDiskHints() (map[string]boshsettings.DiskSettings, error) {
-	service.GetPersistentDiskHintsCallCount++
-	service.PersistentDiskHintsWereLoaded = true
-	return service.PersistentDiskHints, service.GetPersistentDiskHintsError
+func (service *FakeSettingsService) GetPersistentDiskSettings(diskCID string) (boshsettings.DiskSettings, error) {
+	service.GetPersistentDiskSettingsCallCount++
+	service.PersistentDiskSettingsWereLoaded = true
+	return service.PersistentDiskSettings[diskCID], service.GetPersistentDiskSettingsError
 }
 
-func (service *FakeSettingsService) RemovePersistentDiskHint(diskID string) error {
-	service.RemovePersistentDiskHintCallCount++
-	service.RemovePersistentDiskHintLastArg = diskID
-	return service.RemovePersistentDiskHintError
+func (service *FakeSettingsService) RemovePersistentDiskSettings(diskID string) error {
+	service.RemovePersistentDiskSettingsLastArg = diskID
+	service.RemovePersistentDiskSettingsCallCount++
+	return service.RemovePersistentDiskSettingsError
 }
 
-func (service *FakeSettingsService) SavePersistentDiskHint(settings boshsettings.DiskSettings) error {
-	service.SavePersistentDiskHintCallCount++
-	service.SavePersistentDiskHintLastArg = settings
-	if service.SavePersistentDiskHintErr != nil {
-		return service.SavePersistentDiskHintErr
+func (service *FakeSettingsService) SavePersistentDiskSettings(settings boshsettings.DiskSettings) error {
+	service.SavePersistentDiskSettingsCallCount++
+	service.SavePersistentDiskSettingsLastArg = settings
+	if service.SavePersistentDiskSettingsErr != nil {
+		return service.SavePersistentDiskSettingsErr
 	}
 	return nil
+}
+
+func (service *FakeSettingsService) GetAllPersistentDiskSettings() (map[string]boshsettings.DiskSettings, error) {
+	return service.PersistentDiskSettings, service.GetAllPersistentDiskSettingsError
 }
