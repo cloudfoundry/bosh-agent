@@ -41,7 +41,7 @@ type fakeMACAddressDetector struct {
 	macs map[string]string
 }
 
-func (m *fakeMACAddressDetector) MACAddresses() (map[string]string, error) {
+func (m *fakeMACAddressDetector) DetectMacAddresses() (map[string]string, error) {
 	return m.macs, nil
 }
 

@@ -2,7 +2,6 @@ package net
 
 import (
 	"bytes"
-	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -23,6 +22,7 @@ type UbuntuNetManager struct {
 	cmdRunner                     boshsys.CmdRunner
 	fs                            boshsys.FileSystem
 	ipResolver                    boship.Resolver
+	macAddressDetector            MACAddressDetector
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	interfaceAddressesValidator   boship.InterfaceAddressesValidator
 	dnsValidator                  DNSValidator
@@ -35,6 +35,7 @@ func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	ipResolver boship.Resolver,
+	macAddressDetector MACAddressDetector,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	interfaceAddressesValidator boship.InterfaceAddressesValidator,
 	dnsValidator DNSValidator,
@@ -46,6 +47,7 @@ func NewUbuntuNetManager(
 		cmdRunner:                     cmdRunner,
 		fs:                            fs,
 		ipResolver:                    ipResolver,
+		macAddressDetector:            macAddressDetector,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		interfaceAddressesValidator:   interfaceAddressesValidator,
 		dnsValidator:                  dnsValidator,
@@ -191,7 +193,7 @@ func (net UbuntuNetManager) writeNetConfigs(
 func (net UbuntuNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 	interfaces := []string{}
 
-	interfacesByMacAddress, err := net.detectMacAddresses()
+	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
 	if err != nil {
 		return interfaces, bosherr.WrapError(err, "Getting network interfaces")
 	}
@@ -221,7 +223,7 @@ func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
 		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure calling 'pkill dhclient': %s", err)
 	}
 
-	interfacesByMacAddress, err := net.detectMacAddresses()
+	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
 	if err != nil {
 		return err
 	}
@@ -240,7 +242,7 @@ func (net UbuntuNetManager) removeDhcpDNSConfiguration() error {
 }
 
 func (net UbuntuNetManager) buildInterfaces(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
-	interfacesByMacAddress, err := net.detectMacAddresses()
+	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
 	}
@@ -387,34 +389,6 @@ iface {{ .Name }} inet{{ .Version6 }} static
 {{ end }}{{ if .HasVersion6 }}
 accept_ra 1{{ end }}{{ if .DNSServers }}
 dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
-
-func (net UbuntuNetManager) detectMacAddresses() (map[string]string, error) {
-	addresses := map[string]string{}
-
-	filePaths, err := net.fs.Glob("/sys/class/net/*")
-	if err != nil {
-		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
-	}
-
-	var macAddress string
-	for _, filePath := range filePaths {
-		isPhysicalDevice := net.fs.FileExists(path.Join(filePath, "device"))
-
-		if isPhysicalDevice {
-			macAddress, err = net.fs.ReadFileString(path.Join(filePath, "address"))
-			if err != nil {
-				return addresses, bosherr.WrapError(err, "Reading mac address from file")
-			}
-
-			macAddress = strings.Trim(macAddress, "\n")
-
-			interfaceName := path.Base(filePath)
-			addresses[macAddress] = interfaceName
-		}
-	}
-
-	return addresses, nil
-}
 
 func (net UbuntuNetManager) ifaceNames(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations) []string {
 	ifaceNames := []string{}

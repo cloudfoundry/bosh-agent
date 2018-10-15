@@ -67,6 +67,7 @@ func describeUbuntuNetManager() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		ipResolver = &fakeip.FakeResolver{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
+		macAddressDetector := NewMacAddressDetector(fs)
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
@@ -77,6 +78,7 @@ func describeUbuntuNetManager() {
 			fs,
 			cmdRunner,
 			ipResolver,
+			macAddressDetector,
 			interfaceConfigurationCreator,
 			interfaceAddrsValidator,
 			dnsValidator,

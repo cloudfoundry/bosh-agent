@@ -34,6 +34,7 @@ func describeCentosNetManager() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		ipResolver = &fakeip.FakeResolver{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
+		macAddressDetector := NewMacAddressDetector(fs)
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
 		interfaceAddrsValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
@@ -43,6 +44,7 @@ func describeCentosNetManager() {
 			fs,
 			cmdRunner,
 			ipResolver,
+			macAddressDetector,
 			interfaceConfigurationCreator,
 			interfaceAddrsValidator,
 			dnsValidator,
