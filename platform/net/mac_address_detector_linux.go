@@ -8,6 +8,10 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+const (
+	ifaliasPrefix = "bosh-interface"
+)
+
 type linuxMacAddressDetector struct {
 	fs boshsys.FileSystem
 }
@@ -27,10 +31,21 @@ func (d linuxMacAddressDetector) DetectMacAddresses() (map[string]string, error)
 	}
 
 	var macAddress string
+	var ifalias string
 	for _, filePath := range filePaths {
 		isPhysicalDevice := d.fs.FileExists(path.Join(filePath, "device"))
 
-		if isPhysicalDevice {
+		// For third-party networking plugin case that the physical interface is used as bridge
+		// interface and a virtual interface is created to replace it, the virtual interface needs
+		// to be included in the detected result.
+		// The virtual interface has an ifalias that has the prefix "bosh-interface"
+		hasBoshPrefix := false
+		ifalias, err = d.fs.ReadFileString(path.Join(filePath, "ifalias"))
+		if err == nil {
+			hasBoshPrefix = strings.HasPrefix(ifalias, ifaliasPrefix)
+		}
+
+		if isPhysicalDevice || hasBoshPrefix {
 			macAddress, err = d.fs.ReadFileString(path.Join(filePath, "address"))
 			if err != nil {
 				return addresses, bosherr.WrapError(err, "Reading mac address from file")
