@@ -80,6 +80,15 @@ var _ = Describe("ListDisk", func() {
 				Expect(values).ToNot(ContainElement("5"))
 			})
 		})
+
+		Context("there are no disks", func() {
+			It("returns an empty array", func() {
+				result, err := action.Run()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				Expect(result).To(Equal(make([]string, 0)))
+			})
+		})
 	})
 
 	Context("error loading disk paths", func() {

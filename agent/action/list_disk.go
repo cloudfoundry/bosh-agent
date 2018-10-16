@@ -48,7 +48,7 @@ func (a ListDiskAction) Run() (interface{}, error) {
 		return nil, bosherr.WrapError(err, "Refreshing the settings")
 	}
 
-	var diskIDs []string
+	diskIDs := make([]string, 0)
 	usedIDs := map[string]bool{}
 
 	allPersistentDisks, err := a.settingsService.GetAllPersistentDiskSettings()
@@ -67,12 +67,8 @@ func (a ListDiskAction) Run() (interface{}, error) {
 				diskIDs = append(diskIDs, diskID)
 				usedIDs[diskID] = true
 			}
-		} else {
-			a.logger.Debug("list-disk-action", "Volume '%s' not mounted", diskID)
 		}
 	}
-
-	a.logger.Debug("list-disk-action", "returning mounted disks %v", diskIDs)
 
 	return diskIDs, nil
 }
