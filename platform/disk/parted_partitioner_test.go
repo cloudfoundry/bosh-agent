@@ -96,6 +96,67 @@ var _ = Describe("PartedPartitioner", func() {
 				})
 			})
 
+			Context("when there is a loop partition table", func() {
+				BeforeEach(func() {
+					fakeCmdRunner.AddCmdResult(
+						"parted -m /dev/sda unit B print",
+						fakesys.FakeCmdResult{
+							Stdout: `BYT;
+/dev/vdb:21474836480B:virtblk:512:512:loop:Virtio Block Device:;
+`})
+					fakeCmdRunner.AddCmdResult(
+						"parted -m /dev/sda unit B print",
+						fakesys.FakeCmdResult{
+							Stdout: `BYT;
+/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
+`})
+					fakeCmdRunner.AddCmdResult(
+						"parted -s /dev/sda mklabel gpt",
+						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0})
+					fakeCmdRunner.AddCmdResult(
+						"udevadm settle",
+						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0, Sticky: true})
+				})
+
+				It("ignores the loop partition table and assumes an empty disk", func() {
+					partitions := []Partition{
+						{SizeInBytes: 8589934592}, // (8GiB)
+						{SizeInBytes: 8589934592}, // (8GiB)
+					}
+
+					// Calculating "aligned" partition start/end/size
+					// (512 + 1) % 1048576 = 513
+					// (512 + 1) + 1048576 - 513 = 1048576 (aligned start)
+					// 1048576 + 8589934592 = 8590983168
+					// 8590983168 % 1048576 = 0
+					// 8590983168 - 0 - 1 = 8590983167 (desired end)
+					// first start=1048576, end=8590983167, size=8589934592
+
+					// (8590983167 + 1) % 1048576 = 0
+					// (8590983167 + 1) = 8590983168 (aligned start)
+					// 8590983168 + 8589934592 = 17180917760 (desired end)
+					// 17180917760 % 1048576 = 0
+					// 17180917760 - 0 - 1 = 17180917759
+					// second start=11661213696, end=17180917759, size=8589934592
+
+					err := partitioner.Partition("/dev/sda", partitions)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
+						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						[]string{"udevadm", "settle"},
+						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
+						[]string{"partprobe", "/dev/sda"},
+						[]string{"udevadm", "settle"},
+						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
+						[]string{"partprobe", "/dev/sda"},
+						[]string{"udevadm", "settle"},
+					}))
+				})
+			})
+
 			Context("when there are no partitions", func() {
 				BeforeEach(func() {
 					fakeCmdRunner.AddCmdResult(
