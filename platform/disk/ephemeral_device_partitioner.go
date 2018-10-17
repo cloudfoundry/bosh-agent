@@ -171,7 +171,7 @@ func (p EphemeralDevicePartitioner) getPartitionPaths(devicePath string) ([]stri
 		return []string{}, err
 	}
 
-	pathRegExp := devicePath + "."
+	pathRegExp := devicePath + "[0-9]+"
 	re := regexp.MustCompile(pathRegExp)
 	match := re.FindAllString(stdout, -1)
 
