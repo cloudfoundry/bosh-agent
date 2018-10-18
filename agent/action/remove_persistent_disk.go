@@ -31,7 +31,7 @@ func (a RemovePersistentDiskAction) Run(diskCID string) (interface{}, error) {
 }
 
 func (a RemovePersistentDiskAction) IsAsynchronous(_ ProtocolVersion) bool {
-	return false
+	return true
 }
 
 func (a RemovePersistentDiskAction) IsPersistent() bool {
