@@ -199,10 +199,15 @@ func (p partedPartitioner) runPartedPrint(devicePath string) (stdout, stderr str
 
 	defer p.cmdRunner.RunCommand("udevadm", "settle")
 
-	// If the error is not having a partition table, create one
-	if strings.Contains(fmt.Sprintf("%s\n%s", stdout, stderr), "unrecognised disk label") {
-		stdout, stderr, exitStatus, err = p.getPartitionTable(devicePath)
+	printFields := strings.SplitN(string(stdout), ":", 7)
 
+	// Create a new partition table if
+	// - there is none, or
+	// - a "loop" partition table is shown (which can mean a valid one was not found)
+	if strings.Contains(fmt.Sprintf("%s\n%s", stdout, stderr), "unrecognised disk label") ||
+		(len(printFields) > 5 && printFields[5] == "loop") {
+
+		stdout, stderr, exitStatus, err = p.getPartitionTable(devicePath)
 		if err != nil {
 			return stdout, stderr, exitStatus, bosherr.WrapErrorf(err, "Parted making label")
 		}

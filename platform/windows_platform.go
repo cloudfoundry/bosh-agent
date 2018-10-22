@@ -594,7 +594,7 @@ func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 	drive += "\\"
 
 	sshdir := filepath.Join(drive, "ProgramData", "ssh")
-	keypath := filepath.Join(sshdir, "ssh_host_ecdsa_key.pub")
+	keypath := filepath.Join(sshdir, "ssh_host_rsa_key.pub")
 
 	key, err := p.fs.ReadFileString(keypath)
 	if err != nil {
@@ -608,7 +608,7 @@ func (p WindowsPlatform) GetHostPublicKey() (string, error) {
 			return "", bosherr.WrapErrorf(err, "Reading host public key: "+
 				"expected OpenSSH to be installed at: %s", sshdir)
 		}
-		return "", bosherr.WrapErrorf(err, "Missing host public ECDSA key: %s", keypath)
+		return "", bosherr.WrapErrorf(err, "Missing host public RSA key: %s", keypath)
 	}
 	return key, nil
 }
