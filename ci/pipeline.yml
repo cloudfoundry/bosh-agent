@@ -48,13 +48,13 @@ jobs:
       privileged: true
       file: bosh-agent/ci/tasks/test-integration.yml
       params:
-        BOSH_AWS_ACCESS_KEY_ID: {{BOSH_AWS_ACCESS_KEY_ID}}
-        BOSH_AWS_SECRET_ACCESS_KEY: {{BOSH_AWS_SECRET_ACCESS_KEY}}
-        BOSH_LITE_KEYPAIR: {{BOSH_LITE_KEYPAIR}}
-        BOSH_LITE_SUBNET_ID: {{BOSH_LITE_SUBNET_ID}}
-        BOSH_LITE_NAME: {{BOSH_LITE_NAME}}
-        BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
-        BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
+        BOSH_AWS_ACCESS_KEY_ID: ((BOSH_AWS_ACCESS_KEY_ID))
+        BOSH_AWS_SECRET_ACCESS_KEY: ((BOSH_AWS_SECRET_ACCESS_KEY))
+        BOSH_LITE_KEYPAIR: ((BOSH_LITE_KEYPAIR))
+        BOSH_LITE_SUBNET_ID: ((BOSH_LITE_SUBNET_ID))
+        BOSH_LITE_NAME: ((BOSH_LITE_NAME))
+        BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
+        BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
 
 - name: test-unit-go-1.8
   public: true
@@ -73,13 +73,13 @@ jobs:
       privileged: true
       file: bosh-agent/ci/tasks/test-integration-go-1.8.yml
       params:
-        BOSH_AWS_ACCESS_KEY_ID: {{BOSH_AWS_ACCESS_KEY_ID}}
-        BOSH_AWS_SECRET_ACCESS_KEY: {{BOSH_AWS_SECRET_ACCESS_KEY}}
-        BOSH_LITE_KEYPAIR: {{BOSH_LITE_KEYPAIR}}
-        BOSH_LITE_SUBNET_ID: {{BOSH_LITE_SUBNET_ID}}
-        BOSH_LITE_NAME: {{BOSH_LITE_NAME}}
-        BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
-        BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
+        BOSH_AWS_ACCESS_KEY_ID: ((BOSH_AWS_ACCESS_KEY_ID))
+        BOSH_AWS_SECRET_ACCESS_KEY: ((BOSH_AWS_SECRET_ACCESS_KEY))
+        BOSH_LITE_KEYPAIR: ((BOSH_LITE_KEYPAIR))
+        BOSH_LITE_SUBNET_ID: ((BOSH_LITE_SUBNET_ID))
+        BOSH_LITE_NAME: ((BOSH_LITE_NAME))
+        BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
+        BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
 
 - name: windows-test-unit
   serial: true
@@ -101,13 +101,13 @@ jobs:
     input_mapping:
       windows-ami: windows-ami-1803
     params:
-      AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
-      AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
-      AWS_SUBNET: {{WINDOWS_AWS_SUBNET}}
-      AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
-      KEYPAIR_NAME: {{WINDOWS_AWS_KEYPAIR_NAME}}
+      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
+      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
+      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
+      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
+      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
       VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: {{WINRM_PASSWORD}}
+      WINRM_PASSWORD: ((WINRM_PASSWORD))
       WINDOWS_OS_VERSION: 1803
 
 - name: windows-test-integration-1709
@@ -122,13 +122,13 @@ jobs:
     input_mapping:
       windows-ami: windows-ami-1709
     params:
-      AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
-      AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
-      AWS_SUBNET: {{WINDOWS_AWS_SUBNET}}
-      AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
-      KEYPAIR_NAME: {{WINDOWS_AWS_KEYPAIR_NAME}}
+      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
+      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
+      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
+      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
+      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
       VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: {{WINRM_PASSWORD}}
+      WINRM_PASSWORD: ((WINRM_PASSWORD))
       WINDOWS_OS_VERSION: 1709
 
 - name: windows-test-integration-2012R2
@@ -143,13 +143,13 @@ jobs:
     input_mapping:
       windows-ami: windows-ami-2012R2
     params:
-      AWS_ACCESS_KEY: {{WINDOWS_AWS_ACCESS_KEY}}
-      AWS_SECRET_KEY: {{WINDOWS_AWS_SECRET_KEY}}
-      AWS_SUBNET: {{WINDOWS_AWS_SUBNET}}
-      AWS_SSH_KEY: {{WINDOWS_AWS_SSH_KEY}}
-      KEYPAIR_NAME: {{WINDOWS_AWS_KEYPAIR_NAME}}
+      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
+      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
+      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
+      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
+      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
       VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: {{WINRM_PASSWORD}}
+      WINRM_PASSWORD: ((WINRM_PASSWORD))
       WINDOWS_OS_VERSION: 2012R2
 
 - name: promote
@@ -158,24 +158,32 @@ jobs:
   plan:
     - aggregate:
       - trigger: true
-        passed: [test-unit-go-1.8, test-integration-go-1.8, test-unit, test-integration, windows-test-unit, windows-test-integration-1709, windows-test-integration-1803, windows-test-integration-2012R2]
+        #passed: [test-unit-go-1.8, test-integration-go-1.8, test-unit, test-integration, windows-test-unit, windows-test-integration-1709, windows-test-integration-1803, windows-test-integration-2012R2]
+        passed:
+        - test-integration-go-1.8
+        - test-unit
+        - test-integration
+        - windows-test-integration-1709
+        # - windows-test-integration-1803
+        - windows-test-integration-2012R2
         get: bosh-agent
       - get: version-semver
         params: {bump: minor}
+      # - get: bosh-agent-index
     - task: assert-version-aligns
       file: bosh-agent/ci/tasks/assert-version-aligns.yml
-    - put: version-semver
-      params:
-        file: version-semver/number
-    - put: bosh-agent-commit-status
-      params:
-        state: success
-        commit: bosh-agent
-    - put: bosh-agent-master
-      params:
-        repository: bosh-agent
-        tag: version-semver/number
-        tag_prefix: v
+    # - put: version-semver
+    #   params:
+    #     file: version-semver/number
+    # - put: bosh-agent-commit-status
+    #   params:
+    #     state: success
+    #     commit: bosh-agent
+    # - put: bosh-agent-master
+    #   params:
+    #     repository: bosh-agent
+    #     tag: version-semver/number
+    #     tag_prefix: v
     - aggregate:
       - task: build-linux-go-1.8
         file: bosh-agent/ci/tasks/build-linux-go-1.8.yml
@@ -187,51 +195,83 @@ jobs:
         file: bosh-agent/ci/tasks/build-linux.yml
       - task: build-linux-ppc64le
         file: bosh-agent/ci/tasks/build-linux-ppc64le.yml
-    - aggregate:
-      - put: release-bucket-linux-go-1.8
-        params:
-          file: compiled-linux-amd64-go-1.8/bosh-agent-*-linux-amd64
-      - put: release-bucket-linux-ppc64le-go-1.8
-        params:
-          file: compiled-linux-ppc64le-go-1.8/bosh-agent-*-linux-ppc64le
-      - put: release-bucket-windows
-        params:
-          file: compiled-windows-amd64/bosh-agent-*-windows-amd64.exe
-      - put: release-bucket-linux
-        params:
-          file: compiled-linux-amd64/bosh-agent-*-linux-amd64
-      - put: release-bucket-linux-ppc64le
-        params:
-          file: compiled-linux-ppc64le/bosh-agent-*-linux-ppc64le
+    - put: bosh-agent-index
+      params:
+        files:
+        - compiled-linux-*/*
+        version: version-semver/number
+
+# - name: export-final-release
+#   serial: true
+#   plan:
+#   - aggregate:
+#     - get: bosh-agent-index
+#       trigger: true
+#       passed:
+#       - promote
+#     - get: bosh-agent
+#       trigger: true
+#     - get: warden-ubuntu-xenial
+#   # - task: export-final-release
+#   #   file: bosh-master/ci/tasks/export-final-release.yml
+#   #   privileged: true
+#   #   input_mapping:
+#   #     version: bosh-github-release
+#   #     stemcell: warden-ubuntu-xenial
+#   #     bosh-src: bosh-master
+#   - task: push-bosh-compiled-releases
+#     file: bosh-master/ci/tasks/push-bosh-agent-compiled-release.yml
+#     input_mapping:
+#       candidate-version: bosh-github-release
+#       bosh-src: bosh-master
+#     params:
+#       AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
+#       AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+#       git_private_key: ((bosh-compiled-releases-index-deploy-key))
+
 
 resources:
 - name: bosh-agent
   type: git
   source:
     uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: develop
-    private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
+    branch: wip-metalinks
+    private_key: ((BOSH_GITHUB_DEPLOYMENT_KEY))
 
-- name: bosh-agent-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: master
-    private_key: {{BOSH_GITHUB_DEPLOYMENT_KEY}}
+# - name: bosh-agent-master
+#   type: git
+#   source:
+#     uri: git@github.com:cloudfoundry/bosh-agent.git
+#     branch: master
+#     private_key: ((BOSH_GITHUB_DEPLOYMENT_KEY))
 
-- name: bosh-agent-commit-status
-  type: github-status
+- name: bosh-agent-index
+  type: metalink-resource
   source:
-    repository: cloudfoundry/bosh-agent
-    access_token: {{repo_github_token}}
-    branch: develop
-    context: ci/published
+    uri: git+ssh://git@github.com:s4heid/bosh-agent-index.git//
+    mirror_files:
+      - destination: s3://s3-external-1.amazonaws.com/((RELEASE_BUCKET_AGENT))/{{.Name}}
+    options:
+      private_key: ((SHMP_AGENT_KEY))
+    url_handlers:
+    - type: s3
+      options:
+        access_key: ((AWS_S3_BUCKET_ACCESS_KEY))
+        secret_key: ((AWS_S3_BUCKET_SECRET_KEY))
+
+# - name: bosh-agent-commit-status
+#   type: github-status
+#   source:
+#     repository: cloudfoundry/bosh-agent
+#     access_token: ((repo_github_token))
+#     branch: develop
+#     context: ci/published
 
 - name: windows-ami-1709
   type: ami-resource
   source:
-    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
-    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
+    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
+    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
     region: us-east-1
     search_options:
       filters:
@@ -247,8 +287,8 @@ resources:
 - name: windows-ami-2012R2
   type: ami-resource
   source:
-    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
-    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
+    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
+    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
     region: us-east-1
     search_options:
       filters:
@@ -264,8 +304,8 @@ resources:
 - name: windows-ami-1803
   type: ami-resource
   source:
-    access_key_id: {{WINDOWS_AWS_ACCESS_KEY}}
-    secret_access_key: {{WINDOWS_AWS_SECRET_KEY}}
+    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
+    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
     region: us-east-1
     search_options:
       filters:
@@ -278,65 +318,65 @@ resources:
       owners:
       - amazon
 
-- name: release-bucket-linux-go-1.8
-  type: s3
-  source:
-    bucket: releases
-    regexp: go-1.8/bosh-agent-(.*)-linux-amd64
-    bucket: {{RELEASE_BUCKET_AGENT}}
-    region_name: {{AWS_S3_BUCKET_REGION}}
-    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
-    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+# - name: release-bucket-linux-go-1.8
+#   type: s3
+#   source:
+#     bucket: releases
+#     regexp: go-1.8/bosh-agent-(.*)-linux-amd64
+#     bucket: ((RELEASE_BUCKET_AGENT))
+#     region_name: ((AWS_S3_BUCKET_REGION))
+#     access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
+#     secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
-- name: release-bucket-linux
-  type: s3
-  source:
-    bucket: releases-go-latest
-    regexp: bosh-agent-(.*)-linux-amd64
-    bucket: {{RELEASE_BUCKET_AGENT}}
-    region_name: {{AWS_S3_BUCKET_REGION}}
-    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
-    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+# - name: release-bucket-linux
+#   type: s3
+#   source:
+#     bucket: releases-go-latest
+#     regexp: bosh-agent-(.*)-linux-amd64
+#     bucket: ((RELEASE_BUCKET_AGENT))
+#     region_name: ((AWS_S3_BUCKET_REGION))
+#     access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
+#     secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
-- name: release-bucket-linux-ppc64le-go-1.8
-  type: s3
-  source:
-    bucket: releases
-    regexp: go-1.8/bosh-agent-(.*)-linux-ppc64le
-    bucket: {{RELEASE_BUCKET_AGENT}}
-    region_name: {{AWS_S3_BUCKET_REGION}}
-    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
-    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+# - name: release-bucket-linux-ppc64le-go-1.8
+#   type: s3
+#   source:
+#     bucket: releases
+#     regexp: go-1.8/bosh-agent-(.*)-linux-ppc64le
+#     bucket: ((RELEASE_BUCKET_AGENT))
+#     region_name: ((AWS_S3_BUCKET_REGION))
+#     access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
+#     secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
-- name: release-bucket-linux-ppc64le
-  type: s3
-  source:
-    bucket: releases
-    regexp: bosh-agent-(.*)-linux-ppc64le
-    bucket: {{RELEASE_BUCKET_AGENT}}
-    region_name: {{AWS_S3_BUCKET_REGION}}
-    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
-    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+# - name: release-bucket-linux-ppc64le
+#   type: s3
+#   source:
+#     bucket: releases
+#     regexp: bosh-agent-(.*)-linux-ppc64le
+#     bucket: ((RELEASE_BUCKET_AGENT))
+#     region_name: ((AWS_S3_BUCKET_REGION))
+#     access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
+#     secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
-- name: release-bucket-windows
-  type: s3
-  source:
-    bucket: releases
-    regexp: bosh-agent-(.*)-windows-amd64.exe
-    bucket: {{RELEASE_BUCKET_AGENT}}
-    region_name: {{AWS_S3_BUCKET_REGION}}
-    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
-    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+# - name: release-bucket-windows
+#   type: s3
+#   source:
+#     bucket: releases
+#     regexp: bosh-agent-(.*)-windows-amd64.exe
+#     bucket: ((RELEASE_BUCKET_AGENT))
+#     region_name: ((AWS_S3_BUCKET_REGION))
+#     access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
+#     secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
 - name: version-semver
   type: semver
   source:
     initial_version: 0.0.1
     key: agent-current-version
-    bucket: {{SEMVER_BUCKET}}
-    region_name: {{AWS_S3_BUCKET_REGION}}
-    access_key_id: {{AWS_S3_BUCKET_ACCESS_KEY}}
-    secret_access_key: {{AWS_S3_BUCKET_SECRET_KEY}}
+    bucket: ((SEMVER_BUCKET))
+    region_name: ((AWS_S3_BUCKET_REGION))
+    access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
+    secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
 - name: weekly
   type: time
@@ -356,3 +396,7 @@ resource_types:
   source:
     repository: dpb587/github-status-resource
     tag: master
+- name: metalink-resource
+  type: docker-image
+  source:
+    repository: dpb587/metalink-repository-resource
