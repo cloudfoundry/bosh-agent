@@ -17,6 +17,7 @@ outputs:
 
 params:
   DIRNAME: compiled-linux-amd64-go-1.8
+  GOVERSION: go-1.8
   GOARCH: amd64
   GOOS:   linux
 

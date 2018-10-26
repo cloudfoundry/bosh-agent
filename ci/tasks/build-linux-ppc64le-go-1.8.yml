@@ -17,6 +17,7 @@ outputs:
 
 params:
   DIRNAME: compiled-linux-ppc64le-go-1.8
+  GOVERSION: go-1.8
   GOARCH: ppc64le
   GOOS:   linux
 
