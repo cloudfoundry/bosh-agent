@@ -158,20 +158,20 @@ jobs:
   plan:
     - aggregate:
       - trigger: true
-        #passed: [test-unit-go-1.8, test-integration-go-1.8, test-unit, test-integration, windows-test-unit, windows-test-integration-1709, windows-test-integration-1803, windows-test-integration-2012R2]
-        passed:
-        - test-integration-go-1.8
-        - test-unit
-        - test-integration
-        - windows-test-integration-1709
-        # - windows-test-integration-1803
-        - windows-test-integration-2012R2
+        # passed: [test-unit-go-1.8, test-integration-go-1.8, test-unit, test-integration, windows-test-unit, windows-test-integration-1709, windows-test-integration-1803, windows-test-integration-2012R2]
+        # passed:
+        # - test-integration-go-1.8
+        # - test-unit
+        # - test-integration
+        # - windows-test-integration-1709
+        # # - windows-test-integration-1803
+        # - windows-test-integration-2012R2
         get: bosh-agent
       - get: version-semver
         params: {bump: minor}
       # - get: bosh-agent-index
-    - task: assert-version-aligns
-      file: bosh-agent/ci/tasks/assert-version-aligns.yml
+    # - task: assert-version-aligns
+    #   file: bosh-agent/ci/tasks/assert-version-aligns.yml
     # - put: version-semver
     #   params:
     #     file: version-semver/number
