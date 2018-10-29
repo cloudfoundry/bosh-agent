@@ -4,7 +4,8 @@ trap {
     exit 1
 }
 
-powershell.exe bin/install-go.ps1
+powershell.exe "./gopath/src/github.com/cloudfoundry/bosh-agent/bin/install-go.ps1"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 refreshenv
 

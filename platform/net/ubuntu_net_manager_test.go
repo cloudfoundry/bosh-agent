@@ -242,6 +242,16 @@ dns-nameservers 8.8.8.8 9.9.9.9`
 		Context("networks is preconfigured", func() {
 			var networks boshsettings.Networks
 			BeforeEach(func() {
+				interfacePaths := []string{}
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth0", "fake-static-mac-address", true))
+				interfacePaths = append(interfacePaths, writeNetworkDevice("fake-eth1", "fake-dhcp-mac-address", true))
+				fs.SetGlob("/sys/class/net/*", interfacePaths)
+
+				interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+					boship.NewSimpleInterfaceAddress("fake-eth0", "1.2.3.4"),
+					boship.NewSimpleInterfaceAddress("fake-eth1", "5.6.7.8"),
+				}
+
 				dhcpNetwork.Preconfigured = true
 				staticNetwork.Preconfigured = true
 				networks = boshsettings.Networks{
@@ -387,7 +397,7 @@ nameserver 9.9.9.9
 				err := netManager.SetupNetworking(networks, nil)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"resolvconf", "-u"}))
 			})
 		})

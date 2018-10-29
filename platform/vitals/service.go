@@ -91,7 +91,7 @@ func (s concreteService) Get() (vitals Vitals, err error) {
 
 func (s concreteService) getDiskStats() (diskStats DiskVitals, err error) {
 	disks := map[string]string{
-		"/": "system",
+		"/":                      "system",
 		s.dirProvider.DataDir():  "ephemeral",
 		s.dirProvider.StoreDir(): "persistent",
 	}

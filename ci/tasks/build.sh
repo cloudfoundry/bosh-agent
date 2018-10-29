@@ -8,7 +8,12 @@ export GOPATH=${BASE}/gopath
 
 semver=`cat ${BASE}/version-semver/number`
 
-filename="bosh-agent-${semver}-${GOOS}-${GOARCH}"
+goversion_suffix=""
+if [ ! -z "${GOVERSION}" ]; then
+  goversion_suffix="-${GOVERSION}"
+fi
+
+filename="bosh-agent-${semver}${goversion_suffix}-${GOOS}-${GOARCH}"
 if [[ $GOOS = 'windows' ]]; then
   filename="${filename}.exe"
 fi
