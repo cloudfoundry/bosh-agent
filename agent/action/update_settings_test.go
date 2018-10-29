@@ -120,34 +120,34 @@ var _ = Describe("UpdateSettings", func() {
 			newUpdateSettings = boshsettings.UpdateSettings{
 				DiskAssociations: []boshsettings.DiskAssociation{diskAssociation},
 			}
+			settingsService.GetPersistentDiskSettingsError = errors.New("Disk DNE")
 		})
 
 		It("returns the error", func() {
 			_, err := action.Run(newUpdateSettings)
 
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Fetching disk settings: Disk DNE"))
 		})
 	})
 
 	It("associates the disks", func() {
-		settingsService.Settings = boshsettings.Settings{
-			Disks: boshsettings.Disks{
-				Persistent: map[string]interface{}{
-					"fake-disk-id": map[string]interface{}{
-						"volume_id":      "fake-disk-volume-id",
-						"id":             "fake-disk-device-id",
-						"path":           "fake-disk-path",
-						"lun":            "fake-disk-lun",
-						"host_device_id": "fake-disk-host-device-id",
-					},
-					"fake-disk-id-2": map[string]interface{}{
-						"volume_id":      "fake-disk-volume-id-2",
-						"id":             "fake-disk-device-id-2",
-						"path":           "fake-disk-path-2",
-						"lun":            "fake-disk-lun-2",
-						"host_device_id": "fake-disk-host-device-id-2",
-					},
-				},
+		settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
+			"fake-disk-id": {
+				VolumeID:     "fake-disk-volume-id",
+				ID:           "fake-disk-id",
+				DeviceID:     "fake-disk-device-id",
+				Path:         "fake-disk-path",
+				Lun:          "fake-disk-lun",
+				HostDeviceID: "fake-disk-host-device-id",
+			},
+			"fake-disk-id-2": {
+				VolumeID:     "fake-disk-volume-id-2",
+				ID:           "fake-disk-id-2",
+				DeviceID:     "fake-disk-device-id-2",
+				Path:         "fake-disk-path-2",
+				Lun:          "fake-disk-lun-2",
+				HostDeviceID: "fake-disk-host-device-id-2",
 			},
 		}
 

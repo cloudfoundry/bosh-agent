@@ -100,61 +100,17 @@ type VM struct {
 }
 
 func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
-	diskSettings := DiskSettings{}
-
 	for key, settings := range s.Disks.Persistent {
 		if key == diskID {
-			diskSettings.ID = diskID
-
-			if hashSettings, ok := settings.(map[string]interface{}); ok {
-				if path, ok := hashSettings["path"]; ok {
-					diskSettings.Path = path.(string)
-				}
-				if volumeID, ok := hashSettings["volume_id"]; ok {
-					diskSettings.VolumeID = volumeID.(string)
-				}
-				if deviceID, ok := hashSettings["id"]; ok {
-					diskSettings.DeviceID = deviceID.(string)
-				}
-				if lun, ok := hashSettings["lun"]; ok {
-					diskSettings.Lun = lun.(string)
-				}
-				if hostDeviceID, ok := hashSettings["host_device_id"]; ok {
-					diskSettings.HostDeviceID = hostDeviceID.(string)
-				}
-
-				if iSCSISettings, ok := hashSettings["iscsi_settings"]; ok {
-					if hashISCSISettings, ok := iSCSISettings.(map[string]interface{}); ok {
-						if username, ok := hashISCSISettings["username"]; ok {
-							diskSettings.ISCSISettings.Username = username.(string)
-						}
-						if password, ok := hashISCSISettings["password"]; ok {
-							diskSettings.ISCSISettings.Password = password.(string)
-						}
-						if initiator, ok := hashISCSISettings["initiator_name"]; ok {
-							diskSettings.ISCSISettings.InitiatorName = initiator.(string)
-						}
-						if target, ok := hashISCSISettings["target"]; ok {
-							diskSettings.ISCSISettings.Target = target.(string)
-						}
-					}
-				}
-
-			} else {
-				// Old CPIs return disk path (string) or volume id (string) as disk settings
-				diskSettings.Path = settings.(string)
-				diskSettings.VolumeID = settings.(string)
-			}
-
-			diskSettings.FileSystemType = s.Env.PersistentDiskFS
-			diskSettings.MountOptions = s.Env.PersistentDiskMountOptions
-			diskSettings.Partitioner = s.Env.PersistentDiskPartitioner
-
-			return diskSettings, true
+			return s.populatePersistentDiskSettings(diskID, settings), true
 		}
 	}
 
-	return diskSettings, false
+	return DiskSettings{}, false
+}
+
+func (s Settings) PersistentDiskSettingsFromHint(diskID string, diskHint interface{}) DiskSettings {
+	return s.populatePersistentDiskSettings(diskID, diskHint)
 }
 
 func (s Settings) EphemeralDiskSettings() DiskSettings {
@@ -177,10 +133,10 @@ func (s Settings) EphemeralDiskSettings() DiskSettings {
 			if hostDeviceID, ok := hashSettings["host_device_id"]; ok {
 				diskSettings.HostDeviceID = hostDeviceID.(string)
 			}
-		} else {
+		} else if stringSetting, ok := s.Disks.Ephemeral.(string); ok {
 			// Old CPIs return disk path (string) or volume id (string) as disk settings
-			diskSettings.Path = s.Disks.Ephemeral.(string)
-			diskSettings.VolumeID = s.Disks.Ephemeral.(string)
+			diskSettings.Path = stringSetting
+			diskSettings.VolumeID = stringSetting
 		}
 	}
 
@@ -211,6 +167,56 @@ func (s Settings) GetNtpServers() []string {
 		return s.Env.Bosh.NTP
 	}
 	return s.NTP
+}
+
+func (s Settings) populatePersistentDiskSettings(diskID string, settingsInfo interface{}) DiskSettings {
+	diskSettings := DiskSettings{
+		ID: diskID,
+	}
+
+	if hashSettings, ok := settingsInfo.(map[string]interface{}); ok {
+		if path, ok := hashSettings["path"]; ok {
+			diskSettings.Path = path.(string)
+		}
+		if volumeID, ok := hashSettings["volume_id"]; ok {
+			diskSettings.VolumeID = volumeID.(string)
+		}
+		if deviceID, ok := hashSettings["id"]; ok {
+			diskSettings.DeviceID = deviceID.(string)
+		}
+		if lun, ok := hashSettings["lun"]; ok {
+			diskSettings.Lun = lun.(string)
+		}
+		if hostDeviceID, ok := hashSettings["host_device_id"]; ok {
+			diskSettings.HostDeviceID = hostDeviceID.(string)
+		}
+		if iSCSISettings, ok := hashSettings["iscsi_settings"]; ok {
+			if hashISCSISettings, ok := iSCSISettings.(map[string]interface{}); ok {
+				if username, ok := hashISCSISettings["username"]; ok {
+					diskSettings.ISCSISettings.Username = username.(string)
+				}
+				if password, ok := hashISCSISettings["password"]; ok {
+					diskSettings.ISCSISettings.Password = password.(string)
+				}
+				if initiator, ok := hashISCSISettings["initiator_name"]; ok {
+					diskSettings.ISCSISettings.InitiatorName = initiator.(string)
+				}
+				if target, ok := hashISCSISettings["target"]; ok {
+					diskSettings.ISCSISettings.Target = target.(string)
+				}
+			}
+		}
+	} else if stringSetting, ok := settingsInfo.(string); ok {
+		// Old CPIs return disk path (string) or volume id (string) as disk settings
+		diskSettings.Path = stringSetting
+		diskSettings.VolumeID = stringSetting
+	}
+
+	diskSettings.FileSystemType = s.Env.PersistentDiskFS
+	diskSettings.MountOptions = s.Env.PersistentDiskMountOptions
+	diskSettings.Partitioner = s.Env.PersistentDiskPartitioner
+
+	return diskSettings
 }
 
 type Env struct {

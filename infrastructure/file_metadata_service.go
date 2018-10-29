@@ -134,6 +134,28 @@ func (ms fileMetadataService) GetNetworks() (boshsettings.Networks, error) {
 	return userData.Networks, nil
 }
 
+func (ms fileMetadataService) GetSettings() (boshsettings.Settings, error) {
+	var userData UserDataContentsType
+
+	contents, err := ms.fs.ReadFile(ms.userDataFilePath)
+	if err != nil {
+		return boshsettings.Settings{}, bosherr.WrapError(err, "Reading user data")
+	}
+
+	err = json.Unmarshal([]byte(contents), &userData)
+	if err != nil {
+		return boshsettings.Settings{}, bosherr.WrapError(err, "Unmarshalling user data")
+	}
+
+	ms.logger.Debug(ms.logTag, "Read user data '%#v'", userData)
+
+	if userData.Settings.AgentID == "" {
+		return boshsettings.Settings{}, bosherr.Error("Metadata does not provide settings")
+	}
+
+	return userData.Settings, nil
+}
+
 func (ms fileMetadataService) IsAvailable() bool {
 	return ms.fs.FileExists(ms.settingsFilePath)
 }

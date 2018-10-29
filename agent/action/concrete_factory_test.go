@@ -157,24 +157,6 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(NewInfo()))
 	})
 
-	It("prepare_network_change", func() {
-		action, err := factory.Create("prepare_network_change")
-		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settingsService, NewAgentKiller())))
-	})
-
-	It("prepare_configure_networks", func() {
-		action, err := factory.Create("prepare_configure_networks")
-		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewPrepareConfigureNetworks(platform, settingsService)))
-	})
-
-	It("configure_networks", func() {
-		action, err := factory.Create("configure_networks")
-		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewConfigureNetworks(NewAgentKiller())))
-	})
-
 	It("ssh", func() {
 		action, err := factory.Create("ssh")
 		Expect(err).ToNot(HaveOccurred())
@@ -191,6 +173,12 @@ var _ = Describe("concreteFactory", func() {
 		action, err := factory.Create("stop")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewStop(jobSupervisor)))
+	})
+
+	It("remove_persistent_disk", func() {
+		action, err := factory.Create("remove_persistent_disk")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewRemovePersistentDiskAction(settingsService)))
 	})
 
 	It("unmount_disk", func() {

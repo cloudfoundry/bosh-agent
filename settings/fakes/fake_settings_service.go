@@ -11,10 +11,24 @@ type FakeSettingsService struct {
 	LoadSettingsError  error
 	SettingsWereLoaded bool
 
+	GetPersistentDiskSettingsError    error
+	GetAllPersistentDiskSettingsError error
+	PersistentDiskSettingsWereLoaded  bool
+
+	RemovePersistentDiskSettingsError error
+
 	InvalidateSettingsError error
 	SettingsWereInvalidated bool
 
-	Settings boshsettings.Settings
+	PersistentDiskSettings map[string]boshsettings.DiskSettings
+	Settings               boshsettings.Settings
+
+	GetPersistentDiskSettingsCallCount    int
+	RemovePersistentDiskSettingsCallCount int
+	RemovePersistentDiskSettingsLastArg   string
+	SavePersistentDiskSettingsCallCount   int
+	SavePersistentDiskSettingsErr         error
+	SavePersistentDiskSettingsLastArg     boshsettings.DiskSettings
 }
 
 func (service *FakeSettingsService) InvalidateSettings() error {
@@ -33,4 +47,29 @@ func (service *FakeSettingsService) LoadSettings() error {
 
 func (service FakeSettingsService) GetSettings() boshsettings.Settings {
 	return service.Settings
+}
+
+func (service *FakeSettingsService) GetPersistentDiskSettings(diskCID string) (boshsettings.DiskSettings, error) {
+	service.GetPersistentDiskSettingsCallCount++
+	service.PersistentDiskSettingsWereLoaded = true
+	return service.PersistentDiskSettings[diskCID], service.GetPersistentDiskSettingsError
+}
+
+func (service *FakeSettingsService) RemovePersistentDiskSettings(diskID string) error {
+	service.RemovePersistentDiskSettingsLastArg = diskID
+	service.RemovePersistentDiskSettingsCallCount++
+	return service.RemovePersistentDiskSettingsError
+}
+
+func (service *FakeSettingsService) SavePersistentDiskSettings(settings boshsettings.DiskSettings) error {
+	service.SavePersistentDiskSettingsCallCount++
+	service.SavePersistentDiskSettingsLastArg = settings
+	if service.SavePersistentDiskSettingsErr != nil {
+		return service.SavePersistentDiskSettingsErr
+	}
+	return nil
+}
+
+func (service *FakeSettingsService) GetAllPersistentDiskSettings() (map[string]boshsettings.DiskSettings, error) {
+	return service.PersistentDiskSettings, service.GetAllPersistentDiskSettingsError
 }

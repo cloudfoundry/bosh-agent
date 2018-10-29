@@ -53,11 +53,9 @@ func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 		return nil, bosherr.WrapError(err, "Refreshing the settings")
 	}
 
-	settings := a.settingsService.GetSettings()
-
-	diskSettings, found := settings.PersistentDiskSettings(diskCid)
-	if !found {
-		return nil, bosherr.Errorf("Persistent disk with volume id '%s' could not be found", diskCid)
+	diskSettings, err := a.settingsService.GetPersistentDiskSettings(diskCid)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Reading persistent disk settings")
 	}
 
 	mountPoint := a.dirProvider.StoreDir()
@@ -76,4 +74,13 @@ func (a MountDiskAction) Resume() (interface{}, error) {
 
 func (a MountDiskAction) Cancel() error {
 	return errors.New("not supported")
+}
+
+func (a MountDiskAction) pruneNil(hints []interface{}) []interface{} {
+	for i := len(hints) - 1; i >= 0; i-- {
+		if hints[i] == nil {
+			hints = append(hints[:i], hints[i+1:]...)
+		}
+	}
+	return hints
 }

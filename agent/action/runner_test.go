@@ -70,6 +70,38 @@ func (a *actionWithTypes) Cancel() error {
 	return nil
 }
 
+type actionWithSingleStringArgument struct {
+	Value valueType
+	Err   error
+
+	Arg string
+}
+
+func (a *actionWithSingleStringArgument) IsAsynchronous(_ ProtocolVersion) bool {
+	return false
+}
+
+func (a *actionWithSingleStringArgument) IsPersistent() bool {
+	return false
+}
+
+func (a *actionWithSingleStringArgument) IsLoggable() bool {
+	return true
+}
+
+func (a *actionWithSingleStringArgument) Run(arg string) (valueType, error) {
+	a.Arg = arg
+	return a.Value, a.Err
+}
+
+func (a *actionWithSingleStringArgument) Resume() (interface{}, error) {
+	return nil, nil
+}
+
+func (a *actionWithSingleStringArgument) Cancel() error {
+	return nil
+}
+
 type actionWithGoodRunMethod struct {
 	Value valueType
 	Err   error
@@ -289,6 +321,18 @@ var _ = Describe("concreteRunner", func() {
 
 		_, err := runner.Run(action, []byte(payload), 0)
 		Expect(err).To(HaveOccurred())
+	})
+
+	It("runner runs successfully when action is passed more arguments than required", func() {
+		runner := NewRunner()
+
+		expectedValue := valueType{ID: 13, Success: true}
+
+		action := &actionWithSingleStringArgument{Value: expectedValue}
+		payload := `{"arguments":["setup", "additional extra argument", "another extra argument"]}`
+
+		_, err := runner.Run(action, []byte(payload), 0)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("runner run errs when action arguments types do not match", func() {

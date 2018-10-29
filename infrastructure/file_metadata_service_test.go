@@ -166,6 +166,77 @@ var _ = Describe("FileMetadataService", func() {
 		})
 	})
 
+	Describe("GetSettings", func() {
+		Context("when metadata service file exists", func() {
+			BeforeEach(func() {
+				userDataContents := `
+				{
+					"registry":{"endpoint":"fake-registry-endpoint"},
+					"agent_id":"Agent-Foo",
+					"mbus": "Agent-Mbus"
+				}`
+
+				fs.WriteFileString("fake-userdata-file-path", userDataContents)
+			})
+
+			It("returns settings", func() {
+				settings, err := metadataService.GetSettings()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(settings.AgentID).To(Equal("Agent-Foo"))
+			})
+
+			Context("when metadata settings does NOT contain agentID", func() {
+				BeforeEach(func() {
+					userDataContents := `
+					{
+						"registry":{"endpoint":"fake-registry-endpoint"},
+						"mbus": "Agent-Mbus"
+					}`
+
+					fs.WriteFileString("fake-userdata-file-path", userDataContents)
+				})
+
+				It("returns error", func() {
+					_, err := metadataService.GetSettings()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Metadata does not provide settings"))
+				})
+			})
+		})
+
+		Context("when metadata service file does not exist", func() {
+			BeforeEach(func() {
+				fs.RemoveAll("fake-settings-file-path")
+			})
+
+			It("returns error", func() {
+				_, err := metadataService.GetSettings()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Reading user data: Not found: open fake-userdata-file-path"))
+			})
+		})
+
+		Context("when we have incorrect metadata in file", func() {
+			BeforeEach(func() {
+				userDataContents := `
+					{
+						"INCORRECT JSON": ,
+						"registry":{"endpoint":"fake-registry-endpoint"},
+						"settings":{
+							"mbus": "Agent-Mbus"
+					}`
+
+				fs.WriteFileString("fake-userdata-file-path", userDataContents)
+			})
+
+			It("returns error", func() {
+				_, err := metadataService.GetSettings()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Unmarshalling user data: invalid character ',' looking for beginning of value"))
+			})
+		})
+	})
+
 	Describe("IsAvailable", func() {
 		Context("when file does not exist", func() {
 			It("returns false", func() {

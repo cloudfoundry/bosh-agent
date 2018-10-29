@@ -284,4 +284,42 @@ func describeConfigDriveMetadataService() {
 			})
 		})
 	})
+
+	Describe("GetSettings", func() {
+		It("returns an error if it fails to get settings", func() {
+			updateUserdata("{}")
+
+			_, err := metadataService.GetSettings()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Metadata does not provide settings"))
+		})
+
+		Context("when user_data contains settings", func() {
+			BeforeEach(func() {
+				userdataContents := fmt.Sprintf(
+					`
+{
+	"server":{"name":"%s"},
+	"registry":{"endpoint":"%s"},
+	"dns":{"nameserver":["%s"]},
+	"agent_id":"%s",
+	"mbus": "%s"
+}`,
+					"fake-server-name",
+					"http://fake-registry.com",
+					"fake-dns-server-ip",
+					"Agent-Foo",
+					"Agent-Mbus",
+				)
+
+				updateUserdata(userdataContents)
+			})
+
+			It("returns the settings", func() {
+				settings, err := metadataService.GetSettings()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(settings.AgentID).To(Equal("Agent-Foo"))
+			})
+		})
+	})
 }
