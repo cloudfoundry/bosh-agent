@@ -207,10 +207,6 @@ func (s *settingsService) GetSettings() Settings {
 	}
 	s.settingsMutex.Unlock()
 
-	if settingsCopy.Networks.HasInterfaceAlias() {
-		return settingsCopy
-	}
-
 	for networkName, network := range settingsCopy.Networks {
 		if !network.IsDHCP() {
 			continue
