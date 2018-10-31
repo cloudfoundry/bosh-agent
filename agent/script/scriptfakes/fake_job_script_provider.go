@@ -2,30 +2,18 @@
 package scriptfakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/script"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	script "github.com/cloudfoundry/bosh-agent/agent/script"
+	drain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 type FakeJobScriptProvider struct {
-	NewScriptStub        func(jobName string, scriptName string) script.Script
-	newScriptMutex       sync.RWMutex
-	newScriptArgsForCall []struct {
-		jobName    string
-		scriptName string
-	}
-	newScriptReturns struct {
-		result1 script.Script
-	}
-	newScriptReturnsOnCall map[int]struct {
-		result1 script.Script
-	}
-	NewDrainScriptStub        func(jobName string, params boshdrain.ScriptParams) script.CancellableScript
+	NewDrainScriptStub        func(string, drain.ScriptParams) script.CancellableScript
 	newDrainScriptMutex       sync.RWMutex
 	newDrainScriptArgsForCall []struct {
-		jobName string
-		params  boshdrain.ScriptParams
+		arg1 string
+		arg2 drain.ScriptParams
 	}
 	newDrainScriptReturns struct {
 		result1 script.CancellableScript
@@ -33,11 +21,11 @@ type FakeJobScriptProvider struct {
 	newDrainScriptReturnsOnCall map[int]struct {
 		result1 script.CancellableScript
 	}
-	NewParallelScriptStub        func(scriptName string, scripts []script.Script) script.CancellableScript
+	NewParallelScriptStub        func(string, []script.Script) script.CancellableScript
 	newParallelScriptMutex       sync.RWMutex
 	newParallelScriptArgsForCall []struct {
-		scriptName string
-		scripts    []script.Script
+		arg1 string
+		arg2 []script.Script
 	}
 	newParallelScriptReturns struct {
 		result1 script.CancellableScript
@@ -45,75 +33,39 @@ type FakeJobScriptProvider struct {
 	newParallelScriptReturnsOnCall map[int]struct {
 		result1 script.CancellableScript
 	}
+	NewScriptStub        func(string, string) script.Script
+	newScriptMutex       sync.RWMutex
+	newScriptArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	newScriptReturns struct {
+		result1 script.Script
+	}
+	newScriptReturnsOnCall map[int]struct {
+		result1 script.Script
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeJobScriptProvider) NewScript(jobName string, scriptName string) script.Script {
-	fake.newScriptMutex.Lock()
-	ret, specificReturn := fake.newScriptReturnsOnCall[len(fake.newScriptArgsForCall)]
-	fake.newScriptArgsForCall = append(fake.newScriptArgsForCall, struct {
-		jobName    string
-		scriptName string
-	}{jobName, scriptName})
-	fake.recordInvocation("NewScript", []interface{}{jobName, scriptName})
-	fake.newScriptMutex.Unlock()
-	if fake.NewScriptStub != nil {
-		return fake.NewScriptStub(jobName, scriptName)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.newScriptReturns.result1
-}
-
-func (fake *FakeJobScriptProvider) NewScriptCallCount() int {
-	fake.newScriptMutex.RLock()
-	defer fake.newScriptMutex.RUnlock()
-	return len(fake.newScriptArgsForCall)
-}
-
-func (fake *FakeJobScriptProvider) NewScriptArgsForCall(i int) (string, string) {
-	fake.newScriptMutex.RLock()
-	defer fake.newScriptMutex.RUnlock()
-	return fake.newScriptArgsForCall[i].jobName, fake.newScriptArgsForCall[i].scriptName
-}
-
-func (fake *FakeJobScriptProvider) NewScriptReturns(result1 script.Script) {
-	fake.NewScriptStub = nil
-	fake.newScriptReturns = struct {
-		result1 script.Script
-	}{result1}
-}
-
-func (fake *FakeJobScriptProvider) NewScriptReturnsOnCall(i int, result1 script.Script) {
-	fake.NewScriptStub = nil
-	if fake.newScriptReturnsOnCall == nil {
-		fake.newScriptReturnsOnCall = make(map[int]struct {
-			result1 script.Script
-		})
-	}
-	fake.newScriptReturnsOnCall[i] = struct {
-		result1 script.Script
-	}{result1}
-}
-
-func (fake *FakeJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) script.CancellableScript {
+func (fake *FakeJobScriptProvider) NewDrainScript(arg1 string, arg2 drain.ScriptParams) script.CancellableScript {
 	fake.newDrainScriptMutex.Lock()
 	ret, specificReturn := fake.newDrainScriptReturnsOnCall[len(fake.newDrainScriptArgsForCall)]
 	fake.newDrainScriptArgsForCall = append(fake.newDrainScriptArgsForCall, struct {
-		jobName string
-		params  boshdrain.ScriptParams
-	}{jobName, params})
-	fake.recordInvocation("NewDrainScript", []interface{}{jobName, params})
+		arg1 string
+		arg2 drain.ScriptParams
+	}{arg1, arg2})
+	fake.recordInvocation("NewDrainScript", []interface{}{arg1, arg2})
 	fake.newDrainScriptMutex.Unlock()
 	if fake.NewDrainScriptStub != nil {
-		return fake.NewDrainScriptStub(jobName, params)
+		return fake.NewDrainScriptStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.newDrainScriptReturns.result1
+	fakeReturns := fake.newDrainScriptReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeJobScriptProvider) NewDrainScriptCallCount() int {
@@ -122,13 +74,22 @@ func (fake *FakeJobScriptProvider) NewDrainScriptCallCount() int {
 	return len(fake.newDrainScriptArgsForCall)
 }
 
-func (fake *FakeJobScriptProvider) NewDrainScriptArgsForCall(i int) (string, boshdrain.ScriptParams) {
+func (fake *FakeJobScriptProvider) NewDrainScriptCalls(stub func(string, drain.ScriptParams) script.CancellableScript) {
+	fake.newDrainScriptMutex.Lock()
+	defer fake.newDrainScriptMutex.Unlock()
+	fake.NewDrainScriptStub = stub
+}
+
+func (fake *FakeJobScriptProvider) NewDrainScriptArgsForCall(i int) (string, drain.ScriptParams) {
 	fake.newDrainScriptMutex.RLock()
 	defer fake.newDrainScriptMutex.RUnlock()
-	return fake.newDrainScriptArgsForCall[i].jobName, fake.newDrainScriptArgsForCall[i].params
+	argsForCall := fake.newDrainScriptArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeJobScriptProvider) NewDrainScriptReturns(result1 script.CancellableScript) {
+	fake.newDrainScriptMutex.Lock()
+	defer fake.newDrainScriptMutex.Unlock()
 	fake.NewDrainScriptStub = nil
 	fake.newDrainScriptReturns = struct {
 		result1 script.CancellableScript
@@ -136,6 +97,8 @@ func (fake *FakeJobScriptProvider) NewDrainScriptReturns(result1 script.Cancella
 }
 
 func (fake *FakeJobScriptProvider) NewDrainScriptReturnsOnCall(i int, result1 script.CancellableScript) {
+	fake.newDrainScriptMutex.Lock()
+	defer fake.newDrainScriptMutex.Unlock()
 	fake.NewDrainScriptStub = nil
 	if fake.newDrainScriptReturnsOnCall == nil {
 		fake.newDrainScriptReturnsOnCall = make(map[int]struct {
@@ -147,27 +110,28 @@ func (fake *FakeJobScriptProvider) NewDrainScriptReturnsOnCall(i int, result1 sc
 	}{result1}
 }
 
-func (fake *FakeJobScriptProvider) NewParallelScript(scriptName string, scripts []script.Script) script.CancellableScript {
-	var scriptsCopy []script.Script
-	if scripts != nil {
-		scriptsCopy = make([]script.Script, len(scripts))
-		copy(scriptsCopy, scripts)
+func (fake *FakeJobScriptProvider) NewParallelScript(arg1 string, arg2 []script.Script) script.CancellableScript {
+	var arg2Copy []script.Script
+	if arg2 != nil {
+		arg2Copy = make([]script.Script, len(arg2))
+		copy(arg2Copy, arg2)
 	}
 	fake.newParallelScriptMutex.Lock()
 	ret, specificReturn := fake.newParallelScriptReturnsOnCall[len(fake.newParallelScriptArgsForCall)]
 	fake.newParallelScriptArgsForCall = append(fake.newParallelScriptArgsForCall, struct {
-		scriptName string
-		scripts    []script.Script
-	}{scriptName, scriptsCopy})
-	fake.recordInvocation("NewParallelScript", []interface{}{scriptName, scriptsCopy})
+		arg1 string
+		arg2 []script.Script
+	}{arg1, arg2Copy})
+	fake.recordInvocation("NewParallelScript", []interface{}{arg1, arg2Copy})
 	fake.newParallelScriptMutex.Unlock()
 	if fake.NewParallelScriptStub != nil {
-		return fake.NewParallelScriptStub(scriptName, scripts)
+		return fake.NewParallelScriptStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.newParallelScriptReturns.result1
+	fakeReturns := fake.newParallelScriptReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeJobScriptProvider) NewParallelScriptCallCount() int {
@@ -176,13 +140,22 @@ func (fake *FakeJobScriptProvider) NewParallelScriptCallCount() int {
 	return len(fake.newParallelScriptArgsForCall)
 }
 
+func (fake *FakeJobScriptProvider) NewParallelScriptCalls(stub func(string, []script.Script) script.CancellableScript) {
+	fake.newParallelScriptMutex.Lock()
+	defer fake.newParallelScriptMutex.Unlock()
+	fake.NewParallelScriptStub = stub
+}
+
 func (fake *FakeJobScriptProvider) NewParallelScriptArgsForCall(i int) (string, []script.Script) {
 	fake.newParallelScriptMutex.RLock()
 	defer fake.newParallelScriptMutex.RUnlock()
-	return fake.newParallelScriptArgsForCall[i].scriptName, fake.newParallelScriptArgsForCall[i].scripts
+	argsForCall := fake.newParallelScriptArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeJobScriptProvider) NewParallelScriptReturns(result1 script.CancellableScript) {
+	fake.newParallelScriptMutex.Lock()
+	defer fake.newParallelScriptMutex.Unlock()
 	fake.NewParallelScriptStub = nil
 	fake.newParallelScriptReturns = struct {
 		result1 script.CancellableScript
@@ -190,6 +163,8 @@ func (fake *FakeJobScriptProvider) NewParallelScriptReturns(result1 script.Cance
 }
 
 func (fake *FakeJobScriptProvider) NewParallelScriptReturnsOnCall(i int, result1 script.CancellableScript) {
+	fake.newParallelScriptMutex.Lock()
+	defer fake.newParallelScriptMutex.Unlock()
 	fake.NewParallelScriptStub = nil
 	if fake.newParallelScriptReturnsOnCall == nil {
 		fake.newParallelScriptReturnsOnCall = make(map[int]struct {
@@ -201,15 +176,76 @@ func (fake *FakeJobScriptProvider) NewParallelScriptReturnsOnCall(i int, result1
 	}{result1}
 }
 
+func (fake *FakeJobScriptProvider) NewScript(arg1 string, arg2 string) script.Script {
+	fake.newScriptMutex.Lock()
+	ret, specificReturn := fake.newScriptReturnsOnCall[len(fake.newScriptArgsForCall)]
+	fake.newScriptArgsForCall = append(fake.newScriptArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("NewScript", []interface{}{arg1, arg2})
+	fake.newScriptMutex.Unlock()
+	if fake.NewScriptStub != nil {
+		return fake.NewScriptStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.newScriptReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeJobScriptProvider) NewScriptCallCount() int {
+	fake.newScriptMutex.RLock()
+	defer fake.newScriptMutex.RUnlock()
+	return len(fake.newScriptArgsForCall)
+}
+
+func (fake *FakeJobScriptProvider) NewScriptCalls(stub func(string, string) script.Script) {
+	fake.newScriptMutex.Lock()
+	defer fake.newScriptMutex.Unlock()
+	fake.NewScriptStub = stub
+}
+
+func (fake *FakeJobScriptProvider) NewScriptArgsForCall(i int) (string, string) {
+	fake.newScriptMutex.RLock()
+	defer fake.newScriptMutex.RUnlock()
+	argsForCall := fake.newScriptArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeJobScriptProvider) NewScriptReturns(result1 script.Script) {
+	fake.newScriptMutex.Lock()
+	defer fake.newScriptMutex.Unlock()
+	fake.NewScriptStub = nil
+	fake.newScriptReturns = struct {
+		result1 script.Script
+	}{result1}
+}
+
+func (fake *FakeJobScriptProvider) NewScriptReturnsOnCall(i int, result1 script.Script) {
+	fake.newScriptMutex.Lock()
+	defer fake.newScriptMutex.Unlock()
+	fake.NewScriptStub = nil
+	if fake.newScriptReturnsOnCall == nil {
+		fake.newScriptReturnsOnCall = make(map[int]struct {
+			result1 script.Script
+		})
+	}
+	fake.newScriptReturnsOnCall[i] = struct {
+		result1 script.Script
+	}{result1}
+}
+
 func (fake *FakeJobScriptProvider) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.newScriptMutex.RLock()
-	defer fake.newScriptMutex.RUnlock()
 	fake.newDrainScriptMutex.RLock()
 	defer fake.newDrainScriptMutex.RUnlock()
 	fake.newParallelScriptMutex.RLock()
 	defer fake.newParallelScriptMutex.RUnlock()
+	fake.newScriptMutex.RLock()
+	defer fake.newScriptMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

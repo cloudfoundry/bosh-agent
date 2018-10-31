@@ -2,16 +2,17 @@
 package vitalsfakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/vitals"
+	vitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 )
 
 type FakeService struct {
-	GetStub        func() (vitals vitals.Vitals, err error)
+	GetStub        func() (vitals.Vitals, error)
 	getMutex       sync.RWMutex
-	getArgsForCall []struct{}
-	getReturns     struct {
+	getArgsForCall []struct {
+	}
+	getReturns struct {
 		result1 vitals.Vitals
 		result2 error
 	}
@@ -23,10 +24,11 @@ type FakeService struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeService) Get() (vitals vitals.Vitals, err error) {
+func (fake *FakeService) Get() (vitals.Vitals, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
-	fake.getArgsForCall = append(fake.getArgsForCall, struct{}{})
+	fake.getArgsForCall = append(fake.getArgsForCall, struct {
+	}{})
 	fake.recordInvocation("Get", []interface{}{})
 	fake.getMutex.Unlock()
 	if fake.GetStub != nil {
@@ -35,7 +37,8 @@ func (fake *FakeService) Get() (vitals vitals.Vitals, err error) {
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.getReturns.result1, fake.getReturns.result2
+	fakeReturns := fake.getReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeService) GetCallCount() int {
@@ -44,7 +47,15 @@ func (fake *FakeService) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
+func (fake *FakeService) GetCalls(stub func() (vitals.Vitals, error)) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = stub
+}
+
 func (fake *FakeService) GetReturns(result1 vitals.Vitals, result2 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	fake.getReturns = struct {
 		result1 vitals.Vitals
@@ -53,6 +64,8 @@ func (fake *FakeService) GetReturns(result1 vitals.Vitals, result2 error) {
 }
 
 func (fake *FakeService) GetReturnsOnCall(i int, result1 vitals.Vitals, result2 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {

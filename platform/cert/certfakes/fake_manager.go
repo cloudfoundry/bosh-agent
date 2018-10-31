@@ -2,16 +2,16 @@
 package certfakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/cert"
+	cert "github.com/cloudfoundry/bosh-agent/platform/cert"
 )
 
 type FakeManager struct {
-	UpdateCertificatesStub        func(certs string) error
+	UpdateCertificatesStub        func(string) error
 	updateCertificatesMutex       sync.RWMutex
 	updateCertificatesArgsForCall []struct {
-		certs string
+		arg1 string
 	}
 	updateCertificatesReturns struct {
 		result1 error
@@ -23,21 +23,22 @@ type FakeManager struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeManager) UpdateCertificates(certs string) error {
+func (fake *FakeManager) UpdateCertificates(arg1 string) error {
 	fake.updateCertificatesMutex.Lock()
 	ret, specificReturn := fake.updateCertificatesReturnsOnCall[len(fake.updateCertificatesArgsForCall)]
 	fake.updateCertificatesArgsForCall = append(fake.updateCertificatesArgsForCall, struct {
-		certs string
-	}{certs})
-	fake.recordInvocation("UpdateCertificates", []interface{}{certs})
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("UpdateCertificates", []interface{}{arg1})
 	fake.updateCertificatesMutex.Unlock()
 	if fake.UpdateCertificatesStub != nil {
-		return fake.UpdateCertificatesStub(certs)
+		return fake.UpdateCertificatesStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.updateCertificatesReturns.result1
+	fakeReturns := fake.updateCertificatesReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeManager) UpdateCertificatesCallCount() int {
@@ -46,13 +47,22 @@ func (fake *FakeManager) UpdateCertificatesCallCount() int {
 	return len(fake.updateCertificatesArgsForCall)
 }
 
+func (fake *FakeManager) UpdateCertificatesCalls(stub func(string) error) {
+	fake.updateCertificatesMutex.Lock()
+	defer fake.updateCertificatesMutex.Unlock()
+	fake.UpdateCertificatesStub = stub
+}
+
 func (fake *FakeManager) UpdateCertificatesArgsForCall(i int) string {
 	fake.updateCertificatesMutex.RLock()
 	defer fake.updateCertificatesMutex.RUnlock()
-	return fake.updateCertificatesArgsForCall[i].certs
+	argsForCall := fake.updateCertificatesArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeManager) UpdateCertificatesReturns(result1 error) {
+	fake.updateCertificatesMutex.Lock()
+	defer fake.updateCertificatesMutex.Unlock()
 	fake.UpdateCertificatesStub = nil
 	fake.updateCertificatesReturns = struct {
 		result1 error
@@ -60,6 +70,8 @@ func (fake *FakeManager) UpdateCertificatesReturns(result1 error) {
 }
 
 func (fake *FakeManager) UpdateCertificatesReturnsOnCall(i int, result1 error) {
+	fake.updateCertificatesMutex.Lock()
+	defer fake.updateCertificatesMutex.Unlock()
 	fake.UpdateCertificatesStub = nil
 	if fake.updateCertificatesReturnsOnCall == nil {
 		fake.updateCertificatesReturnsOnCall = make(map[int]struct {

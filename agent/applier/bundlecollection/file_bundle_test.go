@@ -13,7 +13,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-//go:generate counterfeiter -o fakes/fake_clock.go /code.cloudfoundry.org/clock Clock
+//go:generate counterfeiter -o fakes/fake_clock.go ../../../vendor/code.cloudfoundry.org/clock Clock
 
 var _ = Describe("FileBundle", func() {
 	var (

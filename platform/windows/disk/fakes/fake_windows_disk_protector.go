@@ -2,25 +2,26 @@
 package fakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	disk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
 type FakeWindowsDiskProtector struct {
 	CommandExistsStub        func() bool
 	commandExistsMutex       sync.RWMutex
-	commandExistsArgsForCall []struct{}
-	commandExistsReturns     struct {
+	commandExistsArgsForCall []struct {
+	}
+	commandExistsReturns struct {
 		result1 bool
 	}
 	commandExistsReturnsOnCall map[int]struct {
 		result1 bool
 	}
-	ProtectPathStub        func(path string) error
+	ProtectPathStub        func(string) error
 	protectPathMutex       sync.RWMutex
 	protectPathArgsForCall []struct {
-		path string
+		arg1 string
 	}
 	protectPathReturns struct {
 		result1 error
@@ -35,7 +36,8 @@ type FakeWindowsDiskProtector struct {
 func (fake *FakeWindowsDiskProtector) CommandExists() bool {
 	fake.commandExistsMutex.Lock()
 	ret, specificReturn := fake.commandExistsReturnsOnCall[len(fake.commandExistsArgsForCall)]
-	fake.commandExistsArgsForCall = append(fake.commandExistsArgsForCall, struct{}{})
+	fake.commandExistsArgsForCall = append(fake.commandExistsArgsForCall, struct {
+	}{})
 	fake.recordInvocation("CommandExists", []interface{}{})
 	fake.commandExistsMutex.Unlock()
 	if fake.CommandExistsStub != nil {
@@ -44,7 +46,8 @@ func (fake *FakeWindowsDiskProtector) CommandExists() bool {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.commandExistsReturns.result1
+	fakeReturns := fake.commandExistsReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeWindowsDiskProtector) CommandExistsCallCount() int {
@@ -53,7 +56,15 @@ func (fake *FakeWindowsDiskProtector) CommandExistsCallCount() int {
 	return len(fake.commandExistsArgsForCall)
 }
 
+func (fake *FakeWindowsDiskProtector) CommandExistsCalls(stub func() bool) {
+	fake.commandExistsMutex.Lock()
+	defer fake.commandExistsMutex.Unlock()
+	fake.CommandExistsStub = stub
+}
+
 func (fake *FakeWindowsDiskProtector) CommandExistsReturns(result1 bool) {
+	fake.commandExistsMutex.Lock()
+	defer fake.commandExistsMutex.Unlock()
 	fake.CommandExistsStub = nil
 	fake.commandExistsReturns = struct {
 		result1 bool
@@ -61,6 +72,8 @@ func (fake *FakeWindowsDiskProtector) CommandExistsReturns(result1 bool) {
 }
 
 func (fake *FakeWindowsDiskProtector) CommandExistsReturnsOnCall(i int, result1 bool) {
+	fake.commandExistsMutex.Lock()
+	defer fake.commandExistsMutex.Unlock()
 	fake.CommandExistsStub = nil
 	if fake.commandExistsReturnsOnCall == nil {
 		fake.commandExistsReturnsOnCall = make(map[int]struct {
@@ -72,21 +85,22 @@ func (fake *FakeWindowsDiskProtector) CommandExistsReturnsOnCall(i int, result1 
 	}{result1}
 }
 
-func (fake *FakeWindowsDiskProtector) ProtectPath(path string) error {
+func (fake *FakeWindowsDiskProtector) ProtectPath(arg1 string) error {
 	fake.protectPathMutex.Lock()
 	ret, specificReturn := fake.protectPathReturnsOnCall[len(fake.protectPathArgsForCall)]
 	fake.protectPathArgsForCall = append(fake.protectPathArgsForCall, struct {
-		path string
-	}{path})
-	fake.recordInvocation("ProtectPath", []interface{}{path})
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("ProtectPath", []interface{}{arg1})
 	fake.protectPathMutex.Unlock()
 	if fake.ProtectPathStub != nil {
-		return fake.ProtectPathStub(path)
+		return fake.ProtectPathStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.protectPathReturns.result1
+	fakeReturns := fake.protectPathReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeWindowsDiskProtector) ProtectPathCallCount() int {
@@ -95,13 +109,22 @@ func (fake *FakeWindowsDiskProtector) ProtectPathCallCount() int {
 	return len(fake.protectPathArgsForCall)
 }
 
+func (fake *FakeWindowsDiskProtector) ProtectPathCalls(stub func(string) error) {
+	fake.protectPathMutex.Lock()
+	defer fake.protectPathMutex.Unlock()
+	fake.ProtectPathStub = stub
+}
+
 func (fake *FakeWindowsDiskProtector) ProtectPathArgsForCall(i int) string {
 	fake.protectPathMutex.RLock()
 	defer fake.protectPathMutex.RUnlock()
-	return fake.protectPathArgsForCall[i].path
+	argsForCall := fake.protectPathArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeWindowsDiskProtector) ProtectPathReturns(result1 error) {
+	fake.protectPathMutex.Lock()
+	defer fake.protectPathMutex.Unlock()
 	fake.ProtectPathStub = nil
 	fake.protectPathReturns = struct {
 		result1 error
@@ -109,6 +132,8 @@ func (fake *FakeWindowsDiskProtector) ProtectPathReturns(result1 error) {
 }
 
 func (fake *FakeWindowsDiskProtector) ProtectPathReturnsOnCall(i int, result1 error) {
+	fake.protectPathMutex.Lock()
+	defer fake.protectPathMutex.Unlock()
 	fake.ProtectPathStub = nil
 	if fake.protectPathReturnsOnCall == nil {
 		fake.protectPathReturnsOnCall = make(map[int]struct {

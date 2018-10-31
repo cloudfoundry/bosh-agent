@@ -2,9 +2,9 @@
 package platformfakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform"
+	platform "github.com/cloudfoundry/bosh-agent/platform"
 )
 
 type FakeAuditLogger struct {
@@ -20,9 +20,10 @@ type FakeAuditLogger struct {
 	}
 	StartLoggingStub        func()
 	startLoggingMutex       sync.RWMutex
-	startLoggingArgsForCall []struct{}
-	invocations             map[string][][]interface{}
-	invocationsMutex        sync.RWMutex
+	startLoggingArgsForCall []struct {
+	}
+	invocations      map[string][][]interface{}
+	invocationsMutex sync.RWMutex
 }
 
 func (fake *FakeAuditLogger) Debug(arg1 string) {
@@ -43,10 +44,17 @@ func (fake *FakeAuditLogger) DebugCallCount() int {
 	return len(fake.debugArgsForCall)
 }
 
+func (fake *FakeAuditLogger) DebugCalls(stub func(string)) {
+	fake.debugMutex.Lock()
+	defer fake.debugMutex.Unlock()
+	fake.DebugStub = stub
+}
+
 func (fake *FakeAuditLogger) DebugArgsForCall(i int) string {
 	fake.debugMutex.RLock()
 	defer fake.debugMutex.RUnlock()
-	return fake.debugArgsForCall[i].arg1
+	argsForCall := fake.debugArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeAuditLogger) Err(arg1 string) {
@@ -67,15 +75,23 @@ func (fake *FakeAuditLogger) ErrCallCount() int {
 	return len(fake.errArgsForCall)
 }
 
+func (fake *FakeAuditLogger) ErrCalls(stub func(string)) {
+	fake.errMutex.Lock()
+	defer fake.errMutex.Unlock()
+	fake.ErrStub = stub
+}
+
 func (fake *FakeAuditLogger) ErrArgsForCall(i int) string {
 	fake.errMutex.RLock()
 	defer fake.errMutex.RUnlock()
-	return fake.errArgsForCall[i].arg1
+	argsForCall := fake.errArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeAuditLogger) StartLogging() {
 	fake.startLoggingMutex.Lock()
-	fake.startLoggingArgsForCall = append(fake.startLoggingArgsForCall, struct{}{})
+	fake.startLoggingArgsForCall = append(fake.startLoggingArgsForCall, struct {
+	}{})
 	fake.recordInvocation("StartLogging", []interface{}{})
 	fake.startLoggingMutex.Unlock()
 	if fake.StartLoggingStub != nil {
@@ -87,6 +103,12 @@ func (fake *FakeAuditLogger) StartLoggingCallCount() int {
 	fake.startLoggingMutex.RLock()
 	defer fake.startLoggingMutex.RUnlock()
 	return len(fake.startLoggingArgsForCall)
+}
+
+func (fake *FakeAuditLogger) StartLoggingCalls(stub func()) {
+	fake.startLoggingMutex.Lock()
+	defer fake.startLoggingMutex.Unlock()
+	fake.StartLoggingStub = stub
 }
 
 func (fake *FakeAuditLogger) Invocations() map[string][][]interface{} {

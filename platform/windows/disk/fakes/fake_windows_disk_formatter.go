@@ -2,17 +2,17 @@
 package fakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	disk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
 type FakeWindowsDiskFormatter struct {
-	FormatStub        func(diskNumber, partitionNumber string) error
+	FormatStub        func(string, string) error
 	formatMutex       sync.RWMutex
 	formatArgsForCall []struct {
-		diskNumber      string
-		partitionNumber string
+		arg1 string
+		arg2 string
 	}
 	formatReturns struct {
 		result1 error
@@ -24,22 +24,23 @@ type FakeWindowsDiskFormatter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeWindowsDiskFormatter) Format(diskNumber string, partitionNumber string) error {
+func (fake *FakeWindowsDiskFormatter) Format(arg1 string, arg2 string) error {
 	fake.formatMutex.Lock()
 	ret, specificReturn := fake.formatReturnsOnCall[len(fake.formatArgsForCall)]
 	fake.formatArgsForCall = append(fake.formatArgsForCall, struct {
-		diskNumber      string
-		partitionNumber string
-	}{diskNumber, partitionNumber})
-	fake.recordInvocation("Format", []interface{}{diskNumber, partitionNumber})
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("Format", []interface{}{arg1, arg2})
 	fake.formatMutex.Unlock()
 	if fake.FormatStub != nil {
-		return fake.FormatStub(diskNumber, partitionNumber)
+		return fake.FormatStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.formatReturns.result1
+	fakeReturns := fake.formatReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeWindowsDiskFormatter) FormatCallCount() int {
@@ -48,13 +49,22 @@ func (fake *FakeWindowsDiskFormatter) FormatCallCount() int {
 	return len(fake.formatArgsForCall)
 }
 
+func (fake *FakeWindowsDiskFormatter) FormatCalls(stub func(string, string) error) {
+	fake.formatMutex.Lock()
+	defer fake.formatMutex.Unlock()
+	fake.FormatStub = stub
+}
+
 func (fake *FakeWindowsDiskFormatter) FormatArgsForCall(i int) (string, string) {
 	fake.formatMutex.RLock()
 	defer fake.formatMutex.RUnlock()
-	return fake.formatArgsForCall[i].diskNumber, fake.formatArgsForCall[i].partitionNumber
+	argsForCall := fake.formatArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeWindowsDiskFormatter) FormatReturns(result1 error) {
+	fake.formatMutex.Lock()
+	defer fake.formatMutex.Unlock()
 	fake.FormatStub = nil
 	fake.formatReturns = struct {
 		result1 error
@@ -62,6 +72,8 @@ func (fake *FakeWindowsDiskFormatter) FormatReturns(result1 error) {
 }
 
 func (fake *FakeWindowsDiskFormatter) FormatReturnsOnCall(i int, result1 error) {
+	fake.formatMutex.Lock()
+	defer fake.formatMutex.Unlock()
 	fake.FormatStub = nil
 	if fake.formatReturnsOnCall == nil {
 		fake.formatReturnsOnCall = make(map[int]struct {

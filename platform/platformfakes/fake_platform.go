@@ -2,108 +2,24 @@
 package platformfakes
 
 import (
-	"sync"
+	sync "sync"
 
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	"github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/platform/cert"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	platform "github.com/cloudfoundry/bosh-agent/platform"
+	cert "github.com/cloudfoundry/bosh-agent/platform/cert"
+	vitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	settings "github.com/cloudfoundry/bosh-agent/settings"
+	directories "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fileutil "github.com/cloudfoundry/bosh-utils/fileutil"
+	system "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type FakePlatform struct {
-	GetFsStub        func() boshsys.FileSystem
-	getFsMutex       sync.RWMutex
-	getFsArgsForCall []struct{}
-	getFsReturns     struct {
-		result1 boshsys.FileSystem
-	}
-	getFsReturnsOnCall map[int]struct {
-		result1 boshsys.FileSystem
-	}
-	GetRunnerStub        func() boshsys.CmdRunner
-	getRunnerMutex       sync.RWMutex
-	getRunnerArgsForCall []struct{}
-	getRunnerReturns     struct {
-		result1 boshsys.CmdRunner
-	}
-	getRunnerReturnsOnCall map[int]struct {
-		result1 boshsys.CmdRunner
-	}
-	GetCompressorStub        func() boshcmd.Compressor
-	getCompressorMutex       sync.RWMutex
-	getCompressorArgsForCall []struct{}
-	getCompressorReturns     struct {
-		result1 boshcmd.Compressor
-	}
-	getCompressorReturnsOnCall map[int]struct {
-		result1 boshcmd.Compressor
-	}
-	GetCopierStub        func() boshcmd.Copier
-	getCopierMutex       sync.RWMutex
-	getCopierArgsForCall []struct{}
-	getCopierReturns     struct {
-		result1 boshcmd.Copier
-	}
-	getCopierReturnsOnCall map[int]struct {
-		result1 boshcmd.Copier
-	}
-	GetDirProviderStub        func() boshdir.Provider
-	getDirProviderMutex       sync.RWMutex
-	getDirProviderArgsForCall []struct{}
-	getDirProviderReturns     struct {
-		result1 boshdir.Provider
-	}
-	getDirProviderReturnsOnCall map[int]struct {
-		result1 boshdir.Provider
-	}
-	GetVitalsServiceStub        func() boshvitals.Service
-	getVitalsServiceMutex       sync.RWMutex
-	getVitalsServiceArgsForCall []struct{}
-	getVitalsServiceReturns     struct {
-		result1 boshvitals.Service
-	}
-	getVitalsServiceReturnsOnCall map[int]struct {
-		result1 boshvitals.Service
-	}
-	GetAuditLoggerStub        func() platform.AuditLogger
-	getAuditLoggerMutex       sync.RWMutex
-	getAuditLoggerArgsForCall []struct{}
-	getAuditLoggerReturns     struct {
-		result1 platform.AuditLogger
-	}
-	getAuditLoggerReturnsOnCall map[int]struct {
-		result1 platform.AuditLogger
-	}
-	GetDevicePathResolverStub        func() (devicePathResolver boshdpresolv.DevicePathResolver)
-	getDevicePathResolverMutex       sync.RWMutex
-	getDevicePathResolverArgsForCall []struct{}
-	getDevicePathResolverReturns     struct {
-		result1 boshdpresolv.DevicePathResolver
-	}
-	getDevicePathResolverReturnsOnCall map[int]struct {
-		result1 boshdpresolv.DevicePathResolver
-	}
-	CreateUserStub        func(username, basePath string) (err error)
-	createUserMutex       sync.RWMutex
-	createUserArgsForCall []struct {
-		username string
-		basePath string
-	}
-	createUserReturns struct {
-		result1 error
-	}
-	createUserReturnsOnCall map[int]struct {
-		result1 error
-	}
-	AddUserToGroupsStub        func(username string, groups []string) (err error)
+	AddUserToGroupsStub        func(string, []string) error
 	addUserToGroupsMutex       sync.RWMutex
 	addUserToGroupsArgsForCall []struct {
-		username string
-		groups   []string
+		arg1 string
+		arg2 []string
 	}
 	addUserToGroupsReturns struct {
 		result1 error
@@ -111,10 +27,45 @@ type FakePlatform struct {
 	addUserToGroupsReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteEphemeralUsersMatchingStub        func(regex string) (err error)
+	AssociateDiskStub        func(string, settings.DiskSettings) error
+	associateDiskMutex       sync.RWMutex
+	associateDiskArgsForCall []struct {
+		arg1 string
+		arg2 settings.DiskSettings
+	}
+	associateDiskReturns struct {
+		result1 error
+	}
+	associateDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
+	CreateUserStub        func(string, string) error
+	createUserMutex       sync.RWMutex
+	createUserArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	createUserReturns struct {
+		result1 error
+	}
+	createUserReturnsOnCall map[int]struct {
+		result1 error
+	}
+	DeleteARPEntryWithIPStub        func(string) error
+	deleteARPEntryWithIPMutex       sync.RWMutex
+	deleteARPEntryWithIPArgsForCall []struct {
+		arg1 string
+	}
+	deleteARPEntryWithIPReturns struct {
+		result1 error
+	}
+	deleteARPEntryWithIPReturnsOnCall map[int]struct {
+		result1 error
+	}
+	DeleteEphemeralUsersMatchingStub        func(string) error
 	deleteEphemeralUsersMatchingMutex       sync.RWMutex
 	deleteEphemeralUsersMatchingArgsForCall []struct {
-		regex string
+		arg1 string
 	}
 	deleteEphemeralUsersMatchingReturns struct {
 		result1 error
@@ -122,263 +73,94 @@ type FakePlatform struct {
 	deleteEphemeralUsersMatchingReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupRootDiskStub        func(ephemeralDiskPath string) (err error)
-	setupRootDiskMutex       sync.RWMutex
-	setupRootDiskArgsForCall []struct {
-		ephemeralDiskPath string
+	GetAuditLoggerStub        func() platform.AuditLogger
+	getAuditLoggerMutex       sync.RWMutex
+	getAuditLoggerArgsForCall []struct {
 	}
-	setupRootDiskReturns struct {
-		result1 error
+	getAuditLoggerReturns struct {
+		result1 platform.AuditLogger
 	}
-	setupRootDiskReturnsOnCall map[int]struct {
-		result1 error
+	getAuditLoggerReturnsOnCall map[int]struct {
+		result1 platform.AuditLogger
 	}
-	SetupSSHStub        func(publicKey []string, username string) (err error)
-	setupSSHMutex       sync.RWMutex
-	setupSSHArgsForCall []struct {
-		publicKey []string
-		username  string
+	GetCertManagerStub        func() cert.Manager
+	getCertManagerMutex       sync.RWMutex
+	getCertManagerArgsForCall []struct {
 	}
-	setupSSHReturns struct {
-		result1 error
+	getCertManagerReturns struct {
+		result1 cert.Manager
 	}
-	setupSSHReturnsOnCall map[int]struct {
-		result1 error
+	getCertManagerReturnsOnCall map[int]struct {
+		result1 cert.Manager
 	}
-	SetUserPasswordStub        func(user, encryptedPwd string) (err error)
-	setUserPasswordMutex       sync.RWMutex
-	setUserPasswordArgsForCall []struct {
-		user         string
-		encryptedPwd string
+	GetCompressorStub        func() fileutil.Compressor
+	getCompressorMutex       sync.RWMutex
+	getCompressorArgsForCall []struct {
 	}
-	setUserPasswordReturns struct {
-		result1 error
+	getCompressorReturns struct {
+		result1 fileutil.Compressor
 	}
-	setUserPasswordReturnsOnCall map[int]struct {
-		result1 error
+	getCompressorReturnsOnCall map[int]struct {
+		result1 fileutil.Compressor
 	}
-	SetupIPv6Stub        func(boshsettings.IPv6) error
-	setupIPv6Mutex       sync.RWMutex
-	setupIPv6ArgsForCall []struct {
-		arg1 boshsettings.IPv6
+	GetConfiguredNetworkInterfacesStub        func() ([]string, error)
+	getConfiguredNetworkInterfacesMutex       sync.RWMutex
+	getConfiguredNetworkInterfacesArgsForCall []struct {
 	}
-	setupIPv6Returns struct {
-		result1 error
-	}
-	setupIPv6ReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupHostnameStub        func(hostname string) (err error)
-	setupHostnameMutex       sync.RWMutex
-	setupHostnameArgsForCall []struct {
-		hostname string
-	}
-	setupHostnameReturns struct {
-		result1 error
-	}
-	setupHostnameReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupNetworkingStub        func(networks boshsettings.Networks) (err error)
-	setupNetworkingMutex       sync.RWMutex
-	setupNetworkingArgsForCall []struct {
-		networks boshsettings.Networks
-	}
-	setupNetworkingReturns struct {
-		result1 error
-	}
-	setupNetworkingReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupLogrotateStub        func(groupName, basePath, size string) (err error)
-	setupLogrotateMutex       sync.RWMutex
-	setupLogrotateArgsForCall []struct {
-		groupName string
-		basePath  string
-		size      string
-	}
-	setupLogrotateReturns struct {
-		result1 error
-	}
-	setupLogrotateReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetTimeWithNtpServersStub        func(servers []string) (err error)
-	setTimeWithNtpServersMutex       sync.RWMutex
-	setTimeWithNtpServersArgsForCall []struct {
-		servers []string
-	}
-	setTimeWithNtpServersReturns struct {
-		result1 error
-	}
-	setTimeWithNtpServersReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupEphemeralDiskWithPathStub        func(devicePath string, desiredSwapSizeInBytes *uint64) (err error)
-	setupEphemeralDiskWithPathMutex       sync.RWMutex
-	setupEphemeralDiskWithPathArgsForCall []struct {
-		devicePath             string
-		desiredSwapSizeInBytes *uint64
-	}
-	setupEphemeralDiskWithPathReturns struct {
-		result1 error
-	}
-	setupEphemeralDiskWithPathReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupRawEphemeralDisksStub        func(devices []boshsettings.DiskSettings) (err error)
-	setupRawEphemeralDisksMutex       sync.RWMutex
-	setupRawEphemeralDisksArgsForCall []struct {
-		devices []boshsettings.DiskSettings
-	}
-	setupRawEphemeralDisksReturns struct {
-		result1 error
-	}
-	setupRawEphemeralDisksReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupDataDirStub        func() (err error)
-	setupDataDirMutex       sync.RWMutex
-	setupDataDirArgsForCall []struct{}
-	setupDataDirReturns     struct {
-		result1 error
-	}
-	setupDataDirReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupSharedMemoryStub        func() (err error)
-	setupSharedMemoryMutex       sync.RWMutex
-	setupSharedMemoryArgsForCall []struct{}
-	setupSharedMemoryReturns     struct {
-		result1 error
-	}
-	setupSharedMemoryReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupTmpDirStub        func() (err error)
-	setupTmpDirMutex       sync.RWMutex
-	setupTmpDirArgsForCall []struct{}
-	setupTmpDirReturns     struct {
-		result1 error
-	}
-	setupTmpDirReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupHomeDirStub        func() (err error)
-	setupHomeDirMutex       sync.RWMutex
-	setupHomeDirArgsForCall []struct{}
-	setupHomeDirReturns     struct {
-		result1 error
-	}
-	setupHomeDirReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupBlobsDirStub        func() (err error)
-	setupBlobsDirMutex       sync.RWMutex
-	setupBlobsDirArgsForCall []struct{}
-	setupBlobsDirReturns     struct {
-		result1 error
-	}
-	setupBlobsDirReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupMonitUserStub        func() (err error)
-	setupMonitUserMutex       sync.RWMutex
-	setupMonitUserArgsForCall []struct{}
-	setupMonitUserReturns     struct {
-		result1 error
-	}
-	setupMonitUserReturnsOnCall map[int]struct {
-		result1 error
-	}
-	StartMonitStub        func() (err error)
-	startMonitMutex       sync.RWMutex
-	startMonitArgsForCall []struct{}
-	startMonitReturns     struct {
-		result1 error
-	}
-	startMonitReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupRuntimeConfigurationStub        func() (err error)
-	setupRuntimeConfigurationMutex       sync.RWMutex
-	setupRuntimeConfigurationArgsForCall []struct{}
-	setupRuntimeConfigurationReturns     struct {
-		result1 error
-	}
-	setupRuntimeConfigurationReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupLogDirStub        func() (err error)
-	setupLogDirMutex       sync.RWMutex
-	setupLogDirArgsForCall []struct{}
-	setupLogDirReturns     struct {
-		result1 error
-	}
-	setupLogDirReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupLoggingAndAuditingStub        func() (err error)
-	setupLoggingAndAuditingMutex       sync.RWMutex
-	setupLoggingAndAuditingArgsForCall []struct{}
-	setupLoggingAndAuditingReturns     struct {
-		result1 error
-	}
-	setupLoggingAndAuditingReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetupRecordsJSONPermissionStub        func(path string) error
-	setupRecordsJSONPermissionMutex       sync.RWMutex
-	setupRecordsJSONPermissionArgsForCall []struct {
-		path string
-	}
-	setupRecordsJSONPermissionReturns struct {
-		result1 error
-	}
-	setupRecordsJSONPermissionReturnsOnCall map[int]struct {
-		result1 error
-	}
-	MountPersistentDiskStub        func(diskSettings boshsettings.DiskSettings, mountPoint string) error
-	mountPersistentDiskMutex       sync.RWMutex
-	mountPersistentDiskArgsForCall []struct {
-		diskSettings boshsettings.DiskSettings
-		mountPoint   string
-	}
-	mountPersistentDiskReturns struct {
-		result1 error
-	}
-	mountPersistentDiskReturnsOnCall map[int]struct {
-		result1 error
-	}
-	UnmountPersistentDiskStub        func(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error)
-	unmountPersistentDiskMutex       sync.RWMutex
-	unmountPersistentDiskArgsForCall []struct {
-		diskSettings boshsettings.DiskSettings
-	}
-	unmountPersistentDiskReturns struct {
-		result1 bool
+	getConfiguredNetworkInterfacesReturns struct {
+		result1 []string
 		result2 error
 	}
-	unmountPersistentDiskReturnsOnCall map[int]struct {
-		result1 bool
+	getConfiguredNetworkInterfacesReturnsOnCall map[int]struct {
+		result1 []string
 		result2 error
 	}
-	MigratePersistentDiskStub        func(fromMountPoint, toMountPoint string) (err error)
-	migratePersistentDiskMutex       sync.RWMutex
-	migratePersistentDiskArgsForCall []struct {
-		fromMountPoint string
-		toMountPoint   string
+	GetCopierStub        func() fileutil.Copier
+	getCopierMutex       sync.RWMutex
+	getCopierArgsForCall []struct {
 	}
-	migratePersistentDiskReturns struct {
-		result1 error
+	getCopierReturns struct {
+		result1 fileutil.Copier
 	}
-	migratePersistentDiskReturnsOnCall map[int]struct {
-		result1 error
+	getCopierReturnsOnCall map[int]struct {
+		result1 fileutil.Copier
 	}
-	GetEphemeralDiskPathStub        func(diskSettings boshsettings.DiskSettings) string
+	GetDefaultNetworkStub        func() (settings.Network, error)
+	getDefaultNetworkMutex       sync.RWMutex
+	getDefaultNetworkArgsForCall []struct {
+	}
+	getDefaultNetworkReturns struct {
+		result1 settings.Network
+		result2 error
+	}
+	getDefaultNetworkReturnsOnCall map[int]struct {
+		result1 settings.Network
+		result2 error
+	}
+	GetDevicePathResolverStub        func() devicepathresolver.DevicePathResolver
+	getDevicePathResolverMutex       sync.RWMutex
+	getDevicePathResolverArgsForCall []struct {
+	}
+	getDevicePathResolverReturns struct {
+		result1 devicepathresolver.DevicePathResolver
+	}
+	getDevicePathResolverReturnsOnCall map[int]struct {
+		result1 devicepathresolver.DevicePathResolver
+	}
+	GetDirProviderStub        func() directories.Provider
+	getDirProviderMutex       sync.RWMutex
+	getDirProviderArgsForCall []struct {
+	}
+	getDirProviderReturns struct {
+		result1 directories.Provider
+	}
+	getDirProviderReturnsOnCall map[int]struct {
+		result1 directories.Provider
+	}
+	GetEphemeralDiskPathStub        func(settings.DiskSettings) string
 	getEphemeralDiskPathMutex       sync.RWMutex
 	getEphemeralDiskPathArgsForCall []struct {
-		diskSettings boshsettings.DiskSettings
+		arg1 settings.DiskSettings
 	}
 	getEphemeralDiskPathReturns struct {
 		result1 string
@@ -386,10 +168,93 @@ type FakePlatform struct {
 	getEphemeralDiskPathReturnsOnCall map[int]struct {
 		result1 string
 	}
-	IsMountPointStub        func(path string) (partitionPath string, result bool, err error)
+	GetFileContentsFromCDROMStub        func(string) ([]byte, error)
+	getFileContentsFromCDROMMutex       sync.RWMutex
+	getFileContentsFromCDROMArgsForCall []struct {
+		arg1 string
+	}
+	getFileContentsFromCDROMReturns struct {
+		result1 []byte
+		result2 error
+	}
+	getFileContentsFromCDROMReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 error
+	}
+	GetFilesContentsFromDiskStub        func(string, []string) ([][]byte, error)
+	getFilesContentsFromDiskMutex       sync.RWMutex
+	getFilesContentsFromDiskArgsForCall []struct {
+		arg1 string
+		arg2 []string
+	}
+	getFilesContentsFromDiskReturns struct {
+		result1 [][]byte
+		result2 error
+	}
+	getFilesContentsFromDiskReturnsOnCall map[int]struct {
+		result1 [][]byte
+		result2 error
+	}
+	GetFsStub        func() system.FileSystem
+	getFsMutex       sync.RWMutex
+	getFsArgsForCall []struct {
+	}
+	getFsReturns struct {
+		result1 system.FileSystem
+	}
+	getFsReturnsOnCall map[int]struct {
+		result1 system.FileSystem
+	}
+	GetHostPublicKeyStub        func() (string, error)
+	getHostPublicKeyMutex       sync.RWMutex
+	getHostPublicKeyArgsForCall []struct {
+	}
+	getHostPublicKeyReturns struct {
+		result1 string
+		result2 error
+	}
+	getHostPublicKeyReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
+	GetMonitCredentialsStub        func() (string, string, error)
+	getMonitCredentialsMutex       sync.RWMutex
+	getMonitCredentialsArgsForCall []struct {
+	}
+	getMonitCredentialsReturns struct {
+		result1 string
+		result2 string
+		result3 error
+	}
+	getMonitCredentialsReturnsOnCall map[int]struct {
+		result1 string
+		result2 string
+		result3 error
+	}
+	GetRunnerStub        func() system.CmdRunner
+	getRunnerMutex       sync.RWMutex
+	getRunnerArgsForCall []struct {
+	}
+	getRunnerReturns struct {
+		result1 system.CmdRunner
+	}
+	getRunnerReturnsOnCall map[int]struct {
+		result1 system.CmdRunner
+	}
+	GetVitalsServiceStub        func() vitals.Service
+	getVitalsServiceMutex       sync.RWMutex
+	getVitalsServiceArgsForCall []struct {
+	}
+	getVitalsServiceReturns struct {
+		result1 vitals.Service
+	}
+	getVitalsServiceReturnsOnCall map[int]struct {
+		result1 vitals.Service
+	}
+	IsMountPointStub        func(string) (string, bool, error)
 	isMountPointMutex       sync.RWMutex
 	isMountPointArgsForCall []struct {
-		path string
+		arg1 string
 	}
 	isMountPointReturns struct {
 		result1 string
@@ -401,23 +266,10 @@ type FakePlatform struct {
 		result2 bool
 		result3 error
 	}
-	IsPersistentDiskMountedStub        func(diskSettings boshsettings.DiskSettings) (result bool, err error)
-	isPersistentDiskMountedMutex       sync.RWMutex
-	isPersistentDiskMountedArgsForCall []struct {
-		diskSettings boshsettings.DiskSettings
-	}
-	isPersistentDiskMountedReturns struct {
-		result1 bool
-		result2 error
-	}
-	isPersistentDiskMountedReturnsOnCall map[int]struct {
-		result1 bool
-		result2 error
-	}
-	IsPersistentDiskMountableStub        func(diskSettings boshsettings.DiskSettings) (bool, error)
+	IsPersistentDiskMountableStub        func(settings.DiskSettings) (bool, error)
 	isPersistentDiskMountableMutex       sync.RWMutex
 	isPersistentDiskMountableArgsForCall []struct {
-		diskSettings boshsettings.DiskSettings
+		arg1 settings.DiskSettings
 	}
 	isPersistentDiskMountableReturns struct {
 		result1 bool
@@ -427,136 +279,57 @@ type FakePlatform struct {
 		result1 bool
 		result2 error
 	}
-	AssociateDiskStub        func(name string, settings boshsettings.DiskSettings) error
-	associateDiskMutex       sync.RWMutex
-	associateDiskArgsForCall []struct {
-		name     string
-		settings boshsettings.DiskSettings
+	IsPersistentDiskMountedStub        func(settings.DiskSettings) (bool, error)
+	isPersistentDiskMountedMutex       sync.RWMutex
+	isPersistentDiskMountedArgsForCall []struct {
+		arg1 settings.DiskSettings
 	}
-	associateDiskReturns struct {
+	isPersistentDiskMountedReturns struct {
+		result1 bool
+		result2 error
+	}
+	isPersistentDiskMountedReturnsOnCall map[int]struct {
+		result1 bool
+		result2 error
+	}
+	MigratePersistentDiskStub        func(string, string) error
+	migratePersistentDiskMutex       sync.RWMutex
+	migratePersistentDiskArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	migratePersistentDiskReturns struct {
 		result1 error
 	}
-	associateDiskReturnsOnCall map[int]struct {
+	migratePersistentDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetFileContentsFromCDROMStub        func(filePath string) (contents []byte, err error)
-	getFileContentsFromCDROMMutex       sync.RWMutex
-	getFileContentsFromCDROMArgsForCall []struct {
-		filePath string
+	MountPersistentDiskStub        func(settings.DiskSettings, string) error
+	mountPersistentDiskMutex       sync.RWMutex
+	mountPersistentDiskArgsForCall []struct {
+		arg1 settings.DiskSettings
+		arg2 string
 	}
-	getFileContentsFromCDROMReturns struct {
-		result1 []byte
-		result2 error
+	mountPersistentDiskReturns struct {
+		result1 error
 	}
-	getFileContentsFromCDROMReturnsOnCall map[int]struct {
-		result1 []byte
-		result2 error
-	}
-	GetFilesContentsFromDiskStub        func(diskPath string, fileNames []string) (contents [][]byte, err error)
-	getFilesContentsFromDiskMutex       sync.RWMutex
-	getFilesContentsFromDiskArgsForCall []struct {
-		diskPath  string
-		fileNames []string
-	}
-	getFilesContentsFromDiskReturns struct {
-		result1 [][]byte
-		result2 error
-	}
-	getFilesContentsFromDiskReturnsOnCall map[int]struct {
-		result1 [][]byte
-		result2 error
-	}
-	GetDefaultNetworkStub        func() (boshsettings.Network, error)
-	getDefaultNetworkMutex       sync.RWMutex
-	getDefaultNetworkArgsForCall []struct{}
-	getDefaultNetworkReturns     struct {
-		result1 boshsettings.Network
-		result2 error
-	}
-	getDefaultNetworkReturnsOnCall map[int]struct {
-		result1 boshsettings.Network
-		result2 error
-	}
-	GetConfiguredNetworkInterfacesStub        func() ([]string, error)
-	getConfiguredNetworkInterfacesMutex       sync.RWMutex
-	getConfiguredNetworkInterfacesArgsForCall []struct{}
-	getConfiguredNetworkInterfacesReturns     struct {
-		result1 []string
-		result2 error
-	}
-	getConfiguredNetworkInterfacesReturnsOnCall map[int]struct {
-		result1 []string
-		result2 error
+	mountPersistentDiskReturnsOnCall map[int]struct {
+		result1 error
 	}
 	PrepareForNetworkingChangeStub        func() error
 	prepareForNetworkingChangeMutex       sync.RWMutex
-	prepareForNetworkingChangeArgsForCall []struct{}
-	prepareForNetworkingChangeReturns     struct {
+	prepareForNetworkingChangeArgsForCall []struct {
+	}
+	prepareForNetworkingChangeReturns struct {
 		result1 error
 	}
 	prepareForNetworkingChangeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteARPEntryWithIPStub        func(ip string) error
-	deleteARPEntryWithIPMutex       sync.RWMutex
-	deleteARPEntryWithIPArgsForCall []struct {
-		ip string
-	}
-	deleteARPEntryWithIPReturns struct {
-		result1 error
-	}
-	deleteARPEntryWithIPReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SaveDNSRecordsStub        func(dnsRecords boshsettings.DNSRecords, hostname string) error
-	saveDNSRecordsMutex       sync.RWMutex
-	saveDNSRecordsArgsForCall []struct {
-		dnsRecords boshsettings.DNSRecords
-		hostname   string
-	}
-	saveDNSRecordsReturns struct {
-		result1 error
-	}
-	saveDNSRecordsReturnsOnCall map[int]struct {
-		result1 error
-	}
-	GetMonitCredentialsStub        func() (username, password string, err error)
-	getMonitCredentialsMutex       sync.RWMutex
-	getMonitCredentialsArgsForCall []struct{}
-	getMonitCredentialsReturns     struct {
-		result1 string
-		result2 string
-		result3 error
-	}
-	getMonitCredentialsReturnsOnCall map[int]struct {
-		result1 string
-		result2 string
-		result3 error
-	}
-	GetCertManagerStub        func() cert.Manager
-	getCertManagerMutex       sync.RWMutex
-	getCertManagerArgsForCall []struct{}
-	getCertManagerReturns     struct {
-		result1 cert.Manager
-	}
-	getCertManagerReturnsOnCall map[int]struct {
-		result1 cert.Manager
-	}
-	GetHostPublicKeyStub        func() (string, error)
-	getHostPublicKeyMutex       sync.RWMutex
-	getHostPublicKeyArgsForCall []struct{}
-	getHostPublicKeyReturns     struct {
-		result1 string
-		result2 error
-	}
-	getHostPublicKeyReturnsOnCall map[int]struct {
-		result1 string
-		result2 error
-	}
-	RemoveDevToolsStub        func(packageFileListPath string) error
+	RemoveDevToolsStub        func(string) error
 	removeDevToolsMutex       sync.RWMutex
 	removeDevToolsArgsForCall []struct {
-		packageFileListPath string
+		arg1 string
 	}
 	removeDevToolsReturns struct {
 		result1 error
@@ -564,10 +337,10 @@ type FakePlatform struct {
 	removeDevToolsReturnsOnCall map[int]struct {
 		result1 error
 	}
-	RemoveStaticLibrariesStub        func(packageFileListPath string) error
+	RemoveStaticLibrariesStub        func(string) error
 	removeStaticLibrariesMutex       sync.RWMutex
 	removeStaticLibrariesArgsForCall []struct {
-		packageFileListPath string
+		arg1 string
 	}
 	removeStaticLibrariesReturns struct {
 		result1 error
@@ -575,409 +348,293 @@ type FakePlatform struct {
 	removeStaticLibrariesReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SaveDNSRecordsStub        func(settings.DNSRecords, string) error
+	saveDNSRecordsMutex       sync.RWMutex
+	saveDNSRecordsArgsForCall []struct {
+		arg1 settings.DNSRecords
+		arg2 string
+	}
+	saveDNSRecordsReturns struct {
+		result1 error
+	}
+	saveDNSRecordsReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetTimeWithNtpServersStub        func([]string) error
+	setTimeWithNtpServersMutex       sync.RWMutex
+	setTimeWithNtpServersArgsForCall []struct {
+		arg1 []string
+	}
+	setTimeWithNtpServersReturns struct {
+		result1 error
+	}
+	setTimeWithNtpServersReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetUserPasswordStub        func(string, string) error
+	setUserPasswordMutex       sync.RWMutex
+	setUserPasswordArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	setUserPasswordReturns struct {
+		result1 error
+	}
+	setUserPasswordReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupBlobsDirStub        func() error
+	setupBlobsDirMutex       sync.RWMutex
+	setupBlobsDirArgsForCall []struct {
+	}
+	setupBlobsDirReturns struct {
+		result1 error
+	}
+	setupBlobsDirReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupDataDirStub        func() error
+	setupDataDirMutex       sync.RWMutex
+	setupDataDirArgsForCall []struct {
+	}
+	setupDataDirReturns struct {
+		result1 error
+	}
+	setupDataDirReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupEphemeralDiskWithPathStub        func(string, *uint64) error
+	setupEphemeralDiskWithPathMutex       sync.RWMutex
+	setupEphemeralDiskWithPathArgsForCall []struct {
+		arg1 string
+		arg2 *uint64
+	}
+	setupEphemeralDiskWithPathReturns struct {
+		result1 error
+	}
+	setupEphemeralDiskWithPathReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupHomeDirStub        func() error
+	setupHomeDirMutex       sync.RWMutex
+	setupHomeDirArgsForCall []struct {
+	}
+	setupHomeDirReturns struct {
+		result1 error
+	}
+	setupHomeDirReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupHostnameStub        func(string) error
+	setupHostnameMutex       sync.RWMutex
+	setupHostnameArgsForCall []struct {
+		arg1 string
+	}
+	setupHostnameReturns struct {
+		result1 error
+	}
+	setupHostnameReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupIPv6Stub        func(settings.IPv6) error
+	setupIPv6Mutex       sync.RWMutex
+	setupIPv6ArgsForCall []struct {
+		arg1 settings.IPv6
+	}
+	setupIPv6Returns struct {
+		result1 error
+	}
+	setupIPv6ReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupLogDirStub        func() error
+	setupLogDirMutex       sync.RWMutex
+	setupLogDirArgsForCall []struct {
+	}
+	setupLogDirReturns struct {
+		result1 error
+	}
+	setupLogDirReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupLoggingAndAuditingStub        func() error
+	setupLoggingAndAuditingMutex       sync.RWMutex
+	setupLoggingAndAuditingArgsForCall []struct {
+	}
+	setupLoggingAndAuditingReturns struct {
+		result1 error
+	}
+	setupLoggingAndAuditingReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupLogrotateStub        func(string, string, string) error
+	setupLogrotateMutex       sync.RWMutex
+	setupLogrotateArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 string
+	}
+	setupLogrotateReturns struct {
+		result1 error
+	}
+	setupLogrotateReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupMonitUserStub        func() error
+	setupMonitUserMutex       sync.RWMutex
+	setupMonitUserArgsForCall []struct {
+	}
+	setupMonitUserReturns struct {
+		result1 error
+	}
+	setupMonitUserReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupNetworkingStub        func(settings.Networks) error
+	setupNetworkingMutex       sync.RWMutex
+	setupNetworkingArgsForCall []struct {
+		arg1 settings.Networks
+	}
+	setupNetworkingReturns struct {
+		result1 error
+	}
+	setupNetworkingReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupRawEphemeralDisksStub        func([]settings.DiskSettings) error
+	setupRawEphemeralDisksMutex       sync.RWMutex
+	setupRawEphemeralDisksArgsForCall []struct {
+		arg1 []settings.DiskSettings
+	}
+	setupRawEphemeralDisksReturns struct {
+		result1 error
+	}
+	setupRawEphemeralDisksReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupRecordsJSONPermissionStub        func(string) error
+	setupRecordsJSONPermissionMutex       sync.RWMutex
+	setupRecordsJSONPermissionArgsForCall []struct {
+		arg1 string
+	}
+	setupRecordsJSONPermissionReturns struct {
+		result1 error
+	}
+	setupRecordsJSONPermissionReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupRootDiskStub        func(string) error
+	setupRootDiskMutex       sync.RWMutex
+	setupRootDiskArgsForCall []struct {
+		arg1 string
+	}
+	setupRootDiskReturns struct {
+		result1 error
+	}
+	setupRootDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupRuntimeConfigurationStub        func() error
+	setupRuntimeConfigurationMutex       sync.RWMutex
+	setupRuntimeConfigurationArgsForCall []struct {
+	}
+	setupRuntimeConfigurationReturns struct {
+		result1 error
+	}
+	setupRuntimeConfigurationReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupSSHStub        func([]string, string) error
+	setupSSHMutex       sync.RWMutex
+	setupSSHArgsForCall []struct {
+		arg1 []string
+		arg2 string
+	}
+	setupSSHReturns struct {
+		result1 error
+	}
+	setupSSHReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupSharedMemoryStub        func() error
+	setupSharedMemoryMutex       sync.RWMutex
+	setupSharedMemoryArgsForCall []struct {
+	}
+	setupSharedMemoryReturns struct {
+		result1 error
+	}
+	setupSharedMemoryReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupTmpDirStub        func() error
+	setupTmpDirMutex       sync.RWMutex
+	setupTmpDirArgsForCall []struct {
+	}
+	setupTmpDirReturns struct {
+		result1 error
+	}
+	setupTmpDirReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ShutdownStub        func() error
 	shutdownMutex       sync.RWMutex
-	shutdownArgsForCall []struct{}
-	shutdownReturns     struct {
+	shutdownArgsForCall []struct {
+	}
+	shutdownReturns struct {
 		result1 error
 	}
 	shutdownReturnsOnCall map[int]struct {
 		result1 error
 	}
+	StartMonitStub        func() error
+	startMonitMutex       sync.RWMutex
+	startMonitArgsForCall []struct {
+	}
+	startMonitReturns struct {
+		result1 error
+	}
+	startMonitReturnsOnCall map[int]struct {
+		result1 error
+	}
+	UnmountPersistentDiskStub        func(settings.DiskSettings) (bool, error)
+	unmountPersistentDiskMutex       sync.RWMutex
+	unmountPersistentDiskArgsForCall []struct {
+		arg1 settings.DiskSettings
+	}
+	unmountPersistentDiskReturns struct {
+		result1 bool
+		result2 error
+	}
+	unmountPersistentDiskReturnsOnCall map[int]struct {
+		result1 bool
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePlatform) GetFs() boshsys.FileSystem {
-	fake.getFsMutex.Lock()
-	ret, specificReturn := fake.getFsReturnsOnCall[len(fake.getFsArgsForCall)]
-	fake.getFsArgsForCall = append(fake.getFsArgsForCall, struct{}{})
-	fake.recordInvocation("GetFs", []interface{}{})
-	fake.getFsMutex.Unlock()
-	if fake.GetFsStub != nil {
-		return fake.GetFsStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getFsReturns.result1
-}
-
-func (fake *FakePlatform) GetFsCallCount() int {
-	fake.getFsMutex.RLock()
-	defer fake.getFsMutex.RUnlock()
-	return len(fake.getFsArgsForCall)
-}
-
-func (fake *FakePlatform) GetFsReturns(result1 boshsys.FileSystem) {
-	fake.GetFsStub = nil
-	fake.getFsReturns = struct {
-		result1 boshsys.FileSystem
-	}{result1}
-}
-
-func (fake *FakePlatform) GetFsReturnsOnCall(i int, result1 boshsys.FileSystem) {
-	fake.GetFsStub = nil
-	if fake.getFsReturnsOnCall == nil {
-		fake.getFsReturnsOnCall = make(map[int]struct {
-			result1 boshsys.FileSystem
-		})
-	}
-	fake.getFsReturnsOnCall[i] = struct {
-		result1 boshsys.FileSystem
-	}{result1}
-}
-
-func (fake *FakePlatform) GetRunner() boshsys.CmdRunner {
-	fake.getRunnerMutex.Lock()
-	ret, specificReturn := fake.getRunnerReturnsOnCall[len(fake.getRunnerArgsForCall)]
-	fake.getRunnerArgsForCall = append(fake.getRunnerArgsForCall, struct{}{})
-	fake.recordInvocation("GetRunner", []interface{}{})
-	fake.getRunnerMutex.Unlock()
-	if fake.GetRunnerStub != nil {
-		return fake.GetRunnerStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getRunnerReturns.result1
-}
-
-func (fake *FakePlatform) GetRunnerCallCount() int {
-	fake.getRunnerMutex.RLock()
-	defer fake.getRunnerMutex.RUnlock()
-	return len(fake.getRunnerArgsForCall)
-}
-
-func (fake *FakePlatform) GetRunnerReturns(result1 boshsys.CmdRunner) {
-	fake.GetRunnerStub = nil
-	fake.getRunnerReturns = struct {
-		result1 boshsys.CmdRunner
-	}{result1}
-}
-
-func (fake *FakePlatform) GetRunnerReturnsOnCall(i int, result1 boshsys.CmdRunner) {
-	fake.GetRunnerStub = nil
-	if fake.getRunnerReturnsOnCall == nil {
-		fake.getRunnerReturnsOnCall = make(map[int]struct {
-			result1 boshsys.CmdRunner
-		})
-	}
-	fake.getRunnerReturnsOnCall[i] = struct {
-		result1 boshsys.CmdRunner
-	}{result1}
-}
-
-func (fake *FakePlatform) GetCompressor() boshcmd.Compressor {
-	fake.getCompressorMutex.Lock()
-	ret, specificReturn := fake.getCompressorReturnsOnCall[len(fake.getCompressorArgsForCall)]
-	fake.getCompressorArgsForCall = append(fake.getCompressorArgsForCall, struct{}{})
-	fake.recordInvocation("GetCompressor", []interface{}{})
-	fake.getCompressorMutex.Unlock()
-	if fake.GetCompressorStub != nil {
-		return fake.GetCompressorStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getCompressorReturns.result1
-}
-
-func (fake *FakePlatform) GetCompressorCallCount() int {
-	fake.getCompressorMutex.RLock()
-	defer fake.getCompressorMutex.RUnlock()
-	return len(fake.getCompressorArgsForCall)
-}
-
-func (fake *FakePlatform) GetCompressorReturns(result1 boshcmd.Compressor) {
-	fake.GetCompressorStub = nil
-	fake.getCompressorReturns = struct {
-		result1 boshcmd.Compressor
-	}{result1}
-}
-
-func (fake *FakePlatform) GetCompressorReturnsOnCall(i int, result1 boshcmd.Compressor) {
-	fake.GetCompressorStub = nil
-	if fake.getCompressorReturnsOnCall == nil {
-		fake.getCompressorReturnsOnCall = make(map[int]struct {
-			result1 boshcmd.Compressor
-		})
-	}
-	fake.getCompressorReturnsOnCall[i] = struct {
-		result1 boshcmd.Compressor
-	}{result1}
-}
-
-func (fake *FakePlatform) GetCopier() boshcmd.Copier {
-	fake.getCopierMutex.Lock()
-	ret, specificReturn := fake.getCopierReturnsOnCall[len(fake.getCopierArgsForCall)]
-	fake.getCopierArgsForCall = append(fake.getCopierArgsForCall, struct{}{})
-	fake.recordInvocation("GetCopier", []interface{}{})
-	fake.getCopierMutex.Unlock()
-	if fake.GetCopierStub != nil {
-		return fake.GetCopierStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getCopierReturns.result1
-}
-
-func (fake *FakePlatform) GetCopierCallCount() int {
-	fake.getCopierMutex.RLock()
-	defer fake.getCopierMutex.RUnlock()
-	return len(fake.getCopierArgsForCall)
-}
-
-func (fake *FakePlatform) GetCopierReturns(result1 boshcmd.Copier) {
-	fake.GetCopierStub = nil
-	fake.getCopierReturns = struct {
-		result1 boshcmd.Copier
-	}{result1}
-}
-
-func (fake *FakePlatform) GetCopierReturnsOnCall(i int, result1 boshcmd.Copier) {
-	fake.GetCopierStub = nil
-	if fake.getCopierReturnsOnCall == nil {
-		fake.getCopierReturnsOnCall = make(map[int]struct {
-			result1 boshcmd.Copier
-		})
-	}
-	fake.getCopierReturnsOnCall[i] = struct {
-		result1 boshcmd.Copier
-	}{result1}
-}
-
-func (fake *FakePlatform) GetDirProvider() boshdir.Provider {
-	fake.getDirProviderMutex.Lock()
-	ret, specificReturn := fake.getDirProviderReturnsOnCall[len(fake.getDirProviderArgsForCall)]
-	fake.getDirProviderArgsForCall = append(fake.getDirProviderArgsForCall, struct{}{})
-	fake.recordInvocation("GetDirProvider", []interface{}{})
-	fake.getDirProviderMutex.Unlock()
-	if fake.GetDirProviderStub != nil {
-		return fake.GetDirProviderStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getDirProviderReturns.result1
-}
-
-func (fake *FakePlatform) GetDirProviderCallCount() int {
-	fake.getDirProviderMutex.RLock()
-	defer fake.getDirProviderMutex.RUnlock()
-	return len(fake.getDirProviderArgsForCall)
-}
-
-func (fake *FakePlatform) GetDirProviderReturns(result1 boshdir.Provider) {
-	fake.GetDirProviderStub = nil
-	fake.getDirProviderReturns = struct {
-		result1 boshdir.Provider
-	}{result1}
-}
-
-func (fake *FakePlatform) GetDirProviderReturnsOnCall(i int, result1 boshdir.Provider) {
-	fake.GetDirProviderStub = nil
-	if fake.getDirProviderReturnsOnCall == nil {
-		fake.getDirProviderReturnsOnCall = make(map[int]struct {
-			result1 boshdir.Provider
-		})
-	}
-	fake.getDirProviderReturnsOnCall[i] = struct {
-		result1 boshdir.Provider
-	}{result1}
-}
-
-func (fake *FakePlatform) GetVitalsService() boshvitals.Service {
-	fake.getVitalsServiceMutex.Lock()
-	ret, specificReturn := fake.getVitalsServiceReturnsOnCall[len(fake.getVitalsServiceArgsForCall)]
-	fake.getVitalsServiceArgsForCall = append(fake.getVitalsServiceArgsForCall, struct{}{})
-	fake.recordInvocation("GetVitalsService", []interface{}{})
-	fake.getVitalsServiceMutex.Unlock()
-	if fake.GetVitalsServiceStub != nil {
-		return fake.GetVitalsServiceStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getVitalsServiceReturns.result1
-}
-
-func (fake *FakePlatform) GetVitalsServiceCallCount() int {
-	fake.getVitalsServiceMutex.RLock()
-	defer fake.getVitalsServiceMutex.RUnlock()
-	return len(fake.getVitalsServiceArgsForCall)
-}
-
-func (fake *FakePlatform) GetVitalsServiceReturns(result1 boshvitals.Service) {
-	fake.GetVitalsServiceStub = nil
-	fake.getVitalsServiceReturns = struct {
-		result1 boshvitals.Service
-	}{result1}
-}
-
-func (fake *FakePlatform) GetVitalsServiceReturnsOnCall(i int, result1 boshvitals.Service) {
-	fake.GetVitalsServiceStub = nil
-	if fake.getVitalsServiceReturnsOnCall == nil {
-		fake.getVitalsServiceReturnsOnCall = make(map[int]struct {
-			result1 boshvitals.Service
-		})
-	}
-	fake.getVitalsServiceReturnsOnCall[i] = struct {
-		result1 boshvitals.Service
-	}{result1}
-}
-
-func (fake *FakePlatform) GetAuditLogger() platform.AuditLogger {
-	fake.getAuditLoggerMutex.Lock()
-	ret, specificReturn := fake.getAuditLoggerReturnsOnCall[len(fake.getAuditLoggerArgsForCall)]
-	fake.getAuditLoggerArgsForCall = append(fake.getAuditLoggerArgsForCall, struct{}{})
-	fake.recordInvocation("GetAuditLogger", []interface{}{})
-	fake.getAuditLoggerMutex.Unlock()
-	if fake.GetAuditLoggerStub != nil {
-		return fake.GetAuditLoggerStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getAuditLoggerReturns.result1
-}
-
-func (fake *FakePlatform) GetAuditLoggerCallCount() int {
-	fake.getAuditLoggerMutex.RLock()
-	defer fake.getAuditLoggerMutex.RUnlock()
-	return len(fake.getAuditLoggerArgsForCall)
-}
-
-func (fake *FakePlatform) GetAuditLoggerReturns(result1 platform.AuditLogger) {
-	fake.GetAuditLoggerStub = nil
-	fake.getAuditLoggerReturns = struct {
-		result1 platform.AuditLogger
-	}{result1}
-}
-
-func (fake *FakePlatform) GetAuditLoggerReturnsOnCall(i int, result1 platform.AuditLogger) {
-	fake.GetAuditLoggerStub = nil
-	if fake.getAuditLoggerReturnsOnCall == nil {
-		fake.getAuditLoggerReturnsOnCall = make(map[int]struct {
-			result1 platform.AuditLogger
-		})
-	}
-	fake.getAuditLoggerReturnsOnCall[i] = struct {
-		result1 platform.AuditLogger
-	}{result1}
-}
-
-func (fake *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
-	fake.getDevicePathResolverMutex.Lock()
-	ret, specificReturn := fake.getDevicePathResolverReturnsOnCall[len(fake.getDevicePathResolverArgsForCall)]
-	fake.getDevicePathResolverArgsForCall = append(fake.getDevicePathResolverArgsForCall, struct{}{})
-	fake.recordInvocation("GetDevicePathResolver", []interface{}{})
-	fake.getDevicePathResolverMutex.Unlock()
-	if fake.GetDevicePathResolverStub != nil {
-		return fake.GetDevicePathResolverStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getDevicePathResolverReturns.result1
-}
-
-func (fake *FakePlatform) GetDevicePathResolverCallCount() int {
-	fake.getDevicePathResolverMutex.RLock()
-	defer fake.getDevicePathResolverMutex.RUnlock()
-	return len(fake.getDevicePathResolverArgsForCall)
-}
-
-func (fake *FakePlatform) GetDevicePathResolverReturns(result1 boshdpresolv.DevicePathResolver) {
-	fake.GetDevicePathResolverStub = nil
-	fake.getDevicePathResolverReturns = struct {
-		result1 boshdpresolv.DevicePathResolver
-	}{result1}
-}
-
-func (fake *FakePlatform) GetDevicePathResolverReturnsOnCall(i int, result1 boshdpresolv.DevicePathResolver) {
-	fake.GetDevicePathResolverStub = nil
-	if fake.getDevicePathResolverReturnsOnCall == nil {
-		fake.getDevicePathResolverReturnsOnCall = make(map[int]struct {
-			result1 boshdpresolv.DevicePathResolver
-		})
-	}
-	fake.getDevicePathResolverReturnsOnCall[i] = struct {
-		result1 boshdpresolv.DevicePathResolver
-	}{result1}
-}
-
-func (fake *FakePlatform) CreateUser(username string, basePath string) (err error) {
-	fake.createUserMutex.Lock()
-	ret, specificReturn := fake.createUserReturnsOnCall[len(fake.createUserArgsForCall)]
-	fake.createUserArgsForCall = append(fake.createUserArgsForCall, struct {
-		username string
-		basePath string
-	}{username, basePath})
-	fake.recordInvocation("CreateUser", []interface{}{username, basePath})
-	fake.createUserMutex.Unlock()
-	if fake.CreateUserStub != nil {
-		return fake.CreateUserStub(username, basePath)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.createUserReturns.result1
-}
-
-func (fake *FakePlatform) CreateUserCallCount() int {
-	fake.createUserMutex.RLock()
-	defer fake.createUserMutex.RUnlock()
-	return len(fake.createUserArgsForCall)
-}
-
-func (fake *FakePlatform) CreateUserArgsForCall(i int) (string, string) {
-	fake.createUserMutex.RLock()
-	defer fake.createUserMutex.RUnlock()
-	return fake.createUserArgsForCall[i].username, fake.createUserArgsForCall[i].basePath
-}
-
-func (fake *FakePlatform) CreateUserReturns(result1 error) {
-	fake.CreateUserStub = nil
-	fake.createUserReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) CreateUserReturnsOnCall(i int, result1 error) {
-	fake.CreateUserStub = nil
-	if fake.createUserReturnsOnCall == nil {
-		fake.createUserReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.createUserReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) AddUserToGroups(username string, groups []string) (err error) {
-	var groupsCopy []string
-	if groups != nil {
-		groupsCopy = make([]string, len(groups))
-		copy(groupsCopy, groups)
+func (fake *FakePlatform) AddUserToGroups(arg1 string, arg2 []string) error {
+	var arg2Copy []string
+	if arg2 != nil {
+		arg2Copy = make([]string, len(arg2))
+		copy(arg2Copy, arg2)
 	}
 	fake.addUserToGroupsMutex.Lock()
 	ret, specificReturn := fake.addUserToGroupsReturnsOnCall[len(fake.addUserToGroupsArgsForCall)]
 	fake.addUserToGroupsArgsForCall = append(fake.addUserToGroupsArgsForCall, struct {
-		username string
-		groups   []string
-	}{username, groupsCopy})
-	fake.recordInvocation("AddUserToGroups", []interface{}{username, groupsCopy})
+		arg1 string
+		arg2 []string
+	}{arg1, arg2Copy})
+	fake.recordInvocation("AddUserToGroups", []interface{}{arg1, arg2Copy})
 	fake.addUserToGroupsMutex.Unlock()
 	if fake.AddUserToGroupsStub != nil {
-		return fake.AddUserToGroupsStub(username, groups)
+		return fake.AddUserToGroupsStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.addUserToGroupsReturns.result1
+	fakeReturns := fake.addUserToGroupsReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakePlatform) AddUserToGroupsCallCount() int {
@@ -986,13 +643,22 @@ func (fake *FakePlatform) AddUserToGroupsCallCount() int {
 	return len(fake.addUserToGroupsArgsForCall)
 }
 
+func (fake *FakePlatform) AddUserToGroupsCalls(stub func(string, []string) error) {
+	fake.addUserToGroupsMutex.Lock()
+	defer fake.addUserToGroupsMutex.Unlock()
+	fake.AddUserToGroupsStub = stub
+}
+
 func (fake *FakePlatform) AddUserToGroupsArgsForCall(i int) (string, []string) {
 	fake.addUserToGroupsMutex.RLock()
 	defer fake.addUserToGroupsMutex.RUnlock()
-	return fake.addUserToGroupsArgsForCall[i].username, fake.addUserToGroupsArgsForCall[i].groups
+	argsForCall := fake.addUserToGroupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakePlatform) AddUserToGroupsReturns(result1 error) {
+	fake.addUserToGroupsMutex.Lock()
+	defer fake.addUserToGroupsMutex.Unlock()
 	fake.AddUserToGroupsStub = nil
 	fake.addUserToGroupsReturns = struct {
 		result1 error
@@ -1000,6 +666,8 @@ func (fake *FakePlatform) AddUserToGroupsReturns(result1 error) {
 }
 
 func (fake *FakePlatform) AddUserToGroupsReturnsOnCall(i int, result1 error) {
+	fake.addUserToGroupsMutex.Lock()
+	defer fake.addUserToGroupsMutex.Unlock()
 	fake.AddUserToGroupsStub = nil
 	if fake.addUserToGroupsReturnsOnCall == nil {
 		fake.addUserToGroupsReturnsOnCall = make(map[int]struct {
@@ -1011,1371 +679,23 @@ func (fake *FakePlatform) AddUserToGroupsReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
-	fake.deleteEphemeralUsersMatchingMutex.Lock()
-	ret, specificReturn := fake.deleteEphemeralUsersMatchingReturnsOnCall[len(fake.deleteEphemeralUsersMatchingArgsForCall)]
-	fake.deleteEphemeralUsersMatchingArgsForCall = append(fake.deleteEphemeralUsersMatchingArgsForCall, struct {
-		regex string
-	}{regex})
-	fake.recordInvocation("DeleteEphemeralUsersMatching", []interface{}{regex})
-	fake.deleteEphemeralUsersMatchingMutex.Unlock()
-	if fake.DeleteEphemeralUsersMatchingStub != nil {
-		return fake.DeleteEphemeralUsersMatchingStub(regex)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.deleteEphemeralUsersMatchingReturns.result1
-}
-
-func (fake *FakePlatform) DeleteEphemeralUsersMatchingCallCount() int {
-	fake.deleteEphemeralUsersMatchingMutex.RLock()
-	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
-	return len(fake.deleteEphemeralUsersMatchingArgsForCall)
-}
-
-func (fake *FakePlatform) DeleteEphemeralUsersMatchingArgsForCall(i int) string {
-	fake.deleteEphemeralUsersMatchingMutex.RLock()
-	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
-	return fake.deleteEphemeralUsersMatchingArgsForCall[i].regex
-}
-
-func (fake *FakePlatform) DeleteEphemeralUsersMatchingReturns(result1 error) {
-	fake.DeleteEphemeralUsersMatchingStub = nil
-	fake.deleteEphemeralUsersMatchingReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) DeleteEphemeralUsersMatchingReturnsOnCall(i int, result1 error) {
-	fake.DeleteEphemeralUsersMatchingStub = nil
-	if fake.deleteEphemeralUsersMatchingReturnsOnCall == nil {
-		fake.deleteEphemeralUsersMatchingReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.deleteEphemeralUsersMatchingReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
-	fake.setupRootDiskMutex.Lock()
-	ret, specificReturn := fake.setupRootDiskReturnsOnCall[len(fake.setupRootDiskArgsForCall)]
-	fake.setupRootDiskArgsForCall = append(fake.setupRootDiskArgsForCall, struct {
-		ephemeralDiskPath string
-	}{ephemeralDiskPath})
-	fake.recordInvocation("SetupRootDisk", []interface{}{ephemeralDiskPath})
-	fake.setupRootDiskMutex.Unlock()
-	if fake.SetupRootDiskStub != nil {
-		return fake.SetupRootDiskStub(ephemeralDiskPath)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupRootDiskReturns.result1
-}
-
-func (fake *FakePlatform) SetupRootDiskCallCount() int {
-	fake.setupRootDiskMutex.RLock()
-	defer fake.setupRootDiskMutex.RUnlock()
-	return len(fake.setupRootDiskArgsForCall)
-}
-
-func (fake *FakePlatform) SetupRootDiskArgsForCall(i int) string {
-	fake.setupRootDiskMutex.RLock()
-	defer fake.setupRootDiskMutex.RUnlock()
-	return fake.setupRootDiskArgsForCall[i].ephemeralDiskPath
-}
-
-func (fake *FakePlatform) SetupRootDiskReturns(result1 error) {
-	fake.SetupRootDiskStub = nil
-	fake.setupRootDiskReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRootDiskReturnsOnCall(i int, result1 error) {
-	fake.SetupRootDiskStub = nil
-	if fake.setupRootDiskReturnsOnCall == nil {
-		fake.setupRootDiskReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupRootDiskReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupSSH(publicKey []string, username string) (err error) {
-	var publicKeyCopy []string
-	if publicKey != nil {
-		publicKeyCopy = make([]string, len(publicKey))
-		copy(publicKeyCopy, publicKey)
-	}
-	fake.setupSSHMutex.Lock()
-	ret, specificReturn := fake.setupSSHReturnsOnCall[len(fake.setupSSHArgsForCall)]
-	fake.setupSSHArgsForCall = append(fake.setupSSHArgsForCall, struct {
-		publicKey []string
-		username  string
-	}{publicKeyCopy, username})
-	fake.recordInvocation("SetupSSH", []interface{}{publicKeyCopy, username})
-	fake.setupSSHMutex.Unlock()
-	if fake.SetupSSHStub != nil {
-		return fake.SetupSSHStub(publicKey, username)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupSSHReturns.result1
-}
-
-func (fake *FakePlatform) SetupSSHCallCount() int {
-	fake.setupSSHMutex.RLock()
-	defer fake.setupSSHMutex.RUnlock()
-	return len(fake.setupSSHArgsForCall)
-}
-
-func (fake *FakePlatform) SetupSSHArgsForCall(i int) ([]string, string) {
-	fake.setupSSHMutex.RLock()
-	defer fake.setupSSHMutex.RUnlock()
-	return fake.setupSSHArgsForCall[i].publicKey, fake.setupSSHArgsForCall[i].username
-}
-
-func (fake *FakePlatform) SetupSSHReturns(result1 error) {
-	fake.SetupSSHStub = nil
-	fake.setupSSHReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupSSHReturnsOnCall(i int, result1 error) {
-	fake.SetupSSHStub = nil
-	if fake.setupSSHReturnsOnCall == nil {
-		fake.setupSSHReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupSSHReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetUserPassword(user string, encryptedPwd string) (err error) {
-	fake.setUserPasswordMutex.Lock()
-	ret, specificReturn := fake.setUserPasswordReturnsOnCall[len(fake.setUserPasswordArgsForCall)]
-	fake.setUserPasswordArgsForCall = append(fake.setUserPasswordArgsForCall, struct {
-		user         string
-		encryptedPwd string
-	}{user, encryptedPwd})
-	fake.recordInvocation("SetUserPassword", []interface{}{user, encryptedPwd})
-	fake.setUserPasswordMutex.Unlock()
-	if fake.SetUserPasswordStub != nil {
-		return fake.SetUserPasswordStub(user, encryptedPwd)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setUserPasswordReturns.result1
-}
-
-func (fake *FakePlatform) SetUserPasswordCallCount() int {
-	fake.setUserPasswordMutex.RLock()
-	defer fake.setUserPasswordMutex.RUnlock()
-	return len(fake.setUserPasswordArgsForCall)
-}
-
-func (fake *FakePlatform) SetUserPasswordArgsForCall(i int) (string, string) {
-	fake.setUserPasswordMutex.RLock()
-	defer fake.setUserPasswordMutex.RUnlock()
-	return fake.setUserPasswordArgsForCall[i].user, fake.setUserPasswordArgsForCall[i].encryptedPwd
-}
-
-func (fake *FakePlatform) SetUserPasswordReturns(result1 error) {
-	fake.SetUserPasswordStub = nil
-	fake.setUserPasswordReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetUserPasswordReturnsOnCall(i int, result1 error) {
-	fake.SetUserPasswordStub = nil
-	if fake.setUserPasswordReturnsOnCall == nil {
-		fake.setUserPasswordReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setUserPasswordReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupIPv6(arg1 boshsettings.IPv6) error {
-	fake.setupIPv6Mutex.Lock()
-	ret, specificReturn := fake.setupIPv6ReturnsOnCall[len(fake.setupIPv6ArgsForCall)]
-	fake.setupIPv6ArgsForCall = append(fake.setupIPv6ArgsForCall, struct {
-		arg1 boshsettings.IPv6
-	}{arg1})
-	fake.recordInvocation("SetupIPv6", []interface{}{arg1})
-	fake.setupIPv6Mutex.Unlock()
-	if fake.SetupIPv6Stub != nil {
-		return fake.SetupIPv6Stub(arg1)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupIPv6Returns.result1
-}
-
-func (fake *FakePlatform) SetupIPv6CallCount() int {
-	fake.setupIPv6Mutex.RLock()
-	defer fake.setupIPv6Mutex.RUnlock()
-	return len(fake.setupIPv6ArgsForCall)
-}
-
-func (fake *FakePlatform) SetupIPv6ArgsForCall(i int) boshsettings.IPv6 {
-	fake.setupIPv6Mutex.RLock()
-	defer fake.setupIPv6Mutex.RUnlock()
-	return fake.setupIPv6ArgsForCall[i].arg1
-}
-
-func (fake *FakePlatform) SetupIPv6Returns(result1 error) {
-	fake.SetupIPv6Stub = nil
-	fake.setupIPv6Returns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupIPv6ReturnsOnCall(i int, result1 error) {
-	fake.SetupIPv6Stub = nil
-	if fake.setupIPv6ReturnsOnCall == nil {
-		fake.setupIPv6ReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupIPv6ReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupHostname(hostname string) (err error) {
-	fake.setupHostnameMutex.Lock()
-	ret, specificReturn := fake.setupHostnameReturnsOnCall[len(fake.setupHostnameArgsForCall)]
-	fake.setupHostnameArgsForCall = append(fake.setupHostnameArgsForCall, struct {
-		hostname string
-	}{hostname})
-	fake.recordInvocation("SetupHostname", []interface{}{hostname})
-	fake.setupHostnameMutex.Unlock()
-	if fake.SetupHostnameStub != nil {
-		return fake.SetupHostnameStub(hostname)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupHostnameReturns.result1
-}
-
-func (fake *FakePlatform) SetupHostnameCallCount() int {
-	fake.setupHostnameMutex.RLock()
-	defer fake.setupHostnameMutex.RUnlock()
-	return len(fake.setupHostnameArgsForCall)
-}
-
-func (fake *FakePlatform) SetupHostnameArgsForCall(i int) string {
-	fake.setupHostnameMutex.RLock()
-	defer fake.setupHostnameMutex.RUnlock()
-	return fake.setupHostnameArgsForCall[i].hostname
-}
-
-func (fake *FakePlatform) SetupHostnameReturns(result1 error) {
-	fake.SetupHostnameStub = nil
-	fake.setupHostnameReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupHostnameReturnsOnCall(i int, result1 error) {
-	fake.SetupHostnameStub = nil
-	if fake.setupHostnameReturnsOnCall == nil {
-		fake.setupHostnameReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupHostnameReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupNetworking(networks boshsettings.Networks) (err error) {
-	fake.setupNetworkingMutex.Lock()
-	ret, specificReturn := fake.setupNetworkingReturnsOnCall[len(fake.setupNetworkingArgsForCall)]
-	fake.setupNetworkingArgsForCall = append(fake.setupNetworkingArgsForCall, struct {
-		networks boshsettings.Networks
-	}{networks})
-	fake.recordInvocation("SetupNetworking", []interface{}{networks})
-	fake.setupNetworkingMutex.Unlock()
-	if fake.SetupNetworkingStub != nil {
-		return fake.SetupNetworkingStub(networks)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupNetworkingReturns.result1
-}
-
-func (fake *FakePlatform) SetupNetworkingCallCount() int {
-	fake.setupNetworkingMutex.RLock()
-	defer fake.setupNetworkingMutex.RUnlock()
-	return len(fake.setupNetworkingArgsForCall)
-}
-
-func (fake *FakePlatform) SetupNetworkingArgsForCall(i int) boshsettings.Networks {
-	fake.setupNetworkingMutex.RLock()
-	defer fake.setupNetworkingMutex.RUnlock()
-	return fake.setupNetworkingArgsForCall[i].networks
-}
-
-func (fake *FakePlatform) SetupNetworkingReturns(result1 error) {
-	fake.SetupNetworkingStub = nil
-	fake.setupNetworkingReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupNetworkingReturnsOnCall(i int, result1 error) {
-	fake.SetupNetworkingStub = nil
-	if fake.setupNetworkingReturnsOnCall == nil {
-		fake.setupNetworkingReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupNetworkingReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupLogrotate(groupName string, basePath string, size string) (err error) {
-	fake.setupLogrotateMutex.Lock()
-	ret, specificReturn := fake.setupLogrotateReturnsOnCall[len(fake.setupLogrotateArgsForCall)]
-	fake.setupLogrotateArgsForCall = append(fake.setupLogrotateArgsForCall, struct {
-		groupName string
-		basePath  string
-		size      string
-	}{groupName, basePath, size})
-	fake.recordInvocation("SetupLogrotate", []interface{}{groupName, basePath, size})
-	fake.setupLogrotateMutex.Unlock()
-	if fake.SetupLogrotateStub != nil {
-		return fake.SetupLogrotateStub(groupName, basePath, size)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupLogrotateReturns.result1
-}
-
-func (fake *FakePlatform) SetupLogrotateCallCount() int {
-	fake.setupLogrotateMutex.RLock()
-	defer fake.setupLogrotateMutex.RUnlock()
-	return len(fake.setupLogrotateArgsForCall)
-}
-
-func (fake *FakePlatform) SetupLogrotateArgsForCall(i int) (string, string, string) {
-	fake.setupLogrotateMutex.RLock()
-	defer fake.setupLogrotateMutex.RUnlock()
-	return fake.setupLogrotateArgsForCall[i].groupName, fake.setupLogrotateArgsForCall[i].basePath, fake.setupLogrotateArgsForCall[i].size
-}
-
-func (fake *FakePlatform) SetupLogrotateReturns(result1 error) {
-	fake.SetupLogrotateStub = nil
-	fake.setupLogrotateReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupLogrotateReturnsOnCall(i int, result1 error) {
-	fake.SetupLogrotateStub = nil
-	if fake.setupLogrotateReturnsOnCall == nil {
-		fake.setupLogrotateReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupLogrotateReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
-	var serversCopy []string
-	if servers != nil {
-		serversCopy = make([]string, len(servers))
-		copy(serversCopy, servers)
-	}
-	fake.setTimeWithNtpServersMutex.Lock()
-	ret, specificReturn := fake.setTimeWithNtpServersReturnsOnCall[len(fake.setTimeWithNtpServersArgsForCall)]
-	fake.setTimeWithNtpServersArgsForCall = append(fake.setTimeWithNtpServersArgsForCall, struct {
-		servers []string
-	}{serversCopy})
-	fake.recordInvocation("SetTimeWithNtpServers", []interface{}{serversCopy})
-	fake.setTimeWithNtpServersMutex.Unlock()
-	if fake.SetTimeWithNtpServersStub != nil {
-		return fake.SetTimeWithNtpServersStub(servers)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setTimeWithNtpServersReturns.result1
-}
-
-func (fake *FakePlatform) SetTimeWithNtpServersCallCount() int {
-	fake.setTimeWithNtpServersMutex.RLock()
-	defer fake.setTimeWithNtpServersMutex.RUnlock()
-	return len(fake.setTimeWithNtpServersArgsForCall)
-}
-
-func (fake *FakePlatform) SetTimeWithNtpServersArgsForCall(i int) []string {
-	fake.setTimeWithNtpServersMutex.RLock()
-	defer fake.setTimeWithNtpServersMutex.RUnlock()
-	return fake.setTimeWithNtpServersArgsForCall[i].servers
-}
-
-func (fake *FakePlatform) SetTimeWithNtpServersReturns(result1 error) {
-	fake.SetTimeWithNtpServersStub = nil
-	fake.setTimeWithNtpServersReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetTimeWithNtpServersReturnsOnCall(i int, result1 error) {
-	fake.SetTimeWithNtpServersStub = nil
-	if fake.setTimeWithNtpServersReturnsOnCall == nil {
-		fake.setTimeWithNtpServersReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setTimeWithNtpServersReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error) {
-	fake.setupEphemeralDiskWithPathMutex.Lock()
-	ret, specificReturn := fake.setupEphemeralDiskWithPathReturnsOnCall[len(fake.setupEphemeralDiskWithPathArgsForCall)]
-	fake.setupEphemeralDiskWithPathArgsForCall = append(fake.setupEphemeralDiskWithPathArgsForCall, struct {
-		devicePath             string
-		desiredSwapSizeInBytes *uint64
-	}{devicePath, desiredSwapSizeInBytes})
-	fake.recordInvocation("SetupEphemeralDiskWithPath", []interface{}{devicePath, desiredSwapSizeInBytes})
-	fake.setupEphemeralDiskWithPathMutex.Unlock()
-	if fake.SetupEphemeralDiskWithPathStub != nil {
-		return fake.SetupEphemeralDiskWithPathStub(devicePath, desiredSwapSizeInBytes)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupEphemeralDiskWithPathReturns.result1
-}
-
-func (fake *FakePlatform) SetupEphemeralDiskWithPathCallCount() int {
-	fake.setupEphemeralDiskWithPathMutex.RLock()
-	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
-	return len(fake.setupEphemeralDiskWithPathArgsForCall)
-}
-
-func (fake *FakePlatform) SetupEphemeralDiskWithPathArgsForCall(i int) (string, *uint64) {
-	fake.setupEphemeralDiskWithPathMutex.RLock()
-	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
-	return fake.setupEphemeralDiskWithPathArgsForCall[i].devicePath, fake.setupEphemeralDiskWithPathArgsForCall[i].desiredSwapSizeInBytes
-}
-
-func (fake *FakePlatform) SetupEphemeralDiskWithPathReturns(result1 error) {
-	fake.SetupEphemeralDiskWithPathStub = nil
-	fake.setupEphemeralDiskWithPathReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupEphemeralDiskWithPathReturnsOnCall(i int, result1 error) {
-	fake.SetupEphemeralDiskWithPathStub = nil
-	if fake.setupEphemeralDiskWithPathReturnsOnCall == nil {
-		fake.setupEphemeralDiskWithPathReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupEphemeralDiskWithPathReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error) {
-	var devicesCopy []boshsettings.DiskSettings
-	if devices != nil {
-		devicesCopy = make([]boshsettings.DiskSettings, len(devices))
-		copy(devicesCopy, devices)
-	}
-	fake.setupRawEphemeralDisksMutex.Lock()
-	ret, specificReturn := fake.setupRawEphemeralDisksReturnsOnCall[len(fake.setupRawEphemeralDisksArgsForCall)]
-	fake.setupRawEphemeralDisksArgsForCall = append(fake.setupRawEphemeralDisksArgsForCall, struct {
-		devices []boshsettings.DiskSettings
-	}{devicesCopy})
-	fake.recordInvocation("SetupRawEphemeralDisks", []interface{}{devicesCopy})
-	fake.setupRawEphemeralDisksMutex.Unlock()
-	if fake.SetupRawEphemeralDisksStub != nil {
-		return fake.SetupRawEphemeralDisksStub(devices)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupRawEphemeralDisksReturns.result1
-}
-
-func (fake *FakePlatform) SetupRawEphemeralDisksCallCount() int {
-	fake.setupRawEphemeralDisksMutex.RLock()
-	defer fake.setupRawEphemeralDisksMutex.RUnlock()
-	return len(fake.setupRawEphemeralDisksArgsForCall)
-}
-
-func (fake *FakePlatform) SetupRawEphemeralDisksArgsForCall(i int) []boshsettings.DiskSettings {
-	fake.setupRawEphemeralDisksMutex.RLock()
-	defer fake.setupRawEphemeralDisksMutex.RUnlock()
-	return fake.setupRawEphemeralDisksArgsForCall[i].devices
-}
-
-func (fake *FakePlatform) SetupRawEphemeralDisksReturns(result1 error) {
-	fake.SetupRawEphemeralDisksStub = nil
-	fake.setupRawEphemeralDisksReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRawEphemeralDisksReturnsOnCall(i int, result1 error) {
-	fake.SetupRawEphemeralDisksStub = nil
-	if fake.setupRawEphemeralDisksReturnsOnCall == nil {
-		fake.setupRawEphemeralDisksReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupRawEphemeralDisksReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupDataDir() (err error) {
-	fake.setupDataDirMutex.Lock()
-	ret, specificReturn := fake.setupDataDirReturnsOnCall[len(fake.setupDataDirArgsForCall)]
-	fake.setupDataDirArgsForCall = append(fake.setupDataDirArgsForCall, struct{}{})
-	fake.recordInvocation("SetupDataDir", []interface{}{})
-	fake.setupDataDirMutex.Unlock()
-	if fake.SetupDataDirStub != nil {
-		return fake.SetupDataDirStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupDataDirReturns.result1
-}
-
-func (fake *FakePlatform) SetupDataDirCallCount() int {
-	fake.setupDataDirMutex.RLock()
-	defer fake.setupDataDirMutex.RUnlock()
-	return len(fake.setupDataDirArgsForCall)
-}
-
-func (fake *FakePlatform) SetupDataDirReturns(result1 error) {
-	fake.SetupDataDirStub = nil
-	fake.setupDataDirReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupDataDirReturnsOnCall(i int, result1 error) {
-	fake.SetupDataDirStub = nil
-	if fake.setupDataDirReturnsOnCall == nil {
-		fake.setupDataDirReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupDataDirReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupSharedMemory() (err error) {
-	fake.setupSharedMemoryMutex.Lock()
-	ret, specificReturn := fake.setupSharedMemoryReturnsOnCall[len(fake.setupSharedMemoryArgsForCall)]
-	fake.setupSharedMemoryArgsForCall = append(fake.setupSharedMemoryArgsForCall, struct{}{})
-	fake.recordInvocation("SetupSharedMemory", []interface{}{})
-	fake.setupSharedMemoryMutex.Unlock()
-	if fake.SetupSharedMemoryStub != nil {
-		return fake.SetupSharedMemoryStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupSharedMemoryReturns.result1
-}
-
-func (fake *FakePlatform) SetupSharedMemoryCallCount() int {
-	fake.setupSharedMemoryMutex.RLock()
-	defer fake.setupSharedMemoryMutex.RUnlock()
-	return len(fake.setupSharedMemoryArgsForCall)
-}
-
-func (fake *FakePlatform) SetupSharedMemoryReturns(result1 error) {
-	fake.SetupSharedMemoryStub = nil
-	fake.setupSharedMemoryReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupSharedMemoryReturnsOnCall(i int, result1 error) {
-	fake.SetupSharedMemoryStub = nil
-	if fake.setupSharedMemoryReturnsOnCall == nil {
-		fake.setupSharedMemoryReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupSharedMemoryReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupTmpDir() (err error) {
-	fake.setupTmpDirMutex.Lock()
-	ret, specificReturn := fake.setupTmpDirReturnsOnCall[len(fake.setupTmpDirArgsForCall)]
-	fake.setupTmpDirArgsForCall = append(fake.setupTmpDirArgsForCall, struct{}{})
-	fake.recordInvocation("SetupTmpDir", []interface{}{})
-	fake.setupTmpDirMutex.Unlock()
-	if fake.SetupTmpDirStub != nil {
-		return fake.SetupTmpDirStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupTmpDirReturns.result1
-}
-
-func (fake *FakePlatform) SetupTmpDirCallCount() int {
-	fake.setupTmpDirMutex.RLock()
-	defer fake.setupTmpDirMutex.RUnlock()
-	return len(fake.setupTmpDirArgsForCall)
-}
-
-func (fake *FakePlatform) SetupTmpDirReturns(result1 error) {
-	fake.SetupTmpDirStub = nil
-	fake.setupTmpDirReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupTmpDirReturnsOnCall(i int, result1 error) {
-	fake.SetupTmpDirStub = nil
-	if fake.setupTmpDirReturnsOnCall == nil {
-		fake.setupTmpDirReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupTmpDirReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupHomeDir() (err error) {
-	fake.setupHomeDirMutex.Lock()
-	ret, specificReturn := fake.setupHomeDirReturnsOnCall[len(fake.setupHomeDirArgsForCall)]
-	fake.setupHomeDirArgsForCall = append(fake.setupHomeDirArgsForCall, struct{}{})
-	fake.recordInvocation("SetupHomeDir", []interface{}{})
-	fake.setupHomeDirMutex.Unlock()
-	if fake.SetupHomeDirStub != nil {
-		return fake.SetupHomeDirStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupHomeDirReturns.result1
-}
-
-func (fake *FakePlatform) SetupHomeDirCallCount() int {
-	fake.setupHomeDirMutex.RLock()
-	defer fake.setupHomeDirMutex.RUnlock()
-	return len(fake.setupHomeDirArgsForCall)
-}
-
-func (fake *FakePlatform) SetupHomeDirReturns(result1 error) {
-	fake.SetupHomeDirStub = nil
-	fake.setupHomeDirReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupHomeDirReturnsOnCall(i int, result1 error) {
-	fake.SetupHomeDirStub = nil
-	if fake.setupHomeDirReturnsOnCall == nil {
-		fake.setupHomeDirReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupHomeDirReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupBlobsDir() (err error) {
-	fake.setupBlobsDirMutex.Lock()
-	ret, specificReturn := fake.setupBlobsDirReturnsOnCall[len(fake.setupBlobsDirArgsForCall)]
-	fake.setupBlobsDirArgsForCall = append(fake.setupBlobsDirArgsForCall, struct{}{})
-	fake.recordInvocation("SetupBlobsDir", []interface{}{})
-	fake.setupBlobsDirMutex.Unlock()
-	if fake.SetupBlobsDirStub != nil {
-		return fake.SetupBlobsDirStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupBlobsDirReturns.result1
-}
-
-func (fake *FakePlatform) SetupBlobsDirCallCount() int {
-	fake.setupBlobsDirMutex.RLock()
-	defer fake.setupBlobsDirMutex.RUnlock()
-	return len(fake.setupBlobsDirArgsForCall)
-}
-
-func (fake *FakePlatform) SetupBlobsDirReturns(result1 error) {
-	fake.SetupBlobsDirStub = nil
-	fake.setupBlobsDirReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupBlobsDirReturnsOnCall(i int, result1 error) {
-	fake.SetupBlobsDirStub = nil
-	if fake.setupBlobsDirReturnsOnCall == nil {
-		fake.setupBlobsDirReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupBlobsDirReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupMonitUser() (err error) {
-	fake.setupMonitUserMutex.Lock()
-	ret, specificReturn := fake.setupMonitUserReturnsOnCall[len(fake.setupMonitUserArgsForCall)]
-	fake.setupMonitUserArgsForCall = append(fake.setupMonitUserArgsForCall, struct{}{})
-	fake.recordInvocation("SetupMonitUser", []interface{}{})
-	fake.setupMonitUserMutex.Unlock()
-	if fake.SetupMonitUserStub != nil {
-		return fake.SetupMonitUserStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupMonitUserReturns.result1
-}
-
-func (fake *FakePlatform) SetupMonitUserCallCount() int {
-	fake.setupMonitUserMutex.RLock()
-	defer fake.setupMonitUserMutex.RUnlock()
-	return len(fake.setupMonitUserArgsForCall)
-}
-
-func (fake *FakePlatform) SetupMonitUserReturns(result1 error) {
-	fake.SetupMonitUserStub = nil
-	fake.setupMonitUserReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupMonitUserReturnsOnCall(i int, result1 error) {
-	fake.SetupMonitUserStub = nil
-	if fake.setupMonitUserReturnsOnCall == nil {
-		fake.setupMonitUserReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupMonitUserReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) StartMonit() (err error) {
-	fake.startMonitMutex.Lock()
-	ret, specificReturn := fake.startMonitReturnsOnCall[len(fake.startMonitArgsForCall)]
-	fake.startMonitArgsForCall = append(fake.startMonitArgsForCall, struct{}{})
-	fake.recordInvocation("StartMonit", []interface{}{})
-	fake.startMonitMutex.Unlock()
-	if fake.StartMonitStub != nil {
-		return fake.StartMonitStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.startMonitReturns.result1
-}
-
-func (fake *FakePlatform) StartMonitCallCount() int {
-	fake.startMonitMutex.RLock()
-	defer fake.startMonitMutex.RUnlock()
-	return len(fake.startMonitArgsForCall)
-}
-
-func (fake *FakePlatform) StartMonitReturns(result1 error) {
-	fake.StartMonitStub = nil
-	fake.startMonitReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) StartMonitReturnsOnCall(i int, result1 error) {
-	fake.StartMonitStub = nil
-	if fake.startMonitReturnsOnCall == nil {
-		fake.startMonitReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.startMonitReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRuntimeConfiguration() (err error) {
-	fake.setupRuntimeConfigurationMutex.Lock()
-	ret, specificReturn := fake.setupRuntimeConfigurationReturnsOnCall[len(fake.setupRuntimeConfigurationArgsForCall)]
-	fake.setupRuntimeConfigurationArgsForCall = append(fake.setupRuntimeConfigurationArgsForCall, struct{}{})
-	fake.recordInvocation("SetupRuntimeConfiguration", []interface{}{})
-	fake.setupRuntimeConfigurationMutex.Unlock()
-	if fake.SetupRuntimeConfigurationStub != nil {
-		return fake.SetupRuntimeConfigurationStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupRuntimeConfigurationReturns.result1
-}
-
-func (fake *FakePlatform) SetupRuntimeConfigurationCallCount() int {
-	fake.setupRuntimeConfigurationMutex.RLock()
-	defer fake.setupRuntimeConfigurationMutex.RUnlock()
-	return len(fake.setupRuntimeConfigurationArgsForCall)
-}
-
-func (fake *FakePlatform) SetupRuntimeConfigurationReturns(result1 error) {
-	fake.SetupRuntimeConfigurationStub = nil
-	fake.setupRuntimeConfigurationReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRuntimeConfigurationReturnsOnCall(i int, result1 error) {
-	fake.SetupRuntimeConfigurationStub = nil
-	if fake.setupRuntimeConfigurationReturnsOnCall == nil {
-		fake.setupRuntimeConfigurationReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupRuntimeConfigurationReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupLogDir() (err error) {
-	fake.setupLogDirMutex.Lock()
-	ret, specificReturn := fake.setupLogDirReturnsOnCall[len(fake.setupLogDirArgsForCall)]
-	fake.setupLogDirArgsForCall = append(fake.setupLogDirArgsForCall, struct{}{})
-	fake.recordInvocation("SetupLogDir", []interface{}{})
-	fake.setupLogDirMutex.Unlock()
-	if fake.SetupLogDirStub != nil {
-		return fake.SetupLogDirStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupLogDirReturns.result1
-}
-
-func (fake *FakePlatform) SetupLogDirCallCount() int {
-	fake.setupLogDirMutex.RLock()
-	defer fake.setupLogDirMutex.RUnlock()
-	return len(fake.setupLogDirArgsForCall)
-}
-
-func (fake *FakePlatform) SetupLogDirReturns(result1 error) {
-	fake.SetupLogDirStub = nil
-	fake.setupLogDirReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupLogDirReturnsOnCall(i int, result1 error) {
-	fake.SetupLogDirStub = nil
-	if fake.setupLogDirReturnsOnCall == nil {
-		fake.setupLogDirReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupLogDirReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupLoggingAndAuditing() (err error) {
-	fake.setupLoggingAndAuditingMutex.Lock()
-	ret, specificReturn := fake.setupLoggingAndAuditingReturnsOnCall[len(fake.setupLoggingAndAuditingArgsForCall)]
-	fake.setupLoggingAndAuditingArgsForCall = append(fake.setupLoggingAndAuditingArgsForCall, struct{}{})
-	fake.recordInvocation("SetupLoggingAndAuditing", []interface{}{})
-	fake.setupLoggingAndAuditingMutex.Unlock()
-	if fake.SetupLoggingAndAuditingStub != nil {
-		return fake.SetupLoggingAndAuditingStub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupLoggingAndAuditingReturns.result1
-}
-
-func (fake *FakePlatform) SetupLoggingAndAuditingCallCount() int {
-	fake.setupLoggingAndAuditingMutex.RLock()
-	defer fake.setupLoggingAndAuditingMutex.RUnlock()
-	return len(fake.setupLoggingAndAuditingArgsForCall)
-}
-
-func (fake *FakePlatform) SetupLoggingAndAuditingReturns(result1 error) {
-	fake.SetupLoggingAndAuditingStub = nil
-	fake.setupLoggingAndAuditingReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupLoggingAndAuditingReturnsOnCall(i int, result1 error) {
-	fake.SetupLoggingAndAuditingStub = nil
-	if fake.setupLoggingAndAuditingReturnsOnCall == nil {
-		fake.setupLoggingAndAuditingReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupLoggingAndAuditingReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRecordsJSONPermission(path string) error {
-	fake.setupRecordsJSONPermissionMutex.Lock()
-	ret, specificReturn := fake.setupRecordsJSONPermissionReturnsOnCall[len(fake.setupRecordsJSONPermissionArgsForCall)]
-	fake.setupRecordsJSONPermissionArgsForCall = append(fake.setupRecordsJSONPermissionArgsForCall, struct {
-		path string
-	}{path})
-	fake.recordInvocation("SetupRecordsJSONPermission", []interface{}{path})
-	fake.setupRecordsJSONPermissionMutex.Unlock()
-	if fake.SetupRecordsJSONPermissionStub != nil {
-		return fake.SetupRecordsJSONPermissionStub(path)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setupRecordsJSONPermissionReturns.result1
-}
-
-func (fake *FakePlatform) SetupRecordsJSONPermissionCallCount() int {
-	fake.setupRecordsJSONPermissionMutex.RLock()
-	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
-	return len(fake.setupRecordsJSONPermissionArgsForCall)
-}
-
-func (fake *FakePlatform) SetupRecordsJSONPermissionArgsForCall(i int) string {
-	fake.setupRecordsJSONPermissionMutex.RLock()
-	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
-	return fake.setupRecordsJSONPermissionArgsForCall[i].path
-}
-
-func (fake *FakePlatform) SetupRecordsJSONPermissionReturns(result1 error) {
-	fake.SetupRecordsJSONPermissionStub = nil
-	fake.setupRecordsJSONPermissionReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) SetupRecordsJSONPermissionReturnsOnCall(i int, result1 error) {
-	fake.SetupRecordsJSONPermissionStub = nil
-	if fake.setupRecordsJSONPermissionReturnsOnCall == nil {
-		fake.setupRecordsJSONPermissionReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setupRecordsJSONPermissionReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error {
-	fake.mountPersistentDiskMutex.Lock()
-	ret, specificReturn := fake.mountPersistentDiskReturnsOnCall[len(fake.mountPersistentDiskArgsForCall)]
-	fake.mountPersistentDiskArgsForCall = append(fake.mountPersistentDiskArgsForCall, struct {
-		diskSettings boshsettings.DiskSettings
-		mountPoint   string
-	}{diskSettings, mountPoint})
-	fake.recordInvocation("MountPersistentDisk", []interface{}{diskSettings, mountPoint})
-	fake.mountPersistentDiskMutex.Unlock()
-	if fake.MountPersistentDiskStub != nil {
-		return fake.MountPersistentDiskStub(diskSettings, mountPoint)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.mountPersistentDiskReturns.result1
-}
-
-func (fake *FakePlatform) MountPersistentDiskCallCount() int {
-	fake.mountPersistentDiskMutex.RLock()
-	defer fake.mountPersistentDiskMutex.RUnlock()
-	return len(fake.mountPersistentDiskArgsForCall)
-}
-
-func (fake *FakePlatform) MountPersistentDiskArgsForCall(i int) (boshsettings.DiskSettings, string) {
-	fake.mountPersistentDiskMutex.RLock()
-	defer fake.mountPersistentDiskMutex.RUnlock()
-	return fake.mountPersistentDiskArgsForCall[i].diskSettings, fake.mountPersistentDiskArgsForCall[i].mountPoint
-}
-
-func (fake *FakePlatform) MountPersistentDiskReturns(result1 error) {
-	fake.MountPersistentDiskStub = nil
-	fake.mountPersistentDiskReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) MountPersistentDiskReturnsOnCall(i int, result1 error) {
-	fake.MountPersistentDiskStub = nil
-	if fake.mountPersistentDiskReturnsOnCall == nil {
-		fake.mountPersistentDiskReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.mountPersistentDiskReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error) {
-	fake.unmountPersistentDiskMutex.Lock()
-	ret, specificReturn := fake.unmountPersistentDiskReturnsOnCall[len(fake.unmountPersistentDiskArgsForCall)]
-	fake.unmountPersistentDiskArgsForCall = append(fake.unmountPersistentDiskArgsForCall, struct {
-		diskSettings boshsettings.DiskSettings
-	}{diskSettings})
-	fake.recordInvocation("UnmountPersistentDisk", []interface{}{diskSettings})
-	fake.unmountPersistentDiskMutex.Unlock()
-	if fake.UnmountPersistentDiskStub != nil {
-		return fake.UnmountPersistentDiskStub(diskSettings)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.unmountPersistentDiskReturns.result1, fake.unmountPersistentDiskReturns.result2
-}
-
-func (fake *FakePlatform) UnmountPersistentDiskCallCount() int {
-	fake.unmountPersistentDiskMutex.RLock()
-	defer fake.unmountPersistentDiskMutex.RUnlock()
-	return len(fake.unmountPersistentDiskArgsForCall)
-}
-
-func (fake *FakePlatform) UnmountPersistentDiskArgsForCall(i int) boshsettings.DiskSettings {
-	fake.unmountPersistentDiskMutex.RLock()
-	defer fake.unmountPersistentDiskMutex.RUnlock()
-	return fake.unmountPersistentDiskArgsForCall[i].diskSettings
-}
-
-func (fake *FakePlatform) UnmountPersistentDiskReturns(result1 bool, result2 error) {
-	fake.UnmountPersistentDiskStub = nil
-	fake.unmountPersistentDiskReturns = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePlatform) UnmountPersistentDiskReturnsOnCall(i int, result1 bool, result2 error) {
-	fake.UnmountPersistentDiskStub = nil
-	if fake.unmountPersistentDiskReturnsOnCall == nil {
-		fake.unmountPersistentDiskReturnsOnCall = make(map[int]struct {
-			result1 bool
-			result2 error
-		})
-	}
-	fake.unmountPersistentDiskReturnsOnCall[i] = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePlatform) MigratePersistentDisk(fromMountPoint string, toMountPoint string) (err error) {
-	fake.migratePersistentDiskMutex.Lock()
-	ret, specificReturn := fake.migratePersistentDiskReturnsOnCall[len(fake.migratePersistentDiskArgsForCall)]
-	fake.migratePersistentDiskArgsForCall = append(fake.migratePersistentDiskArgsForCall, struct {
-		fromMountPoint string
-		toMountPoint   string
-	}{fromMountPoint, toMountPoint})
-	fake.recordInvocation("MigratePersistentDisk", []interface{}{fromMountPoint, toMountPoint})
-	fake.migratePersistentDiskMutex.Unlock()
-	if fake.MigratePersistentDiskStub != nil {
-		return fake.MigratePersistentDiskStub(fromMountPoint, toMountPoint)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.migratePersistentDiskReturns.result1
-}
-
-func (fake *FakePlatform) MigratePersistentDiskCallCount() int {
-	fake.migratePersistentDiskMutex.RLock()
-	defer fake.migratePersistentDiskMutex.RUnlock()
-	return len(fake.migratePersistentDiskArgsForCall)
-}
-
-func (fake *FakePlatform) MigratePersistentDiskArgsForCall(i int) (string, string) {
-	fake.migratePersistentDiskMutex.RLock()
-	defer fake.migratePersistentDiskMutex.RUnlock()
-	return fake.migratePersistentDiskArgsForCall[i].fromMountPoint, fake.migratePersistentDiskArgsForCall[i].toMountPoint
-}
-
-func (fake *FakePlatform) MigratePersistentDiskReturns(result1 error) {
-	fake.MigratePersistentDiskStub = nil
-	fake.migratePersistentDiskReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) MigratePersistentDiskReturnsOnCall(i int, result1 error) {
-	fake.MigratePersistentDiskStub = nil
-	if fake.migratePersistentDiskReturnsOnCall == nil {
-		fake.migratePersistentDiskReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.migratePersistentDiskReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
-	fake.getEphemeralDiskPathMutex.Lock()
-	ret, specificReturn := fake.getEphemeralDiskPathReturnsOnCall[len(fake.getEphemeralDiskPathArgsForCall)]
-	fake.getEphemeralDiskPathArgsForCall = append(fake.getEphemeralDiskPathArgsForCall, struct {
-		diskSettings boshsettings.DiskSettings
-	}{diskSettings})
-	fake.recordInvocation("GetEphemeralDiskPath", []interface{}{diskSettings})
-	fake.getEphemeralDiskPathMutex.Unlock()
-	if fake.GetEphemeralDiskPathStub != nil {
-		return fake.GetEphemeralDiskPathStub(diskSettings)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.getEphemeralDiskPathReturns.result1
-}
-
-func (fake *FakePlatform) GetEphemeralDiskPathCallCount() int {
-	fake.getEphemeralDiskPathMutex.RLock()
-	defer fake.getEphemeralDiskPathMutex.RUnlock()
-	return len(fake.getEphemeralDiskPathArgsForCall)
-}
-
-func (fake *FakePlatform) GetEphemeralDiskPathArgsForCall(i int) boshsettings.DiskSettings {
-	fake.getEphemeralDiskPathMutex.RLock()
-	defer fake.getEphemeralDiskPathMutex.RUnlock()
-	return fake.getEphemeralDiskPathArgsForCall[i].diskSettings
-}
-
-func (fake *FakePlatform) GetEphemeralDiskPathReturns(result1 string) {
-	fake.GetEphemeralDiskPathStub = nil
-	fake.getEphemeralDiskPathReturns = struct {
-		result1 string
-	}{result1}
-}
-
-func (fake *FakePlatform) GetEphemeralDiskPathReturnsOnCall(i int, result1 string) {
-	fake.GetEphemeralDiskPathStub = nil
-	if fake.getEphemeralDiskPathReturnsOnCall == nil {
-		fake.getEphemeralDiskPathReturnsOnCall = make(map[int]struct {
-			result1 string
-		})
-	}
-	fake.getEphemeralDiskPathReturnsOnCall[i] = struct {
-		result1 string
-	}{result1}
-}
-
-func (fake *FakePlatform) IsMountPoint(path string) (partitionPath string, result bool, err error) {
-	fake.isMountPointMutex.Lock()
-	ret, specificReturn := fake.isMountPointReturnsOnCall[len(fake.isMountPointArgsForCall)]
-	fake.isMountPointArgsForCall = append(fake.isMountPointArgsForCall, struct {
-		path string
-	}{path})
-	fake.recordInvocation("IsMountPoint", []interface{}{path})
-	fake.isMountPointMutex.Unlock()
-	if fake.IsMountPointStub != nil {
-		return fake.IsMountPointStub(path)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2, ret.result3
-	}
-	return fake.isMountPointReturns.result1, fake.isMountPointReturns.result2, fake.isMountPointReturns.result3
-}
-
-func (fake *FakePlatform) IsMountPointCallCount() int {
-	fake.isMountPointMutex.RLock()
-	defer fake.isMountPointMutex.RUnlock()
-	return len(fake.isMountPointArgsForCall)
-}
-
-func (fake *FakePlatform) IsMountPointArgsForCall(i int) string {
-	fake.isMountPointMutex.RLock()
-	defer fake.isMountPointMutex.RUnlock()
-	return fake.isMountPointArgsForCall[i].path
-}
-
-func (fake *FakePlatform) IsMountPointReturns(result1 string, result2 bool, result3 error) {
-	fake.IsMountPointStub = nil
-	fake.isMountPointReturns = struct {
-		result1 string
-		result2 bool
-		result3 error
-	}{result1, result2, result3}
-}
-
-func (fake *FakePlatform) IsMountPointReturnsOnCall(i int, result1 string, result2 bool, result3 error) {
-	fake.IsMountPointStub = nil
-	if fake.isMountPointReturnsOnCall == nil {
-		fake.isMountPointReturnsOnCall = make(map[int]struct {
-			result1 string
-			result2 bool
-			result3 error
-		})
-	}
-	fake.isMountPointReturnsOnCall[i] = struct {
-		result1 string
-		result2 bool
-		result3 error
-	}{result1, result2, result3}
-}
-
-func (fake *FakePlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error) {
-	fake.isPersistentDiskMountedMutex.Lock()
-	ret, specificReturn := fake.isPersistentDiskMountedReturnsOnCall[len(fake.isPersistentDiskMountedArgsForCall)]
-	fake.isPersistentDiskMountedArgsForCall = append(fake.isPersistentDiskMountedArgsForCall, struct {
-		diskSettings boshsettings.DiskSettings
-	}{diskSettings})
-	fake.recordInvocation("IsPersistentDiskMounted", []interface{}{diskSettings})
-	fake.isPersistentDiskMountedMutex.Unlock()
-	if fake.IsPersistentDiskMountedStub != nil {
-		return fake.IsPersistentDiskMountedStub(diskSettings)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.isPersistentDiskMountedReturns.result1, fake.isPersistentDiskMountedReturns.result2
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountedCallCount() int {
-	fake.isPersistentDiskMountedMutex.RLock()
-	defer fake.isPersistentDiskMountedMutex.RUnlock()
-	return len(fake.isPersistentDiskMountedArgsForCall)
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountedArgsForCall(i int) boshsettings.DiskSettings {
-	fake.isPersistentDiskMountedMutex.RLock()
-	defer fake.isPersistentDiskMountedMutex.RUnlock()
-	return fake.isPersistentDiskMountedArgsForCall[i].diskSettings
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountedReturns(result1 bool, result2 error) {
-	fake.IsPersistentDiskMountedStub = nil
-	fake.isPersistentDiskMountedReturns = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountedReturnsOnCall(i int, result1 bool, result2 error) {
-	fake.IsPersistentDiskMountedStub = nil
-	if fake.isPersistentDiskMountedReturnsOnCall == nil {
-		fake.isPersistentDiskMountedReturnsOnCall = make(map[int]struct {
-			result1 bool
-			result2 error
-		})
-	}
-	fake.isPersistentDiskMountedReturnsOnCall[i] = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
-	fake.isPersistentDiskMountableMutex.Lock()
-	ret, specificReturn := fake.isPersistentDiskMountableReturnsOnCall[len(fake.isPersistentDiskMountableArgsForCall)]
-	fake.isPersistentDiskMountableArgsForCall = append(fake.isPersistentDiskMountableArgsForCall, struct {
-		diskSettings boshsettings.DiskSettings
-	}{diskSettings})
-	fake.recordInvocation("IsPersistentDiskMountable", []interface{}{diskSettings})
-	fake.isPersistentDiskMountableMutex.Unlock()
-	if fake.IsPersistentDiskMountableStub != nil {
-		return fake.IsPersistentDiskMountableStub(diskSettings)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.isPersistentDiskMountableReturns.result1, fake.isPersistentDiskMountableReturns.result2
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountableCallCount() int {
-	fake.isPersistentDiskMountableMutex.RLock()
-	defer fake.isPersistentDiskMountableMutex.RUnlock()
-	return len(fake.isPersistentDiskMountableArgsForCall)
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountableArgsForCall(i int) boshsettings.DiskSettings {
-	fake.isPersistentDiskMountableMutex.RLock()
-	defer fake.isPersistentDiskMountableMutex.RUnlock()
-	return fake.isPersistentDiskMountableArgsForCall[i].diskSettings
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountableReturns(result1 bool, result2 error) {
-	fake.IsPersistentDiskMountableStub = nil
-	fake.isPersistentDiskMountableReturns = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePlatform) IsPersistentDiskMountableReturnsOnCall(i int, result1 bool, result2 error) {
-	fake.IsPersistentDiskMountableStub = nil
-	if fake.isPersistentDiskMountableReturnsOnCall == nil {
-		fake.isPersistentDiskMountableReturnsOnCall = make(map[int]struct {
-			result1 bool
-			result2 error
-		})
-	}
-	fake.isPersistentDiskMountableReturnsOnCall[i] = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePlatform) AssociateDisk(name string, settings boshsettings.DiskSettings) error {
+func (fake *FakePlatform) AssociateDisk(arg1 string, arg2 settings.DiskSettings) error {
 	fake.associateDiskMutex.Lock()
 	ret, specificReturn := fake.associateDiskReturnsOnCall[len(fake.associateDiskArgsForCall)]
 	fake.associateDiskArgsForCall = append(fake.associateDiskArgsForCall, struct {
-		name     string
-		settings boshsettings.DiskSettings
-	}{name, settings})
-	fake.recordInvocation("AssociateDisk", []interface{}{name, settings})
+		arg1 string
+		arg2 settings.DiskSettings
+	}{arg1, arg2})
+	fake.recordInvocation("AssociateDisk", []interface{}{arg1, arg2})
 	fake.associateDiskMutex.Unlock()
 	if fake.AssociateDiskStub != nil {
-		return fake.AssociateDiskStub(name, settings)
+		return fake.AssociateDiskStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.associateDiskReturns.result1
+	fakeReturns := fake.associateDiskReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakePlatform) AssociateDiskCallCount() int {
@@ -2384,13 +704,22 @@ func (fake *FakePlatform) AssociateDiskCallCount() int {
 	return len(fake.associateDiskArgsForCall)
 }
 
-func (fake *FakePlatform) AssociateDiskArgsForCall(i int) (string, boshsettings.DiskSettings) {
+func (fake *FakePlatform) AssociateDiskCalls(stub func(string, settings.DiskSettings) error) {
+	fake.associateDiskMutex.Lock()
+	defer fake.associateDiskMutex.Unlock()
+	fake.AssociateDiskStub = stub
+}
+
+func (fake *FakePlatform) AssociateDiskArgsForCall(i int) (string, settings.DiskSettings) {
 	fake.associateDiskMutex.RLock()
 	defer fake.associateDiskMutex.RUnlock()
-	return fake.associateDiskArgsForCall[i].name, fake.associateDiskArgsForCall[i].settings
+	argsForCall := fake.associateDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakePlatform) AssociateDiskReturns(result1 error) {
+	fake.associateDiskMutex.Lock()
+	defer fake.associateDiskMutex.Unlock()
 	fake.AssociateDiskStub = nil
 	fake.associateDiskReturns = struct {
 		result1 error
@@ -2398,6 +727,8 @@ func (fake *FakePlatform) AssociateDiskReturns(result1 error) {
 }
 
 func (fake *FakePlatform) AssociateDiskReturnsOnCall(i int, result1 error) {
+	fake.associateDiskMutex.Lock()
+	defer fake.associateDiskMutex.Unlock()
 	fake.AssociateDiskStub = nil
 	if fake.associateDiskReturnsOnCall == nil {
 		fake.associateDiskReturnsOnCall = make(map[int]struct {
@@ -2409,161 +740,348 @@ func (fake *FakePlatform) AssociateDiskReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
-	fake.getFileContentsFromCDROMMutex.Lock()
-	ret, specificReturn := fake.getFileContentsFromCDROMReturnsOnCall[len(fake.getFileContentsFromCDROMArgsForCall)]
-	fake.getFileContentsFromCDROMArgsForCall = append(fake.getFileContentsFromCDROMArgsForCall, struct {
-		filePath string
-	}{filePath})
-	fake.recordInvocation("GetFileContentsFromCDROM", []interface{}{filePath})
-	fake.getFileContentsFromCDROMMutex.Unlock()
-	if fake.GetFileContentsFromCDROMStub != nil {
-		return fake.GetFileContentsFromCDROMStub(filePath)
+func (fake *FakePlatform) CreateUser(arg1 string, arg2 string) error {
+	fake.createUserMutex.Lock()
+	ret, specificReturn := fake.createUserReturnsOnCall[len(fake.createUserArgsForCall)]
+	fake.createUserArgsForCall = append(fake.createUserArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("CreateUser", []interface{}{arg1, arg2})
+	fake.createUserMutex.Unlock()
+	if fake.CreateUserStub != nil {
+		return fake.CreateUserStub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fake.getFileContentsFromCDROMReturns.result1, fake.getFileContentsFromCDROMReturns.result2
+	fakeReturns := fake.createUserReturns
+	return fakeReturns.result1
 }
 
-func (fake *FakePlatform) GetFileContentsFromCDROMCallCount() int {
-	fake.getFileContentsFromCDROMMutex.RLock()
-	defer fake.getFileContentsFromCDROMMutex.RUnlock()
-	return len(fake.getFileContentsFromCDROMArgsForCall)
+func (fake *FakePlatform) CreateUserCallCount() int {
+	fake.createUserMutex.RLock()
+	defer fake.createUserMutex.RUnlock()
+	return len(fake.createUserArgsForCall)
 }
 
-func (fake *FakePlatform) GetFileContentsFromCDROMArgsForCall(i int) string {
-	fake.getFileContentsFromCDROMMutex.RLock()
-	defer fake.getFileContentsFromCDROMMutex.RUnlock()
-	return fake.getFileContentsFromCDROMArgsForCall[i].filePath
+func (fake *FakePlatform) CreateUserCalls(stub func(string, string) error) {
+	fake.createUserMutex.Lock()
+	defer fake.createUserMutex.Unlock()
+	fake.CreateUserStub = stub
 }
 
-func (fake *FakePlatform) GetFileContentsFromCDROMReturns(result1 []byte, result2 error) {
-	fake.GetFileContentsFromCDROMStub = nil
-	fake.getFileContentsFromCDROMReturns = struct {
-		result1 []byte
-		result2 error
-	}{result1, result2}
+func (fake *FakePlatform) CreateUserArgsForCall(i int) (string, string) {
+	fake.createUserMutex.RLock()
+	defer fake.createUserMutex.RUnlock()
+	argsForCall := fake.createUserArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakePlatform) GetFileContentsFromCDROMReturnsOnCall(i int, result1 []byte, result2 error) {
-	fake.GetFileContentsFromCDROMStub = nil
-	if fake.getFileContentsFromCDROMReturnsOnCall == nil {
-		fake.getFileContentsFromCDROMReturnsOnCall = make(map[int]struct {
-			result1 []byte
-			result2 error
+func (fake *FakePlatform) CreateUserReturns(result1 error) {
+	fake.createUserMutex.Lock()
+	defer fake.createUserMutex.Unlock()
+	fake.CreateUserStub = nil
+	fake.createUserReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) CreateUserReturnsOnCall(i int, result1 error) {
+	fake.createUserMutex.Lock()
+	defer fake.createUserMutex.Unlock()
+	fake.CreateUserStub = nil
+	if fake.createUserReturnsOnCall == nil {
+		fake.createUserReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.getFileContentsFromCDROMReturnsOnCall[i] = struct {
-		result1 []byte
-		result2 error
-	}{result1, result2}
+	fake.createUserReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakePlatform) GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error) {
-	var fileNamesCopy []string
-	if fileNames != nil {
-		fileNamesCopy = make([]string, len(fileNames))
-		copy(fileNamesCopy, fileNames)
-	}
-	fake.getFilesContentsFromDiskMutex.Lock()
-	ret, specificReturn := fake.getFilesContentsFromDiskReturnsOnCall[len(fake.getFilesContentsFromDiskArgsForCall)]
-	fake.getFilesContentsFromDiskArgsForCall = append(fake.getFilesContentsFromDiskArgsForCall, struct {
-		diskPath  string
-		fileNames []string
-	}{diskPath, fileNamesCopy})
-	fake.recordInvocation("GetFilesContentsFromDisk", []interface{}{diskPath, fileNamesCopy})
-	fake.getFilesContentsFromDiskMutex.Unlock()
-	if fake.GetFilesContentsFromDiskStub != nil {
-		return fake.GetFilesContentsFromDiskStub(diskPath, fileNames)
+func (fake *FakePlatform) DeleteARPEntryWithIP(arg1 string) error {
+	fake.deleteARPEntryWithIPMutex.Lock()
+	ret, specificReturn := fake.deleteARPEntryWithIPReturnsOnCall[len(fake.deleteARPEntryWithIPArgsForCall)]
+	fake.deleteARPEntryWithIPArgsForCall = append(fake.deleteARPEntryWithIPArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("DeleteARPEntryWithIP", []interface{}{arg1})
+	fake.deleteARPEntryWithIPMutex.Unlock()
+	if fake.DeleteARPEntryWithIPStub != nil {
+		return fake.DeleteARPEntryWithIPStub(arg1)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fake.getFilesContentsFromDiskReturns.result1, fake.getFilesContentsFromDiskReturns.result2
+	fakeReturns := fake.deleteARPEntryWithIPReturns
+	return fakeReturns.result1
 }
 
-func (fake *FakePlatform) GetFilesContentsFromDiskCallCount() int {
-	fake.getFilesContentsFromDiskMutex.RLock()
-	defer fake.getFilesContentsFromDiskMutex.RUnlock()
-	return len(fake.getFilesContentsFromDiskArgsForCall)
+func (fake *FakePlatform) DeleteARPEntryWithIPCallCount() int {
+	fake.deleteARPEntryWithIPMutex.RLock()
+	defer fake.deleteARPEntryWithIPMutex.RUnlock()
+	return len(fake.deleteARPEntryWithIPArgsForCall)
 }
 
-func (fake *FakePlatform) GetFilesContentsFromDiskArgsForCall(i int) (string, []string) {
-	fake.getFilesContentsFromDiskMutex.RLock()
-	defer fake.getFilesContentsFromDiskMutex.RUnlock()
-	return fake.getFilesContentsFromDiskArgsForCall[i].diskPath, fake.getFilesContentsFromDiskArgsForCall[i].fileNames
+func (fake *FakePlatform) DeleteARPEntryWithIPCalls(stub func(string) error) {
+	fake.deleteARPEntryWithIPMutex.Lock()
+	defer fake.deleteARPEntryWithIPMutex.Unlock()
+	fake.DeleteARPEntryWithIPStub = stub
 }
 
-func (fake *FakePlatform) GetFilesContentsFromDiskReturns(result1 [][]byte, result2 error) {
-	fake.GetFilesContentsFromDiskStub = nil
-	fake.getFilesContentsFromDiskReturns = struct {
-		result1 [][]byte
-		result2 error
-	}{result1, result2}
+func (fake *FakePlatform) DeleteARPEntryWithIPArgsForCall(i int) string {
+	fake.deleteARPEntryWithIPMutex.RLock()
+	defer fake.deleteARPEntryWithIPMutex.RUnlock()
+	argsForCall := fake.deleteARPEntryWithIPArgsForCall[i]
+	return argsForCall.arg1
 }
 
-func (fake *FakePlatform) GetFilesContentsFromDiskReturnsOnCall(i int, result1 [][]byte, result2 error) {
-	fake.GetFilesContentsFromDiskStub = nil
-	if fake.getFilesContentsFromDiskReturnsOnCall == nil {
-		fake.getFilesContentsFromDiskReturnsOnCall = make(map[int]struct {
-			result1 [][]byte
-			result2 error
+func (fake *FakePlatform) DeleteARPEntryWithIPReturns(result1 error) {
+	fake.deleteARPEntryWithIPMutex.Lock()
+	defer fake.deleteARPEntryWithIPMutex.Unlock()
+	fake.DeleteARPEntryWithIPStub = nil
+	fake.deleteARPEntryWithIPReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) DeleteARPEntryWithIPReturnsOnCall(i int, result1 error) {
+	fake.deleteARPEntryWithIPMutex.Lock()
+	defer fake.deleteARPEntryWithIPMutex.Unlock()
+	fake.DeleteARPEntryWithIPStub = nil
+	if fake.deleteARPEntryWithIPReturnsOnCall == nil {
+		fake.deleteARPEntryWithIPReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.getFilesContentsFromDiskReturnsOnCall[i] = struct {
-		result1 [][]byte
-		result2 error
-	}{result1, result2}
+	fake.deleteARPEntryWithIPReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
-func (fake *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
-	fake.getDefaultNetworkMutex.Lock()
-	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
-	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct{}{})
-	fake.recordInvocation("GetDefaultNetwork", []interface{}{})
-	fake.getDefaultNetworkMutex.Unlock()
-	if fake.GetDefaultNetworkStub != nil {
-		return fake.GetDefaultNetworkStub()
+func (fake *FakePlatform) DeleteEphemeralUsersMatching(arg1 string) error {
+	fake.deleteEphemeralUsersMatchingMutex.Lock()
+	ret, specificReturn := fake.deleteEphemeralUsersMatchingReturnsOnCall[len(fake.deleteEphemeralUsersMatchingArgsForCall)]
+	fake.deleteEphemeralUsersMatchingArgsForCall = append(fake.deleteEphemeralUsersMatchingArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("DeleteEphemeralUsersMatching", []interface{}{arg1})
+	fake.deleteEphemeralUsersMatchingMutex.Unlock()
+	if fake.DeleteEphemeralUsersMatchingStub != nil {
+		return fake.DeleteEphemeralUsersMatchingStub(arg1)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fake.getDefaultNetworkReturns.result1, fake.getDefaultNetworkReturns.result2
+	fakeReturns := fake.deleteEphemeralUsersMatchingReturns
+	return fakeReturns.result1
 }
 
-func (fake *FakePlatform) GetDefaultNetworkCallCount() int {
-	fake.getDefaultNetworkMutex.RLock()
-	defer fake.getDefaultNetworkMutex.RUnlock()
-	return len(fake.getDefaultNetworkArgsForCall)
+func (fake *FakePlatform) DeleteEphemeralUsersMatchingCallCount() int {
+	fake.deleteEphemeralUsersMatchingMutex.RLock()
+	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
+	return len(fake.deleteEphemeralUsersMatchingArgsForCall)
 }
 
-func (fake *FakePlatform) GetDefaultNetworkReturns(result1 boshsettings.Network, result2 error) {
-	fake.GetDefaultNetworkStub = nil
-	fake.getDefaultNetworkReturns = struct {
-		result1 boshsettings.Network
-		result2 error
-	}{result1, result2}
+func (fake *FakePlatform) DeleteEphemeralUsersMatchingCalls(stub func(string) error) {
+	fake.deleteEphemeralUsersMatchingMutex.Lock()
+	defer fake.deleteEphemeralUsersMatchingMutex.Unlock()
+	fake.DeleteEphemeralUsersMatchingStub = stub
 }
 
-func (fake *FakePlatform) GetDefaultNetworkReturnsOnCall(i int, result1 boshsettings.Network, result2 error) {
-	fake.GetDefaultNetworkStub = nil
-	if fake.getDefaultNetworkReturnsOnCall == nil {
-		fake.getDefaultNetworkReturnsOnCall = make(map[int]struct {
-			result1 boshsettings.Network
-			result2 error
+func (fake *FakePlatform) DeleteEphemeralUsersMatchingArgsForCall(i int) string {
+	fake.deleteEphemeralUsersMatchingMutex.RLock()
+	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
+	argsForCall := fake.deleteEphemeralUsersMatchingArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) DeleteEphemeralUsersMatchingReturns(result1 error) {
+	fake.deleteEphemeralUsersMatchingMutex.Lock()
+	defer fake.deleteEphemeralUsersMatchingMutex.Unlock()
+	fake.DeleteEphemeralUsersMatchingStub = nil
+	fake.deleteEphemeralUsersMatchingReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) DeleteEphemeralUsersMatchingReturnsOnCall(i int, result1 error) {
+	fake.deleteEphemeralUsersMatchingMutex.Lock()
+	defer fake.deleteEphemeralUsersMatchingMutex.Unlock()
+	fake.DeleteEphemeralUsersMatchingStub = nil
+	if fake.deleteEphemeralUsersMatchingReturnsOnCall == nil {
+		fake.deleteEphemeralUsersMatchingReturnsOnCall = make(map[int]struct {
+			result1 error
 		})
 	}
-	fake.getDefaultNetworkReturnsOnCall[i] = struct {
-		result1 boshsettings.Network
-		result2 error
-	}{result1, result2}
+	fake.deleteEphemeralUsersMatchingReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) GetAuditLogger() platform.AuditLogger {
+	fake.getAuditLoggerMutex.Lock()
+	ret, specificReturn := fake.getAuditLoggerReturnsOnCall[len(fake.getAuditLoggerArgsForCall)]
+	fake.getAuditLoggerArgsForCall = append(fake.getAuditLoggerArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetAuditLogger", []interface{}{})
+	fake.getAuditLoggerMutex.Unlock()
+	if fake.GetAuditLoggerStub != nil {
+		return fake.GetAuditLoggerStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getAuditLoggerReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetAuditLoggerCallCount() int {
+	fake.getAuditLoggerMutex.RLock()
+	defer fake.getAuditLoggerMutex.RUnlock()
+	return len(fake.getAuditLoggerArgsForCall)
+}
+
+func (fake *FakePlatform) GetAuditLoggerCalls(stub func() platform.AuditLogger) {
+	fake.getAuditLoggerMutex.Lock()
+	defer fake.getAuditLoggerMutex.Unlock()
+	fake.GetAuditLoggerStub = stub
+}
+
+func (fake *FakePlatform) GetAuditLoggerReturns(result1 platform.AuditLogger) {
+	fake.getAuditLoggerMutex.Lock()
+	defer fake.getAuditLoggerMutex.Unlock()
+	fake.GetAuditLoggerStub = nil
+	fake.getAuditLoggerReturns = struct {
+		result1 platform.AuditLogger
+	}{result1}
+}
+
+func (fake *FakePlatform) GetAuditLoggerReturnsOnCall(i int, result1 platform.AuditLogger) {
+	fake.getAuditLoggerMutex.Lock()
+	defer fake.getAuditLoggerMutex.Unlock()
+	fake.GetAuditLoggerStub = nil
+	if fake.getAuditLoggerReturnsOnCall == nil {
+		fake.getAuditLoggerReturnsOnCall = make(map[int]struct {
+			result1 platform.AuditLogger
+		})
+	}
+	fake.getAuditLoggerReturnsOnCall[i] = struct {
+		result1 platform.AuditLogger
+	}{result1}
+}
+
+func (fake *FakePlatform) GetCertManager() cert.Manager {
+	fake.getCertManagerMutex.Lock()
+	ret, specificReturn := fake.getCertManagerReturnsOnCall[len(fake.getCertManagerArgsForCall)]
+	fake.getCertManagerArgsForCall = append(fake.getCertManagerArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetCertManager", []interface{}{})
+	fake.getCertManagerMutex.Unlock()
+	if fake.GetCertManagerStub != nil {
+		return fake.GetCertManagerStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getCertManagerReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetCertManagerCallCount() int {
+	fake.getCertManagerMutex.RLock()
+	defer fake.getCertManagerMutex.RUnlock()
+	return len(fake.getCertManagerArgsForCall)
+}
+
+func (fake *FakePlatform) GetCertManagerCalls(stub func() cert.Manager) {
+	fake.getCertManagerMutex.Lock()
+	defer fake.getCertManagerMutex.Unlock()
+	fake.GetCertManagerStub = stub
+}
+
+func (fake *FakePlatform) GetCertManagerReturns(result1 cert.Manager) {
+	fake.getCertManagerMutex.Lock()
+	defer fake.getCertManagerMutex.Unlock()
+	fake.GetCertManagerStub = nil
+	fake.getCertManagerReturns = struct {
+		result1 cert.Manager
+	}{result1}
+}
+
+func (fake *FakePlatform) GetCertManagerReturnsOnCall(i int, result1 cert.Manager) {
+	fake.getCertManagerMutex.Lock()
+	defer fake.getCertManagerMutex.Unlock()
+	fake.GetCertManagerStub = nil
+	if fake.getCertManagerReturnsOnCall == nil {
+		fake.getCertManagerReturnsOnCall = make(map[int]struct {
+			result1 cert.Manager
+		})
+	}
+	fake.getCertManagerReturnsOnCall[i] = struct {
+		result1 cert.Manager
+	}{result1}
+}
+
+func (fake *FakePlatform) GetCompressor() fileutil.Compressor {
+	fake.getCompressorMutex.Lock()
+	ret, specificReturn := fake.getCompressorReturnsOnCall[len(fake.getCompressorArgsForCall)]
+	fake.getCompressorArgsForCall = append(fake.getCompressorArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetCompressor", []interface{}{})
+	fake.getCompressorMutex.Unlock()
+	if fake.GetCompressorStub != nil {
+		return fake.GetCompressorStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getCompressorReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetCompressorCallCount() int {
+	fake.getCompressorMutex.RLock()
+	defer fake.getCompressorMutex.RUnlock()
+	return len(fake.getCompressorArgsForCall)
+}
+
+func (fake *FakePlatform) GetCompressorCalls(stub func() fileutil.Compressor) {
+	fake.getCompressorMutex.Lock()
+	defer fake.getCompressorMutex.Unlock()
+	fake.GetCompressorStub = stub
+}
+
+func (fake *FakePlatform) GetCompressorReturns(result1 fileutil.Compressor) {
+	fake.getCompressorMutex.Lock()
+	defer fake.getCompressorMutex.Unlock()
+	fake.GetCompressorStub = nil
+	fake.getCompressorReturns = struct {
+		result1 fileutil.Compressor
+	}{result1}
+}
+
+func (fake *FakePlatform) GetCompressorReturnsOnCall(i int, result1 fileutil.Compressor) {
+	fake.getCompressorMutex.Lock()
+	defer fake.getCompressorMutex.Unlock()
+	fake.GetCompressorStub = nil
+	if fake.getCompressorReturnsOnCall == nil {
+		fake.getCompressorReturnsOnCall = make(map[int]struct {
+			result1 fileutil.Compressor
+		})
+	}
+	fake.getCompressorReturnsOnCall[i] = struct {
+		result1 fileutil.Compressor
+	}{result1}
 }
 
 func (fake *FakePlatform) GetConfiguredNetworkInterfaces() ([]string, error) {
 	fake.getConfiguredNetworkInterfacesMutex.Lock()
 	ret, specificReturn := fake.getConfiguredNetworkInterfacesReturnsOnCall[len(fake.getConfiguredNetworkInterfacesArgsForCall)]
-	fake.getConfiguredNetworkInterfacesArgsForCall = append(fake.getConfiguredNetworkInterfacesArgsForCall, struct{}{})
+	fake.getConfiguredNetworkInterfacesArgsForCall = append(fake.getConfiguredNetworkInterfacesArgsForCall, struct {
+	}{})
 	fake.recordInvocation("GetConfiguredNetworkInterfaces", []interface{}{})
 	fake.getConfiguredNetworkInterfacesMutex.Unlock()
 	if fake.GetConfiguredNetworkInterfacesStub != nil {
@@ -2572,7 +1090,8 @@ func (fake *FakePlatform) GetConfiguredNetworkInterfaces() ([]string, error) {
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.getConfiguredNetworkInterfacesReturns.result1, fake.getConfiguredNetworkInterfacesReturns.result2
+	fakeReturns := fake.getConfiguredNetworkInterfacesReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakePlatform) GetConfiguredNetworkInterfacesCallCount() int {
@@ -2581,7 +1100,15 @@ func (fake *FakePlatform) GetConfiguredNetworkInterfacesCallCount() int {
 	return len(fake.getConfiguredNetworkInterfacesArgsForCall)
 }
 
+func (fake *FakePlatform) GetConfiguredNetworkInterfacesCalls(stub func() ([]string, error)) {
+	fake.getConfiguredNetworkInterfacesMutex.Lock()
+	defer fake.getConfiguredNetworkInterfacesMutex.Unlock()
+	fake.GetConfiguredNetworkInterfacesStub = stub
+}
+
 func (fake *FakePlatform) GetConfiguredNetworkInterfacesReturns(result1 []string, result2 error) {
+	fake.getConfiguredNetworkInterfacesMutex.Lock()
+	defer fake.getConfiguredNetworkInterfacesMutex.Unlock()
 	fake.GetConfiguredNetworkInterfacesStub = nil
 	fake.getConfiguredNetworkInterfacesReturns = struct {
 		result1 []string
@@ -2590,6 +1117,8 @@ func (fake *FakePlatform) GetConfiguredNetworkInterfacesReturns(result1 []string
 }
 
 func (fake *FakePlatform) GetConfiguredNetworkInterfacesReturnsOnCall(i int, result1 []string, result2 error) {
+	fake.getConfiguredNetworkInterfacesMutex.Lock()
+	defer fake.getConfiguredNetworkInterfacesMutex.Unlock()
 	fake.GetConfiguredNetworkInterfacesStub = nil
 	if fake.getConfiguredNetworkInterfacesReturnsOnCall == nil {
 		fake.getConfiguredNetworkInterfacesReturnsOnCall = make(map[int]struct {
@@ -2603,147 +1132,521 @@ func (fake *FakePlatform) GetConfiguredNetworkInterfacesReturnsOnCall(i int, res
 	}{result1, result2}
 }
 
-func (fake *FakePlatform) PrepareForNetworkingChange() error {
-	fake.prepareForNetworkingChangeMutex.Lock()
-	ret, specificReturn := fake.prepareForNetworkingChangeReturnsOnCall[len(fake.prepareForNetworkingChangeArgsForCall)]
-	fake.prepareForNetworkingChangeArgsForCall = append(fake.prepareForNetworkingChangeArgsForCall, struct{}{})
-	fake.recordInvocation("PrepareForNetworkingChange", []interface{}{})
-	fake.prepareForNetworkingChangeMutex.Unlock()
-	if fake.PrepareForNetworkingChangeStub != nil {
-		return fake.PrepareForNetworkingChangeStub()
+func (fake *FakePlatform) GetCopier() fileutil.Copier {
+	fake.getCopierMutex.Lock()
+	ret, specificReturn := fake.getCopierReturnsOnCall[len(fake.getCopierArgsForCall)]
+	fake.getCopierArgsForCall = append(fake.getCopierArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetCopier", []interface{}{})
+	fake.getCopierMutex.Unlock()
+	if fake.GetCopierStub != nil {
+		return fake.GetCopierStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.prepareForNetworkingChangeReturns.result1
+	fakeReturns := fake.getCopierReturns
+	return fakeReturns.result1
 }
 
-func (fake *FakePlatform) PrepareForNetworkingChangeCallCount() int {
-	fake.prepareForNetworkingChangeMutex.RLock()
-	defer fake.prepareForNetworkingChangeMutex.RUnlock()
-	return len(fake.prepareForNetworkingChangeArgsForCall)
+func (fake *FakePlatform) GetCopierCallCount() int {
+	fake.getCopierMutex.RLock()
+	defer fake.getCopierMutex.RUnlock()
+	return len(fake.getCopierArgsForCall)
 }
 
-func (fake *FakePlatform) PrepareForNetworkingChangeReturns(result1 error) {
-	fake.PrepareForNetworkingChangeStub = nil
-	fake.prepareForNetworkingChangeReturns = struct {
-		result1 error
+func (fake *FakePlatform) GetCopierCalls(stub func() fileutil.Copier) {
+	fake.getCopierMutex.Lock()
+	defer fake.getCopierMutex.Unlock()
+	fake.GetCopierStub = stub
+}
+
+func (fake *FakePlatform) GetCopierReturns(result1 fileutil.Copier) {
+	fake.getCopierMutex.Lock()
+	defer fake.getCopierMutex.Unlock()
+	fake.GetCopierStub = nil
+	fake.getCopierReturns = struct {
+		result1 fileutil.Copier
 	}{result1}
 }
 
-func (fake *FakePlatform) PrepareForNetworkingChangeReturnsOnCall(i int, result1 error) {
-	fake.PrepareForNetworkingChangeStub = nil
-	if fake.prepareForNetworkingChangeReturnsOnCall == nil {
-		fake.prepareForNetworkingChangeReturnsOnCall = make(map[int]struct {
-			result1 error
+func (fake *FakePlatform) GetCopierReturnsOnCall(i int, result1 fileutil.Copier) {
+	fake.getCopierMutex.Lock()
+	defer fake.getCopierMutex.Unlock()
+	fake.GetCopierStub = nil
+	if fake.getCopierReturnsOnCall == nil {
+		fake.getCopierReturnsOnCall = make(map[int]struct {
+			result1 fileutil.Copier
 		})
 	}
-	fake.prepareForNetworkingChangeReturnsOnCall[i] = struct {
-		result1 error
+	fake.getCopierReturnsOnCall[i] = struct {
+		result1 fileutil.Copier
 	}{result1}
 }
 
-func (fake *FakePlatform) DeleteARPEntryWithIP(ip string) error {
-	fake.deleteARPEntryWithIPMutex.Lock()
-	ret, specificReturn := fake.deleteARPEntryWithIPReturnsOnCall[len(fake.deleteARPEntryWithIPArgsForCall)]
-	fake.deleteARPEntryWithIPArgsForCall = append(fake.deleteARPEntryWithIPArgsForCall, struct {
-		ip string
-	}{ip})
-	fake.recordInvocation("DeleteARPEntryWithIP", []interface{}{ip})
-	fake.deleteARPEntryWithIPMutex.Unlock()
-	if fake.DeleteARPEntryWithIPStub != nil {
-		return fake.DeleteARPEntryWithIPStub(ip)
+func (fake *FakePlatform) GetDefaultNetwork() (settings.Network, error) {
+	fake.getDefaultNetworkMutex.Lock()
+	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
+	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetDefaultNetwork", []interface{}{})
+	fake.getDefaultNetworkMutex.Unlock()
+	if fake.GetDefaultNetworkStub != nil {
+		return fake.GetDefaultNetworkStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getDefaultNetworkReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakePlatform) GetDefaultNetworkCallCount() int {
+	fake.getDefaultNetworkMutex.RLock()
+	defer fake.getDefaultNetworkMutex.RUnlock()
+	return len(fake.getDefaultNetworkArgsForCall)
+}
+
+func (fake *FakePlatform) GetDefaultNetworkCalls(stub func() (settings.Network, error)) {
+	fake.getDefaultNetworkMutex.Lock()
+	defer fake.getDefaultNetworkMutex.Unlock()
+	fake.GetDefaultNetworkStub = stub
+}
+
+func (fake *FakePlatform) GetDefaultNetworkReturns(result1 settings.Network, result2 error) {
+	fake.getDefaultNetworkMutex.Lock()
+	defer fake.getDefaultNetworkMutex.Unlock()
+	fake.GetDefaultNetworkStub = nil
+	fake.getDefaultNetworkReturns = struct {
+		result1 settings.Network
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetDefaultNetworkReturnsOnCall(i int, result1 settings.Network, result2 error) {
+	fake.getDefaultNetworkMutex.Lock()
+	defer fake.getDefaultNetworkMutex.Unlock()
+	fake.GetDefaultNetworkStub = nil
+	if fake.getDefaultNetworkReturnsOnCall == nil {
+		fake.getDefaultNetworkReturnsOnCall = make(map[int]struct {
+			result1 settings.Network
+			result2 error
+		})
+	}
+	fake.getDefaultNetworkReturnsOnCall[i] = struct {
+		result1 settings.Network
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetDevicePathResolver() devicepathresolver.DevicePathResolver {
+	fake.getDevicePathResolverMutex.Lock()
+	ret, specificReturn := fake.getDevicePathResolverReturnsOnCall[len(fake.getDevicePathResolverArgsForCall)]
+	fake.getDevicePathResolverArgsForCall = append(fake.getDevicePathResolverArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetDevicePathResolver", []interface{}{})
+	fake.getDevicePathResolverMutex.Unlock()
+	if fake.GetDevicePathResolverStub != nil {
+		return fake.GetDevicePathResolverStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.deleteARPEntryWithIPReturns.result1
+	fakeReturns := fake.getDevicePathResolverReturns
+	return fakeReturns.result1
 }
 
-func (fake *FakePlatform) DeleteARPEntryWithIPCallCount() int {
-	fake.deleteARPEntryWithIPMutex.RLock()
-	defer fake.deleteARPEntryWithIPMutex.RUnlock()
-	return len(fake.deleteARPEntryWithIPArgsForCall)
+func (fake *FakePlatform) GetDevicePathResolverCallCount() int {
+	fake.getDevicePathResolverMutex.RLock()
+	defer fake.getDevicePathResolverMutex.RUnlock()
+	return len(fake.getDevicePathResolverArgsForCall)
 }
 
-func (fake *FakePlatform) DeleteARPEntryWithIPArgsForCall(i int) string {
-	fake.deleteARPEntryWithIPMutex.RLock()
-	defer fake.deleteARPEntryWithIPMutex.RUnlock()
-	return fake.deleteARPEntryWithIPArgsForCall[i].ip
+func (fake *FakePlatform) GetDevicePathResolverCalls(stub func() devicepathresolver.DevicePathResolver) {
+	fake.getDevicePathResolverMutex.Lock()
+	defer fake.getDevicePathResolverMutex.Unlock()
+	fake.GetDevicePathResolverStub = stub
 }
 
-func (fake *FakePlatform) DeleteARPEntryWithIPReturns(result1 error) {
-	fake.DeleteARPEntryWithIPStub = nil
-	fake.deleteARPEntryWithIPReturns = struct {
-		result1 error
+func (fake *FakePlatform) GetDevicePathResolverReturns(result1 devicepathresolver.DevicePathResolver) {
+	fake.getDevicePathResolverMutex.Lock()
+	defer fake.getDevicePathResolverMutex.Unlock()
+	fake.GetDevicePathResolverStub = nil
+	fake.getDevicePathResolverReturns = struct {
+		result1 devicepathresolver.DevicePathResolver
 	}{result1}
 }
 
-func (fake *FakePlatform) DeleteARPEntryWithIPReturnsOnCall(i int, result1 error) {
-	fake.DeleteARPEntryWithIPStub = nil
-	if fake.deleteARPEntryWithIPReturnsOnCall == nil {
-		fake.deleteARPEntryWithIPReturnsOnCall = make(map[int]struct {
-			result1 error
+func (fake *FakePlatform) GetDevicePathResolverReturnsOnCall(i int, result1 devicepathresolver.DevicePathResolver) {
+	fake.getDevicePathResolverMutex.Lock()
+	defer fake.getDevicePathResolverMutex.Unlock()
+	fake.GetDevicePathResolverStub = nil
+	if fake.getDevicePathResolverReturnsOnCall == nil {
+		fake.getDevicePathResolverReturnsOnCall = make(map[int]struct {
+			result1 devicepathresolver.DevicePathResolver
 		})
 	}
-	fake.deleteARPEntryWithIPReturnsOnCall[i] = struct {
-		result1 error
+	fake.getDevicePathResolverReturnsOnCall[i] = struct {
+		result1 devicepathresolver.DevicePathResolver
 	}{result1}
 }
 
-func (fake *FakePlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) error {
-	fake.saveDNSRecordsMutex.Lock()
-	ret, specificReturn := fake.saveDNSRecordsReturnsOnCall[len(fake.saveDNSRecordsArgsForCall)]
-	fake.saveDNSRecordsArgsForCall = append(fake.saveDNSRecordsArgsForCall, struct {
-		dnsRecords boshsettings.DNSRecords
-		hostname   string
-	}{dnsRecords, hostname})
-	fake.recordInvocation("SaveDNSRecords", []interface{}{dnsRecords, hostname})
-	fake.saveDNSRecordsMutex.Unlock()
-	if fake.SaveDNSRecordsStub != nil {
-		return fake.SaveDNSRecordsStub(dnsRecords, hostname)
+func (fake *FakePlatform) GetDirProvider() directories.Provider {
+	fake.getDirProviderMutex.Lock()
+	ret, specificReturn := fake.getDirProviderReturnsOnCall[len(fake.getDirProviderArgsForCall)]
+	fake.getDirProviderArgsForCall = append(fake.getDirProviderArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetDirProvider", []interface{}{})
+	fake.getDirProviderMutex.Unlock()
+	if fake.GetDirProviderStub != nil {
+		return fake.GetDirProviderStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.saveDNSRecordsReturns.result1
+	fakeReturns := fake.getDirProviderReturns
+	return fakeReturns.result1
 }
 
-func (fake *FakePlatform) SaveDNSRecordsCallCount() int {
-	fake.saveDNSRecordsMutex.RLock()
-	defer fake.saveDNSRecordsMutex.RUnlock()
-	return len(fake.saveDNSRecordsArgsForCall)
+func (fake *FakePlatform) GetDirProviderCallCount() int {
+	fake.getDirProviderMutex.RLock()
+	defer fake.getDirProviderMutex.RUnlock()
+	return len(fake.getDirProviderArgsForCall)
 }
 
-func (fake *FakePlatform) SaveDNSRecordsArgsForCall(i int) (boshsettings.DNSRecords, string) {
-	fake.saveDNSRecordsMutex.RLock()
-	defer fake.saveDNSRecordsMutex.RUnlock()
-	return fake.saveDNSRecordsArgsForCall[i].dnsRecords, fake.saveDNSRecordsArgsForCall[i].hostname
+func (fake *FakePlatform) GetDirProviderCalls(stub func() directories.Provider) {
+	fake.getDirProviderMutex.Lock()
+	defer fake.getDirProviderMutex.Unlock()
+	fake.GetDirProviderStub = stub
 }
 
-func (fake *FakePlatform) SaveDNSRecordsReturns(result1 error) {
-	fake.SaveDNSRecordsStub = nil
-	fake.saveDNSRecordsReturns = struct {
-		result1 error
+func (fake *FakePlatform) GetDirProviderReturns(result1 directories.Provider) {
+	fake.getDirProviderMutex.Lock()
+	defer fake.getDirProviderMutex.Unlock()
+	fake.GetDirProviderStub = nil
+	fake.getDirProviderReturns = struct {
+		result1 directories.Provider
 	}{result1}
 }
 
-func (fake *FakePlatform) SaveDNSRecordsReturnsOnCall(i int, result1 error) {
-	fake.SaveDNSRecordsStub = nil
-	if fake.saveDNSRecordsReturnsOnCall == nil {
-		fake.saveDNSRecordsReturnsOnCall = make(map[int]struct {
-			result1 error
+func (fake *FakePlatform) GetDirProviderReturnsOnCall(i int, result1 directories.Provider) {
+	fake.getDirProviderMutex.Lock()
+	defer fake.getDirProviderMutex.Unlock()
+	fake.GetDirProviderStub = nil
+	if fake.getDirProviderReturnsOnCall == nil {
+		fake.getDirProviderReturnsOnCall = make(map[int]struct {
+			result1 directories.Provider
 		})
 	}
-	fake.saveDNSRecordsReturnsOnCall[i] = struct {
-		result1 error
+	fake.getDirProviderReturnsOnCall[i] = struct {
+		result1 directories.Provider
 	}{result1}
 }
 
-func (fake *FakePlatform) GetMonitCredentials() (username, password string, err error) {
+func (fake *FakePlatform) GetEphemeralDiskPath(arg1 settings.DiskSettings) string {
+	fake.getEphemeralDiskPathMutex.Lock()
+	ret, specificReturn := fake.getEphemeralDiskPathReturnsOnCall[len(fake.getEphemeralDiskPathArgsForCall)]
+	fake.getEphemeralDiskPathArgsForCall = append(fake.getEphemeralDiskPathArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	fake.recordInvocation("GetEphemeralDiskPath", []interface{}{arg1})
+	fake.getEphemeralDiskPathMutex.Unlock()
+	if fake.GetEphemeralDiskPathStub != nil {
+		return fake.GetEphemeralDiskPathStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getEphemeralDiskPathReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetEphemeralDiskPathCallCount() int {
+	fake.getEphemeralDiskPathMutex.RLock()
+	defer fake.getEphemeralDiskPathMutex.RUnlock()
+	return len(fake.getEphemeralDiskPathArgsForCall)
+}
+
+func (fake *FakePlatform) GetEphemeralDiskPathCalls(stub func(settings.DiskSettings) string) {
+	fake.getEphemeralDiskPathMutex.Lock()
+	defer fake.getEphemeralDiskPathMutex.Unlock()
+	fake.GetEphemeralDiskPathStub = stub
+}
+
+func (fake *FakePlatform) GetEphemeralDiskPathArgsForCall(i int) settings.DiskSettings {
+	fake.getEphemeralDiskPathMutex.RLock()
+	defer fake.getEphemeralDiskPathMutex.RUnlock()
+	argsForCall := fake.getEphemeralDiskPathArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) GetEphemeralDiskPathReturns(result1 string) {
+	fake.getEphemeralDiskPathMutex.Lock()
+	defer fake.getEphemeralDiskPathMutex.Unlock()
+	fake.GetEphemeralDiskPathStub = nil
+	fake.getEphemeralDiskPathReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakePlatform) GetEphemeralDiskPathReturnsOnCall(i int, result1 string) {
+	fake.getEphemeralDiskPathMutex.Lock()
+	defer fake.getEphemeralDiskPathMutex.Unlock()
+	fake.GetEphemeralDiskPathStub = nil
+	if fake.getEphemeralDiskPathReturnsOnCall == nil {
+		fake.getEphemeralDiskPathReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.getEphemeralDiskPathReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakePlatform) GetFileContentsFromCDROM(arg1 string) ([]byte, error) {
+	fake.getFileContentsFromCDROMMutex.Lock()
+	ret, specificReturn := fake.getFileContentsFromCDROMReturnsOnCall[len(fake.getFileContentsFromCDROMArgsForCall)]
+	fake.getFileContentsFromCDROMArgsForCall = append(fake.getFileContentsFromCDROMArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("GetFileContentsFromCDROM", []interface{}{arg1})
+	fake.getFileContentsFromCDROMMutex.Unlock()
+	if fake.GetFileContentsFromCDROMStub != nil {
+		return fake.GetFileContentsFromCDROMStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getFileContentsFromCDROMReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakePlatform) GetFileContentsFromCDROMCallCount() int {
+	fake.getFileContentsFromCDROMMutex.RLock()
+	defer fake.getFileContentsFromCDROMMutex.RUnlock()
+	return len(fake.getFileContentsFromCDROMArgsForCall)
+}
+
+func (fake *FakePlatform) GetFileContentsFromCDROMCalls(stub func(string) ([]byte, error)) {
+	fake.getFileContentsFromCDROMMutex.Lock()
+	defer fake.getFileContentsFromCDROMMutex.Unlock()
+	fake.GetFileContentsFromCDROMStub = stub
+}
+
+func (fake *FakePlatform) GetFileContentsFromCDROMArgsForCall(i int) string {
+	fake.getFileContentsFromCDROMMutex.RLock()
+	defer fake.getFileContentsFromCDROMMutex.RUnlock()
+	argsForCall := fake.getFileContentsFromCDROMArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) GetFileContentsFromCDROMReturns(result1 []byte, result2 error) {
+	fake.getFileContentsFromCDROMMutex.Lock()
+	defer fake.getFileContentsFromCDROMMutex.Unlock()
+	fake.GetFileContentsFromCDROMStub = nil
+	fake.getFileContentsFromCDROMReturns = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetFileContentsFromCDROMReturnsOnCall(i int, result1 []byte, result2 error) {
+	fake.getFileContentsFromCDROMMutex.Lock()
+	defer fake.getFileContentsFromCDROMMutex.Unlock()
+	fake.GetFileContentsFromCDROMStub = nil
+	if fake.getFileContentsFromCDROMReturnsOnCall == nil {
+		fake.getFileContentsFromCDROMReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 error
+		})
+	}
+	fake.getFileContentsFromCDROMReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetFilesContentsFromDisk(arg1 string, arg2 []string) ([][]byte, error) {
+	var arg2Copy []string
+	if arg2 != nil {
+		arg2Copy = make([]string, len(arg2))
+		copy(arg2Copy, arg2)
+	}
+	fake.getFilesContentsFromDiskMutex.Lock()
+	ret, specificReturn := fake.getFilesContentsFromDiskReturnsOnCall[len(fake.getFilesContentsFromDiskArgsForCall)]
+	fake.getFilesContentsFromDiskArgsForCall = append(fake.getFilesContentsFromDiskArgsForCall, struct {
+		arg1 string
+		arg2 []string
+	}{arg1, arg2Copy})
+	fake.recordInvocation("GetFilesContentsFromDisk", []interface{}{arg1, arg2Copy})
+	fake.getFilesContentsFromDiskMutex.Unlock()
+	if fake.GetFilesContentsFromDiskStub != nil {
+		return fake.GetFilesContentsFromDiskStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getFilesContentsFromDiskReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakePlatform) GetFilesContentsFromDiskCallCount() int {
+	fake.getFilesContentsFromDiskMutex.RLock()
+	defer fake.getFilesContentsFromDiskMutex.RUnlock()
+	return len(fake.getFilesContentsFromDiskArgsForCall)
+}
+
+func (fake *FakePlatform) GetFilesContentsFromDiskCalls(stub func(string, []string) ([][]byte, error)) {
+	fake.getFilesContentsFromDiskMutex.Lock()
+	defer fake.getFilesContentsFromDiskMutex.Unlock()
+	fake.GetFilesContentsFromDiskStub = stub
+}
+
+func (fake *FakePlatform) GetFilesContentsFromDiskArgsForCall(i int) (string, []string) {
+	fake.getFilesContentsFromDiskMutex.RLock()
+	defer fake.getFilesContentsFromDiskMutex.RUnlock()
+	argsForCall := fake.getFilesContentsFromDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakePlatform) GetFilesContentsFromDiskReturns(result1 [][]byte, result2 error) {
+	fake.getFilesContentsFromDiskMutex.Lock()
+	defer fake.getFilesContentsFromDiskMutex.Unlock()
+	fake.GetFilesContentsFromDiskStub = nil
+	fake.getFilesContentsFromDiskReturns = struct {
+		result1 [][]byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetFilesContentsFromDiskReturnsOnCall(i int, result1 [][]byte, result2 error) {
+	fake.getFilesContentsFromDiskMutex.Lock()
+	defer fake.getFilesContentsFromDiskMutex.Unlock()
+	fake.GetFilesContentsFromDiskStub = nil
+	if fake.getFilesContentsFromDiskReturnsOnCall == nil {
+		fake.getFilesContentsFromDiskReturnsOnCall = make(map[int]struct {
+			result1 [][]byte
+			result2 error
+		})
+	}
+	fake.getFilesContentsFromDiskReturnsOnCall[i] = struct {
+		result1 [][]byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetFs() system.FileSystem {
+	fake.getFsMutex.Lock()
+	ret, specificReturn := fake.getFsReturnsOnCall[len(fake.getFsArgsForCall)]
+	fake.getFsArgsForCall = append(fake.getFsArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetFs", []interface{}{})
+	fake.getFsMutex.Unlock()
+	if fake.GetFsStub != nil {
+		return fake.GetFsStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getFsReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetFsCallCount() int {
+	fake.getFsMutex.RLock()
+	defer fake.getFsMutex.RUnlock()
+	return len(fake.getFsArgsForCall)
+}
+
+func (fake *FakePlatform) GetFsCalls(stub func() system.FileSystem) {
+	fake.getFsMutex.Lock()
+	defer fake.getFsMutex.Unlock()
+	fake.GetFsStub = stub
+}
+
+func (fake *FakePlatform) GetFsReturns(result1 system.FileSystem) {
+	fake.getFsMutex.Lock()
+	defer fake.getFsMutex.Unlock()
+	fake.GetFsStub = nil
+	fake.getFsReturns = struct {
+		result1 system.FileSystem
+	}{result1}
+}
+
+func (fake *FakePlatform) GetFsReturnsOnCall(i int, result1 system.FileSystem) {
+	fake.getFsMutex.Lock()
+	defer fake.getFsMutex.Unlock()
+	fake.GetFsStub = nil
+	if fake.getFsReturnsOnCall == nil {
+		fake.getFsReturnsOnCall = make(map[int]struct {
+			result1 system.FileSystem
+		})
+	}
+	fake.getFsReturnsOnCall[i] = struct {
+		result1 system.FileSystem
+	}{result1}
+}
+
+func (fake *FakePlatform) GetHostPublicKey() (string, error) {
+	fake.getHostPublicKeyMutex.Lock()
+	ret, specificReturn := fake.getHostPublicKeyReturnsOnCall[len(fake.getHostPublicKeyArgsForCall)]
+	fake.getHostPublicKeyArgsForCall = append(fake.getHostPublicKeyArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetHostPublicKey", []interface{}{})
+	fake.getHostPublicKeyMutex.Unlock()
+	if fake.GetHostPublicKeyStub != nil {
+		return fake.GetHostPublicKeyStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getHostPublicKeyReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakePlatform) GetHostPublicKeyCallCount() int {
+	fake.getHostPublicKeyMutex.RLock()
+	defer fake.getHostPublicKeyMutex.RUnlock()
+	return len(fake.getHostPublicKeyArgsForCall)
+}
+
+func (fake *FakePlatform) GetHostPublicKeyCalls(stub func() (string, error)) {
+	fake.getHostPublicKeyMutex.Lock()
+	defer fake.getHostPublicKeyMutex.Unlock()
+	fake.GetHostPublicKeyStub = stub
+}
+
+func (fake *FakePlatform) GetHostPublicKeyReturns(result1 string, result2 error) {
+	fake.getHostPublicKeyMutex.Lock()
+	defer fake.getHostPublicKeyMutex.Unlock()
+	fake.GetHostPublicKeyStub = nil
+	fake.getHostPublicKeyReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetHostPublicKeyReturnsOnCall(i int, result1 string, result2 error) {
+	fake.getHostPublicKeyMutex.Lock()
+	defer fake.getHostPublicKeyMutex.Unlock()
+	fake.GetHostPublicKeyStub = nil
+	if fake.getHostPublicKeyReturnsOnCall == nil {
+		fake.getHostPublicKeyReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.getHostPublicKeyReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetMonitCredentials() (string, string, error) {
 	fake.getMonitCredentialsMutex.Lock()
 	ret, specificReturn := fake.getMonitCredentialsReturnsOnCall[len(fake.getMonitCredentialsArgsForCall)]
-	fake.getMonitCredentialsArgsForCall = append(fake.getMonitCredentialsArgsForCall, struct{}{})
+	fake.getMonitCredentialsArgsForCall = append(fake.getMonitCredentialsArgsForCall, struct {
+	}{})
 	fake.recordInvocation("GetMonitCredentials", []interface{}{})
 	fake.getMonitCredentialsMutex.Unlock()
 	if fake.GetMonitCredentialsStub != nil {
@@ -2752,7 +1655,8 @@ func (fake *FakePlatform) GetMonitCredentials() (username, password string, err 
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	return fake.getMonitCredentialsReturns.result1, fake.getMonitCredentialsReturns.result2, fake.getMonitCredentialsReturns.result3
+	fakeReturns := fake.getMonitCredentialsReturns
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
 func (fake *FakePlatform) GetMonitCredentialsCallCount() int {
@@ -2761,7 +1665,15 @@ func (fake *FakePlatform) GetMonitCredentialsCallCount() int {
 	return len(fake.getMonitCredentialsArgsForCall)
 }
 
+func (fake *FakePlatform) GetMonitCredentialsCalls(stub func() (string, string, error)) {
+	fake.getMonitCredentialsMutex.Lock()
+	defer fake.getMonitCredentialsMutex.Unlock()
+	fake.GetMonitCredentialsStub = stub
+}
+
 func (fake *FakePlatform) GetMonitCredentialsReturns(result1 string, result2 string, result3 error) {
+	fake.getMonitCredentialsMutex.Lock()
+	defer fake.getMonitCredentialsMutex.Unlock()
 	fake.GetMonitCredentialsStub = nil
 	fake.getMonitCredentialsReturns = struct {
 		result1 string
@@ -2771,6 +1683,8 @@ func (fake *FakePlatform) GetMonitCredentialsReturns(result1 string, result2 str
 }
 
 func (fake *FakePlatform) GetMonitCredentialsReturnsOnCall(i int, result1 string, result2 string, result3 error) {
+	fake.getMonitCredentialsMutex.Lock()
+	defer fake.getMonitCredentialsMutex.Unlock()
 	fake.GetMonitCredentialsStub = nil
 	if fake.getMonitCredentialsReturnsOnCall == nil {
 		fake.getMonitCredentialsReturnsOnCall = make(map[int]struct {
@@ -2786,104 +1700,492 @@ func (fake *FakePlatform) GetMonitCredentialsReturnsOnCall(i int, result1 string
 	}{result1, result2, result3}
 }
 
-func (fake *FakePlatform) GetCertManager() cert.Manager {
-	fake.getCertManagerMutex.Lock()
-	ret, specificReturn := fake.getCertManagerReturnsOnCall[len(fake.getCertManagerArgsForCall)]
-	fake.getCertManagerArgsForCall = append(fake.getCertManagerArgsForCall, struct{}{})
-	fake.recordInvocation("GetCertManager", []interface{}{})
-	fake.getCertManagerMutex.Unlock()
-	if fake.GetCertManagerStub != nil {
-		return fake.GetCertManagerStub()
+func (fake *FakePlatform) GetRunner() system.CmdRunner {
+	fake.getRunnerMutex.Lock()
+	ret, specificReturn := fake.getRunnerReturnsOnCall[len(fake.getRunnerArgsForCall)]
+	fake.getRunnerArgsForCall = append(fake.getRunnerArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetRunner", []interface{}{})
+	fake.getRunnerMutex.Unlock()
+	if fake.GetRunnerStub != nil {
+		return fake.GetRunnerStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getCertManagerReturns.result1
+	fakeReturns := fake.getRunnerReturns
+	return fakeReturns.result1
 }
 
-func (fake *FakePlatform) GetCertManagerCallCount() int {
-	fake.getCertManagerMutex.RLock()
-	defer fake.getCertManagerMutex.RUnlock()
-	return len(fake.getCertManagerArgsForCall)
+func (fake *FakePlatform) GetRunnerCallCount() int {
+	fake.getRunnerMutex.RLock()
+	defer fake.getRunnerMutex.RUnlock()
+	return len(fake.getRunnerArgsForCall)
 }
 
-func (fake *FakePlatform) GetCertManagerReturns(result1 cert.Manager) {
-	fake.GetCertManagerStub = nil
-	fake.getCertManagerReturns = struct {
-		result1 cert.Manager
+func (fake *FakePlatform) GetRunnerCalls(stub func() system.CmdRunner) {
+	fake.getRunnerMutex.Lock()
+	defer fake.getRunnerMutex.Unlock()
+	fake.GetRunnerStub = stub
+}
+
+func (fake *FakePlatform) GetRunnerReturns(result1 system.CmdRunner) {
+	fake.getRunnerMutex.Lock()
+	defer fake.getRunnerMutex.Unlock()
+	fake.GetRunnerStub = nil
+	fake.getRunnerReturns = struct {
+		result1 system.CmdRunner
 	}{result1}
 }
 
-func (fake *FakePlatform) GetCertManagerReturnsOnCall(i int, result1 cert.Manager) {
-	fake.GetCertManagerStub = nil
-	if fake.getCertManagerReturnsOnCall == nil {
-		fake.getCertManagerReturnsOnCall = make(map[int]struct {
-			result1 cert.Manager
+func (fake *FakePlatform) GetRunnerReturnsOnCall(i int, result1 system.CmdRunner) {
+	fake.getRunnerMutex.Lock()
+	defer fake.getRunnerMutex.Unlock()
+	fake.GetRunnerStub = nil
+	if fake.getRunnerReturnsOnCall == nil {
+		fake.getRunnerReturnsOnCall = make(map[int]struct {
+			result1 system.CmdRunner
 		})
 	}
-	fake.getCertManagerReturnsOnCall[i] = struct {
-		result1 cert.Manager
+	fake.getRunnerReturnsOnCall[i] = struct {
+		result1 system.CmdRunner
 	}{result1}
 }
 
-func (fake *FakePlatform) GetHostPublicKey() (string, error) {
-	fake.getHostPublicKeyMutex.Lock()
-	ret, specificReturn := fake.getHostPublicKeyReturnsOnCall[len(fake.getHostPublicKeyArgsForCall)]
-	fake.getHostPublicKeyArgsForCall = append(fake.getHostPublicKeyArgsForCall, struct{}{})
-	fake.recordInvocation("GetHostPublicKey", []interface{}{})
-	fake.getHostPublicKeyMutex.Unlock()
-	if fake.GetHostPublicKeyStub != nil {
-		return fake.GetHostPublicKeyStub()
+func (fake *FakePlatform) GetVitalsService() vitals.Service {
+	fake.getVitalsServiceMutex.Lock()
+	ret, specificReturn := fake.getVitalsServiceReturnsOnCall[len(fake.getVitalsServiceArgsForCall)]
+	fake.getVitalsServiceArgsForCall = append(fake.getVitalsServiceArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetVitalsService", []interface{}{})
+	fake.getVitalsServiceMutex.Unlock()
+	if fake.GetVitalsServiceStub != nil {
+		return fake.GetVitalsServiceStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getVitalsServiceReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetVitalsServiceCallCount() int {
+	fake.getVitalsServiceMutex.RLock()
+	defer fake.getVitalsServiceMutex.RUnlock()
+	return len(fake.getVitalsServiceArgsForCall)
+}
+
+func (fake *FakePlatform) GetVitalsServiceCalls(stub func() vitals.Service) {
+	fake.getVitalsServiceMutex.Lock()
+	defer fake.getVitalsServiceMutex.Unlock()
+	fake.GetVitalsServiceStub = stub
+}
+
+func (fake *FakePlatform) GetVitalsServiceReturns(result1 vitals.Service) {
+	fake.getVitalsServiceMutex.Lock()
+	defer fake.getVitalsServiceMutex.Unlock()
+	fake.GetVitalsServiceStub = nil
+	fake.getVitalsServiceReturns = struct {
+		result1 vitals.Service
+	}{result1}
+}
+
+func (fake *FakePlatform) GetVitalsServiceReturnsOnCall(i int, result1 vitals.Service) {
+	fake.getVitalsServiceMutex.Lock()
+	defer fake.getVitalsServiceMutex.Unlock()
+	fake.GetVitalsServiceStub = nil
+	if fake.getVitalsServiceReturnsOnCall == nil {
+		fake.getVitalsServiceReturnsOnCall = make(map[int]struct {
+			result1 vitals.Service
+		})
+	}
+	fake.getVitalsServiceReturnsOnCall[i] = struct {
+		result1 vitals.Service
+	}{result1}
+}
+
+func (fake *FakePlatform) IsMountPoint(arg1 string) (string, bool, error) {
+	fake.isMountPointMutex.Lock()
+	ret, specificReturn := fake.isMountPointReturnsOnCall[len(fake.isMountPointArgsForCall)]
+	fake.isMountPointArgsForCall = append(fake.isMountPointArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("IsMountPoint", []interface{}{arg1})
+	fake.isMountPointMutex.Unlock()
+	if fake.IsMountPointStub != nil {
+		return fake.IsMountPointStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	fakeReturns := fake.isMountPointReturns
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *FakePlatform) IsMountPointCallCount() int {
+	fake.isMountPointMutex.RLock()
+	defer fake.isMountPointMutex.RUnlock()
+	return len(fake.isMountPointArgsForCall)
+}
+
+func (fake *FakePlatform) IsMountPointCalls(stub func(string) (string, bool, error)) {
+	fake.isMountPointMutex.Lock()
+	defer fake.isMountPointMutex.Unlock()
+	fake.IsMountPointStub = stub
+}
+
+func (fake *FakePlatform) IsMountPointArgsForCall(i int) string {
+	fake.isMountPointMutex.RLock()
+	defer fake.isMountPointMutex.RUnlock()
+	argsForCall := fake.isMountPointArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) IsMountPointReturns(result1 string, result2 bool, result3 error) {
+	fake.isMountPointMutex.Lock()
+	defer fake.isMountPointMutex.Unlock()
+	fake.IsMountPointStub = nil
+	fake.isMountPointReturns = struct {
+		result1 string
+		result2 bool
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakePlatform) IsMountPointReturnsOnCall(i int, result1 string, result2 bool, result3 error) {
+	fake.isMountPointMutex.Lock()
+	defer fake.isMountPointMutex.Unlock()
+	fake.IsMountPointStub = nil
+	if fake.isMountPointReturnsOnCall == nil {
+		fake.isMountPointReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 bool
+			result3 error
+		})
+	}
+	fake.isMountPointReturnsOnCall[i] = struct {
+		result1 string
+		result2 bool
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountable(arg1 settings.DiskSettings) (bool, error) {
+	fake.isPersistentDiskMountableMutex.Lock()
+	ret, specificReturn := fake.isPersistentDiskMountableReturnsOnCall[len(fake.isPersistentDiskMountableArgsForCall)]
+	fake.isPersistentDiskMountableArgsForCall = append(fake.isPersistentDiskMountableArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	fake.recordInvocation("IsPersistentDiskMountable", []interface{}{arg1})
+	fake.isPersistentDiskMountableMutex.Unlock()
+	if fake.IsPersistentDiskMountableStub != nil {
+		return fake.IsPersistentDiskMountableStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.getHostPublicKeyReturns.result1, fake.getHostPublicKeyReturns.result2
+	fakeReturns := fake.isPersistentDiskMountableReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakePlatform) GetHostPublicKeyCallCount() int {
-	fake.getHostPublicKeyMutex.RLock()
-	defer fake.getHostPublicKeyMutex.RUnlock()
-	return len(fake.getHostPublicKeyArgsForCall)
+func (fake *FakePlatform) IsPersistentDiskMountableCallCount() int {
+	fake.isPersistentDiskMountableMutex.RLock()
+	defer fake.isPersistentDiskMountableMutex.RUnlock()
+	return len(fake.isPersistentDiskMountableArgsForCall)
 }
 
-func (fake *FakePlatform) GetHostPublicKeyReturns(result1 string, result2 error) {
-	fake.GetHostPublicKeyStub = nil
-	fake.getHostPublicKeyReturns = struct {
-		result1 string
+func (fake *FakePlatform) IsPersistentDiskMountableCalls(stub func(settings.DiskSettings) (bool, error)) {
+	fake.isPersistentDiskMountableMutex.Lock()
+	defer fake.isPersistentDiskMountableMutex.Unlock()
+	fake.IsPersistentDiskMountableStub = stub
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountableArgsForCall(i int) settings.DiskSettings {
+	fake.isPersistentDiskMountableMutex.RLock()
+	defer fake.isPersistentDiskMountableMutex.RUnlock()
+	argsForCall := fake.isPersistentDiskMountableArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountableReturns(result1 bool, result2 error) {
+	fake.isPersistentDiskMountableMutex.Lock()
+	defer fake.isPersistentDiskMountableMutex.Unlock()
+	fake.IsPersistentDiskMountableStub = nil
+	fake.isPersistentDiskMountableReturns = struct {
+		result1 bool
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakePlatform) GetHostPublicKeyReturnsOnCall(i int, result1 string, result2 error) {
-	fake.GetHostPublicKeyStub = nil
-	if fake.getHostPublicKeyReturnsOnCall == nil {
-		fake.getHostPublicKeyReturnsOnCall = make(map[int]struct {
-			result1 string
+func (fake *FakePlatform) IsPersistentDiskMountableReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.isPersistentDiskMountableMutex.Lock()
+	defer fake.isPersistentDiskMountableMutex.Unlock()
+	fake.IsPersistentDiskMountableStub = nil
+	if fake.isPersistentDiskMountableReturnsOnCall == nil {
+		fake.isPersistentDiskMountableReturnsOnCall = make(map[int]struct {
+			result1 bool
 			result2 error
 		})
 	}
-	fake.getHostPublicKeyReturnsOnCall[i] = struct {
-		result1 string
+	fake.isPersistentDiskMountableReturnsOnCall[i] = struct {
+		result1 bool
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakePlatform) RemoveDevTools(packageFileListPath string) error {
-	fake.removeDevToolsMutex.Lock()
-	ret, specificReturn := fake.removeDevToolsReturnsOnCall[len(fake.removeDevToolsArgsForCall)]
-	fake.removeDevToolsArgsForCall = append(fake.removeDevToolsArgsForCall, struct {
-		packageFileListPath string
-	}{packageFileListPath})
-	fake.recordInvocation("RemoveDevTools", []interface{}{packageFileListPath})
-	fake.removeDevToolsMutex.Unlock()
-	if fake.RemoveDevToolsStub != nil {
-		return fake.RemoveDevToolsStub(packageFileListPath)
+func (fake *FakePlatform) IsPersistentDiskMounted(arg1 settings.DiskSettings) (bool, error) {
+	fake.isPersistentDiskMountedMutex.Lock()
+	ret, specificReturn := fake.isPersistentDiskMountedReturnsOnCall[len(fake.isPersistentDiskMountedArgsForCall)]
+	fake.isPersistentDiskMountedArgsForCall = append(fake.isPersistentDiskMountedArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	fake.recordInvocation("IsPersistentDiskMounted", []interface{}{arg1})
+	fake.isPersistentDiskMountedMutex.Unlock()
+	if fake.IsPersistentDiskMountedStub != nil {
+		return fake.IsPersistentDiskMountedStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.isPersistentDiskMountedReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountedCallCount() int {
+	fake.isPersistentDiskMountedMutex.RLock()
+	defer fake.isPersistentDiskMountedMutex.RUnlock()
+	return len(fake.isPersistentDiskMountedArgsForCall)
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountedCalls(stub func(settings.DiskSettings) (bool, error)) {
+	fake.isPersistentDiskMountedMutex.Lock()
+	defer fake.isPersistentDiskMountedMutex.Unlock()
+	fake.IsPersistentDiskMountedStub = stub
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountedArgsForCall(i int) settings.DiskSettings {
+	fake.isPersistentDiskMountedMutex.RLock()
+	defer fake.isPersistentDiskMountedMutex.RUnlock()
+	argsForCall := fake.isPersistentDiskMountedArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountedReturns(result1 bool, result2 error) {
+	fake.isPersistentDiskMountedMutex.Lock()
+	defer fake.isPersistentDiskMountedMutex.Unlock()
+	fake.IsPersistentDiskMountedStub = nil
+	fake.isPersistentDiskMountedReturns = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) IsPersistentDiskMountedReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.isPersistentDiskMountedMutex.Lock()
+	defer fake.isPersistentDiskMountedMutex.Unlock()
+	fake.IsPersistentDiskMountedStub = nil
+	if fake.isPersistentDiskMountedReturnsOnCall == nil {
+		fake.isPersistentDiskMountedReturnsOnCall = make(map[int]struct {
+			result1 bool
+			result2 error
+		})
+	}
+	fake.isPersistentDiskMountedReturnsOnCall[i] = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) MigratePersistentDisk(arg1 string, arg2 string) error {
+	fake.migratePersistentDiskMutex.Lock()
+	ret, specificReturn := fake.migratePersistentDiskReturnsOnCall[len(fake.migratePersistentDiskArgsForCall)]
+	fake.migratePersistentDiskArgsForCall = append(fake.migratePersistentDiskArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("MigratePersistentDisk", []interface{}{arg1, arg2})
+	fake.migratePersistentDiskMutex.Unlock()
+	if fake.MigratePersistentDiskStub != nil {
+		return fake.MigratePersistentDiskStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.removeDevToolsReturns.result1
+	fakeReturns := fake.migratePersistentDiskReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) MigratePersistentDiskCallCount() int {
+	fake.migratePersistentDiskMutex.RLock()
+	defer fake.migratePersistentDiskMutex.RUnlock()
+	return len(fake.migratePersistentDiskArgsForCall)
+}
+
+func (fake *FakePlatform) MigratePersistentDiskCalls(stub func(string, string) error) {
+	fake.migratePersistentDiskMutex.Lock()
+	defer fake.migratePersistentDiskMutex.Unlock()
+	fake.MigratePersistentDiskStub = stub
+}
+
+func (fake *FakePlatform) MigratePersistentDiskArgsForCall(i int) (string, string) {
+	fake.migratePersistentDiskMutex.RLock()
+	defer fake.migratePersistentDiskMutex.RUnlock()
+	argsForCall := fake.migratePersistentDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakePlatform) MigratePersistentDiskReturns(result1 error) {
+	fake.migratePersistentDiskMutex.Lock()
+	defer fake.migratePersistentDiskMutex.Unlock()
+	fake.MigratePersistentDiskStub = nil
+	fake.migratePersistentDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) MigratePersistentDiskReturnsOnCall(i int, result1 error) {
+	fake.migratePersistentDiskMutex.Lock()
+	defer fake.migratePersistentDiskMutex.Unlock()
+	fake.MigratePersistentDiskStub = nil
+	if fake.migratePersistentDiskReturnsOnCall == nil {
+		fake.migratePersistentDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.migratePersistentDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) MountPersistentDisk(arg1 settings.DiskSettings, arg2 string) error {
+	fake.mountPersistentDiskMutex.Lock()
+	ret, specificReturn := fake.mountPersistentDiskReturnsOnCall[len(fake.mountPersistentDiskArgsForCall)]
+	fake.mountPersistentDiskArgsForCall = append(fake.mountPersistentDiskArgsForCall, struct {
+		arg1 settings.DiskSettings
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("MountPersistentDisk", []interface{}{arg1, arg2})
+	fake.mountPersistentDiskMutex.Unlock()
+	if fake.MountPersistentDiskStub != nil {
+		return fake.MountPersistentDiskStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.mountPersistentDiskReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) MountPersistentDiskCallCount() int {
+	fake.mountPersistentDiskMutex.RLock()
+	defer fake.mountPersistentDiskMutex.RUnlock()
+	return len(fake.mountPersistentDiskArgsForCall)
+}
+
+func (fake *FakePlatform) MountPersistentDiskCalls(stub func(settings.DiskSettings, string) error) {
+	fake.mountPersistentDiskMutex.Lock()
+	defer fake.mountPersistentDiskMutex.Unlock()
+	fake.MountPersistentDiskStub = stub
+}
+
+func (fake *FakePlatform) MountPersistentDiskArgsForCall(i int) (settings.DiskSettings, string) {
+	fake.mountPersistentDiskMutex.RLock()
+	defer fake.mountPersistentDiskMutex.RUnlock()
+	argsForCall := fake.mountPersistentDiskArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakePlatform) MountPersistentDiskReturns(result1 error) {
+	fake.mountPersistentDiskMutex.Lock()
+	defer fake.mountPersistentDiskMutex.Unlock()
+	fake.MountPersistentDiskStub = nil
+	fake.mountPersistentDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) MountPersistentDiskReturnsOnCall(i int, result1 error) {
+	fake.mountPersistentDiskMutex.Lock()
+	defer fake.mountPersistentDiskMutex.Unlock()
+	fake.MountPersistentDiskStub = nil
+	if fake.mountPersistentDiskReturnsOnCall == nil {
+		fake.mountPersistentDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.mountPersistentDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) PrepareForNetworkingChange() error {
+	fake.prepareForNetworkingChangeMutex.Lock()
+	ret, specificReturn := fake.prepareForNetworkingChangeReturnsOnCall[len(fake.prepareForNetworkingChangeArgsForCall)]
+	fake.prepareForNetworkingChangeArgsForCall = append(fake.prepareForNetworkingChangeArgsForCall, struct {
+	}{})
+	fake.recordInvocation("PrepareForNetworkingChange", []interface{}{})
+	fake.prepareForNetworkingChangeMutex.Unlock()
+	if fake.PrepareForNetworkingChangeStub != nil {
+		return fake.PrepareForNetworkingChangeStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.prepareForNetworkingChangeReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) PrepareForNetworkingChangeCallCount() int {
+	fake.prepareForNetworkingChangeMutex.RLock()
+	defer fake.prepareForNetworkingChangeMutex.RUnlock()
+	return len(fake.prepareForNetworkingChangeArgsForCall)
+}
+
+func (fake *FakePlatform) PrepareForNetworkingChangeCalls(stub func() error) {
+	fake.prepareForNetworkingChangeMutex.Lock()
+	defer fake.prepareForNetworkingChangeMutex.Unlock()
+	fake.PrepareForNetworkingChangeStub = stub
+}
+
+func (fake *FakePlatform) PrepareForNetworkingChangeReturns(result1 error) {
+	fake.prepareForNetworkingChangeMutex.Lock()
+	defer fake.prepareForNetworkingChangeMutex.Unlock()
+	fake.PrepareForNetworkingChangeStub = nil
+	fake.prepareForNetworkingChangeReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) PrepareForNetworkingChangeReturnsOnCall(i int, result1 error) {
+	fake.prepareForNetworkingChangeMutex.Lock()
+	defer fake.prepareForNetworkingChangeMutex.Unlock()
+	fake.PrepareForNetworkingChangeStub = nil
+	if fake.prepareForNetworkingChangeReturnsOnCall == nil {
+		fake.prepareForNetworkingChangeReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.prepareForNetworkingChangeReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) RemoveDevTools(arg1 string) error {
+	fake.removeDevToolsMutex.Lock()
+	ret, specificReturn := fake.removeDevToolsReturnsOnCall[len(fake.removeDevToolsArgsForCall)]
+	fake.removeDevToolsArgsForCall = append(fake.removeDevToolsArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("RemoveDevTools", []interface{}{arg1})
+	fake.removeDevToolsMutex.Unlock()
+	if fake.RemoveDevToolsStub != nil {
+		return fake.RemoveDevToolsStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.removeDevToolsReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakePlatform) RemoveDevToolsCallCount() int {
@@ -2892,13 +2194,22 @@ func (fake *FakePlatform) RemoveDevToolsCallCount() int {
 	return len(fake.removeDevToolsArgsForCall)
 }
 
+func (fake *FakePlatform) RemoveDevToolsCalls(stub func(string) error) {
+	fake.removeDevToolsMutex.Lock()
+	defer fake.removeDevToolsMutex.Unlock()
+	fake.RemoveDevToolsStub = stub
+}
+
 func (fake *FakePlatform) RemoveDevToolsArgsForCall(i int) string {
 	fake.removeDevToolsMutex.RLock()
 	defer fake.removeDevToolsMutex.RUnlock()
-	return fake.removeDevToolsArgsForCall[i].packageFileListPath
+	argsForCall := fake.removeDevToolsArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakePlatform) RemoveDevToolsReturns(result1 error) {
+	fake.removeDevToolsMutex.Lock()
+	defer fake.removeDevToolsMutex.Unlock()
 	fake.RemoveDevToolsStub = nil
 	fake.removeDevToolsReturns = struct {
 		result1 error
@@ -2906,6 +2217,8 @@ func (fake *FakePlatform) RemoveDevToolsReturns(result1 error) {
 }
 
 func (fake *FakePlatform) RemoveDevToolsReturnsOnCall(i int, result1 error) {
+	fake.removeDevToolsMutex.Lock()
+	defer fake.removeDevToolsMutex.Unlock()
 	fake.RemoveDevToolsStub = nil
 	if fake.removeDevToolsReturnsOnCall == nil {
 		fake.removeDevToolsReturnsOnCall = make(map[int]struct {
@@ -2917,21 +2230,22 @@ func (fake *FakePlatform) RemoveDevToolsReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) RemoveStaticLibraries(packageFileListPath string) error {
+func (fake *FakePlatform) RemoveStaticLibraries(arg1 string) error {
 	fake.removeStaticLibrariesMutex.Lock()
 	ret, specificReturn := fake.removeStaticLibrariesReturnsOnCall[len(fake.removeStaticLibrariesArgsForCall)]
 	fake.removeStaticLibrariesArgsForCall = append(fake.removeStaticLibrariesArgsForCall, struct {
-		packageFileListPath string
-	}{packageFileListPath})
-	fake.recordInvocation("RemoveStaticLibraries", []interface{}{packageFileListPath})
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("RemoveStaticLibraries", []interface{}{arg1})
 	fake.removeStaticLibrariesMutex.Unlock()
 	if fake.RemoveStaticLibrariesStub != nil {
-		return fake.RemoveStaticLibrariesStub(packageFileListPath)
+		return fake.RemoveStaticLibrariesStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.removeStaticLibrariesReturns.result1
+	fakeReturns := fake.removeStaticLibrariesReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakePlatform) RemoveStaticLibrariesCallCount() int {
@@ -2940,13 +2254,22 @@ func (fake *FakePlatform) RemoveStaticLibrariesCallCount() int {
 	return len(fake.removeStaticLibrariesArgsForCall)
 }
 
+func (fake *FakePlatform) RemoveStaticLibrariesCalls(stub func(string) error) {
+	fake.removeStaticLibrariesMutex.Lock()
+	defer fake.removeStaticLibrariesMutex.Unlock()
+	fake.RemoveStaticLibrariesStub = stub
+}
+
 func (fake *FakePlatform) RemoveStaticLibrariesArgsForCall(i int) string {
 	fake.removeStaticLibrariesMutex.RLock()
 	defer fake.removeStaticLibrariesMutex.RUnlock()
-	return fake.removeStaticLibrariesArgsForCall[i].packageFileListPath
+	argsForCall := fake.removeStaticLibrariesArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakePlatform) RemoveStaticLibrariesReturns(result1 error) {
+	fake.removeStaticLibrariesMutex.Lock()
+	defer fake.removeStaticLibrariesMutex.Unlock()
 	fake.RemoveStaticLibrariesStub = nil
 	fake.removeStaticLibrariesReturns = struct {
 		result1 error
@@ -2954,6 +2277,8 @@ func (fake *FakePlatform) RemoveStaticLibrariesReturns(result1 error) {
 }
 
 func (fake *FakePlatform) RemoveStaticLibrariesReturnsOnCall(i int, result1 error) {
+	fake.removeStaticLibrariesMutex.Lock()
+	defer fake.removeStaticLibrariesMutex.Unlock()
 	fake.RemoveStaticLibrariesStub = nil
 	if fake.removeStaticLibrariesReturnsOnCall == nil {
 		fake.removeStaticLibrariesReturnsOnCall = make(map[int]struct {
@@ -2965,10 +2290,1220 @@ func (fake *FakePlatform) RemoveStaticLibrariesReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
+func (fake *FakePlatform) SaveDNSRecords(arg1 settings.DNSRecords, arg2 string) error {
+	fake.saveDNSRecordsMutex.Lock()
+	ret, specificReturn := fake.saveDNSRecordsReturnsOnCall[len(fake.saveDNSRecordsArgsForCall)]
+	fake.saveDNSRecordsArgsForCall = append(fake.saveDNSRecordsArgsForCall, struct {
+		arg1 settings.DNSRecords
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("SaveDNSRecords", []interface{}{arg1, arg2})
+	fake.saveDNSRecordsMutex.Unlock()
+	if fake.SaveDNSRecordsStub != nil {
+		return fake.SaveDNSRecordsStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.saveDNSRecordsReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SaveDNSRecordsCallCount() int {
+	fake.saveDNSRecordsMutex.RLock()
+	defer fake.saveDNSRecordsMutex.RUnlock()
+	return len(fake.saveDNSRecordsArgsForCall)
+}
+
+func (fake *FakePlatform) SaveDNSRecordsCalls(stub func(settings.DNSRecords, string) error) {
+	fake.saveDNSRecordsMutex.Lock()
+	defer fake.saveDNSRecordsMutex.Unlock()
+	fake.SaveDNSRecordsStub = stub
+}
+
+func (fake *FakePlatform) SaveDNSRecordsArgsForCall(i int) (settings.DNSRecords, string) {
+	fake.saveDNSRecordsMutex.RLock()
+	defer fake.saveDNSRecordsMutex.RUnlock()
+	argsForCall := fake.saveDNSRecordsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakePlatform) SaveDNSRecordsReturns(result1 error) {
+	fake.saveDNSRecordsMutex.Lock()
+	defer fake.saveDNSRecordsMutex.Unlock()
+	fake.SaveDNSRecordsStub = nil
+	fake.saveDNSRecordsReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SaveDNSRecordsReturnsOnCall(i int, result1 error) {
+	fake.saveDNSRecordsMutex.Lock()
+	defer fake.saveDNSRecordsMutex.Unlock()
+	fake.SaveDNSRecordsStub = nil
+	if fake.saveDNSRecordsReturnsOnCall == nil {
+		fake.saveDNSRecordsReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.saveDNSRecordsReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetTimeWithNtpServers(arg1 []string) error {
+	var arg1Copy []string
+	if arg1 != nil {
+		arg1Copy = make([]string, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.setTimeWithNtpServersMutex.Lock()
+	ret, specificReturn := fake.setTimeWithNtpServersReturnsOnCall[len(fake.setTimeWithNtpServersArgsForCall)]
+	fake.setTimeWithNtpServersArgsForCall = append(fake.setTimeWithNtpServersArgsForCall, struct {
+		arg1 []string
+	}{arg1Copy})
+	fake.recordInvocation("SetTimeWithNtpServers", []interface{}{arg1Copy})
+	fake.setTimeWithNtpServersMutex.Unlock()
+	if fake.SetTimeWithNtpServersStub != nil {
+		return fake.SetTimeWithNtpServersStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setTimeWithNtpServersReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetTimeWithNtpServersCallCount() int {
+	fake.setTimeWithNtpServersMutex.RLock()
+	defer fake.setTimeWithNtpServersMutex.RUnlock()
+	return len(fake.setTimeWithNtpServersArgsForCall)
+}
+
+func (fake *FakePlatform) SetTimeWithNtpServersCalls(stub func([]string) error) {
+	fake.setTimeWithNtpServersMutex.Lock()
+	defer fake.setTimeWithNtpServersMutex.Unlock()
+	fake.SetTimeWithNtpServersStub = stub
+}
+
+func (fake *FakePlatform) SetTimeWithNtpServersArgsForCall(i int) []string {
+	fake.setTimeWithNtpServersMutex.RLock()
+	defer fake.setTimeWithNtpServersMutex.RUnlock()
+	argsForCall := fake.setTimeWithNtpServersArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetTimeWithNtpServersReturns(result1 error) {
+	fake.setTimeWithNtpServersMutex.Lock()
+	defer fake.setTimeWithNtpServersMutex.Unlock()
+	fake.SetTimeWithNtpServersStub = nil
+	fake.setTimeWithNtpServersReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetTimeWithNtpServersReturnsOnCall(i int, result1 error) {
+	fake.setTimeWithNtpServersMutex.Lock()
+	defer fake.setTimeWithNtpServersMutex.Unlock()
+	fake.SetTimeWithNtpServersStub = nil
+	if fake.setTimeWithNtpServersReturnsOnCall == nil {
+		fake.setTimeWithNtpServersReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setTimeWithNtpServersReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetUserPassword(arg1 string, arg2 string) error {
+	fake.setUserPasswordMutex.Lock()
+	ret, specificReturn := fake.setUserPasswordReturnsOnCall[len(fake.setUserPasswordArgsForCall)]
+	fake.setUserPasswordArgsForCall = append(fake.setUserPasswordArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("SetUserPassword", []interface{}{arg1, arg2})
+	fake.setUserPasswordMutex.Unlock()
+	if fake.SetUserPasswordStub != nil {
+		return fake.SetUserPasswordStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setUserPasswordReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetUserPasswordCallCount() int {
+	fake.setUserPasswordMutex.RLock()
+	defer fake.setUserPasswordMutex.RUnlock()
+	return len(fake.setUserPasswordArgsForCall)
+}
+
+func (fake *FakePlatform) SetUserPasswordCalls(stub func(string, string) error) {
+	fake.setUserPasswordMutex.Lock()
+	defer fake.setUserPasswordMutex.Unlock()
+	fake.SetUserPasswordStub = stub
+}
+
+func (fake *FakePlatform) SetUserPasswordArgsForCall(i int) (string, string) {
+	fake.setUserPasswordMutex.RLock()
+	defer fake.setUserPasswordMutex.RUnlock()
+	argsForCall := fake.setUserPasswordArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakePlatform) SetUserPasswordReturns(result1 error) {
+	fake.setUserPasswordMutex.Lock()
+	defer fake.setUserPasswordMutex.Unlock()
+	fake.SetUserPasswordStub = nil
+	fake.setUserPasswordReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetUserPasswordReturnsOnCall(i int, result1 error) {
+	fake.setUserPasswordMutex.Lock()
+	defer fake.setUserPasswordMutex.Unlock()
+	fake.SetUserPasswordStub = nil
+	if fake.setUserPasswordReturnsOnCall == nil {
+		fake.setUserPasswordReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setUserPasswordReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupBlobsDir() error {
+	fake.setupBlobsDirMutex.Lock()
+	ret, specificReturn := fake.setupBlobsDirReturnsOnCall[len(fake.setupBlobsDirArgsForCall)]
+	fake.setupBlobsDirArgsForCall = append(fake.setupBlobsDirArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupBlobsDir", []interface{}{})
+	fake.setupBlobsDirMutex.Unlock()
+	if fake.SetupBlobsDirStub != nil {
+		return fake.SetupBlobsDirStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupBlobsDirReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupBlobsDirCallCount() int {
+	fake.setupBlobsDirMutex.RLock()
+	defer fake.setupBlobsDirMutex.RUnlock()
+	return len(fake.setupBlobsDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupBlobsDirCalls(stub func() error) {
+	fake.setupBlobsDirMutex.Lock()
+	defer fake.setupBlobsDirMutex.Unlock()
+	fake.SetupBlobsDirStub = stub
+}
+
+func (fake *FakePlatform) SetupBlobsDirReturns(result1 error) {
+	fake.setupBlobsDirMutex.Lock()
+	defer fake.setupBlobsDirMutex.Unlock()
+	fake.SetupBlobsDirStub = nil
+	fake.setupBlobsDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupBlobsDirReturnsOnCall(i int, result1 error) {
+	fake.setupBlobsDirMutex.Lock()
+	defer fake.setupBlobsDirMutex.Unlock()
+	fake.SetupBlobsDirStub = nil
+	if fake.setupBlobsDirReturnsOnCall == nil {
+		fake.setupBlobsDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupBlobsDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupDataDir() error {
+	fake.setupDataDirMutex.Lock()
+	ret, specificReturn := fake.setupDataDirReturnsOnCall[len(fake.setupDataDirArgsForCall)]
+	fake.setupDataDirArgsForCall = append(fake.setupDataDirArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupDataDir", []interface{}{})
+	fake.setupDataDirMutex.Unlock()
+	if fake.SetupDataDirStub != nil {
+		return fake.SetupDataDirStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupDataDirReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupDataDirCallCount() int {
+	fake.setupDataDirMutex.RLock()
+	defer fake.setupDataDirMutex.RUnlock()
+	return len(fake.setupDataDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupDataDirCalls(stub func() error) {
+	fake.setupDataDirMutex.Lock()
+	defer fake.setupDataDirMutex.Unlock()
+	fake.SetupDataDirStub = stub
+}
+
+func (fake *FakePlatform) SetupDataDirReturns(result1 error) {
+	fake.setupDataDirMutex.Lock()
+	defer fake.setupDataDirMutex.Unlock()
+	fake.SetupDataDirStub = nil
+	fake.setupDataDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupDataDirReturnsOnCall(i int, result1 error) {
+	fake.setupDataDirMutex.Lock()
+	defer fake.setupDataDirMutex.Unlock()
+	fake.SetupDataDirStub = nil
+	if fake.setupDataDirReturnsOnCall == nil {
+		fake.setupDataDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupDataDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupEphemeralDiskWithPath(arg1 string, arg2 *uint64) error {
+	fake.setupEphemeralDiskWithPathMutex.Lock()
+	ret, specificReturn := fake.setupEphemeralDiskWithPathReturnsOnCall[len(fake.setupEphemeralDiskWithPathArgsForCall)]
+	fake.setupEphemeralDiskWithPathArgsForCall = append(fake.setupEphemeralDiskWithPathArgsForCall, struct {
+		arg1 string
+		arg2 *uint64
+	}{arg1, arg2})
+	fake.recordInvocation("SetupEphemeralDiskWithPath", []interface{}{arg1, arg2})
+	fake.setupEphemeralDiskWithPathMutex.Unlock()
+	if fake.SetupEphemeralDiskWithPathStub != nil {
+		return fake.SetupEphemeralDiskWithPathStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupEphemeralDiskWithPathReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupEphemeralDiskWithPathCallCount() int {
+	fake.setupEphemeralDiskWithPathMutex.RLock()
+	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
+	return len(fake.setupEphemeralDiskWithPathArgsForCall)
+}
+
+func (fake *FakePlatform) SetupEphemeralDiskWithPathCalls(stub func(string, *uint64) error) {
+	fake.setupEphemeralDiskWithPathMutex.Lock()
+	defer fake.setupEphemeralDiskWithPathMutex.Unlock()
+	fake.SetupEphemeralDiskWithPathStub = stub
+}
+
+func (fake *FakePlatform) SetupEphemeralDiskWithPathArgsForCall(i int) (string, *uint64) {
+	fake.setupEphemeralDiskWithPathMutex.RLock()
+	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
+	argsForCall := fake.setupEphemeralDiskWithPathArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakePlatform) SetupEphemeralDiskWithPathReturns(result1 error) {
+	fake.setupEphemeralDiskWithPathMutex.Lock()
+	defer fake.setupEphemeralDiskWithPathMutex.Unlock()
+	fake.SetupEphemeralDiskWithPathStub = nil
+	fake.setupEphemeralDiskWithPathReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupEphemeralDiskWithPathReturnsOnCall(i int, result1 error) {
+	fake.setupEphemeralDiskWithPathMutex.Lock()
+	defer fake.setupEphemeralDiskWithPathMutex.Unlock()
+	fake.SetupEphemeralDiskWithPathStub = nil
+	if fake.setupEphemeralDiskWithPathReturnsOnCall == nil {
+		fake.setupEphemeralDiskWithPathReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupEphemeralDiskWithPathReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupHomeDir() error {
+	fake.setupHomeDirMutex.Lock()
+	ret, specificReturn := fake.setupHomeDirReturnsOnCall[len(fake.setupHomeDirArgsForCall)]
+	fake.setupHomeDirArgsForCall = append(fake.setupHomeDirArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupHomeDir", []interface{}{})
+	fake.setupHomeDirMutex.Unlock()
+	if fake.SetupHomeDirStub != nil {
+		return fake.SetupHomeDirStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupHomeDirReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupHomeDirCallCount() int {
+	fake.setupHomeDirMutex.RLock()
+	defer fake.setupHomeDirMutex.RUnlock()
+	return len(fake.setupHomeDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupHomeDirCalls(stub func() error) {
+	fake.setupHomeDirMutex.Lock()
+	defer fake.setupHomeDirMutex.Unlock()
+	fake.SetupHomeDirStub = stub
+}
+
+func (fake *FakePlatform) SetupHomeDirReturns(result1 error) {
+	fake.setupHomeDirMutex.Lock()
+	defer fake.setupHomeDirMutex.Unlock()
+	fake.SetupHomeDirStub = nil
+	fake.setupHomeDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupHomeDirReturnsOnCall(i int, result1 error) {
+	fake.setupHomeDirMutex.Lock()
+	defer fake.setupHomeDirMutex.Unlock()
+	fake.SetupHomeDirStub = nil
+	if fake.setupHomeDirReturnsOnCall == nil {
+		fake.setupHomeDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupHomeDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupHostname(arg1 string) error {
+	fake.setupHostnameMutex.Lock()
+	ret, specificReturn := fake.setupHostnameReturnsOnCall[len(fake.setupHostnameArgsForCall)]
+	fake.setupHostnameArgsForCall = append(fake.setupHostnameArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("SetupHostname", []interface{}{arg1})
+	fake.setupHostnameMutex.Unlock()
+	if fake.SetupHostnameStub != nil {
+		return fake.SetupHostnameStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupHostnameReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupHostnameCallCount() int {
+	fake.setupHostnameMutex.RLock()
+	defer fake.setupHostnameMutex.RUnlock()
+	return len(fake.setupHostnameArgsForCall)
+}
+
+func (fake *FakePlatform) SetupHostnameCalls(stub func(string) error) {
+	fake.setupHostnameMutex.Lock()
+	defer fake.setupHostnameMutex.Unlock()
+	fake.SetupHostnameStub = stub
+}
+
+func (fake *FakePlatform) SetupHostnameArgsForCall(i int) string {
+	fake.setupHostnameMutex.RLock()
+	defer fake.setupHostnameMutex.RUnlock()
+	argsForCall := fake.setupHostnameArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupHostnameReturns(result1 error) {
+	fake.setupHostnameMutex.Lock()
+	defer fake.setupHostnameMutex.Unlock()
+	fake.SetupHostnameStub = nil
+	fake.setupHostnameReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupHostnameReturnsOnCall(i int, result1 error) {
+	fake.setupHostnameMutex.Lock()
+	defer fake.setupHostnameMutex.Unlock()
+	fake.SetupHostnameStub = nil
+	if fake.setupHostnameReturnsOnCall == nil {
+		fake.setupHostnameReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupHostnameReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupIPv6(arg1 settings.IPv6) error {
+	fake.setupIPv6Mutex.Lock()
+	ret, specificReturn := fake.setupIPv6ReturnsOnCall[len(fake.setupIPv6ArgsForCall)]
+	fake.setupIPv6ArgsForCall = append(fake.setupIPv6ArgsForCall, struct {
+		arg1 settings.IPv6
+	}{arg1})
+	fake.recordInvocation("SetupIPv6", []interface{}{arg1})
+	fake.setupIPv6Mutex.Unlock()
+	if fake.SetupIPv6Stub != nil {
+		return fake.SetupIPv6Stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupIPv6Returns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupIPv6CallCount() int {
+	fake.setupIPv6Mutex.RLock()
+	defer fake.setupIPv6Mutex.RUnlock()
+	return len(fake.setupIPv6ArgsForCall)
+}
+
+func (fake *FakePlatform) SetupIPv6Calls(stub func(settings.IPv6) error) {
+	fake.setupIPv6Mutex.Lock()
+	defer fake.setupIPv6Mutex.Unlock()
+	fake.SetupIPv6Stub = stub
+}
+
+func (fake *FakePlatform) SetupIPv6ArgsForCall(i int) settings.IPv6 {
+	fake.setupIPv6Mutex.RLock()
+	defer fake.setupIPv6Mutex.RUnlock()
+	argsForCall := fake.setupIPv6ArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupIPv6Returns(result1 error) {
+	fake.setupIPv6Mutex.Lock()
+	defer fake.setupIPv6Mutex.Unlock()
+	fake.SetupIPv6Stub = nil
+	fake.setupIPv6Returns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupIPv6ReturnsOnCall(i int, result1 error) {
+	fake.setupIPv6Mutex.Lock()
+	defer fake.setupIPv6Mutex.Unlock()
+	fake.SetupIPv6Stub = nil
+	if fake.setupIPv6ReturnsOnCall == nil {
+		fake.setupIPv6ReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupIPv6ReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupLogDir() error {
+	fake.setupLogDirMutex.Lock()
+	ret, specificReturn := fake.setupLogDirReturnsOnCall[len(fake.setupLogDirArgsForCall)]
+	fake.setupLogDirArgsForCall = append(fake.setupLogDirArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupLogDir", []interface{}{})
+	fake.setupLogDirMutex.Unlock()
+	if fake.SetupLogDirStub != nil {
+		return fake.SetupLogDirStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupLogDirReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupLogDirCallCount() int {
+	fake.setupLogDirMutex.RLock()
+	defer fake.setupLogDirMutex.RUnlock()
+	return len(fake.setupLogDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupLogDirCalls(stub func() error) {
+	fake.setupLogDirMutex.Lock()
+	defer fake.setupLogDirMutex.Unlock()
+	fake.SetupLogDirStub = stub
+}
+
+func (fake *FakePlatform) SetupLogDirReturns(result1 error) {
+	fake.setupLogDirMutex.Lock()
+	defer fake.setupLogDirMutex.Unlock()
+	fake.SetupLogDirStub = nil
+	fake.setupLogDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupLogDirReturnsOnCall(i int, result1 error) {
+	fake.setupLogDirMutex.Lock()
+	defer fake.setupLogDirMutex.Unlock()
+	fake.SetupLogDirStub = nil
+	if fake.setupLogDirReturnsOnCall == nil {
+		fake.setupLogDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupLogDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupLoggingAndAuditing() error {
+	fake.setupLoggingAndAuditingMutex.Lock()
+	ret, specificReturn := fake.setupLoggingAndAuditingReturnsOnCall[len(fake.setupLoggingAndAuditingArgsForCall)]
+	fake.setupLoggingAndAuditingArgsForCall = append(fake.setupLoggingAndAuditingArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupLoggingAndAuditing", []interface{}{})
+	fake.setupLoggingAndAuditingMutex.Unlock()
+	if fake.SetupLoggingAndAuditingStub != nil {
+		return fake.SetupLoggingAndAuditingStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupLoggingAndAuditingReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupLoggingAndAuditingCallCount() int {
+	fake.setupLoggingAndAuditingMutex.RLock()
+	defer fake.setupLoggingAndAuditingMutex.RUnlock()
+	return len(fake.setupLoggingAndAuditingArgsForCall)
+}
+
+func (fake *FakePlatform) SetupLoggingAndAuditingCalls(stub func() error) {
+	fake.setupLoggingAndAuditingMutex.Lock()
+	defer fake.setupLoggingAndAuditingMutex.Unlock()
+	fake.SetupLoggingAndAuditingStub = stub
+}
+
+func (fake *FakePlatform) SetupLoggingAndAuditingReturns(result1 error) {
+	fake.setupLoggingAndAuditingMutex.Lock()
+	defer fake.setupLoggingAndAuditingMutex.Unlock()
+	fake.SetupLoggingAndAuditingStub = nil
+	fake.setupLoggingAndAuditingReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupLoggingAndAuditingReturnsOnCall(i int, result1 error) {
+	fake.setupLoggingAndAuditingMutex.Lock()
+	defer fake.setupLoggingAndAuditingMutex.Unlock()
+	fake.SetupLoggingAndAuditingStub = nil
+	if fake.setupLoggingAndAuditingReturnsOnCall == nil {
+		fake.setupLoggingAndAuditingReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupLoggingAndAuditingReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupLogrotate(arg1 string, arg2 string, arg3 string) error {
+	fake.setupLogrotateMutex.Lock()
+	ret, specificReturn := fake.setupLogrotateReturnsOnCall[len(fake.setupLogrotateArgsForCall)]
+	fake.setupLogrotateArgsForCall = append(fake.setupLogrotateArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 string
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("SetupLogrotate", []interface{}{arg1, arg2, arg3})
+	fake.setupLogrotateMutex.Unlock()
+	if fake.SetupLogrotateStub != nil {
+		return fake.SetupLogrotateStub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupLogrotateReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupLogrotateCallCount() int {
+	fake.setupLogrotateMutex.RLock()
+	defer fake.setupLogrotateMutex.RUnlock()
+	return len(fake.setupLogrotateArgsForCall)
+}
+
+func (fake *FakePlatform) SetupLogrotateCalls(stub func(string, string, string) error) {
+	fake.setupLogrotateMutex.Lock()
+	defer fake.setupLogrotateMutex.Unlock()
+	fake.SetupLogrotateStub = stub
+}
+
+func (fake *FakePlatform) SetupLogrotateArgsForCall(i int) (string, string, string) {
+	fake.setupLogrotateMutex.RLock()
+	defer fake.setupLogrotateMutex.RUnlock()
+	argsForCall := fake.setupLogrotateArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakePlatform) SetupLogrotateReturns(result1 error) {
+	fake.setupLogrotateMutex.Lock()
+	defer fake.setupLogrotateMutex.Unlock()
+	fake.SetupLogrotateStub = nil
+	fake.setupLogrotateReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupLogrotateReturnsOnCall(i int, result1 error) {
+	fake.setupLogrotateMutex.Lock()
+	defer fake.setupLogrotateMutex.Unlock()
+	fake.SetupLogrotateStub = nil
+	if fake.setupLogrotateReturnsOnCall == nil {
+		fake.setupLogrotateReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupLogrotateReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupMonitUser() error {
+	fake.setupMonitUserMutex.Lock()
+	ret, specificReturn := fake.setupMonitUserReturnsOnCall[len(fake.setupMonitUserArgsForCall)]
+	fake.setupMonitUserArgsForCall = append(fake.setupMonitUserArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupMonitUser", []interface{}{})
+	fake.setupMonitUserMutex.Unlock()
+	if fake.SetupMonitUserStub != nil {
+		return fake.SetupMonitUserStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupMonitUserReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupMonitUserCallCount() int {
+	fake.setupMonitUserMutex.RLock()
+	defer fake.setupMonitUserMutex.RUnlock()
+	return len(fake.setupMonitUserArgsForCall)
+}
+
+func (fake *FakePlatform) SetupMonitUserCalls(stub func() error) {
+	fake.setupMonitUserMutex.Lock()
+	defer fake.setupMonitUserMutex.Unlock()
+	fake.SetupMonitUserStub = stub
+}
+
+func (fake *FakePlatform) SetupMonitUserReturns(result1 error) {
+	fake.setupMonitUserMutex.Lock()
+	defer fake.setupMonitUserMutex.Unlock()
+	fake.SetupMonitUserStub = nil
+	fake.setupMonitUserReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupMonitUserReturnsOnCall(i int, result1 error) {
+	fake.setupMonitUserMutex.Lock()
+	defer fake.setupMonitUserMutex.Unlock()
+	fake.SetupMonitUserStub = nil
+	if fake.setupMonitUserReturnsOnCall == nil {
+		fake.setupMonitUserReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupMonitUserReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupNetworking(arg1 settings.Networks) error {
+	fake.setupNetworkingMutex.Lock()
+	ret, specificReturn := fake.setupNetworkingReturnsOnCall[len(fake.setupNetworkingArgsForCall)]
+	fake.setupNetworkingArgsForCall = append(fake.setupNetworkingArgsForCall, struct {
+		arg1 settings.Networks
+	}{arg1})
+	fake.recordInvocation("SetupNetworking", []interface{}{arg1})
+	fake.setupNetworkingMutex.Unlock()
+	if fake.SetupNetworkingStub != nil {
+		return fake.SetupNetworkingStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupNetworkingReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupNetworkingCallCount() int {
+	fake.setupNetworkingMutex.RLock()
+	defer fake.setupNetworkingMutex.RUnlock()
+	return len(fake.setupNetworkingArgsForCall)
+}
+
+func (fake *FakePlatform) SetupNetworkingCalls(stub func(settings.Networks) error) {
+	fake.setupNetworkingMutex.Lock()
+	defer fake.setupNetworkingMutex.Unlock()
+	fake.SetupNetworkingStub = stub
+}
+
+func (fake *FakePlatform) SetupNetworkingArgsForCall(i int) settings.Networks {
+	fake.setupNetworkingMutex.RLock()
+	defer fake.setupNetworkingMutex.RUnlock()
+	argsForCall := fake.setupNetworkingArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupNetworkingReturns(result1 error) {
+	fake.setupNetworkingMutex.Lock()
+	defer fake.setupNetworkingMutex.Unlock()
+	fake.SetupNetworkingStub = nil
+	fake.setupNetworkingReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupNetworkingReturnsOnCall(i int, result1 error) {
+	fake.setupNetworkingMutex.Lock()
+	defer fake.setupNetworkingMutex.Unlock()
+	fake.SetupNetworkingStub = nil
+	if fake.setupNetworkingReturnsOnCall == nil {
+		fake.setupNetworkingReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupNetworkingReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRawEphemeralDisks(arg1 []settings.DiskSettings) error {
+	var arg1Copy []settings.DiskSettings
+	if arg1 != nil {
+		arg1Copy = make([]settings.DiskSettings, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.setupRawEphemeralDisksMutex.Lock()
+	ret, specificReturn := fake.setupRawEphemeralDisksReturnsOnCall[len(fake.setupRawEphemeralDisksArgsForCall)]
+	fake.setupRawEphemeralDisksArgsForCall = append(fake.setupRawEphemeralDisksArgsForCall, struct {
+		arg1 []settings.DiskSettings
+	}{arg1Copy})
+	fake.recordInvocation("SetupRawEphemeralDisks", []interface{}{arg1Copy})
+	fake.setupRawEphemeralDisksMutex.Unlock()
+	if fake.SetupRawEphemeralDisksStub != nil {
+		return fake.SetupRawEphemeralDisksStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupRawEphemeralDisksReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupRawEphemeralDisksCallCount() int {
+	fake.setupRawEphemeralDisksMutex.RLock()
+	defer fake.setupRawEphemeralDisksMutex.RUnlock()
+	return len(fake.setupRawEphemeralDisksArgsForCall)
+}
+
+func (fake *FakePlatform) SetupRawEphemeralDisksCalls(stub func([]settings.DiskSettings) error) {
+	fake.setupRawEphemeralDisksMutex.Lock()
+	defer fake.setupRawEphemeralDisksMutex.Unlock()
+	fake.SetupRawEphemeralDisksStub = stub
+}
+
+func (fake *FakePlatform) SetupRawEphemeralDisksArgsForCall(i int) []settings.DiskSettings {
+	fake.setupRawEphemeralDisksMutex.RLock()
+	defer fake.setupRawEphemeralDisksMutex.RUnlock()
+	argsForCall := fake.setupRawEphemeralDisksArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupRawEphemeralDisksReturns(result1 error) {
+	fake.setupRawEphemeralDisksMutex.Lock()
+	defer fake.setupRawEphemeralDisksMutex.Unlock()
+	fake.SetupRawEphemeralDisksStub = nil
+	fake.setupRawEphemeralDisksReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRawEphemeralDisksReturnsOnCall(i int, result1 error) {
+	fake.setupRawEphemeralDisksMutex.Lock()
+	defer fake.setupRawEphemeralDisksMutex.Unlock()
+	fake.SetupRawEphemeralDisksStub = nil
+	if fake.setupRawEphemeralDisksReturnsOnCall == nil {
+		fake.setupRawEphemeralDisksReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupRawEphemeralDisksReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRecordsJSONPermission(arg1 string) error {
+	fake.setupRecordsJSONPermissionMutex.Lock()
+	ret, specificReturn := fake.setupRecordsJSONPermissionReturnsOnCall[len(fake.setupRecordsJSONPermissionArgsForCall)]
+	fake.setupRecordsJSONPermissionArgsForCall = append(fake.setupRecordsJSONPermissionArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("SetupRecordsJSONPermission", []interface{}{arg1})
+	fake.setupRecordsJSONPermissionMutex.Unlock()
+	if fake.SetupRecordsJSONPermissionStub != nil {
+		return fake.SetupRecordsJSONPermissionStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupRecordsJSONPermissionReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupRecordsJSONPermissionCallCount() int {
+	fake.setupRecordsJSONPermissionMutex.RLock()
+	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
+	return len(fake.setupRecordsJSONPermissionArgsForCall)
+}
+
+func (fake *FakePlatform) SetupRecordsJSONPermissionCalls(stub func(string) error) {
+	fake.setupRecordsJSONPermissionMutex.Lock()
+	defer fake.setupRecordsJSONPermissionMutex.Unlock()
+	fake.SetupRecordsJSONPermissionStub = stub
+}
+
+func (fake *FakePlatform) SetupRecordsJSONPermissionArgsForCall(i int) string {
+	fake.setupRecordsJSONPermissionMutex.RLock()
+	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
+	argsForCall := fake.setupRecordsJSONPermissionArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupRecordsJSONPermissionReturns(result1 error) {
+	fake.setupRecordsJSONPermissionMutex.Lock()
+	defer fake.setupRecordsJSONPermissionMutex.Unlock()
+	fake.SetupRecordsJSONPermissionStub = nil
+	fake.setupRecordsJSONPermissionReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRecordsJSONPermissionReturnsOnCall(i int, result1 error) {
+	fake.setupRecordsJSONPermissionMutex.Lock()
+	defer fake.setupRecordsJSONPermissionMutex.Unlock()
+	fake.SetupRecordsJSONPermissionStub = nil
+	if fake.setupRecordsJSONPermissionReturnsOnCall == nil {
+		fake.setupRecordsJSONPermissionReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupRecordsJSONPermissionReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRootDisk(arg1 string) error {
+	fake.setupRootDiskMutex.Lock()
+	ret, specificReturn := fake.setupRootDiskReturnsOnCall[len(fake.setupRootDiskArgsForCall)]
+	fake.setupRootDiskArgsForCall = append(fake.setupRootDiskArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("SetupRootDisk", []interface{}{arg1})
+	fake.setupRootDiskMutex.Unlock()
+	if fake.SetupRootDiskStub != nil {
+		return fake.SetupRootDiskStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupRootDiskReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupRootDiskCallCount() int {
+	fake.setupRootDiskMutex.RLock()
+	defer fake.setupRootDiskMutex.RUnlock()
+	return len(fake.setupRootDiskArgsForCall)
+}
+
+func (fake *FakePlatform) SetupRootDiskCalls(stub func(string) error) {
+	fake.setupRootDiskMutex.Lock()
+	defer fake.setupRootDiskMutex.Unlock()
+	fake.SetupRootDiskStub = stub
+}
+
+func (fake *FakePlatform) SetupRootDiskArgsForCall(i int) string {
+	fake.setupRootDiskMutex.RLock()
+	defer fake.setupRootDiskMutex.RUnlock()
+	argsForCall := fake.setupRootDiskArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupRootDiskReturns(result1 error) {
+	fake.setupRootDiskMutex.Lock()
+	defer fake.setupRootDiskMutex.Unlock()
+	fake.SetupRootDiskStub = nil
+	fake.setupRootDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRootDiskReturnsOnCall(i int, result1 error) {
+	fake.setupRootDiskMutex.Lock()
+	defer fake.setupRootDiskMutex.Unlock()
+	fake.SetupRootDiskStub = nil
+	if fake.setupRootDiskReturnsOnCall == nil {
+		fake.setupRootDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupRootDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRuntimeConfiguration() error {
+	fake.setupRuntimeConfigurationMutex.Lock()
+	ret, specificReturn := fake.setupRuntimeConfigurationReturnsOnCall[len(fake.setupRuntimeConfigurationArgsForCall)]
+	fake.setupRuntimeConfigurationArgsForCall = append(fake.setupRuntimeConfigurationArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupRuntimeConfiguration", []interface{}{})
+	fake.setupRuntimeConfigurationMutex.Unlock()
+	if fake.SetupRuntimeConfigurationStub != nil {
+		return fake.SetupRuntimeConfigurationStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupRuntimeConfigurationReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupRuntimeConfigurationCallCount() int {
+	fake.setupRuntimeConfigurationMutex.RLock()
+	defer fake.setupRuntimeConfigurationMutex.RUnlock()
+	return len(fake.setupRuntimeConfigurationArgsForCall)
+}
+
+func (fake *FakePlatform) SetupRuntimeConfigurationCalls(stub func() error) {
+	fake.setupRuntimeConfigurationMutex.Lock()
+	defer fake.setupRuntimeConfigurationMutex.Unlock()
+	fake.SetupRuntimeConfigurationStub = stub
+}
+
+func (fake *FakePlatform) SetupRuntimeConfigurationReturns(result1 error) {
+	fake.setupRuntimeConfigurationMutex.Lock()
+	defer fake.setupRuntimeConfigurationMutex.Unlock()
+	fake.SetupRuntimeConfigurationStub = nil
+	fake.setupRuntimeConfigurationReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRuntimeConfigurationReturnsOnCall(i int, result1 error) {
+	fake.setupRuntimeConfigurationMutex.Lock()
+	defer fake.setupRuntimeConfigurationMutex.Unlock()
+	fake.SetupRuntimeConfigurationStub = nil
+	if fake.setupRuntimeConfigurationReturnsOnCall == nil {
+		fake.setupRuntimeConfigurationReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupRuntimeConfigurationReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupSSH(arg1 []string, arg2 string) error {
+	var arg1Copy []string
+	if arg1 != nil {
+		arg1Copy = make([]string, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.setupSSHMutex.Lock()
+	ret, specificReturn := fake.setupSSHReturnsOnCall[len(fake.setupSSHArgsForCall)]
+	fake.setupSSHArgsForCall = append(fake.setupSSHArgsForCall, struct {
+		arg1 []string
+		arg2 string
+	}{arg1Copy, arg2})
+	fake.recordInvocation("SetupSSH", []interface{}{arg1Copy, arg2})
+	fake.setupSSHMutex.Unlock()
+	if fake.SetupSSHStub != nil {
+		return fake.SetupSSHStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupSSHReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupSSHCallCount() int {
+	fake.setupSSHMutex.RLock()
+	defer fake.setupSSHMutex.RUnlock()
+	return len(fake.setupSSHArgsForCall)
+}
+
+func (fake *FakePlatform) SetupSSHCalls(stub func([]string, string) error) {
+	fake.setupSSHMutex.Lock()
+	defer fake.setupSSHMutex.Unlock()
+	fake.SetupSSHStub = stub
+}
+
+func (fake *FakePlatform) SetupSSHArgsForCall(i int) ([]string, string) {
+	fake.setupSSHMutex.RLock()
+	defer fake.setupSSHMutex.RUnlock()
+	argsForCall := fake.setupSSHArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakePlatform) SetupSSHReturns(result1 error) {
+	fake.setupSSHMutex.Lock()
+	defer fake.setupSSHMutex.Unlock()
+	fake.SetupSSHStub = nil
+	fake.setupSSHReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupSSHReturnsOnCall(i int, result1 error) {
+	fake.setupSSHMutex.Lock()
+	defer fake.setupSSHMutex.Unlock()
+	fake.SetupSSHStub = nil
+	if fake.setupSSHReturnsOnCall == nil {
+		fake.setupSSHReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupSSHReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupSharedMemory() error {
+	fake.setupSharedMemoryMutex.Lock()
+	ret, specificReturn := fake.setupSharedMemoryReturnsOnCall[len(fake.setupSharedMemoryArgsForCall)]
+	fake.setupSharedMemoryArgsForCall = append(fake.setupSharedMemoryArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupSharedMemory", []interface{}{})
+	fake.setupSharedMemoryMutex.Unlock()
+	if fake.SetupSharedMemoryStub != nil {
+		return fake.SetupSharedMemoryStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupSharedMemoryReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupSharedMemoryCallCount() int {
+	fake.setupSharedMemoryMutex.RLock()
+	defer fake.setupSharedMemoryMutex.RUnlock()
+	return len(fake.setupSharedMemoryArgsForCall)
+}
+
+func (fake *FakePlatform) SetupSharedMemoryCalls(stub func() error) {
+	fake.setupSharedMemoryMutex.Lock()
+	defer fake.setupSharedMemoryMutex.Unlock()
+	fake.SetupSharedMemoryStub = stub
+}
+
+func (fake *FakePlatform) SetupSharedMemoryReturns(result1 error) {
+	fake.setupSharedMemoryMutex.Lock()
+	defer fake.setupSharedMemoryMutex.Unlock()
+	fake.SetupSharedMemoryStub = nil
+	fake.setupSharedMemoryReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupSharedMemoryReturnsOnCall(i int, result1 error) {
+	fake.setupSharedMemoryMutex.Lock()
+	defer fake.setupSharedMemoryMutex.Unlock()
+	fake.SetupSharedMemoryStub = nil
+	if fake.setupSharedMemoryReturnsOnCall == nil {
+		fake.setupSharedMemoryReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupSharedMemoryReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupTmpDir() error {
+	fake.setupTmpDirMutex.Lock()
+	ret, specificReturn := fake.setupTmpDirReturnsOnCall[len(fake.setupTmpDirArgsForCall)]
+	fake.setupTmpDirArgsForCall = append(fake.setupTmpDirArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupTmpDir", []interface{}{})
+	fake.setupTmpDirMutex.Unlock()
+	if fake.SetupTmpDirStub != nil {
+		return fake.SetupTmpDirStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupTmpDirReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupTmpDirCallCount() int {
+	fake.setupTmpDirMutex.RLock()
+	defer fake.setupTmpDirMutex.RUnlock()
+	return len(fake.setupTmpDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupTmpDirCalls(stub func() error) {
+	fake.setupTmpDirMutex.Lock()
+	defer fake.setupTmpDirMutex.Unlock()
+	fake.SetupTmpDirStub = stub
+}
+
+func (fake *FakePlatform) SetupTmpDirReturns(result1 error) {
+	fake.setupTmpDirMutex.Lock()
+	defer fake.setupTmpDirMutex.Unlock()
+	fake.SetupTmpDirStub = nil
+	fake.setupTmpDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupTmpDirReturnsOnCall(i int, result1 error) {
+	fake.setupTmpDirMutex.Lock()
+	defer fake.setupTmpDirMutex.Unlock()
+	fake.SetupTmpDirStub = nil
+	if fake.setupTmpDirReturnsOnCall == nil {
+		fake.setupTmpDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupTmpDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatform) Shutdown() error {
 	fake.shutdownMutex.Lock()
 	ret, specificReturn := fake.shutdownReturnsOnCall[len(fake.shutdownArgsForCall)]
-	fake.shutdownArgsForCall = append(fake.shutdownArgsForCall, struct{}{})
+	fake.shutdownArgsForCall = append(fake.shutdownArgsForCall, struct {
+	}{})
 	fake.recordInvocation("Shutdown", []interface{}{})
 	fake.shutdownMutex.Unlock()
 	if fake.ShutdownStub != nil {
@@ -2977,7 +3512,8 @@ func (fake *FakePlatform) Shutdown() error {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.shutdownReturns.result1
+	fakeReturns := fake.shutdownReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakePlatform) ShutdownCallCount() int {
@@ -2986,7 +3522,15 @@ func (fake *FakePlatform) ShutdownCallCount() int {
 	return len(fake.shutdownArgsForCall)
 }
 
+func (fake *FakePlatform) ShutdownCalls(stub func() error) {
+	fake.shutdownMutex.Lock()
+	defer fake.shutdownMutex.Unlock()
+	fake.ShutdownStub = stub
+}
+
 func (fake *FakePlatform) ShutdownReturns(result1 error) {
+	fake.shutdownMutex.Lock()
+	defer fake.shutdownMutex.Unlock()
 	fake.ShutdownStub = nil
 	fake.shutdownReturns = struct {
 		result1 error
@@ -2994,6 +3538,8 @@ func (fake *FakePlatform) ShutdownReturns(result1 error) {
 }
 
 func (fake *FakePlatform) ShutdownReturnsOnCall(i int, result1 error) {
+	fake.shutdownMutex.Lock()
+	defer fake.shutdownMutex.Unlock()
 	fake.ShutdownStub = nil
 	if fake.shutdownReturnsOnCall == nil {
 		fake.shutdownReturnsOnCall = make(map[int]struct {
@@ -3005,115 +3551,230 @@ func (fake *FakePlatform) ShutdownReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakePlatform) StartMonit() error {
+	fake.startMonitMutex.Lock()
+	ret, specificReturn := fake.startMonitReturnsOnCall[len(fake.startMonitArgsForCall)]
+	fake.startMonitArgsForCall = append(fake.startMonitArgsForCall, struct {
+	}{})
+	fake.recordInvocation("StartMonit", []interface{}{})
+	fake.startMonitMutex.Unlock()
+	if fake.StartMonitStub != nil {
+		return fake.StartMonitStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.startMonitReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) StartMonitCallCount() int {
+	fake.startMonitMutex.RLock()
+	defer fake.startMonitMutex.RUnlock()
+	return len(fake.startMonitArgsForCall)
+}
+
+func (fake *FakePlatform) StartMonitCalls(stub func() error) {
+	fake.startMonitMutex.Lock()
+	defer fake.startMonitMutex.Unlock()
+	fake.StartMonitStub = stub
+}
+
+func (fake *FakePlatform) StartMonitReturns(result1 error) {
+	fake.startMonitMutex.Lock()
+	defer fake.startMonitMutex.Unlock()
+	fake.StartMonitStub = nil
+	fake.startMonitReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) StartMonitReturnsOnCall(i int, result1 error) {
+	fake.startMonitMutex.Lock()
+	defer fake.startMonitMutex.Unlock()
+	fake.StartMonitStub = nil
+	if fake.startMonitReturnsOnCall == nil {
+		fake.startMonitReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.startMonitReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) UnmountPersistentDisk(arg1 settings.DiskSettings) (bool, error) {
+	fake.unmountPersistentDiskMutex.Lock()
+	ret, specificReturn := fake.unmountPersistentDiskReturnsOnCall[len(fake.unmountPersistentDiskArgsForCall)]
+	fake.unmountPersistentDiskArgsForCall = append(fake.unmountPersistentDiskArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	fake.recordInvocation("UnmountPersistentDisk", []interface{}{arg1})
+	fake.unmountPersistentDiskMutex.Unlock()
+	if fake.UnmountPersistentDiskStub != nil {
+		return fake.UnmountPersistentDiskStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.unmountPersistentDiskReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakePlatform) UnmountPersistentDiskCallCount() int {
+	fake.unmountPersistentDiskMutex.RLock()
+	defer fake.unmountPersistentDiskMutex.RUnlock()
+	return len(fake.unmountPersistentDiskArgsForCall)
+}
+
+func (fake *FakePlatform) UnmountPersistentDiskCalls(stub func(settings.DiskSettings) (bool, error)) {
+	fake.unmountPersistentDiskMutex.Lock()
+	defer fake.unmountPersistentDiskMutex.Unlock()
+	fake.UnmountPersistentDiskStub = stub
+}
+
+func (fake *FakePlatform) UnmountPersistentDiskArgsForCall(i int) settings.DiskSettings {
+	fake.unmountPersistentDiskMutex.RLock()
+	defer fake.unmountPersistentDiskMutex.RUnlock()
+	argsForCall := fake.unmountPersistentDiskArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) UnmountPersistentDiskReturns(result1 bool, result2 error) {
+	fake.unmountPersistentDiskMutex.Lock()
+	defer fake.unmountPersistentDiskMutex.Unlock()
+	fake.UnmountPersistentDiskStub = nil
+	fake.unmountPersistentDiskReturns = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakePlatform) UnmountPersistentDiskReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.unmountPersistentDiskMutex.Lock()
+	defer fake.unmountPersistentDiskMutex.Unlock()
+	fake.UnmountPersistentDiskStub = nil
+	if fake.unmountPersistentDiskReturnsOnCall == nil {
+		fake.unmountPersistentDiskReturnsOnCall = make(map[int]struct {
+			result1 bool
+			result2 error
+		})
+	}
+	fake.unmountPersistentDiskReturnsOnCall[i] = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getFsMutex.RLock()
-	defer fake.getFsMutex.RUnlock()
-	fake.getRunnerMutex.RLock()
-	defer fake.getRunnerMutex.RUnlock()
-	fake.getCompressorMutex.RLock()
-	defer fake.getCompressorMutex.RUnlock()
-	fake.getCopierMutex.RLock()
-	defer fake.getCopierMutex.RUnlock()
-	fake.getDirProviderMutex.RLock()
-	defer fake.getDirProviderMutex.RUnlock()
-	fake.getVitalsServiceMutex.RLock()
-	defer fake.getVitalsServiceMutex.RUnlock()
-	fake.getAuditLoggerMutex.RLock()
-	defer fake.getAuditLoggerMutex.RUnlock()
-	fake.getDevicePathResolverMutex.RLock()
-	defer fake.getDevicePathResolverMutex.RUnlock()
-	fake.createUserMutex.RLock()
-	defer fake.createUserMutex.RUnlock()
 	fake.addUserToGroupsMutex.RLock()
 	defer fake.addUserToGroupsMutex.RUnlock()
-	fake.deleteEphemeralUsersMatchingMutex.RLock()
-	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
-	fake.setupRootDiskMutex.RLock()
-	defer fake.setupRootDiskMutex.RUnlock()
-	fake.setupSSHMutex.RLock()
-	defer fake.setupSSHMutex.RUnlock()
-	fake.setUserPasswordMutex.RLock()
-	defer fake.setUserPasswordMutex.RUnlock()
-	fake.setupIPv6Mutex.RLock()
-	defer fake.setupIPv6Mutex.RUnlock()
-	fake.setupHostnameMutex.RLock()
-	defer fake.setupHostnameMutex.RUnlock()
-	fake.setupNetworkingMutex.RLock()
-	defer fake.setupNetworkingMutex.RUnlock()
-	fake.setupLogrotateMutex.RLock()
-	defer fake.setupLogrotateMutex.RUnlock()
-	fake.setTimeWithNtpServersMutex.RLock()
-	defer fake.setTimeWithNtpServersMutex.RUnlock()
-	fake.setupEphemeralDiskWithPathMutex.RLock()
-	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
-	fake.setupRawEphemeralDisksMutex.RLock()
-	defer fake.setupRawEphemeralDisksMutex.RUnlock()
-	fake.setupDataDirMutex.RLock()
-	defer fake.setupDataDirMutex.RUnlock()
-	fake.setupSharedMemoryMutex.RLock()
-	defer fake.setupSharedMemoryMutex.RUnlock()
-	fake.setupTmpDirMutex.RLock()
-	defer fake.setupTmpDirMutex.RUnlock()
-	fake.setupHomeDirMutex.RLock()
-	defer fake.setupHomeDirMutex.RUnlock()
-	fake.setupBlobsDirMutex.RLock()
-	defer fake.setupBlobsDirMutex.RUnlock()
-	fake.setupMonitUserMutex.RLock()
-	defer fake.setupMonitUserMutex.RUnlock()
-	fake.startMonitMutex.RLock()
-	defer fake.startMonitMutex.RUnlock()
-	fake.setupRuntimeConfigurationMutex.RLock()
-	defer fake.setupRuntimeConfigurationMutex.RUnlock()
-	fake.setupLogDirMutex.RLock()
-	defer fake.setupLogDirMutex.RUnlock()
-	fake.setupLoggingAndAuditingMutex.RLock()
-	defer fake.setupLoggingAndAuditingMutex.RUnlock()
-	fake.setupRecordsJSONPermissionMutex.RLock()
-	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
-	fake.mountPersistentDiskMutex.RLock()
-	defer fake.mountPersistentDiskMutex.RUnlock()
-	fake.unmountPersistentDiskMutex.RLock()
-	defer fake.unmountPersistentDiskMutex.RUnlock()
-	fake.migratePersistentDiskMutex.RLock()
-	defer fake.migratePersistentDiskMutex.RUnlock()
-	fake.getEphemeralDiskPathMutex.RLock()
-	defer fake.getEphemeralDiskPathMutex.RUnlock()
-	fake.isMountPointMutex.RLock()
-	defer fake.isMountPointMutex.RUnlock()
-	fake.isPersistentDiskMountedMutex.RLock()
-	defer fake.isPersistentDiskMountedMutex.RUnlock()
-	fake.isPersistentDiskMountableMutex.RLock()
-	defer fake.isPersistentDiskMountableMutex.RUnlock()
 	fake.associateDiskMutex.RLock()
 	defer fake.associateDiskMutex.RUnlock()
+	fake.createUserMutex.RLock()
+	defer fake.createUserMutex.RUnlock()
+	fake.deleteARPEntryWithIPMutex.RLock()
+	defer fake.deleteARPEntryWithIPMutex.RUnlock()
+	fake.deleteEphemeralUsersMatchingMutex.RLock()
+	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
+	fake.getAuditLoggerMutex.RLock()
+	defer fake.getAuditLoggerMutex.RUnlock()
+	fake.getCertManagerMutex.RLock()
+	defer fake.getCertManagerMutex.RUnlock()
+	fake.getCompressorMutex.RLock()
+	defer fake.getCompressorMutex.RUnlock()
+	fake.getConfiguredNetworkInterfacesMutex.RLock()
+	defer fake.getConfiguredNetworkInterfacesMutex.RUnlock()
+	fake.getCopierMutex.RLock()
+	defer fake.getCopierMutex.RUnlock()
+	fake.getDefaultNetworkMutex.RLock()
+	defer fake.getDefaultNetworkMutex.RUnlock()
+	fake.getDevicePathResolverMutex.RLock()
+	defer fake.getDevicePathResolverMutex.RUnlock()
+	fake.getDirProviderMutex.RLock()
+	defer fake.getDirProviderMutex.RUnlock()
+	fake.getEphemeralDiskPathMutex.RLock()
+	defer fake.getEphemeralDiskPathMutex.RUnlock()
 	fake.getFileContentsFromCDROMMutex.RLock()
 	defer fake.getFileContentsFromCDROMMutex.RUnlock()
 	fake.getFilesContentsFromDiskMutex.RLock()
 	defer fake.getFilesContentsFromDiskMutex.RUnlock()
-	fake.getDefaultNetworkMutex.RLock()
-	defer fake.getDefaultNetworkMutex.RUnlock()
-	fake.getConfiguredNetworkInterfacesMutex.RLock()
-	defer fake.getConfiguredNetworkInterfacesMutex.RUnlock()
-	fake.prepareForNetworkingChangeMutex.RLock()
-	defer fake.prepareForNetworkingChangeMutex.RUnlock()
-	fake.deleteARPEntryWithIPMutex.RLock()
-	defer fake.deleteARPEntryWithIPMutex.RUnlock()
-	fake.saveDNSRecordsMutex.RLock()
-	defer fake.saveDNSRecordsMutex.RUnlock()
-	fake.getMonitCredentialsMutex.RLock()
-	defer fake.getMonitCredentialsMutex.RUnlock()
-	fake.getCertManagerMutex.RLock()
-	defer fake.getCertManagerMutex.RUnlock()
+	fake.getFsMutex.RLock()
+	defer fake.getFsMutex.RUnlock()
 	fake.getHostPublicKeyMutex.RLock()
 	defer fake.getHostPublicKeyMutex.RUnlock()
+	fake.getMonitCredentialsMutex.RLock()
+	defer fake.getMonitCredentialsMutex.RUnlock()
+	fake.getRunnerMutex.RLock()
+	defer fake.getRunnerMutex.RUnlock()
+	fake.getVitalsServiceMutex.RLock()
+	defer fake.getVitalsServiceMutex.RUnlock()
+	fake.isMountPointMutex.RLock()
+	defer fake.isMountPointMutex.RUnlock()
+	fake.isPersistentDiskMountableMutex.RLock()
+	defer fake.isPersistentDiskMountableMutex.RUnlock()
+	fake.isPersistentDiskMountedMutex.RLock()
+	defer fake.isPersistentDiskMountedMutex.RUnlock()
+	fake.migratePersistentDiskMutex.RLock()
+	defer fake.migratePersistentDiskMutex.RUnlock()
+	fake.mountPersistentDiskMutex.RLock()
+	defer fake.mountPersistentDiskMutex.RUnlock()
+	fake.prepareForNetworkingChangeMutex.RLock()
+	defer fake.prepareForNetworkingChangeMutex.RUnlock()
 	fake.removeDevToolsMutex.RLock()
 	defer fake.removeDevToolsMutex.RUnlock()
 	fake.removeStaticLibrariesMutex.RLock()
 	defer fake.removeStaticLibrariesMutex.RUnlock()
+	fake.saveDNSRecordsMutex.RLock()
+	defer fake.saveDNSRecordsMutex.RUnlock()
+	fake.setTimeWithNtpServersMutex.RLock()
+	defer fake.setTimeWithNtpServersMutex.RUnlock()
+	fake.setUserPasswordMutex.RLock()
+	defer fake.setUserPasswordMutex.RUnlock()
+	fake.setupBlobsDirMutex.RLock()
+	defer fake.setupBlobsDirMutex.RUnlock()
+	fake.setupDataDirMutex.RLock()
+	defer fake.setupDataDirMutex.RUnlock()
+	fake.setupEphemeralDiskWithPathMutex.RLock()
+	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
+	fake.setupHomeDirMutex.RLock()
+	defer fake.setupHomeDirMutex.RUnlock()
+	fake.setupHostnameMutex.RLock()
+	defer fake.setupHostnameMutex.RUnlock()
+	fake.setupIPv6Mutex.RLock()
+	defer fake.setupIPv6Mutex.RUnlock()
+	fake.setupLogDirMutex.RLock()
+	defer fake.setupLogDirMutex.RUnlock()
+	fake.setupLoggingAndAuditingMutex.RLock()
+	defer fake.setupLoggingAndAuditingMutex.RUnlock()
+	fake.setupLogrotateMutex.RLock()
+	defer fake.setupLogrotateMutex.RUnlock()
+	fake.setupMonitUserMutex.RLock()
+	defer fake.setupMonitUserMutex.RUnlock()
+	fake.setupNetworkingMutex.RLock()
+	defer fake.setupNetworkingMutex.RUnlock()
+	fake.setupRawEphemeralDisksMutex.RLock()
+	defer fake.setupRawEphemeralDisksMutex.RUnlock()
+	fake.setupRecordsJSONPermissionMutex.RLock()
+	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
+	fake.setupRootDiskMutex.RLock()
+	defer fake.setupRootDiskMutex.RUnlock()
+	fake.setupRuntimeConfigurationMutex.RLock()
+	defer fake.setupRuntimeConfigurationMutex.RUnlock()
+	fake.setupSSHMutex.RLock()
+	defer fake.setupSSHMutex.RUnlock()
+	fake.setupSharedMemoryMutex.RLock()
+	defer fake.setupSharedMemoryMutex.RUnlock()
+	fake.setupTmpDirMutex.RLock()
+	defer fake.setupTmpDirMutex.RUnlock()
 	fake.shutdownMutex.RLock()
 	defer fake.shutdownMutex.RUnlock()
+	fake.startMonitMutex.RLock()
+	defer fake.startMonitMutex.RUnlock()
+	fake.unmountPersistentDiskMutex.RLock()
+	defer fake.unmountPersistentDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

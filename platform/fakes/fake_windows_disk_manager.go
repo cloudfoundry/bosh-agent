@@ -2,17 +2,18 @@
 package fakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	platform "github.com/cloudfoundry/bosh-agent/platform"
+	disk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
 type FakeWindowsDiskManager struct {
 	GetFormatterStub        func() disk.WindowsDiskFormatter
 	getFormatterMutex       sync.RWMutex
-	getFormatterArgsForCall []struct{}
-	getFormatterReturns     struct {
+	getFormatterArgsForCall []struct {
+	}
+	getFormatterReturns struct {
 		result1 disk.WindowsDiskFormatter
 	}
 	getFormatterReturnsOnCall map[int]struct {
@@ -20,8 +21,9 @@ type FakeWindowsDiskManager struct {
 	}
 	GetLinkerStub        func() disk.WindowsDiskLinker
 	getLinkerMutex       sync.RWMutex
-	getLinkerArgsForCall []struct{}
-	getLinkerReturns     struct {
+	getLinkerArgsForCall []struct {
+	}
+	getLinkerReturns struct {
 		result1 disk.WindowsDiskLinker
 	}
 	getLinkerReturnsOnCall map[int]struct {
@@ -29,8 +31,9 @@ type FakeWindowsDiskManager struct {
 	}
 	GetPartitionerStub        func() disk.WindowsDiskPartitioner
 	getPartitionerMutex       sync.RWMutex
-	getPartitionerArgsForCall []struct{}
-	getPartitionerReturns     struct {
+	getPartitionerArgsForCall []struct {
+	}
+	getPartitionerReturns struct {
 		result1 disk.WindowsDiskPartitioner
 	}
 	getPartitionerReturnsOnCall map[int]struct {
@@ -38,8 +41,9 @@ type FakeWindowsDiskManager struct {
 	}
 	GetProtectorStub        func() disk.WindowsDiskProtector
 	getProtectorMutex       sync.RWMutex
-	getProtectorArgsForCall []struct{}
-	getProtectorReturns     struct {
+	getProtectorArgsForCall []struct {
+	}
+	getProtectorReturns struct {
 		result1 disk.WindowsDiskProtector
 	}
 	getProtectorReturnsOnCall map[int]struct {
@@ -52,7 +56,8 @@ type FakeWindowsDiskManager struct {
 func (fake *FakeWindowsDiskManager) GetFormatter() disk.WindowsDiskFormatter {
 	fake.getFormatterMutex.Lock()
 	ret, specificReturn := fake.getFormatterReturnsOnCall[len(fake.getFormatterArgsForCall)]
-	fake.getFormatterArgsForCall = append(fake.getFormatterArgsForCall, struct{}{})
+	fake.getFormatterArgsForCall = append(fake.getFormatterArgsForCall, struct {
+	}{})
 	fake.recordInvocation("GetFormatter", []interface{}{})
 	fake.getFormatterMutex.Unlock()
 	if fake.GetFormatterStub != nil {
@@ -61,7 +66,8 @@ func (fake *FakeWindowsDiskManager) GetFormatter() disk.WindowsDiskFormatter {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getFormatterReturns.result1
+	fakeReturns := fake.getFormatterReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeWindowsDiskManager) GetFormatterCallCount() int {
@@ -70,7 +76,15 @@ func (fake *FakeWindowsDiskManager) GetFormatterCallCount() int {
 	return len(fake.getFormatterArgsForCall)
 }
 
+func (fake *FakeWindowsDiskManager) GetFormatterCalls(stub func() disk.WindowsDiskFormatter) {
+	fake.getFormatterMutex.Lock()
+	defer fake.getFormatterMutex.Unlock()
+	fake.GetFormatterStub = stub
+}
+
 func (fake *FakeWindowsDiskManager) GetFormatterReturns(result1 disk.WindowsDiskFormatter) {
+	fake.getFormatterMutex.Lock()
+	defer fake.getFormatterMutex.Unlock()
 	fake.GetFormatterStub = nil
 	fake.getFormatterReturns = struct {
 		result1 disk.WindowsDiskFormatter
@@ -78,6 +92,8 @@ func (fake *FakeWindowsDiskManager) GetFormatterReturns(result1 disk.WindowsDisk
 }
 
 func (fake *FakeWindowsDiskManager) GetFormatterReturnsOnCall(i int, result1 disk.WindowsDiskFormatter) {
+	fake.getFormatterMutex.Lock()
+	defer fake.getFormatterMutex.Unlock()
 	fake.GetFormatterStub = nil
 	if fake.getFormatterReturnsOnCall == nil {
 		fake.getFormatterReturnsOnCall = make(map[int]struct {
@@ -92,7 +108,8 @@ func (fake *FakeWindowsDiskManager) GetFormatterReturnsOnCall(i int, result1 dis
 func (fake *FakeWindowsDiskManager) GetLinker() disk.WindowsDiskLinker {
 	fake.getLinkerMutex.Lock()
 	ret, specificReturn := fake.getLinkerReturnsOnCall[len(fake.getLinkerArgsForCall)]
-	fake.getLinkerArgsForCall = append(fake.getLinkerArgsForCall, struct{}{})
+	fake.getLinkerArgsForCall = append(fake.getLinkerArgsForCall, struct {
+	}{})
 	fake.recordInvocation("GetLinker", []interface{}{})
 	fake.getLinkerMutex.Unlock()
 	if fake.GetLinkerStub != nil {
@@ -101,7 +118,8 @@ func (fake *FakeWindowsDiskManager) GetLinker() disk.WindowsDiskLinker {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getLinkerReturns.result1
+	fakeReturns := fake.getLinkerReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeWindowsDiskManager) GetLinkerCallCount() int {
@@ -110,7 +128,15 @@ func (fake *FakeWindowsDiskManager) GetLinkerCallCount() int {
 	return len(fake.getLinkerArgsForCall)
 }
 
+func (fake *FakeWindowsDiskManager) GetLinkerCalls(stub func() disk.WindowsDiskLinker) {
+	fake.getLinkerMutex.Lock()
+	defer fake.getLinkerMutex.Unlock()
+	fake.GetLinkerStub = stub
+}
+
 func (fake *FakeWindowsDiskManager) GetLinkerReturns(result1 disk.WindowsDiskLinker) {
+	fake.getLinkerMutex.Lock()
+	defer fake.getLinkerMutex.Unlock()
 	fake.GetLinkerStub = nil
 	fake.getLinkerReturns = struct {
 		result1 disk.WindowsDiskLinker
@@ -118,6 +144,8 @@ func (fake *FakeWindowsDiskManager) GetLinkerReturns(result1 disk.WindowsDiskLin
 }
 
 func (fake *FakeWindowsDiskManager) GetLinkerReturnsOnCall(i int, result1 disk.WindowsDiskLinker) {
+	fake.getLinkerMutex.Lock()
+	defer fake.getLinkerMutex.Unlock()
 	fake.GetLinkerStub = nil
 	if fake.getLinkerReturnsOnCall == nil {
 		fake.getLinkerReturnsOnCall = make(map[int]struct {
@@ -132,7 +160,8 @@ func (fake *FakeWindowsDiskManager) GetLinkerReturnsOnCall(i int, result1 disk.W
 func (fake *FakeWindowsDiskManager) GetPartitioner() disk.WindowsDiskPartitioner {
 	fake.getPartitionerMutex.Lock()
 	ret, specificReturn := fake.getPartitionerReturnsOnCall[len(fake.getPartitionerArgsForCall)]
-	fake.getPartitionerArgsForCall = append(fake.getPartitionerArgsForCall, struct{}{})
+	fake.getPartitionerArgsForCall = append(fake.getPartitionerArgsForCall, struct {
+	}{})
 	fake.recordInvocation("GetPartitioner", []interface{}{})
 	fake.getPartitionerMutex.Unlock()
 	if fake.GetPartitionerStub != nil {
@@ -141,7 +170,8 @@ func (fake *FakeWindowsDiskManager) GetPartitioner() disk.WindowsDiskPartitioner
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getPartitionerReturns.result1
+	fakeReturns := fake.getPartitionerReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeWindowsDiskManager) GetPartitionerCallCount() int {
@@ -150,7 +180,15 @@ func (fake *FakeWindowsDiskManager) GetPartitionerCallCount() int {
 	return len(fake.getPartitionerArgsForCall)
 }
 
+func (fake *FakeWindowsDiskManager) GetPartitionerCalls(stub func() disk.WindowsDiskPartitioner) {
+	fake.getPartitionerMutex.Lock()
+	defer fake.getPartitionerMutex.Unlock()
+	fake.GetPartitionerStub = stub
+}
+
 func (fake *FakeWindowsDiskManager) GetPartitionerReturns(result1 disk.WindowsDiskPartitioner) {
+	fake.getPartitionerMutex.Lock()
+	defer fake.getPartitionerMutex.Unlock()
 	fake.GetPartitionerStub = nil
 	fake.getPartitionerReturns = struct {
 		result1 disk.WindowsDiskPartitioner
@@ -158,6 +196,8 @@ func (fake *FakeWindowsDiskManager) GetPartitionerReturns(result1 disk.WindowsDi
 }
 
 func (fake *FakeWindowsDiskManager) GetPartitionerReturnsOnCall(i int, result1 disk.WindowsDiskPartitioner) {
+	fake.getPartitionerMutex.Lock()
+	defer fake.getPartitionerMutex.Unlock()
 	fake.GetPartitionerStub = nil
 	if fake.getPartitionerReturnsOnCall == nil {
 		fake.getPartitionerReturnsOnCall = make(map[int]struct {
@@ -172,7 +212,8 @@ func (fake *FakeWindowsDiskManager) GetPartitionerReturnsOnCall(i int, result1 d
 func (fake *FakeWindowsDiskManager) GetProtector() disk.WindowsDiskProtector {
 	fake.getProtectorMutex.Lock()
 	ret, specificReturn := fake.getProtectorReturnsOnCall[len(fake.getProtectorArgsForCall)]
-	fake.getProtectorArgsForCall = append(fake.getProtectorArgsForCall, struct{}{})
+	fake.getProtectorArgsForCall = append(fake.getProtectorArgsForCall, struct {
+	}{})
 	fake.recordInvocation("GetProtector", []interface{}{})
 	fake.getProtectorMutex.Unlock()
 	if fake.GetProtectorStub != nil {
@@ -181,7 +222,8 @@ func (fake *FakeWindowsDiskManager) GetProtector() disk.WindowsDiskProtector {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getProtectorReturns.result1
+	fakeReturns := fake.getProtectorReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeWindowsDiskManager) GetProtectorCallCount() int {
@@ -190,7 +232,15 @@ func (fake *FakeWindowsDiskManager) GetProtectorCallCount() int {
 	return len(fake.getProtectorArgsForCall)
 }
 
+func (fake *FakeWindowsDiskManager) GetProtectorCalls(stub func() disk.WindowsDiskProtector) {
+	fake.getProtectorMutex.Lock()
+	defer fake.getProtectorMutex.Unlock()
+	fake.GetProtectorStub = stub
+}
+
 func (fake *FakeWindowsDiskManager) GetProtectorReturns(result1 disk.WindowsDiskProtector) {
+	fake.getProtectorMutex.Lock()
+	defer fake.getProtectorMutex.Unlock()
 	fake.GetProtectorStub = nil
 	fake.getProtectorReturns = struct {
 		result1 disk.WindowsDiskProtector
@@ -198,6 +248,8 @@ func (fake *FakeWindowsDiskManager) GetProtectorReturns(result1 disk.WindowsDisk
 }
 
 func (fake *FakeWindowsDiskManager) GetProtectorReturnsOnCall(i int, result1 disk.WindowsDiskProtector) {
+	fake.getProtectorMutex.Lock()
+	defer fake.getProtectorMutex.Unlock()
 	fake.GetProtectorStub = nil
 	if fake.getProtectorReturnsOnCall == nil {
 		fake.getProtectorReturnsOnCall = make(map[int]struct {

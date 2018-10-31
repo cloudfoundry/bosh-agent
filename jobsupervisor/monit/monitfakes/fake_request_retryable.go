@@ -2,17 +2,18 @@
 package monitfakes
 
 import (
-	"net/http"
-	"sync"
+	http "net/http"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	monit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 )
 
 type FakeRequestRetryable struct {
 	AttemptStub        func() (bool, error)
 	attemptMutex       sync.RWMutex
-	attemptArgsForCall []struct{}
-	attemptReturns     struct {
+	attemptArgsForCall []struct {
+	}
+	attemptReturns struct {
 		result1 bool
 		result2 error
 	}
@@ -22,8 +23,9 @@ type FakeRequestRetryable struct {
 	}
 	ResponseStub        func() *http.Response
 	responseMutex       sync.RWMutex
-	responseArgsForCall []struct{}
-	responseReturns     struct {
+	responseArgsForCall []struct {
+	}
+	responseReturns struct {
 		result1 *http.Response
 	}
 	responseReturnsOnCall map[int]struct {
@@ -36,7 +38,8 @@ type FakeRequestRetryable struct {
 func (fake *FakeRequestRetryable) Attempt() (bool, error) {
 	fake.attemptMutex.Lock()
 	ret, specificReturn := fake.attemptReturnsOnCall[len(fake.attemptArgsForCall)]
-	fake.attemptArgsForCall = append(fake.attemptArgsForCall, struct{}{})
+	fake.attemptArgsForCall = append(fake.attemptArgsForCall, struct {
+	}{})
 	fake.recordInvocation("Attempt", []interface{}{})
 	fake.attemptMutex.Unlock()
 	if fake.AttemptStub != nil {
@@ -45,7 +48,8 @@ func (fake *FakeRequestRetryable) Attempt() (bool, error) {
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.attemptReturns.result1, fake.attemptReturns.result2
+	fakeReturns := fake.attemptReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeRequestRetryable) AttemptCallCount() int {
@@ -54,7 +58,15 @@ func (fake *FakeRequestRetryable) AttemptCallCount() int {
 	return len(fake.attemptArgsForCall)
 }
 
+func (fake *FakeRequestRetryable) AttemptCalls(stub func() (bool, error)) {
+	fake.attemptMutex.Lock()
+	defer fake.attemptMutex.Unlock()
+	fake.AttemptStub = stub
+}
+
 func (fake *FakeRequestRetryable) AttemptReturns(result1 bool, result2 error) {
+	fake.attemptMutex.Lock()
+	defer fake.attemptMutex.Unlock()
 	fake.AttemptStub = nil
 	fake.attemptReturns = struct {
 		result1 bool
@@ -63,6 +75,8 @@ func (fake *FakeRequestRetryable) AttemptReturns(result1 bool, result2 error) {
 }
 
 func (fake *FakeRequestRetryable) AttemptReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.attemptMutex.Lock()
+	defer fake.attemptMutex.Unlock()
 	fake.AttemptStub = nil
 	if fake.attemptReturnsOnCall == nil {
 		fake.attemptReturnsOnCall = make(map[int]struct {
@@ -79,7 +93,8 @@ func (fake *FakeRequestRetryable) AttemptReturnsOnCall(i int, result1 bool, resu
 func (fake *FakeRequestRetryable) Response() *http.Response {
 	fake.responseMutex.Lock()
 	ret, specificReturn := fake.responseReturnsOnCall[len(fake.responseArgsForCall)]
-	fake.responseArgsForCall = append(fake.responseArgsForCall, struct{}{})
+	fake.responseArgsForCall = append(fake.responseArgsForCall, struct {
+	}{})
 	fake.recordInvocation("Response", []interface{}{})
 	fake.responseMutex.Unlock()
 	if fake.ResponseStub != nil {
@@ -88,7 +103,8 @@ func (fake *FakeRequestRetryable) Response() *http.Response {
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.responseReturns.result1
+	fakeReturns := fake.responseReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeRequestRetryable) ResponseCallCount() int {
@@ -97,7 +113,15 @@ func (fake *FakeRequestRetryable) ResponseCallCount() int {
 	return len(fake.responseArgsForCall)
 }
 
+func (fake *FakeRequestRetryable) ResponseCalls(stub func() *http.Response) {
+	fake.responseMutex.Lock()
+	defer fake.responseMutex.Unlock()
+	fake.ResponseStub = stub
+}
+
 func (fake *FakeRequestRetryable) ResponseReturns(result1 *http.Response) {
+	fake.responseMutex.Lock()
+	defer fake.responseMutex.Unlock()
 	fake.ResponseStub = nil
 	fake.responseReturns = struct {
 		result1 *http.Response
@@ -105,6 +129,8 @@ func (fake *FakeRequestRetryable) ResponseReturns(result1 *http.Response) {
 }
 
 func (fake *FakeRequestRetryable) ResponseReturnsOnCall(i int, result1 *http.Response) {
+	fake.responseMutex.Lock()
+	defer fake.responseMutex.Unlock()
 	fake.ResponseStub = nil
 	if fake.responseReturnsOnCall == nil {
 		fake.responseReturnsOnCall = make(map[int]struct {

@@ -2,17 +2,17 @@
 package monitfakes
 
 import (
-	"net/http"
-	"sync"
+	http "net/http"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	monit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 )
 
 type FakeHTTPClient struct {
-	DoStub        func(request *http.Request) (*http.Response, error)
+	DoStub        func(*http.Request) (*http.Response, error)
 	doMutex       sync.RWMutex
 	doArgsForCall []struct {
-		request *http.Request
+		arg1 *http.Request
 	}
 	doReturns struct {
 		result1 *http.Response
@@ -26,21 +26,22 @@ type FakeHTTPClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeHTTPClient) Do(request *http.Request) (*http.Response, error) {
+func (fake *FakeHTTPClient) Do(arg1 *http.Request) (*http.Response, error) {
 	fake.doMutex.Lock()
 	ret, specificReturn := fake.doReturnsOnCall[len(fake.doArgsForCall)]
 	fake.doArgsForCall = append(fake.doArgsForCall, struct {
-		request *http.Request
-	}{request})
-	fake.recordInvocation("Do", []interface{}{request})
+		arg1 *http.Request
+	}{arg1})
+	fake.recordInvocation("Do", []interface{}{arg1})
 	fake.doMutex.Unlock()
 	if fake.DoStub != nil {
-		return fake.DoStub(request)
+		return fake.DoStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.doReturns.result1, fake.doReturns.result2
+	fakeReturns := fake.doReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeHTTPClient) DoCallCount() int {
@@ -49,13 +50,22 @@ func (fake *FakeHTTPClient) DoCallCount() int {
 	return len(fake.doArgsForCall)
 }
 
+func (fake *FakeHTTPClient) DoCalls(stub func(*http.Request) (*http.Response, error)) {
+	fake.doMutex.Lock()
+	defer fake.doMutex.Unlock()
+	fake.DoStub = stub
+}
+
 func (fake *FakeHTTPClient) DoArgsForCall(i int) *http.Request {
 	fake.doMutex.RLock()
 	defer fake.doMutex.RUnlock()
-	return fake.doArgsForCall[i].request
+	argsForCall := fake.doArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeHTTPClient) DoReturns(result1 *http.Response, result2 error) {
+	fake.doMutex.Lock()
+	defer fake.doMutex.Unlock()
 	fake.DoStub = nil
 	fake.doReturns = struct {
 		result1 *http.Response
@@ -64,6 +74,8 @@ func (fake *FakeHTTPClient) DoReturns(result1 *http.Response, result2 error) {
 }
 
 func (fake *FakeHTTPClient) DoReturnsOnCall(i int, result1 *http.Response, result2 error) {
+	fake.doMutex.Lock()
+	defer fake.doMutex.Unlock()
 	fake.DoStub = nil
 	if fake.doReturnsOnCall == nil {
 		fake.doReturnsOnCall = make(map[int]struct {

@@ -2,16 +2,28 @@
 package fakes
 
 import (
-	"sync"
+	sync "sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	disk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
 type FakeWindowsDiskLinker struct {
-	LinkTargetStub        func(location string) (target string, err error)
+	LinkStub        func(string, string) error
+	linkMutex       sync.RWMutex
+	linkArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	linkReturns struct {
+		result1 error
+	}
+	linkReturnsOnCall map[int]struct {
+		result1 error
+	}
+	LinkTargetStub        func(string) (string, error)
 	linkTargetMutex       sync.RWMutex
 	linkTargetArgsForCall []struct {
-		location string
+		arg1 string
 	}
 	linkTargetReturns struct {
 		result1 string
@@ -21,37 +33,87 @@ type FakeWindowsDiskLinker struct {
 		result1 string
 		result2 error
 	}
-	LinkStub        func(location, target string) error
-	linkMutex       sync.RWMutex
-	linkArgsForCall []struct {
-		location string
-		target   string
-	}
-	linkReturns struct {
-		result1 error
-	}
-	linkReturnsOnCall map[int]struct {
-		result1 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeWindowsDiskLinker) LinkTarget(location string) (target string, err error) {
+func (fake *FakeWindowsDiskLinker) Link(arg1 string, arg2 string) error {
+	fake.linkMutex.Lock()
+	ret, specificReturn := fake.linkReturnsOnCall[len(fake.linkArgsForCall)]
+	fake.linkArgsForCall = append(fake.linkArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("Link", []interface{}{arg1, arg2})
+	fake.linkMutex.Unlock()
+	if fake.LinkStub != nil {
+		return fake.LinkStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.linkReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeWindowsDiskLinker) LinkCallCount() int {
+	fake.linkMutex.RLock()
+	defer fake.linkMutex.RUnlock()
+	return len(fake.linkArgsForCall)
+}
+
+func (fake *FakeWindowsDiskLinker) LinkCalls(stub func(string, string) error) {
+	fake.linkMutex.Lock()
+	defer fake.linkMutex.Unlock()
+	fake.LinkStub = stub
+}
+
+func (fake *FakeWindowsDiskLinker) LinkArgsForCall(i int) (string, string) {
+	fake.linkMutex.RLock()
+	defer fake.linkMutex.RUnlock()
+	argsForCall := fake.linkArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeWindowsDiskLinker) LinkReturns(result1 error) {
+	fake.linkMutex.Lock()
+	defer fake.linkMutex.Unlock()
+	fake.LinkStub = nil
+	fake.linkReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeWindowsDiskLinker) LinkReturnsOnCall(i int, result1 error) {
+	fake.linkMutex.Lock()
+	defer fake.linkMutex.Unlock()
+	fake.LinkStub = nil
+	if fake.linkReturnsOnCall == nil {
+		fake.linkReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.linkReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeWindowsDiskLinker) LinkTarget(arg1 string) (string, error) {
 	fake.linkTargetMutex.Lock()
 	ret, specificReturn := fake.linkTargetReturnsOnCall[len(fake.linkTargetArgsForCall)]
 	fake.linkTargetArgsForCall = append(fake.linkTargetArgsForCall, struct {
-		location string
-	}{location})
-	fake.recordInvocation("LinkTarget", []interface{}{location})
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("LinkTarget", []interface{}{arg1})
 	fake.linkTargetMutex.Unlock()
 	if fake.LinkTargetStub != nil {
-		return fake.LinkTargetStub(location)
+		return fake.LinkTargetStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.linkTargetReturns.result1, fake.linkTargetReturns.result2
+	fakeReturns := fake.linkTargetReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeWindowsDiskLinker) LinkTargetCallCount() int {
@@ -60,13 +122,22 @@ func (fake *FakeWindowsDiskLinker) LinkTargetCallCount() int {
 	return len(fake.linkTargetArgsForCall)
 }
 
+func (fake *FakeWindowsDiskLinker) LinkTargetCalls(stub func(string) (string, error)) {
+	fake.linkTargetMutex.Lock()
+	defer fake.linkTargetMutex.Unlock()
+	fake.LinkTargetStub = stub
+}
+
 func (fake *FakeWindowsDiskLinker) LinkTargetArgsForCall(i int) string {
 	fake.linkTargetMutex.RLock()
 	defer fake.linkTargetMutex.RUnlock()
-	return fake.linkTargetArgsForCall[i].location
+	argsForCall := fake.linkTargetArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeWindowsDiskLinker) LinkTargetReturns(result1 string, result2 error) {
+	fake.linkTargetMutex.Lock()
+	defer fake.linkTargetMutex.Unlock()
 	fake.LinkTargetStub = nil
 	fake.linkTargetReturns = struct {
 		result1 string
@@ -75,6 +146,8 @@ func (fake *FakeWindowsDiskLinker) LinkTargetReturns(result1 string, result2 err
 }
 
 func (fake *FakeWindowsDiskLinker) LinkTargetReturnsOnCall(i int, result1 string, result2 error) {
+	fake.linkTargetMutex.Lock()
+	defer fake.linkTargetMutex.Unlock()
 	fake.LinkTargetStub = nil
 	if fake.linkTargetReturnsOnCall == nil {
 		fake.linkTargetReturnsOnCall = make(map[int]struct {
@@ -88,62 +161,13 @@ func (fake *FakeWindowsDiskLinker) LinkTargetReturnsOnCall(i int, result1 string
 	}{result1, result2}
 }
 
-func (fake *FakeWindowsDiskLinker) Link(location string, target string) error {
-	fake.linkMutex.Lock()
-	ret, specificReturn := fake.linkReturnsOnCall[len(fake.linkArgsForCall)]
-	fake.linkArgsForCall = append(fake.linkArgsForCall, struct {
-		location string
-		target   string
-	}{location, target})
-	fake.recordInvocation("Link", []interface{}{location, target})
-	fake.linkMutex.Unlock()
-	if fake.LinkStub != nil {
-		return fake.LinkStub(location, target)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.linkReturns.result1
-}
-
-func (fake *FakeWindowsDiskLinker) LinkCallCount() int {
-	fake.linkMutex.RLock()
-	defer fake.linkMutex.RUnlock()
-	return len(fake.linkArgsForCall)
-}
-
-func (fake *FakeWindowsDiskLinker) LinkArgsForCall(i int) (string, string) {
-	fake.linkMutex.RLock()
-	defer fake.linkMutex.RUnlock()
-	return fake.linkArgsForCall[i].location, fake.linkArgsForCall[i].target
-}
-
-func (fake *FakeWindowsDiskLinker) LinkReturns(result1 error) {
-	fake.LinkStub = nil
-	fake.linkReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeWindowsDiskLinker) LinkReturnsOnCall(i int, result1 error) {
-	fake.LinkStub = nil
-	if fake.linkReturnsOnCall == nil {
-		fake.linkReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.linkReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
 func (fake *FakeWindowsDiskLinker) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.linkTargetMutex.RLock()
-	defer fake.linkTargetMutex.RUnlock()
 	fake.linkMutex.RLock()
 	defer fake.linkMutex.RUnlock()
+	fake.linkTargetMutex.RLock()
+	defer fake.linkTargetMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
