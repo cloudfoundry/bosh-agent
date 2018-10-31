@@ -98,10 +98,8 @@ func (net UbuntuNetManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan st
 
 func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
 	if networks.IsPreconfigured() {
-		err := net.writeResolvConf(networks)
-		if err != nil {
-			return bosherr.WrapError(err, "Writing resolvconf")
-		}
+		// Note in this case IPs are not broadcast
+		return net.writeResolvConf(networks)
 	}
 
 	staticConfigs, dhcpConfigs, dnsServers, err := net.ComputeNetworkConfig(networks)
