@@ -85,8 +85,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		Expect(response.StatusCode).To(BeNumerically("==", 404))
 	})
 
-	// Go's TLS client does not support SSLv3 (so we couldn't test it even if it did)
-	PIt("does not allow connections using SSLv3", func() {
+	It("does not allow connections using SSLv3", func() {
 		handler := func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }
 		dispatcher.AddRoute("/example", handler)
 
