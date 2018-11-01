@@ -55,14 +55,20 @@ var _ = Describe("SCSILunDevicePathResolver", func() {
 	Describe("GetRealDevicePath", func() {
 		Context("when path exists", func() {
 			BeforeEach(func() {
+				err := fs.MkdirAll("/sys/bus/vmbus/devices/fake-vmbus-device", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+
 				deviceIDPath := "/sys/bus/vmbus/devices/fake-vmbus-device/device_id"
-				err := fs.WriteFileString(deviceIDPath, "fake-host-device-id")
+				err = fs.WriteFileString(deviceIDPath, "fake-host-device-id")
 				Expect(err).ToNot(HaveOccurred())
 
-				err = fs.MkdirAll("fake-root/fake-vmbus-device/fake-base", os.FileMode(0750))
+				err = fs.MkdirAll("/fake-root/fake-vmbus-device/fake-base", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
 
-				err = fs.Symlink("fake-root/fake-vmbus-device/fake-base", "/sys/class/block/sdc")
+				err = fs.MkdirAll("/sys/class/block", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+
+				err = fs.Symlink("/fake-root/fake-vmbus-device/fake-base", "/sys/class/block/sdc")
 				Expect(err).ToNot(HaveOccurred())
 
 				err = fs.MkdirAll("/dev/sdc", os.FileMode(0750))
@@ -150,10 +156,10 @@ var _ = Describe("SCSILunDevicePathResolver", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					time.AfterFunc(100*time.Millisecond, func() {
-						err := fs.MkdirAll("fake-root/fake-vmbus-device/fake-base", os.FileMode(0750))
+						err := fs.MkdirAll("/fake-root/fake-vmbus-device/fake-base", os.FileMode(0750))
 						Expect(err).ToNot(HaveOccurred())
 
-						err = fs.Symlink("fake-root/fake-vmbus-device/fake-base", "/sys/class/block/sdc")
+						err = fs.Symlink("/fake-root/fake-vmbus-device/fake-base", "/sys/class/block/sdc")
 						Expect(err).ToNot(HaveOccurred())
 
 						err = fs.MkdirAll("/dev/sdc", os.FileMode(0750))
