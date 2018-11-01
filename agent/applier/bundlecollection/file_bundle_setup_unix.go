@@ -32,9 +32,9 @@ func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, erro
 		return nil, "", bosherr.WrapError(err, "Setting ownership on parent installation directory")
 	}
 
-	// Rename MUST be the last possibly-failing operation
+	// CopyDir MUST be the last possibly-failing operation
 	// because IsInstalled() relies on installPath presence.
-	err = b.fs.Rename(sourcePath, b.installPath)
+	err = b.fs.CopyDir(sourcePath, b.installPath)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Moving to installation directory")
 	}

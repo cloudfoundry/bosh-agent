@@ -939,6 +939,18 @@ var _ = Describe("Settings", func() {
 			Expect(env.Bosh.IPv6).To(Equal(IPv6{Enable: true}))
 		})
 
+		It("can enable job directory on tmpfs", func() {
+			env := Env{}
+			err := json.Unmarshal([]byte(`{"bosh": {} }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.JobDir).To(Equal(JobDir{}))
+
+			env = Env{}
+			err = json.Unmarshal([]byte(`{"bosh": {"job_dir": {"tmpfs": true, "tmpfs_size": "37m"} } }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.JobDir).To(Equal(JobDir{TmpFs: true, TmpFsSize: "37m"}))
+		})
+
 		Context("when swap_size is not specified in the json", func() {
 			It("unmarshalls correctly", func() {
 				var env Env

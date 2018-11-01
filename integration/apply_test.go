@@ -16,6 +16,7 @@ var _ = Describe("apply", func() {
 	var (
 		agentClient      agentclient.AgentClient
 		registrySettings settings.Settings
+		applySpec        applyspec.ApplySpec
 	)
 
 	BeforeEach(func() {
@@ -55,41 +56,7 @@ var _ = Describe("apply", func() {
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StartRegistry(registrySettings)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	JustBeforeEach(func() {
-		err := testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
-		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
-		_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
-		Expect(err).NotTo(HaveOccurred())
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
-		Expect(err).NotTo(HaveOccurred())
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
-		Expect(err).NotTo(HaveOccurred())
-
-		applySpec := applyspec.ApplySpec{
+		applySpec = applyspec.ApplySpec{
 			ConfigurationHash: "fake-desired-config-hash",
 			NodeID:            "node-id01-123f-r2344",
 			AvailabilityZone:  "ex-az",
@@ -123,8 +90,42 @@ var _ = Describe("apply", func() {
 				},
 			},
 		}
+	})
 
-		err = agentClient.Apply(applySpec)
+	JustBeforeEach(func() {
+		err := testEnvironment.StartRegistry(registrySettings)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.StartAgent()
+		Expect(err).ToNot(HaveOccurred())
+
+		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
+		Expect(err).NotTo(HaveOccurred())
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
+		Expect(err).NotTo(HaveOccurred())
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		err := testEnvironment.StopAgentTunnel()
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.StopAgent()
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.DetachDevice("/dev/sdh")
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
+		err := agentClient.Apply(applySpec)
 		Expect(err).NotTo(HaveOccurred())
 
 		output, err := testEnvironment.RunCommand("stat /var/vcap/data/sys/run/foobar")
@@ -210,6 +211,21 @@ var _ = Describe("apply", func() {
 			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/blobs/abc2")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Size: 230"))
+		})
+	})
+
+	Context("when job dir tmpfs is enabled", func() {
+		BeforeEach(func() {
+			registrySettings.Env.Bosh.JobDir.TmpFs = true
+		})
+
+		It("mounts a tmpfs for /var/vcap/data/jobs", func() {
+			err := agentClient.Apply(applySpec)
+			Expect(err).NotTo(HaveOccurred())
+
+			output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(ContainSubstring("tmpfs /var/vcap/data/jobs"))
 		})
 	})
 })

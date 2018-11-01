@@ -393,9 +393,10 @@ type FakePlatform struct {
 	setupBlobsDirReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupDataDirStub        func() error
+	SetupDataDirStub        func(settings.JobDir) error
 	setupDataDirMutex       sync.RWMutex
 	setupDataDirArgsForCall []struct {
+		arg1 settings.JobDir
 	}
 	setupDataDirReturns struct {
 		result1 error
@@ -2529,15 +2530,16 @@ func (fake *FakePlatform) SetupBlobsDirReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) SetupDataDir() error {
+func (fake *FakePlatform) SetupDataDir(arg1 settings.JobDir) error {
 	fake.setupDataDirMutex.Lock()
 	ret, specificReturn := fake.setupDataDirReturnsOnCall[len(fake.setupDataDirArgsForCall)]
 	fake.setupDataDirArgsForCall = append(fake.setupDataDirArgsForCall, struct {
-	}{})
-	fake.recordInvocation("SetupDataDir", []interface{}{})
+		arg1 settings.JobDir
+	}{arg1})
+	fake.recordInvocation("SetupDataDir", []interface{}{arg1})
 	fake.setupDataDirMutex.Unlock()
 	if fake.SetupDataDirStub != nil {
-		return fake.SetupDataDirStub()
+		return fake.SetupDataDirStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -2552,10 +2554,17 @@ func (fake *FakePlatform) SetupDataDirCallCount() int {
 	return len(fake.setupDataDirArgsForCall)
 }
 
-func (fake *FakePlatform) SetupDataDirCalls(stub func() error) {
+func (fake *FakePlatform) SetupDataDirCalls(stub func(settings.JobDir) error) {
 	fake.setupDataDirMutex.Lock()
 	defer fake.setupDataDirMutex.Unlock()
 	fake.SetupDataDirStub = stub
+}
+
+func (fake *FakePlatform) SetupDataDirArgsForCall(i int) settings.JobDir {
+	fake.setupDataDirMutex.RLock()
+	defer fake.setupDataDirMutex.RUnlock()
+	argsForCall := fake.setupDataDirArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakePlatform) SetupDataDirReturns(result1 error) {
