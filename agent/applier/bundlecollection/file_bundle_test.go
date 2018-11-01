@@ -3,7 +3,6 @@ package bundlecollection_test
 import (
 	"errors"
 	"os"
-	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -41,81 +40,11 @@ var _ = Describe("FileBundle", func() {
 		err := fs.MkdirAll(path, os.ModePerm)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = fs.WriteFileString("/source-path/config.go", "package go")
-		Expect(err).ToNot(HaveOccurred())
-
 		return path
 	}
 
 	BeforeEach(func() {
 		sourcePath = createSourcePath()
-	})
-
-	Describe("Install", func() {
-		It("installs the bundle from source at the given path", func() {
-			actualFs, path, err := fileBundle.Install(sourcePath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
-			Expect(path).To(Equal(installPath))
-
-			installed, err := fileBundle.IsInstalled()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(installed).To(BeTrue(), "Bundle not installed")
-
-			contents, err := fs.ReadFileString(filepath.Join(path, "config.go"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(contents).To(Equal("package go"))
-		})
-
-		It("returns an error if creation of parent directory fails", func() {
-			fs.MkdirAllError = errors.New("fake-mkdir-error")
-
-			_, _, err := fileBundle.Install(sourcePath)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
-		})
-
-		It("sets correct permissions on install path", func() {
-			fs.Chmod(sourcePath, os.FileMode(0700))
-
-			_, _, err := fileBundle.Install(sourcePath)
-			Expect(err).NotTo(HaveOccurred())
-
-			fileStats := fs.GetFileTestStat(installPath)
-			Expect(fileStats).ToNot(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
-			Expect(fileStats.Username).To(Equal("root"))
-			Expect(fileStats.Groupname).To(Equal("vcap"))
-		})
-
-		It("is idempotent", func() {
-			actualFs, path, err := fileBundle.Install(sourcePath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
-			Expect(path).To(Equal(installPath))
-
-			actualFs, path, err = fileBundle.Install(sourcePath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
-			Expect(path).To(Equal(installPath))
-		})
-
-		It("returns error when it fails to change permissions", func() {
-			fs.ChmodErr = errors.New("fake-chmod-error")
-
-			_, _, err := fileBundle.Install(sourcePath)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-chmod-error"))
-		})
-
-		It("does not install bundle if it fails to change permissions", func() {
-			fs.ChmodErr = errors.New("fake-chmod-error")
-
-			_, _, err := fileBundle.Install(sourcePath)
-			Expect(err).To(HaveOccurred())
-			Expect(fs.FileExists(installPath)).To(BeFalse())
-		})
 	})
 
 	Describe("InstallWithoutContents", func() {
