@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -19,10 +20,11 @@ type RequestRetryable struct {
 	delegate  Client
 	attempt   int
 
-	originalBody io.ReadCloser // buffer request body to memory for retries
-	response     *http.Response
+	bodyBytes []byte // buffer request body to memory for retries
+	response  *http.Response
 
 	uuidGenerator         boshuuid.Generator
+	seekableRequestBody   io.ReadCloser
 	logger                boshlog.Logger
 	logTag                string
 	isResponseAttemptable func(*http.Response, error) (bool, error)
@@ -59,19 +61,34 @@ func (r *RequestRetryable) Attempt() (bool, error) {
 		}
 	}
 
-	if r.attempt == 0 {
-		r.originalBody, err = MakeReplayable(r.request)
-		if err != nil {
-			return false, bosherr.WrapError(err, "Ensuring request can be retried")
+	_, implementsSeekable := r.request.Body.(io.ReadSeeker)
+	if r.seekableRequestBody != nil || implementsSeekable {
+		if r.seekableRequestBody == nil {
+			r.seekableRequestBody = r.request.Body
 		}
-	} else if r.attempt > 0 && r.request.GetBody != nil {
-		r.request.Body, err = r.request.GetBody()
-		if err != nil {
-			if r.originalBody != nil {
-				r.originalBody.Close()
-			}
 
-			return false, bosherr.WrapError(err, "Updating request body for retry")
+		seekable, ok := r.seekableRequestBody.(io.ReadSeeker)
+		if !ok {
+			return false, errors.New("Should never happen")
+		}
+		_, err = seekable.Seek(0, 0)
+		r.request.Body = ioutil.NopCloser(seekable)
+
+		if err != nil {
+			return false, bosherr.WrapErrorf(err, "Seeking to begining of seekable request body during attempt %d", r.attempt)
+		}
+	} else {
+		if r.request.Body != nil && r.bodyBytes == nil {
+			defer r.request.Body.Close()
+			r.bodyBytes, err = ioutil.ReadAll(r.request.Body)
+			if err != nil {
+				return false, bosherr.WrapError(err, "Buffering request body")
+			}
+		}
+
+		// reset request body, because readers cannot be re-read
+		if r.bodyBytes != nil {
+			r.request.Body = ioutil.NopCloser(bytes.NewReader(r.bodyBytes))
 		}
 	}
 
@@ -96,8 +113,8 @@ func (r *RequestRetryable) Attempt() (bool, error) {
 	r.response, err = r.delegate.Do(r.request)
 
 	attemptable, err := r.isResponseAttemptable(r.response, err)
-	if !attemptable && r.originalBody != nil {
-		r.originalBody.Close()
+	if !attemptable && r.seekableRequestBody != nil {
+		r.seekableRequestBody.Close()
 	}
 
 	return attemptable, err
@@ -133,43 +150,4 @@ func formatResponse(resp *http.Response) string {
 	}
 
 	return fmt.Sprintf("Response{ StatusCode: %d, Status: '%s' }", resp.StatusCode, resp.Status)
-}
-
-func MakeReplayable(r *http.Request) (io.ReadCloser, error) {
-	var err error
-
-	if r.Body == nil {
-		return nil, nil
-	} else if r.GetBody != nil {
-		return nil, nil
-	}
-
-	var originalBody = r.Body
-
-	if seekableBody, ok := r.Body.(io.ReadSeeker); ok {
-		r.GetBody = func() (io.ReadCloser, error) {
-			_, err := seekableBody.Seek(0, 0)
-			if err != nil {
-				return nil, bosherr.WrapError(err, "Seeking to beginning of seekable request body")
-			}
-
-			return ioutil.NopCloser(seekableBody), nil
-		}
-	} else {
-		bodyBytes, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			return originalBody, bosherr.WrapError(err, "Buffering request body")
-		}
-
-		r.GetBody = func() (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(bodyBytes)), nil
-		}
-	}
-
-	r.Body, err = r.GetBody()
-	if err != nil {
-		return originalBody, bosherr.WrapError(err, "Buffering request body")
-	}
-
-	return originalBody, nil
 }

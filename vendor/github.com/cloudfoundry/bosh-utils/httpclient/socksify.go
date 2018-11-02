@@ -33,12 +33,12 @@ func SOCKS5DialFuncFromEnvironment(origDialer DialFunc, socks5Proxy ProxyDialer)
 
 		proxyURL, err := url.Parse(allProxy)
 		if err != nil {
-			return errorDialFunc(err, "Parsing BOSH_ALL_PROXY url")
+			return origDialer
 		}
 
 		queryMap, err := url.ParseQuery(proxyURL.RawQuery)
 		if err != nil {
-			return errorDialFunc(err, "Parsing BOSH_ALL_PROXY query params")
+			return origDialer
 		}
 
 		username := ""
@@ -46,17 +46,18 @@ func SOCKS5DialFuncFromEnvironment(origDialer DialFunc, socks5Proxy ProxyDialer)
 			username = proxyURL.User.Username()
 		}
 
-		proxySSHKeyPath := queryMap.Get("private-key")
-		if proxySSHKeyPath == "" {
-			return errorDialFunc(
-				bosherr.Error("Required query param 'private-key' not found"),
-				"Parsing BOSH_ALL_PROXY query params",
-			)
+		proxySSHKeyPath, ok := queryMap["private-key"]
+		if !ok {
+			return origDialer
 		}
 
-		proxySSHKey, err := ioutil.ReadFile(proxySSHKeyPath)
+		if len(proxySSHKeyPath) == 0 {
+			return origDialer
+		}
+
+		proxySSHKey, err := ioutil.ReadFile(proxySSHKeyPath[0])
 		if err != nil {
-			return errorDialFunc(err, "Reading private key file for SOCKS5 Proxy")
+			return origDialer
 		}
 
 		var (
@@ -87,12 +88,12 @@ func SOCKS5DialFuncFromEnvironment(origDialer DialFunc, socks5Proxy ProxyDialer)
 
 	proxyURL, err := url.Parse(allProxy)
 	if err != nil {
-		return errorDialFunc(err, "Parsing BOSH_ALL_PROXY url")
+		return origDialer
 	}
 
 	proxy, err := goproxy.FromURL(proxyURL, origDialer)
 	if err != nil {
-		return errorDialFunc(err, "Parsing BOSH_ALL_PROXY url")
+		return origDialer
 	}
 
 	noProxy := os.Getenv("no_proxy")
@@ -104,10 +105,4 @@ func SOCKS5DialFuncFromEnvironment(origDialer DialFunc, socks5Proxy ProxyDialer)
 	perHost.AddFromString(noProxy)
 
 	return perHost.Dial
-}
-
-func errorDialFunc(err error, cause string) DialFunc {
-	return func(network, address string) (net.Conn, error) {
-		return nil, bosherr.WrapError(err, cause)
-	}
 }

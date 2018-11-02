@@ -3460,15 +3460,10 @@ unit: sectors
 
 	Describe("StartMonit", func() {
 		It("creates a symlink between /etc/service/monit and /etc/sv/monit", func() {
-			err := fs.MkdirAll("/etc/sv/monit", 0750)
+			err := platform.StartMonit()
 			Expect(err).NotTo(HaveOccurred())
-
-			err = platform.StartMonit()
-			Expect(err).NotTo(HaveOccurred())
-
-			target, err := fs.ReadAndFollowLink("/etc/service/monit")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(target).To(Equal("/etc/sv/monit"))
+			target, _ := fs.ReadAndFollowLink(path.Join("/etc", "service", "monit"))
+			Expect(target).To(Equal(path.Join("/etc", "sv", "monit")))
 		})
 
 		It("retries to start monit", func() {

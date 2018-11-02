@@ -44,10 +44,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 
 		Context("when path exists", func() {
 			BeforeEach(func() {
-				err := fs.MkdirAll("/dev", os.FileMode(0750))
-				Expect(err).ToNot(HaveOccurred())
-
-				err = fs.MkdirAll("/dev/fake-device-path", os.FileMode(0750))
+				err := fs.MkdirAll("/dev/fake-device-path", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
 
 				err = fs.Symlink("/dev/fake-device-path", "/dev/intermediate/fake-device-path")
@@ -116,13 +113,10 @@ var _ = Describe("IDDevicePathResolver", func() {
 		Context("when no matching device is found the first time", func() {
 			Context("when the timeout has not expired", func() {
 				BeforeEach(func() {
-					err := fs.MkdirAll("/fake-device-path", os.FileMode(0750))
+					err := fs.MkdirAll("fake-device-path", os.FileMode(0750))
 					Expect(err).ToNot(HaveOccurred())
 
-					err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
-					Expect(err).ToNot(HaveOccurred())
-
-					err = fs.Symlink("/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
+					err = fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
 					Expect(err).ToNot(HaveOccurred())
 
 					fs.GlobStub = func(pattern string) ([]string, error) {
@@ -140,7 +134,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 					path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(path).To(Equal("/fake-device-path"))
+					Expect(path).To(Equal("fake-device-path"))
 					Expect(timeout).To(BeFalse())
 				})
 			})
