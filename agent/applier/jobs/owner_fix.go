@@ -3,7 +3,7 @@ package jobs
 import (
 	"fmt"
 	"os"
-	gopath "path"
+	"path/filepath"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -15,7 +15,7 @@ import (
 // directory e.g. /var/vcap/data/jobs/JOBNAME.
 func FixPermissions(fs boshsys.FileSystem, path string, user string, group string) error {
 	ug := fmt.Sprintf("%s:%s", user, group)
-	binPath := gopath.Join(path, "bin") + "/"
+	binPath := filepath.Join(path, "bin") + "/"
 
 	err := fs.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

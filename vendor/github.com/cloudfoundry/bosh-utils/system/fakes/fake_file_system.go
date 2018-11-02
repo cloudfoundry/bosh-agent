@@ -680,10 +680,6 @@ func (fs *FakeFileSystem) ReadAndFollowLink(symlinkPath string) (string, error) 
 		return "", fs.ReadAndFollowLinkError
 	}
 
-	if symlinkPath == "\\" {
-		symlinkPath = "/"
-	}
-
 	if symlinkPath == "" ||
 		symlinkPath == "/" ||
 		symlinkPath == filepath.VolumeName(symlinkPath)+"\\" {
@@ -707,7 +703,7 @@ func (fs *FakeFileSystem) ReadAndFollowLink(symlinkPath string) (string, error) 
 			return "", err
 		}
 
-		return gopath.Join(dirPath, filepath.Base(symlinkPath)), nil
+		return filepath.Join(dirPath, filepath.Base(symlinkPath)), nil
 	}
 
 	if gopath.IsAbs(stat.SymlinkTarget) {
@@ -719,7 +715,7 @@ func (fs *FakeFileSystem) ReadAndFollowLink(symlinkPath string) (string, error) 
 		return "", err
 	}
 
-	return fs.ReadAndFollowLink(gopath.Join(dirPath, stat.SymlinkTarget))
+	return fs.ReadAndFollowLink(filepath.Join(dirPath, stat.SymlinkTarget))
 }
 
 func (fs *FakeFileSystem) CopyFile(srcPath, dstPath string) error {
