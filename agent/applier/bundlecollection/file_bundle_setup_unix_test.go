@@ -50,11 +50,11 @@ var _ = Describe("FileBundle", func() {
 
 	Describe("Install", func() {
 		It("returns error when moving source to install path fails", func() {
-			fs.CopyDirError = errors.New("fake-copy-dir-error")
+			fs.RenameError = errors.New("fake-rename-error")
 
 			_, _, err := fileBundle.Install(sourcePath)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-copy-dir-error"))
+			Expect(err.Error()).To(ContainSubstring("fake-rename-error"))
 		})
 	})
 })

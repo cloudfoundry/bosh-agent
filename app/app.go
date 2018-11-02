@@ -274,7 +274,6 @@ func (app *app) buildApplierAndCompiler(
 		packageApplierProvider,
 		blobstore,
 		app.platform.GetCompressor(),
-		boshaj.FixPermissions,
 		fileSystem,
 		app.logger,
 	)

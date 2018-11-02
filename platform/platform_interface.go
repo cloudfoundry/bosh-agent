@@ -53,7 +53,7 @@ type Platform interface {
 	SetTimeWithNtpServers(servers []string) (err error)
 	SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64) (err error)
 	SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error)
-	SetupDataDir(boshsettings.JobDir) (err error)
+	SetupDataDir() (err error)
 	SetupSharedMemory() (err error)
 	SetupTmpDir() (err error)
 	SetupHomeDir() (err error)

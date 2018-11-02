@@ -2,36 +2,33 @@ package jobs
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"strings"
 
+	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
-
-	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const logTag = "renderedJobApplier"
 
-type FixPermissionsFunc func(boshsys.FileSystem, string, string, string) error
-
 type renderedJobApplier struct {
-	blobstore              boshblob.DigestBlobstore
-	compressor             boshfileutil.Compressor
 	dirProvider            directories.Provider
-	fixPermissions         FixPermissionsFunc
-	fs                     boshsys.FileSystem
-	jobSupervisor          boshjobsuper.JobSupervisor
 	jobsBc                 boshbc.BundleCollection
-	logger                 boshlog.Logger
+	jobSupervisor          boshjobsuper.JobSupervisor
 	packageApplierProvider packages.ApplierProvider
+	blobstore              boshblob.DigestBlobstore
+	compressor             boshcmd.Compressor
+	fs                     boshsys.FileSystem
+	logger                 boshlog.Logger
 }
 
 func NewRenderedJobApplier(
@@ -40,21 +37,19 @@ func NewRenderedJobApplier(
 	jobSupervisor boshjobsuper.JobSupervisor,
 	packageApplierProvider packages.ApplierProvider,
 	blobstore boshblob.DigestBlobstore,
-	compressor boshfileutil.Compressor,
-	fixPermissions FixPermissionsFunc,
+	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) Applier {
 	return &renderedJobApplier{
+		dirProvider:            dirProvider,
+		jobsBc:                 jobsBc,
+		jobSupervisor:          jobSupervisor,
+		packageApplierProvider: packageApplierProvider,
 		blobstore:              blobstore,
 		compressor:             compressor,
-		dirProvider:            dirProvider,
-		fixPermissions:         fixPermissions,
 		fs:                     fs,
-		jobSupervisor:          jobSupervisor,
-		jobsBc:                 jobsBc,
 		logger:                 logger,
-		packageApplierProvider: packageApplierProvider,
 	}
 }
 
@@ -72,7 +67,7 @@ func (s renderedJobApplier) Prepare(job models.Job) error {
 	}
 
 	if !jobInstalled {
-		err = s.downloadAndInstall(job, jobBundle)
+		err := s.downloadAndInstall(job, jobBundle)
 		if err != nil {
 			return err
 		}
@@ -129,24 +124,36 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		}
 	}()
 
-	err = s.compressor.DecompressFileToDir(file, tmpDir, boshfileutil.CompressorOptions{})
+	err = s.compressor.DecompressFileToDir(file, tmpDir, boshcmd.CompressorOptions{})
 	if err != nil {
 		return bosherr.WrapError(err, "Decompressing files to temp dir")
+	}
+
+	binPath := path.Join(tmpDir, job.Source.PathInArchive, "bin") + "/"
+	err = s.fs.Walk(path.Join(tmpDir, job.Source.PathInArchive), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		} else if info.IsDir() || strings.HasPrefix(path, binPath) {
+			err := s.fs.Chown(path, "root:vcap")
+			if err != nil {
+				return bosherr.WrapError(err, "Failed to chown dir")
+			}
+			return s.fs.Chmod(path, os.FileMode(0750))
+		} else {
+			err := s.fs.Chown(path, "root:vcap")
+			if err != nil {
+				return bosherr.WrapError(err, "Failed to chown dir")
+			}
+			return s.fs.Chmod(path, os.FileMode(0640))
+		}
+	})
+	if err != nil {
+		return bosherr.WrapError(err, "Correcting file permissions")
 	}
 
 	_, _, err = jobBundle.Install(path.Join(tmpDir, job.Source.PathInArchive))
 	if err != nil {
 		return bosherr.WrapError(err, "Installing job bundle")
-	}
-
-	_, installPath, err := jobBundle.GetInstallPath()
-	if err != nil {
-		return bosherr.WrapError(err, "Getting the install path")
-	}
-
-	err = s.fixPermissions(s.fs, installPath, "root", "vcap")
-	if err != nil {
-		return bosherr.WrapError(err, "Fixing job bundle permissions")
 	}
 
 	return nil

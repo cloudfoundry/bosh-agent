@@ -746,7 +746,7 @@ func (p linux) scrubEphemeralDisk(contents []string) error {
 	return nil
 }
 
-func (p linux) SetupDataDir(config boshsettings.JobDir) error {
+func (p linux) SetupDataDir() error {
 	dataDir := p.dirProvider.DataDir()
 
 	sysDataDir := path.Join(dataDir, "sys")
@@ -771,23 +771,6 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 	err = p.fs.MkdirAll(jobsDir, jobsDirPermissions)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Making %s dir", jobsDir)
-	}
-
-	if config.TmpFs {
-		_, jobDirIsMounted, err := p.IsMountPoint(jobsDir)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Checking for mount point %s", jobsDir)
-		}
-		if !jobDirIsMounted {
-			size := config.TmpFsSize
-			if size == "" {
-				size = "100m"
-			}
-			err = p.diskManager.GetMounter().MountFilesystem("tmpfs", jobsDir, "tmpfs", fmt.Sprintf("size=%s", size))
-			if err != nil {
-				return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", jobsDir)
-			}
-		}
 	}
 
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", jobsDir)

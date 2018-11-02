@@ -2,28 +2,26 @@ package jobs_test
 
 import (
 	"errors"
-	"io"
-	"os"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"io"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
-
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"os"
 )
 
 type unsupportedAlgo struct{}
@@ -31,7 +29,6 @@ type unsupportedAlgo struct{}
 func (unsupportedAlgo) Compare(algo boshcrypto.Algorithm) int {
 	return -1
 }
-
 func (unsupportedAlgo) CreateDigest(reader io.Reader) (boshcrypto.Digest, error) {
 	return boshcrypto.MultipleDigest{}, nil
 }
@@ -86,7 +83,6 @@ func init() {
 			compressor             *fakecmd.FakeCompressor
 			fs                     *fakesys.FakeFileSystem
 			applier                Applier
-			fixPermissions         *fakeFixer
 		)
 
 		BeforeEach(func() {
@@ -98,8 +94,6 @@ func init() {
 			compressor = fakecmd.NewFakeCompressor()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			dirProvider := directories.NewProvider("/fakebasedir")
-			fixPermissions = &fakeFixer{}
-
 			applier = NewRenderedJobApplier(
 				dirProvider,
 				jobsBc,
@@ -107,7 +101,6 @@ func init() {
 				packageApplierProvider,
 				blobstore,
 				compressor,
-				fixPermissions.Fix,
 				fs,
 				logger,
 			)
@@ -121,7 +114,6 @@ func init() {
 
 			BeforeEach(func() {
 				job, bundle = buildJob(jobsBc)
-				bundle.GetDirPath = "job-install-path"
 			})
 
 			ItInstallsJob := func(act func() error) {
@@ -218,6 +210,14 @@ func init() {
 					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
 				})
 
+				It("returns error when walking the tree of files fails", func() {
+					fs.WalkErr = errors.New("fake-walk-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-walk-error"))
+				})
+
 				It("installs bundle from decompressed tmp path of a job template", func() {
 					var installedBeforeDecompression bool
 
@@ -235,26 +235,110 @@ func init() {
 					Expect(bundle.InstallSourcePath).To(Equal("/fake-tmp-dir/fake-path-in-archive"))
 				})
 
-				It("fixes the permissions of the files in the job's install directory", func() {
+				It("sets executable bit for the bin and config directories", func() {
+					var binDirStats, configDirStats *fakesys.FakeFileStats
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/blarg", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/blarg.yml", []byte{})
+					}
+
+					bundle.InstallCallBack = func() {
+						binDirStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin")
+						configDirStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config")
+					}
+
 					err := act()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(fixPermissions.fakePathArg).To(Equal("job-install-path"))
-					Expect(fixPermissions.fakeUserArg).To(Equal("root"))
-					Expect(fixPermissions.fakeGroupArg).To(Equal("vcap"))
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(int(binDirStats.FileMode)).To(Equal(0750))
+					Expect(int(configDirStats.FileMode)).To(Equal(0750))
 				})
 
-				It("returns an errors when fixing permissions fails", func() {
-					fixPermissions.fakeFixError = errors.New("disaster")
+				It("sets executable bit for files in bin", func() {
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test1", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test2", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/test", []byte{})
+					}
+
+					fs.SetGlob("/fake-tmp-dir/fake-path-in-archive/bin/*", []string{
+						"/fake-tmp-dir/fake-path-in-archive/bin/test1",
+						"/fake-tmp-dir/fake-path-in-archive/bin/test2",
+					})
+
+					var binTest1Stats, binTest2Stats, configTestStats *fakesys.FakeFileStats
+
+					bundle.InstallCallBack = func() {
+						binTest1Stats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin/test1")
+						binTest2Stats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin/test2")
+						configTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config/test")
+					}
 
 					err := act()
-					Expect(err).To(HaveOccurred())
+					Expect(err).ToNot(HaveOccurred())
+
+					// bin files are executable
+					Expect(int(binTest1Stats.FileMode)).To(Equal(0750))
+					Expect(int(binTest2Stats.FileMode)).To(Equal(0750))
+
+					// non-bin files are not made executable
+					Expect(int(configTestStats.FileMode)).ToNot(Equal(0750))
 				})
 
-				It("returns an errors when getting the install path fails", func() {
-					bundle.GetDirError = errors.New("disaster")
+				It("sets 640 permissions for files in config", func() {
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/config1", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/config2", []byte{})
+					}
+
+					fs.SetGlob("/fake-tmp-dir/fake-path-in-archive/config/*", []string{
+						"/fake-tmp-dir/fake-path-in-archive/config/config1",
+						"/fake-tmp-dir/fake-path-in-archive/config/config2",
+					})
+
+					var config1Stats, config2Stats *fakesys.FakeFileStats
+
+					bundle.InstallCallBack = func() {
+						config1Stats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config/config1")
+						config2Stats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config/config2")
+					}
 
 					err := act()
-					Expect(err).To(HaveOccurred())
+					Expect(err).ToNot(HaveOccurred())
+
+					// permission for config files should be readable by all
+					Expect(int(config1Stats.FileMode)).To(Equal(0640))
+					Expect(int(config2Stats.FileMode)).To(Equal(0640))
+				})
+
+				It("sets root:vcap ownership for all files in the tree", func() {
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/test", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/monit", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/templates/test", []byte{})
+					}
+
+					var binTestStats, configTestStats, monitStats, templateTestStats *fakesys.FakeFileStats
+
+					bundle.InstallCallBack = func() {
+						binTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin/test")
+						configTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config/test")
+						monitStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/monit")
+						templateTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/templates/test")
+					}
+
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(binTestStats.Username).To(Equal("root"))
+					Expect(binTestStats.Groupname).To(Equal("vcap"))
+					Expect(monitStats.Username).To(Equal("root"))
+					Expect(monitStats.Groupname).To(Equal("vcap"))
+					Expect(templateTestStats.Username).To(Equal("root"))
+					Expect(templateTestStats.Groupname).To(Equal("vcap"))
+					Expect(configTestStats.Username).To(Equal("root"))
+					Expect(configTestStats.Groupname).To(Equal("vcap"))
 				})
 			}
 
@@ -463,6 +547,7 @@ func init() {
 
 					ItCreatesDirectories(act)
 				})
+
 			})
 		})
 
@@ -567,20 +652,4 @@ func init() {
 			})
 		})
 	})
-}
-
-type fakeFixer struct {
-	fakeFixError error
-
-	fakePathArg  string
-	fakeUserArg  string
-	fakeGroupArg string
-}
-
-func (f *fakeFixer) Fix(fs boshsys.FileSystem, path, user, group string) error {
-	f.fakePathArg = path
-	f.fakeUserArg = user
-	f.fakeGroupArg = group
-
-	return f.fakeFixError
 }

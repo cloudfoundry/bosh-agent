@@ -3,7 +3,6 @@ package bundlecollection_test
 import (
 	"errors"
 	"os"
-	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,10 +39,6 @@ var _ = Describe("FileBundle", func() {
 		path := "/source-path"
 		err := fs.MkdirAll(path, os.ModePerm)
 		Expect(err).ToNot(HaveOccurred())
-
-		err = fs.WriteFileString("/source-path/config.go", "package go")
-		Expect(err).ToNot(HaveOccurred())
-
 		return path
 	}
 
@@ -58,13 +53,8 @@ var _ = Describe("FileBundle", func() {
 			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
 
-			installed, err := fileBundle.IsInstalled()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(installed).To(BeTrue(), "Bundle not installed")
-
-			contents, err := fs.ReadFileString(filepath.Join(path, "config.go"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(contents).To(Equal("package go"))
+			Expect(fs.RenameOldPaths[0]).To(Equal(sourcePath))
+			Expect(fs.RenameNewPaths[0]).To(Equal(installPath))
 		})
 
 		It("returns an error if creation of parent directory fails", func() {
@@ -95,10 +85,15 @@ var _ = Describe("FileBundle", func() {
 			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
 
-			actualFs, path, err = fileBundle.Install(sourcePath)
+			otherSourcePath := createSourcePath()
+
+			actualFs, path, err = fileBundle.Install(otherSourcePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
+
+			Expect(fs.RenameOldPaths[0]).To(Equal(sourcePath))
+			Expect(fs.RenameNewPaths[0]).To(Equal(installPath))
 		})
 
 		It("returns error when it fails to change permissions", func() {
