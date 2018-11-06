@@ -57,15 +57,14 @@ var _ = Describe("FileBundle", func() {
 		It("returns error when moving source to install path fails", func() {
 			fs.CopyDirError = errors.New("fake-copy-dir-error")
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-copy-dir-error"))
 		})
 
 		It("installs the bundle from source at the given path", func() {
-			actualFs, path, err := fileBundle.Install(sourcePath)
+			path, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
 
 			installed, err := fileBundle.IsInstalled()
@@ -80,7 +79,7 @@ var _ = Describe("FileBundle", func() {
 		It("returns an error if creation of parent directory fails", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-error")
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
@@ -88,7 +87,7 @@ var _ = Describe("FileBundle", func() {
 		It("sets correct permissions on install path", func() {
 			fs.Chmod(sourcePath, os.FileMode(0700))
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat(installPath)
@@ -100,21 +99,19 @@ var _ = Describe("FileBundle", func() {
 		})
 
 		It("is idempotent", func() {
-			actualFs, path, err := fileBundle.Install(sourcePath)
+			path, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
 
-			actualFs, path, err = fileBundle.Install(sourcePath)
+			path, err = fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
 		})
 
 		It("returns error when it fails to change permissions", func() {
 			fs.ChmodErr = errors.New("fake-chmod-error")
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-chmod-error"))
 		})
@@ -122,7 +119,7 @@ var _ = Describe("FileBundle", func() {
 		It("does not install bundle if it fails to change permissions", func() {
 			fs.ChmodErr = errors.New("fake-chmod-error")
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).To(HaveOccurred())
 			Expect(fs.FileExists(installPath)).To(BeFalse())
 		})

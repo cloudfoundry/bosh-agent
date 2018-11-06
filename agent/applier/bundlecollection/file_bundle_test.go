@@ -49,9 +49,8 @@ var _ = Describe("FileBundle", func() {
 
 	Describe("InstallWithoutContents", func() {
 		It("installs the bundle at the given path with the correct permissions", func() {
-			actualFs, path, err := fileBundle.InstallWithoutContents()
+			path, err := fileBundle.InstallWithoutContents()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
 
 			fileStats := fs.GetFileTestStat(installPath)
@@ -65,18 +64,17 @@ var _ = Describe("FileBundle", func() {
 		It("return error when bundle cannot be installed", func() {
 			fs.MkdirAllError = errors.New("fake-mkdirall-error")
 
-			_, _, err := fileBundle.InstallWithoutContents()
+			_, err := fileBundle.InstallWithoutContents()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdirall-error"))
 		})
 
 		It("is idempotent", func() {
-			_, _, err := fileBundle.InstallWithoutContents()
+			_, err := fileBundle.InstallWithoutContents()
 			Expect(err).NotTo(HaveOccurred())
 
-			actualFs, path, err := fileBundle.InstallWithoutContents()
+			path, err := fileBundle.InstallWithoutContents()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
 			Expect(path).To(Equal(installPath))
 		})
 	})
@@ -85,21 +83,20 @@ var _ = Describe("FileBundle", func() {
 		It("returns the install path", func() {
 			fs.MkdirAll(installPath, os.ModePerm)
 
-			actualFs, actualInstallPath, err := fileBundle.GetInstallPath()
+			actualInstallPath, err := fileBundle.GetInstallPath()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(actualFs).To(Equal(fs))
 			Expect(actualInstallPath).To(Equal(installPath))
 		})
 
 		It("returns error when install directory does not exist", func() {
-			_, _, err := fileBundle.GetInstallPath()
+			_, err := fileBundle.GetInstallPath()
 			Expect(err).To(HaveOccurred())
 		})
 	})
 
 	Describe("IsInstalled", func() {
 		It("returns true when it is installed", func() {
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			installed, err := fileBundle.IsInstalled()
@@ -112,23 +109,18 @@ var _ = Describe("FileBundle", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(installed).To(BeFalse())
 		})
-
-		It("returns an error when check fails", func() {
-			// FileExist currently does not return an error
-		})
 	})
 
 	Describe("Enable", func() {
 		Context("when bundle is installed", func() {
 			BeforeEach(func() {
-				_, _, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns the enable path", func() {
-				actualFs, actualEnablePath, err := fileBundle.Enable()
+				actualEnablePath, err := fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(actualFs).To(Equal(fs))
 				Expect(actualEnablePath).To(Equal(enablePath))
 
 				fileStats := fs.GetFileTestStat(enablePath)
@@ -145,23 +137,23 @@ var _ = Describe("FileBundle", func() {
 			})
 
 			It("is idempotent", func() {
-				_, _, err := fileBundle.Enable()
+				_, err := fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 
-				_, _, err = fileBundle.Enable()
+				_, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
 		Context("when bundle is not installed", func() {
 			It("returns error", func() {
-				_, _, err := fileBundle.Enable()
+				_, err := fileBundle.Enable()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("bundle must be installed"))
 			})
 
 			It("does not add symlink", func() {
-				_, _, err := fileBundle.Enable()
+				_, err := fileBundle.Enable()
 				Expect(err).To(HaveOccurred())
 
 				fileStats := fs.GetFileTestStat(enablePath)
@@ -171,11 +163,11 @@ var _ = Describe("FileBundle", func() {
 
 		Context("when enable dir cannot be created", func() {
 			It("returns error", func() {
-				_, _, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath)
 				Expect(err).NotTo(HaveOccurred())
 				fs.MkdirAllError = errors.New("fake-mkdirall-error")
 
-				_, _, err = fileBundle.Enable()
+				_, err = fileBundle.Enable()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-mkdirall-error"))
 			})
@@ -183,11 +175,11 @@ var _ = Describe("FileBundle", func() {
 
 		Context("when bundle cannot be enabled", func() {
 			It("returns error", func() {
-				_, _, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath)
 				Expect(err).NotTo(HaveOccurred())
 				fs.SymlinkError = errors.New("fake-symlink-error")
 
-				_, _, err = fileBundle.Enable()
+				_, err = fileBundle.Enable()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-symlink-error"))
 			})
@@ -207,10 +199,10 @@ var _ = Describe("FileBundle", func() {
 
 		Context("where the enabled path target is the same installed version", func() {
 			BeforeEach(func() {
-				_, _, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, _, err = fileBundle.Enable()
+				_, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -235,19 +227,19 @@ var _ = Describe("FileBundle", func() {
 			newerInstallPath := "/newer-install-path"
 
 			BeforeEach(func() {
-				_, _, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, _, err = fileBundle.Enable()
+				_, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 
 				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, os.FileMode(0750), fs, fakeClock, logger)
 
 				otherSourcePath := createSourcePath()
-				_, _, err = newerFileBundle.Install(otherSourcePath)
+				_, err = newerFileBundle.Install(otherSourcePath)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, _, err = newerFileBundle.Enable()
+				_, err = newerFileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -275,7 +267,7 @@ var _ = Describe("FileBundle", func() {
 
 	Describe("Uninstall", func() {
 		It("removes the files from disk", func() {
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = fileBundle.Uninstall()

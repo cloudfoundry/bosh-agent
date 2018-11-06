@@ -1,9 +1,5 @@
 package bundlecollection
 
-import (
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-)
-
 // BundleDefinition uniquely identifies an asset within a BundleCollection (e.g. Job, Package)
 type BundleDefinition interface {
 	BundleName() string
@@ -16,13 +12,13 @@ type BundleCollection interface {
 }
 
 type Bundle interface {
-	Install(sourcePath string) (fs boshsys.FileSystem, path string, err error)
-	InstallWithoutContents() (fs boshsys.FileSystem, path string, err error)
+	Install(sourcePath string) (path string, err error)
+	InstallWithoutContents() (path string, err error)
 	Uninstall() (err error)
 
 	IsInstalled() (bool, error)
-	GetInstallPath() (fs boshsys.FileSystem, path string, err error)
+	GetInstallPath() (path string, err error)
 
-	Enable() (fs boshsys.FileSystem, path string, err error)
+	Enable() (path string, err error)
 	Disable() (err error)
 }

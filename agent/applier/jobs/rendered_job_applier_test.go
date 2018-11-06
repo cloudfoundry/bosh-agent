@@ -470,12 +470,10 @@ func init() {
 			It("adds job to the job supervisor", func() {
 				job, bundle := buildJob(jobsBc)
 
-				fs := fakesys.NewFakeFileSystem()
 				fs.WriteFileString("/path/to/job/monit", "some conf")
 				fs.SetGlob("/path/to/job/*.monit", []string{"/path/to/job/subjob.monit"})
 
 				bundle.GetDirPath = "/path/to/job"
-				bundle.GetDirFs = fs
 
 				err := applier.Configure(job, 0)
 				Expect(err).ToNot(HaveOccurred())
@@ -496,10 +494,7 @@ func init() {
 			})
 
 			It("does not require monit script", func() {
-				job, bundle := buildJob(jobsBc)
-
-				fs := fakesys.NewFakeFileSystem()
-				bundle.GetDirFs = fs
+				job, _ := buildJob(jobsBc)
 
 				err := applier.Configure(job, 0)
 				Expect(err).ToNot(HaveOccurred())

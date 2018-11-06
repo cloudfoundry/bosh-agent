@@ -78,7 +78,7 @@ func (s compiledPackageApplier) Apply(pkg models.Package) error {
 		return bosherr.WrapError(err, "Getting package bundle")
 	}
 
-	_, _, err = pkgBundle.Enable()
+	_, err = pkgBundle.Enable()
 	if err != nil {
 		return bosherr.WrapError(err, "Enabling package")
 	}
@@ -114,7 +114,7 @@ func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 		return bosherr.WrapError(err, "Decompressing package files")
 	}
 
-	_, _, err = pkgBundle.Install(tmpDir)
+	_, err = pkgBundle.Install(tmpDir)
 	if err != nil {
 		return bosherr.WrapError(err, "Installling package directory")
 	}

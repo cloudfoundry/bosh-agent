@@ -40,59 +40,59 @@ func NewFileBundle(
 	}
 }
 
-func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error) {
+func (b FileBundle) InstallWithoutContents() (string, error) {
 	b.logger.Debug(fileBundleLogTag, "Installing without contents %v", b)
 
 	// MkdirAll MUST be the last possibly-failing operation
 	// because IsInstalled() relies on installPath presence.
 	err := b.fs.MkdirAll(b.installPath, b.fileMode)
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Creating installation directory")
+		return "", bosherr.WrapError(err, "Creating installation directory")
 	}
 	err = b.fs.Chown(b.installPath, "root:vcap")
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Setting ownership on installation directory")
+		return "", bosherr.WrapError(err, "Setting ownership on installation directory")
 	}
 
-	return b.fs, b.installPath, nil
+	return b.installPath, nil
 }
 
-func (b FileBundle) GetInstallPath() (boshsys.FileSystem, string, error) {
+func (b FileBundle) GetInstallPath() (string, error) {
 	path := b.installPath
 	if !b.fs.FileExists(path) {
-		return nil, "", bosherr.Error("install dir does not exist")
+		return "", bosherr.Error("install dir does not exist")
 	}
 
-	return b.fs, path, nil
+	return path, nil
 }
 
 func (b FileBundle) IsInstalled() (bool, error) {
 	return b.fs.FileExists(b.installPath), nil
 }
 
-func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {
+func (b FileBundle) Enable() (string, error) {
 	b.logger.Debug(fileBundleLogTag, "Enabling %v", b)
 
 	if !b.fs.FileExists(b.installPath) {
-		return nil, "", bosherr.Error("bundle must be installed")
+		return "", bosherr.Error("bundle must be installed")
 	}
 
 	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), b.fileMode)
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "failed to create enable dir")
+		return "", bosherr.WrapError(err, "failed to create enable dir")
 	}
 
 	err = b.fs.Chown(filepath.Dir(b.enablePath), "root:vcap")
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Setting ownership on source directory")
+		return "", bosherr.WrapError(err, "Setting ownership on source directory")
 	}
 
 	err = b.fs.Symlink(b.installPath, b.enablePath)
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "failed to enable")
+		return "", bosherr.WrapError(err, "failed to enable")
 	}
 
-	return b.fs, b.enablePath, nil
+	return b.enablePath, nil
 }
 
 func (b FileBundle) Disable() error {

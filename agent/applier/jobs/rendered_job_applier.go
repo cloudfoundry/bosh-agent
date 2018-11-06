@@ -98,7 +98,7 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 		return bosherr.WrapError(err, "Getting job bundle")
 	}
 
-	_, _, err = jobBundle.Enable()
+	_, err = jobBundle.Enable()
 	if err != nil {
 		return bosherr.WrapError(err, "Enabling job")
 	}
@@ -134,12 +134,12 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		return bosherr.WrapError(err, "Decompressing files to temp dir")
 	}
 
-	_, _, err = jobBundle.Install(path.Join(tmpDir, job.Source.PathInArchive))
+	_, err = jobBundle.Install(path.Join(tmpDir, job.Source.PathInArchive))
 	if err != nil {
 		return bosherr.WrapError(err, "Installing job bundle")
 	}
 
-	_, installPath, err := jobBundle.GetInstallPath()
+	installPath, err := jobBundle.GetInstallPath()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting the install path")
 	}
@@ -181,14 +181,14 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 		return
 	}
 
-	fs, jobDir, err := jobBundle.GetInstallPath()
+	jobDir, err := jobBundle.GetInstallPath()
 	if err != nil {
 		err = bosherr.WrapError(err, "Looking up job directory")
 		return
 	}
 
 	monitFilePath := path.Join(jobDir, "monit")
-	if fs.FileExists(monitFilePath) {
+	if s.fs.FileExists(monitFilePath) {
 		err = s.jobSupervisor.AddJob(job.Name, jobIndex, monitFilePath)
 		if err != nil {
 			err = bosherr.WrapError(err, "Adding monit configuration")
@@ -196,7 +196,7 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 		}
 	}
 
-	monitFilePaths, err := fs.Glob(path.Join(jobDir, "*.monit"))
+	monitFilePaths, err := s.fs.Glob(path.Join(jobDir, "*.monit"))
 	if err != nil {
 		err = bosherr.WrapError(err, "Looking for additional monit files")
 		return
