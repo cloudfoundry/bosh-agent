@@ -17,6 +17,7 @@ import (
 	boshaj "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
+	"github.com/cloudfoundry/bosh-agent/agent/bootonce"
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
@@ -208,6 +209,12 @@ func (app *app) Setup(opts Options) error {
 		actionRunner,
 	)
 
+	rebootChecker := bootonce.NewRebootChecker(
+		settingsService,
+		app.platform.GetFs(),
+		app.dirProvider,
+	)
+
 	app.agent = boshagent.New(
 		app.logger,
 		mbusHandler,
@@ -219,14 +226,14 @@ func (app *app) Setup(opts Options) error {
 		settingsService,
 		uuidGen,
 		timeService,
+		rebootChecker,
 	)
 
 	return nil
 }
 
 func (app *app) Run() error {
-	err := app.agent.Run()
-	if err != nil {
+	if err := app.agent.Run(); err != nil {
 		return bosherr.WrapError(err, "Running agent")
 	}
 	return nil

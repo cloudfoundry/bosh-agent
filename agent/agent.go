@@ -20,6 +20,12 @@ const (
 	agentLogTag = "agent"
 )
 
+//go:generate counterfeiter . CanRebooter
+
+type CanRebooter interface {
+	CanReboot() (bool, error)
+}
+
 type Agent struct {
 	logger            boshlog.Logger
 	mbusHandler       boshhandler.Handler
@@ -31,6 +37,7 @@ type Agent struct {
 	settingsService   boshsettings.Service
 	uuidGenerator     boshuuid.Generator
 	timeService       clock.Clock
+	canRebooter       CanRebooter
 }
 
 func New(
@@ -44,6 +51,7 @@ func New(
 	settingsService boshsettings.Service,
 	uuidGenerator boshuuid.Generator,
 	timeService clock.Clock,
+	canRebooter CanRebooter,
 ) Agent {
 	return Agent{
 		logger:            logger,
@@ -56,10 +64,19 @@ func New(
 		settingsService:   settingsService,
 		uuidGenerator:     uuidGenerator,
 		timeService:       timeService,
+		canRebooter:       canRebooter,
 	}
 }
 
 func (a Agent) Run() error {
+	bootable, err := a.canRebooter.CanReboot()
+	if err != nil {
+		return bosherr.WrapError(err, "Failed to check if agent can be rebooted")
+	}
+	if !bootable {
+		return bosherr.Error("Refusing to boot")
+	}
+
 	errCh := make(chan error, 1)
 
 	a.actionDispatcher.ResumePreviouslyDispatchedTasks()
@@ -75,10 +92,7 @@ func (a Agent) Run() error {
 		}
 	}()
 
-	select {
-	case err := <-errCh:
-		return err
-	}
+	return <-errCh
 }
 
 func (a Agent) subscribeActionDispatcher(errCh chan error) {

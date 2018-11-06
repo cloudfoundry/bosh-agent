@@ -10,6 +10,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent"
 
 	"code.cloudfoundry.org/clock/fakeclock"
+	"github.com/cloudfoundry/bosh-agent/agent/agentfakes"
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -37,8 +38,10 @@ func init() {
 			settingsService  *fakesettings.FakeSettingsService
 			uuidGenerator    *fakeuuid.FakeGenerator
 			timeService      *fakeclock.FakeClock
-			agent            Agent
 			vitalService     *vitalsfakes.FakeService
+			canRebooter      *agentfakes.FakeCanRebooter
+
+			agent Agent
 		)
 
 		BeforeEach(func() {
@@ -52,6 +55,8 @@ func init() {
 			uuidGenerator = &fakeuuid.FakeGenerator{}
 			timeService = fakeclock.NewFakeClock(time.Now())
 			vitalService = &vitalsfakes.FakeService{}
+			canRebooter = &agentfakes.FakeCanRebooter{}
+			canRebooter.CanRebootReturns(true, nil) // bootable by default
 
 			platform.GetVitalsServiceReturns(vitalService)
 
@@ -66,6 +71,7 @@ func init() {
 				settingsService,
 				uuidGenerator,
 				timeService,
+				canRebooter,
 			)
 		})
 
@@ -98,7 +104,6 @@ func init() {
 			Context("when heartbeats can be sent", func() {
 				BeforeEach(func() {
 					handler.KeepOnRunning()
-
 				})
 
 				BeforeEach(func() {
@@ -145,6 +150,7 @@ func init() {
 						settingsService,
 						uuidGenerator,
 						timeService,
+						canRebooter,
 					)
 
 					// Immediately exit after sending initial heartbeat
@@ -188,6 +194,28 @@ func init() {
 						}))
 					}
 					Expect(jobSupervisor.GetHealthRecorded()).To(BeNumerically(">=", 3))
+				})
+
+				Context("when the agent may not be rebooted", func() {
+					BeforeEach(func() {
+						canRebooter.CanRebootReturns(false, nil)
+					})
+
+					It("stops the boot process and returns an error", func() {
+						err := agent.Run()
+						Expect(err).To(HaveOccurred())
+					})
+				})
+
+				Context("when the checking if the agent may be rebooted returns an error", func() {
+					BeforeEach(func() {
+						canRebooter.CanRebootReturns(true, errors.New("disaster"))
+					})
+
+					It("stops the boot process and returns an error", func() {
+						err := agent.Run()
+						Expect(err).To(HaveOccurred())
+					})
 				})
 			})
 
