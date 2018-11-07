@@ -62,7 +62,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 				return nil
 			}
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = fileBundle.Uninstall()
@@ -89,7 +89,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 			fakeClock.SinceReturns(1 * time.Second)
 			fakeClock.SinceReturnsOnCall(failingRemoveAlls, BundleSetupTimeout+(1*time.Second))
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = fileBundle.Uninstall()
@@ -123,7 +123,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 				return currentDuration
 			}
 
-			_, path, err := fileBundle.Install(sourcePath)
+			path, err := fileBundle.Install(sourcePath)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fs.FileExists(installPath)).To(BeTrue())
@@ -143,7 +143,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 			fakeClock.SinceReturns(1 * time.Second)
 			fakeClock.SinceReturnsOnCall(failingRenames, BundleSetupTimeout+(1*time.Second))
 
-			_, _, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-rename-error"))
 
