@@ -54,7 +54,21 @@ var _ = Describe("FileBundle", func() {
 	})
 
 	Describe("Install", func() {
+		It("handles rename failing by falling back on copying the directory (cross-device link errors)", func() {
+			fs.RenameError = errors.New("fake-rename-error")
+
+			_, err := fileBundle.Install(sourcePath)
+			Expect(err).NotTo(HaveOccurred())
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeTrue(), "Bundle not installed")
+
+			Expect(fs.FileExists(sourcePath)).To(BeFalse())
+		})
+
 		It("returns error when moving source to install path fails", func() {
+			fs.RenameError = errors.New("fake-rename-error")
 			fs.CopyDirError = errors.New("fake-copy-dir-error")
 
 			_, err := fileBundle.Install(sourcePath)
@@ -103,6 +117,7 @@ var _ = Describe("FileBundle", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(path).To(Equal(installPath))
 
+			sourcePath = createSourcePath()
 			path, err = fileBundle.Install(sourcePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(path).To(Equal(installPath))

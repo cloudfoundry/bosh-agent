@@ -31,11 +31,18 @@ func (b FileBundle) Install(sourcePath string) (string, error) {
 		return "", bosherr.WrapError(err, "Setting ownership on parent installation directory")
 	}
 
-	// CopyDir MUST be the last possibly-failing operation
+	// Rename/CopyDir MUST be the last possibly-failing operation
 	// because IsInstalled() relies on installPath presence.
-	err = b.fs.CopyDir(sourcePath, b.installPath)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Moving to installation directory")
+	if err := b.fs.Rename(sourcePath, b.installPath); err != nil {
+		// Rename can fail if the source and install path are on two different
+		// mountpoints. We fall back to copying the directory and cleaning up
+		// afterwards in this case.
+		if err := b.fs.CopyDir(sourcePath, b.installPath); err != nil {
+			return "", bosherr.WrapError(err, "Moving to installation directory")
+		}
+		if err := b.fs.RemoveAll(sourcePath); err != nil {
+			return "", bosherr.WrapError(err, "Deleting copied source directory")
+		}
 	}
 
 	return b.installPath, nil

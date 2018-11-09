@@ -98,7 +98,7 @@
     "uuid/fakes",
     "work"
   ]
-  revision = "dca6ab8856b90716dd07719bf954826a100b2afa"
+  revision = "f1d51d8b54a541c012a4e3a42d12a7f5a1f60bf1"
 
 [[projects]]
   branch = "master"
