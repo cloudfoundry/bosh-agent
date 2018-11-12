@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/smtp"
@@ -44,6 +45,9 @@ var _ = Describe("monitJobSupervisor", func() {
 	}
 
 	BeforeEach(func() {
+		// go-smtp logs debug messages
+		log.SetOutput(GinkgoWriter)
+
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
 		client = fakemonit.NewFakeMonitClient()
