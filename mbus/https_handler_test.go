@@ -2,10 +2,11 @@ package mbus_test
 
 import (
 	"crypto/tls"
-	"errors"
+	"crypto/x509"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -13,37 +14,44 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"crypto/x509"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	"github.com/cloudfoundry/bosh-agent/platform/fakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-utils/blobstore"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("HTTPSHandler", func() {
 	var (
 		serverURL       string
+		tmpdir          string
 		handler         HTTPSHandler
-		fs              *fakesys.FakeFileSystem
 		receivedRequest boshhandler.Request
 		httpClient      http.Client
-		blobManager     blobstore.BlobManagerInterface
+		blobManager     boshagentblobstore.BlobManagerInterface
 	)
+
+	BeforeEach(func() {
+		var err error
+		tmpdir, err = ioutil.TempDir("", "mbus-http-handler-test")
+		Expect(err).NotTo(HaveOccurred())
+
+		serverURL = "https://user:pass@localhost:6900"
+		blobManager = boshagentblobstore.NewBlobManager(nil, tmpdir)
+	})
+
 	AfterEach(func() {
 		handler.Stop()
-		time.Sleep(1 * time.Millisecond)
+
+		err := os.Chmod(tmpdir, 0700)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = os.RemoveAll(tmpdir)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Context("when the agent creates the handler with custom cert", func() {
 		BeforeEach(func() {
-			serverURL = "https://user:pass@localhost:6900"
-			mbusURL, _ := url.Parse(serverURL)
-			logger := boshlog.NewLogger(boshlog.LevelNone)
-			fs = fakesys.NewFakeFileSystem()
-			blobManager = blobstore.NewBlobManager(fs, "/var/vcap/data/blobs")
-
 			configCert, err := ioutil.ReadFile("test_assets/custom_cert.pem")
 			Expect(err).NotTo(HaveOccurred())
 			configPrivateKey, err := ioutil.ReadFile("test_assets/custom_key.pem")
@@ -54,6 +62,8 @@ var _ = Describe("HTTPSHandler", func() {
 				PrivateKey:  string(configPrivateKey),
 			}
 
+			mbusURL, _ := url.Parse(serverURL)
+			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
 			handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
 
 			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
@@ -95,11 +105,8 @@ var _ = Describe("HTTPSHandler", func() {
 
 	Context("when the agent is not configured with custom TLS", func() {
 		BeforeEach(func() {
-			serverURL = "https://user:pass@localhost:6900"
 			mbusURL, _ := url.Parse(serverURL)
-			logger := boshlog.NewLogger(boshlog.LevelNone)
-			fs = fakesys.NewFakeFileSystem()
-			blobManager = blobstore.NewBlobManager(fs, "/var/vcap/data/blobs")
+			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
 			handler = NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, fakes.NewFakeAuditLogger())
 
 			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
@@ -146,33 +153,17 @@ var _ = Describe("HTTPSHandler", func() {
 		Describe("blob access", func() {
 			Describe("GET /blobs", func() {
 				It("returns data from file system", func() {
-					fs.WriteFileString("/var/vcap/data/blobs/123-456-789", "Some data")
+					err := blobManager.Write("123-456-789", strings.NewReader("Some data"))
+					Expect(err).NotTo(HaveOccurred())
 
-					httpResponse, err := httpClient.Get(serverURL + "/blobs/a5/123-456-789")
-					for err != nil {
-						httpResponse, err = httpClient.Get(serverURL + "/blobs/a5/123-456-789")
-					}
-
+					httpResponse, err := httpClient.Get(serverURL + "/blobs/123-456-789")
+					Expect(err).ToNot(HaveOccurred())
 					defer httpResponse.Body.Close()
 
 					httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
 					Expect(readErr).ToNot(HaveOccurred())
 					Expect(httpResponse.StatusCode).To(Equal(200))
 					Expect(httpBody).To(Equal([]byte("Some data")))
-				})
-
-				It("closes the underlying file", func() {
-					blobPath := "/var/vcap/data/blobs/123-456-789"
-
-					fs.WriteFileString(blobPath, "Some data")
-
-					httpResponse, err := httpClient.Get(serverURL + "/blobs/a5/123-456-789")
-					Expect(err).NotTo(HaveOccurred())
-
-					defer httpResponse.Body.Close()
-					fileStats, err := fs.FindFileStats(blobPath)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(fileStats.Open).To(BeFalse())
 				})
 
 				Context("when incorrect http method is used", func() {
@@ -191,30 +182,19 @@ var _ = Describe("HTTPSHandler", func() {
 
 				Context("when file does not exist", func() {
 					It("returns a 404", func() {
-						fs.OpenFileErr = errors.New("no such file or directory")
-						httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
+						httpResponse, err := httpClient.Get(serverURL + "/blobs/a-file-that-does-not-exist")
 						Expect(err).ToNot(HaveOccurred())
 
 						defer httpResponse.Body.Close()
 						Expect(httpResponse.StatusCode).To(Equal(404))
 					})
 				})
-
-				Context("when file does not have correct permissions", func() {
-					It("returns a 500", func() {
-						fs.OpenFileErr = errors.New("permission denied")
-						httpResponse, err := httpClient.Get(serverURL + "/blobs/123")
-						Expect(err).ToNot(HaveOccurred())
-
-						defer httpResponse.Body.Close()
-						Expect(httpResponse.StatusCode).To(Equal(500))
-					})
-				})
 			})
 
 			Describe("PUT /blobs", func() {
 				It("updates the blob on the file system", func() {
-					fs.WriteFileString("/var/vcap/data/blobs/123-456-789", "Some data")
+					err := blobManager.Write("123-456-789", strings.NewReader("Some data"))
+					Expect(err).NotTo(HaveOccurred())
 
 					putBody := `Updated data`
 					putPayload := strings.NewReader(putBody)
@@ -228,19 +208,25 @@ var _ = Describe("HTTPSHandler", func() {
 					defer httpResponse.Body.Close()
 					Expect(httpResponse.StatusCode).To(Equal(201))
 
-					contents, err := fs.ReadFileString("/var/vcap/data/blobs/123-456-789")
+					file, _, err := blobManager.Fetch("123-456-789")
+					Expect(err).NotTo(HaveOccurred())
+					defer file.Close()
+
+					contents, err := ioutil.ReadAll(file)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(contents).To(Equal("Updated data"))
+					Expect(string(contents)).To(Equal("Updated data"))
 				})
 
 				Context("when an incorrect username and password is provided", func() {
 					It("returns a 401", func() {
-						fs.WriteFileString("/var/vcap/data/blobs/123-456-789", "Some data")
+						err := blobManager.Write("123-456-789", strings.NewReader("Some data"))
+						Expect(err).NotTo(HaveOccurred())
 
 						putBody := `Updated data`
 						putPayload := strings.NewReader(putBody)
 
 						httpRequest, err := http.NewRequest("PUT", strings.Replace(serverURL, "pass", "wrong", -1)+"/blobs/a5/123-456-789", putPayload)
+						Expect(err).NotTo(HaveOccurred())
 						httpResponse, err := httpClient.Do(httpRequest)
 						Expect(err).ToNot(HaveOccurred())
 
@@ -248,28 +234,6 @@ var _ = Describe("HTTPSHandler", func() {
 
 						Expect(httpResponse.StatusCode).To(Equal(401))
 						Expect(httpResponse.Header.Get("WWW-Authenticate")).To(Equal(`Basic realm=""`))
-					})
-				})
-
-				Context("when manager errors", func() {
-					It("returns a 500 because of openfile error", func() {
-						fs.OpenFileErr = errors.New("oops")
-
-						putBody := `Updated data`
-						putPayload := strings.NewReader(putBody)
-
-						request, err := http.NewRequest("PUT", serverURL+"/blobs/a5/123-456-789", putPayload)
-						Expect(err).ToNot(HaveOccurred())
-
-						httpResponse, err := httpClient.Do(request)
-						Expect(err).ToNot(HaveOccurred())
-
-						defer httpResponse.Body.Close()
-						Expect(httpResponse.StatusCode).To(Equal(500))
-
-						responseBody, err := ioutil.ReadAll(httpResponse.Body)
-						Expect(err).ToNot(HaveOccurred())
-						Expect(string(responseBody)).To(ContainSubstring("oops"))
 					})
 				})
 			})

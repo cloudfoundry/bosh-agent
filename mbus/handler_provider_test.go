@@ -12,8 +12,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/yagnats"
 
+	fakeblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )

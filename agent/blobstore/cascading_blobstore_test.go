@@ -5,7 +5,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"errors"
+
 	"github.com/cloudfoundry/bosh-agent/agent/blobstore"
+	fakeagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -15,13 +17,13 @@ import (
 var _ = Describe("cascadingBlobstore", func() {
 	var (
 		innerBlobstore     *fakeblob.FakeDigestBlobstore
-		blobManager        *fakeblob.FakeBlobManagerInterface
+		blobManager        *fakeagentblob.FakeBlobManagerInterface
 		cascadingBlobstore boshblob.DigestBlobstore
 	)
 
 	BeforeEach(func() {
 		innerBlobstore = &fakeblob.FakeDigestBlobstore{}
-		blobManager = &fakeblob.FakeBlobManagerInterface{}
+		blobManager = &fakeagentblob.FakeBlobManagerInterface{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 
 		cascadingBlobstore = blobstore.NewCascadingBlobstore(innerBlobstore, blobManager, logger)

@@ -3,11 +3,12 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	. "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	. "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
 )
 
 var _ = Describe("UploadBlobAction", func() {

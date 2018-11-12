@@ -14,6 +14,7 @@ import (
 
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
+	fakeagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
@@ -30,7 +31,7 @@ var _ = Describe("concreteFactory", func() {
 		settingsService   *fakesettings.FakeSettingsService
 		platform          *platformfakes.FakePlatform
 		blobstore         *fakeblobstore.FakeDigestBlobstore
-		blobManager       *fakeblobstore.FakeBlobManagerInterface
+		blobManager       *fakeagentblobstore.FakeBlobManagerInterface
 		taskService       *faketask.FakeService
 		notifier          *fakenotif.FakeNotifier
 		applier           *fakeappl.FakeApplier
@@ -52,7 +53,7 @@ var _ = Describe("concreteFactory", func() {
 		platform.GetDirProviderReturns(boshdir.NewProvider("/var/vcap"))
 
 		blobstore = &fakeblobstore.FakeDigestBlobstore{}
-		blobManager = &fakeblobstore.FakeBlobManagerInterface{}
+		blobManager = &fakeagentblobstore.FakeBlobManagerInterface{}
 		taskService = &faketask.FakeService{}
 		notifier = fakenotif.NewFakeNotifier()
 		applier = fakeappl.NewFakeApplier()

@@ -3,6 +3,7 @@ package action
 import (
 	boshappl "github.com/cloudfoundry/bosh-agent/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	boshagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
@@ -23,7 +24,7 @@ func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	blobstore boshblob.DigestBlobstore,
-	blobManager boshblob.BlobManagerInterface,
+	blobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
 	applier boshappl.Applier,

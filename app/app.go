@@ -122,7 +122,7 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Running bootstrap")
 	}
 
-	blobManager := boshblob.NewBlobManager(app.platform.GetFs(), app.dirProvider.BlobsDir())
+	blobManager := boshagentblobstore.NewBlobManager(app.platform.GetFs(), app.dirProvider.BlobsDir())
 	blobstore, err := app.setupBlobstore(settingsService.GetSettings().GetBlobstore(), blobManager)
 
 	if err != nil {
@@ -337,7 +337,7 @@ func (app *app) fileContents(path string) string {
 	return contents
 }
 
-func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobManager boshblob.BlobManagerInterface) (boshblob.DigestBlobstore, error) {
+func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobManager boshagentblobstore.BlobManagerInterface) (boshblob.DigestBlobstore, error) {
 	blobstoreProvider := boshblob.NewProvider(
 		app.platform.GetFs(),
 		app.platform.GetRunner(),

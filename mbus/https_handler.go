@@ -10,8 +10,8 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-utils/blobstore"
 
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -21,7 +21,7 @@ const httpsHandlerLogTag = "https_handler"
 
 type HTTPSHandler struct {
 	parsedURL   *url.URL
-	blobManager blobstore.BlobManagerInterface
+	blobManager boshagentblobstore.BlobManagerInterface
 	logger      boshlog.Logger
 	dispatcher  *HTTPSDispatcher
 	auditLogger platform.AuditLogger
@@ -30,7 +30,7 @@ type HTTPSHandler struct {
 func NewHTTPSHandler(
 	parsedURL *url.URL,
 	keyPair settings.CertKeyPair,
-	blobManager blobstore.BlobManagerInterface,
+	blobManager boshagentblobstore.BlobManagerInterface,
 	logger boshlog.Logger,
 	auditLogger platform.AuditLogger,
 ) HTTPSHandler {
@@ -149,8 +149,7 @@ func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
 
-	file, err, statusCode := h.blobManager.Fetch(blobID)
-
+	file, statusCode, err := h.blobManager.Fetch(blobID)
 	if err != nil {
 		h.logger.Error(httpsHandlerLogTag, "Failed to fetch blob: %s", err.Error())
 

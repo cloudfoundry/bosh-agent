@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"github.com/cloudfoundry/bosh-utils/blobstore"
+
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -17,10 +18,10 @@ type UploadBlobSpec struct {
 }
 
 type UploadBlobAction struct {
-	blobManager blobstore.BlobManagerInterface
+	blobManager boshagentblobstore.BlobManagerInterface
 }
 
-func NewUploadBlobAction(blobManager blobstore.BlobManagerInterface) UploadBlobAction {
+func NewUploadBlobAction(blobManager boshagentblobstore.BlobManagerInterface) UploadBlobAction {
 	return UploadBlobAction{blobManager: blobManager}
 }
 

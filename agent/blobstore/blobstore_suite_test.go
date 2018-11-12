@@ -9,5 +9,5 @@ import (
 
 func TestCascadingBlobstore(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Cascading Blobstore Suite")
+	RunSpecs(t, "Blobstore Suite")
 }

@@ -6,10 +6,10 @@ import (
 	"github.com/cloudfoundry/yagnats"
 
 	"code.cloudfoundry.org/clock"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -34,7 +34,7 @@ func NewHandlerProvider(
 
 func (p HandlerProvider) Get(
 	platform boshplatform.Platform,
-	blobManager blobstore.BlobManagerInterface,
+	blobManager boshagentblobstore.BlobManagerInterface,
 ) (handler boshhandler.Handler, err error) {
 	if p.handler != nil {
 		handler = p.handler

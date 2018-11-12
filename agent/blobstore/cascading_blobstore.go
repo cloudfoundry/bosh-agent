@@ -1,7 +1,7 @@
 package blobstore
 
 import (
-	boshUtilsBlobStore "github.com/cloudfoundry/bosh-utils/blobstore"
+	utilblobstore "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -9,15 +9,15 @@ import (
 const logTag = "cascadingBlobstore"
 
 type cascadingBlobstore struct {
-	innerBlobstore boshUtilsBlobStore.DigestBlobstore
-	blobManager    boshUtilsBlobStore.BlobManagerInterface
+	innerBlobstore utilblobstore.DigestBlobstore
+	blobManager    BlobManagerInterface
 	logger         boshlog.Logger
 }
 
 func NewCascadingBlobstore(
-	innerBlobstore boshUtilsBlobStore.DigestBlobstore,
-	blobManager boshUtilsBlobStore.BlobManagerInterface,
-	logger boshlog.Logger) boshUtilsBlobStore.DigestBlobstore {
+	innerBlobstore utilblobstore.DigestBlobstore,
+	blobManager BlobManagerInterface,
+	logger boshlog.Logger) utilblobstore.DigestBlobstore {
 	return cascadingBlobstore{
 		innerBlobstore: innerBlobstore,
 		blobManager:    blobManager,
