@@ -16,17 +16,17 @@ type BlobManager struct {
 	workdir string
 }
 
-func NewBlobManager(fs boshsys.FileSystem, workdir string) BlobManager {
-	return BlobManager{
+func NewBlobManager(workdir string) (*BlobManager, error) {
+	bm := &BlobManager{
 		workdir: workdir,
 	}
+	if err := bm.createDirStructure(); err != nil {
+		return nil, err
+	}
+	return bm, nil
 }
 
 func (m BlobManager) Fetch(blobID string) (boshsys.File, int, error) {
-	if err := m.createDirStructure(); err != nil {
-		return nil, 500, err
-	}
-
 	file, err := os.Open(m.blobPath(blobID))
 	if err != nil {
 		return nil, statusForErr(err), bosherr.WrapError(err, "Reading blob")
@@ -36,10 +36,6 @@ func (m BlobManager) Fetch(blobID string) (boshsys.File, int, error) {
 }
 
 func (m BlobManager) Write(blobID string, r io.Reader) error {
-	if err := m.createDirStructure(); err != nil {
-		return err
-	}
-
 	blobPath := m.blobPath(blobID)
 	file, err := os.OpenFile(blobPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
@@ -55,10 +51,6 @@ func (m BlobManager) Write(blobID string, r io.Reader) error {
 }
 
 func (m BlobManager) GetPath(blobID string, digest boshcrypto.Digest) (string, error) {
-	if err := m.createDirStructure(); err != nil {
-		return "", err
-	}
-
 	if !m.BlobExists(blobID) {
 		return "", bosherr.Errorf("Blob '%s' not found", blobID)
 	}
@@ -82,17 +74,10 @@ func (m BlobManager) GetPath(blobID string, digest boshcrypto.Digest) (string, e
 }
 
 func (m BlobManager) Delete(blobID string) error {
-	if err := m.createDirStructure(); err != nil {
-		return err
-	}
 	return os.RemoveAll(m.blobPath(blobID))
 }
 
 func (m BlobManager) BlobExists(blobID string) bool {
-	if err := m.createDirStructure(); err != nil {
-		return false
-	}
-
 	_, err := os.Stat(m.blobPath(blobID))
 	return !os.IsNotExist(err)
 }

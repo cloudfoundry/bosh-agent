@@ -34,7 +34,8 @@ var _ = Describe("Blob Manager", func() {
 		basePath, err = ioutil.TempDir("", "blobmanager")
 		Expect(err).NotTo(HaveOccurred())
 
-		blobManager = NewBlobManager(fs, basePath)
+		blobManager, err = boshagentblobstore.NewBlobManager(basePath)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {

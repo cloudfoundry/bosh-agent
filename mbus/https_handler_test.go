@@ -37,7 +37,8 @@ var _ = Describe("HTTPSHandler", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		serverURL = "https://user:pass@localhost:6900"
-		blobManager = boshagentblobstore.NewBlobManager(nil, tmpdir)
+		blobManager, err = boshagentblobstore.NewBlobManager(tmpdir)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
