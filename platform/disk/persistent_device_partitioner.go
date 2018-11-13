@@ -33,7 +33,12 @@ func NewPersistentDevicePartitioner(
 
 func (p *PersistentDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	size, err := p.deviceUtil.GetBlockDeviceSize(devicePath)
-	if err == nil && size > MaxFdiskPartitionSize {
+	if err != nil {
+		p.logger.Debug("persistent-disk-partitioner", "Attempting to get block device size")
+		return err
+	}
+
+	if size > MaxFdiskPartitionSize {
 		p.logger.Debug("persistent-disk-partitioner", "Using parted partitioner because disk size is too large: %d", size)
 		return p.partedPartitioner.Partition(devicePath, partitions)
 	}
