@@ -59,13 +59,9 @@ var _ = Describe("PersistentDevicePartitioner", func() {
 				diskUtil.GetBlockDeviceSizeError = errors.New("boom")
 			})
 
-			It("uses the sfdisk partitioner", func() {
+			It("should return an error", func() {
 				err := partitioner.Partition(devicePath, partitions)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(sfDiskPartitioner.PartitionCalled).To(BeTrue())
-				Expect(sfDiskPartitioner.PartitionDevicePath).To(Equal(devicePath))
-				Expect(sfDiskPartitioner.PartitionPartitions).To(Equal(partitions))
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
