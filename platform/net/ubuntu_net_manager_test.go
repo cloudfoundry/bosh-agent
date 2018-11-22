@@ -3,7 +3,6 @@ package net_test
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -294,16 +293,6 @@ nameserver 9.9.9.9
 					}
 				})
 
-				Context("when could not read link /etc/resolv.conf", func() {
-					It("fails reporting error", func() {
-						fs.ReadAndFollowLinkError = errors.New("fake-read-link-error")
-
-						err := netManager.SetupNetworking(networks, nil)
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Reading /etc/resolv.conf symlink"))
-					})
-				})
-
 				Context("when /etc/resolv.conf is no symlink", func() {
 					BeforeEach(func() {
 						err := fs.Symlink("/etc/resolv.conf", "/etc/resolv.conf")
@@ -313,47 +302,6 @@ nameserver 9.9.9.9
 						Expect(err).ToNot(HaveOccurred())
 					})
 
-					It("copies /etc/resolv.conf to .../resolv.conf.d/base", func() {
-						err := netManager.SetupNetworking(networks, nil)
-						Expect(err).ToNot(HaveOccurred())
-
-						contents, err := fs.ReadFile("/etc/resolvconf/resolv.conf.d/base")
-						Expect(err).ToNot(HaveOccurred())
-						Expect(string(contents)).To(Equal("fake-content"))
-					})
-
-					Context("when copying fails", func() {
-						It("fails reporting the error", func() {
-							fs.CopyFileError = errors.New("fake-copy-error")
-
-							err := netManager.SetupNetworking(networks, nil)
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Copying /etc/resolv.conf for backwards compat"))
-						})
-					})
-				})
-			})
-
-			It("forces /etc/resolv.conf to be a symlink", func() {
-				err := netManager.SetupNetworking(networks, nil)
-				Expect(err).ToNot(HaveOccurred())
-				linkContents, err := fs.Readlink("/etc/resolv.conf")
-				Expect(err).ToNot(HaveOccurred())
-
-				expectedContents, err := filepath.Abs("/run/resolvconf/resolv.conf")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(linkContents).To(Equal(expectedContents))
-			})
-
-			Context("when symlink command fails", func() {
-				BeforeEach(func() {
-					fs.SymlinkError = errors.New("fake-symlink-error")
-				})
-
-				It("fails reporting error", func() {
-					err := netManager.SetupNetworking(networks, nil)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Setting up /etc/resolv.conf symlink"))
 				})
 			})
 

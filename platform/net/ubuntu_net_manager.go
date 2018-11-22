@@ -3,7 +3,6 @@ package net
 import (
 	"bytes"
 	"path"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -456,30 +455,6 @@ func (net UbuntuNetManager) writeResolvConf(networks boshsettings.Networks) erro
 		if err != nil {
 			return bosherr.WrapError(err, "Writing to /etc/resolvconf/resolv.conf.d/base")
 		}
-	} else {
-		// For the first time before resolv.conf is symlinked to /run/...
-		// inherit possibly configured resolv.conf
-
-		targetPath, err := net.fs.ReadAndFollowLink("/etc/resolv.conf")
-		if err != nil {
-			return bosherr.WrapError(err, "Reading /etc/resolv.conf symlink")
-		}
-
-		expectedPath, err := filepath.Abs("/etc/resolv.conf")
-		if err != nil {
-			return bosherr.WrapError(err, "Resolving path to native OS")
-		}
-		if targetPath == expectedPath {
-			err := net.fs.CopyFile("/etc/resolv.conf", "/etc/resolvconf/resolv.conf.d/base")
-			if err != nil {
-				return bosherr.WrapError(err, "Copying /etc/resolv.conf for backwards compat")
-			}
-		}
-	}
-
-	err = net.fs.Symlink("/run/resolvconf/resolv.conf", "/etc/resolv.conf")
-	if err != nil {
-		return bosherr.WrapError(err, "Setting up /etc/resolv.conf symlink")
 	}
 
 	_, _, _, err = net.cmdRunner.RunCommand("resolvconf", "-u")
