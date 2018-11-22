@@ -2,16 +2,16 @@
 package platformfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	devicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	platform "github.com/cloudfoundry/bosh-agent/platform"
-	cert "github.com/cloudfoundry/bosh-agent/platform/cert"
-	vitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	settings "github.com/cloudfoundry/bosh-agent/settings"
-	directories "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fileutil "github.com/cloudfoundry/bosh-utils/fileutil"
-	system "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	"github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-utils/fileutil"
+	"github.com/cloudfoundry/bosh-utils/system"
 )
 
 type FakePlatform struct {
@@ -446,11 +446,12 @@ type FakePlatform struct {
 	setupDataDirReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupEphemeralDiskWithPathStub        func(string, *uint64) error
+	SetupEphemeralDiskWithPathStub        func(string, *uint64, string) error
 	setupEphemeralDiskWithPathMutex       sync.RWMutex
 	setupEphemeralDiskWithPathArgsForCall []struct {
 		arg1 string
 		arg2 *uint64
+		arg3 string
 	}
 	setupEphemeralDiskWithPathReturns struct {
 		result1 error
@@ -2856,17 +2857,18 @@ func (fake *FakePlatform) SetupDataDirReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) SetupEphemeralDiskWithPath(arg1 string, arg2 *uint64) error {
+func (fake *FakePlatform) SetupEphemeralDiskWithPath(arg1 string, arg2 *uint64, arg3 string) error {
 	fake.setupEphemeralDiskWithPathMutex.Lock()
 	ret, specificReturn := fake.setupEphemeralDiskWithPathReturnsOnCall[len(fake.setupEphemeralDiskWithPathArgsForCall)]
 	fake.setupEphemeralDiskWithPathArgsForCall = append(fake.setupEphemeralDiskWithPathArgsForCall, struct {
 		arg1 string
 		arg2 *uint64
-	}{arg1, arg2})
-	fake.recordInvocation("SetupEphemeralDiskWithPath", []interface{}{arg1, arg2})
+		arg3 string
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("SetupEphemeralDiskWithPath", []interface{}{arg1, arg2, arg3})
 	fake.setupEphemeralDiskWithPathMutex.Unlock()
 	if fake.SetupEphemeralDiskWithPathStub != nil {
-		return fake.SetupEphemeralDiskWithPathStub(arg1, arg2)
+		return fake.SetupEphemeralDiskWithPathStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -2881,17 +2883,17 @@ func (fake *FakePlatform) SetupEphemeralDiskWithPathCallCount() int {
 	return len(fake.setupEphemeralDiskWithPathArgsForCall)
 }
 
-func (fake *FakePlatform) SetupEphemeralDiskWithPathCalls(stub func(string, *uint64) error) {
+func (fake *FakePlatform) SetupEphemeralDiskWithPathCalls(stub func(string, *uint64, string) error) {
 	fake.setupEphemeralDiskWithPathMutex.Lock()
 	defer fake.setupEphemeralDiskWithPathMutex.Unlock()
 	fake.SetupEphemeralDiskWithPathStub = stub
 }
 
-func (fake *FakePlatform) SetupEphemeralDiskWithPathArgsForCall(i int) (string, *uint64) {
+func (fake *FakePlatform) SetupEphemeralDiskWithPathArgsForCall(i int) (string, *uint64, string) {
 	fake.setupEphemeralDiskWithPathMutex.RLock()
 	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
 	argsForCall := fake.setupEphemeralDiskWithPathArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakePlatform) SetupEphemeralDiskWithPathReturns(result1 error) {
