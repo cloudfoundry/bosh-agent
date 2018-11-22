@@ -123,7 +123,6 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"net1": network1, "net2": network2, "vip": vip})
 			Expect(err).ToNot(HaveOccurred())
 
-
 			Expect(runner.RunCommands).To(
 				ContainElement([]string{"powershell", "-Command", fmt.Sprintf(NicSettingsTemplate, macAddressDetector.macs[network1.Mac], network1.IP, network1.Netmask, network1.Gateway)}))
 			Expect(runner.RunCommands).To(
