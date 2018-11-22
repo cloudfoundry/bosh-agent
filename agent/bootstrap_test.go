@@ -259,9 +259,10 @@ var _ = Describe("bootstrap", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(platform.SetupEphemeralDiskWithPathCallCount()).To(Equal(1))
-			devicePath, desiredSwapSizeInBytes := platform.SetupEphemeralDiskWithPathArgsForCall(0)
+			devicePath, desiredSwapSizeInBytes, labelPrefix := platform.SetupEphemeralDiskWithPathArgsForCall(0)
 			Expect(devicePath).To(Equal("/dev/sda"))
 			Expect(*desiredSwapSizeInBytes).To(Equal(uint64(2048 * 1024 * 1024)))
+			Expect(labelPrefix).To(Equal(settingsService.Settings.AgentID))
 
 			Expect(platform.GetEphemeralDiskPathCallCount()).To(Equal(1))
 			Expect(platform.GetEphemeralDiskPathArgsForCall(0)).To(Equal(boshsettings.DiskSettings{
