@@ -13,18 +13,17 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"time"
 )
 
-type CertExpiration struct {
+type CertExpirationInfo struct {
 	PropertyName string `json:"property"`
-	Expires      time.Time `json:"expires"`
+	Expires      int64  `json:"expires"`
 	ErrorString  string `json:"error_string"`
 }
 
 type GetCertInfoAction struct {
 	spec         applyspec.V1Service
-	boshfs 		boshsys.FileSystem
+	boshfs       boshsys.FileSystem
 	jobDir       string
 	certFileName string
 }
@@ -50,49 +49,49 @@ func (g GetCertInfoAction) IsLoggable() bool {
 	return true
 }
 
-func (g GetCertInfoAction) Run() (map[string][]CertExpiration, error) {
+func (g GetCertInfoAction) Run() (map[string][]CertExpirationInfo, error) {
 	v1Spec, err := g.spec.Get()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Failed get jobsSpecs")
 	}
 
-	jobList := make(map[string][]CertExpiration)
+	jobList := make(map[string][]CertExpirationInfo)
 
 	for _, job := range v1Spec.Jobs() {
-		certExpiration := []CertExpiration{}
-		certExpirationInfo := CertExpiration{}
+		jobCertExpirationInfo := []CertExpirationInfo{}
+		jobCerts := make(map[string]string)
 
-		certs :=  make(map[string]string)
 		certFilePath := path.Join(g.jobDir, job.Name, "/config", g.certFileName)
-
 		if g.boshfs.FileExists(certFilePath) {
 			data, err := g.boshfs.ReadFile(certFilePath)
-			fmt.Printf("\ndata: %v", string(data))
 			if err != nil {
-				return nil, bosherr.WrapError(err, "not able to readfile")
+				return nil, bosherr.WrapError(err, "unable to read file")
 			}
 
-			err = yaml.Unmarshal(data, &certs)
+			err = yaml.Unmarshal(data, &jobCerts)
 			if err != nil {
-				return nil, bosherr.WrapError(err, fmt.Sprintf("loading %s file failed", certFilePath))
+				return nil, bosherr.WrapError(err, fmt.Sprintf("Unmarshaling YAML for %s file failed", certFilePath))
 			}
 
-			for propertyName, cert := range certs {
-				expires, err := g.validateCert(fmt.Sprintf("%v",cert))
-				certExpirationInfo.PropertyName = fmt.Sprintf("%v",propertyName)
+			for propertyName, cert := range jobCerts {
+				certExpirationInfo := CertExpirationInfo{}
+
+				expires, err := g.getCertExpiryDate(fmt.Sprintf("%v", cert))
+
+				certExpirationInfo.PropertyName = fmt.Sprintf("%v", propertyName)
+				certExpirationInfo.Expires = expires
+
 				if err != nil {
-					certExpirationInfo.ErrorString =  err.Error()
-				} else {
-					certExpirationInfo.Expires = expires
+					certExpirationInfo.ErrorString = err.Error()
 				}
-				certExpiration = append(certExpiration, certExpirationInfo)
+
+				jobCertExpirationInfo = append(jobCertExpirationInfo, certExpirationInfo)
 			}
 
-			jobList[job.Name] = certExpiration
-		}else{
-			jobList[job.Name] = certExpiration
+			jobList[job.Name] = jobCertExpirationInfo
+		} else {
+			return nil, bosherr.Errorf("%s not found", certFilePath)
 		}
-
 	}
 
 	return jobList, nil
@@ -106,16 +105,16 @@ func (g GetCertInfoAction) Cancel() error {
 	return errors.New("not supported")
 }
 
-func (g GetCertInfoAction) validateCert(cert string) (time.Time, error) {
+func (g GetCertInfoAction) getCertExpiryDate(cert string) (int64, error) {
 	block, _ := pem.Decode([]byte(cert))
 	if block == nil {
-		return time.Time{}, bosherr.WrapError(nil, "failed to decode certificate")
+		return 0, errors.New("failed to decode certificate")
 	}
 
 	parsedCert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return time.Time{}, bosherr.WrapError(err, "failed to parse certificate")
+		return 0, bosherr.WrapError(err, "failed to parse certificate")
 	}
 
-	return parsedCert.NotAfter, nil
+	return parsedCert.NotAfter.Unix(), nil
 }
