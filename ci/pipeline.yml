@@ -3,7 +3,6 @@ groups:
 - name: bosh-agent:2.1.x
   jobs:
     - test-unit
-    - windows-test-unit
     - test-integration
     - promote
 
@@ -33,21 +32,13 @@ jobs:
         BOSH_LITE_SECURITY_GROUP: {{BOSH_LITE_SECURITY_GROUP}}
         BOSH_LITE_PRIVATE_KEY: {{BOSH_LITE_PRIVATE_KEY}}
 
-- name: windows-test-unit
-  serial: true
-  plan:
-  - get: bosh-agent
-    trigger: true
-  - task: test-unit
-    file: bosh-agent/ci/tasks/test-unit-windows.yml
-
 - name: promote
   public: true
   serial: true
   plan:
     - aggregate:
       - trigger: true
-        passed: [test-unit, test-integration, windows-test-unit]
+        passed: [test-unit, test-integration]
         get: bosh-agent
       - get: version-semver
         params: {bump: patch}
