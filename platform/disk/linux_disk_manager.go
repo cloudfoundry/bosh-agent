@@ -68,6 +68,9 @@ func NewLinuxDiskManager(
 	case "parted":
 		ephemeralPartitioner = partedPartitioner
 		persistentPartitioner = partedPartitioner
+	case "sfdisk":
+		ephemeralPartitioner = sfDiskPartitioner
+		persistentPartitioner = sfDiskPartitioner
 	case "":
 		ephemeralPartitioner = sfDiskPartitioner
 		persistentPartitioner = NewPersistentDevicePartitioner(sfDiskPartitioner, partedPartitioner, diskUtil, logger)
