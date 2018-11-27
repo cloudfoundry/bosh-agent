@@ -90,7 +90,7 @@ func (p partedPartitioner) partitionsMatch(existingPartitions []ExistingPartitio
 		existingPartition := existingPartitions[index]
 		if existingPartition.Type != partition.Type {
 			return false
-		} else if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.convertFromMbToBytes(deltaSize)) {
+		} else if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, ConvertFromMbToBytes(deltaSize)) {
 			return false
 		}
 
@@ -180,18 +180,6 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 	}
 
 	return partitions, deviceFullSizeInBytes, nil
-}
-
-func (p partedPartitioner) convertFromBytesToMb(sizeInBytes uint64) uint64 {
-	return sizeInBytes / (1024 * 1024)
-}
-
-func (p partedPartitioner) convertFromMbToBytes(sizeInMb uint64) uint64 {
-	return sizeInMb * 1024 * 1024
-}
-
-func (p partedPartitioner) convertFromKbToBytes(sizeInKb uint64) uint64 {
-	return sizeInKb * 1024
 }
 
 func (p partedPartitioner) runPartedPrint(devicePath string) (stdout, stderr string, exitStatus int, err error) {
