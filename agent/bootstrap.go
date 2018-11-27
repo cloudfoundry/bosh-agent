@@ -99,10 +99,6 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up networking")
 	}
 
-	if err = boot.platform.SetTimeWithNtpServers(settings.GetNtpServers()); err != nil {
-		return bosherr.WrapError(err, "Setting up NTP servers")
-	}
-
 	if err = boot.platform.SetupRawEphemeralDisks(settings.RawEphemeralDiskSettings()); err != nil {
 		return bosherr.WrapError(err, "Setting up raw ephemeral disk")
 	}
@@ -123,6 +119,10 @@ func (boot bootstrap) Run() (err error) {
 
 	if err = boot.platform.SetupLogDir(); err != nil {
 		return bosherr.WrapError(err, "Setting up log dir")
+	}
+
+	if err = boot.platform.SetTimeWithNtpServers(settings.GetNtpServers()); err != nil {
+		return bosherr.WrapError(err, "Setting up NTP servers")
 	}
 
 	if err = boot.platform.SetupLoggingAndAuditing(); err != nil {
