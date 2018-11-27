@@ -47,10 +47,4 @@ GOOS=windows $bin/build
 echo -e "\n Running build script to confirm everything compiles..."
 $bin/build
 
-echo -e "\n Checking with golint..."
-$bin/golint
-
-echo -e "\n Govetting"
-$bin/govet
-
 echo -e "\n\033[0;32mSUCCESS\033[0m"
