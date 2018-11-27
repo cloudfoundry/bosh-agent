@@ -25,3 +25,5 @@ RUN vagrant plugin install vagrant-aws
 
 COPY --from=golang:1 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
+
+RUN useradd -ms /bin/bash bosh
