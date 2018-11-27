@@ -64,9 +64,9 @@ var _ = Describe("NewLinuxDiskManager", func() {
 
 	Context("when partitioner type is 'sfdisk'", func() {
 		It("returns disk manager configured to use sfdisk", func() {
-			opts := disk.LinuxDiskManagerOpts{PartitionerType: "sfdisk"}
-			diskManager := disk.NewLinuxDiskManager(logger, runner, fs, opts)
-			Expect(diskManager.GetEphemeralDevicePartitioner()).To(Equal(disk.NewSfdiskPartitioner(logger, runner, clock.NewClock())))
+			opts := LinuxDiskManagerOpts{PartitionerType: "sfdisk"}
+			diskManager := NewLinuxDiskManager(logger, runner, fs, opts)
+			Expect(diskManager.GetEphemeralDevicePartitioner()).To(Equal(NewSfdiskPartitioner(logger, runner, clock.NewClock())))
 		})
 	})
 
