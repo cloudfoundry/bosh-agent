@@ -53,7 +53,7 @@ func (p *EphemeralDevicePartitioner) Partition(devicePath string, partitions []P
 		return bosherr.WrapErrorf(err, "Getting existing partitions of `%s'", devicePath)
 	}
 
-	if p.partitionsMatch(existingPartitions, partitions, deviceFullSizeInBytes) {
+	if p.matchPartitionNames(existingPartitions, partitions, deviceFullSizeInBytes) {
 		p.logger.Info(p.logTag, "%s already partitioned as expected, skipping", devicePath)
 		return nil
 	}
@@ -79,30 +79,18 @@ func (p *EphemeralDevicePartitioner) GetPartitions(devicePath string) (partition
 	return p.partedPartitioner.GetPartitions(devicePath)
 }
 
-func (p *EphemeralDevicePartitioner) partitionsMatch(existingPartitions []ExistingPartition, desiredPartitions []Partition, deviceSizeInBytes uint64) bool {
+func (p *EphemeralDevicePartitioner) matchPartitionNames(existingPartitions []ExistingPartition, desiredPartitions []Partition, deviceSizeInBytes uint64) bool {
 	if len(existingPartitions) < len(desiredPartitions) {
 		return false
 	}
 
-	remainingDiskSpace := deviceSizeInBytes
-
 	for index, partition := range desiredPartitions {
-		if index == len(desiredPartitions)-1 && partition.SizeInBytes == 0 {
-			partition.SizeInBytes = remainingDiskSpace
-		}
-
 		existingPartition := existingPartitions[index]
-		if existingPartition.Type != partition.Type {
-			return false
-		} else if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.convertFromMbToBytes(deltaSize)) {
-			return false
-		}
 
 		if !strings.HasPrefix(existingPartition.Name, partition.NamePrefix) {
 			return false
 		}
 
-		remainingDiskSpace = remainingDiskSpace - partition.SizeInBytes
 	}
 
 	return true
@@ -180,10 +168,6 @@ func (p EphemeralDevicePartitioner) getPartitionPaths(devicePath string) ([]stri
 	}
 
 	return match, nil
-}
-
-func (p EphemeralDevicePartitioner) convertFromMbToBytes(sizeInMb uint64) uint64 {
-	return sizeInMb * 1024 * 1024
 }
 
 func (p EphemeralDevicePartitioner) ensureGPTPartition(devicePath string) (err error) {
