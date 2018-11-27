@@ -60,6 +60,8 @@ func NewLinuxDiskManager(
 	switch opts.PartitionerType {
 	case "parted":
 		partitioner = NewPartedPartitioner(logger, runner, clock.NewClock())
+	case "sfdisk":
+		partitioner = NewSfdiskPartitioner(logger, runner, clock.NewClock())
 	case "":
 		partitioner = NewSfdiskPartitioner(logger, runner, clock.NewClock())
 	default:

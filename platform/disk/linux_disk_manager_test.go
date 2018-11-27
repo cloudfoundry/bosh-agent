@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/platform/disk"
 	. "github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
@@ -59,6 +60,14 @@ var _ = Describe("NewLinuxDiskManager", func() {
 			opts := LinuxDiskManagerOpts{PartitionerType: "parted"}
 			diskManager := NewLinuxDiskManager(logger, runner, fs, opts)
 			Expect(diskManager.GetPartitioner()).To(Equal(NewPartedPartitioner(logger, runner, clock.NewClock())))
+		})
+	})
+
+	Context("when partitioner type is 'sfdisk'", func() {
+		It("returns disk manager configured to use sfdisk", func() {
+			opts := LinuxDiskManagerOpts{PartitionerType: "sfdisk"}
+			diskManager := NewLinuxDiskManager(logger, runner, fs, opts)
+			Expect(diskManager.GetPartitioner()).To(Equal(disk.NewSfdiskPartitioner(logger, runner, clock.NewClock())))
 		})
 	})
 
