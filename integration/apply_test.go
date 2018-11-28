@@ -199,8 +199,12 @@ var _ = Describe("apply", func() {
 
 		By("using /var/vcap/bosh/blobs as the local blobstore", func() {
 			output, err = testEnvironment.RunCommand("stat /var/vcap/data/blobs")
-			Expect(output).To(MatchRegexp("Access: \\(0700/drwx------\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(MatchRegexp("Access: \\(0700/drwx------\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
+
+			output, err = testEnvironment.RunCommand("stat /var/vcap/data/sensitive_blobs")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(MatchRegexp("Access: \\(0700/drwx------\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
 			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sensitive_blobs/abc0")
 			Expect(err).NotTo(HaveOccurred())
@@ -229,6 +233,7 @@ var _ = Describe("apply", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(output).To(ContainSubstring("tmpfs /var/vcap/data/jobs"))
+			Expect(output).To(ContainSubstring("tmpfs /var/vcap/data/sensitive_blobs"))
 		})
 	})
 })

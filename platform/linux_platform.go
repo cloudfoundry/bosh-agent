@@ -773,26 +773,34 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 		return bosherr.WrapErrorf(err, "Making %s dir", jobsDir)
 	}
 
+	sensitiveDir := p.dirProvider.SensitiveBlobsDir()
+	err = p.fs.MkdirAll(sensitiveDir, blobsDirPermissions)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", sensitiveDir)
+	}
+
 	if config.TmpFs {
-		_, jobDirIsMounted, err := p.IsMountPoint(jobsDir)
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Checking for mount point %s", jobsDir)
+		size := config.TmpFsSize
+		if size == "" {
+			size = "100m"
 		}
-		if !jobDirIsMounted {
-			size := config.TmpFsSize
-			if size == "" {
-				size = "100m"
-			}
-			err = p.diskManager.GetMounter().MountFilesystem("tmpfs", jobsDir, "tmpfs", fmt.Sprintf("size=%s", size))
-			if err != nil {
-				return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", jobsDir)
-			}
+
+		if err = p.mountTmpfs(jobsDir, size); err != nil {
+			return err
+		}
+		if err = p.mountTmpfs(sensitiveDir, size); err != nil {
+			return err
 		}
 	}
 
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", jobsDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chown %s", jobsDir)
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sensitiveDir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "chown %s", sensitiveDir)
 	}
 
 	packagesDir := p.dirProvider.PkgDir()
@@ -817,6 +825,20 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 		return bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", sysDir, sysDataDir)
 	}
 
+	return nil
+}
+
+func (p linux) mountTmpfs(dir, size string) error {
+	_, dirIsMounted, err := p.IsMountPoint(dir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Checking for mount point %s", dir)
+	}
+	if !dirIsMounted {
+		err = p.diskManager.GetMounter().MountFilesystem("tmpfs", dir, "tmpfs", fmt.Sprintf("size=%s", size))
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", dir)
+		}
+	}
 	return nil
 }
 
