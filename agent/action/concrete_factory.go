@@ -24,7 +24,7 @@ func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	blobstore boshblob.DigestBlobstore,
-	blobManager boshagentblob.BlobManagerInterface,
+	sensitiveBlobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
 	applier boshappl.Applier,
@@ -70,7 +70,7 @@ func NewFactory(
 			"compile_package": NewCompilePackage(compiler),
 
 			// Rendered Templates
-			"upload_blob": NewUploadBlobAction(blobManager),
+			"upload_blob": NewUploadBlobAction(sensitiveBlobManager),
 
 			// Disk management
 			"list_disk":              NewListDisk(settingsService, platform, logger),

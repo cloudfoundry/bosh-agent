@@ -109,3 +109,7 @@ func (p Provider) InstanceDNSDir() string {
 func (p Provider) BlobsDir() string {
 	return filepath.Join(p.DataDir(), "blobs")
 }
+
+func (p Provider) SensitiveBlobsDir() string {
+	return filepath.Join(p.DataDir(), "sensitive_blobs")
+}

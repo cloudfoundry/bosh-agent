@@ -44,6 +44,9 @@ var _ = Describe("apply", func() {
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
+					// Ignored because we rely on the BlobManagers in the
+					// CascadingBlobstore to return blobs rather than the local
+					// blobstore.
 					"blobstore_path": "ignored",
 				},
 			},
@@ -105,7 +108,7 @@ var _ = Describe("apply", func() {
 		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
+		err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
 		Expect(err).NotTo(HaveOccurred())
 		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
 		Expect(err).NotTo(HaveOccurred())
@@ -180,7 +183,6 @@ var _ = Describe("apply", func() {
 		Eventually(func() error {
 			_, err = testEnvironment.RunCommand("stat /var/vcap/data/sys/run/foobar")
 			return err
-			//Expect(output).To(MatchRegexp()("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 		}, 2*time.Minute, 1*time.Second).ShouldNot(HaveOccurred())
 
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/sys/run/foobar")
@@ -200,7 +202,7 @@ var _ = Describe("apply", func() {
 			Expect(output).To(MatchRegexp("Access: \\(0700/drwx------\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/blobs/abc0")
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sensitive_blobs/abc0")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Size: 519"))
 
@@ -225,6 +227,7 @@ var _ = Describe("apply", func() {
 
 			output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(output).To(ContainSubstring("tmpfs /var/vcap/data/jobs"))
 		})
 	})

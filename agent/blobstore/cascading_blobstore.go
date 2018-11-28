@@ -10,31 +10,34 @@ const logTag = "cascadingBlobstore"
 
 type cascadingBlobstore struct {
 	innerBlobstore utilblobstore.DigestBlobstore
-	blobManager    BlobManagerInterface
+	blobManagers   []BlobManagerInterface
 	logger         boshlog.Logger
 }
 
 func NewCascadingBlobstore(
 	innerBlobstore utilblobstore.DigestBlobstore,
-	blobManager BlobManagerInterface,
-	logger boshlog.Logger) utilblobstore.DigestBlobstore {
+	blobManagers []BlobManagerInterface,
+	logger boshlog.Logger,
+) utilblobstore.DigestBlobstore {
 	return cascadingBlobstore{
 		innerBlobstore: innerBlobstore,
-		blobManager:    blobManager,
+		blobManagers:   blobManagers,
 		logger:         logger,
 	}
 }
 
 func (b cascadingBlobstore) Get(blobID string, digest boshcrypto.Digest) (string, error) {
-	if b.blobManager.BlobExists(blobID) {
-		blobPath, err := b.blobManager.GetPath(blobID, digest)
+	for _, blobManager := range b.blobManagers {
+		if blobManager.BlobExists(blobID) {
+			blobPath, err := blobManager.GetPath(blobID, digest)
 
-		if err != nil {
-			return "", err
+			if err != nil {
+				return "", err
+			}
+
+			b.logger.Debug(logTag, "Found blob with BlobManager. BlobID: %s", blobID)
+			return blobPath, nil
 		}
-
-		b.logger.Debug(logTag, "Found blob with BlobManager. BlobID: %s", blobID)
-		return blobPath, nil
 	}
 
 	return b.innerBlobstore.Get(blobID, digest)
@@ -53,7 +56,13 @@ func (b cascadingBlobstore) Validate() error {
 }
 
 func (b cascadingBlobstore) Delete(blobID string) error {
-	err := b.blobManager.Delete(blobID)
+	var err error
+	for _, blobManager := range b.blobManagers {
+		err = blobManager.Delete(blobID)
+		if err == nil {
+			break
+		}
+	}
 
 	if err != nil {
 		return err

@@ -122,19 +122,29 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Running bootstrap")
 	}
 
-	blobManager, err := boshagentblobstore.NewBlobManager(app.dirProvider.BlobsDir())
+	// For storing large non-sensitive blobs
+	inconsiderateBlobManager, err := boshagentblobstore.NewBlobManager(app.dirProvider.BlobsDir())
 	if err != nil {
 		return bosherr.WrapError(err, "Getting blob manager")
 	}
 
-	blobstore, err := app.setupBlobstore(settingsService.GetSettings().GetBlobstore(), blobManager)
+	// For storing sensitive blobs (rendered job templates)
+	sensitiveBlobManager, err := boshagentblobstore.NewBlobManager(app.dirProvider.SensitiveBlobsDir())
+	if err != nil {
+		return bosherr.WrapError(err, "Getting blob manager")
+	}
+
+	blobstore, err := app.setupBlobstore(
+		settingsService.GetSettings().GetBlobstore(),
+		[]boshagentblobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
+	)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting blobstore")
 	}
 
 	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, auditLogger)
 
-	mbusHandler, err := mbusHandlerProvider.Get(app.platform, blobManager)
+	mbusHandler, err := mbusHandlerProvider.Get(app.platform, inconsiderateBlobManager)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting mbus handler")
 	}
@@ -191,7 +201,7 @@ func (app *app) Setup(opts Options) error {
 		settingsService,
 		app.platform,
 		blobstore,
-		blobManager,
+		sensitiveBlobManager,
 		taskService,
 		notifier,
 		applier,
@@ -340,7 +350,10 @@ func (app *app) fileContents(path string) string {
 	return contents
 }
 
-func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobManager boshagentblobstore.BlobManagerInterface) (boshblob.DigestBlobstore, error) {
+func (app *app) setupBlobstore(
+	blobstoreSettings boshsettings.Blobstore,
+	blobManagers []boshagentblobstore.BlobManagerInterface,
+) (boshblob.DigestBlobstore, error) {
 	blobstoreProvider := boshblob.NewProvider(
 		app.platform.GetFs(),
 		app.platform.GetRunner(),
@@ -355,7 +368,7 @@ func (app *app) setupBlobstore(blobstoreSettings boshsettings.Blobstore, blobMan
 		return nil, bosherr.WrapError(err, "Getting blobstore")
 	}
 
-	return boshagentblobstore.NewCascadingBlobstore(blobstore, blobManager, app.logger), nil
+	return boshagentblobstore.NewCascadingBlobstore(blobstore, blobManagers, app.logger), nil
 }
 
 func (app *app) patchBlobstoreOptions(blobstoreSettings boshsettings.Blobstore) boshsettings.Blobstore {

@@ -496,6 +496,22 @@ func (t *TestEnvironment) RunCommand3(command string) (string, string, int, erro
 	return t.cmdRunner.RunCommand("vagrant", "ssh", "-c", command)
 }
 
+func (t *TestEnvironment) CreateSensitiveBlobFromAsset(assetPath, blobID string) error {
+	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/blobs")
+	if err != nil {
+		return err
+	}
+
+	_, _, _, err = t.cmdRunner.RunCommand(
+		"vagrant",
+		"ssh",
+		"-c",
+		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/sensitive_blobs/%s", t.assetsDir(), assetPath, blobID),
+	)
+
+	return err
+}
+
 func (t *TestEnvironment) CreateBlobFromAsset(assetPath, blobID string) error {
 	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/blobs")
 	if err != nil {
