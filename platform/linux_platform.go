@@ -958,7 +958,7 @@ func (p linux) SetupLogDir() error {
 		return bosherr.WrapError(err, "Creating root log dir")
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", boshRootLogPath)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0771", boshRootLogPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Chmoding /var/log dir")
 	}
@@ -1004,6 +1004,31 @@ func (p linux) SetupLogDir() error {
 	err = p.bindMountDir(boshRootLogPath, logDir)
 	if err != nil {
 		return err
+	}
+
+	result, err := p.fs.ReadFileString("/etc/passwd")
+	if err != nil {
+		return nil
+	}
+
+	rx := regexp.MustCompile("(?m)^_chrony:")
+
+	if rx.MatchString(result) {
+		chronyDirPath := path.Join(boshRootLogPath, "chrony")
+		_, _, _, err = p.cmdRunner.RunCommand("mkdir", "-p", chronyDirPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Creating chrony log dir")
+		}
+
+		_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", chronyDirPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Chmoding chrony log dir")
+		}
+
+		_, _, _, err = p.cmdRunner.RunCommand("chown", "_chrony:_chrony", chronyDirPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Chowning chrony log dir")
+		}
 	}
 
 	return nil

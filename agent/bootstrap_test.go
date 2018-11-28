@@ -573,6 +573,20 @@ var _ = Describe("bootstrap", func() {
 					Expect(platform.SetTimeWithNtpServersArgsForCall(0)).To(Equal(anotherNtpServers))
 				})
 			})
+
+			It("sets up the log directories before calling SetTimeWithNTPServers", func() {
+				logNeverCalled := fmt.Errorf("SetupLogDir was never called")
+				platform.SetTimeWithNtpServersStub = func([]string) error {
+					return logNeverCalled
+				}
+				platform.SetupLogDirStub = func() error {
+					logNeverCalled = nil
+					return nil
+				}
+
+				err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 
 		Context("validating persistent disks", func() {
