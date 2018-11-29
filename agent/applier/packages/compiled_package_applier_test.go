@@ -12,7 +12,6 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
@@ -42,7 +41,6 @@ func init() {
 		var (
 			packagesBc *fakebc.FakeBundleCollection
 			blobstore  *fakeblob.FakeDigestBlobstore
-			compressor *fakecmd.FakeCompressor
 			fs         *fakesys.FakeFileSystem
 			logger     boshlog.Logger
 			applier    Applier
@@ -51,10 +49,9 @@ func init() {
 		BeforeEach(func() {
 			packagesBc = fakebc.NewFakeBundleCollection()
 			blobstore = &fakeblob.FakeDigestBlobstore{}
-			compressor = fakecmd.NewFakeCompressor()
 			fs = fakesys.NewFakeFileSystem()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
-			applier = NewCompiledPackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
+			applier = NewCompiledPackageApplier(packagesBc, true, blobstore, fs, logger)
 		})
 
 		Describe("Prepare & Apply", func() {
@@ -97,46 +94,6 @@ func init() {
 					Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 				})
 
-				It("decompresses package blob to tmp path and later cleans it up", func() {
-					fs.TempDirDir = "/fake-tmp-dir"
-					blobstore.GetReturns("/fake-blobstore-file-name", nil)
-
-					var tmpDirExistsBeforeInstall bool
-
-					bundle.InstallCallBack = func() {
-						tmpDirExistsBeforeInstall = true
-					}
-
-					err := act()
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal("/fake-blobstore-file-name"))
-					Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/fake-tmp-dir"))
-
-					// tmp dir exists before bundle install
-					Expect(tmpDirExistsBeforeInstall).To(BeTrue())
-
-					// tmp dir is cleaned up after install
-					Expect(fs.FileExists(fs.TempDirDir)).To(BeFalse())
-				})
-
-				It("returns error when temporary directory creation fails", func() {
-					fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
-				})
-
-				It("returns error when decompressing package blob fails", func() {
-					compressor.DecompressFileToDirErr = errors.New("fake-decompress-error")
-					pkg.Source.Sha1 = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:checksum"))
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
-				})
-
 				It("can process sha1 checksums in the new format", func() {
 					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 					pkg.Source.Sha1 = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))
@@ -159,31 +116,14 @@ func init() {
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))
 				})
 
-				It("returns error when given and unsupported fingerprint", func() {
-					compressor.DecompressFileToDirErr = errors.New("fake-decompress-error")
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
-				})
-
-				It("installs bundle from decompressed tmp path of a package blob", func() {
-					fs.TempDirDir = "/fake-tmp-dir"
-
-					var installedBeforeDecompression bool
-
-					compressor.DecompressFileToDirCallBack = func() {
-						installedBeforeDecompression = bundle.Installed
-					}
-
+				It("installs bundle from archive", func() {
+					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
-					// bundle installation did not happen before decompression
-					Expect(installedBeforeDecompression).To(BeFalse())
-
 					// make sure that bundle install happened after decompression
-					Expect(bundle.InstallSourcePath).To(Equal("/fake-tmp-dir"))
+					Expect(bundle.InstallSourcePath).To(Equal("/fake-blobstore-file-name"))
+					Expect(bundle.InstallPathInBundle).To(Equal(""))
 				})
 			}
 
@@ -343,7 +283,7 @@ func init() {
 
 			Context("when operating on packages as a package owner", func() {
 				BeforeEach(func() {
-					applier = NewCompiledPackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
+					applier = NewCompiledPackageApplier(packagesBc, true, blobstore, fs, logger)
 				})
 
 				It("first disables and then uninstalls packages that are not in keeponly list", func() {
@@ -379,7 +319,7 @@ func init() {
 
 			Context("when operating on packages not as a package owner", func() {
 				BeforeEach(func() {
-					applier = NewCompiledPackageApplier(packagesBc, false, blobstore, compressor, fs, logger)
+					applier = NewCompiledPackageApplier(packagesBc, false, blobstore, fs, logger)
 				})
 
 				It("disables and but does not uninstall packages that are not in keeponly list", func() {

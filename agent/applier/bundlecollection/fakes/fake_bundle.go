@@ -5,11 +5,12 @@ type FakeBundleInstallCallBack func()
 type FakeBundle struct {
 	ActionsCalled []string
 
-	InstallSourcePath string
-	InstallCallBack   FakeBundleInstallCallBack
-	InstallPath       string
-	InstallError      error
-	Installed         bool
+	InstallSourcePath   string
+	InstallPathInBundle string
+	InstallCallBack     FakeBundleInstallCallBack
+	InstallPath         string
+	InstallError        error
+	Installed           bool
 
 	IsInstalledErr error
 
@@ -32,8 +33,9 @@ func NewFakeBundle() (bundle *FakeBundle) {
 	return
 }
 
-func (s *FakeBundle) Install(sourcePath string) (string, error) {
+func (s *FakeBundle) Install(sourcePath, pathInBundle string) (string, error) {
 	s.InstallSourcePath = sourcePath
+	s.InstallPathInBundle = pathInBundle
 	s.Installed = true
 	s.ActionsCalled = append(s.ActionsCalled, "Install")
 	if s.InstallCallBack != nil {

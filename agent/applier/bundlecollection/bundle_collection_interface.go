@@ -12,7 +12,7 @@ type BundleCollection interface {
 }
 
 type Bundle interface {
-	Install(sourcePath string) (path string, err error)
+	Install(sourcePath, pathInBundle string) (path string, err error)
 	InstallWithoutContents() (path string, err error)
 	Uninstall() (err error)
 

@@ -158,36 +158,6 @@ func init() {
 					Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 				})
 
-				It("decompresses job template blob to tmp path and later cleans it up", func() {
-					blobstore.GetReturns("/fake-blobstore-file-name", nil)
-
-					var tmpDirExistsBeforeInstall bool
-
-					bundle.InstallCallBack = func() {
-						tmpDirExistsBeforeInstall = true
-					}
-
-					err := act()
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal("/fake-blobstore-file-name"))
-					Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/fake-tmp-dir"))
-
-					// tmp dir exists before bundle install
-					Expect(tmpDirExistsBeforeInstall).To(BeTrue())
-
-					// tmp dir is cleaned up after install
-					Expect(fs.FileExists(fs.TempDirDir)).To(BeFalse())
-				})
-
-				It("returns error when temporary directory creation fails", func() {
-					fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
-				})
-
 				It("can process sha1 checksums in the new format", func() {
 					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 					job.Source.Sha1 = boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1")
@@ -210,29 +180,15 @@ func init() {
 					Expect(fingerPrint).To(Equal(job.Source.Sha1))
 				})
 
-				It("returns error when decompressing job template fails", func() {
-					compressor.DecompressFileToDirErr = errors.New("fake-decompress-error")
-
-					err := act()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
-				})
-
 				It("installs bundle from decompressed tmp path of a job template", func() {
-					var installedBeforeDecompression bool
-
-					compressor.DecompressFileToDirCallBack = func() {
-						installedBeforeDecompression = bundle.Installed
-					}
+					blobstore.GetReturns("/fake-blobstore-file-name", nil)
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
-					// bundle installation did not happen before decompression
-					Expect(installedBeforeDecompression).To(BeFalse())
-
 					// make sure that bundle install happened after decompression
-					Expect(bundle.InstallSourcePath).To(Equal("/fake-tmp-dir/fake-path-in-archive"))
+					Expect(bundle.InstallSourcePath).To(Equal("/fake-blobstore-file-name"))
+					Expect(bundle.InstallPathInBundle).To(Equal("fake-path-in-archive"))
 				})
 
 				It("fixes the permissions of the files in the job's install directory", func() {

@@ -272,6 +272,7 @@ func (app *app) buildApplierAndCompiler(
 		os.FileMode(0750),
 		fileSystem,
 		timeService,
+		app.platform.GetCompressor(),
 		app.logger,
 	)
 

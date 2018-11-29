@@ -5,7 +5,6 @@ import (
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -18,17 +17,15 @@ type compiledPackageApplier struct {
 	// KeepOnly will permanently uninstall packages when operating as owner
 	packagesBcOwner bool
 
-	blobstore  boshblob.DigestBlobstore
-	compressor boshcmd.Compressor
-	fs         boshsys.FileSystem
-	logger     boshlog.Logger
+	blobstore boshblob.DigestBlobstore
+	fs        boshsys.FileSystem
+	logger    boshlog.Logger
 }
 
 func NewCompiledPackageApplier(
 	packagesBc bc.BundleCollection,
 	packagesBcOwner bool,
 	blobstore boshblob.DigestBlobstore,
-	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) Applier {
@@ -36,7 +33,6 @@ func NewCompiledPackageApplier(
 		packagesBc:      packagesBc,
 		packagesBcOwner: packagesBcOwner,
 		blobstore:       blobstore,
-		compressor:      compressor,
 		fs:              fs,
 		logger:          logger,
 	}
@@ -87,17 +83,6 @@ func (s compiledPackageApplier) Apply(pkg models.Package) error {
 }
 
 func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundle bc.Bundle) error {
-	tmpDir, err := s.fs.TempDir("bosh-agent-applier-packages-CompiledPackageApplier-Apply")
-	if err != nil {
-		return bosherr.WrapError(err, "Getting temp dir")
-	}
-
-	defer func() {
-		if err = s.fs.RemoveAll(tmpDir); err != nil {
-			s.logger.Warn(logTag, "Failed to clean up tmpDir: %s", err.Error())
-		}
-	}()
-
 	file, err := s.blobstore.Get(pkg.Source.BlobstoreID, pkg.Source.Sha1)
 	if err != nil {
 		return bosherr.WrapError(err, "Fetching package blob")
@@ -109,12 +94,7 @@ func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 		}
 	}()
 
-	err = s.compressor.DecompressFileToDir(file, tmpDir, boshcmd.CompressorOptions{})
-	if err != nil {
-		return bosherr.WrapError(err, "Decompressing package files")
-	}
-
-	_, err = pkgBundle.Install(tmpDir)
+	_, err = pkgBundle.Install(file, "")
 	if err != nil {
 		return bosherr.WrapError(err, "Installling package directory")
 	}

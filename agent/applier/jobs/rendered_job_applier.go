@@ -107,17 +107,6 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 }
 
 func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc.Bundle) error {
-	tmpDir, err := s.fs.TempDir("bosh-agent-applier-jobs-RenderedJobApplier-Apply")
-	if err != nil {
-		return bosherr.WrapError(err, "Getting temp dir")
-	}
-
-	defer func() {
-		if err = s.fs.RemoveAll(tmpDir); err != nil {
-			s.logger.Warn(logTag, "Failed to clean up temp directory: %s", err.Error())
-		}
-	}()
-
 	file, err := s.blobstore.Get(job.Source.BlobstoreID, job.Source.Sha1)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting job source from blobstore")
@@ -129,12 +118,7 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc
 		}
 	}()
 
-	err = s.compressor.DecompressFileToDir(file, tmpDir, boshfileutil.CompressorOptions{})
-	if err != nil {
-		return bosherr.WrapError(err, "Decompressing files to temp dir")
-	}
-
-	_, err = jobBundle.Install(path.Join(tmpDir, job.Source.PathInArchive))
+	_, err = jobBundle.Install(file, job.Source.PathInArchive)
 	if err != nil {
 		return bosherr.WrapError(err, "Installing job bundle")
 	}

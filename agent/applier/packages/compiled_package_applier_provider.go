@@ -50,7 +50,7 @@ func NewCompiledPackageApplierProvider(
 // Root provides package applier that operates on system-wide packages.
 // (e.g manages /var/vcap/packages/pkg-a -> /var/vcap/data/packages/pkg-a)
 func (p compiledPackageApplierProvider) Root() Applier {
-	return NewCompiledPackageApplier(p.RootBundleCollection(), true, p.blobstore, p.compressor, p.fs, p.logger)
+	return NewCompiledPackageApplier(p.RootBundleCollection(), true, p.blobstore, p.fs, p.logger)
 }
 
 // JobSpecific provides package applier that operates on job-specific packages.
@@ -64,9 +64,10 @@ func (p compiledPackageApplierProvider) JobSpecific(jobName string) Applier {
 		os.FileMode(0755),
 		p.fs,
 		p.timeProvider,
+		p.compressor,
 		p.logger,
 	)
-	return NewCompiledPackageApplier(packagesBc, false, p.blobstore, p.compressor, p.fs, p.logger)
+	return NewCompiledPackageApplier(packagesBc, false, p.blobstore, p.fs, p.logger)
 }
 
 func (p compiledPackageApplierProvider) RootBundleCollection() boshbc.BundleCollection {
@@ -77,6 +78,7 @@ func (p compiledPackageApplierProvider) RootBundleCollection() boshbc.BundleColl
 		os.FileMode(0755),
 		p.fs,
 		p.timeProvider,
+		p.compressor,
 		p.logger,
 	)
 }

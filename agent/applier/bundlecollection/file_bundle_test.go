@@ -3,12 +3,14 @@ package bundlecollection_test
 import (
 	"errors"
 	"os"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -17,27 +19,40 @@ import (
 
 var _ = Describe("FileBundle", func() {
 	var (
-		fs          *fakesys.FakeFileSystem
-		fakeClock   *fakes.FakeClock
-		logger      boshlog.Logger
-		sourcePath  string
-		installPath string
-		enablePath  string
-		fileBundle  FileBundle
+		fs             *fakesys.FakeFileSystem
+		fakeClock      *fakes.FakeClock
+		fakeCompressor *fakefileutil.FakeCompressor
+		logger         boshlog.Logger
+		sourcePath     string
+		installPath    string
+		enablePath     string
+		fileBundle     FileBundle
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		fakeClock = new(fakes.FakeClock)
+		fakeCompressor = new(fakefileutil.FakeCompressor)
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, fakeClock, logger)
+		fileBundle = NewFileBundle(
+			installPath,
+			enablePath,
+			os.FileMode(0750),
+			fs,
+			fakeClock,
+			fakeCompressor,
+			logger,
+		)
 	})
 
 	createSourcePath := func() string {
 		path := "/source-path"
-		err := fs.MkdirAll(path, os.ModePerm)
+		err := fs.MkdirAll(path, 0750)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = fs.WriteFileString("/source-path/config.go", "package go")
 		Expect(err).ToNot(HaveOccurred())
 
 		return path
@@ -59,6 +74,10 @@ var _ = Describe("FileBundle", func() {
 			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
 			Expect(fileStats.Username).To(Equal("root"))
 			Expect(fileStats.Groupname).To(Equal("vcap"))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeTrue())
 		})
 
 		It("return error when bundle cannot be installed", func() {
@@ -67,6 +86,36 @@ var _ = Describe("FileBundle", func() {
 			_, err := fileBundle.InstallWithoutContents()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdirall-error"))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeFalse())
+		})
+
+		It("return error when chwon fails", func() {
+			fs.ChownErr = errors.New("chown failed")
+
+			_, err := fileBundle.InstallWithoutContents()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("chown failed"))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeFalse())
+		})
+
+		It("sets correct permissions on install path", func() {
+			fs.Chmod(sourcePath, os.FileMode(0700))
+
+			_, err := fileBundle.Install(sourcePath, "")
+			Expect(err).NotTo(HaveOccurred())
+
+			fileStats := fs.GetFileTestStat(installPath)
+			Expect(fileStats).ToNot(BeNil())
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(fileStats.Username).To(Equal("root"))
+			Expect(fileStats.Groupname).To(Equal("vcap"))
 		})
 
 		It("is idempotent", func() {
@@ -79,9 +128,97 @@ var _ = Describe("FileBundle", func() {
 		})
 	})
 
+	Describe("Install", func() {
+		It("installs the bundle from source at the given path", func() {
+			fakeCompressor.DecompressFileToDirCallBack = func() {
+				decompressPath := fakeCompressor.DecompressFileToDirDirs[len(fakeCompressor.DecompressFileToDirDirs)-1]
+				contents, err := fs.ReadFileString(filepath.Join(sourcePath, "config.go"))
+				Expect(err).NotTo(HaveOccurred())
+				fs.WriteFileString(filepath.Join(decompressPath, "config.go"), contents)
+			}
+
+			path, err := fileBundle.Install(sourcePath, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(path).To(Equal(installPath))
+
+			opts := fakeCompressor.DecompressFileToDirOptions[0]
+			Expect(opts.PathInArchive).To(Equal(""))
+			Expect(opts.StripComponents).To(Equal(0))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeTrue(), "Bundle not installed")
+
+			contents, err := fs.ReadFileString(filepath.Join(path, "config.go"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).To(Equal("package go"))
+		})
+
+		It("returns error when decompression fails", func() {
+			fakeCompressor.DecompressFileToDirErr = errors.New("decompress failed")
+
+			_, err := fileBundle.Install(sourcePath, "")
+			Expect(err).To(MatchError(ContainSubstring("decompress")))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeFalse())
+		})
+
+		It("returns an error if creation of install directory fails", func() {
+			fs.MkdirAllError = errors.New("mkdir failed")
+
+			_, err := fileBundle.Install(sourcePath, "")
+			Expect(err).To(MatchError(ContainSubstring("mkdir failed")))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeFalse())
+		})
+
+		It("returns an error if chown install directory fails", func() {
+			fs.ChownErr = errors.New("chown failed")
+
+			_, err := fileBundle.Install(sourcePath, "")
+			Expect(err).To(MatchError(ContainSubstring("chown failed")))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeFalse())
+		})
+
+		It("sets correct permissions on install path", func() {
+			fs.Chmod(sourcePath, os.FileMode(0700))
+
+			_, err := fileBundle.Install(sourcePath, "")
+			Expect(err).NotTo(HaveOccurred())
+
+			fileStats := fs.GetFileTestStat(installPath)
+			Expect(fileStats).ToNot(BeNil())
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(fileStats.Username).To(Equal("root"))
+			Expect(fileStats.Groupname).To(Equal("vcap"))
+		})
+
+		// Job bundles contain many jobs but we only want to extract a single one.
+		Describe("extracting only part of the bundle", func() {
+			It("only decompresses part of the bundle", func() {
+				path, err := fileBundle.Install(sourcePath, "subdir")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path).To(Equal(installPath))
+
+				opts := fakeCompressor.DecompressFileToDirOptions[0]
+				Expect(opts.PathInArchive).To(Equal("subdir"))
+				Expect(opts.StripComponents).To(Equal(1))
+			})
+		})
+	})
+
 	Describe("GetInstallPath", func() {
 		It("returns the install path", func() {
-			fs.MkdirAll(installPath, os.ModePerm)
+			err := fs.MkdirAll(installPath, 0750)
+			Expect(err).NotTo(HaveOccurred())
 
 			actualInstallPath, err := fileBundle.GetInstallPath()
 			Expect(err).NotTo(HaveOccurred())
@@ -96,7 +233,7 @@ var _ = Describe("FileBundle", func() {
 
 	Describe("IsInstalled", func() {
 		It("returns true when it is installed", func() {
-			_, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath, "")
 			Expect(err).NotTo(HaveOccurred())
 
 			installed, err := fileBundle.IsInstalled()
@@ -114,7 +251,7 @@ var _ = Describe("FileBundle", func() {
 	Describe("Enable", func() {
 		Context("when bundle is installed", func() {
 			BeforeEach(func() {
-				_, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath, "")
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -163,7 +300,7 @@ var _ = Describe("FileBundle", func() {
 
 		Context("when enable dir cannot be created", func() {
 			It("returns error", func() {
-				_, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath, "")
 				Expect(err).NotTo(HaveOccurred())
 				fs.MkdirAllError = errors.New("fake-mkdirall-error")
 
@@ -175,7 +312,7 @@ var _ = Describe("FileBundle", func() {
 
 		Context("when bundle cannot be enabled", func() {
 			It("returns error", func() {
-				_, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath, "")
 				Expect(err).NotTo(HaveOccurred())
 				fs.SymlinkError = errors.New("fake-symlink-error")
 
@@ -199,7 +336,7 @@ var _ = Describe("FileBundle", func() {
 
 		Context("where the enabled path target is the same installed version", func() {
 			BeforeEach(func() {
-				_, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath, "")
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = fileBundle.Enable()
@@ -227,16 +364,24 @@ var _ = Describe("FileBundle", func() {
 			newerInstallPath := "/newer-install-path"
 
 			BeforeEach(func() {
-				_, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath, "")
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 
-				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, os.FileMode(0750), fs, fakeClock, logger)
+				newerFileBundle := NewFileBundle(
+					newerInstallPath,
+					enablePath,
+					os.FileMode(0750),
+					fs,
+					fakeClock,
+					fakeCompressor,
+					logger,
+				)
 
 				otherSourcePath := createSourcePath()
-				_, err = newerFileBundle.Install(otherSourcePath)
+				_, err = newerFileBundle.Install(otherSourcePath, "")
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = newerFileBundle.Enable()
@@ -267,7 +412,7 @@ var _ = Describe("FileBundle", func() {
 
 	Describe("Uninstall", func() {
 		It("removes the files from disk", func() {
-			_, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath, "")
 			Expect(err).NotTo(HaveOccurred())
 
 			err = fileBundle.Uninstall()

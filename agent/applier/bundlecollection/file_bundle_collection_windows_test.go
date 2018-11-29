@@ -10,6 +10,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -18,6 +19,7 @@ var _ = Describe("FileBundleCollection", func() {
 	var (
 		fs                   *fakesys.FakeFileSystem
 		fakeClock            *fakes.FakeClock
+		fakeCompressor       *fakefileutil.FakeCompressor
 		logger               boshlog.Logger
 		fileBundleCollection FileBundleCollection
 	)
@@ -33,6 +35,7 @@ var _ = Describe("FileBundleCollection", func() {
 			os.FileMode(0750),
 			fs,
 			fakeClock,
+			fakeCompressor,
 			logger,
 		)
 	})
@@ -53,6 +56,7 @@ var _ = Describe("FileBundleCollection", func() {
 				os.FileMode(0750),
 				fs,
 				fakeClock,
+				fakeCompressor,
 				logger,
 			)
 
@@ -97,6 +101,7 @@ var _ = Describe("FileBundleCollection", func() {
 					os.FileMode(0750),
 					fs,
 					fakeClock,
+					fakeCompressor,
 					logger,
 				),
 				NewFileBundle(
@@ -105,6 +110,7 @@ var _ = Describe("FileBundleCollection", func() {
 					os.FileMode(0750),
 					fs,
 					fakeClock,
+					fakeCompressor,
 					logger,
 				),
 				NewFileBundle(
@@ -113,6 +119,7 @@ var _ = Describe("FileBundleCollection", func() {
 					os.FileMode(0750),
 					fs,
 					fakeClock,
+					fakeCompressor,
 					logger,
 				),
 			}

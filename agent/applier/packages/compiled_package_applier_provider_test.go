@@ -54,11 +54,11 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 					os.FileMode(0755),
 					fs,
 					fakeClock,
+					compressor,
 					logger,
 				),
 				true,
 				blobstore,
-				compressor,
 				fs,
 				logger,
 			)
@@ -76,6 +76,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 					os.FileMode(0755),
 					fs,
 					fakeClock,
+					compressor,
 					logger,
 				),
 
@@ -84,7 +85,6 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 				false,
 
 				blobstore,
-				compressor,
 				fs,
 				logger,
 			)

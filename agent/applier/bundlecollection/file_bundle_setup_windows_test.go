@@ -12,28 +12,31 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-var _ = Describe("FileBundleUninstallWindows", func() {
+var _ = Describe("FileBundle uninstallation", func() {
 	var (
-		fs          *fakesys.FakeFileSystem
-		fakeClock   *fakes.FakeClock
-		logger      boshlog.Logger
-		sourcePath  string
-		installPath string
-		enablePath  string
-		fileBundle  FileBundle
+		fs             *fakesys.FakeFileSystem
+		fakeClock      *fakes.FakeClock
+		fakeCompressor *fakefileutil.FakeCompressor
+		logger         boshlog.Logger
+		sourcePath     string
+		installPath    string
+		enablePath     string
+		fileBundle     FileBundle
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		fakeClock = new(fakes.FakeClock)
+		fakeCompressor = new(fakefileutil.FakeCompressor)
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, fakeClock, logger)
+		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, fakeClock, fakeCompressor, logger)
 	})
 
 	createSourcePath := func() string {
@@ -62,7 +65,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 				return nil
 			}
 
-			_, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath, "")
 			Expect(err).NotTo(HaveOccurred())
 
 			err = fileBundle.Uninstall()
@@ -89,7 +92,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 			fakeClock.SinceReturns(1 * time.Second)
 			fakeClock.SinceReturnsOnCall(failingRemoveAlls, BundleSetupTimeout+(1*time.Second))
 
-			_, err := fileBundle.Install(sourcePath)
+			_, err := fileBundle.Install(sourcePath, "")
 			Expect(err).NotTo(HaveOccurred())
 
 			err = fileBundle.Uninstall()
@@ -99,58 +102,7 @@ var _ = Describe("FileBundleUninstallWindows", func() {
 			for i := 0; i < failingRemoveAlls; i++ {
 				Expect(fakeClock.SinceArgsForCall(i)).To(Equal(expectedStartTime))
 			}
-			Expect(fsRemoveAllCount).To(Equal(failingRemoveAlls - 1))
-		})
-	})
-
-	Describe("Install", func() {
-		It("succeeds when the first few calls to Rename fails", func() {
-			fs.RenameError = errors.New("rename-error")
-
-			expectedStartTime := time.Unix(1000, 0)
-			failingRenames := 0
-			currentDuration := 0 * time.Second
-
-			fakeClock.NowReturns(expectedStartTime)
-			fakeClock.SinceReturns(1 * time.Second)
-
-			fakeClock.SinceStub = func(t time.Time) time.Duration {
-				failingRenames++
-				if failingRenames == 5 {
-					fs.RenameError = nil
-				}
-				currentDuration = currentDuration + 1*time.Second
-				return currentDuration
-			}
-
-			path, err := fileBundle.Install(sourcePath)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fs.FileExists(installPath)).To(BeTrue())
-			Expect(path).To(Equal(installPath))
-
-			Expect(fs.RenameOldPaths[0]).To(Equal(sourcePath))
-			Expect(fs.RenameNewPaths[0]).To(Equal(installPath))
-		})
-
-		It("fails when repeatedly attempting Rename fails", func() {
-			fs.RenameError = errors.New("fake-rename-error")
-
-			expectedStartTime := time.Unix(1000, 0)
-			failingRenames := 5
-
-			fakeClock.NowReturns(expectedStartTime)
-			fakeClock.SinceReturns(1 * time.Second)
-			fakeClock.SinceReturnsOnCall(failingRenames, BundleSetupTimeout+(1*time.Second))
-
-			_, err := fileBundle.Install(sourcePath)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-rename-error"))
-
-			Expect(fakeClock.SinceCallCount()).To(Equal(failingRenames + 1))
-			for i := 0; i < failingRenames; i++ {
-				Expect(fakeClock.SinceArgsForCall(i)).To(Equal(expectedStartTime))
-			}
+			Expect(fsRemoveAllCount).To(Equal(failingRemoveAlls))
 		})
 	})
 })

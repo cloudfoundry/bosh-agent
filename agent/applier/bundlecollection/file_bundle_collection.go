@@ -10,6 +10,7 @@ import (
 	"code.cloudfoundry.org/clock"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -50,6 +51,7 @@ type FileBundleCollection struct {
 	fileMode     os.FileMode
 	fs           boshsys.FileSystem
 	timeProvider clock.Clock
+	compressor   fileutil.Compressor
 	logger       boshlog.Logger
 }
 
@@ -58,6 +60,7 @@ func NewFileBundleCollection(
 	fileMode os.FileMode,
 	fs boshsys.FileSystem,
 	timeProvider clock.Clock,
+	compressor fileutil.Compressor,
 	logger boshlog.Logger,
 ) FileBundleCollection {
 	return FileBundleCollection{
@@ -67,6 +70,7 @@ func NewFileBundleCollection(
 		fileMode:     fileMode,
 		fs:           fs,
 		timeProvider: timeProvider,
+		compressor:   compressor,
 		logger:       logger,
 	}
 }
@@ -88,7 +92,7 @@ func (bc FileBundleCollection) Get(definition BundleDefinition) (Bundle, error) 
 	installPath := path.Join(bc.installPath, bc.name, definition.BundleName(), bundleVersionDigest.String())
 	enablePath := path.Join(bc.enablePath, bc.name, definition.BundleName())
 
-	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.logger), nil
+	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.compressor, bc.logger), nil
 }
 
 func (bc FileBundleCollection) getDigested(definition BundleDefinition) (Bundle, error) {
@@ -102,7 +106,7 @@ func (bc FileBundleCollection) getDigested(definition BundleDefinition) (Bundle,
 
 	installPath := path.Join(bc.installPath, bc.name, definition.BundleName(), definition.BundleVersion())
 	enablePath := path.Join(bc.enablePath, bc.name, definition.BundleName())
-	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.logger), nil
+	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.compressor, bc.logger), nil
 }
 
 func (bc FileBundleCollection) List() ([]Bundle, error) {
