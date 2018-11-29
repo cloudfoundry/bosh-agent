@@ -107,6 +107,14 @@ var _ = Describe("NewLinuxDiskManager", func() {
 			})
 		})
 
+		Context("when sfdisk is requested", func() {
+			It("returns the sfdisk partitioner", func() {
+				partitioner, err := diskManager.GetPersistentDevicePartitioner("sfdisk")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(partitioner).To(Equal(disk.NewSfdiskPartitioner(logger, runner, clock.NewClock())))
+			})
+		})
+
 		Context("when an invalid partitioner is requested", func() {
 			It("returns an error", func() {
 				_, err := diskManager.GetPersistentDevicePartitioner("invalid")

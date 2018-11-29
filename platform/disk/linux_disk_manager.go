@@ -12,6 +12,7 @@ import (
 type linuxDiskManager struct {
 	ephemeralPartitioner  Partitioner
 	partedPartitioner     Partitioner
+	sfDiskPartitioner     Partitioner
 	persistentPartitioner Partitioner
 	rootDevicePartitioner Partitioner
 	diskUtil              Util
@@ -87,6 +88,7 @@ func NewLinuxDiskManager(
 		mounter:               mounter,
 		mountsSearcher:        mountsSearcher,
 		partedPartitioner:     partedPartitioner,
+		sfDiskPartitioner:     sfDiskPartitioner,
 		persistentPartitioner: persistentPartitioner,
 		rootDevicePartitioner: NewRootDevicePartitioner(logger, runner, uint64(20*1024*1024)),
 		runner:                runner,
@@ -100,11 +102,12 @@ func (m linuxDiskManager) GetPersistentDevicePartitioner(partitionerType string)
 	switch partitionerType {
 	case "parted":
 		return m.partedPartitioner, nil
+	case "sfdisk":
+		return m.sfDiskPartitioner, nil
 	case "":
 		return m.persistentPartitioner, nil
 	default:
 		return nil, fmt.Errorf("Unknown partitioner type '%s'", partitionerType)
-
 	}
 }
 
