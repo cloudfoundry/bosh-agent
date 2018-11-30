@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath/tarpathfakes"
 	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -22,6 +23,7 @@ var _ = Describe("FileBundle", func() {
 		fs             *fakesys.FakeFileSystem
 		fakeClock      *fakes.FakeClock
 		fakeCompressor *fakefileutil.FakeCompressor
+		fakeDetector   *tarpathfakes.FakeDetector
 		logger         boshlog.Logger
 		sourcePath     string
 		installPath    string
@@ -33,6 +35,7 @@ var _ = Describe("FileBundle", func() {
 		fs = fakesys.NewFakeFileSystem()
 		fakeClock = new(fakes.FakeClock)
 		fakeCompressor = new(fakefileutil.FakeCompressor)
+		fakeDetector = new(tarpathfakes.FakeDetector)
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
@@ -43,6 +46,7 @@ var _ = Describe("FileBundle", func() {
 			fs,
 			fakeClock,
 			fakeCompressor,
+			fakeDetector,
 			logger,
 		)
 	})

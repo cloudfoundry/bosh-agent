@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -65,6 +66,7 @@ var _ = Describe("FileBundleCollection", func() {
 				fs,
 				fakeClock,
 				fakeCompressor,
+				tarpath.NewPrefixDetector(),
 				logger,
 			)
 
@@ -110,6 +112,7 @@ var _ = Describe("FileBundleCollection", func() {
 					fs,
 					fakeClock,
 					fakeCompressor,
+					tarpath.NewPrefixDetector(),
 					logger,
 				),
 				NewFileBundle(
@@ -119,6 +122,7 @@ var _ = Describe("FileBundleCollection", func() {
 					fs,
 					fakeClock,
 					fakeCompressor,
+					tarpath.NewPrefixDetector(),
 					logger,
 				),
 				NewFileBundle(
@@ -128,6 +132,7 @@ var _ = Describe("FileBundleCollection", func() {
 					fs,
 					fakeClock,
 					fakeCompressor,
+					tarpath.NewPrefixDetector(),
 					logger,
 				),
 			}

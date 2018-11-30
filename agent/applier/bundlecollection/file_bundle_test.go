@@ -10,6 +10,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath/tarpathfakes"
 	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -22,6 +23,7 @@ var _ = Describe("FileBundle", func() {
 		fs             *fakesys.FakeFileSystem
 		fakeClock      *fakes.FakeClock
 		fakeCompressor *fakefileutil.FakeCompressor
+		fakeDetector   *tarpathfakes.FakeDetector
 		logger         boshlog.Logger
 		sourcePath     string
 		installPath    string
@@ -33,6 +35,7 @@ var _ = Describe("FileBundle", func() {
 		fs = fakesys.NewFakeFileSystem()
 		fakeClock = new(fakes.FakeClock)
 		fakeCompressor = new(fakefileutil.FakeCompressor)
+		fakeDetector = &tarpathfakes.FakeDetector{}
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
@@ -43,6 +46,7 @@ var _ = Describe("FileBundle", func() {
 			fs,
 			fakeClock,
 			fakeCompressor,
+			fakeDetector,
 			logger,
 		)
 	})
@@ -155,19 +159,7 @@ var _ = Describe("FileBundle", func() {
 		})
 
 		It("returns error when decompression fails", func() {
-			secondCall := false
-
-			// Even though it succeeds on the second try it doesn't because no path
-			// in archive is given.
-			fakeCompressor.DecompressFileToDirCallBack = func() {
-				if secondCall {
-					fakeCompressor.DecompressFileToDirErr = nil
-					return
-				}
-
-				fakeCompressor.DecompressFileToDirErr = errors.New("disaster")
-				secondCall = true
-			}
+			fakeCompressor.DecompressFileToDirErr = errors.New("disaster")
 
 			_, err := fileBundle.Install(sourcePath, "")
 			Expect(err).To(MatchError(ContainSubstring("disaster")))
@@ -182,6 +174,17 @@ var _ = Describe("FileBundle", func() {
 
 			_, err := fileBundle.Install(sourcePath, "")
 			Expect(err).To(MatchError(ContainSubstring("mkdir failed")))
+
+			installed, err := fileBundle.IsInstalled()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(installed).To(BeFalse())
+		})
+
+		It("returns an error if the detection fails", func() {
+			fakeDetector.DetectReturns(false, errors.New("detect failed"))
+
+			_, err := fileBundle.Install(sourcePath, "subdir")
+			Expect(err).To(MatchError(ContainSubstring("detect failed")))
 
 			installed, err := fileBundle.IsInstalled()
 			Expect(err).NotTo(HaveOccurred())
@@ -215,42 +218,16 @@ var _ = Describe("FileBundle", func() {
 
 		// Job bundles contain many jobs but we only want to extract a single one.
 		Describe("extracting only part of the bundle", func() {
-			It("only decompresses part of the bundle", func() {
+			It("detects the prefix to use", func() {
+				fakeDetector.DetectReturns(true, nil)
+
 				path, err := fileBundle.Install(sourcePath, "subdir")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(path).To(Equal(installPath))
 
 				opts := fakeCompressor.DecompressFileToDirOptions[0]
-				Expect(opts.PathInArchive).To(Equal("subdir"))
-				Expect(opts.StripComponents).To(Equal(1))
-			})
-
-			Context("when extracting fails", func() {
-				It("retries with a leading ./", func() {
-					secondCall := false
-					fakeCompressor.DecompressFileToDirCallBack = func() {
-						if secondCall {
-							fakeCompressor.DecompressFileToDirErr = nil
-							return
-						}
-
-						fakeCompressor.DecompressFileToDirErr = errors.New("not found in archive")
-						secondCall = true
-					}
-
-					_, err := fileBundle.Install(sourcePath, "subdir")
-					Expect(err).NotTo(HaveOccurred())
-
-					installed, err := fileBundle.IsInstalled()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(installed).To(BeTrue())
-
-					firstOpts := fakeCompressor.DecompressFileToDirOptions[0]
-					Expect(firstOpts.PathInArchive).To(Equal("subdir"))
-
-					secondOpts := fakeCompressor.DecompressFileToDirOptions[1]
-					Expect(secondOpts.PathInArchive).To(Equal("./subdir"))
-				})
+				Expect(opts.PathInArchive).To(Equal("./subdir"))
+				Expect(opts.StripComponents).To(Equal(2))
 			})
 		})
 	})
@@ -417,6 +394,7 @@ var _ = Describe("FileBundle", func() {
 					fs,
 					fakeClock,
 					fakeCompressor,
+					fakeDetector,
 					logger,
 				)
 

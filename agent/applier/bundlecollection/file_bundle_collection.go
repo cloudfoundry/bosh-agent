@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/clock"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
@@ -92,7 +93,7 @@ func (bc FileBundleCollection) Get(definition BundleDefinition) (Bundle, error) 
 	installPath := path.Join(bc.installPath, bc.name, definition.BundleName(), bundleVersionDigest.String())
 	enablePath := path.Join(bc.enablePath, bc.name, definition.BundleName())
 
-	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.compressor, bc.logger), nil
+	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.compressor, tarpath.NewPrefixDetector(), bc.logger), nil
 }
 
 func (bc FileBundleCollection) getDigested(definition BundleDefinition) (Bundle, error) {
@@ -106,7 +107,7 @@ func (bc FileBundleCollection) getDigested(definition BundleDefinition) (Bundle,
 
 	installPath := path.Join(bc.installPath, bc.name, definition.BundleName(), definition.BundleVersion())
 	enablePath := path.Join(bc.enablePath, bc.name, definition.BundleName())
-	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.compressor, bc.logger), nil
+	return NewFileBundle(installPath, enablePath, bc.fileMode, bc.fs, bc.timeProvider, bc.compressor, tarpath.NewPrefixDetector(), bc.logger), nil
 }
 
 func (bc FileBundleCollection) List() ([]Bundle, error) {

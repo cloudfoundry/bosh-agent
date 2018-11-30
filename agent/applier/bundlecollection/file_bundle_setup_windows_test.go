@@ -2,6 +2,7 @@ package bundlecollection_test
 
 import (
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath/tarpathfakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -22,6 +23,7 @@ var _ = Describe("FileBundle uninstallation", func() {
 		fs             *fakesys.FakeFileSystem
 		fakeClock      *fakes.FakeClock
 		fakeCompressor *fakefileutil.FakeCompressor
+		fakeDetector   *tarpathfakes.FakeDetector
 		logger         boshlog.Logger
 		sourcePath     string
 		installPath    string
@@ -33,10 +35,21 @@ var _ = Describe("FileBundle uninstallation", func() {
 		fs = fakesys.NewFakeFileSystem()
 		fakeClock = new(fakes.FakeClock)
 		fakeCompressor = new(fakefileutil.FakeCompressor)
+		fakeDetector = &tarpathfakes.FakeDetector{}
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, fakeClock, fakeCompressor, logger)
+
+		fileBundle = NewFileBundle(
+			installPath,
+			enablePath,
+			os.FileMode(0750),
+			fs,
+			fakeClock,
+			fakeCompressor,
+			fakeDetector,
+			logger,
+		)
 	})
 
 	createSourcePath := func() string {

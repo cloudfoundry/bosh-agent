@@ -10,6 +10,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath"
 	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -57,6 +58,7 @@ var _ = Describe("FileBundleCollection", func() {
 				fs,
 				fakeClock,
 				fakeCompressor,
+				tarpath.NewPrefixDetector(),
 				logger,
 			)
 
@@ -102,6 +104,7 @@ var _ = Describe("FileBundleCollection", func() {
 					fs,
 					fakeClock,
 					fakeCompressor,
+					tarpath.NewPrefixDetector(),
 					logger,
 				),
 				NewFileBundle(
@@ -111,6 +114,7 @@ var _ = Describe("FileBundleCollection", func() {
 					fs,
 					fakeClock,
 					fakeCompressor,
+					tarpath.NewPrefixDetector(),
 					logger,
 				),
 				NewFileBundle(
@@ -120,6 +124,7 @@ var _ = Describe("FileBundleCollection", func() {
 					fs,
 					fakeClock,
 					fakeCompressor,
+					tarpath.NewPrefixDetector(),
 					logger,
 				),
 			}

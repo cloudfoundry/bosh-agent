@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"code.cloudfoundry.org/clock"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -23,6 +24,7 @@ type FileBundle struct {
 	fs           boshsys.FileSystem
 	timeProvider clock.Clock
 	compressor   fileutil.Compressor
+	detector     tarpath.Detector
 	logger       boshlog.Logger
 }
 
@@ -32,6 +34,7 @@ func NewFileBundle(
 	fs boshsys.FileSystem,
 	timeProvider clock.Clock,
 	compressor fileutil.Compressor,
+	detector tarpath.Detector,
 	logger boshlog.Logger,
 ) FileBundle {
 	return FileBundle{
@@ -41,6 +44,7 @@ func NewFileBundle(
 		fs:           fs,
 		timeProvider: timeProvider,
 		compressor:   compressor,
+		detector:     detector,
 		logger:       logger,
 	}
 }
@@ -70,12 +74,28 @@ func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
 		return "", err
 	}
 
-	// Job bundles contain more than one job. We receive the individual job's
-	// path as pathInBundle but we don't want to have that be duplicated in the
-	// installPath so we have tar strip that component out.
 	stripComponents := 0
 	if pathInBundle != "" {
+		// Job bundles contain more than one job. We receive the individual job's
+		// path as pathInBundle but we don't want to have that be duplicated in the
+		// installPath so we have tar strip that component out.
 		stripComponents = 1
+
+		// The structure of the tarball is different depending on whether or not it
+		// was delivered over NATS or via the blobstore due to different archiving
+		// code paths in the director. The NATS blobs do not contain a leading ./
+		// path. We need to detect this case and extract the correct style of path.
+		var err error
+		hasSlash, err := b.detector.Detect(sourcePath, pathInBundle)
+		if err != nil {
+			_ = b.Uninstall()
+			return "", bosherr.WrapError(err, "Detecting prefix of package files")
+		}
+
+		if hasSlash {
+			pathInBundle = "./" + pathInBundle
+			stripComponents = 2
+		}
 	}
 
 	err := b.compressor.DecompressFileToDir(
@@ -84,17 +104,8 @@ func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
 		fileutil.CompressorOptions{PathInArchive: pathInBundle, StripComponents: stripComponents},
 	)
 	if err != nil {
-		if pathInBundle != "" {
-			err = b.compressor.DecompressFileToDir(
-				sourcePath,
-				b.installPath,
-				fileutil.CompressorOptions{PathInArchive: "./" + pathInBundle, StripComponents: stripComponents},
-			)
-		}
-		if err != nil {
-			_ = b.Uninstall()
-			return "", bosherr.WrapError(err, "Decompressing package files")
-		}
+		_ = b.Uninstall()
+		return "", bosherr.WrapError(err, "Decompressing package files")
 	}
 
 	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
