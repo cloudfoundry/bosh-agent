@@ -84,8 +84,17 @@ func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
 		fileutil.CompressorOptions{PathInArchive: pathInBundle, StripComponents: stripComponents},
 	)
 	if err != nil {
-		_ = b.Uninstall()
-		return "", bosherr.WrapError(err, "Decompressing package files")
+		if pathInBundle != "" {
+			err = b.compressor.DecompressFileToDir(
+				sourcePath,
+				b.installPath,
+				fileutil.CompressorOptions{PathInArchive: "./" + pathInBundle, StripComponents: stripComponents},
+			)
+		}
+		if err != nil {
+			_ = b.Uninstall()
+			return "", bosherr.WrapError(err, "Decompressing package files")
+		}
 	}
 
 	b.logger.Debug(fileBundleLogTag, "Installing %v", b)

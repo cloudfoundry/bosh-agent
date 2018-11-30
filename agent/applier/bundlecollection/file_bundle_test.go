@@ -155,10 +155,22 @@ var _ = Describe("FileBundle", func() {
 		})
 
 		It("returns error when decompression fails", func() {
-			fakeCompressor.DecompressFileToDirErr = errors.New("decompress failed")
+			secondCall := false
+
+			// Even though it succeeds on the second try it doesn't because no path
+			// in archive is given.
+			fakeCompressor.DecompressFileToDirCallBack = func() {
+				if secondCall {
+					fakeCompressor.DecompressFileToDirErr = nil
+					return
+				}
+
+				fakeCompressor.DecompressFileToDirErr = errors.New("disaster")
+				secondCall = true
+			}
 
 			_, err := fileBundle.Install(sourcePath, "")
-			Expect(err).To(MatchError(ContainSubstring("decompress")))
+			Expect(err).To(MatchError(ContainSubstring("disaster")))
 
 			installed, err := fileBundle.IsInstalled()
 			Expect(err).NotTo(HaveOccurred())
@@ -211,6 +223,34 @@ var _ = Describe("FileBundle", func() {
 				opts := fakeCompressor.DecompressFileToDirOptions[0]
 				Expect(opts.PathInArchive).To(Equal("subdir"))
 				Expect(opts.StripComponents).To(Equal(1))
+			})
+
+			Context("when extracting fails", func() {
+				It("retries with a leading ./", func() {
+					secondCall := false
+					fakeCompressor.DecompressFileToDirCallBack = func() {
+						if secondCall {
+							fakeCompressor.DecompressFileToDirErr = nil
+							return
+						}
+
+						fakeCompressor.DecompressFileToDirErr = errors.New("not found in archive")
+						secondCall = true
+					}
+
+					_, err := fileBundle.Install(sourcePath, "subdir")
+					Expect(err).NotTo(HaveOccurred())
+
+					installed, err := fileBundle.IsInstalled()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(installed).To(BeTrue())
+
+					firstOpts := fakeCompressor.DecompressFileToDirOptions[0]
+					Expect(firstOpts.PathInArchive).To(Equal("subdir"))
+
+					secondOpts := fakeCompressor.DecompressFileToDirOptions[1]
+					Expect(secondOpts.PathInArchive).To(Equal("./subdir"))
+				})
 			})
 		})
 	})
