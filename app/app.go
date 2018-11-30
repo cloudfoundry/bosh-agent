@@ -294,7 +294,6 @@ func (app *app) buildApplierAndCompiler(
 		jobSupervisor,
 		packageApplierProvider,
 		blobstore,
-		app.platform.GetCompressor(),
 		boshaj.FixPermissions,
 		fileSystem,
 		app.logger,

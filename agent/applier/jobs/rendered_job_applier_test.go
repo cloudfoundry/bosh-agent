@@ -22,7 +22,6 @@ import (
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -83,7 +82,6 @@ func init() {
 			jobSupervisor          *fakejobsuper.FakeJobSupervisor
 			packageApplierProvider *fakepackages.FakeApplierProvider
 			blobstore              *fakeblob.FakeDigestBlobstore
-			compressor             *fakecmd.FakeCompressor
 			fs                     *fakesys.FakeFileSystem
 			applier                Applier
 			fixPermissions         *fakeFixer
@@ -95,7 +93,6 @@ func init() {
 			packageApplierProvider = fakepackages.NewFakeApplierProvider()
 			blobstore = &fakeblob.FakeDigestBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
-			compressor = fakecmd.NewFakeCompressor()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			dirProvider := directories.NewProvider("/fakebasedir")
 			fixPermissions = &fakeFixer{}
@@ -106,7 +103,6 @@ func init() {
 				jobSupervisor,
 				packageApplierProvider,
 				blobstore,
-				compressor,
 				fixPermissions.Fix,
 				fs,
 				logger,

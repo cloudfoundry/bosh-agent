@@ -13,7 +13,6 @@ import (
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -24,7 +23,6 @@ type FixPermissionsFunc func(boshsys.FileSystem, string, string, string) error
 
 type renderedJobApplier struct {
 	blobstore              boshblob.DigestBlobstore
-	compressor             boshfileutil.Compressor
 	dirProvider            directories.Provider
 	fixPermissions         FixPermissionsFunc
 	fs                     boshsys.FileSystem
@@ -40,14 +38,12 @@ func NewRenderedJobApplier(
 	jobSupervisor boshjobsuper.JobSupervisor,
 	packageApplierProvider packages.ApplierProvider,
 	blobstore boshblob.DigestBlobstore,
-	compressor boshfileutil.Compressor,
 	fixPermissions FixPermissionsFunc,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) Applier {
 	return &renderedJobApplier{
 		blobstore:              blobstore,
-		compressor:             compressor,
 		dirProvider:            dirProvider,
 		fixPermissions:         fixPermissions,
 		fs:                     fs,
