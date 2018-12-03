@@ -2,6 +2,7 @@ package utils
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"crypto/sha1"
 	"fmt"
 	"io"
@@ -53,23 +54,33 @@ func (t *TarWalker) Walk(path string, fi os.FileInfo, err error) error {
 	return nil
 }
 
-// TarDirectory - rootdir is equivalent to tar -C 'rootdir'
-func TarDirectory(dirname, rootdir, tarname string) (string, error) {
+// TarballDirectory - rootdir is equivalent to tar -C 'rootdir'
+func TarballDirectory(dirname, rootdir, tarname string) (string, error) {
 	f, err := os.OpenFile(tarname, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
 	h := sha1.New()
+	gw := gzip.NewWriter(io.MultiWriter(f, h))
+	tw := tar.NewWriter(gw)
+
 	w := TarWalker{
-		tw:   tar.NewWriter(io.MultiWriter(f, h)),
+		tw:   tw,
 		root: rootdir,
 	}
 	if err := filepath.Walk(dirname, w.Walk); err != nil {
 		return "", err
 	}
-	if err := w.tw.Close(); err != nil {
+
+	if err := tw.Close(); err != nil {
 		return "", err
 	}
+	if err := gw.Close(); err != nil {
+		return "", err
+	}
+	if err := f.Close(); err != nil {
+		return "", err
+	}
+
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }

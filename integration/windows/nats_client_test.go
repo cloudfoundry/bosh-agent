@@ -545,11 +545,11 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha 
 	}
 	defer os.RemoveAll(dirname)
 
-	tarfile := filepath.Join(dirname, jobName+".tar")
+	tarfile := filepath.Join(dirname, jobName+".tgz")
 	chdir := "fixtures/templates"
 	dir := filepath.Join(chdir, jobName)
 
-	renderedTemplateSha, err = utils.TarDirectory(dir, chdir, tarfile)
+	renderedTemplateSha, err = utils.TarballDirectory(dir, chdir, tarfile)
 	if err != nil {
 		return
 	}
@@ -568,9 +568,9 @@ func (n *NatsClient) uploadPackage(packageName string) (string, string, error) {
 	}
 	defer os.RemoveAll(dirname)
 
-	tarfile := filepath.Join(dirname, packageName+".tar")
+	tarfile := filepath.Join(dirname, packageName+".tgz")
 	dir := filepath.Join("fixtures/templates", packageName)
-	sha1, err := utils.TarDirectory(dir, dir, tarfile)
+	sha1, err := utils.TarballDirectory(dir, dir, tarfile)
 	if err != nil {
 		return "", "", err
 	}
