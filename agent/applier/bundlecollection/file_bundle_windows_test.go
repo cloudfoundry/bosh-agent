@@ -3,12 +3,14 @@
 package bundlecollection_test
 
 import (
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath/tarpathfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"os"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -17,13 +19,15 @@ import (
 
 var _ = Describe("FileBundle", func() {
 	var (
-		fs          *fakesys.FakeFileSystem
-		fakeClock   *fakes.FakeClock
-		logger      boshlog.Logger
-		sourcePath  string
-		installPath string
-		enablePath  string
-		fileBundle  FileBundle
+		fs             *fakesys.FakeFileSystem
+		fakeClock      *fakes.FakeClock
+		fakeCompressor *fakefileutil.FakeCompressor
+		fakeDetector   *tarpathfakes.FakeDetector
+		logger         boshlog.Logger
+		sourcePath     string
+		installPath    string
+		enablePath     string
+		fileBundle     FileBundle
 	)
 
 	BeforeEach(func() {
@@ -48,7 +52,11 @@ var _ = Describe("FileBundle", func() {
 		installPath = "/C/var/vcap/data/jobs/job_name"
 		enablePath = "/C/var/vcap/jobs/job_name"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, fakeClock, logger)
+
+		fakeCompressor = new(fakefileutil.FakeCompressor)
+		fakeDetector = &tarpathfakes.FakeDetector{}
+
+		fileBundle = NewFileBundle(installPath, enablePath, os.FileMode(0750), fs, fakeClock, fakeCompressor, fakeDetector, logger)
 	})
 
 	createSourcePath := func() string {
@@ -66,7 +74,7 @@ var _ = Describe("FileBundle", func() {
 	Describe("Disable", func() {
 		Context("where the enabled path target is the same installed version", func() {
 			BeforeEach(func() {
-				_, err := fileBundle.Install(sourcePath)
+				_, err := fileBundle.Install(sourcePath, "")
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = fileBundle.Enable()
