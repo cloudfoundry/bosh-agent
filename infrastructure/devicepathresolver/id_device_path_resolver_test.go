@@ -3,6 +3,7 @@ package devicepathresolver_test
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"time"
 
 	fakeudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice/fakes"
@@ -63,7 +64,10 @@ var _ = Describe("IDDevicePathResolver", func() {
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(path).To(Equal("/dev/fake-device-path"))
+				devicePath, err := filepath.Abs("/dev/fake-device-path")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(path).To(Equal(devicePath))
 				Expect(timeout).To(BeFalse())
 			})
 		})
@@ -140,7 +144,10 @@ var _ = Describe("IDDevicePathResolver", func() {
 					path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(path).To(Equal("/fake-device-path"))
+					devicePath, err := filepath.Abs("/fake-device-path")
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(path).To(Equal(devicePath))
 					Expect(timeout).To(BeFalse())
 				})
 			})

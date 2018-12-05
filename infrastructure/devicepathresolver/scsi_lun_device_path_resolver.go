@@ -3,6 +3,7 @@ package devicepathresolver
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -109,7 +110,7 @@ func (ldpr SCSILunDevicePathResolver) GetRealDevicePath(diskSettings boshsetting
 				continue
 			}
 
-			if strings.Contains(tempPath, fmt.Sprintf("/%s/", vmBusDeviceForDataDisks)) {
+			if strings.Contains(tempPath, fmt.Sprintf("%[1]c%s%[1]c", filepath.Separator, vmBusDeviceForDataDisks)) {
 				realPath := path.Join("/dev/", baseName)
 
 				if ldpr.fs.FileExists(realPath) {

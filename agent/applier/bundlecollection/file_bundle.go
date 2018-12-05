@@ -161,7 +161,12 @@ func (b FileBundle) Disable() error {
 		return bosherr.WrapError(err, "Reading symlink")
 	}
 
-	if target == b.installPath {
+	installPath, err := b.fs.ReadAndFollowLink(b.installPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Reading symlink")
+	}
+
+	if target == installPath {
 		return b.fs.RemoveAll(b.enablePath)
 	}
 

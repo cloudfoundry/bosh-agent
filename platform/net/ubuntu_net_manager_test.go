@@ -3,6 +3,7 @@ package net_test
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -338,7 +339,10 @@ nameserver 9.9.9.9
 				Expect(err).ToNot(HaveOccurred())
 				linkContents, err := fs.Readlink("/etc/resolv.conf")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(linkContents).To(Equal("/run/resolvconf/resolv.conf"))
+
+				expectedContents, err := filepath.Abs("/run/resolvconf/resolv.conf")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(linkContents).To(Equal(expectedContents))
 			})
 
 			Context("when symlink command fails", func() {
