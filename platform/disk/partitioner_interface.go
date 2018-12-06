@@ -22,6 +22,7 @@ type Partitioner interface {
 	Partition(devicePath string, partitions []Partition) (err error)
 	GetDeviceSizeInBytes(devicePath string) (size uint64, err error)
 	GetPartitions(devicePath string) (partitions []ExistingPartition, deviceFullSizeInBytes uint64, err error)
+	RemovePartitions(partitions []ExistingPartition, devicePath string) error
 }
 
 func (p Partition) String() string {

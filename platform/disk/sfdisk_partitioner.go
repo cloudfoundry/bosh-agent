@@ -170,6 +170,10 @@ func (p sfdiskPartitioner) GetPartitions(devicePath string) (partitions []Existi
 	return partitions, deviceFullSizeInBytes, nil
 }
 
+func (p sfdiskPartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
+	panic("unimplemented")
+}
+
 func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsToMatch []Partition) (bool, error) {
 	existingPartitions, _, err := p.GetPartitions(devicePath)
 	if err != nil {

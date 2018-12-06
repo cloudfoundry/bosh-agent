@@ -17,6 +17,10 @@ type FakePartitioner struct {
 	GetPartitionsPartitions []boshdisk.ExistingPartition
 	GetPartitionsSizes      map[string]uint64
 	GetPartitionsErr        error
+
+	RemovePartitionsCalled  bool
+	RemoveExistingPartition []boshdisk.ExistingPartition
+	RemovePartitionsErr     error
 }
 
 func NewFakePartitioner() *FakePartitioner {
@@ -39,4 +43,11 @@ func (p *FakePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error
 
 func (p *FakePartitioner) GetPartitions(devicePath string) (partitions []boshdisk.ExistingPartition, deviceFullSizeInBytes uint64, err error) {
 	return p.GetPartitionsPartitions, p.GetPartitionsSizes[devicePath], p.GetPartitionsErr
+}
+
+func (p *FakePartitioner) RemovePartitions(partitions []boshdisk.ExistingPartition, devicePath string) error {
+	p.RemovePartitionsCalled = true
+	p.RemoveExistingPartition = partitions
+	p.PartitionDevicePath = devicePath
+	return p.RemovePartitionsErr
 }

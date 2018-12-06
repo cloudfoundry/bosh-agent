@@ -184,6 +184,10 @@ func (p rootDevicePartitioner) GetPartitions(devicePath string) (
 	return partitions, deviceFullSizeInBytes, nil
 }
 
+func (p rootDevicePartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
+	panic("unimplemented")
+}
+
 func (p rootDevicePartitioner) partitionsMatch(existingPartitions []ExistingPartition, partitions []Partition) bool {
 	if len(existingPartitions) != len(partitions) {
 		return false
