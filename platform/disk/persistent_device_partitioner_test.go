@@ -139,4 +139,30 @@ var _ = Describe("PersistentDevicePartitioner", func() {
 			})
 		})
 	})
+
+	Describe("RemovePartitions", func() {
+		BeforeEach(func() {
+			sfDiskPartitioner.GetDeviceSizeInBytesSizes = map[string]uint64{
+				"/dev/jim":       10000,
+				"/dev/who-cares": 20000,
+			}
+		})
+
+		It("uses the sfdisk partitioner", func() {
+			size, err := partitioner.GetDeviceSizeInBytes("/dev/jim")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(size).To(BeEquivalentTo(10000))
+		})
+
+		Context("when sfdisk return an error", func() {
+			BeforeEach(func() {
+				sfDiskPartitioner.GetDeviceSizeInBytesErr = errors.New("nice try")
+			})
+
+			It("returns an error", func() {
+				_, err := partitioner.GetDeviceSizeInBytes("/dev/jim")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })

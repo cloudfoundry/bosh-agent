@@ -61,6 +61,10 @@ func (p *PersistentDevicePartitioner) GetPartitions(devicePath string) (partitio
 	return p.partedPartitioner.GetPartitions(devicePath)
 }
 
+func (p *PersistentDevicePartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
+	panic("unimplemented")
+}
+
 func IsGPTError(err error) bool {
 	return err == ErrGPTPartitionEncountered
 }
