@@ -1455,10 +1455,7 @@ func (p linux) partitionDisk(availableSize uint64, desiredSwapSizeInBytes *uint6
 	var swapPartitionPath string
 	var dataPartitionPath string
 
-	if len(labelPrefix) >= 36 {
-		// Keep first 24 chars to avoid too long GPT partition names
-		labelPrefix = labelPrefix[0:23]
-	}
+	labelPrefix = prepareDiskLabelPrefix(labelPrefix)
 	if swapSizeInBytes == 0 {
 		partitions = []boshdisk.Partition{
 			{NamePrefix: labelPrefix, SizeInBytes: linuxSizeInBytes, Type: boshdisk.PartitionTypeLinux},
@@ -1579,4 +1576,15 @@ func (p linux) Shutdown() error {
 	}
 
 	return nil
+}
+
+func prepareDiskLabelPrefix(labelPrefix string) string {
+	// Keep 36 chars to avoid too long GPT partition names
+	labelPrefix = "bosh-partition-" + labelPrefix
+	if len(labelPrefix) > 33 {
+		// Remain one dash and two digits space
+		labelPrefix = labelPrefix[0:32]
+	}
+
+	return labelPrefix
 }
