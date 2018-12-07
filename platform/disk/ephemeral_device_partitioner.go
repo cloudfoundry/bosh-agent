@@ -3,7 +3,6 @@ package disk
 import (
 	"strings"
 
-	"code.cloudfoundry.org/clock"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -11,13 +10,10 @@ import (
 
 type EphemeralDevicePartitioner struct {
 	partedPartitioner Partitioner
-	deviceUtil        Util
 	logger            boshlog.Logger
 
-	logTag      string
-	cmdRunner   boshsys.CmdRunner
-	fs          boshsys.FileSystem
-	timeService clock.Clock
+	logTag    string
+	cmdRunner boshsys.CmdRunner
 }
 
 type Settings struct {
@@ -26,20 +22,14 @@ type Settings struct {
 
 func NewEphemeralDevicePartitioner(
 	partedPartitioner Partitioner,
-	deviceUtil Util,
 	logger boshlog.Logger,
 	cmdRunner boshsys.CmdRunner,
-	fs boshsys.FileSystem,
-	timeService clock.Clock,
 ) *EphemeralDevicePartitioner {
 	return &EphemeralDevicePartitioner{
 		partedPartitioner: partedPartitioner,
-		deviceUtil:        deviceUtil,
 		logger:            logger,
 		logTag:            "EphemeralDevicePartitioner",
 		cmdRunner:         cmdRunner,
-		fs:                fs,
-		timeService:       timeService,
 	}
 }
 

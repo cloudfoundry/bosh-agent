@@ -282,13 +282,8 @@ func (p partedPartitioner) getPartitionPaths(devicePath string) ([]string, error
 
 	pathRegExp := devicePath + "[0-9]+"
 	re := regexp.MustCompile(pathRegExp)
-	match := re.FindAllString(stdout, -1)
 
-	if nil == match {
-		return []string{}, nil
-	}
-
-	return match, nil
+	return re.FindAllString(stdout, -1), nil
 }
 
 func (p partedPartitioner) roundUp(numToRound, multiple uint64) uint64 {
