@@ -54,7 +54,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 		partedPartitioner := NewPartedPartitioner(logger, fakeCmdRunner, fakeclock)
 		diskUtil = fakes.NewFakeDiskUtil()
 
-		partitioner = NewEphemeralDevicePartitioner(partedPartitioner, diskUtil, logger, fakeCmdRunner, fakefs, fakeclock)
+		partitioner = NewEphemeralDevicePartitioner(partedPartitioner, logger, fakeCmdRunner)
 	})
 
 	Describe("Partition", func() {
