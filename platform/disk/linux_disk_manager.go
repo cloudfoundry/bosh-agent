@@ -65,15 +65,15 @@ func NewLinuxDiskManager(
 	partedPartitioner := NewPartedPartitioner(logger, runner, clock.NewClock())
 	sfDiskPartitioner := NewSfdiskPartitioner(logger, runner, clock.NewClock())
 
-	ephemeralPartitioner = NewEphemeralDevicePartitioner(partedPartitioner, diskUtil, logger, runner, fs, clock.NewClock())
-
 	switch opts.PartitionerType {
 	case "parted":
+		ephemeralPartitioner = NewEphemeralDevicePartitioner(partedPartitioner, diskUtil, logger, runner, fs, clock.NewClock())
 		persistentPartitioner = partedPartitioner
 	case "sfdisk":
 		ephemeralPartitioner = sfDiskPartitioner
 		persistentPartitioner = sfDiskPartitioner
 	case "":
+		ephemeralPartitioner = NewEphemeralDevicePartitioner(partedPartitioner, diskUtil, logger, runner, fs, clock.NewClock())
 		persistentPartitioner = NewPersistentDevicePartitioner(sfDiskPartitioner, partedPartitioner, diskUtil, logger)
 	default:
 		panic(fmt.Sprintf("Unknown partitioner type '%s'", opts.PartitionerType))
