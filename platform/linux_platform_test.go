@@ -790,11 +790,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 	Describe("SetupEphemeralDiskWithPath", func() {
 		var (
-			labelPrefix string
+			labelPrefix         string
+			expectedLabelPrefix string
 		)
 
 		BeforeEach(func() {
 			labelPrefix = "fake-agent-id"
+			expectedLabelPrefix = "bosh-partition-" + labelPrefix
 		})
 
 		itSetsUpEphemeralDisk := func(act func() error) {
@@ -945,8 +947,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-						{NamePrefix: labelPrefix, SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
-						{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+						{NamePrefix: expectedLabelPrefix, SizeInBytes: memSizeInBytes, Type: boshdisk.PartitionTypeSwap},
+						{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes - memSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 					}))
 				})
 
@@ -960,8 +962,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-						{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
-						{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+						{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+						{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 					}))
 				})
 
@@ -979,8 +981,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 							err := act()
 							Expect(err).NotTo(HaveOccurred())
 							Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-								{NamePrefix: labelPrefix, SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
-								{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
+								{NamePrefix: expectedLabelPrefix, SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
+								{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
 							}))
 
 						})
@@ -1007,7 +1009,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 							err := act()
 							Expect(err).NotTo(HaveOccurred())
 							Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-								{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+								{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 							}))
 
 							Expect(formatter.FormatPartitionPaths).To(Equal([]string{partitionPath(devicePath, 1)}))
@@ -1029,13 +1031,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-							{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
-							{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+							{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+							{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 						}))
 					})
 
 					It("creates swap and data partitions when label prefix larger than 36", func() {
 						labelPrefix = "12345678-1234-abcd-1234-1234abcd5678"
+						expectedLabelPrefix = ("bosh-partition-" + labelPrefix)[0:32]
 						act = func() error {
 							return platform.SetupEphemeralDiskWithPath(devicePath, nil, labelPrefix)
 						}
@@ -1045,8 +1048,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						err := act()
 						Expect(err).NotTo(HaveOccurred())
 						Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-							{NamePrefix: labelPrefix[0:23], SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
-							{NamePrefix: labelPrefix[0:23], SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
+							{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeSwap},
+							{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes / 2, Type: boshdisk.PartitionTypeLinux},
 						}))
 					})
 				})
@@ -1219,14 +1222,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: memSizeInBytes,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: diskSizeInBytes - memSizeInBytes,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
@@ -1244,14 +1247,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
@@ -1272,8 +1275,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 										err := act()
 										Expect(err).NotTo(HaveOccurred())
 										Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-											{NamePrefix: labelPrefix, SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
-											{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
+											{NamePrefix: expectedLabelPrefix, SizeInBytes: 2048, Type: boshdisk.PartitionTypeSwap},
+											{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes - 2048, Type: boshdisk.PartitionTypeLinux},
 										}))
 
 									})
@@ -1295,7 +1298,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 										err := act()
 										Expect(err).NotTo(HaveOccurred())
 										Expect(partitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
-											{NamePrefix: labelPrefix, SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
+											{NamePrefix: expectedLabelPrefix, SizeInBytes: diskSizeInBytes, Type: boshdisk.PartitionTypeLinux},
 										}))
 
 										Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/vda2"}))
@@ -1398,14 +1401,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: memSizeInBytes,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: diskSizeInBytes - memSizeInBytes,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
@@ -1423,14 +1426,14 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 								Expect(partitioner.PartitionDevicePath).To(Equal("/dev/vda"))
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeSwap,
 									}),
 								)
 								Expect(partitioner.PartitionPartitions).To(ContainElement(
 									boshdisk.Partition{
-										NamePrefix:  labelPrefix,
+										NamePrefix:  expectedLabelPrefix,
 										SizeInBytes: diskSizeInBytes / 2,
 										Type:        boshdisk.PartitionTypeLinux,
 									}),
