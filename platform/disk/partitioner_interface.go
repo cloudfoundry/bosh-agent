@@ -20,6 +20,8 @@ type Partition struct {
 type Partitioner interface {
 	Partition(devicePath string, partitions []Partition) (err error)
 	GetDeviceSizeInBytes(devicePath string) (size uint64, err error)
+	PartionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error)
+	ReizePartitions(devicePath string, partitions []Partition) (err error)
 }
 
 func (p Partition) String() string {

@@ -229,3 +229,11 @@ func (p sfdiskPartitioner) convertFromMbToBytes(sizeInMb uint64) uint64 {
 func (p sfdiskPartitioner) convertFromKbToBytes(sizeInKb uint64) uint64 {
 	return sizeInKb * 1024
 }
+
+func (p sfdiskPartitioner) PartionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p sfdiskPartitioner) ReizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}
