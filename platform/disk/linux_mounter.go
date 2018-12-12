@@ -42,12 +42,6 @@ func (m linuxMounter) MountFilesystem(partitionPath, mountPoint, fstype string, 
 		return bosherr.WrapError(err, "Checking whether partition should be mounted")
 	}
 
-	_, _, _, err = m.runner.RunCommand(
-		"resize2fs",
-		"-f",
-		partitionPath,
-	)
-
 	mountArgs := []string{partitionPath, mountPoint}
 	if fstype != "" {
 		mountArgs = append(mountArgs, "-t", fstype)
