@@ -5,6 +5,7 @@ package platform_test
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
@@ -715,13 +716,23 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
   size=fake-size
 }
 `
+		const expectedLogrotateCronFileContent = `9,24,39,54 * * * * root /usr/bin/logrotate-cron`
 
 		It("sets up logrotate", func() {
+			resetRandInt := int64(rand.Int())
+			rand.Seed(0)
+
 			platform.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
 
 			logrotateFileContent, err := fs.ReadFileString("/etc/logrotate.d/fake-group-name")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logrotateFileContent).To(Equal(expectedEtcLogrotate))
+
+			logrotateCronFileContent, err := fs.ReadFileString("/etc/cron.d/logrotate")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(logrotateCronFileContent).To(Equal(expectedLogrotateCronFileContent))
+
+			rand.Seed(resetRandInt)
 		})
 	})
 

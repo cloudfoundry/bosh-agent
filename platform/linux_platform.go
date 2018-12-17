@@ -3,6 +3,7 @@ package platform
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
@@ -514,6 +515,13 @@ func (p linux) SetupLogrotate(groupName, basePath, size string) (err error) {
 	err = p.fs.WriteFile(path.Join("/etc/logrotate.d", groupName), buffer.Bytes())
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing to /etc/logrotate.d")
+		return
+	}
+
+	minuteZero := rand.Intn(15)
+	err = p.fs.WriteFile("/etc/cron.d/logrotate", []byte(fmt.Sprintf("%d,%d,%d,%d * * * * root /usr/bin/logrotate-cron", minuteZero, minuteZero+15, minuteZero+30, minuteZero+45)))
+	if err != nil {
+		err = bosherr.WrapError(err, "Writing to /etc/cron.d/logrotate")
 		return
 	}
 
