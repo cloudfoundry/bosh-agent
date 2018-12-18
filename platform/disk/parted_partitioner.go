@@ -341,3 +341,11 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 	detectPartitionRetryStrategy := NewPartitionStrategy(detectPartitionRetryable, p.timeService, p.logger)
 	return detectPartitionRetryStrategy.Try()
 }
+
+func (p partedPartitioner) PartionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p partedPartitioner) ReizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}

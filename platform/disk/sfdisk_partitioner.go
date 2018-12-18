@@ -231,7 +231,36 @@ func (p sfdiskPartitioner) convertFromKbToBytes(sizeInKb uint64) uint64 {
 }
 
 func (p sfdiskPartitioner) PartionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
-	return false, nil
+	existingPartitions, err := p.getPartitions(devicePath)
+	if err != nil {
+		return false, err
+	}
+	if len(existingPartitions) < len(partitions) {
+		return false, nil
+	}
+
+	remainingDiskSpace, err := p.GetDeviceSizeInBytes(devicePath)
+	if err != nil {
+		return false, err
+	}
+
+	for index, partitionToMatch := range partitions {
+		if index == len(partitions)-1 {
+			partitionToMatch.SizeInBytes = remainingDiskSpace
+		}
+
+		existingPartition := existingPartitions[index]
+		switch {
+		case existingPartition.Type != partitionToMatch.Type:
+			return false, nil
+		case !biggerThan(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, p.convertFromMbToBytes(deltaSize)):
+			return true, nil
+		}
+
+		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInBytes
+	}
+
+	return true, nil
 }
 
 func (p sfdiskPartitioner) ReizePartitions(devicePath string, partitions []Partition) (err error) {
