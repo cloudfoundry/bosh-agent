@@ -559,6 +559,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 			logrotateFileContent, err := fs.ReadFileString("/etc/logrotate.d/fake-group-name")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logrotateFileContent).To(Equal(expectedEtcLogrotate))
+
+			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"setup-logrotate.sh"}))
 		})
 	})
 
