@@ -517,11 +517,7 @@ func (p linux) SetupLogrotate(groupName, basePath, size string) (err error) {
 		return
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("setup-logrotate.sh")
-	if err != nil {
-		err = bosherr.WrapError(err, "Setting up logrotate")
-		return
-	}
+	_, _, _, _ = p.cmdRunner.RunCommand("setup-logrotate.sh")
 
 	return
 }
