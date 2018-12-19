@@ -521,7 +521,7 @@ func (p linux) SetupLogrotate(groupName, basePath, size string) (err error) {
 		return
 	}
 
-	_, _, _, _ = p.cmdRunner.RunCommand("setup-logrotate.sh")
+	_, _, _, _ = p.cmdRunner.RunCommand("/var/vcap/bosh/bin/setup-logrotate.sh")
 
 	return
 }

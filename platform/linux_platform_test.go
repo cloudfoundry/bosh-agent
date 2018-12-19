@@ -561,7 +561,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 			Expect(logrotateFileContent).To(Equal(expectedEtcLogrotate))
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"setup-logrotate.sh"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"/var/vcap/bosh/bin/setup-logrotate.sh"}))
 		})
 	})
 
