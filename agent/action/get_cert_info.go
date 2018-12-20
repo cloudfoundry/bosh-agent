@@ -13,10 +13,10 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 )
 
 type CertExpirationInfo struct {
-	PropertyName string `json:"property"`
 	Expires      int64  `json:"expires"`
 	ErrorString  string `json:"error_string"`
 }
@@ -28,9 +28,15 @@ type GetCertInfoAction struct {
 	certFileName string
 }
 
+type CertsInfo struct {
+	Certificates map[string]CertExpirationInfo `json:"certificates"`
+	ErrorString string `json:"error_string"`
+}
+
 func NewGetCertInfoTask(spec applyspec.V1Service, boshsf boshsys.FileSystem) (getCertInfo GetCertInfoAction) {
 	getCertInfo.spec = spec
 	getCertInfo.boshfs = boshsf
+	// TODO change the hardcoded path to boshsf.Basedir
 	getCertInfo.jobDir = "/var/vcap/jobs"
 	getCertInfo.certFileName = "validate_certificate.yml"
 	return
@@ -49,48 +55,27 @@ func (g GetCertInfoAction) IsLoggable() bool {
 	return true
 }
 
-func (g GetCertInfoAction) Run() (map[string][]CertExpirationInfo, error) {
+func (g GetCertInfoAction) Run() (interface{}, error) {
 	v1Spec, err := g.spec.Get()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Failed get jobsSpecs")
 	}
 
-	jobList := make(map[string][]CertExpirationInfo)
+	jobList := map[string]CertsInfo{}
+		// make(map[string][]CertExpirationInfo)
 
 	for _, job := range v1Spec.Jobs() {
-		jobCertExpirationInfo := []CertExpirationInfo{}
-		jobCerts := make(map[string]string)
+		errorString := ""
 
-		certFilePath := path.Join(g.jobDir, job.Name, "/config", g.certFileName)
-		if g.boshfs.FileExists(certFilePath) {
-			data, err := g.boshfs.ReadFile(certFilePath)
-			if err != nil {
-				return nil, bosherr.WrapError(err, "unable to read file")
-			}
+		info, err := g.getJobInfo(job)
 
-			err = yaml.Unmarshal(data, &jobCerts)
-			if err != nil {
-				return nil, bosherr.WrapError(err, fmt.Sprintf("Unmarshaling YAML for %s file failed", certFilePath))
-			}
+		if err != nil {
+			errorString = err.Error()
+		}
 
-			for propertyName, cert := range jobCerts {
-				certExpirationInfo := CertExpirationInfo{}
-
-				expires, err := g.getCertExpiryDate(fmt.Sprintf("%v", cert))
-
-				certExpirationInfo.PropertyName = fmt.Sprintf("%v", propertyName)
-				certExpirationInfo.Expires = expires
-
-				if err != nil {
-					certExpirationInfo.ErrorString = err.Error()
-				}
-
-				jobCertExpirationInfo = append(jobCertExpirationInfo, certExpirationInfo)
-			}
-
-			jobList[job.Name] = jobCertExpirationInfo
-		} else {
-			return nil, bosherr.Errorf("%s not found", certFilePath)
+		jobList[job.Name] = CertsInfo{
+			Certificates: info,
+			ErrorString: errorString,
 		}
 	}
 
@@ -117,4 +102,40 @@ func (g GetCertInfoAction) getCertExpiryDate(cert string) (int64, error) {
 	}
 
 	return parsedCert.NotAfter.Unix(), nil
+}
+
+func(g GetCertInfoAction) getJobInfo(job models.Job) (map[string]CertExpirationInfo, error) {
+	jobCertExpirationInfo := map[string]CertExpirationInfo{}
+	jobCerts := make(map[string]string)
+
+	certFilePath := path.Join(g.jobDir, job.Name, "/config", g.certFileName)
+
+	if !g.boshfs.FileExists(certFilePath) {
+		return nil, bosherr.Errorf("%s not found", certFilePath)
+	}
+
+	data, err := g.boshfs.ReadFile(certFilePath)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "unable to read file")
+	}
+
+	err = yaml.Unmarshal(data, &jobCerts)
+	if err != nil {
+		return nil, bosherr.WrapError(err, fmt.Sprintf("Unmarshaling YAML for %s file failed", certFilePath))
+	}
+
+	for propertyName, cert := range jobCerts {
+		certExpirationInfo := CertExpirationInfo{}
+
+		expires, err := g.getCertExpiryDate(fmt.Sprintf("%v", cert))
+
+		certExpirationInfo.Expires = expires
+
+		if err != nil {
+			certExpirationInfo.ErrorString = err.Error()
+		}
+
+		jobCertExpirationInfo[fmt.Sprintf("%v", propertyName)] = certExpirationInfo
+	}
+	return jobCertExpirationInfo, nil
 }

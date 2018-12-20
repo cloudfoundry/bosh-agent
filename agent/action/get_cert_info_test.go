@@ -9,7 +9,6 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -19,6 +18,43 @@ var (
 	jobNames       = []string{
 		"fake-job",
 		"another-fake-job",
+	}
+
+	basicExpectation = map[string]CertsInfo{
+		"fake-job" : {
+			Certificates: map[string]CertExpirationInfo{
+				"this.is.bad" : {
+					Expires: 0,
+					ErrorString: "failed to decode certificate",
+				},
+				firstPropName : {
+					Expires: 1574372638,
+					ErrorString: "",
+				},
+				secondPropName : {
+					Expires: 1574372638,
+					ErrorString: "",
+				},
+			},
+			ErrorString: "",
+		},
+		"another-fake-job" : {
+			Certificates: map[string]CertExpirationInfo{
+				"this.is.bad" : {
+					Expires: 0,
+					ErrorString: "failed to decode certificate",
+				},
+				firstPropName : {
+					Expires: 1574372638,
+					ErrorString: "",
+				},
+				secondPropName : {
+					Expires: 1574372638,
+					ErrorString: "",
+				},
+			},
+			ErrorString: "",
+		},
 	}
 )
 
@@ -68,41 +104,80 @@ var _ = FDescribe("GetCertInfo", func() {
 			}
 		})
 
-		Context("when certs are valid", func() {
+		Context("With valid certificates", func() {
 			BeforeEach(func() {
 				for _, job := range jobNames {
-					certsFileContent = fakeCert(firstPropName, true)
+					certsFileContent = fakeCert(firstPropName, true) + "\n" +
+						fakeCert(secondPropName, true)
 					err := fileSystem.WriteFileString(certFilePath(job), certsFileContent)
 					Expect(err).NotTo(HaveOccurred())
 				}
 			})
 
-			It("returns certificate details per job", func() {
+			It("returns certificate expiry date per job", func() {
 
 				taskValue, err := action.Run()
 				Expect(err).ToNot(HaveOccurred())
 
-				// Check JSON key casing
-				boshassert.MatchesJSONString(GinkgoT(), taskValue,
-					`{"another-fake-job":[{"property":"nats.tls.client_ca.certificate","expires":1574372638,"error_string":""}],"fake-job":[{"property":"nats.tls.client_ca.certificate","expires":1574372638,"error_string":""}]}`)
+				expected := map[string]CertsInfo{
+					"fake-job": {
+						Certificates: map[string]CertExpirationInfo{
+							"nats.tls.client_ca.certificate": {Expires: 1574372638, ErrorString: ""},
+							"other.tls.client.ca.certificate": {Expires: 1574372638, ErrorString: ""},
+						},
+						ErrorString: "",
+					},
+					"another-fake-job": {
+						Certificates: map[string]CertExpirationInfo{
+							"nats.tls.client_ca.certificate": {Expires: 1574372638, ErrorString: ""},
+							"other.tls.client.ca.certificate": {Expires: 1574372638, ErrorString: ""},
+						},
+						ErrorString: "",
+					},
+				}
+
+
+				Expect(taskValue).To(Equal(expected))
 			})
 		})
 
 		Context("when certs are not parseable", func() {
 			BeforeEach(func() {
-				for _, job := range jobNames {
-					certsFileContent = fakeCert("nats.tls.client_ca.certificate", false)
-					err := fileSystem.WriteFileString(certFilePath(job), certsFileContent)
-					Expect(err).NotTo(HaveOccurred())
-				}
+				certsFileContent = fakeCert("nats.tls.client_ca.certificate", false)
+				err := fileSystem.WriteFileString(certFilePath("fake-job"), certsFileContent)
+				Expect(err).NotTo(HaveOccurred())
+
+				certsFileContent = fakeCert("nats.tls.client_ca.certificate", false)
+				err = fileSystem.WriteFileString(certFilePath("another-fake-job"), certsFileContent)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should return error details to the value", func() {
 				taskValue, err := action.Run()
 				Expect(err).ToNot(HaveOccurred())
 
-				boshassert.MatchesJSONString(GinkgoT(), taskValue,
-					`{"another-fake-job":[{"property":"nats.tls.client_ca.certificate","expires":0,"error_string":"failed to decode certificate"}],"fake-job":[{"property":"nats.tls.client_ca.certificate","expires":0,"error_string":"failed to decode certificate"}]}`)
+				expected := map[string]CertsInfo{
+					"fake-job": {
+						Certificates: map[string]CertExpirationInfo{
+							"nats.tls.client_ca.certificate": {
+								Expires: 0,
+								ErrorString: "failed to decode certificate",
+							},
+						},
+						ErrorString: "",
+					},
+					"another-fake-job": {
+						Certificates: map[string]CertExpirationInfo{
+							"nats.tls.client_ca.certificate": {
+								Expires: 0,
+								ErrorString: "failed to decode certificate",
+							},
+						},
+						ErrorString: "",
+					},
+				}
+
+				Expect(taskValue).To(Equal(expected))
 			})
 		})
 
@@ -111,7 +186,18 @@ var _ = FDescribe("GetCertInfo", func() {
 				taskValue, err := action.Run()
 				Expect(err).ToNot(HaveOccurred())
 
-				boshassert.MatchesJSONString(GinkgoT(), taskValue, `{"another-fake-job":[],"fake-job":[]}`)
+				expected := map[string]CertsInfo{
+					"fake-job": {
+						Certificates: map[string]CertExpirationInfo{},
+						ErrorString: "",
+					},
+					"another-fake-job": {
+						Certificates: map[string]CertExpirationInfo{},
+						ErrorString: "",
+					},
+				}
+
+				Expect(taskValue).To(Equal(expected))
 			})
 		})
 
@@ -126,35 +212,12 @@ var _ = FDescribe("GetCertInfo", func() {
 				}
 			})
 
-			//TODO: the JSON returns with elements in different order
-			XIt("should return the expiry date for the valid certs and errors for the invalid certs", func() {
+			It("should return the expiry date for the valid certs and errors for the invalid certs", func() {
 				taskValue, err := action.Run()
+
 				Expect(err).ToNot(HaveOccurred())
 
-				boshassert.MatchesJSONString(GinkgoT(), taskValue,
-					`{"another-fake-job":[{"property":"other.tls.client.ca.certificate","expires":1574372638,"error_string":""},{"property":"this.is.bad","expires":0,"error_string":"failed to decode certificate"},{"property":"nats.tls.client_ca.certificate","expires":1574372638,"error_string":""}],"fake-job":[{"property":"this.is.bad","expires":0,"error_string":"failed to decode certificate"},{"property":"nats.tls.client_ca.certificate","expires":1574372638,"error_string":""},{"property":"other.tls.client.ca.certificate","expires":1574372638,"error_string":""}]}`)
-			})
-		})
-
-		XContext("When file cannot be read", func() {
-			BeforeEach(func() {
-				for _, job := range jobNames {
-					certsFileContent = fakeCert(firstPropName, true)
-					err := fileSystem.WriteFileString(certFilePath(job), certsFileContent)
-					Expect(err).NotTo(HaveOccurred())
-				}
-			})
-
-			It("should return an error stating that file could not be read", func() {
-				for _, job := range jobNames {
-					err := fileSystem.Chmod(certFilePath(job), 0055)
-					Expect(err).NotTo(HaveOccurred())
-				}
-				taskValue, err := action.Run()
-				Expect(err).ToNot(HaveOccurred())
-
-				boshassert.MatchesJSONString(GinkgoT(), taskValue,
-					`{"fake-job":[]}`)
+				Expect(taskValue).To(Equal(basicExpectation))
 			})
 		})
 
@@ -168,9 +231,20 @@ var _ = FDescribe("GetCertInfo", func() {
 			})
 
 			It("should return an error indicating the unmarsheable yaml", func() {
-				_, err := action.Run()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Unmarshaling YAML for"))
+				taskOutput, err := action.Run()
+				Expect(err).NotTo(HaveOccurred())
+
+				expected := map[string]CertsInfo{
+					"another-fake-job": {
+						Certificates: nil,
+						ErrorString: "Unmarshaling YAML for /var/vcap/jobs/another-fake-job/config/validate_certificate.yml file failed: yaml: line 3: could not find expected ':'",
+					},
+					"fake-job": {
+						Certificates: nil,
+						ErrorString: "Unmarshaling YAML for /var/vcap/jobs/fake-job/config/validate_certificate.yml file failed: yaml: line 3: could not find expected ':'",
+					},
+				}
+				Expect(taskOutput).To(Equal(expected))
 			})
 		})
 	})
@@ -183,19 +257,40 @@ var _ = FDescribe("GetCertInfo", func() {
 				JobSpec: boshas.JobSpec{
 					JobTemplateSpecs: []boshas.JobTemplateSpec{
 						{Name: "fake-job"},
+						{Name: "another-fake-job"},
 					},
 				},
 			}
+
+			certsFileContent = fakeCert(firstPropName, true)
+			err := fileSystem.WriteFileString(certFilePath("fake-job"), certsFileContent)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should return an error", func() {
-			for _, job := range jobNames {
-				fileSystem.RemoveAll(certFilePath(job))
-			}
-			_, err := action.Run()
-			Expect(err).To(HaveOccurred())
+			fileSystem.RemoveAll(certFilePath("another-fake-job"))
 
-			Expect(err.Error()).To(ContainSubstring("not found"))
+			taskOutput, err := action.Run()
+			Expect(err).NotTo(HaveOccurred())
+
+			expected := map[string]CertsInfo{
+				"fake-job": {
+					Certificates: map[string]CertExpirationInfo{
+						firstPropName: {
+							Expires:     1574372638,
+							ErrorString: "",
+						},
+					},
+					ErrorString: "",
+				},
+				"another-fake-job": {
+					Certificates: nil,
+					ErrorString:  "/var/vcap/jobs/another-fake-job/config/validate_certificate.yml not found",
+				},
+			}
+
+			Expect(taskOutput).To(Equal(expected))
+
 		})
 	})
 })
@@ -240,3 +335,4 @@ func fakeCert(propName string, valid bool) string {
 func certFilePath(jobName string) string {
 	return fmt.Sprintf("/var/vcap/jobs/%s/config/validate_certificate.yml", jobName)
 }
+

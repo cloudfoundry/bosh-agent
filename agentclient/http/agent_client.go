@@ -140,6 +140,11 @@ func (c *AgentClient) MigrateDisk() error {
 	return err
 }
 
+func (c *AgentClient) GetCertInfo() (interface{}, error) {
+	resp, err := c.SendAsyncTaskMessage("get_cert_info", []interface{}{})
+	return resp, err
+}
+
 func (c *AgentClient) RunScript(scriptName string, options map[string]interface{}) error {
 	_, err := c.SendAsyncTaskMessage("run_script", []interface{}{scriptName, options})
 
@@ -275,3 +280,4 @@ func (c *AgentClient) RemovePersistentDisk(diskCID string) error {
 	_, err := c.SendAsyncTaskMessage("remove_persistent_disk", []interface{}{diskCID})
 	return err
 }
+
