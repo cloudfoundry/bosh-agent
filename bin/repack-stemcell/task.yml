@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
   - name: agent-src
+  - name: compiled-agent
 
 outputs:
   - name: stemcell
