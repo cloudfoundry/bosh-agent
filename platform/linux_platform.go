@@ -604,29 +604,37 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string, desiredSwapSizeInByte
 	}
 
 	if len(swapPartitionPath) > 0 {
-		p.logger.Info(logTag, "Formatting `%s' as swap", swapPartitionPath)
-		err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
+		canonicalSwapPartitionPath, err := resolveCanonicalLink(p.cmdRunner, swapPartitionPath)
+		if err != nil {
+			return err
+		}
+
+		p.logger.Info(logTag, "Formatting `%s' (canonical path: %s) as swap", swapPartitionPath, canonicalSwapPartitionPath)
+		err = p.diskManager.GetFormatter().Format(canonicalSwapPartitionPath, boshdisk.FileSystemSwap)
 		if err != nil {
 			return bosherr.WrapError(err, "Formatting swap")
 		}
-	}
 
-	p.logger.Info(logTag, "Formatting `%s' as ext4", dataPartitionPath)
-	err = p.diskManager.GetFormatter().Format(dataPartitionPath, boshdisk.FileSystemExt4)
-	if err != nil {
-		return bosherr.WrapError(err, "Formatting data partition with ext4")
-	}
-
-	if len(swapPartitionPath) > 0 {
-		p.logger.Info(logTag, "Mounting `%s' as swap", swapPartitionPath)
-		err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
+		p.logger.Info(logTag, "Mounting `%s' (canonical path: %s) as swap", swapPartitionPath, canonicalSwapPartitionPath)
+		err = p.diskManager.GetMounter().SwapOn(canonicalSwapPartitionPath)
 		if err != nil {
 			return bosherr.WrapError(err, "Mounting swap")
 		}
 	}
 
-	p.logger.Info(logTag, "Mounting `%s' at `%s'", dataPartitionPath, mountPoint)
-	err = p.diskManager.GetMounter().Mount(dataPartitionPath, mountPoint)
+	canonicalDataPartitionPath, err := resolveCanonicalLink(p.cmdRunner, dataPartitionPath)
+	if err != nil {
+		return err
+	}
+
+	p.logger.Info(logTag, "Formatting `%s' (canonical path: %s) as ext4", dataPartitionPath, canonicalDataPartitionPath)
+	err = p.diskManager.GetFormatter().Format(canonicalDataPartitionPath, boshdisk.FileSystemExt4)
+	if err != nil {
+		return bosherr.WrapError(err, "Formatting data partition with ext4")
+	}
+
+	p.logger.Info(logTag, "Mounting `%s' (canonical path: %s) at `%s'", dataPartitionPath, canonicalDataPartitionPath, mountPoint)
+	err = p.diskManager.GetMounter().Mount(canonicalDataPartitionPath, mountPoint)
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting data partition")
 	}
@@ -1638,4 +1646,13 @@ func (p linux) Shutdown() error {
 	}
 
 	return nil
+}
+
+func resolveCanonicalLink(cmdRunner boshsys.CmdRunner, path string) (string, error) {
+	stdout, _, _, err := cmdRunner.RunCommand("readlink", "-f", path)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Shelling out to readlink")
+	}
+
+	return strings.Trim(stdout, "\n"), nil
 }
