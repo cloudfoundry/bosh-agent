@@ -37,8 +37,7 @@ J0nE/BW7nm41dXRBIAZR71yproaQrt1tFDFZvdfhwHGLC51L6toOhk/7S604sxbk
 qV0tzT+VaR4hh09FEt9xGmB/3yFh329Yib8ScT94nKzSzoNoDp4Ms/smFhF4lUio
 7SD2+b2/nt8Mcz7q58nYvZteipRrmkOFszlNF5dU31FjvRLITn0bhiOOFRD3qAou
 cSOr1qwsAKuu6MzYNh2ubsLvfg==
------END CERTIFICATE-----
-example`
+-----END CERTIFICATE-----`
 
 const agentKey = `-----BEGIN RSA PRIVATE KEY-----
 MIIEogIBAAKCAQEAutrdgjHQ7o8txCwcBdsXMnJ7Uz8CbeAIxxfkFO6L4ju9/Ixc
@@ -66,8 +65,7 @@ Gt/vbgCSacj1hnSebYsDqDB22tD7G5R9ubwfYe0mjf4H3XPekbdyKgdhVZTJdXww
 feAhAoGABC0apuKQD2IZZXZtDuUI9I4AemPPh0yKvFfTJxmxQ0fTlWjqdcG5nYdh
 tSMBlZwsd6DRlK7dWJ/WHZXuXNeOX6ehSQFmql5/XPNd7INa5My6DDPZr1chh0WJ
 QgK94NXJDoDd1OZjpUBMPLVa8d20/RdGNW8OMolJpzEPhg0r7Ac=
------END RSA PRIVATE KEY-----
-example`
+-----END RSA PRIVATE KEY-----`
 
 type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
