@@ -78,7 +78,7 @@ var _ = Describe("HTTPSHandler", func() {
 			Expect(authority.AppendCertsFromPEM(caCert)).To(BeTrue())
 
 			httpTransport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: authority}}
-			httpClient = http.Client{Timeout: 1 * time.Second, Transport: httpTransport}
+			httpClient = http.Client{Timeout: 5 * time.Second, Transport: httpTransport}
 
 			waitForServerToStart(serverURL, httpClient)
 		})
