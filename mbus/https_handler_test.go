@@ -78,7 +78,7 @@ var _ = Describe("HTTPSHandler", func() {
 			Expect(authority.AppendCertsFromPEM(caCert)).To(BeTrue())
 
 			httpTransport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: authority}}
-			httpClient = http.Client{Transport: httpTransport}
+			httpClient = http.Client{Timeout: 1 * time.Second, Transport: httpTransport}
 
 			waitForServerToStart(serverURL, httpClient)
 		})
@@ -101,24 +101,6 @@ var _ = Describe("HTTPSHandler", func() {
 			httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
 			Expect(readErr).ToNot(HaveOccurred())
 			Expect(httpBody).To(Equal([]byte(`{"value":"expected value"}`)))
-		})
-	})
-
-	Context("when the agent is not configured with custom TLS", func() {
-		BeforeEach(func() {
-			mbusURL, _ := url.Parse(serverURL)
-			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
-			handler = NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, fakes.NewFakeAuditLogger())
-
-			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
-				receivedRequest = req
-				return boshhandler.NewValueResponse("expected value")
-			})
-
-			httpTransport := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
-			httpClient = http.Client{Transport: httpTransport}
-
-			waitForServerToStart(serverURL, httpClient)
 		})
 
 		Describe("POST /agent", func() {

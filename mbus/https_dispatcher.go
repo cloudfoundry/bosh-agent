@@ -76,16 +76,9 @@ func (h *HTTPSDispatcher) Start() error {
 	h.listener = tcpListener
 
 	var cert tls.Certificate
-	if h.keyPair.Certificate != "" && h.keyPair.PrivateKey != "" {
-		cert, err = tls.X509KeyPair([]byte(h.keyPair.Certificate), []byte(h.keyPair.PrivateKey))
-		if err != nil {
-			return bosherr.WrapError(err, "Loading configured tls certificate")
-		}
-	} else {
-		cert, err = tls.LoadX509KeyPair("agent.cert", "agent.key")
-		if err != nil {
-			return bosherr.WrapError(err, "Loading default tls certificate")
-		}
+	cert, err = tls.X509KeyPair([]byte(h.keyPair.Certificate), []byte(h.keyPair.PrivateKey))
+	if err != nil {
+		return bosherr.WrapError(err, "Loading configured tls certificate")
 	}
 
 	// update the server config with the cert
