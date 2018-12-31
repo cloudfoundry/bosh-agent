@@ -43,6 +43,7 @@ type Platform interface {
 	DeleteEphemeralUsersMatching(regex string) (err error)
 
 	// Bootstrap functionality
+	SetupBoshSettingsDisk(boshSettingsDiskPath string) (err error)
 	SetupRootDisk(ephemeralDiskPath string) (err error)
 	SetupSSH(publicKey []string, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)

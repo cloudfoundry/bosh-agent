@@ -112,6 +112,10 @@ func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {
 	return
 }
 
+func (p dummyPlatform) SetupBoshSettingsDisk(boshSettingsDiskPath string) (err error) {
+	panic("TODO")
+}
+
 func (p dummyPlatform) CreateUser(username, basePath string) (err error) {
 	return
 }

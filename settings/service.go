@@ -3,10 +3,11 @@ package settings
 import (
 	"encoding/json"
 
+	"sync"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"sync"
 )
 
 type Service interface {
@@ -33,6 +34,7 @@ const settingsServiceLogTag = "settingsService"
 type settingsService struct {
 	fs                          boshsys.FileSystem
 	settingsPath                string
+	sensitiveSettingsPath       string
 	settings                    Settings
 	settingsMutex               sync.Mutex
 	persistentDiskSettingsPath  string
@@ -51,6 +53,7 @@ type DefaultNetworkResolver interface {
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
+	sensitiveSettingsPath string,
 	persistentDiskSettingsPath string,
 	settingsSource Source,
 	defaultNetworkResolver DefaultNetworkResolver,
@@ -59,6 +62,7 @@ func NewService(
 	return &settingsService{
 		fs:                         fs,
 		settingsPath:               settingsPath,
+		sensitiveSettingsPath:      sensitiveSettingsPath,
 		settings:                   Settings{},
 		persistentDiskSettingsPath: persistentDiskSettingsPath,
 		settingsSource:             settingsSource,
@@ -79,7 +83,7 @@ func (s *settingsService) LoadSettings() error {
 		s.logger.Error(settingsServiceLogTag, "Failed loading settings via fetcher: %v", fetchErr)
 
 		opts := boshsys.ReadOpts{Quiet: true}
-		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.settingsPath, opts)
+		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.getSettingsPath(), opts)
 		if readError != nil {
 			s.logger.Error(settingsServiceLogTag, "Failed reading settings from file %s", readError.Error())
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
@@ -112,7 +116,7 @@ func (s *settingsService) LoadSettings() error {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}
 
-	err = s.fs.WriteFileQuietly(s.settingsPath, newSettingsJSON)
+	err = s.fs.WriteFileQuietly(s.getSettingsPath(), newSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing setting json")
 	}
@@ -223,7 +227,7 @@ func (s *settingsService) GetSettings() Settings {
 }
 
 func (s *settingsService) InvalidateSettings() error {
-	err := s.fs.RemoveAll(s.settingsPath)
+	err := s.fs.RemoveAll(s.getSettingsPath())
 	if err != nil {
 		return bosherr.WrapError(err, "Removing settings file")
 	}
@@ -280,4 +284,15 @@ func (s *settingsService) getPersistentDiskSettingsWithoutLocking() (map[string]
 		}
 	}
 	return persistentDiskSettings, nil
+}
+
+func (s *settingsService) getSettingsPath() string {
+	s.settingsMutex.Lock()
+	defer s.settingsMutex.Unlock()
+
+	if s.settings.Env.Bosh.SettingsTmpfs {
+		return s.sensitiveSettingsPath
+	}
+
+	return s.settingsPath
 }

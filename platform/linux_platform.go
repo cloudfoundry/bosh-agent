@@ -319,6 +319,15 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 	return
 }
 
+func (p linux) SetupBoshSettingsDisk(boshSettingsDiskPath string) (err error) {
+	err = p.fs.MkdirAll(boshSettingsDiskPath, 0700) // TODO use constant chmod?
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", boshSettingsDiskPath)
+	}
+
+	return p.mountTmpfs(boshSettingsDiskPath, "16m")
+}
+
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	if p.options.SkipDiskSetup {
 		return nil

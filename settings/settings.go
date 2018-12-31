@@ -280,6 +280,7 @@ type BoshEnv struct {
 	Blobstores            []Blobstore `json:"blobstores"`
 	NTP                   []string    `json:"ntp"`
 	Parallel              *int        `json:"parallel"`
+	SettingsTmpfs         bool        `json:"settings_tmpfs"`
 }
 
 type MBus struct {

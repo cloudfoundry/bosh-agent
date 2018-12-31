@@ -428,6 +428,10 @@ func (p WindowsPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSetti
 	return
 }
 
+func (p WindowsPlatform) SetupBoshSettingsDisk(boshSettingsDiskPath string) (err error) {
+	panic("TODO")
+}
+
 func (p WindowsPlatform) SetupDataDir(_ boshsettings.JobDir) error {
 	dataDir := p.dirProvider.DataDir()
 	sysDataDir := filepath.Join(dataDir, "sys")

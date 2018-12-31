@@ -18,6 +18,10 @@ func (p Provider) BoshDir() string {
 	return filepath.Join(p.BaseDir(), "bosh")
 }
 
+func (p Provider) BoshSettingsDir() string {
+	return filepath.Join(p.BoshDir(), "sensitive") // TODO naming; "settings" vs "sensitive" vs "tmpfs" vs "ephemeral"
+}
+
 func (p Provider) BoshBinDir() string {
 	return filepath.Join(p.BoshDir(), "bin")
 }

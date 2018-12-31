@@ -64,6 +64,10 @@ func (boot bootstrap) Run() (err error) {
 		}
 	}
 
+	if err = boot.platform.SetupBoshSettingsDisk(boot.dirProvider.BoshSettingsDir()); err != nil {
+		return bosherr.WrapError(err, "Setting up bosh settings disk")
+	}
+
 	if err = boot.settingsService.LoadSettings(); err != nil {
 		return bosherr.WrapError(err, "Fetching settings")
 	}
