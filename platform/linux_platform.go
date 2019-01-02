@@ -952,7 +952,6 @@ func (p linux) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Creating root tmp dir")
 	}
 
-	// change permissions
 	err = p.changeTmpDirPermissions(boshRootTmpPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
@@ -1132,7 +1131,7 @@ func (p linux) changeTmpDirPermissions(path string) error {
 		return bosherr.WrapErrorf(err, "chown %s", path)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "1770", path)
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "1777", path)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chmod %s", path)
 	}

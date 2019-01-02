@@ -2072,10 +2072,8 @@ Number  Start   End     Size    File system  Name             Flags
 			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1770", "/tmp"}))
 			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/var/tmp"}))
-			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1770", "/var/tmp"}))
+			Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1777", "/var/tmp"}))
 		})
 
 		It("creates new temp dir", func() {
@@ -2117,7 +2115,7 @@ Number  Start   End     Size    File system  Name             Flags
 				err := platform.SetupTmpDir()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1770", "/fake-dir/data/root_tmp"}))
+				Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chmod", "1777", "/fake-dir/data/root_tmp"}))
 			})
 
 			Context("mounting root_tmp into /tmp", func() {
@@ -2141,13 +2139,6 @@ Number  Start   End     Size    File system  Name             Flags
 						mntPt, options = mounter.RemountInPlaceArgsForCall(0)
 						Expect(mntPt).To(Equal("/tmp"))
 						Expect(options).To(Equal([]string{"nodev", "noexec", "nosuid"}))
-					})
-
-					It("changes permissions for the system /tmp folder", func() {
-						err := platform.SetupTmpDir()
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(cmdRunner.RunCommands).To(ContainElement([]string{"chown", "root:vcap", "/tmp"}))
 					})
 				})
 
