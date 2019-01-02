@@ -87,7 +87,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("1770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1777"))
 				})
 
 				It("binds /var/vcap/data/root_tmp on /var/tmp", func() {
@@ -98,7 +98,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /var/tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("1770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1777"))
 				})
 			})
 
@@ -117,11 +117,11 @@ var _ = Describe("SystemMounts", func() {
 
 						result, err := testEnvironment.RunCommand("stat -c %a /tmp")
 						Expect(err).ToNot(HaveOccurred())
-						Expect(strings.TrimSpace(result)).To(Equal("1770"))
+						Expect(strings.TrimSpace(result)).To(Equal("1777"))
 
 						result, err = testEnvironment.RunCommand("stat -c %a /var/tmp")
 						Expect(err).ToNot(HaveOccurred())
-						Expect(strings.TrimSpace(result)).To(Equal("1770"))
+						Expect(strings.TrimSpace(result)).To(Equal("1777"))
 					}
 
 					waitForAgentAndExpectMounts()
@@ -137,7 +137,7 @@ var _ = Describe("SystemMounts", func() {
 			})
 
 			Context("when the bind-mounts are removed", func() {
-				It("has permission 770 on /tmp", func() {
+				It("has permission 777 on /tmp", func() {
 					Eventually(func() string {
 						result, _ := testEnvironment.RunCommand("sudo mount | grep -c '/var/vcap/data/root_tmp on /tmp'")
 						return strings.TrimSpace(result)
@@ -148,7 +148,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("1770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1777"))
 				})
 
 				It("has permission 770 on /var/tmp", func() {
@@ -162,7 +162,7 @@ var _ = Describe("SystemMounts", func() {
 
 					result, err := testEnvironment.RunCommand("stat -c %a /var/tmp")
 					Expect(err).ToNot(HaveOccurred())
-					Expect(strings.TrimSpace(result)).To(Equal("1770"))
+					Expect(strings.TrimSpace(result)).To(Equal("1777"))
 				})
 			})
 		})
