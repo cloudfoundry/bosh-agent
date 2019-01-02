@@ -35,6 +35,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		ipResolver = &fakeip.FakeResolver{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
+		macAddressDetector := NewMacAddressDetector(fs)
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
@@ -45,6 +46,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			fs,
 			cmdRunner,
 			ipResolver,
+			macAddressDetector,
 			interfaceConfigurationCreator,
 			interfaceAddrsValidator,
 			dnsValidator,

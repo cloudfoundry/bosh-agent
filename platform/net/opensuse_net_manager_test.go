@@ -36,6 +36,7 @@ func describeOpensuseNetManager() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		ipResolver = &fakeip.FakeResolver{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
+		macAddressDetector := NewMacAddressDetector(fs)
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
 		interfaceAddrsValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
@@ -45,6 +46,7 @@ func describeOpensuseNetManager() {
 			fs,
 			cmdRunner,
 			ipResolver,
+			macAddressDetector,
 			interfaceConfigurationCreator,
 			interfaceAddrsValidator,
 			dnsValidator,

@@ -15,28 +15,6 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-type MACAddressDetector interface {
-	MACAddresses() (map[string]string, error)
-}
-
-func NewMACAddressDetector() MACAddressDetector {
-	return macAddressDetector{}
-}
-
-type macAddressDetector struct{}
-
-func (m macAddressDetector) MACAddresses() (map[string]string, error) {
-	ifs, err := gonet.Interfaces()
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Detecting Mac Addresses")
-	}
-	macs := make(map[string]string, len(ifs))
-	for _, f := range ifs {
-		macs[f.HardwareAddr.String()] = f.Name
-	}
-	return macs, nil
-}
-
 type WindowsNetManager struct {
 	runner                        boshsys.CmdRunner
 	interfaceConfigurationCreator InterfaceConfigurationCreator
@@ -225,7 +203,7 @@ func (net WindowsNetManager) buildInterfaces(networks boshsettings.Networks) (
 	error,
 ) {
 
-	interfacesByMacAddress, err := net.macAddressDetector.MACAddresses()
+	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
 	}

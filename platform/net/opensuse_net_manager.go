@@ -22,6 +22,7 @@ type opensuseNetManager struct {
 	fs                            boshsys.FileSystem
 	routesSearcher                RoutesSearcher
 	ipResolver                    boship.Resolver
+	macAddressDetector            MACAddressDetector
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	interfaceAddressesValidator   boship.InterfaceAddressesValidator
 	dnsValidator                  DNSValidator
@@ -38,6 +39,7 @@ func NewOpensuseNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	ipResolver boship.Resolver,
+	macAddressDetector MACAddressDetector,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	interfaceAddressesValidator boship.InterfaceAddressesValidator,
 	dnsValidator DNSValidator,
@@ -48,6 +50,7 @@ func NewOpensuseNetManager(
 		cmdRunner:                     cmdRunner,
 		fs:                            fs,
 		ipResolver:                    ipResolver,
+		macAddressDetector:            macAddressDetector,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		interfaceAddressesValidator:   interfaceAddressesValidator,
 		dnsValidator:                  dnsValidator,
@@ -158,7 +161,7 @@ func (net opensuseNetManager) writeResolvConf(networks boshsettings.Networks) er
 func (net opensuseNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 	interfaces := []string{}
 
-	interfacesByMacAddress, err := net.detectMacAddresses()
+	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
 	if err != nil {
 		return interfaces, bosherr.WrapError(err, "Getting network interfaces")
 	}
@@ -255,7 +258,7 @@ func (net opensuseNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations
 }
 
 func (net opensuseNetManager) buildInterfaces(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
-	interfacesByMacAddress, err := net.detectMacAddresses()
+	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
 	}
@@ -377,34 +380,6 @@ func (net opensuseNetManager) writeDHCPConfiguration(newServers []string, dhcpIn
 	}
 
 	return changed, nil
-}
-
-func (net opensuseNetManager) detectMacAddresses() (map[string]string, error) {
-	addresses := map[string]string{}
-
-	filePaths, err := net.fs.Glob("/sys/class/net/*")
-	if err != nil {
-		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
-	}
-
-	var macAddress string
-	for _, filePath := range filePaths {
-		isPhysicalDevice := net.fs.FileExists(path.Join(filePath, "device"))
-
-		if isPhysicalDevice {
-			macAddress, err = net.fs.ReadFileString(path.Join(filePath, "address"))
-			if err != nil {
-				return addresses, bosherr.WrapError(err, "Reading mac address from file")
-			}
-
-			macAddress = strings.Trim(macAddress, "\n")
-
-			interfaceName := path.Base(filePath)
-			addresses[macAddress] = interfaceName
-		}
-	}
-
-	return addresses, nil
 }
 
 func (net opensuseNetManager) ifaceAddresses(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration) ([]boship.InterfaceAddress, []boship.InterfaceAddress) {

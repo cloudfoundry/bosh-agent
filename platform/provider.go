@@ -82,15 +82,16 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(interfaceAddressesProvider)
 	dnsValidator := boshnet.NewDNSValidator(fs)
 	kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
+	macAddressDetector := boshnet.NewMacAddressDetector(fs)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, kernelIPv6, logger)
-	opensuseNetManager := boshnet.NewOpensuseNetManager(fs, runner, ipResolver, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, kernelIPv6, logger)
+	opensuseNetManager := boshnet.NewOpensuseNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
 		interfaceConfigurationCreator,
-		boshnet.NewMACAddressDetector(),
+		macAddressDetector,
 		logger,
 		clock,
 		fs,
