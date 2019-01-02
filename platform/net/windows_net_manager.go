@@ -58,7 +58,7 @@ func NewWindowsNetManager(
 	dirProvider boshdirs.Provider,
 ) Manager {
 	return WindowsNetManager{
-		runner:                        runner,
+		runner: runner,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		macAddressDetector:            macAddressDetector,
 		logTag:                        "WindowsNetManager",

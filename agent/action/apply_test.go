@@ -78,7 +78,6 @@ var _ = Describe("ApplyAction", func() {
 						_, err := action.Run(desiredApplySpec)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(applier.Applied).To(BeTrue())
-						Expect(applier.ApplyCurrentApplySpec).To(Equal(currentApplySpec))
 						Expect(applier.ApplyDesiredApplySpec).To(Equal(populatedDesiredApplySpec))
 					})
 
@@ -180,30 +179,30 @@ var _ = Describe("ApplyAction", func() {
 				})
 			})
 
-			Context("when current spec cannot be retrieved", func() {
-				BeforeEach(func() {
-					specService.Spec = currentApplySpec
-					specService.GetErr = errors.New("fake-get-error")
-				})
-
-				It("returns error and does not apply desired spec", func() {
-					_, err := action.Run(desiredApplySpec)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-get-error"))
-				})
-
-				It("does not run applier with desired spec", func() {
-					_, err := action.Run(desiredApplySpec)
-					Expect(err).To(HaveOccurred())
-					Expect(applier.Applied).To(BeFalse())
-				})
-
-				It("does not save desired spec as current spec", func() {
-					_, err := action.Run(desiredApplySpec)
-					Expect(err).To(HaveOccurred())
-					Expect(specService.Spec).To(Equal(currentApplySpec))
-				})
-			})
+			//Context("when current spec cannot be retrieved", func() {
+			//	BeforeEach(func() {
+			//		specService.Spec = currentApplySpec
+			//		specService.GetErr = errors.New("fake-get-error")
+			//	})
+			//
+			//	It("returns error and does not apply desired spec", func() {
+			//		_, err := action.Run(desiredApplySpec)
+			//		Expect(err).To(HaveOccurred())
+			//		Expect(err.Error()).To(ContainSubstring("fake-get-error"))
+			//	})
+			//
+			//	It("does not run applier with desired spec", func() {
+			//		_, err := action.Run(desiredApplySpec)
+			//		Expect(err).To(HaveOccurred())
+			//		Expect(applier.Applied).To(BeFalse())
+			//	})
+			//
+			//	It("does not save desired spec as current spec", func() {
+			//		_, err := action.Run(desiredApplySpec)
+			//		Expect(err).To(HaveOccurred())
+			//		Expect(specService.Spec).To(Equal(currentApplySpec))
+			//	})
+			//})
 		})
 
 		Context("when desired spec does not have a configuration hash", func() {

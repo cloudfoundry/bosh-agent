@@ -156,7 +156,7 @@ func init() {
 
 		Describe("Apply", func() {
 			It("removes all jobs from job supervisor", func() {
-				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})
+				err := applier.Apply(&fakeas.FakeApplySpec{})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(jobSupervisor.RemovedAllJobs).To(BeTrue())
@@ -167,10 +167,7 @@ func init() {
 				jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
 
 				job := buildJob()
-				applier.Apply(
-					&fakeas.FakeApplySpec{},
-					&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
-				)
+				applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 
 				// check that jobs were not applied before removing all other jobs
 
@@ -181,7 +178,7 @@ func init() {
 			It("returns error if removing all jobs from job supervisor fails", func() {
 				jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
 
-				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})
+				err := applier.Apply(&fakeas.FakeApplySpec{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-remove-all-jobs-error"))
 			})
@@ -189,10 +186,7 @@ func init() {
 			It("apply applies jobs", func() {
 				job := buildJob()
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{},
-					&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(jobApplier.ApplyCallCount()).To(Equal(1))
@@ -204,38 +198,29 @@ func init() {
 
 				jobApplier.ApplyReturns(errors.New("fake-apply-job-error"))
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{},
-					&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-apply-job-error"))
 			})
 
-			It("asked jobApplier to keep only the jobs in the desired and current specs", func() {
-				currentJob := buildJob()
+			It("asked jobApplier to keep only the jobs in the desired specs", func() {
 				desiredJob := buildJob()
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{JobResults: []models.Job{currentJob}},
-					&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}})
+
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(jobApplier.KeepOnlyCallCount()).To(Equal(1))
-				Expect(jobApplier.KeepOnlyArgsForCall(0)).To(Equal([]models.Job{currentJob, desiredJob}))
+				Expect(jobApplier.KeepOnlyArgsForCall(0)).To(Equal([]models.Job{desiredJob}))
 			})
 
-			It("returns error when jobApplier fails to keep only the jobs in the desired and current specs", func() {
+			It("returns error when jobApplier fails to keep only the jobs in the desired specs", func() {
 				jobApplier.KeepOnlyReturns(errors.New("fake-keep-only-error"))
 
-				currentJob := buildJob()
 				desiredJob := buildJob()
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{JobResults: []models.Job{currentJob}},
-					&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 			})
@@ -244,10 +229,7 @@ func init() {
 				pkg1 := buildPackage()
 				pkg2 := buildPackage()
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{},
-					&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(packageApplier.AppliedPackages).To(Equal([]models.Package{pkg1, pkg2}))
 			})
@@ -257,36 +239,25 @@ func init() {
 
 				packageApplier.ApplyError = errors.New("fake-apply-package-error")
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{},
-					&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-apply-package-error"))
 			})
 
-			It("asked packageApplier to keep only the packages in the desired and current specs", func() {
-				currentPkg := buildPackage()
+			It("asked packageApplier to keep only the packages in the desired specs", func() {
 				desiredPkg := buildPackage()
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{PackageResults: []models.Package{currentPkg}},
-					&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(packageApplier.KeptOnlyPackages).To(Equal([]models.Package{currentPkg, desiredPkg}))
+				Expect(packageApplier.KeptOnlyPackages).To(Equal([]models.Package{desiredPkg}))
 			})
 
-			It("returns error when packageApplier fails to keep only the packages in the desired and current specs", func() {
+			It("returns error when packageApplier fails to keep only the packages in the desired specs", func() {
 				packageApplier.KeepOnlyErr = errors.New("fake-keep-only-error")
 
-				currentPkg := buildPackage()
 				desiredPkg := buildPackage()
 
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{PackageResults: []models.Package{currentPkg}},
-					&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 			})
@@ -296,7 +267,7 @@ func init() {
 				job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 				jobs := []models.Job{job1, job2}
 
-				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{JobResults: jobs})
+				err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(jobApplier.ConfigureCallCount()).To(Equal(0))
@@ -308,16 +279,13 @@ func init() {
 				jobs := []models.Job{}
 				jobSupervisor.ReloadErr = errors.New("error reloading monit")
 
-				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{JobResults: jobs})
+				err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error reloading monit"))
 			})
 
 			It("apply sets up logrotation", func() {
-				err := applier.Apply(
-					&fakeas.FakeApplySpec{},
-					&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"},
-				)
+				err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
 				Expect(err).ToNot(HaveOccurred())
 
 				assert.Equal(GinkgoT(), logRotateDelegate.SetupLogrotateArgs, SetupLogrotateArgs{
@@ -330,7 +298,7 @@ func init() {
 			It("apply errs if setup logrotate fails", func() {
 				logRotateDelegate.SetupLogrotateErr = errors.New("fake-set-up-logrotate-error")
 
-				err := applier.Apply(&fakeas.FakeApplySpec{}, &fakeas.FakeApplySpec{})
+				err := applier.Apply(&fakeas.FakeApplySpec{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-set-up-logrotate-error"))
 			})
