@@ -728,31 +728,11 @@ var _ = Describe("PartedPartitioner", func() {
 						Name:         "bosh-partition-1",
 					},
 				}
-
-				fakeCmdRunner.AddCmdResult(
-					"blkid",
-					fakesys.FakeCmdResult{
-						Stdout: `/dev/sda1: UUID="5ce03326-b891-4980-95cd-74162d1ff422" TYPE="swap" PARTLABEL="bosh-partition-0" PARTUUID="1ee65ccd-0661-47b9-a954-5eb765f91ff0"
-/dev/sda2: UUID="bc9bcaba-ba4f-4ecb-af95-a7ea034b3091" TYPE="ext4" PARTLABEL="bosh-partition-1" PARTUUID="7a171647-ec5d-497d-89d2-7f46db239a18"
-`},
-				)
 			})
 
 			It("removes partitions", func() {
 				fakeCmdRunner.AddCmdResult(
-					"wipefs -a /dev/sda1",
-					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
-				)
-				fakeCmdRunner.AddCmdResult(
-					"wipefs -a /dev/sda2",
-					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
-				)
-				fakeCmdRunner.AddCmdResult(
-					"parted /dev/sda rm 1",
-					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
-				)
-				fakeCmdRunner.AddCmdResult(
-					"parted /dev/sda rm 2",
+					"wipefs -a /dev/sda",
 					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
 				)
 
@@ -760,54 +740,23 @@ var _ = Describe("PartedPartitioner", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-					{"blkid"},
-					{"wipefs", "-a", "/dev/sda1"},
-					{"wipefs", "-a", "/dev/sda2"},
-					{"parted", "/dev/sda", "rm", "1"},
-					{"parted", "/dev/sda", "rm", "2"},
+					{"wipefs", "-a", "/dev/sda"},
 				}))
 			})
 
-			It("failed to remove partitions when erasing old partition paths error", func() {
+			It("failed to remove partitions when removing device path error", func() {
 				for i := 0; i < 20; i++ {
 					fakeCmdRunner.AddCmdResult(
-						"wipefs -a /dev/sda1",
+						"wipefs -a /dev/sda",
 						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 2, Error: errors.New("fake-cmd-error")},
 					)
 				}
 
 				err := partitioner.RemovePartitions(existingPartitions, "/dev/sda")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Erasing partition"))
+				Expect(err.Error()).To(ContainSubstring("Removing device path"))
 
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"blkid"}))
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda1"}))
-			})
-
-			It("failed to remove partitions when removing old partitions error", func() {
-				fakeCmdRunner.AddCmdResult(
-					"wipefs -a /dev/sda1",
-					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
-				)
-				fakeCmdRunner.AddCmdResult(
-					"wipefs -a /dev/sda2",
-					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
-				)
-				for i := 0; i < 20; i++ {
-					fakeCmdRunner.AddCmdResult(
-						"parted /dev/sda rm 1",
-						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 2, Error: errors.New("fake-cmd-error")},
-					)
-				}
-
-				err := partitioner.RemovePartitions(existingPartitions, "/dev/sda")
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Removing partitions of disk"))
-
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"blkid"}))
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda1"}))
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda2"}))
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "/dev/sda", "rm", "1"}))
+				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda"}))
 			})
 		})
 	})

@@ -183,58 +183,24 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 }
 
 func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
-	partitionPaths, err := p.getPartitionPaths(devicePath)
+	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+		_, _, _, err := p.cmdRunner.RunCommand(
+			"wipefs",
+			"-a",
+			devicePath,
+		)
+		if err != nil {
+			return true, bosherr.WrapError(err, fmt.Sprintf("Removing device path `%s' ", devicePath))
+		}
+
+		p.logger.Info(p.logTag, "Successfully removed device path `%s'", devicePath)
+		return false, nil
+	})
+
+	partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+	err := partitionRetryStrategy.Try()
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Getting partition paths of disk `%s'", devicePath)
-	}
-
-	p.logger.Debug(p.logTag, "Erasing old partition paths")
-	for _, partitionPath := range partitionPaths {
-		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
-			_, _, _, err := p.cmdRunner.RunCommand(
-				"wipefs",
-				"-a",
-				partitionPath,
-			)
-			if err != nil {
-				return true, bosherr.WrapError(err, fmt.Sprintf("Erasing partition path `%s' ", partitionPath))
-			}
-
-			p.logger.Info(p.logTag, "Successfully erased partition path `%s'", partitionPath)
-			return false, nil
-		})
-
-		partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
-		err := partitionRetryStrategy.Try()
-
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Erasing partition `%s' paths", devicePath)
-		}
-	}
-
-	p.logger.Debug(p.logTag, "Removing old partitions")
-	for _, partition := range partitions {
-		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
-			_, _, _, err := p.cmdRunner.RunCommand(
-				"parted",
-				devicePath,
-				"rm",
-				strconv.Itoa(partition.Index),
-			)
-			if err != nil {
-				return true, bosherr.WrapError(err, "Removing partition using parted")
-			}
-
-			p.logger.Info(p.logTag, "Successfully removed partition %s from %s", partition.Name, devicePath)
-			return false, nil
-		})
-
-		partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
-		err := partitionRetryStrategy.Try()
-
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Removing partitions of disk `%s'", devicePath)
-		}
+		return err
 	}
 
 	return nil
@@ -272,18 +238,6 @@ func (p partedPartitioner) getPartitionTable(devicePath string) (stdout, stderr 
 		"mklabel",
 		"gpt",
 	)
-}
-
-func (p partedPartitioner) getPartitionPaths(devicePath string) ([]string, error) {
-	stdout, _, _, err := p.cmdRunner.RunCommand("blkid")
-	if err != nil {
-		return []string{}, err
-	}
-
-	pathRegExp := devicePath + "[0-9]+"
-	re := regexp.MustCompile(pathRegExp)
-
-	return re.FindAllString(stdout, -1), nil
 }
 
 func (p partedPartitioner) roundUp(numToRound, multiple uint64) uint64 {
