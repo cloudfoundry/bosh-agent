@@ -202,13 +202,13 @@ func NewWindowsJobSupervisor(
 	machineIP string,
 ) JobSupervisor {
 	s := &windowsJobSupervisor{
-		cmdRunner:   cmdRunner,
-		dirProvider: dirProvider,
-		fs:          fs,
-		logger:      logger,
-		logTag:      "windowsJobSupervisor",
-		machineIP:   machineIP,
-		msgCh:       make(chan *windowsServiceEvent, 8),
+		cmdRunner:             cmdRunner,
+		dirProvider:           dirProvider,
+		fs:                    fs,
+		logger:                logger,
+		logTag:                "windowsJobSupervisor",
+		machineIP:             machineIP,
+		msgCh:                 make(chan *windowsServiceEvent, 8),
 		jobFailuresServerPort: jobFailuresServerPort,
 		cancelServer:          cancelChan,
 	}
