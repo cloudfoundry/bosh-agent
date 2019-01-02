@@ -6,12 +6,13 @@ import (
 
 	"github.com/cloudfoundry/yagnats"
 
+	"reflect"
+	"time"
+
 	"code.cloudfoundry.org/clock/fakeclock"
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/cloudfoundry/bosh-agent/mbus/fakes"
 	"github.com/cloudfoundry/bosh-utils/errors"
-	"reflect"
-	"time"
 )
 
 func init() {
