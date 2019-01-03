@@ -1,6 +1,7 @@
 package net_test
 
 import (
+	"errors"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -85,6 +86,13 @@ var _ = Describe("MacAddressDetectorLinux", func() {
 					"33:44": "veth2",
 				}))
 			})
+		})
+
+		It("returns errors from glob /sys/class/net/", func() {
+			fs.GlobErr = errors.New("fs-glob-error")
+			_, err := macAddressDetector.DetectMacAddresses()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fs-glob-error"))
 		})
 	})
 })
