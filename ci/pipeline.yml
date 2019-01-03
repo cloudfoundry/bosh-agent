@@ -16,71 +16,69 @@ jobs:
 - name: bump-deps
   public: true
   plan:
-    - get: weekly
-      trigger: true
-    - get: bosh-agent
-    - task: bump-deps
-      file: bosh-agent/ci/tasks/bump-deps.yml
-    - task: test-unit
-      input_mapping:
-        bosh-agent: bumped-bosh-agent
-      file: bosh-agent/ci/tasks/test-unit.yml
-    - put: bosh-agent
-      params:
-        repository: bumped-bosh-agent
-        rebase: true
+  - get: weekly
+    trigger: true
+  - get: bosh-agent
+  - task: bump-deps
+    file: bosh-agent/ci/tasks/bump-deps.yml
+  - task: test-unit
+    input_mapping:
+      bosh-agent: bumped-bosh-agent
+    file: bosh-agent/ci/tasks/test-unit.yml
+  - put: bosh-agent
+    params:
+      repository: bumped-bosh-agent
+      rebase: true
 
 - name: test-unit
   public: true
   plan:
-    - get: bosh-agent
-      trigger: true
-    - task: test-unit
-      file: bosh-agent/ci/tasks/test-unit.yml
+  - get: bosh-agent
+    trigger: true
+  - task: test-unit
+    file: bosh-agent/ci/tasks/test-unit.yml
 
 - name: test-integration
   public: false
   plan:
-    - get: bosh-agent
-      trigger: true
-    - task: test-integration
-      privileged: true
-      file: bosh-agent/ci/tasks/test-integration.yml
-      params:
-        BOSH_AWS_ACCESS_KEY_ID: ((BOSH_AWS_ACCESS_KEY_ID))
-        BOSH_AWS_SECRET_ACCESS_KEY: ((BOSH_AWS_SECRET_ACCESS_KEY))
-        BOSH_LITE_KEYPAIR: ((BOSH_LITE_KEYPAIR))
-        BOSH_LITE_SUBNET_ID: ((BOSH_LITE_SUBNET_ID))
-        BOSH_LITE_NAME: ((BOSH_LITE_NAME))
-        BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
-        BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
+  - get: bosh-agent
+    trigger: true
+  - task: test-integration
+    privileged: true
+    file: bosh-agent/ci/tasks/test-integration.yml
+    params:
+      BOSH_AWS_ACCESS_KEY_ID: ((BOSH_AWS_ACCESS_KEY_ID))
+      BOSH_AWS_SECRET_ACCESS_KEY: ((BOSH_AWS_SECRET_ACCESS_KEY))
+      BOSH_LITE_KEYPAIR: ((BOSH_LITE_KEYPAIR))
+      BOSH_LITE_SUBNET_ID: ((BOSH_LITE_SUBNET_ID))
+      BOSH_LITE_NAME: ((BOSH_LITE_NAME))
+      BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
+      BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
 
 - name: bosh-integration-tests
   public: true
   serial: true
-  serial_groups: [integration-db-tls-postgres]
   build_logs_to_retain: 250
   plan:
-    - aggregate:
-      - get: bosh-src
-      - get: version-semver
-      - get: bosh-cli
-      - get: bosh-agent
-        trigger: true
-        passed:
-          - test-unit
-          - test-integration
-          - windows-test-unit
-          - windows-test-integration-1709
-          - windows-test-integration-1803
-          - windows-test-integration-2012R2
+  - aggregate:
+    - get: bosh-src
+    - get: bosh-cli
+    - get: bosh-agent
+      trigger: true
+      passed:
+      - test-unit
+      - test-integration
+      - windows-test-unit
+      - windows-test-integration-1709
+      - windows-test-integration-1803
+      - windows-test-integration-2012R2
 
-    - task: tests
-      privileged: true
-      file: bosh-src/ci/tasks/test-integration-gocli.yml
-      tags: ["bosh-integration"]
-      params:
-        DB: postgresql
+  - task: tests
+    privileged: true
+    file: bosh-src/ci/tasks/test-integration-gocli.yml
+    tags: ["bosh-integration"]
+    params:
+      DB: postgresql
 
 - name: windows-test-unit
   serial: true
@@ -157,43 +155,39 @@ jobs:
   public: true
   serial: true
   plan:
-    - aggregate:
-      - trigger: true
-        passed:
-          - bosh-integration-tests
-          - windows-test-unit
-          - windows-test-integration-1709
-          - windows-test-integration-1803
-          - windows-test-integration-2012R2
-        get: bosh-agent
-      - get: version-semver
-        params: {bump: minor}
-    - task: assert-version-aligns
-      file: bosh-agent/ci/tasks/assert-version-aligns.yml
-    - put: version-semver
-      params:
-        file: version-semver/number
-    - put: bosh-agent-commit-status
-      params:
-        state: success
-        commit: bosh-agent
-    - put: bosh-agent-master
-      params:
-        repository: bosh-agent
-        tag: version-semver/number
-        tag_prefix: v
-    - aggregate:
-      - task: build-windows
-        file: bosh-agent/ci/tasks/build-windows.yml
-      - task: build-linux
-        file: bosh-agent/ci/tasks/build-linux.yml
-      - task: build-linux-ppc64le
-        file: bosh-agent/ci/tasks/build-linux-ppc64le.yml
-    - put: bosh-agent-index
-      params:
-        files:
-        - compiled-linux-*/*
-        version: version-semver/number
+  - aggregate:
+    - trigger: true
+      passed:
+      - bosh-integration-tests
+      get: bosh-agent
+    - get: version-semver
+      params: {bump: minor}
+  - task: assert-version-aligns
+    file: bosh-agent/ci/tasks/assert-version-aligns.yml
+  - put: version-semver
+    params:
+      file: version-semver/number
+  - put: bosh-agent-commit-status
+    params:
+      state: success
+      commit: bosh-agent
+  - put: bosh-agent-master
+    params:
+      repository: bosh-agent
+      tag: version-semver/number
+      tag_prefix: v
+  - aggregate:
+    - task: build-windows
+      file: bosh-agent/ci/tasks/build-windows.yml
+    - task: build-linux
+      file: bosh-agent/ci/tasks/build-linux.yml
+    - task: build-linux-ppc64le
+      file: bosh-agent/ci/tasks/build-linux-ppc64le.yml
+  - put: bosh-agent-index
+    params:
+      files:
+      - compiled-linux-*/*
+      version: version-semver/number
 
 resources:
 - name: bosh-agent
@@ -215,7 +209,7 @@ resources:
   source:
     uri: git+ssh://git@github.com:cloudfoundry/bosh-agent-index.git//
     mirror_files:
-      - destination: s3://s3-external-1.amazonaws.com/((RELEASE_BUCKET_AGENT))/{{.Name}}
+    - destination: s3://s3-external-1.amazonaws.com/((RELEASE_BUCKET_AGENT))/{{.Name}}
     options:
       private_key: ((BOSH_AGENT_INDEX_DEPLOYMENT_PRIVATE_KEY))
     url_handlers:
