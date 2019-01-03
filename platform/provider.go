@@ -91,7 +91,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
 		interfaceConfigurationCreator,
-		macAddressDetector,
+		boshnet.NewMacAddressDetector(nil),
 		logger,
 		clock,
 		fs,

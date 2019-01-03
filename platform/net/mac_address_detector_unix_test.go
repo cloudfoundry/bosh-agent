@@ -3,6 +3,7 @@ package net_test
 import (
 	"errors"
 	"fmt"
+	"runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,6 +17,12 @@ var _ = Describe("MacAddressDetectorLinux", func() {
 		fs                 *fakesys.FakeFileSystem
 		macAddressDetector MACAddressDetector
 	)
+
+	BeforeEach(func() {
+		if runtime.GOOS == "windows" {
+			Skip("Only run on unix")
+		}
+	})
 
 	writeNetworkDevice := func(iface string, macAddress string, isPhysical bool, ifalias string) string {
 		interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)

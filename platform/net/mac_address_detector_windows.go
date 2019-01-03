@@ -4,12 +4,11 @@ import (
 	gonet "net"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type windowsMacAddressDetector struct{}
 
-func NewMacAddressDetector(_ boshsys.FileSystem) MACAddressDetector {
+func NewMacAddressDetector(_ interface{}) MACAddressDetector {
 	return windowsMacAddressDetector{}
 }
 
