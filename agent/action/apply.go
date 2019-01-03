@@ -63,12 +63,7 @@ func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
 	}
 
 	if desiredSpec.ConfigurationHash != "" {
-		currentSpec, err := a.specService.Get()
-		if err != nil {
-			return "", bosherr.WrapError(err, "Getting current spec")
-		}
-
-		err = a.applier.Apply(currentSpec, resolvedDesiredSpec)
+		err = a.applier.Apply(resolvedDesiredSpec)
 		if err != nil {
 			return "", bosherr.WrapError(err, "Applying")
 		}

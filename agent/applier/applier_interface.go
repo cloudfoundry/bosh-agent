@@ -7,5 +7,5 @@ import (
 type Applier interface {
 	Prepare(desiredApplySpec boshas.ApplySpec) error
 	ConfigureJobs(desiredApplySpec boshas.ApplySpec) error
-	Apply(currentApplySpec, desiredApplySpec boshas.ApplySpec) error
+	Apply(desiredApplySpec boshas.ApplySpec) error
 }

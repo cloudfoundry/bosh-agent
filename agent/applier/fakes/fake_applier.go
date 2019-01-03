@@ -11,7 +11,6 @@ type FakeApplier struct {
 	PrepareError            error
 
 	Applied               bool
-	ApplyCurrentApplySpec boshas.ApplySpec
 	ApplyDesiredApplySpec boshas.ApplySpec
 	ApplyError            error
 
@@ -37,9 +36,8 @@ func (s *FakeApplier) ConfigureJobs(desiredApplySpec boshas.ApplySpec) error {
 	return s.ConfiguredError
 }
 
-func (s *FakeApplier) Apply(currentApplySpec, desiredApplySpec boshas.ApplySpec) error {
+func (s *FakeApplier) Apply(desiredApplySpec boshas.ApplySpec) error {
 	s.Applied = true
-	s.ApplyCurrentApplySpec = currentApplySpec
 	s.ApplyDesiredApplySpec = desiredApplySpec
 	return s.ApplyError
 }
