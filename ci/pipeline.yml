@@ -4,6 +4,7 @@ groups:
   jobs:
   - test-unit
   - test-integration
+  - bosh-integration-tests
   - windows-test-unit
   - windows-test-integration-1803
   - windows-test-integration-1709
@@ -53,6 +54,33 @@ jobs:
         BOSH_LITE_NAME: ((BOSH_LITE_NAME))
         BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
         BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
+
+- name: bosh-integration-tests
+  public: true
+  serial: true
+  serial_groups: [integration-db-tls-postgres]
+  build_logs_to_retain: 250
+  plan:
+    - aggregate:
+      - get: bosh-src
+      - get: version-semver
+      - get: bosh-cli
+      - get: bosh-agent
+        trigger: true
+        passed:
+          - test-unit
+          - test-integration
+          - windows-test-unit
+          - windows-test-integration-1709
+          - windows-test-integration-1803
+          - windows-test-integration-2012R2
+
+    - task: tests
+      privileged: true
+      file: bosh-src/ci/tasks/test-integration-gocli.yml
+      tags: ["bosh-integration"]
+      params:
+        DB: postgresql
 
 - name: windows-test-unit
   serial: true
@@ -132,8 +160,7 @@ jobs:
     - aggregate:
       - trigger: true
         passed:
-          - test-unit
-          - test-integration
+          - bosh-integration-tests
           - windows-test-unit
           - windows-test-integration-1709
           - windows-test-integration-1803
@@ -204,6 +231,19 @@ resources:
     access_token: ((repo_github_token))
     branch: develop
     context: ci/published
+
+- name: bosh-src
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh.git
+    branch: master
+
+- name: bosh-cli
+  type: s3
+  source:
+    regexp: alpha-bosh-cli-(.*)-linux-amd64
+    bucket: bosh-cli-alpha-artifacts
+    region_name: us-east-1
 
 - name: windows-ami-1709
   type: ami-resource
