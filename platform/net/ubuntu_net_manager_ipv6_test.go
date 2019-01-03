@@ -2,7 +2,6 @@ package net_test
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -13,6 +12,7 @@ import (
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/net/netfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -28,14 +28,24 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 		kernelIPv6                    *fakenet.FakeKernelIPv6
 		netManager                    UbuntuNetManager
 		interfaceConfigurationCreator InterfaceConfigurationCreator
+		fakeMACAddressDetector        *netfakes.FakeMACAddressDetector
 	)
+
+	stubInterfaces := func(physicalInterfaces map[string]boshsettings.Network) {
+		addresses := map[string]string{}
+		for iface, networkSettings := range physicalInterfaces {
+			addresses[networkSettings.Mac] = iface
+		}
+
+		fakeMACAddressDetector.DetectMacAddressesReturns(addresses, nil)
+	}
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		ipResolver = &fakeip.FakeResolver{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		macAddressDetector := NewMacAddressDetector(fs)
+		fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
@@ -46,7 +56,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			fs,
 			cmdRunner,
 			ipResolver,
-			macAddressDetector,
+			fakeMACAddressDetector,
 			interfaceConfigurationCreator,
 			interfaceAddrsValidator,
 			dnsValidator,
@@ -55,35 +65,6 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			logger,
 		).(UbuntuNetManager)
 	})
-
-	writeNetworkDevice := func(iface string, macAddress string, isPhysical bool) string {
-		interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
-		fs.WriteFile(interfacePath, []byte{})
-		if isPhysical {
-			fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
-		}
-		fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
-
-		return interfacePath
-	}
-
-	stubInterfacesWithVirtual := func(physicalInterfaces map[string]boshsettings.Network, virtualInterfaces []string) {
-		interfacePaths := []string{}
-
-		for iface, networkSettings := range physicalInterfaces {
-			interfacePaths = append(interfacePaths, writeNetworkDevice(iface, networkSettings.Mac, true))
-		}
-
-		for _, iface := range virtualInterfaces {
-			interfacePaths = append(interfacePaths, writeNetworkDevice(iface, "virtual", false))
-		}
-
-		fs.SetGlob("/sys/class/net/*", interfacePaths)
-	}
-
-	stubInterfaces := func(physicalInterfaces map[string]boshsettings.Network) {
-		stubInterfacesWithVirtual(physicalInterfaces, nil)
-	}
 
 	scrubMultipleLines := func(in string) string {
 		return strings.Replace(in, "\n\n\n", "\n\n", -1)
