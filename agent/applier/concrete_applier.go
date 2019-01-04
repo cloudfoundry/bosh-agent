@@ -88,6 +88,11 @@ func (a *concreteApplier) Apply(desiredApplySpec as.ApplySpec) error {
 		}
 	}
 
+	err = a.jobApplier.DeleteSourceBlobs(desiredApplySpec.Jobs())
+	if err != nil {
+		return bosherr.WrapError(err, "Failed removing job source blobs")
+	}
+
 	err = a.jobApplier.KeepOnly(desiredApplySpec.Jobs())
 	if err != nil {
 		return bosherr.WrapError(err, "Keeping only needed jobs")
@@ -114,7 +119,6 @@ func (a *concreteApplier) Apply(desiredApplySpec as.ApplySpec) error {
 }
 
 func (a *concreteApplier) ConfigureJobs(desiredApplySpec as.ApplySpec) error {
-
 	jobs := desiredApplySpec.Jobs()
 	for i := 0; i < len(jobs); i++ {
 		job := jobs[len(jobs)-1-i]

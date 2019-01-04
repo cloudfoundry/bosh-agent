@@ -237,3 +237,22 @@ func (s *renderedJobApplier) KeepOnly(jobs []models.Job) error {
 
 	return nil
 }
+
+func (s *renderedJobApplier) DeleteSourceBlobs(jobs []models.Job) error {
+	deletedBlobs := map[string]bool{}
+
+	for _, job := range jobs {
+		if _, ok := deletedBlobs[job.Source.BlobstoreID]; ok {
+			continue
+		}
+
+		err := s.blobstore.Delete(job.Source.BlobstoreID)
+		if err != nil {
+			return err
+		}
+
+		deletedBlobs[job.Source.BlobstoreID] = true
+	}
+
+	return nil
+}

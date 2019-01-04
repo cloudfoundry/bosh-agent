@@ -56,17 +56,15 @@ func (b cascadingBlobstore) Validate() error {
 }
 
 func (b cascadingBlobstore) Delete(blobID string) error {
-	var err error
 	for _, blobManager := range b.blobManagers {
-		err = blobManager.Delete(blobID)
-		if err == nil {
-			break
+		if blobManager.BlobExists(blobID) {
+			return blobManager.Delete(blobID)
 		}
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return b.innerBlobstore.Delete(blobID)
+	// We do not delete from the inner blobstore as external blobstores do not
+	// currently support deletion. Also, the bosh-agent should not be responsible
+	// for deleting blobs from the external blobstore which is managed by the
+	// BOSH Director.
+	return nil
 }

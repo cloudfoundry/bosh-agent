@@ -188,52 +188,57 @@ var _ = Describe("cascadingBlobstore", func() {
 		})
 
 		Describe("Delete", func() {
-			It("deletes the blob from the blobManager, and calls Delete on inner blobstore", func() {
-				blobID := "smurf-25"
+			var blobID string
 
-				blobManager.DeleteReturns(nil)
-
-				err := cascadingBlobstore.Delete(blobID)
-
-				Expect(err).To(BeNil())
-
-				Expect(blobManager.DeleteCallCount()).To(Equal(1))
-				Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
-
-				Expect(innerBlobstore.DeleteArgsForCall(0)).To(Equal(blobID))
+			BeforeEach(func() {
+				blobID = "smurf-25"
 			})
 
-			It("returns an error if blobManager returns an error when deleting", func() {
-				blobID := "smurf-28"
+			Context("when the blob exists in the blob manager", func() {
+				BeforeEach(func() {
+					blobManager.BlobExistsReturns(true)
+					blobManager.DeleteReturns(nil)
+				})
 
-				blobManager.DeleteReturns(errors.New("error deleting in blobManager"))
+				It("deletes the blob from the blobManager", func() {
+					err := cascadingBlobstore.Delete(blobID)
+					Expect(err).To(BeNil())
 
-				err := cascadingBlobstore.Delete(blobID)
+					Expect(blobManager.DeleteCallCount()).To(Equal(1))
+					Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
+					Expect(innerBlobstore.DeleteCallCount()).To(Equal(0))
+				})
 
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("error deleting in blobManager"))
+				Context("when deleting a blob in the blob manager fails", func() {
+					BeforeEach(func() {
+						blobManager.DeleteReturns(errors.New("error deleting in blobManager"))
+					})
 
-				Expect(blobManager.DeleteCallCount()).To(Equal(1))
-				Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
+					It("returns an error if blobManager returns an error when deleting", func() {
+						err := cascadingBlobstore.Delete(blobID)
+						Expect(err).ToNot(BeNil())
+						Expect(err.Error()).To(Equal("error deleting in blobManager"))
 
-				Expect(innerBlobstore.DeleteCallCount()).To(Equal(0))
+						Expect(blobManager.DeleteCallCount()).To(Equal(1))
+						Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
+
+						Expect(innerBlobstore.DeleteCallCount()).To(Equal(0))
+					})
+				})
 			})
 
-			It("returns an error if inner blobStore returns an error when deleting", func() {
-				blobID := "smurf-29"
+			Context("when the blob does not exist in the blob manager", func() {
+				BeforeEach(func() {
+					blobManager.BlobExistsReturns(false)
+				})
 
-				blobManager.DeleteReturns(nil)
-				innerBlobstore.DeleteReturns(errors.New("error deleting in innerBlobStore"))
+				It("does not delete the blob from the inner blobstore", func() {
+					err := cascadingBlobstore.Delete(blobID)
+					Expect(err).To(BeNil())
 
-				err := cascadingBlobstore.Delete(blobID)
-
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("error deleting in innerBlobStore"))
-
-				Expect(blobManager.DeleteCallCount()).To(Equal(1))
-				Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
-
-				Expect(innerBlobstore.DeleteArgsForCall(0)).To(Equal(blobID))
+					Expect(blobManager.DeleteCallCount()).To(Equal(0))
+					Expect(innerBlobstore.DeleteCallCount()).To(Equal(0))
+				})
 			})
 		})
 	})
@@ -350,26 +355,23 @@ var _ = Describe("cascadingBlobstore", func() {
 				BeforeEach(func() {
 					for i := 0; i < 10; i++ {
 						blobManager := &fakeagentblob.FakeBlobManagerInterface{}
-						blobManager.DeleteReturns(errors.New("nope"))
+						blobManager.BlobExistsReturns(false)
 						blobManagers = append(blobManagers, blobManager)
 					}
 
 					blobManager = blobManagers[rand.Intn(10)]
+					blobManager.BlobExistsReturns(true)
 				})
 
-				It("deletes the blob from the blobManager, and calls Delete on inner blobstore", func() {
+				It("deletes the blob from the blobManager, and does not delete on inner blobstore", func() {
 					blobID := "smurf-25"
 
-					blobManager.DeleteReturns(nil)
-
 					err := cascadingBlobstore.Delete(blobID)
-
 					Expect(err).To(BeNil())
 
 					Expect(blobManager.DeleteCallCount()).To(Equal(1))
 					Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
-
-					Expect(innerBlobstore.DeleteArgsForCall(0)).To(Equal(blobID))
+					Expect(innerBlobstore.DeleteCallCount()).To(Equal(0))
 				})
 
 				It("returns an error if blobManager returns an error when deleting", func() {
@@ -386,23 +388,6 @@ var _ = Describe("cascadingBlobstore", func() {
 					Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
 
 					Expect(innerBlobstore.DeleteCallCount()).To(Equal(0))
-				})
-
-				It("returns an error if inner blobStore returns an error when deleting", func() {
-					blobID := "smurf-29"
-
-					blobManager.DeleteReturns(nil)
-					innerBlobstore.DeleteReturns(errors.New("error deleting in innerBlobStore"))
-
-					err := cascadingBlobstore.Delete(blobID)
-
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("error deleting in innerBlobStore"))
-
-					Expect(blobManager.DeleteCallCount()).To(Equal(1))
-					Expect(blobManager.DeleteArgsForCall(0)).To(Equal(blobID))
-
-					Expect(innerBlobstore.DeleteArgsForCall(0)).To(Equal(blobID))
 				})
 			})
 		})

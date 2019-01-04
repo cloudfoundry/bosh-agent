@@ -196,28 +196,6 @@ var _ = Describe("apply", func() {
 		output, err = testEnvironment.RunCommand("stat /var/vcap/data/foobar")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-		By("using /var/vcap/bosh/blobs as the local blobstore", func() {
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/blobs")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0700/drwx------\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/sensitive_blobs")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0700/drwx------\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sensitive_blobs/abc0")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Size: 519"))
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/blobs/abc1")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Size: 295"))
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/blobs/abc2")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Size: 230"))
-		})
 	})
 
 	Context("when job dir tmpfs is enabled", func() {
