@@ -96,7 +96,7 @@ func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundl
 
 	_, err = pkgBundle.Install(file, "")
 	if err != nil {
-		return bosherr.WrapError(err, "Installling package directory")
+		return bosherr.WrapError(err, "Installing package directory")
 	}
 
 	return nil

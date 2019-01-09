@@ -123,6 +123,27 @@ var _ = Describe("concreteApplier", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-prepare-package-error"))
 		})
+
+		It("deletes the job source from the blobstore after preparing", func() {
+			job := buildJob()
+
+			err := applier.Prepare(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(jobApplier.DeleteSourceBlobsCallCount()).To(Equal(1))
+			Expect(jobApplier.DeleteSourceBlobsArgsForCall(0)).To(Equal([]models.Job{job}))
+		})
+
+		It("returns an error when deleting the source blobs fails", func() {
+			job := buildJob()
+			jobApplier.DeleteSourceBlobsReturns(errors.New("boom!"))
+
+			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			Expect(err).To(HaveOccurred())
+
+			Expect(jobApplier.DeleteSourceBlobsCallCount()).To(Equal(1))
+			Expect(jobApplier.DeleteSourceBlobsArgsForCall(0)).To(Equal([]models.Job{job}))
+		})
 	})
 
 	Describe("Configure jobs", func() {

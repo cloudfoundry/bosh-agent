@@ -71,6 +71,11 @@ func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
 		return err
 	}
 
+	err = a.jobApplier.DeleteSourceBlobs(desiredApplySpec.Jobs())
+	if err != nil {
+		return bosherr.WrapError(err, "Failed removing job source blobs")
+	}
+
 	return nil
 }
 
