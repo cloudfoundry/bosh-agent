@@ -63,6 +63,18 @@ type FakeMounter struct {
 	mountFilesystemReturnsOnCall map[int]struct {
 		result1 error
 	}
+	MountTmpfsStub        func(string, string) error
+	mountTmpfsMutex       sync.RWMutex
+	mountTmpfsArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	mountTmpfsReturns struct {
+		result1 error
+	}
+	mountTmpfsReturnsOnCall map[int]struct {
+		result1 error
+	}
 	RemountStub        func(string, string, ...string) error
 	remountMutex       sync.RWMutex
 	remountArgsForCall []struct {
@@ -377,6 +389,67 @@ func (fake *FakeMounter) MountFilesystemReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.mountFilesystemReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeMounter) MountTmpfs(arg1 string, arg2 string) error {
+	fake.mountTmpfsMutex.Lock()
+	ret, specificReturn := fake.mountTmpfsReturnsOnCall[len(fake.mountTmpfsArgsForCall)]
+	fake.mountTmpfsArgsForCall = append(fake.mountTmpfsArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("MountTmpfs", []interface{}{arg1, arg2})
+	fake.mountTmpfsMutex.Unlock()
+	if fake.MountTmpfsStub != nil {
+		return fake.MountTmpfsStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.mountTmpfsReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeMounter) MountTmpfsCallCount() int {
+	fake.mountTmpfsMutex.RLock()
+	defer fake.mountTmpfsMutex.RUnlock()
+	return len(fake.mountTmpfsArgsForCall)
+}
+
+func (fake *FakeMounter) MountTmpfsCalls(stub func(string, string) error) {
+	fake.mountTmpfsMutex.Lock()
+	defer fake.mountTmpfsMutex.Unlock()
+	fake.MountTmpfsStub = stub
+}
+
+func (fake *FakeMounter) MountTmpfsArgsForCall(i int) (string, string) {
+	fake.mountTmpfsMutex.RLock()
+	defer fake.mountTmpfsMutex.RUnlock()
+	argsForCall := fake.mountTmpfsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeMounter) MountTmpfsReturns(result1 error) {
+	fake.mountTmpfsMutex.Lock()
+	defer fake.mountTmpfsMutex.Unlock()
+	fake.MountTmpfsStub = nil
+	fake.mountTmpfsReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeMounter) MountTmpfsReturnsOnCall(i int, result1 error) {
+	fake.mountTmpfsMutex.Lock()
+	defer fake.mountTmpfsMutex.Unlock()
+	fake.MountTmpfsStub = nil
+	if fake.mountTmpfsReturnsOnCall == nil {
+		fake.mountTmpfsReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.mountTmpfsReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -698,6 +771,8 @@ func (fake *FakeMounter) Invocations() map[string][][]interface{} {
 	defer fake.mountMutex.RUnlock()
 	fake.mountFilesystemMutex.RLock()
 	defer fake.mountFilesystemMutex.RUnlock()
+	fake.mountTmpfsMutex.RLock()
+	defer fake.mountTmpfsMutex.RUnlock()
 	fake.remountMutex.RLock()
 	defer fake.remountMutex.RUnlock()
 	fake.remountAsReadonlyMutex.RLock()

@@ -1,6 +1,7 @@
 package disk
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -30,6 +31,20 @@ func NewLinuxMounter(
 
 func (m linuxMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) error {
 	return m.MountFilesystem(partitionPath, mountPoint, "", mountOptions...)
+}
+
+func (m linuxMounter) MountTmpfs(dir, size string) error {
+	_, dirIsMounted, err := m.IsMountPoint(dir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Checking for mount point %s", dir)
+	}
+	if !dirIsMounted {
+		err = m.MountFilesystem("tmpfs", dir, "tmpfs", fmt.Sprintf("size=%s", size))
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", dir)
+		}
+	}
+	return nil
 }
 
 func (m linuxMounter) MountFilesystem(partitionPath, mountPoint, fstype string, mountOptions ...string) error {

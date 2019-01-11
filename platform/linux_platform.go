@@ -795,10 +795,10 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 			size = "100m"
 		}
 
-		if err = p.mountTmpfs(jobsDir, size); err != nil {
+		if err = p.diskManager.GetMounter().MountTmpfs(jobsDir, size); err != nil {
 			return err
 		}
-		if err = p.mountTmpfs(sensitiveDir, size); err != nil {
+		if err = p.diskManager.GetMounter().MountTmpfs(sensitiveDir, size); err != nil {
 			return err
 		}
 	}
@@ -835,20 +835,6 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 		return bosherr.WrapErrorf(err, "Symlinking '%s' to '%s'", sysDir, sysDataDir)
 	}
 
-	return nil
-}
-
-func (p linux) mountTmpfs(dir, size string) error {
-	_, dirIsMounted, err := p.IsMountPoint(dir)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Checking for mount point %s", dir)
-	}
-	if !dirIsMounted {
-		err = p.diskManager.GetMounter().MountFilesystem("tmpfs", dir, "tmpfs", fmt.Sprintf("size=%s", size))
-		if err != nil {
-			return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", dir)
-		}
-	}
 	return nil
 }
 

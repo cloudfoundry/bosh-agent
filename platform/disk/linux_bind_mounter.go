@@ -12,6 +12,10 @@ func (m linuxBindMounter) Mount(partitionPath, mountPoint string, mountOptions .
 	return m.MountFilesystem(partitionPath, mountPoint, "", mountOptions...)
 }
 
+func (m linuxBindMounter) MountTmpfs(mountPoint string, size string) error {
+	return m.delegateMounter.MountTmpfs(mountPoint, size)
+}
+
 func (m linuxBindMounter) MountFilesystem(partitionPath, mountPoint, fstype string, mountOptions ...string) error {
 	// Filesystems should not be bind mounted
 	if fstype != "tmpfs" {

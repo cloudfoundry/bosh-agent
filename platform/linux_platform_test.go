@@ -1791,101 +1791,39 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 
 		Context("when a tmpfs for the sensitive directories is requested", func() {
-			Context("when it is not already mounted", func() {
-				It("mounts that with the default size", func() {
-					err := platform.SetupDataDir(boshsettings.JobDir{
-						TmpFs: true,
-					})
-					Expect(err).NotTo(HaveOccurred())
-
-					// sys/run is also mounted
-					Expect(mounter.MountFilesystemCallCount()).To(Equal(3))
-
-					partition, mntPt, fstype, options := mounter.MountFilesystemArgsForCall(0)
-					Expect(partition).To(Equal("tmpfs"))
-					Expect(mntPt).To(Equal("/fake-dir/data/jobs"))
-					Expect(fstype).To(Equal("tmpfs"))
-					Expect(options).To(Equal([]string{"size=100m"}))
-
-					partition, mntPt, fstype, options = mounter.MountFilesystemArgsForCall(1)
-					Expect(partition).To(Equal("tmpfs"))
-					Expect(mntPt).To(Equal("/fake-dir/data/sensitive_blobs"))
-					Expect(fstype).To(Equal("tmpfs"))
-					Expect(options).To(Equal([]string{"size=100m"}))
+			It("mounts that with the default size", func() {
+				err := platform.SetupDataDir(boshsettings.JobDir{
+					TmpFs: true,
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				It("can use a non-default value", func() {
-					err := platform.SetupDataDir(boshsettings.JobDir{
-						TmpFs:     true,
-						TmpFsSize: "42m",
-					})
-					Expect(err).NotTo(HaveOccurred())
+				Expect(mounter.MountTmpfsCallCount()).To(Equal(2))
 
-					// sys/run is also mounted
-					Expect(mounter.MountFilesystemCallCount()).To(Equal(3))
+				mountPoint, size := mounter.MountTmpfsArgsForCall(0)
+				Expect(mountPoint).To(Equal("/fake-dir/data/jobs"))
+				Expect(size).To(Equal("100m"))
 
-					partition, mntPt, fstype, options := mounter.MountFilesystemArgsForCall(0)
-					Expect(partition).To(Equal("tmpfs"))
-					Expect(mntPt).To(Equal("/fake-dir/data/jobs"))
-					Expect(fstype).To(Equal("tmpfs"))
-					Expect(options).To(Equal([]string{"size=42m"}))
-
-					partition, mntPt, fstype, options = mounter.MountFilesystemArgsForCall(1)
-					Expect(partition).To(Equal("tmpfs"))
-					Expect(mntPt).To(Equal("/fake-dir/data/sensitive_blobs"))
-					Expect(fstype).To(Equal("tmpfs"))
-					Expect(options).To(Equal([]string{"size=42m"}))
-				})
+				mountPoint, size = mounter.MountTmpfsArgsForCall(1)
+				Expect(mountPoint).To(Equal("/fake-dir/data/sensitive_blobs"))
+				Expect(size).To(Equal("100m"))
 			})
 
-			Context("when the tmpfs is already mounted for both", func() {
-				BeforeEach(func() {
-					mounter.IsMountPointReturns("", true, nil)
+			It("can use a non-default value", func() {
+				err := platform.SetupDataDir(boshsettings.JobDir{
+					TmpFs:     true,
+					TmpFsSize: "42m",
 				})
+				Expect(err).NotTo(HaveOccurred())
 
-				It("does not mount the jobs dir", func() {
-					err := platform.SetupDataDir(boshsettings.JobDir{
-						TmpFs: true,
-					})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(mounter.MountFilesystemCallCount()).To(Equal(0))
-				})
-			})
+				Expect(mounter.MountTmpfsCallCount()).To(Equal(2))
 
-			Context("when the tmpfs is mounted for jobs but not sensitive_blobs", func() {
-				BeforeEach(func() {
-					mounter.IsMountPointReturnsOnCall(0, "", true, nil)
-				})
+				mountPoint, size := mounter.MountTmpfsArgsForCall(0)
+				Expect(mountPoint).To(Equal("/fake-dir/data/jobs"))
+				Expect(size).To(Equal("42m"))
 
-				It("does not mount the jobs dir", func() {
-					err := platform.SetupDataDir(boshsettings.JobDir{
-						TmpFs: true,
-					})
-					Expect(err).NotTo(HaveOccurred())
-					// sys/run is also mounted
-					Expect(mounter.MountFilesystemCallCount()).To(Equal(2))
-
-					_, mntPt, _, _ := mounter.MountFilesystemArgsForCall(0)
-					Expect(mntPt).To(Equal("/fake-dir/data/sensitive_blobs"))
-				})
-			})
-
-			Context("when the tmpfs is mounted for sensitive_blobs but not jobs", func() {
-				BeforeEach(func() {
-					mounter.IsMountPointReturnsOnCall(1, "", true, nil)
-				})
-
-				It("does not mount the sensitive_blobs dir", func() {
-					err := platform.SetupDataDir(boshsettings.JobDir{
-						TmpFs: true,
-					})
-					Expect(err).NotTo(HaveOccurred())
-					// sys/run is also mounted
-					Expect(mounter.MountFilesystemCallCount()).To(Equal(2))
-
-					_, mntPt, _, _ := mounter.MountFilesystemArgsForCall(0)
-					Expect(mntPt).To(Equal("/fake-dir/data/jobs"))
-				})
+				mountPoint, size = mounter.MountTmpfsArgsForCall(1)
+				Expect(mountPoint).To(Equal("/fake-dir/data/sensitive_blobs"))
+				Expect(size).To(Equal("42m"))
 			})
 		})
 

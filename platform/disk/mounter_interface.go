@@ -4,6 +4,7 @@ package disk
 
 type Mounter interface {
 	Mount(partitionPath, mountPoint string, mountOptions ...string) (err error)
+	MountTmpfs(mountPoint string, size string) (err error)
 	MountFilesystem(partitionPath, mountPoint, fstype string, mountOptions ...string) (err error)
 	Unmount(partitionOrMountPoint string) (didUnmount bool, err error)
 

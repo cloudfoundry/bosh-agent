@@ -43,6 +43,62 @@ var _ = Describe("linuxMounter", func() {
 		mounter = NewLinuxMounter(runner, mountsSearcher, 1*time.Millisecond)
 	})
 
+	Describe("MountTmpfs", func() {
+		Context("when the tmpfs has not been mounted yet", func() {
+			BeforeEach(func() {
+				mountsSearcher.SearchMountsMounts = []Mount{
+					Mount{PartitionPath: "/dev/bob1", MountPoint: "/mnt/bob"},
+				}
+			})
+
+			It("mounts it", func() {
+				err := mounter.MountTmpfs("/mnt/joe", "16mb")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(1).To(Equal(len(runner.RunCommands)))
+				Expect(runner.RunCommands[0]).To(Equal([]string{"mount", "tmpfs", "/mnt/joe", "-t", "tmpfs", "-o", "size=16mb"}))
+			})
+		})
+
+		Context("when the tmpfs is already mounted", func() {
+			BeforeEach(func() {
+				mountsSearcher.SearchMountsMounts = []Mount{
+					Mount{PartitionPath: "/dev/bob1", MountPoint: "/mnt/bob"},
+					Mount{PartitionPath: "/dev/joe1", MountPoint: "/mnt/joe"},
+				}
+			})
+
+			It("does not mount again", func() {
+				err := mounter.MountTmpfs("/mnt/joe", "16mb")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(0).To(Equal(len(runner.RunCommands)))
+			})
+		})
+
+		Context("When searching for mounts returns an error", func() {
+			It("wraps the error", func() {
+				mountsSearcher.SearchMountsErr = errors.New("u crazy fam")
+
+				err := mounter.MountTmpfs("/mnt/joe", "16mb")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Searching mounts: u crazy fam"))
+			})
+		})
+
+		Context("When mounting tmpfs returns an error", func() {
+			BeforeEach(func() {
+				runner.AddCmdResult("mount tmpfs /mnt/joe -t tmpfs -o size=16mb", fakesys.FakeCmdResult{Error: errors.New("KAZAM")})
+			})
+
+			It("wraps the error", func() {
+				err := mounter.MountTmpfs("/mnt/joe", "16mb")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Mounting tmpfs to /mnt/joe: Shelling out to mount: KAZAM"))
+			})
+		})
+	})
+
 	Describe("MountFilesystem", func() {
 		It("allows to mount disk at given mount point", func() {
 			err := mounter.MountFilesystem("/dev/foo", "/mnt/foo", "goodfs")
