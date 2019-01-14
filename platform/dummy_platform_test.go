@@ -295,13 +295,17 @@ func describeDummyPlatform() {
 
 	Describe("GetAgentSettingsPath", func() {
 		It("returns a path in the sensitive settings directory if tmpfs is enabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings", "settings.json")
+
 			path := platform.GetAgentSettingsPath(true)
-			Expect(path).To(Equal("/fake-dir/bosh/settings/settings.json"))
+			Expect(path).To(Equal(expectedPath))
 		})
 
 		It("returns a path in the default directory if tmpfs is disabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings.json")
+
 			path := platform.GetAgentSettingsPath(false)
-			Expect(path).To(Equal("/fake-dir/bosh/settings.json"))
+			Expect(path).To(Equal(expectedPath))
 		})
 	})
 }

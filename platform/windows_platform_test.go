@@ -730,17 +730,21 @@ var _ = Describe("WindowsPlatform", func() {
 
 	Describe("GetAgentSettingsPath", func() {
 		It("logs that windows does not support tmpfs if asked for a tmpfs path", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings.json")
+
 			path := platform.GetAgentSettingsPath(true)
 			Expect(logBuffer).Should(gbytes.Say(
 				"Windows does not support using tmpfs, using default settings path",
 			))
 
-			Expect(path).To(Equal("/fake-dir/bosh/settings.json"))
+			Expect(path).To(Equal(expectedPath))
 		})
 
 		It("returns the default settings path", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings.json")
+
 			path := platform.GetAgentSettingsPath(false)
-			Expect(path).To(Equal("/fake-dir/bosh/settings.json"))
+			Expect(path).To(Equal(expectedPath))
 		})
 	})
 })
