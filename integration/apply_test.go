@@ -198,6 +198,22 @@ var _ = Describe("apply", func() {
 		Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 	})
 
+	Context("when settings tmpfs is enabled", func() {
+		BeforeEach(func() {
+			registrySettings.Env.Bosh.Agent.Settings.TmpFS = true
+		})
+
+		It("mounts a tmpfs for /var/vcap/settings", func() {
+			err := agentClient.Apply(applySpec)
+			Expect(err).NotTo(HaveOccurred())
+
+			output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(output).To(ContainSubstring("tmpfs /var/vcap/bosh/settings"))
+		})
+	})
+
 	Context("when job dir tmpfs is enabled", func() {
 		BeforeEach(func() {
 			registrySettings.Env.Bosh.JobDir.TmpFs = true

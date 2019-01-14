@@ -228,6 +228,39 @@ bosh_foobar:...`
 		})
 	})
 
+	Describe("SetupBoshSettingsDisk", func() {
+		It("mounts TmpFs in specified path", func() {
+			err := platform.SetupBoshSettingsDisk()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fs.MkdirAllCallCount).To(Equal(1))
+
+			Expect(mounter.MountTmpfsCallCount()).To(Equal(1))
+			mountpoint, size := mounter.MountTmpfsArgsForCall(0)
+			Expect(mountpoint).To(Equal("/fake-dir/bosh/settings"))
+			Expect(size).To(Equal("16m"))
+		})
+
+		It("returns error when making directory fails", func() {
+			fs.MkdirAllError = errors.New("my-bad-fake-err")
+
+			err := platform.SetupBoshSettingsDisk()
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("my-bad-fake-err"))
+			Expect(err.Error()).To(ContainSubstring("Setting up Bosh Settings Disk"))
+		})
+
+		It("returns error if mounting tmpfs fails", func() {
+			mounter.MountTmpfsReturns(errors.New("explosion!"))
+
+			err := platform.SetupBoshSettingsDisk()
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("explosion!"))
+		})
+	})
+
 	Describe("SetupRootDisk", func() {
 		BeforeEach(func() {
 			mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{

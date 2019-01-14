@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	. "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/settings/settingsfakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -18,19 +18,26 @@ func init() {
 	Describe("settingsService", func() {
 		var (
 			fs                         *fakesys.FakeFileSystem
-			fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			fakePlatformSettingsGetter *settingsfakes.FakePlatformSettingsGetter
 			fakeSettingsSource         *fakes.FakeSettingsSource
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
-			fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+			fakePlatformSettingsGetter = &settingsfakes.FakePlatformSettingsGetter{}
+			fakePlatformSettingsGetter.GetAgentSettingsPathReturns("/setting/path.json")
 			fakeSettingsSource = &fakes.FakeSettingsSource{}
 		})
 
 		buildService := func() (Service, *fakesys.FakeFileSystem) {
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			service := NewService(fs, "/setting/path.json", "/setting/persistent_settings.json", fakeSettingsSource, fakeDefaultNetworkResolver, logger)
+			service := NewService(
+				fs,
+				"/setting/persistent_settings.json",
+				fakeSettingsSource,
+				fakePlatformSettingsGetter,
+				logger,
+			)
 			return service, fs
 		}
 
@@ -139,11 +146,11 @@ func init() {
 								"networks": {"fake-net-1": {"type": "dynamic"}}
 							}`))
 
-							fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = Network{
+							fakePlatformSettingsGetter.GetDefaultNetworkReturns(Network{
 								IP:      "fake-resolved-ip",
 								Netmask: "fake-resolved-netmask",
 								Gateway: "fake-resolved-gateway",
-							}
+							}, nil)
 						})
 
 						It("should remain quiet about the contents of the settings.json in the log", func() {
@@ -592,7 +599,7 @@ func init() {
 
 				It("does not try to determine default network", func() {
 					_ = service.GetSettings()
-					Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalled).To(BeFalse())
+					Expect(fakePlatformSettingsGetter.GetDefaultNetworkCallCount()).To(Equal(0))
 				})
 			})
 
@@ -616,11 +623,11 @@ func init() {
 
 				Context("when default network can be retrieved", func() {
 					BeforeEach(func() {
-						fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = Network{
+						fakePlatformSettingsGetter.GetDefaultNetworkReturns(Network{
 							IP:      "fake-resolved-ip",
 							Netmask: "fake-resolved-netmask",
 							Gateway: "fake-resolved-gateway",
-						}
+						}, nil)
 					})
 
 					It("returns settings with resolved dynamic network ip, netmask, gateway and keeping everything else the same", func() {
@@ -647,7 +654,7 @@ func init() {
 
 				Context("when default network fails to be retrieved", func() {
 					BeforeEach(func() {
-						fakeDefaultNetworkResolver.GetDefaultNetworkErr = errors.New("fake-get-default-network-err")
+						fakePlatformSettingsGetter.GetDefaultNetworkReturns(Network{}, errors.New("fake-get-default-network-err"))
 					})
 
 					It("returns error", func() {

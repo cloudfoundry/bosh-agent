@@ -148,6 +148,17 @@ func (p dummyPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostna
 	return p.fs.WriteFileString(etcHostsPath, dnsRecordsContents.String())
 }
 
+func (p dummyPlatform) SetupBoshSettingsDisk() error {
+	return p.fs.MkdirAll(filepath.Dir(p.GetAgentSettingsPath(true)), 0700)
+}
+
+func (p dummyPlatform) GetAgentSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		return filepath.Join(p.dirProvider.BoshSettingsDir(), "settings.json")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "settings.json")
+}
+
 func (p dummyPlatform) SetupIPv6(config boshsettings.IPv6) error {
 	return nil
 }

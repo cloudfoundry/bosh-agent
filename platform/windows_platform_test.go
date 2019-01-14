@@ -727,6 +727,22 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(diskManager.Invocations()).To(BeEmpty())
 		})
 	})
+
+	Describe("GetAgentSettingsPath", func() {
+		It("logs that windows does not support tmpfs if asked for a tmpfs path", func() {
+			path := platform.GetAgentSettingsPath(true)
+			Expect(logBuffer).Should(gbytes.Say(
+				"Windows does not support using tmpfs, using default settings path",
+			))
+
+			Expect(path).To(Equal("/fake-dir/bosh/settings.json"))
+		})
+
+		It("returns the default settings path", func() {
+			path := platform.GetAgentSettingsPath(false)
+			Expect(path).To(Equal("/fake-dir/bosh/settings.json"))
+		})
+	})
 })
 
 func expectFormatterCalledWithArgs(

@@ -18,6 +18,10 @@ func (p Provider) BoshDir() string {
 	return filepath.Join(p.BaseDir(), "bosh")
 }
 
+func (p Provider) BoshSettingsDir() string {
+	return filepath.Join(p.BaseDir(), "bosh", "settings")
+}
+
 func (p Provider) BoshBinDir() string {
 	return filepath.Join(p.BoshDir(), "bin")
 }

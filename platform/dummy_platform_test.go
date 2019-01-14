@@ -279,4 +279,29 @@ func describeDummyPlatform() {
 			Expect(stat.FileMode).To(Equal(os.FileMode(0700)))
 		})
 	})
+
+	Describe("SetupBoshSettingsDisk", func() {
+		It("creates the sensitive directory for the agent settings file with correct permissions", func() {
+			err := platform.SetupBoshSettingsDisk()
+			Expect(err).NotTo(HaveOccurred())
+
+			stat := fs.GetFileTestStat(filepath.Clean("/fake-dir/bosh/settings"))
+
+			Expect(stat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(stat.FileMode).To(Equal(os.FileMode(0700)))
+
+		})
+	})
+
+	Describe("GetAgentSettingsPath", func() {
+		It("returns a path in the sensitive settings directory if tmpfs is enabled", func() {
+			path := platform.GetAgentSettingsPath(true)
+			Expect(path).To(Equal("/fake-dir/bosh/settings/settings.json"))
+		})
+
+		It("returns a path in the default directory if tmpfs is disabled", func() {
+			path := platform.GetAgentSettingsPath(false)
+			Expect(path).To(Equal("/fake-dir/bosh/settings.json"))
+		})
+	})
 }

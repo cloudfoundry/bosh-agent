@@ -268,6 +268,7 @@ func (e Env) IsNATSMutualTLSEnabled() bool {
 }
 
 type BoshEnv struct {
+	Agent                 AgentEnv    `json:"agent"`
 	Password              string      `json:"password"`
 	KeepRootPassword      bool        `json:"keep_root_password"`
 	RemoveDevTools        bool        `json:"remove_dev_tools"`
@@ -280,6 +281,14 @@ type BoshEnv struct {
 	Blobstores            []Blobstore `json:"blobstores"`
 	NTP                   []string    `json:"ntp"`
 	Parallel              *int        `json:"parallel"`
+}
+
+type AgentEnv struct {
+	Settings AgentSettings `json:"settings"`
+}
+
+type AgentSettings struct {
+	TmpFS bool `json:"tmpfs"`
 }
 
 type MBus struct {

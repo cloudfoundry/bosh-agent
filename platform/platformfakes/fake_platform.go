@@ -73,6 +73,17 @@ type FakePlatform struct {
 	deleteEphemeralUsersMatchingReturnsOnCall map[int]struct {
 		result1 error
 	}
+	GetAgentSettingsPathStub        func(bool) string
+	getAgentSettingsPathMutex       sync.RWMutex
+	getAgentSettingsPathArgsForCall []struct {
+		arg1 bool
+	}
+	getAgentSettingsPathReturns struct {
+		result1 string
+	}
+	getAgentSettingsPathReturnsOnCall map[int]struct {
+		result1 string
+	}
 	GetAuditLoggerStub        func() platform.AuditLogger
 	getAuditLoggerMutex       sync.RWMutex
 	getAuditLoggerArgsForCall []struct {
@@ -391,6 +402,16 @@ type FakePlatform struct {
 		result1 error
 	}
 	setupBlobsDirReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupBoshSettingsDiskStub        func() error
+	setupBoshSettingsDiskMutex       sync.RWMutex
+	setupBoshSettingsDiskArgsForCall []struct {
+	}
+	setupBoshSettingsDiskReturns struct {
+		result1 error
+	}
+	setupBoshSettingsDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
 	SetupDataDirStub        func(settings.JobDir) error
@@ -919,6 +940,66 @@ func (fake *FakePlatform) DeleteEphemeralUsersMatchingReturnsOnCall(i int, resul
 	}
 	fake.deleteEphemeralUsersMatchingReturnsOnCall[i] = struct {
 		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) GetAgentSettingsPath(arg1 bool) string {
+	fake.getAgentSettingsPathMutex.Lock()
+	ret, specificReturn := fake.getAgentSettingsPathReturnsOnCall[len(fake.getAgentSettingsPathArgsForCall)]
+	fake.getAgentSettingsPathArgsForCall = append(fake.getAgentSettingsPathArgsForCall, struct {
+		arg1 bool
+	}{arg1})
+	fake.recordInvocation("GetAgentSettingsPath", []interface{}{arg1})
+	fake.getAgentSettingsPathMutex.Unlock()
+	if fake.GetAgentSettingsPathStub != nil {
+		return fake.GetAgentSettingsPathStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getAgentSettingsPathReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetAgentSettingsPathCallCount() int {
+	fake.getAgentSettingsPathMutex.RLock()
+	defer fake.getAgentSettingsPathMutex.RUnlock()
+	return len(fake.getAgentSettingsPathArgsForCall)
+}
+
+func (fake *FakePlatform) GetAgentSettingsPathCalls(stub func(bool) string) {
+	fake.getAgentSettingsPathMutex.Lock()
+	defer fake.getAgentSettingsPathMutex.Unlock()
+	fake.GetAgentSettingsPathStub = stub
+}
+
+func (fake *FakePlatform) GetAgentSettingsPathArgsForCall(i int) bool {
+	fake.getAgentSettingsPathMutex.RLock()
+	defer fake.getAgentSettingsPathMutex.RUnlock()
+	argsForCall := fake.getAgentSettingsPathArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) GetAgentSettingsPathReturns(result1 string) {
+	fake.getAgentSettingsPathMutex.Lock()
+	defer fake.getAgentSettingsPathMutex.Unlock()
+	fake.GetAgentSettingsPathStub = nil
+	fake.getAgentSettingsPathReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakePlatform) GetAgentSettingsPathReturnsOnCall(i int, result1 string) {
+	fake.getAgentSettingsPathMutex.Lock()
+	defer fake.getAgentSettingsPathMutex.Unlock()
+	fake.GetAgentSettingsPathStub = nil
+	if fake.getAgentSettingsPathReturnsOnCall == nil {
+		fake.getAgentSettingsPathReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.getAgentSettingsPathReturnsOnCall[i] = struct {
+		result1 string
 	}{result1}
 }
 
@@ -2530,6 +2611,58 @@ func (fake *FakePlatform) SetupBlobsDirReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakePlatform) SetupBoshSettingsDisk() error {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	ret, specificReturn := fake.setupBoshSettingsDiskReturnsOnCall[len(fake.setupBoshSettingsDiskArgsForCall)]
+	fake.setupBoshSettingsDiskArgsForCall = append(fake.setupBoshSettingsDiskArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupBoshSettingsDisk", []interface{}{})
+	fake.setupBoshSettingsDiskMutex.Unlock()
+	if fake.SetupBoshSettingsDiskStub != nil {
+		return fake.SetupBoshSettingsDiskStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupBoshSettingsDiskReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupBoshSettingsDiskCallCount() int {
+	fake.setupBoshSettingsDiskMutex.RLock()
+	defer fake.setupBoshSettingsDiskMutex.RUnlock()
+	return len(fake.setupBoshSettingsDiskArgsForCall)
+}
+
+func (fake *FakePlatform) SetupBoshSettingsDiskCalls(stub func() error) {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	defer fake.setupBoshSettingsDiskMutex.Unlock()
+	fake.SetupBoshSettingsDiskStub = stub
+}
+
+func (fake *FakePlatform) SetupBoshSettingsDiskReturns(result1 error) {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	defer fake.setupBoshSettingsDiskMutex.Unlock()
+	fake.SetupBoshSettingsDiskStub = nil
+	fake.setupBoshSettingsDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupBoshSettingsDiskReturnsOnCall(i int, result1 error) {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	defer fake.setupBoshSettingsDiskMutex.Unlock()
+	fake.SetupBoshSettingsDiskStub = nil
+	if fake.setupBoshSettingsDiskReturnsOnCall == nil {
+		fake.setupBoshSettingsDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupBoshSettingsDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatform) SetupDataDir(arg1 settings.JobDir) error {
 	fake.setupDataDirMutex.Lock()
 	ret, specificReturn := fake.setupDataDirReturnsOnCall[len(fake.setupDataDirArgsForCall)]
@@ -3688,6 +3821,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.deleteARPEntryWithIPMutex.RUnlock()
 	fake.deleteEphemeralUsersMatchingMutex.RLock()
 	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
+	fake.getAgentSettingsPathMutex.RLock()
+	defer fake.getAgentSettingsPathMutex.RUnlock()
 	fake.getAuditLoggerMutex.RLock()
 	defer fake.getAuditLoggerMutex.RUnlock()
 	fake.getCertManagerMutex.RLock()
@@ -3744,6 +3879,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.setUserPasswordMutex.RUnlock()
 	fake.setupBlobsDirMutex.RLock()
 	defer fake.setupBlobsDirMutex.RUnlock()
+	fake.setupBoshSettingsDiskMutex.RLock()
+	defer fake.setupBoshSettingsDiskMutex.RUnlock()
 	fake.setupDataDirMutex.RLock()
 	defer fake.setupDataDirMutex.RUnlock()
 	fake.setupEphemeralDiskWithPathMutex.RLock()

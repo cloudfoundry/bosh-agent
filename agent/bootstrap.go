@@ -87,6 +87,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Settings user password")
 	}
 
+	if err = boot.platform.SetupBoshSettingsDisk(); err != nil {
+		return bosherr.WrapError(err, "Setting up settings tmpfs")
+	}
+
 	if err = boot.platform.SetupIPv6(settings.Env.Bosh.IPv6); err != nil {
 		return bosherr.WrapError(err, "Setting up IPv6")
 	}

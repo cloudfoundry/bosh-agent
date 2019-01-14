@@ -3,10 +3,11 @@ package settings
 import (
 	"encoding/json"
 
+	"sync"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"sync"
 )
 
 type Service interface {
@@ -32,13 +33,12 @@ const settingsServiceLogTag = "settingsService"
 
 type settingsService struct {
 	fs                          boshsys.FileSystem
-	settingsPath                string
 	settings                    Settings
 	settingsMutex               sync.Mutex
 	persistentDiskSettingsPath  string
 	persistentDiskSettingsMutex sync.Mutex
 	settingsSource              Source
-	defaultNetworkResolver      DefaultNetworkResolver
+	platform                    PlatformSettingsGetter
 	logger                      boshlog.Logger
 }
 
@@ -48,21 +48,26 @@ type DefaultNetworkResolver interface {
 	GetDefaultNetwork() (Network, error)
 }
 
+//go:generate counterfeiter PlatformSettingsGetter
+
+type PlatformSettingsGetter interface {
+	DefaultNetworkResolver
+	GetAgentSettingsPath(tmpfs bool) string
+}
+
 func NewService(
 	fs boshsys.FileSystem,
-	settingsPath string,
 	persistentDiskSettingsPath string,
 	settingsSource Source,
-	defaultNetworkResolver DefaultNetworkResolver,
+	platform PlatformSettingsGetter,
 	logger boshlog.Logger,
 ) Service {
 	return &settingsService{
 		fs:                         fs,
-		settingsPath:               settingsPath,
 		settings:                   Settings{},
 		persistentDiskSettingsPath: persistentDiskSettingsPath,
 		settingsSource:             settingsSource,
-		defaultNetworkResolver:     defaultNetworkResolver,
+		platform:                   platform,
 		logger:                     logger,
 	}
 }
@@ -75,11 +80,12 @@ func (s *settingsService) LoadSettings() error {
 	s.logger.Debug(settingsServiceLogTag, "Loading settings from fetcher")
 
 	newSettings, fetchErr := s.settingsSource.Settings()
+
 	if fetchErr != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed loading settings via fetcher: %v", fetchErr)
 
 		opts := boshsys.ReadOpts{Quiet: true}
-		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.settingsPath, opts)
+		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.getSettingsPath(), opts)
 		if readError != nil {
 			s.logger.Error(settingsServiceLogTag, "Failed reading settings from file %s", readError.Error())
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
@@ -112,7 +118,7 @@ func (s *settingsService) LoadSettings() error {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}
 
-	err = s.fs.WriteFileQuietly(s.settingsPath, newSettingsJSON)
+	err = s.fs.WriteFileQuietly(s.getSettingsPath(), newSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing setting json")
 	}
@@ -223,7 +229,7 @@ func (s *settingsService) GetSettings() Settings {
 }
 
 func (s *settingsService) InvalidateSettings() error {
-	err := s.fs.RemoveAll(s.settingsPath)
+	err := s.fs.RemoveAll(s.getSettingsPath())
 	if err != nil {
 		return bosherr.WrapError(err, "Removing settings file")
 	}
@@ -235,7 +241,7 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	// Ideally this would be GetNetworkByMACAddress(mac string)
 	// Currently, we are relying that if the default network does not contain
 	// the MAC adddress the InterfaceConfigurationCreator will fail.
-	resolvedNetwork, err := s.defaultNetworkResolver.GetDefaultNetwork()
+	resolvedNetwork, err := s.platform.GetDefaultNetwork()
 	if err != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())
 		return Network{}, bosherr.WrapError(err, "Failed retrieving default network")
@@ -280,4 +286,11 @@ func (s *settingsService) getPersistentDiskSettingsWithoutLocking() (map[string]
 		}
 	}
 	return persistentDiskSettings, nil
+}
+
+func (s *settingsService) getSettingsPath() string {
+	s.settingsMutex.Lock()
+	defer s.settingsMutex.Unlock()
+
+	return s.platform.GetAgentSettingsPath(s.settings.Env.Bosh.Agent.Settings.TmpFS)
 }

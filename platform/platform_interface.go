@@ -36,6 +36,7 @@ type Platform interface {
 	GetVitalsService() boshvitals.Service
 	GetAuditLogger() AuditLogger
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
+	GetAgentSettingsPath(tmpfs bool) string
 
 	// User management
 	CreateUser(username, basePath string) (err error)
@@ -46,6 +47,7 @@ type Platform interface {
 	SetupRootDisk(ephemeralDiskPath string) (err error)
 	SetupSSH(publicKey []string, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
+	SetupBoshSettingsDisk() (err error)
 	SetupIPv6(boshsettings.IPv6) error
 	SetupHostname(hostname string) (err error)
 	SetupNetworking(networks boshsettings.Networks) (err error)

@@ -18,6 +18,7 @@ var _ = Describe("Provider", func() {
 		},
 		Entry("BaseDir()", p.BaseDir(), "/some/dir"),
 		Entry("BoshDir()", p.BoshDir(), "/some/dir/bosh"),
+		Entry("BoshSettingsDir()", p.BoshSettingsDir(), "/some/dir/bosh/settings"),
 		Entry("BoshBinDir()", p.BoshBinDir(), "/some/dir/bosh/bin"),
 		Entry("EtcDir()", p.EtcDir(), "/some/dir/bosh/etc"),
 		Entry("StoreDir()", p.StoreDir(), "/some/dir/store"),

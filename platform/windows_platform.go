@@ -188,6 +188,17 @@ func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
+func (p WindowsPlatform) SetupBoshSettingsDisk() error {
+	return nil
+}
+
+func (p WindowsPlatform) GetAgentSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		p.logger.Info("WindowsPlatform", "Windows does not support using tmpfs, using default settings path")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "settings.json")
+}
+
 func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 
 	homedir, err := userHomeDirectory(username)

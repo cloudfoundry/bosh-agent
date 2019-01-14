@@ -319,6 +319,24 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 	return
 }
 
+func (p linux) SetupBoshSettingsDisk() (err error) {
+	path := filepath.Dir(p.GetAgentSettingsPath(true))
+
+	err = p.fs.MkdirAll(path, 0700)
+	if err != nil {
+		err = bosherr.WrapError(err, "Setting up Bosh Settings Disk")
+		return
+	}
+	return p.diskManager.GetMounter().MountTmpfs(path, "16m")
+}
+
+func (p linux) GetAgentSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		return filepath.Join(p.dirProvider.BoshSettingsDir(), "settings.json")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "settings.json")
+}
+
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	if p.options.SkipDiskSetup {
 		return nil

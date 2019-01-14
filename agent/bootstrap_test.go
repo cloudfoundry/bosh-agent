@@ -190,6 +190,14 @@ var _ = Describe("bootstrap", func() {
 			})
 		})
 
+		It("sets up BoshSettingsDisk", func() {
+			settingsService.Settings.Env.Bosh.Agent.Settings.TmpFS = true
+
+			err := bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(platform.SetupBoshSettingsDiskCallCount()).To(Equal(1))
+		})
+
 		It("sets up ipv6", func() {
 			settingsService.Settings.Env.Bosh.IPv6.Enable = true
 
@@ -1129,7 +1137,6 @@ var _ = Describe("bootstrap", func() {
 			})
 
 			JustBeforeEach(func() {
-				settingsPath := filepath.Join("bosh", "settings.json")
 				persistentDiskSettingsPath := filepath.Join("bosh", "persistent_disk_settings.json")
 
 				var settings boshsettings.Settings
@@ -1142,7 +1149,6 @@ var _ = Describe("bootstrap", func() {
 
 				settingsService := boshsettings.NewService(
 					platform.GetFs(),
-					settingsPath,
 					persistentDiskSettingsPath,
 					settingsSource,
 					platform,
