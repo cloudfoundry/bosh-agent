@@ -277,9 +277,10 @@ bosh_foobar:...`
 				err = platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "2"}))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda2"}))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"readlink", "-f", "/dev/sda2"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"growpart", "/dev/sda", "2"}))
+				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"resize2fs", "-f", "/dev/sda2"}))
 			})
 
 			It("returns error if it can't find the root device", func() {
@@ -437,9 +438,10 @@ bosh_foobar:...`
 					err = platform.SetupRootDisk("/dev/nvme1n1")
 
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
-					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/nvme0n1", "2"}))
-					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme0n1p2"}))
+					Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"readlink", "-f", "/dev/nvme0n1p2"}))
+					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"growpart", "/dev/nvme0n1", "2"}))
+					Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme0n1p2"}))
 				})
 
 				It("returns error if it can't find the root device", func() {
@@ -832,36 +834,60 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
 
-				It("formats swap and data partitions", func() {
-					collector.MemStats.Total = uint64(1024 * 1024)
-					partitioner.GetDeviceSizeInBytesSizes[devicePath] = uint64(1024 * 1024)
-					err := act()
-					Expect(err).NotTo(HaveOccurred())
+				Context("for data partitions", func() {
+					BeforeEach(func() {
+						cmdRunner.AddCmdResult(
+							"readlink -f /dev/xvda1",
+							fakesys.FakeCmdResult{Stdout: "/dev/xvda1"},
+						)
 
-					Expect(len(formatter.FormatPartitionPaths)).To(Equal(2))
-					Expect(formatter.FormatPartitionPaths[0]).To(Equal(partitionPath(devicePath, 1)))
-					Expect(formatter.FormatPartitionPaths[1]).To(Equal(partitionPath(devicePath, 2)))
+						cmdRunner.AddCmdResult(
+							"readlink -f /dev/xvda2",
+							fakesys.FakeCmdResult{Stdout: "/dev/xvda2"},
+						)
 
-					Expect(len(formatter.FormatFsTypes)).To(Equal(2))
-					Expect(formatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemSwap))
-					Expect(formatter.FormatFsTypes[1]).To(Equal(boshdisk.FileSystemExt4))
-				})
+						cmdRunner.AddCmdResult(
+							"readlink -f /dev/nvme1n1p1",
+							fakesys.FakeCmdResult{Stdout: "/dev/nvme1n1p1"},
+						)
 
-				It("mounts swap and data partitions", func() {
-					collector.MemStats.Total = uint64(1024 * 1024)
-					partitioner.GetDeviceSizeInBytesSizes[devicePath] = uint64(1024 * 1024)
-					err := act()
-					Expect(err).NotTo(HaveOccurred())
+						cmdRunner.AddCmdResult(
+							"readlink -f /dev/nvme1n1p2",
+							fakesys.FakeCmdResult{Stdout: "/dev/nvme1n1p2"},
+						)
+					})
 
-					Expect(mounter.MountCallCount()).To(Equal(1))
-					partition, mntPoint, options := mounter.MountArgsForCall(0)
-					Expect(partition).To(Equal(partitionPath(devicePath, 2)))
-					Expect(mntPoint).To(Equal("/fake-dir/data"))
-					Expect(options).To(BeEmpty())
+					It("formats swap and data partitions", func() {
+						collector.MemStats.Total = uint64(1024 * 1024)
+						partitioner.GetDeviceSizeInBytesSizes[devicePath] = uint64(1024 * 1024)
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
 
-					Expect(mounter.SwapOnCallCount()).To(Equal(1))
-					partition = mounter.SwapOnArgsForCall(0)
-					Expect(partition).To(Equal(partitionPath(devicePath, 1)))
+						Expect(len(formatter.FormatPartitionPaths)).To(Equal(2))
+						Expect(formatter.FormatPartitionPaths[0]).To(Equal(partitionPath(devicePath, 1)))
+						Expect(formatter.FormatPartitionPaths[1]).To(Equal(partitionPath(devicePath, 2)))
+
+						Expect(len(formatter.FormatFsTypes)).To(Equal(2))
+						Expect(formatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemSwap))
+						Expect(formatter.FormatFsTypes[1]).To(Equal(boshdisk.FileSystemExt4))
+					})
+
+					It("mounts swap and data partitions", func() {
+						collector.MemStats.Total = uint64(1024 * 1024)
+						partitioner.GetDeviceSizeInBytesSizes[devicePath] = uint64(1024 * 1024)
+						err := act()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(mounter.MountCallCount()).To(Equal(1))
+						partition, mntPoint, options := mounter.MountArgsForCall(0)
+						Expect(partition).To(Equal(partitionPath(devicePath, 2)))
+						Expect(mntPoint).To(Equal("/fake-dir/data"))
+						Expect(options).To(BeEmpty())
+
+						Expect(mounter.SwapOnCallCount()).To(Equal(1))
+						partition = mounter.SwapOnArgsForCall(0)
+						Expect(partition).To(Equal(partitionPath(devicePath, 1)))
+					})
 				})
 
 				It("creates swap the size of the memory and the rest for data when disk is bigger than twice the memory", func() {
@@ -917,6 +943,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 					Context("and swap size is zero", func() {
 						It("does not attempt to create a swap disk", func() {
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/xvda1",
+								fakesys.FakeCmdResult{Stdout: "/dev/xvda1"},
+							)
+
+							cmdRunner.AddCmdResult(
+								"readlink -f /dev/nvme1n1p1",
+								fakesys.FakeCmdResult{Stdout: "/dev/nvme1n1p1"},
+							)
+
 							var desiredSwapSize uint64
 							act = func() error {
 								return platform.SetupEphemeralDiskWithPath(devicePath, &desiredSwapSize)
@@ -1047,6 +1083,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 							BeforeEach(func() {
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
 								collector.MemStats.Total = 256 * 1024 * 1024
+
+								cmdRunner.AddCmdResult(
+									"readlink -f /dev/vda2",
+									fakesys.FakeCmdResult{Stdout: "/dev/vda2"},
+								)
+
+								cmdRunner.AddCmdResult(
+									"readlink -f /dev/vda3",
+									fakesys.FakeCmdResult{Stdout: "/dev/vda3"},
+								)
 							})
 
 							itSetsUpEphemeralDisk(act)
@@ -1169,6 +1215,11 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 								Context("and swap size is zero", func() {
 									It("does not attempt to create a swap disk", func() {
+										cmdRunner.AddCmdResult(
+											"readlink -f /dev/vda2",
+											fakesys.FakeCmdResult{Stdout: "/dev/vda2"},
+										)
+
 										var desiredSwapSize uint64
 										act := func() error {
 											return platform.SetupEphemeralDiskWithPath("", &desiredSwapSize)
@@ -1227,6 +1278,17 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 							BeforeEach(func() {
 								partitioner.GetDeviceSizeInBytesSizes["/dev/vda"] = 1024 * 1024 * 1024
 								collector.MemStats.Total = 256 * 1024 * 1024
+
+								cmdRunner.AddCmdResult(
+									"readlink -f /dev/vda3",
+									fakesys.FakeCmdResult{Stdout: "/dev/vda3"},
+								)
+
+								cmdRunner.AddCmdResult(
+									"readlink -f /dev/vda4",
+									fakesys.FakeCmdResult{Stdout: "/dev/vda4"},
+								)
+
 							})
 
 							itSetsUpEphemeralDisk(act)
