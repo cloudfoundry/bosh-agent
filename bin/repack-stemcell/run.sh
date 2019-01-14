@@ -8,8 +8,15 @@ cd "${bin}"/../..
 
 ./bin/build-linux-amd64
 
-mv out/bosh-agent bin/bosh-agent # necessary so that fly -x can be used
+tempdir=$(mktemp -d)
+function cleanup {
+  rm -rf "$tempdir"
+}
+trap cleanup EXIT
 
-time fly -t production execute -p -i agent-src=. -o stemcell=out/ -c ./bin/repack-stemcell/task.yml
+
+mv out/bosh-agent ${tempdir}/bosh-agent
+
+time fly -t production execute -p -i compiled-agent=${tempdir} -i agent-src=. -o stemcell=out/ -c ./bin/repack-stemcell/task.yml
 
 ls -la out/stemcell.tgz

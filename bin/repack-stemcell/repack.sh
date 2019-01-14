@@ -44,7 +44,8 @@ echo "$STEMCELL_SHA1  $stemcell_tgz" | shasum -c -
 		mkdir $mnt_dir
 		mount -o loop,offset=32256 root.img $mnt_dir
 		echo -n 0.0.${new_ver} > $mnt_dir/var/vcap/bosh/etc/stemcell_version
-		cp /tmp/build/*/agent-src/bin/bosh-agent $mnt_dir/var/vcap/bosh/bin/bosh-agent
+		echo $(pwd)
+		cp /tmp/build/*/compiled-agent/bosh-agent $mnt_dir/var/vcap/bosh/bin/bosh-agent
 
 		if [ -n "$BOSH_DEBUG_PUB_KEY" ]; then
 			sudo chroot $mnt_dir /bin/bash <<EOF
@@ -61,7 +62,7 @@ EOF
 		tar czvf $stemcell_dir/image *
 	)
 
-	sed -i.bak "s/version: .*/version: 0.0.${new_ver}/" stemcell.MF
+	sed -i.bak "s/^\(\s*version\): .*/\1: 0.0.${new_ver}/" stemcell.MF
 	tar czvf $stemcell_tgz *
 )
 
