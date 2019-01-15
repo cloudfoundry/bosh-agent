@@ -21,8 +21,8 @@ func NewVirtioDevicePathResolver(
 	return virtioDevicePathResolver{
 		idDevicePathResolver:     idDevicePathResolver,
 		mappedDevicePathResolver: mappedDevicePathResolver,
-		logger: logger,
-		logTag: "virtioDevicePathResolver",
+		logger:                   logger,
+		logTag:                   "virtioDevicePathResolver",
 	}
 }
 

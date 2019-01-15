@@ -215,7 +215,7 @@ func (n *NatsClient) PrepareJob(jobName string) {
 		TemplateBlobstoreID:                 templateID,
 		RenderedTemplatesArchiveBlobstoreID: templateID,
 		RenderedTemplatesArchiveSHA1:        sha1,
-		ReplyTo: senderID,
+		ReplyTo:                             senderID,
 	}
 
 	buffer := bytes.NewBuffer([]byte{})

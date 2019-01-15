@@ -34,11 +34,11 @@ func NewCompiledPackageApplierProvider(
 		installPath:           installPath,
 		rootEnablePath:        rootEnablePath,
 		jobSpecificEnablePath: jobSpecificEnablePath,
-		name:       name,
-		blobstore:  blobstore,
-		compressor: compressor,
-		fs:         fs,
-		logger:     logger,
+		name:                  name,
+		blobstore:             blobstore,
+		compressor:            compressor,
+		fs:                    fs,
+		logger:                logger,
 	}
 }
 
