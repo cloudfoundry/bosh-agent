@@ -1137,8 +1137,6 @@ var _ = Describe("bootstrap", func() {
 			})
 
 			JustBeforeEach(func() {
-				persistentDiskSettingsPath := filepath.Join("bosh", "persistent_disk_settings.json")
-
 				var settings boshsettings.Settings
 				json.Unmarshal([]byte(settingsJSON), &settings)
 
@@ -1149,7 +1147,6 @@ var _ = Describe("bootstrap", func() {
 
 				settingsService := boshsettings.NewService(
 					platform.GetFs(),
-					persistentDiskSettingsPath,
 					settingsSource,
 					platform,
 					logger,
