@@ -36,9 +36,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-var _ = Describe("LinuxPlatform", describeLinuxPlatform)
-
-func describeLinuxPlatform() {
+var _ = Describe("LinuxPlatform", func() {
 	var (
 		collector                  *fakestats.FakeCollector
 		fs                         *fakesys.FakeFileSystem
@@ -3990,4 +3988,35 @@ unit: sectors
 		})
 	})
 
-}
+	Describe("GetAgentSettingsPath", func() {
+		It("returns a path in the sensitive settings directory if tmpfs is enabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings", "settings.json")
+
+			path := platform.GetAgentSettingsPath(true)
+			Expect(path).To(Equal(expectedPath))
+		})
+
+		It("returns a path in the default directory if tmpfs is disabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings.json")
+
+			path := platform.GetAgentSettingsPath(false)
+			Expect(path).To(Equal(expectedPath))
+		})
+	})
+
+	Describe("GetPersistentDiskSettingsPath", func() {
+		It("returns a path in the sensitive settings directory if tmpfs is enabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings", "persistent_disk_hints.json")
+
+			path := platform.GetPersistentDiskSettingsPath(true)
+			Expect(path).To(Equal(expectedPath))
+		})
+
+		It("returns a path in the default directory if tmpfs is disabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "persistent_disk_hints.json")
+
+			path := platform.GetPersistentDiskSettingsPath(false)
+			Expect(path).To(Equal(expectedPath))
+		})
+	})
+})

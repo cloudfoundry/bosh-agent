@@ -29,9 +29,7 @@ type mount struct {
 	DiskCid  string
 }
 
-var _ = Describe("DummyPlatform", describeDummyPlatform)
-
-func describeDummyPlatform() {
+var _ = Describe("DummyPlatform", func() {
 	var (
 		platform           Platform
 		collector          boshstats.Collector
@@ -308,4 +306,20 @@ func describeDummyPlatform() {
 			Expect(path).To(Equal(expectedPath))
 		})
 	})
-}
+
+	Describe("GetPersistentDiskSettingsPath", func() {
+		It("returns a path in the sensitive settings directory if tmpfs is enabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings", "persistent_disk_hints.json")
+
+			path := platform.GetPersistentDiskSettingsPath(true)
+			Expect(path).To(Equal(expectedPath))
+		})
+
+		It("returns a path in the default directory if tmpfs is disabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "persistent_disk_hints.json")
+
+			path := platform.GetPersistentDiskSettingsPath(false)
+			Expect(path).To(Equal(expectedPath))
+		})
+	})
+})

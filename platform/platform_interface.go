@@ -37,6 +37,7 @@ type Platform interface {
 	GetAuditLogger() AuditLogger
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
 	GetAgentSettingsPath(tmpfs bool) string
+	GetPersistentDiskSettingsPath(tmpfs bool) string
 
 	// User management
 	CreateUser(username, basePath string) (err error)

@@ -35,7 +35,6 @@ type settingsService struct {
 	fs                          boshsys.FileSystem
 	settings                    Settings
 	settingsMutex               sync.Mutex
-	persistentDiskSettingsPath  string
 	persistentDiskSettingsMutex sync.Mutex
 	settingsSource              Source
 	platform                    PlatformSettingsGetter
@@ -53,22 +52,21 @@ type DefaultNetworkResolver interface {
 type PlatformSettingsGetter interface {
 	DefaultNetworkResolver
 	GetAgentSettingsPath(tmpfs bool) string
+	GetPersistentDiskSettingsPath(tmpfs bool) string
 }
 
 func NewService(
 	fs boshsys.FileSystem,
-	persistentDiskSettingsPath string,
 	settingsSource Source,
 	platform PlatformSettingsGetter,
 	logger boshlog.Logger,
 ) Service {
 	return &settingsService{
-		fs:                         fs,
-		settings:                   Settings{},
-		persistentDiskSettingsPath: persistentDiskSettingsPath,
-		settingsSource:             settingsSource,
-		platform:                   platform,
-		logger:                     logger,
+		fs:             fs,
+		settings:       Settings{},
+		settingsSource: settingsSource,
+		platform:       platform,
+		logger:         logger,
 	}
 }
 
@@ -262,7 +260,7 @@ func (s *settingsService) savePersistentDiskSettingsWithoutLocking(persistentDis
 		return bosherr.WrapError(err, "Marshalling persistent disk settings json")
 	}
 
-	err = s.fs.WriteFile(s.persistentDiskSettingsPath, newPersistentDiskSettingsJSON)
+	err = s.fs.WriteFile(s.getPersistentDiskSettingsPath(), newPersistentDiskSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing persistent disk settings settings json")
 	}
@@ -273,9 +271,9 @@ func (s *settingsService) savePersistentDiskSettingsWithoutLocking(persistentDis
 func (s *settingsService) getPersistentDiskSettingsWithoutLocking() (map[string]DiskSettings, error) {
 	persistentDiskSettings := make(map[string]DiskSettings)
 
-	if s.fs.FileExists(s.persistentDiskSettingsPath) {
+	if s.fs.FileExists(s.getPersistentDiskSettingsPath()) {
 		opts := boshsys.ReadOpts{Quiet: true}
-		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.persistentDiskSettingsPath, opts)
+		existingSettingsJSON, readError := s.fs.ReadFileWithOpts(s.getPersistentDiskSettingsPath(), opts)
 		if readError != nil {
 			return nil, bosherr.WrapError(readError, "Reading persistent disk settings from file")
 		}
@@ -293,4 +291,11 @@ func (s *settingsService) getSettingsPath() string {
 	defer s.settingsMutex.Unlock()
 
 	return s.platform.GetAgentSettingsPath(s.settings.Env.Bosh.Agent.Settings.TmpFS)
+}
+
+func (s *settingsService) getPersistentDiskSettingsPath() string {
+	s.settingsMutex.Lock()
+	defer s.settingsMutex.Unlock()
+
+	return s.platform.GetPersistentDiskSettingsPath(s.settings.Env.Bosh.Agent.Settings.TmpFS)
 }

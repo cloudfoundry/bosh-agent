@@ -337,6 +337,13 @@ func (p linux) GetAgentSettingsPath(tmpfs bool) string {
 	return filepath.Join(p.dirProvider.BoshDir(), "settings.json")
 }
 
+func (p linux) GetPersistentDiskSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		return filepath.Join(p.dirProvider.BoshSettingsDir(), "persistent_disk_hints.json")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "persistent_disk_hints.json")
+}
+
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	if p.options.SkipDiskSetup {
 		return nil

@@ -194,9 +194,16 @@ func (p WindowsPlatform) SetupBoshSettingsDisk() error {
 
 func (p WindowsPlatform) GetAgentSettingsPath(tmpfs bool) string {
 	if tmpfs {
-		p.logger.Info("WindowsPlatform", "Windows does not support using tmpfs, using default settings path")
+		p.logger.Info("WindowsPlatform", "Windows does not support using tmpfs, using default agent settings path")
 	}
 	return filepath.Join(p.dirProvider.BoshDir(), "settings.json")
+}
+
+func (p WindowsPlatform) GetPersistentDiskSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		p.logger.Info("WindowsPlatform", "Windows does not support using tmpfs, using default persistent disk settings path")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "persistent_disk_hints.json")
 }
 
 func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {

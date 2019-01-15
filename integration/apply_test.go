@@ -207,10 +207,18 @@ var _ = Describe("apply", func() {
 			err := agentClient.Apply(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
+			err = agentClient.AddPersistentDisk("disk-cid", "/dev/sdf")
+			Expect(err).NotTo(HaveOccurred())
+
 			output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(output).To(ContainSubstring("tmpfs /var/vcap/bosh/settings"))
+
+			output, err = testEnvironment.RunCommand("sudo ls /var/vcap/bosh/settings")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(ContainSubstring("settings.json"))
+			Expect(output).To(ContainSubstring("persistent_disk_hints.json"))
 		})
 	})
 

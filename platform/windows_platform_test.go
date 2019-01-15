@@ -734,7 +734,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 			path := platform.GetAgentSettingsPath(true)
 			Expect(logBuffer).Should(gbytes.Say(
-				"Windows does not support using tmpfs, using default settings path",
+				"Windows does not support using tmpfs, using default agent settings path",
 			))
 
 			Expect(path).To(Equal(expectedPath))
@@ -744,6 +744,26 @@ var _ = Describe("WindowsPlatform", func() {
 			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings.json")
 
 			path := platform.GetAgentSettingsPath(false)
+			Expect(path).To(Equal(expectedPath))
+		})
+	})
+
+	Describe("GetPersistentDiskSettingsPath", func() {
+		It("logs that windows does not support tmpfs if asked for a tmpfs path", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "persistent_disk_hints.json")
+
+			path := platform.GetPersistentDiskSettingsPath(true)
+			Expect(logBuffer).Should(gbytes.Say(
+				"Windows does not support using tmpfs, using default persistent disk settings path",
+			))
+
+			Expect(path).To(Equal(expectedPath))
+		})
+
+		It("returns the default settings path", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "persistent_disk_hints.json")
+
+			path := platform.GetPersistentDiskSettingsPath(false)
 			Expect(path).To(Equal(expectedPath))
 		})
 	})

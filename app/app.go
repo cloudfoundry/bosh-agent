@@ -63,7 +63,6 @@ func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
 }
 
 func (app *app) Setup(opts Options) error {
-
 	config, err := app.loadConfig(opts.ConfigPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Loading config")
@@ -97,7 +96,6 @@ func (app *app) Setup(opts Options) error {
 
 	settingsService := boshsettings.NewService(
 		app.platform.GetFs(),
-		filepath.Join(app.dirProvider.BoshDir(), "persistent_disk_hints.json"),
 		settingsSource,
 		app.platform,
 		app.logger,

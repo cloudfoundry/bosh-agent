@@ -31,6 +31,17 @@ type FakePlatformSettingsGetter struct {
 		result1 settings.Network
 		result2 error
 	}
+	GetPersistentDiskSettingsPathStub        func(bool) string
+	getPersistentDiskSettingsPathMutex       sync.RWMutex
+	getPersistentDiskSettingsPathArgsForCall []struct {
+		arg1 bool
+	}
+	getPersistentDiskSettingsPathReturns struct {
+		result1 string
+	}
+	getPersistentDiskSettingsPathReturnsOnCall map[int]struct {
+		result1 string
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -150,6 +161,66 @@ func (fake *FakePlatformSettingsGetter) GetDefaultNetworkReturnsOnCall(i int, re
 	}{result1, result2}
 }
 
+func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPath(arg1 bool) string {
+	fake.getPersistentDiskSettingsPathMutex.Lock()
+	ret, specificReturn := fake.getPersistentDiskSettingsPathReturnsOnCall[len(fake.getPersistentDiskSettingsPathArgsForCall)]
+	fake.getPersistentDiskSettingsPathArgsForCall = append(fake.getPersistentDiskSettingsPathArgsForCall, struct {
+		arg1 bool
+	}{arg1})
+	fake.recordInvocation("GetPersistentDiskSettingsPath", []interface{}{arg1})
+	fake.getPersistentDiskSettingsPathMutex.Unlock()
+	if fake.GetPersistentDiskSettingsPathStub != nil {
+		return fake.GetPersistentDiskSettingsPathStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getPersistentDiskSettingsPathReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPathCallCount() int {
+	fake.getPersistentDiskSettingsPathMutex.RLock()
+	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
+	return len(fake.getPersistentDiskSettingsPathArgsForCall)
+}
+
+func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPathCalls(stub func(bool) string) {
+	fake.getPersistentDiskSettingsPathMutex.Lock()
+	defer fake.getPersistentDiskSettingsPathMutex.Unlock()
+	fake.GetPersistentDiskSettingsPathStub = stub
+}
+
+func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPathArgsForCall(i int) bool {
+	fake.getPersistentDiskSettingsPathMutex.RLock()
+	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
+	argsForCall := fake.getPersistentDiskSettingsPathArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPathReturns(result1 string) {
+	fake.getPersistentDiskSettingsPathMutex.Lock()
+	defer fake.getPersistentDiskSettingsPathMutex.Unlock()
+	fake.GetPersistentDiskSettingsPathStub = nil
+	fake.getPersistentDiskSettingsPathReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPathReturnsOnCall(i int, result1 string) {
+	fake.getPersistentDiskSettingsPathMutex.Lock()
+	defer fake.getPersistentDiskSettingsPathMutex.Unlock()
+	fake.GetPersistentDiskSettingsPathStub = nil
+	if fake.getPersistentDiskSettingsPathReturnsOnCall == nil {
+		fake.getPersistentDiskSettingsPathReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.getPersistentDiskSettingsPathReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
 func (fake *FakePlatformSettingsGetter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -157,6 +228,8 @@ func (fake *FakePlatformSettingsGetter) Invocations() map[string][][]interface{}
 	defer fake.getAgentSettingsPathMutex.RUnlock()
 	fake.getDefaultNetworkMutex.RLock()
 	defer fake.getDefaultNetworkMutex.RUnlock()
+	fake.getPersistentDiskSettingsPathMutex.RLock()
+	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
