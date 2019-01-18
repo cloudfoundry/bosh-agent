@@ -20,10 +20,11 @@ const (
 	agentLogTag = "agent"
 )
 
-//go:generate counterfeiter . CanRebooter
+//go:generate counterfeiter . StartManager
 
-type CanRebooter interface {
-	CanReboot() (bool, error)
+type StartManager interface {
+	CanStart() bool
+	RegisterStart() error
 }
 
 type Agent struct {
@@ -37,7 +38,7 @@ type Agent struct {
 	settingsService   boshsettings.Service
 	uuidGenerator     boshuuid.Generator
 	timeService       clock.Clock
-	canRebooter       CanRebooter
+	startManager      StartManager
 }
 
 func New(
@@ -51,7 +52,7 @@ func New(
 	settingsService boshsettings.Service,
 	uuidGenerator boshuuid.Generator,
 	timeService clock.Clock,
-	canRebooter CanRebooter,
+	startManager StartManager,
 ) Agent {
 	return Agent{
 		logger:            logger,
@@ -64,17 +65,16 @@ func New(
 		settingsService:   settingsService,
 		uuidGenerator:     uuidGenerator,
 		timeService:       timeService,
-		canRebooter:       canRebooter,
+		startManager:      startManager,
 	}
 }
 
 func (a Agent) Run() error {
-	bootable, err := a.canRebooter.CanReboot()
-	if err != nil {
-		return bosherr.WrapError(err, "Failed to check if agent can be rebooted")
-	}
-	if !bootable {
+	if !a.startManager.CanStart() {
 		return bosherr.Error("Refusing to boot")
+	}
+	if err := a.startManager.RegisterStart(); err != nil {
+		return bosherr.WrapError(err, "Registering start")
 	}
 
 	errCh := make(chan error, 1)

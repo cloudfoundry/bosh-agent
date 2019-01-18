@@ -39,7 +39,7 @@ func init() {
 			uuidGenerator    *fakeuuid.FakeGenerator
 			timeService      *fakeclock.FakeClock
 			vitalService     *vitalsfakes.FakeService
-			canRebooter      *agentfakes.FakeCanRebooter
+			startManager     *agentfakes.FakeStartManager
 
 			agent Agent
 		)
@@ -55,8 +55,8 @@ func init() {
 			uuidGenerator = &fakeuuid.FakeGenerator{}
 			timeService = fakeclock.NewFakeClock(time.Now())
 			vitalService = &vitalsfakes.FakeService{}
-			canRebooter = &agentfakes.FakeCanRebooter{}
-			canRebooter.CanRebootReturns(true, nil) // bootable by default
+			startManager = &agentfakes.FakeStartManager{}
+			startManager.CanStartReturns(true)
 
 			platform.GetVitalsServiceReturns(vitalService)
 
@@ -71,11 +71,18 @@ func init() {
 				settingsService,
 				uuidGenerator,
 				timeService,
-				canRebooter,
+				startManager,
 			)
 		})
 
 		Describe("Run", func() {
+			It("Registers a start with the startManager", func() {
+				err := agent.Run()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(startManager.RegisterStartCallCount()).To(Equal(1))
+			})
+
 			It("lets dispatcher handle requests arriving via handler", func() {
 				err := agent.Run()
 				Expect(err).ToNot(HaveOccurred())
@@ -150,7 +157,7 @@ func init() {
 						settingsService,
 						uuidGenerator,
 						timeService,
-						canRebooter,
+						startManager,
 					)
 
 					// Immediately exit after sending initial heartbeat
@@ -198,18 +205,7 @@ func init() {
 
 				Context("when the agent may not be rebooted", func() {
 					BeforeEach(func() {
-						canRebooter.CanRebootReturns(false, nil)
-					})
-
-					It("stops the boot process and returns an error", func() {
-						err := agent.Run()
-						Expect(err).To(HaveOccurred())
-					})
-				})
-
-				Context("when the checking if the agent may be rebooted returns an error", func() {
-					BeforeEach(func() {
-						canRebooter.CanRebootReturns(true, errors.New("disaster"))
+						startManager.CanStartReturns(false)
 					})
 
 					It("stops the boot process and returns an error", func() {

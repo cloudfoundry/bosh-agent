@@ -219,7 +219,7 @@ func (app *app) Setup(opts Options) error {
 		actionRunner,
 	)
 
-	rebootChecker := bootonce.NewRebootChecker(
+	startManager := bootonce.NewStartManager(
 		settingsService,
 		app.platform.GetFs(),
 		app.dirProvider,
@@ -236,7 +236,7 @@ func (app *app) Setup(opts Options) error {
 		settingsService,
 		uuidGen,
 		timeService,
-		rebootChecker,
+		startManager,
 	)
 
 	return nil
