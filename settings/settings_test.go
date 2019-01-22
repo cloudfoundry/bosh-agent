@@ -910,7 +910,8 @@ var _ = Describe("Settings", func() {
 			"cert": {
 				"private_key": "fake-private-key-pem",
 				"certificate": "fake-certificate-pem"
-      }
+      },
+			"alternative_password": "fake-alt-password"
     }
   }
 }`
@@ -925,6 +926,11 @@ var _ = Describe("Settings", func() {
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
 			Expect(*env.GetSwapSizeInBytes()).To(Equal(uint64(2048 * 1024 * 1024)))
+
+			settings := Settings{
+				Env: env,
+			}
+			Expect(settings.GetAlternativeMbusPassword()).To(Equal("fake-alt-password"))
 		})
 
 		It("can enable ipv6", func() {

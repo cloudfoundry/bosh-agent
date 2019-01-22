@@ -155,6 +155,9 @@ func (s Settings) GetMbusURL() string {
 	return s.Mbus
 }
 
+func (s Settings) GetAlternativeMbusPassword() string {
+	return s.Env.Bosh.Mbus.AlternativePassword
+}
 func (s Settings) GetBlobstore() Blobstore {
 	if len(s.Env.Bosh.Blobstores) > 0 {
 		return s.Env.Bosh.Blobstores[0]
@@ -292,8 +295,9 @@ type AgentSettings struct {
 }
 
 type MBus struct {
-	Cert CertKeyPair `json:"cert"`
-	URLs []string    `json:"urls"`
+	Cert                CertKeyPair `json:"cert"`
+	URLs                []string    `json:"urls"`
+	AlternativePassword string      `json:"alternative_password"`
 }
 
 type CertKeyPair struct {

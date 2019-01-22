@@ -80,15 +80,16 @@ func init() {
 
 var _ = Describe("HTTPSDispatcher", func() {
 	var (
-		dispatcher *mbus.HTTPSDispatcher
-		logger     *fakelogger.FakeLogger
+		dispatcher          *mbus.HTTPSDispatcher
+		logger              *fakelogger.FakeLogger
+		alternativePassword string
 	)
 
-	BeforeEach(func() {
+	JustBeforeEach(func() {
 		logger = &fakelogger.FakeLogger{}
 		serverURL, err := url.Parse(targetURL)
 		Expect(err).ToNot(HaveOccurred())
-		dispatcher = mbus.NewHTTPSDispatcher(serverURL, settings.CertKeyPair{
+		dispatcher = mbus.NewHTTPSDispatcher(serverURL, alternativePassword, settings.CertKeyPair{
 			Certificate: agentCert,
 			PrivateKey:  agentKey,
 			CA:          "",
@@ -259,21 +260,57 @@ var _ = Describe("HTTPSDispatcher", func() {
 		Expect(tag).To(Equal("HTTPS Dispatcher"))
 	})
 
-	Context("When the basic authorization is wrong", func() {
-		It("returns 401", func() {
-			dispatcher.AddRoute("/example", func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(500)
+	Context("When no alternative password is specified", func() {
+		Context("When client logs in with empty password", func() {
+			It("Does return 401", func() {
+				response := testLogin(dispatcher, "user:", 401)
+				Expect(response.Header.Get("WWW-Authenticate")).To(Equal(`Basic realm=""`))
 			})
-			client := getHTTPClient()
+		})
+		Context("When the basic authorization is wrong", func() {
+			It("returns 401", func() {
+				testLogin(dispatcher, "user:creds", 401)
+			})
+		})
+	})
 
-			response, err := client.Get("https://bad:creds@127.0.0.1:7789/example")
+	Context("When an alternative password is specified", func() {
+		BeforeEach(func() {
+			alternativePassword = "alternative_password"
+		})
+		Context("When client logs in with correct alternative password", func() {
+			It("Does not return 401", func() {
+				response := testLogin(dispatcher, "user:alternative_password", 201)
+				Expect(response.StatusCode).To(BeNumerically("==", 201))
+			})
+		})
 
-			Expect(err).ToNot(HaveOccurred())
-			Expect(response.StatusCode).To(BeNumerically("==", 401))
-			Expect(response.Header.Get("WWW-Authenticate")).To(Equal(`Basic realm=""`))
+		Context("When password matches neither base nor alternative password", func() {
+			It("returns 401", func() {
+				testLogin(dispatcher, "user:creds", 401)
+			})
+		})
+
+		Context("When password matches base password", func() {
+			It("does not return 401", func() {
+				testLogin(dispatcher, "user:pass", 201)
+			})
 		})
 	})
 })
+
+func testLogin(dispatcher *mbus.HTTPSDispatcher, auth string, expectedStatusCode int) *http.Response {
+	dispatcher.AddRoute("/example", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(201)
+	})
+	client := getHTTPClient()
+
+	response, err := client.Get("https://" + auth + "@127.0.0.1:7789/example")
+
+	Expect(err).ToNot(HaveOccurred())
+	Expect(response.StatusCode).To(BeNumerically("==", expectedStatusCode))
+	return response
+}
 
 func getHTTPClient() http.Client {
 	tlsConfig := &tls.Config{

@@ -17,18 +17,18 @@ import (
 const httpsDispatcherLogTag = "HTTPS Dispatcher"
 
 type HTTPSDispatcher struct {
-	httpServer                  *http.Server
-	mux                         *http.ServeMux
-	keyPair                     settings.CertKeyPair
-	listener                    net.Listener
-	logger                      boshlog.Logger
-	baseURL                     *url.URL
-	expectedAuthorizationHeader string
+	httpServer                   *http.Server
+	mux                          *http.ServeMux
+	keyPair                      settings.CertKeyPair
+	listener                     net.Listener
+	logger                       boshlog.Logger
+	baseURL                      *url.URL
+	expectedAuthorizationHeaders []string
 }
 
 type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
-func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) *HTTPSDispatcher {
+func NewHTTPSDispatcher(baseURL *url.URL, alternativePassword string, keyPair settings.CertKeyPair, logger boshlog.Logger) *HTTPSDispatcher {
 	tlsConfig := &tls.Config{
 		// SSLv3 is insecure due to BEAST and POODLE attacks
 		MinVersion: tls.VersionTLS10,
@@ -52,20 +52,31 @@ func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger b
 	mux := http.NewServeMux()
 	httpServer.Handler = mux
 
-	expectedUsername := baseURL.User.Username()
-	expectedPassword, _ := baseURL.User.Password()
-	auth := fmt.Sprintf("%s:%s", expectedUsername, expectedPassword)
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
-	expectedAuthorizationHeader := fmt.Sprintf("Basic %s", encodedAuth)
-
 	return &HTTPSDispatcher{
-		httpServer:                  httpServer,
-		mux:                         mux,
-		keyPair:                     keyPair,
-		logger:                      logger,
-		baseURL:                     baseURL,
-		expectedAuthorizationHeader: expectedAuthorizationHeader,
+		httpServer:                   httpServer,
+		mux:                          mux,
+		keyPair:                      keyPair,
+		logger:                       logger,
+		baseURL:                      baseURL,
+		expectedAuthorizationHeaders: getAllowedAuthorizationHeaders(baseURL, alternativePassword),
 	}
+}
+
+func getAllowedAuthorizationHeaders(baseURL *url.URL, alternativePassword string) []string {
+	username := baseURL.User.Username()
+	password, _ := baseURL.User.Password()
+	authorizationHeaders := []string{getAuthorizationHeader(username, password)}
+	if alternativePassword != "" {
+		authorizationHeaders = append(authorizationHeaders,
+			getAuthorizationHeader(username, alternativePassword))
+	}
+	return authorizationHeaders
+}
+
+func getAuthorizationHeader(username, password string) string {
+	auth := fmt.Sprintf("%s:%s", username, password)
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
+	return fmt.Sprintf("Basic %s", encodedAuth)
 }
 
 func (h *HTTPSDispatcher) Start() error {
@@ -99,11 +110,16 @@ func (h *HTTPSDispatcher) Stop() {
 }
 
 func (h *HTTPSDispatcher) requestNotAuthorized(request *http.Request) bool {
-	return h.constantTimeEquals(h.expectedAuthorizationHeader, request.Header.Get("Authorization"))
+	for _, expectedAuthorizationHeader := range h.expectedAuthorizationHeaders {
+		if h.constantTimeEquals(expectedAuthorizationHeader, request.Header.Get("Authorization")) {
+			return false
+		}
+	}
+	return true
 }
 
 func (h *HTTPSDispatcher) constantTimeEquals(a, b string) bool {
-	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) != 1
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 func (h *HTTPSDispatcher) AddRoute(route string, handler HTTPHandlerFunc) {

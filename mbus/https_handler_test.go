@@ -23,12 +23,13 @@ import (
 
 var _ = Describe("HTTPSHandler", func() {
 	var (
-		serverURL       string
-		tmpdir          string
-		handler         HTTPSHandler
-		receivedRequest boshhandler.Request
-		httpClient      http.Client
-		blobManager     boshagentblobstore.BlobManagerInterface
+		serverURL           string
+		alternativePassword string
+		tmpdir              string
+		handler             HTTPSHandler
+		receivedRequest     boshhandler.Request
+		httpClient          http.Client
+		blobManager         boshagentblobstore.BlobManagerInterface
 	)
 
 	BeforeEach(func() {
@@ -65,7 +66,7 @@ var _ = Describe("HTTPSHandler", func() {
 
 			mbusURL, _ := url.Parse(serverURL)
 			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
-			handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
+			handler = NewHTTPSHandler(mbusURL, alternativePassword, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
 
 			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 				receivedRequest = req

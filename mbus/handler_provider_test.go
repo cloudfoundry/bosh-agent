@@ -55,7 +55,7 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
 			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
-			expectedHandler := NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, auditLogger)
+			expectedHandler := NewHTTPSHandler(mbusURL, "", settings.CertKeyPair{}, blobManager, logger, auditLogger)
 			httpsHandler, ok := handler.(HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(httpsHandler).To(Equal(expectedHandler))
@@ -68,10 +68,12 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
 			settingsService.Settings.Env.Bosh.Mbus.Cert.Certificate = "certificate-pem-block"
 			settingsService.Settings.Env.Bosh.Mbus.Cert.PrivateKey = "private-key-pem-block"
+			settingsService.Settings.Env.Bosh.Mbus.AlternativePassword = "fake-alt-password"
 
 			handler, err := provider.Get(platform, blobManager)
 			expectedHandler := NewHTTPSHandler(
 				mbusURL,
+				"fake-alt-password",
 				settingsService.Settings.Env.Bosh.Mbus.Cert,
 				blobManager,
 				logger,
