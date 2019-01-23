@@ -161,12 +161,22 @@ func (b FileBundle) Disable() error {
 		return bosherr.WrapError(err, "Reading symlink")
 	}
 
+	targetAbsPath, err := filepath.Abs(target)
+	if err != nil {
+		return bosherr.WrapError(err, "Determining absolute path")
+	}
+
 	installPath, err := b.fs.ReadAndFollowLink(b.installPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Reading symlink")
 	}
 
-	if target == installPath {
+	installAbsPath, err := filepath.Abs(installPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Determining absolute path")
+	}
+
+	if targetAbsPath == installAbsPath {
 		return b.fs.RemoveAll(b.enablePath)
 	}
 
