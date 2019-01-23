@@ -19,7 +19,7 @@ else
   )
 fi
 
-cd $base/tmp/bosh
+cd $base/tmp/bosh/src
 
 echo -e "\n Installing BOSH dependencies..."
 bundle install
@@ -29,4 +29,4 @@ rm -rf go/src/github.com/cloudfoundry/bosh-agent
 ln -s $base go/src/github.com/cloudfoundry/bosh-agent
 
 echo -e "\n Running integration tests..."
-bundle exec rake spec:integration
+bundle exec rake spec:integration:gocli
