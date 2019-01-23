@@ -425,6 +425,16 @@ type FakePlatform struct {
 	setupBoshSettingsDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetupCanRestartDirStub        func() error
+	setupCanRestartDirMutex       sync.RWMutex
+	setupCanRestartDirArgsForCall []struct {
+	}
+	setupCanRestartDirReturns struct {
+		result1 error
+	}
+	setupCanRestartDirReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupDataDirStub        func(settings.JobDir) error
 	setupDataDirMutex       sync.RWMutex
 	setupDataDirArgsForCall []struct {
@@ -2734,6 +2744,58 @@ func (fake *FakePlatform) SetupBoshSettingsDiskReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
+func (fake *FakePlatform) SetupCanRestartDir() error {
+	fake.setupCanRestartDirMutex.Lock()
+	ret, specificReturn := fake.setupCanRestartDirReturnsOnCall[len(fake.setupCanRestartDirArgsForCall)]
+	fake.setupCanRestartDirArgsForCall = append(fake.setupCanRestartDirArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupCanRestartDir", []interface{}{})
+	fake.setupCanRestartDirMutex.Unlock()
+	if fake.SetupCanRestartDirStub != nil {
+		return fake.SetupCanRestartDirStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupCanRestartDirReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupCanRestartDirCallCount() int {
+	fake.setupCanRestartDirMutex.RLock()
+	defer fake.setupCanRestartDirMutex.RUnlock()
+	return len(fake.setupCanRestartDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupCanRestartDirCalls(stub func() error) {
+	fake.setupCanRestartDirMutex.Lock()
+	defer fake.setupCanRestartDirMutex.Unlock()
+	fake.SetupCanRestartDirStub = stub
+}
+
+func (fake *FakePlatform) SetupCanRestartDirReturns(result1 error) {
+	fake.setupCanRestartDirMutex.Lock()
+	defer fake.setupCanRestartDirMutex.Unlock()
+	fake.SetupCanRestartDirStub = nil
+	fake.setupCanRestartDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupCanRestartDirReturnsOnCall(i int, result1 error) {
+	fake.setupCanRestartDirMutex.Lock()
+	defer fake.setupCanRestartDirMutex.Unlock()
+	fake.SetupCanRestartDirStub = nil
+	if fake.setupCanRestartDirReturnsOnCall == nil {
+		fake.setupCanRestartDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupCanRestartDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatform) SetupDataDir(arg1 settings.JobDir) error {
 	fake.setupDataDirMutex.Lock()
 	ret, specificReturn := fake.setupDataDirReturnsOnCall[len(fake.setupDataDirArgsForCall)]
@@ -3954,6 +4016,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.setupBlobsDirMutex.RUnlock()
 	fake.setupBoshSettingsDiskMutex.RLock()
 	defer fake.setupBoshSettingsDiskMutex.RUnlock()
+	fake.setupCanRestartDirMutex.RLock()
+	defer fake.setupCanRestartDirMutex.RUnlock()
 	fake.setupDataDirMutex.RLock()
 	defer fake.setupDataDirMutex.RUnlock()
 	fake.setupEphemeralDiskWithPathMutex.RLock()

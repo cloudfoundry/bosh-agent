@@ -926,6 +926,25 @@ func (p linux) SetupBlobsDir() error {
 	return nil
 }
 
+func (p linux) SetupCanRestartDir() error {
+	canRebootDir := p.dirProvider.CanRestartDir()
+
+	err := p.fs.MkdirAll(canRebootDir, 0740)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating canReboot dir")
+	}
+
+	if err = p.diskManager.GetMounter().MountTmpfs(canRebootDir, "16m"); err != nil {
+		return err
+	}
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", canRebootDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning canrestart dir")
+	}
+
+	return nil
+}
+
 func (p linux) SetupTmpDir() error {
 	systemTmpDir := "/tmp"
 	boshTmpDir := p.dirProvider.TmpDir()

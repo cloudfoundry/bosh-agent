@@ -188,6 +188,10 @@ func (p WindowsPlatform) SetupRootDisk(ephemeralDiskPath string) (err error) {
 	return
 }
 
+func (p WindowsPlatform) SetupCanRestartDir() error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupBoshSettingsDisk() error {
 	return nil
 }

@@ -1900,6 +1900,60 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 		})
 
+		Context("when bosh/canrestart is not yet mounted", func() {
+			BeforeEach(func() {
+				mounter.IsMountPointReturns("", false, nil)
+			})
+
+			It("creates new bosh/canrestart dir", func() {
+				err := platform.SetupCanRestartDir()
+				Expect(err).NotTo(HaveOccurred())
+
+				sysRunStats := fs.GetFileTestStat("/fake-dir/bosh/canrestart")
+				Expect(sysRunStats).ToNot(BeNil())
+				Expect(sysRunStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(sysRunStats.FileMode).To(Equal(os.FileMode(0740)))
+				Expect(cmdRunner.RunCommands).To(HaveLen(1))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/bosh/canrestart"}))
+			})
+
+			It("returns an error if chowning the canRestartDir fails", func() {
+				fakeResult := fakesys.FakeCmdResult{Error: errors.New("some error occurred")}
+				cmdRunner.AddCmdResult(
+					"chown root:vcap /fake-dir/bosh/canrestart",
+					fakeResult,
+				)
+				err := platform.SetupCanRestartDir()
+				Expect(err).To(MatchError("Chowning canrestart dir: some error occurred"))
+			})
+
+			It("mounts tmpfs to bosh/canrestart", func() {
+				err := platform.SetupCanRestartDir()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(mounter.MountTmpfsCallCount()).To(Equal(1))
+				mountpoint, size := mounter.MountTmpfsArgsForCall(0)
+				Expect(mountpoint).To(Equal("/fake-dir/bosh/canrestart"))
+				Expect(size).To(Equal("16m"))
+			})
+
+			It("returns an error if creation of mount point fails", func() {
+				fs.MkdirAllError = errors.New("fake-mkdir-error")
+
+				err := platform.SetupCanRestartDir()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
+			})
+
+			It("returns an error if mounting tmpfs fails", func() {
+				mounter.MountTmpfsReturns(errors.New("fake-mount-error"))
+
+				err := platform.SetupCanRestartDir()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
+			})
+		})
+
 		Context("when sys/run is not yet mounted", func() {
 			BeforeEach(func() {
 				mounter.IsMountPointReturns("", false, nil)

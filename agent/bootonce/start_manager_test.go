@@ -82,7 +82,7 @@ var _ = Describe("checking if the agent can be booted", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// delete the tmpfs bootonce to simulate a VM reboot
-					err = fs.RemoveAll(filepath.Join(dirProvider.BoshSettingsDir(), bootonce.BootonceFileName))
+					err = fs.RemoveAll(filepath.Join(dirProvider.CanRestartDir(), bootonce.BootonceFileName))
 					Expect(err).NotTo(HaveOccurred())
 				})
 

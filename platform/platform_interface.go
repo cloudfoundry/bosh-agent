@@ -59,6 +59,7 @@ type Platform interface {
 	SetupDataDir(boshsettings.JobDir) (err error)
 	SetupSharedMemory() (err error)
 	SetupTmpDir() (err error)
+	SetupCanRestartDir() (err error)
 	SetupHomeDir() (err error)
 	SetupBlobsDir() (err error)
 	SetupMonitUser() (err error)

@@ -36,6 +36,7 @@ var _ = Describe("Provider", func() {
 		Entry("JobDir(jobName)", p.JobDir("myJob"), "/some/dir/data/myJob"),
 		Entry("SettingsDir()", p.SettingsDir(), "/some/dir/bosh/settings"),
 		Entry("TmpDir()", p.TmpDir(), "/some/dir/data/tmp"),
+		Entry("CanRestartDir()", p.CanRestartDir(), "/some/dir/bosh/canrestart"),
 		Entry("LogsDir()", p.LogsDir(), "/some/dir/sys/log"),
 		Entry("AgentLogsDir()", p.AgentLogsDir(), "/some/dir/bosh/log"),
 		Entry("InstanceDir()", p.InstanceDir(), "/some/dir/instance"),

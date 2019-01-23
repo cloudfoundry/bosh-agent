@@ -143,6 +143,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up tmp dir")
 	}
 
+	if err = boot.platform.SetupCanRestartDir(); err != nil {
+		return bosherr.WrapError(err, "Setting up canrestart dir")
+	}
+
 	if err = boot.platform.SetupHomeDir(); err != nil {
 		return bosherr.WrapError(err, "Setting up home dir")
 	}

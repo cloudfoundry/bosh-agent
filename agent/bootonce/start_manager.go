@@ -58,7 +58,7 @@ func (r *StartManager) persistentBootoncePath() string {
 }
 
 func (r *StartManager) tmpfsBootoncePath() string {
-	return filepath.Join(r.dirProvider.BoshSettingsDir(), BootonceFileName)
+	return filepath.Join(r.dirProvider.CanRestartDir(), BootonceFileName)
 }
 
 func touch(fs boshsys.FileSystem, path string) error {

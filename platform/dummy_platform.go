@@ -222,6 +222,10 @@ func (p dummyPlatform) SetupDataDir(_ boshsettings.JobDir) error {
 	return nil
 }
 
+func (p dummyPlatform) SetupCanRestartDir() error {
+	return nil
+}
+
 func (p dummyPlatform) SetupTmpDir() error {
 	return nil
 }

@@ -418,6 +418,7 @@ var _ = Describe("bootstrap", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(platform.SetupTmpDirCallCount()).To(Equal(1))
+			Expect(platform.SetupCanRestartDirCallCount()).To(Equal(1))
 			Expect(platform.SetupHomeDirCallCount()).To(Equal(1))
 			Expect(platform.SetupLogDirCallCount()).To(Equal(1))
 			Expect(platform.SetupLoggingAndAuditingCallCount()).To(Equal(1))
@@ -432,6 +433,17 @@ var _ = Describe("bootstrap", func() {
 				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-setup-tmp-dir-err"))
+			})
+		})
+
+		Context("when setting up the canrestart directory fails", func() {
+			BeforeEach(func() {
+				platform.SetupCanRestartDirReturns(errors.New("fake-setup-canrestart-dir-err"))
+			})
+
+			It("returns an error", func() {
+				err := bootstrap()
+				Expect(err).To(MatchError("Setting up canrestart dir: fake-setup-canrestart-dir-err"))
 			})
 		})
 
