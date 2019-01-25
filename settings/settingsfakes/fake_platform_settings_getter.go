@@ -42,6 +42,16 @@ type FakePlatformSettingsGetter struct {
 	getPersistentDiskSettingsPathReturnsOnCall map[int]struct {
 		result1 string
 	}
+	SetupBoshSettingsDiskStub        func() error
+	setupBoshSettingsDiskMutex       sync.RWMutex
+	setupBoshSettingsDiskArgsForCall []struct {
+	}
+	setupBoshSettingsDiskReturns struct {
+		result1 error
+	}
+	setupBoshSettingsDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -221,6 +231,58 @@ func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPathReturnsOnCa
 	}{result1}
 }
 
+func (fake *FakePlatformSettingsGetter) SetupBoshSettingsDisk() error {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	ret, specificReturn := fake.setupBoshSettingsDiskReturnsOnCall[len(fake.setupBoshSettingsDiskArgsForCall)]
+	fake.setupBoshSettingsDiskArgsForCall = append(fake.setupBoshSettingsDiskArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SetupBoshSettingsDisk", []interface{}{})
+	fake.setupBoshSettingsDiskMutex.Unlock()
+	if fake.SetupBoshSettingsDiskStub != nil {
+		return fake.SetupBoshSettingsDiskStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupBoshSettingsDiskReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatformSettingsGetter) SetupBoshSettingsDiskCallCount() int {
+	fake.setupBoshSettingsDiskMutex.RLock()
+	defer fake.setupBoshSettingsDiskMutex.RUnlock()
+	return len(fake.setupBoshSettingsDiskArgsForCall)
+}
+
+func (fake *FakePlatformSettingsGetter) SetupBoshSettingsDiskCalls(stub func() error) {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	defer fake.setupBoshSettingsDiskMutex.Unlock()
+	fake.SetupBoshSettingsDiskStub = stub
+}
+
+func (fake *FakePlatformSettingsGetter) SetupBoshSettingsDiskReturns(result1 error) {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	defer fake.setupBoshSettingsDiskMutex.Unlock()
+	fake.SetupBoshSettingsDiskStub = nil
+	fake.setupBoshSettingsDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatformSettingsGetter) SetupBoshSettingsDiskReturnsOnCall(i int, result1 error) {
+	fake.setupBoshSettingsDiskMutex.Lock()
+	defer fake.setupBoshSettingsDiskMutex.Unlock()
+	fake.SetupBoshSettingsDiskStub = nil
+	if fake.setupBoshSettingsDiskReturnsOnCall == nil {
+		fake.setupBoshSettingsDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupBoshSettingsDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatformSettingsGetter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -230,6 +292,8 @@ func (fake *FakePlatformSettingsGetter) Invocations() map[string][][]interface{}
 	defer fake.getDefaultNetworkMutex.RUnlock()
 	fake.getPersistentDiskSettingsPathMutex.RLock()
 	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
+	fake.setupBoshSettingsDiskMutex.RLock()
+	defer fake.setupBoshSettingsDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

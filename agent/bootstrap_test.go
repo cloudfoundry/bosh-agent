@@ -205,24 +205,6 @@ var _ = Describe("bootstrap", func() {
 			})
 		})
 
-		Context("Setting up the BoshSettingsDisk for tmpfs", func() {
-			It("sets up BoshSettingsDisk if tmpfs is enabled", func() {
-				settingsService.Settings.Env.Bosh.Agent.Settings.TmpFS = true
-
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.SetupBoshSettingsDiskCallCount()).To(Equal(1))
-			})
-
-			It("does not set up BoshSettingsDisk if tmpfs is disabled", func() {
-				settingsService.Settings.Env.Bosh.Agent.Settings.TmpFS = false
-
-				err := bootstrap()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(platform.SetupBoshSettingsDiskCallCount()).To(Equal(0))
-			})
-		})
-
 		It("sets up ipv6", func() {
 			settingsService.Settings.Env.Bosh.IPv6.Enable = true
 

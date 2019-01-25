@@ -51,6 +51,7 @@ type DefaultNetworkResolver interface {
 
 type PlatformSettingsGetter interface {
 	DefaultNetworkResolver
+	SetupBoshSettingsDisk() error
 	GetAgentSettingsPath(tmpfs bool) string
 	GetPersistentDiskSettingsPath(tmpfs bool) string
 }
@@ -111,7 +112,13 @@ func (s *settingsService) LoadSettings() error {
 	s.settings = newSettings
 	s.settingsMutex.Unlock()
 
-	newSettingsJSON, err := json.Marshal(newSettings)
+	if s.settings.Env.Bosh.Agent.Settings.TmpFS {
+		if err := s.platform.SetupBoshSettingsDisk(); err != nil {
+			return bosherr.WrapError(err, "Setting up settings tmpfs")
+		}
+	}
+
+	newSettingsJSON, err := json.Marshal(s.settings)
 	if err != nil {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}

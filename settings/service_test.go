@@ -132,6 +132,28 @@ var _ = Describe("settingsService", func() {
 			})
 		})
 
+		Context("when tmpfs is disabled", func() {
+			It("does not call SetupBoshSettingsDisk()", func() {
+				err := service.LoadSettings()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakePlatformSettingsGetter.SetupBoshSettingsDiskCallCount()).To(Equal(0))
+			})
+		})
+
+		Context("when tmpfs is enabled", func() {
+			BeforeEach(func() {
+				fetchedSettings.Env.Bosh.Agent.Settings.TmpFS = true
+			})
+
+			It("calls SetupBoshSettingsDisk before writing settings", func() {
+				err := service.LoadSettings()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakePlatformSettingsGetter.SetupBoshSettingsDiskCallCount()).To(Equal(1))
+			})
+		})
+
 		Context("when settings fetcher fails fetching settings", func() {
 			BeforeEach(func() {
 				fetcherFuncErr = errors.New("fake-fetch-error")

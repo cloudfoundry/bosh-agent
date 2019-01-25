@@ -219,6 +219,14 @@ var _ = Describe("apply", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(ContainSubstring("settings.json"))
 			Expect(output).To(ContainSubstring("persistent_disk_hints.json"))
+
+			_, err = testEnvironment.RunCommand("sudo umount /var/vcap/bosh/settings")
+			Expect(err).NotTo(HaveOccurred())
+
+			output, err = testEnvironment.RunCommand("sudo ls /var/vcap/bosh/settings")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).NotTo(ContainSubstring("settings.json"))
+			Expect(output).NotTo(ContainSubstring("persistent_disk_hints.json"))
 		})
 	})
 

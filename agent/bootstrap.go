@@ -69,6 +69,7 @@ func (boot bootstrap) Run() (err error) {
 	}
 
 	settings := boot.settingsService.GetSettings()
+
 	envPublicKeys := settings.Env.GetAuthorizedKeys()
 
 	if len(envPublicKeys) > 0 {
@@ -85,12 +86,6 @@ func (boot bootstrap) Run() (err error) {
 
 	if err = boot.setUserPasswords(settings.Env); err != nil {
 		return bosherr.WrapError(err, "Settings user password")
-	}
-
-	if settings.Env.Bosh.Agent.Settings.TmpFS {
-		if err = boot.platform.SetupBoshSettingsDisk(); err != nil {
-			return bosherr.WrapError(err, "Setting up settings tmpfs")
-		}
 	}
 
 	if err = boot.platform.SetupIPv6(settings.Env.Bosh.IPv6); err != nil {
