@@ -224,7 +224,7 @@ var _ = Describe("apply", func() {
 
 	Context("when job dir tmpfs is enabled", func() {
 		BeforeEach(func() {
-			registrySettings.Env.Bosh.JobDir.TmpFs = true
+			registrySettings.Env.Bosh.JobDir.TmpFS = true
 		})
 
 		It("mounts a tmpfs for /var/vcap/data/jobs", func() {

@@ -99,6 +99,10 @@ type VM struct {
 	Name string `json:"name"`
 }
 
+func (s Settings) TmpFSEnabled() bool {
+	return s.Env.Bosh.Agent.Settings.TmpFS || s.Env.Bosh.JobDir.TmpFS
+}
+
 func (s Settings) PersistentDiskSettings(diskID string) (DiskSettings, bool) {
 	for key, settings := range s.Disks.Persistent {
 		if key == diskID {
@@ -307,10 +311,10 @@ type IPv6 struct {
 }
 
 type JobDir struct {
-	TmpFs bool `json:"tmpfs"`
+	TmpFS bool `json:"tmpfs"`
 
 	// Passed to mount directly
-	TmpFsSize string `json:"tmpfs_size"`
+	TmpFSSize string `json:"tmpfs_size"`
 }
 
 type DNSRecords struct {

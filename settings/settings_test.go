@@ -16,6 +16,18 @@ var _ = Describe("Settings", func() {
 	var settings Settings
 	var updateSettings UpdateSettings
 
+	DescribeTable("TmpFSEnabled",
+		func(agentTmpFsEnabled, jobdirTmpFsEnabled, expectation bool) {
+			settings.Env.Bosh.Agent.Settings.TmpFS = agentTmpFsEnabled
+			settings.Env.Bosh.JobDir.TmpFS = jobdirTmpFsEnabled
+			Expect(settings.TmpFSEnabled()).To(Equal(expectation))
+		},
+		Entry("all TmpFS settings are false", false, false, false),
+		Entry("only Agent.Settings.TmpFS is set", true, false, true),
+		Entry("only JobDir.TmpFS is set", false, true, true),
+		Entry("both Agent.Settings.TmpFS and JobDir.TmpFS are set", true, true, true),
+	)
+
 	Describe("PersistentDiskSettings", func() {
 		Context("when the disk settings are hash", func() {
 			BeforeEach(func() {
@@ -948,7 +960,7 @@ var _ = Describe("Settings", func() {
 			env = Env{}
 			err = json.Unmarshal([]byte(`{"bosh": {"job_dir": {"tmpfs": true, "tmpfs_size": "37m"} } }`), &env)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(env.Bosh.JobDir).To(Equal(JobDir{TmpFs: true, TmpFsSize: "37m"}))
+			Expect(env.Bosh.JobDir).To(Equal(JobDir{TmpFS: true, TmpFSSize: "37m"}))
 		})
 
 		Context("when swap_size is not specified in the json", func() {

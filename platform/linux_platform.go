@@ -814,8 +814,8 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 		return bosherr.WrapErrorf(err, "Making %s dir", sensitiveDir)
 	}
 
-	if config.TmpFs {
-		size := config.TmpFsSize
+	if config.TmpFS {
+		size := config.TmpFSSize
 		if size == "" {
 			size = "100m"
 		}

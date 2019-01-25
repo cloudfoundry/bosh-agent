@@ -50,7 +50,7 @@ func (r *StartManager) RegisterStart() error {
 
 func (r *StartManager) tmpFsFeatureEnabled() bool {
 	settings := r.settings.GetSettings()
-	return settings.Env.Bosh.JobDir.TmpFs || settings.Env.Bosh.Agent.Settings.TmpFS
+	return settings.TmpFSEnabled()
 }
 
 func (r *StartManager) persistentBootoncePath() string {

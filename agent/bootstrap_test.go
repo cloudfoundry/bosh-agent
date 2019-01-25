@@ -99,6 +99,21 @@ var _ = Describe("bootstrap", func() {
 			Expect(platform.SetupRuntimeConfigurationCallCount()).To(Equal(1))
 		})
 
+		It("mounts canrestart if tmpfs is enabled", func() {
+			settingsService.Settings.Env.Bosh.Agent.Settings.TmpFS = true
+			err := bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(platform.SetupCanRestartDirCallCount()).To(Equal(1))
+		})
+
+		It("does not mount canrestart if tmpfs is disabled", func() {
+			settingsService.Settings.Env.Bosh.Agent.Settings.TmpFS = false
+			settingsService.Settings.Env.Bosh.JobDir.TmpFS = false
+			err := bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(platform.SetupCanRestartDirCallCount()).To(Equal(0))
+		})
+
 		Context("SSH tunnel setup for registry", func() {
 			It("returns error without configuring ssh on the platform if getting public key fails", func() {
 				settingsService.PublicKeyErr = errors.New("fake-get-public-key-err")
@@ -207,6 +222,7 @@ var _ = Describe("bootstrap", func() {
 				Expect(platform.SetupBoshSettingsDiskCallCount()).To(Equal(0))
 			})
 		})
+
 		It("sets up ipv6", func() {
 			settingsService.Settings.Env.Bosh.IPv6.Enable = true
 
@@ -337,14 +353,14 @@ var _ = Describe("bootstrap", func() {
 			Context("when there are job directory specific feature flags", func() {
 				It("passes those through to the platform", func() {
 					settingsService.Settings.Env.Bosh.JobDir = boshsettings.JobDir{
-						TmpFs:     true,
-						TmpFsSize: "100M",
+						TmpFS:     true,
+						TmpFSSize: "100M",
 					}
 
 					err := bootstrap()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(platform.SetupDataDirCallCount()).To(Equal(1))
-					Expect(platform.SetupDataDirArgsForCall(0)).To(Equal(boshsettings.JobDir{TmpFs: true, TmpFsSize: "100M"}))
+					Expect(platform.SetupDataDirArgsForCall(0)).To(Equal(boshsettings.JobDir{TmpFS: true, TmpFSSize: "100M"}))
 				})
 			})
 		})
@@ -418,7 +434,6 @@ var _ = Describe("bootstrap", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(platform.SetupTmpDirCallCount()).To(Equal(1))
-			Expect(platform.SetupCanRestartDirCallCount()).To(Equal(1))
 			Expect(platform.SetupHomeDirCallCount()).To(Equal(1))
 			Expect(platform.SetupLogDirCallCount()).To(Equal(1))
 			Expect(platform.SetupLoggingAndAuditingCallCount()).To(Equal(1))
@@ -438,6 +453,7 @@ var _ = Describe("bootstrap", func() {
 
 		Context("when setting up the canrestart directory fails", func() {
 			BeforeEach(func() {
+				settingsService.Settings.Env.Bosh.Agent.Settings.TmpFS = true
 				platform.SetupCanRestartDirReturns(errors.New("fake-setup-canrestart-dir-err"))
 			})
 

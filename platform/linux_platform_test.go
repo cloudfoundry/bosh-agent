@@ -227,7 +227,7 @@ bosh_foobar:...`
 	})
 
 	Describe("SetupBoshSettingsDisk", func() {
-		It("mounts TmpFs in specified path", func() {
+		It("mounts TmpFS in specified path", func() {
 			err := platform.SetupBoshSettingsDisk()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1824,7 +1824,7 @@ Number  Start   End     Size    File system  Name             Flags
 		Context("when a tmpfs for the sensitive directories is requested", func() {
 			It("mounts that with the default size", func() {
 				err := platform.SetupDataDir(boshsettings.JobDir{
-					TmpFs: true,
+					TmpFS: true,
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -1841,8 +1841,8 @@ Number  Start   End     Size    File system  Name             Flags
 
 			It("can use a non-default value", func() {
 				err := platform.SetupDataDir(boshsettings.JobDir{
-					TmpFs:     true,
-					TmpFsSize: "42m",
+					TmpFS:     true,
+					TmpFSSize: "42m",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
