@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const MaxFdiskPartitionSize = uint64(2 * 1024 * 1024 * 1024 * 1024)
@@ -15,6 +16,7 @@ type PersistentDevicePartitioner struct {
 	partedPartitioner Partitioner
 	deviceUtil        Util
 	logger            logger.Logger
+	runner            boshsys.CmdRunner
 }
 
 func NewPersistentDevicePartitioner(
@@ -22,16 +24,27 @@ func NewPersistentDevicePartitioner(
 	partedPartitioner Partitioner,
 	deviceUtil Util,
 	logger logger.Logger,
+	runner boshsys.CmdRunner,
 ) *PersistentDevicePartitioner {
 	return &PersistentDevicePartitioner{
 		sfDiskPartitioner: sfDiskPartitioner,
 		partedPartitioner: partedPartitioner,
 		deviceUtil:        deviceUtil,
 		logger:            logger,
+		runner:            runner,
 	}
 }
 
 func (p *PersistentDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
+	// Reread partitions of the new block device (ioctl BLKRRPART)
+	// See https://github.com/cloudfoundry/bosh-agent/issues/198
+	_, _, _, err := p.runner.RunCommand("blockdev", "--rereadpt", devicePath)
+
+	if err != nil {
+		p.logger.Debug("persistent-disk-partitioner", "Reread partitions of '%s'", devicePath)
+		return err
+	}
+
 	size, err := p.deviceUtil.GetBlockDeviceSize(devicePath)
 	if err != nil {
 		p.logger.Debug("persistent-disk-partitioner", "Attempting to get block device size")

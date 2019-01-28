@@ -96,6 +96,7 @@ var _ = Describe("NewLinuxDiskManager", func() {
 				disk.NewPartedPartitioner(logger, runner, clock.NewClock()),
 				disk.NewUtil(runner, mounter, fs, logger),
 				logger,
+				runner,
 			)))
 		})
 

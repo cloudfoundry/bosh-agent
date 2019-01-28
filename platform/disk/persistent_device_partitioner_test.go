@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/disk"
 	"github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	"github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -16,6 +17,7 @@ var _ = Describe("PersistentDevicePartitioner", func() {
 		sfDiskPartitioner *fakes.FakePartitioner
 		partedPartitioner *fakes.FakePartitioner
 		diskUtil          *fakes.FakeDiskUtil
+		runner            *fakesys.FakeCmdRunner
 
 		devicePath string
 		partitions []disk.Partition
@@ -38,8 +40,9 @@ var _ = Describe("PersistentDevicePartitioner", func() {
 		sfDiskPartitioner = fakes.NewFakePartitioner()
 		partedPartitioner = fakes.NewFakePartitioner()
 		diskUtil = fakes.NewFakeDiskUtil()
+		runner = fakesys.NewFakeCmdRunner()
 
-		partitioner = disk.NewPersistentDevicePartitioner(sfDiskPartitioner, partedPartitioner, diskUtil, logger)
+		partitioner = disk.NewPersistentDevicePartitioner(sfDiskPartitioner, partedPartitioner, diskUtil, logger, runner)
 	})
 
 	Describe("Partition", func() {
