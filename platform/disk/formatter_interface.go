@@ -3,12 +3,13 @@ package disk
 type FileSystemType string
 
 const (
-	FileSystemSwap             FileSystemType = "swap"
-	FileSystemExt4             FileSystemType = "ext4"
-	FileSystemXFS              FileSystemType = "xfs"
-	FileSystemDefault          FileSystemType = ""
-	FileSystemExtResizeUtility                = "resize2fs"
-	FileSystemXFSResizeUtility                = "xfs_growfs"
+	FileSystemSwap    FileSystemType = "swap"
+	FileSystemExt4    FileSystemType = "ext4"
+	FileSystemXFS     FileSystemType = "xfs"
+	FileSystemDefault FileSystemType = ""
+
+	FileSystemExtResizeUtility = "resize2fs"
+	FileSystemXFSResizeUtility = "xfs_growfs"
 )
 
 type Formatter interface {
