@@ -345,6 +345,9 @@ func (p linux) GetPersistentDiskSettingsPath(tmpfs bool) string {
 }
 
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
+	var resizeCmd string
+	var resizeCmdArgs []string
+
 	if p.options.SkipDiskSetup {
 		return nil
 	}
@@ -379,10 +382,29 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 		}
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("resize2fs", "-f", p.partitionPath(rootDevicePath, rootDeviceNumber))
+	rootDevice := p.partitionPath(rootDevicePath, rootDeviceNumber)
+	fsType, err := p.diskManager.GetFormatter().GetPartitionFormatType(rootDevice)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting root partition filesystem type")
+	}
+
+	switch fsType {
+	case boshdisk.FileSystemXFS:
+		resizeCmd = boshdisk.FileSystemXFSResizeUtility
+		resizeCmdArgs = []string{"-d", rootDevice}
+	case boshdisk.FileSystemExt4:
+		resizeCmd = boshdisk.FileSystemExtResizeUtility
+		resizeCmdArgs = []string{"-f", rootDevice}
+	default:
+		return bosherr.Errorf("Cannot get filesystem type for root file system")
+	}
+	_, _, _, err = p.cmdRunner.RunComplexCommand(boshsys.Command{
+		Name: resizeCmd,
+		Args: resizeCmdArgs,
+	})
 
 	if err != nil {
-		return bosherr.WrapError(err, "resize2fs")
+		return bosherr.WrapError(err, resizeCmd)
 	}
 
 	return nil

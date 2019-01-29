@@ -34,6 +34,7 @@ import (
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 var _ = Describe("LinuxPlatform", func() {
@@ -111,7 +112,7 @@ var _ = Describe("LinuxPlatform", func() {
 		diskManager.GetPersistentDevicePartitionerReturns(partitioner, nil)
 		diskManager.GetRootDevicePartitionerReturns(partitioner)
 
-		formatter = &fakedisk.FakeFormatter{}
+		formatter = fakedisk.NewFakeFormatter()
 		diskManager.GetFormatterReturns(formatter)
 
 		mounter = &diskfakes.FakeMounter{}
@@ -282,13 +283,28 @@ bosh_foobar:...`
 					"readlink -f /dev/sda1",
 					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
 				)
-
+				formatter.GetFileSystemType["/dev/sda1"] = "ext4"
 				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "1"}))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/sda1"}))
+				Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "resize2fs", Args: []string{"-f", "/dev/sda1"}}))
+			})
+			It("runs growpart and xfs_growfs", func() {
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda1",
+					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
+				)
+				formatter.GetFileSystemType["/dev/sda1"] = "xfs"
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/sda", "1"}))
+				Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "xfs_growfs", Args: []string{"-d", "/dev/sda1"}}))
 			})
 
 			It("runs growpart and resize2fs for the right root device number", func() {
@@ -305,13 +321,40 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda2"},
 				)
 
+				formatter.GetFileSystemType["/dev/sda2"] = "ext4"
 				err = platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"readlink", "-f", "/dev/sda2"}))
 				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"growpart", "/dev/sda", "2"}))
-				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"resize2fs", "-f", "/dev/sda2"}))
+				Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "resize2fs", Args: []string{"-f", "/dev/sda2"}}))
+			})
+
+			It("runs growpart and xfs_growfs for the right root device number", func() {
+				err := platform.SetupEphemeralDiskWithPath("/dev/sda", nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
+					PartitionPath: "/dev/sda2",
+					MountPoint:    "/",
+				}}
+
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda2",
+					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda2"},
+				)
+
+				formatter.GetFileSystemType["/dev/sda2"] = "xfs"
+				err = platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"readlink", "-f", "/dev/sda2"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"growpart", "/dev/sda", "2"}))
+				Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "xfs_growfs", Args: []string{"-d", "/dev/sda2"}}))
 			})
 
 			It("returns error if it can't find the root device", func() {
@@ -320,9 +363,11 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
 				)
 
+				formatter.GetFileSystemType["/dev/sda1"] = "ext4"
 				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("findRootDevicePath: Shelling out to readlink: fake-readlink-error"))
 				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			})
 
@@ -337,13 +382,15 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: errors.New("fake-growpart-error")},
 				)
 
+				formatter.GetFileSystemType["/dev/sda1"] = "ext4"
 				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("growpart: fake-growpart-error"))
 				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 			})
 
-			It("returns error if resizing the filesystem fails", func() {
+			It("returns error if resizing with 'resize2fs' on the filesystem fails", func() {
 				cmdRunner.AddCmdResult(
 					"readlink -f /dev/sda1",
 					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
@@ -354,10 +401,33 @@ bosh_foobar:...`
 					fakesys.FakeCmdResult{Error: errors.New("fake-resize2fs-error")},
 				)
 
+				formatter.GetFileSystemType["/dev/sda1"] = "ext4"
 				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).To(HaveOccurred())
-				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+				Expect(err.Error()).To(ContainSubstring("resize2fs: fake-resize2fs-error"))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
+			})
+
+			It("returns error if resizing with 'xfs_growfs' on the filesystem fails", func() {
+				cmdRunner.AddCmdResult(
+					"readlink -f /dev/sda1",
+					fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/sda1"},
+				)
+
+				cmdRunner.AddCmdResult(
+					"xfs_growfs -d /dev/sda1",
+					fakesys.FakeCmdResult{Error: errors.New("fake-xfs_growfs-error")},
+				)
+
+				formatter.GetFileSystemType["/dev/sda1"] = "xfs"
+				err := platform.SetupRootDisk("/dev/sdb")
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("xfs_growfs: fake-xfs_growfs-error"))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
 			})
 
 			It("skips growing root fs if no ephemerial disk is provided", func() {
@@ -399,6 +469,7 @@ bosh_foobar:...`
 			})
 
 			It("does not return error if growpart is not installed and skips growing fs", func() {
+				formatter.GetFileSystemType["/dev/sda1"] = "ext4"
 				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).ToNot(HaveOccurred())
@@ -413,6 +484,7 @@ bosh_foobar:...`
 			})
 
 			It("does nothing", func() {
+				formatter.GetFileSystemType["/dev/sda1"] = "ext4"
 				err := platform.SetupRootDisk("/dev/sdb")
 
 				Expect(err).ToNot(HaveOccurred())
@@ -444,12 +516,30 @@ bosh_foobar:...`
 						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p1"},
 					)
 
+					formatter.GetFileSystemType["/dev/nvme0n1p1"] = "ext4"
 					err := platform.SetupRootDisk("/dev/nvme1n1")
 
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
 					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/nvme0n1", "1"}))
-					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme0n1p1"}))
+					Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "resize2fs", Args: []string{"-f", "/dev/nvme0n1p1"}}))
+				})
+
+				It("runs growpart and xfs_growfs", func() {
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p1"},
+					)
+
+					formatter.GetFileSystemType["/dev/nvme0n1p1"] = "xfs"
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/nvme0n1", "1"}))
+					Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "xfs_growfs", Args: []string{"-d", "/dev/nvme0n1p1"}}))
 				})
 
 				It("runs growpart and resize2fs for the right root device number", func() {
@@ -466,13 +556,40 @@ bosh_foobar:...`
 						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p2"},
 					)
 
+					formatter.GetFileSystemType["/dev/nvme0n1p2"] = "ext4"
 					err = platform.SetupRootDisk("/dev/nvme1n1")
 
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
 					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"readlink", "-f", "/dev/nvme0n1p2"}))
 					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"growpart", "/dev/nvme0n1", "2"}))
-					Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme0n1p2"}))
+					Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "resize2fs", Args: []string{"-f", "/dev/nvme0n1p2"}}))
+				})
+
+				It("runs growpart and xfs_growfs for the right root device number", func() {
+					err := platform.SetupEphemeralDiskWithPath("/dev/nvme0n1", nil)
+					Expect(err).NotTo(HaveOccurred())
+
+					mountsSearcher.SearchMountsMounts = []boshdisk.Mount{{
+						PartitionPath: "/dev/nvme0n1p2",
+						MountPoint:    "/",
+					}}
+
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p2",
+						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p2"},
+					)
+
+					formatter.GetFileSystemType["/dev/nvme0n1p2"] = "xfs"
+					err = platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"readlink", "-f", "/dev/nvme0n1p2"}))
+					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"growpart", "/dev/nvme0n1", "2"}))
+					Expect(cmdRunner.RunComplexCommands[0]).To(Equal(boshsys.Command{Name: "xfs_growfs", Args: []string{"-d", "/dev/nvme0n1p2"}}))
 				})
 
 				It("returns error if it can't find the root device", func() {
@@ -481,9 +598,11 @@ bosh_foobar:...`
 						fakesys.FakeCmdResult{Error: errors.New("fake-readlink-error")},
 					)
 
+					formatter.GetFileSystemType["/dev/nvme0n1p1"] = "ext4"
 					err := platform.SetupRootDisk("/dev/nvme1n1")
 
 					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("findRootDevicePath: Shelling out to readlink: fake-readlink-error"))
 					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 				})
 
@@ -498,13 +617,15 @@ bosh_foobar:...`
 						fakesys.FakeCmdResult{Error: errors.New("fake-growpart-error")},
 					)
 
+					formatter.GetFileSystemType["/dev/nvme0n1p1"] = "ext4"
 					err := platform.SetupRootDisk("/dev/nvme1n1")
 
 					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("growpart: fake-growpart-error"))
 					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 				})
 
-				It("returns error if resizing the filesystem fails", func() {
+				It("returns error if resizing with 'resize2fs' on the filesystem fails", func() {
 					cmdRunner.AddCmdResult(
 						"readlink -f /dev/nvme0n1p1",
 						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p1"},
@@ -515,10 +636,33 @@ bosh_foobar:...`
 						fakesys.FakeCmdResult{Error: errors.New("fake-resize2fs-error")},
 					)
 
+					formatter.GetFileSystemType["/dev/nvme0n1p1"] = "ext4"
 					err := platform.SetupRootDisk("/dev/nvme1n1")
 
 					Expect(err).To(HaveOccurred())
-					Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+					Expect(err.Error()).To(ContainSubstring("resize2fs: fake-resize2fs-error"))
+					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
+				})
+
+				It("returns error if resizing with 'xfs_growfs' on the filesystem fails", func() {
+					cmdRunner.AddCmdResult(
+						"readlink -f /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: nil, Stdout: "/dev/nvme0n1p1"},
+					)
+
+					cmdRunner.AddCmdResult(
+						"xfs_growfs -d /dev/nvme0n1p1",
+						fakesys.FakeCmdResult{Error: errors.New("fake-xfs_growfs-error")},
+					)
+
+					formatter.GetFileSystemType["/dev/nvme0n1p1"] = "xfs"
+					err := platform.SetupRootDisk("/dev/nvme1n1")
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("xfs_growfs: fake-xfs_growfs-error"))
+					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(1))
 				})
 
 				It("skips growing root fs if no ephemerial disk is provided", func() {

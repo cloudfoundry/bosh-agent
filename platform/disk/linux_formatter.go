@@ -1,10 +1,11 @@
 package disk
 
 import (
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	"regexp"
 	"strings"
+
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type linuxFormatter struct {
@@ -20,7 +21,7 @@ func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) Formatte
 }
 
 func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err error) {
-	existingFsType, err := f.getPartitionFormatType(partitionPath)
+	existingFsType, err := f.GetPartitionFormatType(partitionPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Checking filesystem format of partition")
 	}
@@ -72,7 +73,7 @@ func (f linuxFormatter) makeFileSystemExt4(partitionPath string) error {
 	return err
 }
 
-func (f linuxFormatter) getPartitionFormatType(partitionPath string) (FileSystemType, error) {
+func (f linuxFormatter) GetPartitionFormatType(partitionPath string) (FileSystemType, error) {
 	stdout, stderr, exitStatus, err := f.runner.RunCommand("blkid", "-p", partitionPath)
 
 	if err != nil {
