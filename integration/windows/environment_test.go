@@ -162,15 +162,16 @@ func (e *WindowsEnvironment) AgentProcessRunningFunc() func() bool {
 
 func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string, cmdFmtArgs ...interface{}) string {
 	outString, errString, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd, cmdFmtArgs...)
+	formattedCmd := fmt.Sprintf(cmd, cmdFmtArgs...)
 
 	ExpectWithOffset(offset+1, err).NotTo(
 		HaveOccurred(),
-		fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, outString, errString),
+		fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, formattedCmd, outString, errString),
 	)
 	ExpectWithOffset(offset+1, exitCode).To(
 		BeZero(),
 		fmt.Sprintf(
-			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, outString, errString,
+			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, formattedCmd, exitCode, outString, errString,
 		),
 	)
 
