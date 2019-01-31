@@ -2,9 +2,9 @@
 package scriptfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	script "github.com/cloudfoundry/bosh-agent/agent/script"
+	"github.com/cloudfoundry/bosh-agent/agent/script"
 )
 
 type FakeScript struct {

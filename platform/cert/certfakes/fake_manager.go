@@ -2,9 +2,9 @@
 package certfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	cert "github.com/cloudfoundry/bosh-agent/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/platform/cert"
 )
 
 type FakeManager struct {

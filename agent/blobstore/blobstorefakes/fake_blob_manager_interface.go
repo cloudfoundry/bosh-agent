@@ -2,12 +2,12 @@
 package blobstorefakes
 
 import (
-	io "io"
-	sync "sync"
+	"io"
+	"sync"
 
-	blobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	crypto "github.com/cloudfoundry/bosh-utils/crypto"
-	system "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-agent/agent/blobstore"
+	"github.com/cloudfoundry/bosh-utils/crypto"
+	"github.com/cloudfoundry/bosh-utils/system"
 )
 
 type FakeBlobManagerInterface struct {

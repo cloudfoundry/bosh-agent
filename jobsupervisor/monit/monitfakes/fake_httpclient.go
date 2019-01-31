@@ -2,10 +2,10 @@
 package monitfakes
 
 import (
-	http "net/http"
-	sync "sync"
+	"net/http"
+	"sync"
 
-	monit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 )
 
 type FakeHTTPClient struct {

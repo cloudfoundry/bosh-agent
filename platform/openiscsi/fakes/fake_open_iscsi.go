@@ -2,9 +2,9 @@
 package fakes
 
 import (
-	sync "sync"
+	"sync"
 
-	openiscsi "github.com/cloudfoundry/bosh-agent/platform/openiscsi"
+	"github.com/cloudfoundry/bosh-agent/platform/openiscsi"
 )
 
 type FakeOpenIscsi struct {

@@ -2,10 +2,10 @@
 package scriptfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	script "github.com/cloudfoundry/bosh-agent/agent/script"
-	drain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/script"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 type FakeJobScriptProvider struct {

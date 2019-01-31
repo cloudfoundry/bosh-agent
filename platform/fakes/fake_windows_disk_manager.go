@@ -2,10 +2,10 @@
 package fakes
 
 import (
-	sync "sync"
+	"sync"
 
-	platform "github.com/cloudfoundry/bosh-agent/platform"
-	disk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
 type FakeWindowsDiskManager struct {
