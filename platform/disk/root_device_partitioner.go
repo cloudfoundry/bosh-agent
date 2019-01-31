@@ -27,7 +27,7 @@ func NewRootDevicePartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner
 }
 
 func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
-	existingPartitions, deviceFullSizeInBytes, err := p.getPartitions(devicePath)
+	existingPartitions, deviceFullSizeInBytes, err := p.GetPartitions(devicePath)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Getting existing partitions of `%s'", devicePath)
 	}
@@ -118,8 +118,8 @@ func (p rootDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, 
 	return remainingSizeInBytes, nil
 }
 
-func (p rootDevicePartitioner) getPartitions(devicePath string) (
-	partitions []existingPartition,
+func (p rootDevicePartitioner) GetPartitions(devicePath string) (
+	partitions []ExistingPartition,
 	deviceFullSizeInBytes uint64,
 	err error,
 ) {
@@ -172,7 +172,7 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) (
 
 		partitions = append(
 			partitions,
-			existingPartition{
+			ExistingPartition{
 				Index:        partitionIndex,
 				SizeInBytes:  uint64(partitionSizeInBytes),
 				StartInBytes: uint64(partitionStartInBytes),
@@ -184,7 +184,11 @@ func (p rootDevicePartitioner) getPartitions(devicePath string) (
 	return partitions, deviceFullSizeInBytes, nil
 }
 
-func (p rootDevicePartitioner) partitionsMatch(existingPartitions []existingPartition, partitions []Partition) bool {
+func (p rootDevicePartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
+	panic("unimplemented")
+}
+
+func (p rootDevicePartitioner) partitionsMatch(existingPartitions []ExistingPartition, partitions []Partition) bool {
 	if len(existingPartitions) != len(partitions) {
 		return false
 	}

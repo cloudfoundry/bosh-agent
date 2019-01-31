@@ -2,11 +2,10 @@ package disk_test
 
 import (
 	"errors"
+	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"fmt"
 
 	fakeboshaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	. "github.com/cloudfoundry/bosh-agent/platform/disk"
@@ -77,7 +76,6 @@ var _ = Describe("PartedPartitioner", func() {
 					// 17180917760 % 1048576 = 0
 					// 17180917760 - 0 - 1 = 17180917759
 					// second start=11661213696, end=17180917759, size=8589934592
-
 					err := partitioner.Partition("/dev/sda", partitions)
 					Expect(err).ToNot(HaveOccurred())
 
@@ -203,6 +201,7 @@ var _ = Describe("PartedPartitioner", func() {
 						[]string{"udevadm", "settle"},
 					}))
 				})
+
 			})
 
 			Context("when there are existing partitions", func() {
@@ -703,6 +702,62 @@ var _ = Describe("PartedPartitioner", func() {
 			num, err := partitioner.GetDeviceSizeInBytes("/dev/path")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(num).To(Equal(uint64(123)))
+		})
+	})
+
+	Describe("RemovePartitions", func() {
+		Context("when there are existing partitions", func() {
+			var existingPartitions []ExistingPartition
+
+			BeforeEach(func() {
+				existingPartitions = []ExistingPartition{
+					{
+						Index:        1,
+						SizeInBytes:  uint64(4130340864),
+						StartInBytes: uint64(1048576),
+						EndInBytes:   uint64(413138943),
+						Type:         PartitionTypeSwap,
+						Name:         "bosh-partition-0",
+					},
+					{
+						Index:        2,
+						SizeInBytes:  uint64(103241744384),
+						StartInBytes: uint64(4131389440),
+						EndInBytes:   uint64(107373133823),
+						Type:         PartitionTypeLinux,
+						Name:         "bosh-partition-1",
+					},
+				}
+			})
+
+			It("removes partitions", func() {
+				fakeCmdRunner.AddCmdResult(
+					"wipefs -a /dev/sda",
+					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
+				)
+
+				err := partitioner.RemovePartitions(existingPartitions, "/dev/sda")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+					{"wipefs", "-a", "/dev/sda"},
+				}))
+			})
+
+			It("failed to remove partitions when removing device path error", func() {
+				for i := 0; i < 20; i++ {
+					fakeCmdRunner.AddCmdResult(
+						"wipefs -a /dev/sda",
+						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 2, Error: errors.New("fake-cmd-error")},
+					)
+				}
+
+				err := partitioner.RemovePartitions(existingPartitions, "/dev/sda")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Removing device path"))
+
+				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda"}))
+			})
 		})
 	})
 })

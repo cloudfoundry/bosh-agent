@@ -1,6 +1,6 @@
 package disk
 
-type existingPartition struct {
+type ExistingPartition struct {
 	Index        int
 	SizeInBytes  uint64
 	StartInBytes uint64
