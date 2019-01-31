@@ -467,10 +467,11 @@ var _ = Describe("WindowsPlatform", func() {
 
 	Describe("SetupEphemeralDiskWithPath", func() {
 		var (
-			diskNumber, partitionNumber, dataDir, driveLetter string
+			diskNumber, partitionNumber, dataDir, driveLetter, labelPrefix string
 		)
 
 		BeforeEach(func() {
+			labelPrefix = "fake-agent-id"
 			diskNumber = "0"
 			partitionNumber = "3"
 			driveLetter = "E"
@@ -503,14 +504,14 @@ var _ = Describe("WindowsPlatform", func() {
 
 		It("does nothing when path is empty", func() {
 			diskNumber = ""
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(diskManager.Invocations()).To(BeEmpty())
 		})
 
 		It("partitions the root disk when disk is 0", func() {
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 
@@ -544,7 +545,7 @@ var _ = Describe("WindowsPlatform", func() {
 			partitioner.GetCountOnDiskReturns("0", nil)
 			partitioner.PartitionDiskReturns(partitionNumber, nil)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 
@@ -559,7 +560,7 @@ var _ = Describe("WindowsPlatform", func() {
 			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 			partitioner.GetCountOnDiskReturns("1", nil)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(partitioner.PartitionDiskCallCount()).To(Equal(0))
@@ -571,7 +572,7 @@ var _ = Describe("WindowsPlatform", func() {
 			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 			partitioner.GetCountOnDiskReturns("1", nil)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(partitioner.GetCountOnDiskCallCount()).To(Equal(1))
@@ -583,7 +584,7 @@ var _ = Describe("WindowsPlatform", func() {
 			partitioner.GetFreeSpaceOnDiskReturns(0, nil)
 			linker.LinkTargetReturns(fmt.Sprintf(`%s:\`, driveLetter), nil)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 			Consistently(logBuffer).ShouldNot(gbytes.Say(
@@ -595,7 +596,7 @@ var _ = Describe("WindowsPlatform", func() {
 		It("logs a warning and doesn't create a partition if there is less than 1MB of free disk space", func() {
 			partitioner.GetFreeSpaceOnDiskReturns((1024*1024)-1, nil)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(logBuffer).Should(gbytes.Say(
@@ -607,7 +608,7 @@ var _ = Describe("WindowsPlatform", func() {
 		It("returns an error when Protect-Path cmdlet is missing", func() {
 			protector.CommandExistsReturns(false)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 			Expect(err).To(MatchError(
 				fmt.Sprintf("cannot protect %s. %s cmd does not exist.", dataDir, disk.ProtectCmdlet),
 			))
@@ -617,7 +618,7 @@ var _ = Describe("WindowsPlatform", func() {
 			expectedError := errors.New("It went wrong")
 			partitioner.GetFreeSpaceOnDiskReturns(0, expectedError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(expectedError))
 		})
@@ -629,7 +630,7 @@ var _ = Describe("WindowsPlatform", func() {
 			partitionCountError := errors.New("Something failed")
 			partitioner.GetCountOnDiskReturns("", partitionCountError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(partitionCountError))
 		})
@@ -641,7 +642,7 @@ var _ = Describe("WindowsPlatform", func() {
 			initializeDiskError := errors.New("It went wrong")
 			partitioner.InitializeDiskReturns(initializeDiskError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(initializeDiskError))
 		})
@@ -650,7 +651,7 @@ var _ = Describe("WindowsPlatform", func() {
 			linkTargetError := errors.New("failure")
 			linker.LinkTargetReturns("", linkTargetError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(linkTargetError))
 		})
@@ -659,7 +660,7 @@ var _ = Describe("WindowsPlatform", func() {
 			partitionDiskError := errors.New("It went wrong")
 			partitioner.PartitionDiskReturns("", partitionDiskError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(partitionDiskError))
 		})
@@ -668,7 +669,7 @@ var _ = Describe("WindowsPlatform", func() {
 			formatError := errors.New("A failure occurred")
 			formatter.FormatReturns(formatError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(formatError))
 		})
@@ -677,7 +678,7 @@ var _ = Describe("WindowsPlatform", func() {
 			assignDriveLetterError := errors.New("failure")
 			partitioner.AssignDriveLetterReturns("", assignDriveLetterError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(assignDriveLetterError))
 		})
@@ -686,7 +687,7 @@ var _ = Describe("WindowsPlatform", func() {
 			LinkError := errors.New("It went wrong")
 			linker.LinkReturns(LinkError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(LinkError))
 		})
@@ -695,7 +696,7 @@ var _ = Describe("WindowsPlatform", func() {
 			protectPathError := errors.New("Failure")
 			protector.ProtectPathReturns(protectPathError)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).To(Equal(protectPathError))
 		})
@@ -717,7 +718,7 @@ var _ = Describe("WindowsPlatform", func() {
 				diskManager,
 			)
 
-			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil)
+			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 
 			Expect(err).NotTo(HaveOccurred())
 			Consistently(logBuffer).ShouldNot(gbytes.Say(
