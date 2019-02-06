@@ -4,6 +4,10 @@ required = ["github.com/onsi/ginkgo/ginkgo", "github.com/maxbrunsfeld/counterfei
   name = "gopkg.in/fsnotify.v1"
   source = "gopkg.in/fsnotify/fsnotify.v1"
 
+[[override]]
+  branch = "master"
+  name = "github.com/ChrisTrenkamp/goxpath"
+
 [prune]
   unused-packages = true
   non-go = true

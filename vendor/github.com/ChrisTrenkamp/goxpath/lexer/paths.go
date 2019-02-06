@@ -3,7 +3,7 @@ package lexer
 import (
 	"fmt"
 
-	"github.com/ChrisTrenkamp/goxpath/internal/xconst"
+	"github.com/ChrisTrenkamp/goxpath/xconst"
 )
 
 func absLocPathState(l *Lexer) stateFn {
@@ -168,7 +168,7 @@ func getNextPathState(l *Lexer, state XItemType) stateFn {
 
 	l.skipWS(true)
 
-	if string(l.peek()) == "[" {
+	for string(l.peek()) == "[" {
 		if err := getPred(l); err != nil {
 			return l.errorf(err.Error())
 		}

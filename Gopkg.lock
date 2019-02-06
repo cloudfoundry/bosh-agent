@@ -21,27 +21,27 @@
   revision = "4a21cbd618b459155f8b8ee7f4491cd54f5efa77"
 
 [[projects]]
-  digest = "1:04e92cbfbbf1a8ff3da2d1b2f74e60e3162fd65954011abfa8d9ab2da5d3e974"
+  branch = "master"
+  digest = "1:ee1892c96a7f19f683f59436be5618ec252cea11799eea421b5e97db0f704852"
   name = "github.com/ChrisTrenkamp/goxpath"
   packages = [
     ".",
     "internal/execxp",
-    "internal/lexer",
-    "internal/parser",
-    "internal/parser/findutil",
-    "internal/parser/intfns",
-    "internal/parser/pathexpr",
-    "internal/xconst",
+    "internal/execxp/findutil",
+    "internal/execxp/intfns",
     "internal/xsort",
+    "lexer",
+    "parser",
+    "parser/pathexpr",
     "tree",
     "tree/xmltree",
     "tree/xmltree/xmlbuilder",
     "tree/xmltree/xmlele",
     "tree/xmltree/xmlnode",
+    "xconst",
   ]
   pruneopts = "NUT"
-  revision = "2ad3b31cf4a21db70fc0cacd0e0120eaae566f98"
-  version = "v1.0-alpha3"
+  revision = "c385f95c6022e7756e91beac5f5510872f7dcb7d"
 
 [[projects]]
   digest = "1:2be791e7b333ff7c06f8fb3dc18a7d70580e9399dbdffd352621d067ff260b6e"

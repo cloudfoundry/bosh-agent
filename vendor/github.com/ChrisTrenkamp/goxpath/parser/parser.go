@@ -3,7 +3,7 @@ package parser
 import (
 	"fmt"
 
-	"github.com/ChrisTrenkamp/goxpath/internal/lexer"
+	"github.com/ChrisTrenkamp/goxpath/lexer"
 )
 
 type stateType int
@@ -106,6 +106,14 @@ func Parse(xp string) (*Node, error) {
 func xiXPath(p *parseStack, i lexer.XItem) {
 	if p.curState() == xpathState {
 		p.cur.push(i)
+		p.cur = p.cur.next
+		return
+	}
+
+	if p.cur.Val.Typ == lexer.XItemFunction {
+		p.cur.Right = &Node{Val: i, Parent: p.cur}
+		p.cur.next = p.cur.Right
+		p.push(xpathState)
 		p.cur = p.cur.next
 		return
 	}
