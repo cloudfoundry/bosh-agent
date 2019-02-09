@@ -52,7 +52,7 @@
   version = "v0.4.11"
 
 [[projects]]
-  digest = "1:22efafa7722ed855e8bab8039d2ee6b121971c2945804ec759f5ff1b1681ad08"
+  digest = "1:a8e16b4caf3575365c9aa3380d9418f31dd0b810596faebfe3a15c37fabeee4a"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
@@ -72,8 +72,8 @@
     "internal/wclayer",
   ]
   pruneopts = "NUT"
-  revision = "ea73c60434fae8d3b1d02fc28391d628b0306ff4"
-  version = "v0.8.5"
+  revision = "f92b8fb9c92e17da496af5a69e3ee13fbe9916e1"
+  version = "v0.8.6"
 
 [[projects]]
   digest = "1:7294028ae4f4ebe9f92dccabdc69f63eba37b71fbfcdcb35ed1c32eb823fc6d4"
@@ -134,7 +134,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "c2cf699102bd7878141b9810117cba777852f1be"
+  revision = "9a0affed2bf1b1cd41515ce2356335ca4c6e6f98"
 
 [[projects]]
   branch = "master"
@@ -157,12 +157,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
   digest = "1:d43a203ecd5644f46eeaef9dad5a11a06598ed6feb17cb6e232a2589d8e96347"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
   pruneopts = "NUT"
   revision = "7ade90b228c8472a45c189e77f78497b93bbaeaa"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -428,7 +428,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9690f60f1b27ed2f5a7877eae50ca213f22971b1970e71add838284b50a2e187"
+  digest = "1:eed6cf11b8709708ab6a373ab1b5ce0f6549fa9d8a47a6baab467c45ea3a543f"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -442,7 +442,7 @@
     "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "b8fe1690c61389d7d2a8074a507d1d40c5d30448"
+  revision = "193df9c0f06f8bb35fba505183eaf0acc0136505"
 
 [[projects]]
   branch = "master"
@@ -457,11 +457,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "d26f9f9a57f3fab6a695bec0d84433c2c50f8bbf"
+  revision = "65e2d4e15006aab9813ff8769e768bbf4bb667a0"
 
 [[projects]]
   branch = "master"
-  digest = "1:28ef4cecb8a25953d130e55fce26befb9848871215faeb53b066f202c6a5f235"
+  digest = "1:c750a2bdd318beb530a2b14a30432f40a4f75736f0bf1e68c2ea8de1ea8b3d0e"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -471,7 +471,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "afcc84fd7533758f95a6e93ae710aa945a0b7e73"
+  revision = "41f3e6584952bb034a481797859f6ab34b6803bd"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -501,7 +501,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:86d002f2c67e364e097c5047f517ab38cdef342c3c20be53974c1bfd5b191d30"
+  digest = "1:f57e88c4326d5433c2f4eb28fcd1662be003cb0d11dd13710c8828e687303c76"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -518,7 +518,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "51e363b66d25e28ae79d34610901114c8df309ee"
+  revision = "3744606dbb67b99c60d3f11cb10bd3f9e6dad472"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
