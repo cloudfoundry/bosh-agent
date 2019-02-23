@@ -48,8 +48,8 @@
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "97e4973ce50b2ff5f09635a57e2b88a037aae829"
-  version = "v0.4.11"
+  revision = "1a8911d1ed007260465c3bfbbc785ac6915a0bb8"
+  version = "v0.4.12"
 
 [[projects]]
   digest = "1:a8e16b4caf3575365c9aa3380d9418f31dd0b810596faebfe3a15c37fabeee4a"
@@ -276,16 +276,16 @@
     "util",
   ]
   pruneopts = "NUT"
-  revision = "13c7fc7590db68b18f2015600f8765a02d705b5d"
-  version = "v1.7.0"
+  revision = "70fe06cee50d4b6f98248d9675fb55f2a3aa7228"
+  version = "v1.7.2"
 
 [[projects]]
-  digest = "1:03c07541cd5c71ab734d45a525630458ceba6f34ab7434cde6c3040c5c882ae7"
+  digest = "1:8a279c960ffe2478da23600c8de5e84360049314cd81e6e9acab0648b91079e3"
   name = "github.com/nats-io/nats"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "13c7fc7590db68b18f2015600f8765a02d705b5d"
-  version = "v1.7.0"
+  revision = "70fe06cee50d4b6f98248d9675fb55f2a3aa7228"
+  version = "v1.7.2"
 
 [[projects]]
   digest = "1:bf3b29bcf1276cfa19bc22910eac8d8582fe0d4d2a43e8f01f2242d8dfba7965"
@@ -428,7 +428,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8a7dc39ec52ab4fe73c232a0bfb7dd994f963c4b09e6781cd847b0f3ce501337"
+  digest = "1:cd510d731d7bb70d6048bdebf3ffffaf58329863e9a4e487d4031c65653c347c"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -442,7 +442,7 @@
     "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "74369b46fc6756741c016591724fd1cb8e26845f"
+  revision = "ffb98f73852f696ea2bb21a617a5c4b3e067a439"
 
 [[projects]]
   branch = "master"
@@ -461,7 +461,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:10f482b15c09333fedfb63880f2c94b51c7a52974d42a56587aad540cc19ffdb"
+  digest = "1:46c484d61438ad9ba308fe6d44f047bb0bdf92121c6885250c048f6ac3f55a84"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -471,7 +471,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "d0b11bdaac8adb652bff00e49bcacf992835621a"
+  revision = "cd391775e71e684db52b63df9affd58269495083"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -518,7 +518,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "8dcb7bc8c7fe0a895995c76c721cef79419ac98a"
+  revision = "83362c3779f5f48611068d488a03ea7bbaddc81e"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
