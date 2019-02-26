@@ -7,11 +7,15 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-func BuildCommand(path string) boshsys.Command {
+func BuildCommand(path string, env map[string]string) boshsys.Command {
+	if env == nil {
+		env = map[string]string{}
+	}
+
+	env["PATH"] = boshenv.Path()
+
 	return boshsys.Command{
 		Name: path,
-		Env: map[string]string{
-			"PATH": boshenv.Path(),
-		},
+		Env:  env,
 	}
 }

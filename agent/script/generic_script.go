@@ -19,6 +19,7 @@ type GenericScript struct {
 
 	tag  string
 	path string
+	env  map[string]string
 
 	stdoutLogPath string
 	stderrLogPath string
@@ -29,6 +30,7 @@ func NewScript(
 	runner boshsys.CmdRunner,
 	tag string,
 	path string,
+	env map[string]string,
 	stdoutLogPath string,
 	stderrLogPath string,
 ) GenericScript {
@@ -38,6 +40,7 @@ func NewScript(
 
 		tag:  tag,
 		path: path,
+		env:  env,
 
 		stdoutLogPath: stdoutLogPath,
 		stderrLogPath: stderrLogPath,
@@ -75,7 +78,7 @@ func (s GenericScript) Run() error {
 		_ = stderrFile.Close()
 	}()
 
-	command := cmd.BuildCommand(s.path)
+	command := cmd.BuildCommand(s.path, s.env)
 	command.Stdout = stdoutFile
 	command.Stderr = stderrFile
 

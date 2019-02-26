@@ -88,7 +88,7 @@ func (a RunErrandAction) Run(errandName ...string) (ErrandResult, error) {
 		templateName = errandName[0]
 	}
 
-	command := cmd.BuildCommand(path.Join(a.jobsDir, templateName, "bin", "run"))
+	command := cmd.BuildCommand(path.Join(a.jobsDir, templateName, "bin", "run"), nil)
 
 	process, err := a.cmdRunner.RunComplexCommandAsync(command)
 	if err != nil {

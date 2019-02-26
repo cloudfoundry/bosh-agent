@@ -2,6 +2,7 @@ package action
 
 import (
 	"errors"
+	"fmt"
 
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
@@ -46,6 +47,23 @@ func (a RunScriptAction) IsLoggable() bool {
 func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) (map[string]string, error) {
 	// May be used in future to return more information
 	emptyResults := map[string]string{}
+	env := map[string]string{}
+
+	if envRaw, found := options["env"]; found {
+		envRawSlice, ok := envRaw.(map[string]interface{})
+		if !ok {
+			return emptyResults, errors.New("Casting env options to map[string]string")
+		}
+
+		for envKey, envValueRaw := range envRawSlice {
+			envValue, ok := envValueRaw.(string)
+			if !ok {
+				return emptyResults, fmt.Errorf("Casting env key %s to string", envKey)
+			}
+
+			env[envKey] = envValue
+		}
+	}
 
 	currentSpec, err := a.specService.Get()
 	if err != nil {
@@ -55,7 +73,7 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	var scripts []boshscript.Script
 
 	for _, job := range currentSpec.Jobs() {
-		script := a.scriptProvider.NewScript(job.BundleName(), scriptName)
+		script := a.scriptProvider.NewScript(job.BundleName(), scriptName, env)
 		scripts = append(scripts, script)
 	}
 

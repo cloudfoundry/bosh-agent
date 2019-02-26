@@ -88,7 +88,7 @@ func (s ConcreteScript) runOnce(params ScriptParams) (int, error) {
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()
 
-	command := cmd.BuildCommand(s.path)
+	command := cmd.BuildCommand(s.path, nil)
 
 	jobState, err := params.JobState()
 	if err != nil {
