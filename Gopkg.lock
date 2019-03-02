@@ -192,12 +192,12 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:97df918963298c287643883209a2c3f642e6593379f97ab400c2a2e219ab647d"
+  digest = "1:318f1c959a8a740366fce4b1e1eb2fd914036b4af58fbd0a003349b305f118ad"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   pruneopts = "NUT"
-  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
-  version = "v1.2.0"
+  revision = "c823c79ea1570fb5ff454033735a8e68575d1d0f"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
@@ -222,12 +222,12 @@
   version = "0.5"
 
 [[projects]]
-  digest = "1:4059c14e87a2de3a434430340521b5feece186c1469eff0834c29a63870de3ed"
+  digest = "1:58999a98719fddbac6303cb17e8d85b945f60b72f48e3a2df6b950b97fa926f1"
   name = "github.com/konsorten/go-windows-terminal-sequences"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
-  version = "v1.0.1"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
@@ -246,7 +246,7 @@
     "soap",
   ]
   pruneopts = "NUT"
-  revision = "a196a4ff2a86e262d40284f34b6d5bf328d22d29"
+  revision = "5e5c9a7fe54b25590c464f78841431cb803dcb66"
 
 [[projects]]
   digest = "1:0d33e8f4230cafee906332f45cc456ce2b66ac18a1edc40a9c87e3e68682d08b"
@@ -428,7 +428,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cd510d731d7bb70d6048bdebf3ffffaf58329863e9a4e487d4031c65653c347c"
+  digest = "1:150ce31894d06d918fd4626304d21e498121d7e7f421bb638c4811dcbfa07c7f"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -442,7 +442,7 @@
     "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "ffb98f73852f696ea2bb21a617a5c4b3e067a439"
+  revision = "8dd112bcdc25174059e45e07517d9fc663123347"
 
 [[projects]]
   branch = "master"
@@ -457,13 +457,14 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "3a22650c66bd7f4fb6d1e8072ffd7b75c8a27898"
+  revision = "16b79f2e4e95ea23b2bf9903c9809ff7b013ce85"
 
 [[projects]]
   branch = "master"
-  digest = "1:46c484d61438ad9ba308fe6d44f047bb0bdf92121c6885250c048f6ac3f55a84"
+  digest = "1:9f9d6ee5fb523f4aa575b5fb7739d970a83cd029c1a2b79c7684a026fe9f388d"
   name = "golang.org/x/sys"
   packages = [
+    "cpu",
     "unix",
     "windows",
     "windows/registry",
@@ -471,7 +472,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "cd391775e71e684db52b63df9affd58269495083"
+  revision = "b6889370fb1098ed892bd3400d189bb6a3355813"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -501,7 +502,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f57e88c4326d5433c2f4eb28fcd1662be003cb0d11dd13710c8828e687303c76"
+  digest = "1:e46d8e20161401a9cf8765dfa428494a3492a0b56fe114156b7da792bf41ba78"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -518,7 +519,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "83362c3779f5f48611068d488a03ea7bbaddc81e"
+  revision = "589c23e65e65055d47b9ad4a99723bc389136265"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
