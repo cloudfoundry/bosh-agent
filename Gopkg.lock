@@ -184,6 +184,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:bde9f189072512ba353f3641d4839cb4c9c7edf421e467f2c03f267b402bd16c"
+  name = "github.com/gofrs/uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6b08a5c5172ba18946672b49749cde22873dd7c2"
+  version = "v3.2.0"
+
+[[projects]]
   digest = "1:b60efdeb75d3c0ceed88783ac2495256aba3491a537d0f31401202579fd62a94"
   name = "github.com/golang/mock"
   packages = ["gomock"]
@@ -239,14 +247,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:eaeb847e92b41f1f3adeb22faf505a7f89176b34593317b5903bf574bf473312"
+  digest = "1:2e8ca810eea37d0e4d93dbde09c2868de60c4641710aa12f8228a49b6fe02251"
   name = "github.com/masterzen/winrm"
   packages = [
     ".",
     "soap",
   ]
   pruneopts = "NUT"
-  revision = "5e5c9a7fe54b25590c464f78841431cb803dcb66"
+  revision = "1d17eaf15943ca3554cdebb3b1b10aaa543a0b7e"
 
 [[projects]]
   digest = "1:0d33e8f4230cafee906332f45cc456ce2b66ac18a1edc40a9c87e3e68682d08b"
@@ -312,7 +320,7 @@
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 
 [[projects]]
-  digest = "1:6a1d3cc0142cdd2dde5080e8c25a89aeebac3a15424012bb610441d1959fda1b"
+  digest = "1:dbc24dd0591271d269786adff7458f2c1437305091e41979c5495efe3df09ab8"
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
@@ -343,8 +351,8 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "2e1be8f7d90e9d3e3e58b0ce470f2f14d075406f"
-  version = "v1.7.0"
+  revision = "eea6ad008b96acdaa524f5b409513bf062b500ad"
+  version = "v1.8.0"
 
 [[projects]]
   digest = "1:c1f231e749cfbfb59870c4399faf664dd2fb8d7350569149eddaf526450b51c9"
@@ -428,7 +436,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:150ce31894d06d918fd4626304d21e498121d7e7f421bb638c4811dcbfa07c7f"
+  digest = "1:97ddf0623346c968ed2ebaf72f0b871ee2eda69a0147234e6ab8c890c65866b2"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -442,7 +450,7 @@
     "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "8dd112bcdc25174059e45e07517d9fc663123347"
+  revision = "c2843e01d9a2bc60bb26ad24e09734fdc2d9ec58"
 
 [[projects]]
   branch = "master"
@@ -461,7 +469,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9f9d6ee5fb523f4aa575b5fb7739d970a83cd029c1a2b79c7684a026fe9f388d"
+  digest = "1:5aa6d7de43a543fd48ea64028ca3d9a5930cb061dc740d1c22239b29295cb56f"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -472,7 +480,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "b6889370fb1098ed892bd3400d189bb6a3355813"
+  revision = "584f3b12f43e1e55248c90e84804777009eed0a4"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -519,7 +527,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "589c23e65e65055d47b9ad4a99723bc389136265"
+  revision = "00c44ba9c14f88ffdd4fb5bfae57fe8dd6d6afb1"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
