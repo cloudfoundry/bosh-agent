@@ -55,7 +55,7 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	var scripts []boshscript.Script
 
 	for _, job := range currentSpec.Jobs() {
-		script := a.scriptProvider.NewScript(job.BundleName(), scriptName)
+		script := a.scriptProvider.NewScript(job.BundleName(), scriptName, options)
 		scripts = append(scripts, script)
 	}
 

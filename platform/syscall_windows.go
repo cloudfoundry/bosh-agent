@@ -51,8 +51,8 @@ func createProfile(sid, username string) (string, error) {
 		uintptr(unsafe.Pointer(pusername)),   // _In_  LPCWSTR pszUserName
 		uintptr(unsafe.Pointer(&pathbuf[0])), // _Out_ LPWSTR  pszProfilePath
 		uintptr(len(pathbuf)),                // _In_  DWORD   cchProfilePath
-		0,                                    // unused
-		0,                                    // unused
+		0, // unused
+		0, // unused
 	)
 	if r1 != S_OK {
 		if e1 == 0 {
@@ -76,8 +76,8 @@ func deleteProfile(sid string) error {
 	}
 	r1, _, e1 := syscall.Syscall(procDeleteProfile.Addr(), 3,
 		uintptr(unsafe.Pointer(psid)), // _In_     LPCTSTR lpSidString,
-		0,                             // _In_opt_ LPCTSTR lpProfilePath,
-		0,                             // _In_opt_ LPCTSTR lpComputerName
+		0, // _In_opt_ LPCTSTR lpProfilePath,
+		0, // _In_opt_ LPCTSTR lpComputerName
 	)
 	if r1 == 0 {
 		if e1 == 0 {

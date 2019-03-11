@@ -21,6 +21,7 @@ var _ = Describe("GenericScript", func() {
 		stdoutLogPath string
 		stderrLogPath string
 		fullCommand   string
+		options       map[string]interface{}
 	)
 
 	BeforeEach(func() {
@@ -28,6 +29,12 @@ var _ = Describe("GenericScript", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		stdoutLogPath = filepath.Join("base", "stdout", "logdir", "stdout.log")
 		stderrLogPath = filepath.Join("base", "stderr", "logdir", "stderr.log")
+		options = make(map[string]interface{})
+		options["env"] = map[string]string{
+			"FOO":           "foo",
+			"BAR":           "bar",
+			"OTHER_EXAMPLE": "1243=abcd",
+		}
 		genericScript = boshscript.NewScript(
 			fs,
 			cmdRunner,
@@ -35,6 +42,7 @@ var _ = Describe("GenericScript", func() {
 			"/path-to-script",
 			stdoutLogPath,
 			stderrLogPath,
+			options,
 		)
 		if runtime.GOOS == "windows" {
 			fullCommand = "powershell /path-to-script"
@@ -91,6 +99,13 @@ var _ = Describe("GenericScript", func() {
 			Expect(cmdRunner.RunComplexCommands).To(HaveLen(1))
 			cmd := cmdRunner.RunComplexCommands[0]
 			Expect(cmd.Env).To(HaveKeyWithValue("PATH", boshenv.Path()))
+		})
+
+		It("sets the ENV according to the env provided in options", func() {
+			Expect(genericScript.Run()).To(Succeed())
+			Expect(cmdRunner.RunComplexCommands).To(HaveLen(1))
+			cmd := cmdRunner.RunComplexCommands[0]
+			Expect(cmd.Env).To(HaveKeyWithValue("OTHER_EXAMPLE", "1243=abcd"))
 		})
 
 		Context("when command succeeds", func() {
