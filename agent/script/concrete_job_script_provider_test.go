@@ -19,7 +19,7 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 	var (
 		logger         boshlog.Logger
 		scriptProvider boshscript.ConcreteJobScriptProvider
-		options        map[string]interface{}
+		scriptEnv      map[string]string
 	)
 
 	BeforeEach(func() {
@@ -38,7 +38,7 @@ var _ = Describe("ConcreteJobScriptProvider", func() {
 
 	Describe("NewScript", func() {
 		It("returns script with relative job paths to the base directory", func() {
-			script := scriptProvider.NewScript("myjob", "the-best-hook-ever", options)
+			script := scriptProvider.NewScript("myjob", "the-best-hook-ever", scriptEnv)
 			Expect(script.Tag()).To(Equal("myjob"))
 
 			expPath := "/the/base/dir/jobs/myjob/bin/the-best-hook-ever" + boshscript.ScriptExt

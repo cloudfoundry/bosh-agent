@@ -2,7 +2,6 @@ package action_test
 
 import (
 	"errors"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -66,10 +65,9 @@ var _ = Describe("RunScript", func() {
 				script2 := &scriptfakes.FakeScript{}
 				script2.TagReturns("fake-job-2")
 
-				fakeJobScriptProvider.NewScriptStub = func(jobName, scriptName string, scriptOptions map[string]interface{}) boshscript.Script {
+				fakeJobScriptProvider.NewScriptStub = func(jobName, scriptName string, scriptEnv map[string]string) boshscript.Script {
 					Expect(scriptName).To(Equal("run-me"))
-					env := scriptOptions["env"].(map[string]string)
-					Expect(env["FOO"]).To(Equal("foo"))
+					Expect(scriptEnv["FOO"]).To(Equal("foo"))
 
 					if jobName == "fake-job-1" {
 						return script1

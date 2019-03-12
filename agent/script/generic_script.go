@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"errors"
 	"github.com/cloudfoundry/bosh-agent/agent/script/cmd"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -24,7 +23,7 @@ type GenericScript struct {
 	stdoutLogPath string
 	stderrLogPath string
 
-	options map[string]interface{}
+	env map[string]string
 }
 
 func NewScript(
@@ -34,7 +33,7 @@ func NewScript(
 	path string,
 	stdoutLogPath string,
 	stderrLogPath string,
-	options map[string]interface{},
+	env map[string]string,
 ) GenericScript {
 	return GenericScript{
 		fs:     fs,
@@ -46,7 +45,7 @@ func NewScript(
 		stdoutLogPath: stdoutLogPath,
 		stderrLogPath: stderrLogPath,
 
-		options: options,
+		env: env,
 	}
 }
 
@@ -85,14 +84,8 @@ func (s GenericScript) Run() error {
 	command.Stdout = stdoutFile
 	command.Stderr = stderrFile
 
-	if s.options["env"] != nil {
-		env, ok := s.options["env"].(map[string]string)
-		if !ok {
-			return errors.New("failed to parse Environment Variables in script")
-		}
-		for key, val := range env {
-			command.Env[key] = val
-		}
+	for key, val := range s.env {
+		command.Env[key] = val
 	}
 
 	_, _, _, err = s.runner.RunComplexCommand(command)
