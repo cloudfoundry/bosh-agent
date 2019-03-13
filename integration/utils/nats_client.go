@@ -1,4 +1,4 @@
-package windows_test
+package utils
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	"github.com/nats-io/nats"
 
@@ -28,6 +27,14 @@ type PrepareTemplateConfig struct {
 	RenderedTemplatesArchiveSHA1        string
 	ReplyTo                             string
 }
+
+const (
+	agentGUID       = "123-456-789"
+	agentID         = "agent." + agentGUID
+	senderID        = "director.987-654-321"
+	DefaultTimeout  = time.Minute
+	DefaultInterval = time.Second
+)
 
 const (
 	prepareTemplate = `{
@@ -171,15 +178,18 @@ type NatsClient struct {
 	sub      *nats.Subscription
 	alertSub *nats.Subscription
 
+	natsIP          string
 	compressor      boshfileutil.Compressor
-	blobstoreClient utils.BlobClient
+	blobstoreClient BlobClient
 }
 
 func NewNatsClient(
 	compressor boshfileutil.Compressor,
-	blobstoreClient utils.BlobClient,
+	blobstoreClient BlobClient,
+	natsIP string,
 ) *NatsClient {
 	return &NatsClient{
+		natsIP:          natsIP,
 		compressor:      compressor,
 		blobstoreClient: blobstoreClient,
 	}
@@ -187,7 +197,7 @@ func NewNatsClient(
 
 func (n *NatsClient) Setup() error {
 	var err error
-	n.nc, err = nats.Connect(natsURI())
+	n.nc, err = nats.Connect(n.natsURI())
 	if err != nil {
 		return err
 	}
@@ -195,6 +205,10 @@ func (n *NatsClient) Setup() error {
 	n.sub, err = n.nc.SubscribeSync(senderID)
 	n.alertSub, err = n.nc.SubscribeSync("hm.agent.alert." + agentGUID)
 	return err
+}
+
+func (n *NatsClient) natsURI() string {
+	return fmt.Sprintf("nats://%s:4222", n.natsIP)
 }
 
 func (n *NatsClient) Cleanup() {
@@ -549,7 +563,7 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha 
 	chdir := "fixtures/templates"
 	dir := filepath.Join(chdir, jobName)
 
-	renderedTemplateSha, err = utils.TarballDirectory(dir, chdir, tarfile)
+	renderedTemplateSha, err = TarballDirectory(dir, chdir, tarfile)
 	if err != nil {
 		return
 	}
@@ -570,7 +584,7 @@ func (n *NatsClient) uploadPackage(packageName string) (string, string, error) {
 
 	tarfile := filepath.Join(dirname, packageName+".tgz")
 	dir := filepath.Join("fixtures/templates", packageName)
-	sha1, err := utils.TarballDirectory(dir, dir, tarfile)
+	sha1, err := TarballDirectory(dir, dir, tarfile)
 	if err != nil {
 		return "", "", err
 	}

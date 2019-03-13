@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
+	"github.com/cloudfoundry/bosh-agent/integration/utils"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -34,14 +34,6 @@ func natsIP() string {
 	return ""
 }
 
-func natsURI() string {
-	if VagrantProvider == "aws" {
-		return fmt.Sprintf("nats://%s:4222", NATSPublicIP)
-	}
-	return fmt.Sprintf("nats://%s:4222", natsIP())
-
-}
-
 func blobstoreURI() string {
 	if VagrantProvider == "aws" {
 		return fmt.Sprintf("http://%s:25250", NATSPublicIP)
@@ -49,7 +41,7 @@ func blobstoreURI() string {
 	return fmt.Sprintf("http://%s:25250", natsIP())
 }
 
-func getNetworkProperty(key string, natsClient *NatsClient) string {
+func getNetworkProperty(key string, natsClient *utils.NatsClient) string {
 	message := fmt.Sprintf(`{"method":"get_state","arguments":["full"],"reply_to":"%s"}`, senderID)
 	rawResponse, err := natsClient.SendRawMessage(message)
 	Expect(err).NotTo(HaveOccurred())
@@ -73,7 +65,7 @@ func getNetworkProperty(key string, natsClient *NatsClient) string {
 var _ = Describe("An Agent running on Windows", func() {
 	var (
 		fs              boshsys.FileSystem
-		natsClient      *NatsClient
+		natsClient      *utils.NatsClient
 		blobstoreClient utils.BlobClient
 	)
 
@@ -87,7 +79,14 @@ var _ = Describe("An Agent running on Windows", func() {
 		fs = boshsys.NewOsFileSystem(logger)
 		compressor := boshfileutil.NewTarballCompressor(cmdRunner, fs)
 
-		natsClient = NewNatsClient(compressor, blobstoreClient)
+		var natsIp string
+		if VagrantProvider == "aws" {
+			natsIp = NATSPublicIP
+		} else {
+			natsIp = natsIP()
+		}
+
+		natsClient = utils.NewNatsClient(compressor, blobstoreClient, natsIp)
 		err := natsClient.Setup()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -308,7 +307,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		_, err = natsClient.CompilePackageWithDeps(
 			"execution-lock",
-			map[string]MarshalableBlobRef{"go": *blobref},
+			map[string]utils.MarshalableBlobRef{"go": *blobref},
 		)
 		Expect(err).NotTo(HaveOccurred())
 	})
