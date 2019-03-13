@@ -2,6 +2,7 @@ package action_test
 
 import (
 	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -18,7 +19,7 @@ var _ = Describe("RunScript", func() {
 		fakeJobScriptProvider *scriptfakes.FakeJobScriptProvider
 		specService           *fakeapplyspec.FakeV1Service
 		action                RunScriptAction
-		options               map[string]interface{}
+		options               RunScriptOptions
 	)
 
 	BeforeEach(func() {
@@ -27,9 +28,10 @@ var _ = Describe("RunScript", func() {
 		specService.Spec.RenderedTemplatesArchiveSpec = &applyspec.RenderedTemplatesArchiveSpec{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		action = NewRunScript(fakeJobScriptProvider, specService, logger)
-		options = make(map[string]interface{})
-		options["env"] = map[string]string{
-			"FOO": "foo",
+		options = RunScriptOptions{
+			Env: map[string]string{
+				"FOO": "foo",
+			},
 		}
 	})
 

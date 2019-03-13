@@ -9,6 +9,10 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
+type RunScriptOptions struct {
+	Env map[string]string `json:"env"`
+}
+
 type RunScriptAction struct {
 	scriptProvider boshscript.JobScriptProvider
 	specService    boshas.V1Service
@@ -43,7 +47,7 @@ func (a RunScriptAction) IsLoggable() bool {
 	return true
 }
 
-func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) (map[string]string, error) {
+func (a RunScriptAction) Run(scriptName string, options RunScriptOptions) (map[string]string, error) {
 	// May be used in future to return more information
 	emptyResults := map[string]string{}
 
@@ -52,20 +56,9 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 		return emptyResults, bosherr.WrapError(err, "Getting current spec")
 	}
 
-	scriptEnv := make(map[string]string)
-
-	if options["env"] != nil {
-		parsedEnv, ok := options["env"].(map[string]string)
-		if !ok {
-			return emptyResults, errors.New("failed to parse Environment Variables in script")
-		}
-		scriptEnv = parsedEnv
-	}
-
 	var scripts []boshscript.Script
-
 	for _, job := range currentSpec.Jobs() {
-		script := a.scriptProvider.NewScript(job.BundleName(), scriptName, scriptEnv)
+		script := a.scriptProvider.NewScript(job.BundleName(), scriptName, options.Env)
 		scripts = append(scripts, script)
 	}
 
