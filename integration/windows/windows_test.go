@@ -27,7 +27,7 @@ const (
 	DefaultInterval = time.Second
 )
 
-func natsIP() string {
+func getNatsIP() string {
 	if ip := os.Getenv("NATS_PRIVATE_IP"); ip != "" {
 		return ip
 	}
@@ -38,7 +38,7 @@ func blobstoreURI() string {
 	if VagrantProvider == "aws" {
 		return fmt.Sprintf("http://%s:25250", NATSPublicIP)
 	}
-	return fmt.Sprintf("http://%s:25250", natsIP())
+	return fmt.Sprintf("http://%s:25250", getNatsIP())
 }
 
 func getNetworkProperty(key string, natsClient *utils.NatsClient) string {
@@ -83,7 +83,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		if VagrantProvider == "aws" {
 			natsIP = NATSPublicIP
 		} else {
-			natsIP = natsIP()
+			natsIP = getNatsIP()
 		}
 
 		natsClient = utils.NewNatsClient(compressor, blobstoreClient, natsIP)
@@ -105,10 +105,10 @@ var _ = Describe("An Agent running on Windows", func() {
 	It("responds to 'get_state' message over NATS", func() {
 		getStateSpecAgentID := func() string {
 			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
-			rawResponse, err := natsClient.SendRawMessage(message)
+			rawResponse, _ := natsClient.SendRawMessage(message)
 
 			response := map[string]action.GetStateV1ApplySpec{}
-			err = json.Unmarshal(rawResponse, &response)
+			err := json.Unmarshal(rawResponse, &response)
 			Expect(err).NotTo(HaveOccurred())
 
 			return response["value"].AgentID
