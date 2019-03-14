@@ -79,14 +79,14 @@ var _ = Describe("An Agent running on Windows", func() {
 		fs = boshsys.NewOsFileSystem(logger)
 		compressor := boshfileutil.NewTarballCompressor(cmdRunner, fs)
 
-		var natsIp string
+		var natsIP string
 		if VagrantProvider == "aws" {
-			natsIp = NATSPublicIP
+			natsIP = NATSPublicIP
 		} else {
-			natsIp = natsIP()
+			natsIP = natsIP()
 		}
 
-		natsClient = utils.NewNatsClient(compressor, blobstoreClient, natsIp)
+		natsClient = utils.NewNatsClient(compressor, blobstoreClient, natsIP)
 		err := natsClient.Setup()
 		Expect(err).NotTo(HaveOccurred())
 

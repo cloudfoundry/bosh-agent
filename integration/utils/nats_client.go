@@ -17,7 +17,7 @@ import (
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	"github.com/nats-io/nats"
 
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 )
 
 type PrepareTemplateConfig struct {
@@ -202,7 +202,7 @@ func (n *NatsClient) Setup() error {
 		return err
 	}
 
-	n.sub, err = n.nc.SubscribeSync(senderID)
+	n.sub, _ = n.nc.SubscribeSync(senderID)
 	n.alertSub, err = n.nc.SubscribeSync("hm.agent.alert." + agentGUID)
 	return err
 }
@@ -213,14 +213,14 @@ func (n *NatsClient) natsURI() string {
 
 func (n *NatsClient) Cleanup() {
 	err := n.RunStop()
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	n.nc.Close()
 }
 
 func (n *NatsClient) PrepareJob(jobName string) {
 	templateID, sha1, err := n.uploadJob(jobName)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	prepareTemplateConfig := PrepareTemplateConfig{
 		JobName:                             jobName,
@@ -233,22 +233,22 @@ func (n *NatsClient) PrepareJob(jobName string) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("prepare").Parse(prepareTemplate))
 	err = t.Execute(buffer, prepareTemplateConfig)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	prepareResponse, err := n.SendMessage(buffer.String())
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	_, err = n.WaitForTask(prepareResponse["value"]["agent_task_id"], -1)
-	Expect(err).ToNot(HaveOccurred())
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	buffer.Reset()
 	t = template.Must(template.New("apply").Parse(applyTemplate))
 	err = t.Execute(buffer, prepareTemplateConfig)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	applyResponse, err := n.SendMessage(buffer.String())
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	_, err = n.WaitForTask(applyResponse["value"]["agent_task_id"], -1)
-	Expect(err).ToNot(HaveOccurred())
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 }
 
 type MarshalableBlobRef struct {
@@ -392,12 +392,12 @@ func (n *NatsClient) RunDrain() error {
 		return err
 	}
 
-	taskResponse, err := n.WaitForTask(drainResponse["value"]["agent_task_id"], DefaultTaskTimeout)
+	taskResponse, _ := n.WaitForTask(drainResponse["value"]["agent_task_id"], DefaultTaskTimeout)
 	magicNumber, ok := taskResponse.Value.(float64)
 	if !ok {
 		return fmt.Errorf("RunDrain got invalid taskResponse %s", reflect.TypeOf(taskResponse.Value))
 	}
-	Expect(int(magicNumber)).To(Equal(0))
+	gomega.Expect(int(magicNumber)).To(gomega.Equal(0))
 
 	return nil
 }
@@ -429,11 +429,11 @@ func (n *NatsClient) RunStart() (map[string]string, error) {
 func (n *NatsClient) GetState() action.GetStateV1ApplySpec {
 	message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
 	rawResponse, err := n.SendRawMessage(message)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	getStateResponse := map[string]action.GetStateV1ApplySpec{}
 	err = json.Unmarshal(rawResponse, &getStateResponse)
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	return getStateResponse["value"]
 }
@@ -463,7 +463,7 @@ func (n *NatsClient) RunErrand() (map[string]map[string]string, error) {
 
 func (n *NatsClient) FetchLogs(destinationDir string) {
 	message := fmt.Sprintf(fetchLogsTemplate, senderID)
-	fetchLogsResponse, err := n.SendMessage(message)
+	fetchLogsResponse, _ := n.SendMessage(message)
 	var fetchLogsResult map[string]string
 
 	fetchLogsCheckFunc := func() (map[string]string, error) {
@@ -485,14 +485,14 @@ func (n *NatsClient) FetchLogs(destinationDir string) {
 		return fetchLogsResult, nil
 	}
 
-	Eventually(fetchLogsCheckFunc, DefaultTimeout, DefaultInterval).Should(HaveKey("blobstore_id"))
+	gomega.Eventually(fetchLogsCheckFunc, DefaultTimeout, DefaultInterval).Should(gomega.HaveKey("blobstore_id"))
 
 	fetchedLogFile := filepath.Join(destinationDir, "log.tgz")
-	err = n.blobstoreClient.Get(fetchLogsResult["blobstore_id"], fetchedLogFile)
-	Expect(err).NotTo(HaveOccurred())
+	err := n.blobstoreClient.Get(fetchLogsResult["blobstore_id"], fetchedLogFile)
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	err = n.compressor.DecompressFileToDir(fetchedLogFile, destinationDir, boshfileutil.CompressorOptions{})
-	Expect(err).NotTo(HaveOccurred())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 }
 
 func (n *NatsClient) CheckErrandResultStatus(taskID string) func() (action.ErrandResult, error) {
