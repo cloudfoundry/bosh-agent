@@ -131,8 +131,22 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Getting blob manager")
 	}
 
+	app.logger.Info("info", "Setting up packages blobstore")
+	packageBlobstore := settingsService.GetSettings().GetBlobstore("packages")
+	app.logger.Info("info", "Found %+v", packageBlobstore)
+
 	blobstore, err := app.setupBlobstore(
-		settingsService.GetSettings().GetBlobstore(),
+		packageBlobstore,
+		[]boshagentblobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
+	)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting blobstore")
+	}
+	app.logger.Info("info", "Setting up logs blobstore")
+	logBlobstore := settingsService.GetSettings().GetBlobstore("logs")
+	app.logger.Info("info", "Found %+v", logBlobstore)
+	logsBlobstore, err := app.setupBlobstore(
+		logBlobstore,
 		[]boshagentblobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
 	)
 	if err != nil {
@@ -198,6 +212,7 @@ func (app *app) Setup(opts Options) error {
 		settingsService,
 		app.platform,
 		blobstore,
+		logsBlobstore,
 		sensitiveBlobManager,
 		taskService,
 		notifier,

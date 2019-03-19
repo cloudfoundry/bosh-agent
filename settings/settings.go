@@ -46,6 +46,7 @@ type Source interface {
 type Blobstore struct {
 	Type    string                 `json:"provider"`
 	Options map[string]interface{} `json:"options"`
+	Purpose string                 `json:"purpose,omitempty"`
 }
 
 type Disks struct {
@@ -159,10 +160,17 @@ func (s Settings) GetMbusURL() string {
 	return s.Mbus
 }
 
-func (s Settings) GetBlobstore() Blobstore {
+func (s Settings) GetBlobstore(purpose string) Blobstore {
+	for _, p := range s.Env.Bosh.Blobstores {
+		if p.Purpose == purpose {
+			return p
+		}
+	}
+
 	if len(s.Env.Bosh.Blobstores) > 0 {
 		return s.Env.Bosh.Blobstores[0]
 	}
+
 	return s.Blobstore
 }
 

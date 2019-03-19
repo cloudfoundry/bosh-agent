@@ -1,8 +1,7 @@
 package blobstore
 
 import (
-	"fmt"
-	"path"
+	"io/ioutil"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -54,13 +53,15 @@ func (p Provider) Get(storeType string, options map[string]interface{}) (DigestB
 		)
 
 	default:
+		tempFile, _ := ioutil.TempFile("", "blobstore")
 		blobstore = NewExternalBlobstore(
 			storeType,
 			options,
 			p.fs,
 			p.runner,
 			p.uuidGen,
-			path.Join(p.configDir, fmt.Sprintf("blobstore-%s.json", storeType)),
+			tempFile.Name(),
+			// path.Join(p.configDir, fmt.Sprintf("blobstore-%s.json", storeType)),
 		)
 	}
 
