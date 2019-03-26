@@ -15,6 +15,7 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsystem "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
@@ -79,7 +80,7 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		}
 	}()
 
-	contents, err := fs.ReadFile(filePath)
+	contents, err := fs.ReadFileWithOpts(filePath, boshsystem.ReadOpts{Quiet: true})
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "reading %s from blobstore", filePath)
 	}

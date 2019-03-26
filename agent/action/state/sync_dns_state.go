@@ -65,7 +65,7 @@ func (s SyncDNSState) NeedsUpdate(newVersion uint64) bool {
 }
 
 func (s SyncDNSState) loadVersion() (uint64, error) {
-	contents, err := s.fs.ReadFile(s.path)
+	contents, err := s.fs.ReadFileWithOpts(s.path, boshsys.ReadOpts{Quiet: true})
 	if err != nil {
 		return 0, bosherr.WrapError(err, "reading state file")
 	}
