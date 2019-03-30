@@ -436,7 +436,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:97ddf0623346c968ed2ebaf72f0b871ee2eda69a0147234e6ab8c890c65866b2"
+  digest = "1:b6a27dca1c4dfba1692491e6bf9e4b81d5c9386a9a762d7a17f2ea486c3ec064"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -450,11 +450,11 @@
     "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "b7391e95e576cacdcdd422573063bc057239113d"
+  revision = "a5d413f7728c81fb97d96a2b722368945f651e78"
 
 [[projects]]
   branch = "master"
-  digest = "1:42fa790c6bea9c166e1fd310d4fef3dfaea93101bf4c2d93129587fd3f5e50ff"
+  digest = "1:6ef191d9cd899dc513c1f2a3e88d5ecefdd5b49309506fa271de486277dd5971"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -465,11 +465,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "addf6b3196f61cd44ce5a76657913698c73479d0"
+  revision = "74de082e2cca95839e88aa0aeee5aadf6ce7710f"
 
 [[projects]]
   branch = "master"
-  digest = "1:ce00916a271037de93b2108928b12574631dd81b35cc745d09e09f05c36863fe"
+  digest = "1:23bac68ab4549950f776906fffeb4f651d0dbc519499f3fc7df6161af059c26e"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -480,7 +480,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "f49334f85ddcf0f08d7fb6dd7363e9e6d6b777eb"
+  revision = "9eb1bfa1ce65ae8a6ff3114b0aaf9a41a6cf3560"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -510,7 +510,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:92a62ac3265d8e416ef00d9129d046a7a884b69a8766a159c0644b3b4775d0f6"
+  digest = "1:664bc16fa5d9231f2790aa23270750da8e3f1739f538fd162185fbb8a18175ec"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -526,7 +526,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "c1a832b0ad89ed14aba1b0a13a0733e291a7c7fc"
+  revision = "a96101f168f4ff1e2cd559ba4f61dbd091684e41"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
