@@ -1059,6 +1059,88 @@ var _ = Describe("Settings", func() {
 			)
 		})
 
+		Context("#GetSpecificBlobstore", func() {
+			packagesBlobstore := Blobstore{
+				Name: "packages",
+				Type: "local",
+			}
+
+			logsBlobstore := Blobstore{
+				Type: "s3",
+				Name: "logs",
+			}
+
+			targetedBlobstores := TargetedBlobstores{
+				Packages: "packages",
+				Logs:     "logs",
+			}
+
+			DescribeTable("agent returning the right blobstore configuration",
+				func(settingsBlobstore Blobstore, envBoshBlobstores [](Blobstore), targetedBlobstores TargetedBlobstores, requestedBlobstore string, expectedBlobstore Blobstore) {
+					settings := Settings{
+						Blobstore: settingsBlobstore,
+						Env: Env{
+							Bosh: BoshEnv{
+								TargetedBlobstores: targetedBlobstores,
+								Blobstores:         envBoshBlobstores,
+							},
+						},
+					}
+
+					Expect(settings.GetSpecificBlobstore(requestedBlobstore)).To(Equal(expectedBlobstore))
+				},
+
+				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
+					packagesBlobstore,
+					nil,
+					nil,
+					"packages",
+					packagesBlobstore),
+
+				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
+					packagesBlobstore,
+					nil,
+					nil,
+					"logs",
+					packagesBlobstore),
+
+				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
+					nil,
+					[]Blobstore{packagesBlobstore},
+					nil,
+					"packages",
+					packagesBlobstore),
+
+				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
+					nil,
+					[]Blobstore{packagesBlobstore},
+					nil,
+					"logs",
+					packagesBlobstore),
+
+				Entry("env.bosh.Blobstores targets specific blobstores for packages",
+					logsBlobstore,
+					[]Blobstore{logsBlobstore, packagesBlobstore},
+					targetedBlobstores,
+					"packages",
+					packagesBlobstore),
+
+				Entry("env.bosh.Blobstores targets specific blobstores for logs",
+					packagesBlobstore,
+					[]Blobstore{logsBlobstore, packagesBlobstore},
+					targetedBlobstores,
+					"logs",
+					logsBlobstore),
+
+				Entry("setting.Blobstore and env.bosh.Blobstores both are missing",
+					nil,
+					nil,
+					nil,
+					"logs",
+					nil),
+			)
+		})
+
 		Context("#GetNtpServers", func() {
 			ntpSetOne := []string{"a", "b", "c"}
 
