@@ -46,6 +46,7 @@ type Source interface {
 type Blobstore struct {
 	Type    string                 `json:"provider"`
 	Options map[string]interface{} `json:"options"`
+	Name    string                 `json:"name"`
 }
 
 type Disks struct {
@@ -166,6 +167,37 @@ func (s Settings) GetBlobstore() Blobstore {
 	return s.Blobstore
 }
 
+func (s Settings) GetSpecificBlobstore(targetBlobstore string) (Blobstore, error) {
+	switch targetBlobstore {
+	case "packages":
+		requestedBlobstore := s.Env.Bosh.TargetedBlobstores.Packages
+		if requestedBlobstore == "" {
+			break
+		}
+		for _, blobstore := range s.Env.Bosh.Blobstores {
+			if blobstore.Name == requestedBlobstore {
+				return blobstore, nil
+			}
+		}
+
+		return Blobstore{}, fmt.Errorf("Hey, couldn't find requested blobstore matching %s, sorry", requestedBlobstore)
+	case "logs":
+		requestedBlobstore := s.Env.Bosh.TargetedBlobstores.Logs
+		if requestedBlobstore == "" {
+			break
+		}
+		for _, blobstore := range s.Env.Bosh.Blobstores {
+			if blobstore.Name == requestedBlobstore {
+				return blobstore, nil
+			}
+		}
+
+		return Blobstore{}, fmt.Errorf("Hey, couldn't find requested blobstore matching %s, sorry", requestedBlobstore)
+	}
+
+	return s.GetBlobstore(), nil
+}
+
 func (s Settings) GetNtpServers() []string {
 	if len(s.Env.Bosh.NTP) > 0 {
 		return s.Env.Bosh.NTP
@@ -272,19 +304,20 @@ func (e Env) IsNATSMutualTLSEnabled() bool {
 }
 
 type BoshEnv struct {
-	Agent                 AgentEnv    `json:"agent"`
-	Password              string      `json:"password"`
-	KeepRootPassword      bool        `json:"keep_root_password"`
-	RemoveDevTools        bool        `json:"remove_dev_tools"`
-	RemoveStaticLibraries bool        `json:"remove_static_libraries"`
-	AuthorizedKeys        []string    `json:"authorized_keys"`
-	SwapSizeInMB          *uint64     `json:"swap_size"`
-	Mbus                  MBus        `json:"mbus"`
-	IPv6                  IPv6        `json:"ipv6"`
-	JobDir                JobDir      `json:"job_dir"`
-	Blobstores            []Blobstore `json:"blobstores"`
-	NTP                   []string    `json:"ntp"`
-	Parallel              *int        `json:"parallel"`
+	Agent                 AgentEnv           `json:"agent"`
+	Password              string             `json:"password"`
+	KeepRootPassword      bool               `json:"keep_root_password"`
+	RemoveDevTools        bool               `json:"remove_dev_tools"`
+	RemoveStaticLibraries bool               `json:"remove_static_libraries"`
+	AuthorizedKeys        []string           `json:"authorized_keys"`
+	SwapSizeInMB          *uint64            `json:"swap_size"`
+	Mbus                  MBus               `json:"mbus"`
+	IPv6                  IPv6               `json:"ipv6"`
+	JobDir                JobDir             `json:"job_dir"`
+	Blobstores            []Blobstore        `json:"blobstores"`
+	NTP                   []string           `json:"ntp"`
+	Parallel              *int               `json:"parallel"`
+	TargetedBlobstores    TargetedBlobstores `json:"targeted_blobstores"`
 }
 
 type AgentEnv struct {
@@ -358,6 +391,11 @@ type Network struct {
 }
 
 type Networks map[string]Network
+
+type TargetedBlobstores struct {
+	Packages string `json:"packages"`
+	Logs     string `json:"logs"`
+}
 
 func (n Network) IsDefaultFor(category string) bool {
 	return stringArrayContains(n.Default, category)

@@ -131,8 +131,26 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Getting blob manager")
 	}
 
-	blobstore, err := app.setupBlobstore(
-		settingsService.GetSettings().GetBlobstore(),
+	logsBlobstore, err := settingsService.GetSettings().GetSpecificBlobstore("logs")
+	if err != nil {
+		return bosherr.WrapError(err, "Getting blobstore")
+	}
+
+	wrappedLogsBlobstore, err := app.setupBlobstore(
+		logsBlobstore,
+		[]boshagentblobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
+	)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting blobstore")
+	}
+
+	packagesBlobstore, err := settingsService.GetSettings().GetSpecificBlobstore("packages")
+	if err != nil {
+		return bosherr.WrapError(err, "Getting blobstore")
+	}
+
+	wrappedPackagesBlobstore, err := app.setupBlobstore(
+		packagesBlobstore,
 		[]boshagentblobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
 	)
 	if err != nil {
@@ -170,7 +188,7 @@ func (app *app) Setup(opts Options) error {
 
 	applier, compiler := app.buildApplierAndCompiler(
 		app.dirProvider,
-		blobstore,
+		wrappedPackagesBlobstore,
 		jobSupervisor,
 		settingsService.GetSettings(),
 		timeService,
@@ -197,7 +215,8 @@ func (app *app) Setup(opts Options) error {
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		app.platform,
-		blobstore,
+		wrappedPackagesBlobstore,
+		wrappedLogsBlobstore,
 		sensitiveBlobManager,
 		taskService,
 		notifier,
@@ -255,7 +274,7 @@ func (app *app) GetPlatform() boshplatform.Platform {
 
 func (app *app) buildApplierAndCompiler(
 	dirProvider boshdirs.Provider,
-	blobstore boshblob.DigestBlobstore,
+	packagesBlobstore boshblob.DigestBlobstore,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	settings boshsettings.Settings,
 	timeService clock.Clock,
@@ -278,7 +297,7 @@ func (app *app) buildApplierAndCompiler(
 		dirProvider.BaseDir(),
 		dirProvider.JobsDir(),
 		"packages",
-		blobstore,
+		packagesBlobstore,
 		app.platform.GetCompressor(),
 		fileSystem,
 		timeService,
@@ -290,7 +309,7 @@ func (app *app) buildApplierAndCompiler(
 		jobsBc,
 		jobSupervisor,
 		packageApplierProvider,
-		blobstore,
+		packagesBlobstore,
 		boshaj.FixPermissions,
 		fileSystem,
 		app.logger,
@@ -314,7 +333,7 @@ func (app *app) buildApplierAndCompiler(
 
 	compiler := boshcomp.NewConcreteCompiler(
 		app.platform.GetCompressor(),
-		blobstore,
+		packagesBlobstore,
 		fileSystem,
 		cmdRunner,
 		dirProvider,
