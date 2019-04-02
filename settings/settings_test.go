@@ -1060,14 +1060,18 @@ var _ = Describe("Settings", func() {
 		})
 
 		Context("#GetSpecificBlobstore", func() {
+			singletonBlobstore := Blobstore{
+				Name: "whocares",
+				Type: "whocares",
+			}
 			packagesBlobstore := Blobstore{
 				Name: "packages",
-				Type: "local",
+				Type: "whocares",
 			}
 
 			logsBlobstore := Blobstore{
-				Type: "s3",
 				Name: "logs",
+				Type: "whocares",
 			}
 
 			targetedBlobstores := TargetedBlobstores{
@@ -1091,32 +1095,32 @@ var _ = Describe("Settings", func() {
 				},
 
 				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
-					packagesBlobstore,
+					singletonBlobstore,
 					nil,
 					nil,
 					"packages",
-					packagesBlobstore),
+					singletonBlobstore),
 
 				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
-					packagesBlobstore,
+					singletonBlobstore,
 					nil,
 					nil,
 					"logs",
-					packagesBlobstore),
+					singletonBlobstore),
 
 				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
 					nil,
-					[]Blobstore{packagesBlobstore},
+					[]Blobstore{singletonBlobstore},
 					nil,
 					"packages",
-					packagesBlobstore),
+					singletonBlobstore),
 
 				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
 					nil,
-					[]Blobstore{packagesBlobstore},
+					[]Blobstore{singletonBlobstore},
 					nil,
 					"logs",
-					packagesBlobstore),
+					singletonBlobstore),
 
 				Entry("env.bosh.Blobstores targets specific blobstores for packages",
 					logsBlobstore,
