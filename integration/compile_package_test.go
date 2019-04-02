@@ -114,17 +114,16 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("compiles and stores it to the ephemeral disk", func() {
-			blobId, err := uuid.NewV4()
+			blobID, err := uuid.NewV4()
 			Expect(err).NotTo(HaveOccurred())
 
-			// err = testEnvironment.CreateBlobFromAssetInActualBlobstore("dummy_package.tgz", "/tmp/my-blobs", blobId.String())
-			err = testEnvironment.CreateBlobFromAsset("dummy_package.tgz", blobId.String())
+			err = testEnvironment.CreateBlobFromAsset("dummy_package.tgz", blobID.String())
 			Expect(err).NotTo(HaveOccurred())
 
 			result, err := agentClient.CompilePackage(agentclient.BlobRef{
 				Name:        "fake",
 				Version:     "1",
-				BlobstoreID: blobId.String(),
+				BlobstoreID: blobID.String(),
 				SHA1:        "236cbd31a483c3594061b00a84a80c1c182b3b20",
 			}, []agentclient.BlobRef{})
 
@@ -137,16 +136,16 @@ var _ = Describe("compile_package", func() {
 	})
 
 	It("allows passing bare sha1 for legacy support", func() {
-		blobId, err := uuid.NewV4()
+		blobID, err := uuid.NewV4()
 		Expect(err).NotTo(HaveOccurred())
 
-		err = testEnvironment.CreateBlobFromAssetInActualBlobstore("dummy_package.tgz", "/tmp/my-blobs", blobId.String())
+		err = testEnvironment.CreateBlobFromAssetInActualBlobstore("dummy_package.tgz", "/tmp/my-blobs", blobID.String())
 		Expect(err).NotTo(HaveOccurred())
 
 		result, err := agentClient.CompilePackage(agentclient.BlobRef{
 			Name:        "fake",
 			Version:     "1",
-			BlobstoreID: blobId.String(),
+			BlobstoreID: blobID.String(),
 			SHA1:        "236cbd31a483c3594061b00a84a80c1c182b3b20",
 		}, []agentclient.BlobRef{})
 
