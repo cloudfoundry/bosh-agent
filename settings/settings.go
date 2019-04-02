@@ -160,7 +160,7 @@ func (s Settings) GetMbusURL() string {
 	return s.Mbus
 }
 
-func (s Settings) GetBlobstore() Blobstore {
+func (s Settings) getBlobstore() Blobstore {
 	if len(s.Env.Bosh.Blobstores) > 0 {
 		return s.Env.Bosh.Blobstores[0]
 	}
@@ -168,34 +168,25 @@ func (s Settings) GetBlobstore() Blobstore {
 }
 
 func (s Settings) GetSpecificBlobstore(targetBlobstore string) (Blobstore, error) {
+	var requestedBlobstore string
 	switch targetBlobstore {
 	case "packages":
-		requestedBlobstore := s.Env.Bosh.TargetedBlobstores.Packages
-		if requestedBlobstore == "" {
-			break
-		}
-		for _, blobstore := range s.Env.Bosh.Blobstores {
-			if blobstore.Name == requestedBlobstore {
-				return blobstore, nil
-			}
-		}
-
-		return Blobstore{}, fmt.Errorf("Hey, couldn't find requested blobstore matching %s, sorry", requestedBlobstore)
+		requestedBlobstore = s.Env.Bosh.TargetedBlobstores.Packages
 	case "logs":
-		requestedBlobstore := s.Env.Bosh.TargetedBlobstores.Logs
-		if requestedBlobstore == "" {
-			break
-		}
-		for _, blobstore := range s.Env.Bosh.Blobstores {
-			if blobstore.Name == requestedBlobstore {
-				return blobstore, nil
-			}
-		}
-
-		return Blobstore{}, fmt.Errorf("Hey, couldn't find requested blobstore matching %s, sorry", requestedBlobstore)
+		requestedBlobstore = s.Env.Bosh.TargetedBlobstores.Logs
 	}
 
-	return s.GetBlobstore(), nil
+	if requestedBlobstore == "" {
+		return s.getBlobstore(), nil
+	}
+
+	for _, blobstore := range s.Env.Bosh.Blobstores {
+		if blobstore.Name == requestedBlobstore {
+			return blobstore, nil
+		}
+	}
+
+	return Blobstore{}, fmt.Errorf(`Env.Bosh.Blobstores does not contain blobstore with name "%s"`, requestedBlobstore)
 }
 
 func (s Settings) GetNtpServers() []string {
