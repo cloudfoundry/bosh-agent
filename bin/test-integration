@@ -11,7 +11,7 @@ if [ ! -d "${base}"/tmp ]; then
 fi
 
 cleanup() {
-	echo "Cleaning up"
+  echo "Cleaning up"
 
   (cd $base && vagrant destroy -f)
 

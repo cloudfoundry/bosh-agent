@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -606,23 +605,13 @@ func (t *TestEnvironment) CreateBlobFromStringInActualBlobstore(contents, blobst
 		return "", err
 	}
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	localBlobPath := filepath.Join(pwd, "..", "tmp", blobID)
-	err = ioutil.WriteFile(localBlobPath, []byte(contents), 0640)
-	if err != nil {
-		return "", err
-	}
-
 	remoteBlobPath := filepath.Join(blobstorePath, blobID)
-	_, _, _, err = t.cmdRunner.RunCommand(
+	_, _, _, err = t.cmdRunner.RunCommandWithInput(
+		contents,
 		"vagrant",
 		"ssh",
 		"--",
-		fmt.Sprintf("sudo cp %s %s", filepath.Join(string(os.PathSeparator), "vagrant", "tmp", blobID), remoteBlobPath),
+		fmt.Sprintf("cat | sudo tee %s", remoteBlobPath),
 	)
 	if err != nil {
 		return "", err
