@@ -553,7 +553,7 @@ func (t *TestEnvironment) RunCommand3(command string) (string, string, int, erro
 }
 
 func (t *TestEnvironment) CreateSensitiveBlobFromAsset(assetPath, blobID string) error {
-	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/blobs")
+	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/sensitive_blobs")
 	if err != nil {
 		return err
 	}
