@@ -445,7 +445,7 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
 	client := integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
 
-	for i := 1; i < 30; i++ {
+	for i := 1; i < 90; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
 		time.Sleep(1 * time.Second)
 		_, err := client.Ping()
