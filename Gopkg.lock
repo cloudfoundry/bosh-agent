@@ -112,7 +112,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:29494b88010490e7612eb1c38afc5135fc5bc9dfa9459e831a81f55b715a09ca"
+  digest = "1:c4b73c2664ac1ed6729e0d46525cdfc3523344629afd709c238e55a3bba4b42b"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -134,7 +134,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "9a0affed2bf1b1cd41515ce2356335ca4c6e6f98"
+  revision = "6725a40fb9cb893bc786727104d4b6994ec1ed32"
 
 [[projects]]
   branch = "master"
@@ -157,12 +157,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:d43a203ecd5644f46eeaef9dad5a11a06598ed6feb17cb6e232a2589d8e96347"
+  digest = "1:6422faebc7a4f3c8f58ff0af81002db6bd2f09204d6005611415163091947ad1"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7ade90b228c8472a45c189e77f78497b93bbaeaa"
-  version = "v0.1.0"
+  revision = "633b6fe4c3d8d72a4e7397a948027db02a8e2a96"
+  version = "v0.2.0"
 
 [[projects]]
   branch = "master"
@@ -419,12 +419,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:bb9033d47c116ea3b981ff159bdef73df8351b0b9700da2066339b97211b1bf0"
+  digest = "1:998e4640c25e00ccb7b2569bf94562283937b8afb3485c0e1a0a05a15330240d"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "dae0fa8d5b0c810a8ab733fbd5510c7cae84eca4"
-  version = "v1.4.0"
+  revision = "8bdbc7bcc01dcbb8ec23dc8a28e332258d25251f"
+  version = "v1.4.1"
 
 [[projects]]
   digest = "1:42e8c2456d7ec0f31e182c20022e74324c4da2cb3bd9069ff9b131fe33466308"
@@ -436,7 +436,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b6a27dca1c4dfba1692491e6bf9e4b81d5c9386a9a762d7a17f2ea486c3ec064"
+  digest = "1:725d7d321efd08a7942d20226e146e13bd589b6ef24f3d98373811101e3bc2f7"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -447,10 +447,9 @@
     "md4",
     "poly1305",
     "ssh",
-    "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "a5d413f7728c81fb97d96a2b722368945f651e78"
+  revision = "38d8ce5564a5b71b2e3a00553993f1b9a7ae852f"
 
 [[projects]]
   branch = "master"
@@ -465,11 +464,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "74de082e2cca95839e88aa0aeee5aadf6ce7710f"
+  revision = "eb5bcb51f2a31c7d5141d810b70815c05d9c9146"
 
 [[projects]]
   branch = "master"
-  digest = "1:23bac68ab4549950f776906fffeb4f651d0dbc519499f3fc7df6161af059c26e"
+  digest = "1:3766a093f54349d62edd9b92818876368208dc123c9447d8b9240f0f2105d447"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -480,7 +479,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "9eb1bfa1ce65ae8a6ff3114b0aaf9a41a6cf3560"
+  revision = "4b34438f7a67ee5f45cc6132e2bad873a20324e9"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -510,7 +509,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:664bc16fa5d9231f2790aa23270750da8e3f1739f538fd162185fbb8a18175ec"
+  digest = "1:59b401940f79c311efa01c10e2fa8e78522a978538127f369fb39690a03c3eb4"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -526,7 +525,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "a96101f168f4ff1e2cd559ba4f61dbd091684e41"
+  revision = "052fc3cfdbc2c9e9082b1d51f850b7974b5efb2a"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
@@ -585,6 +584,7 @@
     "github.com/cloudfoundry/gosigar/fakes",
     "github.com/cloudfoundry/yagnats",
     "github.com/cloudfoundry/yagnats/fakeyagnats",
+    "github.com/gofrs/uuid",
     "github.com/golang/mock/gomock",
     "github.com/kevinburke/ssh_config",
     "github.com/masterzen/winrm",
