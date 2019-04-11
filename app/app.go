@@ -370,10 +370,15 @@ func (app *app) setupBlobstore(
 	blobstoreSettings boshsettings.Blobstore,
 	blobManagers []boshagentblobstore.BlobManagerInterface,
 ) (boshblob.DigestBlobstore, error) {
+	blobstoreConfigPath := filepath.Join(app.dirProvider.EtcDir(), blobstoreSettings.Name)
+	if err := app.fs.MkdirAll(blobstoreConfigPath, 0755); err != nil {
+		return nil, err
+	}
+
 	blobstoreProvider := boshblob.NewProvider(
 		app.platform.GetFs(),
 		app.platform.GetRunner(),
-		filepath.Join(app.dirProvider.EtcDir(), blobstoreSettings.Name),
+		blobstoreConfigPath,
 		app.logger,
 	)
 
