@@ -373,7 +373,7 @@ func (app *app) setupBlobstore(
 	blobstoreProvider := boshblob.NewProvider(
 		app.platform.GetFs(),
 		app.platform.GetRunner(),
-		app.dirProvider.EtcDir(),
+		filepath.Join(app.dirProvider.EtcDir(), blobstoreSettings.Name),
 		app.logger,
 	)
 
