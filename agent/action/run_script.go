@@ -9,6 +9,10 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
+type RunScriptOptions struct {
+	Env map[string]string `json:"env"`
+}
+
 type RunScriptAction struct {
 	scriptProvider boshscript.JobScriptProvider
 	specService    boshas.V1Service
@@ -43,7 +47,7 @@ func (a RunScriptAction) IsLoggable() bool {
 	return true
 }
 
-func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) (map[string]string, error) {
+func (a RunScriptAction) Run(scriptName string, options RunScriptOptions) (map[string]string, error) {
 	// May be used in future to return more information
 	emptyResults := map[string]string{}
 
@@ -53,9 +57,8 @@ func (a RunScriptAction) Run(scriptName string, options map[string]interface{}) 
 	}
 
 	var scripts []boshscript.Script
-
 	for _, job := range currentSpec.Jobs() {
-		script := a.scriptProvider.NewScript(job.BundleName(), scriptName)
+		script := a.scriptProvider.NewScript(job.BundleName(), scriptName, options.Env)
 		scripts = append(scripts, script)
 	}
 

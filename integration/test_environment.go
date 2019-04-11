@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -114,7 +115,8 @@ sudo umount /tmp/config-drive
 `
 	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, t.deviceMap[deviceNum], t.deviceMap[deviceNum], t.assetsDir(), t.assetsDir())
 
-	_, err = t.RunCommand(setupConfigDriveScript)
+	rs, err := t.RunCommand(setupConfigDriveScript)
+	fmt.Printf("This happened: %s\n", rs)
 	return err
 }
 
@@ -443,7 +445,7 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
 	client := integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
 
-	for i := 1; i < 1000000; i++ {
+	for i := 1; i < 90; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
 		time.Sleep(1 * time.Second)
 		_, err := client.Ping()
@@ -550,7 +552,7 @@ func (t *TestEnvironment) RunCommand3(command string) (string, string, int, erro
 }
 
 func (t *TestEnvironment) CreateSensitiveBlobFromAsset(assetPath, blobID string) error {
-	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/blobs")
+	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/sensitive_blobs")
 	if err != nil {
 		return err
 	}
@@ -579,6 +581,50 @@ func (t *TestEnvironment) CreateBlobFromAsset(assetPath, blobID string) error {
 	)
 
 	return err
+}
+
+func (t *TestEnvironment) CreateBlobFromAssetInActualBlobstore(assetPath, blobstorePath, blobID string) error {
+	_, err := t.RunCommand(fmt.Sprintf("sudo mkdir -p %s", blobstorePath))
+	if err != nil {
+		return err
+	}
+
+	_, _, _, err = t.cmdRunner.RunCommand(
+		"vagrant",
+		"ssh",
+		"--",
+		fmt.Sprintf("sudo cp %s %s", filepath.Join(t.assetsDir(), assetPath), filepath.Join(blobstorePath, blobID)),
+	)
+
+	return err
+}
+
+func (t *TestEnvironment) CreateBlobFromStringInActualBlobstore(contents, blobstorePath, blobID string) (string, error) {
+	_, err := t.RunCommand(fmt.Sprintf("sudo mkdir -p %s", blobstorePath))
+	if err != nil {
+		return "", err
+	}
+
+	remoteBlobPath := filepath.Join(blobstorePath, blobID)
+	_, _, _, err = t.cmdRunner.RunCommandWithInput(
+		contents,
+		"vagrant",
+		"ssh",
+		"--",
+		fmt.Sprintf("cat | sudo tee %s", remoteBlobPath),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	blobDigest, _, _, err := t.cmdRunner.RunCommand(
+		"vagrant",
+		"ssh",
+		"--",
+		fmt.Sprintf("sudo shasum %s | cut -f 1 -d ' '", remoteBlobPath),
+	)
+
+	return blobDigest, err
 }
 
 func (t *TestEnvironment) agentDir() string {

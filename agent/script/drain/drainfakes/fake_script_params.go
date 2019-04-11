@@ -2,9 +2,9 @@
 package drainfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	drain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 type FakeScriptParams struct {

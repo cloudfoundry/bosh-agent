@@ -2,9 +2,9 @@
 package platformfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	platform "github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/platform"
 )
 
 type FakeAuditLogger struct {

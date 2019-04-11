@@ -22,6 +22,8 @@ type GenericScript struct {
 
 	stdoutLogPath string
 	stderrLogPath string
+
+	env map[string]string
 }
 
 func NewScript(
@@ -31,6 +33,7 @@ func NewScript(
 	path string,
 	stdoutLogPath string,
 	stderrLogPath string,
+	env map[string]string,
 ) GenericScript {
 	return GenericScript{
 		fs:     fs,
@@ -41,6 +44,8 @@ func NewScript(
 
 		stdoutLogPath: stdoutLogPath,
 		stderrLogPath: stderrLogPath,
+
+		env: env,
 	}
 }
 
@@ -78,6 +83,10 @@ func (s GenericScript) Run() error {
 	command := cmd.BuildCommand(s.path)
 	command.Stdout = stdoutFile
 	command.Stderr = stderrFile
+
+	for key, val := range s.env {
+		command.Env[key] = val
+	}
 
 	_, _, _, err = s.runner.RunComplexCommand(command)
 

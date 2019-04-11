@@ -1,6 +1,8 @@
 package infrastructure
 
 import (
+	"errors"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
@@ -14,34 +16,76 @@ func NewMultiSourceMetadataService(services ...MetadataService) MetadataService 
 }
 
 func (ms *MultiSourceMetadataService) GetPublicKey() (string, error) {
-	return ms.getSelectedService().GetPublicKey()
+	selectedService, err := ms.getSelectedService()
+
+	if err != nil {
+		return "", err
+	}
+
+	return selectedService.GetPublicKey()
 }
 
 func (ms *MultiSourceMetadataService) GetInstanceID() (string, error) {
-	return ms.getSelectedService().GetInstanceID()
+	selectedService, err := ms.getSelectedService()
+
+	if err != nil {
+		return "", err
+	}
+
+	return selectedService.GetInstanceID()
 }
 
 func (ms *MultiSourceMetadataService) GetServerName() (string, error) {
-	return ms.getSelectedService().GetServerName()
+	selectedService, err := ms.getSelectedService()
+
+	if err != nil {
+		return "", err
+	}
+
+	return selectedService.GetServerName()
 }
 
 func (ms *MultiSourceMetadataService) GetRegistryEndpoint() (string, error) {
-	return ms.getSelectedService().GetRegistryEndpoint()
+	selectedService, err := ms.getSelectedService()
+
+	if err != nil {
+		return "", err
+	}
+
+	return selectedService.GetRegistryEndpoint()
 }
 
 func (ms *MultiSourceMetadataService) GetNetworks() (boshsettings.Networks, error) {
-	return ms.getSelectedService().GetNetworks()
+	selectedService, err := ms.getSelectedService()
+
+	if err != nil {
+		return boshsettings.Networks{}, err
+	}
+
+	return selectedService.GetNetworks()
 }
 
 func (ms *MultiSourceMetadataService) GetSettings() (boshsettings.Settings, error) {
-	return ms.getSelectedService().GetSettings()
+	selectedService, err := ms.getSelectedService()
+
+	if err != nil {
+		return boshsettings.Settings{}, err
+	}
+
+	return selectedService.GetSettings()
 }
 
 func (ms *MultiSourceMetadataService) IsAvailable() bool {
-	return true
+	for _, service := range ms.Services {
+		if service.IsAvailable() {
+			return true
+		}
+	}
+
+	return false
 }
 
-func (ms *MultiSourceMetadataService) getSelectedService() MetadataService {
+func (ms *MultiSourceMetadataService) getSelectedService() (MetadataService, error) {
 	if ms.selectedService == nil {
 		for _, service := range ms.Services {
 			if service.IsAvailable() {
@@ -50,5 +94,10 @@ func (ms *MultiSourceMetadataService) getSelectedService() MetadataService {
 			}
 		}
 	}
-	return ms.selectedService
+
+	if ms.selectedService == nil {
+		return nil, errors.New("services not available")
+	}
+
+	return ms.selectedService, nil
 }

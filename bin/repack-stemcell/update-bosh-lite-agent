@@ -1,0 +1,46 @@
+#!/bin/bash
+
+set -e
+
+stemcell_tgz="${1}"
+stemcell_dir=$(mktemp -d)
+image_dir=$(mktemp -d)
+agent_path="${PWD}/out/bosh-agent"
+
+
+if [ -z "${1}" ]; then
+	echo "./bin/repack-stemcell/update-bosh-lite-agent STEMCELL"
+	echo "  Repack bosh-lite stemcell with updated agent."
+	echo "  Updates linux agent in place and sets stemcell version to a monotonically increasing number."
+	exit 0
+fi
+
+# Repack stemcell
+(
+	set -eux
+	./bin/build-linux-amd64
+
+	cd $stemcell_dir
+	sudo tar xvf $stemcell_tgz
+	new_ver=`date +%s`
+
+	gunzip < image > ${image_dir}/image.tar
+
+	(
+		cd ${image_dir}
+		mkdir -p ./var/vcap/bosh/etc/
+		echo -n 0.0.${new_ver} > ./var/vcap/bosh/etc/stemcell_version
+		mkdir -p ./var/vcap/bosh/bin/
+		cp "${agent_path}" ./var/vcap/bosh/bin/bosh-agent
+		tar f image.tar --delete ./var/vcap/bosh/bin/bosh-agent
+		tar f image.tar --delete ./var/vcap/bosh/etc/stemcell_version
+		tar uf image.tar ./var/vcap/bosh/bin/bosh-agent
+		tar uf image.tar ./var/vcap/bosh/etc/stemcell_version
+		gzip < image.tar > new_image
+	)
+	rm -f image
+	mv ${image_dir}/new_image image
+
+	sed -i.bak "s/\bversion\b: .*/version: 0.0.${new_ver}/" stemcell.MF
+	sudo tar czvf $stemcell_tgz *
+)

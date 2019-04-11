@@ -2,9 +2,9 @@
 package diskfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	disk "github.com/cloudfoundry/bosh-agent/platform/disk"
+	"github.com/cloudfoundry/bosh-agent/platform/disk"
 )
 
 type FakeManager struct {

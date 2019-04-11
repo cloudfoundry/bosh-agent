@@ -28,11 +28,6 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Vagrant needs ubuntu to own the private key if aws provider
-tmpfile=`mktemp -t bosh-agent-tests-XXXXXXXX`
-echo "${AWS_SSH_KEY}" > $tmpfile
-export PRIVATE_KEY_PATH=$tmpfile
-
 cd $base
 if [ -f ${ENV_LOCAL} ]; then
     echo -e "\n ${ENV_LOCAL} detected. Sourcing contents"
@@ -40,6 +35,11 @@ if [ -f ${ENV_LOCAL} ]; then
 else
     echo -e "\n Running integration test with existing env. Edit ${ENV_LOCAL_TEMPLATE} to run integration tests locally."
 fi
+
+tmpfile=`mktemp -t bosh-agent-tests-XXXXXXXX`
+echo "${AWS_SSH_KEY}" > $tmpfile
+chmod 600 $tmpfile
+export PRIVATE_KEY_PATH=$tmpfile
 
 echo -e "\n Running agent integration tests..."
 $bin/env go clean -r github.com/cloudfoundry/bosh-agent/

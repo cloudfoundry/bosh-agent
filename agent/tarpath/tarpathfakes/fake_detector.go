@@ -2,9 +2,9 @@
 package tarpathfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	tarpath "github.com/cloudfoundry/bosh-agent/agent/tarpath"
+	"github.com/cloudfoundry/bosh-agent/agent/tarpath"
 )
 
 type FakeDetector struct {

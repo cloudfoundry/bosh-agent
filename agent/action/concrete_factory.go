@@ -23,7 +23,8 @@ type concreteFactory struct {
 func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
-	blobstore boshblob.DigestBlobstore,
+	packagesBlobstore boshblob.DigestBlobstore,
+	logsBlobstore boshblob.DigestBlobstore,
 	sensitiveBlobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
@@ -52,7 +53,7 @@ func NewFactory(
 
 			// VM admin
 			"ssh":             NewSSH(settingsService, platform, dirProvider, logger),
-			"fetch_logs":      NewFetchLogs(compressor, copier, blobstore, dirProvider),
+			"fetch_logs":      NewFetchLogs(compressor, copier, logsBlobstore, dirProvider),
 			"update_settings": NewUpdateSettings(settingsService, platform, certManager, logger),
 			"shutdown":        NewShutdown(platform),
 
@@ -84,7 +85,7 @@ func NewFactory(
 			"delete_arp_entries": NewDeleteARPEntries(platform),
 
 			// DNS
-			"sync_dns": NewSyncDNS(blobstore, settingsService, platform, logger),
+			"sync_dns": NewSyncDNS(packagesBlobstore, settingsService, platform, logger),
 		},
 	}
 	return

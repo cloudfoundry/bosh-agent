@@ -22,3 +22,4 @@ params:
   KEYPAIR_NAME: replace-me
   VAGRANT_PROVIDER: aws
   WINRM_PASSWORD: replace-me
+  WINDOWS_OS_VERSION: replace-me

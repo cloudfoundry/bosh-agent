@@ -2,10 +2,10 @@
 package jobsfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	jobs "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 )
 
 type FakeApplier struct {

@@ -19,6 +19,7 @@ var _ = Describe("RunScript", func() {
 		fakeJobScriptProvider *scriptfakes.FakeJobScriptProvider
 		specService           *fakeapplyspec.FakeV1Service
 		action                RunScriptAction
+		options               RunScriptOptions
 	)
 
 	BeforeEach(func() {
@@ -27,6 +28,11 @@ var _ = Describe("RunScript", func() {
 		specService.Spec.RenderedTemplatesArchiveSpec = &applyspec.RenderedTemplatesArchiveSpec{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		action = NewRunScript(fakeJobScriptProvider, specService, logger)
+		options = RunScriptOptions{
+			Env: map[string]string{
+				"FOO": "foo",
+			},
+		}
 	})
 
 	AssertActionIsAsynchronous(action)
@@ -37,7 +43,7 @@ var _ = Describe("RunScript", func() {
 	AssertActionIsNotCancelable(action)
 
 	Describe("Run", func() {
-		act := func() (map[string]string, error) { return action.Run("run-me", map[string]interface{}{}) }
+		act := func() (map[string]string, error) { return action.Run("run-me", options) }
 
 		Context("when current spec can be retrieved", func() {
 			var parallelScript *scriptfakes.FakeCancellableScript
@@ -61,8 +67,9 @@ var _ = Describe("RunScript", func() {
 				script2 := &scriptfakes.FakeScript{}
 				script2.TagReturns("fake-job-2")
 
-				fakeJobScriptProvider.NewScriptStub = func(jobName, scriptName string) boshscript.Script {
+				fakeJobScriptProvider.NewScriptStub = func(jobName, scriptName string, scriptEnv map[string]string) boshscript.Script {
 					Expect(scriptName).To(Equal("run-me"))
+					Expect(scriptEnv["FOO"]).To(Equal("foo"))
 
 					if jobName == "fake-job-1" {
 						return script1

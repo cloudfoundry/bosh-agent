@@ -35,7 +35,7 @@ func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, ti
 }
 
 func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Partition) error {
-	existingPartitions, deviceFullSizeInBytes, err := p.getPartitions(devicePath)
+	existingPartitions, deviceFullSizeInBytes, err := p.GetPartitions(devicePath)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Getting existing partitions of `%s'", devicePath)
 	}
@@ -75,7 +75,7 @@ func (p partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, erro
 	return uint64(deviceSize), nil
 }
 
-func (p partedPartitioner) partitionsMatch(existingPartitions []existingPartition, desiredPartitions []Partition, deviceSizeInBytes uint64) bool {
+func (p partedPartitioner) partitionsMatch(existingPartitions []ExistingPartition, desiredPartitions []Partition, deviceSizeInBytes uint64) bool {
 	if len(existingPartitions) < len(desiredPartitions) {
 		return false
 	}
@@ -90,7 +90,7 @@ func (p partedPartitioner) partitionsMatch(existingPartitions []existingPartitio
 		existingPartition := existingPartitions[index]
 		if existingPartition.Type != partition.Type {
 			return false
-		} else if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, p.convertFromMbToBytes(deltaSize)) {
+		} else if !withinDelta(partition.SizeInBytes, existingPartition.SizeInBytes, ConvertFromMbToBytes(deltaSize)) {
 			return false
 		}
 
@@ -100,7 +100,7 @@ func (p partedPartitioner) partitionsMatch(existingPartitions []existingPartitio
 	return true
 }
 
-func (p partedPartitioner) areAnyExistingPartitionsCreatedByBosh(existingPartitions []existingPartition) bool {
+func (p partedPartitioner) areAnyExistingPartitionsCreatedByBosh(existingPartitions []ExistingPartition) bool {
 	for _, partition := range existingPartitions {
 		if strings.HasPrefix(partition.Name, partitionNamePrefix) {
 			return true
@@ -111,7 +111,7 @@ func (p partedPartitioner) areAnyExistingPartitionsCreatedByBosh(existingPartiti
 }
 
 // For reference on format of outputs: http://lists.alioth.debian.org/pipermail/parted-devel/2006-December/000573.html
-func (p partedPartitioner) getPartitions(devicePath string) (partitions []existingPartition, deviceFullSizeInBytes uint64, err error) {
+func (p partedPartitioner) GetPartitions(devicePath string) (partitions []ExistingPartition, deviceFullSizeInBytes uint64, err error) {
 	stdout, _, _, err := p.runPartedPrint(devicePath)
 	if err != nil {
 		return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Running parted print")
@@ -168,7 +168,7 @@ func (p partedPartitioner) getPartitions(devicePath string) (partitions []existi
 
 		partitions = append(
 			partitions,
-			existingPartition{
+			ExistingPartition{
 				Index:        partitionIndex,
 				SizeInBytes:  uint64(partitionSizeInBytes),
 				StartInBytes: uint64(partitionStartInBytes),
@@ -182,16 +182,28 @@ func (p partedPartitioner) getPartitions(devicePath string) (partitions []existi
 	return partitions, deviceFullSizeInBytes, nil
 }
 
-func (p partedPartitioner) convertFromBytesToMb(sizeInBytes uint64) uint64 {
-	return sizeInBytes / (1024 * 1024)
-}
+func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
+	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+		_, _, _, err := p.cmdRunner.RunCommand(
+			"wipefs",
+			"-a",
+			devicePath,
+		)
+		if err != nil {
+			return true, bosherr.WrapError(err, fmt.Sprintf("Removing device path `%s' ", devicePath))
+		}
 
-func (p partedPartitioner) convertFromMbToBytes(sizeInMb uint64) uint64 {
-	return sizeInMb * 1024 * 1024
-}
+		p.logger.Info(p.logTag, "Successfully removed device path `%s'", devicePath)
+		return false, nil
+	})
 
-func (p partedPartitioner) convertFromKbToBytes(sizeInKb uint64) uint64 {
-	return sizeInKb * 1024
+	partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+	err := partitionRetryStrategy.Try()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p partedPartitioner) runPartedPrint(devicePath string) (stdout, stderr string, exitStatus int, err error) {
@@ -268,6 +280,10 @@ func (p partedPartitioner) createEachPartition(partitions []Partition, deviceFul
 		}
 		partitionEnd = p.roundDown(partitionEnd, alignmentInBytes) - 1
 
+		if len(partition.NamePrefix) == 0 {
+			partition.NamePrefix = partitionNamePrefix
+		}
+
 		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 			_, _, _, err := p.cmdRunner.RunCommand(
 				"parted",
@@ -276,7 +292,7 @@ func (p partedPartitioner) createEachPartition(partitions []Partition, deviceFul
 				"unit",
 				"B",
 				"mkpart",
-				fmt.Sprintf("%s-%d", partitionNamePrefix, index),
+				fmt.Sprintf("%s-%d", partition.NamePrefix, index),
 				fmt.Sprintf("%d", partitionStart),
 				fmt.Sprintf("%d", partitionEnd),
 			)

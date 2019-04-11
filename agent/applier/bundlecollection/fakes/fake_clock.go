@@ -2,10 +2,10 @@
 package fakes
 
 import (
-	sync "sync"
-	time "time"
+	"sync"
+	"time"
 
-	clock "code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/clock"
 )
 
 type FakeClock struct {

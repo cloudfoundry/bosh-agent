@@ -2,10 +2,10 @@
 package scriptfakes
 
 import (
-	sync "sync"
+	"sync"
 
-	script "github.com/cloudfoundry/bosh-agent/agent/script"
-	drain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	"github.com/cloudfoundry/bosh-agent/agent/script"
+	"github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
 type FakeJobScriptProvider struct {
@@ -33,11 +33,12 @@ type FakeJobScriptProvider struct {
 	newParallelScriptReturnsOnCall map[int]struct {
 		result1 script.CancellableScript
 	}
-	NewScriptStub        func(string, string) script.Script
+	NewScriptStub        func(string, string, map[string]string) script.Script
 	newScriptMutex       sync.RWMutex
 	newScriptArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 map[string]string
 	}
 	newScriptReturns struct {
 		result1 script.Script
@@ -176,17 +177,18 @@ func (fake *FakeJobScriptProvider) NewParallelScriptReturnsOnCall(i int, result1
 	}{result1}
 }
 
-func (fake *FakeJobScriptProvider) NewScript(arg1 string, arg2 string) script.Script {
+func (fake *FakeJobScriptProvider) NewScript(arg1 string, arg2 string, arg3 map[string]string) script.Script {
 	fake.newScriptMutex.Lock()
 	ret, specificReturn := fake.newScriptReturnsOnCall[len(fake.newScriptArgsForCall)]
 	fake.newScriptArgsForCall = append(fake.newScriptArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("NewScript", []interface{}{arg1, arg2})
+		arg3 map[string]string
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("NewScript", []interface{}{arg1, arg2, arg3})
 	fake.newScriptMutex.Unlock()
 	if fake.NewScriptStub != nil {
-		return fake.NewScriptStub(arg1, arg2)
+		return fake.NewScriptStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -201,17 +203,17 @@ func (fake *FakeJobScriptProvider) NewScriptCallCount() int {
 	return len(fake.newScriptArgsForCall)
 }
 
-func (fake *FakeJobScriptProvider) NewScriptCalls(stub func(string, string) script.Script) {
+func (fake *FakeJobScriptProvider) NewScriptCalls(stub func(string, string, map[string]string) script.Script) {
 	fake.newScriptMutex.Lock()
 	defer fake.newScriptMutex.Unlock()
 	fake.NewScriptStub = stub
 }
 
-func (fake *FakeJobScriptProvider) NewScriptArgsForCall(i int) (string, string) {
+func (fake *FakeJobScriptProvider) NewScriptArgsForCall(i int) (string, string, map[string]string) {
 	fake.newScriptMutex.RLock()
 	defer fake.newScriptMutex.RUnlock()
 	argsForCall := fake.newScriptArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeJobScriptProvider) NewScriptReturns(result1 script.Script) {

@@ -37,7 +37,7 @@ func NewConcreteJobScriptProvider(
 	}
 }
 
-func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string) Script {
+func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string, scriptEnv map[string]string) Script {
 	path := path.Join(p.dirProvider.JobBinDir(jobName), scriptName+ScriptExt)
 
 	stdoutLogFilename := fmt.Sprintf("%s.stdout.log", scriptName)
@@ -46,7 +46,7 @@ func (p ConcreteJobScriptProvider) NewScript(jobName string, scriptName string) 
 	stderrLogFilename := fmt.Sprintf("%s.stderr.log", scriptName)
 	stderrLogPath := filepath.Join(p.dirProvider.LogsDir(), jobName, stderrLogFilename)
 
-	return NewScript(p.fs, p.cmdRunner, jobName, path, stdoutLogPath, stderrLogPath)
+	return NewScript(p.fs, p.cmdRunner, jobName, path, stdoutLogPath, stderrLogPath, scriptEnv)
 }
 
 func (p ConcreteJobScriptProvider) NewDrainScript(jobName string, params boshdrain.ScriptParams) CancellableScript {

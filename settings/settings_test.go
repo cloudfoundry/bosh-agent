@@ -987,75 +987,119 @@ var _ = Describe("Settings", func() {
 			})
 		})
 
-		Context("#GetBlobstore", func() {
-			blobstoreLocal := Blobstore{
-				Type: "local",
-				Options: map[string]interface{}{
-					"blobstore_path": "/var/vcap/micro_bosh/data/cache",
-				},
+		Context("#GetSpecificBlobstore", func() {
+			singletonBlobstore := Blobstore{
+				Name: "whocares",
+				Type: "whocares",
+			}
+			packagesBlobstore := Blobstore{
+				Name: "packages",
+				Type: "whocares",
 			}
 
-			blobstoreS3 := Blobstore{
-				Type: "s3",
-				Options: map[string]interface{}{
-					"bucket_name":       "george",
-					"encryption_key":    "optional encryption key",
-					"access_key_id":     "optional access key id",
-					"secret_access_key": "optional secret access key",
-					"port":              443.0,
-				},
+			logsBlobstore := Blobstore{
+				Name: "logs",
+				Type: "whocares",
 			}
 
-			blobstoreGcs := Blobstore{
-				Type: "gcs",
-				Options: map[string]interface{}{
-					"provider": "gcs",
-					"json_key": "|" +
-						"DIRECTOR-BLOBSTORE-SERVICE-ACCOUNT-FILE",
-					"bucket_name":    "test-bosh-bucket",
-					"encryption_key": "BASE64-ENCODED-32-BYTES",
-					"storage_class":  "REGIONAL",
-				},
+			targetedBlobstores := TargetedBlobstores{
+				Packages: "packages",
+				Logs:     "logs",
 			}
 
 			DescribeTable("agent returning the right blobstore configuration",
-				func(settingsBlobstore Blobstore, envBoshBlobstores [](Blobstore), expectedBlobstore Blobstore) {
+				func(settingsBlobstore Blobstore, envBoshBlobstores [](Blobstore), targetedBlobstores TargetedBlobstores, requestedBlobstore string, expectedBlobstore Blobstore, expectedErrorMessage string) {
 					settings := Settings{
 						Blobstore: settingsBlobstore,
 						Env: Env{
 							Bosh: BoshEnv{
-								Blobstores: envBoshBlobstores,
+								TargetedBlobstores: targetedBlobstores,
+								Blobstores:         envBoshBlobstores,
 							},
 						},
 					}
 
-					Expect(settings.GetBlobstore()).To(Equal(expectedBlobstore))
+					actualBlobstore, err := settings.GetSpecificBlobstore(requestedBlobstore)
+					Expect(actualBlobstore).To(Equal(expectedBlobstore))
+
+					if expectedErrorMessage == "" {
+						Expect(err).NotTo(HaveOccurred())
+					} else {
+						Expect(err).To(MatchError(expectedErrorMessage))
+					}
 				},
 
 				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
-					blobstoreLocal,
+					singletonBlobstore,
 					nil,
-					blobstoreLocal),
+					nil,
+					"packages",
+					singletonBlobstore,
+					"",
+				),
+
+				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
+					singletonBlobstore,
+					nil,
+					nil,
+					"logs",
+					singletonBlobstore,
+					"",
+				),
 
 				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
 					nil,
-					[]Blobstore{blobstoreLocal},
-					blobstoreLocal),
-
-				Entry("setting.Blobstore is present and env.bosh.Blobstores is provided with a single entry",
-					blobstoreGcs,
-					[]Blobstore{blobstoreLocal},
-					blobstoreLocal),
-
-				Entry("setting.Blobstore is missing and env.bosh.Blobstores has multiple entries",
+					[]Blobstore{singletonBlobstore},
 					nil,
-					[]Blobstore{blobstoreS3, blobstoreGcs},
-					blobstoreS3),
+					"packages",
+					singletonBlobstore,
+					"",
+				),
+
+				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
+					nil,
+					[]Blobstore{singletonBlobstore},
+					nil,
+					"logs",
+					singletonBlobstore,
+					"",
+				),
+
+				Entry("setting.Blobstore is missing and env.bosh.Blobstores does not have the target blobstore",
+					nil,
+					[]Blobstore{},
+					targetedBlobstores,
+					"logs",
+					nil,
+					`Env.Bosh.Blobstores does not contain blobstore with name "logs"`,
+				),
+
+				Entry("env.bosh.Blobstores targets specific blobstores for packages",
+					logsBlobstore,
+					[]Blobstore{logsBlobstore, packagesBlobstore},
+					targetedBlobstores,
+					"packages",
+					packagesBlobstore,
+					"",
+				),
+
+				Entry("env.bosh.Blobstores targets specific blobstores for logs",
+					packagesBlobstore,
+					[]Blobstore{logsBlobstore, packagesBlobstore},
+					targetedBlobstores,
+					"logs",
+					logsBlobstore,
+					"",
+				),
 
 				Entry("setting.Blobstore and env.bosh.Blobstores both are missing",
 					nil,
 					nil,
-					nil),
+					nil,
+					"logs",
+					nil,
+					"",
+				),
 			)
 		})
 

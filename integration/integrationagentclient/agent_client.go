@@ -49,6 +49,22 @@ func (r *SSHResponse) Unmarshal(message []byte) error {
 	return json.Unmarshal(message, r)
 }
 
+func (c *IntegrationAgentClient) FetchLogs(logType string, filters []string) (map[string]interface{}, error) {
+	responseRaw, err := c.SendAsyncTaskMessage("fetch_logs", []interface{}{logType, filters})
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Fetching logs from agent")
+	}
+	responseValue, ok := responseRaw.(map[string]interface{})
+	if !ok {
+		return nil, bosherr.Errorf("Unable to parse fetch_logs response value: %#v", responseRaw)
+	}
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Sending 'fetch_logs' to the agent")
+	}
+
+	return responseValue, err
+}
+
 func (c *IntegrationAgentClient) SSH(cmd string, params action.SSHParams) error {
 	err := c.AgentRequest.Send("ssh", []interface{}{cmd, params}, &SSHResponse{})
 	if err != nil {
