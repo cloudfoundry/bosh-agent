@@ -134,7 +134,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "6725a40fb9cb893bc786727104d4b6994ec1ed32"
+  revision = "869ee1f232edc12d1629b2a2560db6dee292e6b2"
 
 [[projects]]
   branch = "master"
@@ -243,7 +243,7 @@
   name = "github.com/masterzen/simplexml"
   packages = ["dom"]
   pruneopts = "NUT"
-  revision = "4572e39b1ab9fe03ee513ce6fc7e289e98482190"
+  revision = "31eea30827864c9ab643aa5a0d5b2d4988ec8409"
 
 [[projects]]
   branch = "master"
@@ -304,12 +304,12 @@
   version = "v0.0.2"
 
 [[projects]]
-  digest = "1:552100985450eaa4a8fa8d18fe8b6b1a04997c4d2ac24f154cc9471430cc4e1c"
+  digest = "1:98d41d5085f44b0baa46a83ca0ca6d8a079f1ffb449ba5a36050ca9019de391c"
   name = "github.com/nats-io/nuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "289cccf02c178dc782430d534e3c1f5b72af807f"
-  version = "v1.0.0"
+  revision = "4b96681fa6d28dd0ab5fe79bac63b3a493d9ee94"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -436,7 +436,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:725d7d321efd08a7942d20226e146e13bd589b6ef24f3d98373811101e3bc2f7"
+  digest = "1:6d4f5d5aeecf5a63bac31a29afdeca41053a50fdd4c8c14fe32340416557b020"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -449,7 +449,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "38d8ce5564a5b71b2e3a00553993f1b9a7ae852f"
+  revision = "88737f569e3a9c7ab309cdc09a07fe7fc87233c3"
 
 [[projects]]
   branch = "master"
@@ -468,7 +468,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3766a093f54349d62edd9b92818876368208dc123c9447d8b9240f0f2105d447"
+  digest = "1:14fa197aac7d2d1e915946c2dbb18aa297092ea32f315b5c94e38e260ae54f1d"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -479,7 +479,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "4b34438f7a67ee5f45cc6132e2bad873a20324e9"
+  revision = "97732733099d6a942a73b889770774366de963ed"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -509,7 +509,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:59b401940f79c311efa01c10e2fa8e78522a978538127f369fb39690a03c3eb4"
+  digest = "1:71850ac10bbeb4d8dd06ce0743fe57654daf28510b0f6cbd9692aaf0d269360e"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -525,7 +525,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "052fc3cfdbc2c9e9082b1d51f850b7974b5efb2a"
+  revision = "681f9ce8ac52c4ba431539a515ecb7f2ab72eca0"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
