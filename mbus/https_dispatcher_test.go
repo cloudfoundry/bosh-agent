@@ -94,17 +94,16 @@ var _ = Describe("HTTPSDispatcher", func() {
 			CA:          "",
 		}, logger)
 
-		errChan := make(chan error)
 		go func() {
-			errChan <- dispatcher.Start()
+			dispatcher.Start()
 		}()
 
-		select {
-		case err := <-errChan:
+		Eventually(func() int {
+			client := getHTTPClient()
+			response, err := client.Get(targetURL + "/example")
 			Expect(err).ToNot(HaveOccurred())
-		case <-time.After(1 * time.Second):
-			// server should now be running, continue
-		}
+			return response.StatusCode
+		}, 5*time.Second).Should(BeNumerically("==", 404))
 	})
 
 	AfterEach(func() {
