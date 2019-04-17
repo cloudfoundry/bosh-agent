@@ -4,7 +4,7 @@ set -e -o pipefail
 
 bin=$(dirname $0)
 
-go get -u github.com/golang/lint/golint
+go get -u golang.org/x/lint/golint
 
 
 set +e # golint will fail on the issues we filter out
