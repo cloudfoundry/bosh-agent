@@ -73,7 +73,7 @@ func (c *AgentClient) Start() error {
 	}
 
 	if response.Value != "started" {
-		return bosherr.Errorf("Failed to start agent services with response: '%s'", response)
+		return bosherr.Errorf("Failed to start agent services with response: '%v'", response)
 	}
 
 	return nil
