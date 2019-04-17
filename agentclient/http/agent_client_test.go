@@ -1,7 +1,6 @@
 package http_test
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -24,7 +23,6 @@ var _ = Describe("AgentClient", func() {
 		agentClient agentclient.AgentClient
 
 		agentAddress        string
-		agentEndpoint       string
 		replyToAddress      string
 		toleratedErrorCount int
 	)
@@ -36,7 +34,6 @@ var _ = Describe("AgentClient", func() {
 		httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, logger)
 
 		agentAddress = server.URL()
-		agentEndpoint = agentAddress + "/agent"
 		replyToAddress = "fake-reply-to-uuid"
 
 		getTaskDelay := time.Duration(0)
@@ -255,17 +252,13 @@ var _ = Describe("AgentClient", func() {
 
 	Describe("Apply", func() {
 		var (
-			specJSON []byte
-			spec     applyspec.ApplySpec
+			spec applyspec.ApplySpec
 		)
 
 		BeforeEach(func() {
 			spec = applyspec.ApplySpec{
 				Deployment: "fake-deployment-name",
 			}
-			var err error
-			specJSON, err = json.Marshal(spec)
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		Context("when agent responds with a value", func() {
