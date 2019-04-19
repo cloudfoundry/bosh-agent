@@ -1169,12 +1169,17 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		realPath = partitionPath
 	}
 
-	err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
-
+	existingFsType, err := p.getPartitionFormatType(partitionPath)
 	if err != nil {
-		return bosherr.WrapError(err, "Mounting partition")
+		return bosherr.WrapError(err, "Couldn't find existing partition format type")
 	}
 
+	if existingFsType != boshdisk.FileSystemLUKS {
+		err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting partition")
+		}
+	}
 	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
 
 	err = p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
@@ -1184,6 +1189,26 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	}
 
 	return nil
+}
+
+func (p linux) getPartitionFormatType(partitionPath string) (boshdisk.FileSystemType, error) {
+	stdout, stderr, exitStatus, err := p.cmdRunner.RunCommand("blkid", "-p", partitionPath)
+
+	if err != nil {
+		if exitStatus == 2 && stderr == "" {
+			// in that case we expect the device not to have any file system
+			return "", nil
+		}
+		return "", err
+	}
+	re := regexp.MustCompile(" TYPE=\"([^\"]+)\"")
+	match := re.FindStringSubmatch(stdout)
+
+	if nil == match {
+		return "", nil
+	}
+
+	return boshdisk.FileSystemType(match[1]), nil
 }
 
 func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bool, error) {
@@ -1304,6 +1329,19 @@ func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (
 	}
 
 	return p.diskManager.GetMounter().IsMounted(realPath)
+}
+
+func (p linux) IsPersistentDiskMountedExternally(diskSettings boshsettings.DiskSettings) (bool, error) {
+	realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
+	if err != nil {
+		return false,bosherr.WrapError(err, "not mounted externally")
+	}
+
+	if timedOut {
+		p.logger.Debug(logTag, "Timed out resolving device path for %+v, ignoring", diskSettings)
+		return false, nil
+	}
+	return p.diskManager.GetMounter().IsCryptLuks(realPath)
 }
 
 func (p linux) StartMonit() error {

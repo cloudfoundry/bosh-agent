@@ -76,6 +76,7 @@ type Platform interface {
 	GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string
 	IsMountPoint(path string) (partitionPath string, result bool, err error)
 	IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error)
+	IsPersistentDiskMountedExternally(diskSettings boshsettings.DiskSettings) (result bool, err error)
 	IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error)
 	AssociateDisk(name string, settings boshsettings.DiskSettings) error
 

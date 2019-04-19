@@ -393,6 +393,10 @@ func (p dummyPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskSet
 	return true, nil
 }
 
+func (p dummyPlatform) IsPersistentDiskMountedExternally(diskSettings boshsettings.DiskSettings) ( bool,  error) {
+	return false, nil
+}
+
 func (p dummyPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
 	var formattedDisks []formattedDisk
 	formattedDisksPath := filepath.Join(p.dirProvider.BoshDir(), "formatted_disks.json")

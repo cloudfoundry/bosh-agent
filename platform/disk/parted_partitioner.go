@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"os/exec"
 
 	"code.cloudfoundry.org/clock"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -157,8 +158,11 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Parsing existing partitions")
 		}
 
+		out, _ := exec.Command("sh","-c","lsblk -f | grep crypto_LUKS | wc -l").Output()
+		result := string(out)
+
 		partitionType := PartitionTypeUnknown
-		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" {
+		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" || strings.TrimRight(result, "\n") == "1" {
 			partitionType = PartitionTypeLinux
 		} else if partitionInfo[4] == "linux-swap(v1)" {
 			partitionType = PartitionTypeSwap

@@ -6,6 +6,7 @@ const (
 	FileSystemSwap    FileSystemType = "swap"
 	FileSystemExt4    FileSystemType = "ext4"
 	FileSystemXFS     FileSystemType = "xfs"
+	FileSystemLUKS    FileSystemType = "crypto_LUKS"
 	FileSystemDefault FileSystemType = ""
 )
 

@@ -15,5 +15,6 @@ type Mounter interface {
 	SwapOn(partitionPath string) (err error)
 
 	IsMountPoint(path string) (parititionPath string, result bool, err error)
+	IsCryptLuks(path string) (result bool, err error)
 	IsMounted(devicePathOrMountPoint string) (result bool, err error)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"os/exec"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -145,6 +146,15 @@ func (m linuxMounter) IsMountPoint(path string) (string, bool, error) {
 	}
 
 	return "", false, nil
+}
+
+func (m linuxMounter) IsCryptLuks(partitionOrMountPoint string) (bool, error) {
+	out, _ := exec.Command("sh","-c","lsblk -f | grep crypto_LUKS | wc -l").Output()
+	result := string(out)
+	if strings.TrimRight(result, "\n") == "1" {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (m linuxMounter) IsMounted(partitionOrMountPoint string) (bool, error) {

@@ -567,6 +567,10 @@ func (p WindowsPlatform) IsPersistentDiskMounted(diskSettings boshsettings.DiskS
 	return true, nil
 }
 
+func (p WindowsPlatform) IsPersistentDiskMountedExternally(diskSettings boshsettings.DiskSettings) ( bool,  error) {
+	return false, nil
+}
+
 func (p WindowsPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {
 	return true, nil
 }
