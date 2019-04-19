@@ -53,6 +53,7 @@ jobs:
     tags: ["bosh-integration"]
     params:
       DB: postgresql
+      SKIP_RUN_SCRIPT_ENV: true
 
 - name: promote
   public: true
