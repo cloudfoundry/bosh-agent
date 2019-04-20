@@ -436,7 +436,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c35538abaf899069b4f92dcac60971d4956c744361cc4748c40c6405460b2d13"
+  digest = "1:66f648d04cb78592e334a22c6814937cc8f1d5f586e6eddc4c5eaaa3c7cb23d7"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -449,7 +449,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "f416ebab96af27ca70b6e5c23d6a0747530da626"
+  revision = "df01cb2cc480549d72034218dd98bf97671450ac"
 
 [[projects]]
   branch = "master"
@@ -464,11 +464,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "1da14a5a36f220ea3f03470682b737b1dfd5de22"
+  revision = "afa5a82059c6356159f699d81beff22a81842231"
 
 [[projects]]
   branch = "master"
-  digest = "1:654ae9be4c24ccdd55e271a6d1a4886f0a65059b9486422a79e4070a33a850cf"
+  digest = "1:8aef917620d2f227081ec7e384ab367b2a0b3eb9fc04ca0fbde4578807666c48"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -479,7 +479,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "12500544f89f9420afe9529ba8940bf72d294972"
+  revision = "e8e3143a4f4a00f1fafef0dd82ba78223281b01b"
 
 [[projects]]
   digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
@@ -525,7 +525,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "a5870b40385977769b3e1d711864fcd2d82bb9fd"
+  revision = "685fecacd0a02bd01f374ad779b72456e0cd9f8b"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
