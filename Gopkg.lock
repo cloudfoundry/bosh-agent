@@ -134,7 +134,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "fd7e5273417fa3a9b108037f9d1433b07f4654c4"
+  revision = "8bc576c954d77a7f4271dd94097cd3a293900293"
 
 [[projects]]
   branch = "master"
@@ -449,11 +449,11 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "df01cb2cc480549d72034218dd98bf97671450ac"
+  revision = "a29dc8fdc73485234dbef99ebedb95d2eced08de"
 
 [[projects]]
   branch = "master"
-  digest = "1:6ef191d9cd899dc513c1f2a3e88d5ecefdd5b49309506fa271de486277dd5971"
+  digest = "1:8a683f03d71cbb5c985420c453592ddb58021248341b4ec86e8e0d3e31930b41"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -464,11 +464,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "afa5a82059c6356159f699d81beff22a81842231"
+  revision = "4829fb13d2c62012c17688fa7f629f371014946d"
 
 [[projects]]
   branch = "master"
-  digest = "1:8aef917620d2f227081ec7e384ab367b2a0b3eb9fc04ca0fbde4578807666c48"
+  digest = "1:2a8219fa2f5aed87c5d61e4149443569d66948ff36ce8fbc95e26ed80698c9f5"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -479,10 +479,10 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "e8e3143a4f4a00f1fafef0dd82ba78223281b01b"
+  revision = "a129542de9ae0895210abff9c95d67a1f33cb93d"
 
 [[projects]]
-  digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
+  digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -496,6 +496,8 @@
     "encoding/traditionalchinese",
     "encoding/unicode",
     "internal/gen",
+    "internal/language",
+    "internal/language/compact",
     "internal/tag",
     "internal/utf8internal",
     "language",
@@ -504,12 +506,12 @@
     "unicode/cldr",
   ]
   pruneopts = "NUT"
-  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
-  version = "v0.3.0"
+  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
+  version = "v0.3.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:be1ab6d2b333b1d487c01f1328aef9dc76cee4ff4f780775a552d2a1653f0207"
+  digest = "1:93f3f17886abf8d17ff07ece88d6e1974226f5638d216041bd2234ca03ef848c"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -525,7 +527,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "685fecacd0a02bd01f374ad779b72456e0cd9f8b"
+  revision = "ad9eeb80039afa52dec461f6814f3f79c5b45c39"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
