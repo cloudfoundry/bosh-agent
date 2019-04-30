@@ -40,7 +40,7 @@ func (c *windowsCertManager) createBackup() error {
 		_, _, _, err := c.runner.RunCommand(
 			"powershell",
 			"-Command",
-			fmt.Sprintf("Get-ChildItem %s | Select -Unique | Export-Certificate -Type SST -FilePath %s", rootCertStore, c.backupPath),
+			fmt.Sprintf("Get-ChildItem %s | Select -Unique -Property Thumbprint | Export-Certificate -Type SST -FilePath %s", rootCertStore, c.backupPath),
 		)
 		if err != nil {
 			return err
