@@ -61,11 +61,11 @@ func (a ListDiskAction) Run() (interface{}, error) {
 		if err != nil {
 			return nil, bosherr.WrapErrorf(err, "Checking whether device %+v is mounted", diskSettings)
 		}
-                isMountedExternally, err := a.platform.IsPersistentDiskMountedExternally(diskSettings)
-                if err != nil {
+		isMountedExternally, err := a.platform.IsPersistentDiskMountedExternally(diskSettings)
+		if err != nil {
 			return nil, bosherr.WrapErrorf(err, "Checking whether device %+v is mounted externally", diskSettings)
 		}
-		if isMounted || (!isMounted && isMountedExternally) {
+		if (isMounted || isMountedExternally) {
 			if _, present := usedIDs[diskID]; !present {
 				diskIDs = append(diskIDs, diskID)
 				usedIDs[diskID] = true

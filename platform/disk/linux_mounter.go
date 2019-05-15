@@ -2,9 +2,9 @@ package disk
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 	"time"
-	"os/exec"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -149,7 +149,10 @@ func (m linuxMounter) IsMountPoint(path string) (string, bool, error) {
 }
 
 func (m linuxMounter) IsCryptLuks(partitionOrMountPoint string) (bool, error) {
-	out, _ := exec.Command("sh","-c","lsblk -f | grep crypto_LUKS | wc -l").Output()
+	out, err := exec.Command("sh", "-c", "lsblk -f | grep crypto_LUKS | wc -l").Output()
+	if err != nil {
+		return false, bosherr.WrapError(err, "Running lsblk command")
+	}
 	result := string(out)
 	if strings.TrimRight(result, "\n") == "1" {
 		return true, nil

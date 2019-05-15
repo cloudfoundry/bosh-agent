@@ -1169,12 +1169,9 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		realPath = partitionPath
 	}
 
-	existingFsType, err := p.getPartitionFormatType(partitionPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Couldn't find existing partition format type")
-	}
+	isMountedExternally, err := p.IsPersistentDiskMountedExternally(diskSetting)
 
-	if existingFsType != boshdisk.FileSystemLUKS {
+	if !isMountedExternally {
 		err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
 		if err != nil {
 			return bosherr.WrapError(err, "Mounting partition")
@@ -1189,26 +1186,6 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	}
 
 	return nil
-}
-
-func (p linux) getPartitionFormatType(partitionPath string) (boshdisk.FileSystemType, error) {
-	stdout, stderr, exitStatus, err := p.cmdRunner.RunCommand("blkid", "-p", partitionPath)
-
-	if err != nil {
-		if exitStatus == 2 && stderr == "" {
-			// in that case we expect the device not to have any file system
-			return "", nil
-		}
-		return "", err
-	}
-	re := regexp.MustCompile(" TYPE=\"([^\"]+)\"")
-	match := re.FindStringSubmatch(stdout)
-
-	if nil == match {
-		return "", nil
-	}
-
-	return boshdisk.FileSystemType(match[1]), nil
 }
 
 func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bool, error) {
@@ -1334,7 +1311,7 @@ func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (
 func (p linux) IsPersistentDiskMountedExternally(diskSettings boshsettings.DiskSettings) (bool, error) {
 	realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
-		return false,bosherr.WrapError(err, "not mounted externally")
+		return false, bosherr.WrapError(err, "not mounted externally")
 	}
 
 	if timedOut {

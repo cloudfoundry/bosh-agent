@@ -2,10 +2,10 @@ package disk
 
 import (
 	"fmt"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
-	"os/exec"
 
 	"code.cloudfoundry.org/clock"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -158,7 +158,10 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Parsing existing partitions")
 		}
 
-		out, _ := exec.Command("sh","-c","lsblk -f | grep crypto_LUKS | wc -l").Output()
+		out, err := exec.Command("sh", "-c", "lsblk -f | grep crypto_LUKS | wc -l").Output()
+		if err != nil {
+			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Running lsblk command")
+		}
 		result := string(out)
 
 		partitionType := PartitionTypeUnknown
