@@ -134,7 +134,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "c672288466c75653102dede15f8497efa8ba1abf"
+  revision = "60e74086313b981fb68f929ee2712d3ec58d06ee"
 
 [[projects]]
   branch = "master"
@@ -166,14 +166,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5c5f55f454adfd9e257053f99659362c11c89e0844d6094237bb2bdc8b1e23f5"
+  digest = "1:c45e006b8d467d81745f5a3606b1a59c9a717a988f170e85865de89cee407357"
   name = "github.com/cloudfoundry/yagnats"
   packages = [
     ".",
     "fakeyagnats",
   ]
   pruneopts = "NUT"
-  revision = "7928a07c627b46fcab182588201c7e10abc83e8b"
+  revision = "a8e27212607bac6cfea3b25f8d033d4d003814a2"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -277,23 +277,23 @@
   version = "v1.1.2"
 
 [[projects]]
+  digest = "1:29fde0b72a538d0567344142f1a22dd385d4087a81c9d1edb31f2524c60515e1"
+  name = "github.com/nats-io/nats"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "98d6600c35d554f3fed98c81f3ed2e4894931f61"
+  version = "v2.0.0"
+
+[[projects]]
   digest = "1:95837473f879ea39a76b82c43c7badf93a4b27b2d5654182ec3d1728f8ebec30"
-  name = "github.com/nats-io/go-nats"
+  name = "github.com/nats-io/nats.go"
   packages = [
     "encoders/builtin",
     "util",
   ]
   pruneopts = "NUT"
-  revision = "70fe06cee50d4b6f98248d9675fb55f2a3aa7228"
-  version = "v1.7.2"
-
-[[projects]]
-  digest = "1:8a279c960ffe2478da23600c8de5e84360049314cd81e6e9acab0648b91079e3"
-  name = "github.com/nats-io/nats"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "70fe06cee50d4b6f98248d9675fb55f2a3aa7228"
-  version = "v1.7.2"
+  revision = "98d6600c35d554f3fed98c81f3ed2e4894931f61"
+  version = "v2.0.0"
 
 [[projects]]
   digest = "1:bf3b29bcf1276cfa19bc22910eac8d8582fe0d4d2a43e8f01f2242d8dfba7965"
@@ -419,12 +419,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:998e4640c25e00ccb7b2569bf94562283937b8afb3485c0e1a0a05a15330240d"
+  digest = "1:f4aaa07a6c33f2b354726d0571acbc8ca118837c75709f6353203ae1a3f8eeab"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "8bdbc7bcc01dcbb8ec23dc8a28e332258d25251f"
-  version = "v1.4.1"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:42e8c2456d7ec0f31e182c20022e74324c4da2cb3bd9069ff9b131fe33466308"
@@ -436,7 +436,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9fd4e1947d228b3eb414e7f1db7b482c3461a27514ca9c31e37c9b7a7aaaac13"
+  digest = "1:69da7a88ec63765f4e45025359ba833553d5bb93990980e41be9e0acae21faf2"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -449,7 +449,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "22d7a77e9e5f409e934ed268692e56707cd169e5"
+  revision = "20be4c3c3ed52bfccdb2d59a412ee1a936d175a7"
 
 [[projects]]
   branch = "master"
@@ -464,11 +464,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "3ec19112720433827bbce8be9342797f5a6aaaf9"
+  revision = "f3200d17e092c607f615320ecaad13d87ad9a2b3"
 
 [[projects]]
   branch = "master"
-  digest = "1:ead6d9d9a412075aa5b08e925d6cd1ed60233ef4427164396bf087c198f54057"
+  digest = "1:526f94ef45a408aa7b649fb66007d563062c96c93510709220afd265c9576481"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -479,7 +479,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "61b9204099cb1bebc803c9ffb9b2d3acd9d457d9"
+  revision = "4c3a928424d249a1013e789cf5e458d480bcba16"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -511,7 +511,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:93f3f17886abf8d17ff07ece88d6e1974226f5638d216041bd2234ca03ef848c"
+  digest = "1:7c7aa31cc6bc5c85038e46d8c6541a2fb2332b1687229a5a5a04d7b91cea0efe"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -523,11 +523,12 @@
     "imports",
     "internal/fastwalk",
     "internal/gopathwalk",
+    "internal/imports",
     "internal/module",
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "d88f79806bbd013f54a668506864ce559edf6f0a"
+  revision = "26e35f15edef9a960ed13c88b445c5674371da18"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
