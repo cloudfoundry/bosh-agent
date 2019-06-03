@@ -349,16 +349,16 @@ resources:
 
 resource_types:
 - name: ami-resource
-  type: docker-image
+  type: registry-image
   source:
     repository: pivotalgreenhouse/ami-resource
     tag: latest
 - name: github-status
-  type: docker-image
+  type: registry-image
   source:
     repository: dpb587/github-status-resource
     tag: master
 - name: metalink-resource
-  type: docker-image
+  type: registry-image
   source:
     repository: dpb587/metalink-repository-resource
