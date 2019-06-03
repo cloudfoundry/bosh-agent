@@ -38,14 +38,14 @@ var _ = Describe("KernelIPv6", func() {
 
 		Context("when grub.cfg disables IPv6", func() {
 			BeforeEach(func() {
-				err := fs.WriteFileString("/boot/grub/grub.cnf", "before ipv6.disable=1 after")
+				err := fs.WriteFileString("/boot/grub/grub.cfg", "before ipv6.disable=1 after")
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("removes ipv6.disable=1 from grub.cfg", func() {
 				stopCh <- struct{}{}
 				Expect(act()).ToNot(HaveOccurred())
-				Expect(fs.ReadFileString("/boot/grub/grub.cnf")).To(Equal("before  after"))
+				Expect(fs.ReadFileString("/boot/grub/grub.cfg")).To(Equal("before  after"))
 			})
 
 			It("reboots after changing grub.cfg and continue waiting until reboot event succeeds", func() {

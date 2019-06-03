@@ -75,7 +75,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			err := fs.WriteFileString("/etc/resolv.conf", "nameserver 8.8.8.8\nnameserver 9.9.9.9")
 			Expect(err).ToNot(HaveOccurred())
 
-			err = fs.WriteFileString("/boot/grub/grub.cnf", "")
+			err = fs.WriteFileString("/boot/grub/grub.cfg", "")
 			Expect(err).ToNot(HaveOccurred())
 
 			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
