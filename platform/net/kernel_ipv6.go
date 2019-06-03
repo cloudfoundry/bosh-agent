@@ -24,7 +24,7 @@ func NewKernelIPv6Impl(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, logge
 
 func (net KernelIPv6Impl) Enable(stopCh <-chan struct{}) error {
 	const (
-		grubConfPath       = "/boot/grub/grub.cnf"
+		grubConfPath       = "/boot/grub/grub.cfg"
 		grubIPv6DisableOpt = "ipv6.disable=1"
 	)
 
