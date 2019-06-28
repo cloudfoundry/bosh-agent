@@ -15,7 +15,7 @@ import (
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
-	"github.com/nats-io/nats"
+	nats "github.com/nats-io/nats.go"
 
 	"github.com/onsi/gomega"
 )

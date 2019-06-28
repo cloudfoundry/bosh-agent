@@ -26,4 +26,8 @@ RUN vagrant plugin install vagrant-aws
 COPY --from=golang:1 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
+RUN GO111MODULE=on go install -x github.com/onsi/ginkgo/ginkgo
+RUN cp /root/go/bin/ginkgo /usr/local/go/bin/
+RUN chmod +x /usr/local/go/bin/ginkgo
+
 RUN useradd -ms /bin/bash bosh
