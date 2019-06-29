@@ -17,12 +17,10 @@ import (
 	boshaj "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	"github.com/cloudfoundry/bosh-agent/agent/bootonce"
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
-	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
@@ -30,13 +28,11 @@ import (
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
-	sigar "github.com/cloudfoundry/gosigar"
 )
 
 type App interface {
@@ -68,12 +64,10 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Loading config")
 	}
 
-	app.dirProvider = boshdirs.NewProvider(opts.BaseDirectory)
+	app.dirProvider = InitializeDirProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
-	statsCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
-	auditLoggerProvider := boshplatform.NewAuditLoggerProvider()
-	auditLogger := boshplatform.NewDelayedAuditLogger(auditLoggerProvider, app.logger)
+	auditLogger := InitializeAuditLogger(app.logger)
 
 	state, err := boshplatform.NewBootstrapState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
 	if err != nil {
@@ -81,14 +75,26 @@ func (app *app) Setup(opts Options) error {
 	}
 
 	timeService := clock.NewClock()
-	platformProvider := boshplatform.NewProvider(app.logger, app.dirProvider, statsCollector, app.fs, config.Platform, state, timeService, auditLogger)
 
-	app.platform, err = platformProvider.Get(opts.PlatformName)
+	app.platform, err = NewPlatform(
+		app.logger,
+		app.dirProvider,
+		app.fs,
+		config.Platform,
+		state,
+		timeService,
+		auditLogger,
+		opts.PlatformName,
+	)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
 	}
 
-	settingsSourceFactory := boshinf.NewSettingsSourceFactory(config.Infrastructure.Settings, app.platform, app.logger)
+	settingsSourceFactory := InitializeSettingsSourceFactory(
+		config.Infrastructure.Settings,
+		app.platform,
+		app.logger,
+	)
 	settingsSource, err := settingsSourceFactory.New()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting Settings Source")
@@ -238,13 +244,7 @@ func (app *app) Setup(opts Options) error {
 		actionRunner,
 	)
 
-	startManager := bootonce.NewStartManager(
-		settingsService,
-		app.platform.GetFs(),
-		app.dirProvider,
-	)
-
-	app.agent = boshagent.New(
+	app.agent = InitializeAgent(
 		app.logger,
 		mbusHandler,
 		app.platform,
@@ -255,7 +255,8 @@ func (app *app) Setup(opts Options) error {
 		settingsService,
 		uuidGen,
 		timeService,
-		startManager,
+		app.dirProvider,
+		app.platform.GetFs(),
 	)
 
 	return nil
