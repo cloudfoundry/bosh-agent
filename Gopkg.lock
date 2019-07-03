@@ -76,12 +76,12 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:7294028ae4f4ebe9f92dccabdc69f63eba37b71fbfcdcb35ed1c32eb823fc6d4"
+  digest = "1:c2c6f380e0a78474e81fae9a8bdd2353f35c0ea2166126271f9944cc4e3b2343"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "85a78806aa1b4707d1dbace9be592cf1ece91ab3"
-  version = "v1.1.1"
+  revision = "6d051236a614a33f1b10a94f70fd1af002283c5b"
+  version = "v1.1.2"
 
 [[projects]]
   branch = "master"
@@ -134,7 +134,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "b33eae10a72e8288a634dd84fd9d88fc5b33662e"
+  revision = "7a8ec79c544f6a62e7df97354295650dbcdda7ef"
 
 [[projects]]
   branch = "master"
@@ -449,7 +449,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "cc06ce4a13d484c0101a9e92913248488a75786d"
+  revision = "4def268fd1a49955bfb3dda92fe3db4f924f2285"
 
 [[projects]]
   branch = "master"
@@ -464,11 +464,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "3b0461eec859c4b73bb64fdc8285971fd33e3938"
+  revision = "da137c7871d730100384dbcf36e6f8fa493aef5b"
 
 [[projects]]
   branch = "master"
-  digest = "1:59e5905fb8c11d829b56e24d90c8c4b96bae4cf443a464da4c106bc62c1bf274"
+  digest = "1:2a75d73859fd0e57a025d1574eeaae2b60cefa4528ab090095e9ff7f768457ae"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -479,7 +479,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "c5567b49c5d04a5f83870795b8c0e2df43a8ce32"
+  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -511,7 +511,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:21d9323d5ae80d15770262eed40c48d6e335cb0b8bfb62894ea9dc343aa83720"
+  digest = "1:7026eea9c10a8cfaa11a68d8e15259f09a1706dce5b9d736aa032991b5a2749d"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -528,7 +528,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "252024b8295926254bbc18903b9b7d4f0389df2f"
+  revision = "abb7e64e8926d66086e3708e237aadde4226e9eb"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
