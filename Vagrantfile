@@ -34,7 +34,6 @@ Vagrant.configure('2') do |config|
 
 #  config.vm.synced_folder Dir.pwd, '/vagrant', disabled: true
   config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"
-  config.vm.provision :shell, inline: "chmod 777 /var/vcap/sys/log/cpi"
 
   config.vm.provision :shell, inline: "sudo apt-get update && sudo apt-get install -y jq curl"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-go.sh"
