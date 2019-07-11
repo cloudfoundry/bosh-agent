@@ -101,19 +101,15 @@ var _ = Describe("HTTPSDispatcher", func() {
 			}
 		}()
 
-		Eventually(func() int {
+		Eventually(func() *http.Response {
 			client := getHTTPClient()
 			response, _ := client.Get(targetURL + "/example")
-			if err != nil {
-				return 0
-			}
-			return response.StatusCode
-		}, 5*time.Second).Should(BeNumerically("==", 404))
+			return response
+		}, 5*time.Second).ShouldNot(BeNil())
 	})
 
 	AfterEach(func() {
 		dispatcher.Stop()
-		time.Sleep(1 * time.Second)
 	})
 
 	It("calls the handler function for the route", func() {
