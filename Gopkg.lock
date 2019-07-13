@@ -2,7 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
   digest = "1:41531922c7f47d5157308b4dd1abc6142c4c583845ce424ed9664db867fa48cf"
   name = "code.cloudfoundry.org/clock"
   packages = [
@@ -11,6 +10,7 @@
   ]
   pruneopts = "NUT"
   revision = "02e53af36e6c978af692887ed449b74026d76fec"
+  version = "1.0.0"
 
 [[projects]]
   branch = "master"
@@ -76,12 +76,12 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:c2c6f380e0a78474e81fae9a8bdd2353f35c0ea2166126271f9944cc4e3b2343"
+  digest = "1:f3e10b6fd5c6580050a709f0f42242e9c3e1c703216aa05e2ddd503e04de6ae3"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "6d051236a614a33f1b10a94f70fd1af002283c5b"
-  version = "v1.1.2"
+  revision = "eae5cbd0721cf1baf6a83474611de521d48034ea"
+  version = "v1.1.3"
 
 [[projects]]
   branch = "master"
@@ -134,7 +134,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "7a8ec79c544f6a62e7df97354295650dbcdda7ef"
+  revision = "a12bc703440a02f8564ccd8b1038949176524a67"
 
 [[projects]]
   branch = "master"
@@ -166,14 +166,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c45e006b8d467d81745f5a3606b1a59c9a717a988f170e85865de89cee407357"
+  digest = "1:476254e7b30169a44ebfdef2518cedcc50fd3d97b21455b6d9f1f5c001899fa1"
   name = "github.com/cloudfoundry/yagnats"
   packages = [
     ".",
     "fakeyagnats",
   ]
   pruneopts = "NUT"
-  revision = "a8e27212607bac6cfea3b25f8d033d4d003814a2"
+  revision = "c666a176fe17685527ffadf73a4f73abc91ed7c2"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -200,12 +200,12 @@
   version = "1.3.1"
 
 [[projects]]
-  digest = "1:318f1c959a8a740366fce4b1e1eb2fd914036b4af58fbd0a003349b305f118ad"
+  digest = "1:573ca21d3669500ff845bdebee890eb7fc7f0f50c59f2132f2a0c6b03d85086a"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   pruneopts = "NUT"
-  revision = "b5d812f8a3706043e23a9cd5babf2e5423744d30"
-  version = "v1.3.1"
+  revision = "6c65a5562fc06764971b7c5d05c76c75e84bdbf7"
+  version = "v1.3.2"
 
 [[projects]]
   digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
@@ -285,9 +285,10 @@
   version = "v1.8.1"
 
 [[projects]]
-  digest = "1:95837473f879ea39a76b82c43c7badf93a4b27b2d5654182ec3d1728f8ebec30"
+  digest = "1:198f52f16bac13d9338ae08d4ab3d16812e840550146ad6097d22ed5cb395629"
   name = "github.com/nats-io/nats.go"
   packages = [
+    ".",
     "encoders/builtin",
     "util",
   ]
@@ -296,12 +297,12 @@
   version = "v1.8.1"
 
 [[projects]]
-  digest = "1:bf3b29bcf1276cfa19bc22910eac8d8582fe0d4d2a43e8f01f2242d8dfba7965"
+  digest = "1:d649fe8fa50df39a525a9acd9fa73a29f8097272467ca3830a2ebc1abcfb33e3"
   name = "github.com/nats-io/nkeys"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "1546a3320a8f195a5b5c84aef8309377c2e411d5"
-  version = "v0.0.2"
+  revision = "0073b400419be3ffb022ef46b675805e92534a34"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:98d41d5085f44b0baa46a83ca0ca6d8a079f1ffb449ba5a36050ca9019de391c"
@@ -468,7 +469,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2a75d73859fd0e57a025d1574eeaae2b60cefa4528ab090095e9ff7f768457ae"
+  digest = "1:be07d77c559a1e292cc8fdc74b54785e770e3b3b6aa2159209f1580f9c3f2ddf"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -479,7 +480,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
+  revision = "fae7ac547cb717d141c433a2a173315e216b64c4"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -511,7 +512,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7026eea9c10a8cfaa11a68d8e15259f09a1706dce5b9d736aa032991b5a2749d"
+  digest = "1:59988b91533530837bdec96e34fefa9df629d8ee89f3603387c57763b9fed432"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -528,7 +529,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "72ffa07ba3db8d09f5215feec0f89464f3028f8e"
+  revision = "8b927904ee0dec805c89aaf9172f4459296ed6e8"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
