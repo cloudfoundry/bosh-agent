@@ -711,12 +711,21 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			fs.WriteFileString("/etc/dhcp/dhclient.conf", initialDhcpConfig)
 
 			// check that config files change after stop and before start
-			cmdRunner.SetCmdCallback("ifdown --force ethdhcp ethstatic", func() {
+			cmdRunner.SetCmdCallback("ip --force link set ethdhcp down", func() {
 				Expect(fs.ReadFileString("/etc/network/interfaces")).To(Equal(initialInterfacesConfig))
 				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 			})
 
-			cmdRunner.SetCmdCallback("ifup --force ethdhcp ethstatic", func() {
+			cmdRunner.SetCmdCallback("ip --force link set ethstatic down", func() {
+				Expect(fs.ReadFileString("/etc/network/interfaces")).To(Equal(initialInterfacesConfig))
+				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
+			})
+
+			cmdRunner.SetCmdCallback("ip --force link up ethdhcp", func() {
+				Expect(fs.ReadFileString("/etc/network/interfaces")).ToNot(Equal(initialInterfacesConfig))
+				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
+			})
+			cmdRunner.SetCmdCallback("ip --force link up ethstatic", func() {
 				Expect(fs.ReadFileString("/etc/network/interfaces")).ToNot(Equal(initialInterfacesConfig))
 				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 			})
@@ -724,12 +733,14 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(5))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(7))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "--force", "ethdhcp", "ethstatic"}))
-			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "--force", "ethdhcp", "ethstatic"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ip", "--force", "link", "set", "ethdhcp", "down"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ip", "--force", "link", "set", "ethstatic", "down"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"ip", "--force", "link", "set", "ethdhcp", "up"}))
+			Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"ip", "--force", "link", "set", "ethstatic", "up"}))
 
 			Expect(fs.ReadFileString("/etc/network/interfaces")).ToNot(Equal(initialInterfacesConfig))
 			Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
@@ -780,14 +791,23 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			fs.WriteFileString("/etc/dhcp/dhclient.conf", initialDhcpConfig)
 
 			// check that config files change after stop and before start
-			cmdRunner.SetCmdCallback("ifdown --force ethdhcp ethstatic", func() {
+			cmdRunner.SetCmdCallback("ip --force link set ethdhcp down", func() {
 				Expect(fs.ReadFileString("/etc/network/interfaces")).To(Equal(expectedNetworkConfigurationForStaticAndDhcp))
 				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 			})
 
-			cmdRunner.SetCmdCallback("ifup --force ethdhcp ethstatic", func() {
+			cmdRunner.SetCmdCallback("ip --force link set ethstatic down", func() {
 				Expect(fs.ReadFileString("/etc/network/interfaces")).To(Equal(expectedNetworkConfigurationForStaticAndDhcp))
-				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).ToNot(Equal(initialDhcpConfig))
+				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
+			})
+
+			cmdRunner.SetCmdCallback("ip --force link up ethdhcp", func() {
+				Expect(fs.ReadFileString("/etc/network/interfaces")).ToNot(Equal(expectedNetworkConfigurationForStaticAndDhcp))
+				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
+			})
+			cmdRunner.SetCmdCallback("ip --force link up ethstatic", func() {
+				Expect(fs.ReadFileString("/etc/network/interfaces")).ToNot(Equal(expectedNetworkConfigurationForStaticAndDhcp))
+				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 			})
 
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
@@ -796,12 +816,14 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
 			Expect(networkConfig.StringContents()).To(Equal(expectedNetworkConfigurationForStaticAndDhcp))
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(5))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(7))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ifdown", "--force", "ethdhcp", "ethstatic"}))
-			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ifup", "--force", "ethdhcp", "ethstatic"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"ip", "--force", "link", "set", "ethdhcp", "down"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"ip", "--force", "link", "set", "ethstatic", "down"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"ip", "--force", "link", "set", "ethdhcp", "up"}))
+			Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"ip", "--force", "link", "set", "ethstatic", "up"}))
 
 			Expect(fs.ReadFileString("/etc/network/interfaces")).To(Equal(expectedNetworkConfigurationForStaticAndDhcp))
 			Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).ToNot(Equal(initialDhcpConfig))
@@ -1049,32 +1071,32 @@ dns-nameservers 8.8.8.8 10.0.80.11 10.0.80.12`
 					"fake-eth0": boshsettings.Network{Mac: "aa:bb"},
 					"fake-eth1": boshsettings.Network{Mac: "cc:dd"},
 					"fake-eth2": boshsettings.Network{Mac: "ee:ff"},
-					"fake-ens4": boshsettings.Network{Mac: "yy:zz"},
+					"fake-eth3": boshsettings.Network{Mac: "yy:zz"},
 				})
 			})
 
 			It("returns networks that are defined in /etc/network/interfaces", func() {
-				cmdRunner.AddCmdResult("ifup --no-act fake-eth0", fakesys.FakeCmdResult{
+				cmdRunner.AddCmdResult("ip link show fake-eth0", fakesys.FakeCmdResult{
 					Stdout:     "",
-					Stderr:     "ifup: interface fake-eth0 already configured",
+					Stderr:     "any error",
 					ExitStatus: 0,
 				})
 
-				cmdRunner.AddCmdResult("ifup --no-act fake-eth1", fakesys.FakeCmdResult{
+				cmdRunner.AddCmdResult("ip link show fake-eth1", fakesys.FakeCmdResult{
 					Stdout:     "",
-					Stderr:     "Ignoring unknown interface fake-eth1=fake-eth1.",
+					Stderr:     `Device "fake-eth1" does not exist`,
 					ExitStatus: 0,
 				})
 
-				cmdRunner.AddCmdResult("ifup --no-act fake-eth2", fakesys.FakeCmdResult{
+				cmdRunner.AddCmdResult("ip link show fake-eth2", fakesys.FakeCmdResult{
 					Stdout:     "",
-					Stderr:     "ifup: interface fake-eth2 already configured",
+					Stderr:     "any other error",
 					ExitStatus: 0,
 				})
 
-				cmdRunner.AddCmdResult("ifup --no-act fake-ens4", fakesys.FakeCmdResult{
+				cmdRunner.AddCmdResult("ip link show fake-eth3", fakesys.FakeCmdResult{
 					Stdout:     "",
-					Stderr:     "Unknown interface fake-ens4",
+					Stderr:     `Device "fake-eth3" does not exist`,
 					ExitStatus: 1,
 					Error:      errors.New("unconfigured device"),
 				})

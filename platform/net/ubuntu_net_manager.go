@@ -2,6 +2,7 @@ package net
 
 import (
 	"bytes"
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -199,12 +200,12 @@ func (net UbuntuNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 	}
 
 	for _, iface := range interfacesByMacAddress {
-		_, stderr, _, err := net.cmdRunner.RunCommand("ifup", "--no-act", iface)
+		_, stderr, _, err := net.cmdRunner.RunCommand("ip", "link", "show", iface)
 		if err != nil {
-			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure to up interface: %s", err)
+			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failures to get network interface: %s", err)
 		}
 
-		re := regexp.MustCompile("[uU]nknown interface")
+		re := regexp.MustCompile(fmt.Sprintf(`Device "%s" does not exist`, iface))
 
 		if !re.MatchString(stderr) {
 			interfaces = append(interfaces, iface)
@@ -286,9 +287,11 @@ func (net UbuntuNetManager) stopNetworkingInterfaces(dhcpConfigs []DHCPInterface
 
 	ifaceNames := net.ifaceNames(dhcpConfigs, staticConfigs)
 
-	_, _, _, err := net.cmdRunner.RunCommand("ifdown", append([]string{"--force"}, ifaceNames...)...)
-	if err != nil {
-		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err.Error())
+	for _, iface := range ifaceNames {
+		_, _, _, err := net.cmdRunner.RunCommand("ip", []string{"--force", "link", "set", iface, "down"}...)
+		if err != nil {
+			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure in stopping interface: %s", err.Error())
+		}
 	}
 }
 
@@ -297,9 +300,11 @@ func (net UbuntuNetManager) startNetworkingInterfaces(dhcpConfigs []DHCPInterfac
 
 	ifaceNames := net.ifaceNames(dhcpConfigs, staticConfigs)
 
-	_, _, _, err := net.cmdRunner.RunCommand("ifup", append([]string{"--force"}, ifaceNames...)...)
-	if err != nil {
-		net.logger.Error(UbuntuNetManagerLogTag, "Ignoring ifup failure: %s", err.Error())
+	for _, iface := range ifaceNames {
+		_, _, _, err := net.cmdRunner.RunCommand("ip", []string{"--force", "link", "set", iface, "up"}...)
+		if err != nil {
+			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure in starting interface: %s", err.Error())
+		}
 	}
 }
 
