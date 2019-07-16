@@ -4,12 +4,21 @@ trap {
     exit 1
 }
 
-$env:GOPATH = Join-Path -Path $PWD "gopath"
-$env:PATH = $env:GOPATH + "/bin;" + $env:PATH
+# Install chocolatey package manager
+#
+# TODO:
+# Ask Concourse team if we don't have to do this and have a better way to
+# install git.
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+choco install -y git
 
-cd $env:GOPATH/src/github.com/cloudfoundry/bosh-agent
+$env:PATH = $env:PATH + ";c:\program files\git\bin;"
+refreshenv
 
-go.exe install github.com/cloudfoundry/bosh-agent/vendor/github.com/onsi/ginkgo/ginkgo
+cd bosh-agent
+
+go.exe install github.com/onsi/ginkgo/ginkgo
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error installing ginkgo"
     Write-Error $_
