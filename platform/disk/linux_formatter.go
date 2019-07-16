@@ -65,9 +65,9 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 func (f linuxFormatter) makeFileSystemExt4(partitionPath string) error {
 	var err error
 	if f.fs.FileExists("/sys/fs/ext4/features/lazy_itable_init") {
-		_, _, _, err = f.runner.RunCommand("mke2fs", "-t", string(FileSystemExt4), "-j", "-E", "lazy_itable_init=1", partitionPath)
+		_, _, _, err = f.runner.RunCommand("mke2fs", "-t", string(FileSystemExt4), "-O", "quota,project", "-j", "-E", "lazy_itable_init=1", partitionPath)
 	} else {
-		_, _, _, err = f.runner.RunCommand("mke2fs", "-t", string(FileSystemExt4), "-j", partitionPath)
+		_, _, _, err = f.runner.RunCommand("mke2fs", "-t", string(FileSystemExt4), "-O", "quota,project", "-j", partitionPath)
 	}
 	return err
 }
