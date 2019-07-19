@@ -1359,7 +1359,7 @@ func (p linux) PrepareForNetworkingChange() error {
 }
 
 func (p linux) DeleteARPEntryWithIP(ip string) error {
-	_, _, _, err := p.cmdRunner.RunCommand("ip", "n", "flush", "to", ip)
+	_, _, _, err := p.cmdRunner.RunCommand("arp", "-d", ip)
 	if err != nil {
 		return bosherr.WrapError(err, "Deleting arp entry")
 	}
