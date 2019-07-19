@@ -12,7 +12,6 @@ import (
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshaj "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
@@ -90,28 +89,19 @@ func (app *app) Setup(opts Options) error {
 		return bosherr.WrapError(err, "Getting platform")
 	}
 
-	settingsSourceFactory := InitializeSettingsSourceFactory(
+	settingsService, err := NewService(
 		config.Infrastructure.Settings,
+		app.platform,
+		app.platform.GetFs(),
 		app.platform,
 		app.logger,
 	)
-	settingsSource, err := settingsSourceFactory.New()
+
 	if err != nil {
 		return bosherr.WrapError(err, "Getting Settings Source")
 	}
 
-	settingsService := boshsettings.NewService(
-		app.platform.GetFs(),
-		settingsSource,
-		app.platform,
-		app.logger,
-	)
-
-	specFilePath := filepath.Join(app.dirProvider.BoshDir(), "spec.json")
-	specService := boshas.NewConcreteV1Service(
-		app.platform.GetFs(),
-		specFilePath,
-	)
+	specService := NewSpecService(app.platform.GetFs(), app.dirProvider)
 
 	boot := boshagent.NewBootstrap(
 		app.platform,

@@ -3,11 +3,13 @@
 package app
 
 import (
+	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/clock"
 
 	"github.com/cloudfoundry/bosh-agent/agent"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/agent/bootonce"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
@@ -41,7 +43,7 @@ func InitializeAuditLogger(logger boshlog.Logger) *platform.DelayedAuditLogger {
 	return nil
 }
 
-func NewConcreteSigar() sigar.Sigar {
+func NewConcreteSigar() *sigar.ConcreteSigar {
 	return &sigar.ConcreteSigar{}
 }
 
@@ -55,7 +57,7 @@ func NewPlatform(
 	auditLogger platform.AuditLogger,
 	name string,
 ) (boshplatform.Platform, error) {
-	wire.Build(NewConcreteSigar, boshsigar.NewSigarStatsCollector, boshplatform.NewProvider, ProvidePlatform)
+	wire.Build(NewConcreteSigar, wire.Bind(new(sigar.Sigar), new(*sigar.ConcreteSigar)), boshsigar.NewSigarStatsCollector, boshplatform.NewProvider, ProvidePlatform)
 
 	return nil, nil
 }
@@ -64,18 +66,38 @@ func ProvidePlatform(p boshplatform.Provider, name string) (boshplatform.Platfor
 	return p.Get(name)
 }
 
-func InitializeSettingsSourceFactory(opts infrastructure.SettingsOptions, platform platform.Platform, logger logger.Logger) infrastructure.SettingsSourceFactory {
+func ProvideSettingsSource(ssf infrastructure.SettingsSourceFactory) (boshsettings.Source, error) {
+	return ssf.New()
+}
+
+func NewSettingsSourceFactory(opts infrastructure.SettingsOptions, platform platform.Platform, logger logger.Logger) infrastructure.SettingsSourceFactory {
 	wire.Build(infrastructure.NewSettingsSourceFactory)
 
 	return infrastructure.SettingsSourceFactory{}
 }
 
-func NewStartManager(settingsService settings.Service, fs boshsys.FileSystem, dirProvider boshdirs.Provider) agent.StartManager {
-	return bootonce.NewStartManager(
-		settingsService,
-		fs,
-		dirProvider,
-	)
+func NewService(
+	opts infrastructure.SettingsOptions,
+	p platform.Platform,
+	fs boshsys.FileSystem,
+	platformSettingsGetter boshsettings.PlatformSettingsGetter,
+	logger boshlog.Logger,
+) (settings.Service, error) {
+	wire.Build(NewSettingsSourceFactory, ProvideSettingsSource, settings.NewService)
+	return nil, nil
+}
+
+func ProvideSpecFilePath(dp directories.Provider) string {
+	return filepath.Join(dp.BoshDir(), "spec.json")
+}
+
+func NewSpecService(
+	fs system.FileSystem,
+	dirProvider directories.Provider,
+) applyspec.V1Service {
+	wire.Build(boshas.NewConcreteV1Service, ProvideSpecFilePath)
+
+	return nil
 }
 
 func InitializeAgent(
@@ -93,6 +115,6 @@ func InitializeAgent(
 	fs boshsys.FileSystem,
 ) agent.Agent {
 
-	wire.Build(NewStartManager, agent.New)
+	wire.Build(bootonce.NewStartManager, wire.Bind(new(agent.StartManager), new(*bootonce.StartManager)), agent.New)
 	return agent.Agent{}
 }

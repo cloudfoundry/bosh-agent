@@ -4,4 +4,6 @@ pushd $(dirname $1)
   wire
 popd
 
+tmux send-keys -t .0 :e Enter
+
 ./bin/build

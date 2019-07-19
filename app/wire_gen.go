@@ -21,6 +21,7 @@ import (
 	"github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-utils/uuid"
 	sigar2 "github.com/cloudfoundry/gosigar"
+	"path/filepath"
 	"time"
 )
 
@@ -38,8 +39,8 @@ func InitializeAuditLogger(logger2 logger.Logger) *platform.DelayedAuditLogger {
 }
 
 func NewPlatform(logger2 logger.Logger, dirProvider directories.Provider, fs system.FileSystem, opts platform.Options, state *platform.BootstrapState, clock2 clock.Clock, auditLogger platform.AuditLogger, name string) (platform.Platform, error) {
-	sigarSigar := NewConcreteSigar()
-	collector := sigar.NewSigarStatsCollector(sigarSigar)
+	concreteSigar := NewConcreteSigar()
+	collector := sigar.NewSigarStatsCollector(concreteSigar)
 	provider := platform.NewProvider(logger2, dirProvider, collector, fs, opts, state, clock2, auditLogger)
 	platformPlatform, err := ProvidePlatform(provider, name)
 	if err != nil {
@@ -48,20 +49,36 @@ func NewPlatform(logger2 logger.Logger, dirProvider directories.Provider, fs sys
 	return platformPlatform, nil
 }
 
-func InitializeSettingsSourceFactory(opts infrastructure.SettingsOptions, platform2 platform.Platform, logger2 logger.Logger) infrastructure.SettingsSourceFactory {
+func NewSettingsSourceFactory(opts infrastructure.SettingsOptions, platform2 platform.Platform, logger2 logger.Logger) infrastructure.SettingsSourceFactory {
 	settingsSourceFactory := infrastructure.NewSettingsSourceFactory(opts, platform2, logger2)
 	return settingsSourceFactory
 }
 
+func NewService(opts infrastructure.SettingsOptions, p platform.Platform, fs system.FileSystem, platformSettingsGetter settings.PlatformSettingsGetter, logger2 logger.Logger) (settings.Service, error) {
+	settingsSourceFactory := NewSettingsSourceFactory(opts, p, logger2)
+	source, err := ProvideSettingsSource(settingsSourceFactory)
+	if err != nil {
+		return nil, err
+	}
+	service := settings.NewService(fs, source, platformSettingsGetter, logger2)
+	return service, nil
+}
+
+func NewSpecService(fs system.FileSystem, dirProvider directories.Provider) applyspec.V1Service {
+	string2 := ProvideSpecFilePath(dirProvider)
+	v1Service := applyspec.NewConcreteV1Service(fs, string2)
+	return v1Service
+}
+
 func InitializeAgent(logger2 logger.Logger, mbusHandler handler.Handler, platform2 platform.Platform, actionDispatcher agent.ActionDispatcher, jobSupervisor jobsupervisor.JobSupervisor, specService applyspec.V1Service, heartbeatInterval time.Duration, settingsService settings.Service, uuidGenerator uuid.Generator, timeService clock.Clock, dirProvider directories.Provider, fs system.FileSystem) agent.Agent {
-	startManager := NewStartManager(settingsService, fs, dirProvider)
+	startManager := bootonce.NewStartManager(settingsService, fs, dirProvider)
 	agentAgent := agent.New(logger2, mbusHandler, platform2, actionDispatcher, jobSupervisor, specService, heartbeatInterval, settingsService, uuidGenerator, timeService, startManager)
 	return agentAgent
 }
 
 // wire.go:
 
-func NewConcreteSigar() sigar2.Sigar {
+func NewConcreteSigar() *sigar2.ConcreteSigar {
 	return &sigar2.ConcreteSigar{}
 }
 
@@ -69,10 +86,10 @@ func ProvidePlatform(p platform.Provider, name string) (platform.Platform, error
 	return p.Get(name)
 }
 
-func NewStartManager(settingsService settings.Service, fs system.FileSystem, dirProvider directories.Provider) agent.StartManager {
-	return bootonce.NewStartManager(
-		settingsService,
-		fs,
-		dirProvider,
-	)
+func ProvideSettingsSource(ssf infrastructure.SettingsSourceFactory) (settings.Source, error) {
+	return ssf.New()
+}
+
+func ProvideSpecFilePath(dp directories.Provider) string {
+	return filepath.Join(dp.BoshDir(), "spec.json")
 }
