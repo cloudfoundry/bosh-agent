@@ -14,6 +14,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -381,6 +382,32 @@ sudo losetup %s /virtualfs-%d
 
 func (t *TestEnvironment) DetachLoopDevice(devicePath string) error {
 	_, err := t.RunCommand(fmt.Sprintf("sudo losetup -d %s", devicePath))
+	return err
+}
+
+func (t *TestEnvironment) SetUpDummyNetworkInterface(ip, mac string) error {
+	return t.RunCommandChain(
+		"sudo modprobe dummy",
+		"sudo ip link set name dummy0 dev dummy0",
+		fmt.Sprintf("sudo ip link set dev dummy0 address %s", mac),
+		"sudo ip link set dev dummy0 arp on",
+		fmt.Sprintf("sudo ip addr add %s dev dummy0", ip),
+		fmt.Sprintf("sudo ip neigh add to %s lladdr %s dev dummy0 nud reachable", ip, mac),
+	)
+}
+
+func (t *TestEnvironment) RunCommandChain(commands ...string) error {
+	for _, command := range commands {
+		_, err := t.RunCommand(command)
+		if err != nil {
+			return errors.WrapErrorf(err, "Error running %s", command)
+		}
+	}
+	return nil
+}
+
+func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
+	_, err := t.RunCommand("sudo rmmod dummy")
 	return err
 }
 
