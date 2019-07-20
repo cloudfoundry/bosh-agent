@@ -44,12 +44,15 @@
   revision = "c5096ec8773dd9f554971472081ddfbb0782334e"
 
 [[projects]]
-  digest = "1:2be791e7b333ff7c06f8fb3dc18a7d70580e9399dbdffd352621d067ff260b6e"
+  digest = "1:4816836c291b7f2a0da7deefa679ef234be8ad845a199ed2e48779234536cefa"
   name = "github.com/Microsoft/go-winio"
-  packages = ["."]
+  packages = [
+    ".",
+    "pkg/guid",
+  ]
   pruneopts = "NUT"
-  revision = "1a8911d1ed007260465c3bfbbc785ac6915a0bb8"
-  version = "v0.4.12"
+  revision = "a969fb018bd3439cc50861ce06796c40430e3a65"
+  version = "v0.4.13"
 
 [[projects]]
   digest = "1:a8e16b4caf3575365c9aa3380d9418f31dd0b810596faebfe3a15c37fabeee4a"
@@ -112,7 +115,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c4b73c2664ac1ed6729e0d46525cdfc3523344629afd709c238e55a3bba4b42b"
+  digest = "1:1eea874be1876bffc37fd696f2a6cea394f79a27beb4565c023a4ab59de54524"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -134,7 +137,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "a12bc703440a02f8564ccd8b1038949176524a67"
+  revision = "ec93be2c11fb9a09adce8684bb56e08923be8a80"
 
 [[projects]]
   branch = "master"
@@ -512,7 +515,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:59988b91533530837bdec96e34fefa9df629d8ee89f3603387c57763b9fed432"
+  digest = "1:03cb7931c1d82eb61d91e3a29d672c7e1a5b97dbb64fc7ece8b4ec1016dba4ac"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -529,7 +532,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "8b927904ee0dec805c89aaf9172f4459296ed6e8"
+  revision = "e377ae9d63860e3b8f606b92a1a7c7df5b14ca67"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
