@@ -6,7 +6,7 @@
   name = "code.cloudfoundry.org/clock"
   packages = [
     ".",
-    "fakeclock",
+    "fakeclock"
   ]
   pruneopts = "NUT"
   revision = "02e53af36e6c978af692887ed449b74026d76fec"
@@ -38,7 +38,7 @@
     "tree/xmltree/xmlbuilder",
     "tree/xmltree/xmlele",
     "tree/xmltree/xmlnode",
-    "xconst",
+    "xconst"
   ]
   pruneopts = "NUT"
   revision = "c5096ec8773dd9f554971472081ddfbb0782334e"
@@ -48,7 +48,7 @@
   name = "github.com/Microsoft/go-winio"
   packages = [
     ".",
-    "pkg/guid",
+    "pkg/guid"
   ]
   pruneopts = "NUT"
   revision = "a969fb018bd3439cc50861ce06796c40430e3a65"
@@ -72,19 +72,19 @@
     "internal/schema1",
     "internal/schema2",
     "internal/timeout",
-    "internal/wclayer",
+    "internal/wclayer"
   ]
   pruneopts = "NUT"
   revision = "f92b8fb9c92e17da496af5a69e3ee13fbe9916e1"
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:f3e10b6fd5c6580050a709f0f42242e9c3e1c703216aa05e2ddd503e04de6ae3"
+  digest = "1:6724cf35f4b6121ab7277c6a4b5f7790b99d095fc4b661092724abf8c24e7ab7"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "eae5cbd0721cf1baf6a83474611de521d48034ea"
-  version = "v1.1.3"
+  revision = "8c5e0ade498b44ea8563405bf2cda0126d9ee006"
+  version = "v1.1.4"
 
 [[projects]]
   branch = "master"
@@ -99,7 +99,7 @@
   name = "github.com/cloudfoundry/bosh-davcli"
   packages = [
     "client",
-    "config",
+    "config"
   ]
   pruneopts = "NUT"
   revision = "fbc59895ef9f643cc78b6787d346835efbb932a1"
@@ -115,7 +115,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1eea874be1876bffc37fd696f2a6cea394f79a27beb4565c023a4ab59de54524"
+  digest = "1:147b483f535b313a19c5d2a074a8b4fc7301270cd2248e9526dd66347cb8019f"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -134,10 +134,10 @@
     "system/fakes",
     "uuid",
     "uuid/fakes",
-    "work",
+    "work"
   ]
   pruneopts = "NUT"
-  revision = "ec93be2c11fb9a09adce8684bb56e08923be8a80"
+  revision = "752781c952134fc904768e19171b1a0f1370b2ce"
 
 [[projects]]
   branch = "master"
@@ -153,7 +153,7 @@
   packages = [
     ".",
     "fakes",
-    "sys/windows",
+    "sys/windows"
   ]
   pruneopts = "NUT"
   revision = "dcb1afc219e4c99f21c37fb1ec22ed9ffe443317"
@@ -173,7 +173,7 @@
   name = "github.com/cloudfoundry/yagnats"
   packages = [
     ".",
-    "fakeyagnats",
+    "fakeyagnats"
   ]
   pruneopts = "NUT"
   revision = "c666a176fe17685527ffadf73a4f73abc91ed7c2"
@@ -218,7 +218,7 @@
     "ratelimiter",
     "util",
     "watch",
-    "winfile",
+    "winfile"
   ]
   pruneopts = "NUT"
   revision = "a30252cb686a21eb2d0b98132633053ec2f7f1e5"
@@ -254,7 +254,7 @@
   name = "github.com/masterzen/winrm"
   packages = [
     ".",
-    "soap",
+    "soap"
   ]
   pruneopts = "NUT"
   revision = "1d17eaf15943ca3554cdebb3b1b10aaa543a0b7e"
@@ -265,7 +265,7 @@
   packages = [
     ".",
     "arguments",
-    "generator",
+    "generator"
   ]
   pruneopts = "NUT"
   revision = "2d74a219416bffff638e30a3775c76715f1968a7"
@@ -293,7 +293,7 @@
   packages = [
     ".",
     "encoders/builtin",
-    "util",
+    "util"
   ]
   pruneopts = "NUT"
   revision = "e2837a2879e82886f6e21715e3a0217fdc46d370"
@@ -352,7 +352,7 @@
     "reporters/stenographer",
     "reporters/stenographer/support/go-colorable",
     "reporters/stenographer/support/go-isatty",
-    "types",
+    "types"
   ]
   pruneopts = "NUT"
   revision = "eea6ad008b96acdaa524f5b409513bf062b500ad"
@@ -376,7 +376,7 @@
     "matchers/support/goraph/edge",
     "matchers/support/goraph/node",
     "matchers/support/goraph/util",
-    "types",
+    "types"
   ]
   pruneopts = "NUT"
   revision = "90e289841c1ed79b7a598a7cd9959750cb5e89e2"
@@ -450,7 +450,7 @@
     "internal/subtle",
     "md4",
     "poly1305",
-    "ssh",
+    "ssh"
   ]
   pruneopts = "NUT"
   revision = "4def268fd1a49955bfb3dda92fe3db4f924f2285"
@@ -465,7 +465,7 @@
     "html/atom",
     "html/charset",
     "internal/socks",
-    "proxy",
+    "proxy"
   ]
   pruneopts = "NUT"
   revision = "da137c7871d730100384dbcf36e6f8fa493aef5b"
@@ -480,7 +480,7 @@
     "windows",
     "windows/registry",
     "windows/svc",
-    "windows/svc/mgr",
+    "windows/svc/mgr"
   ]
   pruneopts = "NUT"
   revision = "fae7ac547cb717d141c433a2a173315e216b64c4"
@@ -507,7 +507,7 @@
     "language",
     "runes",
     "transform",
-    "unicode/cldr",
+    "unicode/cldr"
   ]
   pruneopts = "NUT"
   revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
@@ -529,7 +529,7 @@
     "internal/gopathwalk",
     "internal/imports",
     "internal/module",
-    "internal/semver",
+    "internal/semver"
   ]
   pruneopts = "NUT"
   revision = "e377ae9d63860e3b8f606b92a1a7c7df5b14ca67"
@@ -615,7 +615,7 @@
     "golang.org/x/sys/windows",
     "golang.org/x/sys/windows/registry",
     "golang.org/x/sys/windows/svc",
-    "golang.org/x/sys/windows/svc/mgr",
+    "golang.org/x/sys/windows/svc/mgr"
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
