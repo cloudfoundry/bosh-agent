@@ -10,6 +10,13 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+type PostUpRoute struct {
+	Destination string
+	Gateway     string
+	Netmask     string
+	NetmaskSize int
+}
+
 type StaticInterfaceConfiguration struct {
 	Name                string
 	Address             string
@@ -19,7 +26,7 @@ type StaticInterfaceConfiguration struct {
 	IsDefaultForGateway bool
 	Mac                 string
 	Gateway             string
-	PostUpRoutes        boshsettings.Routes
+	PostUpRoutes        []PostUpRoute
 }
 
 func (c StaticInterfaceConfiguration) Version6() string {
@@ -66,7 +73,7 @@ func (configs StaticInterfaceConfigurations) HasVersion6() bool {
 
 type DHCPInterfaceConfiguration struct {
 	Name         string
-	PostUpRoutes boshsettings.Routes
+	PostUpRoutes []PostUpRoute
 	Address      string
 }
 
@@ -127,11 +134,27 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 func (creator interfaceConfigurationCreator) createInterfaceConfiguration(staticConfigs []StaticInterfaceConfiguration, dhcpConfigs []DHCPInterfaceConfiguration, ifaceName string, networkSettings boshsettings.Network) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	creator.logger.Debug(creator.logTag, "Creating network configuration with settings: %s", networkSettings)
 
+	postUpRoutes := []PostUpRoute{}
+	for _, route := range networkSettings.Routes {
+		mask := net.ParseIP(route.Netmask).To4()
+		if mask == nil {
+			return nil, nil, bosherr.Error("Parsing post-up route's netmask")
+		}
+		maskSize, _ := net.IPMask(mask).Size()
+
+		postUpRoutes = append(postUpRoutes, PostUpRoute{
+			Destination: route.Destination,
+			Gateway:     route.Gateway,
+			Netmask:     route.Netmask,
+			NetmaskSize: maskSize,
+		})
+	}
+
 	if (networkSettings.IsDHCP() || networkSettings.Mac == "") && networkSettings.Alias == "" {
 		creator.logger.Debug(creator.logTag, "Using dhcp networking")
 		dhcpConfigs = append(dhcpConfigs, DHCPInterfaceConfiguration{
 			Name:         ifaceName,
-			PostUpRoutes: networkSettings.Routes,
+			PostUpRoutes: postUpRoutes,
 			Address:      networkSettings.IP,
 		})
 	} else {
@@ -150,7 +173,7 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 			Broadcast:           broadcastAddress,
 			Mac:                 networkSettings.Mac,
 			Gateway:             networkSettings.Gateway,
-			PostUpRoutes:        networkSettings.Routes,
+			PostUpRoutes:        postUpRoutes,
 		}
 		staticConfigs = append(staticConfigs, conf)
 	}

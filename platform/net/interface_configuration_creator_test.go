@@ -85,6 +85,7 @@ func describeInterfaceConfigurationCreator() {
 								Broadcast:           "1.2.3.255",
 								Mac:                 "fake-static-mac-address",
 								Gateway:             "3.4.5.6",
+								PostUpRoutes:        []PostUpRoute{},
 							},
 						}))
 
@@ -132,6 +133,7 @@ func describeInterfaceConfigurationCreator() {
 								Broadcast:           "1.2.3.255",
 								Mac:                 "fake-any-mac-address",
 								Gateway:             "3.4.5.6",
+								PostUpRoutes:        []PostUpRoute{},
 							},
 						}))
 
@@ -173,6 +175,7 @@ func describeInterfaceConfigurationCreator() {
 							Broadcast:           "1.2.3.255",
 							Mac:                 "fake-static-mac-address",
 							Gateway:             "3.4.5.6",
+							PostUpRoutes:        []PostUpRoute{},
 						},
 					}))
 
@@ -212,16 +215,18 @@ func describeInterfaceConfigurationCreator() {
 							Broadcast:           "1.2.3.255",
 							Mac:                 "fake-static-mac-address",
 							Gateway:             "3.4.5.6",
-							PostUpRoutes: boshsettings.Routes{
-								boshsettings.Route{
+							PostUpRoutes: []PostUpRoute{
+								PostUpRoute{
 									Destination: "10.0.0.0",
 									Gateway:     "3.4.5.6",
 									Netmask:     "255.0.0.0",
+									NetmaskSize: 8,
 								},
-								boshsettings.Route{
+								PostUpRoute{
 									Destination: "161.26.0.0",
 									Gateway:     "3.4.5.6",
 									Netmask:     "255.255.0.0",
+									NetmaskSize: 16,
 								},
 							},
 						},
@@ -258,6 +263,7 @@ func describeInterfaceConfigurationCreator() {
 								IsDefaultForGateway: false,
 								Mac:                 "fake-static-mac-address",
 								Gateway:             "3.4.5.6",
+								PostUpRoutes:        []PostUpRoute{},
 							},
 							StaticInterfaceConfiguration{
 								Name:                "static-interface-name-with-default-gateway",
@@ -268,12 +274,14 @@ func describeInterfaceConfigurationCreator() {
 								Broadcast:           "5.6.7.255",
 								Mac:                 "fake-static-mac-address-with-default-gateway",
 								Gateway:             "5.6.7.1",
+								PostUpRoutes:        []PostUpRoute{},
 							},
 						}))
 
 						Expect(dhcpInterfaceConfigurations).To(Equal([]DHCPInterfaceConfiguration{
 							DHCPInterfaceConfiguration{
-								Name: "dhcp-interface-name",
+								Name:         "dhcp-interface-name",
+								PostUpRoutes: []PostUpRoute{},
 							},
 						}))
 					})
@@ -295,10 +303,12 @@ func describeInterfaceConfigurationCreator() {
 
 						Expect(dhcpInterfaceConfigurations).To(ConsistOf(
 							DHCPInterfaceConfiguration{
-								Name: "dhcp-interface-name",
+								Name:         "dhcp-interface-name",
+								PostUpRoutes: []PostUpRoute{},
 							},
 							DHCPInterfaceConfiguration{
-								Name: "other-interface-name",
+								Name:         "other-interface-name",
+								PostUpRoutes: []PostUpRoute{},
 							},
 						))
 					})
@@ -345,6 +355,7 @@ func describeInterfaceConfigurationCreator() {
 							IsDefaultForGateway: false,
 							Mac:                 "fake-static-mac-address",
 							Gateway:             "3.4.5.6",
+							PostUpRoutes:        []PostUpRoute{},
 						},
 						{
 							Name:                "static-interface-name:1",
@@ -354,6 +365,7 @@ func describeInterfaceConfigurationCreator() {
 							Broadcast:           "1.2.3.255",
 							IsDefaultForGateway: false,
 							Gateway:             "3.4.5.6",
+							PostUpRoutes:        []PostUpRoute{},
 						},
 					}))
 				})
@@ -388,11 +400,12 @@ func describeInterfaceConfigurationCreator() {
 							IsDefaultForGateway: false,
 							Mac:                 "fake-static-mac-address",
 							Gateway:             "3.4.5.6",
-							PostUpRoutes: boshsettings.Routes{
-								boshsettings.Route{
+							PostUpRoutes: []PostUpRoute{
+								PostUpRoute{
 									Destination: "10.0.0.0",
 									Gateway:     "3.4.5.6",
 									Netmask:     "255.0.0.0",
+									NetmaskSize: 8,
 								},
 							},
 						},
@@ -429,17 +442,19 @@ func describeInterfaceConfigurationCreator() {
 							IsDefaultForGateway: false,
 							Mac:                 "fake-static-mac-address",
 							Gateway:             "3.4.5.6",
+							PostUpRoutes:        []PostUpRoute{},
 						},
 					}))
 
 					Expect(dhcpInterfaceConfigurations).To(ConsistOf([]DHCPInterfaceConfiguration{
 						{
 							Name: "dhcp-interface-name",
-							PostUpRoutes: boshsettings.Routes{
-								boshsettings.Route{
+							PostUpRoutes: []PostUpRoute{
+								PostUpRoute{
 									Destination: "10.0.0.0",
 									Gateway:     "3.4.5.6",
 									Netmask:     "255.0.0.0",
+									NetmaskSize: 8,
 								},
 							},
 						},
