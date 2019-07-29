@@ -39,4 +39,6 @@ Vagrant.configure('2') do |config|
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-go.sh"
   config.vm.provision :shell, inline: "sudo cp #{agent_dir}/integration/assets/bosh-start-logging-and-auditing /var/vcap/bosh/bin/bosh-start-logging-and-auditing"
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/disable_growpart.sh"
+  config.vm.provision :shell, inline: "sudo echo '#!/bin/bash' > /var/vcap/bosh/bin/restart_networking"
+  config.vm.provision :shell, inline: "sudo chmod +x /var/vcap/bosh/bin/restart_networking"
 end

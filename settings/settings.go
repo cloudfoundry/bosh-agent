@@ -2,6 +2,8 @@ package settings
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
 	"github.com/cloudfoundry/bosh-agent/platform/disk"
 )
@@ -515,6 +517,17 @@ func (n Network) isDynamic() bool {
 
 func (n Network) IsVIP() bool {
 	return n.Type == NetworkTypeVIP
+}
+
+func NetmaskToCIDR(netmask string, ipv6 bool) string {
+	ip := net.ParseIP(netmask)
+	if ipv6 {
+		ones, _ := net.IPMask(ip).Size()
+		return strconv.Itoa(ones)
+	}
+
+	ones, _ := net.IPMask(ip.To4()).Size()
+	return strconv.Itoa(ones)
 }
 
 //{

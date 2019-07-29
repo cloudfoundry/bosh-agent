@@ -2,7 +2,6 @@ package net
 
 import (
 	"net"
-	"strconv"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -34,11 +33,7 @@ func (c StaticInterfaceConfiguration) IsVersion6() bool {
 }
 
 func (c StaticInterfaceConfiguration) NetmaskOrLen() string {
-	if c.IsVersion6() {
-		ones, _ := net.IPMask(net.ParseIP(c.Netmask)).Size()
-		return strconv.Itoa(ones)
-	}
-	return c.Netmask
+	return boshsettings.NetmaskToCIDR(c.Netmask, c.IsVersion6())
 }
 
 type StaticInterfaceConfigurations []StaticInterfaceConfiguration

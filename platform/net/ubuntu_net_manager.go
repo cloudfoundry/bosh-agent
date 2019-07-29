@@ -118,9 +118,9 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		}
 	}
 
-	changed, err := net.writeNetConfigs(dhcpConfigs, staticConfigs, dnsServers, boshsys.ConvergeFileContentsOpts{DryRun: true})
+	changed, err := net.writeNetConfigs(dhcpConfigs, staticConfigs, dnsServers, boshsys.ConvergeFileContentsOpts{})
 	if err != nil {
-		return bosherr.WrapError(err, "Determining if network configs have changed")
+		return bosherr.WrapError(err, "Updating network configs")
 	}
 
 	if changed {
@@ -129,14 +129,10 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 			return err
 		}
 
-		net.stopNetworkingInterfaces(dhcpConfigs, staticConfigs)
-
-		_, err = net.writeNetConfigs(dhcpConfigs, staticConfigs, dnsServers, boshsys.ConvergeFileContentsOpts{})
+		err := net.restartNetworking()
 		if err != nil {
-			return bosherr.WrapError(err, "Updating network configs")
+			return bosherr.WrapError(err, "Failure restarting networking")
 		}
-
-		net.startNetworkingInterfaces(dhcpConfigs, staticConfigs)
 	}
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
@@ -282,30 +278,12 @@ func (net UbuntuNetManager) broadcastIps(addresses []boship.InterfaceAddress, er
 	}()
 }
 
-func (net UbuntuNetManager) stopNetworkingInterfaces(dhcpConfigs []DHCPInterfaceConfiguration, staticConfigs []StaticInterfaceConfiguration) {
-	net.logger.Debug(UbuntuNetManagerLogTag, "Stopping network interfaces")
-
-	ifaceNames := net.ifaceNames(dhcpConfigs, staticConfigs)
-
-	for _, iface := range ifaceNames {
-		_, _, _, err := net.cmdRunner.RunCommand("ip", []string{"--force", "link", "set", iface, "down"}...)
-		if err != nil {
-			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure in stopping interface: %s", err.Error())
-		}
+func (net UbuntuNetManager) restartNetworking() error {
+	_, _, _, err := net.cmdRunner.RunCommand("/var/vcap/bosh/bin/restart_networking")
+	if err != nil {
+		return err
 	}
-}
-
-func (net UbuntuNetManager) startNetworkingInterfaces(dhcpConfigs []DHCPInterfaceConfiguration, staticConfigs []StaticInterfaceConfiguration) {
-	net.logger.Debug(UbuntuNetManagerLogTag, "Starting network interfaces")
-
-	ifaceNames := net.ifaceNames(dhcpConfigs, staticConfigs)
-
-	for _, iface := range ifaceNames {
-		_, _, _, err := net.cmdRunner.RunCommand("ip", []string{"--force", "link", "set", iface, "up"}...)
-		if err != nil {
-			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failure in starting interface: %s", err.Error())
-		}
-	}
+	return nil
 }
 
 func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string, opts boshsys.ConvergeFileContentsOpts) (bool, error) {
@@ -332,13 +310,31 @@ func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string, opts bos
 
 type networkInterfaceConfig struct {
 	DNSServers        []string
-	StaticConfigs     StaticInterfaceConfigurations
-	DHCPConfigs       DHCPInterfaceConfigurations
+	InterfaceConfig   interface{}
 	HasDNSNameServers bool
 }
 
-func (c networkInterfaceConfig) HasVersion6() bool {
-	return c.StaticConfigs.HasVersion6() || c.DHCPConfigs.HasVersion6()
+func (net UbuntuNetManager) updateConfiguration(name, templateDefinition string, templateConfiguration interface{}, opts boshsys.ConvergeFileContentsOpts) (bool, error) {
+	interfaceBasename := fmt.Sprintf("10_%s.network", name)
+	interfaceFile := filepath.Join("/etc/systemd/network", interfaceBasename)
+	buffer := bytes.NewBuffer([]byte{})
+	templateFuncs := template.FuncMap{
+		"NetmaskToCIDR": boshsettings.NetmaskToCIDR,
+	}
+
+	t := template.Must(template.New(interfaceBasename).Funcs(templateFuncs).Parse(templateDefinition))
+
+	err := t.Execute(buffer, templateConfiguration)
+	if err != nil {
+		return false, bosherr.WrapError(err, fmt.Sprintf("Generating config from template %s", interfaceBasename))
+	}
+
+	net.logger.Error(UbuntuNetManagerLogTag, "Updating %s configuration with contents: %s", interfaceBasename, buffer.Bytes())
+	return net.fs.ConvergeFileContents(
+		interfaceFile,
+		buffer.Bytes(),
+		opts,
+	)
 }
 
 func (net UbuntuNetManager) writeNetworkInterfaces(
@@ -350,50 +346,74 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 	sort.Stable(dhcpConfigs)
 	sort.Stable(staticConfigs)
 
-	networkInterfaceValues := networkInterfaceConfig{
-		DHCPConfigs:       dhcpConfigs,
-		StaticConfigs:     staticConfigs,
-		HasDNSNameServers: true,
-		DNSServers:        dnsServers,
+	anyChanged := false
+	for _, dynamicAddressConfiguration := range dhcpConfigs {
+		networkInterfaceConfiguration := networkInterfaceConfig{
+			InterfaceConfig:   dynamicAddressConfiguration,
+			HasDNSNameServers: true,
+			DNSServers:        dnsServers,
+		}
+		changed, err := net.updateConfiguration(dynamicAddressConfiguration.Name, dynamicNetworkInterfaceTemplate, networkInterfaceConfiguration, opts)
+		if err != nil {
+			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", dynamicAddressConfiguration.Name))
+		}
+
+		anyChanged = anyChanged || changed
 	}
 
-	buffer := bytes.NewBuffer([]byte{})
+	for _, staticAddressConfiguration := range staticConfigs {
+		networkInterfaceConfiguration := networkInterfaceConfig{
+			InterfaceConfig:   staticAddressConfiguration,
+			HasDNSNameServers: true,
+			DNSServers:        dnsServers,
+		}
+		changed, err := net.updateConfiguration(staticAddressConfiguration.Name, staticNetworkInterfaceTemplate, networkInterfaceConfiguration, opts)
+		if err != nil {
+			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", staticAddressConfiguration.Name))
+		}
 
-	t := template.Must(template.New("network-interfaces").Parse(networkInterfacesTemplate))
-
-	err := t.Execute(buffer, networkInterfaceValues)
-	if err != nil {
-		return false, bosherr.WrapError(err, "Generating config from template")
+		anyChanged = anyChanged || changed
 	}
-
-	changed, err := net.fs.ConvergeFileContents("/etc/network/interfaces", buffer.Bytes(), opts)
-	if err != nil {
-		return changed, bosherr.WrapError(err, "Writing to /etc/network/interfaces")
-	}
-
-	return changed, nil
+	return anyChanged, nil
 }
 
-const networkInterfacesTemplate = `# Generated by bosh-agent
-auto lo
-iface lo inet loopback
-{{ range .DHCPConfigs }}
-auto {{ .Name }}
-iface {{ .Name }} inet dhcp{{ range .PostUpRoutes }}
-post-up route add -net {{ .Destination }} netmask {{ .Netmask }} gw {{ .Gateway }}{{ end }}
-{{ end }}{{ range .StaticConfigs }}
-auto {{ .Name }}
-iface {{ .Name }} inet{{ .Version6 }} static
-    address {{ .Address }}{{ if not .IsVersion6 }}
-    network {{ .Network }}{{ end }}
-    netmask {{ .NetmaskOrLen }}{{ if .IsDefaultForGateway }}{{ if not .IsVersion6 }}
-    broadcast {{ .Broadcast }}{{ end }}
-    gateway {{ .Gateway }}{{ end }}{{ if .IsVersion6 }}{{ range .PostUpRoutes }}
-    post-up route -A inet6 add -net {{ .Destination }} netmask {{ .Netmask }} gw {{ .Gateway }}{{ end }}{{ else }}{{ range .PostUpRoutes }}
-    post-up route add -net {{ .Destination }} netmask {{ .Netmask }} gw {{ .Gateway }}{{ end }}{{ end }}
-{{ end }}{{ if .HasVersion6 }}
-accept_ra 1{{ end }}{{ if .DNSServers }}
-dns-nameservers{{ range .DNSServers }} {{ . }}{{ end }}{{ end }}`
+const staticNetworkInterfaceTemplate = `# Generated by bosh-agent
+[Match]
+Name={{ .InterfaceConfig.Name }}
+
+[Address]
+Address={{ .InterfaceConfig.Address }}/{{ .InterfaceConfig.NetmaskOrLen }}
+{{ if .InterfaceConfig.IsDefaultForGateway }}{{ if not .InterfaceConfig.IsVersion6 }}Broadcast={{ end }}{{ .InterfaceConfig.Broadcast }}{{ end }}
+
+[Network]
+{{ if .InterfaceConfig.IsDefaultForGateway }}Gateway={{ .InterfaceConfig.Gateway }}{{ end }}
+{{ if .InterfaceConfig.IsVersion6 }}IPv6AcceptRA=true{{ end }}
+{{ if .DNSServers }}{{ range .DNSServers }}DNS={{ . }}
+{{ end }}{{ end }}
+
+[Route]
+{{ range .InterfaceConfig.PostUpRoutes }}
+Destination={{ .Destination }}/{{ NetmaskToCIDR .Netmask $.InterfaceConfig.IsVersion6 }}
+Gateway={{ .Gateway }}
+{{ end }}
+`
+
+const dynamicNetworkInterfaceTemplate = `# Generated by bosh-agent
+[Match]
+Name={{ .InterfaceConfig.Name }}
+
+[Network]
+DHCP=yes
+{{ if .InterfaceConfig.IsVersion6 }}IPv6AcceptRA=true{{ end }}
+{{ if .DNSServers }}{{ range .DNSServers }}
+DNS={{ . }}
+{{ end }}{{ end }}
+
+[Route]
+{{ range .InterfaceConfig.PostUpRoutes }}
+Destination={{ .Destination }}/{{ NetmaskToCIDR .Netmask $.InterfaceConfig.IsVersion6 }}
+Gateway={{ .Gateway }}
+{{ end }}`
 
 func (net UbuntuNetManager) ifaceNames(dhcpConfigs DHCPInterfaceConfigurations, staticConfigs StaticInterfaceConfigurations) []string {
 	ifaceNames := []string{}
