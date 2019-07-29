@@ -212,7 +212,6 @@ DNS=8.8.8.8
 DNS=9.9.9.9
 
 [Route]
-
 `))
 			networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_ethstatic2.network")
 			Expect(networkConfig).ToNot(BeNil())
@@ -229,7 +228,6 @@ DNS=8.8.8.8
 DNS=9.9.9.9
 
 [Route]
-
 `))
 			networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_ethstatic3.network")
 			Expect(networkConfig).ToNot(BeNil())
@@ -247,7 +245,6 @@ DNS=8.8.8.8
 DNS=9.9.9.9
 
 [Route]
-
 `))
 		})
 
@@ -302,7 +299,6 @@ DNS=9.9.9.9
 
 Destination=2001:db8:1234::/48
 Gateway=2601:646:100:e8e8::
-
 `))
 		})
 	})
