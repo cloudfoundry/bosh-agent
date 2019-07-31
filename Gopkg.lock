@@ -115,7 +115,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:147b483f535b313a19c5d2a074a8b4fc7301270cd2248e9526dd66347cb8019f"
+  digest = "1:9771bcb146b506c229259074be9c49b7506f19c67806a8bf0eed6a47b6f91662"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -137,7 +137,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "752781c952134fc904768e19171b1a0f1370b2ce"
+  revision = "0e25561cd45e5bda1c73955e0773b842a55fb2be"
 
 [[projects]]
   branch = "master"
@@ -464,7 +464,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b69b961087bc107a00937b0b949717872185e5885e2f1a4327cd234adf0453f5"
+  digest = "1:cfe5a75dd2db432bd245a6356d8839d546d06dc2b09448a45c7699152292b135"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -475,7 +475,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "fc99dfbffb4e5ed5758a37e31dd861afe285406b"
+  revision = "1393eb0183657fb29200106b17a5042ec6e48dbe"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -524,7 +524,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "1bd56024c6204c5d493f13273473cf5b3e0e8194"
+  revision = "c001e47e7f00e86e2589be2312a5f197de244238"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
