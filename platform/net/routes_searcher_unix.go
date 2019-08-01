@@ -3,7 +3,6 @@
 package net
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -23,7 +22,6 @@ func NewRoutesSearcher(runner boshsys.CmdRunner, _ InterfaceManager) RoutesSearc
 
 func parseRoute(ipString string) Route {
 	var r = regexp.MustCompile(`(?P<destination>[a-z0-9.]+)(/[0-9]+)?( via (?P<gateway>[0-9.]+))? dev (?P<interfaceName>[a-z0-9]+)`)
-	fmt.Println(ipString)
 
 	match := r.FindStringSubmatch(ipString)
 	matches := make(map[string]string)
