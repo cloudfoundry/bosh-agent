@@ -519,15 +519,23 @@ func (n Network) IsVIP() bool {
 	return n.Type == NetworkTypeVIP
 }
 
-func NetmaskToCIDR(netmask string, ipv6 bool) string {
+func NetmaskToCIDR(netmask string, ipv6 bool) (string, error) {
 	ip := net.ParseIP(netmask)
 	if ipv6 {
-		ones, _ := net.IPMask(ip).Size()
-		return strconv.Itoa(ones)
+		ipv6mask := net.IPMask(ip)
+		ones, _ := ipv6mask.Size()
+		if ipv6mask.String() != "00000000000000000000000000000000" && ones == 0 {
+			return "0", fmt.Errorf("netmask cannot be converted to CIDR: %s", netmask)
+		}
+		return strconv.Itoa(ones), nil
 	}
 
-	ones, _ := net.IPMask(ip.To4()).Size()
-	return strconv.Itoa(ones)
+	ipv4mask := net.IPMask(ip.To4())
+	ones, _ := ipv4mask.Size()
+	if ipv4mask.String() != "00000000" && ones == 0 {
+		return "0", fmt.Errorf("netmask cannot be converted to CIDR: %s", netmask)
+	}
+	return strconv.Itoa(ones), nil
 }
 
 //{

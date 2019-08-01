@@ -608,6 +608,30 @@ Gateway=3.4.5.6
 			Expect(err.Error()).To(ContainSubstring("Creating interface configurations"))
 		})
 
+		It("returns errors when there a netmask cannot be converted to a CIDR", func() {
+			staticNetwork = boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Netmask: "255.0.255.0",
+				Gateway: "3.4.5.6",
+				Mac:     "fake-static-mac-address",
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"eth0": staticNetwork,
+			})
+
+			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
+			}
+
+			err := netManager.SetupNetworking(boshsettings.Networks{
+				"static-1": staticNetwork,
+			}, nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(`Updating network configs: Writing network configuration: Updating network configuration for eth0: Generating config from template 10_eth0.network: template: 10_eth0.network:6:58: executing "10_eth0.network" at <.InterfaceConfig.NetmaskOrLen>: error calling NetmaskOrLen: netmask cannot be converted to CIDR: 255.0.255.0`))
+		})
+
 		It("writes a dhcp configuration if there are dhcp networks", func() {
 			stubInterfaces(map[string]boshsettings.Network{
 				"ethdhcp":   dhcpNetwork,

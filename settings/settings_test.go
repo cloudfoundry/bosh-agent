@@ -1307,4 +1307,43 @@ var _ = Describe("Settings", func() {
 			})
 		})
 	})
+
+	Describe("NetmaskToCIDR", func() {
+		Context("ipv6", func() {
+			It("converts valid netmasks", func() {
+				cidr, err := NetmaskToCIDR("ffff:ffff:ffff:ffff::", true)
+				Expect(cidr).To(Equal("64"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("errors when a netmask is unconvertible", func() {
+				_, err := NetmaskToCIDR("ffff:ffff:0000:ffff::", true)
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("properly converts zero netmasks", func() {
+				cidr, err := NetmaskToCIDR("::", true)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cidr).To(Equal("0"))
+			})
+		})
+
+		Context("ipv4", func() {
+			It("converts valid netmasks", func() {
+				cidr, err := NetmaskToCIDR("255.255.0.0", false)
+				Expect(cidr).To(Equal("16"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("errors when a netmask is unconvertible", func() {
+				_, err := NetmaskToCIDR("255.0.255.0", false)
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("properly converts zero netmasks", func() {
+				cidr, err := NetmaskToCIDR("0.0.0.0", false)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cidr).To(Equal("0"))
+			})
+		})
+	})
 })
