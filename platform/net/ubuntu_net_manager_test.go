@@ -629,7 +629,7 @@ Gateway=3.4.5.6
 				"static-1": staticNetwork,
 			}, nil)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(`Updating network configs: Writing network configuration: Updating network configuration for eth0: Generating config from template 10_eth0.network: template: 10_eth0.network:6:58: executing "10_eth0.network" at <.InterfaceConfig.NetmaskOrLen>: error calling NetmaskOrLen: netmask cannot be converted to CIDR: 255.0.255.0`))
+			Expect(err).To(MatchError(`Updating network configs: Writing network configuration: Updating network configuration for eth0: Generating config from template 10_eth0.network: template: 10_eth0.network:6:58: executing "10_eth0.network" at <.InterfaceConfig.CIDR>: error calling CIDR: netmask cannot be converted to CIDR: 255.0.255.0`))
 		})
 
 		It("writes a dhcp configuration if there are dhcp networks", func() {

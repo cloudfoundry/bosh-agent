@@ -32,7 +32,7 @@ func (c StaticInterfaceConfiguration) IsVersion6() bool {
 	return len(c.Network) == 0 && len(c.Broadcast) == 0
 }
 
-func (c StaticInterfaceConfiguration) NetmaskOrLen() (string, error) {
+func (c StaticInterfaceConfiguration) CIDR() (string, error) {
 	return boshsettings.NetmaskToCIDR(c.Netmask, c.IsVersion6())
 }
 
