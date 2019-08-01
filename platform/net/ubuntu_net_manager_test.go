@@ -845,17 +845,15 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 				"ethstatic": staticNetwork,
 			})
 
-			errCh := make(chan error)
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, errCh)
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			broadcastErr := <-errCh // wait for all arpings
-			Expect(broadcastErr).ToNot(HaveOccurred())
-
-			Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
-				boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
-				boship.NewResolvingInterfaceAddress("ethdhcp", ipResolver),
-			}))
+			Eventually(func() []boship.InterfaceAddress { return addressBroadcaster.BroadcastMACAddressesAddresses }).Should(
+				Equal([]boship.InterfaceAddress{
+					boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
+					boship.NewResolvingInterfaceAddress("ethdhcp", ipResolver),
+				}),
+			)
 		})
 
 		It("skips vip networks", func() {
@@ -1078,17 +1076,14 @@ nameserver 10.0.80.12
 					"eth0": staticNetwork1,
 				})
 
-				errCh := make(chan error)
-				err := netManager.SetupNetworking(boshsettings.Networks{"default": portableNetwork, "dynamic": staticNetwork, "dynamic_1": staticNetwork1}, errCh)
-				Expect(err).NotTo(HaveOccurred())
+				err := netManager.SetupNetworking(boshsettings.Networks{"default": portableNetwork, "dynamic": staticNetwork, "dynamic_1": staticNetwork1}, nil)
 
-				broadcastErr := <-errCh // wait for all arpings
-				Expect(broadcastErr).ToNot(HaveOccurred())
-
-				Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
-					boship.NewSimpleInterfaceAddress("eth0", "10.112.39.113"),
-					boship.NewSimpleInterfaceAddress("eth1", "169.50.68.75"),
-				}))
+				Eventually(func() []boship.InterfaceAddress { return addressBroadcaster.BroadcastMACAddressesAddresses }).Should(
+					Equal([]boship.InterfaceAddress{
+						boship.NewSimpleInterfaceAddress("eth0", "10.112.39.113"),
+						boship.NewSimpleInterfaceAddress("eth1", "169.50.68.75"),
+					}),
+				)
 
 				matches, err := fs.Ls("/etc/systemd/network/")
 				Expect(err).NotTo(HaveOccurred())

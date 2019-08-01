@@ -159,7 +159,7 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return bosherr.WrapError(err, "Validating dns configuration")
 	}
 
-	net.broadcastIps(append(staticAddressesWithoutVirtual, dynamicAddresses...), errCh)
+	go net.addressBroadcaster.BroadcastMACAddresses(append(staticAddressesWithoutVirtual, dynamicAddresses...))
 
 	return nil
 }
@@ -267,15 +267,6 @@ func (net UbuntuNetManager) ifaceAddresses(staticConfigs []StaticInterfaceConfig
 	}
 
 	return staticAddresses, dynamicAddresses
-}
-
-func (net UbuntuNetManager) broadcastIps(addresses []boship.InterfaceAddress, errCh chan error) {
-	go func() {
-		net.addressBroadcaster.BroadcastMACAddresses(addresses)
-		if errCh != nil {
-			errCh <- nil
-		}
-	}()
 }
 
 func (net UbuntuNetManager) restartNetworking() error {

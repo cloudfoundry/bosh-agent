@@ -1056,6 +1056,7 @@ var _ = Describe("bootstrap", func() {
 			}
 
 			BeforeEach(func() {
+				logger = boshlog.NewLogger(boshlog.LevelNone)
 				fs = fakesys.NewFakeFileSystem()
 				specService = fakes.NewFakeV1Service()
 				runner := fakesys.NewFakeCmdRunner()
@@ -1114,7 +1115,6 @@ var _ = Describe("bootstrap", func() {
 				interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
 				interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
 				dnsValidator := boshnet.NewDNSValidator(fs)
-				logger = boshlog.NewLogger(boshlog.LevelNone)
 				kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
 				fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 				fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
