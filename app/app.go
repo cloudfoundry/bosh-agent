@@ -10,7 +10,6 @@ import (
 	"os"
 
 	boshagent "github.com/cloudfoundry/bosh-agent/agent"
-	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshapplier "github.com/cloudfoundry/bosh-agent/agent/applier"
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshaj "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
@@ -18,12 +17,7 @@ import (
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	boshmbus "github.com/cloudfoundry/bosh-agent/mbus"
-	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -31,7 +25,6 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 type App interface {
@@ -58,196 +51,38 @@ func New(logger boshlog.Logger, fs boshsys.FileSystem) App {
 }
 
 func (app *app) Setup(opts Options) error {
-	config, err := app.loadConfig(opts.ConfigPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Loading config")
-	}
-
+	var err error
 	app.dirProvider = InitializeDirProvider(opts.BaseDirectory)
 	app.logStemcellInfo()
 
-	auditLogger := InitializeAuditLogger(app.logger)
-
-	state, err := boshplatform.NewBootstrapState(app.fs, filepath.Join(app.dirProvider.BoshDir(), "agent_state.json"))
-	if err != nil {
-		return bosherr.WrapError(err, "Loading state")
-	}
-
-	timeService := clock.NewClock()
-
 	app.platform, err = NewPlatform(
-		app.logger,
-		app.dirProvider,
-		app.fs,
-		config.Platform,
-		state,
-		timeService,
-		auditLogger,
-		opts.PlatformName,
+		app,
+		opts,
 	)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
 	}
 
-	settingsService, err := NewService(
-		config.Infrastructure.Settings,
-		app.platform,
-		app.platform.GetFs(),
-		app.platform,
-		app.logger,
+	boot, err := InitializeBootstrap(
+		app,
+		opts,
 	)
-
 	if err != nil {
-		return bosherr.WrapError(err, "Getting Settings Source")
+		return bosherr.WrapError(err, "Initializing bootstrap")
 	}
-
-	specService := NewSpecService(app.platform.GetFs(), app.dirProvider)
-
-	boot := boshagent.NewBootstrap(
-		app.platform,
-		app.dirProvider,
-		settingsService,
-		specService,
-		app.logger,
-	)
 
 	if err = boot.Run(); err != nil {
 		return bosherr.WrapError(err, "Running bootstrap")
 	}
 
-	// For storing large non-sensitive blobs
-	inconsiderateBlobManager, err := boshagentblobstore.NewBlobManager(app.dirProvider.BlobsDir())
-	if err != nil {
-		return bosherr.WrapError(err, "Getting blob manager")
-	}
-
-	// For storing sensitive blobs (rendered job templates)
-	sensitiveBlobManager, err := boshagentblobstore.NewBlobManager(app.dirProvider.SensitiveBlobsDir())
-	if err != nil {
-		return bosherr.WrapError(err, "Getting blob manager")
-	}
-
-	logsBlobstore, err := settingsService.GetSettings().GetSpecificBlobstore("logs")
-	if err != nil {
-		return bosherr.WrapError(err, "Getting blobstore")
-	}
-
-	wrappedLogsBlobstore, err := app.setupBlobstore(
-		logsBlobstore,
-		[]boshagentblobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
-	)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting blobstore")
-	}
-
-	packagesBlobstore, err := settingsService.GetSettings().GetSpecificBlobstore("packages")
-	if err != nil {
-		return bosherr.WrapError(err, "Getting blobstore")
-	}
-
-	wrappedPackagesBlobstore, err := app.setupBlobstore(
-		packagesBlobstore,
-		[]boshagentblobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
-	)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting blobstore")
-	}
-
-	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger, auditLogger)
-
-	mbusHandler, err := mbusHandlerProvider.Get(app.platform, inconsiderateBlobManager)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting mbus handler")
-	}
-
-	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger)
-
-	monitClient, err := monitClientProvider.Get()
-	if err != nil {
-		return bosherr.WrapError(err, "Getting monit client")
-	}
-
-	jobSupervisorProvider := boshjobsuper.NewProvider(
-		app.platform,
-		monitClient,
-		app.logger,
-		app.dirProvider,
-		mbusHandler,
-	)
-
-	jobSupervisor, err := jobSupervisorProvider.Get(opts.JobSupervisor)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting job supervisor")
-	}
-
-	notifier := boshnotif.NewNotifier(mbusHandler)
-
-	applier, compiler := app.buildApplierAndCompiler(
-		app.dirProvider,
-		wrappedPackagesBlobstore,
-		jobSupervisor,
-		settingsService.GetSettings(),
-		timeService,
-	)
-
-	uuidGen := boshuuid.NewGenerator()
-
-	taskService := boshtask.NewAsyncTaskService(uuidGen, app.logger)
-
-	taskManager := boshtask.NewManagerProvider().NewManager(
-		app.logger,
-		app.platform.GetFs(),
-		app.dirProvider.BoshDir(),
-	)
-
-	jobScriptProvider := boshscript.NewConcreteJobScriptProvider(
-		app.platform.GetRunner(),
-		app.platform.GetFs(),
-		app.platform.GetDirProvider(),
-		timeService,
-		app.logger,
-	)
-
-	actionFactory := boshaction.NewFactory(
-		settingsService,
-		app.platform,
-		wrappedPackagesBlobstore,
-		wrappedLogsBlobstore,
-		sensitiveBlobManager,
-		taskService,
-		notifier,
-		applier,
-		compiler,
-		jobSupervisor,
-		specService,
-		jobScriptProvider,
-		app.logger,
-	)
-
-	actionRunner := boshaction.NewRunner()
-
-	actionDispatcher := boshagent.NewActionDispatcher(
-		app.logger,
-		taskService,
-		taskManager,
-		actionFactory,
-		actionRunner,
-	)
-
-	app.agent = InitializeAgent(
-		app.logger,
-		mbusHandler,
-		app.platform,
-		actionDispatcher,
-		jobSupervisor,
-		specService,
+	app.agent, err = InitializeAgent(
+		app,
+		opts,
 		time.Second*30,
-		settingsService,
-		uuidGen,
-		timeService,
-		app.dirProvider,
-		app.platform.GetFs(),
 	)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

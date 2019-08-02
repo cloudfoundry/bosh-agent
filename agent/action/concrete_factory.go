@@ -11,7 +11,6 @@ import (
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -23,8 +22,8 @@ type concreteFactory struct {
 func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
-	packagesBlobstore boshblob.DigestBlobstore,
-	logsBlobstore boshblob.DigestBlobstore,
+	packagesBlobstore boshagentblob.PackagesBlobstore,
+	logsBlobstore boshagentblob.LogsBlobstore,
 	sensitiveBlobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,

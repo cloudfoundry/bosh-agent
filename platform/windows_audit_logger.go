@@ -6,17 +6,17 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-type WindowsAuditLogger struct{}
+type DelayedAuditLogger struct{}
 
-func NewDelayedAuditLogger(auditLoggerProvider AuditLoggerProvider, logger boshlog.Logger) AuditLogger {
-	return &WindowsAuditLogger{}
+func NewDelayedAuditLogger(auditLoggerProvider AuditLoggerProvider, logger boshlog.Logger) *DelayedAuditLogger {
+	return &DelayedAuditLogger{}
 }
 
-func (w *WindowsAuditLogger) StartLogging() {
+func (w *DelayedAuditLogger) StartLogging() {
 }
 
-func (w *WindowsAuditLogger) Debug(msg string) {
+func (w *DelayedAuditLogger) Debug(msg string) {
 }
 
-func (w *WindowsAuditLogger) Err(msg string) {
+func (w *DelayedAuditLogger) Err(msg string) {
 }

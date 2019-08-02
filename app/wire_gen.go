@@ -8,15 +8,26 @@ package app
 import (
 	"code.cloudfoundry.org/clock"
 	"github.com/cloudfoundry/bosh-agent/agent"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/applier"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	"github.com/cloudfoundry/bosh-agent/agent/bootonce"
+	"github.com/cloudfoundry/bosh-agent/agent/compiler"
+	"github.com/cloudfoundry/bosh-agent/agent/script"
+	"github.com/cloudfoundry/bosh-agent/agent/task"
 	"github.com/cloudfoundry/bosh-agent/handler"
 	"github.com/cloudfoundry/bosh-agent/infrastructure"
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	"github.com/cloudfoundry/bosh-agent/mbus"
+	"github.com/cloudfoundry/bosh-agent/notification"
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-agent/sigar"
+	blobstore2 "github.com/cloudfoundry/bosh-utils/blobstore"
+	"github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-utils/uuid"
@@ -38,15 +49,112 @@ func InitializeAuditLogger(logger2 logger.Logger) *platform.DelayedAuditLogger {
 	return delayedAuditLogger
 }
 
-func NewPlatform(logger2 logger.Logger, dirProvider directories.Provider, fs system.FileSystem, opts platform.Options, state *platform.BootstrapState, clock2 clock.Clock, auditLogger platform.AuditLogger, name string) (platform.Platform, error) {
+func NewPlatform(a *app, o Options) (platform.Platform, error) {
+	loggerLogger := ProvideAppLogger(a)
+	provider := ProvideAppDirProvider(a)
 	concreteSigar := NewConcreteSigar()
 	collector := sigar.NewSigarStatsCollector(concreteSigar)
-	provider := platform.NewProvider(logger2, dirProvider, collector, fs, opts, state, clock2, auditLogger)
-	platformPlatform, err := ProvidePlatform(provider, name)
+	fileSystem := ProvideAppFileSystem(a)
+	config, err := ProvideConfig(a, o)
+	if err != nil {
+		return nil, err
+	}
+	options := ProvidePlatformOptions(config)
+	bootstrapState, err := InitializeBootstrapState(a)
+	if err != nil {
+		return nil, err
+	}
+	clockClock := clock.NewClock()
+	delayedAuditLogger := InitializeAuditLogger(loggerLogger)
+	platformProvider := platform.NewProvider(loggerLogger, provider, collector, fileSystem, options, bootstrapState, clockClock, delayedAuditLogger)
+	string2 := ProvidePlatformName(o)
+	platformPlatform, err := ProvidePlatform(platformProvider, string2)
 	if err != nil {
 		return nil, err
 	}
 	return platformPlatform, nil
+}
+
+func InitializeBootstrap(a *app, o Options) (agent.Bootstrap, error) {
+	platformPlatform := ProvideAppPlatform(a)
+	provider := ProvideAppDirProvider(a)
+	service, err := NewService(a, o)
+	if err != nil {
+		return nil, err
+	}
+	v1Service := NewSpecService(a)
+	loggerLogger := ProvideAppLogger(a)
+	bootstrap := agent.NewBootstrap(platformPlatform, provider, service, v1Service, loggerLogger)
+	return bootstrap, nil
+}
+
+func InitializeBootstrapState(a *app) (*platform.BootstrapState, error) {
+	fileSystem := ProvideAppFileSystem(a)
+	string2 := ProvideAgentStateFilePath(a)
+	bootstrapState, err := platform.NewBootstrapState(fileSystem, string2)
+	if err != nil {
+		return nil, err
+	}
+	return bootstrapState, nil
+}
+
+func InitializeNotifier(a *app, o Options) (notification.Notifier, error) {
+	service, err := NewService(a, o)
+	if err != nil {
+		return nil, err
+	}
+	loggerLogger := ProvideAppLogger(a)
+	delayedAuditLogger := InitializeAuditLogger(loggerLogger)
+	handlerProvider := mbus.NewHandlerProvider(service, loggerLogger, delayedAuditLogger)
+	platformPlatform := ProvideAppPlatform(a)
+	provider := ProvideAppDirProvider(a)
+	string2 := ProvideInconsiderateBlobsDir(provider)
+	blobManager, err := InitializeBlobManager(a, string2)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := ProvideMbusHandler(handlerProvider, platformPlatform, blobManager)
+	if err != nil {
+		return nil, err
+	}
+	notifier := notification.NewNotifier(handler)
+	return notifier, nil
+}
+
+func InitializeBlobManager(a *app, blobsDir string) (*blobstore.BlobManager, error) {
+	blobManager, err := blobstore.NewBlobManager(blobsDir)
+	if err != nil {
+		return nil, err
+	}
+	return blobManager, nil
+}
+
+func InitializeJobSupervisorProvider(a *app, o Options) (jobsupervisor.Provider, error) {
+	platformPlatform := ProvideAppPlatform(a)
+	loggerLogger := ProvideAppLogger(a)
+	clientProvider := monit.NewProvider(platformPlatform, loggerLogger)
+	client, err := ProvideMonitClient(clientProvider)
+	if err != nil {
+		return jobsupervisor.Provider{}, err
+	}
+	provider := ProvideAppDirProvider(a)
+	service, err := NewService(a, o)
+	if err != nil {
+		return jobsupervisor.Provider{}, err
+	}
+	delayedAuditLogger := InitializeAuditLogger(loggerLogger)
+	handlerProvider := mbus.NewHandlerProvider(service, loggerLogger, delayedAuditLogger)
+	string2 := ProvideInconsiderateBlobsDir(provider)
+	blobManager, err := InitializeBlobManager(a, string2)
+	if err != nil {
+		return jobsupervisor.Provider{}, err
+	}
+	handler, err := ProvideMbusHandler(handlerProvider, platformPlatform, blobManager)
+	if err != nil {
+		return jobsupervisor.Provider{}, err
+	}
+	jobsupervisorProvider := jobsupervisor.NewProvider(platformPlatform, client, loggerLogger, provider, handler)
+	return jobsupervisorProvider, nil
 }
 
 func NewSettingsSourceFactory(opts infrastructure.SettingsOptions, platform2 platform.Platform, logger2 logger.Logger) infrastructure.SettingsSourceFactory {
@@ -54,32 +162,185 @@ func NewSettingsSourceFactory(opts infrastructure.SettingsOptions, platform2 pla
 	return settingsSourceFactory
 }
 
-func NewService(opts infrastructure.SettingsOptions, p platform.Platform, fs system.FileSystem, platformSettingsGetter settings.PlatformSettingsGetter, logger2 logger.Logger) (settings.Service, error) {
-	settingsSourceFactory := NewSettingsSourceFactory(opts, p, logger2)
+func NewService(a *app, o Options) (settings.Service, error) {
+	platformPlatform := ProvideAppPlatform(a)
+	fileSystem := ProvidePlatformFS(platformPlatform)
+	config, err := ProvideConfig(a, o)
+	if err != nil {
+		return nil, err
+	}
+	settingsOptions := ProvideSettings(config)
+	loggerLogger := ProvideAppLogger(a)
+	settingsSourceFactory := NewSettingsSourceFactory(settingsOptions, platformPlatform, loggerLogger)
 	source, err := ProvideSettingsSource(settingsSourceFactory)
 	if err != nil {
 		return nil, err
 	}
-	service := settings.NewService(fs, source, platformSettingsGetter, logger2)
+	platformSettingsGetter := ProvideAppPlatformSettingsGetter(a)
+	service := settings.NewService(fileSystem, source, platformSettingsGetter, loggerLogger)
 	return service, nil
 }
 
-func NewSpecService(fs system.FileSystem, dirProvider directories.Provider) applyspec.V1Service {
-	string2 := ProvideSpecFilePath(dirProvider)
-	v1Service := applyspec.NewConcreteV1Service(fs, string2)
+func NewSpecService(a *app) applyspec.V1Service {
+	platformPlatform := ProvideAppPlatform(a)
+	fileSystem := ProvidePlatformFS(platformPlatform)
+	provider := ProvideAppDirProvider(a)
+	string2 := ProvideSpecFilePath(provider)
+	v1Service := applyspec.NewConcreteV1Service(fileSystem, string2)
 	return v1Service
 }
 
-func InitializeAgent(logger2 logger.Logger, mbusHandler handler.Handler, platform2 platform.Platform, actionDispatcher agent.ActionDispatcher, jobSupervisor jobsupervisor.JobSupervisor, specService applyspec.V1Service, heartbeatInterval time.Duration, settingsService settings.Service, uuidGenerator uuid.Generator, timeService clock.Clock, dirProvider directories.Provider, fs system.FileSystem) agent.Agent {
-	startManager := bootonce.NewStartManager(settingsService, fs, dirProvider)
-	agentAgent := agent.New(logger2, mbusHandler, platform2, actionDispatcher, jobSupervisor, specService, heartbeatInterval, settingsService, uuidGenerator, timeService, startManager)
-	return agentAgent
+func InitializeAgent(a *app, o Options, heartbeatInterval time.Duration) (agent.Agent, error) {
+	loggerLogger := ProvideAppLogger(a)
+	service, err := NewService(a, o)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	delayedAuditLogger := InitializeAuditLogger(loggerLogger)
+	handlerProvider := mbus.NewHandlerProvider(service, loggerLogger, delayedAuditLogger)
+	platformPlatform := ProvideAppPlatform(a)
+	provider := ProvideAppDirProvider(a)
+	string2 := ProvideInconsiderateBlobsDir(provider)
+	blobManager, err := InitializeBlobManager(a, string2)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	handler, err := ProvideMbusHandler(handlerProvider, platformPlatform, blobManager)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	generator := uuid.NewGenerator()
+	taskService := task.NewAsyncTaskService(generator, loggerLogger)
+	managerProvider := task.NewManagerProvider()
+	fileSystem := ProvidePlatformFS(platformPlatform)
+	manager := ProvideTaskManager(managerProvider, loggerLogger, fileSystem, string2)
+	settingsSettings := ProvideServiceSettings(service)
+	packagesBlobstore, err := ProvidePackagesBlobstore(a, settingsSettings)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	logsBlobstore, err := ProvideLogsBlobstore(a, settingsSettings)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	notifier, err := InitializeNotifier(a, o)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	jobsupervisorProvider, err := InitializeJobSupervisorProvider(a, o)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	jobSupervisor, err := ProvideJobSupervisor(jobsupervisorProvider, o)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	clockClock := clock.NewClock()
+	applier := ProvideApplier(a, packagesBlobstore, jobSupervisor, settingsSettings, clockClock)
+	compiler := ProvideCompiler(a, packagesBlobstore, jobSupervisor, settingsSettings, clockClock)
+	v1Service := NewSpecService(a)
+	cmdRunner := ProvideCmdRunner(platformPlatform)
+	concreteJobScriptProvider := script.NewConcreteJobScriptProvider(cmdRunner, fileSystem, provider, clockClock, loggerLogger)
+	factory := action.NewFactory(service, platformPlatform, packagesBlobstore, logsBlobstore, blobManager, taskService, notifier, applier, compiler, jobSupervisor, v1Service, concreteJobScriptProvider, loggerLogger)
+	runner := action.NewRunner()
+	actionDispatcher := agent.NewActionDispatcher(loggerLogger, taskService, manager, factory, runner)
+	startManager := bootonce.NewStartManager(service, fileSystem, provider)
+	agentAgent := agent.New(loggerLogger, handler, platformPlatform, actionDispatcher, jobSupervisor, v1Service, heartbeatInterval, service, generator, clockClock, startManager)
+	return agentAgent, nil
 }
 
 // wire.go:
 
 func NewConcreteSigar() *sigar2.ConcreteSigar {
 	return &sigar2.ConcreteSigar{}
+}
+
+func ProvideBlobsDir(p directories.Provider) string {
+	return p.BlobsDir()
+}
+
+func ProvideConfig(a *app, o Options) (Config, error) {
+	return a.loadConfig(o.ConfigPath)
+}
+
+func ProvideLogsBlobstore(a *app, s settings.Settings) (blobstore.LogsBlobstore, error) {
+	wrappedLogsBlobstore, err := ProvideWrappedBlobstore(a, s, "logs")
+	if err != nil {
+		return nil, err
+	}
+
+	return blobstore.LogsBlobstore(wrappedLogsBlobstore), nil
+}
+
+func ProvidePackagesBlobstore(a *app, s settings.Settings) (blobstore.PackagesBlobstore, error) {
+	wrappedPackagesBlobstore, err := ProvideWrappedBlobstore(a, s, "packages")
+	if err != nil {
+		return nil, err
+	}
+
+	return blobstore.PackagesBlobstore(wrappedPackagesBlobstore), nil
+}
+
+func ProvideJobSupervisor(p jobsupervisor.Provider, o Options) (jobsupervisor.JobSupervisor, error) {
+	return p.Get(o.JobSupervisor)
+}
+
+func ProvideInconsiderateBlobsDir(dp directories.Provider) string {
+	return dp.BlobsDir()
+}
+
+func ProvideSensitiveBlobsDir(dp directories.Provider) string {
+	return dp.SensitiveBlobsDir()
+}
+
+func ProvideMonitClient(p monit.ClientProvider) (monit.Client, error) {
+	return p.Get()
+}
+
+func ProvideMbusHandler(p mbus.HandlerProvider, ap platform.Platform, b blobstore.BlobManagerInterface) (handler.Handler, error) {
+	return p.Get(ap, b)
+}
+
+func ProvideWrappedBlobstore(a *app, s settings.Settings, blobstorePurpose string) (blobstore2.DigestBlobstore, error) {
+	b, err := s.GetSpecificBlobstore(blobstorePurpose)
+	if err != nil {
+		return nil, err
+	}
+
+	inconsiderateBlobManager, err := InitializeBlobManager(a, a.dirProvider.BlobsDir())
+	if err != nil {
+		return nil, errors.WrapError(err, "Getting blob manager")
+	}
+
+	sensitiveBlobManager, err := InitializeBlobManager(a, a.dirProvider.SensitiveBlobsDir())
+	if err != nil {
+		return nil, errors.WrapError(err, "Getting blob manager")
+	}
+
+	return a.setupBlobstore(
+		b,
+		[]blobstore.BlobManagerInterface{sensitiveBlobManager, inconsiderateBlobManager},
+	)
+}
+
+func ProvideServiceSettings(s settings.Service) settings.Settings {
+	return s.GetSettings()
+}
+
+func ProvideAgentStateFilePath(a *app) string {
+	return filepath.Join(a.dirProvider.BoshDir(), "agent_state.json")
+}
+
+func ProvidePlatformOptions(c Config) platform.Options {
+	return c.Platform
+}
+
+func ProvidePlatformName(o Options) string {
+	return o.PlatformName
+}
+
+func ProvideSettings(c Config) infrastructure.SettingsOptions {
+	return c.Infrastructure.Settings
 }
 
 func ProvidePlatform(p platform.Provider, name string) (platform.Platform, error) {
@@ -92,4 +353,76 @@ func ProvideSettingsSource(ssf infrastructure.SettingsSourceFactory) (settings.S
 
 func ProvideSpecFilePath(dp directories.Provider) string {
 	return filepath.Join(dp.BoshDir(), "spec.json")
+}
+
+func ProvideAppFileSystem(a *app) system.FileSystem {
+	return a.fs
+}
+
+func ProvideAppPlatform(a *app) platform.Platform {
+	return a.platform
+}
+
+func ProvideAppDirProvider(a *app) directories.Provider {
+	return a.dirProvider
+}
+
+func ProvideAppPlatformSettingsGetter(a *app) settings.PlatformSettingsGetter {
+	return a.platform
+}
+
+func ProvidePlatformFS(p platform.Platform) system.FileSystem {
+	return p.GetFs()
+}
+
+func ProvideAppLogger(a *app) logger.Logger {
+	return a.logger
+}
+
+func ProvideTaskManager(
+	t task.ManagerProvider,
+	l logger.Logger,
+	f system.FileSystem,
+	dir string,
+) task.Manager {
+	return t.NewManager(l, f, dir)
+}
+
+func ProvideApplier(
+	a *app,
+	b blobstore.PackagesBlobstore,
+	j jobsupervisor.JobSupervisor,
+	s settings.Settings,
+	t clock.Clock,
+) applier.Applier {
+	applier2, _ := a.buildApplierAndCompiler(
+		a.dirProvider,
+		b,
+		j,
+		s,
+		t,
+	)
+	return applier2
+}
+
+func ProvideCompiler(
+	a *app,
+	b blobstore.PackagesBlobstore,
+	j jobsupervisor.JobSupervisor,
+	s settings.Settings,
+	t clock.Clock,
+) compiler.Compiler {
+	_, compiler2 := a.buildApplierAndCompiler(
+		a.dirProvider,
+		b,
+		j,
+		s,
+		t,
+	)
+
+	return compiler2
+}
+
+func ProvideCmdRunner(p platform.Platform) system.CmdRunner {
+	return p.GetRunner()
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -15,6 +16,11 @@ import (
 type BlobManager struct {
 	workdir string
 }
+
+type InconsiderateBlobManager BlobManager
+type SensitiveBlobManager BlobManager
+type LogsBlobstore boshblob.DigestBlobstore
+type PackagesBlobstore boshblob.DigestBlobstore
 
 func NewBlobManager(workdir string) (*BlobManager, error) {
 	bm := &BlobManager{
