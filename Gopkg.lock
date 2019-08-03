@@ -79,12 +79,12 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:6724cf35f4b6121ab7277c6a4b5f7790b99d095fc4b661092724abf8c24e7ab7"
+  digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "8c5e0ade498b44ea8563405bf2cda0126d9ee006"
-  version = "v1.1.4"
+  revision = "2437321e1473408f122a95f65df3d8841fec4fba"
+  version = "v1.1.5"
 
 [[projects]]
   branch = "master"
@@ -464,7 +464,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cfe5a75dd2db432bd245a6356d8839d546d06dc2b09448a45c7699152292b135"
+  digest = "1:c168baf7b0c79300dc904760c56591105e42de4a30ebe149e1335824add3951b"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -475,7 +475,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "1393eb0183657fb29200106b17a5042ec6e48dbe"
+  revision = "cbf593c0f2f39034e9104bbf77e2ec7c48c98fc5"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -507,7 +507,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:87f3ab7c6341b1be840c580bdf23dcce036916bf1859e8ab8667033a09ae6097"
+  digest = "1:aa5bc3c668f07e9663277ab8d8e4f914326c8c893b77e7bee5c53c67e2374c37"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -524,7 +524,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "c001e47e7f00e86e2589be2312a5f197de244238"
+  revision = "1d1727260058c6d58ebfdeb982c4657342282355"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
