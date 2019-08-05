@@ -3,6 +3,7 @@ package net
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -306,26 +307,32 @@ type networkInterfaceConfig struct {
 }
 
 func (net UbuntuNetManager) updateConfiguration(name, templateDefinition string, templateConfiguration interface{}, opts boshsys.ConvergeFileContentsOpts) (bool, error) {
-	interfaceBasename := fmt.Sprintf("10_%s.network", name)
-	interfaceFile := filepath.Join("/etc/systemd/network", interfaceBasename)
+	interfaceFile := interfaceConfigurationFile(name)
 	buffer := bytes.NewBuffer([]byte{})
 	templateFuncs := template.FuncMap{
 		"NetmaskToCIDR": boshsettings.NetmaskToCIDR,
 	}
 
-	t := template.Must(template.New(interfaceBasename).Funcs(templateFuncs).Parse(templateDefinition))
+	t := template.Must(template.New(name).Funcs(templateFuncs).Parse(templateDefinition))
 
 	err := t.Execute(buffer, templateConfiguration)
 	if err != nil {
-		return false, bosherr.WrapError(err, fmt.Sprintf("Generating config from template %s", interfaceBasename))
+		return false, bosherr.WrapError(err, fmt.Sprintf("Generating config from template %s", name))
 	}
 
-	net.logger.Error(UbuntuNetManagerLogTag, "Updating %s configuration with contents: %s", interfaceBasename, buffer.Bytes())
+	net.logger.Error(UbuntuNetManagerLogTag, "Updating %s configuration with contents: %s", name, buffer.Bytes())
 	return net.fs.ConvergeFileContents(
 		interfaceFile,
 		buffer.Bytes(),
 		opts,
 	)
+}
+
+const systemdNetworkFolder = "/etc/systemd/network"
+
+func interfaceConfigurationFile(name string) string {
+	interfaceBasename := fmt.Sprintf("10_%s.network", name)
+	return filepath.Join(systemdNetworkFolder, interfaceBasename)
 }
 
 func (net UbuntuNetManager) writeNetworkInterfaces(
@@ -337,6 +344,19 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 	sort.Stable(dhcpConfigs)
 	sort.Stable(staticConfigs)
 
+	matches := []string{}
+	err := net.fs.Walk(filepath.Join(systemdNetworkFolder), func(match string, _ os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		matches = append(matches, match)
+		return nil
+	})
+
+	if err != nil {
+		return false, err
+	}
+
 	anyChanged := false
 	for _, dynamicAddressConfiguration := range dhcpConfigs {
 		networkInterfaceConfiguration := networkInterfaceConfig{
@@ -347,6 +367,11 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 		changed, err := net.updateConfiguration(dynamicAddressConfiguration.Name, dynamicNetworkInterfaceTemplate, networkInterfaceConfiguration, opts)
 		if err != nil {
 			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", dynamicAddressConfiguration.Name))
+		}
+		for i, match := range matches {
+			if match == interfaceConfigurationFile(dynamicAddressConfiguration.Name) {
+				matches = append(matches[:i], matches[i+1:]...)
+			}
 		}
 
 		anyChanged = anyChanged || changed
@@ -362,8 +387,20 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 		if err != nil {
 			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", staticAddressConfiguration.Name))
 		}
+		for i, match := range matches {
+			if match == interfaceConfigurationFile(staticAddressConfiguration.Name) {
+				matches = append(matches[:i], matches[i+1:]...)
+			}
+		}
 
 		anyChanged = anyChanged || changed
+	}
+	for _, match := range matches {
+		err := net.fs.RemoveAll(match)
+		if err != nil {
+			return false, err
+		}
+		anyChanged = true
 	}
 	return anyChanged, nil
 }
