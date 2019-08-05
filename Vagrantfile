@@ -41,4 +41,5 @@ Vagrant.configure('2') do |config|
   config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/disable_growpart.sh"
   config.vm.provision :shell, inline: "sudo echo '#!/bin/bash' > /var/vcap/bosh/bin/restart_networking"
   config.vm.provision :shell, inline: "sudo chmod +x /var/vcap/bosh/bin/restart_networking"
+  config.vm.provision :shell, inline: "sudo mkdir -p /etc/systemd/network/"
 end
