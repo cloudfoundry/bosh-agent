@@ -344,12 +344,12 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 	sort.Stable(dhcpConfigs)
 	sort.Stable(staticConfigs)
 
-	matches := []string{}
+	staleNetworkConfigFiles := make(map[string]bool)
 	err := net.fs.Walk(filepath.Join(systemdNetworkFolder), func(match string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		matches = append(matches, match)
+		staleNetworkConfigFiles[match] = true
 		return nil
 	})
 
@@ -368,10 +368,10 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 		if err != nil {
 			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", dynamicAddressConfiguration.Name))
 		}
-		for i, match := range matches {
-			if match == interfaceConfigurationFile(dynamicAddressConfiguration.Name) {
-				matches = append(matches[:i], matches[i+1:]...)
-			}
+
+		newNetworkFile := interfaceConfigurationFile(dynamicAddressConfiguration.Name)
+		if _, ok := staleNetworkConfigFiles[newNetworkFile]; ok {
+			staleNetworkConfigFiles[newNetworkFile] = false
 		}
 
 		anyChanged = anyChanged || changed
@@ -387,20 +387,23 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 		if err != nil {
 			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", staticAddressConfiguration.Name))
 		}
-		for i, match := range matches {
-			if match == interfaceConfigurationFile(staticAddressConfiguration.Name) {
-				matches = append(matches[:i], matches[i+1:]...)
-			}
+
+		newNetworkFile := interfaceConfigurationFile(staticAddressConfiguration.Name)
+		if _, ok := staleNetworkConfigFiles[newNetworkFile]; ok {
+			staleNetworkConfigFiles[newNetworkFile] = false
 		}
 
 		anyChanged = anyChanged || changed
 	}
-	for _, match := range matches {
-		err := net.fs.RemoveAll(match)
-		if err != nil {
-			return false, err
+
+	for networkFile, isStale := range staleNetworkConfigFiles {
+		if isStale {
+			err := net.fs.RemoveAll(networkFile)
+			if err != nil {
+				return false, err
+			}
+			anyChanged = true
 		}
-		anyChanged = true
 	}
 	return anyChanged, nil
 }
