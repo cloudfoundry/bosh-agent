@@ -397,6 +397,9 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 	}
 
 	for networkFile, isStale := range staleNetworkConfigFiles {
+		if networkFile == systemdNetworkFolder {
+			continue
+		}
 		if isStale {
 			err := net.fs.RemoveAll(networkFile)
 			if err != nil {
