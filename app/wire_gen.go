@@ -78,12 +78,21 @@ func NewPlatform(a *app, o Options) (platform.Platform, error) {
 func InitializeBootstrap(a *app, o Options) (agent.Bootstrap, error) {
 	platformPlatform := ProvideAppPlatform(a)
 	provider := ProvideAppDirProvider(a)
-	service, err := NewService(a, o)
+	fileSystem := ProvidePlatformFS(platformPlatform)
+	config, err := ProvideConfig(a, o)
 	if err != nil {
 		return nil, err
 	}
-	v1Service := NewSpecService(a)
+	settingsOptions := ProvideSettings(config)
 	loggerLogger := ProvideAppLogger(a)
+	settingsSourceFactory := NewSettingsSourceFactory(settingsOptions, platformPlatform, loggerLogger)
+	source, err := ProvideSettingsSource(settingsSourceFactory)
+	if err != nil {
+		return nil, err
+	}
+	platformSettingsGetter := ProvideAppPlatformSettingsGetter(a)
+	service := settings.NewService(fileSystem, source, platformSettingsGetter, loggerLogger)
+	v1Service := NewSpecService(fileSystem, provider)
 	bootstrap := agent.NewBootstrap(platformPlatform, provider, service, v1Service, loggerLogger)
 	return bootstrap, nil
 }
@@ -99,14 +108,23 @@ func InitializeBootstrapState(a *app) (*platform.BootstrapState, error) {
 }
 
 func InitializeNotifier(a *app, o Options) (notification.Notifier, error) {
-	service, err := NewService(a, o)
+	platformPlatform := ProvideAppPlatform(a)
+	fileSystem := ProvidePlatformFS(platformPlatform)
+	config, err := ProvideConfig(a, o)
 	if err != nil {
 		return nil, err
 	}
+	settingsOptions := ProvideSettings(config)
 	loggerLogger := ProvideAppLogger(a)
+	settingsSourceFactory := NewSettingsSourceFactory(settingsOptions, platformPlatform, loggerLogger)
+	source, err := ProvideSettingsSource(settingsSourceFactory)
+	if err != nil {
+		return nil, err
+	}
+	platformSettingsGetter := ProvideAppPlatformSettingsGetter(a)
+	service := settings.NewService(fileSystem, source, platformSettingsGetter, loggerLogger)
 	delayedAuditLogger := InitializeAuditLogger(loggerLogger)
 	handlerProvider := mbus.NewHandlerProvider(service, loggerLogger, delayedAuditLogger)
-	platformPlatform := ProvideAppPlatform(a)
 	provider := ProvideAppDirProvider(a)
 	string2 := ProvideInconsiderateBlobsDir(provider)
 	blobManager, err := InitializeBlobManager(a, string2)
@@ -129,31 +147,13 @@ func InitializeBlobManager(a *app, blobsDir string) (*blobstore.BlobManager, err
 	return blobManager, nil
 }
 
-func InitializeJobSupervisorProvider(a *app, o Options) (jobsupervisor.Provider, error) {
-	platformPlatform := ProvideAppPlatform(a)
-	loggerLogger := ProvideAppLogger(a)
-	clientProvider := monit.NewProvider(platformPlatform, loggerLogger)
-	client, err := ProvideMonitClient(clientProvider)
-	if err != nil {
-		return jobsupervisor.Provider{}, err
-	}
+func InitializeJobSupervisorProvider(ssf infrastructure.SettingsSourceFactory, bss settings.Source, pp platform.Platform, mc monit.Client, inconsiderate_blobs_dir string, l logger.Logger, p mbus.HandlerProvider, bmi blobstore.BlobManagerInterface, a *app, o Options) (jobsupervisor.Provider, error) {
 	provider := ProvideAppDirProvider(a)
-	service, err := NewService(a, o)
+	handler, err := ProvideMbusHandler(p, pp, bmi)
 	if err != nil {
 		return jobsupervisor.Provider{}, err
 	}
-	delayedAuditLogger := InitializeAuditLogger(loggerLogger)
-	handlerProvider := mbus.NewHandlerProvider(service, loggerLogger, delayedAuditLogger)
-	string2 := ProvideInconsiderateBlobsDir(provider)
-	blobManager, err := InitializeBlobManager(a, string2)
-	if err != nil {
-		return jobsupervisor.Provider{}, err
-	}
-	handler, err := ProvideMbusHandler(handlerProvider, platformPlatform, blobManager)
-	if err != nil {
-		return jobsupervisor.Provider{}, err
-	}
-	jobsupervisorProvider := jobsupervisor.NewProvider(platformPlatform, client, loggerLogger, provider, handler)
+	jobsupervisorProvider := jobsupervisor.NewProvider(pp, mc, l, provider, handler)
 	return jobsupervisorProvider, nil
 }
 
@@ -162,43 +162,30 @@ func NewSettingsSourceFactory(opts infrastructure.SettingsOptions, platform2 pla
 	return settingsSourceFactory
 }
 
-func NewService(a *app, o Options) (settings.Service, error) {
-	platformPlatform := ProvideAppPlatform(a)
-	fileSystem := ProvidePlatformFS(platformPlatform)
-	config, err := ProvideConfig(a, o)
-	if err != nil {
-		return nil, err
-	}
-	settingsOptions := ProvideSettings(config)
-	loggerLogger := ProvideAppLogger(a)
-	settingsSourceFactory := NewSettingsSourceFactory(settingsOptions, platformPlatform, loggerLogger)
-	source, err := ProvideSettingsSource(settingsSourceFactory)
-	if err != nil {
-		return nil, err
-	}
-	platformSettingsGetter := ProvideAppPlatformSettingsGetter(a)
-	service := settings.NewService(fileSystem, source, platformSettingsGetter, loggerLogger)
-	return service, nil
-}
-
-func NewSpecService(a *app) applyspec.V1Service {
-	platformPlatform := ProvideAppPlatform(a)
-	fileSystem := ProvidePlatformFS(platformPlatform)
-	provider := ProvideAppDirProvider(a)
-	string2 := ProvideSpecFilePath(provider)
-	v1Service := applyspec.NewConcreteV1Service(fileSystem, string2)
+func NewSpecService(fs system.FileSystem, d directories.Provider) applyspec.V1Service {
+	string2 := ProvideSpecFilePath(d)
+	v1Service := applyspec.NewConcreteV1Service(fs, string2)
 	return v1Service
 }
 
 func InitializeAgent(a *app, o Options, heartbeatInterval time.Duration) (agent.Agent, error) {
 	loggerLogger := ProvideAppLogger(a)
-	service, err := NewService(a, o)
+	platformPlatform := ProvideAppPlatform(a)
+	fileSystem := ProvidePlatformFS(platformPlatform)
+	config, err := ProvideConfig(a, o)
 	if err != nil {
 		return agent.Agent{}, err
 	}
+	settingsOptions := ProvideSettings(config)
+	settingsSourceFactory := NewSettingsSourceFactory(settingsOptions, platformPlatform, loggerLogger)
+	source, err := ProvideSettingsSource(settingsSourceFactory)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	platformSettingsGetter := ProvideAppPlatformSettingsGetter(a)
+	service := settings.NewService(fileSystem, source, platformSettingsGetter, loggerLogger)
 	delayedAuditLogger := InitializeAuditLogger(loggerLogger)
 	handlerProvider := mbus.NewHandlerProvider(service, loggerLogger, delayedAuditLogger)
-	platformPlatform := ProvideAppPlatform(a)
 	provider := ProvideAppDirProvider(a)
 	string2 := ProvideInconsiderateBlobsDir(provider)
 	blobManager, err := InitializeBlobManager(a, string2)
@@ -212,7 +199,6 @@ func InitializeAgent(a *app, o Options, heartbeatInterval time.Duration) (agent.
 	generator := uuid.NewGenerator()
 	taskService := task.NewAsyncTaskService(generator, loggerLogger)
 	managerProvider := task.NewManagerProvider()
-	fileSystem := ProvidePlatformFS(platformPlatform)
 	manager := ProvideTaskManager(managerProvider, loggerLogger, fileSystem, string2)
 	settingsSettings := ProvideServiceSettings(service)
 	packagesBlobstore, err := ProvidePackagesBlobstore(a, settingsSettings)
@@ -227,7 +213,12 @@ func InitializeAgent(a *app, o Options, heartbeatInterval time.Duration) (agent.
 	if err != nil {
 		return agent.Agent{}, err
 	}
-	jobsupervisorProvider, err := InitializeJobSupervisorProvider(a, o)
+	clientProvider := monit.NewProvider(platformPlatform, loggerLogger)
+	client, err := ProvideMonitClient(clientProvider)
+	if err != nil {
+		return agent.Agent{}, err
+	}
+	jobsupervisorProvider, err := InitializeJobSupervisorProvider(settingsSourceFactory, source, platformPlatform, client, string2, loggerLogger, handlerProvider, blobManager, a, o)
 	if err != nil {
 		return agent.Agent{}, err
 	}
@@ -238,7 +229,7 @@ func InitializeAgent(a *app, o Options, heartbeatInterval time.Duration) (agent.
 	clockClock := clock.NewClock()
 	applier := ProvideApplier(a, packagesBlobstore, jobSupervisor, settingsSettings, clockClock)
 	compiler := ProvideCompiler(a, packagesBlobstore, jobSupervisor, settingsSettings, clockClock)
-	v1Service := NewSpecService(a)
+	v1Service := NewSpecService(fileSystem, provider)
 	cmdRunner := ProvideCmdRunner(platformPlatform)
 	concreteJobScriptProvider := script.NewConcreteJobScriptProvider(cmdRunner, fileSystem, provider, clockClock, loggerLogger)
 	factory := action.NewFactory(service, platformPlatform, packagesBlobstore, logsBlobstore, blobManager, taskService, notifier, applier, compiler, jobSupervisor, v1Service, concreteJobScriptProvider, loggerLogger)

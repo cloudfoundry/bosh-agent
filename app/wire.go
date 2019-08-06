@@ -87,12 +87,18 @@ func NewPlatform(
 
 func InitializeBootstrap(a *app, o Options) (agent.Bootstrap, error) {
 	wire.Build(
+		NewSettingsSourceFactory,
+		ProvideSettings,
+		ProvideConfig,
+		ProvideSettingsSource,
 		ProvideAppPlatform,
 		ProvideAppDirProvider,
+		ProvidePlatformFS,
 		ProvideAppLogger,
 		NewSpecService,
 		boshagent.NewBootstrap,
-		NewService,
+		ProvideAppPlatformSettingsGetter,
+		settings.NewService,
 	)
 	return nil, nil
 }
@@ -119,13 +125,19 @@ func InitializeBootstrapState(
 
 func InitializeNotifier(a *app, o Options) (boshnotif.Notifier, error) {
 	wire.Build(
+		NewSettingsSourceFactory,
+		ProvideSettingsSource,
+		ProvideSettings,
+		ProvideConfig,
 		ProvideAppDirProvider,
 		ProvideInconsiderateBlobsDir,
 		ProvideAppLogger,
 		InitializeAuditLogger,
 		wire.Bind(new(platform.AuditLogger), new(*platform.DelayedAuditLogger)),
 		ProvideAppPlatform,
-		NewService,
+		ProvideAppPlatformSettingsGetter,
+		ProvidePlatformFS,
+		settings.NewService,
 		boshmbus.NewHandlerProvider,
 		ProvideMbusHandler,
 		InitializeBlobManager,
@@ -164,22 +176,22 @@ func ProvideJobSupervisor(p boshjobsuper.Provider, o Options) (boshjobsuper.JobS
 	return p.Get(o.JobSupervisor)
 }
 
-func InitializeJobSupervisorProvider(a *app, o Options) (boshjobsuper.Provider, error) {
+func InitializeJobSupervisorProvider(
+	ssf infrastructure.SettingsSourceFactory,
+	bss boshsettings.Source,
+	pp platform.Platform,
+	mc boshmonit.Client,
+	inconsiderate_blobs_dir string,
+	l logger.Logger,
+	p boshmbus.HandlerProvider,
+	bmi blobstore.BlobManagerInterface,
+	a *app,
+	o Options,
+) (boshjobsuper.Provider, error) {
 	wire.Build(
-		ProvideAppPlatform,
-		boshmonit.NewProvider,
-		ProvideMonitClient,
-		ProvideInconsiderateBlobsDir,
 		boshjobsuper.NewProvider,
-		ProvideAppLogger,
 		ProvideAppDirProvider,
 		ProvideMbusHandler,
-		boshmbus.NewHandlerProvider,
-		NewService,
-		InitializeAuditLogger,
-		wire.Bind(new(platform.AuditLogger), new(*platform.DelayedAuditLogger)),
-		InitializeBlobManager,
-		wire.Bind(new(blobstore.BlobManagerInterface), new(*boshagentblobstore.BlobManager)),
 	)
 	return boshjobsuper.Provider{}, nil
 }
@@ -257,24 +269,6 @@ func NewSettingsSourceFactory(opts infrastructure.SettingsOptions, platform plat
 	return infrastructure.SettingsSourceFactory{}
 }
 
-func NewService(
-	a *app,
-	o Options,
-) (settings.Service, error) {
-	wire.Build(
-		NewSettingsSourceFactory,
-		ProvideAppPlatform,
-		ProvidePlatformFS,
-		ProvideAppPlatformSettingsGetter,
-		ProvideSettings,
-		ProvideSettingsSource,
-		ProvideAppLogger,
-		ProvideConfig,
-		settings.NewService,
-	)
-	return nil, nil
-}
-
 func ProvideSpecFilePath(dp directories.Provider) string {
 	return filepath.Join(dp.BoshDir(), "spec.json")
 }
@@ -304,12 +298,10 @@ func ProvideAppLogger(a *app) logger.Logger {
 }
 
 func NewSpecService(
-	a *app,
+	fs system.FileSystem,
+	d directories.Provider,
 ) applyspec.V1Service {
 	wire.Build(
-		ProvideAppPlatform,
-		ProvidePlatformFS,
-		ProvideAppDirProvider,
 		boshas.NewConcreteV1Service,
 		ProvideSpecFilePath,
 	)
@@ -377,6 +369,12 @@ func InitializeAgent(
 		InitializeAuditLogger,
 		ProvideAppLogger,
 		ProvideAppPlatform,
+		boshmonit.NewProvider,
+		ProvideMonitClient,
+		NewSettingsSourceFactory,
+		ProvideSettings,
+		ProvideSettingsSource,
+		ProvideConfig,
 		boshagent.NewActionDispatcher,
 		boshtask.NewAsyncTaskService,
 		boshtask.NewManagerProvider,
@@ -395,7 +393,8 @@ func InitializeAgent(
 		boshaction.NewFactory,
 		boshuuid.NewGenerator,
 		InitializeJobSupervisorProvider,
-		NewService,
+		ProvideAppPlatformSettingsGetter,
+		settings.NewService,
 		ProvideAppDirProvider,
 		ProvideJobSupervisor,
 		NewSpecService,
