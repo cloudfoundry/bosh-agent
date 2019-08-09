@@ -22,9 +22,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-var _ = Describe("ubuntuNetManager", describeUbuntuNetManager)
-
-func describeUbuntuNetManager() {
+var _ = Describe("ubuntuNetManager", func() {
 	var (
 		fs                            *fakesys.FakeFileSystem
 		cmdRunner                     *fakesys.FakeCmdRunner
@@ -855,11 +853,12 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(5))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
 			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"/var/vcap/bosh/bin/restart_networking"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"resolvconf", "-u"}))
 
 			Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 		})
@@ -894,11 +893,12 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
 			Expect(dhcpConfig.StringContents()).To(Equal(initialDhcpConfig))
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(5))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
 			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"/var/vcap/bosh/bin/restart_networking"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"resolvconf", "-u"}))
 		})
 
 		It("restarts the networks if /etc/dhcp/dhclient.conf changes", func() {
@@ -930,11 +930,12 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(5))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
 			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"/var/vcap/bosh/bin/restart_networking"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"resolvconf", "-u"}))
 
 			Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).ToNot(Equal(initialDhcpConfig))
 		})
@@ -1332,4 +1333,4 @@ DNS=10.0.80.12
 			})
 		})
 	})
-}
+})
