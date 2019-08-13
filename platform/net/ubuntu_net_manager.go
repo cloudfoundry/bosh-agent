@@ -203,14 +203,7 @@ func (net UbuntuNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 	}
 
 	for _, iface := range interfacesByMacAddress {
-		_, stderr, _, err := net.cmdRunner.RunCommand("ip", "link", "show", iface)
-		if err != nil {
-			net.logger.Error(UbuntuNetManagerLogTag, "Ignoring failures to get network interface: %s", err)
-		}
-
-		re := regexp.MustCompile(fmt.Sprintf(`Device "%s" does not exist`, iface))
-
-		if !re.MatchString(stderr) {
+		if net.fs.FileExists(interfaceConfigurationFile(iface)) {
 			interfaces = append(interfaces, iface)
 		}
 	}

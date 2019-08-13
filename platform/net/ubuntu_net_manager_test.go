@@ -1263,30 +1263,8 @@ DNS=10.0.80.12
 			})
 
 			It("returns networks that are defined in /etc/network/interfaces", func() {
-				cmdRunner.AddCmdResult("ip link show fake-eth0", fakesys.FakeCmdResult{
-					Stdout:     "",
-					Stderr:     "any error",
-					ExitStatus: 0,
-				})
-
-				cmdRunner.AddCmdResult("ip link show fake-eth1", fakesys.FakeCmdResult{
-					Stdout:     "",
-					Stderr:     `Device "fake-eth1" does not exist`,
-					ExitStatus: 0,
-				})
-
-				cmdRunner.AddCmdResult("ip link show fake-eth2", fakesys.FakeCmdResult{
-					Stdout:     "",
-					Stderr:     "any other error",
-					ExitStatus: 0,
-				})
-
-				cmdRunner.AddCmdResult("ip link show fake-eth3", fakesys.FakeCmdResult{
-					Stdout:     "",
-					Stderr:     `Device "fake-eth3" does not exist`,
-					ExitStatus: 1,
-					Error:      errors.New("unconfigured device"),
-				})
+				fs.WriteFileString("/etc/systemd/network/10_fake-eth0.network", ``)
+				fs.WriteFileString("/etc/systemd/network/10_fake-eth2.network", ``)
 
 				interfaces, err := netManager.GetConfiguredNetworkInterfaces()
 				Expect(err).ToNot(HaveOccurred())
