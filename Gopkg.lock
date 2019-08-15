@@ -115,7 +115,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9771bcb146b506c229259074be9c49b7506f19c67806a8bf0eed6a47b6f91662"
+  digest = "1:20e882523c9af111cce6ff2c1f303a84691aaedd797c667991205dad0f51960c"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -137,7 +137,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "d286f594c8d9281f5542b6da0457564b5f75e4ed"
+  revision = "4d0b7c5acdfddc1ca85d0dd058f2054b8e683cd4"
 
 [[projects]]
   branch = "master"
@@ -423,12 +423,12 @@
   version = "v1.4.2"
 
 [[projects]]
-  digest = "1:42e8c2456d7ec0f31e182c20022e74324c4da2cb3bd9069ff9b131fe33466308"
+  digest = "1:6e7bb8be062d38ec9e9222973e81835554bfa2181b9ab29ff206514bd44fe8d2"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
   pruneopts = "NUT"
-  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
-  version = "v1.3.0"
+  revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -460,11 +460,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "ca1201d0de80cfde86cb01aea620983605dfe99b"
+  revision = "74dc4d7220e7acc4e100824340f3e66577424772"
 
 [[projects]]
   branch = "master"
-  digest = "1:94b48fccb2d1c9ce5fc4d8d0dee9955dede9e44a6c54a4b7084acd5fad2773d7"
+  digest = "1:6b6683760f5f98f05ba458886c9e50140653fd70e940363f994a03af2c08b2af"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -475,7 +475,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "51ab0e2deafac1f46c46ad59cf0921be2f180c3d"
+  revision = "fde4db37ae7ad8191b03d30d27f258b5291ae4e3"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -507,7 +507,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:396e96dc205fbf29bb19476a102a9ab3be4ed685cae2825149884bf1fd3a4b91"
+  digest = "1:336e9fec64185932477486e128f8ff5ecd737fd2080b0ec7da4417ae89162eb8"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -524,7 +524,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "6d4652c779c4add9e1a69db058dabafddba21c37"
+  revision = "9065c182e3b630a18ed9d858055bd9f0a70e5775"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
