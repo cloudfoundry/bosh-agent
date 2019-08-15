@@ -69,9 +69,6 @@ jobs:
       - test-unit
       - test-integration
       - windows-test-unit
-      - windows-test-integration-1803
-      - windows-test-integration-2019
-      - windows-test-integration-2012R2
 
   - task: tests
     privileged: true
@@ -94,6 +91,10 @@ jobs:
   - get: windows-ami-2019
   - get: bosh-agent
     trigger: true
+    passed:
+    - test-unit
+    - test-integration
+    - windows-test-unit
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
@@ -115,6 +116,10 @@ jobs:
   - get: windows-ami-1803
   - get: bosh-agent
     trigger: true
+    passed:
+    - test-unit
+    - test-integration
+    - windows-test-unit
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
@@ -136,6 +141,10 @@ jobs:
   - get: windows-ami-2012R2
   - get: bosh-agent
     trigger: true
+    passed:
+    - test-unit
+    - test-integration
+    - windows-test-unit
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
@@ -159,6 +168,9 @@ jobs:
     - trigger: true
       passed:
       - bosh-integration-tests
+      - windows-test-integration-2019
+      - windows-test-integration-1803
+      - windows-test-integration-2012R2
       get: bosh-agent
     - get: version-semver
       params: {bump: minor}
