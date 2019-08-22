@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gofrs/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -40,36 +39,11 @@ var _ = Describe("compile_package", func() {
 			// note that this SETS the username and password for HTTP message bus access
 			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
 
-			Env: settings.Env{
-				Bosh: settings.BoshEnv{
-					TargetedBlobstores: settings.TargetedBlobstores{
-						Packages: "custom-blobstore",
-						Logs:     "custom-blobstore",
-					},
-					Blobstores: []settings.Blobstore{
-						settings.Blobstore{
-							Type: "local",
-							Name: "ignored-blobstore",
-							Options: map[string]interface{}{
-								"blobstore_path": "/ignored/blobstore",
-							},
-						},
-						settings.Blobstore{
-							Type: "local",
-							Name: "special-case-local-blobstore",
-							Options: map[string]interface{}{
-								// this path should get rewritten internally to /var/vcap/data/blobs
-								"blobstore_path": "/var/vcap/micro_bosh/data/cache",
-							},
-						},
-						settings.Blobstore{
-							Type: "local",
-							Name: "custom-blobstore",
-							Options: map[string]interface{}{
-								"blobstore_path": "/tmp/my-blobs",
-							},
-						},
-					},
+			Blobstore: settings.Blobstore{
+				Type: "local",
+				Options: map[string]interface{}{
+					// this path should get rewritten internally to /var/vcap/data/blobs
+					"blobstore_path": "/var/vcap/micro_bosh/data/cache",
 				},
 			},
 
@@ -80,13 +54,13 @@ var _ = Describe("compile_package", func() {
 
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.StartRegistry(registrySettings)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartRegistry(registrySettings)
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.StartAgent()
+		err := testEnvironment.StartAgent()
 		Expect(err).ToNot(HaveOccurred())
 
 		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
@@ -102,63 +76,43 @@ var _ = Describe("compile_package", func() {
 
 		err = testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
-
-		output, err := testEnvironment.RunCommand("sudo rm -rf /tmp/my-blobs")
-		Expect(err).NotTo(HaveOccurred(), output)
 	})
 
-	Context("when micro_bosh is configured as the blobstore", func() {
-
-		BeforeEach(func() {
-			registrySettings.Env.Bosh.TargetedBlobstores.Packages = "special-case-local-blobstore"
-		})
-
-		It("compiles and stores it to the ephemeral disk", func() {
-			blobID, err := uuid.NewV4()
-			Expect(err).NotTo(HaveOccurred())
-
-			err = testEnvironment.CreateBlobFromAsset("dummy_package.tgz", blobID.String())
-			Expect(err).NotTo(HaveOccurred())
-
-			result, err := agentClient.CompilePackage(agentclient.BlobRef{
-				Name:        "fake",
-				Version:     "1",
-				BlobstoreID: blobID.String(),
-				SHA1:        "236cbd31a483c3594061b00a84a80c1c182b3b20",
-			}, []agentclient.BlobRef{})
-
-			Expect(err).NotTo(HaveOccurred())
-
-			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat /var/vcap/data/blobs/%s", result.BlobstoreID))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("regular file"))
-		})
-	})
-
-	It("allows passing bare sha1 for legacy support", func() {
-		blobID, err := uuid.NewV4()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.CreateBlobFromAssetInActualBlobstore("dummy_package.tgz", "/tmp/my-blobs", blobID.String())
+	It("compiles and stores it to the blobstore", func() {
+		err := testEnvironment.CreateBlobFromAsset("dummy_package.tgz", "123")
 		Expect(err).NotTo(HaveOccurred())
 
 		result, err := agentClient.CompilePackage(agentclient.BlobRef{
 			Name:        "fake",
 			Version:     "1",
-			BlobstoreID: blobID.String(),
+			BlobstoreID: "123",
 			SHA1:        "236cbd31a483c3594061b00a84a80c1c182b3b20",
 		}, []agentclient.BlobRef{})
 
 		Expect(err).NotTo(HaveOccurred())
 
-		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat /tmp/my-blobs/%s", result.BlobstoreID))
+		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat /var/vcap/data/blobs/%s", result.BlobstoreID))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(MatchRegexp("regular file"))
+	})
 
-		output, err = testEnvironment.RunCommand(`sudo /bin/bash -c "zgrep 'dummy contents of dummy package file' /tmp/my-blobs/* | wc -l"`)
-		Expect(err).NotTo(HaveOccurred(), output)
+	It("allows passing bare sha1 for legacy support", func() {
+		err := testEnvironment.CreateBlobFromAsset("dummy_package.tgz", "123")
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = agentClient.CompilePackage(agentclient.BlobRef{
+			Name:        "fake",
+			Version:     "1",
+			BlobstoreID: "123",
+			SHA1:        "236cbd31a483c3594061b00a84a80c1c182b3b20",
+		}, []agentclient.BlobRef{})
+
+		Expect(err).NotTo(HaveOccurred())
+
+		out, err := testEnvironment.RunCommand(`sudo /bin/bash -c "zgrep 'dummy contents of dummy package file' /var/vcap/data/blobs/* | wc -l"`)
+		Expect(err).NotTo(HaveOccurred(), out)
 		// we expect both the original, uncompiled copy and the compiled copy of the package to exist
-		Expect(strings.Trim(output, "\n")).To(Equal("2"))
+		Expect(strings.Trim(out, "\n")).To(Equal("2"))
 	})
 
 	It("does not skip verification when digest argument is missing", func() {
