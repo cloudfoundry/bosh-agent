@@ -115,8 +115,7 @@ sudo umount /tmp/config-drive
 `
 	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, t.deviceMap[deviceNum], t.deviceMap[deviceNum], t.assetsDir(), t.assetsDir())
 
-	rs, err := t.RunCommand(setupConfigDriveScript)
-	fmt.Printf("This happened: %s\n", rs)
+	_, err = t.RunCommand(setupConfigDriveScript)
 	return err
 }
 
