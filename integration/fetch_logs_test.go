@@ -38,29 +38,10 @@ var _ = Describe("fetch_logs", func() {
 			// note that this SETS the username and password for HTTP message bus access
 			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
 
-			Env: settings.Env{
-				Bosh: settings.BoshEnv{
-					TargetedBlobstores: settings.TargetedBlobstores{
-						Packages: "custom-blobstore",
-						Logs:     "custom-blobstore",
-					},
-					Blobstores: []settings.Blobstore{
-						settings.Blobstore{
-							Type: "local",
-							Name: "ignored-blobstore",
-							Options: map[string]interface{}{
-								"blobstore_path": "/ignored/blobstore",
-							},
-						},
-						settings.Blobstore{
-							Type: "local",
-							Name: "custom-blobstore",
-							Options: map[string]interface{}{
-								// this path should get rewritten internally to /var/vcap/data/blobs
-								"blobstore_path": "/var/vcap/micro_bosh/data/cache",
-							},
-						},
-					},
+			Blobstore: settings.Blobstore{
+				Type: "local",
+				Options: map[string]interface{}{
+					"blobstore_path": "/var/vcap/data/blobs",
 				},
 			},
 
@@ -109,4 +90,5 @@ var _ = Describe("fetch_logs", func() {
 		Expect(r).To(ContainSubstring("foobarbaz"))
 		Expect(r).To(ContainSubstring("fetch-logs"))
 	})
+
 })

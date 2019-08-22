@@ -67,7 +67,6 @@ var _ = Describe("concreteFactory", func() {
 			settingsService,
 			platform,
 			blobstore,
-			blobstore,
 			blobManager,
 			taskService,
 			notifier,
