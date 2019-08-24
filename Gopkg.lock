@@ -137,7 +137,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "4d0b7c5acdfddc1ca85d0dd058f2054b8e683cd4"
+  revision = "701ecef9262dd61cda41a511781e9b49a426241b"
 
 [[projects]]
   branch = "master"
@@ -324,7 +324,7 @@
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 
 [[projects]]
-  digest = "1:dbc24dd0591271d269786adff7458f2c1437305091e41979c5495efe3df09ab8"
+  digest = "1:fb8fbdf245700be616e1631181a04d4e3ea256d64ec39d3e7ddd6183beacf88b"
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
@@ -355,11 +355,11 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "eea6ad008b96acdaa524f5b409513bf062b500ad"
-  version = "v1.8.0"
+  revision = "7e8b50db0c6d0a15ac0eb015d4ca64e7e7e2c88c"
+  version = "v1.9.0"
 
 [[projects]]
-  digest = "1:96b79a553cec6f0b9d1282d7228422571c93608d34d731565cd2597da50e5b67"
+  digest = "1:709674d2cbee855168d2112a450ac7f089cc484587251d4a1c3d993d93da3c86"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
@@ -379,8 +379,8 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "90e289841c1ed79b7a598a7cd9959750cb5e89e2"
-  version = "v1.5.0"
+  revision = "27d50ea6455b212cf516609fa58b2b5dce1abc81"
+  version = "v1.6.0"
 
 [[projects]]
   branch = "master"
@@ -445,7 +445,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "4def268fd1a49955bfb3dda92fe3db4f924f2285"
+  revision = "60c769a6c58655dab1b9adac0d58967dd517cfba"
 
 [[projects]]
   branch = "master"
@@ -507,7 +507,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:faa94b1d1ba8d7d53b8906231deb62d16a5d793429e0ff1a972f516e64571111"
+  digest = "1:6dc625899eddfebb23c8f2d38f8007ac52d473cd01193cac3810cd14e83324c9"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -524,7 +524,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "6889da9d54793ea182dd07be58824cf86bf0746b"
+  revision = "c4a336ef6a2feb97e86b0c7ebdd500717074f42b"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
@@ -583,7 +583,6 @@
     "github.com/cloudfoundry/gosigar/fakes",
     "github.com/cloudfoundry/yagnats",
     "github.com/cloudfoundry/yagnats/fakeyagnats",
-    "github.com/gofrs/uuid",
     "github.com/golang/mock/gomock",
     "github.com/kevinburke/ssh_config",
     "github.com/masterzen/winrm",
