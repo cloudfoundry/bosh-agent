@@ -5,31 +5,9 @@ groups:
   - test-unit
   - test-integration
   - bosh-integration-tests
-  - windows-test-unit
-  - windows-test-integration-2019
-  - windows-test-integration-1803
-  - windows-test-integration-2012R2
   - promote
-  - bump-deps
 
 jobs:
-- name: bump-deps
-  public: true
-  plan:
-  - get: weekly
-    trigger: true
-  - get: bosh-agent
-  - task: bump-deps
-    file: bosh-agent/ci/tasks/bump-deps.yml
-  - task: test-unit
-    input_mapping:
-      bosh-agent: bumped-bosh-agent
-    file: bosh-agent/ci/tasks/test-unit.yml
-  - put: bosh-agent
-    params:
-      repository: bumped-bosh-agent
-      rebase: true
-
 - name: test-unit
   public: true
   plan:
@@ -68,10 +46,6 @@ jobs:
       passed:
       - test-unit
       - test-integration
-      - windows-test-unit
-      - windows-test-integration-1803
-      - windows-test-integration-2019
-      - windows-test-integration-2012R2
 
   - task: tests
     privileged: true
@@ -79,77 +53,6 @@ jobs:
     tags: ["bosh-integration"]
     params:
       DB: postgresql
-
-- name: windows-test-unit
-  serial: true
-  plan:
-  - get: bosh-agent
-    trigger: true
-  - task: test-unit
-    file: bosh-agent/ci/tasks/test-unit-windows.yml
-
-- name: windows-test-integration-2019
-  serial: true
-  plan:
-  - get: windows-ami-2019
-  - get: bosh-agent
-    trigger: true
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    input_mapping:
-      windows-ami: windows-ami-2019
-    params:
-      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
-      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
-      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
-      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
-      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: ((WINRM_PASSWORD))
-      WINDOWS_OS_VERSION: 2019
-
-- name: windows-test-integration-1803
-  serial: true
-  plan:
-  - get: windows-ami-1803
-  - get: bosh-agent
-    trigger: true
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    input_mapping:
-      windows-ami: windows-ami-1803
-    params:
-      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
-      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
-      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
-      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
-      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: ((WINRM_PASSWORD))
-      WINDOWS_OS_VERSION: 1803
-
-- name: windows-test-integration-2012R2
-  serial: true
-  plan:
-  - get: windows-ami-2012R2
-  - get: bosh-agent
-    trigger: true
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    input_mapping:
-      windows-ami: windows-ami-2012R2
-    params:
-      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
-      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
-      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
-      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
-      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: ((WINRM_PASSWORD))
-      WINDOWS_OS_VERSION: 2012R2
 
 - name: promote
   public: true
@@ -161,18 +64,15 @@ jobs:
       - bosh-integration-tests
       get: bosh-agent
     - get: version-semver
-      params: {bump: minor}
+      params: {bump: patch}
   - task: assert-version-aligns
     file: bosh-agent/ci/tasks/assert-version-aligns.yml
   - put: version-semver
     params:
       file: version-semver/number
-  - put: bosh-agent-commit-status
+  - put: bosh-agent
     params:
-      state: success
-      commit: bosh-agent
-  - put: bosh-agent-master
-    params:
+      only_tag: true
       repository: bosh-agent
       tag: version-semver/number
       tag_prefix: v
@@ -194,14 +94,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: develop
-    private_key: ((BOSH_GITHUB_DEPLOYMENT_KEY))
-
-- name: bosh-agent-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: master
+    branch: 2.234.x
     private_key: ((BOSH_GITHUB_DEPLOYMENT_KEY))
 
 - name: bosh-agent-index
@@ -218,14 +111,6 @@ resources:
         access_key: ((AWS_S3_BUCKET_ACCESS_KEY))
         secret_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
-- name: bosh-agent-commit-status
-  type: github-status
-  source:
-    repository: cloudfoundry/bosh-agent
-    access_token: ((repo_github_token))
-    branch: develop
-    context: ci/published
-
 - name: bosh-src
   type: git
   source:
@@ -239,85 +124,17 @@ resources:
     bucket: bosh-cli-alpha-artifacts
     region_name: us-east-1
 
-- name: windows-ami-2012R2
-  type: ami-resource
-  source:
-    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
-    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-2012-R2_RTM-English-64Bit-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
-
-- name: windows-ami-1803
-  type: ami-resource
-  source:
-    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
-    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-1803-English-Core-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
-
-- name: windows-ami-2019
-  type: ami-resource
-  source:
-    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
-    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-2019-English-Core-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
-
 - name: version-semver
   type: semver
   source:
-    initial_version: 0.0.1
-    key: agent-current-version
+    initial_version: 2.234.0
+    key: agent-2.234-current-version
     bucket: ((SEMVER_BUCKET))
     region_name: ((AWS_S3_BUCKET_REGION))
     access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
     secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
 
-- name: weekly
-  type: time
-  source:
-    start: 3:00 -0700
-    stop: 4:30 -0700
-    days: [Saturday]
-
 resource_types:
-- name: ami-resource
-  type: registry-image
-  source:
-    repository: pivotalgreenhouse/ami-resource
-    tag: latest
-- name: github-status
-  type: registry-image
-  source:
-    repository: dpb587/github-status-resource
-    tag: master
 - name: metalink-resource
   type: registry-image
   source:
