@@ -10,6 +10,7 @@ import (
 type RenderedTemplatesArchiveSpec struct {
 	Sha1        *crypto.MultipleDigest `json:"sha1"`
 	BlobstoreID string                 `json:"blobstore_id"`
+	SignedURL   string                 `json:"signed_url"`
 }
 
 func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
@@ -27,6 +28,7 @@ func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
 type renderedTemplatesArchiveJSONStruct struct {
 	Sha1        string `json:"sha1"`
 	BlobstoreID string `json:"blobstore_id"`
+	SignedURL   string `json:"signed_url"`
 }
 
 func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
@@ -34,6 +36,10 @@ func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &jsonStruct)
 	if err != nil {
 		return err
+	}
+
+	if jsonStruct.SignedURL != "" {
+		panic("Time bomb: implementation for signed url in this method is incomplete. It has a lot of custom logic for converting the action's payload into a struct")
 	}
 
 	if jsonStruct.BlobstoreID == "" && jsonStruct.Sha1 == "" {
