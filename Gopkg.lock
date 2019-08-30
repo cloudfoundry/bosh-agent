@@ -95,15 +95,16 @@
   revision = "7dc373669fa10ddf827c37c595dee30a2f001be9"
 
 [[projects]]
-  digest = "1:2c0dbb5dcb8d7816ddf4667735bebff73350785f6c526ca7584188fcd95d3098"
+  digest = "1:cf0418b91d6743ba23574d125ea21d9c02a36bc5ca5d6985b1d1d74f723f9164"
   name = "github.com/cloudfoundry/bosh-davcli"
   packages = [
     "client",
     "config",
+    "signer",
   ]
   pruneopts = "NUT"
-  revision = "fbc59895ef9f643cc78b6787d346835efbb932a1"
-  version = "v0.0.34"
+  revision = "8e10bf5ac777b9a7b068fbaba46bee89ab2c8b58"
+  version = "v0.0.40"
 
 [[projects]]
   digest = "1:9bc795168152263829123afa86b4ec2243d51aec01e89f5bb1d39dd66c5077cd"
@@ -115,7 +116,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:20e882523c9af111cce6ff2c1f303a84691aaedd797c667991205dad0f51960c"
+  digest = "1:840aa6648f78d7ad803c5bc384957701bf0e851f22bab669b5d13af2c10f263a"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -137,7 +138,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "701ecef9262dd61cda41a511781e9b49a426241b"
+  revision = "43f89efdad3bc3b406e468ed8681c963f6bcd004"
 
 [[projects]]
   branch = "master"
@@ -324,7 +325,7 @@
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 
 [[projects]]
-  digest = "1:fb8fbdf245700be616e1631181a04d4e3ea256d64ec39d3e7ddd6183beacf88b"
+  digest = "1:fe1e78101bb29febcb5dfe55f2a8c2aeaa8adf711e780b8312311d6315ca411d"
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
@@ -355,11 +356,11 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "7e8b50db0c6d0a15ac0eb015d4ca64e7e7e2c88c"
-  version = "v1.9.0"
+  revision = "974566c482abc93ffd3df6f4626e79076c7ed290"
+  version = "v1.10.1"
 
 [[projects]]
-  digest = "1:709674d2cbee855168d2112a450ac7f089cc484587251d4a1c3d993d93da3c86"
+  digest = "1:b5ec08263b3a1acfebdd8ffe97dbd938b9d03a23df7c61ba6924ad51c753d824"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
@@ -379,8 +380,8 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "27d50ea6455b212cf516609fa58b2b5dce1abc81"
-  version = "v1.6.0"
+  revision = "bdebf9e0ece900259084cfa4121b97ce1a540939"
+  version = "v1.7.0"
 
 [[projects]]
   branch = "master"
@@ -445,7 +446,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "60c769a6c58655dab1b9adac0d58967dd517cfba"
+  revision = "9756ffdc24725223350eb3266ffb92590d28f278"
 
 [[projects]]
   branch = "master"
@@ -460,11 +461,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "74dc4d7220e7acc4e100824340f3e66577424772"
+  revision = "ba9fcec4b297b415637633c5a6e8fa592e4a16c3"
 
 [[projects]]
   branch = "master"
-  digest = "1:6b6683760f5f98f05ba458886c9e50140653fd70e940363f994a03af2c08b2af"
+  digest = "1:f03b4225770f9ac9d9c517d72162b0b79a24d34c0992d7c05d7068047c37d960"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -475,7 +476,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "fde4db37ae7ad8191b03d30d27f258b5291ae4e3"
+  revision = "1e83adbbebd0f5dc971915fd7e5db032c3d2b731"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -507,7 +508,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6dc625899eddfebb23c8f2d38f8007ac52d473cd01193cac3810cd14e83324c9"
+  digest = "1:b36898a8dd62a54ce3b77ace9fa0e180fa35f1c8b3d56db2cd435f6c0cc815ff"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -524,7 +525,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "c4a336ef6a2feb97e86b0c7ebdd500717074f42b"
+  revision = "56125e7d709e70615e1d28fd9634fc76810c1a93"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
