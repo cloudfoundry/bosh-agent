@@ -525,7 +525,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "56125e7d709e70615e1d28fd9634fc76810c1a93"
+  revision = "573d9926052aeaeb5fbebcd3cf10d994c9c6d4f5"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
