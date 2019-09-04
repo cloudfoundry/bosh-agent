@@ -12,6 +12,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	tlsconfig "code.cloudfoundry.org/tlsconfig"
 )
 
 const httpsDispatcherLogTag = "HTTPS Dispatcher"
@@ -29,23 +31,8 @@ type HTTPSDispatcher struct {
 type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
 func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) *HTTPSDispatcher {
-	tlsConfig := &tls.Config{
-		// SSLv3 is insecure due to BEAST and POODLE attacks
-		MinVersion: tls.VersionTLS10,
-		// Both 3DES & RC4 ciphers can be exploited
-		// Using Mozilla's "Modern" recommended settings (where they overlap with golang support)
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_128_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-		},
-		PreferServerCipherSuites: true,
-	}
+	tlsConfig, _ := tlsconfig.Build(tlsconfig.WithInternalServiceDefaults()).Server()
+
 	httpServer := &http.Server{
 		TLSConfig: tlsConfig,
 	}
