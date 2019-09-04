@@ -12,6 +12,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:3d99f16507e2add9e8dd4cd561c2a2928f4650df8924b1f14788db4809502911"
+  name = "code.cloudfoundry.org/tlsconfig"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "462f72de110612406f0bc2e208bb43810df91b5f"
+
+[[projects]]
+  branch = "master"
   name = "github.com/Azure/go-ntlmssp"
   packages = ["."]
   revision = "4b934ac9dad38d389d34f0b98d98b2467c422012"
