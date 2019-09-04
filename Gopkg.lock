@@ -14,6 +14,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:3d99f16507e2add9e8dd4cd561c2a2928f4650df8924b1f14788db4809502911"
+  name = "code.cloudfoundry.org/tlsconfig"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "462f72de110612406f0bc2e208bb43810df91b5f"
+
+[[projects]]
+  branch = "master"
   digest = "1:b2644fc631c849dc4122f7a33b4462eb9aa5aad165fa6de5fd2a167a46ed6f14"
   name = "github.com/Azure/go-ntlmssp"
   packages = ["."]
@@ -561,6 +569,7 @@
   input-imports = [
     "code.cloudfoundry.org/clock",
     "code.cloudfoundry.org/clock/fakeclock",
+    "code.cloudfoundry.org/tlsconfig",
     "github.com/Microsoft/hcsshim",
     "github.com/charlievieth/fs",
     "github.com/cloudfoundry/bosh-davcli/client",
