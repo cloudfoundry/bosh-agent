@@ -150,7 +150,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("does allow connections using TLSv1", func() {
+	It("does not allow connections using TLSv1", func() {
 		handler := func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }
 		dispatcher.AddRoute("/example", handler)
 
@@ -161,10 +161,10 @@ var _ = Describe("HTTPSDispatcher", func() {
 		}
 		client := getHTTPClientWithConfig(tlsConfig)
 		_, err := client.Get(targetURL + "/example")
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).To(HaveOccurred())
 	})
 
-	It("does allow connections using TLSv1.1", func() {
+	It("does not allow connections using TLSv1.1", func() {
 		handler := func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }
 		dispatcher.AddRoute("/example", handler)
 
@@ -175,7 +175,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		}
 		client := getHTTPClientWithConfig(tlsConfig)
 		_, err := client.Get(targetURL + "/example")
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("does allow connections using TLSv1.2", func() {
@@ -284,10 +284,7 @@ func getHTTPClient() http.Client {
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
-		// SSLv3 and TLSv1.0 are considered weak
-		// TLS1.1 does not support GCM, so it won't actually be used
-		MinVersion: tls.VersionTLS11,
-		MaxVersion: tls.VersionTLS12,
+		MinVersion: tls.VersionTLS12,
 	}
 	return getHTTPClientWithConfig(tlsConfig)
 }
