@@ -1,5 +1,14 @@
 package action
 
+import (
+	"errors"
+
+	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+)
+
 type FetchLogsWithSignedURLRequest struct {
 	SignedURL string `json:"signed_url"`
 
@@ -8,11 +17,90 @@ type FetchLogsWithSignedURLRequest struct {
 }
 
 type FetchLogsWithSignedURLResponse struct {
-	SHA1Digest string `json:"sha1_digest"`
+	SHA1Digest string `json:"sha1"`
 }
 
-type FetchLogsWithSignedURL struct{}
+type FetchLogsWithSignedURLAction struct {
+	compressor       boshcmd.Compressor
+	copier           boshcmd.Copier
+	settingsDir      boshdirs.Provider
+	httpBlobProvider httpblobprovider.HTTPBlobProvider
+}
 
-func (a FetchLogsWithSignedURL) Run(request FetchLogsWithSignedURLRequest) (FetchLogsWithSignedURLResponse, error) {
-	return FetchLogsWithSignedURLResponse{}, nil
+func NewFetchLogsWithSignedURLAction(
+	compressor boshcmd.Compressor,
+	copier boshcmd.Copier,
+	settingsDir boshdirs.Provider,
+	httpBlobProvider httpblobprovider.HTTPBlobProvider,
+) (action FetchLogsWithSignedURLAction) {
+	action.compressor = compressor
+	action.copier = copier
+	action.settingsDir = settingsDir
+	action.httpBlobProvider = httpBlobProvider
+	return
+}
+
+func (a FetchLogsWithSignedURLAction) IsAsynchronous(_ ProtocolVersion) bool {
+	return true
+}
+
+func (a FetchLogsWithSignedURLAction) IsPersistent() bool {
+	return false
+}
+
+func (a FetchLogsWithSignedURLAction) IsLoggable() bool {
+	return true
+}
+
+func (a FetchLogsWithSignedURLAction) Run(request FetchLogsWithSignedURLRequest) (FetchLogsWithSignedURLResponse, error) {
+	var logsDir string
+	filters := request.Filters
+
+	switch request.LogType {
+	case "job":
+		if len(request.Filters) == 0 {
+			filters = []string{"**/*"}
+		}
+		logsDir = a.settingsDir.LogsDir()
+	case "agent":
+		if len(request.Filters) == 0 {
+			filters = []string{"**/*"}
+		}
+		logsDir = a.settingsDir.AgentLogsDir()
+	default:
+		return FetchLogsWithSignedURLResponse{}, bosherr.Error("Invalid log type")
+	}
+
+	tmpDir, err := a.copier.FilteredCopyToTemp(logsDir, filters)
+	if err != nil {
+		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Copying filtered files to temp directory")
+	}
+
+	defer a.copier.CleanUp(tmpDir)
+
+	tarball, err := a.compressor.CompressFilesInDir(tmpDir)
+	if err != nil {
+		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Making logs tarball")
+	}
+
+	defer func() {
+		_ = a.compressor.CleanUp(tarball)
+	}()
+
+	digest, err := a.httpBlobProvider.Upload(request.SignedURL, tarball)
+	if err != nil {
+		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Create file on blobstore")
+	}
+
+	return FetchLogsWithSignedURLResponse{
+		SHA1Digest: digest.String(),
+	}, nil
+}
+
+func (a FetchLogsWithSignedURLAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
+}
+
+func (a FetchLogsWithSignedURLAction) Cancel() error {
+	return errors.New("not supported")
 }

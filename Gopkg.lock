@@ -87,6 +87,52 @@
   version = "v0.8.6"
 
 [[projects]]
+  digest = "1:a32f2803285a3411adaf233595b806e5b74c51d0d7458b2d3d2d447ebc5ae93f"
+  name = "github.com/aws/aws-sdk-go"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/awsutil",
+    "aws/client",
+    "aws/client/metadata",
+    "aws/corehandlers",
+    "aws/credentials",
+    "aws/credentials/ec2rolecreds",
+    "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
+    "aws/credentials/stscreds",
+    "aws/csm",
+    "aws/defaults",
+    "aws/ec2metadata",
+    "aws/endpoints",
+    "aws/request",
+    "aws/session",
+    "aws/signer/v4",
+    "internal/ini",
+    "internal/s3err",
+    "internal/sdkio",
+    "internal/sdkmath",
+    "internal/sdkrand",
+    "internal/sdkuri",
+    "internal/shareddefaults",
+    "private/protocol",
+    "private/protocol/eventstream",
+    "private/protocol/eventstream/eventstreamapi",
+    "private/protocol/json/jsonutil",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/restxml",
+    "private/protocol/xml/xmlutil",
+    "service/s3",
+    "service/sts",
+    "service/sts/stsiface",
+  ]
+  pruneopts = "NUT"
+  revision = "4651c2a344e90782ae06c956a5b0edcae3ae21d0"
+  version = "v1.23.16"
+
+[[projects]]
   digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
@@ -124,7 +170,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:840aa6648f78d7ad803c5bc384957701bf0e851f22bab669b5d13af2c10f263a"
+  digest = "1:748d6fff02feaca5fe501f5902ed9ab4e1979a562a49f6f58c6239a94d342adf"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -146,7 +192,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "43f89efdad3bc3b406e468ed8681c963f6bcd004"
+  revision = "0db903bb910ffe49a91c1508721142df08b76e87"
 
 [[projects]]
   branch = "master"
@@ -232,6 +278,13 @@
   pruneopts = "NUT"
   revision = "a30252cb686a21eb2d0b98132633053ec2f7f1e5"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:1f2aebae7e7c856562355ec0198d8ca2fa222fb05e5b1b66632a1fce39631885"
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:dae921a7328d7e20912287d561a899398e4d943cfbeb4122dd99333b052400e0"
@@ -568,6 +621,9 @@
     "code.cloudfoundry.org/clock/fakeclock",
     "code.cloudfoundry.org/tlsconfig",
     "github.com/Microsoft/hcsshim",
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/s3",
     "github.com/charlievieth/fs",
     "github.com/cloudfoundry/bosh-davcli/client",
     "github.com/cloudfoundry/bosh-davcli/config",

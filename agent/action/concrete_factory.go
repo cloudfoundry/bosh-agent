@@ -5,6 +5,7 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
+	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
@@ -39,6 +40,7 @@ func NewFactory(
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
+	hp := httpblobprovider.NewHTTPBlobImpl(platform.GetFs()).WithDefaultAlgorithms()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -51,10 +53,11 @@ func NewFactory(
 			"cancel_task": NewCancelTask(taskService),
 
 			// VM admin
-			"ssh":             NewSSH(settingsService, platform, dirProvider, logger),
-			"fetch_logs":      NewFetchLogs(compressor, copier, blobstore, dirProvider),
-			"update_settings": NewUpdateSettings(settingsService, platform, certManager, logger),
-			"shutdown":        NewShutdown(platform),
+			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
+			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstore, dirProvider),
+			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, hp),
+			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger),
+			"shutdown":                   NewShutdown(platform),
 
 			// Job management
 			"prepare":    NewPrepare(applier),

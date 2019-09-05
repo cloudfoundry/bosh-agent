@@ -7,7 +7,7 @@ import (
 
 type CompilePackageWithSignedURLRequest struct {
 	PackageGetSignedURL string `json:"package_get_signed_url"`
-	UploadSignedUrl     string `json:"upload_signed_url"`
+	UploadSignedURL     string `json:"upload_signed_url"`
 
 	MultiDigest boshcrypto.MultipleDigest `json:"multi_digest"`
 	Name        string                    `json:"name"`

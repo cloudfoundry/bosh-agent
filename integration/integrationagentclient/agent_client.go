@@ -65,6 +65,27 @@ func (c *IntegrationAgentClient) FetchLogs(logType string, filters []string) (ma
 	return responseValue, err
 }
 
+func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType string, filters []string) (action.FetchLogsWithSignedURLResponse, error) {
+	req := action.FetchLogsWithSignedURLRequest{
+		LogType:   logType,
+		Filters:   filters,
+		SignedURL: signedURL,
+	}
+	responseRaw, err := c.SendAsyncTaskMessage("fetch_logs_with_signed_url", []interface{}{req})
+	if err != nil {
+		return action.FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Sending 'fetch_logs_with_signed_url' to the agent")
+	}
+
+	responseValue, ok := responseRaw.(map[string]interface{})
+	if !ok {
+		return action.FetchLogsWithSignedURLResponse{}, bosherr.Errorf("Unable to parse fetch_logs_with_signed_url response value: %#v", responseRaw)
+	}
+
+	return action.FetchLogsWithSignedURLResponse{
+		SHA1Digest: responseValue["sha1"].(string),
+	}, err
+}
+
 func (c *IntegrationAgentClient) SSH(cmd string, params action.SSHParams) error {
 	err := c.AgentRequest.Send("ssh", []interface{}{cmd, params}, &SSHResponse{})
 	if err != nil {
