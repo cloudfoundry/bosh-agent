@@ -24,7 +24,7 @@ import (
 // AWS_REGION
 // AWS_BUCKET
 
-func generateSignedUrl(bucket, key string) string {
+func generateSignedURL(bucket, key string) string {
 	sess, err := session.NewSession(&aws.Config{})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -106,14 +106,14 @@ var _ = Describe("S3 HTTP Blob Provider", func() {
 	})
 
 	It("successfully uploads a file via a signed URL", func() {
-		signedUrl := generateSignedUrl(bucket, key)
+		signedURL := generateSignedURL(bucket, key)
 
 		logger := boshlog.NewAsyncWriterLogger(boshlog.LevelNone, os.Stderr)
 		realFileSystem := boshsys.NewOsFileSystem(logger)
 
 		blobProvider := httpblobprovider.NewHTTPBlobImpl(realFileSystem).WithAlgorithms([]boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA512})
 
-		_, err := blobProvider.Upload(signedUrl, tmpfile.Name())
+		_, err := blobProvider.Upload(signedURL, tmpfile.Name())
 		Expect(err).NotTo(HaveOccurred())
 
 		contents := downloadS3ObjectContents(bucket, key)

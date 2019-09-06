@@ -21,7 +21,7 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-func generateSignedUrl(bucket, key string) string {
+func generateSignedURL(bucket, key string) string {
 	sess, err := session.NewSession(&aws.Config{})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -170,9 +170,9 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 		r, stderr, _, err := testEnvironment.RunCommand3("echo 'foobarbaz' | sudo tee /var/vcap/sys/log/fetch-logs")
 		Expect(err).NotTo(HaveOccurred(), r, stderr)
 
-		signedUrl := generateSignedUrl(bucket, key)
+		signedURL := generateSignedURL(bucket, key)
 
-		response, err := agentClient.FetchLogsWithSignedURLAction(signedUrl, "job", nil)
+		response, err := agentClient.FetchLogsWithSignedURLAction(signedURL, "job", nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		contents, sha1 := downloadS3ObjectContents(bucket, key)
