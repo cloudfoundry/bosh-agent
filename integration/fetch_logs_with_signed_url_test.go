@@ -158,6 +158,11 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 	)
 
 	BeforeEach(func() {
+		Expect(os.Getenv("AWS_ACCESS_KEY")).NotTo(BeEmpty())
+		Expect(os.Getenv("AWS_SECRET_ACCESS_KEY")).NotTo(BeEmpty())
+		Expect(os.Getenv("AWS_REGION")).NotTo(BeEmpty())
+		Expect(os.Getenv("AWS_BUCKET")).NotTo(BeEmpty())
+
 		bucket = os.Getenv("AWS_BUCKET")
 		key = "s3-signed-file.txt"
 	})
