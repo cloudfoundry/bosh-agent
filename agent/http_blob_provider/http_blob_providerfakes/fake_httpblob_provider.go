@@ -4,22 +4,23 @@ package http_blob_providerfakes
 import (
 	"sync"
 
-	action "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 type FakeHTTPBlobProvider struct {
-	GetStub        func(string) (string, error)
+	GetStub        func(string, crypto.MultipleDigest) ([]byte, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
 		arg1 string
+		arg2 crypto.MultipleDigest
 	}
 	getReturns struct {
-		result1 string
+		result1 []byte
 		result2 error
 	}
 	getReturnsOnCall map[int]struct {
-		result1 string
+		result1 []byte
 		result2 error
 	}
 	UploadStub        func(string, string) (crypto.MultipleDigest, error)
@@ -40,16 +41,17 @@ type FakeHTTPBlobProvider struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeHTTPBlobProvider) Get(arg1 string) (string, error) {
+func (fake *FakeHTTPBlobProvider) Get(arg1 string, arg2 crypto.MultipleDigest) ([]byte, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("Get", []interface{}{arg1})
+		arg2 crypto.MultipleDigest
+	}{arg1, arg2})
+	fake.recordInvocation("Get", []interface{}{arg1, arg2})
 	fake.getMutex.Unlock()
 	if fake.GetStub != nil {
-		return fake.GetStub(arg1)
+		return fake.GetStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -64,41 +66,41 @@ func (fake *FakeHTTPBlobProvider) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string) (string, error)) {
+func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string, crypto.MultipleDigest) ([]byte, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeHTTPBlobProvider) GetArgsForCall(i int) string {
+func (fake *FakeHTTPBlobProvider) GetArgsForCall(i int) (string, crypto.MultipleDigest) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeHTTPBlobProvider) GetReturns(result1 string, result2 error) {
+func (fake *FakeHTTPBlobProvider) GetReturns(result1 []byte, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 string
+		result1 []byte
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeHTTPBlobProvider) GetReturnsOnCall(i int, result1 string, result2 error) {
+func (fake *FakeHTTPBlobProvider) GetReturnsOnCall(i int, result1 []byte, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
-			result1 string
+			result1 []byte
 			result2 error
 		})
 	}
 	fake.getReturnsOnCall[i] = struct {
-		result1 string
+		result1 []byte
 		result2 error
 	}{result1, result2}
 }
@@ -193,4 +195,4 @@ func (fake *FakeHTTPBlobProvider) recordInvocation(key string, args []interface{
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ action.HTTPBlobProvider = new(FakeHTTPBlobProvider)
+var _ httpblobprovider.HTTPBlobProvider = new(FakeHTTPBlobProvider)

@@ -87,7 +87,8 @@ func NewFactory(
 			"delete_arp_entries": NewDeleteARPEntries(platform),
 
 			// DNS
-			"sync_dns": NewSyncDNS(blobstore, settingsService, platform, logger),
+			"sync_dns":                 NewSyncDNS(blobstore, settingsService, platform, logger),
+			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, hp),
 		},
 	}
 	return

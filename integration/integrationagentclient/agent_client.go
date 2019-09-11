@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	"github.com/cloudfoundry/bosh-agent/settings"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -84,6 +85,25 @@ func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType
 	return action.FetchLogsWithSignedURLResponse{
 		SHA1Digest: responseValue["sha1"].(string),
 	}, err
+}
+
+func (c *IntegrationAgentClient) SyncDNSWithSignedURL(signedURL string, digest boshcrypto.MultipleDigest, version uint64) (string, error) {
+	req := action.SyncDNSWithSignedURLRequest{
+		SignedURL:   signedURL,
+		MultiDigest: digest,
+		Version:     version,
+	}
+	responseRaw, err := c.SendAsyncTaskMessage("sync_dns_with_signed_url", []interface{}{req})
+	if err != nil {
+		return "", bosherr.WrapError(err, "Sending 'sync_dns_with_signed_url' to the agent")
+	}
+
+	response, ok := responseRaw.(string)
+	if !ok {
+		return "", bosherr.Errorf("Unable to parse sync_dns_with_signed_url response value: %#v", responseRaw)
+	}
+
+	return response, err
 }
 
 func (c *IntegrationAgentClient) SSH(cmd string, params action.SSHParams) error {
