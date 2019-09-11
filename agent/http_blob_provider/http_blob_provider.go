@@ -1,11 +1,14 @@
 package httpblobprovider
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -72,6 +75,25 @@ func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDig
 	return digest, nil
 }
 
-func (h HTTPBlobImpl) Get(signedURL string) (string, error) {
-	return "", nil
+func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.MultipleDigest) ([]byte, error) {
+	resp, err := http.Get(signedURL)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return []byte{}, fmt.Errorf("Error executing GET to %s, response was %+v", signedURL, resp)
+	}
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	err = digest.Verify(bytes.NewReader(contents))
+	if err != nil {
+		return []byte{}, bosherr.WrapErrorf(err, "Checking downloaded blob digest")
+	}
+
+	return contents, nil
 }

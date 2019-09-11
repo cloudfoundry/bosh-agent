@@ -8,5 +8,5 @@ import (
 
 type HTTPBlobProvider interface {
 	Upload(signedURL, filepath string) (boshcrypto.MultipleDigest, error)
-	Get(signedURL string) (string, error)
+	Get(signedURL string, digest boshcrypto.MultipleDigest) ([]byte, error)
 }
