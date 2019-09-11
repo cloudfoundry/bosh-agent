@@ -2,7 +2,11 @@ package utils
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +14,8 @@ import (
 	"reflect"
 	"text/template"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
@@ -202,7 +208,10 @@ func (n *NatsClient) Setup() error {
 		return err
 	}
 
-	n.sub, _ = n.nc.SubscribeSync(senderID)
+	n.sub, err = n.nc.SubscribeSync(senderID)
+	if err != nil {
+		return err
+	}
 	n.alertSub, err = n.nc.SubscribeSync("hm.agent.alert." + agentGUID)
 	return err
 }
@@ -591,4 +600,87 @@ func (n *NatsClient) uploadPackage(packageName string) (string, string, error) {
 
 	blobID, err := n.blobstoreClient.Create(tarfile)
 	return sha1, blobID, err
+}
+
+func (n *NatsClient) SetupSSH(username string, senderID string) (action.SSHResult, *ssh.ClientConfig, error) {
+	publicKey, privateAuthMethod, err := GenerateKeyPair()
+	if err != nil {
+		return action.SSHResult{}, &ssh.ClientConfig{}, err
+	}
+
+	message := fmt.Sprintf(
+		`{"method":"ssh","arguments":["setup", {"user":"%s", "public_key": %q}],"reply_to":"%s"}`,
+		username, publicKey, senderID,
+	)
+
+	rawResponse, err := n.SendRawMessage(message)
+	if err != nil {
+		return action.SSHResult{}, &ssh.ClientConfig{}, err
+	}
+
+	response := map[string]action.SSHResult{}
+	err = json.Unmarshal(rawResponse, &response)
+	if err != nil {
+		return action.SSHResult{}, &ssh.ClientConfig{}, err
+	}
+
+	clientConfig := &ssh.ClientConfig{
+		User:            username,
+		Auth:            []ssh.AuthMethod{privateAuthMethod},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	return response["value"], clientConfig, nil
+}
+
+func (n *NatsClient) CleanupSSH(username string, senderID string) (action.SSHResult, error) {
+	message := fmt.Sprintf(`{"method":"ssh","arguments":["cleanup", {"user_regex":"^%s"}],"reply_to":"%s"}`, username, senderID)
+	rawResponse, err := n.SendRawMessage(message)
+	if err != nil {
+		return action.SSHResult{}, err
+	}
+
+	response := map[string]action.SSHResult{}
+	err = json.Unmarshal(rawResponse, &response)
+	if err != nil {
+		return action.SSHResult{}, err
+	}
+
+	return response["value"], nil
+}
+
+func GenerateKeyPair() (publicKey []byte, privateAuthMethod ssh.AuthMethod, err error) {
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return publicKey, privateAuthMethod, err
+	}
+
+	err = rsaKey.Validate()
+	if err != nil {
+		return publicKey, privateAuthMethod, err
+	}
+
+	publicRsaKey, err := ssh.NewPublicKey(&rsaKey.PublicKey)
+	if err != nil {
+		return publicKey, privateAuthMethod, err
+	}
+
+	publicKey = ssh.MarshalAuthorizedKey(publicRsaKey)
+
+	privDER := x509.MarshalPKCS1PrivateKey(rsaKey)
+
+	privBlock := pem.Block{
+		Type:    "RSA PRIVATE KEY",
+		Headers: nil,
+		Bytes:   privDER,
+	}
+
+	privatePEM := pem.EncodeToMemory(&privBlock)
+
+	privateSSHKey, err := ssh.ParsePrivateKey(privatePEM)
+	if err != nil {
+		return publicKey, privateAuthMethod, err
+	}
+
+	return publicKey, ssh.PublicKeys(privateSSHKey), err
 }

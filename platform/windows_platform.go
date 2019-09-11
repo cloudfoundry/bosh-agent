@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -165,6 +167,73 @@ func (p WindowsPlatform) findEphemeralUsersMatching(reg *regexp.Regexp) ([]strin
 	return matchingUsers, nil
 }
 
+const (
+	OsErrorFileInUse     = syscall.Errno(0x20)
+	OsErrorFileNotFound2 = syscall.Errno(0x2)
+	OsErrorFileNotFound3 = syscall.Errno(0x3)
+)
+
+func deleteFolderAndContents(path string) error {
+	inf, err := statAndIgnoreFileNotFound(path)
+	if err != nil {
+		return err
+	}
+	if inf == nil {
+		return nil
+	}
+
+	err = os.Chmod(path, 0600)
+	if err != nil {
+		return err
+	}
+
+	if inf.IsDir() {
+		childItems, _ := ioutil.ReadDir(path)
+
+		for _, item := range childItems {
+			err = deleteFolderAndContents(filepath.Join(path, item.Name()))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return removeAndIgnoreProcessFileLocks(path)
+}
+
+func removeAndIgnoreProcessFileLocks(path string) error {
+	err := os.RemoveAll(path)
+	if err != nil {
+		pathError, ok := err.(*os.PathError)
+		if !ok {
+			fmt.Printf("in RaI after PE")
+			return err
+		}
+
+		if pathError.Err != OsErrorFileInUse {
+			fmt.Printf("after FiU check")
+			return err
+		}
+	}
+	return nil
+}
+
+func statAndIgnoreFileNotFound(path string) (os.FileInfo, error) {
+	inf, err := os.Stat(path)
+	if err != nil {
+		pathError, ok := err.(*os.PathError)
+		if !ok {
+			return inf, err
+		}
+
+		if pathError.Err != OsErrorFileNotFound2 && pathError.Err != OsErrorFileNotFound3 {
+			return inf, err
+		}
+	}
+
+	return inf, nil
+}
+
 func (p WindowsPlatform) DeleteEphemeralUsersMatching(pattern string) error {
 	reg, err := regexp.Compile(pattern)
 	if err != nil {
@@ -177,7 +246,12 @@ func (p WindowsPlatform) DeleteEphemeralUsersMatching(pattern string) error {
 	}
 
 	for _, user := range users {
-		if err := deleteUserProfile(user); err != nil {
+		err = deleteFolderAndContents(fmt.Sprintf(`C:\Users\%s`, user))
+		if err != nil {
+			return err
+		}
+
+		if err := deleteLocalUser(user); err != nil {
 			return err
 		}
 	}

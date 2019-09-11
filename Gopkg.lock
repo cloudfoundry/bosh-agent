@@ -266,6 +266,14 @@
   version = "v1.3.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:312c983bebd82e975d9744387025d2e06c7633428bc4f3eb8996b54a8368df46"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c2e93f3ae59f2904160ceaab466009f965df46d6"
+
+[[projects]]
   digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
   name = "github.com/hpcloud/tail"
   packages = [
@@ -650,6 +658,7 @@
     "github.com/cloudfoundry/yagnats",
     "github.com/cloudfoundry/yagnats/fakeyagnats",
     "github.com/golang/mock/gomock",
+    "github.com/google/uuid",
     "github.com/kevinburke/ssh_config",
     "github.com/masterzen/winrm",
     "github.com/maxbrunsfeld/counterfeiter",

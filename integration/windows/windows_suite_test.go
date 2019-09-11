@@ -59,6 +59,7 @@ func tarFixtures(fixturesDir, filename string) error {
 		"bosh-blobstore-dav.exe",
 		"bosh-agent.exe",
 		"pipe.exe",
+		"OpenSSH-Win64.zip",
 		"agent-configuration/agent.json",
 		"agent-configuration/root-partition-agent.json",
 		"agent-configuration/root-partition-agent-ephemeral-disabled.json",
@@ -176,6 +177,7 @@ var _ = BeforeSuite(func() {
 	goSourcePath := filepath.Join(dirname, "templates", "go", "go1.7.1.windows-amd64.zip")
 	os.RemoveAll(goSourcePath)
 	downloadFile(goSourcePath, "https://dl.google.com/go/go1.7.1.windows-amd64.zip")
+	agent.RunPowershellCommand("add-content \\ProgramData\\ssh\\sshd_config \"AllowUsers bosh_testuser\"")
 })
 
 func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {

@@ -278,19 +278,7 @@ func createUserProfile(username string) error {
 	return err
 }
 
-func deleteUserProfile(username string) error {
-	sid, _, _, err := syscall.LookupSID("", username)
-	if err != nil {
-		return err
-	}
-	ssid, err := sid.String()
-	if err != nil {
-		return err
-	}
-	if err := deleteProfile(ssid); err != nil {
-		return err
-	}
-
+func deleteLocalUser(username string) error {
 	cmd := exec.Command("NET.exe", "USER", username, "/DELETE")
 	out, err := cmd.CombinedOutput()
 	if err != nil {

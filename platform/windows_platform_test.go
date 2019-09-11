@@ -14,6 +14,10 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/google/uuid"
+
+	"github.com/cloudfoundry/bosh-agent/platform/windows/powershell"
+
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc/mgr"
 
@@ -802,8 +806,6 @@ func expectAssignDriveLetterCalledWithArgs(
 }
 
 var _ = Describe("BOSH User Commands", func() {
-	const testUsername = boshsettings.EphemeralUserPrefix + "test_abc123"
-
 	var (
 		// We're doing this for real - no fakes!
 		logger    = boshlog.NewLogger(boshlog.LevelNone)
@@ -811,11 +813,15 @@ var _ = Describe("BOSH User Commands", func() {
 		cmdRunner = boshsys.NewExecCmdRunner(logger)
 
 		deleteUserOnce sync.Once
+
+		testUsername string
 	)
 
 	BeforeEach(func() {
+		testUsername = fmt.Sprintf("%stest_%s", boshsettings.EphemeralUserPrefix, fmt.Sprintf("%s", uuid.New())[0:8])
+
 		deleteUserOnce.Do(func() {
-			DeleteUserProfile(testUsername)
+			DeleteLocalUser(testUsername)
 		})
 	})
 
@@ -831,8 +837,11 @@ var _ = Describe("BOSH User Commands", func() {
 	}
 
 	AfterEach(func() {
-		DeleteUserProfile(testUsername)
+		DeleteLocalUser(testUsername)
 		Expect(userExists(testUsername)).ToNot(Succeed())
+
+		cmdRunner.RunCommand(powershell.Executable, "-Command", `get-wmiobject -class win32_userprofile | where { $_.LocalPath -like 'C:\Users\bosh*' } | remove-wmiobject`)
+		cmdRunner.RunCommand(powershell.Executable, "-Command", fmt.Sprintf(`Remove-Item C:\Users\%s* -Force -Recurse`, testUsername))
 	})
 
 	Describe("SSH", func() {
@@ -921,20 +930,53 @@ var _ = Describe("BOSH User Commands", func() {
 			}
 		})
 
-		It("can delete a users matching a regex", func() {
+		It("can delete a user, and any files in the user home directory which aren't in use by the registry", func() {
 			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
 			Expect(userExists(testUsername)).To(Succeed())
 
 			homedir, err := UserHomeDirectory(testUsername)
 			Expect(err).To(Succeed())
 
+			err = platform.SetupSSH([]string{"test-public-key"}, testUsername)
+			Expect(err).NotTo(HaveOccurred())
+
+			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
+			_, err = ioutil.ReadFile(keyPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			userSID, _, _, err := cmdRunner.RunCommand(
+				powershell.Executable,
+				"-Command",
+				fmt.Sprintf("(Get-LocalUser %s).SID.Value", testUsername),
+			)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(userSID).NotTo(BeEmpty())
+
+			_, _, _, err = cmdRunner.RunCommand(
+				"REG",
+				"LOAD",
+				fmt.Sprintf(`HKU\%s`, strings.TrimSpace(userSID)),
+				fmt.Sprintf(`C:\Users\%s\NTUSER.dat`, testUsername),
+			)
+			Expect(err).NotTo(HaveOccurred())
+
 			// Regex taken from: github.com/cloudfoundry/bosh-cli/director/ssh.go
-			//
-			const regex = "^" + testUsername
-			Expect(platform.DeleteEphemeralUsersMatching(regex)).To(Succeed())
+			Expect(platform.DeleteEphemeralUsersMatching(fmt.Sprintf("^%s", testUsername))).To(Succeed())
 			Expect(userExists(testUsername)).ToNot(Succeed())
 
-			_, err = os.Stat(homedir)
+			deletableUserProfileContents, _, _, err := cmdRunner.RunCommand(
+				powershell.Executable,
+				"-Command",
+				fmt.Sprintf(`Get-ChildItem -force \Users\%s -exclude ntuser*`, testUsername),
+			)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(deletableUserProfileContents).To(BeEmpty())
+
+			_, _, _, err = cmdRunner.RunCommand(
+				powershell.Executable,
+				"-Command",
+				fmt.Sprintf("Get-LocalUser %s", testUsername),
+			)
 			Expect(err).To(HaveOccurred())
 		})
 	})

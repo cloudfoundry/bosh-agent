@@ -21,7 +21,7 @@ var (
 	LocalAccountNames    = localAccountNames
 
 	// Export for test cleanup
-	DeleteUserProfile = deleteUserProfile
+	DeleteLocalUser = deleteLocalUser
 )
 
 // SetSSHEnabled sets the function called by GetHostPublicKey to determine if
