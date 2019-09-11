@@ -87,7 +87,7 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:a32f2803285a3411adaf233595b806e5b74c51d0d7458b2d3d2d447ebc5ae93f"
+  digest = "1:c14df6dadcc34b6e61cba03c9b7e1fed722148553d883b16624f749e1c1f4a39"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -129,8 +129,8 @@
     "service/sts/stsiface",
   ]
   pruneopts = "NUT"
-  revision = "4651c2a344e90782ae06c956a5b0edcae3ae21d0"
-  version = "v1.23.16"
+  revision = "8c6586204ba7e9a887fb4cb6ffca2428e6c6dc7c"
+  version = "v1.23.20"
 
 [[projects]]
   digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
@@ -149,7 +149,7 @@
   revision = "7dc373669fa10ddf827c37c595dee30a2f001be9"
 
 [[projects]]
-  digest = "1:cf0418b91d6743ba23574d125ea21d9c02a36bc5ca5d6985b1d1d74f723f9164"
+  digest = "1:2c6c2b83cc9e022a7be4d05ea29d0ded7126425445776cc7b8fcabd76e7d51c4"
   name = "github.com/cloudfoundry/bosh-davcli"
   packages = [
     "client",
@@ -157,8 +157,8 @@
     "signer",
   ]
   pruneopts = "NUT"
-  revision = "8e10bf5ac777b9a7b068fbaba46bee89ab2c8b58"
-  version = "v0.0.40"
+  revision = "c27b88a6d7c102bd066be493393e1fc0c2a3be96"
+  version = "v0.0.41"
 
 [[projects]]
   digest = "1:9bc795168152263829123afa86b4ec2243d51aec01e89f5bb1d39dd66c5077cd"
@@ -192,7 +192,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "0db903bb910ffe49a91c1508721142df08b76e87"
+  revision = "78dc2d34165ffdbdf220605533bc25dbd7282046"
 
 [[projects]]
   branch = "master"
@@ -494,7 +494,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4302486a72c8119fb9f0dd121c55ae263f6d295172c9add995c706a48562def7"
+  digest = "1:cf1b07dfb6b5d6340b7aa244f4c8e9447ec516dfad6412f5a6f1893c4b6233b2"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -507,11 +507,11 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "9756ffdc24725223350eb3266ffb92590d28f278"
+  revision = "227b76d455e791cb042b03e633e2f7fbcfdf74a5"
 
 [[projects]]
   branch = "master"
-  digest = "1:9c9e81eccb4afb764f429c7075cc7cccc47b83603cb18984a5de9275c679a831"
+  digest = "1:ecf3cc598d43edd0afbe5f09a7c508a3f6097bf9e5292142c6cfae52fddc4dfe"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -522,11 +522,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "ba9fcec4b297b415637633c5a6e8fa592e4a16c3"
+  revision = "a7b16738d86b947dd0fadb08ca2c2342b51958b6"
 
 [[projects]]
   branch = "master"
-  digest = "1:f03b4225770f9ac9d9c517d72162b0b79a24d34c0992d7c05d7068047c37d960"
+  digest = "1:8ee8a283867cb51e752103471fcccc6ade942bceefaab1bf5e5b3877ba651b04"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -537,7 +537,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "1e83adbbebd0f5dc971915fd7e5db032c3d2b731"
+  revision = "7ad0cfa0b7b5a50bdf0fb49923febdf3742a975c"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -569,7 +569,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b36898a8dd62a54ce3b77ace9fa0e180fa35f1c8b3d56db2cd435f6c0cc815ff"
+  digest = "1:a789ce1b01ee83c253d465f387852892dd5b19c8bf75b4ca26458ab74238d7f1"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -586,7 +586,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "573d9926052aeaeb5fbebcd3cf10d994c9c6d4f5"
+  revision = "63a3583f646f18c88f3799b86f3046ad8147f3e3"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"

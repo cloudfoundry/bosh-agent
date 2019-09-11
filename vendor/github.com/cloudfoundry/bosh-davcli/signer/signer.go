@@ -5,6 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"net/http"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 )
@@ -42,5 +45,19 @@ func (s *signer) GenerateSignedURL(endpoint, prefixedBlobID, verb string, timeSt
 	expiresAfterSeconds := int(expiresAfter.Seconds())
 	signature := s.generateSignature(prefixedBlobID, verb, timeStamp, expiresAfterSeconds)
 
-	return fmt.Sprintf("%s/%s?st=%s&ts=%d&e=%d", endpoint, prefixedBlobID, signature, timeStamp.Unix(), expiresAfterSeconds), nil
+	blobURL, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+	blobURL.Path = path.Join(blobURL.Path, "signed", prefixedBlobID)
+	req, err := http.NewRequest(verb, blobURL.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	q := req.URL.Query()
+	q.Add("st", signature)
+	q.Add("ts", fmt.Sprintf("%d", timeStamp.Unix()))
+	q.Add("e", fmt.Sprintf("%d", expiresAfterSeconds))
+	req.URL.RawQuery = q.Encode()
+	return req.URL.String(), nil
 }
