@@ -1,9 +1,8 @@
 package httpblobprovider
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -75,25 +74,34 @@ func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDig
 	return digest, nil
 }
 
-func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.MultipleDigest) ([]byte, error) {
+func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.MultipleDigest) (string, error) {
+	file, err := h.fs.TempFile("bosh-http-blob-provider-GET")
+	if err != nil {
+		return "", bosherr.WrapError(err, "Creating temporary file")
+	}
+	defer file.Close()
+
 	resp, err := http.Get(signedURL)
 	if err != nil {
-		return []byte{}, err
+		return file.Name(), err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return []byte{}, fmt.Errorf("Error executing GET to %s, response was %+v", signedURL, resp)
+		return file.Name(), fmt.Errorf("Error executing GET to %s, response was %+v", signedURL, resp)
 	}
 
-	contents, err := ioutil.ReadAll(resp.Body)
+	written, err := io.Copy(file, resp.Body)
 	if err != nil {
-		return []byte{}, err
+		return file.Name(), err
+	}
+	if written != resp.ContentLength {
+		return file.Name(), fmt.Errorf("Write mismatch with blob content-length. Expected: %d, wrote: %d", resp.ContentLength, written)
 	}
 
-	err = digest.Verify(bytes.NewReader(contents))
+	err = digest.Verify(file)
 	if err != nil {
-		return []byte{}, bosherr.WrapErrorf(err, "Checking downloaded blob digest")
+		return file.Name(), bosherr.WrapErrorf(err, "Checking downloaded blob digest")
 	}
 
-	return contents, nil
+	return file.Name(), nil
 }
