@@ -195,6 +195,10 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(
 	return outString, errString, exitCode, err
 }
 
+func (e *WindowsEnvironment) RunPowershellCommandWithResponses(cmd string, cmdFmtArgs ...interface{}) (string, string, int, error) {
+	return e.RunPowershellCommandWithOffsetAndResponses(1, cmd, cmdFmtArgs...)
+}
+
 func (e *WindowsEnvironment) RunPowershellCommand(cmd string, cmdFmtArgs ...interface{}) string {
 	return e.RunPowershellCommandWithOffset(1, cmd, cmdFmtArgs...)
 }

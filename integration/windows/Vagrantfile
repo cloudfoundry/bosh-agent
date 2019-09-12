@@ -153,7 +153,8 @@ enable_ssh = <<-SHELL
 $OpenSSHZipPath = "C:\\bosh\\OpenSSH-Win64.zip"
 
 Push-Location $env:PROGRAMFILES
-Expand-Archive -Path $OpenSSHZipPath -DestinationPath .\\
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($OpenSSHZipPath, $env:PROGRAMFILES)
 Rename-Item .\\OpenSSH-Win64 OpenSSH
 
 Push-Location OpenSSH
