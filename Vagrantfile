@@ -1,9 +1,12 @@
 Vagrant.configure('2') do |config|
-  config.vm.box = 'cloudfoundry/bosh-lite'
-  config.vm.box_version = '9000.20.0'
+  config.vm.box = "xcoo/xenial64"
+  config.vm.hostname = 'bosh-agent-integration-tests'
 
   config.vm.provider :virtualbox do |v, override|
     override.vm.network "private_network", type: "dhcp", id: :local
+    v.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
+    v.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
+    v.customize ['modifyvm', :id, '--paravirtprovider', 'minimal']
   end
 
   config.vm.provider :aws do |v, override|
@@ -21,8 +24,20 @@ Vagrant.configure('2') do |config|
     v.secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY'] || ''
     v.subnet_id = ENV['BOSH_LITE_SUBNET_ID'] || ''
     v.ami = ''
+    v.access_key_id =       ENV.fetch('BOSH_AWS_ACCESS_KEY_ID')
+    v.secret_access_key =   ENV.fetch('BOSH_AWS_SECRET_ACCESS_KEY')
+    v.region =              ENV.fetch('BOSH_LITE_REGION', 'us-east-1')
+    v.keypair_name =        ENV.fetch('BOSH_LITE_KEYPAIR', 'bosh')
+    v.instance_type =       ENV.fetch('BOSH_LITE_INSTANCE_TYPE', 'm3.xlarge')
+    v.block_device_mapping = [{
+      :DeviceName => '/dev/sda1',
+      'Ebs.VolumeType' => 'gp2',
+      'Ebs.VolumeSize' => ENV.fetch('BOSH_LITE_DISK_SIZE', '80').to_i
+    }]
+    v.security_groups =     [ENV.fetch('BOSH_LITE_SECURITY_GROUP', 'inception')]
+    v.subnet_id =           ENV.fetch('BOSH_LITE_SUBNET_ID') if ENV.include?('BOSH_LITE_SUBNET_ID')
+    v.private_ip_address =  ENV.fetch('BOSH_LITE_PRIVATE_IP') if ENV.include?('BOSH_LITE_PRIVATE_IP')
   end
-
   agent_dir = '/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent'
 
   # We need to override the rsync args to exlucde "--copy-links".
@@ -35,11 +50,46 @@ Vagrant.configure('2') do |config|
 #  config.vm.synced_folder Dir.pwd, '/vagrant', disabled: true
   config.vm.provision :shell, inline: "mkdir -p /vagrant && chmod 777 /vagrant"
 
-  config.vm.provision :shell, inline: "sudo apt-get update && sudo apt-get install -y jq curl"
-  config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/install-go.sh"
-  config.vm.provision :shell, inline: "sudo cp #{agent_dir}/integration/assets/bosh-start-logging-and-auditing /var/vcap/bosh/bin/bosh-start-logging-and-auditing"
-  config.vm.provision :shell, inline: "sudo #{agent_dir}/integration/assets/disable_growpart.sh"
-  config.vm.provision :shell, inline: "sudo echo '#!/bin/bash' > /var/vcap/bosh/bin/restart_networking"
-  config.vm.provision :shell, inline: "sudo chmod +x /var/vcap/bosh/bin/restart_networking"
-  config.vm.provision :shell, inline: "sudo mkdir -p /etc/systemd/network/"
+  config.vm.provision :shell, inline: <<-SHELL
+    rm -f /var/lib/dpkg/lock
+    rm -f /var/lib/dpkg/lock-frontend
+    dpkg --configure -a
+    echo $(hostname -I) $(hostname) | tee -a /etc/hosts
+    apt-get update && apt-get install -y jq curl runit iputils-arping
+    groupadd -f vcap
+    useradd -m --comment 'BOSH System User' vcap --uid 1002 -g vcap || true
+    groupadd -f --system admin
+    groupadd -f bosh_sshers
+    groupadd -f bosh_sudoers
+    usermod vcap -a -G vagrant
+    usermod vagrant -a -G vcap
+    mkdir -p /var/vcap/bosh/bin
+    mkdir -p /etc/service/agent
+    mkdir -p /etc/sv/monit
+    mkdir -p /var/vcap/monit/svlog
+    mkdir -p /var/log
+    touch /var/log/monit.log
+    mkdir -p /var/vcap/bosh/log
+    mkdir -p /var/vcap/bosh/etc
+    mkdir -p /var/vcap/jobs
+    chmod 0755 /var/vcap/jobs
+    touch /var/vcap/monit/empty.monitrc
+
+    #{agent_dir}/integration/assets/install-go.sh
+    cp -a #{agent_dir}/integration/assets/alerts.monitrc /var/vcap/monit/alerts.monitrc
+    chmod 0600 /var/vcap/monit/alerts.monitrc
+    chown root:root /var/vcap/monit/alerts.monitrc
+    cp -r #{agent_dir}/integration/assets/runit/monit/* /etc/sv/monit
+    cp -r #{agent_dir}/integration/assets/runit/agent/* /etc/service/agent
+    cp #{agent_dir}/integration/assets/monit /var/vcap/bosh/bin/monit
+    cp #{agent_dir}/integration/assets/monitrc /var/vcap/bosh/etc/monitrc
+    cp #{agent_dir}/integration/assets/bosh-start-logging-and-auditing /var/vcap/bosh/bin/bosh-start-logging-and-auditing
+    cp #{agent_dir}/integration/assets/bosh-agent-rc /var/vcap/bosh/bin/bosh-agent-rc
+    systemctl restart runit
+SHELL
+
+  config.vm.provision :shell, inline: "#{agent_dir}/integration/assets/disable_growpart.sh"
+  config.vm.provision :shell, inline: "echo '#!/bin/bash' > /var/vcap/bosh/bin/restart_networking"
+  config.vm.provision :shell, inline: "chmod +x /var/vcap/bosh/bin/restart_networking"
+  config.vm.provision :shell, inline: "mkdir -p /etc/systemd/network/"
 end

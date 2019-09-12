@@ -32,5 +32,16 @@ func TestIntegration(t *testing.T) {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	AfterEach(func() {
+		err := testEnvironment.CleanupDataDir()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.DetachLoopDevices()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.ResetDeviceMap()
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	RunSpecs(t, "Integration Suite")
 }

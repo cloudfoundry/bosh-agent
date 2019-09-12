@@ -65,9 +65,6 @@ var _ = Describe("DeleteARPEntries", func() {
 		err = testEnvironment.SetupConfigDrive()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.CleanupDataDir()
-		Expect(err).ToNot(HaveOccurred())
-
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 

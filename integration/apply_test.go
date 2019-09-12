@@ -23,9 +23,6 @@ var _ = Describe("apply", func() {
 		err := testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.CleanupDataDir()
-		Expect(err).ToNot(HaveOccurred())
-
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
