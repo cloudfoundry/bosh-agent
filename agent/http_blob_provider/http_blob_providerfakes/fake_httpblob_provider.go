@@ -9,18 +9,18 @@ import (
 )
 
 type FakeHTTPBlobProvider struct {
-	GetStub        func(string, crypto.MultipleDigest) ([]byte, error)
+	GetStub        func(string, crypto.MultipleDigest) (string, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
 		arg1 string
 		arg2 crypto.MultipleDigest
 	}
 	getReturns struct {
-		result1 []byte
+		result1 string
 		result2 error
 	}
 	getReturnsOnCall map[int]struct {
-		result1 []byte
+		result1 string
 		result2 error
 	}
 	UploadStub        func(string, string) (crypto.MultipleDigest, error)
@@ -41,7 +41,7 @@ type FakeHTTPBlobProvider struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeHTTPBlobProvider) Get(arg1 string, arg2 crypto.MultipleDigest) ([]byte, error) {
+func (fake *FakeHTTPBlobProvider) Get(arg1 string, arg2 crypto.MultipleDigest) (string, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
@@ -66,7 +66,7 @@ func (fake *FakeHTTPBlobProvider) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string, crypto.MultipleDigest) ([]byte, error)) {
+func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string, crypto.MultipleDigest) (string, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
@@ -79,28 +79,28 @@ func (fake *FakeHTTPBlobProvider) GetArgsForCall(i int) (string, crypto.Multiple
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeHTTPBlobProvider) GetReturns(result1 []byte, result2 error) {
+func (fake *FakeHTTPBlobProvider) GetReturns(result1 string, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 []byte
+		result1 string
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeHTTPBlobProvider) GetReturnsOnCall(i int, result1 []byte, result2 error) {
+func (fake *FakeHTTPBlobProvider) GetReturnsOnCall(i int, result1 string, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
-			result1 []byte
+			result1 string
 			result2 error
 		})
 	}
 	fake.getReturnsOnCall[i] = struct {
-		result1 []byte
+		result1 string
 		result2 error
 	}{result1, result2}
 }

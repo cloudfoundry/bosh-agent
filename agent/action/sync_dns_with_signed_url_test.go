@@ -70,14 +70,14 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 			multiDigest = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-fingerprint"))
 			err := fakeFileSystem.WriteFileString("fake-blobstore-file-path", fakeDNSRecordsString)
 			Expect(err).ToNot(HaveOccurred())
-			fakeHTTPBlobProvider.GetReturns([]byte(fakeDNSRecordsString), nil)
+			fakeHTTPBlobProvider.GetReturns("fake-blobstore-file-path", nil)
 
 			stateFilePath = filepath.Join(fakePlatform.GetDirProvider().InstanceDNSDir(), "records.json")
 		})
 
 		Context("when local DNS state version is >= Run's version", func() {
 			BeforeEach(func() {
-				fakeHTTPBlobProvider.GetReturns([]byte{}, errors.New("fake-blobstore-get-error"))
+				fakeHTTPBlobProvider.GetReturns("fake-blobstore-file-path", errors.New("fake-blobstore-get-error"))
 			})
 
 			Context("when the version equals the Run's version", func() {
@@ -324,7 +324,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 				Context("when DNS records is invalid", func() {
 					BeforeEach(func() {
-						fakeHTTPBlobProvider.GetReturns([]byte(""), nil)
+						fakeFileSystem.WriteFileString("fake-blobstore-file-path", "")
 					})
 
 					It("fails unmarshalling the DNS records from the file", func() {
@@ -373,7 +373,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 			Context("when new DNS records cannot be fetched", func() {
 				BeforeEach(func() {
-					fakeHTTPBlobProvider.GetReturns([]byte{}, errors.New("embedded error"))
+					fakeHTTPBlobProvider.GetReturns("fake-blobstore-file-path", errors.New("embedded error"))
 				})
 
 				Context("when blobstore returns an error", func() {

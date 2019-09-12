@@ -3,6 +3,7 @@ package httpblobprovider_test
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	. "github.com/onsi/ginkgo"
@@ -10,6 +11,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	system "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -17,6 +19,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 	var (
 		fakeFileSystem *fakesys.FakeFileSystem
 		server         *ghttp.Server
+		tempFile       system.File
 	)
 
 	BeforeEach(func() {
@@ -32,6 +35,19 @@ var _ = Describe("HTTPBlobImpl", func() {
 			multiDigest = boshcrypto.MustNewMultipleDigest(sha1, sha512)
 		)
 
+		BeforeEach(func() {
+			var err error
+
+			tempFile, err = fakeFileSystem.OpenFile("fake-file", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+			Expect(err).ToNot(HaveOccurred())
+
+			fakeFileSystem.ReturnTempFile = tempFile
+		})
+
+		AfterEach(func() {
+			fakeFileSystem.RemoveAll(tempFile.Name())
+		})
+
 		It("downloads the file and returns the contents", func() {
 			server.RouteToHandler("GET", "/success-get-signed-url",
 				ghttp.CombineHandlers(
@@ -41,7 +57,10 @@ var _ = Describe("HTTPBlobImpl", func() {
 
 			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
 
-			content, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest)
+			filepath, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest)
+			Expect(err).NotTo(HaveOccurred())
+
+			content, err := fakeFileSystem.ReadFile(filepath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(content).To(Equal([]byte("abc")))
 		})

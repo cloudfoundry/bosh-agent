@@ -3,6 +3,7 @@ package action
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"sync"
 
@@ -71,9 +72,22 @@ func (a SyncDNSWithSignedURL) Run(request SyncDNSWithSignedURLRequest) (string, 
 		return "synced", nil
 	}
 
-	contents, err := a.httpBlobProvider.Get(request.SignedURL, request.MultiDigest)
+	filePath, err := a.httpBlobProvider.Get(request.SignedURL, request.MultiDigest)
 	if err != nil {
 		return "", bosherr.WrapError(err, "fetching new DNS records")
+	}
+	fs := a.platform.GetFs()
+
+	defer func() {
+		err = fs.RemoveAll(filePath)
+		if err != nil {
+			a.logger.Error(a.logTag, fmt.Sprintf("Failed to remove dns blob file at path '%s'", filePath))
+		}
+	}()
+
+	contents, err := fs.ReadFile(filePath)
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "reading %s from blobstore", filePath)
 	}
 
 	a.lock.Lock()
