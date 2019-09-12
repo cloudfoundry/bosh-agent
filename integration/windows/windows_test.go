@@ -137,7 +137,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Expect(setupResult.Status).To(Equal("success"))
 
-		output := agent.RunPowershellCommand(fmt.Sprintf(`get-wmiobject -class win32_userprofile | Where { $_.LocalPath -eq 'C:\Users\%s'}`, sshTestUser))
+		output := agent.RunPowershellCommand(`get-wmiobject -class win32_userprofile | Where { $_.LocalPath -eq 'C:\Users\%s'}`, sshTestUser)
 		Expect(output).To(MatchRegexp(sshTestUser))
 
 		client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", AgentPublicIP), sshClientConfig)
@@ -154,10 +154,10 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Expect(cleanupResult.Status).To(Equal("success"))
 
-		sshUsers := agent.RunPowershellCommand(fmt.Sprintf(`Get-LocalUser | Where { $_.Name -like "%s" }`, sshTestUser))
-		Expect(sshUsers).To(BeEmpty())
+		_, _, exitCode, _ := agent.RunPowershellCommandWithResponses(`NET.exe USER %s`, sshTestUser)
+		Expect(exitCode).To(Equal(1))
 
-		deletableUserProfileContent := agent.RunPowershellCommand(fmt.Sprintf(`Get-ChildItem -force -recurse -attributes !Directory -Exclude 'ntuser.dat*' , 'usrclass.dat*' /users/%s`, sshTestUser))
+		deletableUserProfileContent := agent.RunPowershellCommand(`Get-ChildItem -force -recurse -attributes !Directory -Exclude 'ntuser.dat*' , 'usrclass.dat*' /users/%s`, sshTestUser)
 		Expect(deletableUserProfileContent).To(BeEmpty())
 	})
 
