@@ -90,6 +90,13 @@ var _ = Describe("sync_dns", func() {
 			Disks: settings.Disks{
 				Ephemeral: "/dev/sdh",
 			},
+
+			Networks: map[string]settings.Network{
+				"default": settings.Network{
+					UseDHCP: true,
+					DNS:     []string{"8.8.8.8"},
+				},
+			},
 		}
 
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
