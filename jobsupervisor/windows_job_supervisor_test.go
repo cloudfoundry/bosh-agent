@@ -480,7 +480,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		AfterEach(func() {
 			Expect(jobSupervisor.Stop()).To(Succeed())
 			Expect(jobSupervisor.RemoveAllJobs()).To(Succeed())
-			Expect(fs.RemoveAll(jobDir)).To(Succeed())
+			Eventually(func() error { return fs.RemoveAll(jobDir) }).Should(Succeed())
 			Expect(fs.RemoveAll(logDir)).To(Succeed())
 		})
 
