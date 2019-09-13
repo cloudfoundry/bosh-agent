@@ -24,8 +24,8 @@ Vagrant.configure('2') do |config|
     v.secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY'] || ''
     v.subnet_id = ENV['BOSH_LITE_SUBNET_ID'] || ''
     v.ami = ''
-    v.access_key_id =       ENV.fetch('BOSH_AWS_ACCESS_KEY_ID')
-    v.secret_access_key =   ENV.fetch('BOSH_AWS_SECRET_ACCESS_KEY')
+    v.access_key_id =       ENV.fetch('BOSH_AWS_ACCESS_KEY_ID', nil)
+    v.secret_access_key =   ENV.fetch('BOSH_AWS_SECRET_ACCESS_KEY', nil)
     v.region =              ENV.fetch('BOSH_LITE_REGION', 'us-east-1')
     v.keypair_name =        ENV.fetch('BOSH_LITE_KEYPAIR', 'bosh')
     v.instance_type =       ENV.fetch('BOSH_LITE_INSTANCE_TYPE', 'm3.xlarge')
@@ -55,7 +55,7 @@ Vagrant.configure('2') do |config|
     rm -f /var/lib/dpkg/lock-frontend
     dpkg --configure -a
     echo $(hostname -I) $(hostname) | tee -a /etc/hosts
-    apt-get update && apt-get install -y jq curl runit iputils-arping
+    apt-get update && apt-get install -y jq curl iputils-arping runit
     groupadd -f vcap
     useradd -m --comment 'BOSH System User' vcap --uid 1002 -g vcap || true
     groupadd -f --system admin
@@ -76,15 +76,22 @@ Vagrant.configure('2') do |config|
     touch /var/vcap/monit/empty.monitrc
 
     #{agent_dir}/integration/assets/install-go.sh
+    #{agent_dir}/integration/assets/install-agent.sh
+    #{agent_dir}/integration/assets/install-fake-registry.sh
     cp -a #{agent_dir}/integration/assets/alerts.monitrc /var/vcap/monit/alerts.monitrc
     chmod 0600 /var/vcap/monit/alerts.monitrc
     chown root:root /var/vcap/monit/alerts.monitrc
     cp -r #{agent_dir}/integration/assets/runit/monit/* /etc/sv/monit
     cp -r #{agent_dir}/integration/assets/runit/agent/* /etc/service/agent
+    cp -r #{agent_dir}/integration/assets/agent_runit.sh /etc/service/agent/run
+
     cp #{agent_dir}/integration/assets/monit /var/vcap/bosh/bin/monit
     cp #{agent_dir}/integration/assets/monitrc /var/vcap/bosh/etc/monitrc
+    chmod 0700 /var/vcap/bosh/etc/monitrc
+
     cp #{agent_dir}/integration/assets/bosh-start-logging-and-auditing /var/vcap/bosh/bin/bosh-start-logging-and-auditing
     cp #{agent_dir}/integration/assets/bosh-agent-rc /var/vcap/bosh/bin/bosh-agent-rc
+
     systemctl restart runit
 SHELL
 
