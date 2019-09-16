@@ -98,6 +98,11 @@ func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.MultipleDigest) (s
 		return file.Name(), fmt.Errorf("Write mismatch with blob content-length. Expected: %d, wrote: %d", resp.ContentLength, written)
 	}
 
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		return file.Name(), bosherr.WrapErrorf(err, "Rewinding file pointer to beginning")
+	}
+
 	err = digest.Verify(file)
 	if err != nil {
 		return file.Name(), bosherr.WrapErrorf(err, "Checking downloaded blob digest")

@@ -88,22 +88,18 @@ func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType
 }
 
 func (c *IntegrationAgentClient) SyncDNSWithSignedURL(signedURL string, digest boshcrypto.MultipleDigest, version uint64) (string, error) {
+	var response http.SyncDNSResponse
 	req := action.SyncDNSWithSignedURLRequest{
 		SignedURL:   signedURL,
 		MultiDigest: digest,
 		Version:     version,
 	}
-	responseRaw, err := c.SendAsyncTaskMessage("sync_dns_with_signed_url", []interface{}{req})
+	err := c.AgentRequest.Send("sync_dns_with_signed_url", []interface{}{req}, &response)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Sending 'sync_dns_with_signed_url' to the agent")
 	}
 
-	response, ok := responseRaw.(string)
-	if !ok {
-		return "", bosherr.Errorf("Unable to parse sync_dns_with_signed_url response value: %#v", responseRaw)
-	}
-
-	return response, err
+	return response.Value, nil
 }
 
 func (c *IntegrationAgentClient) SSH(cmd string, params action.SSHParams) error {
