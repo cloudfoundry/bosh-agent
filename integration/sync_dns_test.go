@@ -8,10 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -20,37 +16,6 @@ import (
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
-
-func generateSignedURLForSyncDNS(bucket, key string) string {
-	sess, err := session.NewSession(&aws.Config{})
-	Expect(err).NotTo(HaveOccurred())
-
-	svc := s3.New(sess)
-
-	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	})
-
-	urlStr, err := req.Presign(15 * time.Minute)
-	Expect(err).NotTo(HaveOccurred())
-
-	return urlStr
-}
-
-func uploadS3Object(bucket, key string, data []byte) {
-	sess, err := session.NewSession(&aws.Config{})
-	Expect(err).NotTo(HaveOccurred())
-
-	uploader := s3manager.NewUploader(sess)
-
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-		Body:   bytes.NewReader(data),
-	})
-	Expect(err).NotTo(HaveOccurred())
-}
 
 var _ = Describe("sync_dns", func() {
 	var (
@@ -160,7 +125,7 @@ var _ = Describe("sync_dns", func() {
 			blobDigest, err = boshcrypto.NewMultipleDigest(strings.NewReader(newRecordsJSONContent), []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA1})
 			Expect(err).NotTo(HaveOccurred())
 
-			uploadS3Object(bucket, key, []byte(newRecordsJSONContent))
+			uploadS3Object(bucket, key, bytes.NewReader([]byte(newRecordsJSONContent)))
 		})
 
 		AfterEach(func() {
@@ -171,7 +136,7 @@ var _ = Describe("sync_dns", func() {
 			oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
 			Expect(err).NotTo(HaveOccurred())
 
-			signedURL := generateSignedURLForSyncDNS(bucket, key)
+			signedURL := generateSignedURLForGet(bucket, key)
 
 			response, err := agentClient.SyncDNSWithSignedURL(signedURL, blobDigest, newRecordsVersion)
 			Expect(err).NotTo(HaveOccurred())
