@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -113,5 +114,10 @@ func (c *IntegrationAgentClient) SSH(cmd string, params action.SSHParams) error 
 
 func (c *IntegrationAgentClient) UpdateSettings(settings settings.UpdateSettings) error {
 	_, err := c.SendAsyncTaskMessage("update_settings", []interface{}{settings})
+	return err
+}
+
+func (c *IntegrationAgentClient) ApplyV1Spec(spec applyspec.V1ApplySpec) error {
+	_, err := c.SendAsyncTaskMessage("apply", []interface{}{spec})
 	return err
 }
