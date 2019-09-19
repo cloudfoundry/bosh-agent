@@ -74,7 +74,7 @@ func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDig
 	return digest, nil
 }
 
-func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.MultipleDigest) (string, error) {
+func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, error) {
 	file, err := h.fs.TempFile("bosh-http-blob-provider-GET")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")

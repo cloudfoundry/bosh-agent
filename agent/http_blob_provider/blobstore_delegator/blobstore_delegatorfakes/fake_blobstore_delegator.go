@@ -9,10 +9,34 @@ import (
 )
 
 type FakeBlobstoreDelegator struct {
-	GetStub        func(crypto.MultipleDigest, string, string) (string, error)
+	CleanUpStub        func(string, string) error
+	cleanUpMutex       sync.RWMutex
+	cleanUpArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	cleanUpReturns struct {
+		result1 error
+	}
+	cleanUpReturnsOnCall map[int]struct {
+		result1 error
+	}
+	DeleteStub        func(string, string) error
+	deleteMutex       sync.RWMutex
+	deleteArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	deleteReturns struct {
+		result1 error
+	}
+	deleteReturnsOnCall map[int]struct {
+		result1 error
+	}
+	GetStub        func(crypto.Digest, string, string) (string, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
-		arg1 crypto.MultipleDigest
+		arg1 crypto.Digest
 		arg2 string
 		arg3 string
 	}
@@ -44,11 +68,133 @@ type FakeBlobstoreDelegator struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeBlobstoreDelegator) Get(arg1 crypto.MultipleDigest, arg2 string, arg3 string) (string, error) {
+func (fake *FakeBlobstoreDelegator) CleanUp(arg1 string, arg2 string) error {
+	fake.cleanUpMutex.Lock()
+	ret, specificReturn := fake.cleanUpReturnsOnCall[len(fake.cleanUpArgsForCall)]
+	fake.cleanUpArgsForCall = append(fake.cleanUpArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("CleanUp", []interface{}{arg1, arg2})
+	fake.cleanUpMutex.Unlock()
+	if fake.CleanUpStub != nil {
+		return fake.CleanUpStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.cleanUpReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeBlobstoreDelegator) CleanUpCallCount() int {
+	fake.cleanUpMutex.RLock()
+	defer fake.cleanUpMutex.RUnlock()
+	return len(fake.cleanUpArgsForCall)
+}
+
+func (fake *FakeBlobstoreDelegator) CleanUpCalls(stub func(string, string) error) {
+	fake.cleanUpMutex.Lock()
+	defer fake.cleanUpMutex.Unlock()
+	fake.CleanUpStub = stub
+}
+
+func (fake *FakeBlobstoreDelegator) CleanUpArgsForCall(i int) (string, string) {
+	fake.cleanUpMutex.RLock()
+	defer fake.cleanUpMutex.RUnlock()
+	argsForCall := fake.cleanUpArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeBlobstoreDelegator) CleanUpReturns(result1 error) {
+	fake.cleanUpMutex.Lock()
+	defer fake.cleanUpMutex.Unlock()
+	fake.CleanUpStub = nil
+	fake.cleanUpReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBlobstoreDelegator) CleanUpReturnsOnCall(i int, result1 error) {
+	fake.cleanUpMutex.Lock()
+	defer fake.cleanUpMutex.Unlock()
+	fake.CleanUpStub = nil
+	if fake.cleanUpReturnsOnCall == nil {
+		fake.cleanUpReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.cleanUpReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBlobstoreDelegator) Delete(arg1 string, arg2 string) error {
+	fake.deleteMutex.Lock()
+	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
+	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("Delete", []interface{}{arg1, arg2})
+	fake.deleteMutex.Unlock()
+	if fake.DeleteStub != nil {
+		return fake.DeleteStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.deleteReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeBlobstoreDelegator) DeleteCallCount() int {
+	fake.deleteMutex.RLock()
+	defer fake.deleteMutex.RUnlock()
+	return len(fake.deleteArgsForCall)
+}
+
+func (fake *FakeBlobstoreDelegator) DeleteCalls(stub func(string, string) error) {
+	fake.deleteMutex.Lock()
+	defer fake.deleteMutex.Unlock()
+	fake.DeleteStub = stub
+}
+
+func (fake *FakeBlobstoreDelegator) DeleteArgsForCall(i int) (string, string) {
+	fake.deleteMutex.RLock()
+	defer fake.deleteMutex.RUnlock()
+	argsForCall := fake.deleteArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeBlobstoreDelegator) DeleteReturns(result1 error) {
+	fake.deleteMutex.Lock()
+	defer fake.deleteMutex.Unlock()
+	fake.DeleteStub = nil
+	fake.deleteReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBlobstoreDelegator) DeleteReturnsOnCall(i int, result1 error) {
+	fake.deleteMutex.Lock()
+	defer fake.deleteMutex.Unlock()
+	fake.DeleteStub = nil
+	if fake.deleteReturnsOnCall == nil {
+		fake.deleteReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deleteReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBlobstoreDelegator) Get(arg1 crypto.Digest, arg2 string, arg3 string) (string, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
-		arg1 crypto.MultipleDigest
+		arg1 crypto.Digest
 		arg2 string
 		arg3 string
 	}{arg1, arg2, arg3})
@@ -70,13 +216,13 @@ func (fake *FakeBlobstoreDelegator) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeBlobstoreDelegator) GetCalls(stub func(crypto.MultipleDigest, string, string) (string, error)) {
+func (fake *FakeBlobstoreDelegator) GetCalls(stub func(crypto.Digest, string, string) (string, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeBlobstoreDelegator) GetArgsForCall(i int) (crypto.MultipleDigest, string, string) {
+func (fake *FakeBlobstoreDelegator) GetArgsForCall(i int) (crypto.Digest, string, string) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
@@ -179,6 +325,10 @@ func (fake *FakeBlobstoreDelegator) WriteReturnsOnCall(i int, result1 string, re
 func (fake *FakeBlobstoreDelegator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.cleanUpMutex.RLock()
+	defer fake.cleanUpMutex.RUnlock()
+	fake.deleteMutex.RLock()
+	defer fake.deleteMutex.RUnlock()
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	fake.writeMutex.RLock()

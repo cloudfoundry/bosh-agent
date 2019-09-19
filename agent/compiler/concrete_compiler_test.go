@@ -9,12 +9,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
+
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakecmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner/fakes"
-	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator/blobstore_delegatorfakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -62,7 +63,7 @@ func init() {
 		var (
 			compiler       Compiler
 			compressor     *fakecmd.FakeCompressor
-			blobstore      *fakeblobstore.FakeDigestBlobstore
+			blobstore      *fakeblobdelegator.FakeBlobstoreDelegator
 			fs             *fakesys.FakeFileSystem
 			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepackages.FakeApplier
@@ -71,7 +72,7 @@ func init() {
 
 		BeforeEach(func() {
 			compressor = fakecmd.NewFakeCompressor()
-			blobstore = &fakeblobstore.FakeDigestBlobstore{}
+			blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 			fs = fakesys.NewFakeFileSystem()
 			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
 			packageApplier = fakepackages.NewFakeApplier()
@@ -113,7 +114,7 @@ func init() {
 			})
 
 			It("returns blob id and sha1 of created compiled package", func() {
-				blobstore.CreateReturns("fake-blob-id", boshcrypto.MultipleDigest{}, nil)
+				blobstore.WriteReturns("fake-blob-id", boshcrypto.MultipleDigest{}, nil)
 
 				blobID, digest, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
@@ -123,7 +124,7 @@ func init() {
 			})
 
 			It("returns blob id and correct sha algo of created compiled package", func() {
-				blobstore.CreateReturns("fake-blob-id", boshcrypto.MultipleDigest{}, nil)
+				blobstore.WriteReturns("fake-blob-id", boshcrypto.MultipleDigest{}, nil)
 
 				// Currently algo of source package is used for compilation pkg algo
 				pkg.Sha1 = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "fakesha"))
@@ -133,7 +134,7 @@ func init() {
 				// echo -n fake-contents|shasum -a 256
 				Expect(digest.String()).To(Equal("sha256:d12d3a3ee8dcdc9e7ea3416fd618298ea50abde2cf434313c6c3edb213f441cd"))
 
-				blobID, fingerprint := blobstore.GetArgsForCall(0)
+				fingerprint, _, blobID := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("blobstore_id"))
 				Expect(fingerprint).To(Equal(pkg.Sha1))
 			})
@@ -323,11 +324,13 @@ func init() {
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(blobstore.CreateArgsForCall(0)).To(Equal("/tmp/compressed-compiled-package"))
+
+				_, filePathArg := blobstore.WriteArgsForCall(0)
+				Expect(filePathArg).To(Equal("/tmp/compressed-compiled-package"))
 			})
 
 			It("returs error if uploading compressed package fails", func() {
-				blobstore.CreateReturns("", boshcrypto.MultipleDigest{}, errors.New("fake-create-err"))
+				blobstore.WriteReturns("", boshcrypto.MultipleDigest{}, errors.New("fake-create-err"))
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(HaveOccurred())
@@ -337,7 +340,7 @@ func init() {
 			It("cleans up compressed package after uploading it to blobstore", func() {
 				var beforeCleanUpTarballPath, afterCleanUpTarballPath string
 
-				blobstore.CreateStub = func(fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
+				blobstore.WriteStub = func(signedURL, fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
 					beforeCleanUpTarballPath = compressor.CleanUpTarballPath
 					return "my-blob-id", boshcrypto.MultipleDigest{}, nil
 				}

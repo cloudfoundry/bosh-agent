@@ -24,7 +24,7 @@ type SyncDNSWithSignedURLRequest struct {
 }
 
 type SyncDNSWithSignedURL struct {
-	blobDelegator     blobdelegator.BlobstoreDelegator
+	blobDelegator   blobdelegator.BlobstoreDelegator
 	settingsService boshsettings.Service
 	platform        boshplat.Platform
 	logger          boshlog.Logger

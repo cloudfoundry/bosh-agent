@@ -124,6 +124,7 @@ var _ = Describe("BlobstoreDelegator", func() {
 				Expect(digestResult).To(Equal(digest))
 			})
 		})
+
 		Context("when there is no signed URL provided", func() {
 			It("uses the local blobstore", func() {
 				filePath := "/some/path/to/a/file"
@@ -140,7 +141,57 @@ var _ = Describe("BlobstoreDelegator", func() {
 				Expect(filenameArg).To(Equal(filePath))
 				Expect(digestResult).To(Equal(digest))
 			})
-			It("errors when there is an error", func() {})
+
+			It("errors when there is an error", func() {
+				fakeError := errors.New("some error")
+				filePath := "/some/path/to/a/file"
+				fakeBlobManager.CreateReturns("123", digest, fakeError)
+
+				_, _, err := blobstoreDelegator.Write("", filePath)
+				Expect(err).To(MatchError(fakeError))
+				Expect(fakeBlobManager.CreateCallCount()).To(Equal(1))
+				Expect(fakeHttpBlobProvider.UploadCallCount()).To(Equal(0))
+			})
+		})
+	})
+
+	Context("CleanUp", func() {
+		Context("when there is a signed URL provided", func() {
+			It("errors", func() {
+				err := blobstoreDelegator.CleanUp("some-signed-url", "nothing")
+				Expect(err).To(MatchError("CleanUp is not supported for signed URLs"))
+			})
+		})
+
+		Context("when there is no signed URL provided", func() {
+			It("Cleans up", func() {
+				someFile := "/some/file"
+				err := blobstoreDelegator.CleanUp("", someFile)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeBlobManager.CleanUpCallCount()).To(Equal(1))
+				Expect(fakeBlobManager.CleanUpArgsForCall(0)).To(Equal("/some/file"))
+			})
+		})
+	})
+
+	Context("Delete", func() {
+		Context("when there is a signed URL provided", func() {
+			It("errors", func() {
+				err := blobstoreDelegator.Delete("some-signed-url", "nothing")
+				Expect(err).To(MatchError("Delete is not supported for signed URLs"))
+			})
+		})
+
+		Context("when there is no signed URL provided", func() {
+			It("Deletes", func() {
+				blobID := "123"
+				err := blobstoreDelegator.Delete("", blobID)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeBlobManager.DeleteCallCount()).To(Equal(1))
+				Expect(fakeBlobManager.DeleteArgsForCall(0)).To(Equal("123"))
+			})
 		})
 	})
 })

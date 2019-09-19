@@ -21,7 +21,6 @@ import (
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -31,7 +30,6 @@ var _ = Describe("concreteFactory", func() {
 	var (
 		settingsService   *fakesettings.FakeSettingsService
 		platform          *platformfakes.FakePlatform
-		blobstore         *fakeblobstore.FakeDigestBlobstore
 		blobManager       *fakeagentblobstore.FakeBlobManagerInterface
 		taskService       *faketask.FakeService
 		notifier          *fakenotif.FakeNotifier
@@ -43,7 +41,7 @@ var _ = Describe("concreteFactory", func() {
 		factory           Factory
 		logger            boshlog.Logger
 		fileSystem        *fakesys.FakeFileSystem
-		blobDelegator       *fakeblobdelegator.FakeBlobstoreDelegator
+		blobDelegator     *fakeblobdelegator.FakeBlobstoreDelegator
 	)
 
 	BeforeEach(func() {
@@ -54,7 +52,6 @@ var _ = Describe("concreteFactory", func() {
 		platform.GetFsReturns(fileSystem)
 		platform.GetDirProviderReturns(boshdir.NewProvider("/var/vcap"))
 
-		blobstore = &fakeblobstore.FakeDigestBlobstore{}
 		blobManager = &fakeagentblobstore.FakeBlobManagerInterface{}
 		taskService = &faketask.FakeService{}
 		notifier = fakenotif.NewFakeNotifier()
@@ -69,7 +66,6 @@ var _ = Describe("concreteFactory", func() {
 		factory = NewFactory(
 			settingsService,
 			platform,
-			blobstore,
 			blobManager,
 			taskService,
 			notifier,
@@ -111,7 +107,7 @@ var _ = Describe("concreteFactory", func() {
 	It("fetch_logs", func() {
 		action, err := factory.Create("fetch_logs")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())))
+		Expect(action).To(Equal(NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobDelegator, platform.GetDirProvider())))
 	})
 
 	It("fetch_logs_with_signed_url", func() {
@@ -240,7 +236,7 @@ var _ = Describe("concreteFactory", func() {
 	It("sync_dns", func() {
 		action, err := factory.Create("sync_dns")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewSyncDNS(blobstore, settingsService, platform, logger)))
+		Expect(action).To(Equal(NewSyncDNS(blobDelegator, settingsService, platform, logger)))
 	})
 
 	It("upload_blob", func() {

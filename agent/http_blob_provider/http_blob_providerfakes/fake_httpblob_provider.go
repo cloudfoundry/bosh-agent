@@ -9,11 +9,11 @@ import (
 )
 
 type FakeHTTPBlobProvider struct {
-	GetStub        func(string, crypto.MultipleDigest) (string, error)
+	GetStub        func(string, crypto.Digest) (string, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
 		arg1 string
-		arg2 crypto.MultipleDigest
+		arg2 crypto.Digest
 	}
 	getReturns struct {
 		result1 string
@@ -41,12 +41,12 @@ type FakeHTTPBlobProvider struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeHTTPBlobProvider) Get(arg1 string, arg2 crypto.MultipleDigest) (string, error) {
+func (fake *FakeHTTPBlobProvider) Get(arg1 string, arg2 crypto.Digest) (string, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
 		arg1 string
-		arg2 crypto.MultipleDigest
+		arg2 crypto.Digest
 	}{arg1, arg2})
 	fake.recordInvocation("Get", []interface{}{arg1, arg2})
 	fake.getMutex.Unlock()
@@ -66,13 +66,13 @@ func (fake *FakeHTTPBlobProvider) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string, crypto.MultipleDigest) (string, error)) {
+func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string, crypto.Digest) (string, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeHTTPBlobProvider) GetArgsForCall(i int) (string, crypto.MultipleDigest) {
+func (fake *FakeHTTPBlobProvider) GetArgsForCall(i int) (string, crypto.Digest) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]

@@ -10,7 +10,7 @@ import (
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator/blobstore_delegatorfakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -40,7 +40,7 @@ func init() {
 	Describe("compiledPackageApplier", func() {
 		var (
 			packagesBc *fakebc.FakeBundleCollection
-			blobstore  *fakeblob.FakeDigestBlobstore
+			blobstore  *fakeblobdelegator.FakeBlobstoreDelegator
 			fs         *fakesys.FakeFileSystem
 			logger     boshlog.Logger
 			applier    Applier
@@ -48,7 +48,7 @@ func init() {
 
 		BeforeEach(func() {
 			packagesBc = fakebc.NewFakeBundleCollection()
-			blobstore = &fakeblob.FakeDigestBlobstore{}
+			blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 			fs = fakesys.NewFakeFileSystem()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
 			applier = NewCompiledPackageApplier(packagesBc, true, blobstore, fs, logger)
@@ -78,12 +78,13 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
 
 					// downloaded file is cleaned up
-					Expect(blobstore.CleanUpArgsForCall(0)).To(Equal("/fake-blobstore-file-name"))
+					_, cleanupArg := blobstore.CleanUpArgsForCall(0)
+					Expect(cleanupArg).To(Equal("/fake-blobstore-file-name"))
 				})
 
 				It("returns error when downloading package blob fails", func() {
@@ -100,7 +101,7 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 				})
@@ -111,7 +112,7 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))
 				})

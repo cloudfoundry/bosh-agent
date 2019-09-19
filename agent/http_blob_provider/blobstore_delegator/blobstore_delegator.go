@@ -1,6 +1,8 @@
 package blobstore_delegator
 
 import (
+	"fmt"
+
 	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	"github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -18,7 +20,7 @@ func NewBlobstoreDelegator(hp httpblobprovider.HTTPBlobProvider, bp blobstore.Di
 	}
 }
 
-func (b *blobstoreDelegator) Get(digest boshcrypto.MultipleDigest, signedURL, blobID string) (fileName string, err error) {
+func (b *blobstoreDelegator) Get(digest boshcrypto.Digest, signedURL, blobID string) (fileName string, err error) {
 	if signedURL == "" {
 		return b.b.Get(blobID, digest)
 	}
@@ -32,4 +34,18 @@ func (b *blobstoreDelegator) Write(signedURL, path string) (string, boshcrypto.M
 
 	digest, err := b.h.Upload(signedURL, path)
 	return "", digest, err
+}
+
+func (b *blobstoreDelegator) CleanUp(signedURL, fileName string) (err error) {
+	if signedURL != "" {
+		return fmt.Errorf("CleanUp is not supported for signed URLs")
+	}
+	return b.b.CleanUp(fileName)
+}
+
+func (b *blobstoreDelegator) Delete(signedURL, blobID string) (err error) {
+	if signedURL != "" {
+		return fmt.Errorf("Delete is not supported for signed URLs")
+	}
+	return b.b.Delete(blobID)
 }

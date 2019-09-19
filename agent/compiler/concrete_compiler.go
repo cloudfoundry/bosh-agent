@@ -9,7 +9,7 @@ import (
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshcmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	"github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -24,7 +24,7 @@ type CompileDirProvider interface {
 
 type concreteCompiler struct {
 	compressor         boshcmd.Compressor
-	blobstore          boshblob.DigestBlobstore
+	blobstore          blobstore_delegator.BlobstoreDelegator
 	fs                 boshsys.FileSystem
 	runner             boshcmdrunner.CmdRunner
 	compileDirProvider CompileDirProvider
@@ -34,7 +34,7 @@ type concreteCompiler struct {
 
 func NewConcreteCompiler(
 	compressor boshcmd.Compressor,
-	blobstore boshblob.DigestBlobstore,
+	blobstore blobstore_delegator.BlobstoreDelegator,
 	fs boshsys.FileSystem,
 	runner boshcmdrunner.CmdRunner,
 	compileDirProvider CompileDirProvider,
@@ -127,7 +127,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		return "", nil, bosherr.WrapError(err, "Calculating compiled package digest")
 	}
 
-	uploadedBlobID, _, err := c.blobstore.Create(tmpPackageTar)
+	uploadedBlobID, _, err := c.blobstore.Write("", tmpPackageTar)
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Uploading compiled package")
 	}
@@ -155,7 +155,7 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) erro
 		return bosherr.Error(fmt.Sprintf("Blobstore ID for package '%s' is empty", pkg.Name))
 	}
 
-	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, pkg.Sha1)
+	depFilePath, err := c.blobstore.Get(pkg.Sha1, "", pkg.BlobstoreID)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}

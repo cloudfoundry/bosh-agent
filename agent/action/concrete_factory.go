@@ -12,7 +12,6 @@ import (
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -26,7 +25,6 @@ func NewFactory(
 	platform boshplatform.Platform,
 	// TODO(ctz, ja): refactor the usage of blobstore as its a duplicate to the
 	// last argument.
-	blobstore boshblob.DigestBlobstore,
 	sensitiveBlobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
@@ -36,7 +34,7 @@ func NewFactory(
 	specService boshas.V1Service,
 	jobScriptProvider boshscript.JobScriptProvider,
 	logger boshlog.Logger,
-	bm blobdelegator.BlobstoreDelegator) (factory Factory) {
+	blobstoreDelegator blobdelegator.BlobstoreDelegator) (factory Factory) {
 	compressor := platform.GetCompressor()
 	copier := platform.GetCopier()
 	dirProvider := platform.GetDirProvider()
@@ -55,8 +53,8 @@ func NewFactory(
 
 			// VM admin
 			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
-			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstore, dirProvider),
-			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, bm),
+			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstoreDelegator, dirProvider),
+			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, blobstoreDelegator),
 			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger),
 			"shutdown":                   NewShutdown(platform),
 
@@ -88,8 +86,8 @@ func NewFactory(
 			"delete_arp_entries": NewDeleteARPEntries(platform),
 
 			// DNS
-			"sync_dns":                 NewSyncDNS(blobstore, settingsService, platform, logger),
-			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, bm),
+			"sync_dns":                 NewSyncDNS(blobstoreDelegator, settingsService, platform, logger),
+			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, blobstoreDelegator),
 		},
 	}
 	return

@@ -170,9 +170,14 @@ func (app *app) Setup(opts Options) error {
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
+	blobstoreDelegator := blobstore_delegator.NewBlobstoreDelegator(
+		httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs()).WithDefaultAlgorithms(),
+		blobstore,
+	)
+
 	applier, compiler := app.buildApplierAndCompiler(
 		app.dirProvider,
-		blobstore,
+		blobstoreDelegator,
 		jobSupervisor,
 		settingsService.GetSettings(),
 		timeService,
@@ -199,7 +204,6 @@ func (app *app) Setup(opts Options) error {
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		app.platform,
-		blobstore,
 		sensitiveBlobManager,
 		taskService,
 		notifier,
@@ -209,10 +213,7 @@ func (app *app) Setup(opts Options) error {
 		specService,
 		jobScriptProvider,
 		app.logger,
-		blobstore_delegator.NewBlobstoreDelegator(
-			httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs()).WithDefaultAlgorithms(),
-			blobstore,
-		),
+		blobstoreDelegator,
 	)
 
 	actionRunner := boshaction.NewRunner()
@@ -261,7 +262,7 @@ func (app *app) GetPlatform() boshplatform.Platform {
 
 func (app *app) buildApplierAndCompiler(
 	dirProvider boshdirs.Provider,
-	blobstore boshblob.DigestBlobstore,
+	blobstoreDelegator blobstore_delegator.BlobstoreDelegator,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	settings boshsettings.Settings,
 	timeService clock.Clock,
@@ -284,7 +285,7 @@ func (app *app) buildApplierAndCompiler(
 		dirProvider.BaseDir(),
 		dirProvider.JobsDir(),
 		"packages",
-		blobstore,
+		blobstoreDelegator,
 		app.platform.GetCompressor(),
 		fileSystem,
 		timeService,
@@ -292,11 +293,11 @@ func (app *app) buildApplierAndCompiler(
 	)
 
 	jobApplier := boshaj.NewRenderedJobApplier(
+		blobstoreDelegator,
 		dirProvider,
 		jobsBc,
 		jobSupervisor,
 		packageApplierProvider,
-		blobstore,
 		boshaj.FixPermissions,
 		fileSystem,
 		app.logger,
@@ -320,7 +321,7 @@ func (app *app) buildApplierAndCompiler(
 
 	compiler := boshcomp.NewConcreteCompiler(
 		app.platform.GetCompressor(),
-		blobstore,
+		blobstoreDelegator,
 		fileSystem,
 		cmdRunner,
 		dirProvider,
