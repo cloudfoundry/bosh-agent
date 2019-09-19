@@ -20,6 +20,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/bootonce"
 	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
+	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	"github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
@@ -207,6 +209,10 @@ func (app *app) Setup(opts Options) error {
 		specService,
 		jobScriptProvider,
 		app.logger,
+		blobstore_delegator.NewBlobstoreDelegator(
+			httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs()).WithDefaultAlgorithms(),
+			blobstore,
+		),
 	)
 
 	actionRunner := boshaction.NewRunner()

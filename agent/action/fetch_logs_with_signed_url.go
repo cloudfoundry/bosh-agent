@@ -3,7 +3,7 @@ package action
 import (
 	"errors"
 
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -21,22 +21,21 @@ type FetchLogsWithSignedURLResponse struct {
 }
 
 type FetchLogsWithSignedURLAction struct {
-	compressor       boshcmd.Compressor
-	copier           boshcmd.Copier
-	settingsDir      boshdirs.Provider
-	httpBlobProvider httpblobprovider.HTTPBlobProvider
+	compressor    boshcmd.Compressor
+	copier        boshcmd.Copier
+	settingsDir   boshdirs.Provider
+	blobDelegator blobdelegator.BlobstoreDelegator
 }
 
 func NewFetchLogsWithSignedURLAction(
 	compressor boshcmd.Compressor,
 	copier boshcmd.Copier,
 	settingsDir boshdirs.Provider,
-	httpBlobProvider httpblobprovider.HTTPBlobProvider,
-) (action FetchLogsWithSignedURLAction) {
+	blobDelegator blobdelegator.BlobstoreDelegator) (action FetchLogsWithSignedURLAction) {
 	action.compressor = compressor
 	action.copier = copier
 	action.settingsDir = settingsDir
-	action.httpBlobProvider = httpBlobProvider
+	action.blobDelegator = blobDelegator
 	return
 }
 
@@ -87,7 +86,7 @@ func (a FetchLogsWithSignedURLAction) Run(request FetchLogsWithSignedURLRequest)
 		_ = a.compressor.CleanUp(tarball)
 	}()
 
-	digest, err := a.httpBlobProvider.Upload(request.SignedURL, tarball)
+	_, digest, err := a.blobDelegator.Write(request.SignedURL, tarball)
 	if err != nil {
 		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Create file on blobstore")
 	}

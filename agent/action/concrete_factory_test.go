@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
@@ -17,6 +16,7 @@ import (
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakeagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator/blobstore_delegatorfakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
@@ -43,6 +43,7 @@ var _ = Describe("concreteFactory", func() {
 		factory           Factory
 		logger            boshlog.Logger
 		fileSystem        *fakesys.FakeFileSystem
+		blobDelegator       *fakeblobdelegator.FakeBlobstoreDelegator
 	)
 
 	BeforeEach(func() {
@@ -63,6 +64,7 @@ var _ = Describe("concreteFactory", func() {
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &scriptfakes.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
+		blobDelegator = &fakeblobdelegator.FakeBlobstoreDelegator{}
 
 		factory = NewFactory(
 			settingsService,
@@ -77,6 +79,7 @@ var _ = Describe("concreteFactory", func() {
 			specService,
 			jobScriptProvider,
 			logger,
+			blobDelegator,
 		)
 	})
 
@@ -115,8 +118,7 @@ var _ = Describe("concreteFactory", func() {
 		ac, err := factory.Create("fetch_logs_with_signed_url")
 		Expect(err).ToNot(HaveOccurred())
 
-		h := httpblobprovider.NewHTTPBlobImpl(platform.GetFs()).WithDefaultAlgorithms()
-		Expect(ac).To(Equal(NewFetchLogsWithSignedURLAction(platform.GetCompressor(), platform.GetCopier(), platform.GetDirProvider(), h)))
+		Expect(ac).To(Equal(NewFetchLogsWithSignedURLAction(platform.GetCompressor(), platform.GetCopier(), platform.GetDirProvider(), blobDelegator)))
 	})
 
 	It("get_task", func() {

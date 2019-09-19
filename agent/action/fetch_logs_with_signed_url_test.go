@@ -7,28 +7,31 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/http_blob_providerfakes"
+
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator/blobstore_delegatorfakes"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 )
 
 var _ = Describe("FetchLogsWithSignedURLAction", func() {
 	var (
-		compressor           *fakecmd.FakeCompressor
-		copier               *fakecmd.FakeCopier
-		dirProvider          boshdirs.Provider
-		fakeHTTPBlobProvider *fakeblobprovider.FakeHTTPBlobProvider
-		action               FetchLogsWithSignedURLAction
+		compressor    *fakecmd.FakeCompressor
+		copier        *fakecmd.FakeCopier
+		dirProvider   boshdirs.Provider
+		action        FetchLogsWithSignedURLAction
+		blobDelegator *fakeblobdelegator.FakeBlobstoreDelegator
 	)
 
 	BeforeEach(func() {
 		compressor = fakecmd.NewFakeCompressor()
 		dirProvider = boshdirs.NewProvider("/fake/dir")
 		copier = fakecmd.NewFakeCopier()
-		fakeHTTPBlobProvider = &fakeblobprovider.FakeHTTPBlobProvider{}
-		action = NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, fakeHTTPBlobProvider)
+		blobDelegator = &fakeblobdelegator.FakeBlobstoreDelegator{}
+
+		action = NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, blobDelegator)
 	})
 
 	AssertActionIsAsynchronous(action)
@@ -45,7 +48,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 
 			multidigestSha := boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"))
 			sha1 := multidigestSha.String()
-			fakeHTTPBlobProvider.UploadReturns(multidigestSha, nil)
+			blobDelegator.WriteReturns("", multidigestSha, nil)
 
 			logs, err := action.Run(FetchLogsWithSignedURLRequest{SignedURL: "foobar", LogType: logType, Filters: filters})
 			Expect(err).ToNot(HaveOccurred())
@@ -64,7 +67,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 			Expect(copier.FilteredCopyToTempTempDir).To(Equal(compressor.CompressFilesInDirDir))
 			Expect(copier.CleanUpTempDir).To(Equal(compressor.CompressFilesInDirDir))
 
-			actualSignedURL, actualTarballPath := fakeHTTPBlobProvider.UploadArgsForCall(0)
+			actualSignedURL, actualTarballPath := blobDelegator.WriteArgsForCall(0)
 			Expect(actualSignedURL).To(Equal("foobar"))
 			Expect(actualTarballPath).To(Equal(compressor.CompressFilesInDirTarballPath))
 

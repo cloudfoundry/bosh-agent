@@ -5,7 +5,7 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
@@ -24,6 +24,8 @@ type concreteFactory struct {
 func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
+	// TODO(ctz, ja): refactor the usage of blobstore as its a duplicate to the
+	// last argument.
 	blobstore boshblob.DigestBlobstore,
 	sensitiveBlobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
@@ -34,13 +36,12 @@ func NewFactory(
 	specService boshas.V1Service,
 	jobScriptProvider boshscript.JobScriptProvider,
 	logger boshlog.Logger,
-) (factory Factory) {
+	bm blobdelegator.BlobstoreDelegator) (factory Factory) {
 	compressor := platform.GetCompressor()
 	copier := platform.GetCopier()
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
-	hp := httpblobprovider.NewHTTPBlobImpl(platform.GetFs()).WithDefaultAlgorithms()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -55,7 +56,7 @@ func NewFactory(
 			// VM admin
 			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
 			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstore, dirProvider),
-			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, hp),
+			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, bm),
 			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger),
 			"shutdown":                   NewShutdown(platform),
 
@@ -88,7 +89,7 @@ func NewFactory(
 
 			// DNS
 			"sync_dns":                 NewSyncDNS(blobstore, settingsService, platform, logger),
-			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, hp),
+			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, bm),
 		},
 	}
 	return
