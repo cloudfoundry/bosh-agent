@@ -163,8 +163,8 @@ var _ = Describe("EphemeralDisk", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(partitionTable).To(ContainSubstring("/dev/sdz1 : start=           1, size=      262144, type=83"))
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz2 : start=      264192, size=     1122304, type=83"))
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz3 : start=     1386496, size=     1120256, type=83"))
+					Expect(partitionTable).To(ContainSubstring("/dev/sdz2 : start=      264192, size=      999704, type=83"))
+					Expect(partitionTable).To(ContainSubstring("/dev/sdz3 : start=     1265664, size=     1241088, type=83"))
 				})
 
 				Context("when swap size is set to 0", func() {
