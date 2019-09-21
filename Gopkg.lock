@@ -87,7 +87,7 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:14886e60aa6cfc4bb238f896eaa0bbef223c304a2c1bc014269d985a5014443a"
+  digest = "1:78761f70a382e6eb255fae4a3aa3cb34c122a130eca0c93002d42d95980b7787"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -131,8 +131,8 @@
     "service/sts/stsiface",
   ]
   pruneopts = "NUT"
-  revision = "e8395d83f2fef980d5c2beb88c596e382236e21e"
-  version = "v1.23.21"
+  revision = "e40a2293b9fb27bd93c2b10a9fe06bd1293691a0"
+  version = "v1.24.3"
 
 [[projects]]
   digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
@@ -194,7 +194,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "78dc2d34165ffdbdf220605533bc25dbd7282046"
+  revision = "10d8e780be86e61ae472e2940102aa5222a9155b"
 
 [[projects]]
   branch = "master"
@@ -532,11 +532,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "24e19bdeb0f2d062d8e2640d50a7aaf2a7f80e7a"
+  revision = "1a5e07d1ff72da30f660d3c95b312a20be31173c"
 
 [[projects]]
   branch = "master"
-  digest = "1:6b3b5893a2fd98b0376df575d26d9164069cf1f1a262c23f5372e176a59d1ced"
+  digest = "1:6fe326b9d7c5d835f553cabb3d685c50bb4cf7948e221e44cf07c17d56df0efe"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -547,7 +547,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "c3b328c6e5a763a2bfc82a48b4bd855037210934"
+  revision = "ef0ce1748380fdf001bd0ff86a45329a12945357"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -579,7 +579,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4d07cfa65b1661b24c43340cb1b8f5721caef6216917f0c59aff23e498c5d7b3"
+  digest = "1:629a44e89cce8a4849ea4dfee1ac9fe25e8a1b7d6c2f8a01ca83b38eadce0317"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -596,7 +596,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "0240832f5c3d9ddcdcd51c66edbf8cd889a54108"
+  revision = "5eefd052ad727afc5e2e7b034c752b9d3d902b3b"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
