@@ -19,6 +19,7 @@ func (s *PackageSpec) AsPackage() models.Package {
 		Version: s.Version,
 		Source: models.Source{
 			Sha1:        s.Sha1,
+			SignedURL:   s.SignedURL,
 			BlobstoreID: s.BlobstoreID,
 		},
 	}

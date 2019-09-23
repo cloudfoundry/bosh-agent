@@ -30,6 +30,7 @@ func (a CompilePackageAction) IsLoggable() bool {
 	return true
 }
 
+// TODO(ja, ctz, as): Add signedURL to package, since it is required to compile
 func (a CompilePackageAction) Run(blobID string, multiDigest boshcrypto.MultipleDigest, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
 	pkg := boshcomp.Package{
 		BlobstoreID: blobID,

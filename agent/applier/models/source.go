@@ -6,4 +6,5 @@ type Source struct {
 	Sha1          crypto.Digest
 	BlobstoreID   string
 	PathInArchive string
+	SignedURL     string
 }

@@ -47,11 +47,11 @@ var _ = Describe("renderedJobApplier", func() {
 		fixPermissions = &fakeFixer{}
 
 		applier = NewRenderedJobApplier(
+			blobstore,
 			dirProvider,
 			jobsBc,
 			jobSupervisor,
 			packageApplierProvider,
-			blobstore,
 			fixPermissions.Fix,
 			fs,
 			logger,
@@ -87,8 +87,9 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
+				Expect(signedURL).To(Equal("/fake/signed/url"))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
 
 				// downloaded file is cleaned up
@@ -110,8 +111,9 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
+				Expect(signedURL).To(Equal("/fake/signed/url"))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 			})
 
@@ -121,8 +123,9 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
+				Expect(signedURL).To(Equal("/fake/signed/url"))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(job.Source.Sha1)))
 			})
 
@@ -550,6 +553,7 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 		Source: models.Source{
 			Sha1:          boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"),
 			BlobstoreID:   "fake-blobstore-id",
+			SignedURL:     "/fake/signed/url",
 			PathInArchive: "fake-path-in-archive",
 		},
 		Packages: []models.Package{
