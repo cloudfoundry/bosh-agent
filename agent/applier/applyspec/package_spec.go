@@ -10,6 +10,7 @@ type PackageSpec struct {
 	Version     string                `json:"version"`
 	Sha1        crypto.MultipleDigest `json:"sha1"`
 	BlobstoreID string                `json:"blobstore_id"`
+	SignedURL   string                `json:"signed_url"`
 }
 
 func (s *PackageSpec) AsPackage() models.Package {

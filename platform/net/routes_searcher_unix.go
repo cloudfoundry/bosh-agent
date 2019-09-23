@@ -3,6 +3,7 @@
 package net
 
 import (
+	"regexp"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -19,30 +20,44 @@ func NewRoutesSearcher(runner boshsys.CmdRunner, _ InterfaceManager) RoutesSearc
 	return cmdRoutesSearcher{runner}
 }
 
+func parseRoute(ipString string) Route {
+	var r = regexp.MustCompile(`(?P<destination>[a-z0-9.]+)(/[0-9]+)?( via (?P<gateway>[0-9.]+))? dev (?P<interfaceName>[a-z0-9]+)`)
+
+	match := r.FindStringSubmatch(ipString)
+	matches := make(map[string]string)
+	for i, name := range r.SubexpNames() {
+		matches[name] = match[i]
+	}
+	gateway := DefaultAddress
+	if len(matches["gateway"]) > 0 {
+		gateway = matches["gateway"]
+	}
+
+	destination := matches["destination"]
+	if destination == "default" {
+		destination = DefaultAddress
+	}
+
+	return Route{
+		Destination:   destination,
+		Gateway:       gateway,
+		InterfaceName: matches["interfaceName"],
+	}
+}
+
 func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
 	var routes []Route
 
-	stdout, _, _, err := s.runner.RunCommandQuietly("route", "-n")
+	stdout, _, _, err := s.runner.RunCommandQuietly("ip", "r")
 	if err != nil {
 		return routes, bosherr.WrapError(err, "Running route")
 	}
 
-	for i, routeEntry := range strings.Split(stdout, "\n") {
-		if i < 2 { // first two lines are informational
+	for _, routeEntry := range strings.Split(stdout, "\n") {
+		if len(routeEntry) == 0 {
 			continue
 		}
-
-		if routeEntry == "" {
-			continue
-		}
-
-		routeFields := strings.Fields(routeEntry)
-
-		routes = append(routes, Route{
-			Destination:   routeFields[0],
-			Gateway:       routeFields[1],
-			InterfaceName: routeFields[7],
-		})
+		routes = append(routes, parseRoute(routeEntry))
 	}
 
 	return routes, nil

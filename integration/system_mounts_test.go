@@ -81,7 +81,7 @@ var _ = Describe("SystemMounts", func() {
 			Context("when agent is first started", func() {
 				It("binds /var/vcap/data/root_tmp on /tmp", func() {
 					Eventually(func() string {
-						result, _ := testEnvironment.RunCommand("sudo mount | grep -c '/var/vcap/data/root_tmp on /tmp'")
+						result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'")
 						return strings.TrimSpace(result)
 					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 
@@ -92,7 +92,7 @@ var _ = Describe("SystemMounts", func() {
 
 				It("binds /var/vcap/data/root_tmp on /var/tmp", func() {
 					Eventually(func() string {
-						result, _ := testEnvironment.RunCommand("sudo mount | grep -c '/var/vcap/data/root_tmp on /var/tmp'")
+						result, _ := testEnvironment.RunCommand("sudo findmnt -D /var/tmp | grep -c '[/root_tmp]'")
 						return strings.TrimSpace(result)
 					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 
@@ -109,10 +109,10 @@ var _ = Describe("SystemMounts", func() {
 							return testEnvironment.LogFileContains("sv start monit")
 						}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 
-						result, _ := testEnvironment.RunCommand("sudo mount | grep -c '/var/vcap/data/root_tmp on /tmp'")
+						result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'")
 						Expect(strings.TrimSpace(result)).To(Equal("1"))
 
-						result, _ = testEnvironment.RunCommand("sudo mount | grep -c '/var/vcap/data/root_tmp on /var/tmp'")
+						result, _ = testEnvironment.RunCommand("sudo findmnt -D /var/tmp | grep -c '[/root_tmp]'")
 						Expect(strings.TrimSpace(result)).To(Equal("1"))
 
 						result, err := testEnvironment.RunCommand("stat -c %a /tmp")
@@ -139,7 +139,7 @@ var _ = Describe("SystemMounts", func() {
 			Context("when the bind-mounts are removed", func() {
 				It("has permission 777 on /tmp", func() {
 					Eventually(func() string {
-						result, _ := testEnvironment.RunCommand("sudo mount | grep -c '/var/vcap/data/root_tmp on /tmp'")
+						result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'")
 						return strings.TrimSpace(result)
 					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 
@@ -153,7 +153,7 @@ var _ = Describe("SystemMounts", func() {
 
 				It("has permission 770 on /var/tmp", func() {
 					Eventually(func() string {
-						result, _ := testEnvironment.RunCommand("sudo mount | grep -c '/var/vcap/data/root_tmp on /var/tmp'")
+						result, _ := testEnvironment.RunCommand("sudo findmnt -D /var/tmp | grep -c '[/root_tmp]'")
 						return strings.TrimSpace(result)
 					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 

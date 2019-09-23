@@ -48,6 +48,12 @@ func init() {
 			settingsJSON := `{
 				"agent_id": "my-agent-id",
 				"blobstore": {
+					"options": {
+						"bucket_name": "george",
+						"encryption_key": "optional encryption key",
+						"access_key_id": "optional access key id",
+						"secret_access_key": "optional secret access key"
+					},
 					"provider": "dummy"
 				},
 				"disks": {
@@ -60,7 +66,24 @@ func init() {
 				"env": {
 					"bosh": {
 						"password": "some encrypted password",
-						"blobstores": []
+						"blobstores": [
+							{
+								"options": {
+									"bucket_name": "2george",
+									"encryption_key": "2optional encryption key",
+									"access_key_id": "2optional access key id",
+									"secret_access_key": "2optional secret access key",
+									"port": 444
+								},
+								"provider": "dummy"
+							},
+							{
+								"options": {
+									"blobstore_path": "/var/vcap/micro_bosh/data/cache"
+								},
+								"provider": "local"
+							}
+						]
 					}
 				},
 				"networks": {

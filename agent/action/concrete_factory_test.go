@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
@@ -67,7 +68,6 @@ var _ = Describe("concreteFactory", func() {
 			settingsService,
 			platform,
 			blobstore,
-			blobstore,
 			blobManager,
 			taskService,
 			notifier,
@@ -109,6 +109,14 @@ var _ = Describe("concreteFactory", func() {
 		action, err := factory.Create("fetch_logs")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(action).To(Equal(NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())))
+	})
+
+	It("fetch_logs_with_signed_url", func() {
+		ac, err := factory.Create("fetch_logs_with_signed_url")
+		Expect(err).ToNot(HaveOccurred())
+
+		h := httpblobprovider.NewHTTPBlobImpl(platform.GetFs()).WithDefaultAlgorithms()
+		Expect(ac).To(Equal(NewFetchLogsWithSignedURLAction(platform.GetCompressor(), platform.GetCopier(), platform.GetDirProvider(), h)))
 	})
 
 	It("get_task", func() {

@@ -14,6 +14,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -104,6 +105,7 @@ func (t *TestEnvironment) SetupConfigDrive() error {
 	setupConfigDriveTemplate := `
 sudo mkfs -t ext3 -m 1 -v %s
 sudo e2label %s config-2
+sudo udevadm settle
 sudo rm -rf /tmp/config-drive
 sudo mkdir /tmp/config-drive
 sudo mount /dev/disk/by-label/config-2 /tmp/config-drive
@@ -115,8 +117,7 @@ sudo umount /tmp/config-drive
 `
 	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, t.deviceMap[deviceNum], t.deviceMap[deviceNum], t.assetsDir(), t.assetsDir())
 
-	rs, err := t.RunCommand(setupConfigDriveScript)
-	fmt.Printf("This happened: %s\n", rs)
+	_, err = t.RunCommand(setupConfigDriveScript)
 	return err
 }
 
@@ -201,6 +202,18 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	return nil
 }
 
+func (t *TestEnvironment) ResetDeviceMap() error {
+	for n, loopDevice := range t.deviceMap {
+		t.DetachLoopDevice(loopDevice)
+		_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
+		if err != nil {
+			return err
+		}
+		t.deviceMap = make(map[int]string)
+	}
+	return nil
+}
+
 // ConfigureAgentForGenericInfrastructure executes the agent_runit.sh asset.
 // Required for reverse-compatibility with older bosh-lite
 // (remove once a new warden stemcell is built).
@@ -241,7 +254,8 @@ func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPart
 			return err
 		}
 
-		output, err := t.RunCommand(fmt.Sprintf("ls -al %s | cut -d' ' -f 6", t.deviceMap[deviceNum]))
+		c := fmt.Sprintf("ls -al %s | cut -d' ' -f 6", t.deviceMap[deviceNum])
+		output, err := t.RunCommand(c)
 		minorNum := strings.TrimSpace(output)
 		if err != nil {
 			return err
@@ -252,7 +266,8 @@ func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPart
 			return err
 		}
 
-		_, err = t.RunCommand(fmt.Sprintf("sudo mknod %s b 7 %s", partitionPath, minorNum))
+		c = fmt.Sprintf("sudo mknod %s b 7 %s", partitionPath, minorNum)
+		_, err = t.RunCommand(c)
 		if err != nil {
 			return err
 		}
@@ -268,9 +283,10 @@ func (t *TestEnvironment) AttachPartitionedRootDevice(devicePath string, sizeInM
 
 	// Create only first partition, agent will partition the rest for ephemeral disk
 	partitionTemplate := `
-echo ',%d,L,' | sudo sfdisk -uM %s
+echo '1,%d,L,' | sudo sfdisk -uS %s
 `
-	partitionScript := fmt.Sprintf(partitionTemplate, rootPartitionSizeInMB, devicePath)
+
+	partitionScript := fmt.Sprintf(partitionTemplate, rootPartitionSizeInMB*2048, devicePath)
 	_, err = t.RunCommand(partitionScript)
 	if err != nil {
 		return "", err
@@ -359,7 +375,10 @@ func (t *TestEnvironment) AttachLoopDevice(size int) (int, error) {
 	}
 
 	if oldDevicePath, ok := t.deviceMap[deviceNum]; ok {
-		t.DetachLoopDevice(oldDevicePath)
+		err := t.DetachLoopDevice(oldDevicePath)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	attachDeviceTemplate := `
@@ -381,6 +400,37 @@ sudo losetup %s /virtualfs-%d
 
 func (t *TestEnvironment) DetachLoopDevice(devicePath string) error {
 	_, err := t.RunCommand(fmt.Sprintf("sudo losetup -d %s", devicePath))
+	return err
+}
+
+func (t *TestEnvironment) DetachLoopDevices() error {
+	_, err := t.RunCommand(fmt.Sprintf("sudo losetup -D"))
+	return err
+}
+
+func (t *TestEnvironment) SetUpDummyNetworkInterface(ip, mac string) error {
+	return t.RunCommandChain(
+		"sudo modprobe dummy",
+		"sudo ip link set name dummy0 dev dummy0",
+		fmt.Sprintf("sudo ip link set dev dummy0 address %s", mac),
+		"sudo ip link set dev dummy0 arp on",
+		fmt.Sprintf("sudo ip addr add %s dev dummy0", ip),
+		fmt.Sprintf("sudo ip neigh add to %s lladdr %s dev dummy0 nud reachable", ip, mac),
+	)
+}
+
+func (t *TestEnvironment) RunCommandChain(commands ...string) error {
+	for _, command := range commands {
+		_, err := t.RunCommand(command)
+		if err != nil {
+			return errors.WrapErrorf(err, "Error running %s", command)
+		}
+	}
+	return nil
+}
+
+func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
+	_, err := t.RunCommand("sudo rmmod dummy")
 	return err
 }
 

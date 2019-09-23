@@ -24,7 +24,7 @@ func NewKernelIPv6Impl(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, logge
 
 func (net KernelIPv6Impl) Enable(stopCh <-chan struct{}) error {
 	const (
-		grubConfPath       = "/boot/grub/grub.conf"
+		grubConfPath       = "/boot/grub/grub.cfg"
 		grubIPv6DisableOpt = "ipv6.disable=1"
 	)
 
@@ -38,7 +38,7 @@ func (net KernelIPv6Impl) Enable(stopCh <-chan struct{}) error {
 
 		err = net.fs.WriteFileString(grubConfPath, grubConf)
 		if err != nil {
-			return bosherr.WrapError(err, "Writing grub.conf")
+			return bosherr.WrapError(err, "Writing grub.cnf")
 		}
 
 		net.logger.Info("net.KernelIPv6", "Rebooting to enable IPv6 in kernel")

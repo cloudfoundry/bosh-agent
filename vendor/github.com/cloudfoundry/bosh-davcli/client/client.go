@@ -3,6 +3,7 @@ package client
 import (
 	"crypto/sha1"
 	"fmt"
+	URLsigner "github.com/cloudfoundry/bosh-davcli/signer"
 	"io"
 	"net/http"
 	"net/url"
@@ -21,6 +22,7 @@ type Client interface {
 	Put(path string, content io.ReadCloser, contentLength int64) (err error)
 	Exists(path string) (err error)
 	Delete(path string) (err error)
+	Sign(objectID, action string, duration time.Duration) (string, error)
 }
 
 func NewClient(config davconf.Config, httpClient httpclient.Client, logger boshlog.Logger) (c Client) {
@@ -133,15 +135,28 @@ func (c client) Delete(path string) error {
 	return nil
 }
 
+func (c client) Sign(blobID, action string, duration time.Duration) (string, error) {
+	signer := URLsigner.NewSigner(c.config.Secret)
+	signTime := time.Now()
+
+	prefixedBlob := fmt.Sprintf("%s/%s", getBlobPrefix(blobID), blobID)
+
+	signedURL, err := signer.GenerateSignedURL(c.config.Endpoint, prefixedBlob, action, signTime, duration)
+
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "pre-signing the url")
+	}
+
+	return signedURL, err
+}
+
 func (c client) createReq(method, blobID string, body io.Reader) (*http.Request, error) {
 	blobURL, err := url.Parse(c.config.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	digester := sha1.New()
-	digester.Write([]byte(blobID))
-	blobPrefix := fmt.Sprintf("%02x", digester.Sum(nil)[0])
+	blobPrefix := getBlobPrefix(blobID)
 
 	newPath := path.Join(blobURL.Path, blobPrefix, blobID)
 	if !strings.HasPrefix(newPath, "/") {
@@ -169,4 +184,10 @@ func (c client) readAndTruncateBody(resp *http.Response) string {
 		}
 	}
 	return body
+}
+
+func getBlobPrefix(blobID string) string {
+	digester := sha1.New()
+	digester.Write([]byte(blobID))
+	return fmt.Sprintf("%02x", digester.Sum(nil)[0])
 }

@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"golang.org/x/crypto/ssh"
+
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/integration/utils"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -25,6 +27,7 @@ const (
 	senderID        = "director.987-654-321"
 	DefaultTimeout  = time.Minute
 	DefaultInterval = time.Second
+	sshTestUser     = "bosh_testuser"
 )
 
 func getNatsIP() string {
@@ -99,22 +102,63 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	AfterEach(func() {
+		message := fmt.Sprintf(`{"method":"ssh","arguments":["cleanup", {"user_regex":"^%s"}],"reply_to":"%s"}`, sshTestUser, senderID)
+		rawResponse, err := natsClient.SendRawMessage(message)
+		Expect(err).NotTo(HaveOccurred())
+
+		response := map[string]action.SSHResult{}
+		err = json.Unmarshal(rawResponse, &response)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(response["value"].Status).To(Equal("success"))
+
 		natsClient.Cleanup()
 	})
 
 	It("responds to 'get_state' message over NATS", func() {
 		getStateSpecAgentID := func() string {
 			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
-			rawResponse, _ := natsClient.SendRawMessage(message)
+			rawResponse, err := natsClient.SendRawMessage(message)
+			Expect(err).NotTo(HaveOccurred())
 
 			response := map[string]action.GetStateV1ApplySpec{}
-			err := json.Unmarshal(rawResponse, &response)
+			err = json.Unmarshal(rawResponse, &response)
 			Expect(err).NotTo(HaveOccurred())
 
 			return response["value"].AgentID
 		}
 
 		Eventually(getStateSpecAgentID, DefaultTimeout, DefaultInterval).Should(Equal(agentGUID))
+	})
+
+	It("cleans up SSH users after session exits", func() {
+		setupResult, sshClientConfig, err := natsClient.SetupSSH(sshTestUser, senderID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(setupResult.Status).To(Equal("success"))
+
+		output := agent.RunPowershellCommand(`get-wmiobject -class win32_userprofile | Where { $_.LocalPath -eq 'C:\Users\%s'}`, sshTestUser)
+		Expect(output).To(MatchRegexp(sshTestUser))
+
+		client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", AgentPublicIP), sshClientConfig)
+		Expect(err).NotTo(HaveOccurred())
+
+		session, err := client.NewSession()
+		Expect(err).NotTo(HaveOccurred())
+
+		err = session.Close()
+		Expect(err).NotTo(HaveOccurred())
+
+		cleanupResult, err := natsClient.CleanupSSH(sshTestUser, senderID)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(cleanupResult.Status).To(Equal("success"))
+
+		_, _, exitCode, _ := agent.RunPowershellCommandWithResponses(`NET.exe USER %s`, sshTestUser)
+		Expect(exitCode).To(Equal(1))
+
+		deletableUserProfileContent := agent.RunPowershellCommand(`Get-ChildItem -force -recurse -attributes !Directory -Exclude 'ntuser.dat*' , 'usrclass.dat*' /users/%s`, sshTestUser)
+		Expect(deletableUserProfileContent).To(BeEmpty())
 	})
 
 	It("includes memory vitals in the 'get_state' response", func() {

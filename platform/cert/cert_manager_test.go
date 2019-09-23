@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -518,6 +519,9 @@ if (Test-Path %[1]s) {
 
 func countFiles(fs system.FileSystem, dir string) (count int) {
 	fs.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if filepath.Join(path) == filepath.Join(dir) {
+			return nil
+		}
 		count++
 		return nil
 	})

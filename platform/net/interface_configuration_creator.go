@@ -2,7 +2,6 @@ package net
 
 import (
 	"net"
-	"strconv"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -33,12 +32,8 @@ func (c StaticInterfaceConfiguration) IsVersion6() bool {
 	return len(c.Network) == 0 && len(c.Broadcast) == 0
 }
 
-func (c StaticInterfaceConfiguration) NetmaskOrLen() string {
-	if c.IsVersion6() {
-		ones, _ := net.IPMask(net.ParseIP(c.Netmask)).Size()
-		return strconv.Itoa(ones)
-	}
-	return c.Netmask
+func (c StaticInterfaceConfiguration) CIDR() (string, error) {
+	return boshsettings.NetmaskToCIDR(c.Netmask, c.IsVersion6())
 }
 
 type StaticInterfaceConfigurations []StaticInterfaceConfiguration
@@ -136,7 +131,7 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 		})
 	} else {
 		creator.logger.Debug(creator.logTag, "Using static networking")
-		networkAddress, broadcastAddress, err := boshsys.CalculateNetworkAndBroadcast(networkSettings.IP, networkSettings.Netmask)
+		networkAddress, broadcastAddress, _, err := boshsys.CalculateNetworkAndBroadcast(networkSettings.IP, networkSettings.Netmask)
 		if err != nil {
 			return nil, nil, bosherr.WrapError(err, "Calculating Network and Broadcast")
 		}

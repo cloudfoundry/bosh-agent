@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+if [ -e /dev/sr0 ]; then
+  chmod 0660 /dev/sr0
+  chown root:root /dev/sr0
+fi
+
+if [ -e /dev/shm ]; then
+  chmod 0770 /dev/shm
+  chown root:vcap /dev/shm
+fi

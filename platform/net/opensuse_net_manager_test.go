@@ -1,3 +1,5 @@
+// +build !windows
+
 package net_test
 
 import (
@@ -548,7 +550,7 @@ WIRELESS_REGULATORY_DOMAIN=''
 			broadcastErr := <-errCh // wait for all arpings
 			Expect(broadcastErr).ToNot(HaveOccurred())
 
-			Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
+			Expect(addressBroadcaster.Value()).To(Equal([]boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
 				boship.NewResolvingInterfaceAddress("ethdhcp", ipResolver),
 			}))

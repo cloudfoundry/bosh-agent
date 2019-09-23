@@ -36,25 +36,25 @@ var _ = Describe("KernelIPv6", func() {
 
 		act := func() error { return kernelIPv6.Enable(stopCh) }
 
-		Context("when grub.conf disables IPv6", func() {
+		Context("when grub.cfg disables IPv6", func() {
 			BeforeEach(func() {
-				err := fs.WriteFileString("/boot/grub/grub.conf", "before ipv6.disable=1 after")
+				err := fs.WriteFileString("/boot/grub/grub.cfg", "before ipv6.disable=1 after")
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("removes ipv6.disable=1 from grub.conf", func() {
+			It("removes ipv6.disable=1 from grub.cfg", func() {
 				stopCh <- struct{}{}
 				Expect(act()).ToNot(HaveOccurred())
-				Expect(fs.ReadFileString("/boot/grub/grub.conf")).To(Equal("before  after"))
+				Expect(fs.ReadFileString("/boot/grub/grub.cfg")).To(Equal("before  after"))
 			})
 
-			It("reboots after changing grub.conf and continue waiting until reboot event succeeds", func() {
+			It("reboots after changing grub.cfg and continue waiting until reboot event succeeds", func() {
 				stopCh <- struct{}{}
 				Expect(act()).ToNot(HaveOccurred())
 				Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
 			})
 
-			It("returns an error if it fails to read grub.conf", func() {
+			It("returns an error if it fails to read grub.cfg", func() {
 				fs.ReadFileError = errors.New("fake-err")
 
 				err := act()
@@ -62,7 +62,7 @@ var _ = Describe("KernelIPv6", func() {
 				Expect(err.Error()).To(ContainSubstring("fake-err"))
 			})
 
-			It("returns an error if update to grub.conf fails", func() {
+			It("returns an error if update to grub.cfg fails", func() {
 				fs.WriteFileError = errors.New("fake-err")
 
 				err := act()
@@ -81,15 +81,15 @@ var _ = Describe("KernelIPv6", func() {
 			})
 		})
 
-		Context("when grub.conf allows IPv6", func() {
+		Context("when grub.cfg allows IPv6", func() {
 			BeforeEach(func() {
-				err := fs.WriteFileString("/boot/grub/grub.conf", "before after")
+				err := fs.WriteFileString("/boot/grub/grub.cfg", "before after")
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("does not change grub.conf", func() {
+			It("does not change grub.cfg", func() {
 				Expect(act()).ToNot(HaveOccurred())
-				Expect(fs.ReadFileString("/boot/grub/grub.conf")).To(Equal("before after"))
+				Expect(fs.ReadFileString("/boot/grub/grub.cfg")).To(Equal("before after"))
 			})
 
 			It("does not reboot but sets IPv6 sysctl", func() {

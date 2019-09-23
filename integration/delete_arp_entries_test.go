@@ -1,9 +1,8 @@
 package integration_test
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
@@ -12,52 +11,51 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type ARPCache struct {
+	MACAddr string
+	State   string
+}
+
 var _ = Describe("DeleteARPEntries", func() {
 	const (
-		emptyMacAddress string = "<incomplete>"
-		testMacAddress  string = "52:54:00:12:35:aa"
+		clearedARPCacheState string = "FAILED"
+		testMacAddress       string = "12:34:56:78:9a:cd"
+		testIP               string = "192.168.100.199"
 	)
 
 	var (
 		agentClient      agentclient.AgentClient
 		registrySettings settings.Settings
-		testIP           string
 	)
 
-	var getValidIP = func(gatewayIP string) string {
-		ipParts := strings.Split(gatewayIP, ".")
-		ipParts[3] = "100"
-		return strings.Join(ipParts, ".")
-	}
-
-	var parseARPCacheIntoMap = func() (map[string]string, error) {
-		ARPCache := map[string]string{}
-		ARPResultsRegex := regexp.MustCompile(`.*\((.*)\)\ at\ (\S+).*`)
-		lines, err := testEnvironment.RunCommand("arp -a")
+	var parseARPCacheIntoMap = func() (map[string]ARPCache, error) {
+		cache := make(map[string]ARPCache)
+		ARPResultsRegex := regexp.MustCompile(`([0-9.]+) dev [0-9a-z]+ (?:lladdr)? ([0-9:a-z]+)? ?([A-Z]+)`)
+		lines, err := testEnvironment.RunCommand("ip neigh")
 		if err != nil {
-			return ARPCache, err
+			return nil, err
 		}
 
 		for _, item := range ARPResultsRegex.FindAllStringSubmatch(lines, -1) {
-			ip := item[1]
-			mac := item[2]
-			ARPCache[ip] = mac
+			var ip, mac, state string
+
+			ip = item[1]
+
+			// When length is 3, then this IP address does not have an ARP entry.
+			if len(item) == 3 {
+				mac = ""
+				state = item[2]
+			} else {
+				mac = item[2]
+				state = item[3]
+			}
+
+			cache[ip] = ARPCache{MACAddr: mac, State: state}
 		}
 
-		return ARPCache, nil
-	}
+		fmt.Printf("%+v\n", cache)
 
-	var getGatewayIP = func() (string, error) {
-		ARPCache, err := parseARPCacheIntoMap()
-		if err != nil {
-			return "", err
-		}
-
-		for key := range ARPCache {
-			return key, nil
-		}
-
-		return "", errors.New("Unable to find gateway ip")
+		return cache, nil
 	}
 
 	BeforeEach(func() {
@@ -65,9 +63,6 @@ var _ = Describe("DeleteARPEntries", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.SetupConfigDrive()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
@@ -100,14 +95,11 @@ var _ = Describe("DeleteARPEntries", func() {
 		err = testEnvironment.StartRegistry(registrySettings)
 		Expect(err).ToNot(HaveOccurred())
 
-		gatewayIP, err := getGatewayIP()
+		err = testEnvironment.SetUpDummyNetworkInterface(testIP, testMacAddress)
 		Expect(err).ToNot(HaveOccurred())
 
-		testIP = getValidIP(gatewayIP)
-		testEnvironment.RunCommand("sudo arp -s " + testIP + " " + testMacAddress)
-
-		ARPCache, _ := parseARPCacheIntoMap()
-		macOfTestIP := ARPCache[testIP]
+		cache, _ := parseARPCacheIntoMap()
+		macOfTestIP := cache[testIP].MACAddr
 		Expect(macOfTestIP).To(Equal(testMacAddress))
 	})
 
@@ -120,7 +112,10 @@ var _ = Describe("DeleteARPEntries", func() {
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
+		err := testEnvironment.TearDownDummyNetworkInterface()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.StopAgentTunnel()
 		Expect(err).NotTo(HaveOccurred())
 
 		err = testEnvironment.StopAgent()
@@ -137,8 +132,8 @@ var _ = Describe("DeleteARPEntries", func() {
 
 			Eventually(func() string {
 				ARPCache, _ := parseARPCacheIntoMap()
-				return ARPCache[testIP]
-			}, 10, 1).Should(Equal(emptyMacAddress))
+				return ARPCache[testIP].State
+			}, 10, 1).Should(Equal(clearedARPCacheState))
 		})
 	})
 })

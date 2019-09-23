@@ -21,18 +21,18 @@ type NATSClient interface {
 type Callback func(*Message)
 
 type Client struct {
-	connection              chan *Connection
-	subscriptions           map[int64]*Subscription
-	subscriptionCounter     int64
-	connected               bool
-	disconnecting           bool
-	lock                    *sync.Mutex
+	connection          chan *Connection
+	subscriptions       map[int64]*Subscription
+	subscriptionCounter int64
+	connected           bool
+	disconnecting       bool
+	lock                *sync.Mutex
 
-	beforeConnectCallback   func()
-	ConnectedCallback       func()
+	beforeConnectCallback func()
+	ConnectedCallback     func()
 
-	logger                  Logger
-	loggerMutex             *sync.RWMutex
+	logger      Logger
+	loggerMutex *sync.RWMutex
 }
 
 type Message struct {

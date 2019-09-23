@@ -1,26 +1,68 @@
 package integration_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient"
+	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
+
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
+
+func generateSignedURLForSyncDNS(bucket, key string) string {
+	sess, err := session.NewSession(&aws.Config{})
+	Expect(err).NotTo(HaveOccurred())
+
+	svc := s3.New(sess)
+
+	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+
+	urlStr, err := req.Presign(15 * time.Minute)
+	Expect(err).NotTo(HaveOccurred())
+
+	return urlStr
+}
+
+func uploadS3Object(bucket, key string, data []byte) {
+	sess, err := session.NewSession(&aws.Config{})
+	Expect(err).NotTo(HaveOccurred())
+
+	uploader := s3manager.NewUploader(sess)
+
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+		Body:   bytes.NewReader(data),
+	})
+	Expect(err).NotTo(HaveOccurred())
+}
 
 var _ = Describe("sync_dns", func() {
 	var (
-		agentClient      agentclient.AgentClient
+		agentClient      *integrationagentclient.IntegrationAgentClient
 		registrySettings settings.Settings
+
+		newRecordsVersion uint64
 	)
 
 	BeforeEach(func() {
+		newRecordsVersion = uint64(time.Now().Unix())
+
 		err := testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
 
@@ -42,45 +84,34 @@ var _ = Describe("sync_dns", func() {
 			// note that this SETS the username and password for HTTP message bus access
 			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
 
-			Env: settings.Env{
-				Bosh: settings.BoshEnv{
-					TargetedBlobstores: settings.TargetedBlobstores{
-						Packages: "custom-blobstore",
-						Logs:     "custom-blobstore",
-					},
-					Blobstores: []settings.Blobstore{
-						settings.Blobstore{
-							Type: "local",
-							Name: "ignored-blobstore",
-							Options: map[string]interface{}{
-								"blobstore_path": "/ignored/blobstore",
-							},
-						},
-						settings.Blobstore{
-							Type: "local",
-							Name: "custom-blobstore",
-							Options: map[string]interface{}{
-								"blobstore_path": "/tmp/my-blobs",
-							},
-						},
-					},
+			Blobstore: settings.Blobstore{
+				Type: "local",
+				Options: map[string]interface{}{
+					"blobstore_path": "/var/vcap/data/blobs",
 				},
 			},
 
 			Disks: settings.Disks{
 				Ephemeral: "/dev/sdh",
 			},
+
+			Networks: map[string]settings.Network{
+				"default": settings.Network{
+					UseDHCP: true,
+					DNS:     []string{"8.8.8.8"},
+				},
+			},
 		}
 
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.StartRegistry(registrySettings)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartRegistry(registrySettings)
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.StartAgent()
+		err := testEnvironment.StartAgent()
 		Expect(err).ToNot(HaveOccurred())
 
 		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
@@ -96,87 +127,169 @@ var _ = Describe("sync_dns", func() {
 
 		err = testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
-
-		output, err := testEnvironment.RunCommand("sudo rm -rf /tmp/my-blobs")
-		Expect(err).NotTo(HaveOccurred(), output)
 	})
 
-	It("sends a sync_dns message to agent", func() {
-		blobID, err := uuid.NewV4()
-		Expect(err).NotTo(HaveOccurred())
+	Context("sync_dns_with_signed_url action", func() {
+		var (
+			bucket string
+			key    string
 
-		instanceUUID, err := uuid.NewV4()
-		Expect(err).NotTo(HaveOccurred())
+			newRecordsJSONContent string
+			blobDigest            boshcrypto.MultipleDigest
+		)
 
-		oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
-		Expect(err).NotTo(HaveOccurred())
+		BeforeEach(func() {
+			Expect(os.Getenv("AWS_ACCESS_KEY")).NotTo(BeEmpty())
+			Expect(os.Getenv("AWS_SECRET_ACCESS_KEY")).NotTo(BeEmpty())
+			Expect(os.Getenv("AWS_REGION")).NotTo(BeEmpty())
+			Expect(os.Getenv("AWS_BUCKET")).NotTo(BeEmpty())
 
-		newDNSRecords := settings.DNSRecords{
-			Records: [][2]string{
-				{"216.58.194.206", "google.com"},
-				{"54.164.223.71", "pivotal.io"},
-			},
-		}
-		contents, err := json.Marshal(newDNSRecords)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(contents).NotTo(BeNil())
+			var err error
+			bucket = os.Getenv("AWS_BUCKET")
+			key = "sync-dns-records.txt"
 
-		version := uint64(time.Now().Unix())
-		recordsJSON := fmt.Sprintf(`{
+			newRecordsJSONContent = fmt.Sprintf(`{
+				"version": %d,
+				"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
+				"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
+				"record_infos": [
+					["%d", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
+				]
+			}`, newRecordsVersion, newRecordsVersion)
+
+			blobDigest, err = boshcrypto.NewMultipleDigest(strings.NewReader(newRecordsJSONContent), []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA1})
+			Expect(err).NotTo(HaveOccurred())
+
+			uploadS3Object(bucket, key, []byte(newRecordsJSONContent))
+		})
+
+		AfterEach(func() {
+			removeS3Object(bucket, key)
+		})
+
+		It("sends a sync_dns_with_signed_url message to the agent", func() {
+			oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
+			Expect(err).NotTo(HaveOccurred())
+
+			signedURL := generateSignedURLForSyncDNS(bucket, key)
+
+			response, err := agentClient.SyncDNSWithSignedURL(signedURL, blobDigest, newRecordsVersion)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(response).To(Equal("synced"))
+
+			newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(newEtcHosts).To(MatchRegexp("216.58.194.206\\s+google.com"))
+			Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
+			Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
+
+			instanceDNSRecords, err := testEnvironment.RunCommand("sudo cat /var/vcap/instance/dns/records.json")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(instanceDNSRecords).To(MatchJSON(newRecordsJSONContent))
+
+			filePerms, err := testEnvironment.RunCommand("ls -l /var/vcap/instance/dns/records.json | cut -d ' ' -f 1,3,4")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.TrimSpace(filePerms)).To(Equal("-rw-r----- root vcap"))
+		})
+	})
+
+	Context("sync_dns action", func() {
+		It("sends a sync_dns message to agent", func() {
+			oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
+			Expect(err).NotTo(HaveOccurred())
+
+			newDNSRecords := settings.DNSRecords{
+				Records: [][2]string{
+					{"216.58.194.206", "google.com"},
+					{"54.164.223.71", "pivotal.io"},
+				},
+			}
+			contents, err := json.Marshal(newDNSRecords)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).NotTo(BeNil())
+
+			_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = testEnvironment.RunCommand("sudo touch /var/vcap/data/new-dns-records")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = testEnvironment.RunCommand("sudo ls -la /var/vcap/data/new-dns-records")
+			Expect(err).NotTo(HaveOccurred())
+
+			recordsJSON := fmt.Sprintf(`{
 		  "version": %d,
 			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
 			"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
 			"record_infos": [
-				["%s", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
+				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 			]
-		}`, version, instanceUUID.String())
-		blobDigest, err := testEnvironment.CreateBlobFromStringInActualBlobstore(recordsJSON, "/tmp/my-blobs", blobID.String())
-		Expect(err).NotTo(HaveOccurred())
+		}`, newRecordsVersion)
+			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo echo '%s' > /tmp/new-dns-records", recordsJSON))
+			Expect(err).NotTo(HaveOccurred())
 
-		_, err = agentClient.SyncDNS(blobID.String(), strings.TrimSpace(blobDigest), version)
-		Expect(err).NotTo(HaveOccurred())
+			blobDigest, err := testEnvironment.RunCommand("sudo shasum /tmp/new-dns-records | cut -f 1 -d ' '")
+			Expect(err).NotTo(HaveOccurred())
 
-		newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
-		Expect(err).NotTo(HaveOccurred())
+			_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/blobs/new-dns-records")
+			Expect(err).NotTo(HaveOccurred())
 
-		Expect(newEtcHosts).To(MatchRegexp("216.58.194.206\\s+google.com"))
-		Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
-		Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
+			_, err = agentClient.SyncDNS("new-dns-records", strings.TrimSpace(blobDigest), newRecordsVersion)
+			Expect(err).NotTo(HaveOccurred())
 
-		instanceDNSRecords, err := testEnvironment.RunCommand("sudo cat /var/vcap/instance/dns/records.json")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(instanceDNSRecords).To(MatchJSON(recordsJSON))
+			newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
+			Expect(err).NotTo(HaveOccurred())
 
-		filePerms, err := testEnvironment.RunCommand("ls -l /var/vcap/instance/dns/records.json | cut -d ' ' -f 1,3,4")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(strings.TrimSpace(filePerms)).To(Equal("-rw-r----- root vcap"))
-	})
+			Expect(newEtcHosts).To(MatchRegexp("216.58.194.206\\s+google.com"))
+			Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
+			Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
 
-	It("does not skip verification if no checksum is sent", func() {
-		blobID, err := uuid.NewV4()
-		Expect(err).NotTo(HaveOccurred())
-
-		version := uint64(time.Now().Unix())
-
-		newDNSRecords := settings.DNSRecords{
-			Records: [][2]string{
-				{"216.58.194.206", "google.com"},
-				{"54.164.223.71", "pivotal.io"},
-			},
-		}
-		contents, err := json.Marshal(newDNSRecords)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(contents).NotTo(BeNil())
-
-		recordsJSON := fmt.Sprintf(`{
-		  "version": %d,
+			instanceDNSRecords, err := testEnvironment.RunCommand("sudo cat /var/vcap/instance/dns/records.json")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(instanceDNSRecords).To(MatchJSON(fmt.Sprintf(`{
+			"version": %d,
 			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
-		}`, version)
-		_, err = testEnvironment.CreateBlobFromStringInActualBlobstore(recordsJSON, "/tmp/my-blobs", blobID.String())
-		Expect(err).NotTo(HaveOccurred())
+			"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
+			"record_infos": [
+				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
+			]
+		}`, newRecordsVersion)))
 
-		_, err = agentClient.SyncDNS(blobID.String(), "", version)
-		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("No digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
+			filePerms, err := testEnvironment.RunCommand("ls -l /var/vcap/instance/dns/records.json | cut -d ' ' -f 1,3,4")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.TrimSpace(filePerms)).To(Equal("-rw-r----- root vcap"))
+		})
+
+		It("does not skip verification if no checksum is sent", func() {
+			newDNSRecords := settings.DNSRecords{
+				Records: [][2]string{
+					{"216.58.194.206", "google.com"},
+					{"54.164.223.71", "pivotal.io"},
+				},
+			}
+			contents, err := json.Marshal(newDNSRecords)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(contents).NotTo(BeNil())
+
+			_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = testEnvironment.RunCommand("sudo touch /var/vcap/data/new-dns-records")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = testEnvironment.RunCommand("sudo ls -la /var/vcap/data/new-dns-records")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = testEnvironment.RunCommand("sudo echo '{\"records\":[[\"216.58.194.206\",\"google.com\"],[\"54.164.223.71\",\"pivotal.io\"]]}' > /tmp/new-dns-records")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/new-dns-records")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = agentClient.SyncDNS("new-dns-records", "", 1)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("No digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
+		})
 	})
 })

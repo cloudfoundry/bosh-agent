@@ -8,7 +8,6 @@ groups:
   - windows-test-unit
   - windows-test-integration-2019
   - windows-test-integration-1803
-  - windows-test-integration-1709
   - windows-test-integration-2012R2
   - promote
   - bump-deps
@@ -55,13 +54,18 @@ jobs:
       BOSH_LITE_NAME: ((BOSH_LITE_NAME))
       BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
       BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
+      AWS_ACCESS_KEY: ((integration_aws_access_key))
+      AWS_SECRET_ACCESS_KEY: ((integration_aws_secret_access_key))
+      AWS_REGION: ((integration_aws_region))
+      AWS_BUCKET: ((integration_aws_bucket))
+
 
 - name: bosh-integration-tests
   public: true
   serial: true
   build_logs_to_retain: 250
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
     - get: bosh-cli
     - get: bosh-agent
@@ -70,14 +74,10 @@ jobs:
       - test-unit
       - test-integration
       - windows-test-unit
-      - windows-test-integration-1709
-      - windows-test-integration-1803
-      - windows-test-integration-2019
-      - windows-test-integration-2012R2
 
   - task: tests
     privileged: true
-    file: bosh-src/ci/tasks/test-integration-gocli.yml
+    file: bosh-src/ci/tasks/test-integration.yml
     tags: ["bosh-integration"]
     params:
       DB: postgresql
@@ -96,6 +96,10 @@ jobs:
   - get: windows-ami-2019
   - get: bosh-agent
     trigger: true
+    passed:
+    - test-unit
+    - test-integration
+    - windows-test-unit
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
@@ -117,6 +121,10 @@ jobs:
   - get: windows-ami-1803
   - get: bosh-agent
     trigger: true
+    passed:
+    - test-unit
+    - test-integration
+    - windows-test-unit
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
@@ -132,33 +140,16 @@ jobs:
       WINRM_PASSWORD: ((WINRM_PASSWORD))
       WINDOWS_OS_VERSION: 1803
 
-- name: windows-test-integration-1709
-  serial: true
-  plan:
-  - get: windows-ami-1709
-  - get: bosh-agent
-    trigger: true
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    input_mapping:
-      windows-ami: windows-ami-1709
-    params:
-      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
-      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
-      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
-      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
-      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: ((WINRM_PASSWORD))
-      WINDOWS_OS_VERSION: 1709
-
 - name: windows-test-integration-2012R2
   serial: true
   plan:
   - get: windows-ami-2012R2
   - get: bosh-agent
     trigger: true
+    passed:
+    - test-unit
+    - test-integration
+    - windows-test-unit
   - task: test-integration
     privileged: true
     file: bosh-agent/ci/tasks/test-integration-windows.yml
@@ -178,10 +169,13 @@ jobs:
   public: true
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - trigger: true
       passed:
       - bosh-integration-tests
+      - windows-test-integration-2019
+      - windows-test-integration-1803
+      - windows-test-integration-2012R2
       get: bosh-agent
     - get: version-semver
       params: {bump: minor}
@@ -199,7 +193,7 @@ jobs:
       repository: bosh-agent
       tag: version-semver/number
       tag_prefix: v
-  - aggregate:
+  - in_parallel:
     - task: build-windows
       file: bosh-agent/ci/tasks/build-windows.yml
     - task: build-linux
@@ -261,23 +255,6 @@ resources:
     regexp: alpha-bosh-cli-(.*)-linux-amd64
     bucket: bosh-cli-alpha-artifacts
     region_name: us-east-1
-
-- name: windows-ami-1709
-  type: ami-resource
-  source:
-    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
-    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-1709-English-Core-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
 
 - name: windows-ami-2012R2
   type: ami-resource
@@ -349,16 +326,16 @@ resources:
 
 resource_types:
 - name: ami-resource
-  type: docker-image
+  type: registry-image
   source:
     repository: pivotalgreenhouse/ami-resource
     tag: latest
 - name: github-status
-  type: docker-image
+  type: registry-image
   source:
     repository: dpb587/github-status-resource
     tag: master
 - name: metalink-resource
-  type: docker-image
+  type: registry-image
   source:
     repository: dpb587/metalink-repository-resource

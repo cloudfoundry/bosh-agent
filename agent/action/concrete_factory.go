@@ -5,6 +5,7 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
+	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
@@ -23,8 +24,7 @@ type concreteFactory struct {
 func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
-	packagesBlobstore boshblob.DigestBlobstore,
-	logsBlobstore boshblob.DigestBlobstore,
+	blobstore boshblob.DigestBlobstore,
 	sensitiveBlobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
@@ -40,6 +40,7 @@ func NewFactory(
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
+	hp := httpblobprovider.NewHTTPBlobImpl(platform.GetFs()).WithDefaultAlgorithms()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -52,10 +53,11 @@ func NewFactory(
 			"cancel_task": NewCancelTask(taskService),
 
 			// VM admin
-			"ssh":             NewSSH(settingsService, platform, dirProvider, logger),
-			"fetch_logs":      NewFetchLogs(compressor, copier, logsBlobstore, dirProvider),
-			"update_settings": NewUpdateSettings(settingsService, platform, certManager, logger),
-			"shutdown":        NewShutdown(platform),
+			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
+			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstore, dirProvider),
+			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, hp),
+			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger),
+			"shutdown":                   NewShutdown(platform),
 
 			// Job management
 			"prepare":    NewPrepare(applier),
@@ -85,7 +87,8 @@ func NewFactory(
 			"delete_arp_entries": NewDeleteARPEntries(platform),
 
 			// DNS
-			"sync_dns": NewSyncDNS(packagesBlobstore, settingsService, platform, logger),
+			"sync_dns":                 NewSyncDNS(blobstore, settingsService, platform, logger),
+			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, hp),
 		},
 	}
 	return

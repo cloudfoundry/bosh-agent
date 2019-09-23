@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	"github.com/cloudfoundry/bosh-agent/settings"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -63,6 +64,42 @@ func (c *IntegrationAgentClient) FetchLogs(logType string, filters []string) (ma
 	}
 
 	return responseValue, err
+}
+
+func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType string, filters []string) (action.FetchLogsWithSignedURLResponse, error) {
+	req := action.FetchLogsWithSignedURLRequest{
+		LogType:   logType,
+		Filters:   filters,
+		SignedURL: signedURL,
+	}
+	responseRaw, err := c.SendAsyncTaskMessage("fetch_logs_with_signed_url", []interface{}{req})
+	if err != nil {
+		return action.FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Sending 'fetch_logs_with_signed_url' to the agent")
+	}
+
+	responseValue, ok := responseRaw.(map[string]interface{})
+	if !ok {
+		return action.FetchLogsWithSignedURLResponse{}, bosherr.Errorf("Unable to parse fetch_logs_with_signed_url response value: %#v", responseRaw)
+	}
+
+	return action.FetchLogsWithSignedURLResponse{
+		SHA1Digest: responseValue["sha1"].(string),
+	}, err
+}
+
+func (c *IntegrationAgentClient) SyncDNSWithSignedURL(signedURL string, digest boshcrypto.MultipleDigest, version uint64) (string, error) {
+	var response http.SyncDNSResponse
+	req := action.SyncDNSWithSignedURLRequest{
+		SignedURL:   signedURL,
+		MultiDigest: digest,
+		Version:     version,
+	}
+	err := c.AgentRequest.Send("sync_dns_with_signed_url", []interface{}{req}, &response)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Sending 'sync_dns_with_signed_url' to the agent")
+	}
+
+	return response.Value, nil
 }
 
 func (c *IntegrationAgentClient) SSH(cmd string, params action.SSHParams) error {

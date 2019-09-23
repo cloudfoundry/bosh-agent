@@ -2,7 +2,7 @@
 platform: linux
 
 image_resource:
-  type: docker-image
+  type: registry-image
   source:
     repository: bosh/agent
     tag: latest
@@ -22,3 +22,7 @@ params:
   BOSH_LITE_NAME: replace-me
   BOSH_LITE_SECURITY_GROUP: replace-me
   BOSH_LITE_PRIVATE_KEY: replace-me
+  AWS_REGION:
+  AWS_BUCKET:
+  AWS_ACCESS_KEY:
+  AWS_SECRET_ACCESS_KEY:
