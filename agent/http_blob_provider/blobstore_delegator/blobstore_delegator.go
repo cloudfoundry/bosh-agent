@@ -8,19 +8,19 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-type blobstoreDelegator struct {
+type BlobstoreDelegatorImpl struct {
 	h httpblobprovider.HTTPBlobProvider
 	b blobstore.DigestBlobstore
 }
 
-func NewBlobstoreDelegator(hp httpblobprovider.HTTPBlobProvider, bp blobstore.DigestBlobstore) *blobstoreDelegator {
-	return &blobstoreDelegator{
+func NewBlobstoreDelegator(hp httpblobprovider.HTTPBlobProvider, bp blobstore.DigestBlobstore) *BlobstoreDelegatorImpl {
+	return &BlobstoreDelegatorImpl{
 		h: hp,
 		b: bp,
 	}
 }
 
-func (b *blobstoreDelegator) Get(digest boshcrypto.Digest, signedURL, blobID string) (fileName string, err error) {
+func (b *BlobstoreDelegatorImpl) Get(digest boshcrypto.Digest, signedURL, blobID string) (fileName string, err error) {
 	if signedURL == "" {
 		if blobID == "" {
 			return "", fmt.Errorf("Both signedURL and blobID are blank which is invalid")
@@ -30,7 +30,7 @@ func (b *blobstoreDelegator) Get(digest boshcrypto.Digest, signedURL, blobID str
 	return b.h.Get(signedURL, digest)
 }
 
-func (b *blobstoreDelegator) Write(signedURL, path string) (string, boshcrypto.MultipleDigest, error) {
+func (b *BlobstoreDelegatorImpl) Write(signedURL, path string) (string, boshcrypto.MultipleDigest, error) {
 	if signedURL == "" {
 		return b.b.Create(path)
 	}
@@ -39,14 +39,14 @@ func (b *blobstoreDelegator) Write(signedURL, path string) (string, boshcrypto.M
 	return "", digest, err
 }
 
-func (b *blobstoreDelegator) CleanUp(signedURL, fileName string) (err error) {
+func (b *BlobstoreDelegatorImpl) CleanUp(signedURL, fileName string) (err error) {
 	if signedURL != "" {
 		return fmt.Errorf("CleanUp is not supported for signed URLs")
 	}
 	return b.b.CleanUp(fileName)
 }
 
-func (b *blobstoreDelegator) Delete(signedURL, blobID string) (err error) {
+func (b *BlobstoreDelegatorImpl) Delete(signedURL, blobID string) (err error) {
 	if signedURL != "" {
 		return fmt.Errorf("Delete is not supported for signed URLs")
 	}

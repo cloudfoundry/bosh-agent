@@ -16,32 +16,32 @@ import (
 var _ = Describe("BlobstoreDelegator", func() {
 	var (
 		blobstoreDelegator   blobstore_delegator.BlobstoreDelegator
-		fakeHttpBlobProvider *fakeblobprovider.FakeHTTPBlobProvider
+		fakeHTTPBlobProvider *fakeblobprovider.FakeHTTPBlobProvider
 		fakeBlobManager      *fakeblobstore.FakeDigestBlobstore
 
 		digest = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "some-digest"))
 	)
 
 	BeforeEach(func() {
-		fakeHttpBlobProvider = &fakeblobprovider.FakeHTTPBlobProvider{}
+		fakeHTTPBlobProvider = &fakeblobprovider.FakeHTTPBlobProvider{}
 		fakeBlobManager = &fakeblobstore.FakeDigestBlobstore{}
 
-		blobstoreDelegator = blobstore_delegator.NewBlobstoreDelegator(fakeHttpBlobProvider, fakeBlobManager)
+		blobstoreDelegator = blobstore_delegator.NewBlobstoreDelegator(fakeHTTPBlobProvider, fakeBlobManager)
 	})
 
 	Context("Get", func() {
 		Context("when there is a signed URL provided", func() {
 			It("reaches out to the HTTP blobstore", func() {
 				downloadedFilePath := "/some/path/to/a/file"
-				fakeHttpBlobProvider.GetReturns(downloadedFilePath, nil)
+				fakeHTTPBlobProvider.GetReturns(downloadedFilePath, nil)
 				getResponse, err := blobstoreDelegator.Get(digest, "some-signed-url", "")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(getResponse).To(Equal(downloadedFilePath))
 
 				Expect(fakeBlobManager.GetCallCount()).To(Equal(0))
-				Expect(fakeHttpBlobProvider.GetCallCount()).To(Equal(1))
+				Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(1))
 
-				signedURLArg, digestArg := fakeHttpBlobProvider.GetArgsForCall(0)
+				signedURLArg, digestArg := fakeHTTPBlobProvider.GetArgsForCall(0)
 				Expect(signedURLArg).To(Equal("some-signed-url"))
 				Expect(digestArg).To(Equal(digest))
 			})
@@ -49,13 +49,13 @@ var _ = Describe("BlobstoreDelegator", func() {
 			It("errors when there is an error", func() {
 				downloadedFilePath := "/some/path/to/a/file"
 				fakeError := errors.New("some error")
-				fakeHttpBlobProvider.GetReturns(downloadedFilePath, fakeError)
+				fakeHTTPBlobProvider.GetReturns(downloadedFilePath, fakeError)
 
 				_, err := blobstoreDelegator.Get(digest, "some-signed-url", "")
 				Expect(err).To(MatchError(fakeError))
 
 				Expect(fakeBlobManager.GetCallCount()).To(Equal(0))
-				Expect(fakeHttpBlobProvider.GetCallCount()).To(Equal(1))
+				Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(1))
 			})
 		})
 
@@ -69,7 +69,7 @@ var _ = Describe("BlobstoreDelegator", func() {
 				Expect(getResponse).To(Equal(downloadedFilePath))
 
 				Expect(fakeBlobManager.GetCallCount()).To(Equal(1))
-				Expect(fakeHttpBlobProvider.GetCallCount()).To(Equal(0))
+				Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(0))
 
 				fetchedBlobID, digestArg := fakeBlobManager.GetArgsForCall(0)
 				Expect(fetchedBlobID).To(Equal("1234"))
@@ -85,7 +85,7 @@ var _ = Describe("BlobstoreDelegator", func() {
 				Expect(err).To(MatchError(fakeError))
 
 				Expect(fakeBlobManager.GetCallCount()).To(Equal(1))
-				Expect(fakeHttpBlobProvider.GetCallCount()).To(Equal(0))
+				Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(0))
 			})
 		})
 
@@ -101,15 +101,15 @@ var _ = Describe("BlobstoreDelegator", func() {
 		Context("when there is a signed URL provided", func() {
 			It("reaches out to the HTTP blobstore", func() {
 				filePath := "/some/path/to/a/file"
-				fakeHttpBlobProvider.UploadReturns(digest, nil)
+				fakeHTTPBlobProvider.UploadReturns(digest, nil)
 
 				_, digestResult, err := blobstoreDelegator.Write("some-signed-url", filePath)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeBlobManager.CreateCallCount()).To(Equal(0))
-				Expect(fakeHttpBlobProvider.UploadCallCount()).To(Equal(1))
+				Expect(fakeHTTPBlobProvider.UploadCallCount()).To(Equal(1))
 
-				signedURLArg, filepathArg := fakeHttpBlobProvider.UploadArgsForCall(0)
+				signedURLArg, filepathArg := fakeHTTPBlobProvider.UploadArgsForCall(0)
 				Expect(signedURLArg).To(Equal("some-signed-url"))
 				Expect(filepathArg).To(Equal(filePath))
 				Expect(digestResult).To(Equal(digest))
@@ -118,14 +118,14 @@ var _ = Describe("BlobstoreDelegator", func() {
 			It("errors when there is an error", func() {
 				filePath := "/some/path/to/a/file"
 				fakeError := errors.New("some error")
-				fakeHttpBlobProvider.UploadReturns(digest, fakeError)
+				fakeHTTPBlobProvider.UploadReturns(digest, fakeError)
 
 				_, digestResult, err := blobstoreDelegator.Write("some-signed-url", filePath)
 				Expect(err).To(MatchError(fakeError))
 				Expect(fakeBlobManager.CreateCallCount()).To(Equal(0))
-				Expect(fakeHttpBlobProvider.UploadCallCount()).To(Equal(1))
+				Expect(fakeHTTPBlobProvider.UploadCallCount()).To(Equal(1))
 
-				signedURLArg, filepathArg := fakeHttpBlobProvider.UploadArgsForCall(0)
+				signedURLArg, filepathArg := fakeHTTPBlobProvider.UploadArgsForCall(0)
 				Expect(signedURLArg).To(Equal("some-signed-url"))
 				Expect(filepathArg).To(Equal(filePath))
 				Expect(digestResult).To(Equal(digest))
@@ -142,7 +142,7 @@ var _ = Describe("BlobstoreDelegator", func() {
 				Expect(blobID).To(Equal("123"))
 
 				Expect(fakeBlobManager.CreateCallCount()).To(Equal(1))
-				Expect(fakeHttpBlobProvider.UploadCallCount()).To(Equal(0))
+				Expect(fakeHTTPBlobProvider.UploadCallCount()).To(Equal(0))
 
 				filenameArg := fakeBlobManager.CreateArgsForCall(0)
 				Expect(filenameArg).To(Equal(filePath))
@@ -157,7 +157,7 @@ var _ = Describe("BlobstoreDelegator", func() {
 				_, _, err := blobstoreDelegator.Write("", filePath)
 				Expect(err).To(MatchError(fakeError))
 				Expect(fakeBlobManager.CreateCallCount()).To(Equal(1))
-				Expect(fakeHttpBlobProvider.UploadCallCount()).To(Equal(0))
+				Expect(fakeHTTPBlobProvider.UploadCallCount()).To(Equal(0))
 			})
 		})
 	})
