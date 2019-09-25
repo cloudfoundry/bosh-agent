@@ -26,6 +26,7 @@ func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBund
 		Name:    "fake-package-name" + uuid,
 		Version: "fake-package-name",
 		Source: models.Source{
+			SignedURL:   "fake-package/signed-url",
 			Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")),
 			BlobstoreID: "fake-blobstore-id",
 		},
@@ -78,7 +79,8 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
 
@@ -101,7 +103,8 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 				})
@@ -112,7 +115,8 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					fingerPrint, _, blobID := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))
 				})

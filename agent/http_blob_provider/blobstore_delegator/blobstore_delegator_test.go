@@ -88,6 +88,13 @@ var _ = Describe("BlobstoreDelegator", func() {
 				Expect(fakeHttpBlobProvider.GetCallCount()).To(Equal(0))
 			})
 		})
+
+		Context("when neither signedURL nor blobID are provided", func() {
+			It("returns an error", func() {
+				_, err := blobstoreDelegator.Get(digest, "", "")
+				Expect(err).To(MatchError(errors.New("Both signedURL and blobID are blank which is invalid")))
+			})
+		})
 	})
 
 	Context("Write", func() {

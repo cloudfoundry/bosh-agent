@@ -69,7 +69,8 @@ func NewFactory(
 			"run_script": NewRunScript(jobScriptProvider, specService, logger),
 
 			// Compilation
-			"compile_package": NewCompilePackage(compiler),
+			"compile_package":                 NewCompilePackage(compiler),
+			"compile_package_with_signed_url": NewCompilePackageWithSignedURL(compiler),
 
 			// Rendered Templates
 			"upload_blob": NewUploadBlobAction(sensitiveBlobManager),

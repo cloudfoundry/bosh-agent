@@ -116,18 +116,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		_ = c.compressor.CleanUp(tmpPackageTar)
 	}()
 
-	file, err := c.fs.OpenFile(tmpPackageTar, os.O_RDONLY, os.ModePerm)
-	if err != nil {
-		return "", nil, bosherr.WrapError(err, "Opening compiled package")
-	}
-
-	// Use SHA256, not the strongest algo from the source blob
-	digest, err = pkg.Sha1.Algorithm().CreateDigest(file)
-	if err != nil {
-		return "", nil, bosherr.WrapError(err, "Calculating compiled package digest")
-	}
-
-	uploadedBlobID, _, err := c.blobstore.Write("", tmpPackageTar)
+	uploadedBlobID, digest, err := c.blobstore.Write(pkg.UploadSignedURL, tmpPackageTar)
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Uploading compiled package")
 	}
@@ -151,11 +140,11 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 }
 
 func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) error {
-	if pkg.BlobstoreID == "" {
-		return bosherr.Error(fmt.Sprintf("Blobstore ID for package '%s' is empty", pkg.Name))
+	if pkg.BlobstoreID == "" && pkg.PackageGetSignedURL == "" {
+		return bosherr.Error(fmt.Sprintf("No blobstore reference for package '%s'", pkg.Name))
 	}
 
-	depFilePath, err := c.blobstore.Get(pkg.Sha1, "", pkg.BlobstoreID)
+	depFilePath, err := c.blobstore.Get(pkg.Sha1, pkg.PackageGetSignedURL, pkg.BlobstoreID)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}

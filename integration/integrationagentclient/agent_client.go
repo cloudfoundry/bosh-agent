@@ -117,6 +117,28 @@ func (c *IntegrationAgentClient) UpdateSettings(settings settings.UpdateSettings
 	return err
 }
 
+func (c *IntegrationAgentClient) CompilePackageWithSignedURL(req action.CompilePackageWithSignedURLRequest) (compiledPackageRef action.CompilePackageWithSignedURLResponse, err error) {
+	responseRaw, err := c.SendAsyncTaskMessage("compile_package_with_signed_url", []interface{}{req})
+	responseValue, ok := responseRaw.(map[string]interface{})
+	if !ok {
+		return action.CompilePackageWithSignedURLResponse{}, bosherr.WrapErrorf(err, "Unable to parse compile_package response value: %#v", responseValue)
+	}
+	if err != nil {
+		return action.CompilePackageWithSignedURLResponse{}, bosherr.WrapError(err, "Sending 'compile_package' to the agent")
+	}
+
+	sha1, ok := responseValue["sha1_digest"].(string)
+	if !ok {
+		return action.CompilePackageWithSignedURLResponse{}, bosherr.Errorf("Unable to parse 'compile_package' response from the agent: %#v", responseValue)
+	}
+
+	compiledPackageRef = action.CompilePackageWithSignedURLResponse{
+		SHA1Digest: sha1,
+	}
+
+	return compiledPackageRef, nil
+}
+
 func (c *IntegrationAgentClient) ApplyV1Spec(spec applyspec.V1ApplySpec) error {
 	_, err := c.SendAsyncTaskMessage("apply", []interface{}{spec})
 	return err

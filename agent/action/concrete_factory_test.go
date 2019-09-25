@@ -201,6 +201,12 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(NewCompilePackage(compiler)))
 	})
 
+	It("compile_package_with_signed_url", func() {
+		action, err := factory.Create("compile_package_with_signed_url")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewCompilePackageWithSignedURL(compiler)))
+	})
+
 	It("run_errand", func() {
 		action, err := factory.Create("run_errand")
 		Expect(err).ToNot(HaveOccurred())

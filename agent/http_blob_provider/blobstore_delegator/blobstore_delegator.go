@@ -22,6 +22,9 @@ func NewBlobstoreDelegator(hp httpblobprovider.HTTPBlobProvider, bp blobstore.Di
 
 func (b *blobstoreDelegator) Get(digest boshcrypto.Digest, signedURL, blobID string) (fileName string, err error) {
 	if signedURL == "" {
+		if blobID == "" {
+			return "", fmt.Errorf("Both signedURL and blobID are blank which is invalid")
+		}
 		return b.b.Get(blobID, digest)
 	}
 	return b.h.Get(signedURL, digest)
