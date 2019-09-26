@@ -369,54 +369,5 @@ var _ = Describe("v1_apply", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 		})
-
-		Context("when settings tmpfs is enabled", func() {
-			BeforeEach(func() {
-				registrySettings.Env.Bosh.Agent.Settings.TmpFS = true
-			})
-
-			It("mounts a tmpfs for /var/vcap/settings", func() {
-				err := agentClient.ApplyV1Spec(applySpec)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = agentClient.AddPersistentDisk("disk-cid", "/dev/sdf")
-				Expect(err).NotTo(HaveOccurred())
-
-				output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(output).To(ContainSubstring("tmpfs /var/vcap/bosh/settings"))
-
-				output, err = testEnvironment.RunCommand("sudo ls /var/vcap/bosh/settings")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(output).To(ContainSubstring("settings.json"))
-				Expect(output).To(ContainSubstring("persistent_disk_hints.json"))
-
-				_, err = testEnvironment.RunCommand("sudo umount /var/vcap/bosh/settings")
-				Expect(err).NotTo(HaveOccurred())
-
-				output, err = testEnvironment.RunCommand("sudo ls /var/vcap/bosh/settings")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(output).NotTo(ContainSubstring("settings.json"))
-				Expect(output).NotTo(ContainSubstring("persistent_disk_hints.json"))
-			})
-		})
-
-		Context("when job dir tmpfs is enabled", func() {
-			BeforeEach(func() {
-				registrySettings.Env.Bosh.JobDir.TmpFS = true
-			})
-
-			It("mounts a tmpfs for /var/vcap/data/jobs", func() {
-				err := agentClient.ApplyV1Spec(applySpec)
-				Expect(err).NotTo(HaveOccurred())
-
-				output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(output).To(ContainSubstring("tmpfs /var/vcap/data/jobs"))
-				Expect(output).To(ContainSubstring("tmpfs /var/vcap/data/sensitive_blobs"))
-			})
-		})
 	})
 })
