@@ -67,6 +67,11 @@ func (c *IntegrationAgentClient) FetchLogs(logType string, filters []string) (ma
 	return responseValue, err
 }
 
+func (c *IntegrationAgentClient) Prepare(spec applyspec.V1ApplySpec) error {
+	_, err := c.SendAsyncTaskMessage("prepare", []interface{}{spec})
+	return err
+}
+
 func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType string, filters []string) (action.FetchLogsWithSignedURLResponse, error) {
 	req := action.FetchLogsWithSignedURLRequest{
 		LogType:   logType,
