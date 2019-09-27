@@ -183,10 +183,38 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 }
 
 func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
+	partitionPaths, err := p.getPartitionPaths(devicePath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Getting partition paths of disk `%s'", devicePath)
+	}
+
+	p.logger.Debug(p.logTag, "Erasing old partition paths")
+	for _, partitionPath := range partitionPaths {
+		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+			_, _, _, err := p.cmdRunner.RunCommand(
+				"wipefs",
+				"-af",
+				partitionPath,
+			)
+			if err != nil {
+				return true, bosherr.WrapError(err, fmt.Sprintf("Erasing partition path `%s' ", partitionPath))
+			}
+
+			p.logger.Info(p.logTag, "Successfully erased partition path `%s'", partitionPath)
+			return false, nil
+		})
+
+		partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+		err = partitionRetryStrategy.Try()
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Erasing partition `%s' paths", devicePath)
+		}
+	}
+
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 		_, _, _, err := p.cmdRunner.RunCommand(
 			"wipefs",
-			"-a",
+			"-af",
 			devicePath,
 		)
 		if err != nil {
@@ -198,9 +226,9 @@ func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devi
 	})
 
 	partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
-	err := partitionRetryStrategy.Try()
+	err = partitionRetryStrategy.Try()
 	if err != nil {
-		return err
+		return bosherr.WrapErrorf(err, "Removing device path `%s' paths", devicePath)
 	}
 
 	return nil
@@ -363,4 +391,16 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 
 	detectPartitionRetryStrategy := NewPartitionStrategy(detectPartitionRetryable, p.timeService, p.logger)
 	return detectPartitionRetryStrategy.Try()
+}
+
+func (p partedPartitioner) getPartitionPaths(devicePath string) ([]string, error) {
+	stdout, _, _, err := p.cmdRunner.RunCommand("blkid")
+	if err != nil {
+		return []string{}, err
+	}
+
+	pathRegExp := devicePath + "[0-9]+"
+	re := regexp.MustCompile(pathRegExp)
+
+	return re.FindAllString(stdout, -1), nil
 }
