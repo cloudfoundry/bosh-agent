@@ -171,7 +171,7 @@ func (app *app) Setup(opts Options) error {
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
 	blobstoreDelegator := blobstore_delegator.NewBlobstoreDelegator(
-		httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs()).WithDefaultAlgorithms(),
+		httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs()),
 		blobstore,
 	)
 

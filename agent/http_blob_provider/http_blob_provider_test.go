@@ -55,7 +55,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
+			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 
 			filepath, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest)
 			Expect(err).NotTo(HaveOccurred())
@@ -72,7 +72,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
+			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 
 			_, err := blobProvider.Get(fmt.Sprintf("%s/bad-get-signed-url", server.URL()), multiDigest)
 			Expect(err).To(HaveOccurred())
@@ -88,7 +88,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 
 			server.RouteToHandler("GET", "/get-disconnecting-handler", disconnectingRequestHandler)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
+			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 
 			_, err := blobProvider.Get(fmt.Sprintf("%s/get-disconnecting-handler", server.URL()), multiDigest)
 			Expect(err).To(HaveOccurred())
@@ -101,7 +101,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
+			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 			badsha1 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "bad-a9993e364706816aba3e25717850c26c9cd0d89d")
 			badsha512 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA512, "bad-ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f")
 			badMultiDigest := boshcrypto.MustNewMultipleDigest(badsha1, badsha512)
@@ -116,7 +116,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 			err := fakeFileSystem.WriteFileString(filepath, "abc")
 			Expect(err).NotTo(HaveOccurred())
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
+			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 
 			actualDigests, err := blobProvider.Upload(signedURL, filepath)
 			return actualDigests, err

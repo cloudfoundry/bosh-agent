@@ -111,7 +111,7 @@ var _ = Describe("S3 HTTP Blob Provider", func() {
 		logger := boshlog.NewAsyncWriterLogger(boshlog.LevelNone, os.Stderr)
 		realFileSystem := boshsys.NewOsFileSystem(logger)
 
-		blobProvider := httpblobprovider.NewHTTPBlobImpl(realFileSystem).WithAlgorithms([]boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA512})
+		blobProvider := httpblobprovider.NewHTTPBlobImplWithDigestAlgorithms(realFileSystem, []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA512})
 
 		_, err := blobProvider.Upload(signedURL, tmpfile.Name())
 		Expect(err).NotTo(HaveOccurred())

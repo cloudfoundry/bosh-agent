@@ -20,26 +20,21 @@ type HTTPBlobImpl struct {
 	httpClient       *http.Client
 }
 
-func NewHTTPBlobImpl(fs boshsys.FileSystem) HTTPBlobImpl {
+func NewHTTPBlobImpl(fs boshsys.FileSystem) *HTTPBlobImpl {
+	return NewHTTPBlobImplWithDigestAlgorithms(fs, DefaultCryptoAlgorithms)
+}
+
+func NewHTTPBlobImplWithDigestAlgorithms(fs boshsys.FileSystem, algorithms []boshcrypto.Algorithm) *HTTPBlobImpl {
 	httpClient := boshhttp.CreateDefaultClient(nil)
 
-	return HTTPBlobImpl{
-		fs:         fs,
-		httpClient: httpClient,
+	return &HTTPBlobImpl{
+		fs:               fs,
+		createAlgorithms: algorithms,
+		httpClient:       httpClient,
 	}
 }
 
-func (h HTTPBlobImpl) WithDefaultAlgorithms() HTTPBlobImpl {
-	h.createAlgorithms = DefaultCryptoAlgorithms
-	return h
-}
-
-func (h HTTPBlobImpl) WithAlgorithms(a []boshcrypto.Algorithm) HTTPBlobImpl {
-	h.createAlgorithms = a
-	return h
-}
-
-func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDigest, error) {
+func (h *HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDigest, error) {
 	digest, err := boshcrypto.NewMultipleDigestFromPath(filepath, h.fs, h.createAlgorithms)
 	if err != nil {
 		return boshcrypto.MultipleDigest{}, err
@@ -78,7 +73,7 @@ func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDig
 	return digest, nil
 }
 
-func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, error) {
+func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, error) {
 	file, err := h.fs.TempFile("bosh-http-blob-provider-GET")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")
