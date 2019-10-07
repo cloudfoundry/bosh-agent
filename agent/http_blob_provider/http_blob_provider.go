@@ -90,12 +90,9 @@ func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, e
 		return file.Name(), fmt.Errorf("Error executing GET to %s, response was %+v", signedURL, resp)
 	}
 
-	written, err := io.Copy(file, resp.Body)
+	_, err = io.Copy(file, resp.Body)
 	if err != nil {
 		return file.Name(), err
-	}
-	if written != resp.ContentLength {
-		return file.Name(), fmt.Errorf("Write mismatch with blob content-length. Expected: %d, wrote: %d", resp.ContentLength, written)
 	}
 
 	_, err = file.Seek(0, io.SeekStart)

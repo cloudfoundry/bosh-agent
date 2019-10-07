@@ -126,7 +126,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 			server.RouteToHandler("PUT", "/success-signed-url",
 				ghttp.CombineHandlers(
 					ghttp.VerifyBody([]byte("abc")),
-					ghttp.VerifyHeaderKV("Content-Length", "3"),
 					ghttp.RespondWith(http.StatusOK, ``),
 				),
 			)
@@ -145,7 +144,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 			server.RouteToHandler("PUT", "/bad-status-code",
 				ghttp.CombineHandlers(
 					ghttp.VerifyBody([]byte("abc")),
-					ghttp.VerifyHeaderKV("Content-Length", "3"),
 					ghttp.RespondWith(http.StatusBadRequest, ``),
 				),
 			)
