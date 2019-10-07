@@ -8,6 +8,7 @@ import (
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshhttp "github.com/cloudfoundry/bosh-utils/httpclient"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -16,11 +17,15 @@ var DefaultCryptoAlgorithms = []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmS
 type HTTPBlobImpl struct {
 	fs               boshsys.FileSystem
 	createAlgorithms []boshcrypto.Algorithm
+	httpClient       *http.Client
 }
 
 func NewHTTPBlobImpl(fs boshsys.FileSystem) HTTPBlobImpl {
+	httpClient := boshhttp.CreateDefaultClient(nil)
+
 	return HTTPBlobImpl{
-		fs: fs,
+		fs:         fs,
+		httpClient: httpClient,
 	}
 }
 
@@ -62,8 +67,7 @@ func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDig
 	req.Header.Set("Expect", "100-continue")
 	req.ContentLength = stat.Size()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := h.httpClient.Do(req)
 	if err != nil {
 		return boshcrypto.MultipleDigest{}, err
 	}
@@ -81,7 +85,7 @@ func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, e
 	}
 	defer file.Close()
 
-	resp, err := http.Get(signedURL)
+	resp, err := h.httpClient.Get(signedURL)
 	if err != nil {
 		return file.Name(), err
 	}
