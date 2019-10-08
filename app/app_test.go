@@ -34,9 +34,7 @@ func init() {
 
 			err = os.Mkdir(filepath.Join(baseDir, "bosh"), os.ModePerm)
 			Expect(err).ToNot(HaveOccurred())
-		})
 
-		BeforeEach(func() {
 			agentConfPath = filepath.Join(baseDir, "bosh", "agent.json")
 
 			agentConfJSON = `{
@@ -111,7 +109,7 @@ func init() {
 				}
 			}`
 
-			err := ioutil.WriteFile(settingsPath, []byte(settingsJSON), 0640)
+			err = ioutil.WriteFile(settingsPath, []byte(settingsJSON), 0640)
 			Expect(err).ToNot(HaveOccurred())
 		})
 

@@ -14,6 +14,7 @@ import (
 
 	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -111,7 +112,8 @@ var _ = Describe("S3 HTTP Blob Provider", func() {
 		logger := boshlog.NewAsyncWriterLogger(boshlog.LevelNone, os.Stderr)
 		realFileSystem := boshsys.NewOsFileSystem(logger)
 
-		blobProvider := httpblobprovider.NewHTTPBlobImplWithDigestAlgorithms(realFileSystem, []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA512})
+		httpClient := httpclient.CreateDefaultClient(nil)
+		blobProvider := httpblobprovider.NewHTTPBlobImplWithDigestAlgorithms(realFileSystem, httpClient, []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA512})
 
 		_, err := blobProvider.Upload(signedURL, tmpfile.Name())
 		Expect(err).NotTo(HaveOccurred())

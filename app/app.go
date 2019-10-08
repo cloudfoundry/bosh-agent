@@ -170,8 +170,13 @@ func (app *app) Setup(opts Options) error {
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
+	blobstoreHTTPClient, err := httpblobprovider.NewBlobstoreHTTPClient(settingsService.GetSettings().GetBlobstore())
+	if err != nil {
+		return bosherr.WrapError(err, "Failed constructing blobstore http client")
+	}
+
 	blobstoreDelegator := blobstore_delegator.NewBlobstoreDelegator(
-		httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs()),
+		httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs(), blobstoreHTTPClient),
 		blobstore,
 	)
 

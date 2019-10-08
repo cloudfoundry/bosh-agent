@@ -20,11 +20,14 @@ var _ = Describe("HTTPBlobImpl", func() {
 		fakeFileSystem *fakesys.FakeFileSystem
 		server         *ghttp.Server
 		tempFile       system.File
+		blobProvider   *HTTPBlobImpl
 	)
 
 	BeforeEach(func() {
 		fakeFileSystem = fakesys.NewFakeFileSystem()
 		server = ghttp.NewServer()
+
+		blobProvider = NewHTTPBlobImpl(fakeFileSystem, server.HTTPTestServer.Client())
 	})
 
 	Describe("Get", func() {
@@ -45,7 +48,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 		})
 
 		AfterEach(func() {
-			fakeFileSystem.RemoveAll(tempFile.Name())
+			Expect(fakeFileSystem.RemoveAll(tempFile.Name())).To(Succeed())
 		})
 
 		It("downloads the file and returns the contents", func() {
@@ -54,8 +57,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 					ghttp.RespondWith(http.StatusOK, "abc"),
 				),
 			)
-
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 
 			filepath, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest)
 			Expect(err).NotTo(HaveOccurred())
@@ -72,8 +73,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
-
 			_, err := blobProvider.Get(fmt.Sprintf("%s/bad-get-signed-url", server.URL()), multiDigest)
 			Expect(err).To(HaveOccurred())
 		})
@@ -88,8 +87,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 
 			server.RouteToHandler("GET", "/get-disconnecting-handler", disconnectingRequestHandler)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
-
 			_, err := blobProvider.Get(fmt.Sprintf("%s/get-disconnecting-handler", server.URL()), multiDigest)
 			Expect(err).To(HaveOccurred())
 		})
@@ -101,7 +98,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 			badsha1 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "bad-a9993e364706816aba3e25717850c26c9cd0d89d")
 			badsha512 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA512, "bad-ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f")
 			badMultiDigest := boshcrypto.MustNewMultipleDigest(badsha1, badsha512)
@@ -115,8 +111,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 		testUpload := func(filepath, signedURL string) (boshcrypto.MultipleDigest, error) {
 			err := fakeFileSystem.WriteFileString(filepath, "abc")
 			Expect(err).NotTo(HaveOccurred())
-
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem)
 
 			actualDigests, err := blobProvider.Upload(signedURL, filepath)
 			return actualDigests, err

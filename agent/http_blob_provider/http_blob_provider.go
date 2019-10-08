@@ -8,7 +8,6 @@ import (
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshhttp "github.com/cloudfoundry/bosh-utils/httpclient"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -20,13 +19,11 @@ type HTTPBlobImpl struct {
 	httpClient       *http.Client
 }
 
-func NewHTTPBlobImpl(fs boshsys.FileSystem) *HTTPBlobImpl {
-	return NewHTTPBlobImplWithDigestAlgorithms(fs, DefaultCryptoAlgorithms)
+func NewHTTPBlobImpl(fs boshsys.FileSystem, httpClient *http.Client) *HTTPBlobImpl {
+	return NewHTTPBlobImplWithDigestAlgorithms(fs, httpClient, DefaultCryptoAlgorithms)
 }
 
-func NewHTTPBlobImplWithDigestAlgorithms(fs boshsys.FileSystem, algorithms []boshcrypto.Algorithm) *HTTPBlobImpl {
-	httpClient := boshhttp.CreateDefaultClient(nil)
-
+func NewHTTPBlobImplWithDigestAlgorithms(fs boshsys.FileSystem, httpClient *http.Client, algorithms []boshcrypto.Algorithm) *HTTPBlobImpl {
 	return &HTTPBlobImpl{
 		fs:               fs,
 		createAlgorithms: algorithms,
