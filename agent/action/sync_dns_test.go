@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator/blobstore_delegatorfakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 

@@ -3,7 +3,7 @@ package action
 import (
 	"errors"
 
-	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"

@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"

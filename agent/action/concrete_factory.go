@@ -5,7 +5,7 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"

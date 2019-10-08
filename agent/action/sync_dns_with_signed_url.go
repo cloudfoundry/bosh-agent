@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action/state"
-	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"

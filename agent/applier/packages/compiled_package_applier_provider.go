@@ -7,7 +7,7 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	"github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"

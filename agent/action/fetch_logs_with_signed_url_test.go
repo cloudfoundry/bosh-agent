@@ -8,7 +8,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator/blobstore_delegatorfakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"

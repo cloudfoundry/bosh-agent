@@ -7,7 +7,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	"github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/blobstore_delegator"
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
