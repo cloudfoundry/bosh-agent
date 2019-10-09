@@ -120,7 +120,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 			server.RouteToHandler("PUT", "/success-signed-url",
 				ghttp.CombineHandlers(
 					ghttp.VerifyBody([]byte("abc")),
-					ghttp.RespondWith(http.StatusOK, ``),
+					ghttp.RespondWith(http.StatusCreated, ``),
 				),
 			)
 

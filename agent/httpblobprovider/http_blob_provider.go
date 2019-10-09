@@ -63,8 +63,8 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDi
 	if err != nil {
 		return boshcrypto.MultipleDigest{}, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT to %s for %s, response was %+v", signedURL, file, resp)
+	if !isSuccess(resp) {
+		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT to %s for %s, response was %#v", signedURL, file.Name(), resp)
 	}
 
 	return digest, nil
@@ -82,8 +82,8 @@ func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, 
 		return file.Name(), err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return file.Name(), fmt.Errorf("Error executing GET to %s, response was %+v", signedURL, resp)
+	if !isSuccess(resp) {
+		return file.Name(), fmt.Errorf("Error executing GET to %s, response was %#v", signedURL, resp)
 	}
 
 	_, err = io.Copy(file, resp.Body)
@@ -102,4 +102,8 @@ func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, 
 	}
 
 	return file.Name(), nil
+}
+
+func isSuccess(resp *http.Response) bool {
+	return resp.StatusCode >= 200 && resp.StatusCode < 300
 }
