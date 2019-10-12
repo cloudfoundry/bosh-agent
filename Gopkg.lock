@@ -87,7 +87,7 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:cc4da1a4c8b7daef975f7bf8d6e47ff7cf467c976ca7f81fbd4c1a397f4d99e9"
+  digest = "1:e4c761583d8b3c06385286ff224d8dd800d030af28e0e6175e371bc6a1cb2341"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -131,8 +131,8 @@
     "service/sts/stsiface",
   ]
   pruneopts = "NUT"
-  revision = "472ba41213bd699ff50a642b60afd89181d7bb9b"
-  version = "v1.25.6"
+  revision = "8b44c74850c51562a4360837e9e4d6e7c47b7d81"
+  version = "v1.25.11"
 
 [[projects]]
   digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
@@ -194,7 +194,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "4335459ccbb76e68abfc04866659f1879f0aee91"
+  revision = "94a8490a77f099ff495aa5823ed963a21cca7ac5"
 
 [[projects]]
   branch = "master"
@@ -504,7 +504,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cf1b07dfb6b5d6340b7aa244f4c8e9447ec516dfad6412f5a6f1893c4b6233b2"
+  digest = "1:d89493891cef5d8082696e8f8b101d1166b10ab1383ef11cd5145d4290813425"
   name = "golang.org/x/crypto"
   packages = [
     "curve25519",
@@ -517,7 +517,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "34f69633bfdcf9db92f698f8487115767eebef81"
+  revision = "87dc89f01550277dc22b74ffcf4cd89fa2f40f4c"
 
 [[projects]]
   branch = "master"
@@ -532,11 +532,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "d98b1b4438230571bd7fbc5aaa89843e92937bd3"
+  revision = "491137f692577e390404f177a0515c9f86f79754"
 
 [[projects]]
   branch = "master"
-  digest = "1:99212a3d2984c5227a4cd26e16ced75e500fcf901efdf063ea4ccee4c4c2a4dc"
+  digest = "1:837d9d733f4469ec62a5ee1af07c6c64786b897a9f783a92174d81066de3d9a6"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -547,7 +547,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "c178f38b412c7b426e4e97be2e75d11ff7b8d4d4"
+  revision = "b09406accb4736d857a32bf9444cd7edae2ffa79"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -596,7 +596,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "c9f9432ec4b21a28c4d47f172513698febb68e9c"
+  revision = "4c025a95b26e43a32c527d23a8a7ed074723e03b"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
