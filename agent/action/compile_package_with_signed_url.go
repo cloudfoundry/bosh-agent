@@ -57,7 +57,7 @@ func (a CompilePackageWithSignedURL) Run(request CompilePackageWithSignedURLRequ
 		return map[string]interface{}{}, bosherr.WrapErrorf(err, "Compiling package %s", pkg.Name)
 	}
 
-	result := map[string]interface{}{
+	result := map[string]string{
 		"sha1": uploadedDigest.String(),
 	}
 

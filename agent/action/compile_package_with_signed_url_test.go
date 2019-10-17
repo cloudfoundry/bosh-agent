@@ -94,7 +94,7 @@ var _ = Describe("CompilePackageWithSignedURL", func() {
 			}
 
 			expectedValue := map[string]interface{}{
-				"result": map[string]interface{}{
+				"result": map[string]string{
 					"sha1": "some checksum",
 				},
 			}
