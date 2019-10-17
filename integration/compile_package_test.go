@@ -106,7 +106,6 @@ var _ = Describe("compile_package", func() {
 			Expect(err).NotTo(HaveOccurred())
 			uploadS3Object(s3Bucket, "dummy_package.tgz", dummyReader)
 			dummyPackageSignedURL = generateSignedURLForGet(s3Bucket, "dummy_package.tgz")
-
 			compiledDummyPackagePutURL = generateSignedURLForPut(s3Bucket, "compiled_dummy_package.tgz")
 		})
 
@@ -130,7 +129,7 @@ var _ = Describe("compile_package", func() {
 			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
 			_, err = downloadedContents.Write(contents)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.SHA1Digest).To(Equal(sha1))
+			Expect(result["result"]).To(Equal(map[string]interface{}{"sha1": sha1}))
 
 			s := exec.Command("stat", downloadedContents.Name())
 			output, err := s.CombinedOutput()
@@ -139,7 +138,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("allows passing bare sha1 for legacy support", func() {
-			result, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			response, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				Name:                "fake",
 				Version:             "1",
 				PackageGetSignedURL: dummyPackageSignedURL,
@@ -157,7 +156,7 @@ var _ = Describe("compile_package", func() {
 			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
 			_, err = downloadedContents.Write(contents)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.SHA1Digest).To(Equal(sha1))
+			Expect(response["result"]).To(Equal(map[string]interface{}{"sha1": sha1}))
 
 			s := exec.Command("zgrep", "dummy contents of dummy package file", downloadedContents.Name())
 			Expect(s.Run()).NotTo(HaveOccurred())
@@ -177,10 +176,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("compiles dependencies and stores them to the blobstore", func() {
-			// digest, err := multiDigest.DigestFor(boshcrypto.DigestAlgorithmSHA1)
-			// Expect(err).NotTo(HaveOccurred())
-
-			result, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			response, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				PackageGetSignedURL: dummyPackageSignedURL,
 				UploadSignedURL:     compiledDummyPackagePutURL,
 				Digest:              multiDigest,
@@ -203,7 +199,7 @@ var _ = Describe("compile_package", func() {
 			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
 			_, err = downloadedContents.Write(contents)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.SHA1Digest).To(Equal(sha1))
+			Expect(response["result"]).To(Equal(map[string]interface{}{"sha1": sha1}))
 
 			s := exec.Command("stat", downloadedContents.Name())
 			output, err := s.CombinedOutput()

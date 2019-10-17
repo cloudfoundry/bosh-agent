@@ -19,10 +19,6 @@ type CompilePackageWithSignedURLRequest struct {
 	Deps    boshcomp.Dependencies     `json:"deps"`
 }
 
-type CompilePackageWithSignedURLResponse struct {
-	SHA1Digest string `json:"sha1_digest"`
-}
-
 type CompilePackageWithSignedURL struct {
 	compiler boshcomp.Compiler
 }
@@ -33,7 +29,7 @@ func NewCompilePackageWithSignedURL(compiler boshcomp.Compiler) (compilePackage 
 	}
 }
 
-func (a CompilePackageWithSignedURL) Run(request CompilePackageWithSignedURLRequest) (CompilePackageWithSignedURLResponse, error) {
+func (a CompilePackageWithSignedURL) Run(request CompilePackageWithSignedURLRequest) (map[string]interface{}, error) {
 	pkg := boshcomp.Package{
 		Name:                request.Name,
 		Sha1:                request.Digest,
@@ -58,11 +54,15 @@ func (a CompilePackageWithSignedURL) Run(request CompilePackageWithSignedURLRequ
 
 	_, uploadedDigest, err := a.compiler.Compile(pkg, modelsDeps)
 	if err != nil {
-		return CompilePackageWithSignedURLResponse{}, bosherr.WrapErrorf(err, "Compiling package %s", pkg.Name)
+		return map[string]interface{}{}, bosherr.WrapErrorf(err, "Compiling package %s", pkg.Name)
 	}
 
-	return CompilePackageWithSignedURLResponse{
-		SHA1Digest: uploadedDigest.String(),
+	result := map[string]interface{}{
+		"sha1": uploadedDigest.String(),
+	}
+
+	return map[string]interface{}{
+		"result": result,
 	}, nil
 }
 
