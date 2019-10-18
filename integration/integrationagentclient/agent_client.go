@@ -132,13 +132,18 @@ func (c *IntegrationAgentClient) CompilePackageWithSignedURL(req action.CompileP
 		return map[string]interface{}{}, bosherr.WrapError(err, "Sending 'compile_package' to the agent")
 	}
 
-	sha1, ok := responseValue["sha1"].(string)
+	result, ok := responseValue["result"].(map[string]interface{})
+	if !ok {
+		return map[string]interface{}{}, bosherr.Errorf("Unable to parse 'compile_package' response from the agent: %#v", responseValue)
+	}
+
+	sha1, ok := result["sha1"].(string)
 	if !ok {
 		return map[string]interface{}{}, bosherr.Errorf("Unable to parse 'compile_package' response from the agent: %#v", responseValue)
 	}
 
 	return map[string]interface{}{
-		"result": map[string]interface{}{
+		"result": map[string]string{
 			"sha1": sha1,
 		},
 	}, nil

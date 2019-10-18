@@ -129,7 +129,7 @@ var _ = Describe("compile_package", func() {
 			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
 			_, err = downloadedContents.Write(contents)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result["result"]).To(Equal(map[string]interface{}{"sha1": sha1}))
+			Expect(result["result"]).To(Equal(map[string]string{"sha1": sha1}))
 
 			s := exec.Command("stat", downloadedContents.Name())
 			output, err := s.CombinedOutput()
@@ -156,7 +156,7 @@ var _ = Describe("compile_package", func() {
 			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
 			_, err = downloadedContents.Write(contents)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(response["result"]).To(Equal(map[string]interface{}{"sha1": sha1}))
+			Expect(response["result"]).To(Equal(map[string]string{"sha1": sha1}))
 
 			s := exec.Command("zgrep", "dummy contents of dummy package file", downloadedContents.Name())
 			Expect(s.Run()).NotTo(HaveOccurred())
@@ -199,7 +199,7 @@ var _ = Describe("compile_package", func() {
 			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
 			_, err = downloadedContents.Write(contents)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(response["result"]).To(Equal(map[string]interface{}{"sha1": sha1}))
+			Expect(response["result"]).To(Equal(map[string]string{"sha1": sha1}))
 
 			s := exec.Command("stat", downloadedContents.Name())
 			output, err := s.CombinedOutput()
