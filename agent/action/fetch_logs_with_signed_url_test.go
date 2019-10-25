@@ -67,7 +67,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 			Expect(copier.FilteredCopyToTempTempDir).To(Equal(compressor.CompressFilesInDirDir))
 			Expect(copier.CleanUpTempDir).To(Equal(compressor.CompressFilesInDirDir))
 
-			actualSignedURL, actualTarballPath := blobDelegator.WriteArgsForCall(0)
+			actualSignedURL, actualTarballPath, _ := blobDelegator.WriteArgsForCall(0)
 			Expect(actualSignedURL).To(Equal("foobar"))
 			Expect(actualTarballPath).To(Equal(compressor.CompressFilesInDirTarballPath))
 

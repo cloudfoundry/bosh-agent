@@ -86,7 +86,7 @@ func (a FetchLogsWithSignedURLAction) Run(request FetchLogsWithSignedURLRequest)
 		_ = a.compressor.CleanUp(tarball)
 	}()
 
-	_, digest, err := a.blobDelegator.Write(request.SignedURL, tarball)
+	_, digest, err := a.blobDelegator.Write(request.SignedURL, tarball, nil)
 	if err != nil {
 		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Create file on blobstore")
 	}

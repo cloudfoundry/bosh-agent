@@ -7,6 +7,6 @@ import (
 //go:generate counterfeiter . HTTPBlobProvider
 
 type HTTPBlobProvider interface {
-	Upload(signedURL, filepath string) (boshcrypto.MultipleDigest, error)
-	Get(signedURL string, digest boshcrypto.Digest) (string, error)
+	Upload(signedURL, filepath string, headers map[string]string) (boshcrypto.MultipleDigest, error)
+	Get(signedURL string, digest boshcrypto.Digest, headers map[string]string) (string, error)
 }

@@ -148,7 +148,7 @@ func init() {
 				Expect(digest.String()).To(Equal("sha256:d12d3a3ee8dcdc9e7ea3416fd618298ea50abde2cf434313c6c3edb213f441cd"))
 
 				Expect(blobstore.GetCallCount()).To(Equal(1))
-				fingerprint, signedURL, blobID := blobstore.GetArgsForCall(0)
+				fingerprint, signedURL, blobID, _ := blobstore.GetArgsForCall(0)
 				Expect(signedURL).To(Equal("/some/signed/url"))
 				Expect(blobID).To(Equal("blobstore_id"))
 				Expect(fingerprint).To(Equal(pkg.Sha1))
@@ -341,7 +341,7 @@ func init() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
 
-				_, filePathArg := blobstore.WriteArgsForCall(0)
+				_, filePathArg, _ := blobstore.WriteArgsForCall(0)
 				Expect(filePathArg).To(Equal("/tmp/compressed-compiled-package"))
 			})
 
@@ -356,7 +356,7 @@ func init() {
 			It("cleans up compressed package after uploading it to blobstore", func() {
 				var beforeCleanUpTarballPath, afterCleanUpTarballPath string
 
-				blobstore.WriteStub = func(signedURL, fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
+				blobstore.WriteStub = func(signedURL, fileName string, headers map[string]string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
 					beforeCleanUpTarballPath = compressor.CleanUpTarballPath
 					return "my-blob-id", boshcrypto.MultipleDigest{}, nil
 				}

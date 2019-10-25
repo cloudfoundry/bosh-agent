@@ -87,7 +87,7 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, _ := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
 				Expect(signedURL).To(Equal("/fake/signed/url"))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
@@ -111,7 +111,7 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, _ := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
 				Expect(signedURL).To(Equal("/fake/signed/url"))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
@@ -123,7 +123,7 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, _ := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
 				Expect(signedURL).To(Equal("/fake/signed/url"))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(job.Source.Sha1)))

@@ -79,7 +79,7 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID, _ := blobstore.GetArgsForCall(0)
 					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
@@ -103,7 +103,7 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID, _ := blobstore.GetArgsForCall(0)
 					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
@@ -115,7 +115,7 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID, _ := blobstore.GetArgsForCall(0)
 					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))

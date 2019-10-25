@@ -44,7 +44,7 @@ var _ = Describe("FetchLogsAction", func() {
 			compressor.CompressFilesInDirTarballPath = "logs_test.tar"
 			multidigestSha := boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"))
 			sha1 := multidigestSha.String()
-			blobstore.WriteStub = func(signedURL, fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
+			blobstore.WriteStub = func(signedURL, fileName string, headers map[string]string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
 				return "my-blob-id", multidigestSha, nil
 			}
 
@@ -65,7 +65,7 @@ var _ = Describe("FetchLogsAction", func() {
 			Expect(copier.FilteredCopyToTempTempDir).To(Equal(compressor.CompressFilesInDirDir))
 			Expect(copier.CleanUpTempDir).To(Equal(compressor.CompressFilesInDirDir))
 
-			_, compressFilesInTarballPath := blobstore.WriteArgsForCall(0)
+			_, compressFilesInTarballPath, _ := blobstore.WriteArgsForCall(0)
 			Expect(compressFilesInTarballPath).To(Equal(compressor.CompressFilesInDirTarballPath))
 
 			boshassert.MatchesJSONString(GinkgoT(), logs, `{"blobstore_id":"my-blob-id","sha1":"`+sha1+`"}`)
@@ -105,7 +105,7 @@ var _ = Describe("FetchLogsAction", func() {
 
 			compressor.CompressFilesInDirTarballPath = "/fake-compressed-logs.tar"
 
-			blobstore.WriteStub = func(signedURL, fileName string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
+			blobstore.WriteStub = func(signedURL, fileName string, headers map[string]string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
 				beforeCleanUpTarballPath = compressor.CleanUpTarballPath
 
 				return "my-blob-id", boshcrypto.MultipleDigest{}, nil

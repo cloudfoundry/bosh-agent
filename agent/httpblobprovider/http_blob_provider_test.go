@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	system "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -55,10 +55,13 @@ var _ = Describe("HTTPBlobImpl", func() {
 			server.RouteToHandler("GET", "/success-get-signed-url",
 				ghttp.CombineHandlers(
 					ghttp.RespondWith(http.StatusOK, "abc"),
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Header.Get("key")).To(Equal("value"))
+					}),
 				),
 			)
 
-			filepath, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest)
+			filepath, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest, map[string]string{"key": "value"})
 			Expect(err).NotTo(HaveOccurred())
 
 			content, err := fakeFileSystem.ReadFile(filepath)
@@ -73,7 +76,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			_, err := blobProvider.Get(fmt.Sprintf("%s/bad-get-signed-url", server.URL()), multiDigest)
+			_, err := blobProvider.Get(fmt.Sprintf("%s/bad-get-signed-url", server.URL()), multiDigest, nil)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -87,7 +90,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 
 			server.RouteToHandler("GET", "/get-disconnecting-handler", disconnectingRequestHandler)
 
-			_, err := blobProvider.Get(fmt.Sprintf("%s/get-disconnecting-handler", server.URL()), multiDigest)
+			_, err := blobProvider.Get(fmt.Sprintf("%s/get-disconnecting-handler", server.URL()), multiDigest, nil)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -102,7 +105,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 			badsha512 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA512, "bad-ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f")
 			badMultiDigest := boshcrypto.MustNewMultipleDigest(badsha1, badsha512)
 
-			_, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), badMultiDigest)
+			_, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), badMultiDigest, nil)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -112,7 +115,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 			err := fakeFileSystem.WriteFileString(filepath, "abc")
 			Expect(err).NotTo(HaveOccurred())
 
-			actualDigests, err := blobProvider.Upload(signedURL, filepath)
+			actualDigests, err := blobProvider.Upload(signedURL, filepath, map[string]string{"key": "value"})
 			return actualDigests, err
 		}
 
@@ -121,6 +124,9 @@ var _ = Describe("HTTPBlobImpl", func() {
 				ghttp.CombineHandlers(
 					ghttp.VerifyBody([]byte("abc")),
 					ghttp.RespondWith(http.StatusCreated, ``),
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Header.Get("key")).To(Equal("value"))
+					}),
 				),
 			)
 
