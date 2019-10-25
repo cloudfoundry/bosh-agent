@@ -198,6 +198,8 @@ var _ = Describe("HTTPSDispatcher", func() {
 
 		tlsConfig := &tls.Config{
 			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS12,
+			MaxVersion:         tls.VersionTLS12,
 			CipherSuites: []uint16{
 				tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
 				tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
@@ -214,6 +216,8 @@ var _ = Describe("HTTPSDispatcher", func() {
 
 		tlsConfig := &tls.Config{
 			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS12,
+			MaxVersion:         tls.VersionTLS12,
 			CipherSuites: []uint16{
 				tls.TLS_RSA_WITH_RC4_128_SHA,
 				tls.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
