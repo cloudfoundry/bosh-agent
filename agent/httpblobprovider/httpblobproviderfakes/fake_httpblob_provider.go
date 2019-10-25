@@ -9,11 +9,12 @@ import (
 )
 
 type FakeHTTPBlobProvider struct {
-	GetStub        func(string, crypto.Digest) (string, error)
+	GetStub        func(string, crypto.Digest, map[string]string) (string, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
 		arg1 string
 		arg2 crypto.Digest
+		arg3 map[string]string
 	}
 	getReturns struct {
 		result1 string
@@ -23,11 +24,12 @@ type FakeHTTPBlobProvider struct {
 		result1 string
 		result2 error
 	}
-	UploadStub        func(string, string) (crypto.MultipleDigest, error)
+	UploadStub        func(string, string, map[string]string) (crypto.MultipleDigest, error)
 	uploadMutex       sync.RWMutex
 	uploadArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 map[string]string
 	}
 	uploadReturns struct {
 		result1 crypto.MultipleDigest
@@ -41,17 +43,18 @@ type FakeHTTPBlobProvider struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeHTTPBlobProvider) Get(arg1 string, arg2 crypto.Digest) (string, error) {
+func (fake *FakeHTTPBlobProvider) Get(arg1 string, arg2 crypto.Digest, arg3 map[string]string) (string, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
 		arg1 string
 		arg2 crypto.Digest
-	}{arg1, arg2})
-	fake.recordInvocation("Get", []interface{}{arg1, arg2})
+		arg3 map[string]string
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3})
 	fake.getMutex.Unlock()
 	if fake.GetStub != nil {
-		return fake.GetStub(arg1, arg2)
+		return fake.GetStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -66,17 +69,17 @@ func (fake *FakeHTTPBlobProvider) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string, crypto.Digest) (string, error)) {
+func (fake *FakeHTTPBlobProvider) GetCalls(stub func(string, crypto.Digest, map[string]string) (string, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeHTTPBlobProvider) GetArgsForCall(i int) (string, crypto.Digest) {
+func (fake *FakeHTTPBlobProvider) GetArgsForCall(i int) (string, crypto.Digest, map[string]string) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeHTTPBlobProvider) GetReturns(result1 string, result2 error) {
@@ -105,17 +108,18 @@ func (fake *FakeHTTPBlobProvider) GetReturnsOnCall(i int, result1 string, result
 	}{result1, result2}
 }
 
-func (fake *FakeHTTPBlobProvider) Upload(arg1 string, arg2 string) (crypto.MultipleDigest, error) {
+func (fake *FakeHTTPBlobProvider) Upload(arg1 string, arg2 string, arg3 map[string]string) (crypto.MultipleDigest, error) {
 	fake.uploadMutex.Lock()
 	ret, specificReturn := fake.uploadReturnsOnCall[len(fake.uploadArgsForCall)]
 	fake.uploadArgsForCall = append(fake.uploadArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("Upload", []interface{}{arg1, arg2})
+		arg3 map[string]string
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Upload", []interface{}{arg1, arg2, arg3})
 	fake.uploadMutex.Unlock()
 	if fake.UploadStub != nil {
-		return fake.UploadStub(arg1, arg2)
+		return fake.UploadStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -130,17 +134,17 @@ func (fake *FakeHTTPBlobProvider) UploadCallCount() int {
 	return len(fake.uploadArgsForCall)
 }
 
-func (fake *FakeHTTPBlobProvider) UploadCalls(stub func(string, string) (crypto.MultipleDigest, error)) {
+func (fake *FakeHTTPBlobProvider) UploadCalls(stub func(string, string, map[string]string) (crypto.MultipleDigest, error)) {
 	fake.uploadMutex.Lock()
 	defer fake.uploadMutex.Unlock()
 	fake.UploadStub = stub
 }
 
-func (fake *FakeHTTPBlobProvider) UploadArgsForCall(i int) (string, string) {
+func (fake *FakeHTTPBlobProvider) UploadArgsForCall(i int) (string, string, map[string]string) {
 	fake.uploadMutex.RLock()
 	defer fake.uploadMutex.RUnlock()
 	argsForCall := fake.uploadArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeHTTPBlobProvider) UploadReturns(result1 crypto.MultipleDigest, result2 error) {

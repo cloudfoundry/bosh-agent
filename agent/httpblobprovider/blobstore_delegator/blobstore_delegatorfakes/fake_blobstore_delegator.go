@@ -33,12 +33,13 @@ type FakeBlobstoreDelegator struct {
 	deleteReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetStub        func(crypto.Digest, string, string) (string, error)
+	GetStub        func(crypto.Digest, string, string, map[string]string) (string, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []struct {
 		arg1 crypto.Digest
 		arg2 string
 		arg3 string
+		arg4 map[string]string
 	}
 	getReturns struct {
 		result1 string
@@ -48,11 +49,12 @@ type FakeBlobstoreDelegator struct {
 		result1 string
 		result2 error
 	}
-	WriteStub        func(string, string) (string, crypto.MultipleDigest, error)
+	WriteStub        func(string, string, map[string]string) (string, crypto.MultipleDigest, error)
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 map[string]string
 	}
 	writeReturns struct {
 		result1 string
@@ -190,18 +192,19 @@ func (fake *FakeBlobstoreDelegator) DeleteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeBlobstoreDelegator) Get(arg1 crypto.Digest, arg2 string, arg3 string) (string, error) {
+func (fake *FakeBlobstoreDelegator) Get(arg1 crypto.Digest, arg2 string, arg3 string, arg4 map[string]string) (string, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, struct {
 		arg1 crypto.Digest
 		arg2 string
 		arg3 string
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3})
+		arg4 map[string]string
+	}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3, arg4})
 	fake.getMutex.Unlock()
 	if fake.GetStub != nil {
-		return fake.GetStub(arg1, arg2, arg3)
+		return fake.GetStub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -216,17 +219,17 @@ func (fake *FakeBlobstoreDelegator) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeBlobstoreDelegator) GetCalls(stub func(crypto.Digest, string, string) (string, error)) {
+func (fake *FakeBlobstoreDelegator) GetCalls(stub func(crypto.Digest, string, string, map[string]string) (string, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeBlobstoreDelegator) GetArgsForCall(i int) (crypto.Digest, string, string) {
+func (fake *FakeBlobstoreDelegator) GetArgsForCall(i int) (crypto.Digest, string, string, map[string]string) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeBlobstoreDelegator) GetReturns(result1 string, result2 error) {
@@ -255,17 +258,18 @@ func (fake *FakeBlobstoreDelegator) GetReturnsOnCall(i int, result1 string, resu
 	}{result1, result2}
 }
 
-func (fake *FakeBlobstoreDelegator) Write(arg1 string, arg2 string) (string, crypto.MultipleDigest, error) {
+func (fake *FakeBlobstoreDelegator) Write(arg1 string, arg2 string, arg3 map[string]string) (string, crypto.MultipleDigest, error) {
 	fake.writeMutex.Lock()
 	ret, specificReturn := fake.writeReturnsOnCall[len(fake.writeArgsForCall)]
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("Write", []interface{}{arg1, arg2})
+		arg3 map[string]string
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Write", []interface{}{arg1, arg2, arg3})
 	fake.writeMutex.Unlock()
 	if fake.WriteStub != nil {
-		return fake.WriteStub(arg1, arg2)
+		return fake.WriteStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
@@ -280,17 +284,17 @@ func (fake *FakeBlobstoreDelegator) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeBlobstoreDelegator) WriteCalls(stub func(string, string) (string, crypto.MultipleDigest, error)) {
+func (fake *FakeBlobstoreDelegator) WriteCalls(stub func(string, string, map[string]string) (string, crypto.MultipleDigest, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
 }
 
-func (fake *FakeBlobstoreDelegator) WriteArgsForCall(i int) (string, string) {
+func (fake *FakeBlobstoreDelegator) WriteArgsForCall(i int) (string, string, map[string]string) {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeBlobstoreDelegator) WriteReturns(result1 string, result2 crypto.MultipleDigest, result3 error) {

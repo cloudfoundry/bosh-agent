@@ -129,7 +129,7 @@ var _ = Describe("SyncDNS", func() {
 					Expect(response).To(Equal("synced"))
 
 					Expect(fakeBlobstore.GetCallCount()).To(Equal(1))
-					fingerPrint, _, blobID := fakeBlobstore.GetArgsForCall(0)
+					fingerPrint, _, blobID, _ := fakeBlobstore.GetArgsForCall(0)
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(multiDigest))
 				})

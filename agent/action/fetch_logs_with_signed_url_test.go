@@ -50,7 +50,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 			sha1 := multidigestSha.String()
 			blobDelegator.WriteReturns("", multidigestSha, nil)
 
-			logs, err := action.Run(FetchLogsWithSignedURLRequest{SignedURL: "foobar", LogType: logType, Filters: filters})
+			logs, err := action.Run(FetchLogsWithSignedURLRequest{SignedURL: "foobar", LogType: logType, Filters: filters, Headers: map[string]string{"key": "value"}})
 			Expect(err).ToNot(HaveOccurred())
 
 			var expectedPath string
@@ -67,8 +67,9 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 			Expect(copier.FilteredCopyToTempTempDir).To(Equal(compressor.CompressFilesInDirDir))
 			Expect(copier.CleanUpTempDir).To(Equal(compressor.CompressFilesInDirDir))
 
-			actualSignedURL, actualTarballPath := blobDelegator.WriteArgsForCall(0)
+			actualSignedURL, actualTarballPath, headers := blobDelegator.WriteArgsForCall(0)
 			Expect(actualSignedURL).To(Equal("foobar"))
+			Expect(headers).To(Equal(map[string]string{"key": "value"}))
 			Expect(actualTarballPath).To(Equal(compressor.CompressFilesInDirTarballPath))
 
 			boshassert.MatchesJSONString(GinkgoT(), logs, `{"sha1":"`+sha1+`"}`)

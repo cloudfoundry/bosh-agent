@@ -15,6 +15,7 @@ type Package struct {
 	PackageGetSignedURL string `json:"package_get_signed_url"`
 	UploadSignedURL     string `json:"upload_signed_url"`
 	Sha1                boshcrypto.MultipleDigest
+	Headers             map[string]string `json:"headers"`
 	Version             string
 }
 

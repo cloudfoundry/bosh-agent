@@ -87,9 +87,10 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
 				Expect(signedURL).To(Equal("/fake/signed/url"))
+				Expect(headers).To(Equal(map[string]string{"key": "value"}))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
 
 				// downloaded file is cleaned up
@@ -111,9 +112,10 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
 				Expect(signedURL).To(Equal("/fake/signed/url"))
+				Expect(headers).To(Equal(map[string]string{"key": "value"}))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 			})
 
@@ -123,9 +125,10 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				fingerPrint, signedURL, blobID := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
 				Expect(signedURL).To(Equal("/fake/signed/url"))
+				Expect(headers).To(Equal(map[string]string{"key": "value"}))
 				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(job.Source.Sha1)))
 			})
 
@@ -551,9 +554,12 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 		Name:    "fake-job-name" + uuid,
 		Version: "fake-job-version",
 		Source: models.Source{
-			Sha1:          boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"),
-			BlobstoreID:   "fake-blobstore-id",
-			SignedURL:     "/fake/signed/url",
+			Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"),
+			BlobstoreID: "fake-blobstore-id",
+			SignedURL:   "/fake/signed/url",
+			Headers: map[string]string{
+				"key": "value",
+			},
 			PathInArchive: "fake-path-in-archive",
 		},
 		Packages: []models.Package{

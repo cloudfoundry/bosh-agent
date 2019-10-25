@@ -115,7 +115,7 @@ var _ = Describe("S3 HTTP Blob Provider", func() {
 		httpClient := httpclient.CreateDefaultClient(nil)
 		blobProvider := httpblobprovider.NewHTTPBlobImplWithDigestAlgorithms(realFileSystem, httpClient, []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA512})
 
-		_, err := blobProvider.Upload(signedURL, tmpfile.Name())
+		_, err := blobProvider.Upload(signedURL, tmpfile.Name(), nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		contents := downloadS3ObjectContents(bucket, key)

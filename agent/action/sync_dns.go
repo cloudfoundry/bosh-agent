@@ -65,7 +65,7 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "synced", nil
 	}
 
-	filePath, err := a.blobstore.Get(multiDigest, "", blobID)
+	filePath, err := a.blobstore.Get(multiDigest, "", blobID, nil)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "getting %s from blobstore", blobID)
 	}

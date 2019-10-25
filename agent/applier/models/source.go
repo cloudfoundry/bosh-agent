@@ -7,4 +7,5 @@ type Source struct {
 	BlobstoreID   string
 	PathInArchive string
 	SignedURL     string
+	Headers       map[string]string
 }

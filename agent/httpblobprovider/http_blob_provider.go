@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -31,7 +32,7 @@ func NewHTTPBlobImplWithDigestAlgorithms(fs boshsys.FileSystem, httpClient *http
 	}
 }
 
-func (h *HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDigest, error) {
+func (h *HTTPBlobImpl) Upload(signedURL, filepath string, headers map[string]string) (boshcrypto.MultipleDigest, error) {
 	digest, err := boshcrypto.NewMultipleDigestFromPath(filepath, h.fs, h.createAlgorithms)
 	if err != nil {
 		return boshcrypto.MultipleDigest{}, err
@@ -57,6 +58,13 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDi
 
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("Expect", "100-continue")
+
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
+
 	req.ContentLength = stat.Size()
 
 	resp, err := h.httpClient.Do(req)
@@ -70,16 +78,27 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDi
 	return digest, nil
 }
 
-func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, error) {
+func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest, headers map[string]string) (string, error) {
 	file, err := h.fs.TempFile("bosh-http-blob-provider-GET")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")
 	}
-	defer file.Close()
 
-	resp, err := h.httpClient.Get(signedURL)
+	req, err := http.NewRequest("GET", signedURL, strings.NewReader(""))
 	if err != nil {
-		return file.Name(), err
+		defer file.Close()
+		return "", bosherr.WrapError(err, "Creating Get Request")
+	}
+
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
+
+	resp, err := h.httpClient.Do(req)
+	if err != nil {
+		return file.Name(), bosherr.WrapError(err, "Excuting GET request")
 	}
 
 	if !isSuccess(resp) {
@@ -88,7 +107,7 @@ func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest) (string, 
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return file.Name(), err
+		return file.Name(), bosherr.WrapError(err, "Copying response to tempfile")
 	}
 
 	_, err = file.Seek(0, io.SeekStart)

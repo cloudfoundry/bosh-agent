@@ -20,22 +20,22 @@ func NewBlobstoreDelegator(hp httpblobprovider.HTTPBlobProvider, bp blobstore.Di
 	}
 }
 
-func (b *BlobstoreDelegatorImpl) Get(digest boshcrypto.Digest, signedURL, blobID string) (fileName string, err error) {
+func (b *BlobstoreDelegatorImpl) Get(digest boshcrypto.Digest, signedURL, blobID string, headers map[string]string) (fileName string, err error) {
 	if signedURL == "" {
 		if blobID == "" {
 			return "", fmt.Errorf("Both signedURL and blobID are blank which is invalid")
 		}
 		return b.b.Get(blobID, digest)
 	}
-	return b.h.Get(signedURL, digest)
+	return b.h.Get(signedURL, digest, headers)
 }
 
-func (b *BlobstoreDelegatorImpl) Write(signedURL, path string) (string, boshcrypto.MultipleDigest, error) {
+func (b *BlobstoreDelegatorImpl) Write(signedURL, path string, headers map[string]string) (string, boshcrypto.MultipleDigest, error) {
 	if signedURL == "" {
 		return b.b.Create(path)
 	}
 
-	digest, err := b.h.Upload(signedURL, path)
+	digest, err := b.h.Upload(signedURL, path, headers)
 	return "", digest, err
 }
 

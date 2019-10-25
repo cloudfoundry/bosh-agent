@@ -136,18 +136,23 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 			Context("when blobstore contains DNS records", func() {
 				It("accesses the blobstore and fetches DNS records", func() {
+					headers := map[string]string{
+						"key": "value",
+					}
 					response, err := action.Run(SyncDNSWithSignedURLRequest{
 						SignedURL:   "fake-signed-url",
 						MultiDigest: multiDigest,
 						Version:     2,
+						Headers:     headers,
 					})
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
 					Expect(blobDelegator.GetCallCount()).To(Equal(1))
-					_, signedURL, blobID := blobDelegator.GetArgsForCall(0)
+					_, signedURL, blobID, urlHeaders := blobDelegator.GetArgsForCall(0)
 					Expect(signedURL).To(Equal("fake-signed-url"))
 					Expect(blobID).To(BeEmpty())
+					Expect(urlHeaders).To(Equal(headers))
 				})
 
 				It("reads the DNS records from the blobstore file", func() {
