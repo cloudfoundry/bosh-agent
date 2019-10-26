@@ -87,7 +87,7 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:fa8767ea8194cafe6b55df80c3d6937dbf9e75779a82d3daf9b24fdd2fda82f1"
+  digest = "1:88ebb4a485b025704f1e6a1551f99886b4ae1c185e64e99143c656d1aed7e66b"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -131,8 +131,8 @@
     "service/sts/stsiface",
   ]
   pruneopts = "NUT"
-  revision = "4b77f7c2f7303e8c757947ae8aff6a33dce7b8d1"
-  version = "v1.25.16"
+  revision = "13ad2b09f6ff7e16808b4a45c32684e6c66bf86d"
+  version = "v1.25.19"
 
 [[projects]]
   digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
@@ -160,7 +160,7 @@
   ]
   pruneopts = "NUT"
   revision = "e06454561427e184e14dca98f979941cb017dc44"
-  version = "v0.0.43"
+  version = "v0.0.44"
 
 [[projects]]
   digest = "1:9bc795168152263829123afa86b4ec2243d51aec01e89f5bb1d39dd66c5077cd"
@@ -194,7 +194,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "edd614a7817f201b7bd70277a68de1c21ddbfe64"
+  revision = "d9506deccf6a821dc81ec55d84873d4a05a1ec9d"
 
 [[projects]]
   branch = "master"
@@ -532,11 +532,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "da9a3fd4c5820e74b24a6cb7fb438dc9b0dd377c"
+  revision = "ec77196f6094c3492a8b61f2c11cf937f78992ae"
 
 [[projects]]
   branch = "master"
-  digest = "1:2f3d83ad8a21cb04e4717ce67d3993490218079f8a49e9c18c1d16fb1c77d219"
+  digest = "1:87d92aec4e4920516621c71ef3218631cf6ba52e76e8975048d6d25560d16689"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -547,7 +547,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "727590c5006e77ca5247972f47e877f4929fc985"
+  revision = "33540a1f603772f9d4b761f416f5c10dade23e96"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -579,7 +579,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:652982a5f8ecd4d5b2628668df8fee776d1fd416b3c24cbdf3a97b786c5bf7e8"
+  digest = "1:e8074db5811031e438301937752755e84de48028d254d69ed9e3bbe74f9d0c0f"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -597,7 +597,7 @@
     "internal/span",
   ]
   pruneopts = "NUT"
-  revision = "ed542cd5b28ad1b474f8ff7ca112cad2c3ac2dc8"
+  revision = "b2104f82a97df5456531b2816ef2022c7f4431c0"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
