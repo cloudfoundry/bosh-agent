@@ -1,0 +1,67 @@
+{
+  "agent_id": "agent-id-bosh-0",
+  "blobstore": {
+    "provider": "local",
+    "options": {
+      "blobstore_path": "/opt/bosh-provisioner/blobstore"
+    }
+  },
+  "disks": {
+    "system": "",
+    "ephemeral": "",
+    "persistent": {}
+  },
+  "env": {
+    "bosh": {
+      "password": ""
+    }
+  },
+  "networks": {
+    "default": {
+      "type": "dynamic",
+      "ip": "",
+      "netmask": "",
+      "gateway": "",
+      "default": null,
+      "dns": null,
+      "mac": ""
+    }
+  },
+  "ntp": [],
+  "mbus": "https://user:password@127.0.0.1:4321/agent",
+  "vm": {
+    "agent_id": "agent-id-bosh-0",
+    "blobstore": {
+      "provider": "local",
+      "options": {
+        "blobstore_path": "/opt/bosh-provisioner/blobstore"
+      }
+    },
+    "disks": {
+      "system": "",
+      "ephemeral": "",
+      "persistent": {}
+    },
+    "env": {
+      "bosh": {
+        "password": ""
+      }
+    },
+    "networks": {
+      "default": {
+        "type": "dynamic",
+        "ip": "",
+        "netmask": "",
+        "gateway": "",
+        "default": null,
+        "dns": null,
+        "mac": ""
+      }
+    },
+    "ntp": [],
+    "mbus": "https://user:password@127.0.0.1:4321/agent",
+    "vm": {
+      "name": "vm-name-bosh-0"
+    }
+  }
+}
