@@ -72,7 +72,7 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string, headers map[string]str
 		return boshcrypto.MultipleDigest{}, err
 	}
 	if !isSuccess(resp) {
-		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT to %s for %s, response was %#v", signedURL, file.Name(), resp)
+		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT for %s, response was %d", file.Name(), resp.StatusCode)
 	}
 
 	return digest, nil
@@ -102,7 +102,7 @@ func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest, headers m
 	}
 
 	if !isSuccess(resp) {
-		return file.Name(), fmt.Errorf("Error executing GET to %s, response was %#v", signedURL, resp)
+		return file.Name(), fmt.Errorf("Error executing GET, response was %d", resp.StatusCode)
 	}
 
 	_, err = io.Copy(file, resp.Body)

@@ -78,6 +78,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 
 			_, err := blobProvider.Get(fmt.Sprintf("%s/bad-get-signed-url", server.URL()), multiDigest, nil)
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).ToNot(ContainSubstring(fmt.Sprintf("%s/bad-get-signed-url", server.URL())))
 		})
 
 		It("does something when the server responds with an error", func() {
@@ -150,6 +151,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 
 			_, err := testUpload("/some/path.tgz", fmt.Sprintf("%s/bad-status-code", server.URL()))
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).ToNot(ContainSubstring(fmt.Sprintf("%s/bad-status-code", server.URL())))
 		})
 
 		It("does something when the server responds with an error", func() {
