@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -16,25 +17,22 @@ var DefaultCryptoAlgorithms = []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmS
 type HTTPBlobImpl struct {
 	fs               boshsys.FileSystem
 	createAlgorithms []boshcrypto.Algorithm
+	httpClient       *http.Client
 }
 
-func NewHTTPBlobImpl(fs boshsys.FileSystem) HTTPBlobImpl {
-	return HTTPBlobImpl{
-		fs: fs,
+func NewHTTPBlobImpl(fs boshsys.FileSystem, httpClient *http.Client) *HTTPBlobImpl {
+	return NewHTTPBlobImplWithDigestAlgorithms(fs, httpClient, DefaultCryptoAlgorithms)
+}
+
+func NewHTTPBlobImplWithDigestAlgorithms(fs boshsys.FileSystem, httpClient *http.Client, algorithms []boshcrypto.Algorithm) *HTTPBlobImpl {
+	return &HTTPBlobImpl{
+		fs:               fs,
+		createAlgorithms: algorithms,
+		httpClient:       httpClient,
 	}
 }
 
-func (h HTTPBlobImpl) WithDefaultAlgorithms() HTTPBlobImpl {
-	h.createAlgorithms = DefaultCryptoAlgorithms
-	return h
-}
-
-func (h HTTPBlobImpl) WithAlgorithms(a []boshcrypto.Algorithm) HTTPBlobImpl {
-	h.createAlgorithms = a
-	return h
-}
-
-func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDigest, error) {
+func (h *HTTPBlobImpl) Upload(signedURL, filepath string, headers map[string]string) (boshcrypto.MultipleDigest, error) {
 	digest, err := boshcrypto.NewMultipleDigestFromPath(filepath, h.fs, h.createAlgorithms)
 	if err != nil {
 		return boshcrypto.MultipleDigest{}, err
@@ -60,42 +58,56 @@ func (h HTTPBlobImpl) Upload(signedURL, filepath string) (boshcrypto.MultipleDig
 
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("Expect", "100-continue")
+
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
+
 	req.ContentLength = stat.Size()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := h.httpClient.Do(req)
 	if err != nil {
 		return boshcrypto.MultipleDigest{}, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT to %s for %s, response was %+v", signedURL, file, resp)
+	if !isSuccess(resp) {
+		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT to %s for %s, response was %#v", signedURL, file.Name(), resp)
 	}
 
 	return digest, nil
 }
 
-func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.MultipleDigest) (string, error) {
+func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest, headers map[string]string) (string, error) {
 	file, err := h.fs.TempFile("bosh-http-blob-provider-GET")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")
 	}
-	defer file.Close()
 
-	resp, err := http.Get(signedURL)
+	req, err := http.NewRequest("GET", signedURL, strings.NewReader(""))
 	if err != nil {
-		return file.Name(), err
+		defer file.Close()
+		return "", bosherr.WrapError(err, "Creating Get Request")
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return file.Name(), fmt.Errorf("Error executing GET to %s, response was %+v", signedURL, resp)
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
 	}
 
-	written, err := io.Copy(file, resp.Body)
+	resp, err := h.httpClient.Do(req)
 	if err != nil {
-		return file.Name(), err
+		return file.Name(), bosherr.WrapError(err, "Excuting GET request")
 	}
-	if written != resp.ContentLength {
-		return file.Name(), fmt.Errorf("Write mismatch with blob content-length. Expected: %d, wrote: %d", resp.ContentLength, written)
+
+	if !isSuccess(resp) {
+		return file.Name(), fmt.Errorf("Error executing GET to %s, response was %#v", signedURL, resp)
+	}
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return file.Name(), bosherr.WrapError(err, "Copying response to tempfile")
 	}
 
 	_, err = file.Seek(0, io.SeekStart)
@@ -109,4 +121,8 @@ func (h HTTPBlobImpl) Get(signedURL string, digest boshcrypto.MultipleDigest) (s
 	}
 
 	return file.Name(), nil
+}
+
+func isSuccess(resp *http.Response) bool {
+	return resp.StatusCode >= 200 && resp.StatusCode < 300
 }

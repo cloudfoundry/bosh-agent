@@ -21,6 +21,7 @@ func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
 	return models.Source{
 		Sha1:          sha1,
 		BlobstoreID:   s.BlobstoreID,
+		SignedURL:     s.SignedURL,
 		PathInArchive: job.Name,
 	}
 }
@@ -38,11 +39,7 @@ func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if jsonStruct.SignedURL != "" {
-		panic("Time bomb: implementation for signed url in this method is incomplete. It has a lot of custom logic for converting the action's payload into a struct")
-	}
-
-	if jsonStruct.BlobstoreID == "" && jsonStruct.Sha1 == "" {
+	if (jsonStruct.BlobstoreID == "" || jsonStruct.SignedURL == "") && jsonStruct.Sha1 == "" {
 		s = nil
 		return nil
 	}
@@ -56,6 +53,7 @@ func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
 	*s = RenderedTemplatesArchiveSpec{
 		Sha1:        &digest,
 		BlobstoreID: jsonStruct.BlobstoreID,
+		SignedURL:   jsonStruct.SignedURL,
 	}
 
 	return nil

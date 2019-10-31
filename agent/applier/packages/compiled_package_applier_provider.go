@@ -7,7 +7,7 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -19,7 +19,7 @@ type compiledPackageApplierProvider struct {
 	jobSpecificEnablePath string
 	name                  string
 
-	blobstore    boshblob.DigestBlobstore
+	blobstore    blobstore_delegator.BlobstoreDelegator
 	compressor   boshcmd.Compressor
 	fs           boshsys.FileSystem
 	timeProvider clock.Clock
@@ -28,7 +28,7 @@ type compiledPackageApplierProvider struct {
 
 func NewCompiledPackageApplierProvider(
 	installPath, rootEnablePath, jobSpecificEnablePath, name string,
-	blobstore boshblob.DigestBlobstore,
+	blobstore blobstore_delegator.BlobstoreDelegator,
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	timeProvider clock.Clock,

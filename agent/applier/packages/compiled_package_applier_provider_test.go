@@ -9,7 +9,7 @@ import (
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("compiledPackageApplierProvider", func() {
 	var (
-		blobstore  *fakeblob.FakeDigestBlobstore
+		blobstore  *fakeblobdelegator.FakeBlobstoreDelegator
 		compressor *fakecmd.FakeCompressor
 		fs         *fakesys.FakeFileSystem
 		fakeClock  *fakes.FakeClock
@@ -26,7 +26,7 @@ var _ = Describe("compiledPackageApplierProvider", func() {
 	)
 
 	BeforeEach(func() {
-		blobstore = &fakeblob.FakeDigestBlobstore{}
+		blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 		compressor = fakecmd.NewFakeCompressor()
 		fs = fakesys.NewFakeFileSystem()
 		fakeClock = new(fakes.FakeClock)

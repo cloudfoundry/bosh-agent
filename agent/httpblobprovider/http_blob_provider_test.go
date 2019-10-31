@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"os"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	. "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	system "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -20,11 +20,14 @@ var _ = Describe("HTTPBlobImpl", func() {
 		fakeFileSystem *fakesys.FakeFileSystem
 		server         *ghttp.Server
 		tempFile       system.File
+		blobProvider   *HTTPBlobImpl
 	)
 
 	BeforeEach(func() {
 		fakeFileSystem = fakesys.NewFakeFileSystem()
 		server = ghttp.NewServer()
+
+		blobProvider = NewHTTPBlobImpl(fakeFileSystem, server.HTTPTestServer.Client())
 	})
 
 	Describe("Get", func() {
@@ -45,19 +48,20 @@ var _ = Describe("HTTPBlobImpl", func() {
 		})
 
 		AfterEach(func() {
-			fakeFileSystem.RemoveAll(tempFile.Name())
+			Expect(fakeFileSystem.RemoveAll(tempFile.Name())).To(Succeed())
 		})
 
 		It("downloads the file and returns the contents", func() {
 			server.RouteToHandler("GET", "/success-get-signed-url",
 				ghttp.CombineHandlers(
 					ghttp.RespondWith(http.StatusOK, "abc"),
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Header.Get("key")).To(Equal("value"))
+					}),
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
-
-			filepath, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest)
+			filepath, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), multiDigest, map[string]string{"key": "value"})
 			Expect(err).NotTo(HaveOccurred())
 
 			content, err := fakeFileSystem.ReadFile(filepath)
@@ -72,9 +76,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
-
-			_, err := blobProvider.Get(fmt.Sprintf("%s/bad-get-signed-url", server.URL()), multiDigest)
+			_, err := blobProvider.Get(fmt.Sprintf("%s/bad-get-signed-url", server.URL()), multiDigest, nil)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -88,9 +90,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 
 			server.RouteToHandler("GET", "/get-disconnecting-handler", disconnectingRequestHandler)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
-
-			_, err := blobProvider.Get(fmt.Sprintf("%s/get-disconnecting-handler", server.URL()), multiDigest)
+			_, err := blobProvider.Get(fmt.Sprintf("%s/get-disconnecting-handler", server.URL()), multiDigest, nil)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -101,12 +101,11 @@ var _ = Describe("HTTPBlobImpl", func() {
 				),
 			)
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
 			badsha1 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "bad-a9993e364706816aba3e25717850c26c9cd0d89d")
 			badsha512 := boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA512, "bad-ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f")
 			badMultiDigest := boshcrypto.MustNewMultipleDigest(badsha1, badsha512)
 
-			_, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), badMultiDigest)
+			_, err := blobProvider.Get(fmt.Sprintf("%s/success-get-signed-url", server.URL()), badMultiDigest, nil)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -116,9 +115,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 			err := fakeFileSystem.WriteFileString(filepath, "abc")
 			Expect(err).NotTo(HaveOccurred())
 
-			blobProvider := NewHTTPBlobImpl(fakeFileSystem).WithDefaultAlgorithms()
-
-			actualDigests, err := blobProvider.Upload(signedURL, filepath)
+			actualDigests, err := blobProvider.Upload(signedURL, filepath, map[string]string{"key": "value"})
 			return actualDigests, err
 		}
 
@@ -126,8 +123,10 @@ var _ = Describe("HTTPBlobImpl", func() {
 			server.RouteToHandler("PUT", "/success-signed-url",
 				ghttp.CombineHandlers(
 					ghttp.VerifyBody([]byte("abc")),
-					ghttp.VerifyHeaderKV("Content-Length", "3"),
-					ghttp.RespondWith(http.StatusOK, ``),
+					ghttp.RespondWith(http.StatusCreated, ``),
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						Expect(r.Header.Get("key")).To(Equal("value"))
+					}),
 				),
 			)
 
@@ -145,7 +144,6 @@ var _ = Describe("HTTPBlobImpl", func() {
 			server.RouteToHandler("PUT", "/bad-status-code",
 				ghttp.CombineHandlers(
 					ghttp.VerifyBody([]byte("abc")),
-					ghttp.VerifyHeaderKV("Content-Length", "3"),
 					ghttp.RespondWith(http.StatusBadRequest, ``),
 				),
 			)

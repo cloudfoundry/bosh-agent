@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
 	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
@@ -17,11 +16,11 @@ import (
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
 	fakeagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -31,7 +30,6 @@ var _ = Describe("concreteFactory", func() {
 	var (
 		settingsService   *fakesettings.FakeSettingsService
 		platform          *platformfakes.FakePlatform
-		blobstore         *fakeblobstore.FakeDigestBlobstore
 		blobManager       *fakeagentblobstore.FakeBlobManagerInterface
 		taskService       *faketask.FakeService
 		notifier          *fakenotif.FakeNotifier
@@ -43,6 +41,7 @@ var _ = Describe("concreteFactory", func() {
 		factory           Factory
 		logger            boshlog.Logger
 		fileSystem        *fakesys.FakeFileSystem
+		blobDelegator     *fakeblobdelegator.FakeBlobstoreDelegator
 	)
 
 	BeforeEach(func() {
@@ -53,7 +52,6 @@ var _ = Describe("concreteFactory", func() {
 		platform.GetFsReturns(fileSystem)
 		platform.GetDirProviderReturns(boshdir.NewProvider("/var/vcap"))
 
-		blobstore = &fakeblobstore.FakeDigestBlobstore{}
 		blobManager = &fakeagentblobstore.FakeBlobManagerInterface{}
 		taskService = &faketask.FakeService{}
 		notifier = fakenotif.NewFakeNotifier()
@@ -63,11 +61,11 @@ var _ = Describe("concreteFactory", func() {
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &scriptfakes.FakeJobScriptProvider{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
+		blobDelegator = &fakeblobdelegator.FakeBlobstoreDelegator{}
 
 		factory = NewFactory(
 			settingsService,
 			platform,
-			blobstore,
 			blobManager,
 			taskService,
 			notifier,
@@ -77,6 +75,7 @@ var _ = Describe("concreteFactory", func() {
 			specService,
 			jobScriptProvider,
 			logger,
+			blobDelegator,
 		)
 	})
 
@@ -108,15 +107,14 @@ var _ = Describe("concreteFactory", func() {
 	It("fetch_logs", func() {
 		action, err := factory.Create("fetch_logs")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())))
+		Expect(action).To(Equal(NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobDelegator, platform.GetDirProvider())))
 	})
 
 	It("fetch_logs_with_signed_url", func() {
 		ac, err := factory.Create("fetch_logs_with_signed_url")
 		Expect(err).ToNot(HaveOccurred())
 
-		h := httpblobprovider.NewHTTPBlobImpl(platform.GetFs()).WithDefaultAlgorithms()
-		Expect(ac).To(Equal(NewFetchLogsWithSignedURLAction(platform.GetCompressor(), platform.GetCopier(), platform.GetDirProvider(), h)))
+		Expect(ac).To(Equal(NewFetchLogsWithSignedURLAction(platform.GetCompressor(), platform.GetCopier(), platform.GetDirProvider(), blobDelegator)))
 	})
 
 	It("get_task", func() {
@@ -203,6 +201,12 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(NewCompilePackage(compiler)))
 	})
 
+	It("compile_package_with_signed_url", func() {
+		action, err := factory.Create("compile_package_with_signed_url")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(NewCompilePackageWithSignedURL(compiler)))
+	})
+
 	It("run_errand", func() {
 		action, err := factory.Create("run_errand")
 		Expect(err).ToNot(HaveOccurred())
@@ -238,7 +242,7 @@ var _ = Describe("concreteFactory", func() {
 	It("sync_dns", func() {
 		action, err := factory.Create("sync_dns")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewSyncDNS(blobstore, settingsService, platform, logger)))
+		Expect(action).To(Equal(NewSyncDNS(blobDelegator, settingsService, platform, logger)))
 	})
 
 	It("upload_blob", func() {

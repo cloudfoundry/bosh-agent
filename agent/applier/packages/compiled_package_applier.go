@@ -3,7 +3,7 @@ package packages
 import (
 	bc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -17,7 +17,7 @@ type compiledPackageApplier struct {
 	// KeepOnly will permanently uninstall packages when operating as owner
 	packagesBcOwner bool
 
-	blobstore boshblob.DigestBlobstore
+	blobstore blobstore_delegator.BlobstoreDelegator
 	fs        boshsys.FileSystem
 	logger    boshlog.Logger
 }
@@ -25,7 +25,7 @@ type compiledPackageApplier struct {
 func NewCompiledPackageApplier(
 	packagesBc bc.BundleCollection,
 	packagesBcOwner bool,
-	blobstore boshblob.DigestBlobstore,
+	blobstore blobstore_delegator.BlobstoreDelegator,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) Applier {
@@ -83,13 +83,13 @@ func (s compiledPackageApplier) Apply(pkg models.Package) error {
 }
 
 func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundle bc.Bundle) error {
-	file, err := s.blobstore.Get(pkg.Source.BlobstoreID, pkg.Source.Sha1)
+	file, err := s.blobstore.Get(pkg.Source.Sha1, pkg.Source.SignedURL, pkg.Source.BlobstoreID, pkg.Source.Headers)
 	if err != nil {
 		return bosherr.WrapError(err, "Fetching package blob")
 	}
 
 	defer func() {
-		if err = s.blobstore.CleanUp(file); err != nil {
+		if err = s.blobstore.CleanUp("", file); err != nil {
 			s.logger.Warn(logTag, "Failed to clean up blobstore blob: %s", err.Error())
 		}
 	}()

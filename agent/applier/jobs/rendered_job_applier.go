@@ -7,11 +7,12 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/packages"
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -22,7 +23,7 @@ const logTag = "renderedJobApplier"
 type FixPermissionsFunc func(boshsys.FileSystem, string, string, string) error
 
 type renderedJobApplier struct {
-	blobstore              boshblob.DigestBlobstore
+	blobstore              blobstore_delegator.BlobstoreDelegator
 	dirProvider            directories.Provider
 	fixPermissions         FixPermissionsFunc
 	fs                     boshsys.FileSystem
@@ -33,11 +34,11 @@ type renderedJobApplier struct {
 }
 
 func NewRenderedJobApplier(
+	blobstore blobstore_delegator.BlobstoreDelegator,
 	dirProvider directories.Provider,
 	jobsBc boshbc.BundleCollection,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	packageApplierProvider packages.ApplierProvider,
-	blobstore boshblob.DigestBlobstore,
 	fixPermissions FixPermissionsFunc,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
@@ -103,13 +104,13 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 }
 
 func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc.Bundle) error {
-	file, err := s.blobstore.Get(job.Source.BlobstoreID, job.Source.Sha1)
+	file, err := s.blobstore.Get(boshcrypto.MustNewMultipleDigest(job.Source.Sha1), job.Source.SignedURL, job.Source.BlobstoreID, job.Source.Headers)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting job source from blobstore")
 	}
 
 	defer func() {
-		if err = s.blobstore.CleanUp(file); err != nil {
+		if err = s.blobstore.CleanUp("", file); err != nil {
 			s.logger.Warn(logTag, "Failed to clean up blobstore blob: %s", err.Error())
 		}
 	}()
@@ -246,7 +247,7 @@ func (s *renderedJobApplier) DeleteSourceBlobs(jobs []models.Job) error {
 			continue
 		}
 
-		err := s.blobstore.Delete(job.Source.BlobstoreID)
+		err := s.blobstore.Delete("", job.Source.BlobstoreID)
 		if err != nil {
 			return err
 		}

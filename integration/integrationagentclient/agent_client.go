@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/agentclient/http"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -66,6 +67,11 @@ func (c *IntegrationAgentClient) FetchLogs(logType string, filters []string) (ma
 	return responseValue, err
 }
 
+func (c *IntegrationAgentClient) Prepare(spec applyspec.V1ApplySpec) error {
+	_, err := c.SendAsyncTaskMessage("prepare", []interface{}{spec})
+	return err
+}
+
 func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType string, filters []string) (action.FetchLogsWithSignedURLResponse, error) {
 	req := action.FetchLogsWithSignedURLRequest{
 		LogType:   logType,
@@ -113,5 +119,37 @@ func (c *IntegrationAgentClient) SSH(cmd string, params action.SSHParams) error 
 
 func (c *IntegrationAgentClient) UpdateSettings(settings settings.UpdateSettings) error {
 	_, err := c.SendAsyncTaskMessage("update_settings", []interface{}{settings})
+	return err
+}
+
+func (c *IntegrationAgentClient) CompilePackageWithSignedURL(req action.CompilePackageWithSignedURLRequest) (compiledPackageRef map[string]interface{}, err error) {
+	responseRaw, err := c.SendAsyncTaskMessage("compile_package_with_signed_url", []interface{}{req})
+	responseValue, ok := responseRaw.(map[string]interface{})
+	if !ok {
+		return map[string]interface{}{}, bosherr.WrapErrorf(err, "Unable to parse compile_package response value: %#v", responseValue)
+	}
+	if err != nil {
+		return map[string]interface{}{}, bosherr.WrapError(err, "Sending 'compile_package' to the agent")
+	}
+
+	result, ok := responseValue["result"].(map[string]interface{})
+	if !ok {
+		return map[string]interface{}{}, bosherr.Errorf("Unable to parse 'compile_package' response from the agent: %#v", responseValue)
+	}
+
+	sha1, ok := result["sha1"].(string)
+	if !ok {
+		return map[string]interface{}{}, bosherr.Errorf("Unable to parse 'compile_package' response from the agent: %#v", responseValue)
+	}
+
+	return map[string]interface{}{
+		"result": map[string]string{
+			"sha1": sha1,
+		},
+	}, nil
+}
+
+func (c *IntegrationAgentClient) ApplyV1Spec(spec applyspec.V1ApplySpec) error {
+	_, err := c.SendAsyncTaskMessage("apply", []interface{}{spec})
 	return err
 }

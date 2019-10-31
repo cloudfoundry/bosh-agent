@@ -162,9 +162,9 @@ var _ = Describe("EphemeralDisk", func() {
 					partitionTable, err := testEnvironment.RunCommand("sudo sfdisk -d /dev/sdz")
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz1 : start=           1, size=      262144, type=83"))
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz2 : start=      264192, size=     1122304, type=83"))
-					Expect(partitionTable).To(ContainSubstring("/dev/sdz3 : start=     1386496, size=     1120256, type=83"))
+					Expect(partitionTable).To(MatchRegexp(`/dev/sdz1 : start=\s+1, size=\s+262144, type=83`))
+					Expect(partitionTable).To(MatchRegexp(`/dev/sdz2 : start=\s+264192, size=\s+\d+, type=83`))
+					Expect(partitionTable).To(MatchRegexp(`/dev/sdz3 : start=\s+\d+, size=\s+\d+, type=83`))
 				})
 
 				Context("when swap size is set to 0", func() {

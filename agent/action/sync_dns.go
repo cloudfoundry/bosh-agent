@@ -8,10 +8,10 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action/state"
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -21,7 +21,7 @@ import (
 const localDNSStateFilename = "records.json"
 
 type SyncDNS struct {
-	blobstore       boshblob.DigestBlobstore
+	blobstore       blobstore_delegator.BlobstoreDelegator
 	settingsService boshsettings.Service
 	platform        boshplat.Platform
 	logger          boshlog.Logger
@@ -29,7 +29,7 @@ type SyncDNS struct {
 	lock            *sync.Mutex
 }
 
-func NewSyncDNS(blobstore boshblob.DigestBlobstore, settingsService boshsettings.Service, platform boshplat.Platform, logger boshlog.Logger) SyncDNS {
+func NewSyncDNS(blobstore blobstore_delegator.BlobstoreDelegator, settingsService boshsettings.Service, platform boshplat.Platform, logger boshlog.Logger) SyncDNS {
 	return SyncDNS{
 		blobstore:       blobstore,
 		settingsService: settingsService,
@@ -65,7 +65,7 @@ func (a SyncDNS) Run(blobID string, multiDigest boshcrypto.MultipleDigest, versi
 		return "synced", nil
 	}
 
-	filePath, err := a.blobstore.Get(blobID, multiDigest)
+	filePath, err := a.blobstore.Get(multiDigest, "", blobID, nil)
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "getting %s from blobstore", blobID)
 	}

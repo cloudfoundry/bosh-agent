@@ -10,7 +10,7 @@ import (
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -26,7 +26,9 @@ func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBund
 		Name:    "fake-package-name" + uuid,
 		Version: "fake-package-name",
 		Source: models.Source{
+			SignedURL:   "fake-package/signed-url",
 			Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")),
+			Headers:     map[string]string{"key": "value"},
 			BlobstoreID: "fake-blobstore-id",
 		},
 	}
@@ -40,7 +42,7 @@ func init() {
 	Describe("compiledPackageApplier", func() {
 		var (
 			packagesBc *fakebc.FakeBundleCollection
-			blobstore  *fakeblob.FakeDigestBlobstore
+			blobstore  *fakeblobdelegator.FakeBlobstoreDelegator
 			fs         *fakesys.FakeFileSystem
 			logger     boshlog.Logger
 			applier    Applier
@@ -48,7 +50,7 @@ func init() {
 
 		BeforeEach(func() {
 			packagesBc = fakebc.NewFakeBundleCollection()
-			blobstore = &fakeblob.FakeDigestBlobstore{}
+			blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 			fs = fakesys.NewFakeFileSystem()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
 			applier = NewCompiledPackageApplier(packagesBc, true, blobstore, fs, logger)
@@ -78,12 +80,15 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
+					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
+					Expect(headers).To(Equal(map[string]string{"key": "value"}))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
 
 					// downloaded file is cleaned up
-					Expect(blobstore.CleanUpArgsForCall(0)).To(Equal("/fake-blobstore-file-name"))
+					_, cleanupArg := blobstore.CleanUpArgsForCall(0)
+					Expect(cleanupArg).To(Equal("/fake-blobstore-file-name"))
 				})
 
 				It("returns error when downloading package blob fails", func() {
@@ -100,8 +105,10 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
+					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
+					Expect(headers).To(Equal(map[string]string{"key": "value"}))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 				})
 
@@ -111,8 +118,10 @@ func init() {
 
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
-					blobID, fingerPrint := blobstore.GetArgsForCall(0)
+					fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
+					Expect(signedURL).To(Equal("fake-package/signed-url"))
 					Expect(blobID).To(Equal("fake-blobstore-id"))
+					Expect(headers).To(Equal(map[string]string{"key": "value"}))
 					Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA256, "sha256:fake-blob-sha256"))))
 				})
 

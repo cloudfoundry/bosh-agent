@@ -20,8 +20,8 @@ import (
 
 	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -30,7 +30,7 @@ var _ = Describe("renderedJobApplier", func() {
 		jobsBc                 *fakebc.FakeBundleCollection
 		jobSupervisor          *fakejobsuper.FakeJobSupervisor
 		packageApplierProvider *fakepackages.FakeApplierProvider
-		blobstore              *fakeblob.FakeDigestBlobstore
+		blobstore              *fakeblobdelegator.FakeBlobstoreDelegator
 		fs                     *fakesys.FakeFileSystem
 		applier                Applier
 		fixPermissions         *fakeFixer
@@ -40,18 +40,18 @@ var _ = Describe("renderedJobApplier", func() {
 		jobsBc = fakebc.NewFakeBundleCollection()
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		packageApplierProvider = fakepackages.NewFakeApplierProvider()
-		blobstore = &fakeblob.FakeDigestBlobstore{}
+		blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 		fs = fakesys.NewFakeFileSystem()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider := directories.NewProvider("/fakebasedir")
 		fixPermissions = &fakeFixer{}
 
 		applier = NewRenderedJobApplier(
+			blobstore,
 			dirProvider,
 			jobsBc,
 			jobSupervisor,
 			packageApplierProvider,
-			blobstore,
 			fixPermissions.Fix,
 			fs,
 			logger,
@@ -87,12 +87,15 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				blobID, fingerPrint := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
-				Expect(fingerPrint).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")))
+				Expect(signedURL).To(Equal("/fake/signed/url"))
+				Expect(headers).To(Equal(map[string]string{"key": "value"}))
+				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"))))
 
 				// downloaded file is cleaned up
-				Expect(blobstore.CleanUpArgsForCall(0)).To(Equal("/fake-blobstore-file-name"))
+				_, cleanupArg := blobstore.CleanUpArgsForCall(0)
+				Expect(cleanupArg).To(Equal("/fake-blobstore-file-name"))
 			})
 
 			It("returns error when downloading job template blob fails", func() {
@@ -109,9 +112,11 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				blobID, fingerPrint := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
-				Expect(fingerPrint).To(Equal(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1")))
+				Expect(signedURL).To(Equal("/fake/signed/url"))
+				Expect(headers).To(Equal(map[string]string{"key": "value"}))
+				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1:fake-blob-sha1"))))
 			})
 
 			It("can process sha2 checksums", func() {
@@ -120,9 +125,11 @@ var _ = Describe("renderedJobApplier", func() {
 
 				err := act()
 				Expect(err).ToNot(HaveOccurred())
-				blobID, fingerPrint := blobstore.GetArgsForCall(0)
+				fingerPrint, signedURL, blobID, headers := blobstore.GetArgsForCall(0)
 				Expect(blobID).To(Equal("fake-blobstore-id"))
-				Expect(fingerPrint).To(Equal(job.Source.Sha1))
+				Expect(signedURL).To(Equal("/fake/signed/url"))
+				Expect(headers).To(Equal(map[string]string{"key": "value"}))
+				Expect(fingerPrint).To(Equal(boshcrypto.MustNewMultipleDigest(job.Source.Sha1)))
 			})
 
 			It("installs bundle from decompressed tmp path of a job template", func() {
@@ -491,8 +498,10 @@ var _ = Describe("renderedJobApplier", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(blobstore.DeleteCallCount()).To(Equal(2))
-			Expect(blobstore.DeleteArgsForCall(0)).To(Equal("blob-id"))
-			Expect(blobstore.DeleteArgsForCall(1)).To(Equal("another-blob-id"))
+			_, deleteArg := blobstore.DeleteArgsForCall(0)
+			Expect(deleteArg).To(Equal("blob-id"))
+			_, deleteArg = blobstore.DeleteArgsForCall(1)
+			Expect(deleteArg).To(Equal("another-blob-id"))
 		})
 
 		Context("when deleting from the blobstore fails", func() {
@@ -545,8 +554,12 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 		Name:    "fake-job-name" + uuid,
 		Version: "fake-job-version",
 		Source: models.Source{
-			Sha1:          boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"),
-			BlobstoreID:   "fake-blobstore-id",
+			Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"),
+			BlobstoreID: "fake-blobstore-id",
+			SignedURL:   "/fake/signed/url",
+			Headers: map[string]string{
+				"key": "value",
+			},
 			PathInArchive: "fake-path-in-archive",
 		},
 		Packages: []models.Package{

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -12,7 +13,6 @@ import (
 
 	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -22,7 +22,7 @@ import (
 var _ = Describe("SyncDNS", func() {
 	var (
 		action               SyncDNS
-		fakeBlobstore        *fakeblobstore.FakeDigestBlobstore
+		fakeBlobstore        *fakeblobdelegator.FakeBlobstoreDelegator
 		fakeSettingsService  *fakesettings.FakeSettingsService
 		fakePlatform         *platformfakes.FakePlatform
 		fakeFileSystem       *fakesys.FakeFileSystem
@@ -32,7 +32,7 @@ var _ = Describe("SyncDNS", func() {
 
 	BeforeEach(func() {
 		logger = &fakelogger.FakeLogger{}
-		fakeBlobstore = &fakeblobstore.FakeDigestBlobstore{}
+		fakeBlobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 		fakeSettingsService = &fakesettings.FakeSettingsService{}
 		fakePlatform = &platformfakes.FakePlatform{}
 		fakeFileSystem = fakesys.NewFakeFileSystem()
@@ -129,7 +129,7 @@ var _ = Describe("SyncDNS", func() {
 					Expect(response).To(Equal("synced"))
 
 					Expect(fakeBlobstore.GetCallCount()).To(Equal(1))
-					blobID, fingerPrint := fakeBlobstore.GetArgsForCall(0)
+					fingerPrint, _, blobID, _ := fakeBlobstore.GetArgsForCall(0)
 					Expect(blobID).To(Equal("fake-blobstore-id"))
 					Expect(fingerPrint).To(Equal(multiDigest))
 				})

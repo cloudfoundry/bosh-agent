@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider/http_blob_providerfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -22,23 +22,23 @@ import (
 var _ = Describe("SyncDNSWithSignedURL", func() {
 	var (
 		action               SyncDNSWithSignedURL
-		fakeHTTPBlobProvider *fakeblobprovider.FakeHTTPBlobProvider
 		fakeSettingsService  *fakesettings.FakeSettingsService
 		fakePlatform         *platformfakes.FakePlatform
 		fakeFileSystem       *fakesys.FakeFileSystem
 		logger               *fakelogger.FakeLogger
 		fakeDNSRecordsString string
+		blobDelegator        *fakeblobdelegator.FakeBlobstoreDelegator
 	)
 
 	BeforeEach(func() {
 		logger = &fakelogger.FakeLogger{}
-		fakeHTTPBlobProvider = &fakeblobprovider.FakeHTTPBlobProvider{}
+		blobDelegator = &fakeblobdelegator.FakeBlobstoreDelegator{}
 		fakeSettingsService = &fakesettings.FakeSettingsService{}
 		fakePlatform = &platformfakes.FakePlatform{}
 		fakeFileSystem = fakesys.NewFakeFileSystem()
 		fakePlatform.GetFsReturns(fakeFileSystem)
 
-		action = NewSyncDNSWithSignedURL(fakeSettingsService, fakePlatform, logger, fakeHTTPBlobProvider)
+		action = NewSyncDNSWithSignedURL(fakeSettingsService, fakePlatform, logger, blobDelegator)
 	})
 
 	AssertActionIsNotAsynchronous(action)
@@ -70,14 +70,14 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 			multiDigest = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-fingerprint"))
 			err := fakeFileSystem.WriteFileString("fake-blobstore-file-path", fakeDNSRecordsString)
 			Expect(err).ToNot(HaveOccurred())
-			fakeHTTPBlobProvider.GetReturns("fake-blobstore-file-path", nil)
+			blobDelegator.GetReturns("fake-blobstore-file-path", nil)
 
 			stateFilePath = filepath.Join(fakePlatform.GetDirProvider().InstanceDNSDir(), "records.json")
 		})
 
 		Context("when local DNS state version is >= Run's version", func() {
 			BeforeEach(func() {
-				fakeHTTPBlobProvider.GetReturns("fake-blobstore-file-path", errors.New("fake-blobstore-get-error"))
+				blobDelegator.GetReturns("fake-blobstore-file-path", errors.New("fake-blobstore-get-error"))
 			})
 
 			Context("when the version equals the Run's version", func() {
@@ -136,17 +136,23 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 			Context("when blobstore contains DNS records", func() {
 				It("accesses the blobstore and fetches DNS records", func() {
+					headers := map[string]string{
+						"key": "value",
+					}
 					response, err := action.Run(SyncDNSWithSignedURLRequest{
 						SignedURL:   "fake-signed-url",
 						MultiDigest: multiDigest,
 						Version:     2,
+						Headers:     headers,
 					})
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
-					Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(1))
-					signedURL, _ := fakeHTTPBlobProvider.GetArgsForCall(0)
+					Expect(blobDelegator.GetCallCount()).To(Equal(1))
+					_, signedURL, blobID, urlHeaders := blobDelegator.GetArgsForCall(0)
 					Expect(signedURL).To(Equal("fake-signed-url"))
+					Expect(blobID).To(BeEmpty())
+					Expect(urlHeaders).To(Equal(headers))
 				})
 
 				It("reads the DNS records from the blobstore file", func() {
@@ -373,7 +379,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 			Context("when new DNS records cannot be fetched", func() {
 				BeforeEach(func() {
-					fakeHTTPBlobProvider.GetReturns("fake-blobstore-file-path", errors.New("embedded error"))
+					blobDelegator.GetReturns("fake-blobstore-file-path", errors.New("embedded error"))
 				})
 
 				Context("when blobstore returns an error", func() {

@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action/state"
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -21,29 +21,29 @@ type SyncDNSWithSignedURLRequest struct {
 	SignedURL   string                    `json:"signed_url"`
 	MultiDigest boshcrypto.MultipleDigest `json:"multi_digest"`
 	Version     uint64                    `json:"version"`
+	Headers     map[string]string         `json:"headers"`
 }
 
 type SyncDNSWithSignedURL struct {
-	httpBlobProvider httpblobprovider.HTTPBlobProvider
-	settingsService  boshsettings.Service
-	platform         boshplat.Platform
-	logger           boshlog.Logger
-	logTag           string
-	lock             *sync.Mutex
+	blobDelegator   blobdelegator.BlobstoreDelegator
+	settingsService boshsettings.Service
+	platform        boshplat.Platform
+	logger          boshlog.Logger
+	logTag          string
+	lock            *sync.Mutex
 }
 
 func NewSyncDNSWithSignedURL(
 	settingsService boshsettings.Service,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
-	httpBlobProvider httpblobprovider.HTTPBlobProvider,
-) (action SyncDNSWithSignedURL) {
+	bd blobdelegator.BlobstoreDelegator) (action SyncDNSWithSignedURL) {
 	action.settingsService = settingsService
 	action.platform = platform
 	action.logger = logger
 	action.lock = &sync.Mutex{}
 	action.logTag = "SyncDNSWithSignedURL"
-	action.httpBlobProvider = httpBlobProvider
+	action.blobDelegator = bd
 	return
 }
 
@@ -72,7 +72,7 @@ func (a SyncDNSWithSignedURL) Run(request SyncDNSWithSignedURLRequest) (string, 
 		return "synced", nil
 	}
 
-	filePath, err := a.httpBlobProvider.Get(request.SignedURL, request.MultiDigest)
+	filePath, err := a.blobDelegator.Get(request.MultiDigest, request.SignedURL, "", request.Headers)
 	if err != nil {
 		return "", bosherr.WrapError(err, "fetching new DNS records")
 	}

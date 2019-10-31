@@ -3,8 +3,8 @@ package action
 import (
 	"errors"
 
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 )
@@ -12,14 +12,14 @@ import (
 type FetchLogsAction struct {
 	compressor  boshcmd.Compressor
 	copier      boshcmd.Copier
-	blobstore   boshblob.DigestBlobstore
+	blobstore   blobstore_delegator.BlobstoreDelegator
 	settingsDir boshdirs.Provider
 }
 
 func NewFetchLogs(
 	compressor boshcmd.Compressor,
 	copier boshcmd.Copier,
-	blobstore boshblob.DigestBlobstore,
+	blobstore blobstore_delegator.BlobstoreDelegator,
 	settingsDir boshdirs.Provider,
 ) (action FetchLogsAction) {
 	action.compressor = compressor
@@ -78,7 +78,7 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 		_ = a.compressor.CleanUp(tarball)
 	}()
 
-	blobID, multidigestSha, err := a.blobstore.Create(tarball)
+	blobID, multidigestSha, err := a.blobstore.Write("", tarball, nil)
 	if err != nil {
 		err = bosherr.WrapError(err, "Create file on blobstore")
 		return

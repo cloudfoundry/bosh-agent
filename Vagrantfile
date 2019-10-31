@@ -84,6 +84,7 @@ Vagrant.configure('2') do |config|
     cp -r #{agent_dir}/integration/assets/runit/monit/* /etc/sv/monit
     cp -r #{agent_dir}/integration/assets/runit/agent/* /etc/service/agent
     cp -r #{agent_dir}/integration/assets/agent_runit.sh /etc/service/agent/run
+    cp -r #{agent_dir}/integration/assets/generic_settings.json /var/vcap/bosh/settings.json
 
     cp #{agent_dir}/integration/assets/monit /var/vcap/bosh/bin/monit
     cp #{agent_dir}/integration/assets/monitrc /var/vcap/bosh/etc/monitrc

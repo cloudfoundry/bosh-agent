@@ -5,14 +5,13 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/http_blob_provider"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -24,7 +23,8 @@ type concreteFactory struct {
 func NewFactory(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
-	blobstore boshblob.DigestBlobstore,
+	// TODO(ctz, ja): refactor the usage of blobstore as its a duplicate to the
+	// last argument.
 	sensitiveBlobManager boshagentblob.BlobManagerInterface,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
@@ -34,13 +34,12 @@ func NewFactory(
 	specService boshas.V1Service,
 	jobScriptProvider boshscript.JobScriptProvider,
 	logger boshlog.Logger,
-) (factory Factory) {
+	blobstoreDelegator blobdelegator.BlobstoreDelegator) (factory Factory) {
 	compressor := platform.GetCompressor()
 	copier := platform.GetCopier()
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
-	hp := httpblobprovider.NewHTTPBlobImpl(platform.GetFs()).WithDefaultAlgorithms()
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
@@ -54,8 +53,8 @@ func NewFactory(
 
 			// VM admin
 			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
-			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstore, dirProvider),
-			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, hp),
+			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstoreDelegator, dirProvider),
+			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, blobstoreDelegator),
 			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger),
 			"shutdown":                   NewShutdown(platform),
 
@@ -70,7 +69,8 @@ func NewFactory(
 			"run_script": NewRunScript(jobScriptProvider, specService, logger),
 
 			// Compilation
-			"compile_package": NewCompilePackage(compiler),
+			"compile_package":                 NewCompilePackage(compiler),
+			"compile_package_with_signed_url": NewCompilePackageWithSignedURL(compiler),
 
 			// Rendered Templates
 			"upload_blob": NewUploadBlobAction(sensitiveBlobManager),
@@ -87,8 +87,8 @@ func NewFactory(
 			"delete_arp_entries": NewDeleteARPEntries(platform),
 
 			// DNS
-			"sync_dns":                 NewSyncDNS(blobstore, settingsService, platform, logger),
-			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, hp),
+			"sync_dns":                 NewSyncDNS(blobstoreDelegator, settingsService, platform, logger),
+			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, blobstoreDelegator),
 		},
 	}
 	return
