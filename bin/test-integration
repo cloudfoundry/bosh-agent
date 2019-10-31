@@ -48,6 +48,7 @@ echo -e "\n Rebuilding agent..."
 vagrant rsync
 vagrant ssh -- "sudo /home/vagrant/go/src/github.com/cloudfoundry/bosh-agent/integration/assets/install-agent.sh"
 vagrant ssh -- "sudo /home/vagrant/go/src/github.com/cloudfoundry/bosh-agent/integration/assets/install-fake-registry.sh"
+vagrant ssh -- "sudo /home/vagrant/go/src/github.com/cloudfoundry/bosh-agent/integration/assets/install-fake-blobstore.sh"
 
 echo -e "\n Running tests..."
 focus=""

@@ -2,12 +2,9 @@ package integration_test
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 
+	"github.com/gofrs/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -90,27 +87,26 @@ var _ = Describe("compile_package", func() {
 		var (
 			dummyPackageSignedURL      string
 			compiledDummyPackagePutURL string
-			s3Bucket                   string
+			compiledPackagePath        string
 		)
 
 		multiDigest := createSHA1MultiDigest("236cbd31a483c3594061b00a84a80c1c182b3b20")
 
-		AfterEach(func() {
-			removeS3Object(s3Bucket, "dummy-package.tgz")
-		})
-
 		BeforeEach(func() {
-			s3Bucket = os.Getenv("AWS_BUCKET")
-			dummyReader, err := os.Open(filepath.Join("assets", "dummy_package.tgz"))
-			defer dummyReader.Close()
+			err := testEnvironment.StartBlobstore()
 			Expect(err).NotTo(HaveOccurred())
-			uploadS3Object(s3Bucket, "dummy_package.tgz", dummyReader)
-			dummyPackageSignedURL = generateSignedURLForGet(s3Bucket, "dummy_package.tgz")
-			compiledDummyPackagePutURL = generateSignedURLForPut(s3Bucket, "compiled_dummy_package.tgz")
+
+			dummyPackageSignedURL = "http://127.0.0.1:9091/get_package/dummy_package.tgz"
+
+			id, err := uuid.NewV4()
+			Expect(err).NotTo(HaveOccurred())
+
+			compiledPackagePath = fmt.Sprintf("compiled-dummy-packages-%s.tgz", id.String())
+			compiledDummyPackagePutURL = fmt.Sprintf("http://127.0.0.1:9091/upload_package/%s", compiledPackagePath)
 		})
 
 		It("compiles and stores it to the blobstore", func() {
-			result, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			_, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				PackageGetSignedURL: dummyPackageSignedURL,
 				UploadSignedURL:     compiledDummyPackagePutURL,
 
@@ -119,26 +115,15 @@ var _ = Describe("compile_package", func() {
 				Version: "1",
 				Deps:    boshcomp.Dependencies{},
 			})
-
 			Expect(err).NotTo(HaveOccurred())
 
-			downloadedContents, err := ioutil.TempFile("", "compile-package-test")
-			Expect(err).ToNot(HaveOccurred())
-			defer os.Remove(downloadedContents.Name())
-
-			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
-			_, err = downloadedContents.Write(contents)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result["result"]).To(Equal(map[string]string{"sha1": sha1}))
-
-			s := exec.Command("stat", downloadedContents.Name())
-			output, err := s.CombinedOutput()
+			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s/%s", testEnvironment.AssetsDir(), compiledPackagePath))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("regular file"))
 		})
 
 		It("allows passing bare sha1 for legacy support", func() {
-			response, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			_, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				Name:                "fake",
 				Version:             "1",
 				PackageGetSignedURL: dummyPackageSignedURL,
@@ -146,20 +131,11 @@ var _ = Describe("compile_package", func() {
 				Digest:              multiDigest,
 				Deps:                boshcomp.Dependencies{},
 			})
-
 			Expect(err).NotTo(HaveOccurred())
 
-			downloadedContents, err := ioutil.TempFile("", "compile-package-test")
-			Expect(err).ToNot(HaveOccurred())
-			defer os.Remove(downloadedContents.Name())
-
-			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
-			_, err = downloadedContents.Write(contents)
+			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s/%s", testEnvironment.AssetsDir(), compiledPackagePath))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(response["result"]).To(Equal(map[string]string{"sha1": sha1}))
-
-			s := exec.Command("zgrep", "dummy contents of dummy package file", downloadedContents.Name())
-			Expect(s.Run()).NotTo(HaveOccurred())
+			Expect(output).To(MatchRegexp("regular file"))
 		})
 
 		It("does not skip verification when digest argument is missing", func() {
@@ -176,7 +152,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("compiles dependencies and stores them to the blobstore", func() {
-			response, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			_, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				PackageGetSignedURL: dummyPackageSignedURL,
 				UploadSignedURL:     compiledDummyPackagePutURL,
 				Digest:              multiDigest,
@@ -189,20 +165,9 @@ var _ = Describe("compile_package", func() {
 					Sha1:                multiDigest,
 					Version:             "1",
 				}}})
-
 			Expect(err).NotTo(HaveOccurred())
 
-			downloadedContents, err := ioutil.TempFile("", "compile-package-test")
-			Expect(err).ToNot(HaveOccurred())
-			defer os.Remove(downloadedContents.Name())
-
-			contents, sha1 := downloadS3ObjectContents(s3Bucket, "compiled_dummy_package.tgz")
-			_, err = downloadedContents.Write(contents)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(response["result"]).To(Equal(map[string]string{"sha1": sha1}))
-
-			s := exec.Command("stat", downloadedContents.Name())
-			output, err := s.CombinedOutput()
+			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s/%s", testEnvironment.AssetsDir(), compiledPackagePath))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("regular file"))
 		})

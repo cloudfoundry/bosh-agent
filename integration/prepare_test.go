@@ -4,7 +4,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
@@ -13,7 +12,7 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-var _ = Describe("v1_apply", func() {
+var _ = Describe("prepare", func() {
 	var (
 		agentClient      *integrationagentclient.IntegrationAgentClient
 		registrySettings settings.Settings
@@ -85,35 +84,15 @@ var _ = Describe("v1_apply", func() {
 			barPackageSignedURL string
 			fooPackageSignedURL string
 			foobarJobSignedURL  string
-			s3Bucket            string
 		)
 
-		AfterEach(func() {
-			removeS3Object(s3Bucket, "foobar.tgz")
-			removeS3Object(s3Bucket, "foo.tgz")
-			removeS3Object(s3Bucket, "bar.tgz")
-		})
-
 		BeforeEach(func() {
-			s3Bucket = os.Getenv("AWS_BUCKET")
-			foobarReader, err := os.Open(filepath.Join("assets", "release", "jobs", "foobar.tgz"))
-			defer foobarReader.Close()
+			err := testEnvironment.StartBlobstore()
 			Expect(err).NotTo(HaveOccurred())
-			uploadS3Object(s3Bucket, "foobar.tgz", foobarReader)
 
-			barReader, err := os.Open(filepath.Join("assets", "release", "packages", "bar.tgz"))
-			defer barReader.Close()
-			Expect(err).NotTo(HaveOccurred())
-			uploadS3Object(s3Bucket, "bar.tgz", barReader)
-
-			fooReader, err := os.Open(filepath.Join("assets", "release", "packages", "foo.tgz"))
-			defer fooReader.Close()
-			Expect(err).NotTo(HaveOccurred())
-			uploadS3Object(s3Bucket, "foo.tgz", fooReader)
-
-			foobarJobSignedURL = generateSignedURLForGet(s3Bucket, "foobar.tgz")
-			fooPackageSignedURL = generateSignedURLForGet(s3Bucket, "foo.tgz")
-			barPackageSignedURL = generateSignedURLForGet(s3Bucket, "bar.tgz")
+			foobarJobSignedURL = "http://127.0.0.1:9091/get_package/release/jobs/foobar.tgz"
+			fooPackageSignedURL = "http://127.0.0.1:9091/get_package/release/packages/foo.tgz"
+			barPackageSignedURL = "http://127.0.0.1:9091/get_package/release/packages/bar.tgz"
 
 			stringPointerFunc := func(a string) *string {
 				return &a

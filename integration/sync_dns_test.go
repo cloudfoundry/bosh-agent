@@ -1,10 +1,9 @@
 package integration_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -96,22 +95,15 @@ var _ = Describe("sync_dns", func() {
 
 	Context("sync_dns_with_signed_url action", func() {
 		var (
-			bucket string
-			key    string
-
 			newRecordsJSONContent string
 			blobDigest            boshcrypto.MultipleDigest
 		)
 
 		BeforeEach(func() {
-			Expect(os.Getenv("AWS_ACCESS_KEY")).NotTo(BeEmpty())
-			Expect(os.Getenv("AWS_SECRET_ACCESS_KEY")).NotTo(BeEmpty())
-			Expect(os.Getenv("AWS_REGION")).NotTo(BeEmpty())
-			Expect(os.Getenv("AWS_BUCKET")).NotTo(BeEmpty())
-
 			var err error
-			bucket = os.Getenv("AWS_BUCKET")
-			key = "sync-dns-records.txt"
+
+			err = testEnvironment.StartBlobstore()
+			Expect(err).NotTo(HaveOccurred())
 
 			newRecordsJSONContent = fmt.Sprintf(`{
 				"version": %d,
@@ -122,22 +114,22 @@ var _ = Describe("sync_dns", func() {
 				]
 			}`, newRecordsVersion, newRecordsVersion)
 
-			blobDigest, err = boshcrypto.NewMultipleDigest(strings.NewReader(newRecordsJSONContent), []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA1})
+			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo echo '%s' > /tmp/new-dns-records", newRecordsJSONContent))
 			Expect(err).NotTo(HaveOccurred())
 
-			uploadS3Object(bucket, key, bytes.NewReader([]byte(newRecordsJSONContent)))
-		})
+			shasum, err := testEnvironment.RunCommand("sudo shasum /tmp/new-dns-records | cut -f 1 -d ' '")
+			Expect(err).NotTo(HaveOccurred())
+			blobDigest = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, strings.TrimSpace(shasum)))
 
-		AfterEach(func() {
-			removeS3Object(bucket, key)
+			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo mv /tmp/new-dns-records %s", filepath.Join(testEnvironment.AssetsDir(), "records.json")))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("sends a sync_dns_with_signed_url message to the agent", func() {
 			oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
 			Expect(err).NotTo(HaveOccurred())
 
-			signedURL := generateSignedURLForGet(bucket, key)
-
+			signedURL := "http://127.0.0.1:9091/get_package/records.json"
 			response, err := agentClient.SyncDNSWithSignedURL(signedURL, blobDigest, newRecordsVersion)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(response).To(Equal("synced"))

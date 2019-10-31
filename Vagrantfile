@@ -78,6 +78,7 @@ Vagrant.configure('2') do |config|
     #{agent_dir}/integration/assets/install-go.sh
     #{agent_dir}/integration/assets/install-agent.sh
     #{agent_dir}/integration/assets/install-fake-registry.sh
+    #{agent_dir}/integration/assets/install-fake-blobstore.sh
     cp -a #{agent_dir}/integration/assets/alerts.monitrc /var/vcap/monit/alerts.monitrc
     chmod 0600 /var/vcap/monit/alerts.monitrc
     chown root:root /var/vcap/monit/alerts.monitrc
