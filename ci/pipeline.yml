@@ -54,10 +54,6 @@ jobs:
       BOSH_LITE_NAME: ((BOSH_LITE_NAME))
       BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
       BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
-      AWS_ACCESS_KEY: ((integration_aws_access_key))
-      AWS_SECRET_ACCESS_KEY: ((integration_aws_secret_access_key))
-      AWS_REGION: ((integration_aws_region))
-      AWS_BUCKET: ((integration_aws_bucket))
 
 
 - name: bosh-integration-tests

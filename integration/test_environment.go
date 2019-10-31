@@ -115,7 +115,7 @@ sudo cp %s/meta-data.json /tmp/config-drive/ec2/latest/meta-data.json
 sudo cp %s/user-data.json /tmp/config-drive/ec2/latest/user-data.json
 sudo umount /tmp/config-drive
 `
-	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, t.deviceMap[deviceNum], t.deviceMap[deviceNum], t.assetsDir(), t.assetsDir())
+	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, t.deviceMap[deviceNum], t.deviceMap[deviceNum], t.AssetsDir(), t.AssetsDir())
 
 	_, err = t.RunCommand(setupConfigDriveScript)
 	return err
@@ -221,7 +221,7 @@ func (t *TestEnvironment) ConfigureAgentForGenericInfrastructure() error {
 	_, err := t.RunCommand(
 		fmt.Sprintf(
 			"sudo cp %s/agent_runit.sh /etc/service/agent/run",
-			t.assetsDir(),
+			t.AssetsDir(),
 		),
 	)
 	return err
@@ -438,7 +438,7 @@ func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
 	_, err := t.RunCommand(
 		fmt.Sprintf(
 			"sudo cp %s/%s /var/vcap/bosh/agent.json",
-			t.assetsDir(),
+			t.AssetsDir(),
 			configFile,
 		),
 	)
@@ -514,6 +514,20 @@ func (t *TestEnvironment) StopAgentTunnel() error {
 	t.sshTunnelProc.Wait()
 	t.sshTunnelProc = nil
 	return nil
+}
+
+func (t *TestEnvironment) StartBlobstore() error {
+	t.RunCommand("sudo killall -9 fake-blobstore")
+
+	_, err := t.RunCommand(
+		fmt.Sprintf(
+			`nohup %s/tmp/fake-blobstore -host 127.0.0.1 -port 9091 -assets %s &> /dev/null &`,
+			t.agentDir(),
+			t.AssetsDir(),
+		),
+	)
+
+	return err
 }
 
 func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
@@ -611,7 +625,7 @@ func (t *TestEnvironment) CreateSensitiveBlobFromAsset(assetPath, blobID string)
 		"vagrant",
 		"ssh",
 		"--",
-		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/sensitive_blobs/%s", t.assetsDir(), assetPath, blobID),
+		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/sensitive_blobs/%s", t.AssetsDir(), assetPath, blobID),
 	)
 
 	return err
@@ -627,7 +641,7 @@ func (t *TestEnvironment) CreateBlobFromAsset(assetPath, blobID string) error {
 		"vagrant",
 		"ssh",
 		"--",
-		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/blobs/%s", t.assetsDir(), assetPath, blobID),
+		fmt.Sprintf("sudo cp %s/%s /var/vcap/data/blobs/%s", t.AssetsDir(), assetPath, blobID),
 	)
 
 	return err
@@ -643,7 +657,7 @@ func (t *TestEnvironment) CreateBlobFromAssetInActualBlobstore(assetPath, blobst
 		"vagrant",
 		"ssh",
 		"--",
-		fmt.Sprintf("sudo cp %s %s", filepath.Join(t.assetsDir(), assetPath), filepath.Join(blobstorePath, blobID)),
+		fmt.Sprintf("sudo cp %s %s", filepath.Join(t.AssetsDir(), assetPath), filepath.Join(blobstorePath, blobID)),
 	)
 
 	return err
@@ -681,7 +695,7 @@ func (t *TestEnvironment) agentDir() string {
 	return "/home/vagrant/go/src/github.com/cloudfoundry/bosh-agent"
 }
 
-func (t *TestEnvironment) assetsDir() string {
+func (t *TestEnvironment) AssetsDir() string {
 	return fmt.Sprintf("%s/integration/assets", t.agentDir())
 }
 

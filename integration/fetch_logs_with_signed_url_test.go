@@ -1,7 +1,8 @@
 package integration_test
 
 import (
-	"os"
+	"fmt"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -71,6 +72,9 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 
 		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.StartBlobstore()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -84,33 +88,18 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	var (
-		bucket string
-		key    string
-	)
-
-	BeforeEach(func() {
-		bucket = os.Getenv("AWS_BUCKET")
-		key = "s3-signed-file.txt"
-	})
-
-	AfterEach(func() {
-		removeS3Object(bucket, key)
-	})
-
 	It("puts the logs in the appropriate blobstore location", func() {
 		r, stderr, _, err := testEnvironment.RunCommand3("echo 'foobarbaz' | sudo tee /var/vcap/sys/log/fetch-logs")
 		Expect(err).NotTo(HaveOccurred(), r, stderr)
 
-		signedURL := generateSignedURLForPut(bucket, key)
+		signedURL := "http://127.0.0.1:9091/upload_package/logs.tgz"
 
-		response, err := agentClient.FetchLogsWithSignedURLAction(signedURL, "job", nil)
+		_, err = agentClient.FetchLogsWithSignedURLAction(signedURL, "job", nil)
 		Expect(err).NotTo(HaveOccurred())
 
-		contents, sha1 := downloadS3ObjectContents(bucket, key)
-		Expect(response.SHA1Digest).To(Equal(sha1))
-
-		Expect(contents).To(ContainSubstring("foobarbaz"))
-		Expect(contents).To(ContainSubstring("fetch-logs"))
+		r, stderr, _, err = testEnvironment.RunCommand3(fmt.Sprintf("sudo zcat %s", filepath.Join(testEnvironment.AssetsDir(), "logs.tgz")))
+		Expect(err).NotTo(HaveOccurred(), r, stderr)
+		Expect(r).To(ContainSubstring("foobarbaz"))
+		Expect(r).To(ContainSubstring("fetch-logs"))
 	})
 })
