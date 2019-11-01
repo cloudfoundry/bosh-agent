@@ -147,11 +147,7 @@ var _ = Describe("prepare", func() {
 			err := agentClient.Prepare(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := testEnvironment.RunCommand("stat /var/vcap/packages")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages")
+			output, err := testEnvironment.RunCommand("stat /var/vcap/data/packages")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
@@ -160,10 +156,6 @@ var _ = Describe("prepare", func() {
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
 			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/foo")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("stat /var/vcap/jobs")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
@@ -243,11 +235,7 @@ var _ = Describe("prepare", func() {
 			err := agentClient.Prepare(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := testEnvironment.RunCommand("stat /var/vcap/packages")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages")
+			output, err := testEnvironment.RunCommand("stat /var/vcap/data/packages")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
@@ -256,10 +244,6 @@ var _ = Describe("prepare", func() {
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
 			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/foo")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("stat /var/vcap/jobs")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
