@@ -424,8 +424,8 @@ Address={{ .InterfaceConfig.Address }}/{{ .InterfaceConfig.CIDR }}
 {{ if .DNSServers }}{{ range .DNSServers }}DNS={{ . }}
 {{ end }}{{ end }}
 
-[Route]
 {{ range .InterfaceConfig.PostUpRoutes }}
+[Route]
 Destination={{ .Destination }}/{{ NetmaskToCIDR .Netmask $.InterfaceConfig.IsVersion6 }}
 Gateway={{ .Gateway }}
 {{ end }}`
@@ -440,8 +440,8 @@ DHCP=yes
 {{ if .DNSServers }}{{ range .DNSServers }}DNS={{ . }}
 {{ end }}{{ end }}
 
-[Route]
 {{ range .InterfaceConfig.PostUpRoutes }}
+[Route]
 Destination={{ .Destination }}/{{ NetmaskToCIDR .Netmask $.InterfaceConfig.IsVersion6 }}
 Gateway={{ .Gateway }}
 {{ end }}`
