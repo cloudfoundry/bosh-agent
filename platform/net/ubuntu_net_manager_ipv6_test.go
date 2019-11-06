@@ -213,7 +213,6 @@ IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
 
-[Route]
 `))
 			networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_ethstatic2.network")
 			Expect(networkConfig).ToNot(BeNil())
@@ -229,7 +228,6 @@ Address=1.2.3.4/24
 DNS=8.8.8.8
 DNS=9.9.9.9
 
-[Route]
 `))
 			networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_ethstatic3.network")
 			Expect(networkConfig).ToNot(BeNil())
@@ -246,7 +244,6 @@ IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
 
-[Route]
 `))
 		})
 
@@ -297,8 +294,8 @@ IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
 
-[Route]
 
+[Route]
 Destination=2001:db8:1234::/48
 Gateway=2601:646:100:e8e8::
 `))
