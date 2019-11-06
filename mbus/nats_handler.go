@@ -117,6 +117,8 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	})
 
 	natsRetryable := boshretry.NewRetryable(func() (bool, error) {
+		h.logger.Info(h.logTag, "Attempting to connect to NATS")
+
 		err := h.client.Connect(connProvider)
 		if err != nil {
 			return true, bosherr.WrapError(err, "Connecting to NATS")
