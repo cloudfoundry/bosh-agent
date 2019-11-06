@@ -50,7 +50,7 @@ func (p HandlerProvider) Get(
 	switch mbusURL.Scheme {
 	case "nats":
 		natsClient := NewTimeoutNatsClient(yagnats.NewClient(), clock.NewClock())
-		handler = NewNatsHandler(p.settingsService, natsClient, p.logger, platform)
+		handler = NewNatsHandler(p.settingsService, natsClient, p.logger, platform, natsConnectRetryInterval, natsConnectMaxRetryInterval)
 	case "https":
 		mbusKeyPair := p.settingsService.GetSettings().Env.Bosh.Mbus.Cert
 		handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, p.logger, p.auditLogger)

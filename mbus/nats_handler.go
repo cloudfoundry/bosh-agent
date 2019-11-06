@@ -29,9 +29,11 @@ import (
 )
 
 const (
-	responseMaxLength        = 1024 * 1024
-	natsHandlerLogTag        = "NATS Handler"
-	natsConnectionMaxRetries = 4
+	responseMaxLength           = 1024 * 1024
+	natsHandlerLogTag           = "NATS Handler"
+	natsConnectionMaxRetries    = 10
+	natsConnectRetryInterval    = 1 * time.Second
+	natsConnectMaxRetryInterval = 1 * time.Minute
 )
 
 type Handler interface {
@@ -53,6 +55,9 @@ type natsHandler struct {
 	logger      boshlog.Logger
 	auditLogger boshplatform.AuditLogger
 	logTag      string
+
+	connectRetryInterval    time.Duration
+	maxConnectRetryInterval time.Duration
 }
 
 func NewNatsHandler(
@@ -60,15 +65,19 @@ func NewNatsHandler(
 	client yagnats.NATSClient,
 	logger boshlog.Logger,
 	platform boshplatform.Platform,
+	connectRetryInterval time.Duration,
+	maxConnectRetryInterval time.Duration,
 ) Handler {
 	return &natsHandler{
 		settingsService: settingsService,
 		client:          client,
 		platform:        platform,
 
-		logger:      logger,
-		logTag:      natsHandlerLogTag,
-		auditLogger: platform.GetAuditLogger(),
+		logger:                  logger,
+		logTag:                  natsHandlerLogTag,
+		auditLogger:             platform.GetAuditLogger(),
+		connectRetryInterval:    connectRetryInterval,
+		maxConnectRetryInterval: maxConnectRetryInterval,
 	}
 }
 
@@ -115,7 +124,13 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		return false, nil
 	})
 
-	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(natsConnectionMaxRetries, time.Second, natsRetryable, h.logger)
+	attemptRetryStrategy := boshretry.NewBackoffWithJitterRetryStrategy(
+		natsConnectionMaxRetries,
+		h.connectRetryInterval,
+		h.maxConnectRetryInterval,
+		natsRetryable,
+		h.logger,
+	)
 	err = attemptRetryStrategy.Try()
 	if err != nil {
 		return bosherr.WrapError(err, "Connecting")

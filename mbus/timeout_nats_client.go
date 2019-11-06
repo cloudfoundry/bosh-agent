@@ -1,12 +1,19 @@
 package mbus
 
 import (
+	"math/rand"
+	"time"
+
 	"code.cloudfoundry.org/clock"
 	"github.com/cloudfoundry/yagnats"
-	"time"
 )
 
 var _ yagnats.NATSClient = &TimeoutNatsClient{}
+
+const (
+	defaultTimeout = 5 * time.Minute
+	publishTimeout = 10 * time.Minute
+)
 
 type TimeoutNatsClient struct {
 	client yagnats.NATSClient
@@ -26,7 +33,7 @@ func (c *TimeoutNatsClient) Ping() bool {
 		complete <- c.client.Ping()
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	timeout := c.clock.NewTimer(defaultTimeout)
 
 	select {
 	case success := <-complete:
@@ -43,7 +50,7 @@ func (c *TimeoutNatsClient) Connect(connectionProvider yagnats.ConnectionProvide
 		complete <- c.client.Connect(connectionProvider)
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	timeout := c.clock.NewTimer(defaultTimeout)
 
 	select {
 	case err := <-complete:
@@ -61,7 +68,7 @@ func (c *TimeoutNatsClient) Disconnect() {
 		complete <- true
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	timeout := c.clock.NewTimer(defaultTimeout)
 
 	select {
 	case <-complete:
@@ -78,7 +85,10 @@ func (c *TimeoutNatsClient) Publish(subject string, payload []byte) error {
 		complete <- c.client.Publish(subject, payload)
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	// We want to randomize the publish timeout to prevent all agents from
+	// exiting at the same time
+	jitter := rand.Float64()*0.5 + 0.75
+	timeout := c.clock.NewTimer(time.Duration(jitter * float64(publishTimeout)))
 
 	select {
 	case err := <-complete:
@@ -108,7 +118,7 @@ func (c *TimeoutNatsClient) Subscribe(subject string, callback yagnats.Callback)
 		}
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	timeout := c.clock.NewTimer(defaultTimeout)
 
 	select {
 	case result := <-complete:
@@ -134,7 +144,7 @@ func (c *TimeoutNatsClient) SubscribeWithQueue(subject, queue string, callback y
 		}
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	timeout := c.clock.NewTimer(defaultTimeout)
 
 	select {
 	case result := <-complete:
@@ -151,7 +161,7 @@ func (c *TimeoutNatsClient) Unsubscribe(subscription int64) error {
 		complete <- c.client.Unsubscribe(subscription)
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	timeout := c.clock.NewTimer(defaultTimeout)
 
 	select {
 	case err := <-complete:
@@ -169,7 +179,7 @@ func (c *TimeoutNatsClient) UnsubscribeAll(subject string) {
 		complete <- true
 	}()
 
-	timeout := c.clock.NewTimer(5 * time.Minute)
+	timeout := c.clock.NewTimer(defaultTimeout)
 
 	select {
 	case <-complete:

@@ -3,6 +3,7 @@ package mbus_test
 import (
 	gourl "net/url"
 	"reflect"
+	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
@@ -44,7 +45,7 @@ var _ = Describe("HandlerProvider", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// yagnats.NewClient returns new object every time
-			expectedHandler := NewNatsHandler(settingsService, yagnats.NewClient(), logger, platform)
+			expectedHandler := NewNatsHandler(settingsService, yagnats.NewClient(), logger, platform, time.Second, 1*time.Minute)
 			Expect(reflect.TypeOf(handler)).To(Equal(reflect.TypeOf(expectedHandler)))
 		})
 

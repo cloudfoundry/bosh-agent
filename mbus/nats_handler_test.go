@@ -6,7 +6,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
@@ -50,7 +52,7 @@ func init() {
 			platform = &platformfakes.FakePlatform{}
 			auditLogger = &platformfakes.FakeAuditLogger{}
 			platform.GetAuditLoggerReturns(auditLogger)
-			handler = NewNatsHandler(settingsService, client, logger, platform)
+			handler = NewNatsHandler(settingsService, client, logger, platform, time.Millisecond, time.Millisecond)
 		})
 
 		Describe("Start", func() {
@@ -236,7 +238,7 @@ func init() {
 
 			It("does not err when no username and password", func() {
 				settingsService.Settings.Mbus = "nats://127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, client, logger, platform)
+				handler = NewNatsHandler(settingsService, client, logger, platform, time.Millisecond, time.Millisecond)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())
@@ -245,7 +247,7 @@ func init() {
 
 			It("errs when has username without password", func() {
 				settingsService.Settings.Mbus = "nats://foo@127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, client, logger, platform)
+				handler = NewNatsHandler(settingsService, client, logger, platform, time.Millisecond, time.Millisecond)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).To(HaveOccurred())
@@ -492,15 +494,12 @@ func init() {
 				})
 
 				Context("when exhausting all the retries", func() {
-
 					BeforeEach(func() {
-						client.SetConnectErrors([]error{
-							errors.New("Nats Connection Error 1"),
-							errors.New("Nats Connection Error 2"),
-							errors.New("Nats Connection Error 3"),
-							errors.New("Nats Connection Error 4"),
-							errors.New("Nats Connection Error 5"),
-						})
+						errors := make([]error, 11)
+						for i := 0; i < 11; i++ {
+							errors[i] = fmt.Errorf("Nats Connection Error %d", i+1)
+						}
+						client.SetConnectErrors(errors)
 					})
 
 					It("will return an error", func() {
@@ -509,12 +508,11 @@ func init() {
 						})
 						defer handler.Stop()
 
-						Expect(client.GetConnectCallCount()).To(Equal(4))
+						Expect(client.GetConnectCallCount()).To(Equal(10))
 						Expect(err).ToNot(BeNil())
-						Expect(err.Error()).To(ContainSubstring("Nats Connection Error 4"))
+						Expect(err.Error()).To(ContainSubstring("Nats Connection Error 10"))
 					})
 				})
-
 			})
 		})
 
