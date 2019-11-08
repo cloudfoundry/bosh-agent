@@ -13,7 +13,7 @@ import (
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakecmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner/fakes"
 	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -24,7 +24,7 @@ func init() {
 		var (
 			compiler       Compiler
 			compressor     *fakecmd.FakeCompressor
-			blobstore      *fakeblobstore.FakeDigestBlobstore
+			blobstore      *fakeblobdelegator.FakeBlobstoreDelegator
 			fs             *fakesys.FakeFileSystem
 			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepackages.FakeApplier
@@ -34,7 +34,7 @@ func init() {
 
 		BeforeEach(func() {
 			compressor = fakecmd.NewFakeCompressor()
-			blobstore = &fakeblobstore.FakeDigestBlobstore{}
+			blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 			fs = fakesys.NewFakeFileSystem()
 			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
 			packageApplier = fakepackages.NewFakeApplier()
