@@ -87,54 +87,6 @@
   version = "v0.8.6"
 
 [[projects]]
-  digest = "1:88ebb4a485b025704f1e6a1551f99886b4ae1c185e64e99143c656d1aed7e66b"
-  name = "github.com/aws/aws-sdk-go"
-  packages = [
-    "aws",
-    "aws/awserr",
-    "aws/awsutil",
-    "aws/client",
-    "aws/client/metadata",
-    "aws/corehandlers",
-    "aws/credentials",
-    "aws/credentials/ec2rolecreds",
-    "aws/credentials/endpointcreds",
-    "aws/credentials/processcreds",
-    "aws/credentials/stscreds",
-    "aws/csm",
-    "aws/defaults",
-    "aws/ec2metadata",
-    "aws/endpoints",
-    "aws/request",
-    "aws/session",
-    "aws/signer/v4",
-    "internal/ini",
-    "internal/s3err",
-    "internal/sdkio",
-    "internal/sdkmath",
-    "internal/sdkrand",
-    "internal/sdkuri",
-    "internal/shareddefaults",
-    "private/protocol",
-    "private/protocol/eventstream",
-    "private/protocol/eventstream/eventstreamapi",
-    "private/protocol/json/jsonutil",
-    "private/protocol/query",
-    "private/protocol/query/queryutil",
-    "private/protocol/rest",
-    "private/protocol/restxml",
-    "private/protocol/xml/xmlutil",
-    "service/s3",
-    "service/s3/s3iface",
-    "service/s3/s3manager",
-    "service/sts",
-    "service/sts/stsiface",
-  ]
-  pruneopts = "NUT"
-  revision = "13ad2b09f6ff7e16808b4a45c32684e6c66bf86d"
-  version = "v1.25.19"
-
-[[projects]]
   digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
@@ -172,7 +124,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:03f9ffb60f69a235477d587923bb3996e1bb6480e94096c04596c9511970e41f"
+  digest = "1:eecf4c9e453e211d6d54fe7fff6b0d58952db65c4e825b92d8043b72f2a7b09f"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -194,7 +146,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "d9506deccf6a821dc81ec55d84873d4a05a1ec9d"
+  revision = "7239a019919e5c91b8c82a6900395f4c1c2d73e6"
 
 [[projects]]
   branch = "master"
@@ -290,11 +242,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:1f2aebae7e7c856562355ec0198d8ca2fa222fb05e5b1b66632a1fce39631885"
-  name = "github.com/jmespath/go-jmespath"
+  digest = "1:ebd0081aed1cd0af2f65a362c0ceea985eae9fe72efb28cefb84eca3b98dd3a3"
+  name = "github.com/jpillora/backoff"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c2b33e84"
+  revision = "8eab2debe79d12b7bd3d10653910df25fa9552ba"
+  version = "1.0.0"
 
 [[projects]]
   digest = "1:dae921a7328d7e20912287d561a899398e4d943cfbeb4122dd99333b052400e0"
@@ -632,10 +585,6 @@
     "code.cloudfoundry.org/clock/fakeclock",
     "code.cloudfoundry.org/tlsconfig",
     "github.com/Microsoft/hcsshim",
-    "github.com/aws/aws-sdk-go/aws",
-    "github.com/aws/aws-sdk-go/aws/session",
-    "github.com/aws/aws-sdk-go/service/s3",
-    "github.com/aws/aws-sdk-go/service/s3/s3manager",
     "github.com/charlievieth/fs",
     "github.com/cloudfoundry/bosh-davcli/client",
     "github.com/cloudfoundry/bosh-davcli/config",
@@ -661,6 +610,7 @@
     "github.com/cloudfoundry/gosigar/fakes",
     "github.com/cloudfoundry/yagnats",
     "github.com/cloudfoundry/yagnats/fakeyagnats",
+    "github.com/gofrs/uuid",
     "github.com/golang/mock/gomock",
     "github.com/google/uuid",
     "github.com/kevinburke/ssh_config",
