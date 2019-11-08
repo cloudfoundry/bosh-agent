@@ -124,7 +124,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:19be35725978825a4e8b043930c3dbe36a485a61a8358deacb174daac37547f9"
+  digest = "1:eecf4c9e453e211d6d54fe7fff6b0d58952db65c4e825b92d8043b72f2a7b09f"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -146,7 +146,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "d0b77418490dee69ca98baf5d6719733dd58511f"
+  revision = "7239a019919e5c91b8c82a6900395f4c1c2d73e6"
 
 [[projects]]
   branch = "master"

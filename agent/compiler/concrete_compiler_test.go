@@ -92,6 +92,7 @@ func init() {
 				FakeCompileDirProvider{Dir: "/fake-compile-dir"},
 				packageApplier,
 				packagesBc,
+				new(fakebc.FakeClock),
 			)
 
 			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
