@@ -94,7 +94,7 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 
 		signedURL := "http://127.0.0.1:9091/upload_package/logs.tgz"
 
-		_, err = agentClient.FetchLogsWithSignedURLAction(signedURL, "job", nil)
+		_, err = agentClient.FetchLogsWithSignedURLAction(signedURL, "job", nil, map[string]string{"header": "value"})
 		Expect(err).NotTo(HaveOccurred())
 
 		r, stderr, _, err = testEnvironment.RunCommand3(fmt.Sprintf("sudo zcat %s", filepath.Join(testEnvironment.AssetsDir(), "logs.tgz")))

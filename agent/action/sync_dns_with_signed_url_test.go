@@ -140,10 +140,10 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 						"key": "value",
 					}
 					response, err := action.Run(SyncDNSWithSignedURLRequest{
-						SignedURL:   "fake-signed-url",
-						MultiDigest: multiDigest,
-						Version:     2,
-						Headers:     headers,
+						SignedURL:        "fake-signed-url",
+						MultiDigest:      multiDigest,
+						Version:          2,
+						BlobstoreHeaders: headers,
 					})
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))

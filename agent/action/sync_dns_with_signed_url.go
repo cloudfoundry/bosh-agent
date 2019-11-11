@@ -18,10 +18,10 @@ import (
 )
 
 type SyncDNSWithSignedURLRequest struct {
-	SignedURL   string                    `json:"signed_url"`
-	MultiDigest boshcrypto.MultipleDigest `json:"multi_digest"`
-	Version     uint64                    `json:"version"`
-	Headers     map[string]string         `json:"headers"`
+	SignedURL        string                    `json:"signed_url"`
+	MultiDigest      boshcrypto.MultipleDigest `json:"multi_digest"`
+	Version          uint64                    `json:"version"`
+	BlobstoreHeaders map[string]string         `json:"blobstore_headers"`
 }
 
 type SyncDNSWithSignedURL struct {
@@ -72,7 +72,7 @@ func (a SyncDNSWithSignedURL) Run(request SyncDNSWithSignedURLRequest) (string, 
 		return "synced", nil
 	}
 
-	filePath, err := a.blobDelegator.Get(request.MultiDigest, request.SignedURL, "", request.Headers)
+	filePath, err := a.blobDelegator.Get(request.MultiDigest, request.SignedURL, "", request.BlobstoreHeaders)
 	if err != nil {
 		return "", bosherr.WrapError(err, "fetching new DNS records")
 	}

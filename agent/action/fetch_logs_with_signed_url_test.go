@@ -50,7 +50,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 			sha1 := multidigestSha.String()
 			blobDelegator.WriteReturns("", multidigestSha, nil)
 
-			logs, err := action.Run(FetchLogsWithSignedURLRequest{SignedURL: "foobar", LogType: logType, Filters: filters, Headers: map[string]string{"key": "value"}})
+			logs, err := action.Run(FetchLogsWithSignedURLRequest{SignedURL: "foobar", LogType: logType, Filters: filters, BlobstoreHeaders: map[string]string{"key": "value"}})
 			Expect(err).ToNot(HaveOccurred())
 
 			var expectedPath string

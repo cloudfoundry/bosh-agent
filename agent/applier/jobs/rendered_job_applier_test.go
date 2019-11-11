@@ -557,7 +557,7 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 			Sha1:        boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1"),
 			BlobstoreID: "fake-blobstore-id",
 			SignedURL:   "/fake/signed/url",
-			Headers: map[string]string{
+			BlobstoreHeaders: map[string]string{
 				"key": "value",
 			},
 			PathInArchive: "fake-path-in-archive",

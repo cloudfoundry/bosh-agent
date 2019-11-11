@@ -104,7 +104,7 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 }
 
 func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc.Bundle) error {
-	file, err := s.blobstore.Get(boshcrypto.MustNewMultipleDigest(job.Source.Sha1), job.Source.SignedURL, job.Source.BlobstoreID, job.Source.Headers)
+	file, err := s.blobstore.Get(boshcrypto.MustNewMultipleDigest(job.Source.Sha1), job.Source.SignedURL, job.Source.BlobstoreID, job.Source.BlobstoreHeaders)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting job source from blobstore")
 	}

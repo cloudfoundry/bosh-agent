@@ -32,7 +32,7 @@ func getCompileArgs() (Package, []boshmodels.Package) {
 	pkg := Package{
 		BlobstoreID:         "blobstore_id",
 		PackageGetSignedURL: "/some/signed/url",
-		Headers:             map[string]string{"key": "value"},
+		BlobstoreHeaders:    map[string]string{"key": "value"},
 		Sha1:                boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sha1")),
 		Name:                "pkg_name",
 		Version:             "pkg_version",
@@ -43,20 +43,20 @@ func getCompileArgs() (Package, []boshmodels.Package) {
 			Name:    "first_dep_name",
 			Version: "first_dep_version",
 			Source: boshmodels.Source{
-				SignedURL:   "first_dep/signed/url",
-				Headers:     map[string]string{"key": "value"},
-				Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
-				BlobstoreID: "first_dep_blobstore_id",
+				SignedURL:        "first_dep/signed/url",
+				BlobstoreHeaders: map[string]string{"key": "value"},
+				Sha1:             boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "first_dep_sha1")),
+				BlobstoreID:      "first_dep_blobstore_id",
 			},
 		},
 		{
 			Name:    "sec_dep_name",
 			Version: "sec_dep_version",
 			Source: boshmodels.Source{
-				SignedURL:   "sec_dep/signed/url",
-				Headers:     map[string]string{"key": "value"},
-				Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
-				BlobstoreID: "sec_dep_blobstore_id",
+				SignedURL:        "sec_dep/signed/url",
+				BlobstoreHeaders: map[string]string{"key": "value"},
+				Sha1:             boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1")),
+				BlobstoreID:      "sec_dep_blobstore_id",
 			},
 		},
 	}

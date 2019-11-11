@@ -12,10 +12,10 @@ type Compiler interface {
 type Package struct {
 	BlobstoreID         string `json:"blobstore_id"`
 	Name                string
-	PackageGetSignedURL string `json:"package_get_signed_url"`
-	UploadSignedURL     string `json:"upload_signed_url"`
+	PackageGetSignedURL string            `json:"package_get_signed_url"`
+	UploadSignedURL     string            `json:"upload_signed_url"`
+	BlobstoreHeaders    map[string]string `json:"blobstore_headers"`
 	Sha1                boshcrypto.MultipleDigest
-	Headers             map[string]string `json:"headers"`
 	Version             string
 }
 

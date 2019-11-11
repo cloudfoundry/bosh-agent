@@ -72,11 +72,12 @@ func (c *IntegrationAgentClient) Prepare(spec applyspec.V1ApplySpec) error {
 	return err
 }
 
-func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType string, filters []string) (action.FetchLogsWithSignedURLResponse, error) {
+func (c *IntegrationAgentClient) FetchLogsWithSignedURLAction(signedURL, logType string, filters []string, headers map[string]string) (action.FetchLogsWithSignedURLResponse, error) {
 	req := action.FetchLogsWithSignedURLRequest{
-		LogType:   logType,
-		Filters:   filters,
-		SignedURL: signedURL,
+		LogType:          logType,
+		Filters:          filters,
+		SignedURL:        signedURL,
+		BlobstoreHeaders: headers,
 	}
 	responseRaw, err := c.SendAsyncTaskMessage("fetch_logs_with_signed_url", []interface{}{req})
 	if err != nil {

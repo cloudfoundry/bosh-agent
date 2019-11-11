@@ -26,10 +26,10 @@ func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBund
 		Name:    "fake-package-name" + uuid,
 		Version: "fake-package-name",
 		Source: models.Source{
-			SignedURL:   "fake-package/signed-url",
-			Sha1:        boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")),
-			Headers:     map[string]string{"key": "value"},
-			BlobstoreID: "fake-blobstore-id",
+			SignedURL:        "fake-package/signed-url",
+			Sha1:             boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "fake-blob-sha1")),
+			BlobstoreHeaders: map[string]string{"key": "value"},
+			BlobstoreID:      "fake-blobstore-id",
 		},
 	}
 

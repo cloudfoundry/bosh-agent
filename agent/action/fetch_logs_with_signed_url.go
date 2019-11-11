@@ -10,11 +10,10 @@ import (
 )
 
 type FetchLogsWithSignedURLRequest struct {
-	SignedURL string `json:"signed_url"`
-
-	LogType string            `json:"log_type"`
-	Filters []string          `json:"filters"`
-	Headers map[string]string `json:"headers"`
+	SignedURL        string            `json:"signed_url"`
+	LogType          string            `json:"log_type"`
+	Filters          []string          `json:"filters"`
+	BlobstoreHeaders map[string]string `json:"blobstore_headers"`
 }
 
 type FetchLogsWithSignedURLResponse struct {
@@ -87,7 +86,7 @@ func (a FetchLogsWithSignedURLAction) Run(request FetchLogsWithSignedURLRequest)
 		_ = a.compressor.CleanUp(tarball)
 	}()
 
-	_, digest, err := a.blobDelegator.Write(request.SignedURL, tarball, request.Headers)
+	_, digest, err := a.blobDelegator.Write(request.SignedURL, tarball, request.BlobstoreHeaders)
 	if err != nil {
 		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Create file on blobstore")
 	}
