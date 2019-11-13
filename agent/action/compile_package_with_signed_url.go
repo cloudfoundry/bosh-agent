@@ -47,9 +47,10 @@ func (a CompilePackageWithSignedURL) Run(request CompilePackageWithSignedURLRequ
 			Name:    dep.Name,
 			Version: dep.Version,
 			Source: boshmodels.Source{
-				Sha1:        dep.Sha1,
-				BlobstoreID: dep.BlobstoreID,
-				SignedURL:   dep.PackageGetSignedURL,
+				Sha1:             dep.Sha1,
+				BlobstoreID:      dep.BlobstoreID,
+				SignedURL:        dep.PackageGetSignedURL,
+				BlobstoreHeaders: dep.BlobstoreHeaders,
 			},
 		})
 	}
