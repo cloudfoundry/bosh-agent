@@ -7,10 +7,10 @@ result=0
 bin=$(dirname $0)
 
 $bin/test-unit -q
-let "result+=$?"
+let "result+=$?" || true
 
 $bin/test-integration
-let "result+=$?"
+let "result+=$?" || true
 
 if [ $result -eq 0 ]; then
   echo -e "\n\033[0;32mSUITE SUCCESS\033[0m"
