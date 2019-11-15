@@ -149,6 +149,10 @@ func (c httpClient) status() (status, error) {
 		return status{}, bosherr.WrapError(err, "Unmarshalling Monit status")
 	}
 
+	for _, stat := range st.Services.Services {
+		c.logger.Debug("http-client", "Unmarshalled Monit status: %+v", stat)
+	}
+
 	return st, nil
 }
 
