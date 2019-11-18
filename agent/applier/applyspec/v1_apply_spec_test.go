@@ -32,8 +32,8 @@ var _ = Describe("V1ApplySpec", func() {
 					]
 				},
 				"packages": {
-					"package 1": {"name": "package 1", "version": "0.1", "sha1": "sha1:package1sha1;sha256:package1sha256", "blobstore_id": "package-blob-id-1"},
-					"package 2": {"name": "package 2", "version": "0.2", "sha1": "sha1:package2sha1;sha256:package2sha256", "blobstore_id": "package-blob-id-2"}
+					"package 1": {"name": "package 1", "version": "0.1", "sha1": "sha1:package1sha1;sha256:package1sha256", "blobstore_id": "package-blob-id-1", "signed_url": "https://signed", "blobstore_headers": {"header": "value"}},
+					"package 2": {"name": "package 2", "version": "0.2", "sha1": "sha1:package2sha1;sha256:package2sha256", "blobstore_id": "package-blob-id-2", "signed_url": "https://signed", "blobstore_headers": {"header": "value"}}
 				},
 				"networks": {
 					"manual-net": {
@@ -92,8 +92,8 @@ var _ = Describe("V1ApplySpec", func() {
 					},
 				},
 				PackageSpecs: map[string]PackageSpec{
-					"package 1": {Name: "package 1", Version: "0.1", Sha1: crypto.MustParseMultipleDigest("sha1:package1sha1;sha256:package1sha256"), BlobstoreID: "package-blob-id-1"},
-					"package 2": {Name: "package 2", Version: "0.2", Sha1: crypto.MustParseMultipleDigest("sha1:package2sha1;sha256:package2sha256"), BlobstoreID: "package-blob-id-2"},
+					"package 1": {Name: "package 1", Version: "0.1", Sha1: crypto.MustParseMultipleDigest("sha1:package1sha1;sha256:package1sha256"), BlobstoreID: "package-blob-id-1", SignedURL: "https://signed", BlobstoreHeaders: map[string]string{"header": "value"}},
+					"package 2": {Name: "package 2", Version: "0.2", Sha1: crypto.MustParseMultipleDigest("sha1:package2sha1;sha256:package2sha256"), BlobstoreID: "package-blob-id-2", SignedURL: "https://signed", BlobstoreHeaders: map[string]string{"header": "value"}},
 				},
 				RenderedTemplatesArchiveSpec: &RenderedTemplatesArchiveSpec{
 					Sha1:        &sha1,

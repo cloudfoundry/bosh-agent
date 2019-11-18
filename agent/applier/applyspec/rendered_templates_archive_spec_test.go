@@ -29,7 +29,6 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 		r = RenderedTemplatesArchiveSpec{
 			Sha1:        d,
 			BlobstoreID: "123",
-			SignedURL:   "signed/url",
 		}
 	})
 
@@ -37,7 +36,6 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 		asSource := r.AsSource(models.Job{Name: "foo"})
 		Expect(asSource.Sha1.String()).To(Equal("abc"))
 		Expect(asSource.BlobstoreID).To(Equal("123"))
-		Expect(asSource.SignedURL).To(Equal("signed/url"))
 		Expect(asSource.PathInArchive).To(Equal("foo"))
 	})
 
@@ -52,8 +50,8 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 	})
 
 	Context("unmarshalling JSON", func() {
-		DescribeTable("unmarshalling", func(blobstoreID, signedURL, sha1, errorMsg string, expected *RenderedTemplatesArchiveSpec) {
-			data := []byte(fmt.Sprintf(`{"blobstore_id": "%s", "signed_url": "%s", "sha1": "%s"}`, blobstoreID, signedURL, sha1))
+		DescribeTable("unmarshalling", func(blobstoreID, sha1, errorMsg string, expected *RenderedTemplatesArchiveSpec) {
+			data := []byte(fmt.Sprintf(`{"blobstore_id": "%s", "sha1": "%s"}`, blobstoreID, sha1))
 			var rendered *RenderedTemplatesArchiveSpec
 			rendered = &RenderedTemplatesArchiveSpec{}
 			err := json.Unmarshal(data, rendered)
@@ -68,45 +66,21 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 				Expect(*rendered).To(Equal(*expected))
 			}
 		},
-			Entry("When signedURL and Sha1Sum are set", "", "signed/url", "abc", "", &RenderedTemplatesArchiveSpec{
-				Sha1:        newMultipleSha1Digest("abc"),
-				BlobstoreID: "",
-				SignedURL:   "signed/url",
-			}),
-			Entry("When signedURL is set", "", "signed/url", "", "", &RenderedTemplatesArchiveSpec{
-				Sha1:        nil,
-				BlobstoreID: "",
-				SignedURL:   "",
-			}),
 			Entry("When only sha1Sum is set", "", "", "abc", "", &RenderedTemplatesArchiveSpec{
 				Sha1:        newMultipleSha1Digest("abc"),
 				BlobstoreID: "",
-				SignedURL:   "",
 			}),
 			Entry("When nothing is set", "", "", "", "", &RenderedTemplatesArchiveSpec{
 				Sha1:        nil,
 				BlobstoreID: "",
-				SignedURL:   "",
-			}),
-			Entry("When everything is set", "123", "signed/url", "abc", "", &RenderedTemplatesArchiveSpec{
-				Sha1:        newMultipleSha1Digest("abc"),
-				BlobstoreID: "123",
-				SignedURL:   "signed/url",
-			}),
-			Entry("When blobstoreID and signedURL are set", "123", "signed/url", "", "No digest algorithm found. Supported algorithms: sha1, sha256, sha512", &RenderedTemplatesArchiveSpec{
-				Sha1:        nil,
-				BlobstoreID: "",
-				SignedURL:   "",
 			}),
 			Entry("When blobstoreID and Sha1Sum are set", "123", "", "abc", "", &RenderedTemplatesArchiveSpec{
 				Sha1:        newMultipleSha1Digest("abc"),
 				BlobstoreID: "123",
-				SignedURL:   "",
 			}),
 			Entry("When only blobstoreID is set", "123", "", "", "", &RenderedTemplatesArchiveSpec{
 				Sha1:        nil,
 				BlobstoreID: "",
-				SignedURL:   "",
 			}),
 		)
 	})

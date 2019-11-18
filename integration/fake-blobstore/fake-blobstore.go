@@ -21,6 +21,14 @@ func main() {
 
 		asset := r.URL.Path[len("/get_package/"):]
 
+		if r.URL.Query().Get("encrypted") != "" {
+			if r.Header.Get("encryption-key") == "" {
+				w.WriteHeader(http.StatusForbidden)
+				w.Write([]byte("no headers"))
+				return
+			}
+		}
+
 		f, err := os.Open(filepath.Join(*assets, asset))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

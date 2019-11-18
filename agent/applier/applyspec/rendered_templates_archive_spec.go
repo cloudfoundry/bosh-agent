@@ -10,7 +10,6 @@ import (
 type RenderedTemplatesArchiveSpec struct {
 	Sha1        *crypto.MultipleDigest `json:"sha1"`
 	BlobstoreID string                 `json:"blobstore_id"`
-	SignedURL   string                 `json:"signed_url"`
 }
 
 func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
@@ -21,7 +20,6 @@ func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
 	return models.Source{
 		Sha1:          sha1,
 		BlobstoreID:   s.BlobstoreID,
-		SignedURL:     s.SignedURL,
 		PathInArchive: job.Name,
 	}
 }
@@ -29,7 +27,6 @@ func (s RenderedTemplatesArchiveSpec) AsSource(job models.Job) models.Source {
 type renderedTemplatesArchiveJSONStruct struct {
 	Sha1        string `json:"sha1"`
 	BlobstoreID string `json:"blobstore_id"`
-	SignedURL   string `json:"signed_url"`
 }
 
 func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
@@ -39,7 +36,7 @@ func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if (jsonStruct.BlobstoreID == "" || jsonStruct.SignedURL == "") && jsonStruct.Sha1 == "" {
+	if jsonStruct.BlobstoreID == "" && jsonStruct.Sha1 == "" {
 		s = nil
 		return nil
 	}
@@ -53,7 +50,6 @@ func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
 	*s = RenderedTemplatesArchiveSpec{
 		Sha1:        &digest,
 		BlobstoreID: jsonStruct.BlobstoreID,
-		SignedURL:   jsonStruct.SignedURL,
 	}
 
 	return nil
