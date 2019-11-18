@@ -153,7 +153,7 @@ var _ = Describe("prepare", func() {
 
 			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc")
 			Expect(err).NotTo(HaveOccurred())
-		}
+		})
 
 		It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
 			err := agentClient.Prepare(applySpec)
