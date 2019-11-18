@@ -66,19 +66,19 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 				Expect(*rendered).To(Equal(*expected))
 			}
 		},
-			Entry("When only sha1Sum is set", "", "", "abc", "", &RenderedTemplatesArchiveSpec{
+			Entry("When only sha1Sum is set", "", "abc", "", &RenderedTemplatesArchiveSpec{
 				Sha1:        newMultipleSha1Digest("abc"),
 				BlobstoreID: "",
 			}),
-			Entry("When nothing is set", "", "", "", "", &RenderedTemplatesArchiveSpec{
+			Entry("When nothing is set", "", "", "", &RenderedTemplatesArchiveSpec{
 				Sha1:        nil,
 				BlobstoreID: "",
 			}),
-			Entry("When blobstoreID and Sha1Sum are set", "123", "", "abc", "", &RenderedTemplatesArchiveSpec{
+			Entry("When blobstoreID and Sha1Sum are set", "123", "abc", "", &RenderedTemplatesArchiveSpec{
 				Sha1:        newMultipleSha1Digest("abc"),
 				BlobstoreID: "123",
 			}),
-			Entry("When only blobstoreID is set", "123", "", "", "", &RenderedTemplatesArchiveSpec{
+			Entry("When only blobstoreID is set", "123", "", "No digest algorithm found. Supported algorithms: sha1, sha256, sha512", &RenderedTemplatesArchiveSpec{
 				Sha1:        nil,
 				BlobstoreID: "",
 			}),
