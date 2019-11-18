@@ -145,10 +145,15 @@ var _ = Describe("prepare", func() {
 					},
 				},
 			}
+		})
+
+		JustBeforeEach(func() {
+			_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
+			Expect(err).NotTo(HaveOccurred())
 
 			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc")
 			Expect(err).NotTo(HaveOccurred())
-		})
+		}
 
 		It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
 			err := agentClient.Prepare(applySpec)
