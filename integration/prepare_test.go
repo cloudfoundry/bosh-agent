@@ -86,9 +86,6 @@ var _ = Describe("prepare", func() {
 		)
 
 		BeforeEach(func() {
-			err := testEnvironment.StartBlobstore()
-			Expect(err).NotTo(HaveOccurred())
-
 			fooPackageSignedURL = "http://127.0.0.1:9091/get_package/release/packages/foo.tgz?encrypted"
 			barPackageSignedURL = "http://127.0.0.1:9091/get_package/release/packages/bar.tgz?encrypted"
 
@@ -124,7 +121,7 @@ var _ = Describe("prepare", func() {
 				},
 
 				RenderedTemplatesArchiveSpec: &applyspec.RenderedTemplatesArchiveSpec{
-					BlobstoreID: "abc",
+					BlobstoreID: "abc0",
 					Sha1:        getDigest("b70d2e6fefb1ff48f33a1cb08a609f19dd0f2c7d"),
 				},
 
@@ -151,7 +148,10 @@ var _ = Describe("prepare", func() {
 			_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 			Expect(err).NotTo(HaveOccurred())
 
-			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc")
+			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
+			Expect(err).NotTo(HaveOccurred())
+
+			err = testEnvironment.StartBlobstore()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
