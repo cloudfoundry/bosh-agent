@@ -13,9 +13,9 @@ if [ ! -z "${GOVERSION}" ]; then
   goversion_suffix="-${GOVERSION}"
 fi
 
-filename="bosh-agent-${semver}${goversion_suffix}-${GOOS}-${GOARCH}"
+filename_suffix="${semver}${goversion_suffix}-${GOOS}-${GOARCH}"
 if [[ $GOOS = 'windows' ]]; then
-  filename="${filename}.exe"
+  filename_suffix="${filename_suffix}.exe"
 fi
 
 timestamp=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
@@ -30,6 +30,11 @@ sed -i 's/\[DEV BUILD\]/'"$version"'/' main/version.go
 
 bin/build
 
+# output bosh-agent
 shasum -a 256 out/bosh-agent
+cp out/bosh-agent "${BASE}/${DIRNAME}/bosh-agent-${filename_suffix}"
 
-cp out/bosh-agent "${BASE}/${DIRNAME}/${filename}"
+if [[ $GOOS = 'windows' ]]; then
+  shasum -a 256 out/bosh-agent-pipe
+  cp out/bosh-agent-pipe "${BASE}/${DIRNAME}/bosh-agent-pipe-${filename_suffix}"
+fi
