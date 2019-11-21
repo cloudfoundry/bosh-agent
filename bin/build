@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 set -e
 
@@ -19,3 +19,7 @@ fi
 $bin/go build -o $bin/../out/bosh-agent github.com/cloudfoundry/bosh-agent/main
 # $bin/go build -o $bin/../out/dav-cli    github.com/cloudfoundry/bosh-utils/davcli/main
 # $bin/go build -o $bin/../out/bosh-bootstrapper github.com/cloudfoundry/bosh-agent/bootstrapper/main
+
+if [[ $GOOS = 'windows' ]]; then
+  $bin/go build -o $bin/../out/bosh-agent-pipe github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe
+fi
