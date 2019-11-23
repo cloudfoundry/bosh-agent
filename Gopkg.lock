@@ -146,7 +146,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "2dd39ab386e846a29e719b8e87021c31e5f104b5"
+  revision = "1cef897cc40ea0353357faa3536fae2430da99ec"
 
 [[projects]]
   branch = "master"
@@ -478,7 +478,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "e1110fd1c708ef015366ea01799a23c459593c47"
+  revision = "ac88ee75c92c889b97e05591e9a39b6480c538b3"
 
 [[projects]]
   branch = "master"
@@ -493,11 +493,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "2180aed2234323691e9fd264fb1d32d20ff04b27"
+  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
 
 [[projects]]
   branch = "master"
-  digest = "1:65a4bebf76533180befc721ce54a995f514f069c61542c10305f9e0242d00d1c"
+  digest = "1:4e07a629899b95af795766da8208f84478883f5cd63c83d7a3a39b454a13dadc"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -508,7 +508,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "52ab431487773bc9dd1b0766228b1cf3944126bf"
+  revision = "bd437916bb0eb726b873ee8e9b2dcf212d32e2fd"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -540,7 +540,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:179724ddf7c487d270cec09f0c29d9a096e2673c4e32b9c89a193eb85a78ce0c"
+  digest = "1:346b02a900d9480bf34c69a9b9b12f86a3eb768d10a6facfa77a4ff41fa11326"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -558,7 +558,7 @@
     "internal/span",
   ]
   pruneopts = "NUT"
-  revision = "3a792d9c32b2634e09d90a8e377b8f77fca8f02a"
+  revision = "2a6ccf25d769ccc6c0b364ff440915b10af1e3cf"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
@@ -578,12 +578,12 @@
   revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
 
 [[projects]]
-  digest = "1:5ad10df0893403ae9fdbd17c6f14814394a635339dd79595600bae52432befcf"
+  digest = "1:1532269ea4c7a7fcb29639a46318dd00c0f99c2f308a2a2860acf5b5354b8acc"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "f90ceb4f409096b60e2e9076b38b304b8246e5fa"
-  version = "v2.2.5"
+  revision = "1f64d6156d11335c3f22d9330b0ad14fc1e789ce"
+  version = "v2.2.7"
 
 [solve-meta]
   analyzer-name = "dep"
