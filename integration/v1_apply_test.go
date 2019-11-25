@@ -146,8 +146,10 @@ var _ = Describe("v1_apply", func() {
 					},
 				},
 			}
+		})
 
-			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc")
+		JustBeforeEach(func() {
+			err := testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
