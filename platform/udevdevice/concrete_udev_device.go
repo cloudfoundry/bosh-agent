@@ -35,7 +35,7 @@ func (udev ConcreteUdevDevice) KickDevice(filePath string) {
 	}
 
 	if err := udev.readByte(filePath); err != nil {
-		udev.logger.Error(udev.logtag, "Failed to red byte from device: %s", err.Error())
+		udev.logger.Error(udev.logtag, "Failed to read byte from device: %s", err.Error())
 	}
 
 	return
