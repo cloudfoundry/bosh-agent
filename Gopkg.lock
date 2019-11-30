@@ -14,11 +14,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3d99f16507e2add9e8dd4cd561c2a2928f4650df8924b1f14788db4809502911"
+  digest = "1:b9ee00c71bed5232e90598550a94ef3d93c9b4ae493412a46aba7af7998681df"
   name = "code.cloudfoundry.org/tlsconfig"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "462f72de110612406f0bc2e208bb43810df91b5f"
+  revision = "6c65973656e309398a32f286ff6cad0f22460962"
 
 [[projects]]
   branch = "master"
@@ -146,7 +146,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "1cef897cc40ea0353357faa3536fae2430da99ec"
+  revision = "1519f14bace7df9e173420d281ff08b3da57d73c"
 
 [[projects]]
   branch = "master"
@@ -478,11 +478,11 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "ac88ee75c92c889b97e05591e9a39b6480c538b3"
+  revision = "b544559bb6d1b5c62fba4af5e843ff542174f079"
 
 [[projects]]
   branch = "master"
-  digest = "1:f5cfe8bdfcc0d8326011ff70d6e54a673dd2e0eea62ccca0917fa2eb096d045b"
+  digest = "1:7da6080199e4f63b257e78d45d23778a9bcc5e9dde75e6cce476a294e30a8d6b"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -493,11 +493,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
+  revision = "ef20fe5d793301b553005db740f730d87993f778"
 
 [[projects]]
   branch = "master"
-  digest = "1:4e07a629899b95af795766da8208f84478883f5cd63c83d7a3a39b454a13dadc"
+  digest = "1:235b45e8bbcec9d747fc422f1c0e51320648eba2f5a30561c1538231d53d0282"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -508,7 +508,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "bd437916bb0eb726b873ee8e9b2dcf212d32e2fd"
+  revision = "6d18c012aee9febd81bbf9806760c8c4480e870d"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -540,7 +540,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:346b02a900d9480bf34c69a9b9b12f86a3eb768d10a6facfa77a4ff41fa11326"
+  digest = "1:10c612b4f89a6d75ac2a0e7cd33cb9474034e8914844231d76a40fe7cd799945"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -558,7 +558,7 @@
     "internal/span",
   ]
   pruneopts = "NUT"
-  revision = "2a6ccf25d769ccc6c0b364ff440915b10af1e3cf"
+  revision = "6e064ea0cf2dcfaca8da2da9f42da458bab38756"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
