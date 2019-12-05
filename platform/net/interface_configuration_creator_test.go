@@ -10,9 +10,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-var _ = Describe("InterfaceConfigurationCreator", describeInterfaceConfigurationCreator)
-
-func describeInterfaceConfigurationCreator() {
+var _ = Describe("InterfaceConfigurationCreator", func() {
 	var (
 		interfaceConfigurationCreator   InterfaceConfigurationCreator
 		staticNetwork                   boshsettings.Network
@@ -480,7 +478,7 @@ func describeInterfaceConfigurationCreator() {
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Invalid IP 'not an ip'"))
 	})
-}
+})
 
 var _ = Describe("StaticInterfaceConfiguration", func() {
 	Describe("Version6", func() {
