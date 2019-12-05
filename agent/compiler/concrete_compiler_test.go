@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -74,6 +75,7 @@ func init() {
 			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepackages.FakeApplier
 			packagesBc     *fakebc.FakeBundleCollection
+			fakeClock	   *fakebc.FakeClock
 		)
 
 		BeforeEach(func() {
@@ -83,6 +85,8 @@ func init() {
 			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
 			packageApplier = fakepackages.NewFakeApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
+			fakeClock = new(fakebc.FakeClock)
+
 
 			compiler = NewConcreteCompiler(
 				compressor,
@@ -92,7 +96,7 @@ func init() {
 				FakeCompileDirProvider{Dir: "/fake-compile-dir"},
 				packageApplier,
 				packagesBc,
-				new(fakebc.FakeClock),
+				fakeClock,
 			)
 
 			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
@@ -377,6 +381,35 @@ func init() {
 				afterCleanUpTarballPath = compressor.CleanUpTarballPath
 				Expect(afterCleanUpTarballPath).To(Equal("/tmp/compressed-compiled-package"))
 			})
+
+			It("fails if renaming does not succeed within the retry window", func() {
+				callCounter := 0
+
+				fs.RenameStub = func(oldPath, newPath string) error {
+					callCounter++
+					return errors.New("can't perform filesystem rename")
+				}
+
+				startTime := time.Now()
+				//fakeClock.SleepStub = func() {
+				//
+				//}
+				fakeClock.NowReturns(startTime)
+				//duration := CompileTimeout + time.Second
+				duration := time.Duration(4) * time.Second
+				fmt.Printf("%d", duration)
+				fakeClock.SinceReturns(time.Duration(fakeClock.SinceCallCount()) * time.Second)
+				//fakeClock.SinceReturns(CompileTimeout + time.Second)
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(MatchError(ContainSubstring("can't perform filesystem rename")))
+
+				// brittle callcount
+				Expect(fakeClock.SinceCallCount()).To(Equal(1))
+				Expect(fakeClock.SinceArgsForCall(0)).To(Equal(startTime))
+				Expect(callCounter).To(Equal(1))
+			})
+
 		})
 	})
 }

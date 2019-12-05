@@ -119,6 +119,7 @@ func init() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).To(MatchError(ContainSubstring("can't perform filesystem rename")))
 
+				// brittle callcount
 				Expect(fakeClock.SinceCallCount()).To(Equal(1))
 				Expect(fakeClock.SinceArgsForCall(0)).To(Equal(startTime))
 				Expect(callCounter).To(Equal(1))
