@@ -63,36 +63,39 @@
   version = "v0.4.14"
 
 [[projects]]
-  digest = "1:a8e16b4caf3575365c9aa3380d9418f31dd0b810596faebfe3a15c37fabeee4a"
+  digest = "1:64541c49a1b189d587bec7bf1922030d4f5a1dec0e7bfa811853647d71c2c46d"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
-    "internal/guestrequest",
-    "internal/guid",
+    "internal/cow",
     "internal/hcs",
     "internal/hcserror",
     "internal/hns",
     "internal/interop",
+    "internal/log",
     "internal/logfields",
     "internal/longpath",
     "internal/mergemaps",
+    "internal/oc",
     "internal/safefile",
     "internal/schema1",
     "internal/schema2",
     "internal/timeout",
+    "internal/vmcompute",
     "internal/wclayer",
+    "osversion",
   ]
   pruneopts = "NUT"
-  revision = "f92b8fb9c92e17da496af5a69e3ee13fbe9916e1"
-  version = "v0.8.6"
+  revision = "b3f49c06ffaeef24d09c6c08ec8ec8425a0303e2"
+  version = "v0.8.7"
 
 [[projects]]
-  digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
+  digest = "1:b7a18d6bf5e663d2bfa578e7375c88763ef5705d0e999e780c7625b9b5cbd2a6"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "2437321e1473408f122a95f65df3d8841fec4fba"
-  version = "v1.1.5"
+  revision = "8fcc08761109c1a6699c22f50a73448182507b32"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
@@ -146,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "1519f14bace7df9e173420d281ff08b3da57d73c"
+  revision = "869d1913b850a1fea21e72dc2c4d05a6fb2509b8"
 
 [[projects]]
   branch = "master"
@@ -188,6 +191,14 @@
   revision = "5cab3e0999746db050f2adea7d06e013d006b36d"
 
 [[projects]]
+  branch = "master"
+  digest = "1:96141bea4ceedc105277a48bc1bed612dcd3ae2c6786aa5e68b1872bbd417982"
+  name = "github.com/containerd/cgroups"
+  packages = ["stats/v1"]
+  pruneopts = "NUT"
+  revision = "fada802a7909d430bd17126fd6e4bbf5716f2bcd"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -202,6 +213,26 @@
   pruneopts = "NUT"
   revision = "6b08a5c5172ba18946672b49749cde22873dd7c2"
   version = "v3.2.0"
+
+[[projects]]
+  digest = "1:dc984388f49af46e504fb1a57adb644b9152882e88f8fc3160800b7e7dc352b2"
+  name = "github.com/gogo/protobuf"
+  packages = [
+    "gogoproto",
+    "proto",
+    "protoc-gen-gogo/descriptor",
+  ]
+  pruneopts = "NUT"
+  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
+  version = "v1.3.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b7cb6054d3dff43b38ad2e92492f220f57ae6087ee797dca298139776749ace8"
+  name = "github.com/golang/groupcache"
+  packages = ["lru"]
+  pruneopts = "NUT"
+  revision = "611e8accdfc92c4187d399e95ce826046d4c8d73"
 
 [[projects]]
   digest = "1:be408f349cae090a7c17a279633d6e62b00068e64af66a582cae0983de8890ea"
@@ -464,8 +495,22 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:2e6b1e2a89a8d2002911658aef7b77e512d80376a19ff564631ae0b0daaf1c9e"
+  name = "go.opencensus.io"
+  packages = [
+    ".",
+    "internal",
+    "trace",
+    "trace/internal",
+    "trace/tracestate",
+  ]
+  pruneopts = "NUT"
+  revision = "aad2c527c5defcf89b5afab7f37274304195a6b2"
+  version = "v0.22.2"
+
+[[projects]]
   branch = "master"
-  digest = "1:d62d9e60de40063d0bf751e8ac34e87c09dc633bfadf5bd81f3daf1c0aa843c9"
+  digest = "1:d28ae58dd46b5031fc2793e8e7b4a243e0f7e6266ddc695795c8b9d4aba067f6"
   name = "golang.org/x/crypto"
   packages = [
     "chacha20",
@@ -478,11 +523,11 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "b544559bb6d1b5c62fba4af5e843ff542174f079"
+  revision = "e9b2fee46413994441b28dfca259d911d963dfed"
 
 [[projects]]
   branch = "master"
-  digest = "1:7da6080199e4f63b257e78d45d23778a9bcc5e9dde75e6cce476a294e30a8d6b"
+  digest = "1:bb4e534e14d6d2eb39abbcc9d5fbf0be626b30f8dc4cb2be71d5b9777468b15b"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -493,11 +538,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "ef20fe5d793301b553005db740f730d87993f778"
+  revision = "e7e4b65ae66375ec1e85afc8e6b9b4933ae4da81"
 
 [[projects]]
   branch = "master"
-  digest = "1:235b45e8bbcec9d747fc422f1c0e51320648eba2f5a30561c1538231d53d0282"
+  digest = "1:e434d86584d0ace7513f24a12d330981c6a8e292d7e9de1a0136ddc79637d2a4"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -508,7 +553,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "6d18c012aee9febd81bbf9806760c8c4480e870d"
+  revision = "eeba5f6aabab6d6594a9191d6bfeaca5fa6a8248"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -540,7 +585,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:10c612b4f89a6d75ac2a0e7cd33cb9474034e8914844231d76a40fe7cd799945"
+  digest = "1:34f7d6df156a2db4148618ef03de445c6fdad2f42de23e530fd3d194095098a9"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -555,10 +600,9 @@
     "internal/imports",
     "internal/module",
     "internal/semver",
-    "internal/span",
   ]
   pruneopts = "NUT"
-  revision = "6e064ea0cf2dcfaca8da2da9f42da458bab38756"
+  revision = "259af5ff87bdcd4abf2ecda8edc3f13f04f26a42"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
