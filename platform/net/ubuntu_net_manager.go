@@ -169,9 +169,52 @@ func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks)
 		return nil, nil, nil, err
 	}
 
+	staticConfigs, err = net.collapseVirtualInterfaces(staticConfigs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
 	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
 	return staticConfigs, dhcpConfigs, dnsServers, nil
+}
+
+func (net UbuntuNetManager) collapseVirtualInterfaces(staticConfigs []StaticInterfaceConfiguration) ([]StaticInterfaceConfiguration, error) {
+	configs := []StaticInterfaceConfiguration{}
+
+	// collect any virtual interfaces
+	virtualInterfacesByDevice := map[string][]VirtualInterface{}
+	for _, config := range staticConfigs {
+		if strings.Contains(config.Name, ":") {
+			ifaceName := strings.Split(config.Name, ":")[0]
+
+			if _, ok := virtualInterfacesByDevice[ifaceName]; !ok {
+				virtualInterfacesByDevice[ifaceName] = []VirtualInterface{}
+			}
+			cidr, err := config.CIDR()
+			if err != nil {
+				return nil, err
+			}
+
+			virtualInterfacesByDevice[ifaceName] = append(
+				virtualInterfacesByDevice[ifaceName],
+				VirtualInterface{Label: config.Name, Address: fmt.Sprintf("%s/%s", config.Address, cidr)},
+			)
+		}
+	}
+
+	// keep non-virtual interfaces, and append if found
+	for _, config := range staticConfigs {
+		if !strings.Contains(config.Name, ":") {
+			if virtualInterfaces, ok := virtualInterfacesByDevice[config.Name]; ok {
+				config.VirtualInterfaces = virtualInterfaces
+			}
+
+			configs = append(configs, config)
+		}
+	}
+
+	return configs, nil
 }
 
 func (net UbuntuNetManager) writeNetConfigs(
@@ -479,6 +522,14 @@ func (net UbuntuNetManager) writeStaticInterfaceConfiguration(config StaticInter
 		addressSection.AddKey("Broadcast", config.Broadcast)
 	}
 	file.AppendSection(addressSection)
+
+	// Virtual Interfaces
+	for _, virtualInterface := range config.VirtualInterfaces {
+		addressSection := &ini.Section{Name: "Address"}
+		addressSection.AddKey("Label", virtualInterface.Label)
+		addressSection.AddKey("Address", virtualInterface.Address)
+		file.AppendSection(addressSection)
+	}
 
 	// Network Section
 	networkSection := &ini.Section{Name: "Network"}
