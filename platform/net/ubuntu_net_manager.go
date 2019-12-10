@@ -560,7 +560,10 @@ func (net UbuntuNetManager) writeStaticInterfaceConfiguration(config StaticInter
 		file.AppendSection(routeSection)
 	}
 
-	file.WriteTo(finalFile)
+	_, err = file.WriteTo(finalFile)
+	if err != nil {
+		return false, err
+	}
 
 	return false, nil
 }
@@ -605,7 +608,11 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(config DHCPInterf
 		file.AppendSection(routeSection)
 	}
 
-	file.WriteTo(finalFile)
+	_, err = file.WriteTo(finalFile)
+	if err != nil {
+		return false, err
+	}
+
 	return true, nil
 }
 
