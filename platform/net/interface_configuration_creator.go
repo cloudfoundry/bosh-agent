@@ -9,6 +9,11 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+type VirtualInterface struct {
+	Label   string
+	Address string
+}
+
 type StaticInterfaceConfiguration struct {
 	Name                string
 	Address             string
@@ -19,6 +24,7 @@ type StaticInterfaceConfiguration struct {
 	Mac                 string
 	Gateway             string
 	PostUpRoutes        boshsettings.Routes
+	VirtualInterfaces   []VirtualInterface
 }
 
 func (c StaticInterfaceConfiguration) Version6() string {

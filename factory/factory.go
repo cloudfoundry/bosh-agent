@@ -27,6 +27,7 @@ func (n Network) Build() settings.Network {
 		Gateway: defaultString(n.Gateway, "10.10.0.1"),
 		Default: n.Default,
 		Mac:     n.Mac,
+		Alias:   n.Alias,
 	}
 
 	if n.DNS == nil {
