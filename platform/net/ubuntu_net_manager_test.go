@@ -687,10 +687,7 @@ Name=eth0
 
 [Network]
 DHCP=yes
-
 DNS=8.8.8.8
-
-
 
 [Route]
 Destination=10.0.0.0/8
@@ -699,6 +696,7 @@ Gateway=3.4.5.6
 [Route]
 Destination=10.0.1.0/8
 Gateway=3.4.5.6
+
 `))
 		})
 
@@ -1048,10 +1046,8 @@ Name=ethdhcp
 
 [Network]
 DHCP=yes
-
 DNS=8.8.8.8
 DNS=9.9.9.9
-
 
 `))
 
