@@ -16,3 +16,7 @@ required = ["github.com/onsi/ginkgo/ginkgo", "github.com/maxbrunsfeld/counterfei
   unused-packages = true
   non-go = true
   go-tests = true
+
+[[override]]
+  version = "~1.1.5"
+  name = "github.com/bmatcuk/doublestar"
