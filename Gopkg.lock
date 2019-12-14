@@ -585,7 +585,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:34f7d6df156a2db4148618ef03de445c6fdad2f42de23e530fd3d194095098a9"
+  digest = "1:bbdf08fe776b96380d959a5e6cdfb2cc54122b48085ffac19a7586597cee84a4"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -602,7 +602,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "22774f7dae43231ae3ff025ca3f8f2c37bdff19b"
+  revision = "04c2e8eff935f58e9a5568b6b73542f91e0491e6"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
