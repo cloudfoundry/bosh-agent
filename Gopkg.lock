@@ -90,12 +90,12 @@
   version = "v0.8.7"
 
 [[projects]]
-  digest = "1:2352f40df77dec05ec853c63c0226a31343490412528e0345a86e46cece28b15"
+  digest = "1:db1f64ceacde0c4302dc0de285cc9800949d5e1eaa8982bbd435f3d1f6896f57"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "2437321e1473408f122a95f65df3d8841fec4fba"
-  version = "v1.1.5"
+  revision = "50be492faef103d1904fec6e1019454b07cdb03f"
+  version = "v1.2.2"
 
 [[projects]]
   branch = "master"
