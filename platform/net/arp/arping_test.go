@@ -79,5 +79,14 @@ var _ = Describe("arping", func() {
 			arping.BroadcastMACAddresses(addresses)
 			Expect(cmdRunner.RunCommands).To(BeEmpty())
 		})
+
+		It("ignores ipv6 addresses", func() {
+			addresses := []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("eth0", "fe80::"),
+			}
+
+			arping.BroadcastMACAddresses(addresses)
+			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+		})
 	})
 })
