@@ -1,6 +1,8 @@
 package ip
 
 import (
+	"strings"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
@@ -27,28 +29,35 @@ func (i *interfaceAddressesValidator) Validate(desiredInterfaceAddresses []Inter
 	for _, desiredInterfaceAddress := range desiredInterfaceAddresses {
 		ifaceName := desiredInterfaceAddress.GetInterfaceName()
 
-		iface, found := i.findInterfaceByName(ifaceName, systemInterfaceAddresses)
-		if !found {
+		ifaces := i.findInterfaceByName(ifaceName, systemInterfaceAddresses)
+		if len(ifaces) == 0 {
 			return bosherr.Errorf("Validating network interface '%s' IP addresses, no interface configured with that name", ifaceName)
 		}
 
+		actualIPs := []string{}
 		desiredIP, _ := desiredInterfaceAddress.GetIP()
-		actualIP, _ := iface.GetIP()
+		for _, iface := range ifaces {
+			actualIP, _ := iface.GetIP()
 
-		if desiredIP != actualIP {
-			return bosherr.Errorf("Validating network interface '%s' IP addresses, expected: '%s', actual: '%s'", ifaceName, desiredIP, actualIP)
+			if desiredIP == actualIP {
+				return nil
+			}
+			actualIPs = append(actualIPs, actualIP)
 		}
+
+		return bosherr.Errorf("Validating network interface '%s' IP addresses, expected: '%s', actual: [%s]", ifaceName, desiredIP, strings.Join(actualIPs, ", "))
 	}
 
 	return nil
 }
 
-func (i *interfaceAddressesValidator) findInterfaceByName(ifaceName string, ifaces []InterfaceAddress) (InterfaceAddress, bool) {
+func (i *interfaceAddressesValidator) findInterfaceByName(ifaceName string, ifaces []InterfaceAddress) []InterfaceAddress {
+	result := []InterfaceAddress{}
 	for _, iface := range ifaces {
 		if iface.GetInterfaceName() == ifaceName {
-			return iface, true
+			result = append(result, iface)
 		}
 	}
 
-	return nil, false
+	return result
 }

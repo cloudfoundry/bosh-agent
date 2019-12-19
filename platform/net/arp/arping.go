@@ -1,6 +1,7 @@
 package arp
 
 import (
+	"net"
 	"path"
 	"sync"
 	"time"
@@ -47,6 +48,16 @@ func (a arping) BroadcastMACAddresses(addresses []boship.InterfaceAddress) {
 	var wg sync.WaitGroup
 
 	for _, addr := range addresses {
+		ip, err := addr.GetIP()
+		if err != nil {
+			continue
+		}
+
+		formattedIP := net.ParseIP(ip)
+		if formattedIP.To4() == nil {
+			continue
+		}
+
 		wg.Add(1) // Outside of goroutine
 
 		go func(address boship.InterfaceAddress) {

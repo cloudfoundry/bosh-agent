@@ -32,7 +32,22 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 		It("returns nil", func() {
 			err := interfaceAddrsValidator.Validate([]boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
-				boship.NewSimpleInterfaceAddress("eth1", "5.6.7.8"),
+			})
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("when an interface has multiple IPs", func() {
+		BeforeEach(func() {
+			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
+				boship.NewSimpleInterfaceAddress("eth0", "fe80::1"),
+			}
+		})
+
+		It("returns nil", func() {
+			err := interfaceAddrsValidator.Validate([]boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("eth0", "fe80::1"),
 			})
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -42,6 +57,7 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 		BeforeEach(func() {
 			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.5"),
+				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.6"),
 			}
 		})
 
@@ -50,7 +66,7 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
 			})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Validating network interface 'eth0' IP addresses, expected: '1.2.3.4', actual: '1.2.3.5'"))
+			Expect(err.Error()).To(ContainSubstring("Validating network interface 'eth0' IP addresses, expected: '1.2.3.4', actual: [1.2.3.5, 1.2.3.6]"))
 		})
 	})
 
@@ -82,16 +98,5 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Validating network interface 'eth0' IP addresses, no interface configured with that name"))
 		})
-	})
-
-	Context("when resolv.conf has valid dns configurations", func() {
-		It("fails", func() {
-
-		})
-
-	})
-
-	Context("when resolv.conf has invalid dns configurations", func() {
-
 	})
 })
