@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "e190b792a3405e2f6e0f599368735935a8288dce"
+  revision = "9dcf5b2684dc3f8aba32b264a8f83a4ac2c95294"
 
 [[projects]]
   branch = "master"
@@ -232,7 +232,7 @@
   name = "github.com/golang/groupcache"
   packages = ["lru"]
   pruneopts = "NUT"
-  revision = "611e8accdfc92c4187d399e95ce826046d4c8d73"
+  revision = "215e87163ea771ffa998a96c611387313bb5a403"
 
 [[projects]]
   digest = "1:be408f349cae090a7c17a279633d6e62b00068e64af66a582cae0983de8890ea"
@@ -523,7 +523,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "becbf705a91575484002d598f87d74f0002801e7"
+  revision = "53104e6ec876ad4e22ad27cce588b01392043c1b"
 
 [[projects]]
   branch = "master"
@@ -542,7 +542,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:13fcf26e50dd0b1efb7db3aeac23c0590caa305b10a8ee209a6343a2f11668dc"
+  digest = "1:98ddebdae34774fce67e4992d179abb48d057b4b7ebc6262cae4cc71a7739ca2"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -553,7 +553,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "0732a990476f7f2f5f7200b39ba4ab730c0f09f8"
+  revision = "c709ea063b76879dc9915358f55d4d77c16ab6d5"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -602,7 +602,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "f13409bbebaf4952699e53713a73474ea30e8672"
+  revision = "7b8e75db28f4b09dc0b853eadee5b034956bcb9e"
 
 [[projects]]
   branch = "master"
