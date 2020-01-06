@@ -85,7 +85,6 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	macAddressDetector := boshnet.NewMacAddressDetector(fs)
 
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, kernelIPv6, logger)
-	opensuseNetManager := boshnet.NewOpensuseNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, logger)
 
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
@@ -99,7 +98,6 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 60, logger)
 	windowsCertManager := boshcert.NewWindowsCertManager(fs, runner, dirProvider, logger)
-	opensuseCertManager := boshcert.NewOpensuseOSCertManager(fs, runner, 0, logger)
 
 	interfaceManager := boshnet.NewInterfaceManager()
 
@@ -187,36 +185,11 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		)
 	}
 
-	var opensuse = func() Platform {
-		return NewLinuxPlatform(
-			fs,
-			runner,
-			statsCollector,
-			compressor,
-			copier,
-			dirProvider,
-			vitalsService,
-			linuxCdutil,
-			linuxDiskManager,
-			opensuseNetManager,
-			opensuseCertManager,
-			monitRetryStrategy,
-			devicePathResolver,
-			bootstrapState,
-			options.Linux,
-			logger,
-			defaultNetworkResolver,
-			uuidGenerator,
-			auditLogger,
-		)
-	}
-
 	return provider{
 		platforms: map[string]func() Platform{
-			"ubuntu":   ubuntu,
-			"dummy":    dummy,
-			"windows":  windows,
-			"opensuse": opensuse,
+			"ubuntu":  ubuntu,
+			"dummy":   dummy,
+			"windows": windows,
 		},
 	}
 }
