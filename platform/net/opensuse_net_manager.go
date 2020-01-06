@@ -191,6 +191,19 @@ GATEWAY={{ .Gateway }}{{ range .DNSServers }}
 DNS{{ .Index }}={{ .Address }}{{ end }}
 `
 
+type dnsConfig struct {
+	Index   int
+	Address string
+}
+
+func newDNSConfigs(dnsServers []string) []dnsConfig {
+	dnsConfigs := []dnsConfig{}
+	for i := range dnsServers {
+		dnsConfigs = append(dnsConfigs, dnsConfig{Index: i + 1, Address: dnsServers[i]})
+	}
+	return dnsConfigs
+}
+
 type opensuseStaticIfcfg struct {
 	*StaticInterfaceConfiguration
 	DNSServers []dnsConfig
