@@ -6,12 +6,14 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"time"
 
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -24,7 +26,7 @@ type opensuseNetManager struct {
 	ipResolver                    boship.Resolver
 	macAddressDetector            MACAddressDetector
 	interfaceConfigurationCreator InterfaceConfigurationCreator
-	interfaceAddressesValidator   boship.InterfaceAddressesValidator
+	interfaceAddrsProvider        boship.InterfaceAddressesProvider
 	dnsValidator                  DNSValidator
 	addressBroadcaster            bosharp.AddressBroadcaster
 	logger                        boshlog.Logger
@@ -41,7 +43,7 @@ func NewOpensuseNetManager(
 	ipResolver boship.Resolver,
 	macAddressDetector MACAddressDetector,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
-	interfaceAddressesValidator boship.InterfaceAddressesValidator,
+	interfaceAddrsProvider boship.InterfaceAddressesProvider,
 	dnsValidator DNSValidator,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
@@ -52,7 +54,7 @@ func NewOpensuseNetManager(
 		ipResolver:                    ipResolver,
 		macAddressDetector:            macAddressDetector,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
-		interfaceAddressesValidator:   interfaceAddressesValidator,
+		interfaceAddrsProvider:        interfaceAddrsProvider,
 		dnsValidator:                  dnsValidator,
 		addressBroadcaster:            addressBroadcaster,
 		logger:                        logger,
@@ -91,7 +93,14 @@ func (net opensuseNetManager) SetupNetworking(networks boshsettings.Networks, er
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
 
-	err = net.interfaceAddressesValidator.Validate(staticAddresses)
+	interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(net.interfaceAddrsProvider, staticAddresses)
+	retryIPValidator := boshretry.NewAttemptRetryStrategy(
+		10,
+		time.Second,
+		interfaceAddressesValidator,
+		net.logger,
+	)
+	err = retryIPValidator.Try()
 	if err != nil {
 		return bosherr.WrapError(err, "Validating static network configuration")
 	}

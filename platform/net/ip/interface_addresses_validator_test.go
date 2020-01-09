@@ -18,7 +18,6 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 
 	BeforeEach(func() {
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-		interfaceAddrsValidator = boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
 	})
 
 	Context("when networks match", func() {
@@ -30,9 +29,11 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 		})
 
 		It("returns nil", func() {
-			err := interfaceAddrsValidator.Validate([]boship.InterfaceAddress{
+			interfaceAddrsValidator = boship.NewInterfaceAddressesValidator(interfaceAddrsProvider, []boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
 			})
+			retry, err := interfaceAddrsValidator.Attempt()
+			Expect(retry).To(Equal(false))
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -46,9 +47,11 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 		})
 
 		It("returns nil", func() {
-			err := interfaceAddrsValidator.Validate([]boship.InterfaceAddress{
+			interfaceAddrsValidator = boship.NewInterfaceAddressesValidator(interfaceAddrsProvider, []boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("eth0", "fe80::1"),
 			})
+			retry, err := interfaceAddrsValidator.Attempt()
+			Expect(retry).To(Equal(false))
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -62,9 +65,11 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 		})
 
 		It("fails", func() {
-			err := interfaceAddrsValidator.Validate([]boship.InterfaceAddress{
+			interfaceAddrsValidator = boship.NewInterfaceAddressesValidator(interfaceAddrsProvider, []boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
 			})
+			retry, err := interfaceAddrsValidator.Attempt()
+			Expect(retry).To(Equal(true))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Validating network interface 'eth0' IP addresses, expected: '1.2.3.4', actual: [1.2.3.5, 1.2.3.6]"))
 		})
@@ -76,9 +81,11 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 		})
 
 		It("fails", func() {
-			err := interfaceAddrsValidator.Validate([]boship.InterfaceAddress{
+			interfaceAddrsValidator = boship.NewInterfaceAddressesValidator(interfaceAddrsProvider, []boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
 			})
+			retry, err := interfaceAddrsValidator.Attempt()
+			Expect(retry).To(Equal(true))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("interface-error"))
 		})
@@ -92,9 +99,11 @@ var _ = Describe("InterfaceAddressesValidator", func() {
 		})
 
 		It("fails", func() {
-			err := interfaceAddrsValidator.Validate([]boship.InterfaceAddress{
+			interfaceAddrsValidator = boship.NewInterfaceAddressesValidator(interfaceAddrsProvider, []boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
 			})
+			retry, err := interfaceAddrsValidator.Attempt()
+			Expect(retry).To(Equal(true))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Validating network interface 'eth0' IP addresses, no interface configured with that name"))
 		})

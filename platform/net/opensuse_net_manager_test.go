@@ -51,7 +51,6 @@ func describeOpensuseNetManager() {
 		fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-		interfaceAddrsValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
 		dnsValidator := NewDNSValidator(fs)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		netManager = NewOpensuseNetManager(
@@ -60,7 +59,7 @@ func describeOpensuseNetManager() {
 			ipResolver,
 			fakeMACAddressDetector,
 			interfaceConfigurationCreator,
-			interfaceAddrsValidator,
+			interfaceAddrsProvider,
 			dnsValidator,
 			addressBroadcaster,
 			logger,

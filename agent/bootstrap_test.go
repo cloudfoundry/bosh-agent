@@ -1112,14 +1112,13 @@ var _ = Describe("bootstrap", func() {
 				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
 				interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-				interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
 				dnsValidator := boshnet.NewDNSValidator(fs)
 				logger = boshlog.NewLogger(boshlog.LevelNone)
 				kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
 				fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 				fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
 
-				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, fakeMACAddressDetector, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, kernelIPv6, logger)
+				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, fakeMACAddressDetector, interfaceConfigurationCreator, interfaceAddrsProvider, dnsValidator, arping, kernelIPv6, logger)
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 1, logger)
 
 				monitRetryable := boshplatform.NewMonitRetryable(runner)

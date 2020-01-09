@@ -50,7 +50,6 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-		interfaceAddrsValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
 		dnsValidator := NewDNSValidator(fs)
 		kernelIPv6 = &fakenet.FakeKernelIPv6{}
 		netManager = NewUbuntuNetManager(
@@ -59,7 +58,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			ipResolver,
 			fakeMACAddressDetector,
 			interfaceConfigurationCreator,
-			interfaceAddrsValidator,
+			interfaceAddrsProvider,
 			dnsValidator,
 			addressBroadcaster,
 			kernelIPv6,
