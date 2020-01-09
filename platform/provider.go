@@ -79,12 +79,11 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
 	interfaceAddressesProvider := boship.NewSystemInterfaceAddressesProvider()
-	interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(interfaceAddressesProvider)
 	dnsValidator := boshnet.NewDNSValidator(fs)
 	kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
 	macAddressDetector := boshnet.NewMacAddressDetector(fs)
 
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesValidator, dnsValidator, arping, kernelIPv6, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesProvider, dnsValidator, arping, kernelIPv6, logger)
 
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
