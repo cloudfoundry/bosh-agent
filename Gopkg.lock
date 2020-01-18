@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "8c5bf9093331ed683af7e8b1e1051e66ea67e87e"
+  revision = "59196cba50b011136272461f4e1761785139124e"
 
 [[projects]]
   branch = "master"
@@ -196,7 +196,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "3f83850c48d225466698517ad34f4848d2ddaeeb"
+  revision = "a8908713319d7d6099cbb6cc6da0700c7c9f0169"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -463,12 +463,12 @@
   revision = "0af6982457e5e683c4e238a1abf5dcd73b014504"
 
 [[projects]]
-  digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
+  digest = "1:4047c378584616813d610c9f993bf90dd0d07aed8d94bd3bc299cd35ececdcba"
   name = "github.com/pkg/errors"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
-  version = "v0.8.1"
+  revision = "614d223910a179a466c1767a985424175c39b465"
+  version = "v0.9.1"
 
 [[projects]]
   digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
@@ -523,7 +523,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "61a87790db17894570dfb32dbaa0a4af9ce60cb4"
+  revision = "530e935923ad688be97c15eeb8e5ee42ebf2b54a"
 
 [[projects]]
   branch = "master"
@@ -538,11 +538,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "c0dbc17a35534bf2e581d7a942408dc936316da4"
+  revision = "6afb5195e5aab057fda82e27171243402346b0ad"
 
 [[projects]]
   branch = "master"
-  digest = "1:fcef7f8d822ae2e7ff4f6cd80895ff75465142ce2f779e20570e38d6954e0644"
+  digest = "1:f53b291cebcd9196af638d3fb4ba82a124020d0f2f956d2889e4d8d1c57fba84"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -553,7 +553,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "548cf772de5052aa878ccb47cdeb7d262b75c8ec"
+  revision = "59e60aa80a0c64fa4b088976ee16ad7f04252c25"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -585,7 +585,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:89f5e612a0d15c7ae54d836588492210d872d5ac173dc334f5e916ca0e8a7803"
+  digest = "1:de93fe0a242fca3eabf898ea15e4eeef983bed5bb18b1e26437758856e4f9050"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -599,10 +599,11 @@
     "internal/gopathwalk",
     "internal/imports",
     "internal/module",
+    "internal/packagesinternal",
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "a7a6caa82ab2c7a235db8f1e47d3a8f2e7a6c054"
+  revision = "0cba7a3a9ee9d9a5917ed56b9668e7ad35eaa571"
 
 [[projects]]
   branch = "master"
