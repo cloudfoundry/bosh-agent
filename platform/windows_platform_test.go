@@ -822,6 +822,7 @@ var _ = Describe("BOSH User Commands", func() {
 
 		deleteUserOnce.Do(func() {
 			DeleteLocalUser(testUsername)
+			DeleteLocalUser("vcap")
 		})
 	})
 
@@ -838,6 +839,7 @@ var _ = Describe("BOSH User Commands", func() {
 
 	AfterEach(func() {
 		DeleteLocalUser(testUsername)
+		DeleteLocalUser("vcap")
 		Expect(userExists(testUsername)).ToNot(Succeed())
 
 		cmdRunner.RunCommand(powershell.Executable, "-Command", `get-wmiobject -class win32_userprofile | where { $_.LocalPath -like 'C:\Users\bosh*' } | remove-wmiobject`)
