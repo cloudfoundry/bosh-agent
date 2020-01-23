@@ -940,11 +940,9 @@ var _ = Describe("BOSH User Commands", func() {
 				"KEY_2",
 				"KEY_3",
 			}
-			Expect(userExists("vcap")).To(BeFalse())
+			Expect(userExists("vcap")).NotTo(Succeed())
 
 			Expect(platform.SetupSSH(keys, "vcap")).To(Succeed())
-
-			Expect(userExists("vcap")).To(BeTrue())
 
 			homedir, err := UserHomeDirectory("vcap")
 			Expect(err).To(Succeed())
