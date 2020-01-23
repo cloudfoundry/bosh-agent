@@ -286,6 +286,15 @@ func (p WindowsPlatform) GetPersistentDiskSettingsPath(tmpfs bool) string {
 
 func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 
+	if username == boshsettings.VCAPUsername {
+		if !userExists(username) {
+			err := p.CreateUser(username, "")
+			if err != nil {
+				return bosherr.WrapErrorf(err, "Creating user: %s", username)
+			}
+		}
+	}
+
 	homedir, err := userHomeDirectory(username)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Finding home directory for user: %s", username)

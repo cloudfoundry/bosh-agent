@@ -930,6 +930,34 @@ var _ = Describe("BOSH User Commands", func() {
 			}
 		})
 
+		It("can create vcap user and insert authorized public keys into .ssh\\authorized_keys file", func() {
+			if !sshdServiceIsInstalled() {
+				Skip("This test requires the SSHD service to be installed")
+			}
+
+			keys := []string{
+				"KEY_1",
+				"KEY_2",
+				"KEY_3",
+			}
+			Expect(userExists("vcap")).NotTo(Succeed())
+
+			Expect(platform.SetupSSH(keys, "vcap")).To(Succeed())
+
+			homedir, err := UserHomeDirectory("vcap")
+			Expect(err).To(Succeed())
+
+			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
+			b, err := ioutil.ReadFile(keyPath)
+			Expect(err).To(Succeed())
+
+			content := strings.TrimSpace(string(b))
+			for i, line := range strings.Split(content, "\n") {
+				line = strings.TrimSpace(line)
+				Expect(line).To(Equal(keys[i]))
+			}
+		})
+
 		It("can delete a user, and any files in the user home directory which aren't in use by the registry", func() {
 			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
 			Expect(userExists(testUsername)).To(Succeed())
