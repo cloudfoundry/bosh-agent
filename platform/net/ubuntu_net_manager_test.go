@@ -738,6 +738,7 @@ Name=eth0
 
 [Network]
 DHCP=yes
+UseDomains=yes
 DNS=8.8.8.8
 
 [Route]
@@ -1105,6 +1106,7 @@ Name=ethdhcp
 
 [Network]
 DHCP=yes
+UseDomains=yes
 DNS=8.8.8.8
 DNS=9.9.9.9
 
