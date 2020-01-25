@@ -18,7 +18,7 @@
   name = "code.cloudfoundry.org/tlsconfig"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "551ec42d1f74761a2a526dd3a824cad4e0a43b24"
+  revision = "b5ccaa4fedfc8f3986139f63719fedb66d7ff642"
 
 [[projects]]
   branch = "master"
@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "59196cba50b011136272461f4e1761785139124e"
+  revision = "9dc0142733489df6092c8f38b530654fb3bf2901"
 
 [[projects]]
   branch = "master"
@@ -232,15 +232,15 @@
   name = "github.com/golang/groupcache"
   packages = ["lru"]
   pruneopts = "NUT"
-  revision = "215e87163ea771ffa998a96c611387313bb5a403"
+  revision = "8c9f03a8e57eb486e42badaed3fb287da51807ba"
 
 [[projects]]
-  digest = "1:be408f349cae090a7c17a279633d6e62b00068e64af66a582cae0983de8890ea"
+  digest = "1:7ae311278f7ccaa724de8f2cdec0a507ba3ee6dea8c77237e8157bcf64b0f28b"
   name = "github.com/golang/mock"
   packages = ["gomock"]
   pruneopts = "NUT"
-  revision = "9fa652df1129bef0e734c9cf9bf6dbae9ef3b9fa"
-  version = "1.3.1"
+  revision = "3dcdcb6994c4de42a73bd2e4790178be3ed4554b"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:573ca21d3669500ff845bdebee890eb7fc7f0f50c59f2132f2a0c6b03d85086a"
@@ -542,7 +542,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f53b291cebcd9196af638d3fb4ba82a124020d0f2f956d2889e4d8d1c57fba84"
+  digest = "1:fd0badbee27e6a288ef34681879bfda03798bb68ddad0b22cd9f1db78d015dee"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -553,7 +553,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "59e60aa80a0c64fa4b088976ee16ad7f04252c25"
+  revision = "9fbb57f87de9ccfe3a99d4e3270ce8a926ebba4f"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -585,7 +585,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:de93fe0a242fca3eabf898ea15e4eeef983bed5bb18b1e26437758856e4f9050"
+  digest = "1:6cc3b8ccc2059d27519dde5d1e70479f80a2bb8eac37dee8b3d793d8610947a3"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -603,7 +603,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "0cba7a3a9ee9d9a5917ed56b9668e7ad35eaa571"
+  revision = "8fe064f891f2084bc046f3ebf13b0c2258993b8c"
 
 [[projects]]
   branch = "master"
@@ -634,12 +634,12 @@
   revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
 
 [[projects]]
-  digest = "1:1532269ea4c7a7fcb29639a46318dd00c0f99c2f308a2a2860acf5b5354b8acc"
+  digest = "1:d9b9ac6943a512737f76bf3d61b08d97121c66686bc02ffc231313563230b468"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "1f64d6156d11335c3f22d9330b0ad14fc1e789ce"
-  version = "v2.2.7"
+  revision = "53403b58ad1b561927d19068c655246f2db79d48"
+  version = "v2.2.8"
 
 [solve-meta]
   analyzer-name = "dep"
