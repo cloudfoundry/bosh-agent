@@ -592,7 +592,6 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(config DHCPInterf
 	// Network Section
 	networkSection := &ini.Section{Name: "Network"}
 	networkSection.AddKey("DHCP", "yes")
-	networkSection.AddKey("UseDomains", "yes")
 	if config.IsVersion6() {
 		networkSection.AddKey("IPv6AcceptRA", "true")
 	}
@@ -601,6 +600,11 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(config DHCPInterf
 		networkSection.AddKey("DNS", dnsServer)
 	}
 	file.AppendSection(networkSection)
+
+	// DHCP Section
+	dhcpSection := &ini.Section{Name: "DHCP"}
+	dhcpSection.AddKey("UseDomains", "yes")
+	file.AppendSection(dhcpSection)
 
 	// Route Sections
 	for _, postUpRoute := range config.PostUpRoutes {
