@@ -98,13 +98,12 @@ func SOCKS5DialContextFuncFromEnvironment(origDialer *net.Dialer, socks5Proxy Pr
 		return errorDialFunc(err, "Parsing BOSH_ALL_PROXY url")
 	}
 
-	noProxy := os.Getenv("no_proxy")
-	if len(noProxy) == 0 {
-		return origDialer.DialContext
-	}
-
 	perHost := goproxy.NewPerHost(proxy, origDialer)
-	perHost.AddFromString(noProxy)
+
+	noProxy := os.Getenv("no_proxy")
+	if len(noProxy) != 0 {
+		perHost.AddFromString(noProxy)
+	}
 
 	return perHost.DialContext
 }

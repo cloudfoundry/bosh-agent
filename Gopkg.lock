@@ -18,7 +18,7 @@
   name = "code.cloudfoundry.org/tlsconfig"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "b5ccaa4fedfc8f3986139f63719fedb66d7ff642"
+  revision = "bbe0f8da39b3c59d42217afcc79019c754dabdfb"
 
 [[projects]]
   branch = "master"
@@ -127,7 +127,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:aa2198238e82f52e7f245528753308397ed8a60813dbc33b5daab275b145ede6"
+  digest = "1:163ad1291e45f14dc6f6196c9c1617a4aab9e22c4339097fbeb42f42c6dede9e"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "9dc0142733489df6092c8f38b530654fb3bf2901"
+  revision = "693666268ebee3c83aea63f232fbcfb2746479c6"
 
 [[projects]]
   branch = "master"
@@ -243,12 +243,12 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:573ca21d3669500ff845bdebee890eb7fc7f0f50c59f2132f2a0c6b03d85086a"
+  digest = "1:d1e35b720b5f5156502ffdd174000c81295919293735342da78582e4dc7a8bcd"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   pruneopts = "NUT"
-  revision = "6c65a5562fc06764971b7c5d05c76c75e84bdbf7"
-  version = "v1.3.2"
+  revision = "d23c5127dc24889085f8ccea5c9d560a57a879d8"
+  version = "v1.3.3"
 
 [[projects]]
   branch = "master"
@@ -523,7 +523,7 @@
     "ssh",
   ]
   pruneopts = "NUT"
-  revision = "530e935923ad688be97c15eeb8e5ee42ebf2b54a"
+  revision = "69ecbb4d6d5dab05e49161c6e77ea40a030884e1"
 
 [[projects]]
   branch = "master"
@@ -585,7 +585,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6cc3b8ccc2059d27519dde5d1e70479f80a2bb8eac37dee8b3d793d8610947a3"
+  digest = "1:f520736a515a5b2e425c0019e40b1bfbfad9a74c7e92b987d01944daaa257d44"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -603,7 +603,7 @@
     "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "8fe064f891f2084bc046f3ebf13b0c2258993b8c"
+  revision = "ecb101ed655036dbb0b743ef039cc3e9d44dbf83"
 
 [[projects]]
   branch = "master"
