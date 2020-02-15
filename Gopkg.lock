@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "cbe98f846f7e0d811862657c47badf911a06952e"
+  revision = "881640b2d0a6eab68596440baf5aafdccd785c54"
 
 [[projects]]
   branch = "master"
@@ -525,7 +525,18 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "ecb85df213405b7d32e4d73cb5bbaace2ec88881"
+  revision = "1d94cc7ab1c630336ab82ccb9c9cda72a875c382"
+
+[[projects]]
+  digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
+  name = "golang.org/x/mod"
+  packages = [
+    "module",
+    "semver",
+  ]
+  pruneopts = "NUT"
+  revision = "ed3ec21bb8e252814c380df79a80f366440ddb2d"
+  version = "v0.2.0"
 
 [[projects]]
   branch = "master"
@@ -544,7 +555,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4faf285fafd218733493d774612ec4ffa90b8137ca77d3b989b84826c49f21da"
+  digest = "1:4e8a8a2015df74815e932784f938e22003547d539da55826eec942da5127181f"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -555,7 +566,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "d101bd2416d505c0448a6ce8a282482678040a89"
+  revision = "12a6c2dcc1e4cb348b57847c73987099e261714b"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -587,7 +598,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a16cf72c3081afaec8083183ee02679b27b2340fb00d4cf26b1adf3109e9854f"
+  digest = "1:09a14c8de8e9777ea76e231169509253cc7ffd0b90afc4b277032b6a5bcffcfe"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -600,12 +611,10 @@
     "internal/fastwalk",
     "internal/gopathwalk",
     "internal/imports",
-    "internal/module",
     "internal/packagesinternal",
-    "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "61798d64f0258df3b7b6e3667997eaebec9c0d99"
+  revision = "5916a50871fbb77650a14d484c89ca39f9487118"
 
 [[projects]]
   branch = "master"
