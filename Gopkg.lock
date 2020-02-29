@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "0af5ba7d2c4657d8be2a151f0c742841d96c4b75"
+  revision = "2c99d7618fe74f4667ae3aa34028949913164679"
 
 [[projects]]
   branch = "master"
@@ -196,7 +196,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "d732e370d46d8d554ed462c41f421a738e5b6d5d"
+  revision = "44306b6a1d46985d916b48b4199f93a378af314f"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -239,16 +239,16 @@
   name = "github.com/golang/mock"
   packages = ["gomock"]
   pruneopts = "NUT"
-  revision = "3dcdcb6994c4de42a73bd2e4790178be3ed4554b"
-  version = "v1.4.0"
+  revision = "b48cb6623c04dae64c28537143aca42d16561daf"
+  version = "v1.4.1"
 
 [[projects]]
   digest = "1:d1e35b720b5f5156502ffdd174000c81295919293735342da78582e4dc7a8bcd"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   pruneopts = "NUT"
-  revision = "d23c5127dc24889085f8ccea5c9d560a57a879d8"
-  version = "v1.3.3"
+  revision = "5d5b4c10bd43f85e63bd9e4a3fa9b1ea2ef88af2"
+  version = "v1.3.4"
 
 [[projects]]
   branch = "master"
@@ -551,11 +551,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "078779b8f2d83d3faf06633707560018f91a9e82"
+  revision = "0de0cce0169b09b364e001f108dc0399ea8630b3"
 
 [[projects]]
   branch = "master"
-  digest = "1:0ad80e35e85c6c2e2cc544ac04b50a6a3098af952e81f9dfb6d4f4e5a09f4adb"
+  digest = "1:3130d74fd39086791cbc022221f004a8bbadc4fd7ecd282273adbbcea48e4225"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -566,7 +566,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "cb0a6d8edb6c3528b01a0be84a5fe513dbf880a6"
+  revision = "d5e6a3e2c0ae16fc7480523ebcb7fd4dd3215489"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -598,7 +598,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0dc804f6bcf398652de6715a358efc22ea53e28bafc44a25c3c58a5118ea62fe"
+  digest = "1:3932c229de539a38b0bce379f853bd35279ccce3f4eb25f09c797279caa41d79"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -609,12 +609,13 @@
     "go/types/typeutil",
     "imports",
     "internal/fastwalk",
+    "internal/gocommand",
     "internal/gopathwalk",
     "internal/imports",
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "e1da425f72fd3793b579f4e74d908ba96eb16c8a"
+  revision = "71482053b885ea3938876d1306ad8a1e4037f367"
 
 [[projects]]
   branch = "master"
