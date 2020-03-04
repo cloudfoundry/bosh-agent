@@ -6,7 +6,6 @@ import (
 	"github.com/cloudfoundry/gosigar"
 
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
@@ -14,18 +13,6 @@ import (
 
 type Service interface {
 	Get() (vitals Vitals, err error)
-}
-
-type concreteService struct {
-	statsCollector boshstats.Collector
-	dirProvider    boshdirs.Provider
-}
-
-func NewService(statsCollector boshstats.Collector, dirProvider boshdirs.Provider) Service {
-	return concreteService{
-		statsCollector: statsCollector,
-		dirProvider:    dirProvider,
-	}
 }
 
 func (s concreteService) Get() (vitals Vitals, err error) {
@@ -93,8 +80,12 @@ func (s concreteService) getDiskStats() (diskStats DiskVitals, err error) {
 	disks := map[string]string{
 		"/":                      "system",
 		s.dirProvider.DataDir():  "ephemeral",
-		s.dirProvider.StoreDir(): "persistent",
 	}
+
+	if s.isMountPoint(s.dirProvider.StoreDir()) {
+		disks[s.dirProvider.StoreDir()] = "persistent"
+	}
+
 	diskStats = make(DiskVitals, len(disks))
 
 	for path, name := range disks {
