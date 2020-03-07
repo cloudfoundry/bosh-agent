@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "2c99d7618fe74f4667ae3aa34028949913164679"
+  revision = "19776694af9983db56e4aa2ec774d6f2857b7fa2"
 
 [[projects]]
   branch = "master"
@@ -525,7 +525,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "2aa609cf4a9d7d1126360de73b55b6002f9e052a"
+  revision = "78000ba7a073cafc0278790f6bce552a0f25850e"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -551,11 +551,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "0de0cce0169b09b364e001f108dc0399ea8630b3"
+  revision = "244492dfa37ae2ce87222fd06250a03160745faa"
 
 [[projects]]
   branch = "master"
-  digest = "1:3130d74fd39086791cbc022221f004a8bbadc4fd7ecd282273adbbcea48e4225"
+  digest = "1:c6351c9595dd6b0d892aa31e18e5f7d54199f0fa59b21c2457e868576a7c296b"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -566,7 +566,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "d5e6a3e2c0ae16fc7480523ebcb7fd4dd3215489"
+  revision = "5c8b2ff67527cb88b770f693cebf3799036d8bc0"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -598,7 +598,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3932c229de539a38b0bce379f853bd35279ccce3f4eb25f09c797279caa41d79"
+  digest = "1:9bfbe3920876cd182f22aebd53b14dc6283f3185fb9bee248611ab0e8aafe261"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -615,7 +615,7 @@
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "71482053b885ea3938876d1306ad8a1e4037f367"
+  revision = "51e69f71924feb7593954ae1973578c0c9ac2e4f"
 
 [[projects]]
   branch = "master"
