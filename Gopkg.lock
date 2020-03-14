@@ -196,7 +196,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "44306b6a1d46985d916b48b4199f93a378af314f"
+  revision = "6c3dec43a1030a55584ab8b5b181411029d43ecc"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -235,20 +235,23 @@
   revision = "8c9f03a8e57eb486e42badaed3fb287da51807ba"
 
 [[projects]]
-  digest = "1:7ae311278f7ccaa724de8f2cdec0a507ba3ee6dea8c77237e8157bcf64b0f28b"
+  digest = "1:18272c10996e80babbef3d4313d1c7217eaca8ee5908d31c37ee99a09fcd0fa3"
   name = "github.com/golang/mock"
-  packages = ["gomock"]
+  packages = [
+    "gomock",
+    "gomock/internal/validate",
+  ]
   pruneopts = "NUT"
-  revision = "b48cb6623c04dae64c28537143aca42d16561daf"
-  version = "v1.4.1"
+  revision = "064e67a3c906eadcc6c19e017b03b358ae8de561"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:d1e35b720b5f5156502ffdd174000c81295919293735342da78582e4dc7a8bcd"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   pruneopts = "NUT"
-  revision = "5d5b4c10bd43f85e63bd9e4a3fa9b1ea2ef88af2"
-  version = "v1.3.4"
+  revision = "84668698ea25b64748563aa20726db66a6b8d299"
+  version = "v1.3.5"
 
 [[projects]]
   branch = "master"
@@ -256,7 +259,7 @@
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c2e93f3ae59f2904160ceaab466009f965df46d6"
+  revision = "7c63a14153262497940ad1c2237accc855f47684"
 
 [[projects]]
   digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
@@ -525,7 +528,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "78000ba7a073cafc0278790f6bce552a0f25850e"
+  revision = "f7b00557c8c46a1ea4b035cae84f52028c2c0564"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -615,7 +618,7 @@
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "51e69f71924feb7593954ae1973578c0c9ac2e4f"
+  revision = "4303120df7d88143fd0803f9144b4f47ad3ea9fb"
 
 [[projects]]
   branch = "master"
@@ -629,13 +632,13 @@
   revision = "9bdfabe68543c54f90421aeb9a60ef8061b5b544"
 
 [[projects]]
-  digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
+  digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
   name = "gopkg.in/fsnotify.v1"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
+  revision = "45d7d09e39ef4ac08d493309fa031790c15bfe8a"
   source = "gopkg.in/fsnotify/fsnotify.v1"
-  version = "v1.4.7"
+  version = "v1.4.9"
 
 [[projects]]
   branch = "v1"
