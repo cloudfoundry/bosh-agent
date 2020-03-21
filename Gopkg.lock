@@ -235,15 +235,12 @@
   revision = "8c9f03a8e57eb486e42badaed3fb287da51807ba"
 
 [[projects]]
-  digest = "1:18272c10996e80babbef3d4313d1c7217eaca8ee5908d31c37ee99a09fcd0fa3"
+  digest = "1:7ae311278f7ccaa724de8f2cdec0a507ba3ee6dea8c77237e8157bcf64b0f28b"
   name = "github.com/golang/mock"
-  packages = [
-    "gomock",
-    "gomock/internal/validate",
-  ]
+  packages = ["gomock"]
   pruneopts = "NUT"
-  revision = "064e67a3c906eadcc6c19e017b03b358ae8de561"
-  version = "v1.4.2"
+  revision = "3a35fb6e3e18b9dbfee291262260dee7372d2a92"
+  version = "v1.4.3"
 
 [[projects]]
   digest = "1:d1e35b720b5f5156502ffdd174000c81295919293735342da78582e4dc7a8bcd"
@@ -331,12 +328,12 @@
   version = "v6.0.1"
 
 [[projects]]
-  digest = "1:a45ae66dea4c899d79fceb116accfa1892105c251f0dcd9a217ddc276b42ec68"
+  digest = "1:ef9143b14280c6dde0c891d6d64ff3281a92a0b3c6ba0fa83638ab9e80b5307f"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "3536a929edddb9a5b34bd6861dc4a9647cb459fe"
-  version = "v1.1.2"
+  revision = "694aaefbc689be1915c2ef39e880409057931a94"
+  version = "v1.2.2"
 
 [[projects]]
   digest = "1:2a2300e9d1c7eee7b1c7bfab3cba485823c036620e63b68c0bdb2d3ba4ace216"
@@ -513,7 +510,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c32bb13b0e2c4fa0c108b0f3ffc5752b78ec42a6ce15ac6b5d738df9369687fa"
+  digest = "1:5f896db1e0aabcf3887b6db09ff2cf1931dc4c7f9576a4d6779cb75ef5becf62"
   name = "golang.org/x/crypto"
   packages = [
     "blowfish",
@@ -528,7 +525,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "f7b00557c8c46a1ea4b035cae84f52028c2c0564"
+  revision = "891825fb96dfc23279b4a42f710d49e78e05b333"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -554,11 +551,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "244492dfa37ae2ce87222fd06250a03160745faa"
+  revision = "118fecf932d8fea033f3b7aca66fba22cfdd517d"
 
 [[projects]]
   branch = "master"
-  digest = "1:c6351c9595dd6b0d892aa31e18e5f7d54199f0fa59b21c2457e868576a7c296b"
+  digest = "1:179bc4c663fc690b172f91ec5cc84fb33db75c8c925b07148f28bce3677d0ab9"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -569,7 +566,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "5c8b2ff67527cb88b770f693cebf3799036d8bc0"
+  revision = "af34d8274f850ead0ac2056234f8fb0196d9891b"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -601,7 +598,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9bfbe3920876cd182f22aebd53b14dc6283f3185fb9bee248611ab0e8aafe261"
+  digest = "1:a1ca1ef1bdcbb98ab32456481be1c449873303314380afe02690b5e4a393a48f"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -618,7 +615,7 @@
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "4303120df7d88143fd0803f9144b4f47ad3ea9fb"
+  revision = "268ba720d32c891185aa340e8851e215f23173db"
 
 [[projects]]
   branch = "master"
