@@ -20,10 +20,14 @@ func NewRoutesSearcher(runner boshsys.CmdRunner, _ InterfaceManager) RoutesSearc
 	return cmdRoutesSearcher{runner}
 }
 
-func parseRoute(ipString string) Route {
+func parseRoute(ipString string) (Route, error) {
 	var r = regexp.MustCompile(`(?P<destination>[a-z0-9.]+)(/[0-9]+)?( via (?P<gateway>[0-9.]+))? dev (?P<interfaceName>[a-z0-9]+)`)
 
 	match := r.FindStringSubmatch(ipString)
+	// Issue #230, skip blackhole routes
+	if len(match) == 0 {
+		return Route{}, bosherr.Error("unexpected route")
+	}
 	matches := make(map[string]string)
 	for i, name := range r.SubexpNames() {
 		matches[name] = match[i]
@@ -42,7 +46,7 @@ func parseRoute(ipString string) Route {
 		Destination:   destination,
 		Gateway:       gateway,
 		InterfaceName: matches["interfaceName"],
-	}
+	}, nil
 }
 
 func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
@@ -57,7 +61,11 @@ func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
 		if len(routeEntry) == 0 {
 			continue
 		}
-		routes = append(routes, parseRoute(routeEntry))
+		route, err := parseRoute(routeEntry)
+		if err != nil {
+			continue
+		}
+		routes = append(routes, route)
 	}
 
 	return routes, nil
