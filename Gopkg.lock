@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "19776694af9983db56e4aa2ec774d6f2857b7fa2"
+  revision = "71c987d412e9336d1aa32422c0812f7ba63b0eab"
 
 [[projects]]
   branch = "master"
@@ -196,7 +196,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "6c3dec43a1030a55584ab8b5b181411029d43ecc"
+  revision = "b4448137398923af7f4918b8b2ad8249172ca7a6"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -252,11 +252,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:312c983bebd82e975d9744387025d2e06c7633428bc4f3eb8996b54a8368df46"
+  digest = "1:60e22d5792dd0d83a1ea413ab9fe3f13f1755a795c8fcd6864ee635be3f7637c"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7c63a14153262497940ad1c2237accc855f47684"
+  revision = "bd451584982ecf4ca5b1e5938cf168e17e30d837"
 
 [[projects]]
   digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
@@ -344,15 +344,15 @@
   version = "v0.3.2"
 
 [[projects]]
-  digest = "1:53dd13051d947d23e742412572352429e6a9a5dccf6d5595e72e627ccef078fc"
+  digest = "1:00837fbf01c04c831204dbcdca4cf887a00ebd4d1696a310ef42eb9c08872046"
   name = "github.com/nats-io/nats"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "6063d679d23ae5b3edb4030d5e89a6e30ea53bc6"
-  version = "v1.9.1"
+  revision = "4d5d5d17e7df8f8e3bf3c1426a5ed759012faab8"
+  version = "v1.9.2"
 
 [[projects]]
-  digest = "1:8fdfe362fb878cfd0740ead278723a92af8668db959cbe3df58d679ac4dff7bd"
+  digest = "1:aee9f20a267d7af28b45043e9efc82a5abb87ea8915c5a4ab73769d10475e91d"
   name = "github.com/nats-io/nats.go"
   packages = [
     ".",
@@ -360,16 +360,16 @@
     "util",
   ]
   pruneopts = "NUT"
-  revision = "6063d679d23ae5b3edb4030d5e89a6e30ea53bc6"
-  version = "v1.9.1"
+  revision = "4d5d5d17e7df8f8e3bf3c1426a5ed759012faab8"
+  version = "v1.9.2"
 
 [[projects]]
-  digest = "1:91fe2d9ad004bbb77a8e14e1141caf5c7cecc612d992084751d6551802f8186b"
+  digest = "1:646ee6c77f5203d767be2140efec7847ba545a03f49cc7446e4e3853186721bc"
   name = "github.com/nats-io/nkeys"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "f1930e19b436412202ab130a733187cc6f40ba7e"
-  version = "v0.1.3"
+  revision = "b5fd77f98a683853cab7313d1263093d2c0d4113"
+  version = "v0.1.4"
 
 [[projects]]
   digest = "1:98d41d5085f44b0baa46a83ca0ca6d8a079f1ffb449ba5a36050ca9019de391c"
@@ -479,12 +479,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:f4aaa07a6c33f2b354726d0571acbc8ca118837c75709f6353203ae1a3f8eeab"
+  digest = "1:a47439b62873ffe354ad8b507e984c8baf3c4aeb20c1ec7c5eaba9a486475faa"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
-  version = "v1.4.2"
+  revision = "d417be0fe654de640a82370515129985b407c7e3"
+  version = "v1.5.0"
 
 [[projects]]
   digest = "1:619c0d90a027b62dfc220e66d94522d283e911aac02b1cef4242e3ca7be7b859"
@@ -510,7 +510,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5f896db1e0aabcf3887b6db09ff2cf1931dc4c7f9576a4d6779cb75ef5becf62"
+  digest = "1:94c4276ca1253e7c36bc1c60fdf8e45209d824142c98094dff959746ca6f7621"
   name = "golang.org/x/crypto"
   packages = [
     "blowfish",
@@ -525,7 +525,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "891825fb96dfc23279b4a42f710d49e78e05b333"
+  revision = "0ec3e9974c59449edd84298612e9f16fa13368e8"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -551,11 +551,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "118fecf932d8fea033f3b7aca66fba22cfdd517d"
+  revision = "d3edc9973b7eb1fb302b0ff2c62357091cea9a30"
 
 [[projects]]
   branch = "master"
-  digest = "1:179bc4c663fc690b172f91ec5cc84fb33db75c8c925b07148f28bce3677d0ab9"
+  digest = "1:e3c5ab694107c7f582a947380815a22052000c68e00bf900f05d3681ad83f6a2"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -566,7 +566,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "af34d8274f850ead0ac2056234f8fb0196d9891b"
+  revision = "c3d80250170dec19bf61949c81233cede5ddaf61"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -598,7 +598,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a1ca1ef1bdcbb98ab32456481be1c449873303314380afe02690b5e4a393a48f"
+  digest = "1:880c58513c4bd0a1ead2edefeb27bfd87d6c40d5d43ed8334a6380431c3a1d93"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -615,7 +615,7 @@
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "268ba720d32c891185aa340e8851e215f23173db"
+  revision = "9d5940d4931278c43e995522b1077283e7ad642a"
 
 [[projects]]
   branch = "master"
