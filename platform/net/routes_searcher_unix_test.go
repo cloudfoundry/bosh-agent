@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
+	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
@@ -20,7 +21,7 @@ var _ = Describe("cmdRoutesSeacher", func() {
 
 	BeforeEach(func() {
 		runner = fakesys.NewFakeCmdRunner()
-		searcher = NewRoutesSearcher(runner, nil)
+		searcher = NewRoutesSearcher(&loggerfakes.FakeLogger{}, runner, nil)
 	})
 
 	Describe("SearchRoutes", func() {
