@@ -67,7 +67,7 @@ func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
 		}
 		route, err := parseRoute(routeEntry)
 		if err != nil {
-			s.logger.Warn("SearchRoutes", "parseRoute error: %s", err.Error())
+			s.logger.Warn("SearchRoutes", "parseRoute error for route '%s': %s", routeEntry, err.Error())
 			continue
 		}
 		routes = append(routes, route)
