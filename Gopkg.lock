@@ -196,7 +196,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "b4448137398923af7f4918b8b2ad8249172ca7a6"
+  revision = "53ba5634dc0f0e43af83e83fd486311d2051b939"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -525,7 +525,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "0ec3e9974c59449edd84298612e9f16fa13368e8"
+  revision = "baeed622b8d86045ff442b324772b0ad306a2b3f"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -598,7 +598,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:880c58513c4bd0a1ead2edefeb27bfd87d6c40d5d43ed8334a6380431c3a1d93"
+  digest = "1:6d451d07397cb8bf85b394345b9522492d71a6be1abbaaf8355dc3f934204a1e"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -615,7 +615,7 @@
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "9d5940d4931278c43e995522b1077283e7ad642a"
+  revision = "44a64ad78b9b521790ab78240c17a3bc75b5eaa7"
 
 [[projects]]
   branch = "master"
