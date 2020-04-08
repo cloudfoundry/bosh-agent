@@ -104,7 +104,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 
 	interfaceManager := boshnet.NewInterfaceManager()
 
-	routesSearcher := boshnet.NewRoutesSearcher(runner, interfaceManager)
+	routesSearcher := boshnet.NewRoutesSearcher(logger, runner, interfaceManager)
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 
 	monitRetryable := NewMonitRetryable(runner)

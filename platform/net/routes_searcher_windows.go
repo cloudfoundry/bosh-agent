@@ -4,6 +4,7 @@ import (
 	"syscall"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -17,7 +18,7 @@ type windowsRoutesSearcher struct {
 	cmdRunner        boshsys.CmdRunner
 }
 
-func NewRoutesSearcher(cmdRunner boshsys.CmdRunner, interfaceManager InterfaceManager) RoutesSearcher {
+func NewRoutesSearcher(_ boshlog.Logger, cmdRunner boshsys.CmdRunner, interfaceManager InterfaceManager) RoutesSearcher {
 	return windowsRoutesSearcher{interfaceManager, cmdRunner}
 }
 
