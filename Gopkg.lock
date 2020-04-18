@@ -90,12 +90,12 @@
   version = "v0.8.7"
 
 [[projects]]
-  digest = "1:db1f64ceacde0c4302dc0de285cc9800949d5e1eaa8982bbd435f3d1f6896f57"
+  digest = "1:6232425d84afee0d5c60aca42835308040966e9a4f4f6bb59cc524f7acdfcd44"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "50be492faef103d1904fec6e1019454b07cdb03f"
-  version = "v1.2.2"
+  revision = "ac81ccc6969be9b61e4661f04d2200ee28d3b049"
+  version = "v1.2.4"
 
 [[projects]]
   branch = "master"
@@ -149,7 +149,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "add7921dad2dff10956c83eaa28031f168a1c174"
+  revision = "5c26b9eaff73e9526ed477a09d9836816e4464f2"
 
 [[projects]]
   branch = "master"
@@ -243,12 +243,12 @@
   version = "v1.4.3"
 
 [[projects]]
-  digest = "1:d1e35b720b5f5156502ffdd174000c81295919293735342da78582e4dc7a8bcd"
+  digest = "1:112b07cad4bd500e6e445cc0b9294ca310faa41199c19475c557daa2c7519549"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   pruneopts = "NUT"
-  revision = "84668698ea25b64748563aa20726db66a6b8d299"
-  version = "v1.3.5"
+  revision = "1b794fe86dd6a0c7c52ae69b5c9cb0aeedc52afa"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -525,7 +525,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "056763e48d71961566155f089ac0f02f1dda9b5a"
+  revision = "0848c9571904fcbcb24543358ca8b5a7dbfde875"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -555,7 +555,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7842bef69c9592acd9b929d4c8d155518fbd4c8db280cefde745c29d9902600a"
+  digest = "1:5ccac2148add2887d2e14333e99966c529862e3b1cd5e35e2e3ab23073049438"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -566,7 +566,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "59c9f1ba88faf592b225274f69c5ef1e4ebacf82"
+  revision = "669c56c373c468cbe0f0c12b7939832b26088d33"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -598,7 +598,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:070cbafca9a4ad11c251cabe31867e21e86ec14bea16e2a5dcaba5b051b0db64"
+  digest = "1:a71d9d7f304a43040713931ac0f7ad768bf1a933ced2712e580e5762f8e75cf9"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -616,7 +616,7 @@
     "internal/telemetry/event",
   ]
   pruneopts = "NUT"
-  revision = "79a7a3126eef9c5f4ff7a1580f8e0d45e0e85e77"
+  revision = "c07e33ef3290829dccb52f723d2b5676c837a330"
 
 [[projects]]
   branch = "master"
@@ -628,6 +628,42 @@
   ]
   pruneopts = "NUT"
   revision = "9bdfabe68543c54f90421aeb9a60ef8061b5b544"
+
+[[projects]]
+  digest = "1:f1865c7b6c5f85632ff40fd729aa3393e66a2db3de74d43ab7c594be7e9bfe25"
+  name = "google.golang.org/protobuf"
+  packages = [
+    "encoding/prototext",
+    "encoding/protowire",
+    "internal/descfmt",
+    "internal/descopts",
+    "internal/detrand",
+    "internal/encoding/defval",
+    "internal/encoding/messageset",
+    "internal/encoding/tag",
+    "internal/encoding/text",
+    "internal/errors",
+    "internal/fieldnum",
+    "internal/fieldsort",
+    "internal/filedesc",
+    "internal/filetype",
+    "internal/flags",
+    "internal/genname",
+    "internal/impl",
+    "internal/mapsort",
+    "internal/pragma",
+    "internal/set",
+    "internal/strs",
+    "internal/version",
+    "proto",
+    "reflect/protoreflect",
+    "reflect/protoregistry",
+    "runtime/protoiface",
+    "runtime/protoimpl",
+  ]
+  pruneopts = "NUT"
+  revision = "3b9eee12916ce611400f93d6c2fed2fc2911b0ad"
+  version = "v1.21.0"
 
 [[projects]]
   digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
