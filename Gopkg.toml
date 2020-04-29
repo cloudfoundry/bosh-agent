@@ -1,6 +1,10 @@
 required = ["github.com/onsi/ginkgo/ginkgo", "github.com/maxbrunsfeld/counterfeiter"]
 
 [[override]]
+  name = "github.com/cloudfoundry/bosh-utils"
+  branch = "wip/fix-ciphers-external-blobstore"
+
+[[override]]
   name = "gopkg.in/fsnotify.v1"
   source = "gopkg.in/fsnotify/fsnotify.v1"
 
