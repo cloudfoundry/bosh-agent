@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/settings"
 
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshhttp "github.com/cloudfoundry/bosh-utils/httpclient"
 )
