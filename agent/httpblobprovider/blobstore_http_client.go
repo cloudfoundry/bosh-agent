@@ -26,9 +26,9 @@ func NewBlobstoreHTTPClient(blobstoreSettings settings.Blobstore) (*http.Client,
 
 	if isInternalBlobstore(blobstoreSettings.Type) {
 		return boshhttp.CreateDefaultClient(certpool), nil
-	} else {
-		return boshhttp.CreateExternalDefaultClient(certpool), nil
 	}
+
+	return boshhttp.CreateExternalDefaultClient(certpool), nil
 }
 
 func isInternalBlobstore(provider string) bool {
