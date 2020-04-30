@@ -23,7 +23,21 @@ func NewBlobstoreHTTPClient(blobstoreSettings settings.Blobstore) (*http.Client,
 		}
 	}
 
-	return boshhttp.CreateDefaultClient(certpool), nil
+	if isInternalBlobstore(blobstoreSettings.Type) {
+		return boshhttp.CreateDefaultClient(certpool), nil
+	} else {
+		return boshhttp.CreateExternalDefaultClient(certpool), nil
+	}
+}
+
+func isInternalBlobstore(provider string) bool {
+	switch provider {
+	case boshblob.BlobstoreTypeDummy, boshblob.BlobstoreTypeLocal, "dav":
+		return true
+	default:
+		return false
+	}
+
 }
 
 func fetchCaCertificate(options map[string]interface{}) string {

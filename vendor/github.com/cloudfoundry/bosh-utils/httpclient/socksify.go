@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"io/ioutil"
 	"net"
 	"net/url"
@@ -18,14 +19,16 @@ type ProxyDialer interface {
 	Dialer(string, string, string) (proxy.DialFunc, error)
 }
 
-type DialFunc func(network, address string) (net.Conn, error)
+type DialContextFunc func(ctx context.Context, network, address string) (net.Conn, error)
 
-func (f DialFunc) Dial(network, address string) (net.Conn, error) { return f(network, address) }
+func (f DialContextFunc) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return f(ctx, network, address)
+}
 
-func SOCKS5DialFuncFromEnvironment(origDialer DialFunc, socks5Proxy ProxyDialer) DialFunc {
+func SOCKS5DialContextFuncFromEnvironment(origDialer *net.Dialer, socks5Proxy ProxyDialer) DialContextFunc {
 	allProxy := os.Getenv("BOSH_ALL_PROXY")
 	if len(allProxy) == 0 {
-		return origDialer
+		return origDialer.DialContext
 	}
 
 	if strings.HasPrefix(allProxy, "ssh+") {
@@ -63,7 +66,7 @@ func SOCKS5DialFuncFromEnvironment(origDialer DialFunc, socks5Proxy ProxyDialer)
 			dialer proxy.DialFunc
 			mut    sync.RWMutex
 		)
-		return func(network, address string) (net.Conn, error) {
+		return func(ctx context.Context, network, address string) (net.Conn, error) {
 			mut.RLock()
 			haveDialer := dialer != nil
 			mut.RUnlock()
@@ -95,19 +98,18 @@ func SOCKS5DialFuncFromEnvironment(origDialer DialFunc, socks5Proxy ProxyDialer)
 		return errorDialFunc(err, "Parsing BOSH_ALL_PROXY url")
 	}
 
+	perHost := goproxy.NewPerHost(proxy, origDialer)
+
 	noProxy := os.Getenv("no_proxy")
-	if len(noProxy) == 0 {
-		return proxy.Dial
+	if len(noProxy) != 0 {
+		perHost.AddFromString(noProxy)
 	}
 
-	perHost := goproxy.NewPerHost(proxy, origDialer)
-	perHost.AddFromString(noProxy)
-
-	return perHost.Dial
+	return perHost.DialContext
 }
 
-func errorDialFunc(err error, cause string) DialFunc {
-	return func(network, address string) (net.Conn, error) {
+func errorDialFunc(err error, cause string) DialContextFunc {
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		return nil, bosherr.WrapError(err, cause)
 	}
 }
