@@ -52,18 +52,19 @@
   revision = "c5096ec8773dd9f554971472081ddfbb0782334e"
 
 [[projects]]
-  digest = "1:4816836c291b7f2a0da7deefa679ef234be8ad845a199ed2e48779234536cefa"
+  digest = "1:135be330e88d9185a605d9c8d5a5a885028beaa2e105855cdeb5605deb9feff9"
   name = "github.com/Microsoft/go-winio"
   packages = [
     ".",
     "pkg/guid",
+    "vhd",
   ]
   pruneopts = "NUT"
   revision = "6c72808b55902eae4c5943626030429ff20f3b63"
   version = "v0.4.14"
 
 [[projects]]
-  digest = "1:64541c49a1b189d587bec7bf1922030d4f5a1dec0e7bfa811853647d71c2c46d"
+  digest = "1:f2c289384207c0d767eb958f22b34e14adb8b69d86d81ed77bba7d0b72ac5dac"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
@@ -86,16 +87,16 @@
     "osversion",
   ]
   pruneopts = "NUT"
-  revision = "b3f49c06ffaeef24d09c6c08ec8ec8425a0303e2"
-  version = "v0.8.7"
+  revision = "5bc557dd210ff2caf615e6e22d398123de77fc11"
+  version = "v0.8.9"
 
 [[projects]]
-  digest = "1:6232425d84afee0d5c60aca42835308040966e9a4f4f6bb59cc524f7acdfcd44"
+  digest = "1:753ce2f3e52554c40ed6c5baa10d9c8fc5c5b8a1684af4c4ad6674c37694bd66"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "ac81ccc6969be9b61e4661f04d2200ee28d3b049"
-  version = "v1.2.4"
+  revision = "39df92f7399bdaa74c821d606e9322dd1332074a"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -289,12 +290,12 @@
   version = "1.0"
 
 [[projects]]
-  digest = "1:58999a98719fddbac6303cb17e8d85b945f60b72f48e3a2df6b950b97fa926f1"
+  digest = "1:a3998f85665bdf805d519735e658c0e0125bd67b57bb15e414a5a9e360e32455"
   name = "github.com/konsorten/go-windows-terminal-sequences"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
-  version = "v1.0.2"
+  revision = "edb144dfd453055e1e49a3d8b410a660b5a87613"
+  version = "v1.0.3"
 
 [[projects]]
   branch = "master"
@@ -328,12 +329,12 @@
   version = "v6.0.1"
 
 [[projects]]
-  digest = "1:ef9143b14280c6dde0c891d6d64ff3281a92a0b3c6ba0fa83638ab9e80b5307f"
+  digest = "1:a25a617db6fea065cae4da6f0fb25cbc3d21796c28f0b2bbc9d2713ec717191b"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "694aaefbc689be1915c2ef39e880409057931a94"
-  version = "v1.2.2"
+  revision = "916b5f23bc2f603eb9012f48efd9e38287e71ed5"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:2a2300e9d1c7eee7b1c7bfab3cba485823c036620e63b68c0bdb2d3ba4ace216"
@@ -510,7 +511,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5e6e9c87673a2c24d9f9f8550b57c821baaad83a197e8e16b9b8d378ed82ea8a"
+  digest = "1:c6c19978af3908794029e54515bba0371455eebb238f5f64e9fbbfe40a004274"
   name = "golang.org/x/crypto"
   packages = [
     "blowfish",
@@ -525,7 +526,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "4bdfaf469ed5a1194e0ec57ec7b1af73991a7ee3"
+  revision = "4b2356b1ed79e6be3deca3737a3db3d132d2847a"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -551,14 +552,15 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "e086a090c8fdb9982880f0fb6e3db47af1856533"
+  revision = "e0ff5e5a1de5b859e2d48a2830d7933b3ab5b75f"
 
 [[projects]]
   branch = "master"
-  digest = "1:5ccac2148add2887d2e14333e99966c529862e3b1cd5e35e2e3ab23073049438"
+  digest = "1:e6eb994b3f3ed51d86be7965db6e1172fb70b925b7368c99983971e23d11a48a"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
+    "internal/unsafeheader",
     "unix",
     "windows",
     "windows/registry",
@@ -566,7 +568,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "1957bb5e6d1f523308b49060df02171d06ddfc77"
+  revision = "bc7a7d42d5c30f4d0fe808715c002826ce2c624e"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -598,7 +600,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e9d94a126d80880cf8861dd8e43a479f57e403e4dda5917581dd90c83b405779"
+  digest = "1:cf5e98e67e9d2fd307b4448ffed5f4351858a6cbb260d51c9de4d7025e15cfa1"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -619,7 +621,7 @@
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "8463f397d07cfd2b3f1442fb1daa5e6bc2178a6e"
+  revision = "542909fd99441a8c7598df366f17343150c16b0d"
 
 [[projects]]
   branch = "master"
