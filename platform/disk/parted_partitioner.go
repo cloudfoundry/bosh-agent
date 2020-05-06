@@ -45,7 +45,10 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 	}
 
 	if p.areAnyExistingPartitionsCreatedByBosh(existingPartitions) {
-		return bosherr.Errorf("'%s' contains a partition created by bosh. No partitioning is allowed.", devicePath)
+		//return bosherr.Errorf("'%s' contains a partition created by bosh. No partitioning is allowed.", devicePath)
+		p.ResizePartition(devicePath, existingPartitions)
+		p.ResizeFilesystem(devicePath, existingPartitions)
+		return nil
 	}
 
 	if err = p.createEachPartition(desiredPartitions, deviceFullSizeInBytes, devicePath); err != nil {
@@ -59,6 +62,54 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 	}
 
 	return nil
+}
+
+func (p partedPartitioner) ResizePartition(devicePath string, existingPartitions []ExistingPartition) {
+	for _, partition := range existingPartitions {
+		/*
+					devicePath contains device without partition number.
+			        for example: `/dev/vdb`
+		*/
+		stdout, _, _, err := p.cmdRunner.RunCommand("growpart", devicePath, strconv.Itoa(partition.Index))
+		if err != nil {
+			bosherr.WrapErrorf(err, "Failed to resize partition '%s' Error: '%s'", devicePath, stdout)
+		}
+	}
+}
+
+func (p partedPartitioner) ResizeFilesystem(devicePath string, existingPartitions []ExistingPartition) {
+	for _, partition := range existingPartitions {
+		partitionPath := devicePath + strconv.Itoa(partition.Index)
+		stdout, _, _, err := p.cmdRunner.RunCommand("blkid", "-o", "value", "-s", "TYPE", partitionPath)
+		partitionFilesystemType := strings.Trim(stdout, "\n")
+		if err != nil {
+			bosherr.WrapErrorf(err, "Getting filesystem type '%s'", partitionPath)
+		}
+
+		fmt.Println("Working on partitionPath", partitionPath)
+		fmt.Println("Partition filesystem type: ", partitionFilesystemType)
+
+		if partitionFilesystemType == "ext4" {
+			fmt.Println("Working on ext4 filesystem")
+			fmt.Println("Running e2fsck prior to resize2fs")
+			e2fsckStdout, _, _, err := p.cmdRunner.RunCommand("e2fsck", "-y", "-f", partitionPath)
+			if err != nil {
+				bosherr.WrapErrorf(err, "Failed to run e2fsck", partitionPath, e2fsckStdout)
+			}
+			resize2fsStdout, _, _, err := p.cmdRunner.RunCommand("resize2fs", partitionPath)
+			if err != nil {
+				bosherr.WrapErrorf(err, "Failed to resize partition with resize2fs", partitionPath, resize2fsStdout)
+			}
+		} else if partitionFilesystemType == "xfs" {
+			fmt.Println("Working on xfs filesystem")
+			xfsGrowFsStdout, _, _, err := p.cmdRunner.RunCommand("xfs_growfs", partitionPath)
+			if err != nil {
+				bosherr.WrapErrorf(err, "Failed to resize partition with xfs_growfs", partitionPath, xfsGrowFsStdout)
+			}
+		} else {
+			p.logger.Info(p.logTag, "No supported filesystem type found for `%s'", partitionPath)
+		}
+	}
 }
 
 func (p partedPartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, error) {
