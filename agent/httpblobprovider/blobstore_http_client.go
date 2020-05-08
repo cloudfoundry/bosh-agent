@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/settings"
 
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshhttp "github.com/cloudfoundry/bosh-utils/httpclient"
 )
@@ -23,7 +24,20 @@ func NewBlobstoreHTTPClient(blobstoreSettings settings.Blobstore) (*http.Client,
 		}
 	}
 
-	return boshhttp.CreateDefaultClient(certpool), nil
+	if isInternalBlobstore(blobstoreSettings.Type) {
+		return boshhttp.CreateDefaultClient(certpool), nil
+	}
+
+	return boshhttp.CreateExternalDefaultClient(certpool), nil
+}
+
+func isInternalBlobstore(provider string) bool {
+	switch provider {
+	case boshblob.BlobstoreTypeDummy, boshblob.BlobstoreTypeLocal, "dav":
+		return true
+	default:
+		return false
+	}
 }
 
 func fetchCaCertificate(options map[string]interface{}) string {

@@ -3,6 +3,7 @@ package net_test
 import (
 	"github.com/cloudfoundry/bosh-agent/platform/net"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/onsi/ginkgo"
@@ -13,13 +14,14 @@ var _ = Describe("Windows Route Searcher", func() {
 	var (
 		runner           *fakesys.FakeCmdRunner
 		interfaceManager *fakenet.FakeInterfaceManager
+		logger           *fakelogger.FakeLogger
 		searcher         net.RoutesSearcher
 	)
 
 	BeforeEach(func() {
 		runner = fakesys.NewFakeCmdRunner()
 		interfaceManager = &fakenet.FakeInterfaceManager{}
-		searcher = net.NewRoutesSearcher(runner, interfaceManager)
+		searcher = net.NewRoutesSearcher(logger, runner, interfaceManager)
 	})
 
 	Describe("SeachRoutes", func() {
