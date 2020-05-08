@@ -67,8 +67,8 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 func (p partedPartitioner) ResizePartition(devicePath string, existingPartitions []ExistingPartition) {
 	for _, partition := range existingPartitions {
 		/*
-					devicePath contains device without partition number.
-			        for example: `/dev/vdb`
+			devicePath contains device without partition number.
+			for example: `/dev/vdb`
 		*/
 		stdout, _, _, err := p.cmdRunner.RunCommand("growpart", devicePath, strconv.Itoa(partition.Index))
 		if err != nil {
@@ -86,12 +86,12 @@ func (p partedPartitioner) ResizeFilesystem(devicePath string, existingPartition
 			bosherr.WrapErrorf(err, "Getting filesystem type '%s'", partitionPath)
 		}
 
-		fmt.Println("Working on partitionPath", partitionPath)
-		fmt.Println("Partition filesystem type: ", partitionFilesystemType)
+		p.logger.Info(p.logTag, "Working on partitionPath `%s'", partitionPath)
+		p.logger.Info(p.logTag, "Partition filesystem type: `%s'", partitionFilesystemType)
 
 		if partitionFilesystemType == "ext4" {
-			fmt.Println("Working on ext4 filesystem")
-			fmt.Println("Running e2fsck prior to resize2fs")
+			p.logger.Info(p.logTag, "Working on ext4 filesystem")
+			p.logger.Info(p.logTag, "Running e2fsck prior to resize2fs")
 			e2fsckStdout, _, _, err := p.cmdRunner.RunCommand("e2fsck", "-y", "-f", partitionPath)
 			if err != nil {
 				bosherr.WrapErrorf(err, "Failed to run e2fsck", partitionPath, e2fsckStdout)
@@ -101,7 +101,7 @@ func (p partedPartitioner) ResizeFilesystem(devicePath string, existingPartition
 				bosherr.WrapErrorf(err, "Failed to resize partition with resize2fs", partitionPath, resize2fsStdout)
 			}
 		} else if partitionFilesystemType == "xfs" {
-			fmt.Println("Working on xfs filesystem")
+			p.logger.Info(p.logTag, "Working on xfs filesystem")
 			xfsGrowFsStdout, _, _, err := p.cmdRunner.RunCommand("xfs_growfs", partitionPath)
 			if err != nil {
 				bosherr.WrapErrorf(err, "Failed to resize partition with xfs_growfs", partitionPath, xfsGrowFsStdout)
