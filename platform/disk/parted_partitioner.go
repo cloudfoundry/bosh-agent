@@ -45,7 +45,6 @@ func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Part
 	}
 
 	if p.areAnyExistingPartitionsCreatedByBosh(existingPartitions) {
-		//return bosherr.Errorf("'%s' contains a partition created by bosh. No partitioning is allowed.", devicePath)
 		p.ResizePartition(devicePath, existingPartitions)
 		p.ResizeFilesystem(devicePath, existingPartitions)
 		return nil
