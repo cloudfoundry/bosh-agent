@@ -150,7 +150,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "fa15a6f68ca08467bc66f79f06a2ddbb53198961"
+  revision = "5ed3e9b4c9de5f42aa56c9d2986ec58fbf6905cc"
 
 [[projects]]
   branch = "master"
@@ -197,7 +197,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "666f4a009ffb2741d4d3884aead4dfc17497c2d6"
+  revision = "5d2757656685d9b3fa1e9fe2ac0eb7e391ee7380"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -331,12 +331,12 @@
   version = "v1.3.1"
 
 [[projects]]
-  digest = "1:2a2300e9d1c7eee7b1c7bfab3cba485823c036620e63b68c0bdb2d3ba4ace216"
+  digest = "1:5d2b1851a6e6181a0bb7acb3ffc06cdfc3493db33dd1f3e79e9396cd736c1bf4"
   name = "github.com/nats-io/jwt"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "0c3fc7aed8bb2534e7bfdf0968a75890402d48cd"
-  version = "v0.3.2"
+  revision = "8527407e521556b9f0253318912cc03fd84a5bbd"
+  version = "v1.0.1"
 
 [[projects]]
   digest = "1:9ec39fd1362e23fdf1d264b02a9212bc6fd1b7a5b1878bbcb533abbd144ca6c6"
@@ -496,12 +496,12 @@
   version = "v1.6.0"
 
 [[projects]]
-  digest = "1:619c0d90a027b62dfc220e66d94522d283e911aac02b1cef4242e3ca7be7b859"
+  digest = "1:100bc26640871bd80f0ff54b3a0e5615dfd7f1fbb234e5d41f821ccb30d07eff"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
   pruneopts = "NUT"
-  revision = "3ebf1ddaeb260c4b1ae502a01c7844fa8c1fa0e9"
-  version = "v1.5.1"
+  revision = "004e3cb72213e5e727e4e08f668ee6c8f27e5d32"
+  version = "v1.6.0"
 
 [[projects]]
   digest = "1:2e6b1e2a89a8d2002911658aef7b77e512d80376a19ff564631ae0b0daaf1c9e"
@@ -560,11 +560,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "0ba52f642ac2f9371a88bfdde41f4b4e195a37c0"
+  revision = "3c3fba18258b2a1398a025a6aeb7374d2a470009"
 
 [[projects]]
   branch = "master"
-  digest = "1:ea7008bc2c76d3fa7d6fd17d7c2e0b3389d51eae4e447eb13af71b409149f6cf"
+  digest = "1:40ca74243a479a36e76f27fa27c817caaf2d3d7a350727cf1a1401e4bb03088d"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -576,7 +576,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "fe76b779f299728f3bd63f77ea2c815504229c3b"
+  revision = "05986578812163b26672dabd9b425240ae2bb0ad"
 
 [[projects]]
   digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
@@ -608,7 +608,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f23f12a49c0d67463b86a1183fa6bb641a918981d227a71068956e227533e096"
+  digest = "1:7ae4fe7692630ef69a7e7f4922765bbbabe0ade74c6e8f005db933b792dc5c3d"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -629,7 +629,7 @@
     "internal/packagesinternal",
   ]
   pruneopts = "NUT"
-  revision = "cb1345f3a375367f8439bba882e90348348288d9"
+  revision = "a64b76657301576cd9227c1802c591029a395785"
 
 [[projects]]
   branch = "master"
@@ -643,7 +643,7 @@
   revision = "9bdfabe68543c54f90421aeb9a60ef8061b5b544"
 
 [[projects]]
-  digest = "1:2d07e31460124a78b7493196e5f6c7425404865f7de73161ea7f2c6ee427ef72"
+  digest = "1:2a628685d02a3eb98bd3b2b25778967113a5bdfae5be743e2612960b07780809"
   name = "google.golang.org/protobuf"
   packages = [
     "encoding/prototext",
@@ -675,8 +675,8 @@
     "runtime/protoimpl",
   ]
   pruneopts = "NUT"
-  revision = "d165be301fb1e13390ad453281ded24385fd8ebc"
-  version = "v1.23.0"
+  revision = "5c3dd7024aed895adfe053f26b5a479e991cbca9"
+  version = "v1.24.0"
 
 [[projects]]
   branch = "v1"
@@ -693,6 +693,14 @@
   pruneopts = "NUT"
   revision = "0b1645d91e851e735d3e23330303ce81f70adbe3"
   version = "v2.3.0"
+
+[[projects]]
+  branch = "v3"
+  digest = "1:7e47d320134449a94187cd129c17c76a98c90bff242774042449ceb6576905d7"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "2ff61e1afc866138abf1a8adf3cc89721090ac31"
 
 [solve-meta]
   analyzer-name = "dep"
