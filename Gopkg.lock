@@ -22,11 +22,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f55c105c8338773397a4eb828807ad02c3f7f3d151bcd536cb57e4cb2f688fc2"
+  digest = "1:c5a8c141f8ead5a7c07a36596c3c20edf52a6642b34c85f3124a6a50f4e66df7"
   name = "github.com/Azure/go-ntlmssp"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "2b2be6cc8ed4447c970df46eed569febe2fce58f"
+  revision = "66371956d46c8e2133a2b72b3d320e435465011f"
 
 [[projects]]
   branch = "master"
@@ -150,7 +150,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "7f673ba6be2a505f686f094901e540ac39233d07"
+  revision = "c482f04ffbe8f8ae7cd8c4e99958d6da5e1d2af5"
 
 [[projects]]
   branch = "master"
@@ -301,14 +301,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:269616c75fdd84e429bedda3a7b8a25f651057e31a849485b587e84f80a3c354"
+  digest = "1:10f1aabb8a57c947ccd886a789bcc2a4716aacb77d7a4077ae2f2680f9d06c9a"
   name = "github.com/masterzen/winrm"
   packages = [
     ".",
     "soap",
   ]
   pruneopts = "NUT"
-  revision = "f6f9b2959811a701b632b162dfcfcdd3717fb4b7"
+  revision = "c42b5136ff886aff9dba40fb3670281f0d583db8"
 
 [[projects]]
   digest = "1:0d33e8f4230cafee906332f45cc456ce2b66ac18a1edc40a9c87e3e68682d08b"
@@ -505,7 +505,7 @@
   version = "v1.6.1"
 
 [[projects]]
-  digest = "1:2e6b1e2a89a8d2002911658aef7b77e512d80376a19ff564631ae0b0daaf1c9e"
+  digest = "1:4746e1f3b9ec9cfdac2ec09e51deb65122bdcad47d2fdb500c2b70da3587ae06"
   name = "go.opencensus.io"
   packages = [
     ".",
@@ -515,12 +515,12 @@
     "trace/tracestate",
   ]
   pruneopts = "NUT"
-  revision = "d835ff86be02193d324330acdb7d65546b05f814"
-  version = "v0.22.3"
+  revision = "5fa069b99bc903d713add0295c7e0a55d34ae573"
+  version = "v0.22.4"
 
 [[projects]]
   branch = "master"
-  digest = "1:0f2f2e12f2c6b39b42cb95a6288563a66e20502fe9b7898b007f14b5ff7cbdcf"
+  digest = "1:66fff77b659eeb4028f4d2a134e14956ea76c602ca56aab041e727915c798103"
   name = "golang.org/x/crypto"
   packages = [
     "blowfish",
@@ -535,7 +535,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "70a84ac30bf957c7df57edd1935d2081871515e1"
+  revision = "75b288015ac94e66e3d6715fb68a9b41bf046ec2"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -565,7 +565,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7eaa2beea1569b5c30edd198bbd8b66d87b555e7001905605abc1ff5a15574a9"
+  digest = "1:a5437abd4cee40461799dd83ddd6da40c92e54339487f6bad28e5a4745f15e9f"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -577,10 +577,10 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "226ff32320da7b90d0b5bc2365f4e359c466fb78"
+  revision = "ed371f2e16b4b305ee99df548828de367527b76b"
 
 [[projects]]
-  digest = "1:8a0baffd5559acaa560f854d7d525c02f4fec2d4f8a214398556fb661a10f6e0"
+  digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -604,12 +604,12 @@
     "unicode/cldr",
   ]
   pruneopts = "NUT"
-  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
-  version = "v0.3.2"
+  revision = "23ae387dee1f90d29a23c0e87ee0b46038fbed0e"
+  version = "v0.3.3"
 
 [[projects]]
   branch = "master"
-  digest = "1:52c43539998eb4c78c45e7568e3ed4994c0721e27f71505026e9c69e79561fac"
+  digest = "1:b53ad075e5d4f6e32d5bd1047105b8251923ebb9cbe5a9cd1a67888e740a915f"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "54c614fe050cac95ace393a63f164149942ecbde"
+  revision = "ff88973b1e4e607c850ddc0dbfd7facf368475b6"
 
 [[projects]]
   branch = "master"
@@ -698,11 +698,11 @@
 
 [[projects]]
   branch = "v3"
-  digest = "1:c69e5fef940c975533f41c808cfcd99cec3d11efb36a659186d766f3c2c6cf53"
+  digest = "1:c9a53b5be2654e3d1d466419bb389371ff3755220ec3cafd43dd8742fb7aebdd"
   name = "gopkg.in/yaml.v3"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "a5ece683394c3b88d90572e44d36c93aea492c2c"
+  revision = "eeeca48fe7764f320e4870d231902bf9c1be2c08"
 
 [solve-meta]
   analyzer-name = "dep"
