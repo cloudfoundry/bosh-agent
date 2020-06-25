@@ -533,6 +533,10 @@ func (p WindowsPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSetti
 	return
 }
 
+func (p WindowsPlatform) SetupRunDataDir(_ boshsettings.AgentSettings) error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupDataDir(_ boshsettings.JobDir) error {
 	dataDir := p.dirProvider.DataDir()
 	sysDataDir := filepath.Join(dataDir, "sys")

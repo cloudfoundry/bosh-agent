@@ -720,6 +720,43 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 	return nil
 }
 
+func (p linux) SetupRunDataDir(config boshsettings.AgentSettings) error {
+	dataDir := p.dirProvider.DataDir()
+
+	sysDataDir := path.Join(dataDir, "sys")
+
+	runDir := path.Join(sysDataDir, "run")
+
+	_, runDirIsMounted, err := p.IsMountPoint(runDir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Checking for mount point %s", runDir)
+	}
+
+	if !runDirIsMounted {
+		err = p.fs.MkdirAll(runDir, runDirPermissions)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Making %s dir", runDir)
+		}
+
+		tmpfsSize := config.SysDataRunTmpFSSize
+		if tmpfsSize == "" {
+			tmpfsSize = "16m"
+		}
+
+		err = p.diskManager.GetMounter().MountTmpfs(runDir, tmpfsSize)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Mounting tmpfs to %s with size %d", runDir, tmpfsSize)
+		}
+
+		_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", runDir)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "chown %s", runDir)
+		}
+	}
+
+	return nil
+}
+
 func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 	dataDir := p.dirProvider.DataDir()
 
@@ -816,7 +853,7 @@ func (p linux) setupRunDir(sysDir string) error {
 			return bosherr.WrapErrorf(err, "Making %s dir", runDir)
 		}
 
-		err = p.diskManager.GetMounter().MountFilesystem("tmpfs", runDir, "tmpfs", "size=1m")
+		err = p.diskManager.GetMounter().MountTmpfs(runDir, "16m")
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", runDir)
 		}

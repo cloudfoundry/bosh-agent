@@ -295,6 +295,9 @@ type AgentEnv struct {
 
 type AgentSettings struct {
 	TmpFS bool `json:"tmpfs"`
+
+	// Passed to mount directly, defaults to "16m" if empty
+	SysDataRunTmpFSSize string `json:"sys_data_run_tmpfs_size"` // For /var/vcap/sys/data/run
 }
 
 type MBus struct {

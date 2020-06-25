@@ -202,6 +202,10 @@ func (p dummyPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSetting
 	return
 }
 
+func (p dummyPlatform) SetupRunDataDir(_ boshsettings.AgentSettings) error {
+	return nil
+}
+
 func (p dummyPlatform) SetupDataDir(_ boshsettings.JobDir) error {
 	dataDir := p.dirProvider.DataDir()
 
