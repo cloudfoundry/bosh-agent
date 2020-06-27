@@ -197,7 +197,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "80c669f4bad05817dd13e448a47783d6bb38811a"
+  revision = "544d8ea40afe6e1a898293261c454043ed31c88f"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -561,11 +561,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "627f9648deb96c27737b83199d44bb5c1010cbcf"
+  revision = "4c5254603344ea4a8ae4bed7e296a9588303e14f"
 
 [[projects]]
   branch = "master"
-  digest = "1:a5437abd4cee40461799dd83ddd6da40c92e54339487f6bad28e5a4745f15e9f"
+  digest = "1:1af6a133de1e85298344aa1ce5ed6e37d86ac986107dd7da1cc5044a0295f3e3"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -577,7 +577,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "ed371f2e16b4b305ee99df548828de367527b76b"
+  revision = "ddb9806d33aed8dbaac1cd6f1cba58952e87f933"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -609,7 +609,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b53ad075e5d4f6e32d5bd1047105b8251923ebb9cbe5a9cd1a67888e740a915f"
+  digest = "1:50887cf3f6be06d64c2055b86aa2bb6b2d824cf43a54e9611b26400d51905fc0"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "ff88973b1e4e607c850ddc0dbfd7facf368475b6"
+  revision = "aa94e735be7f31b6b12c5acf9c5838e5605455b4"
 
 [[projects]]
   branch = "master"
@@ -645,7 +645,7 @@
   revision = "9bdfabe68543c54f90421aeb9a60ef8061b5b544"
 
 [[projects]]
-  digest = "1:2a628685d02a3eb98bd3b2b25778967113a5bdfae5be743e2612960b07780809"
+  digest = "1:cccb3a18e62abaccd19c309fc01a69da2509719f5a453cb2e66969f670503245"
   name = "google.golang.org/protobuf"
   packages = [
     "encoding/prototext",
@@ -658,12 +658,11 @@
     "internal/encoding/tag",
     "internal/encoding/text",
     "internal/errors",
-    "internal/fieldnum",
     "internal/fieldsort",
     "internal/filedesc",
     "internal/filetype",
     "internal/flags",
-    "internal/genname",
+    "internal/genid",
     "internal/impl",
     "internal/mapsort",
     "internal/pragma",
@@ -677,8 +676,8 @@
     "runtime/protoimpl",
   ]
   pruneopts = "NUT"
-  revision = "5c3dd7024aed895adfe053f26b5a479e991cbca9"
-  version = "v1.24.0"
+  revision = "3f7a61f89bb6813f89d981d1870ed68da0b3c3f1"
+  version = "v1.25.0"
 
 [[projects]]
   branch = "v1"
