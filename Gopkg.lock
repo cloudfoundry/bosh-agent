@@ -150,7 +150,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "c482f04ffbe8f8ae7cd8c4e99958d6da5e1d2af5"
+  revision = "3b1b4b94b70bf4cb24ae0e7d27ad4231d74b9e3f"
 
 [[projects]]
   branch = "master"
@@ -197,7 +197,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "544d8ea40afe6e1a898293261c454043ed31c88f"
+  revision = "4ef69bc702db375e85c4aaae2c56ddc23adc18d1"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -261,11 +261,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1697556d3d95db234b5bf0f3b2078e02ba2755cbc4876c0479f52258658cb6ff"
+  digest = "1:653085796b580bbe8a516d4ccdac890f57bc568bb1a68da02eefca8d087ea130"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "cb32006e483f2a23230e24209cf185c65b477dbf"
+  revision = "0e4e31197428a347842d152773b4cace4645ca25"
 
 [[projects]]
   digest = "1:ebd0081aed1cd0af2f65a362c0ceea985eae9fe72efb28cefb84eca3b98dd3a3"
@@ -397,7 +397,7 @@
   version = "v1.4.4"
 
 [[projects]]
-  digest = "1:2c3fcbe823fda10c61a36292cf30d4cb0b14ddff376ea4bd591e6a182979912f"
+  digest = "1:e254001317dbb0540c86f70fa2d388a4f8177e14ffd06a6c19e1519ff3e53881"
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
@@ -429,8 +429,8 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "4943fe132fbcccacbd3d896c73e7ff993558259b"
-  version = "v1.13.0"
+  revision = "9c254cb251dc962dc20ca91d0279c870095cfcf9"
+  version = "v1.14.0"
 
 [[projects]]
   digest = "1:8d0fe95432805159fd26380192db6173ca74cde6ac507cc0cf8a49978606d3a6"
@@ -561,7 +561,7 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "4c5254603344ea4a8ae4bed7e296a9588303e14f"
+  revision = "ab34263943818b32f575efc978a3d24e80b04bd7"
 
 [[projects]]
   branch = "master"
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "aa94e735be7f31b6b12c5acf9c5838e5605455b4"
+  revision = "9e0a013e855f2f659103e38e82f14f5d329ccd88"
 
 [[projects]]
   branch = "master"
