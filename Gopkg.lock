@@ -128,7 +128,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c4c638192f2f37198242de4f510e0568b5969f69f8cb2e6cd5e5e27e54eeda39"
+  digest = "1:5be6a919ee5ea9914f8b9fa31f9b87a7e361f573ea111a21422153ebd08db6fa"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -150,7 +150,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "3b1b4b94b70bf4cb24ae0e7d27ad4231d74b9e3f"
+  revision = "08dc6eeb160bd603e8e3bf7531dc0f442e2a4521"
 
 [[projects]]
   branch = "master"
@@ -197,7 +197,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "4ef69bc702db375e85c4aaae2c56ddc23adc18d1"
+  revision = "318312a373405e5e91134d8063d04d59768a1bff"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -535,7 +535,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "75b288015ac94e66e3d6715fb68a9b41bf046ec2"
+  revision = "948cd5f35899cbf089c620b3caeac9b60fa08704"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -609,7 +609,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:50887cf3f6be06d64c2055b86aa2bb6b2d824cf43a54e9611b26400d51905fc0"
+  digest = "1:616bf5ceb5a644acc0b4d2a132bfd9082efc43d97559c01f7e391dabcd7ebfa7"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "9e0a013e855f2f659103e38e82f14f5d329ccd88"
+  revision = "f1c4188a97a1cbc0a5408db2e5b0d7b0dca73271"
 
 [[projects]]
   branch = "master"
