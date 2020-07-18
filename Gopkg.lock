@@ -150,7 +150,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "08dc6eeb160bd603e8e3bf7531dc0f442e2a4521"
+  revision = "536f54a5c9545e3fea562cfe5eaa9b9307f5e241"
 
 [[projects]]
   branch = "master"
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "f1c4188a97a1cbc0a5408db2e5b0d7b0dca73271"
+  revision = "6ddee64345a6aa3330ff5260ce9366cd8b2462e8"
 
 [[projects]]
   branch = "master"
