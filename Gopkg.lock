@@ -323,12 +323,12 @@
   version = "v6.0.1"
 
 [[projects]]
-  digest = "1:ec43c4a9ac2179da8b7ba5541e205947d918331a0b1a08c09fd6d23488ca75bd"
+  digest = "1:40709da827caf66d1421f7e7251ed840c1c04423597041332d01797403280e49"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "d16e9488127408e67948eb43b6d3fbb9f222da10"
-  version = "v1.3.2"
+  revision = "9e1e4717f8567d7ead72d070d064ad17d444a67e"
+  version = "v1.3.3"
 
 [[projects]]
   digest = "1:5d2b1851a6e6181a0bb7acb3ffc06cdfc3493db33dd1f3e79e9396cd736c1bf4"
@@ -565,7 +565,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1af6a133de1e85298344aa1ce5ed6e37d86ac986107dd7da1cc5044a0295f3e3"
+  digest = "1:4d4dc3f090434a77acc2404295e4db98037e434b556df607a1cc38ce07da3705"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -577,7 +577,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "ddb9806d33aed8dbaac1cd6f1cba58952e87f933"
+  revision = "0e2f3a69832c9e0de74996506b9f1373a5873c56"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -609,7 +609,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:616bf5ceb5a644acc0b4d2a132bfd9082efc43d97559c01f7e391dabcd7ebfa7"
+  digest = "1:dea43cc5892c9ceae540595220a1378cc207542598bc6474d9594fb9b098715e"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "6ddee64345a6aa3330ff5260ce9366cd8b2462e8"
+  revision = "b5fc9d354d99c98f615cc62f71ea3e0d336c51fc"
 
 [[projects]]
   branch = "master"
