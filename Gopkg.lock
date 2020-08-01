@@ -150,7 +150,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "536f54a5c9545e3fea562cfe5eaa9b9307f5e241"
+  revision = "1bb7272649721b71d0b391cc57a18c37d2ec9df6"
 
 [[projects]]
   branch = "master"
@@ -248,8 +248,8 @@
   name = "github.com/golang/mock"
   packages = ["gomock"]
   pruneopts = "NUT"
-  revision = "3a35fb6e3e18b9dbfee291262260dee7372d2a92"
-  version = "v1.4.3"
+  revision = "f7b1909c82a8958747e5c87c6a5c3b2eaed8a33d"
+  version = "v1.4.4"
 
 [[projects]]
   digest = "1:9e1f58e0d3991f12e7b532161f56dc12c633fb01802ec60520d877599c2af2c5"
@@ -535,7 +535,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "948cd5f35899cbf089c620b3caeac9b60fa08704"
+  revision = "123391ffb6de907695e1066dc40c1ff09322aeb6"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -565,7 +565,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4d4dc3f090434a77acc2404295e4db98037e434b556df607a1cc38ce07da3705"
+  digest = "1:5c9e8c4258ef3658367f5bd7ce12f91b596fd59b63aa33dcc34c88f1abb98f81"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -577,7 +577,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "0e2f3a69832c9e0de74996506b9f1373a5873c56"
+  revision = "3e129f6d46b10b0e1da36b3deffcb55e09631b64"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "b5fc9d354d99c98f615cc62f71ea3e0d336c51fc"
+  revision = "b5fad4ed8dd65a3d7aae567b1f4e751b8ca72837"
 
 [[projects]]
   branch = "master"
