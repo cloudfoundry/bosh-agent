@@ -150,7 +150,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "677a8ebab4c4f0f6c8b58a9bc03562c00608835d"
+  revision = "57addb4ca0501caec13fdd052ba853f11f340b81"
 
 [[projects]]
   branch = "master"
@@ -197,7 +197,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "7a3c009711fb246818258be4b463e785279977db"
+  revision = "0b889c03f102012f1d93a97ddd3ef71cd6f4f510"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -561,11 +561,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "3edf25e44fccea9e11b919341e952fca722ef460"
+  revision = "c89045814202410a2d67ec20ecf177ec77ceae7f"
 
 [[projects]]
   branch = "master"
-  digest = "1:6491e810f7de15436a84637269fab2ffad6f73da680b3461ebd0d794889e0d0c"
+  digest = "1:151278a9d5f7a7460f478857da989c9a30784e411518f2fda7dfb1dce0d544a6"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -577,7 +577,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "fda516888d292084949c284313e463073fc40876"
+  revision = "157a740278f41cac851f88b8aebe047c6fc2414f"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -609,7 +609,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:60ba5038e8b58bcd71568b78f747cdb9d81635cdbdc430976f640851b65663f2"
+  digest = "1:09c483175f95f974cc2324a43b435d1561eea95ade7c387e7cddeba6f1e9506b"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -631,7 +631,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "1e23e48ab93b0df83d1e98f3bd8116980cda8cf1"
+  revision = "5deb26317202b1b4cc6f9ce9958c402f95abea49"
 
 [[projects]]
   branch = "master"
