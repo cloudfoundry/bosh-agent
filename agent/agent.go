@@ -13,11 +13,17 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (
-	agentLogTag = "agent"
+	agentLogTag         = "agent"
+	heartbeatMaxRetries = 10
+)
+
+var (
+	HeartbeatRetryInterval = 1 * time.Second
 )
 
 //go:generate counterfeiter . StartManager
@@ -111,19 +117,19 @@ func (a Agent) generateHeartbeats(errCh chan error) {
 	defer a.logger.HandlePanic("Agent Generate Heartbeats")
 
 	// Send initial heartbeat
-	a.sendAndRecordHeartbeat(errCh)
+	a.sendAndRecordHeartbeat(errCh, false)
 
 	tickChan := time.Tick(a.heartbeatInterval)
 
 	for {
 		select {
 		case <-tickChan:
-			a.sendAndRecordHeartbeat(errCh)
+			a.sendAndRecordHeartbeat(errCh, true)
 		}
 	}
 }
 
-func (a Agent) sendAndRecordHeartbeat(errCh chan error) {
+func (a Agent) sendAndRecordHeartbeat(errCh chan error, retry bool) {
 	status := a.jobSupervisor.Status()
 	heartbeat, err := a.getHeartbeat(status)
 	if err != nil {
@@ -133,9 +139,30 @@ func (a Agent) sendAndRecordHeartbeat(errCh chan error) {
 	}
 	a.jobSupervisor.HealthRecorder(status)
 
-	err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Heartbeat, heartbeat)
+	heartbeatRetryable := boshretry.NewRetryable(func() (bool, error) {
+		a.logger.Info(agentLogTag, "Attempting to send Heartbeat")
+
+		err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Heartbeat, heartbeat)
+		if err != nil {
+			return true, bosherr.WrapError(err, "Sending Heartbeat")
+		}
+		return false, nil
+	})
+
+	retries := 1
+	if retry {
+		retries = heartbeatMaxRetries
+	}
+
+	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(
+		retries,
+		HeartbeatRetryInterval,
+		heartbeatRetryable,
+		a.logger,
+	)
+	err = attemptRetryStrategy.Try()
+
 	if err != nil {
-		err = bosherr.WrapError(err, "Sending heartbeat")
 		errCh <- err
 	}
 }
