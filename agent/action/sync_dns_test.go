@@ -11,7 +11,8 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
-	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
+
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 

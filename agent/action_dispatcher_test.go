@@ -14,8 +14,8 @@ import (
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	"github.com/cloudfoundry/bosh-agent/logger/fakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	fakes "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 
 func init() {

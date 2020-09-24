@@ -11,9 +11,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
 	"github.com/cloudfoundry/bosh-agent/mbus"
 	"github.com/cloudfoundry/bosh-agent/settings"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 
 const targetURL = "https://user:pass@127.0.0.1:7789"

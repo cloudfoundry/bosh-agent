@@ -64,7 +64,7 @@
   version = "v0.4.14"
 
 [[projects]]
-  digest = "1:f2c289384207c0d767eb958f22b34e14adb8b69d86d81ed77bba7d0b72ac5dac"
+  digest = "1:69d722eaaa4464024ae170c67aa845b795dd8328cf33035567fe1baa4db4c0d8"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
@@ -84,11 +84,12 @@
     "internal/timeout",
     "internal/vmcompute",
     "internal/wclayer",
+    "internal/winapi",
     "osversion",
   ]
   pruneopts = "NUT"
-  revision = "5bc557dd210ff2caf615e6e22d398123de77fc11"
-  version = "v0.8.9"
+  revision = "380508768ed2619a4777f268c6443017bb76b04e"
+  version = "v0.8.10"
 
 [[projects]]
   digest = "1:bab9bb2c800328fcd24192210229808c748a6af39c1f95900061501003fabb5b"
@@ -104,7 +105,7 @@
   name = "github.com/charlievieth/fs"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7dc373669fa10ddf827c37c595dee30a2f001be9"
+  revision = "454dded8b957bf46afc5122eaf5bf31847485a54"
 
 [[projects]]
   digest = "1:2c6c2b83cc9e022a7be4d05ea29d0ded7126425445776cc7b8fcabd76e7d51c4"
@@ -128,7 +129,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5be6a919ee5ea9914f8b9fa31f9b87a7e361f573ea111a21422153ebd08db6fa"
+  digest = "1:e1d527f3408787abd7a79ba857324add2fc8c9dd6880af3e161ada821676e492"
   name = "github.com/cloudfoundry/bosh-utils"
   packages = [
     "assert",
@@ -150,7 +151,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "5c0a36794da851aa03a390d5924c03e2faeb3d88"
+  revision = "ecce197fc94d3dbf5190380dd584d432cee15bdb"
 
 [[projects]]
   branch = "master"
@@ -301,14 +302,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:10f1aabb8a57c947ccd886a789bcc2a4716aacb77d7a4077ae2f2680f9d06c9a"
+  digest = "1:4b0375651b735a1af7071a89da168f296a48d293866f970a839eb5dadf88f2a7"
   name = "github.com/masterzen/winrm"
   packages = [
     ".",
     "soap",
   ]
   pruneopts = "NUT"
-  revision = "c42b5136ff886aff9dba40fb3670281f0d583db8"
+  revision = "9a59535f8f2ab597cf7198395c9b312797ff431c"
 
 [[projects]]
   digest = "1:0d33e8f4230cafee906332f45cc456ce2b66ac18a1edc40a9c87e3e68682d08b"
@@ -561,11 +562,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "62affa334b73ec65ed44a326519ac12c421905e3"
+  revision = "328152dc79b1547da63f950cd4cdd9afd50b2774"
 
 [[projects]]
   branch = "master"
-  digest = "1:eca23a74e06f338bc4ffcb8e838aad0d0dd27daf028f026113f8213720b6779e"
+  digest = "1:05937abbf1ddc4c382940cd91b9aaac4cf1f1cfc9984f2fb7b9bd818f4a8bc56"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -577,7 +578,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "be1d3432aa8f4fd677757447c4c9e7ff9bf25f73"
+  revision = "d9f96fdee20d1e5115ee34ba4016eae6cfb66eb9"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -609,7 +610,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:09c483175f95f974cc2324a43b435d1561eea95ade7c387e7cddeba6f1e9506b"
+  digest = "1:b63623309bf64a26ccb6aeea7e2681a6225261a938f742225661f47db49f472d"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -631,7 +632,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "39188db5885871ea0132a6314eab0c1b5d179a8b"
+  revision = "463111b698783442f36fa0dfacbdff0bdd96cec3"
 
 [[projects]]
   branch = "master"
