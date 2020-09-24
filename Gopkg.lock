@@ -632,7 +632,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "463111b698783442f36fa0dfacbdff0bdd96cec3"
+  revision = "06f3a46a9d1e4913ecf04347e6eea61252bf3c41"
 
 [[projects]]
   branch = "master"
