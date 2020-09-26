@@ -562,7 +562,7 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "328152dc79b1547da63f950cd4cdd9afd50b2774"
+  revision = "05aa5d4ee32165add31ddef9d5d3946713e5dc5e"
 
 [[projects]]
   branch = "master"
@@ -632,7 +632,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "06f3a46a9d1e4913ecf04347e6eea61252bf3c41"
+  revision = "5d1fdd8fa3469142b9369713b23d8413d6d83189"
 
 [[projects]]
   branch = "master"
