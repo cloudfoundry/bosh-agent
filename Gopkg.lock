@@ -151,7 +151,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "ecce197fc94d3dbf5190380dd584d432cee15bdb"
+  revision = "fe1f0beb6a7ddeb36790689d1b8a3eb485ca1d51"
 
 [[projects]]
   branch = "master"
@@ -285,14 +285,6 @@
   version = "1.0"
 
 [[projects]]
-  digest = "1:a3998f85665bdf805d519735e658c0e0125bd67b57bb15e414a5a9e360e32455"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "edb144dfd453055e1e49a3d8b410a660b5a87613"
-  version = "v1.0.3"
-
-[[projects]]
   branch = "master"
   digest = "1:a7c1ab68a6cdeffcb148dc0d8b92c897f034aa38f58b69eab9bc6e77645b26fb"
   name = "github.com/masterzen/simplexml"
@@ -394,8 +386,8 @@
     "winfile",
   ]
   pruneopts = "NUT"
-  revision = "327c577245448d8192115e77a76ea3d6aee88202"
-  version = "v1.4.4"
+  revision = "2683a83f3fb0c35b4908abeecadf6704cede46d1"
+  version = "v1.4.5"
 
 [[projects]]
   digest = "1:e47c0f6ae9106054b6ba64edc37aca055e792b69a120f73e0ffe70d936ee4813"
@@ -490,12 +482,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:1dbbefdedbdb89fc0073bfa0df49e0f117f9d901fe265c24552b72473cc5a650"
+  digest = "1:f3a83720e88101d4931d409b4766bc0457da6db6def361a095c7f4b249e228d7"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "60c74ad9be0d874af0ab0daef6ab07c5c5911f0d"
-  version = "v1.6.0"
+  revision = "6699a89a232f3db797f2e280639854bbc4b89725"
+  version = "v1.7.0"
 
 [[projects]]
   digest = "1:c59bbf7751c26b0fd98789cc8a8bdedc8377a61506537f62874902e597b20fa3"
@@ -521,7 +513,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:66fff77b659eeb4028f4d2a134e14956ea76c602ca56aab041e727915c798103"
+  digest = "1:905a767352ea3ca219662fc07b5f94a63209641d3a01a428fb61ea9e2a9cdc6e"
   name = "golang.org/x/crypto"
   packages = [
     "blowfish",
@@ -536,7 +528,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "5c72a883971a4325f8c62bf07b6d38c20ea47a6a"
+  revision = "7f63de1d35b0f77fa2b9faea3e7deb402a2383c8"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -562,11 +554,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "05aa5d4ee32165add31ddef9d5d3946713e5dc5e"
+  revision = "0a1ea396d57c75b04aff7cb73d169717064c2b8a"
 
 [[projects]]
   branch = "master"
-  digest = "1:05937abbf1ddc4c382940cd91b9aaac4cf1f1cfc9984f2fb7b9bd818f4a8bc56"
+  digest = "1:7bb515d2b9329c534f8264998aa9101df5e873518b0733b7e31a93e635222d4a"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -578,7 +570,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "d9f96fdee20d1e5115ee34ba4016eae6cfb66eb9"
+  revision = "fdedc70b468f679c263a3ccaefc1faeed3239939"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -632,7 +624,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "5d1fdd8fa3469142b9369713b23d8413d6d83189"
+  revision = "ecd9fd270d5d8717504e3c25d668fe010450ea5e"
 
 [[projects]]
   branch = "master"
