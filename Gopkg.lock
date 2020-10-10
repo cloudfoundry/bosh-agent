@@ -151,7 +151,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "fe1f0beb6a7ddeb36790689d1b8a3eb485ca1d51"
+  revision = "e47b266778ec6c76cf031a81ef236fa1bfcf8add"
 
 [[projects]]
   branch = "master"
@@ -294,14 +294,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4b0375651b735a1af7071a89da168f296a48d293866f970a839eb5dadf88f2a7"
+  digest = "1:9cdedb04ee46379082c453aa1dbf64143e808230d85010a48ef4d68c12076295"
   name = "github.com/masterzen/winrm"
   packages = [
     ".",
     "soap",
   ]
   pruneopts = "NUT"
-  revision = "9a59535f8f2ab597cf7198395c9b312797ff431c"
+  revision = "4ac35cc9739646de74446706ef504e6bc2428980"
 
 [[projects]]
   digest = "1:0d33e8f4230cafee906332f45cc456ce2b66ac18a1edc40a9c87e3e68682d08b"
@@ -498,7 +498,7 @@
   version = "v1.6.1"
 
 [[projects]]
-  digest = "1:4746e1f3b9ec9cfdac2ec09e51deb65122bdcad47d2fdb500c2b70da3587ae06"
+  digest = "1:04f1809d18130f9e86460adb996a22887810c3063377d73ca32f0c24580d02af"
   name = "go.opencensus.io"
   packages = [
     ".",
@@ -508,8 +508,8 @@
     "trace/tracestate",
   ]
   pruneopts = "NUT"
-  revision = "5fa069b99bc903d713add0295c7e0a55d34ae573"
-  version = "v0.22.4"
+  revision = "3fb168f674736c026e623310bfccb0691e6dec8a"
+  version = "v0.22.5"
 
 [[projects]]
   branch = "master"
@@ -554,11 +554,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "0a1ea396d57c75b04aff7cb73d169717064c2b8a"
+  revision = "dbdefad45b8998787d2fd6a2edea7fc79838207b"
 
 [[projects]]
   branch = "master"
-  digest = "1:7bb515d2b9329c534f8264998aa9101df5e873518b0733b7e31a93e635222d4a"
+  digest = "1:929aa24a60e0d656db73c92893dbdfce4e6e4978ba0a08b73d977069523e2274"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -570,7 +570,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "fdedc70b468f679c263a3ccaefc1faeed3239939"
+  revision = "dfb3f7c4e6342ab64fe0e22bde473c74a5699721"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -624,7 +624,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "ecd9fd270d5d8717504e3c25d668fe010450ea5e"
+  revision = "fcf82128ed91fc9924ee9daba0d9816af1936ff9"
 
 [[projects]]
   branch = "master"
