@@ -19,7 +19,7 @@ import (
 
 const (
 	agentLogTag         = "agent"
-	heartbeatMaxRetries = 10
+	heartbeatMaxRetries = 60
 )
 
 var (

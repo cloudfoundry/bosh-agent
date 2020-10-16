@@ -44,6 +44,10 @@ func init() {
 			agent Agent
 		)
 
+		BeforeSuite(func() {
+			HeartbeatRetryInterval = 1 * time.Millisecond
+		})
+
 		BeforeEach(func() {
 			logger = boshlog.NewLogger(boshlog.LevelNone)
 			handler = &fakembus.FakeHandler{}
@@ -74,7 +78,6 @@ func init() {
 				startManager,
 			)
 
-			HeartbeatRetryInterval = 1 * time.Millisecond
 		})
 
 		Describe("Run", func() {
