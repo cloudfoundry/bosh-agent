@@ -151,7 +151,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "b4389ba9b13646f51d0b1ff5640970fcdd3b3ffc"
+  revision = "2c354ff44754be22c0fba649ae1bc9ea5e35ce7c"
 
 [[projects]]
   branch = "master"
@@ -324,12 +324,12 @@
   version = "v1.3.3"
 
 [[projects]]
-  digest = "1:5d2b1851a6e6181a0bb7acb3ffc06cdfc3493db33dd1f3e79e9396cd736c1bf4"
+  digest = "1:c54aacb34c652f66802f6c45c41a79e85da26e3a78fdfde3e8884c384c27c5fe"
   name = "github.com/nats-io/jwt"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "8527407e521556b9f0253318912cc03fd84a5bbd"
-  version = "v1.0.1"
+  revision = "7507723f66ba5b22fed9cdbbaad2bd46f32c82ee"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:9ec39fd1362e23fdf1d264b02a9212bc6fd1b7a5b1878bbcb533abbd144ca6c6"
@@ -543,7 +543,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4218927c16bb90810d73a689a8fce7050a49cf64bb9ba33089dda15ae2e48476"
+  digest = "1:886cd6bbbde7b82e52a1222177f33f564654f7f04c18120122673f81a0d6f5f7"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -554,11 +554,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "7b1cca2348c07eb09fef635269c8e01611260f9f"
+  revision = "be3efd7ff1275f85d6b01ced0bee28cdb728f4b9"
 
 [[projects]]
   branch = "master"
-  digest = "1:c016728563282a9297224bcfc13e9f57eef49376dfe3c96972315f350a24d232"
+  digest = "1:dc4f78fb515abb7ab9d008992079f37e523a88517e92cc60ae3f913c471902a3"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -570,7 +570,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "b09fb700fbb73bb06b1863b5741a67ef6dbfa433"
+  revision = "fb209a7c41cd8505b3b047ae14763a4d3d06fa19"
 
 [[projects]]
   digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
@@ -602,7 +602,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8e9f4867e1ec6d775f534197254de1d93d9131f64413befda6bcc88beed9b13b"
+  digest = "1:a57e734528cbaede2fca90b59473e2967cac683031ddf27789b71300268360aa"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -624,7 +624,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "6003fad69a889b43c22ce72e5796412a20301c5e"
+  revision = "c8cfbd0f21e6146422c1927945569c9c855a56bc"
 
 [[projects]]
   branch = "master"
