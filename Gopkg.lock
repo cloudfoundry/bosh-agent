@@ -92,12 +92,12 @@
   version = "v0.8.10"
 
 [[projects]]
-  digest = "1:bab9bb2c800328fcd24192210229808c748a6af39c1f95900061501003fabb5b"
+  digest = "1:628d0f7f5f0f6295ce5210a265a1f9bf58cf903f6798ff9af3b423c9d416f5b7"
   name = "github.com/bmatcuk/doublestar"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "5cf9061c537e876f6647559ac1a0624115c86b3a"
-  version = "v1.3.2"
+  revision = "eb4d9ac565e08f034b7f2631c445f08dd3975b97"
+  version = "v1.3.3"
 
 [[projects]]
   branch = "master"
@@ -151,7 +151,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "2c354ff44754be22c0fba649ae1bc9ea5e35ce7c"
+  revision = "93329b1c361428a37cca70fc118016f32c79a0ff"
 
 [[projects]]
   branch = "master"
@@ -301,7 +301,7 @@
     "soap",
   ]
   pruneopts = "NUT"
-  revision = "4ac35cc9739646de74446706ef504e6bc2428980"
+  revision = "56ca5c5f2380b87db83c8149fca45f0a138514cc"
 
 [[projects]]
   digest = "1:0d33e8f4230cafee906332f45cc456ce2b66ac18a1edc40a9c87e3e68682d08b"
@@ -324,12 +324,12 @@
   version = "v1.3.3"
 
 [[projects]]
-  digest = "1:c54aacb34c652f66802f6c45c41a79e85da26e3a78fdfde3e8884c384c27c5fe"
+  digest = "1:10762838ed43ff2d54bbd28b0af9378b12a3615eda2bfb8b21b4280c47125701"
   name = "github.com/nats-io/jwt"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7507723f66ba5b22fed9cdbbaad2bd46f32c82ee"
-  version = "v1.1.0"
+  revision = "057ba30017beca2abb0ba35e7db6442be3479c5d"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:9ec39fd1362e23fdf1d264b02a9212bc6fd1b7a5b1878bbcb533abbd144ca6c6"
@@ -543,7 +543,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:886cd6bbbde7b82e52a1222177f33f564654f7f04c18120122673f81a0d6f5f7"
+  digest = "1:914e04a3377a725d4ebcd634d4b4e056257ae08abdee4a62e876f595b003897b"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -554,11 +554,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "be3efd7ff1275f85d6b01ced0bee28cdb728f4b9"
+  revision = "ff519b6c91021e6316e1df005bc19f266994ddda"
 
 [[projects]]
   branch = "master"
-  digest = "1:dc4f78fb515abb7ab9d008992079f37e523a88517e92cc60ae3f913c471902a3"
+  digest = "1:da0749e80cd01240181a7b4aab9b1773f4dc0c7b7d601a06cdb0b19460d5548d"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -570,10 +570,10 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "fb209a7c41cd8505b3b047ae14763a4d3d06fa19"
+  revision = "201ba4db2418b54b698efb4d8082dcb504617cdb"
 
 [[projects]]
-  digest = "1:27f1a11ecfee360418360997a013764fd4da959413ad1a8ac2ea5b38508048fc"
+  digest = "1:d0ce967403a66635e6b31005cd17ae75c32408a632df63bc4d4e1c20992503f3"
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -597,8 +597,8 @@
     "unicode/cldr",
   ]
   pruneopts = "NUT"
-  revision = "23ae387dee1f90d29a23c0e87ee0b46038fbed0e"
-  version = "v0.3.3"
+  revision = "22f1617af38ed4cd65b3b96e02bab267e560155c"
+  version = "v0.3.4"
 
 [[projects]]
   branch = "master"
@@ -624,7 +624,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "c8cfbd0f21e6146422c1927945569c9c855a56bc"
+  revision = "582c62ec74d06936c88d4b760c63cbc2925e69c7"
 
 [[projects]]
   branch = "master"
