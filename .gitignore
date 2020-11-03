@@ -2,6 +2,7 @@ out
 gobin/*
 .idea
 .vagrant
+.vscode
 
 /tmp/
 
