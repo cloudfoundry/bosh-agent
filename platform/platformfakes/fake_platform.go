@@ -578,6 +578,17 @@ type FakePlatform struct {
 	setupRootDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetupRunDataDirStub        func(settings.AgentSettings) error
+	setupRunDataDirMutex       sync.RWMutex
+	setupRunDataDirArgsForCall []struct {
+		arg1 settings.AgentSettings
+	}
+	setupRunDataDirReturns struct {
+		result1 error
+	}
+	setupRunDataDirReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupRuntimeConfigurationStub        func() error
 	setupRuntimeConfigurationMutex       sync.RWMutex
 	setupRuntimeConfigurationArgsForCall []struct {
@@ -3554,6 +3565,66 @@ func (fake *FakePlatform) SetupRootDiskReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakePlatform) SetupRunDataDir(arg1 settings.AgentSettings) error {
+	fake.setupRunDataDirMutex.Lock()
+	ret, specificReturn := fake.setupRunDataDirReturnsOnCall[len(fake.setupRunDataDirArgsForCall)]
+	fake.setupRunDataDirArgsForCall = append(fake.setupRunDataDirArgsForCall, struct {
+		arg1 settings.AgentSettings
+	}{arg1})
+	fake.recordInvocation("SetupRunDataDir", []interface{}{arg1})
+	fake.setupRunDataDirMutex.Unlock()
+	if fake.SetupRunDataDirStub != nil {
+		return fake.SetupRunDataDirStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.setupRunDataDirReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupRunDataDirCallCount() int {
+	fake.setupRunDataDirMutex.RLock()
+	defer fake.setupRunDataDirMutex.RUnlock()
+	return len(fake.setupRunDataDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupRunDataDirCalls(stub func(settings.AgentSettings) error) {
+	fake.setupRunDataDirMutex.Lock()
+	defer fake.setupRunDataDirMutex.Unlock()
+	fake.SetupRunDataDirStub = stub
+}
+
+func (fake *FakePlatform) SetupRunDataDirArgsForCall(i int) settings.AgentSettings {
+	fake.setupRunDataDirMutex.RLock()
+	defer fake.setupRunDataDirMutex.RUnlock()
+	argsForCall := fake.setupRunDataDirArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupRunDataDirReturns(result1 error) {
+	fake.setupRunDataDirMutex.Lock()
+	defer fake.setupRunDataDirMutex.Unlock()
+	fake.SetupRunDataDirStub = nil
+	fake.setupRunDataDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupRunDataDirReturnsOnCall(i int, result1 error) {
+	fake.setupRunDataDirMutex.Lock()
+	defer fake.setupRunDataDirMutex.Unlock()
+	fake.SetupRunDataDirStub = nil
+	if fake.setupRunDataDirReturnsOnCall == nil {
+		fake.setupRunDataDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupRunDataDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatform) SetupRuntimeConfiguration() error {
 	fake.setupRuntimeConfigurationMutex.Lock()
 	ret, specificReturn := fake.setupRuntimeConfigurationReturnsOnCall[len(fake.setupRuntimeConfigurationArgsForCall)]
@@ -4046,6 +4117,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
 	fake.setupRootDiskMutex.RLock()
 	defer fake.setupRootDiskMutex.RUnlock()
+	fake.setupRunDataDirMutex.RLock()
+	defer fake.setupRunDataDirMutex.RUnlock()
 	fake.setupRuntimeConfigurationMutex.RLock()
 	defer fake.setupRuntimeConfigurationMutex.RUnlock()
 	fake.setupSSHMutex.RLock()
