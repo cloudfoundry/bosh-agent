@@ -1683,7 +1683,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 	Describe("SetupDataDir", func() {
 		It("creates jobs directory in data directory", func() {
-			err := platform.SetupDataDir(boshsettings.JobDir{})
+			err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 			Expect(err).NotTo(HaveOccurred())
 
 			sysLogStats := fs.GetFileTestStat("/fake-dir/data/jobs")
@@ -1694,7 +1694,7 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 
 		It("creates sensitive blobs directory in data directory", func() {
-			err := platform.SetupDataDir(boshsettings.JobDir{})
+			err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 			Expect(err).NotTo(HaveOccurred())
 
 			sysLogStats := fs.GetFileTestStat("/fake-dir/data/sensitive_blobs")
@@ -1705,7 +1705,7 @@ Number  Start   End     Size    File system  Name             Flags
 		})
 
 		It("creates packages directory in data directory", func() {
-			err := platform.SetupDataDir(boshsettings.JobDir{})
+			err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 			Expect(err).NotTo(HaveOccurred())
 
 			sysLogStats := fs.GetFileTestStat("/fake-dir/data/packages")
@@ -1719,10 +1719,10 @@ Number  Start   End     Size    File system  Name             Flags
 			It("mounts that with the default size", func() {
 				err := platform.SetupDataDir(boshsettings.JobDir{
 					TmpFS: true,
-				})
+				}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(mounter.MountTmpfsCallCount()).To(Equal(2))
+				Expect(mounter.MountTmpfsCallCount()).To(Equal(3))
 
 				mountPoint, size := mounter.MountTmpfsArgsForCall(0)
 				Expect(mountPoint).To(Equal("/fake-dir/data/jobs"))
@@ -1737,10 +1737,12 @@ Number  Start   End     Size    File system  Name             Flags
 				err := platform.SetupDataDir(boshsettings.JobDir{
 					TmpFS:     true,
 					TmpFSSize: "42m",
+				}, boshsettings.RunDir{
+					TmpFSSize: "24m",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(mounter.MountTmpfsCallCount()).To(Equal(2))
+				Expect(mounter.MountTmpfsCallCount()).To(Equal(3))
 
 				mountPoint, size := mounter.MountTmpfsArgsForCall(0)
 				Expect(mountPoint).To(Equal("/fake-dir/data/jobs"))
@@ -1749,6 +1751,11 @@ Number  Start   End     Size    File system  Name             Flags
 				mountPoint, size = mounter.MountTmpfsArgsForCall(1)
 				Expect(mountPoint).To(Equal("/fake-dir/data/sensitive_blobs"))
 				Expect(size).To(Equal("42m"))
+
+				mountPoint, size = mounter.MountTmpfsArgsForCall(2)
+				Expect(mountPoint).To(Equal("/fake-dir/data/sys/run"))
+				Expect(size).To(Equal("24m"))
+
 			})
 		})
 
@@ -1758,7 +1765,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("creates sys/log directory in data directory", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
 				sysLogStats := fs.GetFileTestStat("/fake-dir/data/sys/log")
@@ -1770,7 +1777,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("creates symlink from sys to data/sys", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
 				sysStats := fs.GetFileTestStat("/fake-dir/sys")
@@ -1780,7 +1787,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("does not create new sys/run dir", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
 				sysRunStats := fs.GetFileTestStat("/fake-dir/data/sys/run")
@@ -1788,7 +1795,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("does not mount tmpfs again", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mounter.MountCallCount()).To(Equal(0))
 			})
@@ -1854,7 +1861,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("creates sys/log directory in data directory", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
 				sysLogStats := fs.GetFileTestStat("/fake-dir/data/sys/log")
@@ -1866,7 +1873,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("creates symlink from sys to data/sys", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
 				sysStats := fs.GetFileTestStat("/fake-dir/sys")
@@ -1876,7 +1883,7 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("creates new sys/run dir", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
 				sysRunStats := fs.GetFileTestStat("/fake-dir/data/sys/run")
@@ -1887,29 +1894,27 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("mounts tmpfs to sys/run", func() {
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(mounter.MountFilesystemCallCount()).To(Equal(1))
-				partition, mntPt, fstype, options := mounter.MountFilesystemArgsForCall(0)
-				Expect(partition).To(Equal("tmpfs"))
+				Expect(mounter.MountTmpfsCallCount()).To(Equal(1))
+				mntPt, size := mounter.MountTmpfsArgsForCall(0)
 				Expect(mntPt).To(Equal("/fake-dir/data/sys/run"))
-				Expect(fstype).To(Equal("tmpfs"))
-				Expect(options).To(Equal([]string{"size=1m"}))
+				Expect(size).To(Equal("16m"))
 			})
 
 			It("returns an error if creation of mount point fails", func() {
 				fs.MkdirAllError = errors.New("fake-mkdir-error")
 
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 			})
 
 			It("returns an error if mounting tmpfs fails", func() {
-				mounter.MountFilesystemReturns(errors.New("fake-mount-error"))
+				mounter.MountTmpfsReturns(errors.New("fake-mount-error"))
 
-				err := platform.SetupDataDir(boshsettings.JobDir{})
+				err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
 			})
