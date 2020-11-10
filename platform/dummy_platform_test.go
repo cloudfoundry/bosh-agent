@@ -256,7 +256,7 @@ var _ = Describe("DummyPlatform", func() {
 
 	Describe("SetupDataDir", func() {
 		It("creates a link from BASEDIR/sys to BASEDIR/data/sys", func() {
-			err := platform.SetupDataDir(boshsettings.JobDir{})
+			err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 			Expect(err).NotTo(HaveOccurred())
 
 			stat := fs.GetFileTestStat(filepath.Clean("/fake-dir/sys"))
