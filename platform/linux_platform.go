@@ -720,7 +720,7 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 	return nil
 }
 
-func (p linux) SetupDataDir(config boshsettings.JobDir) error {
+func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsettings.RunDir) error {
 	dataDir := p.dirProvider.DataDir()
 
 	sysDataDir := path.Join(dataDir, "sys")
@@ -753,8 +753,8 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 		return bosherr.WrapErrorf(err, "Making %s dir", sensitiveDir)
 	}
 
-	if config.TmpFS {
-		size := config.TmpFSSize
+	if jobConfig.TmpFS {
+		size := jobConfig.TmpFSSize
 		if size == "" {
 			size = "100m"
 		}
@@ -788,7 +788,7 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 		return bosherr.WrapErrorf(err, "chown %s", packagesDir)
 	}
 
-	err = p.setupRunDir(sysDataDir)
+	err = p.setupRunDir(sysDataDir, runConfig.TmpFSSize)
 	if err != nil {
 		return err
 	}
@@ -802,7 +802,7 @@ func (p linux) SetupDataDir(config boshsettings.JobDir) error {
 	return nil
 }
 
-func (p linux) setupRunDir(sysDir string) error {
+func (p linux) setupRunDir(sysDir, tmppFSSize string) error {
 	runDir := path.Join(sysDir, "run")
 
 	_, runDirIsMounted, err := p.IsMountPoint(runDir)
@@ -816,7 +816,11 @@ func (p linux) setupRunDir(sysDir string) error {
 			return bosherr.WrapErrorf(err, "Making %s dir", runDir)
 		}
 
-		err = p.diskManager.GetMounter().MountFilesystem("tmpfs", runDir, "tmpfs", "size=1m")
+		if tmppFSSize == "" {
+			tmppFSSize = "16m"
+		}
+
+		err = p.diskManager.GetMounter().MountTmpfs(runDir, tmppFSSize)
 		if err != nil {
 			return bosherr.WrapErrorf(err, "Mounting tmpfs to %s", runDir)
 		}
