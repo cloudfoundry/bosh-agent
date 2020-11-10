@@ -130,7 +130,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Starting up logging and auditing utilities")
 	}
 
-	if err = boot.platform.SetupDataDir(settings.Env.Bosh.JobDir); err != nil {
+	if err = boot.platform.SetupDataDir(settings.Env.Bosh.JobDir, settings.Env.Bosh.RunDir); err != nil {
 		return bosherr.WrapError(err, "Setting up data dir")
 	}
 
