@@ -963,6 +963,18 @@ var _ = Describe("Settings", func() {
 			Expect(env.Bosh.JobDir).To(Equal(JobDir{TmpFS: true, TmpFSSize: "37m"}))
 		})
 
+		It("can set run directory tmpfs size", func() {
+			env := Env{}
+			err := json.Unmarshal([]byte(`{"bosh": {} }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.RunDir).To(Equal(RunDir{}))
+
+			env = Env{}
+			err = json.Unmarshal([]byte(`{"bosh": {"run_dir": {"tmpfs_size": "37m"} } }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.RunDir).To(Equal(RunDir{TmpFSSize: "37m"}))
+		})
+
 		Context("when swap_size is not specified in the json", func() {
 			It("unmarshalls correctly", func() {
 				var env Env

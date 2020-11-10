@@ -282,6 +282,7 @@ type BoshEnv struct {
 	Mbus                  MBus        `json:"mbus"`
 	IPv6                  IPv6        `json:"ipv6"`
 	JobDir                JobDir      `json:"job_dir"`
+	RunDir                RunDir      `json:"run_dir"`
 	Blobstores            []Blobstore `json:"blobstores"`
 	NTP                   []string    `json:"ntp"`
 	Parallel              *int        `json:"parallel"`
@@ -313,6 +314,11 @@ type IPv6 struct {
 type JobDir struct {
 	TmpFS bool `json:"tmpfs"`
 
+	// Passed to mount directly
+	TmpFSSize string `json:"tmpfs_size"`
+}
+
+type RunDir struct {
 	// Passed to mount directly
 	TmpFSSize string `json:"tmpfs_size"`
 }

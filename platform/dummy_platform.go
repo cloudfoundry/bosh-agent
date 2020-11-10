@@ -202,7 +202,7 @@ func (p dummyPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSetting
 	return
 }
 
-func (p dummyPlatform) SetupDataDir(_ boshsettings.JobDir) error {
+func (p dummyPlatform) SetupDataDir(_ boshsettings.JobDir, _ boshsettings.RunDir) error {
 	dataDir := p.dirProvider.DataDir()
 
 	sysDataDir := filepath.Join(dataDir, "sys")
