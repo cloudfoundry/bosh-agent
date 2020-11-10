@@ -231,7 +231,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 	Describe("SetupDataDir", func() {
 		It("creates new temp dir", func() {
-			err := platform.SetupDataDir(boshsettings.JobDir{})
+			err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/sys/log")
@@ -246,7 +246,7 @@ var _ = Describe("WindowsPlatform", func() {
 		It("returns error if creating new temp dir errs", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-error")
 
-			err := platform.SetupDataDir(boshsettings.JobDir{})
+			err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
