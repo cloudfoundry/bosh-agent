@@ -151,7 +151,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "f523638849f6b7c351300b85f6f38a408d75fdf9"
+  revision = "3c8652f24f4022b33b69ed89e86abdfe6470e0c2"
 
 [[projects]]
   branch = "master"
@@ -316,12 +316,12 @@
   version = "v6.0.1"
 
 [[projects]]
-  digest = "1:40709da827caf66d1421f7e7251ed840c1c04423597041332d01797403280e49"
+  digest = "1:f734e55e424eb88aff8537206c8284194d9a09b263058e9a347801f4094eab18"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "9e1e4717f8567d7ead72d070d064ad17d444a67e"
-  version = "v1.3.3"
+  revision = "95075d6e1a88d608e5258a054d7f0de9401f255e"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:10762838ed43ff2d54bbd28b0af9378b12a3615eda2bfb8b21b4280c47125701"
@@ -528,7 +528,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "c1f2f97bffc9c53fc40a1a28a5b460094c0050d9"
+  revision = "c8d3bf9c5392d5f66747f112cd55055d7a530b19"
 
 [[projects]]
   digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
@@ -558,7 +558,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:008361c1fd31e151c8bda6c3dad5bb7f0d8e669d8d1cc5aa0cc58021d8acde0a"
+  digest = "1:3d98fa1a6e955b934e12e4bebbd197f67d42741e50bba79d29c3d624ff648156"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -570,7 +570,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "f84b799fce68db3cb46a8f6f819c1e56377181df"
+  revision = "77190671981848ff71219ecfff38636c9add3b79"
 
 [[projects]]
   digest = "1:d0ce967403a66635e6b31005cd17ae75c32408a632df63bc4d4e1c20992503f3"
@@ -602,7 +602,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2fa7f2e65654266eb8da513b7e5b97b26aff6f55cadde23e3bde8e2709987856"
+  digest = "1:e49c2e118694702bc9489bf54e0a1f683dd0419b9acb8c4853a288f9d61fcc5c"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -624,7 +624,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "780cb80bd7fbb444813fc4b6be83a7ede5cd0d7d"
+  revision = "b5590deeca9b708498816ae0bf4482b97f46295f"
 
 [[projects]]
   branch = "master"
@@ -681,12 +681,12 @@
   revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
 
 [[projects]]
-  digest = "1:62a89978829993fb84e755bff5ae0e3d84837228898fd55b1a88a885036e1e51"
+  digest = "1:0b74852e34746033bb64ec0b21c16a4952917bdaf344446a1682f101c042e610"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "0b1645d91e851e735d3e23330303ce81f70adbe3"
-  version = "v2.3.0"
+  revision = "7649d4548cb53a614db133b2a8ac1f31859dda8c"
+  version = "v2.4.0"
 
 [[projects]]
   branch = "v3"
