@@ -151,7 +151,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "3c8652f24f4022b33b69ed89e86abdfe6470e0c2"
+  revision = "4ba3e9fa0520912d1358b87e53c86c771f0bb435"
 
 [[projects]]
   branch = "master"
@@ -324,12 +324,12 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:10762838ed43ff2d54bbd28b0af9378b12a3615eda2bfb8b21b4280c47125701"
+  digest = "1:6bae15acc9186e8c6b614d145a8459270587ab398c031cb0cbc49891e2581fe5"
   name = "github.com/nats-io/jwt"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "057ba30017beca2abb0ba35e7db6442be3479c5d"
-  version = "v1.2.0"
+  revision = "0ea326566cb17313ecf982b6370758a0ac4bc7fd"
+  version = "v1.2.2"
 
 [[projects]]
   digest = "1:9ec39fd1362e23fdf1d264b02a9212bc6fd1b7a5b1878bbcb533abbd144ca6c6"
@@ -513,7 +513,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1e6640892958e70a66fc9c62c653c397e94a6c88a0013032fe884cd9b7b07d93"
+  digest = "1:db9ed39a4e3ca44e6248b8707d7b2f8aed6dee69c6b0ec282258403cbe050d59"
   name = "golang.org/x/crypto"
   packages = [
     "blowfish",
@@ -528,18 +528,18 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "c8d3bf9c5392d5f66747f112cd55055d7a530b19"
+  revision = "be400aefbc4c83e9aab51e82b8d4b12760653b47"
 
 [[projects]]
-  digest = "1:467bb8fb8fa786448b8d486cd0bb7c1a5577dcd7310441aa02a20110cd9f727d"
+  digest = "1:4c6e4e4e7d0f334dd6201c3172d9795c5c87e19b2612a83ec309c899c4aa0903"
   name = "golang.org/x/mod"
   packages = [
     "module",
     "semver",
   ]
   pruneopts = "NUT"
-  revision = "859b3ef565e237f9f1a0fb6b55385c497545680d"
-  version = "v0.3.0"
+  revision = "3bfbaada29be620417d472f349d55056286b2119"
+  version = "v0.4.0"
 
 [[projects]]
   branch = "master"
@@ -554,11 +554,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "69a78807bb2bb6d1599c68698c6b009505012083"
+  revision = "c7110b5ffcbb9f2ac4de9fbd2600e37d42473a9a"
 
 [[projects]]
   branch = "master"
-  digest = "1:3d98fa1a6e955b934e12e4bebbd197f67d42741e50bba79d29c3d624ff648156"
+  digest = "1:b9c9376f5e76c1db69ea217d26c8dc2aedb7c8244d602ef3f064097800c335d7"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -570,7 +570,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "77190671981848ff71219ecfff38636c9add3b79"
+  revision = "ed752295db8857b3a7f36c3f57e38509cadff471"
 
 [[projects]]
   digest = "1:d0ce967403a66635e6b31005cd17ae75c32408a632df63bc4d4e1c20992503f3"
@@ -624,7 +624,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "b5590deeca9b708498816ae0bf4482b97f46295f"
+  revision = "654352759326a83ade56ef0d49787dedaa16078e"
 
 [[projects]]
   branch = "master"
