@@ -52,11 +52,12 @@
   revision = "c5096ec8773dd9f554971472081ddfbb0782334e"
 
 [[projects]]
-  digest = "1:078b7aa920b2c68b9b51bc3fef70d2dd34ad3cf0e92d80526f101d4951de4b36"
+  digest = "1:9e987bec6b100e3ec47e7465a4a6a5b27f8d583efe7bddcd1a39316c90045c8f"
   name = "github.com/Microsoft/go-winio"
   packages = [
     ".",
     "pkg/guid",
+    "pkg/security",
     "vhd",
   ]
   pruneopts = "NUT"
@@ -64,7 +65,7 @@
   version = "v0.4.16"
 
 [[projects]]
-  digest = "1:3f041c78bd4ad1c3dd175602e7f6a8a9b7709fd8140cf99b69c0e0d49e729422"
+  digest = "1:d4379ba1fe6a56c884e6a9703c113c29ffd876392295c4a346b75b6c47b7b650"
   name = "github.com/Microsoft/hcsshim"
   packages = [
     ".",
@@ -89,8 +90,8 @@
     "osversion",
   ]
   pruneopts = "NUT"
-  revision = "2010d9a3eeb0a93b64faac63c39eff76fb12082c"
-  version = "v0.8.11"
+  revision = "d3e5debf77dab8cd35ce1a842065358469f4b7ea"
+  version = "v0.8.14"
 
 [[projects]]
   digest = "1:42800cc5868028ee21ff8252e541b2461244686ba0248cc1e3fcaee5082ded41"
@@ -152,7 +153,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "004b43f0ac7895adbcf1cdc2eb87ae55eed79a91"
+  revision = "2d810666951c1367bf1b23bc3354743707afe09d"
 
 [[projects]]
   branch = "master"
@@ -514,7 +515,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:db9ed39a4e3ca44e6248b8707d7b2f8aed6dee69c6b0ec282258403cbe050d59"
+  digest = "1:137a3c9ca0859a9570abbb672d7a19e53bcde17b29d76fe73f9bf6eb88787252"
   name = "golang.org/x/crypto"
   packages = [
     "blowfish",
@@ -529,7 +530,7 @@
     "ssh/internal/bcrypt_pbkdf",
   ]
   pruneopts = "NUT"
-  revision = "5f87f3452ae96c4850ab9af7783f2517b643061b"
+  revision = "9d1352758620574fd6fc23c31c59c4333b4b3fff"
 
 [[projects]]
   digest = "1:4c6e4e4e7d0f334dd6201c3172d9795c5c87e19b2612a83ec309c899c4aa0903"
@@ -555,11 +556,11 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "ac852fbbde11df194bfd5004603c7c8e117901f2"
+  revision = "986b41b23924a168277bf3df55a4fd462154f916"
 
 [[projects]]
   branch = "master"
-  digest = "1:a410cf69f7e4200f9032dec4b8236813debbf41281ee8c9df72d49136281895b"
+  digest = "1:b1eb57add2e577df1b1b07ce97c2e28b54bfd53fa0ca054666d310601128d038"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -571,7 +572,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "8ad439b19e0fb2ded35375e495090c1334011eb9"
+  revision = "7d0127a7474212d658b2b43a776ebb0ac9f10b80"
 
 [[projects]]
   digest = "1:d0ce967403a66635e6b31005cd17ae75c32408a632df63bc4d4e1c20992503f3"
@@ -625,7 +626,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "d93e913c1a5829629e8005c31b45b96a7b143a16"
+  revision = "ae774e9781d20c38931ca8334d1c4eeb4ccb4ae0"
 
 [[projects]]
   branch = "master"
