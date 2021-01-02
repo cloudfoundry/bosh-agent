@@ -153,7 +153,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "b8b153d2e7a24149e7b5cbfef2eff1eacbfa3d1f"
+  revision = "333c696f5345b5e15eb568700ab9c6adac475938"
 
 [[projects]]
   branch = "master"
@@ -219,12 +219,12 @@
   version = "v1.4.9"
 
 [[projects]]
-  digest = "1:fddde6fd7d33141d23cedcfea6197fdb17e867b8791aaa84aab54ae42f25ffbb"
+  digest = "1:556fdfe43fb1628f38719c9c1108dee39662fc15a7254d011085c92a4a7c7590"
   name = "github.com/gofrs/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "abfe1881e60ef34074c1b8d8c63b42565c356ed6"
-  version = "v3.3.0"
+  revision = "4b36aa0ea796d49630bbae624f8f05ab7013af77"
+  version = "v4.0.0"
 
 [[projects]]
   digest = "1:dc984388f49af46e504fb1a57adb644b9152882e88f8fc3160800b7e7dc352b2"
@@ -264,11 +264,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:653085796b580bbe8a516d4ccdac890f57bc568bb1a68da02eefca8d087ea130"
+  digest = "1:07a90c51ed387dfbfbd77cca0d0061be473aee242551ed4a6cb628160abc9f1f"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "0e4e31197428a347842d152773b4cace4645ca25"
+  revision = "edef28d0c8acc7d3bdfaddde8ab27de602cc131b"
 
 [[projects]]
   digest = "1:ebd0081aed1cd0af2f65a362c0ceea985eae9fe72efb28cefb84eca3b98dd3a3"
@@ -560,7 +560,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2a1e2dd6778a65979bc3c2bc878f2b420723489f99efbbd8b1e24972f22f24c7"
+  digest = "1:b75ce38fcfdccabfbd7ce55ace7a5c73de106c9109112d19f2f7f35d84b2e505"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -572,7 +572,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "0d417f6369309be088e227ead8736fb722d759d3"
+  revision = "2d18734c6014bdfc4d7fd7cfc8e0608c9684967b"
 
 [[projects]]
   digest = "1:d0ce967403a66635e6b31005cd17ae75c32408a632df63bc4d4e1c20992503f3"
@@ -626,7 +626,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "2b0845dc783e36ae26d683f4915a5840ef01ab0f"
+  revision = "2dba1e4ea05c87619b17c862f8ae1cb05ac5694a"
 
 [[projects]]
   branch = "master"
