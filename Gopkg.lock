@@ -153,7 +153,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "333c696f5345b5e15eb568700ab9c6adac475938"
+  revision = "ed8dcddc80c2b72441ad3b57bf8707563d556af1"
 
 [[projects]]
   branch = "master"
@@ -264,11 +264,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:07a90c51ed387dfbfbd77cca0d0061be473aee242551ed4a6cb628160abc9f1f"
+  digest = "1:7b319ff0ae6b40ba7252968f43e1a4540fc02d27cf9f1318c8e4b0550c5ad679"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "edef28d0c8acc7d3bdfaddde8ab27de602cc131b"
+  revision = "85223faccf99409308cd169d9608753a95d21083"
 
 [[projects]]
   digest = "1:ebd0081aed1cd0af2f65a362c0ceea985eae9fe72efb28cefb84eca3b98dd3a3"
@@ -560,7 +560,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b75ce38fcfdccabfbd7ce55ace7a5c73de106c9109112d19f2f7f35d84b2e505"
+  digest = "1:30d46deee75142e7bd8b863cd45fb3f9fb82f2a1e268a5c20c88a1ed507adc07"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -572,10 +572,10 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "2d18734c6014bdfc4d7fd7cfc8e0608c9684967b"
+  revision = "0df2131ae363d24eb52316e51d47503aee0642e6"
 
 [[projects]]
-  digest = "1:d0ce967403a66635e6b31005cd17ae75c32408a632df63bc4d4e1c20992503f3"
+  digest = "1:71f4b937710573df214b940f7cc1dc0fc816974db00dba006f7a8a5dbe20c07e"
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -599,12 +599,12 @@
     "unicode/cldr",
   ]
   pruneopts = "NUT"
-  revision = "22f1617af38ed4cd65b3b96e02bab267e560155c"
-  version = "v0.3.4"
+  revision = "75a595aef632b07c6eeaaa805adb6f0f66e4130e"
+  version = "v0.3.5"
 
 [[projects]]
   branch = "master"
-  digest = "1:3c921e62a8f176063a99d9f77eebdbe6b2ac554c947e38a95d4d16e6dc2e1c88"
+  digest = "1:60dd0e82531a77989546786c75f3bb500bd702b754c58d7d72a7434cf11252bd"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -626,7 +626,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "2dba1e4ea05c87619b17c862f8ae1cb05ac5694a"
+  revision = "e2f9c7f1fc8e3456c71ab5b45a8220d3ae8e0aef"
 
 [[projects]]
   branch = "master"
@@ -692,11 +692,11 @@
 
 [[projects]]
   branch = "v3"
-  digest = "1:c9a53b5be2654e3d1d466419bb389371ff3755220ec3cafd43dd8742fb7aebdd"
+  digest = "1:7f943028086d549b7f99ecad153e416e4726538768d663277f3c272f93ffb1c2"
   name = "gopkg.in/yaml.v3"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "eeeca48fe7764f320e4870d231902bf9c1be2c08"
+  revision = "496545a6307b2a7d7a710fd516e5e16e8ab62dbc"
 
 [solve-meta]
   analyzer-name = "dep"
