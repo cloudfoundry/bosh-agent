@@ -200,7 +200,7 @@
   name = "github.com/containerd/cgroups"
   packages = ["stats/v1"]
   pruneopts = "NUT"
-  revision = "4cbc285b33272039927a0b066d3412799db8de14"
+  revision = "8a68de567b68b30602948417a7a8e99ccf00ee9b"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -227,7 +227,7 @@
   version = "v4.0.0"
 
 [[projects]]
-  digest = "1:dc984388f49af46e504fb1a57adb644b9152882e88f8fc3160800b7e7dc352b2"
+  digest = "1:fd9a64a91b13d97a94f78583aaedd0798748cc90f1fd17e23cb558d466da0503"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -235,8 +235,8 @@
     "protoc-gen-gogo/descriptor",
   ]
   pruneopts = "NUT"
-  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
-  version = "v1.3.1"
+  revision = "b03c65ea87cdc3521ede29f62fe3ce239267c1bc"
+  version = "v1.3.2"
 
 [[projects]]
   branch = "master"
@@ -264,11 +264,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7b319ff0ae6b40ba7252968f43e1a4540fc02d27cf9f1318c8e4b0550c5ad679"
+  digest = "1:786617e02f9f656982eb6a7ba023b32d88419b078d506b835621597060c3e00e"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "85223faccf99409308cd169d9608753a95d21083"
+  revision = "b5d0d36c983b13c35a93a356a9d2c14da0a1c3ab"
 
 [[projects]]
   digest = "1:ebd0081aed1cd0af2f65a362c0ceea985eae9fe72efb28cefb84eca3b98dd3a3"
@@ -318,12 +318,12 @@
   version = "v6.0.1"
 
 [[projects]]
-  digest = "1:f734e55e424eb88aff8537206c8284194d9a09b263058e9a347801f4094eab18"
+  digest = "1:e807a55c05f34e8fe5481a90c175b3c5003d362a0fc96b36bd7fc51f35912c22"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "95075d6e1a88d608e5258a054d7f0de9401f255e"
-  version = "v1.4.0"
+  revision = "8ebf2d61a8b4adcce25fc9fc9b76e8452a00672f"
+  version = "v1.4.1"
 
 [[projects]]
   digest = "1:6bae15acc9186e8c6b614d145a8459270587ab398c031cb0cbc49891e2581fe5"
@@ -492,12 +492,12 @@
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:c59bbf7751c26b0fd98789cc8a8bdedc8377a61506537f62874902e597b20fa3"
+  digest = "1:257678dc4f0189515d88387a39364c4f56ea37a632e9cc94e540ab911f0bbb0d"
   name = "github.com/stretchr/testify"
   packages = ["assert"]
   pruneopts = "NUT"
-  revision = "f654a9112bbeac49ca2cd45bfbe11533c4666cf8"
-  version = "v1.6.1"
+  revision = "acba37e5db06f0093b465a7d47822bf13644b66c"
+  version = "v1.7.0"
 
 [[projects]]
   digest = "1:04f1809d18130f9e86460adb996a22887810c3063377d73ca32f0c24580d02af"
@@ -540,8 +540,8 @@
     "semver",
   ]
   pruneopts = "NUT"
-  revision = "3bfbaada29be620417d472f349d55056286b2119"
-  version = "v0.4.0"
+  revision = "6ce8bb3f08e0e47592fe93e007071d86dcf214bb"
+  version = "v0.4.1"
 
 [[projects]]
   branch = "master"
@@ -560,7 +560,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:30d46deee75142e7bd8b863cd45fb3f9fb82f2a1e268a5c20c88a1ed507adc07"
+  digest = "1:dc53d8945f1d6bb9ce347897f05e60d5b1d90c5f321ab0ccfac4d13e18de59c7"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
@@ -572,7 +572,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "0df2131ae363d24eb52316e51d47503aee0642e6"
+  revision = "4bcb84eeeb78d47aae60461dac79349e427b5349"
 
 [[projects]]
   digest = "1:71f4b937710573df214b940f7cc1dc0fc816974db00dba006f7a8a5dbe20c07e"
@@ -604,7 +604,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:60dd0e82531a77989546786c75f3bb500bd702b754c58d7d72a7434cf11252bd"
+  digest = "1:1d2d200c77bc064518e41d24cdadaf8f1bd591ddcfb3af97ac6b46bb9f0c9a79"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -626,7 +626,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "e2f9c7f1fc8e3456c71ab5b45a8220d3ae8e0aef"
+  revision = "e0d201561e39aeaab8136532f2bbe17ae1ef24ff"
 
 [[projects]]
   branch = "master"
