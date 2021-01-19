@@ -153,7 +153,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "ed8dcddc80c2b72441ad3b57bf8707563d556af1"
+  revision = "c508cff11a1366b79ac568bf78b31e454a97f8e0"
 
 [[projects]]
   branch = "master"
@@ -556,7 +556,7 @@
     "proxy",
   ]
   pruneopts = "NUT"
-  revision = "6772e930b67bb09bf22262c7378e7d2f67cf59d1"
+  revision = "5f4716e94777e714bc2fb3e3a44599cb40817aac"
 
 [[projects]]
   branch = "master"
@@ -572,7 +572,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "4bcb84eeeb78d47aae60461dac79349e427b5349"
+  revision = "b64e53b001e413bd5067f36d4e439eded3827374"
 
 [[projects]]
   digest = "1:71f4b937710573df214b940f7cc1dc0fc816974db00dba006f7a8a5dbe20c07e"
@@ -626,7 +626,7 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "e0d201561e39aeaab8136532f2bbe17ae1ef24ff"
+  revision = "a46736d9d96250947e60e5bd784789ab9b40c958"
 
 [[projects]]
   branch = "master"
