@@ -35,6 +35,12 @@ func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, ti
 }
 
 func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Partition) error {
+	_, _, _, err := p.cmdRunner.RunCommand("partprobe", devicePath)
+	if err != nil {
+		p.logger.Error(p.logTag, "Failed to probe existing parition: %s", err)
+		return bosherr.WrapErrorf(err, "Re-reading partition table for `%s'", devicePath)
+	}
+
 	existingPartitions, deviceFullSizeInBytes, err := p.GetPartitions(devicePath)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Getting existing partitions of `%s'", devicePath)

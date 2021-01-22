@@ -80,6 +80,7 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
@@ -141,6 +142,7 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
@@ -191,6 +193,7 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
@@ -243,6 +246,7 @@ var _ = Describe("PartedPartitioner", func() {
 						Expect(err).ToNot(HaveOccurred())
 
 						Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+							[]string{"partprobe", "/dev/sda"},
 							[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 							[]string{"udevadm", "settle"},
 							[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
@@ -292,6 +296,7 @@ var _ = Describe("PartedPartitioner", func() {
 						Expect(err.Error()).To(Equal("'/dev/sda' contains a partition created by bosh. No partitioning is allowed."))
 
 						Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+							[]string{"partprobe", "/dev/sda"},
 							[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 							[]string{"udevadm", "settle"},
 						}))
@@ -330,6 +335,7 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sdf"},
 						[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 						[]string{"parted", "-s", "/dev/sdf", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "3146062495743"},
@@ -368,6 +374,7 @@ var _ = Describe("PartedPartitioner", func() {
 					err := partitioner.Partition("/dev/sdf", partitions)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sdf"},
 						[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 						[]string{"parted", "-s", "/dev/sdf", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "3146062495743"},
@@ -415,6 +422,7 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
@@ -452,6 +460,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 					}))
@@ -481,6 +490,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 					}))
@@ -509,6 +519,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 					}))
@@ -538,6 +549,7 @@ var _ = Describe("PartedPartitioner", func() {
 							Expect(err).ToNot(HaveOccurred())
 
 							Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+								[]string{"partprobe", "/dev/sdf"},
 								[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
 								[]string{"udevadm", "settle"},
 							}))
@@ -568,6 +580,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sdf"},
 						[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 					}))
@@ -576,6 +589,31 @@ var _ = Describe("PartedPartitioner", func() {
 		})
 
 		Context("when getting existing partitions returns an error", func() {
+			Context("when re-reading partition table fails", func() {
+				BeforeEach(func() {
+					fakeCmdRunner.AddCmdResult(
+						"partprobe /dev/sda",
+						fakesys.FakeCmdResult{
+							Stdout: "Some weird error", ExitStatus: 1, Error: errors.New("Some weird error")},
+					)
+				})
+
+				It("throw an error", func() {
+					partitions := []Partition{
+						{SizeInBytes: 8589934592}, // (8GiB)
+						{SizeInBytes: 8589934592}, // (8GiB)
+					}
+
+					err := partitioner.Partition("/dev/sda", partitions)
+					Expect(err).To(HaveOccurred())
+
+					Expect(err.Error()).To(ContainSubstring("Re-reading partition table for `/dev/sda': Some weird error"))
+					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
+					}))
+				})
+			})
+
 			Context("when the first call to parted print fails", func() {
 				BeforeEach(func() {
 					fakeCmdRunner.AddCmdResult(
@@ -596,6 +634,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda': Running parted print: Some weird error"))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"udevadm", "settle"},
 					}))
@@ -625,6 +664,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda': Running parted print: Parted making label: Some weird error"))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
 						[]string{"udevadm", "settle"},
@@ -659,6 +699,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda': Running parted print: Some weird error"))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+						[]string{"partprobe", "/dev/sda"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
 						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
