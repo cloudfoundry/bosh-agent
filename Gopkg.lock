@@ -264,11 +264,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:786617e02f9f656982eb6a7ba023b32d88419b078d506b835621597060c3e00e"
+  digest = "1:e17aae7d62ab4b46021d0a7d9878c1619728798a7f4d728375bef97299142818"
   name = "github.com/google/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "b5d0d36c983b13c35a93a356a9d2c14da0a1c3ab"
+  revision = "bfb86fa49a73e4194d93bea18d7acfe3694438ce"
 
 [[projects]]
   digest = "1:ebd0081aed1cd0af2f65a362c0ceea985eae9fe72efb28cefb84eca3b98dd3a3"
@@ -560,10 +560,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dc53d8945f1d6bb9ce347897f05e60d5b1d90c5f321ab0ccfac4d13e18de59c7"
+  digest = "1:2387f0b8fe341725241bfe59611cbcdae71cdb33cbc7c37f162ed0c94eb6bcbf"
   name = "golang.org/x/sys"
   packages = [
     "cpu",
+    "execabs",
     "internal/unsafeheader",
     "unix",
     "windows",
@@ -572,7 +573,7 @@
     "windows/svc/mgr",
   ]
   pruneopts = "NUT"
-  revision = "b64e53b001e413bd5067f36d4e439eded3827374"
+  revision = "a8b976e07c7b0ff014c8da1d5352077edaf678d4"
 
 [[projects]]
   digest = "1:71f4b937710573df214b940f7cc1dc0fc816974db00dba006f7a8a5dbe20c07e"
@@ -603,8 +604,7 @@
   version = "v0.3.5"
 
 [[projects]]
-  branch = "master"
-  digest = "1:1d2d200c77bc064518e41d24cdadaf8f1bd591ddcfb3af97ac6b46bb9f0c9a79"
+  digest = "1:e0b738f0390478cbb64d048e563382d65a95ddc84c7cba34f2e70933c595c786"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -626,7 +626,8 @@
     "internal/typesinternal",
   ]
   pruneopts = "NUT"
-  revision = "a46736d9d96250947e60e5bd784789ab9b40c958"
+  revision = "fe37c9e135b934191089b245ac29325091462508"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
