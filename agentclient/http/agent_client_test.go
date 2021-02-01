@@ -88,7 +88,7 @@ var _ = Describe("AgentClient", func() {
 
 					err := agentClient.Stop()
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError(ContainSubstring("Post %s/agent: EOF", server.URL())))
+					Expect(err).To(MatchError(ContainSubstring("Post \"%s/agent\": EOF", server.URL())))
 					Expect(server.ReceivedRequests()).To(HaveLen(4))
 				})
 			})
@@ -113,7 +113,7 @@ var _ = Describe("AgentClient", func() {
 
 					err := agentClient.Stop()
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError(ContainSubstring("Post %s/agent: EOF", server.URL())))
+					Expect(err).To(MatchError(ContainSubstring("Post \"%s/agent\": EOF", server.URL())))
 					Expect(server.ReceivedRequests()).To(HaveLen(7))
 				})
 			})
@@ -565,7 +565,7 @@ var _ = Describe("AgentClient", func() {
 			It("returns the error", func() {
 				_, err := agentClient.GetState()
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(ContainSubstring("Post %s/agent: EOF", server.URL())))
+				Expect(err).To(MatchError(ContainSubstring("Post \"%s/agent\": EOF", server.URL())))
 				Expect(server.ReceivedRequests()).To(HaveLen(3))
 			})
 		})
@@ -961,7 +961,7 @@ var _ = Describe("AgentClient", func() {
 
 			err := agentClient.RunScript("the-script", map[string]interface{}{})
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(ContainSubstring("Post %s/agent: EOF", server.URL())))
+			Expect(err).To(MatchError(ContainSubstring("Post \"%s/agent\": EOF", server.URL())))
 		})
 
 		It("does not return an error if the error is 'unknown message'", func() {
