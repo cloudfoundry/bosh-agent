@@ -1,5 +1,19 @@
 VAGRANTFILE_API_VERSION = '2'
 
+# Fix for "Undefined HashMap method `except`"
+# https://github.com/mitchellh/vagrant-aws/issues/566
+# 02/01/2021
+class Hash
+  def slice(*keep_keys)
+    h = {}
+    keep_keys.each { |key| h[key] = fetch(key) if has_key?(key) }
+    h
+  end unless Hash.method_defined?(:slice)
+  def except(*less_keys)
+    slice(*keys - less_keys)
+  end unless Hash.method_defined?(:except)
+end
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # trusty (latest), virtualbox only
   config.vm.box = 'ubuntu/trusty64'
