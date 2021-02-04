@@ -1247,7 +1247,7 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 
 	// Golang does not implement a file copy that would allow us to preserve dates...
 	// So we have to shell out to tar to perform the copy instead of delegating to the FileSystem
-	tarCopy := fmt.Sprintf("(tar -C %s -cf - .) | (tar -C %s -xpf -)", fromMountPoint, toMountPoint)
+	tarCopy := fmt.Sprintf("(tar -C %s --xattrs -cf - .) | (tar -C %s --xattrs -xpf -)", fromMountPoint, toMountPoint)
 	_, _, _, err = p.cmdRunner.RunCommand("sh", "-c", tarCopy)
 	if err != nil {
 		err = bosherr.WrapError(err, "Copying files from old disk to new disk")
