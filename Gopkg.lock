@@ -153,7 +153,7 @@
     "work",
   ]
   pruneopts = "NUT"
-  revision = "f3833792f5354be764bb8e58906e3e651be45854"
+  revision = "910bbc6b59f7a1d2234612362f81d40a09f0e585"
 
 [[projects]]
   branch = "master"
@@ -378,7 +378,7 @@
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 
 [[projects]]
-  digest = "1:1f3230329bc193cc4ce7c622998afc3d311fa11f78b9efd54fbdecf6e8bef637"
+  digest = "1:85d886fe78a7da9d756d4648297c3b2ea770c9e5c728eb28d0191a63c2275bda"
   name = "github.com/nxadm/tail"
   packages = [
     ".",
@@ -388,11 +388,11 @@
     "winfile",
   ]
   pruneopts = "NUT"
-  revision = "ed4934787418681691173f6f7aa0499582e7611a"
-  version = "v1.4.6"
+  revision = "abad231d8d07ef91e09cd4c4c457cac35ed3bbb9"
+  version = "v1.4.8"
 
 [[projects]]
-  digest = "1:ee18304347399cf8810d5079ff61465c92a925342f21f6d617032952ba02e04e"
+  digest = "1:57570c4fd3519afb4eec9c878fdfa0a789bd2785df47f4192009fdabe06f9b3b"
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
@@ -402,6 +402,7 @@
     "ginkgo/convert",
     "ginkgo/interrupthandler",
     "ginkgo/nodot",
+    "ginkgo/outline",
     "ginkgo/testrunner",
     "ginkgo/testsuite",
     "ginkgo/watch",
@@ -424,11 +425,11 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "55c858784e51c26077949c81b6defb6b97b76944"
-  version = "v1.14.2"
+  revision = "c75f46eb0a6e1e3de5a78dd0eb4e2492d4ec5829"
+  version = "v1.15.0"
 
 [[projects]]
-  digest = "1:d1a4158009d329bdd236ab98789a598c4e0b2595d60f132fdebacaa73c0b1d13"
+  digest = "1:ad328785556c11b848d6245e5e4ea7ec392924d69a83f39a76e19594a94bc322"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
@@ -448,8 +449,8 @@
     "types",
   ]
   pruneopts = "NUT"
-  revision = "f9a2b5d71f6c392d3169b2f53d4c3531062044c4"
-  version = "v1.10.4"
+  revision = "3e036b855ae3e332843aff25edf11a0a37033156"
+  version = "v1.10.5"
 
 [[projects]]
   branch = "master"
@@ -604,10 +605,11 @@
   version = "v0.3.5"
 
 [[projects]]
-  digest = "1:e0b738f0390478cbb64d048e563382d65a95ddc84c7cba34f2e70933c595c786"
+  digest = "1:dc1659fa8c883e4a42d3554cc03aabdd714d3139c7cecb38c34da2cb59e34663"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
+    "go/ast/inspector",
     "go/gcexportdata",
     "go/internal/gcimporter",
     "go/internal/packagesdriver",
