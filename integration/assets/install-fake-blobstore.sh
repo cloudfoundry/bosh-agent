@@ -17,4 +17,6 @@ if [ $MINOR -lt 5 ]; then
   exit 1
 fi
 
-$bin/go build -o $base/tmp/fake-blobstore github.com/cloudfoundry/bosh-agent/integration/fake-blobstore
+pushd ${base}
+  $bin/go build -o $base/tmp/fake-blobstore github.com/cloudfoundry/bosh-agent/integration/fake-blobstore
+popd
