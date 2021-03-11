@@ -41,9 +41,6 @@ vagrant up "$@"
 
 vagrant ssh-config > $base/tmp/vagrant-config
 
-echo -e "\n Installing ginkgo..."
-$bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
-
 echo -e "\n Rebuilding agent..."
 vagrant rsync
 vagrant ssh -- "sudo /home/vagrant/go/src/github.com/cloudfoundry/bosh-agent/integration/assets/install-agent.sh"
@@ -55,6 +52,6 @@ focus=""
 if [ ! -z "$BOSH_AGENT_INTEGRATION_FOCUS" ]; then
   focus="-focus=$BOSH_AGENT_INTEGRATION_FOCUS"
 fi
-$bin/env ginkgo "$focus" -race -trace integration
+$bin/env go run github.com/onsi/ginkgo/ginkgo "$focus" -race -trace integration
 
 exit 0

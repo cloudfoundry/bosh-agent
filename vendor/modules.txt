@@ -1,0 +1,270 @@
+# code.cloudfoundry.org/clock v1.0.0
+## explicit
+code.cloudfoundry.org/clock
+code.cloudfoundry.org/clock/fakeclock
+# code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3
+## explicit
+code.cloudfoundry.org/tlsconfig
+# github.com/Azure/go-ntlmssp v0.0.0-20180810175552-4a21cbd618b4
+github.com/Azure/go-ntlmssp
+# github.com/ChrisTrenkamp/goxpath v0.0.0-20190607011252-c5096ec8773d
+## explicit
+github.com/ChrisTrenkamp/goxpath
+github.com/ChrisTrenkamp/goxpath/internal/execxp
+github.com/ChrisTrenkamp/goxpath/internal/execxp/findutil
+github.com/ChrisTrenkamp/goxpath/internal/execxp/intfns
+github.com/ChrisTrenkamp/goxpath/internal/xsort
+github.com/ChrisTrenkamp/goxpath/lexer
+github.com/ChrisTrenkamp/goxpath/parser
+github.com/ChrisTrenkamp/goxpath/parser/pathexpr
+github.com/ChrisTrenkamp/goxpath/tree
+github.com/ChrisTrenkamp/goxpath/tree/xmltree
+github.com/ChrisTrenkamp/goxpath/tree/xmltree/xmlbuilder
+github.com/ChrisTrenkamp/goxpath/tree/xmltree/xmlele
+github.com/ChrisTrenkamp/goxpath/tree/xmltree/xmlnode
+github.com/ChrisTrenkamp/goxpath/xconst
+# github.com/Microsoft/go-winio v0.4.14
+## explicit
+github.com/Microsoft/go-winio
+github.com/Microsoft/go-winio/pkg/guid
+# github.com/Microsoft/hcsshim v0.8.6
+## explicit
+github.com/Microsoft/hcsshim
+github.com/Microsoft/hcsshim/internal/guestrequest
+github.com/Microsoft/hcsshim/internal/guid
+github.com/Microsoft/hcsshim/internal/hcs
+github.com/Microsoft/hcsshim/internal/hcserror
+github.com/Microsoft/hcsshim/internal/hns
+github.com/Microsoft/hcsshim/internal/interop
+github.com/Microsoft/hcsshim/internal/logfields
+github.com/Microsoft/hcsshim/internal/longpath
+github.com/Microsoft/hcsshim/internal/mergemaps
+github.com/Microsoft/hcsshim/internal/safefile
+github.com/Microsoft/hcsshim/internal/schema1
+github.com/Microsoft/hcsshim/internal/schema2
+github.com/Microsoft/hcsshim/internal/timeout
+github.com/Microsoft/hcsshim/internal/wclayer
+# github.com/bmatcuk/doublestar v1.1.5
+## explicit
+github.com/bmatcuk/doublestar
+# github.com/charlievieth/fs v0.0.0-20170613215519-7dc373669fa1
+## explicit
+github.com/charlievieth/fs
+# github.com/cloudfoundry/bosh-davcli v0.0.44
+## explicit
+github.com/cloudfoundry/bosh-davcli/client
+github.com/cloudfoundry/bosh-davcli/config
+github.com/cloudfoundry/bosh-davcli/signer
+# github.com/cloudfoundry/bosh-init v0.0.103
+## explicit
+github.com/cloudfoundry/bosh-init/registry
+# github.com/cloudfoundry/bosh-utils v0.0.0-20200429181937-96357f638e8c
+## explicit
+github.com/cloudfoundry/bosh-utils/assert
+github.com/cloudfoundry/bosh-utils/blobstore
+github.com/cloudfoundry/bosh-utils/blobstore/fakes
+github.com/cloudfoundry/bosh-utils/crypto
+github.com/cloudfoundry/bosh-utils/errors
+github.com/cloudfoundry/bosh-utils/fileutil
+github.com/cloudfoundry/bosh-utils/fileutil/fakes
+github.com/cloudfoundry/bosh-utils/httpclient
+github.com/cloudfoundry/bosh-utils/logger
+github.com/cloudfoundry/bosh-utils/logger/loggerfakes
+github.com/cloudfoundry/bosh-utils/retrystrategy
+github.com/cloudfoundry/bosh-utils/retrystrategy/fakes
+github.com/cloudfoundry/bosh-utils/system
+github.com/cloudfoundry/bosh-utils/system/fakes
+github.com/cloudfoundry/bosh-utils/uuid
+github.com/cloudfoundry/bosh-utils/uuid/fakes
+github.com/cloudfoundry/bosh-utils/work
+# github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
+## explicit
+github.com/cloudfoundry/go-socks5
+# github.com/cloudfoundry/gosigar v1.1.0
+## explicit
+github.com/cloudfoundry/gosigar
+github.com/cloudfoundry/gosigar/fakes
+github.com/cloudfoundry/gosigar/sys/windows
+# github.com/cloudfoundry/socks5-proxy v0.2.0
+## explicit
+github.com/cloudfoundry/socks5-proxy
+# github.com/cloudfoundry/yagnats v0.0.0-20191003180638-5cab3e099974
+## explicit
+github.com/cloudfoundry/yagnats
+github.com/cloudfoundry/yagnats/fakeyagnats
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/gofrs/uuid v3.2.0+incompatible
+## explicit
+github.com/gofrs/uuid
+# github.com/golang/mock v1.3.1-0.20190508161146-9fa652df1129
+## explicit
+github.com/golang/mock/gomock
+# github.com/golang/protobuf v1.3.2
+## explicit
+github.com/golang/protobuf/proto
+# github.com/google/go-cmp v0.5.5
+## explicit
+# github.com/google/uuid v1.1.2-0.20190416172445-c2e93f3ae59f
+## explicit
+github.com/google/uuid
+# github.com/hpcloud/tail v1.0.0
+github.com/hpcloud/tail
+github.com/hpcloud/tail/ratelimiter
+github.com/hpcloud/tail/util
+github.com/hpcloud/tail/watch
+github.com/hpcloud/tail/winfile
+# github.com/jpillora/backoff v0.0.0-20170918002102-8eab2debe79d
+## explicit
+github.com/jpillora/backoff
+# github.com/kevinburke/ssh_config v0.0.0-20190724205821-6cfae18c12b8
+## explicit
+github.com/kevinburke/ssh_config
+# github.com/konsorten/go-windows-terminal-sequences v1.0.2
+## explicit
+github.com/konsorten/go-windows-terminal-sequences
+# github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786
+## explicit
+github.com/masterzen/simplexml/dom
+# github.com/masterzen/winrm v0.0.0-20190308153735-1d17eaf15943
+## explicit
+github.com/masterzen/winrm
+github.com/masterzen/winrm/soap
+# github.com/mitchellh/mapstructure v1.1.2
+## explicit
+github.com/mitchellh/mapstructure
+# github.com/nats-io/nats.go v1.8.1
+## explicit
+github.com/nats-io/nats.go
+github.com/nats-io/nats.go/encoders/builtin
+github.com/nats-io/nats.go/util
+# github.com/nats-io/nkeys v0.1.0
+## explicit
+github.com/nats-io/nkeys
+# github.com/nats-io/nuid v1.0.1
+github.com/nats-io/nuid
+# github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
+## explicit
+github.com/nu7hatch/gouuid
+# github.com/onsi/ginkgo v1.10.2
+## explicit
+github.com/onsi/ginkgo
+github.com/onsi/ginkgo/config
+github.com/onsi/ginkgo/extensions/table
+github.com/onsi/ginkgo/ginkgo
+github.com/onsi/ginkgo/ginkgo/convert
+github.com/onsi/ginkgo/ginkgo/interrupthandler
+github.com/onsi/ginkgo/ginkgo/nodot
+github.com/onsi/ginkgo/ginkgo/testrunner
+github.com/onsi/ginkgo/ginkgo/testsuite
+github.com/onsi/ginkgo/ginkgo/watch
+github.com/onsi/ginkgo/internal/codelocation
+github.com/onsi/ginkgo/internal/containernode
+github.com/onsi/ginkgo/internal/failer
+github.com/onsi/ginkgo/internal/leafnodes
+github.com/onsi/ginkgo/internal/remote
+github.com/onsi/ginkgo/internal/spec
+github.com/onsi/ginkgo/internal/spec_iterator
+github.com/onsi/ginkgo/internal/specrunner
+github.com/onsi/ginkgo/internal/suite
+github.com/onsi/ginkgo/internal/testingtproxy
+github.com/onsi/ginkgo/internal/writer
+github.com/onsi/ginkgo/reporters
+github.com/onsi/ginkgo/reporters/stenographer
+github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
+github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
+github.com/onsi/ginkgo/types
+# github.com/onsi/gomega v1.7.0
+## explicit
+github.com/onsi/gomega
+github.com/onsi/gomega/format
+github.com/onsi/gomega/gbytes
+github.com/onsi/gomega/gexec
+github.com/onsi/gomega/ghttp
+github.com/onsi/gomega/internal/assertion
+github.com/onsi/gomega/internal/asyncassertion
+github.com/onsi/gomega/internal/oraclematcher
+github.com/onsi/gomega/internal/testingtsupport
+github.com/onsi/gomega/matchers
+github.com/onsi/gomega/matchers/support/goraph/bipartitegraph
+github.com/onsi/gomega/matchers/support/goraph/edge
+github.com/onsi/gomega/matchers/support/goraph/node
+github.com/onsi/gomega/matchers/support/goraph/util
+github.com/onsi/gomega/types
+# github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20
+## explicit
+github.com/pivotal-cf/paraphernalia/secure/tlsconfig
+# github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
+## explicit
+github.com/pivotal/go-smtpd/smtpd
+# github.com/pkg/errors v0.8.1
+## explicit
+github.com/pkg/errors
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/sirupsen/logrus v1.4.2
+## explicit
+github.com/sirupsen/logrus
+# github.com/stretchr/testify v1.4.0
+## explicit
+github.com/stretchr/testify/assert
+# github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
+## explicit
+# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+## explicit
+golang.org/x/crypto/blowfish
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/internal/subtle
+golang.org/x/crypto/md4
+golang.org/x/crypto/poly1305
+golang.org/x/crypto/ssh
+golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
+# golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
+## explicit
+# golang.org/x/net v0.0.0-20201021035429-f5854403a974
+## explicit
+golang.org/x/net/context
+golang.org/x/net/html
+golang.org/x/net/html/atom
+golang.org/x/net/html/charset
+golang.org/x/net/internal/socks
+golang.org/x/net/proxy
+# golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4
+## explicit
+golang.org/x/sys/cpu
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+golang.org/x/sys/windows/registry
+golang.org/x/sys/windows/svc
+golang.org/x/sys/windows/svc/mgr
+# golang.org/x/text v0.3.3
+golang.org/x/text/encoding
+golang.org/x/text/encoding/charmap
+golang.org/x/text/encoding/htmlindex
+golang.org/x/text/encoding/internal
+golang.org/x/text/encoding/internal/identifier
+golang.org/x/text/encoding/japanese
+golang.org/x/text/encoding/korean
+golang.org/x/text/encoding/simplifiedchinese
+golang.org/x/text/encoding/traditionalchinese
+golang.org/x/text/encoding/unicode
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/tag
+golang.org/x/text/internal/utf8internal
+golang.org/x/text/language
+golang.org/x/text/runes
+golang.org/x/text/transform
+# golang.org/x/tools v0.1.0
+## explicit
+# gopkg.in/fsnotify.v1 v1.4.7
+gopkg.in/fsnotify.v1
+# gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
+gopkg.in/tomb.v1
+# gopkg.in/yaml.v2 v2.2.4
+## explicit
+gopkg.in/yaml.v2

@@ -44,14 +44,11 @@ export PRIVATE_KEY_PATH=$tmpfile
 echo -e "\n Running agent integration tests..."
 $bin/env go clean -r github.com/cloudfoundry/bosh-agent/
 
-echo -e "\n Installing ginkgo..."
-$bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
-
 echo -e "\n Running tests..."
 focus=""
 if [ ! -z "$BOSH_AGENT_INTEGRATION_FOCUS" ]; then
   focus="-focus=$BOSH_AGENT_INTEGRATION_FOCUS"
 fi
-bin/env ginkgo "$focus" -v -race -trace integration/windows/
+bin/env go run github.com/onsi/ginkgo/ginkgo "$focus" -v -race -trace integration/windows/
 
 exit 0

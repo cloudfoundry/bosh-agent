@@ -32,9 +32,6 @@ for i in `ls -1` ; do
   fi
 done
 
-echo -e "\n Installing ginkgo..."
-$bin/go install ./vendor/github.com/onsi/ginkgo/ginkgo
-
 echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk/errcheck/issues/75 is resolved"
 # $bin/test-unhandled-errors
 
@@ -45,7 +42,7 @@ echo -e "\n Running build script to confirm everything compiles..."
 $bin/build
 
 echo -e "\n Testing packages..."
-$bin/env ginkgo $WATCH -r $race -skipPackage="integration,vendor" $dir
+$bin/env go run github.com/onsi/ginkgo/ginkgo $WATCH -r $race -skipPackage="integration,vendor" $dir
 
 if [[ ! "$(go version)" =~ go1.8 ]]; then
   echo -e "\n Checking with golint..."
