@@ -17,4 +17,6 @@ if [ $MINOR -lt 5 ]; then
   exit 1
 fi
 
-$bin/go build -o $base/tmp/fake-registry github.com/cloudfoundry/bosh-agent/integration/fake-registry
+pushd ${base}
+  $bin/go build -o $base/tmp/fake-registry github.com/cloudfoundry/bosh-agent/integration/fake-registry
+popd
