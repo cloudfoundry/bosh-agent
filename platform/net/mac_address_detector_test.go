@@ -56,7 +56,7 @@ var _ = Describe("MacAddressDetectorLinux", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		macAddressDetector = NewMacAddressDetector(fs)
+		macAddressDetector = NewLinuxMacAddressDetector(fs)
 	})
 
 	Describe("DetectMacAddresses", func() {

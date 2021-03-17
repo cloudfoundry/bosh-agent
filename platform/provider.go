@@ -81,14 +81,14 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	interfaceAddressesProvider := boship.NewSystemInterfaceAddressesProvider()
 	dnsValidator := boshnet.NewDNSValidator(fs)
 	kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
-	macAddressDetector := boshnet.NewMacAddressDetector(fs)
+	macAddressDetector := boshnet.NewLinuxMacAddressDetector(fs)
 
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesProvider, dnsValidator, arping, kernelIPv6, logger)
 
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
 		interfaceConfigurationCreator,
-		boshnet.NewMacAddressDetector(nil),
+		boshnet.NewWindowsMacAddressDetector(),
 		logger,
 		clock,
 		fs,

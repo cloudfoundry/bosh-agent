@@ -1,14 +1,19 @@
-// +build !windows
-
 package net
 
 import (
+	gonet "net"
 	"path"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
+
+//go:generate counterfeiter . MACAddressDetector
+
+type MACAddressDetector interface {
+	DetectMacAddresses() (map[string]string, error)
+}
 
 const (
 	ifaliasPrefix = "bosh-interface"
@@ -18,10 +23,16 @@ type linuxMacAddressDetector struct {
 	fs boshsys.FileSystem
 }
 
-func NewMacAddressDetector(fs boshsys.FileSystem) MACAddressDetector {
+type windowsMacAddressDetector struct{}
+
+func NewLinuxMacAddressDetector(fs boshsys.FileSystem) MACAddressDetector {
 	return linuxMacAddressDetector{
 		fs: fs,
 	}
+}
+
+func NewWindowsMacAddressDetector() MACAddressDetector {
+	return windowsMacAddressDetector{}
 }
 
 func (d linuxMacAddressDetector) DetectMacAddresses() (map[string]string, error) {
@@ -61,4 +72,16 @@ func (d linuxMacAddressDetector) DetectMacAddresses() (map[string]string, error)
 	}
 
 	return addresses, nil
+}
+
+func (d windowsMacAddressDetector) DetectMacAddresses() (map[string]string, error) {
+	ifs, err := gonet.Interfaces()
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Detecting Mac Addresses")
+	}
+	macs := make(map[string]string, len(ifs))
+	for _, f := range ifs {
+		macs[f.HardwareAddr.String()] = f.Name
+	}
+	return macs, nil
 }
