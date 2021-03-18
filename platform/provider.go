@@ -1,6 +1,7 @@
 package platform
 
 import (
+	gonet "net"
 	"time"
 
 	"code.cloudfoundry.org/clock"
@@ -88,7 +89,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,
 		interfaceConfigurationCreator,
-		boshnet.NewWindowsMacAddressDetector(),
+		boshnet.NewWindowsMacAddressDetector(runner, gonet.Interfaces),
 		logger,
 		clock,
 		fs,
