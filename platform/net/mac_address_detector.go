@@ -1,6 +1,7 @@
 package net
 
 import (
+	"encoding/json"
 	gonet "net"
 	"path"
 	"strings"
@@ -23,7 +24,15 @@ type linuxMacAddressDetector struct {
 	fs boshsys.FileSystem
 }
 
-type windowsMacAddressDetector struct{}
+type windowsMacAddressDetector struct {
+	interfacesFunction func() ([]gonet.Interface, error)
+	runner             boshsys.CmdRunner
+}
+
+type netAdapter struct {
+	Name       string
+	MacAddress string
+}
 
 func NewLinuxMacAddressDetector(fs boshsys.FileSystem) MACAddressDetector {
 	return linuxMacAddressDetector{
@@ -31,8 +40,11 @@ func NewLinuxMacAddressDetector(fs boshsys.FileSystem) MACAddressDetector {
 	}
 }
 
-func NewWindowsMacAddressDetector() MACAddressDetector {
-	return windowsMacAddressDetector{}
+func NewWindowsMacAddressDetector(runner boshsys.CmdRunner, interfacesFunction func() ([]gonet.Interface, error)) MACAddressDetector {
+	return windowsMacAddressDetector{
+		interfacesFunction: interfacesFunction,
+		runner:             runner,
+	}
 }
 
 func (d linuxMacAddressDetector) DetectMacAddresses() (map[string]string, error) {
@@ -75,13 +87,35 @@ func (d linuxMacAddressDetector) DetectMacAddresses() (map[string]string, error)
 }
 
 func (d windowsMacAddressDetector) DetectMacAddresses() (map[string]string, error) {
-	ifs, err := gonet.Interfaces()
+	ifs, err := d.interfacesFunction()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Detecting Mac Addresses")
 	}
 	macs := make(map[string]string, len(ifs))
+
+	var netAdapters []netAdapter
+	stdout, _, _, _ := d.runner.RunCommand("powershell -Command Get-NetAdapter | Select MacAddress,Name | ConvertTo-Json")
+	err = json.Unmarshal([]byte(stdout), &netAdapters)
+	if err != nil {
+		var singularNetAdapter netAdapter
+		json.Unmarshal([]byte(stdout), &singularNetAdapter)
+		netAdapters = append(netAdapters, singularNetAdapter)
+	}
+
 	for _, f := range ifs {
-		macs[f.HardwareAddr.String()] = f.Name
+		if adapterVisible(netAdapters, f.HardwareAddr.String(), f.Name) {
+			macs[f.HardwareAddr.String()] = f.Name
+		}
 	}
 	return macs, nil
+}
+
+func adapterVisible(netAdapters []netAdapter, macAddress string, adapterName string) bool {
+	for _, adapter := range netAdapters {
+		adapterMac, _ := gonet.ParseMAC(adapter.MacAddress)
+		if adapter.Name == adapterName && adapterMac.String() == macAddress {
+			return true
+		}
+	}
+	return false
 }
