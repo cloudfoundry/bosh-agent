@@ -94,7 +94,7 @@ func (d windowsMacAddressDetector) DetectMacAddresses() (map[string]string, erro
 	macs := make(map[string]string, len(ifs))
 
 	var netAdapters []netAdapter
-	stdout, stderr, _, err := d.runner.RunCommand("powershell -Command Get-NetAdapter | Select MacAddress,Name | ConvertTo-Json")
+	stdout, stderr, _, err := d.runner.RunCommand("powershell", "-Command", "Get-NetAdapter | Select MacAddress,Name | ConvertTo-Json")
 	if err != nil {
 		return nil, bosherr.WrapErrorf(err, "Getting visible adapters: %s", stderr)
 	}
