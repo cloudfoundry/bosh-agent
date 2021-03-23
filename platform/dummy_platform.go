@@ -331,8 +331,8 @@ func (p dummyPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSetti
 	return true, nil
 }
 
-func (p dummyPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
-	return "/dev/sdb"
+func (p dummyPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error) {
+	return "/dev/sdb", nil
 }
 
 func (p dummyPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {

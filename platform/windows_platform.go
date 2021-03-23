@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -606,10 +607,10 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 	return
 }
 
-func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string) {
+func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string, err error) {
 	p.logger.Debug("WindowsPlatform", "Identifying ephemeral disk path, diskSettings.Path: `%s`", diskSettings.Path)
 
-	if diskSettings.Path == "" && p.options.Linux.CreatePartitionIfNoEphemeralDisk {
+	if p.options.Linux.CreatePartitionIfNoEphemeralDisk {
 		diskPath = "0"
 	}
 
@@ -623,11 +624,24 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 			lastChar := diskSettings.Path[len(diskSettings.Path)-1:]
 			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, byte(lastChar[0])))
 		}
+	} else if diskSettings.DeviceID != "" {
+		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell", "-Command", fmt.Sprintf("Get-Disk -UniqueId %s | Select Number | ConvertTo-Json", diskSettings.DeviceID))
+		if err != nil {
+			return "", bosherr.WrapErrorf(err, "Translating disk ID to disk number: %s: %s", err.Error(), stderr)
+		}
+		var diskNumberResponse struct {
+			Number json.Number
+		}
+		err = json.Unmarshal([]byte(stdout), &diskNumberResponse)
+		if err != nil {
+			return "", bosherr.WrapError(err, "Translating disk ID to disk number")
+		}
+		diskPath = string(diskNumberResponse.Number)
 	}
 
 	p.logger.Debug("WindowsPlatform", "Identified Disk Path as `%s`", diskPath)
 
-	return diskPath
+	return diskPath, nil
 }
 
 func (p WindowsPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {

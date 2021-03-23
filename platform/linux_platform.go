@@ -1208,13 +1208,13 @@ func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bo
 	return p.diskManager.GetMounter().Unmount(realPath)
 }
 
-func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string {
+func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error) {
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
-		return ""
+		return "", nil
 	}
 
-	return realPath
+	return realPath, nil
 }
 
 func (p linux) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error) {

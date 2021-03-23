@@ -104,7 +104,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up raw ephemeral disk")
 	}
 
-	ephemeralDiskPath := boot.platform.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
+	ephemeralDiskPath, err := boot.platform.GetEphemeralDiskPath(settings.EphemeralDiskSettings())
+	if err != nil {
+		return bosherr.WrapError(err, "Getting ephemeral disk path")
+	}
 	desiredSwapSizeInBytes := settings.Env.GetSwapSizeInBytes()
 	if err = boot.platform.SetupEphemeralDiskWithPath(ephemeralDiskPath, desiredSwapSizeInBytes, settings.AgentID); err != nil {
 		return bosherr.WrapError(err, "Setting up ephemeral disk")

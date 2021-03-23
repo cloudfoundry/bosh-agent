@@ -75,7 +75,7 @@ var _ = Describe("bootstrap", func() {
 
 			fileSystem = fakesys.NewFakeFileSystem()
 			platform.GetFsReturns(fileSystem)
-			platform.GetEphemeralDiskPathReturns(ephemeralDiskPath)
+			platform.GetEphemeralDiskPathReturns(ephemeralDiskPath, nil)
 
 			specService.Spec = applyspec.V1ApplySpec{
 				RenderedTemplatesArchiveSpec: &applyspec.RenderedTemplatesArchiveSpec{},
@@ -285,6 +285,18 @@ var _ = Describe("bootstrap", func() {
 				VolumeID: "fake-ephemeral-disk-setting",
 				Path:     "fake-ephemeral-disk-setting",
 			}))
+		})
+
+		Context("when determining the ephemeral disk path fails", func() {
+			BeforeEach(func() {
+				platform.GetEphemeralDiskPathReturns("", errors.New("fake-get-ephemeral-disk-path-err"))
+			})
+
+			It("returns the error", func() {
+				err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-get-ephemeral-disk-path-err"))
+			})
 		})
 
 		Context("when setting up the ephemeral disk fails", func() {

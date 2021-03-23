@@ -429,7 +429,8 @@ var _ = Describe("WindowsPlatform", func() {
 
 	Describe("GetEphemeralDiskPath", func() {
 		It("returns empty string when disk settings path is empty", func() {
-			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+			Expect(err).NotTo(HaveOccurred())
 			Expect(diskPath).To(Equal(""))
 		})
 
@@ -454,18 +455,93 @@ var _ = Describe("WindowsPlatform", func() {
 				diskManager,
 			)
 
-			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+			Expect(err).NotTo(HaveOccurred())
 			Expect(diskPath).To(Equal("0"))
 		})
 
+		It("returns the disk number resolved from ID when disk settings path is empty and CreatePartitionIfNoEphemeralDisk is true", func() {
+			platform = NewWindowsPlatform(
+				collector,
+				fs,
+				cmdRunner,
+				dirProvider,
+				netManager,
+				certManager,
+				devicePathResolver,
+				Options{
+					Linux: LinuxOptions{
+						CreatePartitionIfNoEphemeralDisk: true,
+					},
+				},
+				logger,
+				fakeDefaultNetworkResolver,
+				auditLogger,
+				fakeUUIDGenerator,
+				diskManager,
+			)
+			cmdRunner.AddCmdResult(
+				"powershell -Command Get-Disk -UniqueId f0015401d | Select Number | ConvertTo-Json",
+				fakesys.FakeCmdResult{Stdout: `{
+					"Number": 42
+			  }`},
+			)
+
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "f0015401d"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diskPath).To(Equal("42"))
+		})
+
 		It("return 1 when disk settings path is /dev/sdb", func() {
-			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "/dev/sdb"})
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "/dev/sdb"})
+			Expect(err).NotTo(HaveOccurred())
 			Expect(diskPath).To(Equal("1"))
 		})
 
 		It("returns 2 when disk settings path is /dev/sdc", func() {
-			diskPath := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "/dev/sdc"})
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "/dev/sdc"})
+			Expect(err).NotTo(HaveOccurred())
 			Expect(diskPath).To(Equal("2"))
+		})
+
+		It("returns the disk number resolved from Get-Disk when disk settings is passed by id", func() {
+			cmdRunner.AddCmdResult(
+				"powershell -Command Get-Disk -UniqueId c00101d0d00d | Select Number | ConvertTo-Json",
+				fakesys.FakeCmdResult{Stdout: `{
+					"Number": 42
+			  }`},
+			)
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "c00101d0d00d"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diskPath).To(Equal("42"))
+		})
+
+		It("returns an error if executing Get-Disk fails", func() {
+			cmdRunner.AddCmdResult(
+				"powershell -Command Get-Disk -UniqueId c00101d0d00d | Select Number | ConvertTo-Json",
+				fakesys.FakeCmdResult{Stderr: `commands are hard`, Error: errors.New("running is hard")},
+			)
+			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "c00101d0d00d"})
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(ContainSubstring("Translating disk ID to disk number")))
+			Expect(err).To(MatchError(ContainSubstring("running is hard")))
+			Expect(err).To(MatchError(ContainSubstring("commands are hard")))
+		})
+
+		It("returns an error if Get-Disk does not return a marshallable JSON response", func() {
+			cmdRunner.AddCmdResult(
+				"powershell -Command Get-Disk -UniqueId c00101d0d00d | Select Number | ConvertTo-Json",
+				fakesys.FakeCmdResult{Stdout: "aklsjdfh"},
+			)
+			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "c00101d0d00d"})
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(ContainSubstring("Translating disk ID to disk number")))
+		})
+
+		It("always returns the path if it is present in favor of resolving the ID", func() {
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "99", DeviceID: "c00101d0d00d"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(diskPath).To(Equal("99"))
 		})
 	})
 

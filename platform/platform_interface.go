@@ -73,7 +73,7 @@ type Platform interface {
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
 	UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
-	GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) string
+	GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error)
 	IsMountPoint(path string) (partitionPath string, result bool, err error)
 	IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (result bool, err error)
 	IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings) (bool, error)
