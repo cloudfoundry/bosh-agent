@@ -625,7 +625,7 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, byte(lastChar[0])))
 		}
 	} else if diskSettings.DeviceID != "" {
-		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell", "-Command", fmt.Sprintf("Get-Disk -UniqueId %s | Select Number | ConvertTo-Json", diskSettings.DeviceID))
+		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell", "-Command", fmt.Sprintf("Get-Disk -UniqueId %s | Select Number | ConvertTo-Json", strings.ReplaceAll(diskSettings.DeviceID, "-", "")))
 		if err != nil {
 			return "", bosherr.WrapErrorf(err, "Translating disk ID to disk number: %s: %s", err.Error(), stderr)
 		}

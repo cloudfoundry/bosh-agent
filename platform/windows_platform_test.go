@@ -504,14 +504,14 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(diskPath).To(Equal("2"))
 		})
 
-		It("returns the disk number resolved from Get-Disk when disk settings is passed by id", func() {
+		It("returns the disk number resolved from Get-Disk when disk settings is passed by id, with dashes stripped", func() {
 			cmdRunner.AddCmdResult(
 				"powershell -Command Get-Disk -UniqueId c00101d0d00d | Select Number | ConvertTo-Json",
 				fakesys.FakeCmdResult{Stdout: `{
 					"Number": 42
 			  }`},
 			)
-			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "c00101d0d00d"})
+			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "c001-0-1d-0-d00d"})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(diskPath).To(Equal("42"))
 		})
