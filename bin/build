@@ -16,10 +16,12 @@ else
   fi
 fi
 
-pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent
-  $bin/go build -o $bin/../out/bosh-agent main
-
-  if [[ $GOOS = 'windows' ]]; then
-    $bin/go build -o $bin/../out/bosh-agent-pipe jobsupervisor/pipe
-  fi
+pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent/main
+  $bin/go build -o $bin/../out/bosh-agent
 popd
+
+if [[ $GOOS = 'windows' ]]; then
+  pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe
+    $bin/go build -o $bin/../out/bosh-agent-pipe
+  popd
+fi
