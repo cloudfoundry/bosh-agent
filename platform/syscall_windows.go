@@ -351,7 +351,7 @@ func toString(p *uint16) string {
 	if p == nil {
 		return ""
 	}
-	return syscall.UTF16ToString((*[4096]uint16)(unsafe.Pointer(p))[:])
+	return windows.UTF16PtrToString(p)
 }
 
 func serviceDisabled(s *mgr.Service) bool {
