@@ -5,12 +5,12 @@ set -e
 agent_dir="$(cd "$(dirname "$0")" && cd .. && pwd)"
 bin=$agent_dir/bin
 
-pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent/main
+pushd $agent_dir/main
   $bin/go build -o $agent_dir/out/bosh-agent
 popd
 
 if [[ $GOOS = 'windows' ]]; then
-  pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe
+  pushd $agent_dir/jobsupervisor/pipe
     $bin/go build -o $agent_dir/out/bosh-agent-pipe
   popd
 fi
