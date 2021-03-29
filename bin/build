@@ -2,26 +2,15 @@
 
 set -e
 
-bin=$(dirname $0)
-
-goversion=`$bin/go version | awk '{print $3}'`
-
-if [ "$goversion" ==  "devel" ]; then
-  echo "Using 'devel' version, make sure it's go1.5.1 or greater"
-else
-  MINOR=`echo $goversion | cut -f2 -d.`
-  if [ $MINOR -lt 5 ]; then
-    echo "Currently using go version $goversion, must be using go1.5.1 or greater"
-    exit 1
-  fi
-fi
+agent_dir="$(cd "$(dirname "$0")" && cd .. && pwd)"
+bin=$agent_dir/bin
 
 pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent/main
-  $bin/go build -o $bin/../out/bosh-agent
+  $bin/go build -o $agent_dir/out/bosh-agent
 popd
 
 if [[ $GOOS = 'windows' ]]; then
   pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe
-    $bin/go build -o $bin/../out/bosh-agent-pipe
+    $bin/go build -o $agent_dir/out/bosh-agent-pipe
   popd
 fi
