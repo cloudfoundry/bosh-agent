@@ -16,7 +16,7 @@ else
   fi
 fi
 
-pushd github.com/cloudfoundry/bosh-agent
+pushd $GOPATH/src/github.com/cloudfoundry/bosh-agent
   $bin/go build -o $bin/../out/bosh-agent main
 
   if [[ $GOOS = 'windows' ]]; then
