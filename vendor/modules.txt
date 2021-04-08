@@ -8,7 +8,7 @@ code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c
 ## explicit
 github.com/Azure/go-ntlmssp
-# github.com/ChrisTrenkamp/goxpath v0.0.0-20190607011252-c5096ec8773d
+# github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6
 ## explicit
 github.com/ChrisTrenkamp/goxpath
 github.com/ChrisTrenkamp/goxpath/internal/execxp
@@ -53,7 +53,6 @@ github.com/Microsoft/hcsshim/internal/wclayer
 github.com/Microsoft/hcsshim/internal/winapi
 github.com/Microsoft/hcsshim/osversion
 # github.com/bmatcuk/doublestar v1.3.4
-## explicit
 github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.1
 ## explicit
@@ -66,7 +65,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.0-20210213100152-d3ba248ff042
+# github.com/cloudfoundry/bosh-utils v0.0.0-20210405164104-56a124db2552
 ## explicit
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -86,7 +85,6 @@ github.com/cloudfoundry/bosh-utils/uuid
 github.com/cloudfoundry/bosh-utils/uuid/fakes
 github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
-## explicit
 github.com/cloudfoundry/go-socks5
 # github.com/cloudfoundry/gosigar v1.1.0
 ## explicit
@@ -94,7 +92,6 @@ github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
 # github.com/cloudfoundry/socks5-proxy v0.2.0
-## explicit
 github.com/cloudfoundry/socks5-proxy
 # github.com/cloudfoundry/yagnats v0.0.0-20191003180638-5cab3e099974
 ## explicit
@@ -107,6 +104,8 @@ github.com/containerd/cgroups/stats/v1
 github.com/davecgh/go-spew/spew
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
+# github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0
+github.com/go-task/slim-sprig
 # github.com/gofrs/uuid v4.0.0+incompatible
 ## explicit
 github.com/gofrs/uuid
@@ -125,10 +124,9 @@ github.com/golang/protobuf/proto
 # github.com/google/uuid v1.2.0
 ## explicit
 github.com/google/uuid
-# github.com/jpillora/backoff v0.0.0-20170918002102-8eab2debe79d
-## explicit
+# github.com/jpillora/backoff v1.0.0
 github.com/jpillora/backoff
-# github.com/kevinburke/ssh_config v0.0.0-20190724205821-6cfae18c12b8
+# github.com/kevinburke/ssh_config v1.1.0
 ## explicit
 github.com/kevinburke/ssh_config
 # github.com/magefile/mage v1.11.0
@@ -153,25 +151,25 @@ github.com/nats-io/jwt
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
 github.com/nats-io/nats.go/util
-# github.com/nats-io/nkeys v0.2.0
+# github.com/nats-io/nkeys v0.3.0
+## explicit
 github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
 github.com/nats-io/nuid
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
-## explicit
 github.com/nu7hatch/gouuid
 # github.com/nxadm/tail v1.4.8
-## explicit
 github.com/nxadm/tail
 github.com/nxadm/tail/ratelimiter
 github.com/nxadm/tail/util
 github.com/nxadm/tail/watch
 github.com/nxadm/tail/winfile
-# github.com/onsi/ginkgo v1.15.0
+# github.com/onsi/ginkgo v1.16.1
 ## explicit
 github.com/onsi/ginkgo
 github.com/onsi/ginkgo/config
 github.com/onsi/ginkgo/extensions/table
+github.com/onsi/ginkgo/formatter
 github.com/onsi/ginkgo/ginkgo
 github.com/onsi/ginkgo/ginkgo/convert
 github.com/onsi/ginkgo/ginkgo/interrupthandler
@@ -197,7 +195,7 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.10.5
+# github.com/onsi/gomega v1.11.0
 ## explicit
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -215,7 +213,6 @@ github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
 # github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20
-## explicit
 github.com/pivotal-cf/paraphernalia/secure/tlsconfig
 # github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 ## explicit
@@ -231,8 +228,6 @@ github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.7.0
 ## explicit
 github.com/stretchr/testify/assert
-# github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
-## explicit
 # go.opencensus.io v0.22.6
 ## explicit
 go.opencensus.io
@@ -240,7 +235,7 @@ go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+# golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 ## explicit
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -254,7 +249,7 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 # golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 ## explicit
-# golang.org/x/net v0.0.0-20210220033124-5f55cee0dc0d
+# golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/html
@@ -262,7 +257,7 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43
+# golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
@@ -271,7 +266,7 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/text v0.3.5
+# golang.org/x/text v0.3.6
 ## explicit
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
@@ -323,8 +318,6 @@ google.golang.org/protobuf/runtime/protoimpl
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.4.0
-## explicit
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-## explicit
 gopkg.in/yaml.v3
