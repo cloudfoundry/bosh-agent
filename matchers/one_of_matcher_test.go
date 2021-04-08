@@ -126,7 +126,7 @@ var _ = Describe("matchers", func() {
 to match one of
 		<\*matchers.EqualMatcher | 0x[[:xdigit:]]+>: {Expected: "a"}
 or
-		<\*matchers.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[1\]}`
+		<\*matchers.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[<int>1\]}`
 
 			Expect(msg).To(MatchRegexp(expectedMessagePattern))
 		})
@@ -143,7 +143,7 @@ or
 not to match one of
 		<string>: a
 or
-		<\*matchers\.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[1\]}`
+		<\*matchers\.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[<int>1\]}`
 
 			Expect(msg).To(MatchRegexp(expectedMessagePattern))
 		})
