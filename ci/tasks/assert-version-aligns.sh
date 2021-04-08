@@ -12,6 +12,11 @@ popd
 
 echo "detected bosh-agent will build from branch $git_branch ..."
 
+if [[ "$git_branch" == "master" ]]; then
+  echo "SKIPPED: version check is ignored on $git_branch"
+  exit 0
+fi
+
 if [ "$git_branch" = "develop" ]; then
   version_must_match='^[0-9]+\.[0-9]+\.0$'
 else
