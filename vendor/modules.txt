@@ -65,7 +65,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.0-20210412224541-4dc0ba7ee880
+# github.com/cloudfoundry/bosh-utils v0.0.252
 ## explicit
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -91,7 +91,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.2
+# github.com/cloudfoundry/socks5-proxy v0.2.3
 ## explicit
 github.com/cloudfoundry/socks5-proxy
 # github.com/cloudfoundry/yagnats v0.0.0-20191003180638-5cab3e099974
@@ -236,7 +236,7 @@ go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
+# golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 ## explicit
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -252,7 +252,7 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 ## explicit
 golang.org/x/lint
 golang.org/x/lint/golint
-# golang.org/x/net v0.0.0-20210415231046-e915ea6b2b7d
+# golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/html
@@ -260,7 +260,7 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20210415045647-66c3f260301c
+# golang.org/x/sys v0.0.0-20210423185535-09eb48e85fd7
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
