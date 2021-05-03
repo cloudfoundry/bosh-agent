@@ -655,7 +655,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string, desiredSwapSizeInByte
 	}
 
 	p.logger.Info(logTag, "Mounting `%s' (canonical path: %s) at `%s'", dataPartitionPath, canonicalDataPartitionPath, mountPoint)
-	err = p.diskManager.GetMounter().Mount(canonicalDataPartitionPath, mountPoint)
+	err = p.diskManager.GetMounter().Mount(canonicalDataPartitionPath, mountPoint, "noatime,prjquota")
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting data partition")
 	}
