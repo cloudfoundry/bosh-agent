@@ -2,6 +2,7 @@ package disk
 
 import (
 	"fmt"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -163,8 +164,14 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Parsing existing partitions")
 		}
 
+		out, err := exec.Command("sh", "-c", "lsblk -f | grep crypto_LUKS | wc -l").Output()
+		if err != nil {
+			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Running lsblk command")
+		}
+		result := string(out)
+
 		partitionType := PartitionTypeUnknown
-		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" {
+		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" || strings.TrimRight(result, "\n") == "1" {
 			partitionType = PartitionTypeLinux
 		} else if partitionInfo[4] == "linux-swap(v1)" {
 			partitionType = PartitionTypeSwap

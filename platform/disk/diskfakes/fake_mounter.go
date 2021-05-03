@@ -157,6 +157,10 @@ func (fake *FakeMounter) IsMountPoint(arg1 string) (string, bool, error) {
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
+func (fake *FakeMounter) IsCryptLuks(arg1 string) ( bool, error) {
+	return false, nil
+}
+
 func (fake *FakeMounter) IsMountPointCallCount() int {
 	fake.isMountPointMutex.RLock()
 	defer fake.isMountPointMutex.RUnlock()

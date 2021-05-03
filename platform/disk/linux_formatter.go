@@ -30,7 +30,7 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 			return
 		}
 		// swap is not user-configured, so we're not concerned about reformatting
-	} else if existingFsType == FileSystemExt4 || existingFsType == FileSystemXFS {
+	} else if existingFsType == FileSystemExt4 || existingFsType == FileSystemXFS || existingFsType == FileSystemLUKS {
 		// never reformat if it is already formatted in a supported format
 		return
 	}

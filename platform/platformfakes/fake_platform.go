@@ -2147,6 +2147,10 @@ func (fake *FakePlatform) IsPersistentDiskMounted(arg1 settings.DiskSettings) (b
 	return fakeReturns.result1, fakeReturns.result2
 }
 
+func (fake *FakePlatform) IsPersistentDiskMountedExternally(arg1 settings.DiskSettings) ( bool,  error) {
+	return false, nil
+}
+
 func (fake *FakePlatform) IsPersistentDiskMountedCallCount() int {
 	fake.isPersistentDiskMountedMutex.RLock()
 	defer fake.isPersistentDiskMountedMutex.RUnlock()

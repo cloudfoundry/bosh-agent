@@ -48,6 +48,10 @@ func (m linuxBindMounter) IsMountPoint(path string) (string, bool, error) {
 	return m.delegateMounter.IsMountPoint(path)
 }
 
+func (m linuxBindMounter) IsCryptLuks(arg1 string) ( bool, error) {
+	return false, nil
+}
+
 func (m linuxBindMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
 	return m.delegateMounter.IsMounted(partitionOrMountPoint)
 }

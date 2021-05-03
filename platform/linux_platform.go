@@ -1173,12 +1173,14 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		realPath = partitionPath
 	}
 
-	err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
+	isMountedExternally, err := p.IsPersistentDiskMountedExternally(diskSetting)
 
-	if err != nil {
-		return bosherr.WrapError(err, "Mounting partition")
+	if !isMountedExternally {
+		err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting partition")
+		}
 	}
-
 	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
 
 	err = p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
@@ -1308,6 +1310,19 @@ func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (
 	}
 
 	return p.diskManager.GetMounter().IsMounted(realPath)
+}
+
+func (p linux) IsPersistentDiskMountedExternally(diskSettings boshsettings.DiskSettings) (bool, error) {
+	realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
+	if err != nil {
+		return false, bosherr.WrapError(err, "not mounted externally")
+	}
+
+	if timedOut {
+		p.logger.Debug(logTag, "Timed out resolving device path for %+v, ignoring", diskSettings)
+		return false, nil
+	}
+	return p.diskManager.GetMounter().IsCryptLuks(realPath)
 }
 
 func (p linux) StartMonit() error {
