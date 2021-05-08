@@ -12,9 +12,9 @@ require (
 	github.com/charlievieth/fs v0.0.1
 	github.com/cloudfoundry/bosh-davcli v0.0.44
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.253
+	github.com/cloudfoundry/bosh-utils v0.0.254
 	github.com/cloudfoundry/gosigar v1.2.0
-	github.com/cloudfoundry/socks5-proxy v0.2.4 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.5 // indirect
 	github.com/cloudfoundry/yagnats v0.0.0-20191003180638-5cab3e099974
 	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible
@@ -24,21 +24,20 @@ require (
 	github.com/kevinburke/ssh_config v1.1.0
 	github.com/magefile/mage v1.11.0 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
-	github.com/masterzen/winrm v0.0.0-20201030141608-56ca5c5f2380
+	github.com/masterzen/winrm v0.0.0-20210504160029-28ed956f5227
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nats-io/jwt v1.2.2 // indirect
-	github.com/nats-io/nats.go v1.10.0
-	github.com/nats-io/nkeys v0.3.0 // indirect
-	github.com/onsi/ginkgo v1.16.1
-	github.com/onsi/gomega v1.11.0
+	github.com/nats-io/nats.go v1.11.0
+	github.com/onsi/ginkgo v1.16.2
+	github.com/onsi/gomega v1.12.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	go.opencensus.io v0.22.6 // indirect
-	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
+	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
-	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
-	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887
+	golang.org/x/net v0.0.0-20210508051633-16afe75a6701
+	golang.org/x/sys v0.0.0-20210507161434-a76c4d0a0096
 	golang.org/x/tools v0.1.0 // indirect
 )
