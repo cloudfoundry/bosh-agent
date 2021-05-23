@@ -15,7 +15,7 @@ func NewMultiSettingsSource(sources ...boshsettings.Source) (boshsettings.Source
 	var err error
 
 	if len(sources) == 0 {
-		err = bosherr.Error("MultiSettingsSource requires to have at least one source")
+		err = bosherr.Error("MultiSettingsSource requires at least one source")
 	}
 
 	return &MultiSettingsSource{sources: sources}, err
