@@ -363,7 +363,7 @@ func (net UbuntuNetManager) updateConfiguration(name, templateDefinition string,
 const systemdNetworkFolder = "/etc/systemd/network"
 
 func interfaceConfigurationFile(name string) string {
-	interfaceBasename := fmt.Sprintf("09_%s.network", name)
+	interfaceBasename := fmt.Sprintf("10_%s.network", name)
 	return filepath.Join(systemdNetworkFolder, interfaceBasename)
 }
 
@@ -578,10 +578,6 @@ func (net UbuntuNetManager) writeStaticInterfaceConfiguration(config StaticInter
 }
 
 func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(config DHCPInterfaceConfiguration, dnsServers []string, opts boshsys.ConvergeFileContentsOpts) (bool, error) {
-	if config.Address == "" {
-		return false, nil
-	}
-
 	var err error
 	configPath := interfaceConfigurationFile(config.Name)
 
