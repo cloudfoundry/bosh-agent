@@ -11,7 +11,7 @@ class Hash
 end
 
 Vagrant.configure('2') do |config|
-  config.vm.box = "xcoo/xenial64"
+  config.vm.box = "ubuntu/xenial64"
   config.vm.hostname = 'bosh-agent-integration-tests'
 
   config.vm.provider :virtualbox do |v, override|
