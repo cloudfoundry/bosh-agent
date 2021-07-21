@@ -11,7 +11,8 @@ class Hash
 end
 
 Vagrant.configure('2') do |config|
-  config.vm.box = "ubuntu/xenial64"
+  config.vm.box = 'cloudfoundry/bosh-lite'
+  config.vm.box_version = '9000.20.0'
   config.vm.hostname = 'bosh-agent-integration-tests'
 
   config.vm.provider :virtualbox do |v, override|
