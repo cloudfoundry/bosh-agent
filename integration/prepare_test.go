@@ -147,23 +147,23 @@ var _ = Describe("prepare", func() {
 			err := agentClient.Prepare(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := testEnvironment.RunCommand("stat /var/vcap/data/packages")
+			output, err := testEnvironment.RunCommand("sudo stat /var/vcap/data/packages")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/bar")
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/packages/bar")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/foo")
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/packages/foo")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/jobs/foobar")
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/jobs/foobar")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0750/drwxr-x---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/jobs/foobar/*")
+			output, err = testEnvironment.RunCommand("sudo bash -c 'stat /var/vcap/data/jobs/foobar/*'")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0750/drwxr-x---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 		})
@@ -235,23 +235,23 @@ var _ = Describe("prepare", func() {
 			err := agentClient.Prepare(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := testEnvironment.RunCommand("stat /var/vcap/data/packages")
+			output, err := testEnvironment.RunCommand("sudo stat /var/vcap/data/packages")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/bar")
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/packages/bar")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/packages/foo")
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/packages/foo")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0755/drwxr-xr-x\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/jobs/foobar")
+			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/jobs/foobar")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0750/drwxr-x---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 
-			output, err = testEnvironment.RunCommand("stat /var/vcap/data/jobs/foobar/*")
+			output, err = testEnvironment.RunCommand("sudo bash -c 'stat /var/vcap/data/jobs/foobar/*'")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("Access: \\(0750/drwxr-x---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
 		})

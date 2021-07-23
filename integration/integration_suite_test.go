@@ -1,10 +1,9 @@
 package integration_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"testing"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -20,15 +19,20 @@ func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	BeforeSuite(func() {
-		logger := boshlog.NewLogger(boshlog.LevelDebug)
+		logLevel := boshlog.LevelError
+		logger := boshlog.NewLogger(logLevel)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		var err error
-		testEnvironment, err = NewTestEnvironment(cmdRunner)
+		testEnvironment, err = NewTestEnvironment(cmdRunner, logLevel)
 		Expect(err).ToNot(HaveOccurred())
 
-		// Required for reverse-compatibility with older bosh-lite
-		// (remove once a new warden stemcell is built).
-		err = testEnvironment.ConfigureAgentForGenericInfrastructure()
+		err = testEnvironment.StopAgent()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.CleanupDataDir()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.EnsureRootDeviceIsLargeEnough()
 		Expect(err).ToNot(HaveOccurred())
 	})
 

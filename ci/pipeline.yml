@@ -1,337 +1,293 @@
 ---
-groups:
-- name: bosh-agent
-  jobs:
-  - test-unit
-  - test-integration
-  - bosh-integration-tests
-  - windows-test-unit
-  - windows-test-integration-2019
-  - windows-test-integration-1803
-  - windows-test-integration-2012R2
-  - promote
-  - bump-deps
-
-jobs:
-- name: bump-deps
-  public: true
-  plan:
-  - get: weekly
-    trigger: true
-  - get: bosh-agent
-  - task: bump-deps
-    file: bosh-agent/ci/tasks/bump-deps.yml
-  - task: test-unit
-    input_mapping:
-      bosh-agent: bumped-bosh-agent
-    file: bosh-agent/ci/tasks/test-unit.yml
-  - put: bosh-agent
-    params:
-      repository: bumped-bosh-agent
-      rebase: true
-
-- name: test-unit
-  public: true
-  plan:
-  - get: bosh-agent
-    trigger: true
-  - task: test-unit
-    file: bosh-agent/ci/tasks/test-unit.yml
-
-- name: test-integration
-  public: false
-  plan:
-  - get: bosh-agent
-    trigger: true
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration.yml
-    params:
-      BOSH_AWS_ACCESS_KEY_ID: ((BOSH_AWS_ACCESS_KEY_ID))
-      BOSH_AWS_SECRET_ACCESS_KEY: ((BOSH_AWS_SECRET_ACCESS_KEY))
-      BOSH_LITE_KEYPAIR: ((BOSH_LITE_KEYPAIR))
-      BOSH_LITE_SUBNET_ID: ((BOSH_LITE_SUBNET_ID))
-      BOSH_LITE_NAME: ((BOSH_LITE_NAME))
-      BOSH_LITE_SECURITY_GROUP: ((BOSH_LITE_SECURITY_GROUP))
-      BOSH_LITE_PRIVATE_KEY: ((BOSH_LITE_PRIVATE_KEY))
-
-
-- name: bosh-integration-tests
-  public: true
-  serial: true
-  build_logs_to_retain: 250
-  plan:
-  - in_parallel:
-    - get: bosh-src
-    - get: bosh-cli
-    - get: bosh-agent
-      trigger: true
-      passed:
-      - test-unit
-      - test-integration
-      - windows-test-unit
-
-  - task: tests
-    privileged: true
-    file: bosh-src/ci/tasks/test-integration.yml
-    tags: ["bosh-integration"]
-    params:
-      DB: postgresql
-
-- name: windows-test-unit
-  serial: true
-  plan:
-  - get: bosh-agent
-    trigger: true
-  - task: test-unit
-    file: bosh-agent/ci/tasks/test-unit-windows.yml
-
-- name: windows-test-integration-2019
-  serial: true
-  plan:
-  - get: windows-ami-2019
-  - get: bosh-agent
-    trigger: true
-    passed:
-    - test-unit
-    - test-integration
-    - windows-test-unit
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    input_mapping:
-      windows-ami: windows-ami-2019
-    params:
-      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
-      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
-      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
-      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
-      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: ((WINRM_PASSWORD))
-      WINDOWS_OS_VERSION: 2019
-
-- name: windows-test-integration-1803
-  serial: true
-  plan:
-  - get: windows-ami-1803
-  - get: bosh-agent
-    trigger: true
-    passed:
-    - test-unit
-    - test-integration
-    - windows-test-unit
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    input_mapping:
-      windows-ami: windows-ami-1803
-    params:
-      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
-      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
-      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
-      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
-      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: ((WINRM_PASSWORD))
-      WINDOWS_OS_VERSION: 1803
-
-- name: windows-test-integration-2012R2
-  serial: true
-  plan:
-  - get: windows-ami-2012R2
-  - get: bosh-agent
-    trigger: true
-    passed:
-    - test-unit
-    - test-integration
-    - windows-test-unit
-  - task: test-integration
-    privileged: true
-    file: bosh-agent/ci/tasks/test-integration-windows.yml
-    input_mapping:
-      windows-ami: windows-ami-2012R2
-    params:
-      AWS_ACCESS_KEY: ((WINDOWS_AWS_ACCESS_KEY))
-      AWS_SECRET_KEY: ((WINDOWS_AWS_SECRET_KEY))
-      AWS_SUBNET: ((WINDOWS_AWS_SUBNET))
-      AWS_SSH_KEY: ((WINDOWS_AWS_SSH_KEY))
-      KEYPAIR_NAME: ((WINDOWS_AWS_KEYPAIR_NAME))
-      VAGRANT_PROVIDER: aws
-      WINRM_PASSWORD: ((WINRM_PASSWORD))
-      WINDOWS_OS_VERSION: 2012R2
-
-- name: promote
-  public: true
-  serial: true
-  plan:
-  - in_parallel:
-    - trigger: true
-      passed:
-      - bosh-integration-tests
-      - windows-test-integration-2019
-      - windows-test-integration-1803
-      - windows-test-integration-2012R2
-      get: bosh-agent
-    - get: version-semver
-      params: {bump: minor}
-  - task: assert-version-aligns
-    file: bosh-agent/ci/tasks/assert-version-aligns.yml
-  - put: version-semver
-    params:
-      file: version-semver/number
-  - put: bosh-agent-commit-status
-    params:
-      state: success
-      commit: bosh-agent
-  - put: bosh-agent-master
-    params:
-      repository: bosh-agent
-      tag: version-semver/number
-      tag_prefix: v
-  - in_parallel:
-    - task: build-windows
-      file: bosh-agent/ci/tasks/build-windows.yml
-    - task: build-linux
-      file: bosh-agent/ci/tasks/build-linux.yml
-    - task: build-linux-ppc64le
-      file: bosh-agent/ci/tasks/build-linux-ppc64le.yml
-  - put: bosh-agent-index
-    params:
-      files:
-      - compiled-linux-*/*
-      version: version-semver/number
+resource_types:
+  - name: bosh-deployment
+    type: docker-image
+    source:
+      repository: cloudfoundry/bosh-deployment-resource
+  - name: metalink-resource
+    type: registry-image
+    source:
+      repository: dpb587/metalink-repository-resource
+  - name: pivnet
+    type: docker-image
+    source:
+      repository: pivotalcf/pivnet-resource
+      tag: latest-final
+      username: ((docker.username))
+      password: ((docker.password))
 
 resources:
-- name: bosh-agent
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: develop
-    private_key: ((BOSH_GITHUB_DEPLOYMENT_KEY))
+  - name: bosh-agent
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh-agent.git
+      branch: 2.268.x
+      private_key: ((github_deploy_key_bosh-agent.private_key))
 
-- name: bosh-agent-master
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/bosh-agent.git
-    branch: master
-    private_key: ((BOSH_GITHUB_DEPLOYMENT_KEY))
-
-- name: bosh-agent-index
-  type: metalink-resource
-  source:
-    uri: git+ssh://git@github.com:cloudfoundry/bosh-agent-index.git//
-    mirror_files:
-    - destination: s3://s3-external-1.amazonaws.com/((RELEASE_BUCKET_AGENT))/{{.Name}}
-    options:
-      private_key: ((BOSH_AGENT_INDEX_DEPLOYMENT_PRIVATE_KEY))
-    url_handlers:
-    - type: s3
+  - name: bosh-agent-index
+    type: metalink-resource
+    source:
+      uri: git+ssh://git@github.com:cloudfoundry/bosh-agent-index.git//
+      version: 2.268.*
+      mirror_files:
+        - destination: s3://s3-external-1.amazonaws.com/bosh-agent-binaries/{{.Name}}
       options:
-        access_key: ((AWS_S3_BUCKET_ACCESS_KEY))
-        secret_key: ((AWS_S3_BUCKET_SECRET_KEY))
+        private_key: ((github_deploy_key_bosh-agent-index.private_key))
+      url_handlers:
+        - type: s3
+          options:
+            access_key: ((bosh-agent-s3.username))
+            secret_key: ((bosh-agent-s3.password))
 
-- name: bosh-agent-commit-status
-  type: github-status
-  source:
-    repository: cloudfoundry/bosh-agent
-    access_token: ((repo_github_token))
-    branch: develop
-    context: ci/published
+  - name: bosh-cli
+    type: github-release
+    source:
+      owner: cloudfoundry
+      repository: bosh-cli
 
-- name: bosh-src
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/bosh.git
-    branch: master
+  - name: bosh-ecosystem-concourse
+    type: git
+    source:
+      uri: git@github.com:pivotal/bosh-ecosystem-concourse.git
+      private_key: ((github_deploy_key_bosh_ecosystem_concourse.private_key))
 
-- name: bosh-cli
-  type: s3
-  source:
-    regexp: alpha-bosh-cli-(.*)-linux-amd64
-    bucket: bosh-cli-alpha-artifacts
-    region_name: us-east-1
+  - name: bosh-ecosystem-docker-image
+    type: docker-image
+    source:
+      repository: bosh/bosh-ecosystem-concourse
+      username: ((docker.username))
+      password: ((docker.password))
 
-- name: windows-ami-2012R2
-  type: ami-resource
-  source:
-    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
-    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-2012-R2_RTM-English-64Bit-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: master
 
-- name: windows-ami-1803
-  type: ami-resource
-  source:
-    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
-    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-1803-English-Core-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
+  - name: gcp-stemcell
+    type: pivnet
+    source:
+      api_token: ((pivnet_bot_api_token))
+      product_slug: stemcells-ubuntu-xenial
+      product_version: 621\..*
 
-- name: windows-ami-2019
-  type: ami-resource
-  source:
-    access_key_id: ((WINDOWS_AWS_ACCESS_KEY))
-    secret_access_key: ((WINDOWS_AWS_SECRET_KEY))
-    region: us-east-1
-    search_options:
-      filters:
-      - name: name
-        values:
-        - Windows_Server-2019-English-Core-Base*
-      - name: state
-        values:
-        - available
-      owners:
-      - amazon
+  - name: integration-vm-deployment
+    type: bosh-deployment
+    source:
+      deployment: bosh-agent-integration-2-268-x
+      target: ((iaas_directors_gcp-director_bosh_environment))
+      client: ((iaas_directors_gcp-director_bosh_client.username))
+      client_secret: ((iaas_directors_gcp-director_bosh_client.password))
+      ca_cert: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
+      jumpbox_ssh_key: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
+      jumpbox_username: ((iaas_directors_gcp-director_bosh_jumpbox_username))
+      jumpbox_url: ((iaas_directors_gcp-director_bosh_jumpbox_ip)):22
 
-- name: version-semver
-  type: semver
-  source:
-    initial_version: 0.0.1
-    key: agent-current-version
-    bucket: ((SEMVER_BUCKET))
-    region_name: ((AWS_S3_BUCKET_REGION))
-    access_key_id: ((AWS_S3_BUCKET_ACCESS_KEY))
-    secret_access_key: ((AWS_S3_BUCKET_SECRET_KEY))
+  - name: version-semver
+    type: semver
+    source:
+      initial_version: 0.0.1
+      key: agent-2.268-current-version
+      bucket: bosh-agent-semver
+      region_name: us-east-1
+      access_key_id: ((bosh-agent-s3.username))
+      secret_access_key: ((bosh-agent-s3.password))
 
-- name: weekly
-  type: time
-  source:
-    start: 3:00 -0700
-    stop: 4:30 -0700
-    days: [Saturday]
+  - name: weekly
+    type: time
+    source:
+      start: 3:00 -0700
+      stop: 4:30 -0700
+      days: [ Saturday ]
 
-resource_types:
-- name: ami-resource
-  type: registry-image
-  source:
-    repository: pivotalgreenhouse/ami-resource
-    tag: latest
-- name: github-status
-  type: registry-image
-  source:
-    repository: dpb587/github-status-resource
-    tag: master
-- name: metalink-resource
-  type: registry-image
-  source:
-    repository: dpb587/metalink-repository-resource
+
+jobs:
+  - name: bump-deps
+    plan:
+      - get: weekly
+        trigger: true
+      - get: bosh-agent
+      - task: bump-deps
+        file: bosh-agent/ci/tasks/bump-deps.yml
+      - task: test-unit
+        input_mapping:
+          bosh-agent: bumped-bosh-agent
+        file: bosh-agent/ci/tasks/test-unit.yml
+      - put: bosh-agent
+        params:
+          repository: bumped-bosh-agent
+          rebase: true
+
+  - name: test-unit
+    plan:
+      - get: bosh-agent
+        trigger: true
+      - task: test-unit
+        file: bosh-agent/ci/tasks/test-unit.yml
+
+  - name: test-integration
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-agent
+            trigger: true
+          - get: bosh-ecosystem-concourse
+          - get: bosh-ecosystem-docker-image
+          - get: gcp-stemcell
+            trigger: true
+            params:
+              globs:
+                - "*google*.tgz"
+      - do:
+          - task: update-resurrection-config
+            image: bosh-ecosystem-docker-image
+            config:
+              platform: linux
+              inputs:
+                - name: bosh-agent
+                - name: bosh-ecosystem-concourse
+              params:
+                BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
+                BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
+                BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
+                BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
+                JUMPBOX_IP: ((iaas_directors_gcp-director_bosh_jumpbox_ip))
+              run:
+                path: /bin/bash
+                args:
+                  - -c
+                  - |
+                    source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
+                    bosh -n update-config --name 2-268-x-resurrection --type resurrection --var deployment_name=bosh-agent-integration-2-268-x bosh-agent/integration/assets/resurrection_config.yml
+          - put: integration-vm-deployment
+            params:
+              cleanup: true
+              manifest: "bosh-agent/integration/assets/agent-deployment.yml"
+              stemcells:
+                - "gcp-stemcell/*.tgz"
+              vars:
+                deployment_name: bosh-agent-integration-2-268-x
+                stemcell_os: ubuntu-xenial
+
+          - task: get-agent-info
+            image: bosh-ecosystem-docker-image
+            config:
+              platform: linux
+              inputs:
+                - name: bosh-agent
+                - name: bosh-ecosystem-concourse
+              outputs:
+                - name: agent-info
+              params:
+                BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
+                BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
+                BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
+                BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
+                JUMPBOX_URL: "((iaas_directors_gcp-director_bosh_jumpbox_ip)):22"
+                CREDHUB_CA_CERT_STRING: ((iaas_directors_gcp-director_bosh_credhub_ca_cert.ca))
+                CREDHUB_CLIENT: ((iaas_directors_gcp-director_bosh_credhub_client.username))
+                CREDHUB_SECRET: ((iaas_directors_gcp-director_bosh_credhub_client.password))
+                CREDHUB_SERVER: ((iaas_directors_gcp-director_bosh_credhub_server))
+              run:
+                path: /bin/bash
+                args:
+                  - -c
+                  - |
+                    source bosh-ecosystem-concourse/tasks/shared/configure_credhub_proxies.sh
+                    bosh -d bosh-agent-integration-2-268-x instances --json --column ips | jq -r .Tables[].Rows[].ips > agent-info/agent_ip
+                    credhub get -n /concourse/bosh-agent-integration-2-268-x/ssh_creds -k private_key > agent-info/agent-creds.pem
+                    chmod 600 agent-info/agent-creds.pem
+          - task: test-integration
+            image: bosh-ecosystem-docker-image
+            file: bosh-agent/ci/tasks/test-integration.yml
+            params:
+              BOSH_DEPLOYMENT: bosh-agent-integration-2-268-x
+              BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
+              BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
+              BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
+              BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
+              JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
+              JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
+              JUMPBOX_IP: ((iaas_directors_gcp-director_bosh_jumpbox_ip))
+        ensure:
+          in_parallel:
+            - task: update-resurrection-config
+              image: bosh-ecosystem-docker-image
+              config:
+                platform: linux
+                inputs:
+                  - name: bosh-agent
+                  - name: bosh-ecosystem-concourse
+                params:
+                  BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
+                  BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
+                  BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
+                  BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
+                  JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
+                  JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
+                  JUMPBOX_IP: ((iaas_directors_gcp-director_bosh_jumpbox_ip))
+                run:
+                  path: /bin/bash
+                  args:
+                    - -c
+                    - |
+                      source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
+                      bosh -n delete-config --name 2-268-x-resurrection --type resurrection
+            - put: integration-vm-deployment
+              params:
+                cleanup: true
+                delete:
+                  enabled: true
+                  force: true
+
+  - name: bosh-integration-tests
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-src
+          - get: bosh-cli
+            params:
+              globs:
+                - "bosh-cli-*-linux-amd64"
+          - get: bosh-agent
+            trigger: true
+            passed:
+              - test-unit
+              - test-integration
+      - task: tests
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration.yml
+
+  - name: promote
+    serial: true
+    plan:
+      - in_parallel:
+          - trigger: true
+            passed:
+              - bosh-integration-tests
+            get: bosh-agent
+          - get: version-semver
+            params:
+              bump: patch
+      - task: assert-version-aligns
+        file: bosh-agent/ci/tasks/assert-version-aligns.yml
+      - put: version-semver
+        params:
+          file: version-semver/number
+      - put: bosh-agent
+        params:
+          only_tag: true
+          repository: bosh-agent
+          tag: version-semver/number
+          tag_prefix: v
+      - task: build-linux
+        file: bosh-agent/ci/tasks/build-linux.yml
+      - put: bosh-agent-index
+        params:
+          files:
+            - compiled-linux-*/*
+          version: version-semver/number

@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/gofrs/uuid"
@@ -96,6 +97,8 @@ var _ = Describe("compile_package", func() {
 			err := testEnvironment.StartBlobstore()
 			Expect(err).NotTo(HaveOccurred())
 
+			err = testEnvironment.CopyFileToPath(filepath.Join(testEnvironment.AssetsDir(), "dummy_package.tgz"), filepath.Join(testEnvironment.BlobstoreDir(), "dummy_package.tgz"))
+			Expect(err).NotTo(HaveOccurred())
 			dummyPackageSignedURL = "http://127.0.0.1:9091/get_package/dummy_package.tgz"
 
 			id, err := uuid.NewV4()
@@ -117,7 +120,7 @@ var _ = Describe("compile_package", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s/%s", testEnvironment.AssetsDir(), compiledPackagePath))
+			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s", filepath.Join(testEnvironment.BlobstoreDir(), compiledPackagePath)))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("regular file"))
 		})
@@ -133,7 +136,7 @@ var _ = Describe("compile_package", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s/%s", testEnvironment.AssetsDir(), compiledPackagePath))
+			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s", filepath.Join(testEnvironment.BlobstoreDir(), compiledPackagePath)))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("regular file"))
 		})
@@ -167,7 +170,7 @@ var _ = Describe("compile_package", func() {
 				}}})
 			Expect(err).NotTo(HaveOccurred())
 
-			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s/%s", testEnvironment.AssetsDir(), compiledPackagePath))
+			output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo stat %s", filepath.Join(testEnvironment.BlobstoreDir(), compiledPackagePath)))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(MatchRegexp("regular file"))
 		})

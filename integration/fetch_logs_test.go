@@ -78,17 +78,17 @@ var _ = Describe("fetch_logs", func() {
 	})
 
 	It("puts the logs in the appropriate blobstore location", func() {
-		r, stderr, _, err := testEnvironment.RunCommand3("echo 'foobarbaz' | sudo tee /var/vcap/sys/log/fetch-logs")
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
+		_, err := testEnvironment.RunCommand("echo 'foobarbaz' | sudo tee /var/vcap/sys/log/fetch-logs")
+		Expect(err).NotTo(HaveOccurred())
 
 		logsResponse, err := agentClient.FetchLogs("job", nil)
 		Expect(err).NotTo(HaveOccurred())
 
-		r, stderr, _, err = testEnvironment.RunCommand3(fmt.Sprintf("sudo zcat /var/vcap/data/blobs/%s", logsResponse["blobstore_id"]))
+		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo zcat /var/vcap/data/blobs/%s", logsResponse["blobstore_id"]))
 
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
-		Expect(r).To(ContainSubstring("foobarbaz"))
-		Expect(r).To(ContainSubstring("fetch-logs"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("foobarbaz"))
+		Expect(output).To(ContainSubstring("fetch-logs"))
 	})
 
 })
