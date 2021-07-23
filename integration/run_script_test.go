@@ -103,14 +103,14 @@ var _ = Describe("run_script", func() {
 	})
 
 	BeforeEach(func() {
-		r, stderr, _, err := testEnvironment.RunCommand3("rm -f /var/vcap/data/foobar/output.txt")
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
+		_, err := testEnvironment.RunCommand("sudo rm -f /var/vcap/data/foobar/output.txt")
+		Expect(err).NotTo(HaveOccurred())
 
-		r, stderr, _, err = testEnvironment.RunCommand3("sudo mkdir -p /var/vcap/jobs/foobar/bin")
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
+		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/jobs/foobar/bin")
+		Expect(err).NotTo(HaveOccurred())
 
-		r, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data/foobar")
-		Expect(err).NotTo(HaveOccurred(), r)
+		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data/foobar")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -125,29 +125,29 @@ var _ = Describe("run_script", func() {
 	})
 
 	It("runs a custom script", func() {
-		r, stderr, _, err := testEnvironment.RunCommand3(`sudo bash -c "echo '#!/bin/bash
+		_, err := testEnvironment.RunCommand(`sudo bash -c "echo '#!/bin/bash
 		echo -n foobar > /var/vcap/data/foobar/output.txt' > /var/vcap/jobs/foobar/bin/custom-script"`)
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
+		Expect(err).NotTo(HaveOccurred())
 
-		r, err = testEnvironment.RunCommand("sudo chmod +x /var/vcap/jobs/foobar/bin/custom-script")
-		Expect(err).NotTo(HaveOccurred(), r)
+		_, err = testEnvironment.RunCommand("sudo chmod +x /var/vcap/jobs/foobar/bin/custom-script")
+		Expect(err).NotTo(HaveOccurred())
 
 		err = agentClient.RunScript("custom-script", map[string]interface{}{})
 		Expect(err).NotTo(HaveOccurred())
 
-		r, stderr, _, err = testEnvironment.RunCommand3("cat /var/vcap/data/foobar/output.txt")
+		output, err := testEnvironment.RunCommand("sudo cat /var/vcap/data/foobar/output.txt")
 
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
-		Expect(r).To(Equal("foobar"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(Equal("foobar"))
 	})
 
 	It("runs a custom script with variables", func() {
-		r, stderr, _, err := testEnvironment.RunCommand3(`sudo bash -c "echo '#!/bin/bash
+		_, err := testEnvironment.RunCommand(`sudo bash -c "echo '#!/bin/bash
 		echo -n \$FOO > /var/vcap/data/foobar/output.txt' > /var/vcap/jobs/foobar/bin/custom-script"`)
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
+		Expect(err).NotTo(HaveOccurred())
 
-		r, err = testEnvironment.RunCommand("sudo chmod +x /var/vcap/jobs/foobar/bin/custom-script")
-		Expect(err).NotTo(HaveOccurred(), r)
+		_, err = testEnvironment.RunCommand("sudo chmod +x /var/vcap/jobs/foobar/bin/custom-script")
+		Expect(err).NotTo(HaveOccurred())
 
 		options := make(map[string]interface{})
 		options["env"] = map[string]string{
@@ -156,9 +156,9 @@ var _ = Describe("run_script", func() {
 		err = agentClient.RunScript("custom-script", options)
 		Expect(err).NotTo(HaveOccurred())
 
-		r, stderr, _, err = testEnvironment.RunCommand3("cat /var/vcap/data/foobar/output.txt")
+		output, err := testEnvironment.RunCommand("sudo cat /var/vcap/data/foobar/output.txt")
 
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
-		Expect(r).To(Equal("bar"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(Equal("bar"))
 	})
 })

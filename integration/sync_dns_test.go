@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,9 +17,13 @@ var _ = Describe("sync_dns", func() {
 	var (
 		agentClient      agentclient.AgentClient
 		registrySettings settings.Settings
+
+		newRecordsVersion uint64
 	)
 
 	BeforeEach(func() {
+		newRecordsVersion = uint64(time.Now().Unix())
+
 		err := testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
 
@@ -79,9 +84,6 @@ var _ = Describe("sync_dns", func() {
 	})
 
 	It("sends a sync_dns message to agent", func() {
-		oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
-		Expect(err).NotTo(HaveOccurred())
-
 		newDNSRecords := settings.DNSRecords{
 			Records: [][2]string{
 				{"216.58.194.206", "google.com"},
@@ -101,14 +103,14 @@ var _ = Describe("sync_dns", func() {
 		_, err = testEnvironment.RunCommand("sudo ls -la /var/vcap/data/new-dns-records")
 		Expect(err).NotTo(HaveOccurred())
 
-		recordsJSON := `{
-		  "version": 1,
+		recordsJSON := fmt.Sprintf(`{
+		  "version": %d,
 			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
 			"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
 			"record_infos": [
 				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 			]
-		}`
+		}`, newRecordsVersion)
 		_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo echo '%s' > /tmp/new-dns-records", recordsJSON))
 		Expect(err).NotTo(HaveOccurred())
 
@@ -118,7 +120,7 @@ var _ = Describe("sync_dns", func() {
 		_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/blobs/new-dns-records")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = agentClient.SyncDNS("new-dns-records", strings.TrimSpace(blobDigest), 1)
+		_, err = agentClient.SyncDNS("new-dns-records", strings.TrimSpace(blobDigest), newRecordsVersion)
 		Expect(err).NotTo(HaveOccurred())
 
 		newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
@@ -126,18 +128,17 @@ var _ = Describe("sync_dns", func() {
 
 		Expect(newEtcHosts).To(MatchRegexp("216.58.194.206\\s+google.com"))
 		Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
-		Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
 
 		instanceDNSRecords, err := testEnvironment.RunCommand("sudo cat /var/vcap/instance/dns/records.json")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(instanceDNSRecords).To(MatchJSON(`{
-			"version": 1,
+		Expect(instanceDNSRecords).To(MatchJSON(fmt.Sprintf(`{
+			"version": %d,
 			"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],
 			"record_keys": ["id", "instance_group", "az", "network", "deployment", "ip"],
 			"record_infos": [
 				["id-1", "instance-group-1", "az1", "network1", "deployment1", "ip1"]
 			]
-		}`))
+		}`, newRecordsVersion)))
 
 		filePerms, err := testEnvironment.RunCommand("ls -l /var/vcap/instance/dns/records.json | cut -d ' ' -f 1,3,4")
 		Expect(err).NotTo(HaveOccurred())
