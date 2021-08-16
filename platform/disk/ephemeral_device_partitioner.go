@@ -32,13 +32,6 @@ func NewEphemeralDevicePartitioner(
 		cmdRunner:         cmdRunner,
 	}
 }
-func (p *EphemeralDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
-	return false, nil
-}
-
-func (p *EphemeralDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
-	return nil
-}
 
 func (p *EphemeralDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, deviceFullSizeInBytes, err := p.partedPartitioner.GetPartitions(devicePath)
@@ -111,5 +104,42 @@ func (p EphemeralDevicePartitioner) ensureGPTPartition(devicePath string) (err e
 		}
 	}
 
+	return nil
+}
+
+func (p *EphemeralDevicePartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
+	existingPartitions, _, err := p.GetPartitions(devicePath)
+	if err != nil {
+		return false, err
+	}
+	if len(existingPartitions) < len(partitionsToMatch) {
+		return false, nil
+	}
+
+	remainingDiskSpace, err := p.GetDeviceSizeInBytes(devicePath)
+	if err != nil {
+		return false, err
+	}
+
+	for index, partitionToMatch := range partitionsToMatch {
+		if index == len(partitionsToMatch)-1 {
+			partitionToMatch.SizeInBytes = remainingDiskSpace
+		}
+
+		existingPartition := existingPartitions[index]
+		switch {
+		case existingPartition.Type != partitionToMatch.Type:
+			return false, nil
+		case !biggerThan(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, ConvertFromMbToBytes(deltaSize)):
+			return true, nil
+		}
+
+		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInBytes
+	}
+
+	return true, nil
+}
+
+func (p *EphemeralDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
 	return nil
 }

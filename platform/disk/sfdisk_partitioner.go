@@ -29,14 +29,6 @@ func NewSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, ti
 	}
 }
 
-func (p sfdiskPartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
-	return false, nil
-}
-
-func (p sfdiskPartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
-	return nil
-}
-
 func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) error {
 	partitionMatches, err := p.diskMatchesPartitions(devicePath, partitions)
 	if err != nil {
@@ -233,10 +225,39 @@ func extractPartitionPathAndType(line string) (partitionPath string, partitionTy
 	return
 }
 
-func (p sfdiskPartitioner) PartionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
-	return false, nil
+func (p sfdiskPartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
+	existingPartitions, _, err := p.GetPartitions(devicePath)
+	if err != nil {
+		return false, err
+	}
+	if len(existingPartitions) < len(partitionsToMatch) {
+		return false, nil
+	}
+
+	remainingDiskSpace, err := p.GetDeviceSizeInBytes(devicePath)
+	if err != nil {
+		return false, err
+	}
+
+	for index, partitionToMatch := range partitionsToMatch {
+		if index == len(partitionsToMatch)-1 {
+			partitionToMatch.SizeInBytes = remainingDiskSpace
+		}
+
+		existingPartition := existingPartitions[index]
+		switch {
+		case existingPartition.Type != partitionToMatch.Type:
+			return false, nil
+		case !biggerThan(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, ConvertFromMbToBytes(deltaSize)):
+			return true, nil
+		}
+
+		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInBytes
+	}
+
+	return true, nil
 }
 
-func (p sfdiskPartitioner) ReizePartitions(devicePath string, partitions []Partition) (err error) {
+func (p sfdiskPartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
 	return nil
 }

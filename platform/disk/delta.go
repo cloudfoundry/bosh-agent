@@ -9,3 +9,11 @@ func withinDelta(existing, expected, delta uint64) bool {
 	}
 	return true
 }
+
+func biggerThan(existing, expected, delta uint64) bool {
+	switch {
+	case expected > existing:
+		return (expected - existing) > delta
+	}
+	return true
+}
