@@ -1154,24 +1154,65 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			return bosherr.WrapError(err, "Selecting partitioner")
 		}
 
-		err = partitioner.Partition(devicePath, singlePartPartitioning)
-		if err != nil {
-			return bosherr.WrapError(err, "Partitioning disk")
-		}
-
 		persistentDiskFS := diskSetting.FileSystemType
-		switch persistentDiskFS {
-		case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
-		case boshdisk.FileSystemDefault:
-			persistentDiskFS = boshdisk.FileSystemExt4
-		default:
-			return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
-		}
-
-		err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
+		partitionNeedsResize, err := partitioner.PartionsNeedResize(devicePath, singlePartPartitioning)
 		if err != nil {
-			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
+			return bosherr.WrapError(err, "Failed to get partition size information")
 		}
+		if partitionNeedsResize {
+			err = partitioner.ReizePartitions(devicePath, singlePartPartitioning)
+			if err != nil {
+				return bosherr.WrapError(err, "Resizing disk partition")
+			}
+			realDeviceSize, err := partitioner.GetDeviceSizeInBytes(devicePath)
+			if err != nil {
+				return bosherr.WrapError(err, "Failed to get real device size")
+			}
+			//TODO use here interface to avoid duplication
+			switch persistentDiskFS {
+			case boshdisk.FileSystemExt4, boshdisk.FileSystemDefault:
+				err = boshdisk.NewExt4FileSystemExtender(p.cmdRunner).Extend(devicePath, realDeviceSize)
+				if err != nil {
+					return bosherr.WrapError(err, "Failed to resize file system")
+				}
+			case boshdisk.FileSystemXFS:
+				err = boshdisk.NewXfsFileSystemExtender(p.cmdRunner).Extend(devicePath, realDeviceSize)
+				if err != nil {
+					return bosherr.WrapError(err, "Failed to resize file system")
+				}
+			default:
+				return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
+			}
+		} else {
+			err = partitioner.Partition(devicePath, singlePartPartitioning)
+			if err != nil {
+				return bosherr.WrapError(err, "Partitioning disk")
+			}
+			switch persistentDiskFS {
+			case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
+			case boshdisk.FileSystemDefault:
+				persistentDiskFS = boshdisk.FileSystemExt4
+			default:
+				return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
+			}
+
+			err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
+			if err != nil {
+				return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
+			}
+		}
+		// switch persistentDiskFS {
+		// case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
+		// case boshdisk.FileSystemDefault:
+		// 	persistentDiskFS = boshdisk.FileSystemExt4
+		// default:
+		// 	return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
+		// }
+
+		// err = p.diskManager.GetFormatter().Format(partitionPath, persistentDiskFS)
+		// if err != nil {
+		// 	return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
+		// }
 
 		partitionPathToMount = firstPartitionPath
 	}

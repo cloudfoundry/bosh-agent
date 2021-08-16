@@ -224,3 +224,11 @@ func extractPartitionPathAndType(line string) (partitionPath string, partitionTy
 	partitionType = partitionTypesMap[sfdiskPartitionType]
 	return
 }
+
+func (p sfdiskPartitioner) PartionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p sfdiskPartitioner) ReizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}
