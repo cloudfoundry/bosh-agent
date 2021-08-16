@@ -1155,12 +1155,12 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		}
 
 		persistentDiskFS := diskSetting.FileSystemType
-		partitionNeedsResize, err := partitioner.PartionsNeedResize(devicePath, singlePartPartitioning)
+		partitionNeedsResize, err := partitioner.PartitionsNeedResize(devicePath, singlePartPartitioning)
 		if err != nil {
 			return bosherr.WrapError(err, "Failed to get partition size information")
 		}
 		if partitionNeedsResize {
-			err = partitioner.ReizePartitions(devicePath, singlePartPartitioning)
+			err = partitioner.ResizePartitions(devicePath, singlePartPartitioning)
 			if err != nil {
 				return bosherr.WrapError(err, "Resizing disk partition")
 			}

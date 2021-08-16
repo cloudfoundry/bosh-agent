@@ -32,6 +32,13 @@ func NewEphemeralDevicePartitioner(
 		cmdRunner:         cmdRunner,
 	}
 }
+func (p *EphemeralDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p *EphemeralDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}
 
 func (p *EphemeralDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, deviceFullSizeInBytes, err := p.partedPartitioner.GetPartitions(devicePath)

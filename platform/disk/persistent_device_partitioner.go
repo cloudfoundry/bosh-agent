@@ -31,6 +31,14 @@ func NewPersistentDevicePartitioner(
 	}
 }
 
+func (p *PersistentDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p *PersistentDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}
+
 func (p *PersistentDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	size, err := p.deviceUtil.GetBlockDeviceSize(devicePath)
 	if err != nil {

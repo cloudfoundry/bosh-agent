@@ -26,6 +26,14 @@ func NewRootDevicePartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner
 	}
 }
 
+func (p rootDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p rootDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}
+
 func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, deviceFullSizeInBytes, err := p.GetPartitions(devicePath)
 	if err != nil {

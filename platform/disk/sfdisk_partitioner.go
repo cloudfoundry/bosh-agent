@@ -29,6 +29,14 @@ func NewSfdiskPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, ti
 	}
 }
 
+func (p sfdiskPartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p sfdiskPartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}
+
 func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) error {
 	partitionMatches, err := p.diskMatchesPartitions(devicePath, partitions)
 	if err != nil {

@@ -29,6 +29,14 @@ func NewFakePartitioner() *FakePartitioner {
 	}
 }
 
+func (p *FakePartitioner) PartitionsNeedResize(devicePath string, partitions []boshdisk.Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p *FakePartitioner) ResizePartitions(devicePath string, partitions []boshdisk.Partition) (err error) {
+	return nil
+}
+
 func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) error {
 	p.PartitionCalled = true
 	p.PartitionDevicePath = devicePath

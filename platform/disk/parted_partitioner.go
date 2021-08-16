@@ -34,6 +34,14 @@ func NewPartedPartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner, ti
 	}
 }
 
+func (p partedPartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, nil
+}
+
+func (p partedPartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
+	return nil
+}
+
 func (p partedPartitioner) Partition(devicePath string, desiredPartitions []Partition) error {
 	_, _, _, err := p.cmdRunner.RunCommand("partprobe", devicePath)
 	if err != nil {
