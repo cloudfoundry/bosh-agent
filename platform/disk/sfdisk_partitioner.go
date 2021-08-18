@@ -226,38 +226,9 @@ func extractPartitionPathAndType(line string) (partitionPath string, partitionTy
 }
 
 func (p sfdiskPartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
-	existingPartitions, _, err := p.GetPartitions(devicePath)
-	if err != nil {
-		return false, err
-	}
-	if len(existingPartitions) < len(partitionsToMatch) {
-		return false, nil
-	}
-
-	remainingDiskSpace, err := p.GetDeviceSizeInBytes(devicePath)
-	if err != nil {
-		return false, err
-	}
-
-	for index, partitionToMatch := range partitionsToMatch {
-		if index == len(partitionsToMatch)-1 {
-			partitionToMatch.SizeInBytes = remainingDiskSpace
-		}
-
-		existingPartition := existingPartitions[index]
-		switch {
-		case existingPartition.Type != partitionToMatch.Type:
-			return false, nil
-		case !biggerThan(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, ConvertFromMbToBytes(deltaSize)):
-			return true, nil
-		}
-
-		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInBytes
-	}
-
-	return true, nil
+	return false, bosherr.WrapError(err, "Resizing partition using sfdisk is not supported")
 }
 
-func (p sfdiskPartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
-	return nil
+func (p sfdiskPartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
+	return bosherr.WrapError(err, "Resizing partition using sfdisk is not supported")
 }

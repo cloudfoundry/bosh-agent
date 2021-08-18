@@ -31,14 +31,6 @@ func NewPersistentDevicePartitioner(
 	}
 }
 
-func (p *PersistentDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
-	return false, nil
-}
-
-func (p *PersistentDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
-	return nil
-}
-
 func (p *PersistentDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	size, err := p.deviceUtil.GetBlockDeviceSize(devicePath)
 	if err != nil {
@@ -75,4 +67,12 @@ func (p *PersistentDevicePartitioner) RemovePartitions(partitions []ExistingPart
 
 func IsGPTError(err error) bool {
 	return err == ErrGPTPartitionEncountered
+}
+
+func (p *PersistentDevicePartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
+	return p.partedPartitioner.PartitionsNeedResize(devicePath, partitionsToMatch)
+}
+
+func (p *PersistentDevicePartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
+	return p.partedPartitioner.ResizePartitions(devicePath, partitionsToMatch)
 }

@@ -26,14 +26,6 @@ func NewRootDevicePartitioner(logger boshlog.Logger, cmdRunner boshsys.CmdRunner
 	}
 }
 
-func (p rootDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
-	return false, nil
-}
-
-func (p rootDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
-	return nil
-}
-
 func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partition) error {
 	existingPartitions, deviceFullSizeInBytes, err := p.GetPartitions(devicePath)
 	if err != nil {
@@ -232,4 +224,12 @@ func (p rootDevicePartitioner) roundDown(numToRound, multiple uint64) uint64 {
 		return numToRound
 	}
 	return numToRound - remainder
+}
+
+func (p rootDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+	return false, bosherr.WrapError(err, "Resizing the system disk is not supported")
+}
+
+func (p rootDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
+	return bosherr.WrapError(err, "Resizing the system disk is not supported")
 }
