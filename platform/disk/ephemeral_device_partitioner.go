@@ -108,9 +108,9 @@ func (p EphemeralDevicePartitioner) ensureGPTPartition(devicePath string) (err e
 }
 
 func (p *EphemeralDevicePartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
-	return p.partedPartitioner.PartitionsNeedResize(devicePath, partitionsToMatch)
+	return false, bosherr.WrapError(err, "Resizing the ephemeral disk is not supported")
 }
 
 func (p *EphemeralDevicePartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
-	return p.partedPartitioner.ResizePartitions(devicePath, partitionsToMatch)
+	return bosherr.WrapError(err, "Resizing the ephemeral disk is not supported")
 }
