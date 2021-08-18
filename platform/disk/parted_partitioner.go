@@ -405,61 +405,37 @@ func (p partedPartitioner) PartitionsNeedResize(devicePath string, partitionsToM
 }
 
 func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
-	partitionStart := uint64(1048576)
-	alignmentInBytes := uint64(1048576)
-
-	deviceFullSizeInBytes, err := p.GetDeviceSizeInBytes(devicePath)
-	if err != nil {
-		return err
-	}
-
 	if len(partitionsToMatch) > 1 {
 		p.logger.Debug("parted-partioner", "Multiple partitions are not supported when resizing")
 		return bosherr.Error("Multiple partitions are not supported when resizing")
 	}
 
+	if !p.cmdRunner.CommandExists("growpart") {
+		p.logger.Info(p.logTag, "The program 'growpart' is not installed, Persistent Filesystem cannot be grown")
+		return nil
+	}
+
+	if !p.cmdRunner.CommandExists("partx") {
+		p.logger.Info(p.logTag, "The program 'partx' is not installed, Persistent Filesystem cannot be grown")
+		return nil
+	}
+
 	for index, partition := range partitionsToMatch {
-		var partitionEnd uint64
-
-		if partition.SizeInBytes == 0 {
-			partitionEnd = deviceFullSizeInBytes - 1
-		} else {
-			partitionEnd = partitionStart + partition.SizeInBytes
-			if partitionEnd >= deviceFullSizeInBytes {
-				partitionEnd = deviceFullSizeInBytes - 1
-				p.logger.Info(p.logTag, "Partition %d would be larger than remaining space. Reducing size to %dB", index, partitionEnd-partitionStart)
-			}
-		}
-		partitionEnd = p.roundDown(partitionEnd, alignmentInBytes) - 1
-
-		if len(partition.NamePrefix) == 0 {
-			partition.NamePrefix = partitionNamePrefix
+		if partition.SizeInBytes != 0 {
+			p.logger.Debug("parted-partioner", "Partitions smaller than disk size are not supported")
+			return bosherr.Error("Partitions smaller than disk size are not supported")
 		}
 
 		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 			_, _, _, err := p.cmdRunner.RunCommand(
-				"parted",
-				"-s",
+				"growpart",
 				devicePath,
-				"unit",
-				"B",
-				"resizepart",
-				fmt.Sprintf("%d", index+1),
-				fmt.Sprintf("%d", partitionEnd),
+				"--update auto",
 			)
 			if err != nil {
 				p.logger.Error(p.logTag, "Failed with an error: %s", err)
-				//TODO: double check the output here. Does it make sense?
-				return true, bosherr.WrapError(err, "Resizing partition using parted")
+				return true, bosherr.WrapError(err, "Resizing partition using growpart")
 			}
-
-			_, _, _, err = p.cmdRunner.RunCommand("partprobe", devicePath)
-			if err != nil {
-				p.logger.Error(p.logTag, "Failed to probe for newly created parition: %s", err)
-				return true, bosherr.WrapError(err, "Resizing partition using parted")
-			}
-
-			p.cmdRunner.RunCommand("udevadm", "settle")
 
 			p.logger.Info(p.logTag, "Successfully resized partition %d on %s", index, devicePath)
 			return false, nil
@@ -472,7 +448,6 @@ func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch
 			return bosherr.WrapErrorf(err, "Repartitioning disk `%s'", devicePath)
 		}
 
-		partitionStart = p.roundUp(partitionEnd+1, alignmentInBytes)
 	}
 	return nil
 }
