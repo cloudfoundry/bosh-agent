@@ -422,16 +422,14 @@ func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch
 		var partitionEnd uint64
 
 		if partition.SizeInBytes == 0 {
-			p.logger.Debug("parted-partioner", "Invalid partion size of zero")
-			return bosherr.Error("Invalid partion size of zero")
-		}
-
-		partitionEnd = partitionStart + partition.SizeInBytes
-		if partitionEnd >= deviceFullSizeInBytes {
 			partitionEnd = deviceFullSizeInBytes - 1
-			p.logger.Info(p.logTag, "Partition %d would be larger than remaining space. Reducing size to %dB", index, partitionEnd-partitionStart)
+		} else {
+			partitionEnd = partitionStart + partition.SizeInBytes
+			if partitionEnd >= deviceFullSizeInBytes {
+				partitionEnd = deviceFullSizeInBytes - 1
+				p.logger.Info(p.logTag, "Partition %d would be larger than remaining space. Reducing size to %dB", index, partitionEnd-partitionStart)
+			}
 		}
-
 		partitionEnd = p.roundDown(partitionEnd, alignmentInBytes) - 1
 
 		if len(partition.NamePrefix) == 0 {
