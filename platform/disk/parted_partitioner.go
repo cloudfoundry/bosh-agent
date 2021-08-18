@@ -430,7 +430,9 @@ func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch
 			_, _, _, err := p.cmdRunner.RunCommand(
 				"growpart",
 				devicePath,
-				"--update auto",
+				fmt.Sprintf("%d", index+1),
+				"--update",
+				"auto",
 			)
 			if err != nil {
 				p.logger.Error(p.logTag, "Failed with an error: %s", err)
