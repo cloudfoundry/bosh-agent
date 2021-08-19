@@ -1155,11 +1155,11 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		}
 
 		persistentDiskFS := diskSetting.FileSystemType
-		partitionNeedsResize, err := partitioner.PartitionsNeedResize(devicePath, singlePartPartitioning)
+		singlePartNeedsResize, err := partitioner.PartitionsNeedResize(devicePath, singlePartPartitioning)
 		if err != nil {
-			return bosherr.WrapError(err, "Failed to get partition size information")
+			return bosherr.WrapError(err, "Failed to determine whether partitions need rezising")
 		}
-		if partitionNeedsResize {
+		if singlePartNeedsResize {
 			err = partitioner.ResizePartitions(devicePath, singlePartPartitioning)
 			if err != nil {
 				return bosherr.WrapError(err, "Resizing disk partition")
@@ -1209,7 +1209,7 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		// 	return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
 		// }
 
-		// err = p.diskManager.GetFormatter().Format(partitionPath, persistentDiskFS)
+		// err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
 		// if err != nil {
 		// 	return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
 		// }
