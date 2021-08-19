@@ -1171,12 +1171,12 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			//TODO use here interface to avoid duplication
 			switch persistentDiskFS {
 			case boshdisk.FileSystemExt4, boshdisk.FileSystemDefault:
-				err = boshdisk.NewExt4FileSystemExtender(p.cmdRunner).Extend(devicePath, realDeviceSize)
+				err = boshdisk.NewExt4FileSystemExtender(p.cmdRunner).Extend(firstPartitionPath, realDeviceSize)
 				if err != nil {
 					return bosherr.WrapError(err, "Failed to resize file system")
 				}
 			case boshdisk.FileSystemXFS:
-				err = boshdisk.NewXfsFileSystemExtender(p.cmdRunner).Extend(devicePath, realDeviceSize)
+				err = boshdisk.NewXfsFileSystemExtender(p.cmdRunner).Extend(firstPartitionPath, realDeviceSize)
 				if err != nil {
 					return bosherr.WrapError(err, "Failed to resize file system")
 				}
