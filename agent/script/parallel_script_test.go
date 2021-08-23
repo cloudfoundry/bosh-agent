@@ -181,7 +181,7 @@ var _ = Describe("ParallelScript", func() {
 				Expect(existingScript2.RunCallCount()).To(Equal(1))
 			})
 
-			It("runs the scripts concurrently", func(done Done) {
+			It("runs the scripts concurrently", func() {
 				waitGroup := &sync.WaitGroup{}
 				waitGroup.Add(2)
 
@@ -199,8 +199,6 @@ var _ = Describe("ParallelScript", func() {
 
 				Expect(existingScript1.RunCallCount()).To(Equal(1))
 				Expect(existingScript2.RunCallCount()).To(Equal(1))
-
-				close(done)
 			})
 		})
 	})
