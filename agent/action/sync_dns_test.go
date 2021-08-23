@@ -2,6 +2,7 @@ package action_test
 
 import (
 	"errors"
+	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
@@ -10,9 +11,8 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
-	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"

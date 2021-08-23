@@ -122,11 +122,13 @@ var _ = Describe("matchers", func() {
 			msg := oneOf.FailureMessage("Fake Test Value")
 
 			expectedMessagePattern := `Expected
-		<string>: Fake Test Value
+	<string>: Fake Test Value
 to match one of
-		<\*matchers.EqualMatcher | 0x[[:xdigit:]]+>: {Expected: "a"}
+	<\*matchers.EqualMatcher | 0x[[:xdigit:]]+>: {
+		Expected: <string>"a",
+	}
 or
-		<\*matchers.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[1\]}`
+	<\*matchers.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[<int>1\]}`
 
 			Expect(msg).To(MatchRegexp(expectedMessagePattern))
 		})
@@ -143,7 +145,7 @@ or
 not to match one of
 		<string>: a
 or
-		<\*matchers\.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[1\]}`
+		<\*matchers\.BeNumericallyMatcher | 0x[[:xdigit:]]+>: {Comparator: ">", CompareTo: \[<int>1\]}`
 
 			Expect(msg).To(MatchRegexp(expectedMessagePattern))
 		})
