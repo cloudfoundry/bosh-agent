@@ -2254,6 +2254,10 @@ func (fake *FakePlatform) MigratePersistentDiskReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
+func (fake *FakePlatform) AdjustPersistentDiskPartitioning(diskSetting settings.DiskSettings, mountPoint string) error {
+	return nil
+}
+
 func (fake *FakePlatform) MountPersistentDisk(arg1 settings.DiskSettings, arg2 string) error {
 	fake.mountPersistentDiskMutex.Lock()
 	ret, specificReturn := fake.mountPersistentDiskReturnsOnCall[len(fake.mountPersistentDiskArgsForCall)]

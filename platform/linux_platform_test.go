@@ -2594,6 +2594,187 @@ sam:fakeanotheruser`)
 		})
 	})
 
+	Describe("AdjustPersistentDiskPartitioning", func() {
+		var (
+			diskSettings boshsettings.DiskSettings
+			mntPoint     string
+		)
+
+		BeforeEach(func() {
+			diskSettings = boshsettings.DiskSettings{ID: "fake-unique-id", Path: "fake-volume-id", MountOptions: []string{"mntOpt1", "mntOpt2"}}
+			mntPoint = "/mnt/point"
+		})
+
+		Context("when device real path starts with /dev/mapper/ and is successfully resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RealDevicePath = "/dev/mapper/fake-real-device-path"
+			})
+
+			Context("when UsePreformattedPersistentDisk set to false", func() {
+
+				It("partitions the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(diskManager.GetPersistentDevicePartitionerCallCount()).To(Equal(1))
+					Expect(diskManager.GetPersistentDevicePartitionerArgsForCall(0)).To(Equal(""))
+
+					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+					Expect(partitioner.PartitionDevicePath).To(Equal("/dev/mapper/fake-real-device-path"))
+					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
+				})
+
+				It("formats the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
+					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+				})
+
+				Context("when fetching the partitioner fails", func() {
+					BeforeEach(func() {
+						diskManager.GetPersistentDevicePartitionerReturns(nil, errors.New("boom"))
+					})
+
+					It("returns the error", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).To(HaveOccurred())
+					})
+				})
+
+				Context("when a persistent disk partitioner is requested", func() {
+					BeforeEach(func() {
+						diskSettings.Partitioner = "cool-partitioner"
+					})
+
+					It("fetches that partitioner", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(diskManager.GetPersistentDevicePartitionerCallCount()).To(Equal(1))
+						Expect(diskManager.GetPersistentDevicePartitionerArgsForCall(0)).To(Equal("cool-partitioner"))
+					})
+				})
+			})
+		})
+
+		Context("when device real path starts with /dev/nvme and is successfully resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RealDevicePath = "/dev/nvme2n1"
+			})
+
+			Context("when UsePreformattedPersistentDisk set to false", func() {
+				It("partitions the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+					Expect(partitioner.PartitionDevicePath).To(Equal("/dev/nvme2n1"))
+					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
+				})
+
+				It("formats the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/nvme2n1p1"}))
+					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+				})
+			})
+		})
+
+		Context("when device path is successfully resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RealDevicePath = "fake-real-device-path"
+			})
+			Context("when UsePreformattedPersistentDisk set to false", func() {
+
+				It("partitions the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+					Expect(partitioner.PartitionDevicePath).To(Equal("fake-real-device-path"))
+					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
+				})
+
+				Context("when settings do NOT specify persistentDiskFS", func() {
+					It("formats in ext4 format", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(formatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+						Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+					})
+				})
+
+				Context("when settings specify persistentDiskFS", func() {
+					Context("with ext4", func() {
+						It("formats in using the given format", func() {
+							err := platform.AdjustPersistentDiskPartitioning(
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemExt4},
+								"/mnt/point",
+							)
+
+							Expect(err).ToNot(HaveOccurred())
+							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+						})
+					})
+
+					Context("with xfs", func() {
+						It("formats in using the given format", func() {
+							err := platform.AdjustPersistentDiskPartitioning(
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
+								"/mnt/point",
+							)
+
+							Expect(err).ToNot(HaveOccurred())
+							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemXFS}))
+						})
+					})
+
+					Context("with an unsupported type", func() {
+						It("it errors", func() {
+							err := platform.AdjustPersistentDiskPartitioning(
+								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemType("blahblah")},
+								"/mnt/point",
+							)
+
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(Equal(`The filesystem type "blahblah" is not supported`))
+						})
+					})
+				})
+
+				It("returns an error when disk could not be formatted", func() {
+					formatter.FormatError = errors.New("Oh noes!")
+					err := platform.AdjustPersistentDiskPartitioning(
+						boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
+						"/mnt/point",
+					)
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal("Formatting partition with xfs: Oh noes!"))
+				})
+			})
+
+			Context("when UsePreformattedPersistentDisk set to true", func() {
+				BeforeEach(func() {
+					options.UsePreformattedPersistentDisk = true
+				})
+
+				It("does not partition the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(partitioner.PartitionCalled).To(BeFalse())
+				})
+
+				It("does not format the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(formatter.FormatCalled).To(BeFalse())
+				})
+			})
+		})
+	})
+
 	Describe("MountPersistentDisk", func() {
 		var (
 			diskSettings boshsettings.DiskSettings
@@ -2677,36 +2858,6 @@ sam:fakeanotheruser`)
 					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
 				})
 
-				It("partitions the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(diskManager.GetPersistentDevicePartitionerCallCount()).To(Equal(1))
-					Expect(diskManager.GetPersistentDevicePartitionerArgsForCall(0)).To(Equal(""))
-
-					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
-					Expect(partitioner.PartitionDevicePath).To(Equal("/dev/mapper/fake-real-device-path"))
-					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
-				})
-
-				It("formats the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/mapper/fake-real-device-path-part1"}))
-					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
-				})
-
-				It("mounts the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(mounter.MountCallCount()).To(Equal(1))
-					partition, mntPt, options := mounter.MountArgsForCall(0)
-					Expect(partition).To(Equal("/dev/mapper/fake-real-device-path-part1"))
-					Expect(mntPt).To(Equal("/mnt/point"))
-					Expect(options).To(Equal([]string{"mntOpt1", "mntOpt2"}))
-				})
-
 				It("generates the managed disk settings file", func() {
 					err := platform.MountPersistentDisk(diskSettings, mntPoint)
 					Expect(err).ToNot(HaveOccurred())
@@ -2717,30 +2868,6 @@ sam:fakeanotheruser`)
 					contents, err = platform.GetFs().ReadFileString(managedSettingsPath)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(contents).To(Equal("fake-unique-id"))
-				})
-
-				Context("when fetching the partitioner fails", func() {
-					BeforeEach(func() {
-						diskManager.GetPersistentDevicePartitionerReturns(nil, errors.New("boom"))
-					})
-
-					It("returns the error", func() {
-						err := platform.MountPersistentDisk(diskSettings, mntPoint)
-						Expect(err).To(HaveOccurred())
-					})
-				})
-
-				Context("when a persistent disk partitioner is requested", func() {
-					BeforeEach(func() {
-						diskSettings.Partitioner = "cool-partitioner"
-					})
-
-					It("fetches that partitioner", func() {
-						err := platform.MountPersistentDisk(diskSettings, mntPoint)
-						Expect(err).NotTo(HaveOccurred())
-						Expect(diskManager.GetPersistentDevicePartitionerCallCount()).To(Equal(1))
-						Expect(diskManager.GetPersistentDevicePartitionerArgsForCall(0)).To(Equal("cool-partitioner"))
-					})
 				})
 			})
 		})
@@ -2817,22 +2944,6 @@ sam:fakeanotheruser`)
 					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
 				})
 
-				It("partitions the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-
-					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
-					Expect(partitioner.PartitionDevicePath).To(Equal("/dev/nvme2n1"))
-					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
-				})
-
-				It("formats the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/nvme2n1p1"}))
-					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
-				})
-
 				It("mounts the disk", func() {
 					err := platform.MountPersistentDisk(diskSettings, mntPoint)
 					Expect(err).ToNot(HaveOccurred())
@@ -2879,73 +2990,6 @@ sam:fakeanotheruser`)
 					err := platform.MountPersistentDisk(diskSettings, mntPoint)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
-				})
-
-				It("partitions the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-
-					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
-					Expect(partitioner.PartitionDevicePath).To(Equal("fake-real-device-path"))
-					Expect(partitioner.PartitionPartitions).To(Equal(partitions))
-				})
-
-				Context("when settings do NOT specify persistentDiskFS", func() {
-					It("formats in ext4 format", func() {
-						err := platform.MountPersistentDisk(diskSettings, mntPoint)
-						Expect(err).ToNot(HaveOccurred())
-						Expect(formatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
-						Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
-					})
-				})
-
-				Context("when settings specify persistentDiskFS", func() {
-					Context("with ext4", func() {
-						It("formats in using the given format", func() {
-							err := platform.MountPersistentDisk(
-								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemExt4},
-								"/mnt/point",
-							)
-
-							Expect(err).ToNot(HaveOccurred())
-							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
-						})
-					})
-
-					Context("with xfs", func() {
-						It("formats in using the given format", func() {
-							err := platform.MountPersistentDisk(
-								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
-								"/mnt/point",
-							)
-
-							Expect(err).ToNot(HaveOccurred())
-							Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemXFS}))
-						})
-					})
-
-					Context("with an unsupported type", func() {
-						It("it errors", func() {
-							err := platform.MountPersistentDisk(
-								boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemType("blahblah")},
-								"/mnt/point",
-							)
-
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(Equal(`The filesystem type "blahblah" is not supported`))
-						})
-					})
-				})
-
-				It("returns an error when disk could not be formatted", func() {
-					formatter.FormatError = errors.New("Oh noes!")
-					err := platform.MountPersistentDisk(
-						boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
-						"/mnt/point",
-					)
-
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Formatting partition with xfs: Oh noes!"))
 				})
 
 				It("returns an error when updating managed_disk_settings.json fails", func() {
@@ -3011,18 +3055,6 @@ sam:fakeanotheruser`)
 					err := platform.MountPersistentDisk(diskSettings, mntPoint)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-mount-err"))
-				})
-
-				It("does not partition the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(partitioner.PartitionCalled).To(BeFalse())
-				})
-
-				It("does not format the disk", func() {
-					err := platform.MountPersistentDisk(diskSettings, mntPoint)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(formatter.FormatCalled).To(BeFalse())
 				})
 			})
 		})
