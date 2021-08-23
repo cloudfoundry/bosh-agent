@@ -79,7 +79,7 @@ type TestEnvironment struct {
 	sshClient        *ssh.Client
 }
 
-func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel, ) (*TestEnvironment, error) {
+func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (*TestEnvironment, error) {
 	client, err := dialSSHClient(cmdRunner)
 	if err != nil {
 		return nil, err

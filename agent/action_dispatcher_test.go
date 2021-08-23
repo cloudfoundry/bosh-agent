@@ -14,14 +14,14 @@ import (
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	"github.com/cloudfoundry/bosh-agent/logger/fakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 
 func init() {
 	Describe("actionDispatcher", func() {
 		var (
-			logger        *fakes.FakeLogger
+			logger        *fakelogger.FakeLogger
 			taskService   *faketask.FakeService
 			taskManager   *faketask.FakeManager
 			actionFactory *fakeaction.FakeFactory
@@ -30,7 +30,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger = &fakes.FakeLogger{}
+			logger = &fakelogger.FakeLogger{}
 			taskService = faketask.NewFakeService()
 			taskManager = faketask.NewFakeManager()
 			actionFactory = fakeaction.NewFakeFactory()

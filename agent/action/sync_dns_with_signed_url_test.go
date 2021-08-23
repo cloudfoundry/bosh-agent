@@ -11,8 +11,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	fakelogger "github.com/cloudfoundry/bosh-agent/logger/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
