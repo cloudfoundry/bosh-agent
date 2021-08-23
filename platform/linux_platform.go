@@ -1112,6 +1112,75 @@ func (p linux) changeTmpDirPermissions(path string) error {
 	return nil
 }
 
+func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSettings, mountPoint string) error {
+
+	if p.options.UsePreformattedPersistentDisk {
+		return nil
+	}
+	p.logger.Debug(logTag, "Adjusting size for persistent disk %+v", diskSetting)
+
+	devicePath, _, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting real device path")
+	}
+
+	firstPartitionPath := p.partitionPath(devicePath, 1)
+
+	singlePartPartitioning := []boshdisk.Partition{
+		{Type: boshdisk.PartitionTypeLinux},
+	}
+
+	partitioner, err := p.diskManager.GetPersistentDevicePartitioner(diskSetting.Partitioner)
+	if err != nil {
+		return bosherr.WrapError(err, "Selecting partitioner")
+	}
+
+	persistentDiskFS := diskSetting.FileSystemType
+	singlePartNeedsResize, err := partitioner.PartitionsNeedResize(devicePath, singlePartPartitioning)
+	if err != nil {
+		return bosherr.WrapError(err, "Failed to determine whether partitions need rezising")
+	}
+	if singlePartNeedsResize {
+		err = partitioner.ResizePartitions(devicePath, singlePartPartitioning)
+		if err != nil {
+			return bosherr.WrapError(err, "Resizing disk partition")
+		}
+
+		err := p.diskManager.GetMounter().Mount(firstPartitionPath, mountPoint, diskSetting.MountOptions...)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to mount partition for filesystem growing")
+		}
+
+		err = p.diskManager.GetFormatter().GrowFilesystem(firstPartitionPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to grow filesystem")
+		}
+
+		_, err = p.diskManager.GetMounter().Unmount(firstPartitionPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to unmount partition after filesystem growing")
+		}
+	} else {
+		err = partitioner.Partition(devicePath, singlePartPartitioning)
+		if err != nil {
+			return bosherr.WrapError(err, "Partitioning disk")
+		}
+		switch persistentDiskFS {
+		case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
+		case boshdisk.FileSystemDefault:
+			persistentDiskFS = boshdisk.FileSystemExt4
+		default:
+			return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
+		}
+
+		err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
+		if err != nil {
+			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
+		}
+	}
+	return nil
+}
+
 func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountPoint string) error {
 	p.logger.Debug(logTag, "Mounting persistent disk %+v at %s", diskSetting, mountPoint)
 
@@ -1120,15 +1189,15 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		return bosherr.WrapError(err, "Getting real device path")
 	}
 
-	alreadyMountedPartPath, isMountPoint, err := p.IsMountPoint(mountPoint)
+	alreadyMountedPartPath, hasMountedDevice, err := p.IsMountPoint(mountPoint)
 	if err != nil {
-		return bosherr.WrapError(err, "Checking mount point")
+		return bosherr.WrapError(err, "Checking mount point already has a device monted onto")
 	}
-	p.logger.Info(logTag, "devicePath = %s, alreadyMountedPartPath = %s, isMountPoint = %t", devicePath, alreadyMountedPartPath, isMountPoint)
+	p.logger.Info(logTag, "devicePath = %s, alreadyMountedPartPath = %s, hasMountedDevice = %t", devicePath, alreadyMountedPartPath, hasMountedDevice)
 
 	firstPartitionPath := p.partitionPath(devicePath, 1)
-	if isMountPoint {
-		if firstPartitionPath == alreadyMountedPartPath {
+	if hasMountedDevice {
+		if alreadyMountedPartPath == firstPartitionPath {
 			p.logger.Info(logTag, "device: %s is already mounted on %s, skipping mounting", alreadyMountedPartPath, mountPoint)
 			return nil
 		}
@@ -1145,80 +1214,10 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	if p.options.UsePreformattedPersistentDisk {
 		partitionPathToMount = devicePath
 	} else {
-		singlePartPartitioning := []boshdisk.Partition{
-			{Type: boshdisk.PartitionTypeLinux},
-		}
-
-		partitioner, err := p.diskManager.GetPersistentDevicePartitioner(diskSetting.Partitioner)
-		if err != nil {
-			return bosherr.WrapError(err, "Selecting partitioner")
-		}
-
-		persistentDiskFS := diskSetting.FileSystemType
-		singlePartNeedsResize, err := partitioner.PartitionsNeedResize(devicePath, singlePartPartitioning)
-		if err != nil {
-			return bosherr.WrapError(err, "Failed to determine whether partitions need rezising")
-		}
-		if singlePartNeedsResize {
-			err = partitioner.ResizePartitions(devicePath, singlePartPartitioning)
-			if err != nil {
-				return bosherr.WrapError(err, "Resizing disk partition")
-			}
-			realDeviceSize, err := partitioner.GetDeviceSizeInBytes(devicePath)
-			if err != nil {
-				return bosherr.WrapError(err, "Failed to get real device size")
-			}
-			//TODO use here interface to avoid duplication
-			switch persistentDiskFS {
-			case boshdisk.FileSystemExt4, boshdisk.FileSystemDefault:
-				err = boshdisk.NewExt4FileSystemExtender(p.cmdRunner).Extend(firstPartitionPath, realDeviceSize)
-				if err != nil {
-					return bosherr.WrapError(err, "Failed to resize file system")
-				}
-			case boshdisk.FileSystemXFS:
-				err = boshdisk.NewXfsFileSystemExtender(p.cmdRunner).Extend(firstPartitionPath, realDeviceSize)
-				if err != nil {
-					return bosherr.WrapError(err, "Failed to resize file system")
-				}
-			default:
-				return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
-			}
-		} else {
-			err = partitioner.Partition(devicePath, singlePartPartitioning)
-			if err != nil {
-				return bosherr.WrapError(err, "Partitioning disk")
-			}
-			switch persistentDiskFS {
-			case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
-			case boshdisk.FileSystemDefault:
-				persistentDiskFS = boshdisk.FileSystemExt4
-			default:
-				return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
-			}
-
-			err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
-			if err != nil {
-				return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
-			}
-		}
-		// switch persistentDiskFS {
-		// case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
-		// case boshdisk.FileSystemDefault:
-		// 	persistentDiskFS = boshdisk.FileSystemExt4
-		// default:
-		// 	return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
-		// }
-
-		// err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
-		// if err != nil {
-		// 	return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
-		// }
-
 		partitionPathToMount = firstPartitionPath
 	}
 
 	err = p.diskManager.GetMounter().Mount(partitionPathToMount, mountPoint, diskSetting.MountOptions...)
-
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
 	}
@@ -1226,7 +1225,6 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
 
 	err = p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
-
 	if err != nil {
 		return bosherr.WrapError(err, "Writing managed_disk_settings.json")
 	}

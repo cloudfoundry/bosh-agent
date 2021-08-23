@@ -2735,7 +2735,7 @@ sam:fakeanotheruser`)
 						diskSettings.Partitioner = "cool-partitioner"
 					})
 
-					It("returns the error", func() {
+					It("fetches that partitioner", func() {
 						err := platform.MountPersistentDisk(diskSettings, mntPoint)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(diskManager.GetPersistentDevicePartitionerCallCount()).To(Equal(1))

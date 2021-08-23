@@ -20,3 +20,7 @@ func (p *FakeFormatter) Format(partitionPath string, fsType boshdisk.FileSystemT
 	p.FormatFsTypes = append(p.FormatFsTypes, fsType)
 	return
 }
+
+func (p *FakeFormatter) GrowFilesystem(partitionPath string) error {
+	return nil
+}
