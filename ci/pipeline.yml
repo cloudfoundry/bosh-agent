@@ -104,18 +104,19 @@ resources:
 jobs:
   - name: bump-deps
     plan:
-      - get: weekly
-        trigger: true
-      - get: bosh-agent
+      - in_parallel:
+        - get: weekly
+          trigger: true
+        - get: bosh-agent
+        - get: bosh-ecosystem-docker-image
       - task: bump-deps
         file: bosh-agent/ci/tasks/bump-deps.yml
+        image: bosh-ecosystem-docker-image
       - task: test-unit
-        input_mapping:
-          bosh-agent: bumped-bosh-agent
         file: bosh-agent/ci/tasks/test-unit.yml
       - put: bosh-agent
         params:
-          repository: bumped-bosh-agent
+          repository: bosh-agent
           rebase: true
 
   - name: test-unit
