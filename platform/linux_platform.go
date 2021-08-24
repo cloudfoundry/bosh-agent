@@ -1140,6 +1140,7 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 	if err != nil {
 		return bosherr.WrapError(err, "Failed to determine whether partitions need rezising")
 	}
+	p.logger.Debug(logTag, "Persistent disk single partition needs resize: %+v", singlePartNeedsResize)
 	if singlePartNeedsResize {
 		err = partitioner.ResizePartitions(devicePath, singlePartPartitioning)
 		if err != nil {

@@ -374,7 +374,7 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 func (p partedPartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
 	existingPartitions, _, err := p.GetPartitions(devicePath)
 	if err != nil {
-		return false, err
+		return false, bosherr.WrapError(err, "Failed to get existing partitions")
 	}
 	if len(existingPartitions) < len(partitionsToMatch) {
 		return false, nil
@@ -382,7 +382,7 @@ func (p partedPartitioner) PartitionsNeedResize(devicePath string, partitionsToM
 
 	remainingDiskSpace, err := p.GetDeviceSizeInBytes(devicePath)
 	if err != nil {
-		return false, err
+		return false, bosherr.WrapError(err, "Failed to get device size")
 	}
 
 	for index, partitionToMatch := range partitionsToMatch {
@@ -394,14 +394,14 @@ func (p partedPartitioner) PartitionsNeedResize(devicePath string, partitionsToM
 		switch {
 		case existingPartition.Type != partitionToMatch.Type:
 			return false, nil
-		case !biggerThan(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, ConvertFromMbToBytes(deltaSize)):
+		case significantlySmallerThan(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, ConvertFromMbToBytes(deltaSize)):
 			return true, nil
 		}
 
 		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInBytes
 	}
 
-	return true, nil
+	return false, nil
 }
 
 func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
