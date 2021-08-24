@@ -3725,19 +3725,19 @@ unit: sectors
 	Describe("DeleteARPEntryWithIP", func() {
 		It("cleans the arp entry for the given ip", func() {
 			err := platform.DeleteARPEntryWithIP("1.2.3.4")
-			deleteArpEntry := []string{"arp", "-d", "1.2.3.4"}
+			deleteArpEntry := []string{"ip", "neigh", "flush", "to", "1.2.3.4"}
 			Expect(cmdRunner.RunCommands[0]).To(Equal(deleteArpEntry))
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("fails if arp command fails", func() {
+		It("fails when failing to clear arp cache", func() {
 			result := fakesys.FakeCmdResult{
 				Error:      errors.New("failure"),
 				ExitStatus: 1,
 				Stderr:     "",
 				Stdout:     "",
 			}
-			cmdRunner.AddCmdResult("arp -d 1.2.3.4", result)
+			cmdRunner.AddCmdResult("ip neigh flush to 1.2.3.4", result)
 
 			err := platform.DeleteARPEntryWithIP("1.2.3.4")
 
