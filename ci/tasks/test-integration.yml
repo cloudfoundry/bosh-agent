@@ -1,28 +1,15 @@
 ---
 platform: linux
 
-image_resource:
-  type: registry-image
-  source:
-    repository: bosh/agent
-    tag: latest
-
 inputs:
+- name: agent-info
 - name: bosh-agent
-  path: gopath/src/github.com/cloudfoundry/bosh-agent
-
-run:
-  path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/test-integration.sh
 
 params:
-  BOSH_AWS_ACCESS_KEY_ID: replace-me
-  BOSH_AWS_SECRET_ACCESS_KEY: replace-me
-  BOSH_LITE_KEYPAIR: replace-me
-  BOSH_LITE_SUBNET_ID: replace-me
-  BOSH_LITE_NAME: replace-me
-  BOSH_LITE_SECURITY_GROUP: replace-me
-  BOSH_LITE_PRIVATE_KEY: replace-me
-  AWS_REGION:
-  AWS_BUCKET:
-  AWS_ACCESS_KEY:
-  AWS_SECRET_ACCESS_KEY:
+  JUMPBOX_PRIVATE_KEY:
+  JUMPBOX_USERNAME:
+  JUMPBOX_IP:
+
+run:
+  path: bosh-agent/ci/tasks/test-integration.sh
+

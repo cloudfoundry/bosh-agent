@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient"
@@ -52,8 +51,6 @@ var _ = Describe("DeleteARPEntries", func() {
 
 			cache[ip] = ARPCache{MACAddr: mac, State: state}
 		}
-
-		fmt.Printf("%+v\n", cache)
 
 		return cache, nil
 	}
@@ -130,10 +127,10 @@ var _ = Describe("DeleteARPEntries", func() {
 			err := agentClient.DeleteARPEntries([]string{testIP})
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() string {
+			Eventually(func() ARPCache {
 				ARPCache, _ := parseARPCacheIntoMap()
-				return ARPCache[testIP].State
-			}, 10, 1).Should(Equal(clearedARPCacheState))
+				return ARPCache[testIP]
+			}, 10, 1).Should(Equal(ARPCache{}))
 		})
 	})
 })

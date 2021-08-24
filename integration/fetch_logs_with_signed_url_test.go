@@ -89,17 +89,17 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 	})
 
 	It("puts the logs in the appropriate blobstore location", func() {
-		r, stderr, _, err := testEnvironment.RunCommand3("echo 'foobarbaz' | sudo tee /var/vcap/sys/log/fetch-logs")
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
+		_, err := testEnvironment.RunCommand("echo 'foobarbaz' | sudo tee /var/vcap/sys/log/fetch-logs")
+		Expect(err).NotTo(HaveOccurred())
 
 		signedURL := "http://127.0.0.1:9091/upload_package/logs.tgz"
 
 		_, err = agentClient.FetchLogsWithSignedURLAction(signedURL, "job", nil, map[string]string{"header": "value"})
 		Expect(err).NotTo(HaveOccurred())
 
-		r, stderr, _, err = testEnvironment.RunCommand3(fmt.Sprintf("sudo zcat %s", filepath.Join(testEnvironment.AssetsDir(), "logs.tgz")))
-		Expect(err).NotTo(HaveOccurred(), r, stderr)
-		Expect(r).To(ContainSubstring("foobarbaz"))
-		Expect(r).To(ContainSubstring("fetch-logs"))
+		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo zcat %s", filepath.Join(testEnvironment.BlobstoreDir(), "logs.tgz")))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("foobarbaz"))
+		Expect(output).To(ContainSubstring("fetch-logs"))
 	})
 })

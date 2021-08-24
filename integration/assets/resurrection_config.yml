@@ -1,0 +1,5 @@
+rules:
+  - enabled: false
+    include:
+      deployments:
+        - ((deployment_name))
