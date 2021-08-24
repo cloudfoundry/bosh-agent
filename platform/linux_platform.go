@@ -1135,12 +1135,12 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 		return bosherr.WrapError(err, "Selecting partitioner")
 	}
 
-	persistentDiskFS := diskSetting.FileSystemType
 	singlePartNeedsResize, err := partitioner.PartitionsNeedResize(devicePath, singlePartPartitioning)
 	if err != nil {
 		return bosherr.WrapError(err, "Failed to determine whether partitions need rezising")
 	}
 	p.logger.Debug(logTag, "Persistent disk single partition needs resize: %+v", singlePartNeedsResize)
+
 	if singlePartNeedsResize {
 		err = partitioner.ResizePartitions(devicePath, singlePartPartitioning)
 		if err != nil {
@@ -1166,6 +1166,8 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")
 		}
+
+		persistentDiskFS := diskSetting.FileSystemType
 		switch persistentDiskFS {
 		case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
 		case boshdisk.FileSystemDefault:

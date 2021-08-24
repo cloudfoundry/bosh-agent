@@ -801,4 +801,68 @@ var _ = Describe("PartedPartitioner", func() {
 			})
 		})
 	})
+
+	Describe("PartitionsNeedResize", func() {
+		Context("when persistent disk has an existing partition", func() {
+			var deviceSizeInBytes uint64
+			var partitionsToMatch []Partition
+
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: `BYT;
+/dev/nvme2n1:4294967296B:nvme:512:512:gpt:Amazon Elastic Block Store:;
+1:1048576B:2146435071B:2145386496B:ext4:bosh-partition-0:;
+`},
+				)
+			})
+
+			Context("when device has slightly larger size due to geometry alignments", func() {
+				BeforeEach(func() {
+					deviceSizeInBytes = ConvertFromMbToBytes(2048)
+					partitionsToMatch = []Partition{
+						{
+							Type:        PartitionTypeLinux,
+							SizeInBytes: deviceSizeInBytes,
+						},
+					}
+					fakeCmdRunner.AddCmdResult(
+						"lsblk --nodeps -nb -o SIZE /dev/nvme2n1",
+						fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", deviceSizeInBytes)},
+					)
+				})
+
+				It("tells the partition needs not being resized", func() {
+					needsResize, err := partitioner.PartitionsNeedResize("/dev/nvme2n1", partitionsToMatch)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(needsResize).To(BeFalse())
+				})
+			})
+
+			Context("when device has been grown in size", func() {
+				BeforeEach(func() {
+					deviceSizeInBytes = ConvertFromMbToBytes(4096)
+					partitionsToMatch = []Partition{
+						{
+							Type:        PartitionTypeLinux,
+							SizeInBytes: deviceSizeInBytes,
+						},
+					}
+					fakeCmdRunner.AddCmdResult(
+						"lsblk --nodeps -nb -o SIZE /dev/nvme2n1",
+						fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", deviceSizeInBytes)},
+					)
+				})
+
+				It("tells the partition needs resizing", func() {
+					needsResize, err := partitioner.PartitionsNeedResize("/dev/nvme2n1", partitionsToMatch)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(needsResize).To(BeTrue())
+				})
+			})
+		})
+	})
 })

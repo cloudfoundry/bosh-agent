@@ -11,5 +11,5 @@ func withinDelta(existing, expected, delta uint64) bool {
 }
 
 func significantlySmallerThan(existing, expected, delta uint64) bool {
-	return existing < expected-delta
+	return existing < (expected - delta)
 }

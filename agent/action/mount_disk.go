@@ -11,6 +11,7 @@ import (
 )
 
 type diskMounter interface {
+	AdjustPersistentDiskPartitioning(diskSettings boshsettings.DiskSettings, mountPoint string) error
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
 }
 
@@ -59,6 +60,11 @@ func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
 	}
 
 	mountPoint := a.dirProvider.StoreDir()
+
+	err = a.diskMounter.AdjustPersistentDiskPartitioning(diskSettings, mountPoint)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Adjusting persistent disk partitioning")
+	}
 
 	err = a.diskMounter.MountPersistentDisk(diskSettings, mountPoint)
 	if err != nil {
