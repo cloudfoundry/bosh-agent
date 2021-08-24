@@ -16,10 +16,7 @@ var _ = Describe("ConfigDrive", func() {
 			err := testEnvironment.StopAgent()
 			Expect(err).ToNot(HaveOccurred())
 
-			Eventually(func() error {
-				return testEnvironment.SetupConfigDrive()
-			}, 1*time.Minute).ShouldNot(HaveOccurred())
-
+			testEnvironment.SetupConfigDrive()
 			registrySettings := boshsettings.Settings{
 				AgentID: "fake-agent-id",
 			}

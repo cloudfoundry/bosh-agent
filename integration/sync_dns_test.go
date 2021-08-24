@@ -121,14 +121,11 @@ var _ = Describe("sync_dns", func() {
 			Expect(err).NotTo(HaveOccurred())
 			blobDigest = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, strings.TrimSpace(shasum)))
 
-			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo mv /tmp/new-dns-records %s", filepath.Join(testEnvironment.AssetsDir(), "records.json")))
+			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo mv /tmp/new-dns-records %s", filepath.Join(testEnvironment.BlobstoreDir(), "records.json")))
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("sends a sync_dns_with_signed_url message to the agent", func() {
-			oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
-			Expect(err).NotTo(HaveOccurred())
-
 			signedURL := "http://127.0.0.1:9091/get_package/records.json"
 			response, err := agentClient.SyncDNSWithSignedURL(signedURL, blobDigest, newRecordsVersion)
 			Expect(err).NotTo(HaveOccurred())
@@ -139,7 +136,6 @@ var _ = Describe("sync_dns", func() {
 
 			Expect(newEtcHosts).To(MatchRegexp("216.58.194.206\\s+google.com"))
 			Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
-			Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
 
 			instanceDNSRecords, err := testEnvironment.RunCommand("sudo cat /var/vcap/instance/dns/records.json")
 			Expect(err).NotTo(HaveOccurred())
@@ -153,9 +149,6 @@ var _ = Describe("sync_dns", func() {
 
 	Context("sync_dns action", func() {
 		It("sends a sync_dns message to agent", func() {
-			oldEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
-			Expect(err).NotTo(HaveOccurred())
-
 			newDNSRecords := settings.DNSRecords{
 				Records: [][2]string{
 					{"216.58.194.206", "google.com"},
@@ -200,7 +193,6 @@ var _ = Describe("sync_dns", func() {
 
 			Expect(newEtcHosts).To(MatchRegexp("216.58.194.206\\s+google.com"))
 			Expect(newEtcHosts).To(MatchRegexp("54.164.223.71\\s+pivotal.io"))
-			Expect(newEtcHosts).To(ContainSubstring(oldEtcHosts))
 
 			instanceDNSRecords, err := testEnvironment.RunCommand("sudo cat /var/vcap/instance/dns/records.json")
 			Expect(err).NotTo(HaveOccurred())
