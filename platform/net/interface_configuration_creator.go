@@ -136,7 +136,7 @@ func (creator interfaceConfigurationCreator) createInterfaceConfiguration(static
 		})
 	} else {
 		creator.logger.Debug(creator.logTag, "Using static networking")
-		networkAddress, broadcastAddress, err := boshsys.CalculateNetworkAndBroadcast(networkSettings.IP, networkSettings.Netmask)
+		networkAddress, broadcastAddress, _, err := boshsys.CalculateNetworkAndBroadcast(networkSettings.IP, networkSettings.Netmask)
 		if err != nil {
 			return nil, nil, bosherr.WrapError(err, "Calculating Network and Broadcast")
 		}
