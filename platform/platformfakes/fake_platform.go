@@ -27,6 +27,18 @@ type FakePlatform struct {
 	addUserToGroupsReturnsOnCall map[int]struct {
 		result1 error
 	}
+	AdjustPersistentDiskPartitioningStub        func(settings.DiskSettings, string) error
+	adjustPersistentDiskPartitioningMutex       sync.RWMutex
+	adjustPersistentDiskPartitioningArgsForCall []struct {
+		diskSetting settings.DiskSettings
+		mountPoint  string
+	}
+	adjustPersistentDiskPartitioningReturns struct {
+		err error
+	}
+	adjustPersistentDiskPartitioningReturnsOnCall map[int]struct {
+		err error
+	}
 	AssociateDiskStub        func(string, settings.DiskSettings) error
 	associateDiskMutex       sync.RWMutex
 	associateDiskArgsForCall []struct {
@@ -2255,7 +2267,65 @@ func (fake *FakePlatform) MigratePersistentDiskReturnsOnCall(i int, result1 erro
 }
 
 func (fake *FakePlatform) AdjustPersistentDiskPartitioning(diskSetting settings.DiskSettings, mountPoint string) error {
-	return nil
+	fake.adjustPersistentDiskPartitioningMutex.Lock()
+	ret, specificReturn := fake.adjustPersistentDiskPartitioningReturnsOnCall[len(fake.adjustPersistentDiskPartitioningArgsForCall)]
+	fake.adjustPersistentDiskPartitioningArgsForCall = append(fake.adjustPersistentDiskPartitioningArgsForCall, struct {
+		diskSetting settings.DiskSettings
+		mountPoint  string
+	}{diskSetting, mountPoint})
+	stub := fake.AdjustPersistentDiskPartitioningStub
+	fakeReturns := fake.adjustPersistentDiskPartitioningReturns
+	fake.recordInvocation("AdjustPersistentDiskPartitioning", []interface{}{diskSetting, mountPoint})
+	fake.adjustPersistentDiskPartitioningMutex.Unlock()
+	if stub != nil {
+		return stub(diskSetting, mountPoint)
+	}
+	if specificReturn {
+		return ret.err
+	}
+	return fakeReturns.err
+}
+
+func (fake *FakePlatform) AdjustPersistentDiskPartitioningCallCount() int {
+	fake.adjustPersistentDiskPartitioningMutex.RLock()
+	defer fake.adjustPersistentDiskPartitioningMutex.RUnlock()
+	return len(fake.adjustPersistentDiskPartitioningArgsForCall)
+}
+
+func (fake *FakePlatform) AdjustPersistentDiskPartitioningCalls(stub func(settings.DiskSettings, string) error) {
+	fake.adjustPersistentDiskPartitioningMutex.Lock()
+	defer fake.adjustPersistentDiskPartitioningMutex.Unlock()
+	fake.AdjustPersistentDiskPartitioningStub = stub
+}
+
+func (fake *FakePlatform) AdjustPersistentDiskPartitioningArgsForCall(i int) (settings.DiskSettings, string) {
+	fake.adjustPersistentDiskPartitioningMutex.RLock()
+	defer fake.adjustPersistentDiskPartitioningMutex.RUnlock()
+	argsForCall := fake.adjustPersistentDiskPartitioningArgsForCall[i]
+	return argsForCall.diskSetting, argsForCall.mountPoint
+}
+
+func (fake *FakePlatform) AdjustPersistentDiskPartitioningReturns(err error) {
+	fake.adjustPersistentDiskPartitioningMutex.Lock()
+	defer fake.adjustPersistentDiskPartitioningMutex.Unlock()
+	fake.AdjustPersistentDiskPartitioningStub = nil
+	fake.adjustPersistentDiskPartitioningReturns = struct {
+		err error
+	}{err}
+}
+
+func (fake *FakePlatform) AdjustPersistentDiskPartitioningReturnsOnCall(i int, err error) {
+	fake.adjustPersistentDiskPartitioningMutex.Lock()
+	defer fake.adjustPersistentDiskPartitioningMutex.Unlock()
+	fake.AdjustPersistentDiskPartitioningStub = nil
+	if fake.adjustPersistentDiskPartitioningReturnsOnCall == nil {
+		fake.adjustPersistentDiskPartitioningReturnsOnCall = make(map[int]struct {
+			err error
+		})
+	}
+	fake.adjustPersistentDiskPartitioningReturnsOnCall[i] = struct {
+		err error
+	}{err}
 }
 
 func (fake *FakePlatform) MountPersistentDisk(arg1 settings.DiskSettings, arg2 string) error {

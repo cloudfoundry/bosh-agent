@@ -52,6 +52,21 @@ var _ = Describe("MountDiskAction", func() {
 						}
 					})
 
+					Context("when adjusting partitioning fails", func() {
+						BeforeEach(func() {
+							platform.AdjustPersistentDiskPartitioningReturns(errors.New("fake-adjust-persistent-disk-partitioning-err"))
+						})
+
+						It("returns error after trying to adjust partitioning", func() {
+							_, err := action.Run("fake-disk-cid")
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("fake-adjust-persistent-disk-partitioning-err"))
+							Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
+							Expect(platform.MountPersistentDiskCallCount()).To(Equal(0))
+							Expect(settingsService.SavePersistentDiskSettingsCallCount).To(Equal(0))
+						})
+					})
+
 					Context("when mounting succeeds", func() {
 						It("returns without an error after mounting store directory", func() {
 							result, err := action.Run("fake-disk-cid")
