@@ -1115,21 +1115,21 @@ func (p linux) changeTmpDirPermissions(path string) error {
 func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountPoint string) error {
 	p.logger.Debug(logTag, "Mounting persistent disk %+v at %s", diskSetting, mountPoint)
 
-	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
+	devicePath, _, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting real device path")
 	}
 
-	devicePath, isMountPoint, err := p.IsMountPoint(mountPoint)
+	alreadyMountedPartPath, isMountPoint, err := p.IsMountPoint(mountPoint)
 	if err != nil {
 		return bosherr.WrapError(err, "Checking mount point")
 	}
-	p.logger.Info(logTag, "realPath = %s, devicePath = %s, isMountPoint = %t", realPath, devicePath, isMountPoint)
+	p.logger.Info(logTag, "devicePath = %s, alreadyMountedPartPath = %s, isMountPoint = %t", devicePath, alreadyMountedPartPath, isMountPoint)
 
-	partitionPath := p.partitionPath(realPath, 1)
+	firstPartitionPath := p.partitionPath(devicePath, 1)
 	if isMountPoint {
-		if partitionPath == devicePath {
-			p.logger.Info(logTag, "device: %s is already mounted on %s, skipping mounting", devicePath, mountPoint)
+		if firstPartitionPath == alreadyMountedPartPath {
+			p.logger.Info(logTag, "device: %s is already mounted on %s, skipping mounting", alreadyMountedPartPath, mountPoint)
 			return nil
 		}
 
@@ -1141,8 +1141,11 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 		return bosherr.WrapErrorf(err, "Creating directory %s", mountPoint)
 	}
 
-	if !p.options.UsePreformattedPersistentDisk {
-		partitions := []boshdisk.Partition{
+	var partitionPathToMount string
+	if p.options.UsePreformattedPersistentDisk {
+		partitionPathToMount = devicePath
+	} else {
+		singlePartPartitioning := []boshdisk.Partition{
 			{Type: boshdisk.PartitionTypeLinux},
 		}
 
@@ -1151,7 +1154,7 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			return bosherr.WrapError(err, "Selecting partitioner")
 		}
 
-		err = partitioner.Partition(realPath, partitions)
+		err = partitioner.Partition(devicePath, singlePartPartitioning)
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")
 		}
@@ -1165,15 +1168,15 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
 		}
 
-		err = p.diskManager.GetFormatter().Format(partitionPath, persistentDiskFS)
+		err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
 		if err != nil {
 			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
 		}
 
-		realPath = partitionPath
+		partitionPathToMount = firstPartitionPath
 	}
 
-	err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
+	err = p.diskManager.GetMounter().Mount(partitionPathToMount, mountPoint, diskSetting.MountOptions...)
 
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
