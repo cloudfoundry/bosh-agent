@@ -36,7 +36,7 @@ var _ = Describe("Linux Formatter", func() {
 			Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"mkswap", "/dev/xvda1"}))
 		})
 
-		It("it does not reformat if it already formatted as swap", func() {
+		It("does not reformat if it already formatted as swap", func() {
 			fakeRunner := fakesys.NewFakeCmdRunner()
 			fakeFs := fakesys.NewFakeFileSystem()
 			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="swap" yyyy zzzz`})
@@ -61,7 +61,6 @@ var _ = Describe("Linux Formatter", func() {
 
 			Expect(2).To(Equal(len(fakeRunner.RunCommands)))
 			Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", "/dev/xvda2"}))
-
 		})
 
 		Context("when mke2fs errors", func() {
@@ -203,6 +202,61 @@ var _ = Describe("Linux Formatter", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Shelling out to mkfs.xfs: Sadness"))
+		})
+	})
+
+	Describe("GrowFilesystem", func() {
+		var (
+			fakeRunner *fakesys.FakeCmdRunner
+			fakeFs     *fakesys.FakeFileSystem
+			formatter  Formatter
+		)
+
+		BeforeEach(func() {
+			fakeRunner = fakesys.NewFakeCmdRunner()
+			fakeFs = fakesys.NewFakeFileSystem()
+		})
+
+		Describe("determining partition filesystem fails", func() {
+			BeforeEach(func() {
+				fakeRunner.AddCmdResult("blkid -p /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("No GPT found")})
+				formatter = NewLinuxFormatter(fakeRunner, fakeFs)
+			})
+
+			It("returns an error", func() {
+				err := formatter.GrowFilesystem("/dev/nvme2n1p1")
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("No GPT found"))
+			})
+		})
+
+		Describe("when using Ext4", func() {
+			BeforeEach(func() {
+				fakeRunner.AddCmdResult("blkid -p /dev/nvme2n1p1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
+				formatter = NewLinuxFormatter(fakeRunner, fakeFs)
+			})
+
+			It("grows the Ext4 filesystem", func() {
+				err := formatter.GrowFilesystem("/dev/nvme2n1p1")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme2n1p1"}))
+			})
+		})
+
+		Describe("when using XFS", func() {
+			BeforeEach(func() {
+				fakeRunner.AddCmdResult("blkid -p /dev/nvme2n1p1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="xfs" yyyy zzzz`})
+				formatter = NewLinuxFormatter(fakeRunner, fakeFs)
+			})
+
+			It("grows the XFS filesystem", func() {
+				err := formatter.GrowFilesystem("/dev/nvme2n1p1")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"xfs_growfs", "/dev/nvme2n1p1"}))
+			})
 		})
 	})
 })

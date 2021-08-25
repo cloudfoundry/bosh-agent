@@ -2678,6 +2678,31 @@ sam:fakeanotheruser`)
 					Expect(formatter.FormatPartitionPaths).To(Equal([]string{"/dev/nvme2n1p1"}))
 					Expect(formatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
 				})
+
+				Context("when partition needs resize after IaaS-native disk resize", func() {
+					BeforeEach(func() {
+						fakePartitioner.PartitionsNeedResizeReturns.needResize = true
+						fakePartitioner.PartitionsNeedResizeReturns.err = nil
+					})
+
+					It("resizes the single partition", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).ToNot(HaveOccurred())
+
+						partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+						Expect(partitioner.ResizePartitionsDevicePath).To(Equal("/dev/nvme2n1p1"))
+						Expect(partitioner.ResizePartitionsPartitions).To(Equal(partitions))
+					})
+
+					It("grows the partition filesystem", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).ToNot(HaveOccurred())
+
+						partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+						Expect(partitioner.ResizePartitionsDevicePath).To(Equal("/dev/nvme2n1p1"))
+						Expect(partitioner.ResizePartitionsPartitions).To(Equal(partitions))
+					})
+				})
 			})
 		})
 
@@ -2685,6 +2710,7 @@ sam:fakeanotheruser`)
 			BeforeEach(func() {
 				devicePathResolver.RealDevicePath = "fake-real-device-path"
 			})
+
 			Context("when UsePreformattedPersistentDisk set to false", func() {
 
 				It("partitions the disk", func() {
@@ -2758,6 +2784,12 @@ sam:fakeanotheruser`)
 			Context("when UsePreformattedPersistentDisk set to true", func() {
 				BeforeEach(func() {
 					options.UsePreformattedPersistentDisk = true
+				})
+
+				It("does not resize the disk", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(partitioner.ResizePartitionsCalled).To(BeFalse())
 				})
 
 				It("does not partition the disk", func() {

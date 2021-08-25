@@ -5,6 +5,16 @@ import (
 )
 
 type FakePartitioner struct {
+	PartitionsNeedResizeReturns struct {
+		needResize bool
+		err        error
+	}
+
+	ResizePartitionsCalled     bool
+	ResizePartitionsDevicePath string
+	ResizePartitionsPartitions []boshdisk.Partition
+	ResizePartitionsErr        error
+
 	PartitionCalled     bool
 	PartitionDevicePath string
 	PartitionPartitions []boshdisk.Partition
@@ -30,11 +40,14 @@ func NewFakePartitioner() *FakePartitioner {
 }
 
 func (p *FakePartitioner) PartitionsNeedResize(devicePath string, partitions []boshdisk.Partition) (needsResize bool, err error) {
-	return false, nil
+	return p.PartitionsNeedResizeReturns.needResize, p.PartitionsNeedResizeReturns.err
 }
 
 func (p *FakePartitioner) ResizePartitions(devicePath string, partitions []boshdisk.Partition) (err error) {
-	return nil
+	p.ResizePartitionsCalled = true
+	p.ResizePartitionsDevicePath = devicePath
+	p.ResizePartitionsPartitions = partitions
+	return p.ResizePartitionsErr
 }
 
 func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) error {
