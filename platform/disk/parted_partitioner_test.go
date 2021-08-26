@@ -865,4 +865,36 @@ var _ = Describe("PartedPartitioner", func() {
 			})
 		})
 	})
+
+	Describe("ResizePartitions", func() {
+		Context("when persistent disk has an existing partition", func() {
+			var partitionsToMatch []Partition
+
+			BeforeEach(func() {
+				fakeCmdRunner.AvailableCommands["growpart"] = true
+				fakeCmdRunner.AvailableCommands["partx"] = true
+			})
+
+			Context("and parition needs to grow", func() {
+				BeforeEach(func() {
+					partitionsToMatch = []Partition{
+						{
+							Type:        PartitionTypeLinux,
+							SizeInBytes: 0,
+						},
+					}
+				})
+
+				It("resizes paritions", func() {
+					err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+				})
+
+				
+			})
+		})
+	})
+
 })

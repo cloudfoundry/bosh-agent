@@ -412,12 +412,12 @@ func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch
 
 	if !p.cmdRunner.CommandExists("growpart") {
 		p.logger.Info(p.logTag, "The program 'growpart' is not installed, Persistent Filesystem cannot be grown")
-		return nil
+		return bosherr.Error("The program 'growpart' is not installed, Persistent Filesystem cannot be grown")
 	}
 
 	if !p.cmdRunner.CommandExists("partx") {
 		p.logger.Info(p.logTag, "The program 'partx' is not installed, Persistent Filesystem cannot be grown")
-		return nil
+		return bosherr.Error("The program 'partx' is not installed, Persistent Filesystem cannot be grown")
 	}
 
 	for index, partition := range partitionsToMatch {
