@@ -867,34 +867,110 @@ var _ = Describe("PartedPartitioner", func() {
 	})
 
 	Describe("ResizePartitions", func() {
-		Context("when persistent disk has an existing partition", func() {
-			var partitionsToMatch []Partition
+		var partitionsToMatch []Partition
+		BeforeEach(func() {
+			fakeCmdRunner.AvailableCommands["growpart"] = true
+			fakeCmdRunner.AvailableCommands["partx"] = true
 
+			partitionsToMatch = []Partition{
+				{
+					Type:        PartitionTypeLinux,
+					SizeInBytes: 0,
+				},
+			}
+		})
+
+		Context("when persistent disk has two or more partitions", func() {
 			BeforeEach(func() {
-				fakeCmdRunner.AvailableCommands["growpart"] = true
-				fakeCmdRunner.AvailableCommands["partx"] = true
+				partitionsToMatch = []Partition{
+					{
+						Type:        PartitionTypeLinux,
+						SizeInBytes: 1000000,
+					}, {
+						Type:        PartitionTypeLinux,
+						SizeInBytes: 2000000,
+					},
+				}
 			})
 
-			Context("and parition needs to grow", func() {
+			It("returns an error", func() {
+				err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Multiple partitions are not supported"))
+			})
+		})
+
+		Context("when parition needs to grow", func() {
+			Context("and growpart is missing", func() {
 				BeforeEach(func() {
-					partitionsToMatch = []Partition{
-						{
-							Type:        PartitionTypeLinux,
-							SizeInBytes: 0,
-						},
-					}
+					fakeCmdRunner.AvailableCommands["growpart"] = false
 				})
 
-				It("resizes paritions", func() {
+				It("returns an error", func() {
 					err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
 
-					Expect(err).ToNot(HaveOccurred())
-					Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("'growpart' is not installed"))
+				})
+			})
+
+			Context("and partx is missing", func() {
+				BeforeEach(func() {
+					fakeCmdRunner.AvailableCommands["partx"] = false
 				})
 
-				
+				It("returns an error", func() {
+					err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("'partx' is not installed"))
+				})
+			})
+		})
+
+		Context("when persistent disk has one partition with non-zero size", func() {
+			BeforeEach(func() {
+				partitionsToMatch = []Partition{
+					{
+						Type:        PartitionTypeLinux,
+						SizeInBytes: 1000000,
+					},
+				}
+			})
+
+			It("returns an error", func() {
+				err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("not supported"))
+			})
+		})
+
+		Context("when persistent disk has an existing partition to grow", func() {
+			It("resizes paritions", func() {
+				err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fakeCmdRunner.RunCommands).To(HaveLen(1))
+				Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+			})
+		})
+
+		Context("when growing partition fails", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"growpart /dev/nvme2n1 1 --update auto",
+					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 1, Error: errors.New("growpart-failure")},
+				)
+			})
+
+			It("returns an error", func() {
+				err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("growpart-failure"))
 			})
 		})
 	})
-
 })

@@ -2690,7 +2690,7 @@ sam:fakeanotheruser`)
 						Expect(err).ToNot(HaveOccurred())
 
 						partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
-						Expect(partitioner.ResizePartitionsDevicePath).To(Equal("/dev/nvme2n1p1"))
+						Expect(partitioner.ResizePartitionsDevicePath).To(Equal("/dev/nvme2n1"))
 						Expect(partitioner.ResizePartitionsPartitions).To(Equal(partitions))
 					})
 
@@ -2699,7 +2699,7 @@ sam:fakeanotheruser`)
 						Expect(err).ToNot(HaveOccurred())
 
 						partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
-						Expect(partitioner.ResizePartitionsDevicePath).To(Equal("/dev/nvme2n1p1"))
+						Expect(partitioner.ResizePartitionsDevicePath).To(Equal("/dev/nvme2n1"))
 						Expect(partitioner.ResizePartitionsPartitions).To(Equal(partitions))
 					})
 				})
