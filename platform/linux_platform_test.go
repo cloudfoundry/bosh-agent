@@ -2681,8 +2681,8 @@ sam:fakeanotheruser`)
 
 				Context("when partition needs resize after IaaS-native disk resize", func() {
 					BeforeEach(func() {
-						fakePartitioner.PartitionsNeedResizeReturns.needResize = true
-						fakePartitioner.PartitionsNeedResizeReturns.err = nil
+						partitioner.PartitionsNeedResizeReturns.NeedResize = true
+						partitioner.PartitionsNeedResizeReturns.Err = nil
 					})
 
 					It("resizes the single partition", func() {
