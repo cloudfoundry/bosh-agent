@@ -12,17 +12,13 @@ popd
 
 echo "detected bosh-agent will build from branch $git_branch ..."
 
-if [[ "$git_branch" == "master" ]]; then
+if [[ "$git_branch" == "main" ]]; then
   echo "SKIPPED: version check is ignored on $git_branch"
   exit 0
 fi
 
-if [ "$git_branch" = "develop" ]; then
-  version_must_match='^[0-9]+\.[0-9]+\.0$'
-else
-  version_must_match="^${git_branch//x/[0-9]+}$"
-  version_must_match="${version_must_match//./\.}"
-fi
+version_must_match="^${git_branch//x/[0-9]+}$"
+version_must_match="${version_must_match//./\.}"
 
 echo "will only continue if version to promote matches $version_must_match ..."
 
