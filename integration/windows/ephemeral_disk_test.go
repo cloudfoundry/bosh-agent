@@ -99,12 +99,14 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.EnsureAgentServiceStopped()
 		agent.EnsureDataDirDoesntExist()
 
+		diskNumber = "1"
+		agent.EnsureDiskCleared(diskNumber)
+
 		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
 		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\second-disk-settings.json c:\\bosh\\settings.json")
 
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
-		diskNumber = "1"
 		Eventually(func() bool {
 			return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
 		}, 60*time.Second).Should(BeTrue())
