@@ -81,12 +81,12 @@ func AgentGateway() string {
 	return os.Getenv("AGENT_GATEWAY")
 }
 
-func FakeDirectorIp() string {
+func FakeDirectorIP() string {
 	return os.Getenv("FAKE_DIRECTOR_IP")
 }
 
 func BlobstoreURI() string {
-	return fmt.Sprintf("http://%s:25250", FakeDirectorIp())
+	return fmt.Sprintf("http://%s:25250", FakeDirectorIP())
 }
 
 func AgentDir() string {

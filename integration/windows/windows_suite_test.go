@@ -41,7 +41,7 @@ func TestWindows(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	natsIP := utils.FakeDirectorIp()
+	natsIP := utils.FakeDirectorIP()
 
 	templateEphemeralDiskSettings(natsIP, `""`, "root-disk-settings.json")
 	templateEphemeralDiskSettings(natsIP, `"/dev/sdb"`, "second-disk-settings.json")

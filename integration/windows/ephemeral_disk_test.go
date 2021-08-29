@@ -105,7 +105,9 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
 
 		diskNumber = "1"
-		agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
+		Eventually(func() bool {
+			return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
+		}, 60*time.Second).Should(BeTrue())
 		diskLetter = agent.GetDriveLetterForLink(dataDir)
 
 		agent.AssertDataACLed()

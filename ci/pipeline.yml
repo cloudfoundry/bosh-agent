@@ -338,6 +338,7 @@ jobs:
                   bosh -d bosh-agent-integration-windows-main instances --json --column ips --column instance > ./vm_ips
                   cat ./vm_ips| jq -r '.Tables[].Rows[]  | select( .instance | contains("agent_test")).ips' > agent-info/agent_ip
                   cat ./vm_ips| jq -r '.Tables[].Rows[]  | select( .instance | contains("fake_director")).ips' > agent-info/fake_director_ip
+                  echo "ip_address: $(cat agent-info/fake_director_ip)" > agent-info/fake_director_ip_vars
                   credhub get -n /concourse/bosh-agent-integration-windows-main/ssh_creds -k private_key > agent-info/agent-creds.pem
                   chmod 600 agent-info/agent-creds.pem
         - put: windows-integration-vm-deployment
@@ -347,13 +348,14 @@ jobs:
               - "aws-stemcell/*.tgz"
               - "aws-windows-stemcell/*.tgz"
             ops_files:
-              - "bosh-agent/integration/assets/agent-windows-deployment.yml"
+              - "bosh-agent/integration/assets/agent-windows-nats-blobstore.yml"
             vars:
               deployment_name: bosh-agent-integration-windows-main
-            var_files:
-              ip_address: "agent-info/fake_director_ip"
+            vars_files:
+              - "agent-info/fake_director_ip_vars"
         - task: test-integration
           file: bosh-agent/ci/tasks/test-integration-windows.yml
+          image: bosh-ecosystem-docker-image
           params:
             AGENT_GATEWAY: 10.0.16.1
             AGENT_NETMASK: 255.255.240.0
@@ -362,6 +364,17 @@ jobs:
             JUMPBOX_IP: ((iaas_directors_aws-director_bosh_jumpbox_ip))
         ensure:
           in_parallel:
+            - task: clean-credhub
+              file: bosh-ecosystem-concourse/tasks/shared/delete-credhub-entries.yml
+              image: bosh-ecosystem-docker-image
+              params:
+                CREDHUB_CA_CERT_STRING: ((iaas_directors_aws-director_bosh_credhub_ca_cert.ca))
+                CREDHUB_CLIENT: ((iaas_directors_aws-director_bosh_credhub_client.username))
+                CREDHUB_SECRET: ((iaas_directors_aws-director_bosh_credhub_client.password))
+                CREDHUB_SERVER: ((iaas_directors_aws-director_bosh_credhub_server))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_aws-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_URL: "((iaas_directors_aws-director_bosh_jumpbox_ip)):22"
+                PATH_TO_DELETE: "/concourse/bosh-agent-integration-windows-main"
             - task: update-resurrection-config
               image: bosh-ecosystem-docker-image
               config:
