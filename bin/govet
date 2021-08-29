@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e -o pipefail
-
-go list ./... | grep -v github.com/cloudfoundry/bosh-agent/vendor | xargs go vet
-
-echo -e "\n go vet success"

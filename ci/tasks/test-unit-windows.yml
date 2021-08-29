@@ -3,7 +3,6 @@ platform: windows
 
 inputs:
 - name: bosh-agent
-  path: gopath/src/github.com/cloudfoundry/bosh-agent
 
 run:
   path: powershell
@@ -11,4 +10,4 @@ run:
   - "-ExecutionPolicy"
   - "Bypass"
   - "-File"
-  - gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/test-unit.ps1
+  - bosh-agent/ci/tasks/test-unit.ps1

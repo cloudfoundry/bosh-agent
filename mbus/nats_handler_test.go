@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"runtime"
 	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/mbus"
@@ -362,7 +363,9 @@ func init() {
 					Expect(result.Addr).To(Equal(expected.Addr))
 					Expect(result.Username).To(Equal(expected.Username))
 					Expect(result.Password).To(Equal(expected.Password))
-					Expect(result.TLSInfo.CertPool).To(Equal(expected.TLSInfo.CertPool))
+					if runtime.GOOS != "windows" {
+						Expect(result.TLSInfo.CertPool).To(BeEquivalentTo(expected.TLSInfo.CertPool))
+					}
 					Expect(result.TLSInfo.ClientCert).To(Equal(expected.TLSInfo.ClientCert))
 				})
 

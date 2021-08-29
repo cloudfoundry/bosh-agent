@@ -65,7 +65,6 @@ From here on out we assume you're working in `$GOPATH/src/github.com/cloudfoundr
 
 Install tools used by the BOSH Agent test suite:
 
-- `bin/go get code.google.com/p/go.tools/cmd/vet`
 - `bin/go get github.com/golang/lint/golint`
 
 #### Updating dependencies
