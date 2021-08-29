@@ -30,7 +30,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 	retryableError := "net/http: timeout awaiting response headers"
 	retryableSizeMin := "Resize-Partition : Not enough available capacity"
 
-	sizeMinBuffer := 0
+	sizeMinBuffer := 1 * GB
 	cmdFmtString := "Get-Partition -DriveLetter C | Resize-Partition -Size $((Get-PartitionSupportedSize -DriveLetter C).SizeMin + %d)"
 
 	for i := 0; i < 5; i++ {
@@ -105,6 +105,21 @@ func (e *WindowsEnvironment) GetDriveLetterForLinkWithOffset(offset int, path st
 	return strings.Split(target, ":")[0]
 }
 
+func (e *WindowsEnvironment) CleanUpExtraDisks() {
+	e.EnsureDataDirDoesntExist()
+	partitions := e.PartitionCount("0")
+	cDrivePartition, err := strconv.Atoi(strings.TrimSpace(e.RunPowershellCommand("(Get-Partition -DriveLetter C).PartitionNumber")))
+	Expect(err).ToNot(HaveOccurred())
+
+	for i := partitions; i > cDrivePartition; i-- {
+		e.RunPowershellCommandWithOffset(
+			1,
+			"Remove-Partition -DiskNumber 0 -PartitionNumber %d -Confirm:0",
+			i,
+		)
+	}
+}
+
 func (e *WindowsEnvironment) GetDiskNumberForDrive(driveLetter string) string {
 	return strings.TrimSpace(e.RunPowershellCommandWithOffset(
 		1,
@@ -112,12 +127,16 @@ func (e *WindowsEnvironment) GetDiskNumberForDrive(driveLetter string) string {
 	))
 }
 
-func (e *WindowsEnvironment) EnsureLinkTargettedToDisk(path, diskNumber string) {
+func (e *WindowsEnvironment) IsLinkTargetedToDisk(path, diskNumber string) bool {
 	e.WaitForLinkWithOffset(1, path)
 
 	diskLetter := e.GetDriveLetterForLinkWithOffset(1, path)
 	actualDiskNumber := agent.GetDiskNumberForDrive(diskLetter)
-	ExpectWithOffset(1, actualDiskNumber).To(Equal(diskNumber))
+	return actualDiskNumber == diskNumber
+}
+
+func (e *WindowsEnvironment) EnsureLinkTargetedToDisk(path, diskNumber string) {
+	ExpectWithOffset(1, e.IsLinkTargetedToDisk(path, diskNumber)).To(BeTrue())
 }
 
 func (e *WindowsEnvironment) WaitForLink(path string) {
@@ -128,7 +147,7 @@ func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
 	EventuallyWithOffset(offset+1, func() bool {
 		target, _ := e.Linker.LinkTarget(path)
 		return target != ""
-	}, 4*time.Minute, 5*time.Second).Should(BeTrue())
+	}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 }
 
 func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
@@ -150,14 +169,12 @@ func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
 	}
 }
 
-func (e *WindowsEnvironment) AgentProcessRunningFunc() func() bool {
-	return func() bool {
-		exitCode, err := e.Client.Run(
-			winrm.Powershell("Get-Process -ProcessName bosh-agent"),
-			ioutil.Discard, ioutil.Discard,
-		)
-		return exitCode == 0 && err == nil
-	}
+func (e *WindowsEnvironment) AgentProcessRunning() bool {
+	exitCode, err := e.Client.Run(
+		winrm.Powershell("Get-Process -ProcessName bosh-agent"),
+		ioutil.Discard, ioutil.Discard,
+	)
+	return exitCode == 0 && err == nil
 }
 
 func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string, cmdFmtArgs ...interface{}) string {

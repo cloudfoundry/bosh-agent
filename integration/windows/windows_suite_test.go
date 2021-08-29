@@ -1,12 +1,14 @@
 package windows_test
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"fmt"
+	"github.com/onsi/gomega/gexec"
 	"io"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"time"
 
 	"net/http"
 
@@ -22,28 +24,15 @@ import (
 )
 
 var (
-	VagrantProvider             = os.Getenv("VAGRANT_PROVIDER")
-	OsVersion                   = getOsVersion()
-	AgentPublicIP, NATSPublicIP string
-	dirname                     = filepath.Join(
-		os.Getenv("GOPATH"),
-		"src/github.com/cloudfoundry/bosh-agent/integration/windows/fixtures",
-	)
 	agent *WindowsEnvironment
 )
 
 type BoshAgentSettings struct {
 	NatsPrivateIP       string
 	EphemeralDiskConfig string
-}
-
-func getOsVersion() string {
-	osVersion := os.Getenv("WINDOWS_OS_VERSION")
-	if osVersion == "" {
-		osVersion = "2012R2"
-	}
-
-	return osVersion
+	AgentIP             string
+	AgentNetmask        string
+	AgentGateway        string
 }
 
 func TestWindows(t *testing.T) {
@@ -51,112 +40,26 @@ func TestWindows(t *testing.T) {
 	RunSpecs(t, "Windows Suite")
 }
 
-func tarFixtures(fixturesDir, filename string) error {
-	fixtures := []string{
-		"service_wrapper.xml",
-		"service_wrapper.exe",
-		"job-service-wrapper.exe",
-		"bosh-blobstore-dav.exe",
-		"bosh-agent.exe",
-		"pipe.exe",
-		"OpenSSH-Win64.zip",
-		"agent-configuration/agent.json",
-		"agent-configuration/root-partition-agent.json",
-		"agent-configuration/root-partition-agent-ephemeral-disabled.json",
-		"agent-configuration/root-disk-settings.json",
-		"agent-configuration/second-disk-settings.json",
-		"agent-configuration/second-disk-digit-settings.json",
-		"agent-configuration/third-disk-settings.json",
-		"psFixture/psFixture.psd1",
-		"psFixture/psFixture.psm1",
-	}
-
-	archive, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer archive.Close()
-
-	gzipWriter := gzip.NewWriter(archive)
-	tarWriter := tar.NewWriter(gzipWriter)
-
-	for _, name := range fixtures {
-		path := filepath.Join(fixturesDir, name)
-		fi, err := os.Stat(path)
-		if err != nil {
-			return err
-		}
-
-		hdr, err := tar.FileInfoHeader(fi, "")
-		if err != nil {
-			return err
-		}
-		hdr.Name = name
-
-		if err := tarWriter.WriteHeader(hdr); err != nil {
-			return err
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		if _, err := io.Copy(tarWriter, f); err != nil {
-			return err
-		}
-	}
-
-	if err := tarWriter.Close(); err != nil {
-		return err
-	}
-
-	return gzipWriter.Close()
-}
-
 var _ = BeforeSuite(func() {
-	if os.Getenv("GOPATH") == "" {
-		Fail("Environment variable GOPATH not set", 1)
-	}
+	natsIP := utils.FakeDirectorIp()
 
-	if err := utils.BuildAgent(); err != nil {
-		Fail(fmt.Sprintln("Could not build the bosh-agent project.\nError is:", err))
-	}
+	templateEphemeralDiskSettings(natsIP, `""`, "root-disk-settings.json")
+	templateEphemeralDiskSettings(natsIP, `"/dev/sdb"`, "second-disk-settings.json")
+	templateEphemeralDiskSettings(natsIP, `"1"`, "second-disk-digit-settings.json")
+	templateEphemeralDiskSettings(natsIP, `{"path": "/dev/sdc"}`, "third-disk-settings.json")
 
-	err := utils.StartVagrant("nats", VagrantProvider, OsVersion)
-	natsPrivateIP, err := utils.RetrievePrivateIP("nats")
-	Expect(err).NotTo(HaveOccurred())
-	Expect(natsPrivateIP).NotTo(BeEmpty(), "Couldn't retrieve NATS private IP")
+	sshClient, err := utils.GetSSHTunnelClient()
 
-	templateEphemeralDiskSettings(natsPrivateIP, `""`, "root-disk-settings.json")
-	templateEphemeralDiskSettings(natsPrivateIP, `"/dev/sdb"`, "second-disk-settings.json")
-	templateEphemeralDiskSettings(natsPrivateIP, `"1"`, "second-disk-digit-settings.json")
-	templateEphemeralDiskSettings(natsPrivateIP, `{"path": "/dev/sdc"}`, "third-disk-settings.json")
+	endpoint := winrm.NewEndpoint(utils.AgentIP(), 5985, false, false, nil, nil, nil, 0)
 
-	filename := filepath.Join(dirname, "fixtures.tgz")
-	if err := tarFixtures(dirname, filename); err != nil {
-		Fail(fmt.Sprintln("Creating fixtures TGZ::", err))
-	}
+	params := winrm.NewParameters("PT5M", "en-US", 153600)
+	params.Dial = sshClient.Dial
 
-	err = utils.StartVagrant("agent", VagrantProvider, OsVersion)
-
-	AgentPublicIP, err = utils.RetrievePublicIP("agent")
-	Expect(err).NotTo(HaveOccurred())
-
-	NATSPublicIP, err = utils.RetrievePublicIP("nats")
-	Expect(err).NotTo(HaveOccurred())
-
-	if err != nil {
-		Fail(fmt.Sprintln("Could not setup and run vagrant.\nError is:", err))
-	}
-
-	endpoint := winrm.NewEndpoint(AgentPublicIP, 5985, false, false, nil, nil, nil, 0)
 	client, err := winrm.NewClientWithParameters(
 		endpoint,
-		"vagrant",
-		"Password123!",
-		winrm.NewParameters("PT5M", "en-US", 153600),
+		"vcap",
+		"Agent-test-password1",
+		params,
 	)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -169,32 +72,38 @@ var _ = BeforeSuite(func() {
 		},
 	}
 
-	// We do this so that both 2012R2 and 1709 run ephemeral disk tests against raw disks.
-	// 2012R2 additional disks start formatted on AWS for some reason.
-	agent.EnsureDiskCleared("1")
-	agent.EnsureDiskCleared("2")
+	agent.CleanUpExtraDisks()
 
-	goSourcePath := filepath.Join(dirname, "templates", "go", "go1.7.1.windows-amd64.zip")
+	goSourcePath := filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "go", "go1.7.1.windows-amd64.zip")
 	os.RemoveAll(goSourcePath)
 	downloadFile(goSourcePath, "https://dl.google.com/go/go1.7.1.windows-amd64.zip")
-	agent.RunPowershellCommand("add-content \\ProgramData\\ssh\\sshd_config \"AllowUsers bosh_testuser\"")
+	//agent.RunPowershellCommand("add-content \\ProgramData\\ssh\\sshd_config \"AllowUsers bosh_testuser\"")
 })
 
 func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
 	agentSettings := BoshAgentSettings{
 		NatsPrivateIP:       natsPrivateIP,
 		EphemeralDiskConfig: ephemeralDiskConfig,
+		AgentIP:             utils.AgentIP(),
+		AgentNetmask:        utils.AgentNetmask(),
+		AgentGateway:        utils.AgentGateway(),
 	}
 	settingsTmpl, err := template.ParseFiles(
-		filepath.Join(dirname, "templates", "agent-configuration", "settings.json.tmpl"),
+		filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "agent-configuration", "settings.json.tmpl"),
 	)
 	Expect(err).NotTo(HaveOccurred())
-	outputFile, err := os.Create(filepath.Join(dirname, "agent-configuration", filename))
-	defer outputFile.Close()
 
+	outputFile, err := os.CreateTemp("", "agent-settings")
+	defer outputFile.Close()
 	Expect(err).NotTo(HaveOccurred())
+
 	err = settingsTmpl.Execute(outputFile, agentSettings)
+	outputFile.Close()
+
+	command := exec.Command("scp", outputFile.Name(), fmt.Sprintf("%s:/bosh/agent-configuration/%s", utils.AgentIP(), filename))
+	session, err := gexec.Start(command, ioutil.Discard, ioutil.Discard)
 	Expect(err).NotTo(HaveOccurred())
+	Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
 }
 
 func downloadFile(localPath, sourceURL string) error {

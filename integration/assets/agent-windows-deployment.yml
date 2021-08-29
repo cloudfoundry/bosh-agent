@@ -1,0 +1,50 @@
+---
+name: ((deployment_name))
+
+instance_groups:
+  - azs:
+      - z1
+    env:
+      bosh:
+        authorized_keys: [((ssh_creds.public_key))]
+    instances: 1
+    jobs: []
+    name: agent_test
+    networks:
+      - name: default
+    stemcell: windows_stemcell
+    vm_extensions:
+      - 50GB_ephemeral_disk
+    vm_type: large
+  - azs:
+      - z1
+    instances: 1
+    jobs: []
+    name: fake_director
+    networks:
+      - name: default
+    stemcell: linux_stemcell
+    vm_extensions:
+      - 50GB_ephemeral_disk
+    vm_type: large
+
+releases: []
+
+stemcells:
+  - alias: windows_stemcell
+    os: windows2019
+    version: latest
+  - alias: linux_stemcell
+    os: ubuntu-bionic
+    version: latest
+
+update:
+  canaries: 0
+  canary_watch_time: 60000
+  max_in_flight: 2
+  update_watch_time: 60000
+  serial: false
+
+variables:
+  - name: ssh_creds
+    type: ssh

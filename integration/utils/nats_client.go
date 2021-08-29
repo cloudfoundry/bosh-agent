@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -96,7 +97,7 @@ const (
                 "version": "8fe0a4982b28ffe4e59d7c1e573c4f30a526770d"
             },
             "networks": {
-            	"diego1": {}
+              "default": {}
             },
 			"rendered_templates_archive": {
 					"blobstore_id": "{{ .RenderedTemplatesArchiveBlobstoreID }}",
@@ -203,7 +204,16 @@ func NewNatsClient(
 
 func (n *NatsClient) Setup() error {
 	var err error
-	n.nc, err = nats.Connect(n.natsURI())
+
+	sshClient, err := utils.GetSSHTunnelClient()
+	if err != nil {
+		return err
+	}
+
+	n.nc, err = nats.Connect(n.natsURI(), func(options *nats.Options) error {
+		options.CustomDialer = sshClient
+		return nil
+	}, nats.UserInfo("nats", "nats"))
 	if err != nil {
 		return err
 	}

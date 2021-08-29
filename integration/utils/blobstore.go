@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	davclient "github.com/cloudfoundry/bosh-davcli/client"
 	davconfig "github.com/cloudfoundry/bosh-davcli/config"
@@ -56,9 +58,17 @@ func (b BlobClient) Get(uuid string, destinationPath string) error {
 }
 
 func NewBlobstore(uri string) BlobClient {
-	config := davconfig.Config{Endpoint: uri}
+	config := davconfig.Config{Endpoint: uri, User: "agent", Password: "password"}
 	logger := boshlog.NewLogger(boshlog.LevelNone)
-	client := davclient.NewClient(config, http.DefaultClient, logger)
+	tunnelClient, _ := utils.GetSSHTunnelClient()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			Dial:         tunnelClient.Dial,
+			TLSHandshakeTimeout: 10 * time.Second,
+		},
+	}
+	client := davclient.NewClient(config, httpClient, logger)
 
 	return BlobClient{
 		dav:           client,

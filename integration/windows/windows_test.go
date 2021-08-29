@@ -7,12 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/ssh"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/integration/utils"
+	windowsutils "github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -27,22 +29,7 @@ const (
 	senderID        = "director.987-654-321"
 	DefaultTimeout  = time.Minute
 	DefaultInterval = time.Second
-	sshTestUser     = "bosh_testuser"
 )
-
-func getNatsIP() string {
-	if ip := os.Getenv("NATS_PRIVATE_IP"); ip != "" {
-		return ip
-	}
-	return ""
-}
-
-func blobstoreURI() string {
-	if VagrantProvider == "aws" {
-		return fmt.Sprintf("http://%s:25250", NATSPublicIP)
-	}
-	return fmt.Sprintf("http://%s:25250", getNatsIP())
-}
 
 func getNetworkProperty(key string, natsClient *utils.NatsClient) string {
 	message := fmt.Sprintf(`{"method":"get_state","arguments":["full"],"reply_to":"%s"}`, senderID)
@@ -73,23 +60,20 @@ var _ = Describe("An Agent running on Windows", func() {
 	)
 
 	BeforeEach(func() {
+		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\agent.json c:\\bosh\\agent.json")
+		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-disk-settings.json c:\\bosh\\settings.json")
+		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+
 		message := fmt.Sprintf(`{"method":"ping","arguments":[],"reply_to":"%s"}`, senderID)
 
-		blobstoreClient = utils.NewBlobstore(blobstoreURI())
+		blobstoreClient = utils.NewBlobstore(windowsutils.BlobstoreURI())
 
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		fs = boshsys.NewOsFileSystem(logger)
 		compressor := boshfileutil.NewTarballCompressor(cmdRunner, fs)
 
-		var natsIP string
-		if VagrantProvider == "aws" {
-			natsIP = NATSPublicIP
-		} else {
-			natsIP = getNatsIP()
-		}
-
-		natsClient = utils.NewNatsClient(compressor, blobstoreClient, natsIP)
+		natsClient = utils.NewNatsClient(compressor, blobstoreClient, windowsutils.FakeDirectorIp())
 		err := natsClient.Setup()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -102,17 +86,9 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	AfterEach(func() {
-		message := fmt.Sprintf(`{"method":"ssh","arguments":["cleanup", {"user_regex":"^%s"}],"reply_to":"%s"}`, sshTestUser, senderID)
-		rawResponse, err := natsClient.SendRawMessage(message)
-		Expect(err).NotTo(HaveOccurred())
-
-		response := map[string]action.SSHResult{}
-		err = json.Unmarshal(rawResponse, &response)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(response["value"].Status).To(Equal("success"))
-
 		natsClient.Cleanup()
+
+		agent.EnsureAgentServiceStopped()
 	})
 
 	It("responds to 'get_state' message over NATS", func() {
@@ -132,6 +108,8 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("cleans up SSH users after session exits", func() {
+		time := strconv.Itoa(int(time.Now().Unix()))
+		sshTestUser := fmt.Sprintf("bosh_testuser_%s", time[len(time)-5:])
 		setupResult, sshClientConfig, err := natsClient.SetupSSH(sshTestUser, senderID)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -140,7 +118,18 @@ var _ = Describe("An Agent running on Windows", func() {
 		output := agent.RunPowershellCommand(`get-wmiobject -class win32_userprofile | Where { $_.LocalPath -eq 'C:\Users\%s'}`, sshTestUser)
 		Expect(output).To(MatchRegexp(sshTestUser))
 
-		client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", AgentPublicIP), sshClientConfig)
+		tunnelClient, err := windowsutils.GetSSHTunnelClient()
+		Expect(err).NotTo(HaveOccurred())
+
+		agentSSHAddress := fmt.Sprintf("%s:22", windowsutils.AgentIP())
+		proxyConnection, err := tunnelClient.Dial("tcp", agentSSHAddress)
+		Expect(err).NotTo(HaveOccurred())
+
+		proxyClientConnection, proxyClientChannel, proxyClientRequest, err := ssh.NewClientConn(proxyConnection, agentSSHAddress, sshClientConfig)
+		Expect(err).NotTo(HaveOccurred())
+
+		client := ssh.NewClient(proxyClientConnection, proxyClientChannel, proxyClientRequest)
+
 		Expect(err).NotTo(HaveOccurred())
 
 		session, err := client.NewSession()
@@ -358,9 +347,6 @@ var _ = Describe("An Agent running on Windows", func() {
 
 	Context("when there are multiple networks", func() {
 		BeforeEach(func() {
-			if OsVersion == "2012R2" {
-				Skip("Cannot create virtual interfaces in 2012R2")
-			}
 			natsClient.PrepareJob("add-network-interface")
 
 			err := natsClient.RunScript("run")

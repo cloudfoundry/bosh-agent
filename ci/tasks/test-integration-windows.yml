@@ -1,25 +1,16 @@
 ---
 platform: linux
 
-image_resource:
-  type: registry-image
-  source:
-    repository: bosh/agent
-
 inputs:
+- name: agent-info
 - name: bosh-agent
-  path: gopath/src/github.com/cloudfoundry/bosh-agent
-- name: windows-ami
 
 run:
-  path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/test-integration-windows.sh
+  path: bosh-agent/ci/tasks/test-integration-windows.sh
 
 params:
-  AWS_ACCESS_KEY: replace-me
-  AWS_SECRET_KEY: replace-me
-  AWS_SUBNET: replace-me
-  AWS_SSH_KEY: replace-me
-  KEYPAIR_NAME: replace-me
-  VAGRANT_PROVIDER: aws
-  WINRM_PASSWORD: replace-me
-  WINDOWS_OS_VERSION: replace-me
+  JUMPBOX_IP:
+  JUMPBOX_PRIVATE_KEY:
+  JUMPBOX_USERNAME:
+  AGENT_GATEWAY:
+  AGENT_NETMASK:

@@ -1,0 +1,77 @@
+- type: replace
+  path: /instance_groups/name=fake_director/jobs/-
+  value:
+    name: bpm
+    release: bpm
+
+- type: replace
+  path: /instance_groups/name=fake_director/jobs/-
+  value:
+    name: blobstore
+    release: bosh
+    properties:
+      blobstore:
+        agent:
+          user: agent
+          password: password
+        director:
+          user: agent
+          password: password
+        tls:
+          cert:
+            certificate: ((server_tls.certificate))
+            private_key: ((server_tls.private_key))
+
+- type: replace
+  path: /instance_groups/name=fake_director/jobs/-
+  value:
+    name: nats
+    release: nats
+    properties:
+      nats:
+        machines:
+          - ((ip_address))
+        user: nats
+        password: nats
+
+- type: replace
+  path: /releases/name=bpm?
+  value:
+    name: bpm
+    version: latest
+
+- type: replace
+  path: /releases/name=bosh?
+  value:
+    name: bosh
+    version: latest
+
+- type: replace
+  path: /releases/name=nats?
+  value:
+    name: nats
+    version: latest
+
+- type: replace
+  path: /instance_groups/name=fake_director/persistent_disk?
+  value: 5000
+
+- type: replace
+  path: /variables?/-
+  value:
+    name: server_ca
+    options:
+      is_ca: true
+      common_name: server_ca
+    type: certificate
+
+- type: replace
+  path: /variables?/-
+  value:
+    name: server_tls
+    options:
+      ca: server_ca
+      common_name: ((ip_address))
+      alternative_names:
+        - ((ip_address))
+    type: certificate

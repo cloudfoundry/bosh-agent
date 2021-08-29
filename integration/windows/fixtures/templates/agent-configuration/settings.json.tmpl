@@ -3,7 +3,9 @@
   "blobstore": {
     "provider": "dav",
     "options": {
-      "endpoint": "http://{{.NatsPrivateIP}}:25250"
+      "endpoint": "http://{{.NatsPrivateIP}}:25250",
+      "password": "password",
+      "user": "agent"
     }
   },
   "disks": {
@@ -14,23 +16,39 @@
   },
   "env": {
     "bosh": {
-      "password": ""
+      "password": "",
+      "blobstores": [
+        {
+          "provider": "dav",
+          "options": {
+            "endpoint": "http://{{.NatsPrivateIP}}:25250",
+            "password": "password",
+            "user": "agent"
+          }
+        }
+      ]
     }
   },
   "networks": {
-    "diego1": {
-      "type": "",
-      "ip": "10.10.10.11",
-      "netmask": "255.255.255.0",
-      "gateway": "10.10.10.1",
+    "default": {
+      "type": "manual",
+      "ip": "{{.AgentIP}}",
+      "netmask": "{{.AgentNetmask}}",
+      "gateway": "{{.AgentGateway}}",
       "resolved": false,
       "use_dhcp": true,
-      "default": ["dns", "gateway"],
+      "default": [
+        "dns",
+        "gateway"
+      ],
+      "dns": [
+        "8.8.8.8"
+      ],
       "mac": "",
       "preconfigured": false
     }
   },
-  "mbus": "nats://{{.NatsPrivateIP}}:4222",
+  "mbus": "nats://nats:nats@{{.NatsPrivateIP}}:4222",
   "vm": {
     "name": "vm-1f1aaed4-b479-4cf5-b73e-a7cbf0abf4ae"
   },
