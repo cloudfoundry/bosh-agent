@@ -446,10 +446,14 @@ jobs:
           repository: bosh-agent
           tag: version-semver/number
           tag_prefix: v
-      - task: build-linux
-        file: bosh-agent/ci/tasks/build-linux.yml
+      - in_parallel:
+        - task: build-linux
+          file: bosh-agent/ci/tasks/build-linux.yml
+        - task: build-windows
+          file: bosh-agent/ci/tasks/build-windows.yml
       - put: bosh-agent-index
         params:
           files:
             - compiled-linux-*/*
+            - compiled-windows-*/*
           version: version-semver/number
