@@ -64,6 +64,14 @@ var _ = Describe("MountDiskAction", func() {
 							Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
 							Expect(platform.MountPersistentDiskCallCount()).To(Equal(0))
 							Expect(settingsService.SavePersistentDiskSettingsCallCount).To(Equal(0))
+
+							diskSettings, mntPt := platform.AdjustPersistentDiskPartitioningArgsForCall(0)
+							Expect(diskSettings).To(Equal(boshsettings.DiskSettings{
+								ID:       "fake-disk-cid",
+								VolumeID: "fake-volume-id",
+								Path:     "fake-device-path",
+							}))
+							Expect(mntPt).To(boshassert.MatchPath("/fake-base-dir/store"))
 						})
 					})
 
@@ -73,6 +81,7 @@ var _ = Describe("MountDiskAction", func() {
 							Expect(err).NotTo(HaveOccurred())
 							Expect(result).To(Equal(map[string]string{}))
 
+							Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
 							Expect(platform.MountPersistentDiskCallCount()).To(Equal(1))
 
 							diskSettings, mntPt := platform.MountPersistentDiskArgsForCall(0)

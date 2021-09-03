@@ -803,10 +803,124 @@ var _ = Describe("PartedPartitioner", func() {
 	})
 
 	Describe("PartitionsNeedResize", func() {
-		Context("when persistent disk has an existing partition", func() {
-			var deviceSizeInBytes uint64
-			var partitionsToMatch []Partition
+		var deviceSizeInBytes uint64
+		var partitionsToMatch []Partition
 
+		BeforeEach(func() {
+			deviceSizeInBytes = ConvertFromMbToBytes(2048)
+			partitionsToMatch = []Partition{
+				{
+					Type:        PartitionTypeLinux,
+					SizeInBytes: deviceSizeInBytes,
+				},
+			}
+		})
+
+		Context("when listing partitions fails", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult("parted -m /dev/nvme2n1 unit B print", fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("No GPT found")})
+			})
+
+			It("returns an error", func() {
+				_, err := partitioner.PartitionsNeedResize("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Failed to get existing partitions"))
+				Expect(err.Error()).To(ContainSubstring("No GPT found"))
+			})
+		})
+
+		Context("when persistent disk has no partition", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: `BYT;
+/dev/nvme2n1:4294967296B:nvme:512:512:gpt:Amazon Elastic Block Store:;
+`},
+				)
+			})
+
+			It("tells no re-partitioning is supposed to happen", func() {
+				needsResize, err := partitioner.PartitionsNeedResize("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(needsResize).To(BeFalse())
+			})
+		})
+
+		Context("when getting device size fails", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: `BYT;
+/dev/nvme2n1:4294967296B:nvme:512:512:gpt:Amazon Elastic Block Store:;
+1:1048576B:2146435071B:2145386496B:ext4:bosh-partition-0:;
+`},
+				)
+				fakeCmdRunner.AddCmdResult("lsblk --nodeps -nb -o SIZE /dev/nvme2n1", fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("I/O error")})
+			})
+
+			It("returns an error", func() {
+				_, err := partitioner.PartitionsNeedResize("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Failed to get device size"))
+				Expect(err.Error()).To(ContainSubstring("I/O error"))
+			})
+		})
+
+		Context("when persistent disk has many existing partitions", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: `BYT;
+/dev/nvme2n1:34359738368B:nvme:512:512:gpt:Amazon Elastic Block Store:;
+1:1048576B:17180917759B:17179869184B:linux-swap(v1):bosh-partition-0:;
+2:17180917760B:34358689791B:17177772032B:ext4:bosh-partition-1:;
+`},
+				)
+				fakeCmdRunner.AddCmdResult(
+					"lsblk --nodeps -nb -o SIZE /dev/nvme2n1",
+					fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", deviceSizeInBytes)},
+				)
+			})
+
+			It("tells no re-partitioning is supposed to happen", func() {
+				needsResize, err := partitioner.PartitionsNeedResize("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(needsResize).To(BeFalse())
+			})
+		})
+
+		Context("when persistent disk has one existing partition of swap type", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: `BYT;
+/dev/nvme2n1:34359738368B:nvme:512:512:gpt:Amazon Elastic Block Store:;
+1:1048576B:2146435071B:2145386496B:linux-swap(v1):bosh-partition-0:;
+`},
+				)
+				fakeCmdRunner.AddCmdResult(
+					"lsblk --nodeps -nb -o SIZE /dev/nvme2n1",
+					fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", deviceSizeInBytes)},
+				)
+			})
+
+			It("tells no re-partitioning is supposed to happen", func() {
+				needsResize, err := partitioner.PartitionsNeedResize("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(needsResize).To(BeFalse())
+			})
+		})
+
+		Context("when persistent disk has an existing partition of Linux type", func() {
 			BeforeEach(func() {
 				fakeCmdRunner.AddCmdResult(
 					"parted -m /dev/nvme2n1 unit B print",
@@ -820,7 +934,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 			Context("when device has slightly larger size due to geometry alignments", func() {
 				BeforeEach(func() {
-					deviceSizeInBytes = ConvertFromMbToBytes(2048)
+					deviceSizeInBytes = ConvertFromMbToBytes(2048 + 20)
 					partitionsToMatch = []Partition{
 						{
 							Type:        PartitionTypeLinux,
@@ -868,6 +982,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 	Describe("ResizePartitions", func() {
 		var partitionsToMatch []Partition
+
 		BeforeEach(func() {
 			fakeCmdRunner.AvailableCommands["growpart"] = true
 			fakeCmdRunner.AvailableCommands["partx"] = true
@@ -901,31 +1016,29 @@ var _ = Describe("PartedPartitioner", func() {
 			})
 		})
 
-		Context("when parition needs to grow", func() {
-			Context("and growpart is missing", func() {
-				BeforeEach(func() {
-					fakeCmdRunner.AvailableCommands["growpart"] = false
-				})
-
-				It("returns an error", func() {
-					err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
-
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("'growpart' is not installed"))
-				})
+		Context("when growpart is missing", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AvailableCommands["growpart"] = false
 			})
 
-			Context("and partx is missing", func() {
-				BeforeEach(func() {
-					fakeCmdRunner.AvailableCommands["partx"] = false
-				})
+			It("returns an error", func() {
+				err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
 
-				It("returns an error", func() {
-					err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("'growpart' is not installed"))
+			})
+		})
 
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("'partx' is not installed"))
-				})
+		Context("when partx is missing", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AvailableCommands["partx"] = false
+			})
+
+			It("returns an error", func() {
+				err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("'partx' is not installed"))
 			})
 		})
 
@@ -957,12 +1070,31 @@ var _ = Describe("PartedPartitioner", func() {
 			})
 		})
 
-		Context("when growing partition fails", func() {
+		Context("when growing partition temporarily fails once", func() {
 			BeforeEach(func() {
 				fakeCmdRunner.AddCmdResult(
 					"growpart /dev/nvme2n1 1 --update auto",
 					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 1, Error: errors.New("growpart-failure")},
 				)
+			})
+
+			It("reties and succeeds", func() {
+				err := partitioner.ResizePartitions("/dev/nvme2n1", partitionsToMatch)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+				Expect(fakeCmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+			})
+		})
+
+		Context("when growing partition fails constantly", func() {
+			BeforeEach(func() {
+				for i := 0; i < 20; i++ {
+					fakeCmdRunner.AddCmdResult(
+						"growpart /dev/nvme2n1 1 --update auto",
+						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 1, Error: errors.New("growpart-failure")},
+					)
+				}
 			})
 
 			It("returns an error", func() {

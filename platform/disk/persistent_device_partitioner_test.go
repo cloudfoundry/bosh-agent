@@ -139,4 +139,28 @@ var _ = Describe("PersistentDevicePartitioner", func() {
 			})
 		})
 	})
+
+	Describe("PartitionsNeedResize", func() {
+		It("delegates to the parted partitioner", func() {
+			_, err := partitioner.PartitionsNeedResize(devicePath, partitions)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(sfDiskPartitioner.PartitionsNeedResizeCalled).To(BeFalse())
+			Expect(partedPartitioner.PartitionsNeedResizeCalled).To(BeTrue())
+			Expect(partedPartitioner.PartitionsNeedResizeDevicePath).To(Equal(devicePath))
+			Expect(partedPartitioner.PartitionsNeedResizePartitions).To(Equal(partitions))
+		})
+	})
+
+	Describe("ResizePartitions", func() {
+		It("delegates to the parted partitioner", func() {
+			err := partitioner.ResizePartitions(devicePath, partitions)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(sfDiskPartitioner.ResizePartitionsCalled).To(BeFalse())
+			Expect(partedPartitioner.ResizePartitionsCalled).To(BeTrue())
+			Expect(partedPartitioner.ResizePartitionsDevicePath).To(Equal(devicePath))
+			Expect(partedPartitioner.ResizePartitionsPartitions).To(Equal(partitions))
+		})
+	})
 })
