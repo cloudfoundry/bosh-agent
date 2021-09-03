@@ -220,7 +220,7 @@ func (r *FakeCmdRunner) getOutputsForCmd(runCmd []string) (string, string, int, 
 
 		if !result.Sticky {
 			if len(newResults) == 0 {
-				delete(r.commandResults, "fullCmd")
+				delete(r.commandResults, fullCmd)
 			} else {
 				r.commandResults[fullCmd] = newResults
 			}
