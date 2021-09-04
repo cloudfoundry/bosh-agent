@@ -12,10 +12,10 @@ require (
 	github.com/charlievieth/fs v0.0.1
 	github.com/cloudfoundry/bosh-davcli v0.0.45
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.271
+	github.com/cloudfoundry/bosh-utils v0.0.273
 	github.com/cloudfoundry/gosigar v1.2.0
-	github.com/cloudfoundry/socks5-proxy v0.2.18 // indirect
-	github.com/cloudfoundry/yagnats v0.0.0-20191003180638-5cab3e099974
+	github.com/cloudfoundry/socks5-proxy v0.2.19 // indirect
+	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible
@@ -28,7 +28,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20210623064412-3b76017826b0
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nats-io/jwt v1.2.2 // indirect
-	github.com/nats-io/nats.go v1.12.0
+	github.com/nats-io/nats.go v1.12.1
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
@@ -38,7 +38,7 @@ require (
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
-	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
-	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf
+	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f
+	golang.org/x/sys v0.0.0-20210903071746-97244b99971b
 	golang.org/x/text v0.3.7 // indirect
 )
