@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudfoundry/gosigar"
 
+	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -19,12 +20,18 @@ type Service interface {
 type concreteService struct {
 	statsCollector boshstats.Collector
 	dirProvider    boshdirs.Provider
+	diskMounter    boshdisk.Mounter
 }
 
-func NewService(statsCollector boshstats.Collector, dirProvider boshdirs.Provider) Service {
+func NewService(
+	statsCollector boshstats.Collector,
+	dirProvider boshdirs.Provider,
+	diskMounter boshdisk.Mounter,
+) Service {
 	return concreteService{
 		statsCollector: statsCollector,
 		dirProvider:    dirProvider,
+		diskMounter:    diskMounter,
 	}
 }
 
@@ -109,6 +116,18 @@ func (s concreteService) getDiskStats() (diskStats DiskVitals, err error) {
 
 func (s concreteService) addDiskStats(diskStats DiskVitals, path, name string) (updated DiskVitals, err error) {
 	updated = diskStats
+
+	if s.diskMounter != nil {
+		var isMountPoint bool
+		_, isMountPoint, err = s.diskMounter.IsMountPoint(path)
+		if err != nil {
+			err = bosherr.WrapError(err, fmt.Sprintf("Verifying if '%s' is a mount point", path))
+			return
+		}
+		if !isMountPoint {
+			return
+		}
+	}
 
 	stat, diskErr := s.statsCollector.GetDiskStats(path)
 	if diskErr != nil {

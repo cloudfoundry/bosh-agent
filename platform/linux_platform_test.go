@@ -80,7 +80,6 @@ var _ = Describe("LinuxPlatform", func() {
 		cdutil = fakecdrom.NewFakeCDUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewGenericCpCopier(fs, logger)
-		vitalsService = boshvitals.NewService(collector, dirProvider)
 		netManager = &fakenet.FakeManager{}
 		certManager = new(certfakes.FakeManager)
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
@@ -122,6 +121,8 @@ var _ = Describe("LinuxPlatform", func() {
 
 		diskUtil = fakedisk.NewFakeDiskUtil()
 		diskManager.GetUtilReturns(diskUtil)
+
+		vitalsService = boshvitals.NewService(collector, dirProvider, mounter)
 	})
 
 	JustBeforeEach(func() {

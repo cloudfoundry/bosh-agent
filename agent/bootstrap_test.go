@@ -1116,7 +1116,7 @@ var _ = Describe("bootstrap", func() {
 
 				sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
-				vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
+				vitalsService := boshvitals.NewService(sigarCollector, dirProvider, mounter)
 
 				ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
 

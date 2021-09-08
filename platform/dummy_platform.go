@@ -69,7 +69,7 @@ func NewDummyPlatform(
 		copier:             boshcmd.NewGenericCpCopier(fs, logger),
 		dirProvider:        dirProvider,
 		devicePathResolver: devicePathResolver,
-		vitalsService:      boshvitals.NewService(collector, dirProvider),
+		vitalsService:      boshvitals.NewService(collector, dirProvider, nil),
 		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
 		logger:             logger,
 		auditLogger:        auditLogger,
