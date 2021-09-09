@@ -13,7 +13,7 @@ require (
 	github.com/cloudfoundry/bosh-davcli v0.0.45
 	github.com/cloudfoundry/bosh-init v0.0.103
 	github.com/cloudfoundry/bosh-utils v0.0.273
-	github.com/cloudfoundry/gosigar v1.3.0
+	github.com/cloudfoundry/gosigar v1.3.1
 	github.com/cloudfoundry/socks5-proxy v0.2.19 // indirect
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
