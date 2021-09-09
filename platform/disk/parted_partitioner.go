@@ -371,45 +371,29 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 	return detectPartitionRetryStrategy.Try()
 }
 
-func (p partedPartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
-	existingPartitions, _, err := p.GetPartitions(devicePath)
+func (p partedPartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
+	existingPartitions, diskSize, err := p.GetPartitions(devicePath)
 	if err != nil {
 		return false, bosherr.WrapError(err, "Failed to get existing partitions")
 	}
-	if len(existingPartitions) < len(partitionsToMatch) {
+	if len(existingPartitions) > 1 {
+		return false, bosherr.Errorf(
+			"Persistent disks with many partitions are not supported. Expected 1, got %d.",
+			len(existingPartitions))
+	}
+	if len(existingPartitions) < 1 {
 		return false, nil
 	}
 
-	remainingDiskSpace, err := p.GetDeviceSizeInBytes(devicePath)
-	if err != nil {
-		return false, bosherr.WrapError(err, "Failed to get device size")
+	partition := existingPartitions[0]
+	if partition.Type != expectedPartitionType {
+		return false, nil
 	}
-
-	for index, partitionToMatch := range partitionsToMatch {
-		if index == len(partitionsToMatch)-1 {
-			partitionToMatch.SizeInBytes = remainingDiskSpace
-		}
-
-		existingPartition := existingPartitions[index]
-		switch {
-		case existingPartition.Type != partitionToMatch.Type:
-			return false, nil
-		case significantlySmallerThan(existingPartition.SizeInBytes, partitionToMatch.SizeInBytes, ConvertFromMbToBytes(deltaSize)):
-			return true, nil
-		}
-
-		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInBytes
-	}
-
-	return false, nil
+	return significantlySmallerThan(
+		partition.SizeInBytes, diskSize, ConvertFromMbToBytes(deltaSize)), nil
 }
 
-func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
-	if len(partitionsToMatch) > 1 {
-		p.logger.Debug("parted-partioner", "Multiple partitions are not supported when resizing")
-		return bosherr.Error("Multiple partitions are not supported when resizing")
-	}
-
+func (p partedPartitioner) ResizeSinglePartition(devicePath string) (err error) {
 	if !p.cmdRunner.CommandExists("growpart") {
 		p.logger.Info(p.logTag, "The program 'growpart' is not installed, Persistent Filesystem cannot be grown")
 		return bosherr.Error("The program 'growpart' is not installed, Persistent Filesystem cannot be grown")
@@ -420,36 +404,25 @@ func (p partedPartitioner) ResizePartitions(devicePath string, partitionsToMatch
 		return bosherr.Error("The program 'partx' is not installed, Persistent Filesystem cannot be grown")
 	}
 
-	for index, partition := range partitionsToMatch {
-		if partition.SizeInBytes != 0 {
-			p.logger.Debug("parted-partioner", "Partitions smaller than disk size are not supported")
-			return bosherr.Error("Partitions smaller than disk size are not supported")
-		}
-
-		partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
-			_, _, _, err := p.cmdRunner.RunCommand(
-				"growpart",
-				devicePath,
-				fmt.Sprintf("%d", index+1),
-				"--update",
-				"auto",
-			)
-			if err != nil {
-				p.logger.Error(p.logTag, "Failed with an error: %s", err)
-				return true, bosherr.WrapError(err, "Resizing partition using growpart")
-			}
-
-			p.logger.Info(p.logTag, "Successfully resized partition %d on %s", index, devicePath)
-			return false, nil
-		})
-
-		partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
-		err := partitionRetryStrategy.Try()
-
+	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+		_, _, _, err := p.cmdRunner.RunCommand(
+			"growpart", devicePath, "1", "--update", "auto",
+		)
 		if err != nil {
-			return bosherr.WrapErrorf(err, "Repartitioning disk `%s'", devicePath)
+			p.logger.Error(p.logTag, "Failed with an error: %s", err)
+			return true, bosherr.WrapError(err, "Resizing partition using growpart")
 		}
 
+		p.logger.Info(p.logTag, "Successfully resized sinlge partition in %s", devicePath)
+		return false, nil
+	})
+
+	partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+	err = partitionRetryStrategy.Try()
+
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Repartitioning disk `%s'", devicePath)
 	}
+
 	return nil
 }

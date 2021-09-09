@@ -5,18 +5,17 @@ import (
 )
 
 type FakePartitioner struct {
-	PartitionsNeedResizeCalled     bool
-	PartitionsNeedResizeDevicePath string
-	PartitionsNeedResizePartitions []boshdisk.Partition
-	PartitionsNeedResizeReturns    struct {
+	SinglePartitionNeedsResizeCalled                bool
+	SinglePartitionNeedsResizeDevicePath            string
+	SinglePartitionNeedsResizeExpectedPartitionType boshdisk.PartitionType
+	SinglePartitionNeedsResizeReturns               struct {
 		NeedResize bool
 		Err        error
 	}
 
-	ResizePartitionsCalled     bool
-	ResizePartitionsDevicePath string
-	ResizePartitionsPartitions []boshdisk.Partition
-	ResizePartitionsErr        error
+	ResizeSinglePartitionCalled     bool
+	ResizeSinglePartitionDevicePath string
+	ResizeSinglePartitionErr        error
 
 	PartitionCalled     bool
 	PartitionDevicePath string
@@ -42,18 +41,17 @@ func NewFakePartitioner() *FakePartitioner {
 	}
 }
 
-func (p *FakePartitioner) PartitionsNeedResize(devicePath string, partitions []boshdisk.Partition) (needsResize bool, err error) {
-	p.PartitionsNeedResizeCalled = true
-	p.PartitionsNeedResizeDevicePath = devicePath
-	p.PartitionsNeedResizePartitions = partitions
-	return p.PartitionsNeedResizeReturns.NeedResize, p.PartitionsNeedResizeReturns.Err
+func (p *FakePartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType boshdisk.PartitionType) (needsResize bool, err error) {
+	p.SinglePartitionNeedsResizeCalled = true
+	p.SinglePartitionNeedsResizeDevicePath = devicePath
+	p.SinglePartitionNeedsResizeExpectedPartitionType = expectedPartitionType
+	return p.SinglePartitionNeedsResizeReturns.NeedResize, p.SinglePartitionNeedsResizeReturns.Err
 }
 
-func (p *FakePartitioner) ResizePartitions(devicePath string, partitions []boshdisk.Partition) (err error) {
-	p.ResizePartitionsCalled = true
-	p.ResizePartitionsDevicePath = devicePath
-	p.ResizePartitionsPartitions = partitions
-	return p.ResizePartitionsErr
+func (p *FakePartitioner) ResizeSinglePartition(devicePath string) (err error) {
+	p.ResizeSinglePartitionCalled = true
+	p.ResizeSinglePartitionDevicePath = devicePath
+	return p.ResizeSinglePartitionErr
 }
 
 func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) error {

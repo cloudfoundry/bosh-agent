@@ -226,10 +226,10 @@ func (p rootDevicePartitioner) roundDown(numToRound, multiple uint64) uint64 {
 	return numToRound - remainder
 }
 
-func (p rootDevicePartitioner) PartitionsNeedResize(devicePath string, partitions []Partition) (needsResize bool, err error) {
+func (p rootDevicePartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
 	return false, bosherr.WrapError(err, "Resizing the system disk is not supported")
 }
 
-func (p rootDevicePartitioner) ResizePartitions(devicePath string, partitions []Partition) (err error) {
+func (p rootDevicePartitioner) ResizeSinglePartition(devicePath string) (err error) {
 	return bosherr.WrapError(err, "Resizing the system disk is not supported")
 }

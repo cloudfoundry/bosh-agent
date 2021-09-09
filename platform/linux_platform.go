@@ -1126,23 +1126,19 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 
 	firstPartitionPath := p.partitionPath(devicePath, 1)
 
-	singlePartPartitioning := []boshdisk.Partition{
-		{Type: boshdisk.PartitionTypeLinux},
-	}
-
 	partitioner, err := p.diskManager.GetPersistentDevicePartitioner(diskSetting.Partitioner)
 	if err != nil {
 		return bosherr.WrapError(err, "Selecting partitioner")
 	}
 
-	singlePartNeedsResize, err := partitioner.PartitionsNeedResize(devicePath, singlePartPartitioning)
+	singlePartNeedsResize, err := partitioner.SinglePartitionNeedsResize(devicePath, boshdisk.PartitionTypeLinux)
 	if err != nil {
 		return bosherr.WrapError(err, "Failed to determine whether partitions need rezising")
 	}
 	p.logger.Debug(logTag, "Persistent disk single partition needs resize: %+v", singlePartNeedsResize)
 
 	if singlePartNeedsResize {
-		err = partitioner.ResizePartitions(devicePath, singlePartPartitioning)
+		err = partitioner.ResizeSinglePartition(devicePath)
 		if err != nil {
 			return bosherr.WrapError(err, "Resizing disk partition")
 		}
@@ -1162,6 +1158,9 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 			return bosherr.WrapError(err, "Failed to unmount partition after filesystem growing")
 		}
 	} else {
+		singlePartPartitioning := []boshdisk.Partition{
+			{Type: boshdisk.PartitionTypeLinux},
+		}
 		err = partitioner.Partition(devicePath, singlePartPartitioning)
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")

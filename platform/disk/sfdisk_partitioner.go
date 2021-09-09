@@ -225,10 +225,10 @@ func extractPartitionPathAndType(line string) (partitionPath string, partitionTy
 	return
 }
 
-func (p sfdiskPartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
+func (p sfdiskPartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
 	return false, bosherr.WrapError(err, "Resizing partition using sfdisk is not supported")
 }
 
-func (p sfdiskPartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
+func (p sfdiskPartitioner) ResizeSinglePartition(devicePath string) (err error) {
 	return bosherr.WrapError(err, "Resizing partition using sfdisk is not supported")
 }

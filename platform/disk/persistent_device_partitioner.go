@@ -69,10 +69,10 @@ func IsGPTError(err error) bool {
 	return err == ErrGPTPartitionEncountered
 }
 
-func (p *PersistentDevicePartitioner) PartitionsNeedResize(devicePath string, partitionsToMatch []Partition) (needsResize bool, err error) {
-	return p.partedPartitioner.PartitionsNeedResize(devicePath, partitionsToMatch)
+func (p *PersistentDevicePartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
+	return p.partedPartitioner.SinglePartitionNeedsResize(devicePath, expectedPartitionType)
 }
 
-func (p *PersistentDevicePartitioner) ResizePartitions(devicePath string, partitionsToMatch []Partition) (err error) {
-	return p.partedPartitioner.ResizePartitions(devicePath, partitionsToMatch)
+func (p *PersistentDevicePartitioner) ResizeSinglePartition(devicePath string) (err error) {
+	return p.partedPartitioner.ResizeSinglePartition(devicePath)
 }

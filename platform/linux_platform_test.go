@@ -2617,7 +2617,7 @@ sam:fakeanotheruser`)
 			It("does not resize the disk", func() {
 				err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(partitioner.ResizePartitionsCalled).To(BeFalse())
+				Expect(partitioner.ResizeSinglePartitionCalled).To(BeFalse())
 			})
 
 			It("does not partition the disk", func() {
@@ -2716,17 +2716,15 @@ sam:fakeanotheruser`)
 
 			Context("when partition needs resize after IaaS-native disk resize", func() {
 				BeforeEach(func() {
-					partitioner.PartitionsNeedResizeReturns.NeedResize = true
-					partitioner.PartitionsNeedResizeReturns.Err = nil
+					partitioner.SinglePartitionNeedsResizeReturns.NeedResize = true
+					partitioner.SinglePartitionNeedsResizeReturns.Err = nil
 				})
 
 				It("resizes the single partition", func() {
 					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
 					Expect(err).ToNot(HaveOccurred())
 
-					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
-					Expect(partitioner.ResizePartitionsDevicePath).To(Equal("fake-real-device-path"))
-					Expect(partitioner.ResizePartitionsPartitions).To(Equal(partitions))
+					Expect(partitioner.ResizeSinglePartitionDevicePath).To(Equal("fake-real-device-path"))
 				})
 
 				It("grows the partition filesystem, temporarily mounting it", func() {
