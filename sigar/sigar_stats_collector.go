@@ -66,7 +66,7 @@ func (s *sigarStatsCollector) GetCPUStats() (boshstats.CPUStats, error) {
 }
 
 func (s *sigarStatsCollector) GetMemStats() (usage boshstats.Usage, err error) {
-	mem, err := s.statsSigar.GetMem()
+	mem, err := s.statsSigar.GetMemIgnoringCGroups()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar Mem")
 		return

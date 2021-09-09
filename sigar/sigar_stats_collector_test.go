@@ -87,7 +87,7 @@ var _ = Describe("sigarStatsCollector", func() {
 
 	Describe("GetMemStats", func() {
 		It("returns mem stats", func() {
-			fakeSigar.Mem = sigar.Mem{
+			fakeSigar.MemIgnoringCGroups = sigar.Mem{
 				Total:      100,
 				ActualUsed: 80,
 			}
