@@ -14,7 +14,7 @@ require (
 	github.com/cloudfoundry/bosh-init v0.0.103
 	github.com/cloudfoundry/bosh-utils v0.0.273
 	github.com/cloudfoundry/gosigar v1.3.2
-	github.com/cloudfoundry/socks5-proxy v0.2.19 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.20 // indirect
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible
@@ -34,6 +34,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/net v0.0.0-20210908191846-a5e095526f91
-	golang.org/x/sys v0.0.0-20210909193231-528a39cd75f3
+	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
 	golang.org/x/text v0.3.7 // indirect
 )
