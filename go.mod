@@ -13,8 +13,8 @@ require (
 	github.com/cloudfoundry/bosh-davcli v0.0.45
 	github.com/cloudfoundry/bosh-init v0.0.103
 	github.com/cloudfoundry/bosh-utils v0.0.273
-	github.com/cloudfoundry/gosigar v1.2.0
-	github.com/cloudfoundry/socks5-proxy v0.2.19 // indirect
+	github.com/cloudfoundry/gosigar v1.3.2
+	github.com/cloudfoundry/socks5-proxy v0.2.20 // indirect
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -38,7 +38,7 @@ require (
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
-	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f
-	golang.org/x/sys v0.0.0-20210903071746-97244b99971b
+	golang.org/x/net v0.0.0-20210908191846-a5e095526f91
+	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
 	golang.org/x/text v0.3.7 // indirect
 )
