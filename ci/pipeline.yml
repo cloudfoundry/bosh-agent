@@ -111,7 +111,7 @@ resources:
   - name: bpm-bosh-release
     type: bosh-io-release
     source:
-      repository: cloudfoundry/nats-release
+      repository: cloudfoundry/bpm-release
 
   - name: nats-bosh-release
     type: bosh-io-release
