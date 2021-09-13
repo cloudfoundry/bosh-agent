@@ -103,6 +103,21 @@ resources:
       jumpbox_username: ((iaas_directors_aws-director_bosh_jumpbox_username))
       jumpbox_url: ((iaas_directors_aws-director_bosh_jumpbox_ip)):22
 
+  - name: bosh-bosh-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/bosh
+
+  - name: bpm-bosh-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/nats-release
+
+  - name: nats-bosh-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/nats-release
+
   - name: version-semver
     type: semver
     source:
@@ -275,6 +290,9 @@ jobs:
         - get: bosh-ecosystem-concourse
         - get: bosh-ecosystem-docker-image
         - get: aws-stemcell
+        - get: bosh-bosh-release
+        - get: bpm-bosh-release
+        - get: nats-bosh-release
         - get: aws-windows-stemcell
           trigger: true
       - do:
@@ -349,6 +367,10 @@ jobs:
               - "aws-windows-stemcell/*.tgz"
             ops_files:
               - "bosh-agent/integration/assets/agent-windows-nats-blobstore.yml"
+            releases:
+              - bosh-bosh-release/release.tgz
+              - bpm-bosh-release/release.tgz
+              - nats-bosh-release/release.tgz
             vars:
               deployment_name: bosh-agent-integration-windows-main
             vars_files:
