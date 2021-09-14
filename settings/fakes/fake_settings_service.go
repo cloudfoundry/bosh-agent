@@ -29,6 +29,9 @@ type FakeSettingsService struct {
 	SavePersistentDiskSettingsCallCount   int
 	SavePersistentDiskSettingsErr         error
 	SavePersistentDiskSettingsLastArg     boshsettings.DiskSettings
+	SaveUpdateSettingsCallCount           int
+	SaveUpdateSettingsErr                 error
+	SaveUpdateSettingsLastArg             boshsettings.UpdateSettings
 }
 
 func (service *FakeSettingsService) InvalidateSettings() error {
@@ -66,6 +69,15 @@ func (service *FakeSettingsService) SavePersistentDiskSettings(settings boshsett
 	service.SavePersistentDiskSettingsLastArg = settings
 	if service.SavePersistentDiskSettingsErr != nil {
 		return service.SavePersistentDiskSettingsErr
+	}
+	return nil
+}
+
+func (service *FakeSettingsService) SaveUpdateSettings(updateSettings boshsettings.UpdateSettings) error {
+	service.SaveUpdateSettingsCallCount++
+	service.SaveUpdateSettingsLastArg = updateSettings
+	if service.SaveUpdateSettingsErr != nil {
+		return service.SaveUpdateSettingsErr
 	}
 	return nil
 }

@@ -772,6 +772,26 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(path).To(Equal(expectedPath))
 		})
 	})
+
+	Describe("GetUpdateSettingsPath", func() {
+		It("logs that windows does not support tmpfs if asked for a tmpfs path", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
+
+			path := platform.GetUpdateSettingsPath(true)
+			Expect(logBuffer).Should(gbytes.Say(
+				"Windows does not support using tmpfs, using default update settings path",
+			))
+
+			Expect(path).To(Equal(expectedPath))
+		})
+
+		It("returns the default settings path", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
+
+			path := platform.GetUpdateSettingsPath(false)
+			Expect(path).To(Equal(expectedPath))
+		})
+	})
 })
 
 func expectFormatterCalledWithArgs(

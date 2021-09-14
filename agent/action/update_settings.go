@@ -3,24 +3,25 @@ package action
 import (
 	"errors"
 
-	"encoding/json"
+	"github.com/cloudfoundry/bosh-agent/agent/utils"
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/logger"
-	"path/filepath"
 )
 
 type UpdateSettingsAction struct {
+	agentKiller        utils.Killer
 	trustedCertManager cert.Manager
 	logger             logger.Logger
 	settingsService    boshsettings.Service
 	platform           platform.Platform
 }
 
-func NewUpdateSettings(service boshsettings.Service, platform platform.Platform, trustedCertManager cert.Manager, logger logger.Logger) UpdateSettingsAction {
+func NewUpdateSettings(service boshsettings.Service, platform platform.Platform, trustedCertManager cert.Manager, logger logger.Logger, agentKiller utils.Killer) UpdateSettingsAction {
 	return UpdateSettingsAction{
+		agentKiller:        agentKiller,
 		trustedCertManager: trustedCertManager,
 		logger:             logger,
 		settingsService:    service,
@@ -33,7 +34,7 @@ func (a UpdateSettingsAction) IsAsynchronous(_ ProtocolVersion) bool {
 }
 
 func (a UpdateSettingsAction) IsPersistent() bool {
-	return false
+	return true
 }
 
 func (a UpdateSettingsAction) IsLoggable() bool {
@@ -41,6 +42,7 @@ func (a UpdateSettingsAction) IsLoggable() bool {
 }
 
 func (a UpdateSettingsAction) Run(newUpdateSettings boshsettings.UpdateSettings) (string, error) {
+	var restartNeeded bool
 	err := a.settingsService.LoadSettings()
 	if err != nil {
 		return "", err
@@ -63,22 +65,23 @@ func (a UpdateSettingsAction) Run(newUpdateSettings boshsettings.UpdateSettings)
 		return "", err
 	}
 
-	updateSettingsJSON, err := json.Marshal(newUpdateSettings)
+	existingSettings := a.settingsService.GetSettings().UpdateSettings
+	restartNeeded = existingSettings.MergeSettings(newUpdateSettings)
+	err = a.settingsService.SaveUpdateSettings(existingSettings)
 	if err != nil {
-		return "", bosherr.WrapError(err, "Marshalling updateSettings json")
+		return "", err
 	}
 
-	updateSettingsPath := filepath.Join(a.platform.GetDirProvider().BoshDir(), "update_settings.json")
-	err = a.platform.GetFs().WriteFile(updateSettingsPath, updateSettingsJSON)
-	if err != nil {
-		return "", bosherr.WrapError(err, "writing update settings json")
+	if restartNeeded {
+		a.agentKiller.KillAgent()
+		panic("This line of code should be unreachable due to killing of agent")
 	}
 
-	return "updated", nil
+	return "ok", nil
 }
 
 func (a UpdateSettingsAction) Resume() (interface{}, error) {
-	return nil, errors.New("not supported")
+	return "ok", nil
 }
 
 func (a UpdateSettingsAction) Cancel() error {

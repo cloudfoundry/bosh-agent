@@ -340,6 +340,13 @@ func (p linux) GetPersistentDiskSettingsPath(tmpfs bool) string {
 	return filepath.Join(p.dirProvider.BoshDir(), "persistent_disk_hints.json")
 }
 
+func (p linux) GetUpdateSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		return filepath.Join(p.dirProvider.BoshSettingsDir(), "update_settings.json")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "update_settings.json")
+}
+
 func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	if p.options.SkipDiskSetup {
 		return nil

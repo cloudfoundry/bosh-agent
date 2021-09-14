@@ -8,6 +8,7 @@ import (
 	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
+	"github.com/cloudfoundry/bosh-agent/agent/utils"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -55,7 +56,7 @@ func NewFactory(
 			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
 			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstoreDelegator, dirProvider),
 			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, blobstoreDelegator),
-			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger),
+			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger, utils.NewAgentKiller()),
 			"shutdown":                   NewShutdown(platform),
 
 			// Job management

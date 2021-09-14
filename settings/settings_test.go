@@ -1031,13 +1031,16 @@ var _ = Describe("Settings", func() {
 			}
 
 			DescribeTable("agent returning the right blobstore configuration",
-				func(settingsBlobstore Blobstore, envBoshBlobstores [](Blobstore), expectedBlobstore Blobstore) {
+				func(settingsBlobstore Blobstore, envBoshBlobstores [](Blobstore), updateSettingsBlobstores [](Blobstore), expectedBlobstore Blobstore) {
 					settings := Settings{
 						Blobstore: settingsBlobstore,
 						Env: Env{
 							Bosh: BoshEnv{
 								Blobstores: envBoshBlobstores,
 							},
+						},
+						UpdateSettings: UpdateSettings{
+							Blobstores: updateSettingsBlobstores,
 						},
 					}
 
@@ -1047,24 +1050,35 @@ var _ = Describe("Settings", func() {
 				Entry("setting.Blobstore provided and env.bosh.Blobstores is missing",
 					blobstoreLocal,
 					nil,
+					nil,
 					blobstoreLocal),
 
 				Entry("setting.Blobstore is missing and env.bosh.Blobstores is provided with a single entry",
 					nil,
 					[]Blobstore{blobstoreLocal},
+					nil,
 					blobstoreLocal),
 
 				Entry("setting.Blobstore is present and env.bosh.Blobstores is provided with a single entry",
 					blobstoreGcs,
 					[]Blobstore{blobstoreLocal},
+					nil,
 					blobstoreLocal),
 
 				Entry("setting.Blobstore is missing and env.bosh.Blobstores has multiple entries",
 					nil,
 					[]Blobstore{blobstoreS3, blobstoreGcs},
+					nil,
 					blobstoreS3),
 
+				Entry("setting.UpdateSettings.Blobstore is present",
+					blobstoreS3,
+					[]Blobstore{blobstoreGcs},
+					[]Blobstore{blobstoreLocal},
+					blobstoreLocal),
+
 				Entry("setting.Blobstore and env.bosh.Blobstores both are missing",
+					nil,
 					nil,
 					nil,
 					nil),
@@ -1165,6 +1179,28 @@ var _ = Describe("Settings", func() {
 	})
 
 	Describe("#GetMbusURL", func() {
+		Context("UpdateSettings.Mbus.URLs is populated", func() {
+			It("should return UpdateSettings.Mbus.URLs", func() {
+				settings = Settings{
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: []string{"nats://nested:789"},
+							},
+						},
+					},
+					Mbus: "nats://top-level:123",
+					UpdateSettings: UpdateSettings{
+						Mbus: MBus{
+							URLs: []string{"update settings mbus url"},
+						},
+					},
+				}
+
+				Expect(settings.GetMbusURL()).To(Equal("update settings mbus url"))
+			})
+		})
+
 		Context("Env.Bosh.Mbus.URLs is populated", func() {
 			It("should return Env.Bosh.Mbus.URLs", func() {
 				settings = Settings{
@@ -1213,6 +1249,66 @@ var _ = Describe("Settings", func() {
 				}
 
 				Expect(settings.GetMbusURL()).To(Equal("nats://top-level:456"))
+			})
+		})
+	})
+
+	Describe("#GetMbusCerts", func() {
+		Context("UpdateSettings.Mbus.Cert is populated", func() {
+			It("returns UpdateSettings.Mbus.Certs", func() {
+				settings = Settings{
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								Cert: CertKeyPair{
+									CA:          "ignored ca",
+									Certificate: "ignored certificate",
+									PrivateKey:  "ignored private key",
+								},
+							},
+						},
+					},
+					UpdateSettings: UpdateSettings{
+						Mbus: MBus{
+							Cert: CertKeyPair{
+								CA:          "ca",
+								Certificate: "certificate",
+								PrivateKey:  "private key",
+							},
+						},
+					},
+				}
+
+				Expect(settings.GetMbusCerts()).To(Equal(settings.UpdateSettings.Mbus.Cert))
+			})
+		})
+
+		Context("Only Env.Bosh.Mbus.Cert is populated", func() {
+			It("returns nv.Bosh.Mbus.Certs", func() {
+				settings = Settings{
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								Cert: CertKeyPair{
+									CA:          "ca",
+									Certificate: "certificate",
+									PrivateKey:  "private key",
+								},
+							},
+						},
+					},
+					UpdateSettings: UpdateSettings{
+						Mbus: MBus{
+							Cert: CertKeyPair{
+								CA:          "",
+								Certificate: "",
+								PrivateKey:  "",
+							},
+						},
+					},
+				}
+
+				Expect(settings.GetMbusCerts()).To(Equal(settings.Env.Bosh.Mbus.Cert))
 			})
 		})
 	})

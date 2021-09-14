@@ -241,7 +241,7 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 	if settings.Env.IsNATSMutualTLSEnabled() {
 		connInfo.TLSInfo = &yagnats.ConnectionTLSInfo{}
 
-		caCert := settings.Env.Bosh.Mbus.Cert.CA
+		caCert := settings.GetMbusCerts().CA
 		if caCert != "" {
 			connInfo.TLSInfo.CertPool = x509.NewCertPool()
 			if ok := connInfo.TLSInfo.CertPool.AppendCertsFromPEM([]byte(caCert)); !ok {
@@ -251,7 +251,7 @@ func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
 
 		connInfo.TLSInfo.VerifyPeerCertificate = h.VerifyPeerCertificate
 
-		clientCertificate, err := tls.X509KeyPair([]byte(settings.Env.Bosh.Mbus.Cert.Certificate), []byte(settings.Env.Bosh.Mbus.Cert.PrivateKey))
+		clientCertificate, err := tls.X509KeyPair([]byte(settings.GetMbusCerts().Certificate), []byte(settings.GetMbusCerts().PrivateKey))
 		if err != nil {
 			return nil, bosherr.WrapError(err, "Parsing certificate and private key")
 		}

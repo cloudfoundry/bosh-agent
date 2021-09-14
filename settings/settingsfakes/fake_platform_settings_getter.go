@@ -42,6 +42,17 @@ type FakePlatformSettingsGetter struct {
 	getPersistentDiskSettingsPathReturnsOnCall map[int]struct {
 		result1 string
 	}
+	GetUpdateSettingsPathStub        func(bool) string
+	getUpdateSettingsPathMutex       sync.RWMutex
+	getUpdateSettingsPathArgsForCall []struct {
+		arg1 bool
+	}
+	getUpdateSettingsPathReturns struct {
+		result1 string
+	}
+	getUpdateSettingsPathReturnsOnCall map[int]struct {
+		result1 string
+	}
 	SetupBoshSettingsDiskStub        func() error
 	setupBoshSettingsDiskMutex       sync.RWMutex
 	setupBoshSettingsDiskArgsForCall []struct {
@@ -62,15 +73,16 @@ func (fake *FakePlatformSettingsGetter) GetAgentSettingsPath(arg1 bool) string {
 	fake.getAgentSettingsPathArgsForCall = append(fake.getAgentSettingsPathArgsForCall, struct {
 		arg1 bool
 	}{arg1})
+	stub := fake.GetAgentSettingsPathStub
+	fakeReturns := fake.getAgentSettingsPathReturns
 	fake.recordInvocation("GetAgentSettingsPath", []interface{}{arg1})
 	fake.getAgentSettingsPathMutex.Unlock()
-	if fake.GetAgentSettingsPathStub != nil {
-		return fake.GetAgentSettingsPathStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getAgentSettingsPathReturns
 	return fakeReturns.result1
 }
 
@@ -121,15 +133,16 @@ func (fake *FakePlatformSettingsGetter) GetDefaultNetwork() (settings.Network, e
 	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
 	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {
 	}{})
+	stub := fake.GetDefaultNetworkStub
+	fakeReturns := fake.getDefaultNetworkReturns
 	fake.recordInvocation("GetDefaultNetwork", []interface{}{})
 	fake.getDefaultNetworkMutex.Unlock()
-	if fake.GetDefaultNetworkStub != nil {
-		return fake.GetDefaultNetworkStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getDefaultNetworkReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -177,15 +190,16 @@ func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPath(arg1 bool)
 	fake.getPersistentDiskSettingsPathArgsForCall = append(fake.getPersistentDiskSettingsPathArgsForCall, struct {
 		arg1 bool
 	}{arg1})
+	stub := fake.GetPersistentDiskSettingsPathStub
+	fakeReturns := fake.getPersistentDiskSettingsPathReturns
 	fake.recordInvocation("GetPersistentDiskSettingsPath", []interface{}{arg1})
 	fake.getPersistentDiskSettingsPathMutex.Unlock()
-	if fake.GetPersistentDiskSettingsPathStub != nil {
-		return fake.GetPersistentDiskSettingsPathStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getPersistentDiskSettingsPathReturns
 	return fakeReturns.result1
 }
 
@@ -231,20 +245,82 @@ func (fake *FakePlatformSettingsGetter) GetPersistentDiskSettingsPathReturnsOnCa
 	}{result1}
 }
 
+func (fake *FakePlatformSettingsGetter) GetUpdateSettingsPath(arg1 bool) string {
+	fake.getUpdateSettingsPathMutex.Lock()
+	ret, specificReturn := fake.getUpdateSettingsPathReturnsOnCall[len(fake.getUpdateSettingsPathArgsForCall)]
+	fake.getUpdateSettingsPathArgsForCall = append(fake.getUpdateSettingsPathArgsForCall, struct {
+		arg1 bool
+	}{arg1})
+	stub := fake.GetUpdateSettingsPathStub
+	fakeReturns := fake.getUpdateSettingsPathReturns
+	fake.recordInvocation("GetUpdateSettingsPath", []interface{}{arg1})
+	fake.getUpdateSettingsPathMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatformSettingsGetter) GetUpdateSettingsPathCallCount() int {
+	fake.getUpdateSettingsPathMutex.RLock()
+	defer fake.getUpdateSettingsPathMutex.RUnlock()
+	return len(fake.getUpdateSettingsPathArgsForCall)
+}
+
+func (fake *FakePlatformSettingsGetter) GetUpdateSettingsPathCalls(stub func(bool) string) {
+	fake.getUpdateSettingsPathMutex.Lock()
+	defer fake.getUpdateSettingsPathMutex.Unlock()
+	fake.GetUpdateSettingsPathStub = stub
+}
+
+func (fake *FakePlatformSettingsGetter) GetUpdateSettingsPathArgsForCall(i int) bool {
+	fake.getUpdateSettingsPathMutex.RLock()
+	defer fake.getUpdateSettingsPathMutex.RUnlock()
+	argsForCall := fake.getUpdateSettingsPathArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatformSettingsGetter) GetUpdateSettingsPathReturns(result1 string) {
+	fake.getUpdateSettingsPathMutex.Lock()
+	defer fake.getUpdateSettingsPathMutex.Unlock()
+	fake.GetUpdateSettingsPathStub = nil
+	fake.getUpdateSettingsPathReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakePlatformSettingsGetter) GetUpdateSettingsPathReturnsOnCall(i int, result1 string) {
+	fake.getUpdateSettingsPathMutex.Lock()
+	defer fake.getUpdateSettingsPathMutex.Unlock()
+	fake.GetUpdateSettingsPathStub = nil
+	if fake.getUpdateSettingsPathReturnsOnCall == nil {
+		fake.getUpdateSettingsPathReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.getUpdateSettingsPathReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
 func (fake *FakePlatformSettingsGetter) SetupBoshSettingsDisk() error {
 	fake.setupBoshSettingsDiskMutex.Lock()
 	ret, specificReturn := fake.setupBoshSettingsDiskReturnsOnCall[len(fake.setupBoshSettingsDiskArgsForCall)]
 	fake.setupBoshSettingsDiskArgsForCall = append(fake.setupBoshSettingsDiskArgsForCall, struct {
 	}{})
+	stub := fake.SetupBoshSettingsDiskStub
+	fakeReturns := fake.setupBoshSettingsDiskReturns
 	fake.recordInvocation("SetupBoshSettingsDisk", []interface{}{})
 	fake.setupBoshSettingsDiskMutex.Unlock()
-	if fake.SetupBoshSettingsDiskStub != nil {
-		return fake.SetupBoshSettingsDiskStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.setupBoshSettingsDiskReturns
 	return fakeReturns.result1
 }
 
@@ -292,6 +368,8 @@ func (fake *FakePlatformSettingsGetter) Invocations() map[string][][]interface{}
 	defer fake.getDefaultNetworkMutex.RUnlock()
 	fake.getPersistentDiskSettingsPathMutex.RLock()
 	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
+	fake.getUpdateSettingsPathMutex.RLock()
+	defer fake.getUpdateSettingsPathMutex.RUnlock()
 	fake.setupBoshSettingsDiskMutex.RLock()
 	defer fake.setupBoshSettingsDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

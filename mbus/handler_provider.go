@@ -52,7 +52,7 @@ func (p HandlerProvider) Get(
 		natsClient := NewTimeoutNatsClient(yagnats.NewClient(), clock.NewClock())
 		handler = NewNatsHandler(p.settingsService, natsClient, p.logger, platform)
 	case "https":
-		mbusKeyPair := p.settingsService.GetSettings().Env.Bosh.Mbus.Cert
+		mbusKeyPair := p.settingsService.GetSettings().GetMbusCerts()
 		handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, p.logger, p.auditLogger)
 	default:
 		err = bosherr.Errorf("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)

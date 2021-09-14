@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
@@ -212,20 +211,7 @@ func (boot bootstrap) Run() (err error) {
 }
 
 func (boot bootstrap) comparePersistentDisk() error {
-	updateSettingsPath := filepath.Join(boot.platform.GetDirProvider().BoshDir(), "update_settings.json")
-
-	var updateSettings boshsettings.UpdateSettings
-
-	if boot.platform.GetFs().FileExists(updateSettingsPath) {
-		contents, err := boot.platform.GetFs().ReadFile(updateSettingsPath)
-		if err != nil {
-			return bosherr.WrapError(err, "Reading update_settings.json")
-		}
-
-		if err = json.Unmarshal(contents, &updateSettings); err != nil {
-			return bosherr.WrapError(err, "Unmarshalling update_settings.json")
-		}
-	}
+	updateSettings := boot.settingsService.GetSettings().UpdateSettings
 
 	for _, diskAssociation := range updateSettings.DiskAssociations {
 		_, err := boot.settingsService.GetPersistentDiskSettings(diskAssociation.DiskCID)
