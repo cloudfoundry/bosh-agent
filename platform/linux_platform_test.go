@@ -4053,4 +4053,20 @@ unit: sectors
 			Expect(path).To(Equal(expectedPath))
 		})
 	})
+
+	Describe("GetUpdateSettingsPath", func() {
+		It("returns a path in the sensitive settings directory if tmpfs is enabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "settings", "update_settings.json")
+
+			path := platform.GetUpdateSettingsPath(true)
+			Expect(path).To(Equal(expectedPath))
+		})
+
+		It("returns a path in the default directory if tmpfs is disabled", func() {
+			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
+
+			path := platform.GetUpdateSettingsPath(false)
+			Expect(path).To(Equal(expectedPath))
+		})
+	})
 })

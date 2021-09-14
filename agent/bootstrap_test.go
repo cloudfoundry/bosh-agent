@@ -651,160 +651,102 @@ var _ = Describe("bootstrap", func() {
 		})
 
 		Context("validating persistent disks", func() {
-			Context("when the update_settings.json is present", func() {
-				Context("and there are no disk associations", func() {
+			Context("when UpdateSettings contains DiskAssociations", func() {
+				BeforeEach(func() {
+					settingsService.Settings.UpdateSettings = boshsettings.UpdateSettings{
+						DiskAssociations: []boshsettings.DiskAssociation{
+							{
+								Name:    "test-disk",
+								DiskCID: "vol-123",
+							},
+							{
+								Name:    "test-disk-2",
+								DiskCID: "vol-456",
+							},
+						},
+					}
+
+					settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
+						"vol-123": {
+							Path: "/dev/sdb",
+							ID:   "vol-123",
+						},
+						"vol-456": {
+							Path: "/dev/sdc",
+							ID:   "vol-456",
+						},
+					}
+				})
+
+				It("successfully bootstraps", func() {
+					err := bootstrap()
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				Context("when the disk associations are not provided as attached disks", func() {
 					BeforeEach(func() {
-						updateSettings := boshsettings.UpdateSettings{}
-						updateSettingsBytes, err := json.Marshal(updateSettings)
-						Expect(err).ToNot(HaveOccurred())
-
-						updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-						fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
+						settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{}
+						settingsService.GetPersistentDiskSettingsError = errors.New("Disk not found")
 					})
 
-					Context("when there are no managed persistent disks provided", func() {
-						It("does not error", func() {
-							err := bootstrap()
-							Expect(err).ToNot(HaveOccurred())
-						})
-					})
-
-					Context("when there is a single managed persistent disk provided", func() {
-						BeforeEach(func() {
-							settingsService.Settings.Disks = boshsettings.Disks{
-								Persistent: map[string]interface{}{
-									"vol-123": "/dev/sdb",
-								},
-							}
-						})
-
-						It("does not error", func() {
-							err := bootstrap()
-							Expect(err).ToNot(HaveOccurred())
-						})
-					})
-
-					Context("when there are more than one persistent disks provided", func() {
-						BeforeEach(func() {
-							settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
-								"vol-123": {
-									Path: "/dev/sdb",
-									ID:   "vol-123",
-								},
-								"vol-456": {
-									Path: "/dev/sdc",
-									ID:   "vol-123",
-								},
-							}
-						})
-
-						It("returns an error", func() {
-							err := bootstrap()
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Unexpected disk attached"))
-						})
-					})
-
-					Context("when managed_disk_settings.json exists", func() {
-						var managedDiskSettingsPath string
-
-						BeforeEach(func() {
-							diskCid := "i-am-a-disk-cid"
-
-							managedDiskSettingsPath = filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
-							fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
-
-							updateSettings := boshsettings.UpdateSettings{
-								DiskAssociations: []boshsettings.DiskAssociation{
-									{
-										Name:    "test-disk",
-										DiskCID: diskCid,
-									},
-								},
-							}
-							updateSettingsBytes, err := json.Marshal(updateSettings)
-							Expect(err).ToNot(HaveOccurred())
-
-							updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-							fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
-						})
-
-						Context("and the provided disk CID is the same", func() {
-							BeforeEach(func() {
-								settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
-									"i-am-a-disk-cid": {
-										Path: "/dev/sdb",
-										ID:   "i-am-a-disk-cid",
-									},
-								}
-							})
-
-							It("does not error", func() {
-								err := bootstrap()
-								Expect(err).ToNot(HaveOccurred())
-							})
-						})
-
-						Context("and the provided disk CID is not the same", func() {
-							BeforeEach(func() {
-								settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
-									"i-am-a-different-disk-cid": {
-										Path: "/dev/sdb",
-										ID:   "i-am-a-disk-cid",
-									},
-								}
-								settingsService.GetPersistentDiskSettingsError = errors.New("Disk not found")
-							})
-
-							It("returns an error", func() {
-								err := bootstrap()
-								Expect(err).To(HaveOccurred())
-
-								Expect(err.Error()).To(ContainSubstring("Attached disk disagrees with previous mount: Disk not found"))
-							})
-						})
-
-						Context("when there are no provided disks", func() {
-							It("does not return an error", func() {
-								err := bootstrap()
-								Expect(err).NotTo(HaveOccurred())
-							})
-						})
-
-						Context("when reading the managed_disk_settings.json errors", func() {
-							BeforeEach(func() {
-								fileSystem.RegisterReadFileError(managedDiskSettingsPath, errors.New("Oh noes!"))
-							})
-
-							It("returns an error", func() {
-								err := bootstrap()
-								Expect(err).To(HaveOccurred())
-								Expect(err.Error()).To(ContainSubstring("Reading managed_disk_settings.json"))
-							})
-						})
+					It("returns an error", func() {
+						err := bootstrap()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Disk vol-123 is not attached"))
 					})
 				})
 
-				Context("when there are disk associations", func() {
+				Context("when there are attached disks that do not have disk associations", func() {
 					BeforeEach(func() {
-						updateSettings := boshsettings.UpdateSettings{
-							DiskAssociations: []boshsettings.DiskAssociation{
-								{
-									Name:    "test-disk",
-									DiskCID: "vol-123",
-								},
-								{
-									Name:    "test-disk-2",
-									DiskCID: "vol-456",
-								},
+						settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
+							"vol-123": {
+								Path: "/dev/sdb",
+								ID:   "vol123",
+							},
+							"vol-456": {
+								Path: "/dev/sdc",
+								ID:   "vol123",
+							},
+							"vol-789": {
+								Path: "/dev/sdd",
+								ID:   "vol123",
 							},
 						}
+					})
 
-						updateSettingsBytes, err := json.Marshal(updateSettings)
+					It("returns an error", func() {
+						err := bootstrap()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Unexpected disk attached"))
+					})
+				})
+			})
+
+			Context("when UpdateSettings does not contain DiskAssociations", func() {
+				Context("when there are no managed persistent disks provided", func() {
+					It("does not error", func() {
+						err := bootstrap()
 						Expect(err).ToNot(HaveOccurred())
+					})
+				})
 
-						updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-						fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
+				Context("when there is a single managed persistent disk provided", func() {
+					BeforeEach(func() {
+						settingsService.Settings.Disks = boshsettings.Disks{
+							Persistent: map[string]interface{}{
+								"vol-123": "/dev/sdb",
+							},
+						}
+					})
+
+					It("does not error", func() {
+						err := bootstrap()
+						Expect(err).ToNot(HaveOccurred())
+					})
+				})
+
+				Context("when there are more than one persistent disks provided", func() {
+					BeforeEach(func() {
 						settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
 							"vol-123": {
 								Path: "/dev/sdb",
@@ -812,57 +754,97 @@ var _ = Describe("bootstrap", func() {
 							},
 							"vol-456": {
 								Path: "/dev/sdc",
-								ID:   "vol-456",
+								ID:   "vol-123",
 							},
 						}
 					})
 
-					It("successfully bootstraps", func() {
+					It("returns an error", func() {
 						err := bootstrap()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Unexpected disk attached"))
+					})
+				})
+
+				Context("when managed_disk_settings.json exists", func() {
+					var managedDiskSettingsPath string
+
+					BeforeEach(func() {
+						diskCid := "i-am-a-disk-cid"
+
+						managedDiskSettingsPath = filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+						fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+
+						updateSettings := boshsettings.UpdateSettings{
+							DiskAssociations: []boshsettings.DiskAssociation{
+								{
+									Name:    "test-disk",
+									DiskCID: diskCid,
+								},
+							},
+						}
+						updateSettingsBytes, err := json.Marshal(updateSettings)
 						Expect(err).ToNot(HaveOccurred())
+
+						updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
+						fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
 					})
 
-					Context("when the disk associations are not provided as attached disks", func() {
+					Context("and the provided disk CID is the same", func() {
 						BeforeEach(func() {
-							settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{}
+							settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
+								"i-am-a-disk-cid": {
+									Path: "/dev/sdb",
+									ID:   "i-am-a-disk-cid",
+								},
+							}
+						})
+
+						It("does not error", func() {
+							err := bootstrap()
+							Expect(err).ToNot(HaveOccurred())
+						})
+					})
+
+					Context("and the provided disk CID is not the same", func() {
+						BeforeEach(func() {
+							settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
+								"i-am-a-different-disk-cid": {
+									Path: "/dev/sdb",
+									ID:   "i-am-a-disk-cid",
+								},
+							}
 							settingsService.GetPersistentDiskSettingsError = errors.New("Disk not found")
 						})
 
 						It("returns an error", func() {
 							err := bootstrap()
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Disk vol-123 is not attached"))
+
+							Expect(err.Error()).To(ContainSubstring("Attached disk disagrees with previous mount: Disk not found"))
 						})
 					})
 
-					Context("when there are attached disks that do not have disk associations", func() {
+					Context("when there are no provided disks", func() {
+						It("does not return an error", func() {
+							err := bootstrap()
+							Expect(err).NotTo(HaveOccurred())
+						})
+					})
+
+					Context("when reading the managed_disk_settings.json errors", func() {
 						BeforeEach(func() {
-							settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
-								"vol-123": {
-									Path: "/dev/sdb",
-									ID:   "vol123",
-								},
-								"vol-456": {
-									Path: "/dev/sdc",
-									ID:   "vol123",
-								},
-								"vol-789": {
-									Path: "/dev/sdd",
-									ID:   "vol123",
-								},
-							}
+							fileSystem.RegisterReadFileError(managedDiskSettingsPath, errors.New("Oh noes!"))
 						})
 
 						It("returns an error", func() {
 							err := bootstrap()
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("Unexpected disk attached"))
+							Expect(err.Error()).To(ContainSubstring("Reading managed_disk_settings.json"))
 						})
 					})
 				})
-			})
 
-			Context("when the update_settings.json does not exist", func() {
 				Context("and no disks are provided", func() {
 					BeforeEach(func() {
 						settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{}
@@ -893,33 +875,6 @@ var _ = Describe("bootstrap", func() {
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("Unexpected disk attached"))
 					})
-				})
-			})
-
-			Context("when reading update_settings.json fails", func() {
-				BeforeEach(func() {
-					updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-					fileSystem.WriteFile(updateSettingsPath, []byte(`{"persistent_disks":{"invalid":true`))
-					fileSystem.ReadFileError = errors.New("Oh noes!")
-				})
-
-				It("returns error", func() {
-					err := bootstrap()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Reading update_settings.json"))
-				})
-			})
-
-			Context("when unmarshalling update_settings.json fails", func() {
-				BeforeEach(func() {
-					updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-					fileSystem.WriteFile(updateSettingsPath, []byte(`{"persistent_disks":{"invalid":true`))
-				})
-
-				It("returns wrapped error", func() {
-					err := bootstrap()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Unmarshalling update_settings.json"))
 				})
 			})
 		})

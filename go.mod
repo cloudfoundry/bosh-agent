@@ -26,6 +26,7 @@ require (
 	github.com/magefile/mage v1.11.0 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/masterzen/winrm v0.0.0-20210623064412-3b76017826b0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/mitchellh/mapstructure v1.4.2
 	github.com/nats-io/jwt v1.2.2 // indirect
 	github.com/nats-io/nats.go v1.12.3

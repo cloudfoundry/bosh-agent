@@ -166,6 +166,13 @@ func (p dummyPlatform) GetPersistentDiskSettingsPath(tmpfs bool) string {
 	return filepath.Join(p.dirProvider.BoshDir(), "persistent_disk_hints.json")
 }
 
+func (p dummyPlatform) GetUpdateSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		return filepath.Join(p.dirProvider.BoshSettingsDir(), "update_settings.json")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "update_settings.json")
+}
+
 func (p dummyPlatform) SetupIPv6(config boshsettings.IPv6) error {
 	return nil
 }
