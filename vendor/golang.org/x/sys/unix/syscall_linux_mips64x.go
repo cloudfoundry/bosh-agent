@@ -219,6 +219,13 @@ func (cmsg *Cmsghdr) SetLen(length int) {
 
 func (rsa *RawSockaddrNFCLLCP) SetServiceNameLen(length int) {
 	rsa.Service_name_len = uint64(length)
+<<<<<<< HEAD
+=======
+}
+
+func InotifyInit() (fd int, err error) {
+	return InotifyInit1(0)
+>>>>>>> develop
 }
 
 //sys	poll(fds *PollFd, nfds int, timeout int) (n int, err error)

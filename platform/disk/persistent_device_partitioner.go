@@ -68,3 +68,11 @@ func (p *PersistentDevicePartitioner) RemovePartitions(partitions []ExistingPart
 func IsGPTError(err error) bool {
 	return err == ErrGPTPartitionEncountered
 }
+
+func (p *PersistentDevicePartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
+	return p.partedPartitioner.SinglePartitionNeedsResize(devicePath, expectedPartitionType)
+}
+
+func (p *PersistentDevicePartitioner) ResizeSinglePartition(devicePath string) (err error) {
+	return p.partedPartitioner.ResizeSinglePartition(devicePath)
+}

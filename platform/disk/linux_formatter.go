@@ -62,6 +62,35 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 	return
 }
 
+func (f linuxFormatter) GrowFilesystem(partitionPath string) error {
+	existingFsType, err := f.getPartitionFormatType(partitionPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Checking filesystem format of partition")
+	}
+
+	switch existingFsType {
+	case FileSystemExt4:
+		_, _, _, err := f.runner.RunCommand(
+			"resize2fs",
+			"-f",
+			partitionPath,
+		)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to grow Ext4 filesystem")
+		}
+
+	case FileSystemXFS:
+		_, _, _, err = f.runner.RunCommand(
+			"xfs_growfs",
+			partitionPath,
+		)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to grow XFS filesystem")
+		}
+	}
+	return nil
+}
+
 func (f linuxFormatter) makeFileSystemExt4(partitionPath string) error {
 	var err error
 	if f.fs.FileExists("/sys/fs/ext4/features/lazy_itable_init") {

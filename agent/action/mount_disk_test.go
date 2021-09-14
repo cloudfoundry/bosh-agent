@@ -52,12 +52,36 @@ var _ = Describe("MountDiskAction", func() {
 						}
 					})
 
+					Context("when adjusting partitioning fails", func() {
+						BeforeEach(func() {
+							platform.AdjustPersistentDiskPartitioningReturns(errors.New("fake-adjust-persistent-disk-partitioning-err"))
+						})
+
+						It("returns error after trying to adjust partitioning", func() {
+							_, err := action.Run("fake-disk-cid")
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("fake-adjust-persistent-disk-partitioning-err"))
+							Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
+							Expect(platform.MountPersistentDiskCallCount()).To(Equal(0))
+							Expect(settingsService.SavePersistentDiskSettingsCallCount).To(Equal(0))
+
+							diskSettings, mntPt := platform.AdjustPersistentDiskPartitioningArgsForCall(0)
+							Expect(diskSettings).To(Equal(boshsettings.DiskSettings{
+								ID:       "fake-disk-cid",
+								VolumeID: "fake-volume-id",
+								Path:     "fake-device-path",
+							}))
+							Expect(mntPt).To(boshassert.MatchPath("/fake-base-dir/store"))
+						})
+					})
+
 					Context("when mounting succeeds", func() {
 						It("returns without an error after mounting store directory", func() {
 							result, err := action.Run("fake-disk-cid")
 							Expect(err).NotTo(HaveOccurred())
 							Expect(result).To(Equal(map[string]string{}))
 
+							Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
 							Expect(platform.MountPersistentDiskCallCount()).To(Equal(1))
 
 							diskSettings, mntPt := platform.MountPersistentDiskArgsForCall(0)

@@ -91,8 +91,12 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
+<<<<<<< HEAD
 # github.com/cloudfoundry/socks5-proxy v0.2.20
 ## explicit
+=======
+# github.com/cloudfoundry/socks5-proxy v0.2.18
+>>>>>>> develop
 github.com/cloudfoundry/socks5-proxy
 # github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 ## explicit
@@ -138,7 +142,11 @@ github.com/magefile/mage/sh
 # github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786
 ## explicit
 github.com/masterzen/simplexml/dom
+<<<<<<< HEAD
 # github.com/masterzen/winrm v0.0.0-20210623064412-3b76017826b0
+=======
+# github.com/masterzen/winrm v0.0.0-20210504160029-28ed956f5227
+>>>>>>> develop
 ## explicit
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
@@ -147,7 +155,11 @@ github.com/masterzen/winrm/soap
 github.com/mitchellh/mapstructure
 # github.com/nats-io/jwt v1.2.2
 ## explicit
+<<<<<<< HEAD
 # github.com/nats-io/nats.go v1.12.1
+=======
+# github.com/nats-io/nats.go v1.11.0
+>>>>>>> develop
 ## explicit
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
@@ -164,7 +176,11 @@ github.com/nxadm/tail/ratelimiter
 github.com/nxadm/tail/util
 github.com/nxadm/tail/watch
 github.com/nxadm/tail/winfile
+<<<<<<< HEAD
 # github.com/onsi/ginkgo v1.16.4
+=======
+# github.com/onsi/ginkgo v1.16.2
+>>>>>>> develop
 ## explicit
 github.com/onsi/ginkgo
 github.com/onsi/ginkgo/config
@@ -195,7 +211,11 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
+<<<<<<< HEAD
 # github.com/onsi/gomega v1.16.0
+=======
+# github.com/onsi/gomega v1.12.0
+>>>>>>> develop
 ## explicit
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -249,7 +269,11 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 ## explicit
 golang.org/x/lint
 golang.org/x/lint/golint
+<<<<<<< HEAD
 # golang.org/x/net v0.0.0-20210908191846-a5e095526f91
+=======
+# golang.org/x/net v0.0.0-20210825183410-e898025ed96a
+>>>>>>> develop
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/html
@@ -257,7 +281,11 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
+<<<<<<< HEAD
 # golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+=======
+# golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf
+>>>>>>> develop
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader

@@ -46,7 +46,11 @@ import (
 
 // Default Constants
 const (
+<<<<<<< HEAD
 	Version                   = "1.12.1"
+=======
+	Version                   = "1.11.0"
+>>>>>>> develop
 	DefaultURL                = "nats://127.0.0.1:4222"
 	DefaultPort               = 4222
 	DefaultMaxReconnect       = 60
@@ -146,6 +150,7 @@ var (
 	ErrInvalidJSAck                 = errors.New("nats: invalid jetstream publish response")
 	ErrMultiStreamUnsupported       = errors.New("nats: multiple streams are not supported")
 	ErrStreamNameRequired           = errors.New("nats: stream name is required")
+<<<<<<< HEAD
 	ErrStreamNotFound               = errors.New("nats: stream not found")
 	ErrConsumerNotFound             = errors.New("nats: consumer not found")
 	ErrConsumerNameRequired         = errors.New("nats: consumer name is required")
@@ -155,6 +160,11 @@ var (
 	ErrPullSubscribeToPushConsumer  = errors.New("nats: cannot pull subscribe to push based consumer")
 	ErrPullSubscribeRequired        = errors.New("nats: must use pull subscribe to bind to pull based consumer")
 	ErrConsumerNotActive            = errors.New("nats: consumer not active")
+=======
+	ErrConsumerConfigRequired       = errors.New("nats: consumer configuration is required")
+	ErrStreamSnapshotConfigRequired = errors.New("nats: stream snapshot configuration is required")
+	ErrDeliverSubjectRequired       = errors.New("nats: deliver subject is required")
+>>>>>>> develop
 )
 
 func init() {
@@ -456,9 +466,12 @@ type Options struct {
 	// For websocket connections, indicates to the server that the connection
 	// supports compression. If the server does too, then data will be compressed.
 	Compression bool
+<<<<<<< HEAD
 
 	// InboxPrefix allows the default _INBOX prefix to be customized
 	InboxPrefix string
+=======
+>>>>>>> develop
 }
 
 const (
@@ -520,6 +533,7 @@ type Conn struct {
 	ws      bool // true if a websocket connection
 
 	// New style response handler
+<<<<<<< HEAD
 	respSub       string               // The wildcard subject
 	respSubPrefix string               // the wildcard prefix including trailing .
 	respSubLen    int                  // the length of the wildcard prefix excluding trailing .
@@ -548,6 +562,33 @@ type natsWriter struct {
 	plimit  int
 }
 
+=======
+	respSub   string               // The wildcard subject
+	respScanf string               // The scanf template to extract mux token
+	respMux   *Subscription        // A single response subscription
+	respMap   map[string]chan *Msg // Request map for the response msg channels
+	respRand  *rand.Rand           // Used for generating suffix
+
+	// JetStream Contexts last account check.
+	jsLastCheck time.Time
+}
+
+type natsReader struct {
+	r   io.Reader
+	buf []byte
+	off int
+	n   int
+}
+
+type natsWriter struct {
+	w       io.Writer
+	bufs    []byte
+	limit   int
+	pending *bytes.Buffer
+	plimit  int
+}
+
+>>>>>>> develop
 // Subscription represents interest in a given subject.
 type Subscription struct {
 	mu  sync.Mutex
@@ -1133,6 +1174,7 @@ func Compression(enabled bool) Option {
 	}
 }
 
+<<<<<<< HEAD
 // CustomInboxPrefix configures the request + reply inbox prefix
 func CustomInboxPrefix(p string) Option {
 	return func(o *Options) error {
@@ -1144,6 +1186,8 @@ func CustomInboxPrefix(p string) Option {
 	}
 }
 
+=======
+>>>>>>> develop
 // Handler processing
 
 // SetDisconnectHandler will set the disconnect event handler.
@@ -1290,6 +1334,7 @@ func defaultErrHandler(nc *Conn, sub *Subscription, err error) {
 	}
 	var errStr string
 	if sub != nil {
+<<<<<<< HEAD
 		var subject string
 		sub.mu.Lock()
 		if sub.jsi != nil {
@@ -1299,6 +1344,9 @@ func defaultErrHandler(nc *Conn, sub *Subscription, err error) {
 		}
 		sub.mu.Unlock()
 		errStr = fmt.Sprintf("%s on connection [%d] for subscription on %q\n", err.Error(), cid, subject)
+=======
+		errStr = fmt.Sprintf("%s on connection [%d] for subscription on %q\n", err.Error(), cid, sub.Subject)
+>>>>>>> develop
 	} else {
 		errStr = fmt.Sprintf("%s on connection [%d]\n", err.Error(), cid)
 	}
@@ -1950,6 +1998,7 @@ func (nc *Conn) connect() error {
 
 	if err == nil && nc.status != CONNECTED {
 		err = ErrNoServers
+<<<<<<< HEAD
 	}
 
 	if err == nil {
@@ -1964,6 +2013,22 @@ func (nc *Conn) connect() error {
 		nc.current = nil
 	}
 
+=======
+	}
+
+	if err == nil {
+		nc.initc = false
+	} else if nc.Opts.RetryOnFailedConnect {
+		nc.setup()
+		nc.status = RECONNECTING
+		nc.bw.switchToPending()
+		go nc.doReconnect(ErrNoServers)
+		err = nil
+	} else {
+		nc.current = nil
+	}
+
+>>>>>>> develop
 	return err
 }
 
@@ -2533,6 +2598,7 @@ func (nc *Conn) readLoop() {
 	for {
 		buf, err := br.Read()
 		if err == nil {
+<<<<<<< HEAD
 			// With websocket, it is possible that there is no error but
 			// also no buffer returned (either WS control message or read of a
 			// partial compressed message). We could call parse(buf) which
@@ -2540,6 +2606,8 @@ func (nc *Conn) readLoop() {
 			if len(buf) == 0 {
 				continue
 			}
+=======
+>>>>>>> develop
 			err = nc.parse(buf)
 		}
 		if err != nil {
@@ -2598,9 +2666,14 @@ func (nc *Conn) waitForMsgs(s *Subscription) {
 		if !s.closed {
 			s.delivered++
 			delivered = s.delivered
+<<<<<<< HEAD
 			if s.jsi != nil {
 				fcReply = s.checkForFlowControlResponse()
 				s.jsi.active = true
+=======
+			if s.jsi != nil && s.jsi.fc && len(s.jsi.fcs) > 0 {
+				s.checkForFlowControlResponse(delivered)
+>>>>>>> develop
 			}
 		}
 		s.mu.Unlock()
@@ -2681,10 +2754,13 @@ func (nc *Conn) processMsg(data []byte) {
 	// that is itself trying to send data to us.
 	nc.subsMu.RLock()
 	sub := nc.subs[nc.ps.ma.sid]
+<<<<<<< HEAD
 	var mf msgFilter
 	if nc.filters != nil {
 		mf = nc.filters[string(nc.ps.ma.subject)]
 	}
+=======
+>>>>>>> develop
 	nc.subsMu.RUnlock()
 
 	if sub == nil {
@@ -2727,8 +2803,31 @@ func (nc *Conn) processMsg(data []byte) {
 		}
 	}
 
+	// Check if we have headers encoded here.
+	var h Header
+	var err error
+	var ctrlMsg bool
+	var hasFC bool
+	var hasHBs bool
+
+	if nc.ps.ma.hdr > 0 {
+		hbuf := msgPayload[:nc.ps.ma.hdr]
+		msgPayload = msgPayload[nc.ps.ma.hdr:]
+		h, err = decodeHeadersMsg(hbuf)
+		if err != nil {
+			// We will pass the message through but send async error.
+			nc.mu.Lock()
+			nc.err = ErrBadHeaderMsg
+			if nc.Opts.AsyncErrorCB != nil {
+				nc.ach.push(func() { nc.Opts.AsyncErrorCB(nc, sub, ErrBadHeaderMsg) })
+			}
+			nc.mu.Unlock()
+		}
+	}
+
 	// FIXME(dlc): Should we recycle these containers?
 	m := &Msg{Header: h, Data: msgPayload, Subject: subj, Reply: reply, Sub: sub}
+<<<<<<< HEAD
 
 	// Check for message filters.
 	if mf != nil {
@@ -2737,6 +2836,8 @@ func (nc *Conn) processMsg(data []byte) {
 			return
 		}
 	}
+=======
+>>>>>>> develop
 
 	sub.mu.Lock()
 
@@ -2745,6 +2846,7 @@ func (nc *Conn) processMsg(data []byte) {
 		sub.mu.Unlock()
 		return
 	}
+<<<<<<< HEAD
 
 	// Skip flow control messages in case of using a JetStream context.
 	jsi := sub.jsi
@@ -2820,6 +2922,69 @@ func (nc *Conn) processMsg(data []byte) {
 		} else {
 			// Schedule a reply after the previous message is delivered.
 			sub.scheduleFlowControlResponse(sub.delivered+uint64(sub.pMsgs), m.Reply)
+=======
+
+	// Skip flow control messages in case of using a JetStream context.
+	jsi := sub.jsi
+	if jsi != nil {
+		ctrlMsg, hasHBs, hasFC = isControlMessage(m), jsi.hbs, jsi.fc
+	}
+
+	// Skip processing if this is a control message.
+	if !ctrlMsg {
+		// Subscription internal stats (applicable only for non ChanSubscription's)
+		if sub.typ != ChanSubscription {
+			sub.pMsgs++
+			if sub.pMsgs > sub.pMsgsMax {
+				sub.pMsgsMax = sub.pMsgs
+			}
+			sub.pBytes += len(m.Data)
+			if sub.pBytes > sub.pBytesMax {
+				sub.pBytesMax = sub.pBytes
+			}
+
+			// Check for a Slow Consumer
+			if (sub.pMsgsLimit > 0 && sub.pMsgs > sub.pMsgsLimit) ||
+				(sub.pBytesLimit > 0 && sub.pBytes > sub.pBytesLimit) {
+				goto slowConsumer
+			}
+		}
+
+		// We have two modes of delivery. One is the channel, used by channel
+		// subscribers and syncSubscribers, the other is a linked list for async.
+		if sub.mch != nil {
+			select {
+			case sub.mch <- m:
+			default:
+				goto slowConsumer
+			}
+		} else {
+			// Push onto the async pList
+			if sub.pHead == nil {
+				sub.pHead = m
+				sub.pTail = m
+				if sub.pCond != nil {
+					sub.pCond.Signal()
+				}
+			} else {
+				sub.pTail.next = m
+				sub.pTail = m
+			}
+		}
+		if jsi != nil && hasHBs {
+			// Store the ACK metadata from the message to
+			// compare later on with the received heartbeat.
+			jsi.trackSequences(m.Reply)
+		}
+	} else if hasFC && m.Reply != _EMPTY_ {
+		// This is a flow control message.
+		// If we have no pending, go ahead and send in place.
+		if sub.pMsgs == 0 {
+			nc.Publish(m.Reply, nil)
+		} else {
+			// Schedule a reply after the previous message is delivered.
+			jsi.scheduleFlowControlResponse(sub.delivered+uint64(sub.pMsgs), m.Reply)
+>>>>>>> develop
 		}
 	}
 
@@ -2827,6 +2992,7 @@ func (nc *Conn) processMsg(data []byte) {
 	sub.sc = false
 	sub.mu.Unlock()
 
+<<<<<<< HEAD
 	if fcReply != _EMPTY_ {
 		nc.Publish(fcReply, nil)
 	}
@@ -2834,6 +3000,11 @@ func (nc *Conn) processMsg(data []byte) {
 	// Handle control heartbeat messages.
 	if ctrlMsg && ctrlType == jsCtrlHB && m.Reply == _EMPTY_ {
 		nc.checkForSequenceMismatch(m, sub, jsi)
+=======
+	// Handle control heartbeat messages.
+	if ctrlMsg && hasHBs && m.Reply == _EMPTY_ {
+		nc.processSequenceMismatch(m, sub, jsi)
+>>>>>>> develop
 	}
 
 	return
@@ -3195,10 +3366,15 @@ const (
 	descrHdr           = "Description"
 	lastConsumerSeqHdr = "Nats-Last-Consumer"
 	lastStreamSeqHdr   = "Nats-Last-Stream"
+<<<<<<< HEAD
 	consumerStalledHdr = "Nats-Consumer-Stalled"
 	noResponders       = "503"
 	noMessagesSts      = "404"
 	reqTimeoutSts      = "408"
+=======
+	noResponders       = "503"
+	noMessages         = "404"
+>>>>>>> develop
 	controlMsg         = "100"
 	statusLen          = 3 // e.g. 20x, 40x, 50x
 )
@@ -3238,7 +3414,14 @@ func decodeHeadersMsg(data []byte) (Header, error) {
 //
 // https://golang.org/pkg/net/textproto/#Reader.ReadMIMEHeader
 func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
+<<<<<<< HEAD
 	m := make(textproto.MIMEHeader)
+=======
+	var (
+		m    = make(textproto.MIMEHeader)
+		strs []string
+	)
+>>>>>>> develop
 	for {
 		kv, err := tp.ReadLine()
 		if len(kv) == 0 {
@@ -3260,7 +3443,20 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			i++
 		}
 		value := string(kv[i:])
+<<<<<<< HEAD
 		m[key] = append(m[key], value)
+=======
+		vv := m[key]
+		if vv == nil && len(strs) > 0 {
+			// Single value header.
+			vv, strs = strs[:1:1], strs[1:]
+			vv[0] = value
+			m[key] = vv
+		} else {
+			// Multi value header.
+			m[key] = append(vv, value)
+		}
+>>>>>>> develop
 		if err != nil {
 			return m, err
 		}
@@ -3524,8 +3720,20 @@ func (nc *Conn) request(subj string, hdr, data []byte, timeout time.Duration) (*
 		m, err = nc.oldRequest(subj, hdr, data, timeout)
 	} else {
 		m, err = nc.newRequest(subj, hdr, data, timeout)
+<<<<<<< HEAD
 	}
 
+	// Check for no responder status.
+	if err == nil && len(m.Data) == 0 && m.Header.Get(statusHdr) == noResponders {
+		m, err = nil, ErrNoResponders
+=======
+>>>>>>> develop
+	}
+	return m, err
+}
+
+<<<<<<< HEAD
+=======
 	// Check for no responder status.
 	if err == nil && len(m.Data) == 0 && m.Header.Get(statusHdr) == noResponders {
 		m, err = nil, ErrNoResponders
@@ -3533,6 +3741,7 @@ func (nc *Conn) request(subj string, hdr, data []byte, timeout time.Duration) (*
 	return m, err
 }
 
+>>>>>>> develop
 func (nc *Conn) newRequest(subj string, hdr, data []byte, timeout time.Duration) (*Msg, error) {
 	mch, token, err := nc.createNewRequestAndSend(subj, hdr, data)
 	if err != nil {
@@ -3564,7 +3773,11 @@ func (nc *Conn) newRequest(subj string, hdr, data []byte, timeout time.Duration)
 // with the Inbox reply and return the first reply received.
 // This is optimized for the case of multiple responses.
 func (nc *Conn) oldRequest(subj string, hdr, data []byte, timeout time.Duration) (*Msg, error) {
+<<<<<<< HEAD
 	inbox := nc.newInbox()
+=======
+	inbox := NewInbox()
+>>>>>>> develop
 	ch := make(chan *Msg, RequestChanLen)
 
 	s, err := nc.subscribe(inbox, _EMPTY_, nil, ch, true, nil)
@@ -4029,6 +4242,7 @@ func (s *Subscription) AutoUnsubscribe(max int) error {
 // unsubscribe performs the low level unsubscribe to the server.
 // Use Subscription.Unsubscribe()
 func (nc *Conn) unsubscribe(sub *Subscription, max int, drainMode bool) error {
+<<<<<<< HEAD
 	var maxStr string
 	if max > 0 {
 		sub.mu.Lock()
@@ -4037,6 +4251,18 @@ func (nc *Conn) unsubscribe(sub *Subscription, max int, drainMode bool) error {
 			maxStr = strconv.Itoa(max)
 		}
 		sub.mu.Unlock()
+=======
+	// For JetStream consumers, need to clean up ephemeral consumers
+	// or delete durable ones if called with Unsubscribe.
+	sub.mu.Lock()
+	jsi := sub.jsi
+	sub.mu.Unlock()
+	if jsi != nil {
+		err := jsi.unsubscribe(drainMode)
+		if err != nil {
+			return err
+		}
+>>>>>>> develop
 	}
 
 	nc.mu.Lock()
@@ -4055,7 +4281,17 @@ func (nc *Conn) unsubscribe(sub *Subscription, max int, drainMode bool) error {
 		return nil
 	}
 
+<<<<<<< HEAD
 	if maxStr == _EMPTY_ && !drainMode {
+=======
+	maxStr := _EMPTY_
+	if max > 0 {
+		s.mu.Lock()
+		s.max = uint64(max)
+		s.mu.Unlock()
+		maxStr = strconv.Itoa(max)
+	} else if !drainMode {
+>>>>>>> develop
 		nc.removeSub(s)
 	}
 
@@ -4184,9 +4420,14 @@ func (s *Subscription) processNextMsgDelivered(msg *Msg) error {
 	// Update some stats.
 	s.delivered++
 	delivered := s.delivered
+<<<<<<< HEAD
 	if s.jsi != nil {
 		fcReply = s.checkForFlowControlResponse()
 		s.jsi.active = true
+=======
+	if s.jsi != nil && s.jsi.fc && len(s.jsi.fcs) > 0 {
+		s.checkForFlowControlResponse(delivered)
+>>>>>>> develop
 	}
 
 	if s.typ == SyncSubscription {
@@ -4534,10 +4775,17 @@ func (nc *Conn) resendSubscriptions() {
 		subj, queue, sid := s.Subject, s.Queue, s.sid
 		s.mu.Unlock()
 
+<<<<<<< HEAD
 		nc.bw.writeDirect(fmt.Sprintf(subProto, subj, queue, sid))
 		if adjustedMax > 0 {
 			maxStr := strconv.Itoa(int(adjustedMax))
 			nc.bw.writeDirect(fmt.Sprintf(unsubProto, sid, maxStr))
+=======
+		nc.bw.writeDirect(fmt.Sprintf(subProto, s.Subject, s.Queue, s.sid))
+		if adjustedMax > 0 {
+			maxStr := strconv.Itoa(int(adjustedMax))
+			nc.bw.writeDirect(fmt.Sprintf(unsubProto, s.sid, maxStr))
+>>>>>>> develop
 		}
 	}
 }

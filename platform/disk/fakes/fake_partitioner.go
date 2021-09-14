@@ -5,6 +5,18 @@ import (
 )
 
 type FakePartitioner struct {
+	SinglePartitionNeedsResizeCalled                bool
+	SinglePartitionNeedsResizeDevicePath            string
+	SinglePartitionNeedsResizeExpectedPartitionType boshdisk.PartitionType
+	SinglePartitionNeedsResizeReturns               struct {
+		NeedResize bool
+		Err        error
+	}
+
+	ResizeSinglePartitionCalled     bool
+	ResizeSinglePartitionDevicePath string
+	ResizeSinglePartitionErr        error
+
 	PartitionCalled     bool
 	PartitionDevicePath string
 	PartitionPartitions []boshdisk.Partition
@@ -27,6 +39,19 @@ func NewFakePartitioner() *FakePartitioner {
 	return &FakePartitioner{
 		GetDeviceSizeInBytesSizes: make(map[string]uint64),
 	}
+}
+
+func (p *FakePartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType boshdisk.PartitionType) (needsResize bool, err error) {
+	p.SinglePartitionNeedsResizeCalled = true
+	p.SinglePartitionNeedsResizeDevicePath = devicePath
+	p.SinglePartitionNeedsResizeExpectedPartitionType = expectedPartitionType
+	return p.SinglePartitionNeedsResizeReturns.NeedResize, p.SinglePartitionNeedsResizeReturns.Err
+}
+
+func (p *FakePartitioner) ResizeSinglePartition(devicePath string) (err error) {
+	p.ResizeSinglePartitionCalled = true
+	p.ResizeSinglePartitionDevicePath = devicePath
+	return p.ResizeSinglePartitionErr
 }
 
 func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) error {

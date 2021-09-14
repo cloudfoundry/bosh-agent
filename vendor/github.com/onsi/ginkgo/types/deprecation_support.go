@@ -48,7 +48,11 @@ func (d deprecations) Measure() Deprecation {
 	return Deprecation{
 		Message: "Measure is deprecated and will be removed in Ginkgo V2.  Please migrate to gomega/gmeasure.",
 		DocLink: "removed-measure",
+<<<<<<< HEAD
 		Version: "1.16.3",
+=======
+		Version: "1.16.0",
+>>>>>>> develop
 	}
 }
 

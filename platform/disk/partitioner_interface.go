@@ -21,6 +21,8 @@ type Partition struct {
 type Partitioner interface {
 	Partition(devicePath string, partitions []Partition) (err error)
 	GetDeviceSizeInBytes(devicePath string) (size uint64, err error)
+	SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error)
+	ResizeSinglePartition(devicePath string) (err error)
 	GetPartitions(devicePath string) (partitions []ExistingPartition, deviceFullSizeInBytes uint64, err error)
 	RemovePartitions(partitions []ExistingPartition, devicePath string) error
 }

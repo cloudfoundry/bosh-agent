@@ -442,10 +442,10 @@ func (p linux) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
 
-const EtcHostsTemplate = `127.0.0.1 localhost {{ . }}
+const EtcHostsTemplate = `127.0.0.1 {{ . }} localhost
 
 # The following lines are desirable for IPv6 capable hosts
-::1 localhost ip6-localhost ip6-loopback {{ . }}
+::1 {{ . }} localhost ip6-localhost ip6-loopback
 fe00::0 ip6-localnet
 ff00::0 ip6-mcastprefix
 ff02::1 ip6-allnodes
@@ -1112,46 +1112,56 @@ func (p linux) changeTmpDirPermissions(path string) error {
 	return nil
 }
 
-func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountPoint string) error {
-	p.logger.Debug(logTag, "Mounting persistent disk %+v at %s", diskSetting, mountPoint)
+func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSettings, mountPoint string) error {
 
-	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
+	if p.options.UsePreformattedPersistentDisk {
+		return nil
+	}
+	p.logger.Debug(logTag, "Adjusting size for persistent disk %+v", diskSetting)
+
+	devicePath, _, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting real device path")
 	}
 
-	devicePath, isMountPoint, err := p.IsMountPoint(mountPoint)
-	if err != nil {
-		return bosherr.WrapError(err, "Checking mount point")
-	}
-	p.logger.Info(logTag, "realPath = %s, devicePath = %s, isMountPoint = %t", realPath, devicePath, isMountPoint)
+	firstPartitionPath := p.partitionPath(devicePath, 1)
 
-	partitionPath := p.partitionPath(realPath, 1)
-	if isMountPoint {
-		if partitionPath == devicePath {
-			p.logger.Info(logTag, "device: %s is already mounted on %s, skipping mounting", devicePath, mountPoint)
-			return nil
+	partitioner, err := p.diskManager.GetPersistentDevicePartitioner(diskSetting.Partitioner)
+	if err != nil {
+		return bosherr.WrapError(err, "Selecting partitioner")
+	}
+
+	singlePartNeedsResize, err := partitioner.SinglePartitionNeedsResize(devicePath, boshdisk.PartitionTypeLinux)
+	if err != nil {
+		return bosherr.WrapError(err, "Failed to determine whether partitions need rezising")
+	}
+	p.logger.Debug(logTag, "Persistent disk single partition needs resize: %+v", singlePartNeedsResize)
+
+	if singlePartNeedsResize {
+		err = partitioner.ResizeSinglePartition(devicePath)
+		if err != nil {
+			return bosherr.WrapError(err, "Resizing disk partition")
 		}
 
-		mountPoint = p.dirProvider.StoreMigrationDir()
-	}
+		err := p.diskManager.GetMounter().Mount(firstPartitionPath, mountPoint, diskSetting.MountOptions...)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to mount partition for filesystem growing")
+		}
 
-	err = p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Creating directory %s", mountPoint)
-	}
+		err = p.diskManager.GetFormatter().GrowFilesystem(firstPartitionPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to grow filesystem")
+		}
 
-	if !p.options.UsePreformattedPersistentDisk {
-		partitions := []boshdisk.Partition{
+		_, err = p.diskManager.GetMounter().Unmount(firstPartitionPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Failed to unmount partition after filesystem growing")
+		}
+	} else {
+		singlePartPartitioning := []boshdisk.Partition{
 			{Type: boshdisk.PartitionTypeLinux},
 		}
-
-		partitioner, err := p.diskManager.GetPersistentDevicePartitioner(diskSetting.Partitioner)
-		if err != nil {
-			return bosherr.WrapError(err, "Selecting partitioner")
-		}
-
-		err = partitioner.Partition(realPath, partitions)
+		err = partitioner.Partition(devicePath, singlePartPartitioning)
 		if err != nil {
 			return bosherr.WrapError(err, "Partitioning disk")
 		}
@@ -1165,16 +1175,51 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 			return bosherr.Error(fmt.Sprintf(`The filesystem type "%s" is not supported`, diskSetting.FileSystemType))
 		}
 
-		err = p.diskManager.GetFormatter().Format(partitionPath, persistentDiskFS)
+		err = p.diskManager.GetFormatter().Format(firstPartitionPath, persistentDiskFS)
 		if err != nil {
 			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
 		}
+	}
+	return nil
+}
 
-		realPath = partitionPath
+func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountPoint string) error {
+	p.logger.Debug(logTag, "Mounting persistent disk %+v at %s", diskSetting, mountPoint)
+
+	devicePath, _, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting real device path")
 	}
 
-	err = p.diskManager.GetMounter().Mount(realPath, mountPoint, diskSetting.MountOptions...)
+	alreadyMountedPartPath, hasMountedDevice, err := p.IsMountPoint(mountPoint)
+	if err != nil {
+		return bosherr.WrapError(err, "Checking mount point already has a device monted onto")
+	}
+	p.logger.Info(logTag, "devicePath = %s, alreadyMountedPartPath = %s, hasMountedDevice = %t", devicePath, alreadyMountedPartPath, hasMountedDevice)
 
+	firstPartitionPath := p.partitionPath(devicePath, 1)
+	if hasMountedDevice {
+		if alreadyMountedPartPath == firstPartitionPath {
+			p.logger.Info(logTag, "device: %s is already mounted on %s, skipping mounting", alreadyMountedPartPath, mountPoint)
+			return nil
+		}
+
+		mountPoint = p.dirProvider.StoreMigrationDir()
+	}
+
+	err = p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Creating directory %s", mountPoint)
+	}
+
+	var partitionPathToMount string
+	if p.options.UsePreformattedPersistentDisk {
+		partitionPathToMount = devicePath
+	} else {
+		partitionPathToMount = firstPartitionPath
+	}
+
+	err = p.diskManager.GetMounter().Mount(partitionPathToMount, mountPoint, diskSetting.MountOptions...)
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
 	}
@@ -1182,7 +1227,6 @@ func (p linux) MountPersistentDisk(diskSetting boshsettings.DiskSettings, mountP
 	managedSettingsPath := filepath.Join(p.dirProvider.BoshDir(), "managed_disk_settings.json")
 
 	err = p.fs.WriteFileString(managedSettingsPath, diskSetting.ID)
-
 	if err != nil {
 		return bosherr.WrapError(err, "Writing managed_disk_settings.json")
 	}

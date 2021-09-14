@@ -22,7 +22,11 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
+<<<<<<< HEAD
 const GOMEGA_VERSION = "1.16.0"
+=======
+const GOMEGA_VERSION = "1.12.0"
+>>>>>>> develop
 
 const nilGomegaPanic = `You are trying to make an assertion, but haven't registered Gomega's fail handler.
 If you're using Ginkgo then you probably forgot to put your assertion in an It().
