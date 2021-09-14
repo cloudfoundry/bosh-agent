@@ -285,6 +285,13 @@ func (p WindowsPlatform) GetPersistentDiskSettingsPath(tmpfs bool) string {
 	return filepath.Join(p.dirProvider.BoshDir(), "persistent_disk_hints.json")
 }
 
+func (p WindowsPlatform) GetUpdateSettingsPath(tmpfs bool) string {
+	if tmpfs {
+		p.logger.Info("WindowsPlatform", "Windows does not support using tmpfs, using default update settings path")
+	}
+	return filepath.Join(p.dirProvider.BoshDir(), "update_settings.json")
+}
+
 func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
 
 	if username == boshsettings.VCAPUsername {

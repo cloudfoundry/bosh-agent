@@ -197,6 +197,16 @@ var _ = Describe("settingsService", func() {
 							},
 						}))
 					})
+
+					It("fetches UpdateSettings", func() {
+						fs.WriteFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false), []byte(`{"trusted_certs": "a trusted cert"}`))
+
+						err := service.LoadSettings()
+						Expect(err).NotTo(HaveOccurred())
+
+						settings := service.GetSettings()
+						Expect(settings.UpdateSettings.TrustedCerts).To(Equal("a trusted cert"))
+					})
 				})
 			})
 
@@ -219,6 +229,32 @@ var _ = Describe("settingsService", func() {
 					Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
 
 					Expect(service.GetSettings()).To(Equal(Settings{}))
+				})
+			})
+		})
+
+		Describe("UpdateSettings", func() {
+			Context("when the update_settings.json exists", func() {
+				BeforeEach(func() {
+					fs.WriteFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false), []byte(`{"trusted_certs": "a trusted cert"}`))
+				})
+
+				It("populates settings with an UpdateSettings read from the update settings file", func() {
+					err := service.LoadSettings()
+					Expect(err).NotTo(HaveOccurred())
+
+					settings := service.GetSettings()
+					Expect(settings.UpdateSettings.TrustedCerts).To(Equal("a trusted cert"))
+				})
+			})
+
+			Context("when the update_settings.json does not exist", func() {
+				It("populates settings with an empty UpdateSettings object", func() {
+					err := service.LoadSettings()
+					Expect(err).NotTo(HaveOccurred())
+
+					settings := service.GetSettings()
+					Expect(settings.UpdateSettings).To(Equal(UpdateSettings{}))
 				})
 			})
 		})
@@ -683,6 +719,28 @@ var _ = Describe("settingsService", func() {
 					Expect(settings).To(Equal(loadedSettings))
 				})
 			})
+		})
+	})
+
+	Describe("SaveUpdateSettings", func() {
+		var (
+			service Service
+		)
+
+		BeforeEach(func() {
+			service, fs = buildService()
+		})
+
+		It("saves update_settings.json with the provided object", func() {
+			updateSettings := UpdateSettings{TrustedCerts: "a trusted cert"}
+
+			err := service.SaveUpdateSettings(updateSettings)
+			Expect(err).NotTo(HaveOccurred())
+			jsonString, err := json.Marshal(updateSettings)
+
+			fileContent, err := fs.ReadFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fileContent).To(Equal(jsonString))
 		})
 	})
 })

@@ -24,8 +24,9 @@ type AuditLoggerProvider interface {
 	ProvideErrorLogger() (*log.Logger, error)
 }
 
-//go:generate counterfeiter . Platform
-//go:generate counterfeiter . AuditLogger
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//counterfeiter:generate . Platform
+//counterfeiter:generate . AuditLogger
 
 type Platform interface {
 	GetFs() boshsys.FileSystem
@@ -38,6 +39,7 @@ type Platform interface {
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
 	GetAgentSettingsPath(tmpfs bool) string
 	GetPersistentDiskSettingsPath(tmpfs bool) string
+	GetUpdateSettingsPath(tmpfs bool) string
 
 	// User management
 	CreateUser(username, basePath string) (err error)

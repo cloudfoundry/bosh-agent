@@ -27,6 +27,8 @@ type Service interface {
 	PublicSSHKeyForUsername(string) (string, error)
 
 	InvalidateSettings() error
+
+	SaveUpdateSettings(updateSettings UpdateSettings) error
 }
 
 const settingsServiceLogTag = "settingsService"
@@ -47,13 +49,14 @@ type DefaultNetworkResolver interface {
 	GetDefaultNetwork() (Network, error)
 }
 
-//go:generate counterfeiter PlatformSettingsGetter
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . PlatformSettingsGetter
 
 type PlatformSettingsGetter interface {
 	DefaultNetworkResolver
 	SetupBoshSettingsDisk() error
 	GetAgentSettingsPath(tmpfs bool) string
 	GetPersistentDiskSettingsPath(tmpfs bool) string
+	GetUpdateSettingsPath(tmpfs bool) string
 }
 
 func NewService(
@@ -100,6 +103,13 @@ func (s *settingsService) LoadSettings() error {
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
 		}
 
+		newUpdateSettings, err := s.getUpdateSettings(cachedSettings.Env.Bosh.Agent.Settings.TmpFS)
+		if err != nil {
+			s.logger.Error(settingsServiceLogTag, err.Error())
+			return err
+		}
+		cachedSettings.UpdateSettings = newUpdateSettings
+
 		s.settingsMutex.Lock()
 		s.settings = cachedSettings
 		s.settingsMutex.Unlock()
@@ -108,6 +118,13 @@ func (s *settingsService) LoadSettings() error {
 	}
 
 	s.logger.Debug(settingsServiceLogTag, "Successfully received settings from fetcher")
+	newUpdateSettings, err := s.getUpdateSettings(newSettings.Env.Bosh.Agent.Settings.TmpFS)
+	if err != nil {
+		s.logger.Error(settingsServiceLogTag, err.Error())
+		return err
+	}
+	newSettings.UpdateSettings = newUpdateSettings
+
 	s.settingsMutex.Lock()
 	s.settings = newSettings
 	s.settingsMutex.Unlock()
@@ -203,6 +220,22 @@ func (s *settingsService) SavePersistentDiskSettings(newDiskSettings DiskSetting
 	return nil
 }
 
+func (s *settingsService) SaveUpdateSettings(updateSettings UpdateSettings) error {
+	currentSettings := s.GetSettings()
+	updateSettingsPath := s.platform.GetUpdateSettingsPath(currentSettings.Env.Bosh.Agent.Settings.TmpFS)
+
+	updateSettingsJSON, err := json.Marshal(updateSettings)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling Update Settings json")
+	}
+
+	err = s.fs.WriteFile(updateSettingsPath, updateSettingsJSON)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing Update Settings json")
+	}
+	return nil
+}
+
 // GetSettings returns setting even if it fails to resolve IPs for dynamic networks.
 func (s *settingsService) GetSettings() Settings {
 	s.settingsMutex.Lock()
@@ -291,6 +324,22 @@ func (s *settingsService) getPersistentDiskSettingsWithoutLocking() (map[string]
 		}
 	}
 	return persistentDiskSettings, nil
+}
+
+func (s *settingsService) getUpdateSettings(useTmpFS bool) (UpdateSettings, error) {
+	updateSettings := UpdateSettings{}
+	updateSettingsPath := s.platform.GetUpdateSettingsPath(useTmpFS)
+	if s.fs.FileExists(updateSettingsPath) {
+		existingSettingsContents, err := s.fs.ReadFile(updateSettingsPath)
+		if err != nil {
+			return updateSettings, bosherr.WrapError(err, "Reading Update Settings json")
+		}
+		err = json.Unmarshal(existingSettingsContents, &updateSettings)
+		if err != nil {
+			return updateSettings, bosherr.WrapError(err, "Unmarshalling Update Settings json")
+		}
+	}
+	return updateSettings, nil
 }
 
 func (s *settingsService) getSettingsPath() string {

@@ -31,9 +31,10 @@ func (fake *FakeAuditLogger) Debug(arg1 string) {
 	fake.debugArgsForCall = append(fake.debugArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.DebugStub
 	fake.recordInvocation("Debug", []interface{}{arg1})
 	fake.debugMutex.Unlock()
-	if fake.DebugStub != nil {
+	if stub != nil {
 		fake.DebugStub(arg1)
 	}
 }
@@ -62,9 +63,10 @@ func (fake *FakeAuditLogger) Err(arg1 string) {
 	fake.errArgsForCall = append(fake.errArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.ErrStub
 	fake.recordInvocation("Err", []interface{}{arg1})
 	fake.errMutex.Unlock()
-	if fake.ErrStub != nil {
+	if stub != nil {
 		fake.ErrStub(arg1)
 	}
 }
@@ -92,9 +94,10 @@ func (fake *FakeAuditLogger) StartLogging() {
 	fake.startLoggingMutex.Lock()
 	fake.startLoggingArgsForCall = append(fake.startLoggingArgsForCall, struct {
 	}{})
+	stub := fake.StartLoggingStub
 	fake.recordInvocation("StartLogging", []interface{}{})
 	fake.startLoggingMutex.Unlock()
-	if fake.StartLoggingStub != nil {
+	if stub != nil {
 		fake.StartLoggingStub()
 	}
 }

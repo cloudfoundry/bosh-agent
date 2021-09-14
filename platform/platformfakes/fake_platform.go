@@ -277,6 +277,17 @@ type FakePlatform struct {
 	getRunnerReturnsOnCall map[int]struct {
 		result1 system.CmdRunner
 	}
+	GetUpdateSettingsPathStub        func(bool) string
+	getUpdateSettingsPathMutex       sync.RWMutex
+	getUpdateSettingsPathArgsForCall []struct {
+		arg1 bool
+	}
+	getUpdateSettingsPathReturns struct {
+		result1 string
+	}
+	getUpdateSettingsPathReturnsOnCall map[int]struct {
+		result1 string
+	}
 	GetVitalsServiceStub        func() vitals.Service
 	getVitalsServiceMutex       sync.RWMutex
 	getVitalsServiceArgsForCall []struct {
@@ -1953,6 +1964,67 @@ func (fake *FakePlatform) GetRunnerReturnsOnCall(i int, result1 system.CmdRunner
 	}
 	fake.getRunnerReturnsOnCall[i] = struct {
 		result1 system.CmdRunner
+	}{result1}
+}
+
+func (fake *FakePlatform) GetUpdateSettingsPath(arg1 bool) string {
+	fake.getUpdateSettingsPathMutex.Lock()
+	ret, specificReturn := fake.getUpdateSettingsPathReturnsOnCall[len(fake.getUpdateSettingsPathArgsForCall)]
+	fake.getUpdateSettingsPathArgsForCall = append(fake.getUpdateSettingsPathArgsForCall, struct {
+		arg1 bool
+	}{arg1})
+	stub := fake.GetUpdateSettingsPathStub
+	fakeReturns := fake.getUpdateSettingsPathReturns
+	fake.recordInvocation("GetUpdateSettingsPath", []interface{}{arg1})
+	fake.getUpdateSettingsPathMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetUpdateSettingsPathCallCount() int {
+	fake.getUpdateSettingsPathMutex.RLock()
+	defer fake.getUpdateSettingsPathMutex.RUnlock()
+	return len(fake.getUpdateSettingsPathArgsForCall)
+}
+
+func (fake *FakePlatform) GetUpdateSettingsPathCalls(stub func(bool) string) {
+	fake.getUpdateSettingsPathMutex.Lock()
+	defer fake.getUpdateSettingsPathMutex.Unlock()
+	fake.GetUpdateSettingsPathStub = stub
+}
+
+func (fake *FakePlatform) GetUpdateSettingsPathArgsForCall(i int) bool {
+	fake.getUpdateSettingsPathMutex.RLock()
+	defer fake.getUpdateSettingsPathMutex.RUnlock()
+	argsForCall := fake.getUpdateSettingsPathArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) GetUpdateSettingsPathReturns(result1 string) {
+	fake.getUpdateSettingsPathMutex.Lock()
+	defer fake.getUpdateSettingsPathMutex.Unlock()
+	fake.GetUpdateSettingsPathStub = nil
+	fake.getUpdateSettingsPathReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakePlatform) GetUpdateSettingsPathReturnsOnCall(i int, result1 string) {
+	fake.getUpdateSettingsPathMutex.Lock()
+	defer fake.getUpdateSettingsPathMutex.Unlock()
+	fake.GetUpdateSettingsPathStub = nil
+	if fake.getUpdateSettingsPathReturnsOnCall == nil {
+		fake.getUpdateSettingsPathReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.getUpdateSettingsPathReturnsOnCall[i] = struct {
+		result1 string
 	}{result1}
 }
 
@@ -4128,6 +4200,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
 	fake.getRunnerMutex.RLock()
 	defer fake.getRunnerMutex.RUnlock()
+	fake.getUpdateSettingsPathMutex.RLock()
+	defer fake.getUpdateSettingsPathMutex.RUnlock()
 	fake.getVitalsServiceMutex.RLock()
 	defer fake.getVitalsServiceMutex.RUnlock()
 	fake.isMountPointMutex.RLock()

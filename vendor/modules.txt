@@ -142,6 +142,12 @@ github.com/masterzen/simplexml/dom
 ## explicit
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
+## explicit
+github.com/maxbrunsfeld/counterfeiter/v6
+github.com/maxbrunsfeld/counterfeiter/v6/arguments
+github.com/maxbrunsfeld/counterfeiter/v6/command
+github.com/maxbrunsfeld/counterfeiter/v6/generator
 # github.com/mitchellh/mapstructure v1.4.2
 ## explicit
 github.com/mitchellh/mapstructure
@@ -249,6 +255,9 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 ## explicit
 golang.org/x/lint
 golang.org/x/lint/golint
+# golang.org/x/mod v0.4.2
+golang.org/x/mod/module
+golang.org/x/mod/semver
 # golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
 ## explicit
 golang.org/x/net/context
@@ -260,6 +269,7 @@ golang.org/x/net/proxy
 # golang.org/x/sys v0.0.0-20211001092434-39dca1131b70
 ## explicit
 golang.org/x/sys/cpu
+golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
@@ -290,6 +300,23 @@ golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/ast/inspector
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/gcimporter
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/go/packages
+golang.org/x/tools/go/types/typeutil
+golang.org/x/tools/imports
+golang.org/x/tools/internal/event
+golang.org/x/tools/internal/event/core
+golang.org/x/tools/internal/event/keys
+golang.org/x/tools/internal/event/label
+golang.org/x/tools/internal/fastwalk
+golang.org/x/tools/internal/gocommand
+golang.org/x/tools/internal/gopathwalk
+golang.org/x/tools/internal/imports
+golang.org/x/tools/internal/packagesinternal
+golang.org/x/tools/internal/typesinternal
+# golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+golang.org/x/xerrors
+golang.org/x/xerrors/internal
 # google.golang.org/protobuf v1.26.0
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire

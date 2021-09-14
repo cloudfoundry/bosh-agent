@@ -25,19 +25,15 @@ const (
 )
 
 type Settings struct {
-	AgentID   string    `json:"agent_id"`
-	Blobstore Blobstore `json:"blobstore"`
-	Disks     Disks     `json:"disks"`
-	Env       Env       `json:"env"`
-	Networks  Networks  `json:"networks"`
-	NTP       []string  `json:"ntp"`
-	Mbus      string    `json:"mbus"`
-	VM        VM        `json:"vm"`
-}
-
-type UpdateSettings struct {
-	DiskAssociations DiskAssociations `json:"disk_associations"`
-	TrustedCerts     string           `json:"trusted_certs"`
+	AgentID        string         `json:"agent_id"`
+	Blobstore      Blobstore      `json:"blobstore"`
+	Disks          Disks          `json:"disks"`
+	Env            Env            `json:"env"`
+	Networks       Networks       `json:"networks"`
+	NTP            []string       `json:"ntp"`
+	Mbus           string         `json:"mbus"`
+	VM             VM             `json:"vm"`
+	UpdateSettings UpdateSettings `json:"-"`
 }
 
 type Source interface {
@@ -154,6 +150,9 @@ func (s Settings) RawEphemeralDiskSettings() (devices []DiskSettings) {
 }
 
 func (s Settings) GetMbusURL() string {
+	if len(s.UpdateSettings.Mbus.URLs) > 0 {
+		return s.UpdateSettings.Mbus.URLs[0]
+	}
 	if len(s.Env.Bosh.Mbus.URLs) > 0 {
 		return s.Env.Bosh.Mbus.URLs[0]
 	}
@@ -161,7 +160,17 @@ func (s Settings) GetMbusURL() string {
 	return s.Mbus
 }
 
+func (s Settings) GetMbusCerts() CertKeyPair {
+	if s.UpdateSettings.Mbus.Cert.CA != "" {
+		return s.UpdateSettings.Mbus.Cert
+	}
+	return s.Env.Bosh.Mbus.Cert
+}
+
 func (s Settings) GetBlobstore() Blobstore {
+	if len(s.UpdateSettings.Blobstores) > 0 {
+		return s.UpdateSettings.Blobstores[0]
+	}
 	if len(s.Env.Bosh.Blobstores) > 0 {
 		return s.Env.Bosh.Blobstores[0]
 	}

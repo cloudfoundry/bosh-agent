@@ -1,12 +1,11 @@
 package action_test
 
 import (
+	"github.com/cloudfoundry/bosh-agent/agent/utils/utilsfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"errors"
-
-	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
@@ -22,6 +21,7 @@ import (
 var _ = Describe("UpdateSettings", func() {
 	var (
 		action            UpdateSettingsAction
+		agentKiller       utilsfakes.FakeKiller
 		certManager       *certfakes.FakeManager
 		settingsService   *fakesettings.FakeSettingsService
 		log               logger.Logger
@@ -31,6 +31,7 @@ var _ = Describe("UpdateSettings", func() {
 	)
 
 	BeforeEach(func() {
+		agentKiller = utilsfakes.FakeKiller{}
 		log = logger.NewLogger(logger.LevelNone)
 		certManager = new(certfakes.FakeManager)
 		settingsService = &fakesettings.FakeSettingsService{}
@@ -39,35 +40,33 @@ var _ = Describe("UpdateSettings", func() {
 		fileSystem = fakesys.NewFakeFileSystem()
 		platform.GetFsReturns(fileSystem)
 
-		action = NewUpdateSettings(settingsService, platform, certManager, log)
+		action = NewUpdateSettings(settingsService, platform, certManager, log, &agentKiller)
 		newUpdateSettings = boshsettings.UpdateSettings{}
 	})
 
 	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
+	AssertActionIsPersistent(action)
 	AssertActionIsLoggable(action)
 
-	AssertActionIsNotResumable(action)
+	AssertActionIsResumable(action)
 	AssertActionIsNotCancelable(action)
 
 	Context("on success", func() {
-		It("returns 'updated'", func() {
+		It("returns 'ok'", func() {
 			result, err := action.Run(newUpdateSettings)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(Equal("updated"))
+			Expect(result).To(Equal("ok"))
 		})
 
 		It("writes the updated settings to a file", func() {
 			action.Run(newUpdateSettings)
-			expectedPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-			exists := platform.GetFs().FileExists(expectedPath)
-			Expect(exists).To(Equal(true))
+			Expect(settingsService.SaveUpdateSettingsCallCount).To(Equal(1))
 		})
 	})
 
-	Context("when it cannot write the update settings file", func() {
+	Context("when it fails to save the UpdateSettings", func() {
 		BeforeEach(func() {
-			fileSystem.WriteFileError = errors.New("Fake write error")
+			settingsService.SaveUpdateSettingsErr = errors.New("Fake write error")
 		})
 
 		It("returns an error", func() {
@@ -82,7 +81,7 @@ var _ = Describe("UpdateSettings", func() {
 			log = logger.NewLogger(logger.LevelNone)
 			certManager = new(certfakes.FakeManager)
 			certManager.UpdateCertificatesReturns(errors.New("Error"))
-			action = NewUpdateSettings(settingsService, platform, certManager, log)
+			action = NewUpdateSettings(settingsService, platform, certManager, log, &agentKiller)
 		})
 
 		It("returns the error", func() {
@@ -161,7 +160,7 @@ var _ = Describe("UpdateSettings", func() {
 			DiskCID: "fake-disk-id-2",
 		}
 
-		result, err := action.Run(boshsettings.UpdateSettings{
+		_, err := action.Run(boshsettings.UpdateSettings{
 			DiskAssociations: []boshsettings.DiskAssociation{
 				diskAssociation,
 				diskAssociation2,
@@ -169,7 +168,6 @@ var _ = Describe("UpdateSettings", func() {
 		})
 
 		Expect(err).ToNot(HaveOccurred())
-		Expect(result).To(Equal("updated"))
 		Expect(platform.AssociateDiskCallCount()).To(Equal(2))
 
 		actualDiskName, actualDiskSettings := platform.AssociateDiskArgsForCall(0)
@@ -194,5 +192,31 @@ var _ = Describe("UpdateSettings", func() {
 			Path:         "fake-disk-path-2",
 		}))
 
+		updateSettings := settingsService.SaveUpdateSettingsLastArg
+		Expect(updateSettings.DiskAssociations[0].Name).To(Equal("fake-disk-name"))
+	})
+
+	Context("when updating nats or blobstore settings", func() {
+		BeforeEach(func() {
+			newUpdateSettings.Mbus.Cert.CA = "new ca cert"
+			newUpdateSettings.Blobstores = append(newUpdateSettings.Blobstores, boshsettings.Blobstore{Type: "new blobstore"})
+		})
+
+		It("kills the agent", func() {
+			Expect(func() {
+				action.Run(newUpdateSettings)
+			}).To(Panic())
+			Expect(agentKiller.KillAgentCallCount()).To(Equal(1))
+		})
+
+		It("persists the new settings", func() {
+			Expect(func() {
+				action.Run(newUpdateSettings)
+			}).To(Panic())
+
+			updateSettings := settingsService.SaveUpdateSettingsLastArg
+			Expect(updateSettings.Mbus.Cert.CA).To(Equal("new ca cert"))
+			Expect(updateSettings.Blobstores[0].Type).To(Equal("new blobstore"))
+		})
 	})
 })
