@@ -9,3 +9,7 @@ func withinDelta(existing, expected, delta uint64) bool {
 	}
 	return true
 }
+
+func significantlySmallerThan(existing, expected, delta uint64) bool {
+	return existing < (expected - delta)
+}

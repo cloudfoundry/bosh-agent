@@ -370,3 +370,59 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 	detectPartitionRetryStrategy := NewPartitionStrategy(detectPartitionRetryable, p.timeService, p.logger)
 	return detectPartitionRetryStrategy.Try()
 }
+
+func (p partedPartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
+	existingPartitions, diskSize, err := p.GetPartitions(devicePath)
+	if err != nil {
+		return false, bosherr.WrapError(err, "Failed to get existing partitions")
+	}
+	if len(existingPartitions) > 1 {
+		return false, bosherr.Errorf(
+			"Persistent disks with many partitions are not supported. Expected 1, got %d.",
+			len(existingPartitions))
+	}
+	if len(existingPartitions) < 1 {
+		return false, nil
+	}
+
+	partition := existingPartitions[0]
+	if partition.Type != expectedPartitionType {
+		return false, nil
+	}
+	return significantlySmallerThan(
+		partition.SizeInBytes, diskSize, ConvertFromMbToBytes(deltaSize)), nil
+}
+
+func (p partedPartitioner) ResizeSinglePartition(devicePath string) (err error) {
+	if !p.cmdRunner.CommandExists("growpart") {
+		p.logger.Info(p.logTag, "The program 'growpart' is not installed, Persistent Filesystem cannot be grown")
+		return bosherr.Error("The program 'growpart' is not installed, Persistent Filesystem cannot be grown")
+	}
+
+	if !p.cmdRunner.CommandExists("partx") {
+		p.logger.Info(p.logTag, "The program 'partx' is not installed, Persistent Filesystem cannot be grown")
+		return bosherr.Error("The program 'partx' is not installed, Persistent Filesystem cannot be grown")
+	}
+
+	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+		_, _, _, err := p.cmdRunner.RunCommand(
+			"growpart", devicePath, "1", "--update", "auto",
+		)
+		if err != nil {
+			p.logger.Error(p.logTag, "Failed with an error: %s", err)
+			return true, bosherr.WrapError(err, "Resizing partition using growpart")
+		}
+
+		p.logger.Info(p.logTag, "Successfully resized sinlge partition in %s", devicePath)
+		return false, nil
+	})
+
+	partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+	err = partitionRetryStrategy.Try()
+
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Repartitioning disk `%s'", devicePath)
+	}
+
+	return nil
+}

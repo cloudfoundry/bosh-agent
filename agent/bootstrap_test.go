@@ -943,6 +943,23 @@ var _ = Describe("bootstrap", func() {
 
 				platform.IsPersistentDiskMountableReturns(true, nil)
 			})
+			Context("when adjusting persistent disk partitioning fails", func() {
+				BeforeEach(func() {
+					diskCid := "vol-123"
+					managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
+					fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+
+					platform.AdjustPersistentDiskPartitioningReturns(errors.New("Grow partition fail"))
+				})
+				It("should return error", func() {
+					err := bootstrap()
+					Expect(err).To(HaveOccurred())
+					Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
+					Expect(platform.MountPersistentDiskCallCount()).To(Equal(0))
+					Expect(err.Error()).To(Equal("Mounting last mounted disk: Adjusting persistent disk partitioning: Grow partition fail"))
+				})
+			})
+
 			Context("when mounting persistent disk fails", func() {
 				BeforeEach(func() {
 					diskCid := "vol-123"

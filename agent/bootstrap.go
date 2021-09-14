@@ -332,6 +332,9 @@ func (boot bootstrap) mountLastMountedDisk() error {
 	}
 
 	if isPartitioned {
+		if err = boot.platform.AdjustPersistentDiskPartitioning(diskSettings, boot.dirProvider.StoreDir()); err != nil {
+			return bosherr.WrapError(err, "Adjusting persistent disk partitioning")
+		}
 		if err = boot.platform.MountPersistentDisk(diskSettings, boot.dirProvider.StoreDir()); err != nil {
 			return bosherr.WrapError(err, "Mounting persistent disk")
 		}

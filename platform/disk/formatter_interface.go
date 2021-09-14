@@ -11,4 +11,5 @@ const (
 
 type Formatter interface {
 	Format(partitionPath string, fsType FileSystemType) (err error)
+	GrowFilesystem(partitionPath string) error
 }

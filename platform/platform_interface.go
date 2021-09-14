@@ -70,6 +70,7 @@ type Platform interface {
 	SetupRecordsJSONPermission(path string) error
 
 	// Disk management
+	AdjustPersistentDiskPartitioning(diskSettings boshsettings.DiskSettings, mountPoint string) error
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
 	UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)

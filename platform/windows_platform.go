@@ -599,6 +599,10 @@ func (p WindowsPlatform) SetupLoggingAndAuditing() error {
 	return nil
 }
 
+func (p WindowsPlatform) AdjustPersistentDiskPartitioning(diskSettings boshsettings.DiskSettings, mountPoint string) (err error) {
+	return
+}
+
 func (p WindowsPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) (err error) {
 	return
 }

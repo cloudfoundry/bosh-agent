@@ -15,6 +15,55 @@ import (
 
 const partitionNamePrefix = "bosh-partition"
 
+func bytesOfMiB(sizeInMiB uint64) uint64 {
+	return sizeInMiB * 1024 * 1024
+}
+
+func bytesOfGiB(sizeInGiB uint64) uint64 {
+	return bytesOfMiB(sizeInGiB) * 1024
+}
+
+type PartedPartition struct {
+	Index      int
+	Start      uint64
+	End        uint64
+	Size       uint64
+	Filesystem string
+	Name       string
+}
+
+func buildPartedOutput(
+	devicePath string, deviceSize uint64,
+	transportType, partitionTableType, modelName string,
+	partitions []PartedPartition) (partedOutput string) {
+	partedOutput = "BYT;\n"
+	// Disk info format:
+	// "path":"size":"transport-type":"logical-sector-size":"physical-sector-size":"partition-table-type":"model-name";
+	// See: https://alioth-lists.debian.net/pipermail/parted-devel/2006-December/000573.html
+	partedOutput += fmt.Sprintf(
+		"%s:%dB:%s:512:512:%s:%s;\n",
+		devicePath,
+		deviceSize,
+		transportType,
+		partitionTableType,
+		modelName,
+	)
+	for _, partition := range partitions {
+		// Partition info format:
+		// "number":"begin":"end":"size":"filesystem-type":"partition-name":"flags-set";
+		partedOutput += fmt.Sprintf(
+			"%d:%dB:%dB:%dB:%s:%s:;\n",
+			partition.Index,
+			partition.Start,
+			partition.End,
+			partition.Size,
+			partition.Filesystem,
+			partition.Name,
+		)
+	}
+	return
+}
+
 var _ = Describe("PartedPartitioner", func() {
 	var (
 		fakeCmdRunner *fakesys.FakeCmdRunner
@@ -40,14 +89,14 @@ var _ = Describe("PartedPartitioner", func() {
 							Stdout:     "Error: /dev/sda: unrecognised disk label",
 							ExitStatus: 1,
 							Error:      errors.New("Error: /dev/sda: unrecognised disk label"),
-						},
-					)
+						})
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-`})
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{}),
+						})
 					fakeCmdRunner.AddCmdResult(
 						"parted -s /dev/sda mklabel gpt",
 						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0})
@@ -80,17 +129,17 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -100,15 +149,18 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/vdb:21474836480B:virtblk:512:512:loop:Virtio Block Device:;
-`})
+							Stdout: buildPartedOutput(
+								"/dev/vdb", bytesOfGiB(20), "virtblk", "loop", "Virtio Block Device",
+								[]PartedPartition{}),
+						})
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-`})
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{}),
+						})
+
 					fakeCmdRunner.AddCmdResult(
 						"parted -s /dev/sda mklabel gpt",
 						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0})
@@ -142,17 +194,17 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -162,10 +214,10 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{}),
+						})
 				})
 
 				It("creates partitions using parted starting at the 1048576 byte", func() {
@@ -193,15 +245,15 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
 					}))
 				})
 
@@ -214,11 +266,14 @@ var _ = Describe("PartedPartitioner", func() {
 						fakeCmdRunner.AddCmdResult(
 							"parted -m /dev/sda unit B print",
 							fakesys.FakeCmdResult{
-								Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:512B:2048576B:199680B:ext4:primary:;
-`},
-						)
+								Stdout: buildPartedOutput(
+									"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+									[]PartedPartition{
+										{Index: 1,
+											Start: 512, End: 2048576, Size: 199680,
+											Filesystem: "ext4", Name: "primary"},
+									}),
+							})
 					})
 
 					It("creates partitions using parted overwriting the existing partitions", func() {
@@ -246,15 +301,15 @@ var _ = Describe("PartedPartitioner", func() {
 						Expect(err).ToNot(HaveOccurred())
 
 						Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-							[]string{"partprobe", "/dev/sda"},
-							[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-							[]string{"udevadm", "settle"},
-							[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
-							[]string{"partprobe", "/dev/sda"},
-							[]string{"udevadm", "settle"},
-							[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
-							[]string{"partprobe", "/dev/sda"},
-							[]string{"udevadm", "settle"},
+							{"partprobe", "/dev/sda"},
+							{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+							{"udevadm", "settle"},
+							{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
+							{"partprobe", "/dev/sda"},
+							{"udevadm", "settle"},
+							{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "17180917759"},
+							{"partprobe", "/dev/sda"},
+							{"udevadm", "settle"},
 						}))
 					})
 				})
@@ -264,11 +319,14 @@ var _ = Describe("PartedPartitioner", func() {
 						fakeCmdRunner.AddCmdResult(
 							"parted -m /dev/sda unit B print",
 							fakesys.FakeCmdResult{
-								Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:512B:2048576B:199680B:ext4:bosh-partition-0:;
-`},
-						)
+								Stdout: buildPartedOutput(
+									"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+									[]PartedPartition{
+										{Index: 1,
+											Start: 512, End: 2048576, Size: 199680,
+											Filesystem: "ext4", Name: "bosh-partition-0"},
+									}),
+							})
 					})
 
 					It("does NOT partition the disk, and returns an error", func() {
@@ -296,9 +354,9 @@ var _ = Describe("PartedPartitioner", func() {
 						Expect(err.Error()).To(Equal("'/dev/sda' contains a partition created by bosh. No partitioning is allowed."))
 
 						Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-							[]string{"partprobe", "/dev/sda"},
-							[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-							[]string{"udevadm", "settle"},
+							{"partprobe", "/dev/sda"},
+							{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+							{"udevadm", "settle"},
 						}))
 					})
 				})
@@ -310,11 +368,14 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sdf unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:3146063544320B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:1048576B:3146062496255B:3146062495744B:Golden Bow:primary:;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(2930), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{
+									{Index: 1,
+										Start: bytesOfMiB(1), End: 3146062496255, Size: 3146062495744,
+										Filesystem: "Golden Bow", Name: "primary"},
+								}),
+						})
 				})
 
 				It("replaces the partition", func() {
@@ -335,12 +396,12 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sdf"},
-						[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sdf", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "3146062495743"},
-						[]string{"partprobe", "/dev/sdf"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sdf"},
+						{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sdf", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "3146062495743"},
+						{"partprobe", "/dev/sdf"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -350,11 +411,14 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sdf unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:3146063544320B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:1048576B:3146062496255B:3146062495744B::primary:;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(2930), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{
+									{Index: 1,
+										Start: bytesOfMiB(1), End: 3146062496255, Size: 3146062495744,
+										Filesystem: "", Name: "primary"},
+								}),
+						})
 				})
 
 				It("repartitions", func() {
@@ -374,12 +438,12 @@ var _ = Describe("PartedPartitioner", func() {
 					err := partitioner.Partition("/dev/sdf", partitions)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sdf"},
-						[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sdf", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "3146062495743"},
-						[]string{"partprobe", "/dev/sdf"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sdf"},
+						{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sdf", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "3146062495743"},
+						{"partprobe", "/dev/sdf"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -389,11 +453,14 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:512B:2048576B:199680B:ext4::;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{
+									{Index: 1,
+										Start: 512, End: 2048576, Size: 199680,
+										Filesystem: "ext4", Name: ""},
+								}),
+						})
 				})
 
 				It("creates partitions using parted but truncates the partition", func() {
@@ -422,15 +489,15 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
-						[]string{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "221189767167"},
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-0", "1048576", "8590983167"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
+						{"parted", "-s", "/dev/sda", "unit", "B", "mkpart", "bosh-partition-1", "8590983168", "221189767167"},
+						{"partprobe", "/dev/sda"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -442,12 +509,17 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:512B:8589935104B:8589934592B:ext4::;
-2:8589935105B:17179869697B:8589934592B:ext4::;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{
+									{Index: 1,
+										Start: 512, End: 8589935104, Size: 8589934592,
+										Filesystem: "ext4", Name: ""},
+									{Index: 2,
+										Start: 8589935105, End: 17179869697, Size: 8589934592,
+										Filesystem: "ext4", Name: ""},
+								}),
+						})
 				})
 
 				It("checks the existing partitions and does nothing", func() {
@@ -460,9 +532,9 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -472,12 +544,17 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:512B:8589935104B:8558963072B:ext4::;
-2:8589935105B:17179869697B:8568963072B:ext4::;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{
+									{Index: 1,
+										Start: 512, End: 8589935104, Size: 8558963072,
+										Filesystem: "ext4", Name: ""},
+									{Index: 2,
+										Start: 8589935105, End: 17179869697, Size: 8568963072,
+										Filesystem: "ext4", Name: ""},
+								}),
+						})
 				})
 
 				It("checks the existing partitions and does nothing", func() {
@@ -490,9 +567,9 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -502,12 +579,17 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:221190815744B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:512B:8589935104B:8589934592B:ext4::;
-2:8589935105B:17179869697B:8589934592B:ext4::;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(206), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{
+									{Index: 1,
+										Start: 512, End: 8589935104, Size: 8589934592,
+										Filesystem: "ext4", Name: ""},
+									{Index: 2,
+										Start: 8589935105, End: 17179869697, Size: 8589934592,
+										Filesystem: "ext4", Name: ""},
+								}),
+						})
 				})
 
 				It("checks the existing partitions and does nothing", func() {
@@ -519,9 +601,9 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sda", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -533,11 +615,14 @@ var _ = Describe("PartedPartitioner", func() {
 							fakeCmdRunner.AddCmdResult(
 								"parted -m /dev/sdf unit B print",
 								fakesys.FakeCmdResult{
-									Stdout: fmt.Sprintf(`BYT;
-/dev/xvdf:3146063544320B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:1048576B:3146062496255B:3146062495744B:%s:primary:;
-`, fsFormat)},
-							)
+									Stdout: buildPartedOutput(
+										"/dev/xvdf", bytesOfGiB(2930), "xvd", "gpt", "Xen Virtual Block Device",
+										[]PartedPartition{
+											{Index: 1,
+												Start: 1048576, End: 3146062496255, Size: 3146062495744,
+												Filesystem: fsFormat, Name: "primary"},
+										}),
+								})
 						})
 
 						It("reuses the existing partition", func() {
@@ -549,9 +634,9 @@ var _ = Describe("PartedPartitioner", func() {
 							Expect(err).ToNot(HaveOccurred())
 
 							Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-								[]string{"partprobe", "/dev/sdf"},
-								[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
-								[]string{"udevadm", "settle"},
+								{"partprobe", "/dev/sdf"},
+								{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
+								{"udevadm", "settle"},
 							}))
 						})
 					})
@@ -563,11 +648,14 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sdf unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: `BYT;
-/dev/xvdf:3146063544320B:xvd:512:512:gpt:Xen Virtual Block Device;
-1:1048576B:3146062496255B:3146062495744B:linux-swap(v1):primary:;
-`},
-					)
+							Stdout: buildPartedOutput(
+								"/dev/xvdf", bytesOfGiB(2930), "xvd", "gpt", "Xen Virtual Block Device",
+								[]PartedPartition{
+									{Index: 1,
+										Start: 1048576, End: 3146062496255, Size: 3146062495744,
+										Filesystem: "linux-swap(v1)", Name: "primary"},
+								}),
+						})
 				})
 
 				It("reuses the existing partition", func() {
@@ -580,9 +668,9 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sdf"},
-						[]string{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sdf"},
+						{"parted", "-m", "/dev/sdf", "unit", "B", "print"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -594,8 +682,9 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"partprobe /dev/sda",
 						fakesys.FakeCmdResult{
-							Stdout: "Some weird error", ExitStatus: 1, Error: errors.New("Some weird error")},
-					)
+							Stdout: "Some weird error", ExitStatus: 1,
+							Error: errors.New("Some weird error"),
+						})
 				})
 
 				It("throw an error", func() {
@@ -609,7 +698,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(err.Error()).To(ContainSubstring("Re-reading partition table for `/dev/sda': Some weird error"))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
+						{"partprobe", "/dev/sda"},
 					}))
 				})
 			})
@@ -619,8 +708,9 @@ var _ = Describe("PartedPartitioner", func() {
 					fakeCmdRunner.AddCmdResult(
 						"parted -m /dev/sda unit B print",
 						fakesys.FakeCmdResult{
-							Stdout: "Some weird error", ExitStatus: 1, Error: errors.New("Some weird error")},
-					)
+							Stdout: "Some weird error", ExitStatus: 1,
+							Error: errors.New("Some weird error"),
+						})
 				})
 
 				It("throw an error", func() {
@@ -634,9 +724,9 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda': Running parted print: Some weird error"))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -664,10 +754,10 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda': Running parted print: Parted making label: Some weird error"))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -699,11 +789,11 @@ var _ = Describe("PartedPartitioner", func() {
 
 					Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda': Running parted print: Some weird error"))
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-						[]string{"partprobe", "/dev/sda"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
-						[]string{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						[]string{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
+						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
 					}))
 				})
 			})
@@ -798,6 +888,220 @@ var _ = Describe("PartedPartitioner", func() {
 				Expect(err.Error()).To(ContainSubstring("Removing device path"))
 
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda"}))
+			})
+		})
+	})
+
+	Describe("SinglePartitionNeedsResize", func() {
+		Context("when listing partitions fails", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult("parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("No GPT found")})
+			})
+
+			It("returns an error", func() {
+				_, err := partitioner.SinglePartitionNeedsResize("/dev/nvme2n1", PartitionTypeLinux)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Failed to get existing partitions"))
+				Expect(err.Error()).To(ContainSubstring("No GPT found"))
+			})
+		})
+
+		Context("when persistent disk has no partition", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: buildPartedOutput(
+							"/dev/nvme2n1", bytesOfGiB(4), "nvme", "gpt", "Amazon Elastic Block Store",
+							[]PartedPartition{}),
+					})
+			})
+
+			It("tells no re-partitioning is supposed to happen", func() {
+				needsResize, err := partitioner.SinglePartitionNeedsResize("/dev/nvme2n1", PartitionTypeLinux)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(needsResize).To(BeFalse())
+			})
+		})
+
+		Context("when persistent disk has many existing partitions", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: buildPartedOutput(
+							"/dev/nvme2n1", bytesOfGiB(32), "nvme", "gpt", "Amazon Elastic Block Store",
+							[]PartedPartition{
+								{Index: 1,
+									Start: bytesOfMiB(1), End: 17180917759, Size: 17179869184,
+									Filesystem: "linux-swap(v1)", Name: "bosh-partition-0"},
+								{Index: 2,
+									Start: 17180917760, End: 34358689791, Size: 17177772032,
+									Filesystem: "ext4", Name: "bosh-partition-1"},
+							}),
+					})
+			})
+
+			It("returns an error", func() {
+				_, err := partitioner.SinglePartitionNeedsResize("/dev/nvme2n1", PartitionTypeLinux)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Persistent disks with many partitions are not supported"))
+			})
+		})
+
+		Context("when persistent disk has one existing partition of swap type", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"parted -m /dev/nvme2n1 unit B print",
+					fakesys.FakeCmdResult{
+						Stdout: buildPartedOutput(
+							"/dev/nvme2n1", bytesOfGiB(32), "nvme", "gpt", "Amazon Elastic Block Store",
+							[]PartedPartition{
+								{Index: 1,
+									Start: bytesOfMiB(1), End: 2146435071, Size: 2145386496,
+									Filesystem: "linux-swap(v1)", Name: "bosh-partition-0"},
+							}),
+					})
+			})
+
+			It("tells no re-partitioning is supposed to happen", func() {
+				needsResize, err := partitioner.SinglePartitionNeedsResize("/dev/nvme2n1", PartitionTypeLinux)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(needsResize).To(BeFalse())
+			})
+		})
+
+		Context("when persistent disk has an existing partition of Linux type", func() {
+			var (
+				deviceSizeInBytes uint64
+				setupPartedOutput func()
+			)
+
+			BeforeEach(func() {
+				setupPartedOutput = func() {
+					fakeCmdRunner.AddCmdResult(
+						"parted -m /dev/nvme2n1 unit B print",
+						fakesys.FakeCmdResult{
+							Stdout: buildPartedOutput(
+								"/dev/nvme2n1", deviceSizeInBytes, "nvme", "gpt", "Amazon Elastic Block Store",
+								[]PartedPartition{
+									{Index: 1,
+										Start: bytesOfMiB(1), End: 2146435071, Size: 2145386496,
+										Filesystem: "ext4", Name: "bosh-partition-0"},
+								}),
+						})
+				}
+			})
+
+			Context("when device has slightly larger size due to geometry alignments", func() {
+				BeforeEach(func() {
+					deviceSizeInBytes = bytesOfGiB(2) + bytesOfMiB(20)
+					setupPartedOutput()
+				})
+
+				It("tells the partition needs not being resized", func() {
+					needsResize, err := partitioner.SinglePartitionNeedsResize("/dev/nvme2n1", PartitionTypeLinux)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(needsResize).To(BeFalse())
+				})
+			})
+
+			Context("when device has been grown in size", func() {
+				BeforeEach(func() {
+					deviceSizeInBytes = bytesOfGiB(4)
+					setupPartedOutput()
+				})
+
+				It("tells the partition needs resizing", func() {
+					needsResize, err := partitioner.SinglePartitionNeedsResize("/dev/nvme2n1", PartitionTypeLinux)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(needsResize).To(BeTrue())
+				})
+			})
+		})
+	})
+
+	Describe("ResizeSinglePartition", func() {
+		BeforeEach(func() {
+			fakeCmdRunner.AvailableCommands["growpart"] = true
+			fakeCmdRunner.AvailableCommands["partx"] = true
+		})
+
+		Context("when growpart is missing", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AvailableCommands["growpart"] = false
+			})
+
+			It("returns an error", func() {
+				err := partitioner.ResizeSinglePartition("/dev/nvme2n1")
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("'growpart' is not installed"))
+			})
+		})
+
+		Context("when partx is missing", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AvailableCommands["partx"] = false
+			})
+
+			It("returns an error", func() {
+				err := partitioner.ResizeSinglePartition("/dev/nvme2n1")
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("'partx' is not installed"))
+			})
+		})
+
+		Context("when growing partition", func() {
+			It("resizes paritions", func() {
+				err := partitioner.ResizeSinglePartition("/dev/nvme2n1")
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fakeCmdRunner.RunCommands).To(HaveLen(1))
+				Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+			})
+		})
+
+		Context("when growpart temporarily fails once", func() {
+			BeforeEach(func() {
+				fakeCmdRunner.AddCmdResult(
+					"growpart /dev/nvme2n1 1 --update auto",
+					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 1, Error: errors.New("growpart-failure")},
+				)
+			})
+
+			It("reties and succeeds", func() {
+				err := partitioner.ResizeSinglePartition("/dev/nvme2n1")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeCmdRunner.RunCommands[0]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+				Expect(fakeCmdRunner.RunCommands[1]).To(Equal([]string{"growpart", "/dev/nvme2n1", "1", "--update", "auto"}))
+			})
+		})
+
+		Context("when growpart fails constantly", func() {
+			BeforeEach(func() {
+				for i := 0; i < 20; i++ {
+					fakeCmdRunner.AddCmdResult(
+						"growpart /dev/nvme2n1 1 --update auto",
+						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 1, Error: errors.New("growpart-failure")},
+					)
+				}
+			})
+
+			It("returns an error", func() {
+				err := partitioner.ResizeSinglePartition("/dev/nvme2n1")
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("growpart-failure"))
 			})
 		})
 	})
