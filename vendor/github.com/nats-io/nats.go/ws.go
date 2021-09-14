@@ -72,12 +72,6 @@ const (
 // From https://tools.ietf.org/html/rfc6455#section-1.3
 var wsGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
 
-<<<<<<< HEAD
-=======
-// As per https://tools.ietf.org/html/rfc7692#section-7.2.2
-// add 0x00, 0x00, 0xff, 0xff and then a final block so that flate reader
-// does not report unexpected EOF.
->>>>>>> develop
 var compressFinalBlock = []byte{0x00, 0x00, 0xff, 0xff, 0x01, 0x00, 0x00, 0xff, 0xff}
 
 type websocketReader struct {
@@ -86,7 +80,6 @@ type websocketReader struct {
 	ib      []byte
 	ff      bool
 	fc      bool
-<<<<<<< HEAD
 	dc      *wsDecompressor
 	nc      *Conn
 }
@@ -97,12 +90,6 @@ type wsDecompressor struct {
 	off   int
 }
 
-=======
-	dc      io.ReadCloser
-	nc      *Conn
-}
-
->>>>>>> develop
 type websocketWriter struct {
 	w          io.Writer
 	compress   bool
@@ -113,7 +100,6 @@ type websocketWriter struct {
 	noMoreSend bool     // if true, even if there is a Write() call, we should not send anything
 }
 
-<<<<<<< HEAD
 func (d *wsDecompressor) Read(dst []byte) (int, error) {
 	if len(dst) == 0 {
 		return 0, nil
@@ -187,57 +173,6 @@ func (d *wsDecompressor) decompress() ([]byte, error) {
 	// Now reset the compressed buffers list
 	d.bufs = nil
 	return b, err
-=======
-type decompressorBuffer struct {
-	buf   []byte
-	rem   int
-	off   int
-	final bool
-}
-
-func newDecompressorBuffer(buf []byte) *decompressorBuffer {
-	return &decompressorBuffer{buf: buf, rem: len(buf)}
-}
-
-func (d *decompressorBuffer) Read(p []byte) (int, error) {
-	if d.buf == nil {
-		return 0, io.EOF
-	}
-	lim := d.rem
-	if len(p) < lim {
-		lim = len(p)
-	}
-	n := copy(p, d.buf[d.off:d.off+lim])
-	d.off += n
-	d.rem -= n
-	d.checkRem()
-	return n, nil
-}
-
-func (d *decompressorBuffer) checkRem() {
-	if d.rem != 0 {
-		return
-	}
-	if !d.final {
-		d.buf = compressFinalBlock
-		d.off = 0
-		d.rem = len(d.buf)
-		d.final = true
-	} else {
-		d.buf = nil
-	}
-}
-
-func (d *decompressorBuffer) ReadByte() (byte, error) {
-	if d.buf == nil {
-		return 0, io.EOF
-	}
-	b := d.buf[d.off]
-	d.off++
-	d.rem--
-	d.checkRem()
-	return b, nil
->>>>>>> develop
 }
 
 func wsNewReader(r io.Reader) *websocketReader {
@@ -346,15 +281,11 @@ func (r *websocketReader) Read(p []byte) (int, error) {
 		}
 
 		var b []byte
-<<<<<<< HEAD
 		// This ensures that we get the full payload for this frame.
-=======
->>>>>>> develop
 		b, pos, err = wsGet(r.r, buf, pos, rem)
 		if err != nil {
 			return 0, err
 		}
-<<<<<<< HEAD
 		// We read the full frame.
 		rem = 0
 		addToPending := true
@@ -391,27 +322,6 @@ func (r *websocketReader) addCBuf(b []byte) {
 	}
 	// Add a copy of the incoming buffer to the list of compressed buffers.
 	r.dc.addBuf(append([]byte(nil), b...))
-=======
-		rem = 0
-		if r.fc {
-			br := newDecompressorBuffer(b)
-			if r.dc == nil {
-				r.dc = flate.NewReader(br)
-			} else {
-				r.dc.(flate.Resetter).Reset(br, nil)
-			}
-			// TODO: When Go 1.15 support is dropped, replace with io.ReadAll()
-			b, err = ioutil.ReadAll(r.dc)
-			if err != nil {
-				return 0, err
-			}
-			r.fc = false
-		}
-		r.pending = append(r.pending, b)
-	}
-	// At this point we should have pending slices.
-	return r.drainPending(p), nil
->>>>>>> develop
 }
 
 func (r *websocketReader) drainPending(p []byte) int {

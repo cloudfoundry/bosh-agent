@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ## 1.16.0
 
 ### Features
@@ -39,8 +38,6 @@ In addition, 1.15.0 cleans up some of Gomega's internals.  Most users shouldn't 
 - gmeasure provides BETA support for benchmarking (#447) [8f2dfbf]
 - Set consistently and eventually defaults on init (#443) [12eb778]
 
-=======
->>>>>>> develop
 ## 1.12.0
 
 ### Features

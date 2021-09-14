@@ -64,7 +64,7 @@ func NewBlobstore(uri string) BlobClient {
 
 	httpClient := &http.Client{
 		Transport: &http.Transport{
-			Dial:         tunnelClient.Dial,
+			Dial:                tunnelClient.Dial,
 			TLSHandshakeTimeout: 10 * time.Second,
 		},
 	}

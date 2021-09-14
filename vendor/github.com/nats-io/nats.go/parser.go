@@ -28,7 +28,6 @@ type msgArg struct {
 const MAX_CONTROL_LINE_SIZE = 4096
 
 type parseState struct {
-<<<<<<< HEAD
 	state     int
 	as        int
 	drop      int
@@ -38,16 +37,6 @@ type parseState struct {
 	msgBuf    []byte
 	msgCopied bool
 	scratch   [MAX_CONTROL_LINE_SIZE]byte
-=======
-	state   int
-	as      int
-	drop    int
-	hdr     int
-	ma      msgArg
-	argBuf  []byte
-	msgBuf  []byte
-	scratch [MAX_CONTROL_LINE_SIZE]byte
->>>>>>> develop
 }
 
 const (

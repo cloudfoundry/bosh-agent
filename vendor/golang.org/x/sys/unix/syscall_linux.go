@@ -66,13 +66,10 @@ func Fchmodat(dirfd int, path string, mode uint32, flags int) (err error) {
 	return fchmodat(dirfd, path, mode)
 }
 
-<<<<<<< HEAD
 func InotifyInit() (fd int, err error) {
 	return InotifyInit1(0)
 }
 
-=======
->>>>>>> develop
 //sys	ioctl(fd int, req uint, arg uintptr) (err error) = SYS_IOCTL
 //sys	ioctlPtr(fd int, req uint, arg unsafe.Pointer) (err error) = SYS_IOCTL
 

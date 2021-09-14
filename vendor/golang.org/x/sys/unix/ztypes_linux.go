@@ -3452,11 +3452,7 @@ const (
 	ETHTOOL_MSG_CABLE_TEST_ACT                = 0x1a
 	ETHTOOL_MSG_CABLE_TEST_TDR_ACT            = 0x1b
 	ETHTOOL_MSG_TUNNEL_INFO_GET               = 0x1c
-<<<<<<< HEAD
 	ETHTOOL_MSG_USER_MAX                      = 0x21
-=======
-	ETHTOOL_MSG_USER_MAX                      = 0x20
->>>>>>> develop
 	ETHTOOL_MSG_KERNEL_NONE                   = 0x0
 	ETHTOOL_MSG_STRSET_GET_REPLY              = 0x1
 	ETHTOOL_MSG_LINKINFO_GET_REPLY            = 0x2
@@ -3487,11 +3483,7 @@ const (
 	ETHTOOL_MSG_CABLE_TEST_NTF                = 0x1b
 	ETHTOOL_MSG_CABLE_TEST_TDR_NTF            = 0x1c
 	ETHTOOL_MSG_TUNNEL_INFO_GET_REPLY         = 0x1d
-<<<<<<< HEAD
 	ETHTOOL_MSG_KERNEL_MAX                    = 0x22
-=======
-	ETHTOOL_MSG_KERNEL_MAX                    = 0x21
->>>>>>> develop
 	ETHTOOL_A_HEADER_UNSPEC                   = 0x0
 	ETHTOOL_A_HEADER_DEV_INDEX                = 0x1
 	ETHTOOL_A_HEADER_DEV_NAME                 = 0x2
@@ -3931,7 +3923,6 @@ const (
 	NFC_SDP_ATTR_URI                  = 0x1
 	NFC_SDP_ATTR_SAP                  = 0x2
 )
-<<<<<<< HEAD
 
 type LandlockRulesetAttr struct {
 	Access_fs uint64
@@ -3945,5 +3936,3 @@ type LandlockPathBeneathAttr struct {
 const (
 	LANDLOCK_RULE_PATH_BENEATH = 0x1
 )
-=======
->>>>>>> develop

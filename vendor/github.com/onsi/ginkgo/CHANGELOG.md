@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ## 1.16.4
 
 ### Fixes
@@ -9,8 +8,6 @@
 ### Features
 - Measure is now deprecated and emits a deprecation warning.
 
-=======
->>>>>>> develop
 ## 1.16.2
 
 ### Fixes

@@ -1946,15 +1946,12 @@ const (
 	PR_PAC_GET_ENABLED_KEYS                     = 0x3d
 	PR_PAC_RESET_KEYS                           = 0x36
 	PR_PAC_SET_ENABLED_KEYS                     = 0x3c
-<<<<<<< HEAD
 	PR_SCHED_CORE                               = 0x3e
 	PR_SCHED_CORE_CREATE                        = 0x1
 	PR_SCHED_CORE_GET                           = 0x0
 	PR_SCHED_CORE_MAX                           = 0x4
 	PR_SCHED_CORE_SHARE_FROM                    = 0x3
 	PR_SCHED_CORE_SHARE_TO                      = 0x2
-=======
->>>>>>> develop
 	PR_SET_CHILD_SUBREAPER                      = 0x24
 	PR_SET_DUMPABLE                             = 0x4
 	PR_SET_ENDIAN                               = 0x14

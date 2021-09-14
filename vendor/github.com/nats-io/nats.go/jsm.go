@@ -74,7 +74,6 @@ type JetStreamManager interface {
 // There are sensible defaults for most. If no subjects are
 // given the name will be used as the only subject.
 type StreamConfig struct {
-<<<<<<< HEAD
 	Name              string          `json:"name"`
 	Description       string          `json:"description,omitempty"`
 	Subjects          []string        `json:"subjects,omitempty"`
@@ -94,25 +93,6 @@ type StreamConfig struct {
 	Placement         *Placement      `json:"placement,omitempty"`
 	Mirror            *StreamSource   `json:"mirror,omitempty"`
 	Sources           []*StreamSource `json:"sources,omitempty"`
-=======
-	Name         string          `json:"name"`
-	Subjects     []string        `json:"subjects,omitempty"`
-	Retention    RetentionPolicy `json:"retention"`
-	MaxConsumers int             `json:"max_consumers"`
-	MaxMsgs      int64           `json:"max_msgs"`
-	MaxBytes     int64           `json:"max_bytes"`
-	Discard      DiscardPolicy   `json:"discard"`
-	MaxAge       time.Duration   `json:"max_age"`
-	MaxMsgSize   int32           `json:"max_msg_size,omitempty"`
-	Storage      StorageType     `json:"storage"`
-	Replicas     int             `json:"num_replicas"`
-	NoAck        bool            `json:"no_ack,omitempty"`
-	Template     string          `json:"template_owner,omitempty"`
-	Duplicates   time.Duration   `json:"duplicate_window,omitempty"`
-	Placement    *Placement      `json:"placement,omitempty"`
-	Mirror       *StreamSource   `json:"mirror,omitempty"`
-	Sources      []*StreamSource `json:"sources,omitempty"`
->>>>>>> develop
 }
 
 // Placement is used to guide placement of streams in clustered JetStream.
@@ -168,10 +148,7 @@ type AccountInfo struct {
 	Store     uint64        `json:"storage"`
 	Streams   int           `json:"streams"`
 	Consumers int           `json:"consumers"`
-<<<<<<< HEAD
 	Domain    string        `json:"domain"`
-=======
->>>>>>> develop
 	API       APIStats      `json:"api"`
 	Limits    AccountLimits `json:"limits"`
 }
@@ -196,11 +173,8 @@ type accountInfoResponse struct {
 }
 
 // AccountInfo retrieves info about the JetStream usage from the current account.
-<<<<<<< HEAD
 // If JetStream is not enabled, this will return ErrJetStreamNotEnabled
 // Other errors can happen but are generally considered retryable
-=======
->>>>>>> develop
 func (js *js) AccountInfo(opts ...JSOpt) (*AccountInfo, error) {
 	o, cancel, err := getJSContextOpts(js.opts, opts...)
 	if err != nil {
@@ -212,13 +186,10 @@ func (js *js) AccountInfo(opts ...JSOpt) (*AccountInfo, error) {
 
 	resp, err := js.nc.RequestWithContext(o.ctx, js.apiSubj(apiAccountInfo), nil)
 	if err != nil {
-<<<<<<< HEAD
 		// todo maybe nats server should never have no responder on this subject and always respond if they know there is no js to be had
 		if err == ErrNoResponders {
 			err = ErrJetStreamNotEnabled
 		}
-=======
->>>>>>> develop
 		return nil, err
 	}
 	var info accountInfoResponse
@@ -289,12 +260,9 @@ func (js *js) AddConsumer(stream string, cfg *ConsumerConfig, opts ...JSOpt) (*C
 		return nil, err
 	}
 	if info.Error != nil {
-<<<<<<< HEAD
 		if info.Error.Code == 404 {
 			return nil, ErrConsumerNotFound
 		}
-=======
->>>>>>> develop
 		return nil, errors.New(info.Error.Description)
 	}
 	return info.ConsumerInfo, nil
@@ -329,15 +297,11 @@ func (js *js) DeleteConsumer(stream, consumer string, opts ...JSOpt) error {
 	if err := json.Unmarshal(r.Data, &resp); err != nil {
 		return err
 	}
-<<<<<<< HEAD
 
 	if resp.Error != nil {
 		if resp.Error.Code == 404 {
 			return ErrConsumerNotFound
 		}
-=======
-	if resp.Error != nil {
->>>>>>> develop
 		return errors.New(resp.Error.Description)
 	}
 	return nil
@@ -604,10 +568,7 @@ func (js *js) AddStream(cfg *StreamConfig, opts ...JSOpt) (*StreamInfo, error) {
 	if resp.Error != nil {
 		return nil, errors.New(resp.Error.Description)
 	}
-<<<<<<< HEAD
 
-=======
->>>>>>> develop
 	return resp.StreamInfo, nil
 }
 
@@ -636,17 +597,12 @@ func (js *js) StreamInfo(stream string, opts ...JSOpt) (*StreamInfo, error) {
 		return nil, err
 	}
 	if resp.Error != nil {
-<<<<<<< HEAD
 		if resp.Error.Code == 404 {
 			return nil, ErrStreamNotFound
 		}
 		return nil, errors.New(resp.Error.Description)
 	}
 
-=======
-		return nil, errors.New(resp.Error.Description)
-	}
->>>>>>> develop
 	return resp.StreamInfo, nil
 }
 
@@ -759,15 +715,11 @@ func (js *js) DeleteStream(name string, opts ...JSOpt) error {
 	if err := json.Unmarshal(r.Data, &resp); err != nil {
 		return err
 	}
-<<<<<<< HEAD
 
 	if resp.Error != nil {
 		if resp.Error.Code == 404 {
 			return ErrStreamNotFound
 		}
-=======
-	if resp.Error != nil {
->>>>>>> develop
 		return errors.New(resp.Error.Description)
 	}
 	return nil
