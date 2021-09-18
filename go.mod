@@ -12,9 +12,9 @@ require (
 	github.com/charlievieth/fs v0.0.1
 	github.com/cloudfoundry/bosh-davcli v0.0.45
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.273
+	github.com/cloudfoundry/bosh-utils v0.0.274
 	github.com/cloudfoundry/gosigar v1.3.2
-	github.com/cloudfoundry/socks5-proxy v0.2.20 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.21 // indirect
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible
@@ -24,7 +24,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/masterzen/winrm v0.0.0-20210623064412-3b76017826b0
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/mitchellh/mapstructure v1.4.2
 	github.com/nats-io/nats.go v1.12.1
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0
@@ -32,8 +32,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/net v0.0.0-20210908191846-a5e095526f91
-	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+	golang.org/x/crypto v0.0.0-20210915214749-c084706c2272
+	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf
+	golang.org/x/sys v0.0.0-20210917161153-d61c044b1678
 	golang.org/x/text v0.3.7 // indirect
 )
