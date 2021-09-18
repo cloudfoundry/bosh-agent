@@ -65,7 +65,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.273
+# github.com/cloudfoundry/bosh-utils v0.0.274
 ## explicit
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -91,7 +91,8 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.18
+# github.com/cloudfoundry/socks5-proxy v0.2.21
+## explicit
 github.com/cloudfoundry/socks5-proxy
 # github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 ## explicit
@@ -141,7 +142,7 @@ github.com/masterzen/simplexml/dom
 ## explicit
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
-# github.com/mitchellh/mapstructure v1.4.1
+# github.com/mitchellh/mapstructure v1.4.2
 ## explicit
 github.com/mitchellh/mapstructure
 # github.com/nats-io/jwt v1.2.2
@@ -231,7 +232,7 @@ go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+# golang.org/x/crypto v0.0.0-20210915214749-c084706c2272
 ## explicit
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -239,16 +240,16 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/internal/poly1305
 golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/md4
-golang.org/x/crypto/poly1305
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 # golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 ## explicit
 golang.org/x/lint
 golang.org/x/lint/golint
-# golang.org/x/net v0.0.0-20210908191846-a5e095526f91
+# golang.org/x/net v0.0.0-20210917221730-978cfadd31cf
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/html
@@ -256,7 +257,7 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+# golang.org/x/sys v0.0.0-20210917161153-d61c044b1678
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
