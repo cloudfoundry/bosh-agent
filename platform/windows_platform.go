@@ -89,7 +89,7 @@ func NewWindowsPlatform(
 		dirProvider:            dirProvider,
 		netManager:             netManager,
 		devicePathResolver:     devicePathResolver,
-		vitalsService:          boshvitals.NewService(collector, dirProvider),
+		vitalsService:          boshvitals.NewService(collector, dirProvider, nil),
 		certManager:            certManager,
 		options:                options,
 		defaultNetworkResolver: defaultNetworkResolver,

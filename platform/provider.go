@@ -72,7 +72,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	// Kick of stats collection as soon as possible
 	statsCollector.StartCollecting(SigarStatsCollectionInterval, nil)
 
-	vitalsService := boshvitals.NewService(statsCollector, dirProvider)
+	vitalsService := boshvitals.NewService(statsCollector, dirProvider, linuxDiskManager.GetMounter())
 
 	ipResolver := boship.NewResolver(boship.NetworkInterfaceToAddrsFunc)
 
