@@ -15,7 +15,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	fakedevicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/disk/diskfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
@@ -1153,7 +1153,7 @@ var _ = Describe("bootstrap", func() {
 				monitRetryable := boshplatform.NewMonitRetryable(runner)
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
-				devicePathResolver := devicepathresolver.NewIdentityDevicePathResolver()
+				devicePathResolver := fakedevicepathresolver.NewFakeDevicePathResolver()
 
 				fakeUUIDGenerator := boshuuid.NewGenerator()
 				routesSearcher := boshnet.NewRoutesSearcher(logger, runner, nil)
