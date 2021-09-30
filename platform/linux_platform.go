@@ -1255,7 +1255,8 @@ func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bo
 func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error) {
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
-		return "", err
+		p.logger.Debug(logTag, "Error getting ephermeral disk path %v", err)
+		return "", nil
 	}
 
 	return realPath, nil
