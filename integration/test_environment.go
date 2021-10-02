@@ -541,7 +541,7 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 	t.sshTunnelProc = newTunnelProc
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
-	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
+	mbusURL := fmt.Sprintf("https://%s:%s@127.0.0.1:16868", mbusUser, mbusPass)
 	client := integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
 
 	for i := 1; i < 90; i++ {
