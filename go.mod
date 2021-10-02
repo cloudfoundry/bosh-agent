@@ -12,9 +12,9 @@ require (
 	github.com/charlievieth/fs v0.0.1
 	github.com/cloudfoundry/bosh-davcli v0.0.45
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.275
+	github.com/cloudfoundry/bosh-utils v0.0.276
 	github.com/cloudfoundry/gosigar v1.3.2
-	github.com/cloudfoundry/socks5-proxy v0.2.22 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.23 // indirect
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.0.0-20210924151903-3ad01bbaa167
-	golang.org/x/sys v0.0.0-20210925032602-92d5a993a665
+	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
+	golang.org/x/sys v0.0.0-20211001092434-39dca1131b70
 	golang.org/x/text v0.3.7 // indirect
 )
