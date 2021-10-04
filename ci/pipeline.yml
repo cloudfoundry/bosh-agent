@@ -45,6 +45,13 @@ resources:
       repository: bosh-cli
       access_token: ((github_read_only_token))
 
+  - name: credhub-cli-github-release
+    type: github-release
+    source:
+      access_token: ((github_read_only_token))
+      owner: cloudfoundry-incubator
+      repository: credhub-cli
+
   - name: bosh-ecosystem-concourse
     type: git
     source:
@@ -175,6 +182,11 @@ jobs:
           - get: bosh-agent-registry-image
           - get: bosh-cli-github-release
             resource: bosh-cli
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+          - get: credhub-cli-github-release
             trigger: true
             params:
               globs:

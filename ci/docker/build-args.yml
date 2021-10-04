@@ -4,6 +4,7 @@ platform: linux
 inputs:
   - name: bosh-cli-github-release
   - name: bosh-agent
+  - name: credhub-cli-github-release
 
 outputs:
   - name: docker-build-args
