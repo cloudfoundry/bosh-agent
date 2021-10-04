@@ -541,13 +541,13 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 	for i := 1; i < 90; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
 		time.Sleep(1 * time.Second)
-		_, err := client.Ping()
+		_, err = client.Ping()
 		if err == nil {
 			break
 		}
 		t.logger.Debug("test environment", err.Error())
 	}
-	return client, nil
+	return client, err
 }
 
 func (t *TestEnvironment) StopAgentTunnel() error {
@@ -555,6 +555,7 @@ func (t *TestEnvironment) StopAgentTunnel() error {
 		return fmt.Errorf("Not running")
 	}
 	t.sshTunnelProc.Wait()
+	t.sshTunnelProc.TerminateNicely(5 * time.Second)
 	t.sshTunnelProc = nil
 	return nil
 }
