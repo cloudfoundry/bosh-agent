@@ -51,10 +51,25 @@ resources:
       uri: git@github.com:pivotal/bosh-ecosystem-concourse.git
       private_key: ((github_deploy_key_bosh_ecosystem_concourse.private_key))
 
-  - name: bosh-ecosystem-docker-image
+  - name: bosh-agent-docker-image
     type: docker-image
     source:
-      repository: bosh/bosh-ecosystem-concourse
+      repository: bosh/agent
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: bosh-agent-registry-image
+    type: registry-image
+    source:
+      repository: bosh/agent
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: golang-registry-image
+    type: registry-image
+    source:
+      repository: golang
+      tag: 1.16
       username: ((docker.username))
       password: ((docker.password))
 
@@ -142,16 +157,37 @@ jobs:
         - get: weekly
           trigger: true
         - get: bosh-agent
-        - get: bosh-ecosystem-docker-image
+        - get: bosh-agent-registry-image
       - task: bump-deps
         file: bosh-agent/ci/tasks/bump-deps.yml
-        image: bosh-ecosystem-docker-image
+        image: bosh-agent-registry-image
       - task: test-unit
         file: bosh-agent/ci/tasks/test-unit.yml
       - put: bosh-agent
         params:
           repository: bosh-agent
           rebase: true
+
+  - name: build-docker-image
+    plan:
+      - in_parallel:
+          - get: bosh-agent
+          - get: bosh-agent-registry-image
+          - get: bosh-cli-github-release
+            resource: bosh-cli
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+          - get: golang-registry-image
+            trigger: true
+      - task: build-docker-args
+        file: bosh-ecosystem-concourse/docker/build-args.yml
+        image: bosh-agent-registry-image
+      - put: bosh-agent-docker-image
+        params:
+          build: bosh-agent/ci/docker/
+          build_args_file: docker-build-args/docker-build-args.json
 
   - name: test-unit
     plan:
@@ -177,12 +213,12 @@ jobs:
           - get: bosh-agent
             trigger: true
           - get: bosh-ecosystem-concourse
-          - get: bosh-ecosystem-docker-image
+          - get: bosh-agent-registry-image
           - get: gcp-stemcell
             trigger: true
       - do:
           - task: update-resurrection-config
-            image: bosh-ecosystem-docker-image
+            image: bosh-agent-registry-image
             config:
               platform: linux
               inputs:
@@ -214,7 +250,7 @@ jobs:
                 stemcell_os: ubuntu-bionic
 
           - task: get-agent-info
-            image: bosh-ecosystem-docker-image
+            image: bosh-agent-registry-image
             config:
               platform: linux
               inputs:
@@ -244,7 +280,7 @@ jobs:
                     credhub get -n /concourse/bosh-agent-integration-main/ssh_creds -k private_key > agent-info/agent-creds.pem
                     chmod 600 agent-info/agent-creds.pem
           - task: test-integration
-            image: bosh-ecosystem-docker-image
+            image: bosh-agent-registry-image
             file: bosh-agent/ci/tasks/test-integration.yml
             params:
               BOSH_DEPLOYMENT: bosh-agent-integration-main
@@ -258,7 +294,7 @@ jobs:
         ensure:
           in_parallel:
             - task: update-resurrection-config
-              image: bosh-ecosystem-docker-image
+              image: bosh-agent-registry-image
               config:
                 platform: linux
                 inputs:
@@ -293,7 +329,7 @@ jobs:
         - get: bosh-agent
           trigger: true
         - get: bosh-ecosystem-concourse
-        - get: bosh-ecosystem-docker-image
+        - get: bosh-agent-registry-image
         - get: aws-stemcell
         - get: bosh-bosh-release
         - get: bpm-bosh-release
@@ -302,7 +338,7 @@ jobs:
           trigger: true
       - do:
         - task: update-resurrection-config
-          image: bosh-ecosystem-docker-image
+          image: bosh-agent-registry-image
           config:
             platform: linux
             inputs:
@@ -332,7 +368,7 @@ jobs:
             vars:
               deployment_name: bosh-agent-integration-windows-main
         - task: get-agent-info
-          image: bosh-ecosystem-docker-image
+          image: bosh-agent-registry-image
           config:
             platform: linux
             inputs:
@@ -382,7 +418,7 @@ jobs:
               - "agent-info/fake_director_ip_vars"
         - task: test-integration
           file: bosh-agent/ci/tasks/test-integration-windows.yml
-          image: bosh-ecosystem-docker-image
+          image: bosh-agent-registry-image
           params:
             AGENT_GATEWAY: 10.0.16.1
             AGENT_NETMASK: 255.255.240.0
@@ -393,7 +429,7 @@ jobs:
           in_parallel:
             - task: clean-credhub
               file: bosh-ecosystem-concourse/tasks/shared/delete-credhub-entries.yml
-              image: bosh-ecosystem-docker-image
+              image: bosh-agent-registry-image
               params:
                 CREDHUB_CA_CERT_STRING: ((iaas_directors_aws-director_bosh_credhub_ca_cert.ca))
                 CREDHUB_CLIENT: ((iaas_directors_aws-director_bosh_credhub_client.username))
@@ -403,7 +439,7 @@ jobs:
                 JUMPBOX_URL: "((iaas_directors_aws-director_bosh_jumpbox_ip)):22"
                 PATH_TO_DELETE: "/concourse/bosh-agent-integration-windows-main"
             - task: update-resurrection-config
-              image: bosh-ecosystem-docker-image
+              image: bosh-agent-registry-image
               config:
                 platform: linux
                 inputs:

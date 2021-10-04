@@ -1,0 +1,12 @@
+---
+platform: linux
+
+inputs:
+  - name: bosh-cli-github-release
+  - name: bosh-agent
+
+outputs:
+  - name: docker-build-args
+
+run:
+  path: bosh-agent/ci/docker/build-args.sh

@@ -1,6 +1,5 @@
 FROM ubuntu
 
-# basic deps {
 RUN \
   apt-get update \
   && apt-get -y upgrade \
@@ -9,21 +8,17 @@ RUN \
     curl \
     git \
     libssl-dev \
+    netcat-openbsd \
     rsync \
     tar \
     wget \
   && apt-get clean
-# }
 
-# vagrant {
-# package manager provides 1.4.3, which is too old for vagrant-aws
-RUN cd /tmp && wget -q https://releases.hashicorp.com/vagrant/2.2.9/vagrant_2.2.9_x86_64.deb \
- && echo "d06038b68a97a38369220838f0d21c50f9f09b693cf0458cad872864bb7ee09b vagrant_2.2.9_x86_64.deb" | sha256sum -c - \
- && dpkg -i vagrant_2.2.9_x86_64.deb
-RUN vagrant plugin install vagrant-aws
-# }
 
-COPY --from=golang:1 /usr/local/go /usr/local/go
+RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_CLI_VERSION}/bosh-cli-${BOSH_CLI_VERSION}-linux-amd64 \
+    -O /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
+
+COPY --from=golang:1.16 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 RUN useradd -ms /bin/bash bosh
