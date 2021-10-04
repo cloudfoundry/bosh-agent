@@ -28,29 +28,17 @@ deployment_name="bosh-agent-integration"
 
 agent_ip="$(cat ${agent_ip_path})"
 
-echo "
-Host ${JUMPBOX_IP}
-  User ${JUMPBOX_USERNAME}
-  IdentityFile ${jumpbox_key_path}
-
-Host ${agent_ip}
-  User vcap
-  IdentityFile ${agent_vm_key_path}
-  ProxyJump ${JUMPBOX_IP}
-" > ~/.ssh/config
-
-ssh_command="ssh ${agent_ip}"
-
-ssh-keyscan -H ${JUMPBOX_IP} >> ~/.ssh/known_hosts 2>/dev/null
-ssh ${JUMPBOX_USERNAME}@${JUMPBOX_IP} "ssh-keyscan -H ${agent_ip}" >> ~/.ssh/known_hosts 2>/dev/null
+export BOSH_ALL_PROXY="ssh+socks5://${JUMPBOX_USERNAME}@${JUMPBOX_IP}:22?private-key=${jumpbox_key_path}"
 
 echo -e "\n Creating agent_test_user"
-${ssh_command} "sudo useradd agent_test_user" >/dev/null 2>&1
-${ssh_command} "sudo usermod -G bosh_sshers,bosh_sudoers agent_test_user" >/dev/null 2>&1
-${ssh_command} "sudo usermod -s /bin/bash agent_test_user" >/dev/null 2>&1
-${ssh_command} "sudo mkdir -p /home/agent_test_user/.ssh" >/dev/null 2>&1
-${ssh_command} "sudo cp /home/vcap/.ssh/authorized_keys /home/agent_test_user/.ssh/authorized_keys" >/dev/null 2>&1
-${ssh_command} "sudo chown -R agent_test_user:agent_test_user /home/agent_test_user/" >/dev/null 2>&1
+bosh ssh -c "sudo useradd agent_test_user &&
+sudo usermod -G bosh_sshers,bosh_sudoers agent_test_user &&
+sudo usermod -s /bin/bash agent_test_user &&
+sudo mkdir -p /home/agent_test_user/.ssh &&
+sudo cp /home/vcap/.ssh/authorized_keys /home/agent_test_user/.ssh/authorized_keys &&
+sudo chown -R agent_test_user:agent_test_user /home/agent_test_user/"
+
+unset BOSH_ALL_PROXY
 
 echo "
 Host ${JUMPBOX_IP}
@@ -61,6 +49,10 @@ Host ${agent_ip}
   IdentityFile ${agent_vm_key_path}
   ProxyJump ${JUMPBOX_IP}
 " > ~/.ssh/config
+
+ssh-keyscan -H ${JUMPBOX_IP} >> ~/.ssh/known_hosts 2>/dev/null
+ssh ${JUMPBOX_USERNAME}@${JUMPBOX_IP} "ssh-keyscan -H ${agent_ip}" >> ~/.ssh/known_hosts 2>/dev/null
+ssh_command="ssh ${agent_ip}"
 
 cd ${bosh_agent_dir}
 echo -e "\n Building agent..."
