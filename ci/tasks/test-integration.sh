@@ -38,6 +38,8 @@ sudo mkdir -p /home/agent_test_user/.ssh &&
 sudo cp /home/vcap/.ssh/authorized_keys /home/agent_test_user/.ssh/authorized_keys &&
 sudo chown -R agent_test_user:agent_test_user /home/agent_test_user/"
 
+unset BOSH_ALL_PROXY
+
 echo "
 Host ${JUMPBOX_IP}
   User ${JUMPBOX_USERNAME}
