@@ -1,4 +1,5 @@
 FROM ubuntu
+ARG BOSH_CLI_VERSION
 
 RUN \
   apt-get update \
