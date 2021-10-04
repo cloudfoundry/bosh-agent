@@ -182,7 +182,7 @@ jobs:
           - get: golang-registry-image
             trigger: true
       - task: build-docker-args
-        file: bosh-ecosystem-concourse/docker/build-args.yml
+        file: bosh-agent/ci/docker/build-args.yml
         image: bosh-agent-registry-image
       - put: bosh-agent-docker-image
         params:
