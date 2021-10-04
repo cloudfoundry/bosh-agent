@@ -247,6 +247,11 @@ jobs:
             image: bosh-ecosystem-docker-image
             file: bosh-agent/ci/tasks/test-integration.yml
             params:
+              BOSH_DEPLOYMENT: bosh-agent-integration-main
+              BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
+              BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
+              BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
+              BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
               JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
               JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
               JUMPBOX_IP: ((iaas_directors_gcp-director_bosh_jumpbox_ip))
