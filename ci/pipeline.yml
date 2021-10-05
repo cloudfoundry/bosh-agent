@@ -52,10 +52,10 @@ resources:
       uri: git@github.com:pivotal/bosh-ecosystem-concourse.git
       private_key: ((github_deploy_key_bosh_ecosystem_concourse.private_key))
 
-  - name: bosh-ecosystem-docker-image
-    type: docker-image
+  - name: bosh-agent-registry-image
+    type: registry-image
     source:
-      repository: bosh/bosh-ecosystem-concourse
+      repository: bosh/agent
       username: ((docker.username))
       password: ((docker.password))
 
@@ -109,10 +109,10 @@ jobs:
         - get: weekly
           trigger: true
         - get: bosh-agent
-        - get: bosh-ecosystem-docker-image
+        - get: bosh-agent-registry-image
       - task: bump-deps
         file: bosh-agent/ci/tasks/bump-deps.yml
-        image: bosh-ecosystem-docker-image
+        image: bosh-agent-registry-image
       - task: test-unit
         file: bosh-agent/ci/tasks/test-unit.yml
       - put: bosh-agent
@@ -134,7 +134,7 @@ jobs:
           - get: bosh-agent
             trigger: true
           - get: bosh-ecosystem-concourse
-          - get: bosh-ecosystem-docker-image
+          - get: bosh-agent-registry-image
           - get: gcp-stemcell
             trigger: true
             params:
@@ -142,7 +142,7 @@ jobs:
                 - "*google*.tgz"
       - do:
           - task: update-resurrection-config
-            image: bosh-ecosystem-docker-image
+            image: bosh-agent-registry-image
             config:
               platform: linux
               inputs:
@@ -174,7 +174,7 @@ jobs:
                 stemcell_os: ubuntu-xenial
 
           - task: get-agent-info
-            image: bosh-ecosystem-docker-image
+            image: bosh-agent-registry-image
             config:
               platform: linux
               inputs:
@@ -204,7 +204,7 @@ jobs:
                     credhub get -n /concourse/bosh-agent-integration-2-234-x/ssh_creds -k private_key > agent-info/agent-creds.pem
                     chmod 600 agent-info/agent-creds.pem
           - task: test-integration
-            image: bosh-ecosystem-docker-image
+            image: bosh-agent-registry-image
             file: bosh-agent/ci/tasks/test-integration.yml
             params:
               BOSH_DEPLOYMENT: bosh-agent-integration-2-234-x
@@ -218,7 +218,7 @@ jobs:
         ensure:
           in_parallel:
             - task: update-resurrection-config
-              image: bosh-ecosystem-docker-image
+              image: bosh-agent-registry-image
               config:
                 platform: linux
                 inputs:
