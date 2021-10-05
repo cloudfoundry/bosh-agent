@@ -1,6 +1,7 @@
 package vitals_test
 
 import (
+	"path"
 	"runtime"
 	"time"
 
@@ -153,9 +154,9 @@ var _ = Describe("Vitals service", func() {
 
 	Context("when no persistent disk is mounted", func() {
 		BeforeEach(func() {
-			mounter.IsMountPointStub = func(path string) (partitionPath string, isMountPoint bool, err error) {
+			mounter.IsMountPointStub = func(folderPath string) (partitionPath string, isMountPoint bool, err error) {
 				partitionPath = "/dev/fake-partition-device"
-				isMountPoint = (path != "/fake/base/dir/store")
+				isMountPoint = path.Base(folderPath) != "store"
 				return
 			}
 		})
