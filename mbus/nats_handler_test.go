@@ -360,7 +360,7 @@ func init() {
 					Expect(result.Addr).To(Equal(expected.Addr))
 					Expect(result.Username).To(Equal(expected.Username))
 					Expect(result.Password).To(Equal(expected.Password))
-					Expect(result.TLSInfo.CertPool).To(Equal(expected.TLSInfo.CertPool))
+					Expect(result.TLSInfo.CertPool.Subjects()).To(Equal(expected.TLSInfo.CertPool.Subjects()))
 					Expect(result.TLSInfo.ClientCert).To(Equal(expected.TLSInfo.ClientCert))
 				})
 
