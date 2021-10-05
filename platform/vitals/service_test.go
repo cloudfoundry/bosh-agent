@@ -1,7 +1,7 @@
 package vitals_test
 
 import (
-	"path"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -156,7 +156,7 @@ var _ = Describe("Vitals service", func() {
 		BeforeEach(func() {
 			mounter.IsMountPointStub = func(folderPath string) (partitionPath string, isMountPoint bool, err error) {
 				partitionPath = "/dev/fake-partition-device"
-				isMountPoint = path.Base(folderPath) != "store"
+				isMountPoint = filepath.Base(folderPath) != "store"
 				return
 			}
 		})
