@@ -1,11 +1,9 @@
 package httpblobprovider_test
 
 import (
-	"net/http"
-	"runtime"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"net/http"
 
 	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-agent/settings"
@@ -70,9 +68,7 @@ var _ = Describe("NewBlobstoreHTTPClient", func() {
 			expectedCertPool, err := boshcrypto.CertPoolFromPEM([]byte(certificate))
 			Expect(err).NotTo(HaveOccurred())
 
-			if runtime.GOOS != "windows" {
-				Expect(client.Transport.(*http.Transport).TLSClientConfig.RootCAs).To(Equal(expectedCertPool))
-			}
+			Expect(client.Transport.(*http.Transport).TLSClientConfig.RootCAs.Subjects()).To(Equal(expectedCertPool.Subjects()))
 		})
 
 		Context("when the ca certificate is not valid", func() {
