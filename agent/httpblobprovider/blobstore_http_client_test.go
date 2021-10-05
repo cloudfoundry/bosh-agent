@@ -69,7 +69,7 @@ var _ = Describe("NewBlobstoreHTTPClient", func() {
 			expectedCertPool, err := boshcrypto.CertPoolFromPEM([]byte(certificate))
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(client.Transport.(*http.Transport).TLSClientConfig.RootCAs).To(Equal(expectedCertPool))
+			Expect(client.Transport.(*http.Transport).TLSClientConfig.RootCAs.Subjects()).To(Equal(expectedCertPool.Subjects()))
 		})
 
 		Context("when the ca certificate is not valid", func() {
