@@ -30,4 +30,4 @@ RUN wget -nv https://github.com/cloudfoundry-incubator/credhub-cli/releases/down
 COPY --from=golang:1.16 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
-RUN useradd -ms /bin/bash bosh && mkdir -p /home/bosh && chown bosh:bosh /home/bosh
+RUN useradd -ms /bin/bash bosh
