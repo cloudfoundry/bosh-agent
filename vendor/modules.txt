@@ -46,7 +46,7 @@ github.com/Microsoft/hcsshim/internal/timeout
 github.com/Microsoft/hcsshim/internal/wclayer
 # github.com/bmatcuk/doublestar v1.3.4
 github.com/bmatcuk/doublestar
-# github.com/charlievieth/fs v0.0.1
+# github.com/charlievieth/fs v0.0.2
 ## explicit
 github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-davcli v0.0.45
@@ -57,7 +57,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.276
+# github.com/cloudfoundry/bosh-utils v0.0.277
 ## explicit
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -83,7 +83,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.23
+# github.com/cloudfoundry/socks5-proxy v0.2.24
 ## explicit
 github.com/cloudfoundry/socks5-proxy
 # github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
@@ -125,7 +125,7 @@ github.com/masterzen/winrm/soap
 github.com/mitchellh/mapstructure
 # github.com/nats-io/jwt v1.2.2
 ## explicit
-# github.com/nats-io/nats.go v1.12.3
+# github.com/nats-io/nats.go v1.13.0
 ## explicit
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
@@ -216,7 +216,7 @@ golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/md4
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
+# golang.org/x/net v0.0.0-20211008194852-3b03d305991f
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/html
@@ -224,7 +224,7 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20211001092434-39dca1131b70
+# golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
