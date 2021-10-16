@@ -14,9 +14,10 @@ require (
 	github.com/cloudfoundry/bosh-init v0.0.103
 	github.com/cloudfoundry/bosh-utils v0.0.278
 	github.com/cloudfoundry/gosigar v1.3.2
+	github.com/cloudfoundry/socks5-proxy v0.2.25 // indirect
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/gofrs/uuid v4.1.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.1.2-0.20190416172445-c2e93f3ae59f
 	github.com/kevinburke/ssh_config v1.1.0
@@ -30,11 +31,10 @@ require (
 	github.com/onsi/gomega v1.16.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
-	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0
-	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
+	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744
 	golang.org/x/text v0.3.7 // indirect
 )
