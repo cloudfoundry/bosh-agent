@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 // Package pathenv returns the OS specific PATH environment variable to use
