@@ -83,7 +83,7 @@ resources:
     type: registry-image
     source:
       repository: golang
-      tag: 1.16
+      tag: 1.17
       username: ((docker.username))
       password: ((docker.password))
 
