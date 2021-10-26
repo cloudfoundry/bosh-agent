@@ -62,7 +62,6 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
-	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
