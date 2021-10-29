@@ -23,6 +23,7 @@ type HTTPMetadataService struct {
 	userdataPath    string
 	instanceIDPath  string
 	sshKeysPath     string
+	tokenPath       string
 	resolver        DNSResolver
 	platform        boshplat.Platform
 	logTag          string
@@ -35,6 +36,7 @@ func NewHTTPMetadataService(
 	userdataPath string,
 	instanceIDPath string,
 	sshKeysPath string,
+	tokenPath string,
 	resolver DNSResolver,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
@@ -46,6 +48,7 @@ func NewHTTPMetadataService(
 		userdataPath:    userdataPath,
 		instanceIDPath:  instanceIDPath,
 		sshKeysPath:     sshKeysPath,
+		tokenPath:       tokenPath,
 		resolver:        resolver,
 		platform:        platform,
 		logTag:          "httpMetadataService",
@@ -92,8 +95,13 @@ func (ms HTTPMetadataService) GetPublicKey() (string, error) {
 		return "", err
 	}
 
+	imdsV2Token, err := ms.getToken()
+	if err != nil {
+		return "", err
+	}
+
 	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.sshKeysPath)
-	resp, err := ms.client.GetCustomized(url, ms.addHeaders())
+	resp, err := ms.client.GetCustomized(url, ms.addHeadersWithToken(imdsV2Token))
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting open ssh key from url %s", url)
 	}
@@ -126,8 +134,13 @@ func (ms HTTPMetadataService) GetInstanceID() (string, error) {
 		return "", err
 	}
 
+	imdsV2Token, err := ms.getToken()
+	if err != nil {
+		return "", err
+	}
+
 	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.instanceIDPath)
-	resp, err := ms.client.GetCustomized(url, ms.addHeaders())
+	resp, err := ms.client.GetCustomized(url, ms.addHeadersWithToken(imdsV2Token))
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting instance id from url %s", url)
 	}
@@ -156,8 +169,13 @@ func (ms HTTPMetadataService) GetValueAtPath(path string) (string, error) {
 		return "", err
 	}
 
+	imdsV2Token, err := ms.getToken()
+	if err != nil {
+		return "", err
+	}
+
 	url := fmt.Sprintf("%s%s", ms.metadataHost, path)
-	resp, err := ms.client.GetCustomized(url, ms.addHeaders())
+	resp, err := ms.client.GetCustomized(url, ms.addHeadersWithToken(imdsV2Token))
 	if err != nil {
 		return "", bosherr.WrapErrorf(err, "Getting value from url %s", url)
 	}
@@ -238,8 +256,13 @@ func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 		return userData, err
 	}
 
+	imdsV2Token, err := ms.getToken()
+	if err != nil {
+		return userData, err
+	}
+
 	userDataURL := fmt.Sprintf("%s%s", ms.metadataHost, ms.userdataPath)
-	userDataResp, err := ms.client.GetCustomized(userDataURL, ms.addHeaders())
+	userDataResp, err := ms.client.GetCustomized(userDataURL, ms.addHeadersWithToken(imdsV2Token))
 	if err != nil {
 		return userData, bosherr.WrapErrorf(err, "request failed from url %s", userDataURL)
 	}
@@ -296,11 +319,48 @@ func (ms HTTPMetadataService) ensureMinimalNetworkSetup() error {
 }
 
 func (ms HTTPMetadataService) addHeaders() func(*http.Request) {
+	return ms.addHeadersWithToken("")
+}
+
+func (ms HTTPMetadataService) addHeadersWithToken(imdsToken string) func(*http.Request) {
 	return func(req *http.Request) {
 		for key, value := range ms.metadataHeaders {
 			req.Header.Add(key, value)
 		}
+		if imdsToken != "" {
+			req.Header.Add("X-aws-ec2-metadata-token", imdsToken)
+		}
 	}
+}
+
+func (ms HTTPMetadataService) ttlHeaders() func(*http.Request) {
+	return func(req *http.Request) {
+		req.Header.Add("X-aws-ec2-metadata-token-ttl-seconds", "300")
+	}
+}
+
+func (ms HTTPMetadataService) getToken()(token string, err error) {
+	if ms.tokenPath == "" { return"", nil }
+
+	ms.logger.Debug(ms.logTag, "Using IMDSv2 with endpoint: %s", ms.tokenPath)
+
+	url := fmt.Sprintf("%s%s", ms.metadataHost, ms.tokenPath)
+	resp, err := ms.client.PutCustomized(url, []byte(""), ms.ttlHeaders())
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "Getting token from url %s", url)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			ms.logger.Warn(ms.logTag, "Failed to close response body when getting token: %s", err.Error())
+		}
+	}()
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Reading instance id response body")
+	}
+
+	return string(bytes), nil
 }
 
 func createRetryClient(delay time.Duration, logger boshlog.Logger) *httpclient.HTTPClient {
