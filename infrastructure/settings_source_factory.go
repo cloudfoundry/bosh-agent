@@ -34,6 +34,7 @@ type HTTPSourceOptions struct {
 	UserDataPath   string
 	InstanceIDPath string
 	SSHKeysPath    string
+	TokenPath      string
 }
 
 func (o HTTPSourceOptions) sourceOptionsInterface() {}
@@ -115,6 +116,7 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 				typedOpts.UserDataPath,
 				typedOpts.InstanceIDPath,
 				typedOpts.SSHKeysPath,
+				typedOpts.TokenPath,
 				resolver,
 				f.platform,
 				f.logger,
