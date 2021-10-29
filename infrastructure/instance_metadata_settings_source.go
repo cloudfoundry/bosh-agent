@@ -42,7 +42,7 @@ func NewInstanceMetadataSettingsSource(
 		logTag: logTag,
 		// The HTTPMetadataService provides more functionality than we need (like custom DNS), so we
 		// pass zero values to the New function and only use its GetValueAtPath method.
-		metadataService: NewHTTPMetadataService(metadataHost, metadataHeaders, "", "", "", nil, platform, logger),
+		metadataService: NewHTTPMetadataService(metadataHost, metadataHeaders, "", "", "", "", nil, platform, logger),
 	}
 }
 
