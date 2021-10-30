@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.2
-	github.com/cloudfoundry/bosh-davcli v0.0.46
+	github.com/cloudfoundry/bosh-davcli v0.0.47
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.284
+	github.com/cloudfoundry/bosh-utils v0.0.287
 	github.com/cloudfoundry/gosigar v1.3.2
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/gofrs/uuid v4.1.0+incompatible
@@ -26,26 +26,24 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.0.0-20211020060615-d418f374d309
-	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359
+	golang.org/x/net v0.0.0-20211029224645-99673261e6eb
+	golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8
 )
 
 require (
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.27 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.29 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rogpeppe/go-internal v1.6.1 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/tools v0.1.1 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

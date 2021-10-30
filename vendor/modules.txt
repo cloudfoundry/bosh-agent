@@ -51,7 +51,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.2
 ## explicit; go 1.15
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.46
+# github.com/cloudfoundry/bosh-davcli v0.0.47
 ## explicit; go 1.17
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -59,7 +59,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.284
+# github.com/cloudfoundry/bosh-utils v0.0.287
 ## explicit; go 1.17
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -86,7 +86,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.27
+# github.com/cloudfoundry/socks5-proxy v0.2.29
 ## explicit; go 1.17
 github.com/cloudfoundry/socks5-proxy
 # github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
@@ -123,8 +123,6 @@ github.com/kevinburke/ssh_config
 # github.com/konsorten/go-windows-terminal-sequences v1.0.2
 ## explicit
 github.com/konsorten/go-windows-terminal-sequences
-# github.com/kr/text v0.2.0
-## explicit
 # github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786
 ## explicit
 github.com/masterzen/simplexml/dom
@@ -219,8 +217,6 @@ github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/rogpeppe/go-internal v1.6.1
-## explicit; go 1.11
 # github.com/sirupsen/logrus v1.4.2
 ## explicit
 github.com/sirupsen/logrus
@@ -244,7 +240,7 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 ## explicit; go 1.12
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20211020060615-d418f374d309
+# golang.org/x/net v0.0.0-20211029224645-99673261e6eb
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -252,7 +248,7 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359
+# golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
