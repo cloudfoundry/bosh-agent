@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.2
 	github.com/cloudfoundry/bosh-davcli v0.0.47
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.287
+	github.com/cloudfoundry/bosh-utils v0.0.288
 	github.com/cloudfoundry/gosigar v1.3.2
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/gofrs/uuid v4.1.0+incompatible
@@ -26,8 +26,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.0.0-20211029224645-99673261e6eb
-	golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8
+	golang.org/x/net v0.0.0-20211101193420-4a448f8816b3
+	golang.org/x/sys v0.0.0-20211101204403-39c9dd37992c
 )
 
 require (
