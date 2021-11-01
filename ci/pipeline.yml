@@ -65,6 +65,11 @@ resources:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: master
 
+  - name: golang-release
+    type: git
+    source:
+      uri: https://github.com/bosh-packages/golang-release.git
+
   - name: gcp-stemcell
     type: pivnet
     source:
@@ -109,15 +114,20 @@ jobs:
         - get: weekly
           trigger: true
         - get: bosh-agent
-        - get: bosh-agent-registry-image
+        - get: golang-release
       - task: bump-deps
-        file: bosh-agent/ci/tasks/bump-deps.yml
-        image: bosh-agent-registry-image
+        file: golang-release/ci/tasks/shared/bump-deps.yml
+        input_mapping:
+          input_repo: bosh-agent
+        output_mapping:
+          output_repo: bumped-bosh-agent
       - task: test-unit
         file: bosh-agent/ci/tasks/test-unit.yml
+        input_mapping:
+          bosh-agent: bumped-bosh-agent
       - put: bosh-agent
         params:
-          repository: bosh-agent
+          repository: bumped-bosh-agent
           rebase: true
 
   - name: test-unit
