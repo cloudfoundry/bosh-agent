@@ -405,7 +405,6 @@ jobs:
           config:
             platform: linux
             inputs:
-              - name: bosh-agent
               - name: bosh-ecosystem-concourse
             outputs:
               - name: agent-info
@@ -432,6 +431,9 @@ jobs:
                   cat ./vm_ips| jq -r '.Tables[].Rows[]  | select( .instance | contains("fake_director")).ips' > agent-info/fake_director_ip
                   echo "ip_address: $(cat agent-info/fake_director_ip)" > agent-info/fake_director_ip_vars
                   credhub get -n /concourse/bosh-agent-integration-windows-main/ssh_creds -k private_key > agent-info/agent-creds.pem
+                  credhub get -n /concourse/bosh-agent-integration-windows-main/client_tls -k ca > agent-info/nats-ca.pem
+                  credhub get -n /concourse/bosh-agent-integration-windows-main/client_tls -k certificate > agent-info/nats-certificate.pem
+                  credhub get -n /concourse/bosh-agent-integration-windows-main/client_tls -k private_key > agent-info/nats-private-key.pem
                   chmod 600 agent-info/agent-creds.pem
         - put: windows-integration-vm-deployment
           params:

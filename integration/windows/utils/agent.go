@@ -108,6 +108,26 @@ func JumpboxKeyPath() string {
 	return os.Getenv("JUMPBOX_KEY_PATH")
 }
 
+func getPemContents(path string) string {
+	contents, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	return string(contents)
+}
+
+func NatsCA() string {
+	return getPemContents(os.Getenv("NATS_CA_PATH"))
+}
+
+func NatsCertificate() string {
+	return getPemContents(os.Getenv("NATS_CERTIFICATE_PATH"))
+}
+
+func NatsPrivateKey() string {
+	return getPemContents(os.Getenv("NATS_PRIVATE_KEY_PATH"))
+}
+
 func GetSSHTunnelClient() (*ssh.Client, error) {
 	key, err := ioutil.ReadFile(JumpboxKeyPath())
 	if err != nil {

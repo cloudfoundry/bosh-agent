@@ -48,3 +48,19 @@ update:
 variables:
   - name: ssh_creds
     type: ssh
+
+  - name: server_ca
+    options:
+      is_ca: true
+      common_name: server_ca
+    type: certificate
+
+  - name: client_tls
+    options:
+      ca: server_ca
+      common_name: client_tls
+      alternative_names:
+        - client_tls
+      extended_key_usage:
+        - client_auth
+    type: certificate

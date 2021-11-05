@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -213,7 +214,7 @@ func (n *NatsClient) Setup() error {
 	n.nc, err = nats.Connect(n.natsURI(), func(options *nats.Options) error {
 		options.CustomDialer = sshClient
 		return nil
-	}, nats.UserInfo("nats", "nats"))
+	}, nats.UserInfo("nats", "nats"), nats.Secure(n.tlsConfig()))
 	if err != nil {
 		return err
 	}
@@ -224,6 +225,15 @@ func (n *NatsClient) Setup() error {
 	}
 	n.alertSub, err = n.nc.SubscribeSync("hm.agent.alert." + agentGUID)
 	return err
+}
+
+func (n *NatsClient) tlsConfig() *tls.Config {
+	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+	tlsConfig.RootCAs = x509.NewCertPool()
+	tlsConfig.RootCAs.AppendCertsFromPEM([]byte(utils.NatsCA()))
+	clientCertificate, _ := tls.X509KeyPair([]byte(utils.NatsCertificate()), []byte(utils.NatsPrivateKey()))
+	tlsConfig.Certificates = []tls.Certificate{clientCertificate}
+	return tlsConfig
 }
 
 func (n *NatsClient) natsURI() string {

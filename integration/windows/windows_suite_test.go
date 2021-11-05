@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"net/http"
@@ -33,6 +34,9 @@ type BoshAgentSettings struct {
 	AgentIP             string
 	AgentNetmask        string
 	AgentGateway        string
+	NatsCA              string
+	NatsCertificate     string
+	NatsPrivateKey      string
 }
 
 func TestWindows(t *testing.T) {
@@ -87,6 +91,9 @@ func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename 
 		AgentIP:             utils.AgentIP(),
 		AgentNetmask:        utils.AgentNetmask(),
 		AgentGateway:        utils.AgentGateway(),
+		NatsCA:              strings.Replace(utils.NatsCA(), "\n", "\\n", -1),
+		NatsCertificate:     strings.Replace(utils.NatsCertificate(), "\n", "\\n", -1),
+		NatsPrivateKey:      strings.Replace(utils.NatsPrivateKey(), "\n", "\\n", -1),
 	}
 	settingsTmpl, err := template.ParseFiles(
 		filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "agent-configuration", "settings.json.tmpl"),
