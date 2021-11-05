@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nats-io/nats.go"
 	"net"
 	"net/url"
 	"os"
@@ -11,8 +12,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-
-	"github.com/cloudfoundry/yagnats"
 
 	"crypto/x509"
 	"time"
@@ -46,9 +45,21 @@ type Handler interface {
 	Stop()
 }
 
+type NatsConnector func(url string, options ...nats.Option) (NatsConnection, error)
+
+//counterfeiter:generate . NatsConnection
+
+type NatsConnection interface {
+	Close()
+	Publish(subj string, data []byte) error
+	Subscribe(subj string, cb nats.MsgHandler) (*nats.Subscription, error)
+	//Subscribe(subject string, f func(natsMsg *nats.Msg)) (interface{}, error)
+}
+
 type natsHandler struct {
 	settingsService boshsettings.Service
-	client          yagnats.NATSClient
+	connector       NatsConnector
+	connection      NatsConnection
 	platform        boshplatform.Platform
 
 	handlerFuncs     []boshhandler.Func
@@ -62,19 +73,31 @@ type natsHandler struct {
 	maxConnectRetryInterval time.Duration
 }
 
+type ConnectionInfo struct {
+	Addr      string
+	IP        string
+	Dial      func(network, address string) (net.Conn, error)
+	TLSConfig *tls.Config
+}
+
+type ConnectionTLSInfo struct {
+	CertPool              *x509.CertPool
+	ClientCert            *tls.Certificate
+	VerifyPeerCertificate func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error
+}
+
 func NewNatsHandler(
 	settingsService boshsettings.Service,
-	client yagnats.NATSClient,
+	client NatsConnector,
 	logger boshlog.Logger,
 	platform boshplatform.Platform,
 	connectRetryInterval time.Duration,
 	maxConnectRetryInterval time.Duration,
 ) Handler {
 	return &natsHandler{
-		settingsService: settingsService,
-		client:          client,
-		platform:        platform,
-
+		settingsService:         settingsService,
+		connector:               client,
+		platform:                platform,
 		logger:                  logger,
 		logTag:                  natsHandlerLogTag,
 		auditLogger:             platform.GetAuditLogger(),
@@ -99,32 +122,31 @@ func (h *natsHandler) Run(handlerFunc boshhandler.Func) error {
 func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	h.RegisterAdditionalFunc(handlerFunc)
 
-	connProvider, err := h.getConnectionInfo()
+	connectionInfo, err := h.getConnectionInfo()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting connection info")
 	}
 
-	h.client.BeforeConnectCallback(func() {
-		hostSplit := strings.Split(connProvider.Addr, ":")
-		ip := hostSplit[0]
-
-		if net.ParseIP(ip) == nil {
-			return
-		}
-
-		err = h.platform.DeleteARPEntryWithIP(ip)
-		if err != nil {
-			h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s", ip)
-		}
-	})
-
 	natsRetryable := boshretry.NewRetryable(func() (bool, error) {
 		h.logger.Info(h.logTag, "Attempting to connect to NATS")
 
-		err := h.client.Connect(connProvider)
+		if net.ParseIP(connectionInfo.IP) != nil {
+			err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
+			if err != nil {
+				h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s", connectionInfo.IP)
+			}
+		}
+
+		var natsOptions []nats.Option
+		if connectionInfo.TLSConfig != nil {
+			natsOptions = append(natsOptions, nats.Secure(connectionInfo.TLSConfig))
+		}
+
+		connection, err := h.connector(connectionInfo.Addr, natsOptions...)
 		if err != nil {
 			return true, bosherr.WrapError(err, "Connecting to NATS")
 		}
+		h.connection = connection
 		return false, nil
 	})
 
@@ -146,7 +168,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 
 	h.logger.Info(h.logTag, "Subscribing to %s", subject)
 
-	_, err = h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
+	_, err = h.connection.Subscribe(subject, func(natsMsg *nats.Msg) {
 		// Do not lock handler funcs around possible network calls!
 		h.handlerFuncsLock.Lock()
 		handlerFuncs := h.handlerFuncs
@@ -183,11 +205,14 @@ func (h *natsHandler) Send(target boshhandler.Target, topic boshhandler.Topic, m
 	settings := h.settingsService.GetSettings()
 
 	subject := fmt.Sprintf("%s.agent.%s.%s", target, topic, settings.AgentID)
-	return h.client.Publish(subject, bytes)
+	if h.connection != nil {
+		return h.connection.Publish(subject, bytes)
+	}
+	return nil
 }
 
 func (h *natsHandler) Stop() {
-	h.client.Disconnect()
+	h.connection.Close()
 }
 
 func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
@@ -204,9 +229,9 @@ func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains []
 	return errors.New("Server Certificate CommonName does not match *.nats.bosh-internal")
 }
 
-func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.Func) {
+func (h *natsHandler) handleNatsMsg(natsMsg *nats.Msg, handlerFunc boshhandler.Func) {
 	respBytes, req, err := boshhandler.PerformHandlerWithJSON(
-		natsMsg.Payload,
+		natsMsg.Data,
 		handlerFunc,
 		responseMaxLength,
 		h.logger,
@@ -219,7 +244,7 @@ func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshha
 	}
 
 	if len(respBytes) > 0 {
-		err = h.client.Publish(req.ReplyTo, respBytes)
+		err = h.connection.Publish(req.ReplyTo, respBytes)
 		if err != nil {
 			h.generateCEFLog(natsMsg, 7, err.Error())
 			h.logger.Error(h.logTag, "Publishing to the client: %s", err.Error())
@@ -231,7 +256,7 @@ func (h *natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshha
 }
 
 func (h *natsHandler) runUntilInterrupted() {
-	defer h.client.Disconnect()
+	defer h.connection.Close()
 
 	keepRunning := true
 
@@ -246,51 +271,44 @@ func (h *natsHandler) runUntilInterrupted() {
 	}
 }
 
-func (h *natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
+func (h *natsHandler) getConnectionInfo() (*ConnectionInfo, error) {
 	settings := h.settingsService.GetSettings()
 
-	natsURL, err := url.Parse(settings.GetMbusURL())
+	connInfo := new(ConnectionInfo)
+	connInfo.Addr = settings.GetMbusURL()
+	natsURL, err := url.Parse(connInfo.Addr)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Parsing Nats URL")
 	}
 
-	connInfo := new(yagnats.ConnectionInfo)
-	connInfo.Addr = natsURL.Host
+	hostSplit := strings.Split(natsURL.Host, ":")
+	connInfo.IP = hostSplit[0]
+
 
 	if settings.Env.IsNATSMutualTLSEnabled() {
-		connInfo.TLSInfo = &yagnats.ConnectionTLSInfo{}
+		connInfo.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 
 		caCert := settings.GetMbusCerts().CA
 		if caCert != "" {
-			connInfo.TLSInfo.CertPool = x509.NewCertPool()
-			if ok := connInfo.TLSInfo.CertPool.AppendCertsFromPEM([]byte(caCert)); !ok {
+			connInfo.TLSConfig.RootCAs = x509.NewCertPool()
+			if ok := connInfo.TLSConfig.RootCAs.AppendCertsFromPEM([]byte(caCert)); !ok {
 				return nil, bosherr.Error("Failed to load Mbus CA cert")
 			}
 		}
 
-		connInfo.TLSInfo.VerifyPeerCertificate = h.VerifyPeerCertificate
+		connInfo.TLSConfig.VerifyPeerCertificate = h.VerifyPeerCertificate
 
 		clientCertificate, err := tls.X509KeyPair([]byte(settings.GetMbusCerts().Certificate), []byte(settings.GetMbusCerts().PrivateKey))
 		if err != nil {
 			return nil, bosherr.WrapError(err, "Parsing certificate and private key")
 		}
-		connInfo.TLSInfo.ClientCert = &clientCertificate
-	}
-
-	user := natsURL.User
-	if user != nil {
-		password, passwordIsSet := user.Password()
-		if !passwordIsSet {
-			return nil, errors.New("No password set for connection")
-		}
-		connInfo.Password = password
-		connInfo.Username = user.Username()
+		connInfo.TLSConfig.Certificates = []tls.Certificate{clientCertificate}
 	}
 
 	return connInfo, nil
 }
 
-func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, statusReason string) {
+func (h *natsHandler) generateCEFLog(natsMsg *nats.Msg, severity int, statusReason string) {
 	cef := boshhandler.NewCommonEventFormat()
 
 	settings := h.settingsService.GetSettings()
@@ -307,7 +325,7 @@ func (h *natsHandler) generateCEFLog(natsMsg *yagnats.Message, severity int, sta
 		Method  string `json:"method"`
 		ReplyTo string `json:"reply_to"`
 	}{}
-	err = json.Unmarshal(natsMsg.Payload, &payload)
+	err = json.Unmarshal(natsMsg.Data, &payload)
 	if err != nil {
 		h.logger.Error(natsHandlerLogTag, err.Error())
 	}

@@ -6,7 +6,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
+	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
+	"github.com/nats-io/nats.go"
 	"io/ioutil"
 	"time"
 
@@ -15,26 +16,28 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	"github.com/cloudfoundry/yagnats"
-	"github.com/cloudfoundry/yagnats/fakeyagnats"
 
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	bosherrors "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() {
 	Describe("natsHandler", func() {
 		var (
-			settingsService *fakesettings.FakeSettingsService
-			client          *fakeyagnats.FakeYagnats
-			logger          boshlog.Logger
-			handler         boshhandler.Handler
-			platform        *platformfakes.FakePlatform
-			auditLogger     *platformfakes.FakeAuditLogger
-			loggerOutBuf    *bytes.Buffer
+			settingsService     *fakesettings.FakeSettingsService
+			connector           NatsConnector
+			connectorURLArg     string
+			connectorOptionsArg []nats.Option
+			connection          *mbusfakes.FakeNatsConnection
+			logger              boshlog.Logger
+			handler             boshhandler.Handler
+			platform            *platformfakes.FakePlatform
+			auditLogger         *platformfakes.FakeAuditLogger
+			loggerOutBuf        *bytes.Buffer
 		)
 
 		BeforeEach(func() {
@@ -47,12 +50,20 @@ func init() {
 
 			loggerOutBuf = bytes.NewBufferString("")
 			logger = boshlog.NewWriterLogger(boshlog.LevelError, loggerOutBuf)
+			connection = &mbusfakes.FakeNatsConnection{}
 
-			client = fakeyagnats.New()
+			connector = func(url string, options ...nats.Option) (NatsConnection, error) {
+				connectorURLArg = url
+				connectorOptionsArg = options
+				return connection, nil
+			}
 			platform = &platformfakes.FakePlatform{}
 			auditLogger = &platformfakes.FakeAuditLogger{}
 			platform.GetAuditLoggerReturns(auditLogger)
-			handler = NewNatsHandler(settingsService, client, logger, platform, time.Millisecond, time.Millisecond)
+		})
+
+		JustBeforeEach(func() {
+			handler = NewNatsHandler(settingsService, connector, logger, platform, time.Millisecond, time.Millisecond)
 		})
 
 		Describe("Start", func() {
@@ -65,17 +76,14 @@ func init() {
 				})
 				defer handler.Stop()
 
-				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
-
-				Expect(client.SubscriptionCount()).To(Equal(1))
-				subscriptions := client.Subscriptions("agent.my-agent-id")
-				Expect(len(subscriptions)).To(Equal(1))
+				Expect(connection.SubscribeCallCount()).To(Equal(1))
+				subj, handler := connection.SubscribeArgsForCall(0)
+				Expect(subj).To(Equal("agent.my-agent-id"))
 
 				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
-				subscription := subscriptions[0]
-				subscription.Callback(&yagnats.Message{
+				handler(&nats.Msg {
 					Subject: "agent.my-agent-id",
-					Payload: expectedPayload,
+					Data: expectedPayload,
 				})
 
 				Expect(receivedRequest).To(Equal(boshhandler.Request{
@@ -84,10 +92,10 @@ func init() {
 					Payload: expectedPayload,
 				}))
 
-				Expect(client.PublishedMessageCount()).To(Equal(1))
-				messages := client.PublishedMessages("reply to me!")
-				Expect(len(messages)).To(Equal(1))
-				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"expected value"}`)))
+				Expect(connection.PublishCallCount()).To(Equal(1))
+				subj, message := connection.PublishArgsForCall(0)
+				Expect(subj).To(Equal("reply to me!"))
+				Expect(message).To(Equal([]byte(`{"value":"expected value"}`)))
 			})
 
 			It("cleans up ip-mac address cache for nats configured with ip address", func() {
@@ -97,7 +105,6 @@ func init() {
 				defer handler.Stop()
 
 				Expect(platform.DeleteARPEntryWithIPArgsForCall(0)).To(Equal("127.0.0.1"))
-				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
 			It("does not try to clean up ip-mac address cache for nats configured with hostname", func() {
@@ -108,7 +115,6 @@ func init() {
 				defer handler.Stop()
 
 				Expect(platform.DeleteARPEntryWithIPCallCount()).To(Equal(0))
-				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
 			It("logs error and proceeds if it fails to clean up ip-mac address cache for nats", func() {
@@ -120,7 +126,6 @@ func init() {
 
 				Expect(platform.DeleteARPEntryWithIPArgsForCall(0)).To(Equal("127.0.0.1"))
 				Expect(loggerOutBuf).To(ContainSubstring("ERROR - Cleaning ip-mac address cache for: 127.0.0.1"))
-				Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
 			})
 
 			It("does not respond if the response is nil", func() {
@@ -130,30 +135,18 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				subscription := client.Subscriptions("agent.my-agent-id")[0]
-				subscription.Callback(&yagnats.Message{
+				_, handler := connection.SubscribeArgsForCall(0)
+				handler(&nats.Msg {
 					Subject: "agent.my-agent-id",
-					Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
+					Data: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 				})
 
-				Expect(client.PublishedMessageCount()).To(Equal(0))
+				Expect(connection.PublishCallCount()).To(Equal(0))
 			})
 
 			It("responds with an error if the response is bigger than 1MB", func() {
 				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
-					// gets inflated by json.Marshal when enveloping
-					size := 0
-
-					switch req.Method {
-					case "small":
-						size = 1024*1024 - 12
-					case "big":
-						size = 1024 * 1024
-					default:
-						panic("unknown request size")
-					}
-
-					chars := make([]byte, size)
+					chars := make([]byte, 1024 * 1024)
 					for i := range chars {
 						chars[i] = 'A'
 					}
@@ -162,22 +155,16 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				subscription := client.Subscriptions("agent.my-agent-id")[0]
-				subscription.Callback(&yagnats.Message{
+				_, handler := connection.SubscribeArgsForCall(0)
+				handler(&nats.Msg {
 					Subject: "agent.my-agent-id",
-					Payload: []byte(`{"method":"small","arguments":[], "reply_to": "fake-reply-to"}`),
+					Data: []byte(`{"method":"big","arguments":[], "reply_to": "fake-reply-to"}`),
 				})
 
-				subscription.Callback(&yagnats.Message{
-					Subject: "agent.my-agent-id",
-					Payload: []byte(`{"method":"big","arguments":[], "reply_to": "fake-reply-to"}`),
-				})
-
-				Expect(client.PublishedMessageCount()).To(Equal(1))
-				messages := client.PublishedMessages("fake-reply-to")
-				Expect(len(messages)).To(Equal(2))
-				Expect(messages[0].Payload).To(MatchRegexp("value"))
-				Expect(messages[1].Payload).To(Equal([]byte(
+				Expect(connection.PublishCallCount()).To(Equal(1))
+				subj, message := connection.PublishArgsForCall(0)
+				Expect(subj).To(Equal("fake-reply-to"))
+				Expect(message).To(Equal([]byte(
 					`{"exception":{"message":"Response exceeded maximum allowed length"}}`)))
 			})
 
@@ -197,10 +184,10 @@ func init() {
 
 				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "fake-reply-to"}`)
 
-				subscription := client.Subscriptions("agent.my-agent-id")[0]
-				subscription.Callback(&yagnats.Message{
+				_, handler := connection.SubscribeArgsForCall(0)
+				handler(&nats.Msg {
 					Subject: "agent.my-agent-id",
-					Payload: expectedPayload,
+					Data: expectedPayload,
 				})
 
 				// Expected requests received by both handlers
@@ -217,11 +204,13 @@ func init() {
 				}))
 
 				// Bosh handler responses were sent
-				Expect(client.PublishedMessageCount()).To(Equal(1))
-				messages := client.PublishedMessages("fake-reply-to")
-				Expect(len(messages)).To(Equal(2))
-				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"first-handler-resp"}`)))
-				Expect(messages[1].Payload).To(Equal([]byte(`{"value":"second-handler-resp"}`)))
+				Expect(connection.PublishCallCount()).To(Equal(2))
+				subj, message := connection.PublishArgsForCall(0)
+				Expect(subj).To(Equal("fake-reply-to"))
+				Expect(message).To(Equal([]byte(`{"value":"first-handler-resp"}`)))
+				subj, message = connection.PublishArgsForCall(1)
+				Expect(subj).To(Equal("fake-reply-to"))
+				Expect(message).To(Equal([]byte(`{"value":"second-handler-resp"}`)))
 			})
 
 			It("has the correct connection info", func() {
@@ -229,28 +218,15 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				Expect(client.ConnectedConnectionProvider()).To(Equal(&yagnats.ConnectionInfo{
-					Addr:     "127.0.0.1:1234",
-					Username: "fake-username",
-					Password: "fake-password",
-				}))
+				Expect(connectorURLArg).To(Equal("nats://fake-username:fake-password@127.0.0.1:1234"))
 			})
 
 			It("does not err when no username and password", func() {
 				settingsService.Settings.Mbus = "nats://127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, client, logger, platform, time.Millisecond, time.Millisecond)
+				handler = NewNatsHandler(settingsService, connector, logger, platform, time.Millisecond, time.Millisecond)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())
-				defer handler.Stop()
-			})
-
-			It("errs when has username without password", func() {
-				settingsService.Settings.Mbus = "nats://foo@127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, client, logger, platform, time.Millisecond, time.Millisecond)
-
-				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-				Expect(err).To(HaveOccurred())
 				defer handler.Stop()
 			})
 
@@ -262,10 +238,10 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					defer handler.Stop()
 
-					subscription := client.Subscriptions("agent.my-agent-id")[0]
-					subscription.Callback(&yagnats.Message{
+					_, handler := connection.SubscribeArgsForCall(0)
+					handler(&nats.Msg {
 						Subject: "agent.my-agent-id",
-						Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
+						Data: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 					})
 
 					msg := `CEF:0|CloudFoundry|BOSH|1|agent_api|ping|1|duser=reply to me! src=127.0.0.1 spt=1234`
@@ -280,10 +256,10 @@ func init() {
 						Expect(err).ToNot(HaveOccurred())
 						defer handler.Stop()
 
-						subscription := client.Subscriptions("agent.my-agent-id")[0]
-						subscription.Callback(&yagnats.Message{
+						_, handler := connection.SubscribeArgsForCall(0)
+						handler(&nats.Msg {
 							Subject: "agent.my-agent-id",
-							Payload: []byte(`bad json`),
+							Data: []byte(`bad json`),
 						})
 
 						Expect(auditLogger.DebugCallCount()).To(Equal(0))
@@ -295,9 +271,7 @@ func init() {
 
 				Context("when NATs handler fails to publish", func() {
 					It("logs to syslog error", func() {
-						client.WhenPublishing("reply to me!", func(*yagnats.Message) error {
-							return errors.New("Oh noes!")
-						})
+						connection.PublishReturns(errors.New("Oh noes!"))
 
 						err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 							return boshhandler.NewValueResponse("responding")
@@ -305,10 +279,10 @@ func init() {
 						Expect(err).ToNot(HaveOccurred())
 						defer handler.Stop()
 
-						subscription := client.Subscriptions("agent.my-agent-id")[0]
-						subscription.Callback(&yagnats.Message{
+						_, handler := connection.SubscribeArgsForCall(0)
+						handler(&nats.Msg {
 							Subject: "agent.my-agent-id",
-							Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
+							Data: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 						})
 
 						Expect(auditLogger.DebugCallCount()).To(Equal(0))
@@ -335,7 +309,7 @@ func init() {
 					}
 				})
 
-				It("sets CertPool and ClientCert on ConnectionInfo", func() {
+				It("sets Client Certificates and Server CA on the TLSConfig", func() {
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 					Expect(err).ToNot(HaveOccurred())
 					defer handler.Stop()
@@ -345,25 +319,15 @@ func init() {
 					Expect(ok).To(BeTrue())
 
 					clientCert, err := tls.LoadX509KeyPair("./test_assets/client-cert.pem", "./test_assets/client-pkey.pem")
+					Expect(err).ToNot(HaveOccurred())
 
-					Expect(err, BeNil())
-
-					result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
-					expected := &yagnats.ConnectionInfo{
-						Addr:     "127.0.0.1:1234",
-						Username: "fake-username",
-						Password: "fake-password",
-						TLSInfo: &yagnats.ConnectionTLSInfo{
-							CertPool:   certPool,
-							ClientCert: &clientCert,
-						},
+					options := nats.Options{}
+					for _, option := range connectorOptionsArg {
+						option(&options)
 					}
 
-					Expect(result.Addr).To(Equal(expected.Addr))
-					Expect(result.Username).To(Equal(expected.Username))
-					Expect(result.Password).To(Equal(expected.Password))
-					Expect(result.TLSInfo.CertPool.Subjects()).To(BeEquivalentTo(expected.TLSInfo.CertPool.Subjects()))
-					Expect(result.TLSInfo.ClientCert).To(Equal(expected.TLSInfo.ClientCert))
+					Expect(options.TLSConfig.RootCAs.Subjects()).To(BeEquivalentTo(certPool.Subjects()))
+					Expect(options.TLSConfig.Certificates[0]).To(Equal(clientCert))
 				})
 
 				It("returns an error if the `ca cert` is provided and invalid", func() {
@@ -372,7 +336,6 @@ func init() {
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Getting connection info: Failed to load Mbus CA cert"))
-					defer handler.Stop()
 				})
 
 				It("returns an error if the client certificate is invalid", func() {
@@ -381,7 +344,6 @@ func init() {
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Getting connection info: Parsing certificate and private key: tls: failed to find any PEM data in certificate input"))
-					defer handler.Stop()
 				})
 
 				It("returns an error if the private key is invalid", func() {
@@ -390,14 +352,13 @@ func init() {
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Getting connection info: Parsing certificate and private key: tls: failed to find any PEM data in key input"))
-					defer handler.Stop()
 				})
 
 				Context("when the VerifyPeerCertificate is called", func() {
 					It("verify certificate common name matches correct pattern", func() {
 						certPath := "test_assets/custom_cert.pem"
 						caPath := "test_assets/ca.pem"
-						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+						err := VerifyPeerCertificateCallback(handler, connectorOptionsArg, certPath, caPath)
 
 						Expect(err).To(BeNil())
 					})
@@ -405,7 +366,7 @@ func init() {
 					It("verify certificate common name does not match the correct pattern", func() {
 						certPath := "test_assets/invalid_cn_cert.pem"
 						caPath := "test_assets/ca.pem"
-						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+						err := VerifyPeerCertificateCallback(handler, connectorOptionsArg, certPath, caPath)
 
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
@@ -414,7 +375,7 @@ func init() {
 					It("verify certificate common name is missing", func() {
 						certPath := "test_assets/missing_cn_cert.pem"
 						caPath := "test_assets/ca.pem"
-						err := testVerifyPeerCertificateCallback(client, handler, certPath, caPath)
+						err := VerifyPeerCertificateCallback(handler, connectorOptionsArg, certPath, caPath)
 
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
@@ -432,118 +393,60 @@ func init() {
 						clientCert, err := tls.LoadX509KeyPair("./test_assets/client-cert.pem", "./test_assets/client-pkey.pem")
 						Expect(err, BeNil())
 
-						result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
-						expected := &yagnats.ConnectionInfo{
-							Addr:     "127.0.0.1:1234",
-							Username: "fake-username",
-							Password: "fake-password",
-							TLSInfo: &yagnats.ConnectionTLSInfo{
-								ClientCert: &clientCert,
-							},
+						options := nats.Options{}
+						for _, option := range connectorOptionsArg {
+							option(&options)
 						}
 
-						Expect(result.TLSInfo.CertPool).To(BeNil())
-						Expect(result.TLSInfo.ClientCert).To(Equal(expected.TLSInfo.ClientCert))
+						Expect(options.TLSConfig.RootCAs).To(BeNil())
+						Expect(options.TLSConfig.Certificates[0]).To(Equal(clientCert))
 					})
 				})
 			})
 
 			Context("when connecting to NATS server fails", func() {
+				var connectCallCount = 0
 				BeforeEach(func() {
-					client.SetConnectErrors([]error{
-						errors.New("error"),
-						errors.New("error"),
-					})
+					connector = func(url string, options ...nats.Option) (NatsConnection, error) {
+						connectCallCount++
+						return nil, errors.New("ConnectError")
+					}
 				})
 
 				It("will retry the max number allowed", func() {
-					var receivedRequest boshhandler.Request
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 
-					err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
-						receivedRequest = req
-						return boshhandler.NewValueResponse("expected value")
-					})
-					defer handler.Stop()
-
-					Expect(err).To(BeNil())
-					Expect(client.GetConnectCallCount()).To(Equal(3))
-
-					Expect(client.ConnectedConnectionProvider()).ToNot(BeNil())
-
-					Expect(client.SubscriptionCount()).To(Equal(1))
-					subscriptions := client.Subscriptions("agent.my-agent-id")
-					Expect(len(subscriptions)).To(Equal(1))
-
-					expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
-					subscription := subscriptions[0]
-					subscription.Callback(&yagnats.Message{
-						Subject: "agent.my-agent-id",
-						Payload: expectedPayload,
-					})
-
-					Expect(receivedRequest).To(Equal(boshhandler.Request{
-						ReplyTo: "reply to me!",
-						Method:  "ping",
-						Payload: expectedPayload,
-					}))
-
-					Expect(client.PublishedMessageCount()).To(Equal(1))
-					messages := client.PublishedMessages("reply to me!")
-					Expect(len(messages)).To(Equal(1))
-					Expect(messages[0].Payload).To(Equal([]byte(`{"value":"expected value"}`)))
-				})
-
-				Context("when exhausting all the retries", func() {
-					BeforeEach(func() {
-						errors := make([]error, 11)
-						for i := 0; i < 11; i++ {
-							errors[i] = fmt.Errorf("Nats Connection Error %d", i+1)
-						}
-						client.SetConnectErrors(errors)
-					})
-
-					It("will return an error", func() {
-						err := handler.Start(func(boshhandler.Request) (resp boshhandler.Response) {
-							return boshhandler.NewValueResponse("expected value")
-						})
-						defer handler.Stop()
-
-						Expect(client.GetConnectCallCount()).To(Equal(10))
-						Expect(err).ToNot(BeNil())
-						Expect(err.Error()).To(ContainSubstring("Nats Connection Error 10"))
-					})
+					middleError := err.(bosherrors.ComplexError).Cause
+					Expect(middleError.(bosherrors.ComplexError).Cause).To(MatchError("ConnectError"))
+					Expect(connectCallCount).To(Equal(10))
 				})
 			})
 		})
 
 		Describe("Send", func() {
 			It("sends the message over nats to a subject that includes the target and topic", func() {
-				errCh := make(chan error, 1)
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					return nil
+				})
+				Expect(err).ToNot(HaveOccurred())
+				defer handler.Stop()
 
 				payload := map[string]string{"key1": "value1", "keyA": "valueA"}
 
-				go func() {
-					errCh <- handler.Send(boshhandler.HealthMonitor, boshhandler.Heartbeat, payload)
-				}()
-
-				var err error
-				select {
-				case err = <-errCh:
-				}
+				err = handler.Send(boshhandler.HealthMonitor, boshhandler.Heartbeat, payload)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(client.PublishedMessageCount()).To(Equal(1))
-				messages := client.PublishedMessages("hm.agent.heartbeat.my-agent-id")
-				Expect(messages).To(HaveLen(1))
-				Expect(messages[0].Payload).To(Equal(
-					[]byte("{\"key1\":\"value1\",\"keyA\":\"valueA\"}"),
-				))
+				Expect(connection.PublishCallCount()).To(Equal(1))
+				subj, message := connection.PublishArgsForCall(0)
+				Expect(subj).To(Equal("hm.agent.heartbeat.my-agent-id"))
+				Expect(message).To(Equal([]byte("{\"key1\":\"value1\",\"keyA\":\"valueA\"}"), ))
 			})
 		})
 	})
+
 }
 
-func testVerifyPeerCertificateCallback(client *fakeyagnats.FakeYagnats, handler boshhandler.Handler, certPath string, caPath string) error {
+func VerifyPeerCertificateCallback(handler boshhandler.Handler, connectorOptionsArg []nats.Option, certPath string, caPath string) error {
 	ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
 
 	correctCnCert, err := ioutil.ReadFile(certPath)
@@ -560,12 +463,16 @@ func testVerifyPeerCertificateCallback(client *fakeyagnats.FakeYagnats, handler 
 	Expect(errHandler).ToNot(HaveOccurred())
 	defer handler.Stop()
 
+	options := nats.Options{}
+	for _, option := range connectorOptionsArg {
+		option(&options)
+	}
+
 	certPool := x509.NewCertPool()
 	ok := certPool.AppendCertsFromPEM(ValidCA)
 	Expect(ok).To(BeTrue())
 
-	result := client.ConnectedConnectionProvider().(*yagnats.ConnectionInfo)
-	callback := result.TLSInfo.VerifyPeerCertificate
+	callback := options.TLSConfig.VerifyPeerCertificate
 
 	raw := [][]byte{correctCnCert, correctCa}
 	verified := [][]*x509.Certificate{{cert, ca}}

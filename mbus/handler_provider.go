@@ -1,17 +1,14 @@
 package mbus
 
 import (
-	"net/url"
-
-	"github.com/cloudfoundry/yagnats"
-
-	"code.cloudfoundry.org/clock"
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/nats-io/nats.go"
+	"net/url"
 )
 
 type HandlerProvider struct {
@@ -49,8 +46,10 @@ func (p HandlerProvider) Get(
 
 	switch mbusURL.Scheme {
 	case "nats":
-		natsClient := NewTimeoutNatsClient(yagnats.NewClient(), clock.NewClock())
-		handler = NewNatsHandler(p.settingsService, natsClient, p.logger, platform, natsConnectRetryInterval, natsConnectMaxRetryInterval)
+		f := func(url string, options ...nats.Option) (NatsConnection, error) {
+			return nats.Connect(url, options...)
+		}
+		handler = NewNatsHandler(p.settingsService, f, p.logger, platform, natsConnectRetryInterval, natsConnectMaxRetryInterval)
 	case "https":
 		mbusKeyPair := p.settingsService.GetSettings().GetMbusCerts()
 		handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, p.logger, p.auditLogger)

@@ -62,7 +62,7 @@ var _ = Describe("An Agent running on Windows", func() {
 	BeforeEach(func() {
 		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\agent.json c:\\bosh\\agent.json")
 		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-disk-settings.json c:\\bosh\\settings.json")
-		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+		agent.StartAgent()
 
 		message := fmt.Sprintf(`{"method":"ping","arguments":[],"reply_to":"%s"}`, senderID)
 

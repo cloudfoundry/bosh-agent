@@ -1,6 +1,8 @@
 package mbus_test
 
 import (
+	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
+	"github.com/nats-io/nats.go"
 	gourl "net/url"
 	"reflect"
 	"time"
@@ -9,11 +11,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	fakeblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/yagnats"
-
-	fakeblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -44,8 +44,10 @@ var _ = Describe("HandlerProvider", func() {
 			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
 
-			// yagnats.NewClient returns new object every time
-			expectedHandler := NewNatsHandler(settingsService, yagnats.NewClient(), logger, platform, time.Second, 1*time.Minute)
+			connector := func(url string, options ...nats.Option) (NatsConnection, error) {
+				return &mbusfakes.FakeNatsConnection{}, nil
+			}
+			expectedHandler := NewNatsHandler(settingsService, connector, logger, platform, time.Second, 1*time.Minute)
 			Expect(reflect.TypeOf(handler)).To(Equal(reflect.TypeOf(expectedHandler)))
 		})
 

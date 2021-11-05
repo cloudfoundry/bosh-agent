@@ -10,6 +10,9 @@ agent_vm_key_path="${workspace_dir}/agent-info/agent-creds.pem"
 agent_ip_path="${workspace_dir}/agent-info/agent_ip"
 fake_director_ip_path="${workspace_dir}/agent-info/fake_director_ip"
 jumpbox_key_path="${workspace_dir}/jumpbox-key.pem"
+nats_ca_path="${workspace_dir}/agent-info/nats-ca.pem"
+nats_certificate_path="${workspace_dir}/agent-info/nats-certificate.pem"
+nats_private_key_path="${workspace_dir}/agent-info/nats-private-key.pem"
 
 mkdir -p ~/.ssh
 
@@ -39,6 +42,7 @@ ssh ${agent_ip} "NET.exe USER vcap Agent-test-password1" > /dev/null 2>&1
 
 echo -e "\n Stopping running agent processes..."
 ssh ${agent_ip} "c:\bosh\service_wrapper.exe stop" > /dev/null 2>&1
+ssh ${agent_ip} "c:\bosh\service_wrapper.exe uninstall" > /dev/null 2>&1
 ssh ${agent_ip} "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-healthcheck-windows" > /dev/null 2>&1
 ssh ${agent_ip} "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-nameserverconfig-windows" > /dev/null 2>&1
 ssh ${agent_ip} "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-windows" > /dev/null 2>&1
@@ -66,5 +70,8 @@ pushd ${bosh_agent_dir} > /dev/null
   export JUMPBOX_IP=${JUMPBOX_IP}
   export JUMPBOX_USERNAME=${JUMPBOX_USERNAME}
   export JUMPBOX_KEY_PATH=${jumpbox_key_path}
+  export NATS_CA_PATH=${nats_ca_path}
+  export NATS_CERTIFICATE_PATH=${nats_certificate_path}
+  export NATS_PRIVATE_KEY_PATH=${nats_private_key_path}
   go run github.com/onsi/ginkgo/ginkgo -race --slowSpecThreshold=300 -trace integration/windows/
 popd > /dev/null

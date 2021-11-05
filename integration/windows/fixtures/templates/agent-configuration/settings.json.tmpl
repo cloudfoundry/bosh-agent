@@ -26,7 +26,15 @@
             "user": "agent"
           }
         }
-      ]
+      ],
+      "mbus": {
+        "cert": {
+          "ca": "{{.NatsCA}}",
+          "private_key": "{{.NatsPrivateKey}}",
+          "certificate": "{{.NatsCertificate}}"
+        },
+        "urls": null
+      }
     }
   },
   "networks": {

@@ -25,14 +25,20 @@
 - type: replace
   path: /instance_groups/name=fake_director/jobs/-
   value:
-    name: nats
+    name: nats-tls
     release: nats
     properties:
       nats:
+        external:
+          tls:
+            ca: ((client_tls.ca))
+            certificate: ((server_tls.certificate))
+            private_key: ((server_tls.private_key))
         machines:
           - ((ip_address))
         user: nats
         password: nats
+        port: 4222
 
 - type: replace
   path: /releases/name=bpm?
@@ -59,19 +65,10 @@
 - type: replace
   path: /variables?/-
   value:
-    name: server_ca
-    options:
-      is_ca: true
-      common_name: server_ca
-    type: certificate
-
-- type: replace
-  path: /variables?/-
-  value:
     name: server_tls
     options:
       ca: server_ca
-      common_name: ((ip_address))
+      common_name: default.nats.bosh-internal
       alternative_names:
         - ((ip_address))
     type: certificate
