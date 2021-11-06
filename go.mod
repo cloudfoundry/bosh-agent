@@ -23,14 +23,14 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.0.0-20211101193420-4a448f8816b3
-	golang.org/x/sys v0.0.0-20211101204403-39c9dd37992c
+	golang.org/x/net v0.0.0-20211105192438-b53810dc28af
+	golang.org/x/sys v0.0.0-20211105183446-c75c47738b0c
 )
 
 require (
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.29 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.30 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
