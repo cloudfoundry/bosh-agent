@@ -312,6 +312,48 @@ func describeHTTPMetadataService() {
 			})
 
 		})
+
+		Context("when a tokenPath is set, but the region does not support IMDSv2 (which could be a thing that could happen, we don't know we can't verify)", func() {
+			var tokenCalls int
+			BeforeEach(func() {
+
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					defer GinkgoRecover()
+
+					// requests for new tokens use the PUT HTTP verb
+					if r.Method == "PUT" {
+						Expect(r.URL.Path).To(Equal("/token"))
+						Expect(r.Header.Get("X-aws-ec2-metadata-token-ttl-seconds")).To(Equal("300"))
+						tokenCalls++
+
+						w.WriteHeader(500)
+						w.Write([]byte("ceci-nest-pas-une-token"))
+						return
+					}
+
+					Expect(r.Method).To(Equal("GET"))
+					Expect(r.URL.Path).To(Equal("/instanceid"))
+					Expect(r.Header.Get("key")).To(Equal("value"))
+					Expect(r.Header.Get("X-aws-ec2-metadata-token")).To(Equal(""))
+
+					w.Write([]byte("fake-instance-id"))
+				})
+				ts = httptest.NewServer(handler)
+
+				metadataService = NewHTTPMetadataService(ts.URL, metadataHeaders, "/user-data", "/instanceid", "/ssh-keys", "/token", dnsResolver, platform, logger)
+			})
+
+			AfterEach(func() {
+				ts.Close()
+			})
+			It("returns fetched instance id", func() {
+				instanceID, err := metadataService.GetInstanceID()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tokenCalls).NotTo(BeZero())
+				Expect(instanceID).To(Equal("fake-instance-id"))
+			})
+
+		})
 	})
 
 	Describe("GetServerName", func() {
