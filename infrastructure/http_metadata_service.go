@@ -353,12 +353,17 @@ func (ms HTTPMetadataService) getToken()(token string, err error) {
 		}
 	}()
 
+	if resp.StatusCode != 200 {
+		return "", nil
+	}
+
 	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Reading instance id response body")
 	}
 
 	return string(bytes), nil
+
 }
 
 func createRetryClient(delay time.Duration, logger boshlog.Logger) *httpclient.HTTPClient {
