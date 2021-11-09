@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20210615191307-5d92ef3894a7
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.2
-	github.com/cloudfoundry/bosh-davcli v0.0.47
+	github.com/cloudfoundry/bosh-davcli v0.0.48
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.288
+	github.com/cloudfoundry/bosh-utils v0.0.289
 	github.com/cloudfoundry/gosigar v1.3.2
 	github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
 	github.com/gofrs/uuid v4.1.0+incompatible
@@ -21,20 +21,20 @@ require (
 	github.com/mitchellh/mapstructure v1.4.2
 	github.com/nats-io/nats.go v1.13.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.16.0
+	github.com/onsi/gomega v1.17.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
-	golang.org/x/net v0.0.0-20211101193420-4a448f8816b3
-	golang.org/x/sys v0.0.0-20211101204403-39c9dd37992c
+	golang.org/x/net v0.0.0-20211108170745-6635138e15ea
+	golang.org/x/sys v0.0.0-20211108224332-cbcd623f202e
 )
 
 require (
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.29 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.30 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
