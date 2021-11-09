@@ -5,20 +5,22 @@ import (
 	"github.com/cloudfoundry/bosh-utils/system"
 )
 
-//go:generate counterfeiter -o fakes/fake_windows_disk_formatter.go . WindowsDiskFormatter
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
+//counterfeiter:generate -o fakes/fake_windows_disk_formatter.go . WindowsDiskFormatter
 
 type WindowsDiskFormatter interface {
 	Format(diskNumber, partitionNumber string) error
 }
 
-//go:generate counterfeiter -o fakes/fake_windows_disk_linker.go . WindowsDiskLinker
+//counterfeiter:generate -o fakes/fake_windows_disk_linker.go . WindowsDiskLinker
 
 type WindowsDiskLinker interface {
 	LinkTarget(location string) (target string, err error)
 	Link(location, target string) error
 }
 
-//go:generate counterfeiter -o fakes/fake_windows_disk_partitioner.go . WindowsDiskPartitioner
+//counterfeiter:generate -o fakes/fake_windows_disk_partitioner.go . WindowsDiskPartitioner
 
 type WindowsDiskPartitioner interface {
 	GetCountOnDisk(diskNumber string) (string, error)
@@ -28,7 +30,7 @@ type WindowsDiskPartitioner interface {
 	AssignDriveLetter(diskNumber, partitionNumber string) (string, error)
 }
 
-//go:generate counterfeiter -o fakes/fake_windows_disk_protector.go . WindowsDiskProtector
+//counterfeiter:generate -o fakes/fake_windows_disk_protector.go . WindowsDiskProtector
 
 type WindowsDiskProtector interface {
 	CommandExists() bool

@@ -10,7 +10,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-//go:generate counterfeiter . MACAddressDetector
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . MACAddressDetector
 
 type MACAddressDetector interface {
 	DetectMacAddresses() (map[string]string, error)

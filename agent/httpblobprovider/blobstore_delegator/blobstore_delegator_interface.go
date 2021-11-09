@@ -4,7 +4,7 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-//go:generate counterfeiter . BlobstoreDelegator
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . BlobstoreDelegator
 
 type BlobstoreDelegator interface {
 	Get(digest boshcrypto.Digest, signedURL, blobID string, headers map[string]string) (fileName string, err error)

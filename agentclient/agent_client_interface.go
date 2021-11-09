@@ -2,7 +2,7 @@ package agentclient
 
 import "github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 
-//go:generate counterfeiter -o fakes/fake_agent_client.go agent_client_interface.go AgentClient
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_agent_client.go . AgentClient
 
 type AgentClient interface {
 	Ping() (string, error)

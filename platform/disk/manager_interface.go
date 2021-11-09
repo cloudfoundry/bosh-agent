@@ -1,6 +1,6 @@
 package disk
 
-//go:generate counterfeiter . Manager
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Manager
 
 type Manager interface {
 	GetEphemeralDevicePartitioner() Partitioner

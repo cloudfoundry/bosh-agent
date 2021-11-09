@@ -6,7 +6,7 @@ import (
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 )
 
-//go:generate counterfeiter . ScriptParams
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ScriptParams
 
 type ScriptParams interface {
 	JobChange() (change string)

@@ -57,15 +57,16 @@ func (fake *FakeJobScriptProvider) NewDrainScript(arg1 string, arg2 drain.Script
 		arg1 string
 		arg2 drain.ScriptParams
 	}{arg1, arg2})
+	stub := fake.NewDrainScriptStub
+	fakeReturns := fake.newDrainScriptReturns
 	fake.recordInvocation("NewDrainScript", []interface{}{arg1, arg2})
 	fake.newDrainScriptMutex.Unlock()
-	if fake.NewDrainScriptStub != nil {
-		return fake.NewDrainScriptStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.newDrainScriptReturns
 	return fakeReturns.result1
 }
 
@@ -123,15 +124,16 @@ func (fake *FakeJobScriptProvider) NewParallelScript(arg1 string, arg2 []script.
 		arg1 string
 		arg2 []script.Script
 	}{arg1, arg2Copy})
+	stub := fake.NewParallelScriptStub
+	fakeReturns := fake.newParallelScriptReturns
 	fake.recordInvocation("NewParallelScript", []interface{}{arg1, arg2Copy})
 	fake.newParallelScriptMutex.Unlock()
-	if fake.NewParallelScriptStub != nil {
-		return fake.NewParallelScriptStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.newParallelScriptReturns
 	return fakeReturns.result1
 }
 
@@ -185,15 +187,16 @@ func (fake *FakeJobScriptProvider) NewScript(arg1 string, arg2 string, arg3 map[
 		arg2 string
 		arg3 map[string]string
 	}{arg1, arg2, arg3})
+	stub := fake.NewScriptStub
+	fakeReturns := fake.newScriptReturns
 	fake.recordInvocation("NewScript", []interface{}{arg1, arg2, arg3})
 	fake.newScriptMutex.Unlock()
-	if fake.NewScriptStub != nil {
-		return fake.NewScriptStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.newScriptReturns
 	return fakeReturns.result1
 }
 

@@ -9,7 +9,7 @@ import (
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
-//go:generate counterfeiter . RequestRetryable
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . RequestRetryable
 
 type RequestRetryable interface {
 	Attempt() (bool, error)

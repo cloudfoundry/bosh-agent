@@ -83,15 +83,16 @@ func (fake *FakeWindowsDiskPartitioner) AssignDriveLetter(arg1 string, arg2 stri
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.AssignDriveLetterStub
+	fakeReturns := fake.assignDriveLetterReturns
 	fake.recordInvocation("AssignDriveLetter", []interface{}{arg1, arg2})
 	fake.assignDriveLetterMutex.Unlock()
-	if fake.AssignDriveLetterStub != nil {
-		return fake.AssignDriveLetterStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.assignDriveLetterReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -146,15 +147,16 @@ func (fake *FakeWindowsDiskPartitioner) GetCountOnDisk(arg1 string) (string, err
 	fake.getCountOnDiskArgsForCall = append(fake.getCountOnDiskArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.GetCountOnDiskStub
+	fakeReturns := fake.getCountOnDiskReturns
 	fake.recordInvocation("GetCountOnDisk", []interface{}{arg1})
 	fake.getCountOnDiskMutex.Unlock()
-	if fake.GetCountOnDiskStub != nil {
-		return fake.GetCountOnDiskStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getCountOnDiskReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -209,15 +211,16 @@ func (fake *FakeWindowsDiskPartitioner) GetFreeSpaceOnDisk(arg1 string) (int, er
 	fake.getFreeSpaceOnDiskArgsForCall = append(fake.getFreeSpaceOnDiskArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.GetFreeSpaceOnDiskStub
+	fakeReturns := fake.getFreeSpaceOnDiskReturns
 	fake.recordInvocation("GetFreeSpaceOnDisk", []interface{}{arg1})
 	fake.getFreeSpaceOnDiskMutex.Unlock()
-	if fake.GetFreeSpaceOnDiskStub != nil {
-		return fake.GetFreeSpaceOnDiskStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getFreeSpaceOnDiskReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -272,15 +275,16 @@ func (fake *FakeWindowsDiskPartitioner) InitializeDisk(arg1 string) error {
 	fake.initializeDiskArgsForCall = append(fake.initializeDiskArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.InitializeDiskStub
+	fakeReturns := fake.initializeDiskReturns
 	fake.recordInvocation("InitializeDisk", []interface{}{arg1})
 	fake.initializeDiskMutex.Unlock()
-	if fake.InitializeDiskStub != nil {
-		return fake.InitializeDiskStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.initializeDiskReturns
 	return fakeReturns.result1
 }
 
@@ -332,15 +336,16 @@ func (fake *FakeWindowsDiskPartitioner) PartitionDisk(arg1 string) (string, erro
 	fake.partitionDiskArgsForCall = append(fake.partitionDiskArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.PartitionDiskStub
+	fakeReturns := fake.partitionDiskReturns
 	fake.recordInvocation("PartitionDisk", []interface{}{arg1})
 	fake.partitionDiskMutex.Unlock()
-	if fake.PartitionDiskStub != nil {
-		return fake.PartitionDiskStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.partitionDiskReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

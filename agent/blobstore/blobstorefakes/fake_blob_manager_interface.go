@@ -84,15 +84,16 @@ func (fake *FakeBlobManagerInterface) BlobExists(arg1 string) bool {
 	fake.blobExistsArgsForCall = append(fake.blobExistsArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.BlobExistsStub
+	fakeReturns := fake.blobExistsReturns
 	fake.recordInvocation("BlobExists", []interface{}{arg1})
 	fake.blobExistsMutex.Unlock()
-	if fake.BlobExistsStub != nil {
-		return fake.BlobExistsStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.blobExistsReturns
 	return fakeReturns.result1
 }
 
@@ -144,15 +145,16 @@ func (fake *FakeBlobManagerInterface) Delete(arg1 string) error {
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.DeleteStub
+	fakeReturns := fake.deleteReturns
 	fake.recordInvocation("Delete", []interface{}{arg1})
 	fake.deleteMutex.Unlock()
-	if fake.DeleteStub != nil {
-		return fake.DeleteStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.deleteReturns
 	return fakeReturns.result1
 }
 
@@ -204,15 +206,16 @@ func (fake *FakeBlobManagerInterface) Fetch(arg1 string) (system.File, int, erro
 	fake.fetchArgsForCall = append(fake.fetchArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.FetchStub
+	fakeReturns := fake.fetchReturns
 	fake.recordInvocation("Fetch", []interface{}{arg1})
 	fake.fetchMutex.Unlock()
-	if fake.FetchStub != nil {
-		return fake.FetchStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	fakeReturns := fake.fetchReturns
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
@@ -271,15 +274,16 @@ func (fake *FakeBlobManagerInterface) GetPath(arg1 string, arg2 crypto.Digest) (
 		arg1 string
 		arg2 crypto.Digest
 	}{arg1, arg2})
+	stub := fake.GetPathStub
+	fakeReturns := fake.getPathReturns
 	fake.recordInvocation("GetPath", []interface{}{arg1, arg2})
 	fake.getPathMutex.Unlock()
-	if fake.GetPathStub != nil {
-		return fake.GetPathStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getPathReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -335,15 +339,16 @@ func (fake *FakeBlobManagerInterface) Write(arg1 string, arg2 io.Reader) error {
 		arg1 string
 		arg2 io.Reader
 	}{arg1, arg2})
+	stub := fake.WriteStub
+	fakeReturns := fake.writeReturns
 	fake.recordInvocation("Write", []interface{}{arg1, arg2})
 	fake.writeMutex.Unlock()
-	if fake.WriteStub != nil {
-		return fake.WriteStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.writeReturns
 	return fakeReturns.result1
 }
 

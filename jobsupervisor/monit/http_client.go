@@ -14,7 +14,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-//go:generate counterfeiter . HTTPClient
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . HTTPClient
 
 type HTTPClient interface {
 	Do(request *http.Request) (*http.Response, error)

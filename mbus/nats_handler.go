@@ -36,6 +36,8 @@ const (
 	natsConnectMaxRetryInterval = 1 * time.Minute
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
 type Handler interface {
 	Run(boshhandler.Func) error
 	Start(boshhandler.Func) error

@@ -11,7 +11,7 @@ import (
 
 type PrefixDetector struct{}
 
-//go:generate counterfeiter . Detector
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Detector
 
 type Detector interface {
 	Detect(tgz string, path string) (bool, error)

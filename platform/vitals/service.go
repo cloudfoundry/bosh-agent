@@ -11,7 +11,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
-//go:generate counterfeiter . Service
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Service
 
 type Service interface {
 	Get() (vitals Vitals, err error)

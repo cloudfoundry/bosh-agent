@@ -28,7 +28,7 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
-//go:generate counterfeiter -o fakes/fake_windows_disk_manager.go . WindowsDiskManager
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_windows_disk_manager.go . WindowsDiskManager
 
 type WindowsDiskManager interface {
 	GetFormatter() disk.WindowsDiskFormatter

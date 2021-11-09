@@ -1,6 +1,6 @@
 package openiscsi
 
-//go:generate counterfeiter -o fakes/fake_open_iscsi.go . OpenIscsi
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . OpenIscsi
 
 type OpenIscsi interface {
 	Setup(iqn, username, password string) (err error)

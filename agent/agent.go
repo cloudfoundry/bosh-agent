@@ -26,7 +26,7 @@ var (
 	HeartbeatRetryInterval = 1 * time.Second
 )
 
-//go:generate counterfeiter . StartManager
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StartManager
 
 type StartManager interface {
 	CanStart() bool

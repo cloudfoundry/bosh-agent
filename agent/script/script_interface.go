@@ -4,7 +4,9 @@ import (
 	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
 )
 
-//go:generate counterfeiter . JobScriptProvider
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
+//counterfeiter:generate . JobScriptProvider
 
 type JobScriptProvider interface {
 	NewScript(jobName string, scriptName string, scriptEnv map[string]string) Script
@@ -12,7 +14,7 @@ type JobScriptProvider interface {
 	NewParallelScript(scriptName string, scripts []Script) CancellableScript
 }
 
-//go:generate counterfeiter . Script
+//counterfeiter:generate . Script
 
 type Script interface {
 	Tag() string
@@ -22,7 +24,7 @@ type Script interface {
 	Run() error
 }
 
-//go:generate counterfeiter . CancellableScript
+//counterfeiter:generate . CancellableScript
 
 type CancellableScript interface {
 	Script

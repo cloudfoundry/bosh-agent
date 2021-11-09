@@ -10,7 +10,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-//go:generate counterfeiter . Manager
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Manager
 
 // Manager is a set of operations for manipulating the set of trusted CA certificates
 // on any OS platform.

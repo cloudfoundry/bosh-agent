@@ -1,6 +1,6 @@
 package disk
 
-//go:generate counterfeiter . Mounter
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Mounter
 
 type Mounter interface {
 	Mount(partitionPath, mountPoint string, mountOptions ...string) (err error)

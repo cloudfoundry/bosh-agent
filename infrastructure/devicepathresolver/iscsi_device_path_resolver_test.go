@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	fakeopeniscsi "github.com/cloudfoundry/bosh-agent/platform/openiscsi/fakes"
+	"github.com/cloudfoundry/bosh-agent/platform/openiscsi/openiscsifakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -24,7 +24,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 		password      string
 
 		runner                  *fakesys.FakeCmdRunner
-		openiscsi               *fakeopeniscsi.FakeOpenIscsi
+		openiscsi               *openiscsifakes.FakeOpenIscsi
 		fs                      *fakesys.FakeFileSystem
 		dirProvider             boshdirs.Provider
 		diskSettings            boshsettings.DiskSettings
@@ -39,7 +39,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 		password = "fake-password"
 
 		runner = fakesys.NewFakeCmdRunner()
-		openiscsi = &fakeopeniscsi.FakeOpenIscsi{}
+		openiscsi = &openiscsifakes.FakeOpenIscsi{}
 		fs = fakesys.NewFakeFileSystem()
 		dirProvider = boshdirs.NewProvider("/fake-base-dir")
 

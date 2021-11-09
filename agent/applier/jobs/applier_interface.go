@@ -4,7 +4,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 )
 
-//go:generate counterfeiter . Applier
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Applier
 
 type Applier interface {
 	Prepare(job models.Job) error

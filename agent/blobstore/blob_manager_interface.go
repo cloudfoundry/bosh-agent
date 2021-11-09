@@ -7,7 +7,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-//go:generate counterfeiter . BlobManagerInterface
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . BlobManagerInterface
 
 type BlobManagerInterface interface {
 	Fetch(blobID string) (boshsys.File, int, error)
