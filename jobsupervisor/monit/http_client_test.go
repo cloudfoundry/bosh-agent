@@ -72,7 +72,7 @@ var _ = Describe("httpClient", func() {
 
 			content, err := ioutil.ReadAll(req.Body)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(content)).To(Equal("action=start"))
+			Expect(string(content)).To(ContainSubstring("action=start"))
 		})
 	})
 
@@ -118,7 +118,7 @@ var _ = Describe("httpClient", func() {
 
 			content, err := ioutil.ReadAll(req.Body)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(content)).To(Equal("action=stop"))
+			Expect(string(content)).To(ContainSubstring("action=stop"))
 		})
 	})
 
@@ -165,7 +165,7 @@ var _ = Describe("httpClient", func() {
 
 			content, err := ioutil.ReadAll(req.Body)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(content)).To(Equal("action=unmonitor"))
+			Expect(string(content)).To(ContainSubstring("action=unmonitor"))
 		})
 	})
 

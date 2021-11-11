@@ -29,6 +29,7 @@ type httpClient struct {
 	username        string
 	password        string
 	logger          boshlog.Logger
+	securityToken   string
 }
 
 // NewHTTPClient creates a new monit client
@@ -50,6 +51,7 @@ func NewHTTPClient(
 		unmonitorClient: longClient,
 		statusClient:    shortClient,
 		logger:          logger,
+		securityToken:   "",
 	}
 }
 
@@ -68,7 +70,11 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 }
 
 func (c httpClient) StartService(serviceName string) error {
-	response, err := c.makeRequest(c.startClient, c.monitURL(serviceName), "POST", "action=start")
+	data := url.Values{}
+	data.Set("action", "start")
+	data.Set("securitytoken", c.securityToken)
+	response, err := c.makeRequest(c.startClient, c.monitURL(serviceName), "POST", data.Encode())
+
 	if err != nil {
 		return bosherr.WrapError(err, "Sending start request to monit")
 	}
@@ -83,12 +89,14 @@ func (c httpClient) StartService(serviceName string) error {
 }
 
 func (c httpClient) StopService(serviceName string) error {
-	response, err := c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "action=stop")
+	data := url.Values{}
+	data.Set("action", "stop")
+	data.Set("securitytoken", c.securityToken)
+	response, err := c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", data.Encode())
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Sending stop request for service '%s'", serviceName)
 	}
 	defer response.Body.Close()
-
 	err = c.validateResponse(response)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Stopping Monit service '%s'", serviceName)
@@ -98,7 +106,10 @@ func (c httpClient) StopService(serviceName string) error {
 }
 
 func (c httpClient) UnmonitorService(serviceName string) error {
-	response, err := c.makeRequest(c.unmonitorClient, c.monitURL(serviceName), "POST", "action=unmonitor")
+	data := url.Values{}
+	data.Set("action", "unmonitor")
+	data.Set("securitytoken", c.securityToken)
+	response, err := c.makeRequest(c.unmonitorClient, c.monitURL(serviceName), "POST", data.Encode())
 	if err != nil {
 		return bosherr.WrapError(err, "Sending unmonitor request to monit")
 	}
@@ -171,7 +182,11 @@ func (c httpClient) validateResponse(response *http.Response) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Reading body of failed Monit response")
 	}
-
+	for _, cookie := range response.Cookies() {
+		if cookie.Name == "securitytoken" {
+			c.securityToken = cookie.Value
+		}
+	}
 	c.logger.Debug("http-client", "Request failed with %s: %s", response.Status, string(body))
 
 	return bosherr.Errorf("Request failed with %s: %s", response.Status, string(body))
