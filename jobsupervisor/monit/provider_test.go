@@ -2,6 +2,7 @@ package monit_test
 
 import (
 	"net/http"
+	"net/http/cookiejar"
 	"time"
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
@@ -25,8 +26,11 @@ var _ = Describe("clientProvider", func() {
 
 		client, err := NewProvider(platform, logger).Get()
 		Expect(err).ToNot(HaveOccurred())
-
-		httpClient := http.DefaultClient
+		jar, err := cookiejar.New(nil)
+		if err != nil {
+			panic(err)
+		}
+		httpClient := &http.Client{Jar: jar}
 
 		shortHTTPClient := httpclient.NewRetryClient(httpClient, 20, 1*time.Second, logger)
 		longHTTPClient := NewMonitRetryClient(httpClient, 300, 20, 1*time.Second, logger)

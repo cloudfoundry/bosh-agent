@@ -2,6 +2,7 @@ package monit
 
 import (
 	"net/http"
+	"net/http/cookiejar"
 	"time"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -29,8 +30,12 @@ type clientProvider struct {
 }
 
 func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientProvider {
-	httpClient := http.DefaultClient
 
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		panic(err)
+	}
+	httpClient := &http.Client{Jar: jar}
 	shortHTTPClient := httpclient.NewRetryClient(
 		httpClient,
 		shortRetryStrategyAttempts,
