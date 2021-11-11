@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/smtp"
 	"os"
@@ -101,8 +102,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			client.Incarnations = []int{1, 1, 1, 2, 3}
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Monitored: true, Status: "failing"},
-					boshmonit.Service{Monitored: true, Status: "running"},
+					{Monitored: true, Status: "failing"},
+					{Monitored: true, Status: "running"},
 				},
 				Incarnation: 1,
 			}
@@ -123,8 +124,8 @@ var _ = Describe("monitJobSupervisor", func() {
 
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Monitored: true, Status: "failing"},
-					boshmonit.Service{Monitored: true, Status: "running"},
+					{Monitored: true, Status: "failing"},
+					{Monitored: true, Status: "running"},
 				},
 				Incarnation: 1,
 			}
@@ -149,8 +150,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			client.Incarnations = []int{2, 2, 1} // different and less than old one
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Monitored: true, Status: "failing"},
-					boshmonit.Service{Monitored: true, Status: "running"},
+					{Monitored: true, Status: "failing"},
+					{Monitored: true, Status: "running"},
 				},
 				Incarnation: 2,
 			}
@@ -279,12 +280,16 @@ var _ = Describe("monitJobSupervisor", func() {
 			defer ts.Close()
 
 			url := ts.Listener.Addr().String()
+			jar, err := cookiejar.New(nil)
+			if err != nil {
+				panic(err)
+			}
 			client := boshmonit.NewHTTPClient(
 				url,
 				"fake-user",
 				"fake-pass",
-				http.DefaultClient,
-				http.DefaultClient,
+				&http.Client{Jar: jar},
+				&http.Client{Jar: jar},
 				logger,
 			)
 
@@ -303,7 +308,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				timeService,
 			)
 
-			err := monit.StopAndWait()
+			err = monit.StopAndWait()
 			Expect(err).To(BeNil())
 		})
 
@@ -483,12 +488,16 @@ var _ = Describe("monitJobSupervisor", func() {
 				defer ts.Close()
 
 				url := ts.Listener.Addr().String()
+				jar, err := cookiejar.New(nil)
+				if err != nil {
+					panic(err)
+				}
 				client := boshmonit.NewHTTPClient(
 					url,
 					"fake-user",
 					"fake-pass",
-					http.DefaultClient,
-					http.DefaultClient,
+					&http.Client{Jar: jar},
+					&http.Client{Jar: jar},
 					logger,
 				)
 
@@ -507,7 +516,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					timeService,
 				)
 
-				err := monit.StopAndWait()
+				err = monit.StopAndWait()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("Stopping services '[test-service]' errored"))
 			})
@@ -536,12 +545,16 @@ var _ = Describe("monitJobSupervisor", func() {
 				defer ts.Close()
 
 				url := ts.Listener.Addr().String()
+				jar, err := cookiejar.New(nil)
+				if err != nil {
+					panic(err)
+				}
 				client := boshmonit.NewHTTPClient(
 					url,
 					"fake-user",
 					"fake-pass",
-					http.DefaultClient,
-					http.DefaultClient,
+					&http.Client{Jar: jar},
+					&http.Client{Jar: jar},
 					logger,
 				)
 
@@ -581,8 +594,8 @@ var _ = Describe("monitJobSupervisor", func() {
 		It("status returns running when all services are monitored and running", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Monitored: true, Status: "running"},
-					boshmonit.Service{Monitored: true, Status: "running"},
+					{Monitored: true, Status: "running"},
+					{Monitored: true, Status: "running"},
 				},
 			}
 
@@ -593,8 +606,8 @@ var _ = Describe("monitJobSupervisor", func() {
 		It("status returns failing when all services are monitored and at least one service is failing", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Monitored: true, Status: "failing"},
-					boshmonit.Service{Monitored: true, Status: "running"},
+					{Monitored: true, Status: "failing"},
+					{Monitored: true, Status: "running"},
 				},
 			}
 
@@ -605,8 +618,8 @@ var _ = Describe("monitJobSupervisor", func() {
 		It("status returns failing when at least one service is not monitored", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Monitored: false, Status: "running"},
-					boshmonit.Service{Monitored: true, Status: "running"},
+					{Monitored: false, Status: "running"},
+					{Monitored: true, Status: "running"},
 				},
 			}
 
@@ -617,9 +630,9 @@ var _ = Describe("monitJobSupervisor", func() {
 		It("status returns start when at least one service is starting", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{Monitored: true, Status: "failing"},
-					boshmonit.Service{Monitored: true, Status: "starting"},
-					boshmonit.Service{Monitored: true, Status: "running"},
+					{Monitored: true, Status: "failing"},
+					{Monitored: true, Status: "starting"},
+					{Monitored: true, Status: "running"},
 				},
 			}
 
@@ -660,7 +673,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		It("returns all processes", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
-					boshmonit.Service{
+					{
 						Name:                 "fake-service-1",
 						Monitored:            true,
 						Status:               "running",
@@ -669,7 +682,7 @@ var _ = Describe("monitJobSupervisor", func() {
 						MemoryKilobytesTotal: 100,
 						CPUPercentTotal:      0.5,
 					},
-					boshmonit.Service{
+					{
 						Name:                 "fake-service-2",
 						Monitored:            true,
 						Status:               "failing",
@@ -684,7 +697,7 @@ var _ = Describe("monitJobSupervisor", func() {
 			processes, err := monit.Processes()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(processes).To(Equal([]Process{
-				Process{
+				{
 					Name:  "fake-service-1",
 					State: "running",
 					Uptime: UptimeVitals{
@@ -698,7 +711,7 @@ var _ = Describe("monitJobSupervisor", func() {
 						Total: 0.5,
 					},
 				},
-				Process{
+				{
 					Name:  "fake-service-2",
 					State: "failing",
 					Uptime: UptimeVitals{

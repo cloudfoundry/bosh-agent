@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"path"
 	"strings"
@@ -30,7 +29,6 @@ type httpClient struct {
 	username        string
 	password        string
 	logger          boshlog.Logger
-	cookieJar       cookiejar.Jar
 }
 
 // NewHTTPClient creates a new monit client
@@ -43,10 +41,6 @@ func NewHTTPClient(
 	longClient HTTPClient,
 	logger boshlog.Logger,
 ) Client {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		bosherr.Errorf("Error creating CookieJar: %s", err)
-	}
 	return httpClient{
 		host:            host,
 		username:        username,
@@ -56,7 +50,6 @@ func NewHTTPClient(
 		unmonitorClient: longClient,
 		statusClient:    shortClient,
 		logger:          logger,
-		cookieJar:       *jar,
 	}
 }
 
@@ -90,8 +83,6 @@ func (c httpClient) StartService(serviceName string) error {
 }
 
 func (c httpClient) StopService(serviceName string) error {
-	var response *http.Response
-
 	response, err := c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "action=stop")
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Sending stop request for service '%s'", serviceName)

@@ -44,14 +44,14 @@ var _ = Describe("status", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedServices := []Service{
-				Service{Monitored: false, Name: "unmonitored-start-pending", Status: "unknown", Pending: true},
-				Service{Monitored: true, Name: "initializing", Status: "starting", Pending: false},
-				Service{Monitored: true, Name: "running", Status: "running", Pending: false},
-				Service{Monitored: true, Name: "running-stop-pending", Status: "running", Pending: true},
-				Service{Monitored: false, Name: "unmonitored-stop-pending", Status: "unknown", Pending: true},
-				Service{Monitored: false, Name: "unmonitored", Status: "unknown", Pending: false},
-				Service{Monitored: false, Name: "stopped", Status: "unknown", Pending: false},
-				Service{Monitored: true, Name: "failing", Status: "failing", Pending: false},
+				{Monitored: false, Name: "unmonitored-start-pending", Status: "unknown", Pending: true},
+				{Monitored: true, Name: "initializing", Status: "starting", Pending: false},
+				{Monitored: true, Name: "running", Status: "running", Pending: false},
+				{Monitored: true, Name: "running-stop-pending", Status: "running", Pending: true},
+				{Monitored: false, Name: "unmonitored-stop-pending", Status: "unknown", Pending: true},
+				{Monitored: false, Name: "unmonitored", Status: "unknown", Pending: false},
+				{Monitored: false, Name: "stopped", Status: "unknown", Pending: false},
+				{Monitored: true, Name: "failing", Status: "failing", Pending: false},
 			}
 
 			services := status.ServicesInGroup("vcap")
@@ -91,7 +91,7 @@ var _ = Describe("status", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedServices := []Service{
-				Service{
+				{
 					Name:                 "dummy",
 					Monitored:            true,
 					Errored:              false,

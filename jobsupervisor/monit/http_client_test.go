@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 
 	. "github.com/onsi/ginkgo"
@@ -14,6 +15,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/monitfakes"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -220,14 +222,14 @@ var _ = Describe("httpClient", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedServices := []Service{
-				Service{Monitored: false, Status: "unmonitored-start-pending"},
-				Service{Monitored: true, Status: "initializing"},
-				Service{Monitored: true, Status: "running"},
-				Service{Monitored: true, Status: "running-stop-pending"},
-				Service{Monitored: false, Status: "unmonitored-stop-pending"},
-				Service{Monitored: false, Status: "unmonitored"},
-				Service{Monitored: false, Status: "stopped"},
-				Service{Monitored: true, Status: "failing"},
+				{Monitored: false, Status: "unmonitored-start-pending"},
+				{Monitored: true, Status: "initializing"},
+				{Monitored: true, Status: "running"},
+				{Monitored: true, Status: "running-stop-pending"},
+				{Monitored: false, Status: "unmonitored-stop-pending"},
+				{Monitored: false, Status: "unmonitored"},
+				{Monitored: false, Status: "stopped"},
+				{Monitored: true, Status: "failing"},
 			}
 
 			services := status.ServicesInGroup("vcap")
@@ -246,13 +248,16 @@ var _ = Describe("httpClient", func() {
 
 func newRealClient(url string) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
-
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		bosherr.Errorf("Error creating CookieJar: %s", err)
+	}
 	return NewHTTPClient(
 		url,
 		"fake-user",
 		"fake-pass",
-		http.DefaultClient,
-		http.DefaultClient,
+		&http.Client{Jar: jar},
+		&http.Client{Jar: jar},
 		logger,
 	)
 }
