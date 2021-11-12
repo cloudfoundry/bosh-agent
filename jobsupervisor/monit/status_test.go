@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 
 	. "github.com/onsi/ginkgo"
@@ -28,8 +29,11 @@ var _ = Describe("status", func() {
 			defer ts.Close()
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
+			jar, err := cookiejar.New(nil)
 
-			httpClient := http.DefaultClient
+			httpClient := &http.Client{
+				Jar: jar,
+			}
 
 			client := NewHTTPClient(
 				ts.Listener.Addr().String(),
@@ -38,6 +42,7 @@ var _ = Describe("status", func() {
 				httpClient,
 				httpClient,
 				logger,
+				jar,
 			)
 
 			status, err := client.Status()
@@ -75,8 +80,10 @@ var _ = Describe("status", func() {
 			defer ts.Close()
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-
-			httpClient := http.DefaultClient
+			jar, err := cookiejar.New(nil)
+			httpClient := &http.Client{
+				Jar: jar,
+			}
 
 			client := NewHTTPClient(
 				ts.Listener.Addr().String(),
@@ -85,6 +92,7 @@ var _ = Describe("status", func() {
 				httpClient,
 				httpClient,
 				logger,
+				jar,
 			)
 
 			status, err := client.Status()

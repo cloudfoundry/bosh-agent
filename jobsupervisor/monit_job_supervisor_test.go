@@ -291,6 +291,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				&http.Client{Jar: jar},
 				&http.Client{Jar: jar},
 				logger,
+				jar,
 			)
 
 			monit := NewMonitJobSupervisor(
@@ -499,6 +500,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					&http.Client{Jar: jar},
 					&http.Client{Jar: jar},
 					logger,
+					jar,
 				)
 
 				monit := NewMonitJobSupervisor(
@@ -556,6 +558,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					&http.Client{Jar: jar},
 					&http.Client{Jar: jar},
 					logger,
+					jar,
 				)
 
 				monit := NewMonitJobSupervisor(

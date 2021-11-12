@@ -27,6 +27,7 @@ type clientProvider struct {
 	logger          boshlog.Logger
 	shortHTTPClient HTTPClient
 	longHTTPClient  HTTPClient
+	jar             cookiejar.Jar
 }
 
 func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientProvider {
@@ -56,6 +57,7 @@ func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientPr
 		logger:          logger,
 		shortHTTPClient: shortHTTPClient,
 		longHTTPClient:  longHTTPClient,
+		jar:             *jar,
 	}
 }
 
@@ -72,5 +74,6 @@ func (p clientProvider) Get() (client Client, err error) {
 		p.shortHTTPClient,
 		p.longHTTPClient,
 		p.logger,
+		&p.jar,
 	), nil
 }

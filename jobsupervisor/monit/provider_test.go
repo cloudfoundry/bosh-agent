@@ -42,6 +42,7 @@ var _ = Describe("clientProvider", func() {
 			shortHTTPClient,
 			longHTTPClient,
 			logger,
+			jar,
 		)
 		Expect(client).To(Equal(expectedClient))
 	})

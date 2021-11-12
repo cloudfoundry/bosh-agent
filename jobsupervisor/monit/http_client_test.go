@@ -259,12 +259,16 @@ func newRealClient(url string) Client {
 		&http.Client{Jar: jar},
 		&http.Client{Jar: jar},
 		logger,
+		jar,
 	)
 }
 
 func newFakeClient(shortClient, longClient HTTPClient) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
-
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil
+	}
 	return NewHTTPClient(
 		"agent.example.com",
 		"fake-user",
@@ -272,5 +276,6 @@ func newFakeClient(shortClient, longClient HTTPClient) Client {
 		shortClient,
 		longClient,
 		logger,
+		jar,
 	)
 }
