@@ -190,14 +190,14 @@ func (c httpClient) validateResponse(response *http.Response) error {
 }
 
 func (c httpClient) makeRequest(client HTTPClient, target url.URL, method, requestBody string) (*http.Response, error) {
-	c.logger.Debug("http-client", "Monit request: url='%s' body='%s'", target.String(), requestBody)
 
 	for _, cookie := range c.jar.Cookies(&target) {
 		if cookie.Name == "securityToken" {
+			c.logger.Debug("http-client", "Adding cookie (name='%v') found in jar", cookie.Name)
 			requestBody = fmt.Sprintf("%v&securityToken=%v", requestBody, url.QueryEscape(cookie.Value))
 		}
 	}
-
+	c.logger.Debug("http-client", "Monit request: url='%s' body='%s'", target.String(), requestBody)
 	request, err := http.NewRequest(method, target.String(), strings.NewReader(requestBody))
 	if err != nil {
 		return nil, err
@@ -207,5 +207,6 @@ func (c httpClient) makeRequest(client HTTPClient, target url.URL, method, reque
 
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+	c.logger.Debug("full request: %v", fmt.Sprintf("%v", request))
 	return client.Do(request)
 }
