@@ -2,7 +2,6 @@ package monit
 
 import (
 	"encoding/xml"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -44,7 +43,6 @@ func NewHTTPClient(
 	logger boshlog.Logger,
 	jar http.CookieJar,
 ) Client {
-
 	return httpClient{
 		host:            host,
 		username:        username,
@@ -73,10 +71,8 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 }
 
 func (c httpClient) StartService(serviceName string) error {
-	data := url.Values{}
-	data.Set("action", "start")
 
-	response, err := c.makeRequest(c.startClient, c.monitURL(serviceName), "POST", data.Encode())
+	response, err := c.makeRequest(c.startClient, c.monitURL(serviceName), "POST", "start")
 
 	if err != nil {
 		return bosherr.WrapError(err, "Sending start request to monit")
@@ -92,9 +88,8 @@ func (c httpClient) StartService(serviceName string) error {
 }
 
 func (c httpClient) StopService(serviceName string) error {
-	data := url.Values{}
-	data.Set("action", "stop")
-	response, err := c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", data.Encode())
+
+	response, err := c.makeRequest(c.stopClient, c.monitURL(serviceName), "POST", "stop")
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Sending stop request for service '%s'", serviceName)
 	}
@@ -108,9 +103,8 @@ func (c httpClient) StopService(serviceName string) error {
 }
 
 func (c httpClient) UnmonitorService(serviceName string) error {
-	data := url.Values{}
-	data.Set("action", "unmonitor")
-	response, err := c.makeRequest(c.unmonitorClient, c.monitURL(serviceName), "POST", data.Encode())
+
+	response, err := c.makeRequest(c.unmonitorClient, c.monitURL(serviceName), "POST", "unmonitor")
 	if err != nil {
 		return bosherr.WrapError(err, "Sending unmonitor request to monit")
 	}
@@ -183,22 +177,27 @@ func (c httpClient) validateResponse(response *http.Response) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Reading body of failed Monit response")
 	}
-
+	c.logger.Debug("http-cookies", "\n\n'%v', http Cookies %v\n\n", response.Request.URL, response.Request.Cookies())
+	c.logger.Debug("http-cookies", "Request for url='%v', http Cookies %v", response.Request.URL, response.Request)
+	c.logger.Debug("http-cookies", "Response Cookies for url='%v', http Cookies %v", c.monitURL(""), response.Cookies())
 	c.logger.Debug("http-client", "Request failed with %s: %s", response.Status, string(body))
 
 	return bosherr.Errorf("Request failed with %s: %s", response.Status, string(body))
 }
 
-func (c httpClient) makeRequest(client HTTPClient, target url.URL, method, requestBody string) (*http.Response, error) {
+func (c httpClient) makeRequest(client HTTPClient, target url.URL, method, action string) (*http.Response, error) {
 
+	data := url.Values{}
+	data.Set("action", action)
 	for _, cookie := range c.jar.Cookies(&target) {
-		if cookie.Name == "securityToken" {
-			c.logger.Debug("http-client", "Adding cookie (name='%v') found in jar", cookie.Name)
-			requestBody = fmt.Sprintf("%v&securityToken=%v", requestBody, url.QueryEscape(cookie.Value))
+		c.logger.Debug("http-client", "Checking jar for securitytoken cookie %v", cookie.Name)
+		if cookie.Name == "securitytoken" {
+			data.Set("securitytoken", cookie.Value)
 		}
 	}
-	c.logger.Debug("http-client", "Monit request: url='%s' body='%s'", target.String(), requestBody)
-	request, err := http.NewRequest(method, target.String(), strings.NewReader(requestBody))
+	c.logger.Debug("http-client", "Monit request: url='%s' body='%s'", target.String(), data.Encode())
+	c.logger.Debug("http-client", "Payload for request %v", data.Encode())
+	request, err := http.NewRequest(method, target.String(), strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
 	}
@@ -207,6 +206,5 @@ func (c httpClient) makeRequest(client HTTPClient, target url.URL, method, reque
 
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	c.logger.Debug("full request: %v", fmt.Sprintf("%v", request))
 	return client.Do(request)
 }

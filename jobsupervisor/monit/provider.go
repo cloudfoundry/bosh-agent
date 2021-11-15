@@ -27,7 +27,7 @@ type clientProvider struct {
 	logger          boshlog.Logger
 	shortHTTPClient HTTPClient
 	longHTTPClient  HTTPClient
-	jar             cookiejar.Jar
+	jar             *cookiejar.Jar
 }
 
 func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientProvider {
@@ -43,7 +43,7 @@ func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientPr
 		retryDelay,
 		logger,
 	)
-
+	httpClient = &http.Client{Jar: jar}
 	longHTTPClient := NewMonitRetryClient(
 		httpClient,
 		longRetryStrategyAttempts,
@@ -57,7 +57,7 @@ func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) ClientPr
 		logger:          logger,
 		shortHTTPClient: shortHTTPClient,
 		longHTTPClient:  longHTTPClient,
-		jar:             *jar,
+		jar:             jar,
 	}
 }
 
@@ -66,7 +66,6 @@ func (p clientProvider) Get() (client Client, err error) {
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Getting monit credentials")
 	}
-
 	return NewHTTPClient(
 		monitHost,
 		monitUser,
@@ -74,6 +73,6 @@ func (p clientProvider) Get() (client Client, err error) {
 		p.shortHTTPClient,
 		p.longHTTPClient,
 		p.logger,
-		&p.jar,
+		p.jar,
 	), nil
 }

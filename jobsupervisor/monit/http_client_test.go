@@ -132,7 +132,7 @@ var _ = Describe("httpClient", func() {
 				Expect(r.URL.Path).To(Equal("/test-service"))
 				Expect(r.PostFormValue("action")).To(Equal("unmonitor"))
 				Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
-
+				w.Header().Set("securitytoken", "testvalue")
 				expectedAuthEncoded := base64.URLEncoding.EncodeToString([]byte("fake-user:fake-pass"))
 				Expect(r.Header.Get("Authorization")).To(Equal(fmt.Sprintf("Basic %s", expectedAuthEncoded)))
 			})
@@ -215,7 +215,12 @@ var _ = Describe("httpClient", func() {
 
 			shortClient.DoReturns(&http.Response{
 				StatusCode: 200,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(string(readFixture(statusWithMultipleServiceFixturePath)))),
+				Header: http.Header{
+					"securitytoken": []string{
+						"test",
+					},
+				},
+				Body: ioutil.NopCloser(bytes.NewBufferString(string(readFixture(statusWithMultipleServiceFixturePath)))),
 			}, nil)
 
 			status, err := client.Status()
@@ -267,7 +272,7 @@ func newFakeClient(shortClient, longClient HTTPClient) Client {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 	jar, err := cookiejar.New(nil)
 	if err != nil {
-		return nil
+		bosherr.Errorf("Error creating CookieJar: %s", err)
 	}
 	return NewHTTPClient(
 		"agent.example.com",

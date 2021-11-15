@@ -30,6 +30,7 @@ var _ = Describe("status", func() {
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			jar, err := cookiejar.New(nil)
+			Expect(err).To(BeNil())
 
 			httpClient := &http.Client{
 				Jar: jar,
@@ -81,6 +82,7 @@ var _ = Describe("status", func() {
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			jar, err := cookiejar.New(nil)
+			Expect(err).To(BeNil())
 			httpClient := &http.Client{
 				Jar: jar,
 			}
