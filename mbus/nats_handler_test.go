@@ -21,7 +21,6 @@ import (
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	bosherrors "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -39,12 +38,26 @@ func init() {
 			auditLogger         *platformfakes.FakeAuditLogger
 			loggerOutBuf        *bytes.Buffer
 		)
+		ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
+		ValidCertificate, _ := ioutil.ReadFile("./test_assets/client-cert.pem")
+		ValidPrivateKey, _ := ioutil.ReadFile("./test_assets/client-pkey.pem")
 
 		BeforeEach(func() {
 			settingsService = &fakesettings.FakeSettingsService{
 				Settings: boshsettings.Settings{
 					AgentID: "my-agent-id",
 					Mbus:    "nats://fake-username:fake-password@127.0.0.1:1234",
+					Env: boshsettings.Env{
+						Bosh: boshsettings.BoshEnv{
+							Mbus: boshsettings.MBus{
+								Cert: boshsettings.CertKeyPair{
+									CA:          string(ValidCA),
+									PrivateKey:  string(ValidPrivateKey),
+									Certificate: string(ValidCertificate),
+								},
+							},
+						},
+					},
 				},
 			}
 
@@ -294,21 +307,6 @@ func init() {
 			})
 
 			Context("Mutual TLS", func() {
-				ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
-				ValidCertificate, _ := ioutil.ReadFile("./test_assets/client-cert.pem")
-				ValidPrivateKey, _ := ioutil.ReadFile("./test_assets/client-pkey.pem")
-
-				BeforeEach(func() {
-					settingsService.Settings.Env.Bosh.Mbus = boshsettings.MBus{
-						Cert: boshsettings.CertKeyPair{
-							CA:          string(ValidCA),
-							PrivateKey:  string(ValidPrivateKey),
-							Certificate: string(ValidCertificate),
-						},
-						URLs: []string{"tls://fake-username:fake-password@127.0.0.1:1234"},
-					}
-				})
-
 				It("sets Client Certificates and Server CA on the TLSConfig", func() {
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 					Expect(err).ToNot(HaveOccurred())
@@ -401,24 +399,6 @@ func init() {
 						Expect(options.TLSConfig.RootCAs).To(BeNil())
 						Expect(options.TLSConfig.Certificates[0]).To(Equal(clientCert))
 					})
-				})
-			})
-
-			Context("when connecting to NATS server fails", func() {
-				var connectCallCount = 0
-				BeforeEach(func() {
-					connector = func(url string, options ...nats.Option) (NatsConnection, error) {
-						connectCallCount++
-						return nil, errors.New("ConnectError")
-					}
-				})
-
-				It("will retry the max number allowed", func() {
-					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-
-					middleError := err.(bosherrors.ComplexError).Cause
-					Expect(middleError.(bosherrors.ComplexError).Cause).To(MatchError("ConnectError"))
-					Expect(connectCallCount).To(Equal(10))
 				})
 			})
 		})
