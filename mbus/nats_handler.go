@@ -212,7 +212,9 @@ func (h *natsHandler) Send(target boshhandler.Target, topic boshhandler.Topic, m
 }
 
 func (h *natsHandler) Stop() {
-	h.connection.Close()
+	if h.connection != nil {
+		h.connection.Close()
+	}
 }
 
 func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
@@ -284,26 +286,23 @@ func (h *natsHandler) getConnectionInfo() (*ConnectionInfo, error) {
 	hostSplit := strings.Split(natsURL.Host, ":")
 	connInfo.IP = hostSplit[0]
 
+	connInfo.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 
-	if settings.Env.IsNATSMutualTLSEnabled() {
-		connInfo.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
-
-		caCert := settings.GetMbusCerts().CA
-		if caCert != "" {
-			connInfo.TLSConfig.RootCAs = x509.NewCertPool()
-			if ok := connInfo.TLSConfig.RootCAs.AppendCertsFromPEM([]byte(caCert)); !ok {
-				return nil, bosherr.Error("Failed to load Mbus CA cert")
-			}
+	caCert := settings.GetMbusCerts().CA
+	if caCert != "" {
+		connInfo.TLSConfig.RootCAs = x509.NewCertPool()
+		if ok := connInfo.TLSConfig.RootCAs.AppendCertsFromPEM([]byte(caCert)); !ok {
+			return nil, bosherr.Error("Failed to load Mbus CA cert")
 		}
-
-		connInfo.TLSConfig.VerifyPeerCertificate = h.VerifyPeerCertificate
-
-		clientCertificate, err := tls.X509KeyPair([]byte(settings.GetMbusCerts().Certificate), []byte(settings.GetMbusCerts().PrivateKey))
-		if err != nil {
-			return nil, bosherr.WrapError(err, "Parsing certificate and private key")
-		}
-		connInfo.TLSConfig.Certificates = []tls.Certificate{clientCertificate}
 	}
+
+	connInfo.TLSConfig.VerifyPeerCertificate = h.VerifyPeerCertificate
+
+	clientCertificate, err := tls.X509KeyPair([]byte(settings.GetMbusCerts().Certificate), []byte(settings.GetMbusCerts().PrivateKey))
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Parsing certificate and private key")
+	}
+	connInfo.TLSConfig.Certificates = []tls.Certificate{clientCertificate}
 
 	return connInfo, nil
 }
