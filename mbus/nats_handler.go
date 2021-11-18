@@ -24,12 +24,12 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
 const (
 	responseMaxLength           = 1024 * 1024
 	natsHandlerLogTag           = "NATS Handler"
+	natsConnectionTimeout       = 5 * time.Minute
 	natsConnectionMaxRetries    = 10
 	natsConnectRetryInterval    = 1 * time.Second
 	natsConnectMaxRetryInterval = 1 * time.Minute
@@ -127,40 +127,28 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		return bosherr.WrapError(err, "Getting connection info")
 	}
 
-	natsRetryable := boshretry.NewRetryable(func() (bool, error) {
-		h.logger.Info(h.logTag, "Attempting to connect to NATS")
+	h.logger.Info(h.logTag, "Attempting to connect to NATS")
 
-		if net.ParseIP(connectionInfo.IP) != nil {
-			err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
-			if err != nil {
-				h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s", connectionInfo.IP)
-			}
-		}
-
-		var natsOptions []nats.Option
-		if connectionInfo.TLSConfig != nil {
-			natsOptions = append(natsOptions, nats.Secure(connectionInfo.TLSConfig))
-		}
-
-		connection, err := h.connector(connectionInfo.Addr, natsOptions...)
+	if net.ParseIP(connectionInfo.IP) != nil {
+		err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
 		if err != nil {
-			return true, bosherr.WrapError(err, "Connecting to NATS")
+			h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s", connectionInfo.IP)
 		}
-		h.connection = connection
-		return false, nil
-	})
-
-	attemptRetryStrategy := boshretry.NewBackoffWithJitterRetryStrategy(
-		natsConnectionMaxRetries,
-		h.connectRetryInterval,
-		h.maxConnectRetryInterval,
-		natsRetryable,
-		h.logger,
-	)
-	err = attemptRetryStrategy.Try()
-	if err != nil {
-		return bosherr.WrapError(err, "Connecting")
 	}
+
+	var natsOptions = []nats.Option{
+		nats.Timeout(natsConnectionTimeout),
+		nats.MaxReconnects(natsConnectionMaxRetries),
+		nats.ReconnectWait(h.connectRetryInterval),
+		nats.ReconnectJitter(h.maxConnectRetryInterval, h.maxConnectRetryInterval),
+		nats.Secure(connectionInfo.TLSConfig),
+	}
+
+	connection, err := h.connector(connectionInfo.Addr, natsOptions...)
+	if err != nil {
+		return bosherr.WrapError(err, "Connecting to NATS")
+	}
+	h.connection = connection
 
 	settings := h.settingsService.GetSettings()
 
