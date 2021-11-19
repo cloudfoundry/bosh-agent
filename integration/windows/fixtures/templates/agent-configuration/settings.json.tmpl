@@ -14,7 +14,25 @@
   },
   "env": {
     "bosh": {
-      "password": ""
+      "password": "",
+      "blobstores": [
+        {
+          "provider": "dav",
+          "options": {
+            "endpoint": "http://{{.NatsPrivateIP}}:25250",
+            "password": "password",
+            "user": "agent"
+          }
+        }
+      ],
+      "mbus": {
+        "cert": {
+          "ca": "{{.NatsCA}}",
+          "private_key": "{{.NatsPrivateKey}}",
+          "certificate": "{{.NatsCertificate}}"
+        },
+        "urls": null
+      }
     }
   },
   "networks": {
