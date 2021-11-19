@@ -267,10 +267,6 @@ func (e Env) GetParallel() *int {
 	return &result
 }
 
-func (e Env) IsNATSMutualTLSEnabled() bool {
-	return len(e.Bosh.Mbus.Cert.Certificate) > 0 && len(e.Bosh.Mbus.Cert.PrivateKey) > 0
-}
-
 type BoshEnv struct {
 	Agent                 AgentEnv    `json:"agent"`
 	Password              string      `json:"password"`

@@ -24,9 +24,10 @@ github.com/ChrisTrenkamp/goxpath/tree/xmltree/xmlbuilder
 github.com/ChrisTrenkamp/goxpath/tree/xmltree/xmlele
 github.com/ChrisTrenkamp/goxpath/tree/xmltree/xmlnode
 github.com/ChrisTrenkamp/goxpath/xconst
-# github.com/Microsoft/go-winio v0.4.12
-## explicit
+# github.com/Microsoft/go-winio v0.4.14
+## explicit; go 1.12
 github.com/Microsoft/go-winio
+github.com/Microsoft/go-winio/pkg/guid
 # github.com/Microsoft/hcsshim v0.8.6
 ## explicit
 github.com/Microsoft/hcsshim
@@ -58,7 +59,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.289
+# github.com/cloudfoundry/bosh-utils v0.0.290
 ## explicit; go 1.17
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -88,10 +89,6 @@ github.com/cloudfoundry/gosigar/sys/windows
 # github.com/cloudfoundry/socks5-proxy v0.2.31
 ## explicit; go 1.17
 github.com/cloudfoundry/socks5-proxy
-# github.com/cloudfoundry/yagnats v0.0.0-20210903191155-c3d200e049ee
-## explicit; go 1.12
-github.com/cloudfoundry/yagnats
-github.com/cloudfoundry/yagnats/fakeyagnats
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
@@ -116,9 +113,6 @@ github.com/jpillora/backoff
 # github.com/kevinburke/ssh_config v1.1.0
 ## explicit
 github.com/kevinburke/ssh_config
-# github.com/konsorten/go-windows-terminal-sequences v1.0.2
-## explicit
-github.com/konsorten/go-windows-terminal-sequences
 # github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786
 ## explicit
 github.com/masterzen/simplexml/dom
@@ -131,6 +125,8 @@ github.com/masterzen/winrm/soap
 github.com/mitchellh/mapstructure
 # github.com/nats-io/jwt v1.2.2
 ## explicit; go 1.14
+# github.com/nats-io/nats-server/v2 v2.0.0
+## explicit
 # github.com/nats-io/nats.go v1.13.0
 ## explicit; go 1.16
 github.com/nats-io/nats.go
@@ -209,13 +205,13 @@ github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/sirupsen/logrus v1.4.2
-## explicit
+# github.com/sirupsen/logrus v1.7.0
+## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.7.0
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
-# golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
+# golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 ## explicit; go 1.17
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -228,7 +224,7 @@ golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/md4
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
+# golang.org/x/net v0.0.0-20211118161319-6a13c67c3ce4
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -236,7 +232,7 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20211113001501-0c823b97ae02
+# golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader

@@ -23,7 +23,6 @@ type AuditLoggerProvider interface {
 	ProvideDebugLogger() (*log.Logger, error)
 	ProvideErrorLogger() (*log.Logger, error)
 }
-
 //go:generate counterfeiter . Platform
 //go:generate counterfeiter . AuditLogger
 

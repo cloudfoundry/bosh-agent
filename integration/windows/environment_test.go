@@ -131,6 +131,11 @@ func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
 	}, 4*time.Minute, 5*time.Second).Should(BeTrue())
 }
 
+func (e *WindowsEnvironment) StartAgent() {
+	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe install")
+	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+}
+
 func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
 	stdout := e.RunPowershellCommandWithOffset(1, "Get-Service -Name bosh-agent | Format-List -Property Status")
 
@@ -139,6 +144,7 @@ func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
 	if running {
 		e.RunPowershellCommandWithOffset(1, "c:\\bosh\\service_wrapper.exe stop")
 	}
+	e.RunPowershellCommandWithOffset(1, "c:\\bosh\\service_wrapper.exe uninstall")
 }
 
 func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {

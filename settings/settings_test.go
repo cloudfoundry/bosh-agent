@@ -1111,46 +1111,6 @@ var _ = Describe("Settings", func() {
 					nil),
 			)
 		})
-
-		Context("#IsNATSMutualTLSEnabled", func() {
-			Context("env JSON does NOT provide mbus", func() {
-				It("should return false", func() {
-					envJSON := `{ "bosh": {} }`
-
-					var env Env
-					err := json.Unmarshal([]byte(envJSON), &env)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNATSMutualTLSEnabled()).To(BeFalse())
-				})
-			})
-
-			DescribeTable("env JSON provides mbus",
-				func(cert string, expected bool) {
-					envJSON := `{ "bosh": { "mbus": { "cert": ` + cert + ` } } }`
-
-					var env Env
-					err := json.Unmarshal([]byte(envJSON), &env)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(env.IsNATSMutualTLSEnabled()).To(Equal(expected))
-				},
-
-				Entry("empty cert",
-					`{}`,
-					false),
-
-				Entry("only certificate provided",
-					`{ "certificate": "some value" }`,
-					false),
-
-				Entry("only private_key provided",
-					`{ "private_key": "some value" }`,
-					false),
-
-				Entry("provides certificate, and private_key",
-					`{ "certificate": "some value", "private_key": "some value" }`,
-					true),
-			)
-		})
 	})
 
 	Describe("UpdateSettings", func() {
