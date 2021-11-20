@@ -9,9 +9,9 @@ require (
 	github.com/charlievieth/fs v0.0.2
 	github.com/cloudfoundry/bosh-davcli v0.0.48
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.289
+	github.com/cloudfoundry/bosh-utils v0.0.290
 	github.com/cloudfoundry/gosigar v1.3.2
-	github.com/cloudfoundry/socks5-proxy v0.2.31 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.32 // indirect
 	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.1.0+incompatible
