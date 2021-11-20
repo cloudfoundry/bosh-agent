@@ -29,8 +29,9 @@ github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e/go.mod h1:P
 github.com/cloudfoundry/gosigar v1.3.2 h1:bSW9IHq1UKZJuno/LZiuSs9D7WNgZdaduhyZn0oaMNI=
 github.com/cloudfoundry/gosigar v1.3.2/go.mod h1:tZGd29SDghYXnEP3vX7AGanIGEVZhGWcp/2HGSt1FXg=
 github.com/cloudfoundry/socks5-proxy v0.2.27/go.mod h1:OgQUih8s/9MtA8O/GKXNsUVEFg/klubj5410qPfC6ro=
-github.com/cloudfoundry/socks5-proxy v0.2.31 h1:Vp2XLfEDhnhbPT/1juf1fyGsNQibIg2ny94N7gWlNuo=
 github.com/cloudfoundry/socks5-proxy v0.2.31/go.mod h1:3gL8HtV+1PtZp2fQ03ud0w46m3/rGgG2hrLXfxyOSHk=
+github.com/cloudfoundry/socks5-proxy v0.2.32 h1:M53YBHEvk/EokDO5jnjJByM3NAwMsuq062mTlrxra3k=
+github.com/cloudfoundry/socks5-proxy v0.2.32/go.mod h1:jp3QYHP8zhRZlMsQAW2EJVBGaZMBSfVcmjgqLZoh4Pg=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

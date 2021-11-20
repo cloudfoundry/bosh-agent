@@ -86,7 +86,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.31
+# github.com/cloudfoundry/socks5-proxy v0.2.32
 ## explicit; go 1.17
 github.com/cloudfoundry/socks5-proxy
 # github.com/davecgh/go-spew v1.1.1
