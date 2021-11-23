@@ -2,6 +2,7 @@ package devicepathresolver_test
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -15,6 +16,18 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
+
+type dmsetupDevice struct {
+	Name      string
+	MajMinNum string
+}
+
+func buildDmsetupOutput(devices []dmsetupDevice) (output string) {
+	for _, device := range devices {
+		output += fmt.Sprintf("%s\t%s\n", device.Name, device.MajMinNum)
+	}
+	return
+}
 
 var _ = Describe("iscsiDevicePathResolver", func() {
 	var (
@@ -30,6 +43,21 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 		diskSettings            boshsettings.DiskSettings
 		pathResolver            DevicePathResolver
 		managedDiskSettingsPath string
+
+		dmsetupOutputForNoDeviceFound = fakesys.FakeCmdResult{
+			Stdout: "No devices found"}
+		dmsetupOutputForNonPartitionedDisk = fakesys.FakeCmdResult{
+			Stdout: buildDmsetupOutput(
+				[]dmsetupDevice{
+					{Name: "fake_device_path", MajMinNum: "(252:0)"},
+				}),
+		}
+		dmsetupOutputForPartitionedDisk = fakesys.FakeCmdResult{Stdout: buildDmsetupOutput(
+			[]dmsetupDevice{
+				{Name: "fake_device_path-part1", MajMinNum: "(252:1)"},
+				{Name: "fake_device_path", MajMinNum: "(252:0)"},
+			}),
+		}
 	)
 
 	BeforeEach(func() {
@@ -43,7 +71,14 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 		fs = fakesys.NewFakeFileSystem()
 		dirProvider = boshdirs.NewProvider("/fake-base-dir")
 
-		pathResolver = NewIscsiDevicePathResolver(500*time.Millisecond, runner, openiscsi, fs, dirProvider, boshlog.NewLogger(boshlog.LevelNone))
+		pathResolver = NewIscsiDevicePathResolver(
+			500*time.Millisecond,
+			runner,
+			openiscsi,
+			fs,
+			dirProvider,
+			boshlog.NewLogger(boshlog.LevelNone),
+		)
 		diskSettings = boshsettings.DiskSettings{
 			ISCSISettings: boshsettings.ISCSISettings{
 				InitiatorName: initiatorName,
@@ -65,8 +100,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				// for the pathResolver call to find devices
 				runner.AddCmdResult(
 					"dmsetup ls",
-					fakesys.FakeCmdResult{Error: nil, Stdout: "No devices found"},
-				)
+					dmsetupOutputForNoDeviceFound)
 
 				openiscsi.SetupReturns(nil)
 
@@ -79,22 +113,24 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				// for the pathResolver call to find devices after openiscsi restart
 				runner.AddCmdResult(
 					"dmsetup ls",
-					fakesys.FakeCmdResult{Stdout: "fake_device_path	(252:0)"},
-				)
+					dmsetupOutputForNonPartitionedDisk)
 
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(path).To(Equal("/dev/mapper/fake_device_path"))
 				Expect(timeout).To(BeFalse())
+
+				Expect(openiscsi.SetupCallCount()).To(Equal(1))
+				Expect(openiscsi.DiscoveryCallCount()).To(Equal(1))
+				Expect(openiscsi.LoginCallCount()).To(Equal(1))
 			})
 
 			It("returns timeout after iSCSI restart", func() {
 				// for the pathResolver call to find devices after openiscsi restart
 				runner.AddCmdResult(
 					"dmsetup ls",
-					fakesys.FakeCmdResult{Stdout: "No devices found"},
-				)
+					dmsetupOutputForNoDeviceFound)
 
 				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
@@ -102,27 +138,81 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 
 				Expect(path).To(Equal(""))
 				Expect(timeout).To(BeTrue())
-
 			})
 		})
 
-		Context("when one device is found", func() {
-			It("returns the real path after iSCSI restart", func() {
-
-				// for the pathResolver call to find devices
-				runner.AddCmdResult(
-					"dmsetup ls",
-					fakesys.FakeCmdResult{Stdout: `fake_device_path-part1	(252:1)
-                    fake_device_path	(252:0)
-					`},
-				)
-
+		Context("when one device is to be found", func() {
+			BeforeEach(func() {
 				diskSettings.ID = "12345678"
-				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-				Expect(err).ToNot(HaveOccurred())
+			})
 
-				Expect(path).To(Equal("/dev/mapper/fake_device_path"))
-				Expect(timeout).To(BeFalse())
+			Context("when the device has never been mounted previously", func() {
+				BeforeEach(func() {
+					// ...that has never been mounted previously...
+					fs.RemoveAll(managedDiskSettingsPath)
+				})
+
+				Context("when the device is not yet partitioned", func() {
+					BeforeEach(func() {
+						runner.AddCmdResult("dmsetup ls",
+							dmsetupOutputForNoDeviceFound)
+						runner.AddCmdResult("dmsetup ls",
+							dmsetupOutputForNonPartitionedDisk)
+					})
+
+					It("returns the real path after iSCSI discovery", func() {
+						path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(path).To(Equal("/dev/mapper/fake_device_path"))
+						Expect(timeout).To(BeFalse())
+
+						Expect(openiscsi.SetupCallCount()).To(Equal(1))
+						Expect(openiscsi.DiscoveryCallCount()).To(Equal(1))
+						Expect(openiscsi.LoginCallCount()).To(Equal(1))
+					})
+				})
+
+				Context("when the device is already partitioned", func() {
+					BeforeEach(func() {
+						runner.AddCmdResult("dmsetup ls",
+							dmsetupOutputForPartitionedDisk)
+						fs.RemoveAll(managedDiskSettingsPath)
+					})
+
+					It("returns the real path without iSCSI restart", func() {
+						path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(path).To(Equal("/dev/mapper/fake_device_path"))
+						Expect(timeout).To(BeFalse())
+
+						Expect(openiscsi.SetupCallCount()).To(Equal(0))
+						Expect(openiscsi.DiscoveryCallCount()).To(Equal(0))
+						Expect(openiscsi.LogoutCallCount()).To(Equal(0))
+						Expect(openiscsi.LoginCallCount()).To(Equal(0))
+					})
+				})
+			})
+
+			Context("when the device has already been mounted previously", func() {
+				BeforeEach(func() {
+					runner.AddCmdResult("dmsetup ls",
+						dmsetupOutputForPartitionedDisk)
+				})
+
+				It("returns the real path without iSCSI restart", func() {
+					path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(path).To(Equal("/dev/mapper/fake_device_path"))
+					Expect(timeout).To(BeFalse())
+
+					Expect(openiscsi.SetupCallCount()).To(Equal(0))
+					Expect(openiscsi.DiscoveryCallCount()).To(Equal(0))
+					Expect(openiscsi.LogoutCallCount()).To(Equal(0))
+					Expect(openiscsi.LoginCallCount()).To(Equal(0))
+				})
 			})
 		})
 
@@ -131,14 +221,16 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 				// for the pathResolver call to find devices
 				runner.AddCmdResult(
 					"dmsetup ls",
-					fakesys.FakeCmdResult{Stdout: `fake_device_path-part1	(252:1)
-					fake_device_path	(252:0)
-                    fake_device_path2-part1	(252:2)
-					fake_device_path2	(252:3)
-                    fake_device_path3-part1	(252:2)
-					fake_device_path3	(252:3)
-					`},
-				)
+					fakesys.FakeCmdResult{Stdout: buildDmsetupOutput(
+						[]dmsetupDevice{
+							{Name: "fake_device_path-part1", MajMinNum: "(252:1)"},
+							{Name: "fake_device_path", MajMinNum: "(252:0)"},
+							{Name: "fake_device_path2-part1", MajMinNum: "(252:3)"},
+							{Name: "fake_device_path2", MajMinNum: "(252:2)"},
+							{Name: "fake_device_path3-part1", MajMinNum: "(252:5)"},
+							{Name: "fake_device_path3", MajMinNum: "(252:4)"},
+						}),
+					})
 
 				diskSettings.ID = "22345678"
 
@@ -232,7 +324,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 			// for the pathResolver call to find devices
 			runner.AddCmdResult(
 				"dmsetup ls",
-				fakesys.FakeCmdResult{Stdout: "No devices found"},
+				dmsetupOutputForNoDeviceFound,
 			)
 
 			openiscsi.SetupReturns(errors.New("fake-cmd-error"))
@@ -249,7 +341,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 			// for the pathResolver call to find devices
 			runner.AddCmdResult(
 				"dmsetup ls",
-				fakesys.FakeCmdResult{Stdout: "No devices found"},
+				dmsetupOutputForNoDeviceFound,
 			)
 
 			openiscsi.SetupReturns(nil)
@@ -268,7 +360,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 			// for the pathResolver call to find devices
 			runner.AddCmdResult(
 				"dmsetup ls",
-				fakesys.FakeCmdResult{Stdout: "No devices found"},
+				dmsetupOutputForNoDeviceFound,
 			)
 
 			openiscsi.SetupReturns(nil)
@@ -289,7 +381,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 			// for the pathResolver call to find devices
 			runner.AddCmdResult(
 				"dmsetup ls",
-				fakesys.FakeCmdResult{Stdout: "No devices found"},
+				dmsetupOutputForNoDeviceFound,
 			)
 
 			openiscsi.SetupReturns(nil)
