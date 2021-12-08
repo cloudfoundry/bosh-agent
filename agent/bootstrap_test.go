@@ -431,6 +431,7 @@ var _ = Describe("bootstrap", func() {
 			Expect(platform.SetupTmpDirCallCount()).To(Equal(1))
 			Expect(platform.SetupHomeDirCallCount()).To(Equal(1))
 			Expect(platform.SetupLogDirCallCount()).To(Equal(1))
+			Expect(platform.SetupOptDirCallCount()).To(Equal(1))
 			Expect(platform.SetupLoggingAndAuditingCallCount()).To(Equal(1))
 		})
 
