@@ -174,6 +174,11 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		return err
 	}
 
+	err = t.DetachDevice("/var/opt")
+	if err != nil {
+		return err
+	}
+
 	err = t.DetachDevice("/var/vcap/data")
 	if err != nil {
 		return err
@@ -205,6 +210,21 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	}
 
 	_, err = t.RunCommand("sudo chown root:syslog /var/log")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo mkdir -p /var/opt")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chmod 775 /var/opt")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chown root:root /var/opt")
 	if err != nil {
 		return err
 	}

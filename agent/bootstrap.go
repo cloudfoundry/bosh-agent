@@ -124,6 +124,10 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up log dir")
 	}
 
+	if err = boot.platform.SetupOptDir(); err != nil {
+		return bosherr.WrapError(err, "Setting up opt dir")
+	}
+
 	if err = boot.platform.SetTimeWithNtpServers(settings.GetNtpServers()); err != nil {
 		return bosherr.WrapError(err, "Setting up NTP servers")
 	}

@@ -2542,6 +2542,81 @@ sam:fakeanotheruser`)
 		})
 	})
 
+	Describe("SetupOptDir", func() {
+		It("creates a root_opt folder with permissions", func() {
+			err := platform.SetupOptDir()
+			Expect(err).NotTo(HaveOccurred())
+			testFileStat := fs.GetFileTestStat("/fake-dir/data/root_opt")
+			Expect(testFileStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0755)))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:root", "/fake-dir/data/root_opt"}))
+		})
+
+		Context("mounting root_opt into /var/opt", func() {
+			Context("when /var/opt is not a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointReturns("", false, nil)
+				})
+
+				It("bind mounts it in /var/opt", func() {
+					err := platform.SetupOptDir()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(mounter.MountFilesystemCallCount()).To(Equal(1))
+					partition, mntPt, fstype, options := mounter.MountFilesystemArgsForCall(0)
+					Expect(partition).To(Equal("/fake-dir/data/root_opt"))
+					Expect(mntPt).To(Equal("/var/opt"))
+					Expect(fstype).To(Equal(""))
+					Expect(options).To(Equal([]string{"bind"}))
+				})
+			})
+
+			Context("when /var/opt is a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+						if devicePathOrMountPoint == "/var/opt" {
+							return true, nil
+						}
+						return false, nil
+					}
+				})
+
+				It("returns without an error", func() {
+					err := platform.SetupOptDir()
+					Expect(mounter.IsMountedArgsForCall(0)).To(Equal("/var/opt"))
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("does not try to mount root_opt into /var/opt", func() {
+					platform.SetupOptDir()
+					Expect(mounter.MountCallCount()).To(Equal(0))
+				})
+			})
+
+			Context("when /var/opt cannot be determined if it is a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+						if devicePathOrMountPoint == "/var/opt" {
+							return false, errors.New("fake-is-mounted-error")
+						}
+						return false, nil
+					}
+				})
+
+				It("returns error", func() {
+					err := platform.SetupOptDir()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
+				})
+
+				It("does not try to mount /var/opt", func() {
+					platform.SetupOptDir()
+					Expect(mounter.MountCallCount()).To(Equal(0))
+				})
+			})
+		})
+	})
+
 	Describe("SetupBlobDir", func() {
 		act := func() error {
 			return platform.SetupBlobsDir()
