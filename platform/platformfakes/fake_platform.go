@@ -557,6 +557,16 @@ type FakePlatform struct {
 	setupNetworkingReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetupOptDirStub        func() error
+	setupOptDirMutex       sync.RWMutex
+	setupOptDirArgsForCall []struct {
+	}
+	setupOptDirReturns struct {
+		result1 error
+	}
+	setupOptDirReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupRawEphemeralDisksStub        func([]settings.DiskSettings) error
 	setupRawEphemeralDisksMutex       sync.RWMutex
 	setupRawEphemeralDisksArgsForCall []struct {
@@ -3443,6 +3453,59 @@ func (fake *FakePlatform) SetupNetworkingReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakePlatform) SetupOptDir() error {
+	fake.setupOptDirMutex.Lock()
+	ret, specificReturn := fake.setupOptDirReturnsOnCall[len(fake.setupOptDirArgsForCall)]
+	fake.setupOptDirArgsForCall = append(fake.setupOptDirArgsForCall, struct {
+	}{})
+	stub := fake.SetupOptDirStub
+	fakeReturns := fake.setupOptDirReturns
+	fake.recordInvocation("SetupOptDir", []interface{}{})
+	fake.setupOptDirMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupOptDirCallCount() int {
+	fake.setupOptDirMutex.RLock()
+	defer fake.setupOptDirMutex.RUnlock()
+	return len(fake.setupOptDirArgsForCall)
+}
+
+func (fake *FakePlatform) SetupOptDirCalls(stub func() error) {
+	fake.setupOptDirMutex.Lock()
+	defer fake.setupOptDirMutex.Unlock()
+	fake.SetupOptDirStub = stub
+}
+
+func (fake *FakePlatform) SetupOptDirReturns(result1 error) {
+	fake.setupOptDirMutex.Lock()
+	defer fake.setupOptDirMutex.Unlock()
+	fake.SetupOptDirStub = nil
+	fake.setupOptDirReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupOptDirReturnsOnCall(i int, result1 error) {
+	fake.setupOptDirMutex.Lock()
+	defer fake.setupOptDirMutex.Unlock()
+	fake.SetupOptDirStub = nil
+	if fake.setupOptDirReturnsOnCall == nil {
+		fake.setupOptDirReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupOptDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatform) SetupRawEphemeralDisks(arg1 []settings.DiskSettings) error {
 	var arg1Copy []settings.DiskSettings
 	if arg1 != nil {
@@ -4116,6 +4179,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.setupMonitUserMutex.RUnlock()
 	fake.setupNetworkingMutex.RLock()
 	defer fake.setupNetworkingMutex.RUnlock()
+	fake.setupOptDirMutex.RLock()
+	defer fake.setupOptDirMutex.RUnlock()
 	fake.setupRawEphemeralDisksMutex.RLock()
 	defer fake.setupRawEphemeralDisksMutex.RUnlock()
 	fake.setupRecordsJSONPermissionMutex.RLock()

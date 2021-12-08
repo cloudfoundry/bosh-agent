@@ -245,6 +245,10 @@ func (p dummyPlatform) SetupLogDir() error {
 	return nil
 }
 
+func (p dummyPlatform) SetupOptDir() error {
+	return nil
+}
+
 func (p dummyPlatform) SetupSharedMemory() error {
 	return nil
 }

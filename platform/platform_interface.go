@@ -68,6 +68,7 @@ type Platform interface {
 	SetupRuntimeConfiguration() (err error)
 	SetupLogDir() (err error)
 	SetupLoggingAndAuditing() (err error)
+	SetupOptDir() (err error)
 	SetupRecordsJSONPermission(path string) error
 
 	// Disk management

@@ -40,6 +40,7 @@ const (
 	userBaseDirPermissions    = os.FileMode(0755)
 	disksDirPermissions       = os.FileMode(0755)
 	userRootLogDirPermissions = os.FileMode(0775)
+	userRootOptDirPermissions = os.FileMode(0755)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
 	blobsDirPermissions       = os.FileMode(0700)
 
@@ -1060,6 +1061,25 @@ func (p linux) SetupLogDir() error {
 	}
 
 	return nil
+}
+
+func (p linux) SetupOptDir() error {
+	optDir := "/var/opt"
+
+	boshRootOptDirPath := path.Join(p.dirProvider.DataDir(), "root_opt")
+	err := p.fs.MkdirAll(boshRootOptDirPath, userRootOptDirPermissions)
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:root", boshRootOptDirPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning root opt dir")
+	}
+
+	err = p.bindMountDir(boshRootOptDirPath, optDir)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 func (p linux) ensureFile(path, owner, mode string) error {

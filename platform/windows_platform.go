@@ -583,6 +583,10 @@ func (p WindowsPlatform) SetupLogDir() error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupOptDir() error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupBlobsDir() error {
 	blobsDirPath := p.dirProvider.BlobsDir()
 	err := p.fs.MkdirAll(blobsDirPath, blobsDirPermissions)
