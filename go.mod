@@ -9,9 +9,9 @@ require (
 	github.com/charlievieth/fs v0.0.2
 	github.com/cloudfoundry/bosh-davcli v0.0.48
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.292
+	github.com/cloudfoundry/bosh-utils v0.0.293
 	github.com/cloudfoundry/gosigar v1.3.2
-	github.com/cloudfoundry/socks5-proxy v0.2.34 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.35 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/golang/mock v1.6.0
@@ -26,9 +26,9 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
-	golang.org/x/net v0.0.0-20211203184738-4852103109b8
-	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881
+	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b
+	golang.org/x/net v0.0.0-20211209124913-491a49abca63
+	golang.org/x/sys v0.0.0-20211210111614-af8b64212486
 )
 
 require (
@@ -52,7 +52,7 @@ require (
 )
 
 require (
-	github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c // indirect
+	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
 	github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6 // indirect
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
