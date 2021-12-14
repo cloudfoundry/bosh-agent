@@ -1068,6 +1068,9 @@ func (p linux) SetupOptDir() error {
 
 	boshRootOptDirPath := path.Join(p.dirProvider.DataDir(), "root_opt")
 	err := p.fs.MkdirAll(boshRootOptDirPath, userRootOptDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating root opt dir")
+	}
 
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:root", boshRootOptDirPath)
 	if err != nil {
