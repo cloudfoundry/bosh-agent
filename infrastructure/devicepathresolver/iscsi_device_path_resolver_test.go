@@ -169,7 +169,27 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 
 						Expect(openiscsi.SetupCallCount()).To(Equal(1))
 						Expect(openiscsi.DiscoveryCallCount()).To(Equal(1))
+						Expect(openiscsi.LogoutCallCount()).To(Equal(0))
 						Expect(openiscsi.LoginCallCount()).To(Equal(1))
+					})
+
+					Context("when already logged in to iSCSI", func() {
+						BeforeEach(func() {
+							openiscsi.IsLoggedinReturns(true, nil)
+						})
+
+						It("returns the real path after iSCSI logout/login", func() {
+							path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+							Expect(err).ToNot(HaveOccurred())
+
+							Expect(path).To(Equal("/dev/mapper/fake_device_path"))
+							Expect(timeout).To(BeFalse())
+
+							Expect(openiscsi.SetupCallCount()).To(Equal(1))
+							Expect(openiscsi.DiscoveryCallCount()).To(Equal(1))
+							Expect(openiscsi.LogoutCallCount()).To(Equal(1))
+							Expect(openiscsi.LoginCallCount()).To(Equal(1))
+						})
 					})
 				})
 
@@ -177,7 +197,6 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 					BeforeEach(func() {
 						runner.AddCmdResult("dmsetup ls",
 							dmsetupOutputForPartitionedDisk)
-						fs.RemoveAll(managedDiskSettingsPath)
 					})
 
 					It("returns the real path without iSCSI restart", func() {
@@ -191,6 +210,36 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 						Expect(openiscsi.DiscoveryCallCount()).To(Equal(0))
 						Expect(openiscsi.LogoutCallCount()).To(Equal(0))
 						Expect(openiscsi.LoginCallCount()).To(Equal(0))
+					})
+				})
+
+				Context("when device is resolved then paritioned and re-resolved", func() {
+					BeforeEach(func() {
+						runner.AddCmdResult("dmsetup ls",
+							dmsetupOutputForNoDeviceFound)
+						runner.AddCmdResult("dmsetup ls",
+							dmsetupOutputForNonPartitionedDisk)
+						runner.AddCmdResult("dmsetup ls",
+							dmsetupOutputForPartitionedDisk)
+					})
+
+					It("returns the real path consistently", func() {
+						path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(path).To(Equal("/dev/mapper/fake_device_path"))
+						Expect(timeout).To(BeFalse())
+
+						Expect(openiscsi.LoginCallCount()).To(Equal(1))
+
+						path, timeout, err = pathResolver.GetRealDevicePath(diskSettings)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(path).To(Equal("/dev/mapper/fake_device_path"))
+						Expect(timeout).To(BeFalse())
+
+						// expect no more call to Login() to have been made:
+						Expect(openiscsi.LoginCallCount()).To(Equal(1))
 					})
 				})
 			})
@@ -213,6 +262,64 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 					Expect(openiscsi.LogoutCallCount()).To(Equal(0))
 					Expect(openiscsi.LoginCallCount()).To(Equal(0))
 				})
+			})
+		})
+
+		Context("when performing a disk migration", func() {
+			BeforeEach(func() {
+				// NOTE: this test setup is based on the traces provided in
+				// https://github.com/cloudfoundry/bosh-agent/issues/252#issuecomment-977712657
+				dmsetupOutputForPartitionedDisk = fakesys.FakeCmdResult{Stdout: buildDmsetupOutput(
+					[]dmsetupDevice{
+						{Name: "3600a098038305679445d523053437757", MajMinNum: "(253:0)"},
+						{Name: "3600a098038305679445d523053437757-part1", MajMinNum: "(253:1)"},
+					}),
+				}
+				runner.AddCmdResult("dmsetup ls",
+					dmsetupOutputForPartitionedDisk)
+				runner.AddCmdResult("dmsetup ls",
+					dmsetupOutputForPartitionedDisk)
+				runner.AddCmdResult("dmsetup ls",
+					fakesys.FakeCmdResult{Stdout: buildDmsetupOutput(
+						[]dmsetupDevice{
+							{Name: "3600a098038305678762b523053333956", MajMinNum: "(253:2)"},
+							{Name: "3600a098038305679445d523053437757", MajMinNum: "(253:0)"},
+							{Name: "3600a098038305679445d523053437757-part1", MajMinNum: "(253:1)"},
+						}),
+					})
+				runner.AddCmdResult("dmsetup ls",
+					fakesys.FakeCmdResult{Stdout: buildDmsetupOutput(
+						[]dmsetupDevice{
+							{Name: "3600a098038305678762b523053333956", MajMinNum: "(253:2)"},
+							{Name: "3600a098038305678762b523053333956-part1", MajMinNum: "(253:3)"},
+							{Name: "3600a098038305679445d523053437757", MajMinNum: "(253:0)"},
+							{Name: "3600a098038305679445d523053437757-part1", MajMinNum: "(253:1)"},
+						}),
+					})
+			})
+
+			It("returns the real path consistently", func() {
+				diskSettings.ID = "12345678" // the last mounted disk ID
+
+				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(path).To(Equal("/dev/mapper/3600a098038305679445d523053437757"))
+				Expect(timeout).To(BeFalse())
+
+				diskSettings.ID = "23456789" // the new disk with new size
+
+				path, timeout, err = pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(path).To(Equal("/dev/mapper/3600a098038305678762b523053333956"))
+				Expect(timeout).To(BeFalse())
+
+				path, timeout, err = pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(path).To(Equal("/dev/mapper/3600a098038305678762b523053333956"))
+				Expect(timeout).To(BeFalse())
 			})
 		})
 
