@@ -16,6 +16,13 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+const maxRecentDevices = 10
+
+type recentDevice struct {
+	path     string
+	resolved time.Time
+}
+
 // iscsiDevicePathResolver resolves device path by performing Open-iscsi discovery
 type iscsiDevicePathResolver struct {
 	diskWaitTimeout time.Duration
@@ -25,6 +32,7 @@ type iscsiDevicePathResolver struct {
 	dirProvider     boshdirs.Provider
 	logTag          string
 	logger          boshlog.Logger
+	recentDevices   map[string]recentDevice
 }
 
 func NewIscsiDevicePathResolver(
@@ -43,6 +51,7 @@ func NewIscsiDevicePathResolver(
 		dirProvider:     dirProvider,
 		logTag:          "iscsiResolver",
 		logger:          logger,
+		recentDevices:   make(map[string]recentDevice),
 	}
 }
 
@@ -52,12 +61,17 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 		return "", false, bosherr.WrapError(err, "Checking disk settings")
 	}
 
+	devicePath, found := ispr.getFromCache(diskSettings.ID)
+	if found {
+		ispr.logger.Info(ispr.logTag, "Found remembered path '%s'", devicePath)
+		return devicePath, false, nil
+	}
+
 	// fetch existing path if disk is last mounted
 	lastDiskID, err := ispr.lastMountedCid()
 	if err != nil {
 		return "", false, bosherr.WrapError(err, "Fetching last mounted disk CID")
 	}
-
 	ispr.logger.Debug(ispr.logTag, "Last mounted disk CID: '%s'", lastDiskID)
 
 	mappedDevices, err := ispr.getMappedDevices()
@@ -79,8 +93,10 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 	alreadySeen := lastDiskID == diskSettings.ID
 	brandNew := lastDiskID == ""
 	isPartitionned := len(existingPaths) > 0
+	ispr.logger.Debug(ispr.logTag, "Found %d existing paths (alreadySeen:'%+v', brandNew:'%+v', isPartitionned:'%+v')", len(existingPaths), alreadySeen, brandNew, isPartitionned)
 	if (alreadySeen || brandNew) && isPartitionned {
 		ispr.logger.Info(ispr.logTag, "Found existing path '%s'", existingPaths[0])
+		ispr.putToCache(diskSettings.ID, existingPaths[0])
 		return existingPaths[0], false, nil
 	}
 
@@ -99,6 +115,7 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 		return "", false, bosherr.WrapError(err, "get device path after connect iSCSI target")
 	}
 
+	ispr.putToCache(diskSettings.ID, realPath)
 	return realPath, false, nil
 }
 
@@ -246,4 +263,38 @@ func (ispr iscsiDevicePathResolver) lastMountedCid() (string, error) {
 	}
 
 	return string(contents), nil
+}
+
+func (ispr iscsiDevicePathResolver) putToCache(diskCID, devicePath string) {
+	if diskCID == "" {
+		ispr.logger.Warn(ispr.logTag, "Cannot remember device path '%s' for empty disk CID", devicePath)
+	}
+	for len(ispr.recentDevices) >= maxRecentDevices {
+		var (
+			oldestCID    string
+			oldestDevice recentDevice
+		)
+		// find the oldest entry to evict from cache
+		for cid, device := range ispr.recentDevices {
+			if oldestCID == "" || device.resolved.Before(oldestDevice.resolved) {
+				oldestCID = cid
+				oldestDevice = device
+			}
+		}
+		ispr.logger.Warn(ispr.logTag, "Evicting from cache device ID '%s' with path '%s'", oldestCID, oldestDevice.path)
+		delete(ispr.recentDevices, oldestCID)
+	}
+	ispr.logger.Warn(ispr.logTag, "Remembering device path '%s' for disk CID '%s'", devicePath, diskCID)
+	ispr.recentDevices[diskCID] = recentDevice{
+		path:     devicePath,
+		resolved: time.Now(),
+	}
+}
+
+func (ispr iscsiDevicePathResolver) getFromCache(diskCID string) (string, bool) {
+	device, found := ispr.recentDevices[diskCID]
+	if found {
+		return device.path, found
+	}
+	return "", false
 }
