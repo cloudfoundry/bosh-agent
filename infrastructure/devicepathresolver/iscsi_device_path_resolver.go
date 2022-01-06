@@ -87,6 +87,19 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 
 	ispr.logger.Debug(ispr.logTag, "Existing real paths '%+v'", existingPaths)
 	if len(existingPaths) > 2 {
+		// KLUDGE (2021-12 review): why should we accept 2 but not 3 attached
+		// (and partitioned) devices here? When migrating from an old disk to
+		// a new one, we'll typically find the old disk here (we know it
+		// because the disk ID is the lat mounted CID that has been written
+		// on disk), and the new one after iSCSI discovery/logout/login in
+		// getDevicePathAfterConnectTarget() below.
+		//
+		// Second concern is that Bosh allows many persistent disks to be
+		// mounted. So, this limitation here seems inappropriate.
+		// See also: https://www.starkandwayne.com/blog/bosh-multiple-disks/
+		//
+		// It really seems that the original implementer have made an invalid
+		// assumption here.
 		return "", false, bosherr.WrapError(err, "More than 2 persistent disks attached")
 	}
 
@@ -95,6 +108,10 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 	isPartitionned := len(existingPaths) > 0
 	ispr.logger.Debug(ispr.logTag, "Found %d existing paths (alreadySeen:'%+v', brandNew:'%+v', isPartitionned:'%+v')", len(existingPaths), alreadySeen, brandNew, isPartitionned)
 	if (alreadySeen || brandNew) && isPartitionned {
+		// KLUDGE (2021-12 review): when facing 2 devices here, why would we
+		// arbitrarily choose the first one. How do we know this is the right
+		// one matching the disk ID? Practically, this algorithm seems to
+		// work reliably only when mounting one new device at a time.
 		ispr.logger.Info(ispr.logTag, "Found existing path '%s'", existingPaths[0])
 		ispr.putToCache(diskSettings.ID, existingPaths[0])
 		return existingPaths[0], false, nil
@@ -158,7 +175,7 @@ func (ispr iscsiDevicePathResolver) getMappedDevices() ([]string, error) {
 // getDevicePaths: to find iSCSI device paths
 // a "–part1" suffix device based on origin multipath device
 // last mounted disk already have this device, new disk doesn't have this device yet
-func (ispr iscsiDevicePathResolver) getDevicePaths(devices []string, shouldExist bool) ([]string, error) {
+func (ispr iscsiDevicePathResolver) getDevicePaths(devices []string, alreadyPartitioned bool) ([]string, error) {
 	var partitionRegexp = regexp.MustCompile("-part1")
 	var paths []string
 
@@ -170,7 +187,7 @@ func (ispr iscsiDevicePathResolver) getDevicePaths(devices []string, shouldExist
 		}
 		deviceName := fields[0]
 		firstPartitionExists := partitionRegexp.MatchString(deviceName)
-		if firstPartitionExists == shouldExist {
+		if firstPartitionExists == alreadyPartitioned {
 			matchedPath := path.Join("/dev/mapper", strings.Split(deviceName, "-")[0])
 			ispr.logger.Debug(ispr.logTag, "path in device list: '%+v'", matchedPath)
 			paths = append(paths, matchedPath)
