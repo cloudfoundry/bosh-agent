@@ -221,7 +221,7 @@ func describeHTTPMetadataService() {
 			instanceIDPath string
 		)
 
-		Context("when using IMDSv1", func(){
+		Context("when using IMDSv1", func() {
 			BeforeEach(func() {
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					defer GinkgoRecover()
@@ -270,7 +270,6 @@ func describeHTTPMetadataService() {
 			})
 
 		})
-
 
 		Context("when IMDSv2 is required", func() {
 			var tokenCalls int

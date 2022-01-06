@@ -339,8 +339,10 @@ func (ms HTTPMetadataService) ttlHeaders() func(*http.Request) {
 	}
 }
 
-func (ms HTTPMetadataService) getToken()(token string, err error) {
-	if ms.tokenPath == "" { return"", nil }
+func (ms HTTPMetadataService) getToken() (token string, err error) {
+	if ms.tokenPath == "" {
+		return "", nil
+	}
 
 	ms.logger.Debug(ms.logTag, "Using IMDSv2 with endpoint: %s", ms.tokenPath)
 
