@@ -329,7 +329,8 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// archive was downloaded from the blobstore and decompress to this temp dir
-				Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/real-compile-dir/pkg_name-bosh-agent-unpack"))
+				Expect(compressor.DecompressFileToDirDirs[0]).To(ContainSubstring("real-compile-dir"))
+				Expect(compressor.DecompressFileToDirDirs[0]).To(ContainSubstring("pkg_name-bosh-agent-unpack"))
 				Expect(compressor.DecompressFileToDirTarballPaths[0]).To(BeEmpty())
 
 				// contents were moved from the temp dir to the install/enable dir
