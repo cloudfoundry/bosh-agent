@@ -1,11 +1,10 @@
 package compiler
 
 import (
+	"code.cloudfoundry.org/clock"
 	"fmt"
 	"os"
 	"path"
-
-	"code.cloudfoundry.org/clock"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
@@ -189,7 +188,12 @@ func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) 
 		}
 	}
 
-	err := c.compressor.DecompressFileToDir(archivePath, tmpInstallPath, boshcmd.CompressorOptions{})
+	tmpInstallPathWithoutSymlinks, err := c.fs.ReadAndFollowLink(tmpInstallPath)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Following Compile Path Symlink")
+	}
+
+	err = c.compressor.DecompressFileToDir(archivePath, tmpInstallPathWithoutSymlinks, boshcmd.CompressorOptions{})
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
 	}

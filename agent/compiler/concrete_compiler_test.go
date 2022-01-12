@@ -95,7 +95,8 @@ func init() {
 				new(fakebc.FakeClock),
 			)
 
-			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
+			fs.MkdirAll("/real-compile-dir", os.ModePerm)
+			fs.Symlink("/real-compile-dir", "/fake-compile-dir")
 			Expect(fs.WriteFileString("/tmp/compressed-compiled-package", "fake-contents")).ToNot(HaveOccurred())
 		})
 
@@ -328,7 +329,7 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// archive was downloaded from the blobstore and decompress to this temp dir
-				Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/fake-compile-dir/pkg_name-bosh-agent-unpack"))
+				Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/real-compile-dir/pkg_name-bosh-agent-unpack"))
 				Expect(compressor.DecompressFileToDirTarballPaths[0]).To(BeEmpty())
 
 				// contents were moved from the temp dir to the install/enable dir
