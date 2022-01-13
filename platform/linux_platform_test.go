@@ -2421,7 +2421,7 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"chown", "root:syslog", "/fake-dir/data/root_log"}))
 			})
 
-			It("touches, chmods and chowns wtmp and btmp files", func() {
+			It("touches, chmods and chowns wtmp, btmp and lastlog  files", func() {
 				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
@@ -2432,6 +2432,10 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(cmdRunner.RunCommands[9]).To(Equal([]string{"touch", "/fake-dir/data/root_log/wtmp"}))
 				Expect(cmdRunner.RunCommands[10]).To(Equal([]string{"chown", "root:utmp", "/fake-dir/data/root_log/wtmp"}))
 				Expect(cmdRunner.RunCommands[11]).To(Equal([]string{"chmod", "0664", "/fake-dir/data/root_log/wtmp"}))
+
+				Expect(cmdRunner.RunCommands[12]).To(Equal([]string{"touch", "/fake-dir/data/root_log/lastlog"}))
+				Expect(cmdRunner.RunCommands[13]).To(Equal([]string{"chown", "root:utmp", "/fake-dir/data/root_log/lastlog"}))
+				Expect(cmdRunner.RunCommands[14]).To(Equal([]string{"chmod", "0664", "/fake-dir/data/root_log/lastlog"}))
 			})
 		})
 
@@ -2456,9 +2460,9 @@ sam:fakeanotheruser`)
 					err := act()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(cmdRunner.RunCommands[12]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/chrony"}))
-					Expect(cmdRunner.RunCommands[13]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_log/chrony"}))
-					Expect(cmdRunner.RunCommands[14]).To(Equal([]string{"chown", "_chrony:_chrony", "/fake-dir/data/root_log/chrony"}))
+					Expect(cmdRunner.RunCommands[15]).To(Equal([]string{"mkdir", "-p", "/fake-dir/data/root_log/chrony"}))
+					Expect(cmdRunner.RunCommands[16]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_log/chrony"}))
+					Expect(cmdRunner.RunCommands[17]).To(Equal([]string{"chown", "_chrony:_chrony", "/fake-dir/data/root_log/chrony"}))
 				})
 			})
 

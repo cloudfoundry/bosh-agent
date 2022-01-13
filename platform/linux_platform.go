@@ -1030,6 +1030,11 @@ func (p linux) SetupLogDir() error {
 		return err
 	}
 
+	err = p.ensureFile(fmt.Sprintf("%s/lastlog", boshRootLogPath), "root:utmp", "0664")
+	if err != nil {
+		return err
+	}
+
 	err = p.bindMountDir(boshRootLogPath, logDir)
 	if err != nil {
 		return err
