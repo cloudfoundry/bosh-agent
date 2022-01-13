@@ -98,9 +98,14 @@ func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
 		}
 	}
 
-	err := b.compressor.DecompressFileToDir(
+	installPathWithoutSymlinks, err := b.fs.ReadAndFollowLink(b.installPath)
+	if err != nil {
+		return "", bosherr.WrapErrorf(err, "Following Install Path Symlink")
+	}
+
+	err = b.compressor.DecompressFileToDir(
 		sourcePath,
-		b.installPath,
+		installPathWithoutSymlinks,
 		fileutil.CompressorOptions{PathInArchive: pathInBundle, StripComponents: stripComponents},
 	)
 	if err != nil {
