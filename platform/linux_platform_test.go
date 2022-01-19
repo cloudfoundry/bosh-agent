@@ -2547,16 +2547,25 @@ sam:fakeanotheruser`)
 	})
 
 	Describe("SetupOptDir", func() {
+		It("creates a root_var_opt folder with permissions", func() {
+			err := platform.SetupOptDir()
+			Expect(err).NotTo(HaveOccurred())
+			testFileStat := fs.GetFileTestStat("/fake-dir/data/root_var_opt")
+			Expect(testFileStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0755)))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:root", "/fake-dir/data/root_var_opt"}))
+		})
+
 		It("creates a root_opt folder with permissions", func() {
 			err := platform.SetupOptDir()
 			Expect(err).NotTo(HaveOccurred())
 			testFileStat := fs.GetFileTestStat("/fake-dir/data/root_opt")
 			Expect(testFileStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(testFileStat.FileMode).To(Equal(os.FileMode(0755)))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:root", "/fake-dir/data/root_opt"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:root", "/fake-dir/data/root_opt"}))
 		})
 
-		Context("mounting root_opt into /var/opt", func() {
+		Context("mounting root_var_opt into /var/opt", func() {
 			Context("when /var/opt is not a mount point", func() {
 				BeforeEach(func() {
 					mounter.IsMountPointReturns("", false, nil)
@@ -2566,9 +2575,8 @@ sam:fakeanotheruser`)
 					err := platform.SetupOptDir()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(mounter.MountFilesystemCallCount()).To(Equal(1))
 					partition, mntPt, fstype, options := mounter.MountFilesystemArgsForCall(0)
-					Expect(partition).To(Equal("/fake-dir/data/root_opt"))
+					Expect(partition).To(Equal("/fake-dir/data/root_var_opt"))
 					Expect(mntPt).To(Equal("/var/opt"))
 					Expect(fstype).To(Equal(""))
 					Expect(options).To(Equal([]string{"bind"}))
@@ -2591,7 +2599,7 @@ sam:fakeanotheruser`)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("does not try to mount root_opt into /var/opt", func() {
+				It("does not try to mount root_var_opt into /var/opt", func() {
 					platform.SetupOptDir()
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
@@ -2614,6 +2622,69 @@ sam:fakeanotheruser`)
 				})
 
 				It("does not try to mount /var/opt", func() {
+					platform.SetupOptDir()
+					Expect(mounter.MountCallCount()).To(Equal(0))
+				})
+			})
+		})
+
+		Context("mounting root_opt into /opt", func() {
+			Context("when /opt is not a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountPointReturns("", false, nil)
+				})
+
+				It("bind mounts it in /opt", func() {
+					err := platform.SetupOptDir()
+					Expect(err).NotTo(HaveOccurred())
+
+					partition, mntPt, fstype, options := mounter.MountFilesystemArgsForCall(1)
+					Expect(partition).To(Equal("/fake-dir/data/root_opt"))
+					Expect(mntPt).To(Equal("/opt"))
+					Expect(fstype).To(Equal(""))
+					Expect(options).To(Equal([]string{"bind"}))
+				})
+			})
+
+			Context("when /opt is a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+						if devicePathOrMountPoint == "/opt" {
+							return true, nil
+						}
+						return false, nil
+					}
+				})
+
+				It("returns without an error", func() {
+					err := platform.SetupOptDir()
+					Expect(mounter.IsMountedArgsForCall(1)).To(Equal("/opt"))
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("does not try to mount root_opt into /opt", func() {
+					platform.SetupOptDir()
+					Expect(mounter.MountCallCount()).To(Equal(0))
+				})
+			})
+
+			Context("when /opt cannot be determined if it is a mount point", func() {
+				BeforeEach(func() {
+					mounter.IsMountedStub = func(devicePathOrMountPoint string) (bool, error) {
+						if devicePathOrMountPoint == "/opt" {
+							return false, errors.New("fake-is-mounted-error")
+						}
+						return false, nil
+					}
+				})
+
+				It("returns error", func() {
+					err := platform.SetupOptDir()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-mounted-error"))
+				})
+
+				It("does not try to mount /opt", func() {
 					platform.SetupOptDir()
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
