@@ -1064,10 +1064,28 @@ func (p linux) SetupLogDir() error {
 }
 
 func (p linux) SetupOptDir() error {
-	optDir := "/var/opt"
+	varOptDir := "/var/opt"
+
+	boshRootVarOptDirPath := path.Join(p.dirProvider.DataDir(), "root_var_opt")
+	err := p.fs.MkdirAll(boshRootVarOptDirPath, userRootOptDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating root var opt dir")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:root", boshRootVarOptDirPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning root var opt dir")
+	}
+
+	err = p.bindMountDir(boshRootVarOptDirPath, varOptDir)
+	if err != nil {
+		return err
+	}
+
+	optDir := "/opt"
 
 	boshRootOptDirPath := path.Join(p.dirProvider.DataDir(), "root_opt")
-	err := p.fs.MkdirAll(boshRootOptDirPath, userRootOptDirPermissions)
+	err = p.fs.MkdirAll(boshRootOptDirPath, userRootOptDirPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating root opt dir")
 	}
