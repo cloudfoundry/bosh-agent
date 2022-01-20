@@ -2061,7 +2061,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(mounter.RemountInPlaceCallCount()).To(Equal(2))
 						mntPt, options = mounter.RemountInPlaceArgsForCall(0)
 						Expect(mntPt).To(Equal("/tmp"))
-						Expect(options).To(Equal([]string{"nodev", "noexec", "nosuid"}))
+						Expect(options).To(Equal([]string{"nodev", "nosuid", "noexec"}))
 					})
 				})
 
@@ -2095,7 +2095,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(mounter.RemountInPlaceCallCount()).To(Equal(2))
 						mntPt, options := mounter.RemountInPlaceArgsForCall(0)
 						Expect(mntPt).To(Equal("/tmp"))
-						Expect(options).To(Equal([]string{"nodev", "noexec", "nosuid"}))
+						Expect(options).To(Equal([]string{"nodev", "nosuid", "noexec"}))
 					})
 
 					It("does not create new tmp filesystem", func() {
@@ -2163,7 +2163,7 @@ Number  Start   End     Size    File system  Name             Flags
 						Expect(mounter.RemountInPlaceCallCount()).To(Equal(2))
 						mntPt, options = mounter.RemountInPlaceArgsForCall(1)
 						Expect(mntPt).To(Equal("/var/tmp"))
-						Expect(options).To(Equal([]string{"nodev", "noexec", "nosuid"}))
+						Expect(options).To(Equal([]string{"nodev", "nosuid", "noexec"}))
 					})
 
 					It("changes permissions for the system /var/tmp folder", func() {
@@ -2575,6 +2575,10 @@ sam:fakeanotheruser`)
 					Expect(mntPt).To(Equal("/var/opt"))
 					Expect(fstype).To(Equal(""))
 					Expect(options).To(Equal([]string{"bind"}))
+
+					mntPt, options = mounter.RemountInPlaceArgsForCall(0)
+					Expect(mntPt).To(Equal("/var/opt"))
+					Expect(options).To(Equal([]string{"nodev", "nosuid"}))
 				})
 			})
 
@@ -2638,6 +2642,10 @@ sam:fakeanotheruser`)
 					Expect(mntPt).To(Equal("/opt"))
 					Expect(fstype).To(Equal(""))
 					Expect(options).To(Equal([]string{"bind"}))
+
+					mntPt, options = mounter.RemountInPlaceArgsForCall(1)
+					Expect(mntPt).To(Equal("/opt"))
+					Expect(options).To(Equal([]string{"nodev", "nosuid"}))
 				})
 			})
 
