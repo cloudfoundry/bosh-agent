@@ -223,8 +223,8 @@ bosh_foobar:...`
 			err := platform.DeleteEphemeralUsersMatching("bar$")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"userdel", "-r", "bosh_bar"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"userdel", "-r", "bosh_foobar"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"userdel", "-rf", "bosh_bar"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"userdel", "-rf", "bosh_foobar"}))
 		})
 	})
 

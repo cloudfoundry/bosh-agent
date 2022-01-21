@@ -293,7 +293,7 @@ func (p linux) DeleteEphemeralUsersMatching(reg string) error {
 }
 
 func (p linux) deleteUser(user string) (err error) {
-	_, _, _, err = p.cmdRunner.RunCommand("userdel", "-r", user)
+	_, _, _, err = p.cmdRunner.RunCommand("userdel", "-rf", user)
 	return
 }
 

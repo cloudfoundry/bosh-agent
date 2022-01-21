@@ -89,11 +89,11 @@ var _ = Describe("Instance Info", func() {
 		BeforeEach(func() {
 			testEnvironment.RunCommand("sudo groupadd bosh_sudoers")
 			testEnvironment.RunCommand("sudo groupadd bosh_sshers")
-			testEnvironment.RunCommand("sudo userdel -r username")
+			testEnvironment.RunCommand("sudo userdel -rf username")
 		})
 
 		AfterEach(func() {
-			testEnvironment.RunCommand("sudo userdel -r username")
+			testEnvironment.RunCommand("sudo userdel -rf username")
 		})
 
 		It("should contain the correct home directory permissions", func() {
