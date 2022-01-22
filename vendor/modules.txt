@@ -59,7 +59,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.296
+# github.com/cloudfoundry/bosh-utils v0.0.297
 ## explicit; go 1.17
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -86,7 +86,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.38
+# github.com/cloudfoundry/socks5-proxy v0.2.39
 ## explicit; go 1.17
 github.com/cloudfoundry/socks5-proxy
 # github.com/davecgh/go-spew v1.1.1
@@ -292,7 +292,7 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 ## explicit; go 1.12
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
+# golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
