@@ -90,7 +90,6 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: master
 
   - name: golang-release
     type: git
