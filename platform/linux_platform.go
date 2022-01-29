@@ -1082,6 +1082,8 @@ func (p linux) SetupOptDir() error {
 		return bosherr.WrapError(err, "Chowning root var opt dir")
 	}
 
+	//Mount our /var/opt bind mount without the 'noexec' option. Binaries are
+	//often in subdirectories of /var/opt, and folks expect to be able to execute them.
 	err = p.bindMountDir(boshRootVarOptDirPath, varOptDir, true)
 	if err != nil {
 		return err
@@ -1100,6 +1102,8 @@ func (p linux) SetupOptDir() error {
 		return bosherr.WrapError(err, "Chowning root opt dir")
 	}
 
+	//Mount our /opt bind mount without the 'noexec' option. Binaries are
+	//often in subdirectories of /opt, and folks expect to be able to execute them.
 	err = p.bindMountDir(boshRootOptDirPath, optDir, true)
 	if err != nil {
 		return err
