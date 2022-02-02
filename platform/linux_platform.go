@@ -938,12 +938,12 @@ func (p linux) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
 	}
 
-	err = p.bindMountDir(boshRootTmpPath, systemTmpDir)
+	err = p.bindMountDir(boshRootTmpPath, systemTmpDir, false)
 	if err != nil {
 		return err
 	}
 
-	err = p.bindMountDir(boshRootTmpPath, varTmpDir)
+	err = p.bindMountDir(boshRootTmpPath, varTmpDir, false)
 	if err != nil {
 		return err
 	}
@@ -1035,7 +1035,7 @@ func (p linux) SetupLogDir() error {
 		return err
 	}
 
-	err = p.bindMountDir(boshRootLogPath, logDir)
+	err = p.bindMountDir(boshRootLogPath, logDir, false)
 	if err != nil {
 		return err
 	}
@@ -1069,10 +1069,30 @@ func (p linux) SetupLogDir() error {
 }
 
 func (p linux) SetupOptDir() error {
-	optDir := "/var/opt"
+	varOptDir := "/var/opt"
+
+	boshRootVarOptDirPath := path.Join(p.dirProvider.DataDir(), "root_var_opt")
+	err := p.fs.MkdirAll(boshRootVarOptDirPath, userRootOptDirPermissions)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating root var opt dir")
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:root", boshRootVarOptDirPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Chowning root var opt dir")
+	}
+
+	//Mount our /var/opt bind mount without the 'noexec' option. Binaries are
+	//often in subdirectories of /var/opt, and folks expect to be able to execute them.
+	err = p.bindMountDir(boshRootVarOptDirPath, varOptDir, true)
+	if err != nil {
+		return err
+	}
+
+	optDir := "/opt"
 
 	boshRootOptDirPath := path.Join(p.dirProvider.DataDir(), "root_opt")
-	err := p.fs.MkdirAll(boshRootOptDirPath, userRootOptDirPermissions)
+	err = p.fs.MkdirAll(boshRootOptDirPath, userRootOptDirPermissions)
 	if err != nil {
 		return bosherr.WrapError(err, "Creating root opt dir")
 	}
@@ -1082,7 +1102,9 @@ func (p linux) SetupOptDir() error {
 		return bosherr.WrapError(err, "Chowning root opt dir")
 	}
 
-	err = p.bindMountDir(boshRootOptDirPath, optDir)
+	//Mount our /opt bind mount without the 'noexec' option. Binaries are
+	//often in subdirectories of /opt, and folks expect to be able to execute them.
+	err = p.bindMountDir(boshRootOptDirPath, optDir, true)
 	if err != nil {
 		return err
 	}
@@ -1117,7 +1139,7 @@ func (p linux) SetupLoggingAndAuditing() error {
 	return nil
 }
 
-func (p linux) bindMountDir(mountSource, mountPoint string) error {
+func (p linux) bindMountDir(mountSource, mountPoint string, allowExec bool) error {
 	bindMounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
 	mounted, err := bindMounter.IsMounted(mountPoint)
 
@@ -1130,7 +1152,11 @@ func (p linux) bindMountDir(mountSource, mountPoint string) error {
 		return err
 	}
 
-	return bindMounter.RemountInPlace(mountPoint, "nodev", "noexec", "nosuid")
+	mountOptions := []string{"nodev", "nosuid"}
+	if !allowExec {
+		mountOptions = append(mountOptions, "noexec")
+	}
+	return bindMounter.RemountInPlace(mountPoint, mountOptions...)
 }
 
 func (p linux) changeTmpDirPermissions(path string) error {
