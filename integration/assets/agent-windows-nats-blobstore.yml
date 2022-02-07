@@ -29,6 +29,7 @@
     release: nats
     properties:
       nats:
+        hostname: ((server_tls.common_name))
         external:
           tls:
             ca: ((client_tls.ca))
