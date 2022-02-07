@@ -30,6 +30,10 @@
     properties:
       nats:
         hostname: default.nats.bosh-internal
+        client:
+          tls:
+            certificate: ((client_tls.certificate))
+            private_key: ((client_tls.private_key))
         external:
           tls:
             ca: ((client_tls.ca))
