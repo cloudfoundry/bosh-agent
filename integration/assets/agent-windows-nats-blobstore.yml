@@ -29,7 +29,7 @@
     release: nats
     properties:
       nats:
-        hostname: ((server_tls.common_name))
+        hostname: default.nats.bosh-internal
         external:
           tls:
             ca: ((client_tls.ca))
