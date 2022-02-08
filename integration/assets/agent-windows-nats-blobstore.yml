@@ -76,4 +76,5 @@
       common_name: default.nats.bosh-internal
       alternative_names:
         - ((ip_address))
+        - default.nats.bosh-internal
     type: certificate
