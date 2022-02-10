@@ -560,10 +560,11 @@ type FakePlatform struct {
 	setupMonitUserReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupNetworkingStub        func(settings.Networks) error
+	SetupNetworkingStub        func(settings.Networks, string) error
 	setupNetworkingMutex       sync.RWMutex
 	setupNetworkingArgsForCall []struct {
 		arg1 settings.Networks
+		arg2 string
 	}
 	setupNetworkingReturns struct {
 		result1 error
@@ -3518,18 +3519,19 @@ func (fake *FakePlatform) SetupMonitUserReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) SetupNetworking(arg1 settings.Networks) error {
+func (fake *FakePlatform) SetupNetworking(arg1 settings.Networks, arg2 string) error {
 	fake.setupNetworkingMutex.Lock()
 	ret, specificReturn := fake.setupNetworkingReturnsOnCall[len(fake.setupNetworkingArgsForCall)]
 	fake.setupNetworkingArgsForCall = append(fake.setupNetworkingArgsForCall, struct {
 		arg1 settings.Networks
-	}{arg1})
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.SetupNetworkingStub
 	fakeReturns := fake.setupNetworkingReturns
-	fake.recordInvocation("SetupNetworking", []interface{}{arg1})
+	fake.recordInvocation("SetupNetworking", []interface{}{arg1, arg2})
 	fake.setupNetworkingMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -3543,17 +3545,17 @@ func (fake *FakePlatform) SetupNetworkingCallCount() int {
 	return len(fake.setupNetworkingArgsForCall)
 }
 
-func (fake *FakePlatform) SetupNetworkingCalls(stub func(settings.Networks) error) {
+func (fake *FakePlatform) SetupNetworkingCalls(stub func(settings.Networks, string) error) {
 	fake.setupNetworkingMutex.Lock()
 	defer fake.setupNetworkingMutex.Unlock()
 	fake.SetupNetworkingStub = stub
 }
 
-func (fake *FakePlatform) SetupNetworkingArgsForCall(i int) settings.Networks {
+func (fake *FakePlatform) SetupNetworkingArgsForCall(i int) (settings.Networks, string) {
 	fake.setupNetworkingMutex.RLock()
 	defer fake.setupNetworkingMutex.RUnlock()
 	argsForCall := fake.setupNetworkingArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakePlatform) SetupNetworkingReturns(result1 error) {

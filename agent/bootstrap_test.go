@@ -255,12 +255,16 @@ var _ = Describe("bootstrap", func() {
 			networks := boshsettings.Networks{
 				"bosh": boshsettings.Network{},
 			}
+			mbus := "nats://user:pass@host.local"
 			settingsService.Settings.Networks = networks
-
+			settingsService.Settings.Mbus = mbus
 			err := bootstrap()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(platform.SetupNetworkingCallCount()).To(Equal(1))
-			Expect(platform.SetupNetworkingArgsForCall(0)).To(Equal(networks))
+			net, mbusURL := platform.SetupNetworkingArgsForCall(0)
+			Expect(net).To(Equal(networks))
+			Expect(mbusURL).To(Equal(mbus))
+
 		})
 
 		It("sets up ephemeral disk", func() {

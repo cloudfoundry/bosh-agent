@@ -87,8 +87,12 @@ func (net UbuntuNetManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan st
 	return nil
 }
 
-func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
+func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus string, errCh chan error) error {
 	if networks.IsPreconfigured() {
+		err := net.setupFirewall(mbus)
+		if err != nil {
+			return bosherr.WrapError(err, "Setting up Nats Firewall")
+		}
 		// Note in this case IPs are not broadcast
 		dnsNetwork, _ := networks.DefaultNetworkFor("dns")
 		return net.writeResolvConf(dnsNetwork.DNS)
@@ -161,10 +165,21 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	}
 
 	go net.addressBroadcaster.BroadcastMACAddresses(append(staticAddressesWithoutVirtual, dynamicAddresses...))
-
+	err = net.setupFirewall(mbus)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting up Nats Firewall")
+	}
 	return nil
 }
 
+func (net UbuntuNetManager) setupFirewall(mbus string) error {
+	if mbus == "" {
+		net.logger.Info("NetworkSetup", "Skipping adding Firewall for outgoing nats. Mbus url is empty")
+		return nil
+	}
+	net.logger.Info("NetworkSetup", "Adding Firewall not implemented on")
+	return nil
+}
 func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, []string, error) {
 	nonVipNetworks := boshsettings.Networks{}
 	for networkName, networkSettings := range networks {

@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/settings"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/fakes"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
-	"github.com/cloudfoundry/bosh-agent/settings"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
