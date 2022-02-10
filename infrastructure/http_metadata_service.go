@@ -309,7 +309,7 @@ func (ms HTTPMetadataService) ensureMinimalNetworkSetup() error {
 			"eth0": {
 				Type: boshsettings.NetworkTypeDynamic,
 			},
-		})
+		}, "")
 		if err != nil {
 			return bosherr.WrapError(err, "Setting up initial DHCP network")
 		}

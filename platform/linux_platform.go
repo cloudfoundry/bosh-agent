@@ -209,8 +209,8 @@ func (p linux) GetAuditLogger() AuditLogger {
 	return p.auditLogger
 }
 
-func (p linux) SetupNetworking(networks boshsettings.Networks) (err error) {
-	return p.netManager.SetupNetworking(networks, nil)
+func (p linux) SetupNetworking(networks boshsettings.Networks, mbus string) (err error) {
+	return p.netManager.SetupNetworking(networks, mbus, nil)
 }
 
 func (p linux) GetConfiguredNetworkInterfaces() ([]string, error) {
