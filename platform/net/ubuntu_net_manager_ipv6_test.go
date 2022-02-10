@@ -97,7 +97,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 				"ethstatic1": static1Net,
 			})
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(kernelIPv6.Enabled).To(BeTrue())
@@ -120,7 +120,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 
 			kernelIPv6.EnableErr = errors.New("fake-err")
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, "", nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-err"))
 		})
@@ -139,7 +139,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 				"ethstatic2": static1Net,
 			})
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(kernelIPv6.Enabled).To(BeFalse())
@@ -183,7 +183,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 				"net1": static1Net,
 				"net2": static2Net,
 				"net3": static3Net,
-			}, nil)
+			}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")
@@ -264,7 +264,7 @@ DNS=9.9.9.9
 
 			err := netManager.SetupNetworking(boshsettings.Networks{
 				"net1": static1Net,
-			}, nil)
+			}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")

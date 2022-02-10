@@ -51,7 +51,7 @@ func describeHTTPMetadataService() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(platform.SetupNetworkingCallCount()).To(Equal(1))
-				networks := platform.SetupNetworkingArgsForCall(0)
+				networks, _ := platform.SetupNetworkingArgsForCall(0)
 				Expect(networks).To(Equal(boshsettings.Networks{
 					"eth0": boshsettings.Network{
 						Type: "dynamic",

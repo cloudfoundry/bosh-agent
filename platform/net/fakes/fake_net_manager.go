@@ -27,7 +27,7 @@ func (net *FakeManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan struct
 	return net.SetupIPv6Err
 }
 
-func (net *FakeManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
+func (net *FakeManager) SetupNetworking(networks boshsettings.Networks, mbus string, errCh chan error) error {
 	net.SetupNetworkingNetworks = networks
 	return net.SetupNetworkingErr
 }
