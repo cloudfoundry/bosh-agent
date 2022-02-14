@@ -177,7 +177,7 @@ func (app *app) Setup(opts Options) error {
 
 	blobstoreDelegator := blobstore_delegator.NewBlobstoreDelegator(
 		httpblobprovider.NewHTTPBlobImpl(app.platform.GetFs(), blobstoreHTTPClient),
-		blobstore,
+		blobstore, app.logger,
 	)
 
 	applier, compiler := app.buildApplierAndCompiler(

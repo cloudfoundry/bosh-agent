@@ -2,7 +2,7 @@ package blobstore_delegator_test
 
 import (
 	"errors"
-
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -18,6 +18,7 @@ var _ = Describe("BlobstoreDelegator", func() {
 		blobstoreDelegator   blobstore_delegator.BlobstoreDelegator
 		fakeHTTPBlobProvider *fakeblobprovider.FakeHTTPBlobProvider
 		fakeBlobManager      *fakeblobstore.FakeDigestBlobstore
+		logger               boshlog.Logger
 
 		digest = boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "some-digest"))
 	)
@@ -25,8 +26,9 @@ var _ = Describe("BlobstoreDelegator", func() {
 	BeforeEach(func() {
 		fakeHTTPBlobProvider = &fakeblobprovider.FakeHTTPBlobProvider{}
 		fakeBlobManager = &fakeblobstore.FakeDigestBlobstore{}
+		logger = boshlog.NewLogger(boshlog.LevelNone)
 
-		blobstoreDelegator = blobstore_delegator.NewBlobstoreDelegator(fakeHTTPBlobProvider, fakeBlobManager)
+		blobstoreDelegator = blobstore_delegator.NewBlobstoreDelegator(fakeHTTPBlobProvider, fakeBlobManager, logger)
 	})
 
 	Context("Get", func() {
@@ -47,16 +49,30 @@ var _ = Describe("BlobstoreDelegator", func() {
 				Expect(headersArg).To(Equal(map[string]string{"key": "value"}))
 			})
 
-			It("errors when there is an error", func() {
+			It("errors when there is an error with retries", func() {
 				downloadedFilePath := "/some/path/to/a/file"
 				fakeError := errors.New("some error")
 				fakeHTTPBlobProvider.GetReturns(downloadedFilePath, fakeError)
 
 				_, err := blobstoreDelegator.Get(digest, "some-signed-url", "", nil)
-				Expect(err).To(MatchError(fakeError))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("some error"))
 
 				Expect(fakeBlobManager.GetCallCount()).To(Equal(0))
-				Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(1))
+				Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(3))
+			})
+
+			It("succeeds in 2nd try", func() {
+				downloadedFilePath := "/some/path/to/a/file"
+				fakeError := errors.New("some error")
+				fakeHTTPBlobProvider.GetReturnsOnCall(0, downloadedFilePath, fakeError)
+				fakeHTTPBlobProvider.GetReturnsOnCall(1, downloadedFilePath, nil)
+
+				_, err := blobstoreDelegator.Get(digest, "some-signed-url", "", nil)
+				Expect(err).To(BeNil())
+
+				Expect(fakeBlobManager.GetCallCount()).To(Equal(0))
+				Expect(fakeHTTPBlobProvider.GetCallCount()).To(Equal(2))
 			})
 		})
 
