@@ -59,6 +59,18 @@ func NewUbuntuCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeo
 	}
 }
 
+func NewCentOSCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeout time.Duration, logger logger.Logger) Manager {
+	return &certManager{
+		fs:            fs,
+		runner:        runner,
+		path:          "/etc/pki/ca-trust/source/anchors/",
+		updateCmdPath: "/usr/bin/update-ca-trust",
+		logger:        logger,
+		logTag:        "CentOSCertManager",
+		updateTimeout: timeout,
+	}
+}
+
 func NewDummyCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, timeout time.Duration, logger logger.Logger) Manager {
 	return &certManager{
 		fs:            fs,
