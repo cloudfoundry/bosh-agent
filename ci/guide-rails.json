@@ -1,0 +1,89 @@
+{
+	"metadata": {
+		"version": 2
+	},
+	"application": {
+		"name": "bosh-agent",
+		"language": "GOLANG",
+		"artifact_store": {
+			"repositories": null
+		}
+	},
+	"pipeline": {
+		"segments": [
+			{
+				"name": "Build",
+				"segment_type": "build",
+				"exit_actions": {},
+				"properties": [
+					{
+						"name": "gopath",
+						"value": "${SEGMENT_BASE_DIR}/cache/go",
+						"description": "GOPATH is set to ${SEGMENT_BASE_DIR}/cache/go by default, when caching is enabled. Caches are maintained on the worker where your build gets allocated. For a new worker assigned to the build, the cache will be re-created"
+					}
+				],
+				"deployment_strategy": {},
+				"application_init": {},
+				"packages": [
+					{
+						"name": "((application.name))",
+						"downloads": [],
+						"files": [
+							"main/((application.name))"
+						]
+					}
+				],
+				"instance_tags": [
+					{
+						"name": "application.name",
+						"value": "((application.name))"
+					}
+				],
+				"cache_info": {
+					"paths": [
+						"((gopath))"
+					]
+				},
+				"tasks": [
+					{
+						"name": "bosh-agent",
+						"steps": [
+							{
+								"name": "Get Dependencies",
+								"definition": "Get Dependencies",
+								"command": "go get -t -d ./...",
+								"properties": null
+							},
+							{
+								"name": "Unit Tests",
+								"definition": "Unit Tests",
+								"command": "adduser bosh --disabled-password --gecos \"\"\n\nchown -R bosh:bosh $GOPATH/\n\nset -o pipefail\n\nsu -s /bin/bash -c \"ginkgo -cover -r -v -skipPackage=pb,test,mock,proto -outputdir=./ | tee /tmp/ginkgo.output\" bosh",
+								"properties": null
+							},
+							{
+								"name": "Convert coverage",
+								"definition": "Convert coverage",
+								"command": "cat /tmp/ginkgo.output 2\u003e\u00261 | go-junit-report \u003e test.xml\ngocov convert *.coverprofile | gocov-xml \u003e coverage.xml",
+								"properties": null
+							},
+							{
+								"name": "Build",
+								"definition": "Build",
+								"command": "pushd main\ngo build -o ((application.name))",
+								"properties": null
+							}
+						],
+						"docker_options": {}
+					}
+				]
+			}
+		],
+		"exit_actions": {},
+		"default_properties": [],
+		"deployment_files": [],
+		"application_init": {}
+	},
+	"organization": {
+		"orgname": "GR-Product"
+	}
+}
