@@ -50,7 +50,6 @@ func describeCentosNetManager() {
 		fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-		interfaceAddrsValidator := boship.NewInterfaceAddressesValidator(interfaceAddrsProvider)
 		dnsValidator := NewDNSValidator(fs)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		netManager = NewCentosNetManager(
@@ -59,7 +58,7 @@ func describeCentosNetManager() {
 			ipResolver,
 			fakeMACAddressDetector,
 			interfaceConfigurationCreator,
-			interfaceAddrsValidator,
+			interfaceAddrsProvider,
 			dnsValidator,
 			addressBroadcaster,
 			logger,
