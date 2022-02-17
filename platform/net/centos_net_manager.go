@@ -3,6 +3,7 @@ package net
 import (
 	"bytes"
 	"path"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -93,7 +94,20 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticInterfaceConfigurations, dhcpInterfaceConfigurations)
 
-	interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(net.interfaceAddrsProvider, staticAddresses)
+	var staticAddressesWithoutVirtual []boship.InterfaceAddress
+	r, err := regexp.Compile(`:\d+`)
+	if err != nil {
+		return bosherr.WrapError(err, "There is a problem with your regexp: ':\\d+'. That is used to skip validation of virtual interfaces(e.g., eth0:0, eth0:1)")
+	}
+	for _, addr := range staticAddresses {
+		if r.MatchString(addr.GetInterfaceName()) == true {
+			continue
+		} else {
+			staticAddressesWithoutVirtual = append(staticAddressesWithoutVirtual, addr)
+		}
+	}
+
+	interfaceAddressesValidator := boship.NewInterfaceAddressesValidator(net.interfaceAddrsProvider, staticAddressesWithoutVirtual)
 	retryIPValidator := boshretry.NewAttemptRetryStrategy(
 		10,
 		time.Second,
