@@ -372,52 +372,6 @@ request subnet-mask, broadcast-address, time-offset, routers,
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 		})
 
-		Context("when manual networks were not configured with proper IP addresses", func() {
-			BeforeEach(func() {
-				interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
-					boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.5"),
-				}
-			})
-
-			It("fails", func() {
-				stubInterfaces(map[string]boshsettings.Network{
-					"ethstatic": staticNetwork,
-				})
-
-				errCh := make(chan error)
-				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, errCh)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Validating static network configuration"))
-			})
-		})
-
-		Context("when dns is not properly configured", func() {
-			BeforeEach(func() {
-				fs.WriteFileString("/etc/resolv.conf", "")
-			})
-
-			It("fails", func() {
-				staticNetwork = boshsettings.Network{
-					Type:    "manual",
-					IP:      "1.2.3.4",
-					Default: []string{"dns"},
-					DNS:     []string{"8.8.8.8"},
-					Netmask: "255.255.255.0",
-					Gateway: "3.4.5.6",
-					Mac:     "fake-static-mac-address",
-				}
-
-				stubInterfaces(map[string]boshsettings.Network{
-					"ethstatic": staticNetwork,
-				})
-
-				errCh := make(chan error)
-				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, errCh)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Validating dns configuration"))
-			})
-		})
-
 		It("broadcasts MAC addresses for all interfaces", func() {
 			stubInterfaces(map[string]boshsettings.Network{
 				"ethdhcp":   dhcpNetwork,
@@ -487,6 +441,52 @@ request subnet-mask, broadcast-address, time-offset, routers,
 			Expect(networkConfig).ToNot(BeNil())
 			Expect(networkConfig.StringContents()).ToNot(ContainSubstring("4.4.4.4"))
 			Expect(networkConfig.StringContents()).ToNot(ContainSubstring("5.5.5.5"))
+		})
+
+		Context("when manual networks were not configured with proper IP addresses", func() {
+			BeforeEach(func() {
+				interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+					boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.5"),
+				}
+			})
+
+			It("fails", func() {
+				stubInterfaces(map[string]boshsettings.Network{
+					"ethstatic": staticNetwork,
+				})
+
+				errCh := make(chan error)
+				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, errCh)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Validating static network configuration"))
+			})
+		})
+
+		Context("when dns is not properly configured", func() {
+			BeforeEach(func() {
+				fs.WriteFileString("/etc/resolv.conf", "")
+			})
+
+			It("fails", func() {
+				staticNetwork = boshsettings.Network{
+					Type:    "manual",
+					IP:      "1.2.3.4",
+					Default: []string{"dns"},
+					DNS:     []string{"8.8.8.8"},
+					Netmask: "255.255.255.0",
+					Gateway: "3.4.5.6",
+					Mac:     "fake-static-mac-address",
+				}
+
+				stubInterfaces(map[string]boshsettings.Network{
+					"ethstatic": staticNetwork,
+				})
+
+				errCh := make(chan error)
+				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, errCh)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Validating dns configuration"))
+			})
 		})
 
 		Context("when no MAC address is provided in the settings", func() {
