@@ -11,7 +11,7 @@ if [ ! -d "${bosh_dir}" ]; then
   mkdir -p "${bosh_dir}"
   git clone --recursive --depth 1 --branch main https://github.com/cloudfoundry/bosh.git "${bosh_dir}"
 else
-  echo -e "\n Updating BOSH to origin/master..."
+  echo -e "\n Updating BOSH to origin/main..."
   (
     cd "${bosh_dir}"
     git clean -dfx
