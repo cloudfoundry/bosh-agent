@@ -91,7 +91,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		nonVipNetworks[networkName] = networkSettings
 	}
 
-	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.buildInterfaces(nonVipNetworks)
+	staticConfigs, dhcpConfigs, err := net.buildInterfaces(nonVipNetworks)
 	if err != nil {
 		return err
 	}
@@ -99,14 +99,14 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
 
-	interfacesChanged, err := net.writeNetworkInterfaces(dhcpInterfaceConfigurations, staticInterfaceConfigurations, dnsServers)
+	interfacesChanged, err := net.writeNetworkInterfaces(dhcpConfigs, staticConfigs, dnsServers)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network configuration")
 	}
 
 	dhcpChanged := false
-	if len(dhcpInterfaceConfigurations) > 0 {
-		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers, dhcpInterfaceConfigurations)
+	if len(dhcpConfigs) > 0 {
+		dhcpChanged, err = net.writeDHCPConfiguration(dnsServers, dhcpConfigs)
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		net.restartNetworkingInterfaces()
 	}
 
-	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticInterfaceConfigurations, dhcpInterfaceConfigurations)
+	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
 
 	var staticAddressesWithoutVirtual []boship.InterfaceAddress
 	r, err := regexp.Compile(`:\d+`)
@@ -213,15 +213,15 @@ func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, co
 	return changed, nil
 }
 
-func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations []DHCPInterfaceConfiguration, staticInterfaceConfigurations []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
+func (net centosNetManager) writeNetworkInterfaces(dhcpConfigs []DHCPInterfaceConfiguration, staticConfigs []StaticInterfaceConfiguration, dnsServers []string) (bool, error) {
 	anyInterfaceChanged := false
 
 	staticConfig := centosStaticIfcfg{}
 	staticConfig.DNSServers = newDNSConfigs(dnsServers)
 	staticTemplate := template.Must(template.New("ifcfg").Parse(centosStaticIfcfgTemplate))
 
-	for i := range staticInterfaceConfigurations {
-		staticConfig.StaticInterfaceConfiguration = &staticInterfaceConfigurations[i]
+	for i := range staticConfigs {
+		staticConfig.StaticInterfaceConfiguration = &staticConfigs[i]
 
 		changed, err := net.writeIfcfgFile(staticConfig.StaticInterfaceConfiguration.Name, staticTemplate, staticConfig)
 		if err != nil {
@@ -233,8 +233,8 @@ func (net centosNetManager) writeNetworkInterfaces(dhcpInterfaceConfigurations [
 
 	dhcpTemplate := template.Must(template.New("ifcfg").Parse(centosDHCPIfcfgTemplate))
 
-	for i := range dhcpInterfaceConfigurations {
-		config := &dhcpInterfaceConfigurations[i]
+	for i := range dhcpConfigs {
+		config := &dhcpConfigs[i]
 
 		changed, err := net.writeIfcfgFile(config.Name, dhcpTemplate, config)
 		if err != nil {
@@ -253,13 +253,13 @@ func (net centosNetManager) buildInterfaces(networks boshsettings.Networks) ([]S
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")
 	}
 
-	staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := net.interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMacAddress)
+	staticConfigs, dhcpConfigs, err := net.interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMacAddress)
 
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Creating interface configurations")
 	}
 
-	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
+	return staticConfigs, dhcpConfigs, nil
 }
 
 func (net centosNetManager) restartNetworkingInterfaces() {
@@ -286,7 +286,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 prepend domain-name-servers {{ . }};{{ end }}
 `
 
-func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInterfaceConfigurations []DHCPInterfaceConfiguration) (bool, error) {
+func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpConfigs []DHCPInterfaceConfiguration) (bool, error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
@@ -304,8 +304,8 @@ func (net centosNetManager) writeDHCPConfiguration(dnsServers []string, dhcpInte
 		return changed, bosherr.WrapErrorf(err, "Writing to %s", dhclientConfigFile)
 	}
 
-	for i := range dhcpInterfaceConfigurations {
-		name := dhcpInterfaceConfigurations[i].Name
+	for i := range dhcpConfigs {
+		name := dhcpConfigs[i].Name
 		interfaceDhclientConfigFile := path.Join("/etc/dhcp/", "dhclient-"+name+".conf")
 		err = net.fs.Symlink(dhclientConfigFile, interfaceDhclientConfigFile)
 		if err != nil {
