@@ -140,7 +140,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(13))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
-					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/edx"}))
+					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "--force", "-a", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "17180917759"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-1", "17180917760", "25770852351"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partprobe", "/dev/edx"}))
@@ -196,7 +196,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(13))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
-					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/edx"}))
+					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "--force", "-a", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "8590983167"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-1", "8590983168", "17180917759"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partprobe", "/dev/edx"}))
@@ -285,7 +285,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(13))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
-					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/edx"}))
+					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "--force", "-a", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "8590983167"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-1", "8590983168", "17180917759"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partprobe", "/dev/edx"}))
@@ -329,7 +329,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 				)
 				for i := 0; i < 20; i++ {
 					fakeCmdRunner.AddCmdResult(
-						"wipefs -a /dev/edx",
+						"wipefs --force -a /dev/edx",
 						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 2, Error: errors.New("fake-cmd-error")},
 					)
 				}
