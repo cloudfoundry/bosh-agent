@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/onsi/gomega/format"
+	"sort"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -582,10 +583,16 @@ nameserver 10.0.80.12
 				err := netManager.SetupNetworking(boshsettings.Networks{"default": portableNetwork, "dynamic": staticNetwork, "dynamic_1": staticNetwork1}, nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				Eventually(func() []boship.InterfaceAddress { return addressBroadcaster.Value() }).Should(
+				Eventually(func() []boship.InterfaceAddress {
+					ifaceAddresses := addressBroadcaster.Value()
+					sort.Slice(ifaceAddresses[:], func(i, j int) bool {
+						return ifaceAddresses[i].GetInterfaceName() < ifaceAddresses[j].GetInterfaceName()
+					})
+					return ifaceAddresses
+				}).Should(
 					Equal([]boship.InterfaceAddress{
-						boship.NewSimpleInterfaceAddress("eth1", "169.50.68.75"),
 						boship.NewSimpleInterfaceAddress("eth0", "10.112.39.113"),
+						boship.NewSimpleInterfaceAddress("eth1", "169.50.68.75"),
 					}),
 				)
 
