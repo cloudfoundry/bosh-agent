@@ -135,7 +135,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 		return bosherr.WrapError(err, "Validating dns configuration")
 	}
 
-	net.broadcastIps(append(staticAddresses, dynamicAddresses...), errCh)
+	go net.addressBroadcaster.BroadcastMACAddresses(append(staticAddressesWithoutVirtual, dynamicAddresses...))
 
 	return nil
 }
@@ -260,15 +260,6 @@ func (net centosNetManager) buildInterfaces(networks boshsettings.Networks) ([]S
 	}
 
 	return staticInterfaceConfigurations, dhcpInterfaceConfigurations, nil
-}
-
-func (net centosNetManager) broadcastIps(addresses []boship.InterfaceAddress, errCh chan error) {
-	go func() {
-		net.addressBroadcaster.BroadcastMACAddresses(addresses)
-		if errCh != nil {
-			errCh <- nil
-		}
-	}()
 }
 
 func (net centosNetManager) restartNetworkingInterfaces() {

@@ -378,18 +378,15 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				"ethstatic": staticNetwork,
 			})
 
-			errCh := make(chan error)
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, errCh)
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			broadcastErr := <-errCh // wait for all arpings
-			Expect(broadcastErr).ToNot(HaveOccurred())
-
-			Expect(addressBroadcaster.Value()).To(Equal([]boship.InterfaceAddress{
-				boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
-				boship.NewResolvingInterfaceAddress("ethdhcp", ipResolver),
-			}))
-
+			Eventually(func() []boship.InterfaceAddress { return addressBroadcaster.Value() }).Should(
+				Equal([]boship.InterfaceAddress{
+					boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
+					boship.NewResolvingInterfaceAddress("ethdhcp", ipResolver),
+				}),
+			)
 		})
 
 		It("skips vip networks", func() {
