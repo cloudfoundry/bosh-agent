@@ -65,7 +65,7 @@ func (net centosNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 	}
 
 	for _, iface := range interfacesByMacAddress {
-		if net.fs.FileExists(ifcfgFilePath(iface)) {
+		if net.fs.FileExists(interfaceConfigurationFileCentos(iface)) {
 			interfaces = append(interfaces, iface)
 		}
 	}
@@ -192,7 +192,7 @@ func newDNSConfigs(dnsServers []string) []dnsConfig {
 	return dnsConfigs
 }
 
-func ifcfgFilePath(name string) string {
+func interfaceConfigurationFileCentos(name string) string {
 	return path.Join("/etc/sysconfig/network-scripts", "ifcfg-"+name)
 }
 
@@ -204,7 +204,7 @@ func (net centosNetManager) writeIfcfgFile(name string, t *template.Template, co
 		return false, bosherr.WrapErrorf(err, "Generating '%s' config from template", name)
 	}
 
-	filePath := ifcfgFilePath(name)
+	filePath := interfaceConfigurationFileCentos(name)
 	changed, err := net.fs.ConvergeFileContents(filePath, buffer.Bytes())
 	if err != nil {
 		return false, bosherr.WrapErrorf(err, "Writing config to '%s'", filePath)
