@@ -6,6 +6,8 @@ package net_test
 import (
 	"errors"
 	"fmt"
+	"github.com/onsi/gomega/format"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -515,6 +517,128 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
 				Expect(networkConfig).ToNot(BeNil())
 				Expect(networkConfig.StringContents()).To(Equal(expectedNetworkConfigurationForStatic))
+			})
+		})
+
+		Context("when manual networks were configured with portable IP", func() {
+			var (
+				portableNetwork boshsettings.Network
+				staticNetwork   boshsettings.Network
+				staticNetwork1  boshsettings.Network
+			)
+			BeforeEach(func() {
+				portableNetwork = boshsettings.Network{
+					Type:     "manual",
+					IP:       "10.112.166.136",
+					Netmask:  "255.255.255.192",
+					Resolved: false,
+					UseDHCP:  false,
+					DNS:      []string{"8.8.8.8"},
+					Alias:    "eth0:0",
+				}
+				staticNetwork = boshsettings.Network{
+					Type:     "dynamic",
+					IP:       "169.50.68.75",
+					Netmask:  "255.255.255.224",
+					Gateway:  "169.50.68.65",
+					Default:  []string{"gateway", "dns"},
+					Resolved: false,
+					UseDHCP:  false,
+					DNS:      []string{"8.8.8.8", "10.0.80.11", "10.0.80.12"},
+					Mac:      "06:64:d4:7d:63:71",
+					Alias:    "eth1",
+				}
+				staticNetwork1 = boshsettings.Network{
+					Type:     "dynamic",
+					IP:       "10.112.39.113",
+					Netmask:  "255.255.255.128",
+					Resolved: false,
+					UseDHCP:  false,
+					DNS:      []string{"8.8.8.8", "10.0.80.11", "10.0.80.12"},
+					Mac:      "06:b7:e8:0c:38:d8",
+					Alias:    "eth0",
+				}
+				interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+					boship.NewSimpleInterfaceAddress("eth0", "10.112.39.113"),
+					boship.NewSimpleInterfaceAddress("eth1", "169.50.68.75"),
+				}
+				fs.WriteFileString("/etc/resolv.conf", `
+nameserver 8.8.8.8
+nameserver 10.0.80.11
+nameserver 10.0.80.12
+`)
+			})
+
+			scrubMultipleLines := func(in string) string {
+				return strings.Replace(in, "\n\n\n", "\n\n", -1)
+			}
+
+			It("succeeds", func() {
+				stubInterfaces(map[string]boshsettings.Network{
+					"eth1": staticNetwork,
+					"eth0": staticNetwork1,
+				})
+
+				err := netManager.SetupNetworking(boshsettings.Networks{"default": portableNetwork, "dynamic": staticNetwork, "dynamic_1": staticNetwork1}, nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() []boship.InterfaceAddress { return addressBroadcaster.Value() }).Should(
+					Equal([]boship.InterfaceAddress{
+						boship.NewSimpleInterfaceAddress("eth1", "169.50.68.75"),
+						boship.NewSimpleInterfaceAddress("eth0", "10.112.39.113"),
+					}),
+				)
+
+				matches, err := fs.Ls("/etc/sysconfig/network-scripts/")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(matches).To(ConsistOf(
+					"/etc/sysconfig/network-scripts/ifcfg-eth0",
+					"/etc/sysconfig/network-scripts/ifcfg-eth0:0",
+					"/etc/sysconfig/network-scripts/ifcfg-eth1",
+				))
+
+				format.TruncatedDiff = false
+
+				networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+				Expect(networkConfig).ToNot(BeNil())
+				Expect(networkConfig.StringContents()).To(Equal(`DEVICE=eth0
+BOOTPROTO=static
+IPADDR=10.112.39.113
+NETMASK=255.255.255.128
+BROADCAST=10.112.39.127
+ONBOOT=yes
+PEERDNS=no
+DNS1=8.8.8.8
+DNS2=10.0.80.11
+DNS3=10.0.80.12
+`))
+				networkConfig = fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0:0")
+				Expect(networkConfig).ToNot(BeNil())
+				Expect(networkConfig.StringContents()).To(Equal(`DEVICE=eth0:0
+BOOTPROTO=static
+IPADDR=10.112.166.136
+NETMASK=255.255.255.192
+BROADCAST=10.112.166.191
+ONBOOT=yes
+PEERDNS=no
+DNS1=8.8.8.8
+DNS2=10.0.80.11
+DNS3=10.0.80.12
+`))
+				networkConfig = fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth1")
+				Expect(networkConfig).ToNot(BeNil())
+				Expect(scrubMultipleLines(networkConfig.StringContents())).To(Equal(`DEVICE=eth1
+BOOTPROTO=static
+IPADDR=169.50.68.75
+NETMASK=255.255.255.224
+BROADCAST=169.50.68.95
+GATEWAY=169.50.68.65
+ONBOOT=yes
+PEERDNS=no
+DNS1=8.8.8.8
+DNS2=10.0.80.11
+DNS3=10.0.80.12
+`))
 			})
 		})
 
