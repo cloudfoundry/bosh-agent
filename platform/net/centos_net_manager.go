@@ -56,6 +56,23 @@ func NewCentosNetManager(
 	}
 }
 
+func (net centosNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
+	interfaces := []string{}
+
+	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
+	if err != nil {
+		return interfaces, bosherr.WrapError(err, "Getting network interfaces")
+	}
+
+	for _, iface := range interfacesByMacAddress {
+		if net.fs.FileExists(ifcfgFilePath(iface)) {
+			interfaces = append(interfaces, iface)
+		}
+	}
+
+	return interfaces, nil
+}
+
 func (net centosNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
 
 func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
@@ -138,23 +155,6 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	go net.addressBroadcaster.BroadcastMACAddresses(append(staticAddressesWithoutVirtual, dynamicAddresses...))
 
 	return nil
-}
-
-func (net centosNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
-	interfaces := []string{}
-
-	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
-	if err != nil {
-		return interfaces, bosherr.WrapError(err, "Getting network interfaces")
-	}
-
-	for _, iface := range interfacesByMacAddress {
-		if net.fs.FileExists(ifcfgFilePath(iface)) {
-			interfaces = append(interfaces, iface)
-		}
-	}
-
-	return interfaces, nil
 }
 
 const centosDHCPIfcfgTemplate = `DEVICE={{ .Name }}
