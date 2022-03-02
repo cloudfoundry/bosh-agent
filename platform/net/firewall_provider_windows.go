@@ -7,6 +7,7 @@ import (
 	gonet "net"
 	gonetURL "net/url"
 	"strconv"
+	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"golang.org/x/sys/windows"
@@ -15,9 +16,13 @@ import (
 )
 
 func SetupNatsFirewall(mbus string) error {
+	// return early if we get an empty string for mbus. this is the case when the network for the host is just getting setup or in unit tests.
+	if mbus == "" || strings.HasPrefix(mbus, "https://") {
+		return nil
+	}
 	natsURI, err := gonetURL.Parse(mbus)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting up nats firewall")
+	if err != nil || natsURI.Hostname() == "" {
+		return bosherr.WrapError(err, "Error parsing MbusURL")
 	}
 	session, err := wf.New(&wf.Options{
 		Name:    "Windows Firewall Session for Bosh Agent",

@@ -29,15 +29,16 @@ func (fake *FakeMACAddressDetector) DetectMacAddresses() (map[string]string, err
 	ret, specificReturn := fake.detectMacAddressesReturnsOnCall[len(fake.detectMacAddressesArgsForCall)]
 	fake.detectMacAddressesArgsForCall = append(fake.detectMacAddressesArgsForCall, struct {
 	}{})
+	stub := fake.DetectMacAddressesStub
+	fakeReturns := fake.detectMacAddressesReturns
 	fake.recordInvocation("DetectMacAddresses", []interface{}{})
 	fake.detectMacAddressesMutex.Unlock()
-	if fake.DetectMacAddressesStub != nil {
-		return fake.DetectMacAddressesStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.detectMacAddressesReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

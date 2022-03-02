@@ -145,15 +145,16 @@ func (fake *FakeMounter) IsMountPoint(arg1 string) (string, bool, error) {
 	fake.isMountPointArgsForCall = append(fake.isMountPointArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.IsMountPointStub
+	fakeReturns := fake.isMountPointReturns
 	fake.recordInvocation("IsMountPoint", []interface{}{arg1})
 	fake.isMountPointMutex.Unlock()
-	if fake.IsMountPointStub != nil {
-		return fake.IsMountPointStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	fakeReturns := fake.isMountPointReturns
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
@@ -211,15 +212,16 @@ func (fake *FakeMounter) IsMounted(arg1 string) (bool, error) {
 	fake.isMountedArgsForCall = append(fake.isMountedArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.IsMountedStub
+	fakeReturns := fake.isMountedReturns
 	fake.recordInvocation("IsMounted", []interface{}{arg1})
 	fake.isMountedMutex.Unlock()
-	if fake.IsMountedStub != nil {
-		return fake.IsMountedStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.isMountedReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -276,15 +278,16 @@ func (fake *FakeMounter) Mount(arg1 string, arg2 string, arg3 ...string) error {
 		arg2 string
 		arg3 []string
 	}{arg1, arg2, arg3})
+	stub := fake.MountStub
+	fakeReturns := fake.mountReturns
 	fake.recordInvocation("Mount", []interface{}{arg1, arg2, arg3})
 	fake.mountMutex.Unlock()
-	if fake.MountStub != nil {
-		return fake.MountStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.mountReturns
 	return fakeReturns.result1
 }
 
@@ -339,15 +342,16 @@ func (fake *FakeMounter) MountFilesystem(arg1 string, arg2 string, arg3 string, 
 		arg3 string
 		arg4 []string
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.MountFilesystemStub
+	fakeReturns := fake.mountFilesystemReturns
 	fake.recordInvocation("MountFilesystem", []interface{}{arg1, arg2, arg3, arg4})
 	fake.mountFilesystemMutex.Unlock()
-	if fake.MountFilesystemStub != nil {
-		return fake.MountFilesystemStub(arg1, arg2, arg3, arg4...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.mountFilesystemReturns
 	return fakeReturns.result1
 }
 
@@ -400,15 +404,16 @@ func (fake *FakeMounter) MountTmpfs(arg1 string, arg2 string) error {
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.MountTmpfsStub
+	fakeReturns := fake.mountTmpfsReturns
 	fake.recordInvocation("MountTmpfs", []interface{}{arg1, arg2})
 	fake.mountTmpfsMutex.Unlock()
-	if fake.MountTmpfsStub != nil {
-		return fake.MountTmpfsStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.mountTmpfsReturns
 	return fakeReturns.result1
 }
 
@@ -462,15 +467,16 @@ func (fake *FakeMounter) Remount(arg1 string, arg2 string, arg3 ...string) error
 		arg2 string
 		arg3 []string
 	}{arg1, arg2, arg3})
+	stub := fake.RemountStub
+	fakeReturns := fake.remountReturns
 	fake.recordInvocation("Remount", []interface{}{arg1, arg2, arg3})
 	fake.remountMutex.Unlock()
-	if fake.RemountStub != nil {
-		return fake.RemountStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.remountReturns
 	return fakeReturns.result1
 }
 
@@ -522,15 +528,16 @@ func (fake *FakeMounter) RemountAsReadonly(arg1 string) error {
 	fake.remountAsReadonlyArgsForCall = append(fake.remountAsReadonlyArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.RemountAsReadonlyStub
+	fakeReturns := fake.remountAsReadonlyReturns
 	fake.recordInvocation("RemountAsReadonly", []interface{}{arg1})
 	fake.remountAsReadonlyMutex.Unlock()
-	if fake.RemountAsReadonlyStub != nil {
-		return fake.RemountAsReadonlyStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.remountAsReadonlyReturns
 	return fakeReturns.result1
 }
 
@@ -583,15 +590,16 @@ func (fake *FakeMounter) RemountInPlace(arg1 string, arg2 ...string) error {
 		arg1 string
 		arg2 []string
 	}{arg1, arg2})
+	stub := fake.RemountInPlaceStub
+	fakeReturns := fake.remountInPlaceReturns
 	fake.recordInvocation("RemountInPlace", []interface{}{arg1, arg2})
 	fake.remountInPlaceMutex.Unlock()
-	if fake.RemountInPlaceStub != nil {
-		return fake.RemountInPlaceStub(arg1, arg2...)
+	if stub != nil {
+		return stub(arg1, arg2...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.remountInPlaceReturns
 	return fakeReturns.result1
 }
 
@@ -643,15 +651,16 @@ func (fake *FakeMounter) SwapOn(arg1 string) error {
 	fake.swapOnArgsForCall = append(fake.swapOnArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.SwapOnStub
+	fakeReturns := fake.swapOnReturns
 	fake.recordInvocation("SwapOn", []interface{}{arg1})
 	fake.swapOnMutex.Unlock()
-	if fake.SwapOnStub != nil {
-		return fake.SwapOnStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.swapOnReturns
 	return fakeReturns.result1
 }
 
@@ -703,15 +712,16 @@ func (fake *FakeMounter) Unmount(arg1 string) (bool, error) {
 	fake.unmountArgsForCall = append(fake.unmountArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.UnmountStub
+	fakeReturns := fake.unmountReturns
 	fake.recordInvocation("Unmount", []interface{}{arg1})
 	fake.unmountMutex.Unlock()
-	if fake.UnmountStub != nil {
-		return fake.UnmountStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.unmountReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

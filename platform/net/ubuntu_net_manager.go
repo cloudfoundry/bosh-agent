@@ -89,20 +89,24 @@ func (net UbuntuNetManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan st
 
 func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus string, errCh chan error) error {
 	if networks.IsPreconfigured() {
-		err := net.setupFirewall(mbus)
+
+		// Note in this case IPs are not broadcast
+		dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+		err := net.writeResolvConf(dnsNetwork.DNS)
+		if err != nil {
+			return err
+		}
+		err = SetupNatsFirewall(mbus)
 		if err != nil {
 			return bosherr.WrapError(err, "Setting up Nats Firewall")
 		}
-		// Note in this case IPs are not broadcast
-		dnsNetwork, _ := networks.DefaultNetworkFor("dns")
-		return net.writeResolvConf(dnsNetwork.DNS)
+		net.logger.Info(UbuntuNetManagerLogTag, "Successfully set up outgoing nats api firewall")
+		return nil
 	}
-
 	staticConfigs, dhcpConfigs, dnsServers, err := net.ComputeNetworkConfig(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration")
 	}
-
 	if StaticInterfaceConfigurations(staticConfigs).HasVersion6() {
 		err := net.kernelIPv6.Enable(make(chan struct{}))
 		if err != nil {
@@ -114,7 +118,6 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 	if err != nil {
 		return bosherr.WrapError(err, "Updating network configs")
 	}
-
 	if changed {
 		err = net.removeDhcpDNSConfiguration()
 		if err != nil {
@@ -126,7 +129,6 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 			return bosherr.WrapError(err, "Failure restarting networking")
 		}
 	}
-
 	staticAddresses, dynamicAddresses := net.ifaceAddresses(staticConfigs, dhcpConfigs)
 
 	var staticAddressesWithoutVirtual []boship.InterfaceAddress
@@ -164,6 +166,11 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 		return bosherr.WrapError(err, "Validating dns configuration")
 	}
 
+	err = SetupNatsFirewall(mbus)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting up nats firewall")
+	}
+	net.logger.Info(UbuntuNetManagerLogTag, "Successfully set up outgoing nats api firewall")
 	go net.addressBroadcaster.BroadcastMACAddresses(append(staticAddressesWithoutVirtual, dynamicAddresses...))
 	err = net.setupFirewall(mbus)
 	if err != nil {

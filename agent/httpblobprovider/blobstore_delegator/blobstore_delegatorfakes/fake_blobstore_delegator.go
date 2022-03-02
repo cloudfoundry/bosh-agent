@@ -77,15 +77,16 @@ func (fake *FakeBlobstoreDelegator) CleanUp(arg1 string, arg2 string) error {
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.CleanUpStub
+	fakeReturns := fake.cleanUpReturns
 	fake.recordInvocation("CleanUp", []interface{}{arg1, arg2})
 	fake.cleanUpMutex.Unlock()
-	if fake.CleanUpStub != nil {
-		return fake.CleanUpStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.cleanUpReturns
 	return fakeReturns.result1
 }
 
@@ -138,15 +139,16 @@ func (fake *FakeBlobstoreDelegator) Delete(arg1 string, arg2 string) error {
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.DeleteStub
+	fakeReturns := fake.deleteReturns
 	fake.recordInvocation("Delete", []interface{}{arg1, arg2})
 	fake.deleteMutex.Unlock()
-	if fake.DeleteStub != nil {
-		return fake.DeleteStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.deleteReturns
 	return fakeReturns.result1
 }
 
@@ -201,15 +203,16 @@ func (fake *FakeBlobstoreDelegator) Get(arg1 crypto.Digest, arg2 string, arg3 st
 		arg3 string
 		arg4 map[string]string
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.GetStub
+	fakeReturns := fake.getReturns
 	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3, arg4})
 	fake.getMutex.Unlock()
-	if fake.GetStub != nil {
-		return fake.GetStub(arg1, arg2, arg3, arg4)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -266,15 +269,16 @@ func (fake *FakeBlobstoreDelegator) Write(arg1 string, arg2 string, arg3 map[str
 		arg2 string
 		arg3 map[string]string
 	}{arg1, arg2, arg3})
+	stub := fake.WriteStub
+	fakeReturns := fake.writeReturns
 	fake.recordInvocation("Write", []interface{}{arg1, arg2, arg3})
 	fake.writeMutex.Unlock()
-	if fake.WriteStub != nil {
-		return fake.WriteStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	fakeReturns := fake.writeReturns
 	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 

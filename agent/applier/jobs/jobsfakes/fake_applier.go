@@ -75,15 +75,16 @@ func (fake *FakeApplier) Apply(arg1 models.Job) error {
 	fake.applyArgsForCall = append(fake.applyArgsForCall, struct {
 		arg1 models.Job
 	}{arg1})
+	stub := fake.ApplyStub
+	fakeReturns := fake.applyReturns
 	fake.recordInvocation("Apply", []interface{}{arg1})
 	fake.applyMutex.Unlock()
-	if fake.ApplyStub != nil {
-		return fake.ApplyStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.applyReturns
 	return fakeReturns.result1
 }
 
@@ -136,15 +137,16 @@ func (fake *FakeApplier) Configure(arg1 models.Job, arg2 int) error {
 		arg1 models.Job
 		arg2 int
 	}{arg1, arg2})
+	stub := fake.ConfigureStub
+	fakeReturns := fake.configureReturns
 	fake.recordInvocation("Configure", []interface{}{arg1, arg2})
 	fake.configureMutex.Unlock()
-	if fake.ConfigureStub != nil {
-		return fake.ConfigureStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.configureReturns
 	return fakeReturns.result1
 }
 
@@ -201,15 +203,16 @@ func (fake *FakeApplier) DeleteSourceBlobs(arg1 []models.Job) error {
 	fake.deleteSourceBlobsArgsForCall = append(fake.deleteSourceBlobsArgsForCall, struct {
 		arg1 []models.Job
 	}{arg1Copy})
+	stub := fake.DeleteSourceBlobsStub
+	fakeReturns := fake.deleteSourceBlobsReturns
 	fake.recordInvocation("DeleteSourceBlobs", []interface{}{arg1Copy})
 	fake.deleteSourceBlobsMutex.Unlock()
-	if fake.DeleteSourceBlobsStub != nil {
-		return fake.DeleteSourceBlobsStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.deleteSourceBlobsReturns
 	return fakeReturns.result1
 }
 
@@ -266,15 +269,16 @@ func (fake *FakeApplier) KeepOnly(arg1 []models.Job) error {
 	fake.keepOnlyArgsForCall = append(fake.keepOnlyArgsForCall, struct {
 		arg1 []models.Job
 	}{arg1Copy})
+	stub := fake.KeepOnlyStub
+	fakeReturns := fake.keepOnlyReturns
 	fake.recordInvocation("KeepOnly", []interface{}{arg1Copy})
 	fake.keepOnlyMutex.Unlock()
-	if fake.KeepOnlyStub != nil {
-		return fake.KeepOnlyStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.keepOnlyReturns
 	return fakeReturns.result1
 }
 
@@ -326,15 +330,16 @@ func (fake *FakeApplier) Prepare(arg1 models.Job) error {
 	fake.prepareArgsForCall = append(fake.prepareArgsForCall, struct {
 		arg1 models.Job
 	}{arg1})
+	stub := fake.PrepareStub
+	fakeReturns := fake.prepareReturns
 	fake.recordInvocation("Prepare", []interface{}{arg1})
 	fake.prepareMutex.Unlock()
-	if fake.PrepareStub != nil {
-		return fake.PrepareStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.prepareReturns
 	return fakeReturns.result1
 }
 

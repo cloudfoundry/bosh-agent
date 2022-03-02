@@ -57,15 +57,16 @@ func (fake *FakeScript) Exists() bool {
 	ret, specificReturn := fake.existsReturnsOnCall[len(fake.existsArgsForCall)]
 	fake.existsArgsForCall = append(fake.existsArgsForCall, struct {
 	}{})
+	stub := fake.ExistsStub
+	fakeReturns := fake.existsReturns
 	fake.recordInvocation("Exists", []interface{}{})
 	fake.existsMutex.Unlock()
-	if fake.ExistsStub != nil {
-		return fake.ExistsStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.existsReturns
 	return fakeReturns.result1
 }
 
@@ -109,15 +110,16 @@ func (fake *FakeScript) Path() string {
 	ret, specificReturn := fake.pathReturnsOnCall[len(fake.pathArgsForCall)]
 	fake.pathArgsForCall = append(fake.pathArgsForCall, struct {
 	}{})
+	stub := fake.PathStub
+	fakeReturns := fake.pathReturns
 	fake.recordInvocation("Path", []interface{}{})
 	fake.pathMutex.Unlock()
-	if fake.PathStub != nil {
-		return fake.PathStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.pathReturns
 	return fakeReturns.result1
 }
 
@@ -161,15 +163,16 @@ func (fake *FakeScript) Run() error {
 	ret, specificReturn := fake.runReturnsOnCall[len(fake.runArgsForCall)]
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
 	}{})
+	stub := fake.RunStub
+	fakeReturns := fake.runReturns
 	fake.recordInvocation("Run", []interface{}{})
 	fake.runMutex.Unlock()
-	if fake.RunStub != nil {
-		return fake.RunStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.runReturns
 	return fakeReturns.result1
 }
 
@@ -213,15 +216,16 @@ func (fake *FakeScript) Tag() string {
 	ret, specificReturn := fake.tagReturnsOnCall[len(fake.tagArgsForCall)]
 	fake.tagArgsForCall = append(fake.tagArgsForCall, struct {
 	}{})
+	stub := fake.TagStub
+	fakeReturns := fake.tagReturns
 	fake.recordInvocation("Tag", []interface{}{})
 	fake.tagMutex.Unlock()
-	if fake.TagStub != nil {
-		return fake.TagStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.tagReturns
 	return fakeReturns.result1
 }
 

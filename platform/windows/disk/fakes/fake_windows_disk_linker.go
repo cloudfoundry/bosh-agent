@@ -44,15 +44,16 @@ func (fake *FakeWindowsDiskLinker) Link(arg1 string, arg2 string) error {
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.LinkStub
+	fakeReturns := fake.linkReturns
 	fake.recordInvocation("Link", []interface{}{arg1, arg2})
 	fake.linkMutex.Unlock()
-	if fake.LinkStub != nil {
-		return fake.LinkStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.linkReturns
 	return fakeReturns.result1
 }
 
@@ -104,15 +105,16 @@ func (fake *FakeWindowsDiskLinker) LinkTarget(arg1 string) (string, error) {
 	fake.linkTargetArgsForCall = append(fake.linkTargetArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.LinkTargetStub
+	fakeReturns := fake.linkTargetReturns
 	fake.recordInvocation("LinkTarget", []interface{}{arg1})
 	fake.linkTargetMutex.Unlock()
-	if fake.LinkTargetStub != nil {
-		return fake.LinkTargetStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.linkTargetReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

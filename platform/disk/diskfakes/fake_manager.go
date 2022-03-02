@@ -90,15 +90,16 @@ func (fake *FakeManager) GetEphemeralDevicePartitioner() disk.Partitioner {
 	ret, specificReturn := fake.getEphemeralDevicePartitionerReturnsOnCall[len(fake.getEphemeralDevicePartitionerArgsForCall)]
 	fake.getEphemeralDevicePartitionerArgsForCall = append(fake.getEphemeralDevicePartitionerArgsForCall, struct {
 	}{})
+	stub := fake.GetEphemeralDevicePartitionerStub
+	fakeReturns := fake.getEphemeralDevicePartitionerReturns
 	fake.recordInvocation("GetEphemeralDevicePartitioner", []interface{}{})
 	fake.getEphemeralDevicePartitionerMutex.Unlock()
-	if fake.GetEphemeralDevicePartitionerStub != nil {
-		return fake.GetEphemeralDevicePartitionerStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getEphemeralDevicePartitionerReturns
 	return fakeReturns.result1
 }
 
@@ -142,15 +143,16 @@ func (fake *FakeManager) GetFormatter() disk.Formatter {
 	ret, specificReturn := fake.getFormatterReturnsOnCall[len(fake.getFormatterArgsForCall)]
 	fake.getFormatterArgsForCall = append(fake.getFormatterArgsForCall, struct {
 	}{})
+	stub := fake.GetFormatterStub
+	fakeReturns := fake.getFormatterReturns
 	fake.recordInvocation("GetFormatter", []interface{}{})
 	fake.getFormatterMutex.Unlock()
-	if fake.GetFormatterStub != nil {
-		return fake.GetFormatterStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getFormatterReturns
 	return fakeReturns.result1
 }
 
@@ -194,15 +196,16 @@ func (fake *FakeManager) GetMounter() disk.Mounter {
 	ret, specificReturn := fake.getMounterReturnsOnCall[len(fake.getMounterArgsForCall)]
 	fake.getMounterArgsForCall = append(fake.getMounterArgsForCall, struct {
 	}{})
+	stub := fake.GetMounterStub
+	fakeReturns := fake.getMounterReturns
 	fake.recordInvocation("GetMounter", []interface{}{})
 	fake.getMounterMutex.Unlock()
-	if fake.GetMounterStub != nil {
-		return fake.GetMounterStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getMounterReturns
 	return fakeReturns.result1
 }
 
@@ -246,15 +249,16 @@ func (fake *FakeManager) GetMountsSearcher() disk.MountsSearcher {
 	ret, specificReturn := fake.getMountsSearcherReturnsOnCall[len(fake.getMountsSearcherArgsForCall)]
 	fake.getMountsSearcherArgsForCall = append(fake.getMountsSearcherArgsForCall, struct {
 	}{})
+	stub := fake.GetMountsSearcherStub
+	fakeReturns := fake.getMountsSearcherReturns
 	fake.recordInvocation("GetMountsSearcher", []interface{}{})
 	fake.getMountsSearcherMutex.Unlock()
-	if fake.GetMountsSearcherStub != nil {
-		return fake.GetMountsSearcherStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getMountsSearcherReturns
 	return fakeReturns.result1
 }
 
@@ -299,15 +303,16 @@ func (fake *FakeManager) GetPersistentDevicePartitioner(arg1 string) (disk.Parti
 	fake.getPersistentDevicePartitionerArgsForCall = append(fake.getPersistentDevicePartitionerArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.GetPersistentDevicePartitionerStub
+	fakeReturns := fake.getPersistentDevicePartitionerReturns
 	fake.recordInvocation("GetPersistentDevicePartitioner", []interface{}{arg1})
 	fake.getPersistentDevicePartitionerMutex.Unlock()
-	if fake.GetPersistentDevicePartitionerStub != nil {
-		return fake.GetPersistentDevicePartitionerStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getPersistentDevicePartitionerReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -361,15 +366,16 @@ func (fake *FakeManager) GetRootDevicePartitioner() disk.Partitioner {
 	ret, specificReturn := fake.getRootDevicePartitionerReturnsOnCall[len(fake.getRootDevicePartitionerArgsForCall)]
 	fake.getRootDevicePartitionerArgsForCall = append(fake.getRootDevicePartitionerArgsForCall, struct {
 	}{})
+	stub := fake.GetRootDevicePartitionerStub
+	fakeReturns := fake.getRootDevicePartitionerReturns
 	fake.recordInvocation("GetRootDevicePartitioner", []interface{}{})
 	fake.getRootDevicePartitionerMutex.Unlock()
-	if fake.GetRootDevicePartitionerStub != nil {
-		return fake.GetRootDevicePartitionerStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getRootDevicePartitionerReturns
 	return fakeReturns.result1
 }
 
@@ -413,15 +419,16 @@ func (fake *FakeManager) GetUtil() disk.Util {
 	ret, specificReturn := fake.getUtilReturnsOnCall[len(fake.getUtilArgsForCall)]
 	fake.getUtilArgsForCall = append(fake.getUtilArgsForCall, struct {
 	}{})
+	stub := fake.GetUtilStub
+	fakeReturns := fake.getUtilReturns
 	fake.recordInvocation("GetUtil", []interface{}{})
 	fake.getUtilMutex.Unlock()
-	if fake.GetUtilStub != nil {
-		return fake.GetUtilStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.getUtilReturns
 	return fakeReturns.result1
 }
 
