@@ -12,7 +12,7 @@ require (
 	github.com/cloudfoundry/bosh-utils v0.0.302
 	github.com/cloudfoundry/gosigar v1.3.3
 	github.com/cloudfoundry/socks5-proxy v0.2.44 // indirect
-	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68 // indirect
+	github.com/containerd/cgroups v1.0.3
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -37,10 +37,18 @@ require (
 )
 
 require (
+	github.com/coreos/go-iptables v0.6.0
+	github.com/opencontainers/runtime-spec v1.0.2
+)
+
+require (
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
+	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
+	github.com/godbus/dbus/v5 v5.0.4 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
@@ -53,7 +61,7 @@ require (
 	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/tools v0.1.1 // indirect
+	golang.org/x/tools v0.1.5 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -72,9 +80,8 @@ require (
 	github.com/jcmturner/goidentity/v6 v6.0.1 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.2 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/magefile/mage v1.11.0 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
-	github.com/sirupsen/logrus v1.8.0 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6

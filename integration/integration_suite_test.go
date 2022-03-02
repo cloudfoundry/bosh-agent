@@ -1,9 +1,10 @@
 package integration_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"testing"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -18,7 +19,7 @@ var (
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	BeforeSuite(func() {
+	SynchronizedBeforeSuite(func() []byte {
 		logLevel := boshlog.LevelError
 		logger := boshlog.NewLogger(logLevel)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
@@ -28,15 +29,21 @@ func TestIntegration(t *testing.T) {
 
 		err = testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
+		//create a backup of original settings for nats FW tests
+		_, err = testEnvironment.RunCommand("sudo sh -c \"mkdir -p /settings-backup && cp /var/vcap/bosh/*.json /settings-backup/ \" ")
+		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.EnsureRootDeviceIsLargeEnough()
 		Expect(err).ToNot(HaveOccurred())
-	})
 
+		return []byte("done")
+
+	}, func(in []byte) {})
 	AfterEach(func() {
+
 		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
