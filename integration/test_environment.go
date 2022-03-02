@@ -670,10 +670,10 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 	}
 	defer s.Close()
 	t.logger.Debug("Remote Cmd Runner", "Running remote command '%s'", command)
-	out, err := s.Output(command)
+	out, err := s.CombinedOutput(command)
 	if err != nil {
 		t.logger.Debug("COMMAND FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
-		return "", err
+		return string(out), err
 	}
 	return string(out), nil
 }
