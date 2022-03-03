@@ -22,6 +22,19 @@ unit: sectors
 /dev/sda4 : start=        0, size=    0, Id= 0
 `
 
+const devSdaSfdiskEmptyDumpWhitespace = `# partition table of /dev/sda
+unit: sectors
+
+/dev/sda1 : start=        0, size=    0, Id= 0
+
+/dev/sda2 : start=        0, size=    0, Id= 0
+ 
+ /dev/sda3 : start=        0, size=    0, Id= 0 
+\t
+\t /dev/sda4 : start=        0, size=    0, Id= 0 \t
+
+`
+
 const devSdaSfdiskNotableDumpStderr = `
 sfdisk: ERROR: sector 0 does not have an msdos signature
  /dev/sda: unrecognized partition table type
@@ -98,6 +111,25 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
+	})
+
+	Context("when sfdisk output has extra whitespace", func() {
+		It("ignores extra whitespace", func() {
+			runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
+			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskEmptyDumpWhitespace})
+			runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: "1048576"})
+
+			partitions := []Partition{
+				{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
+				{Type: PartitionTypeLinux, SizeInBytes: 1024 * 1024 * 1024},
+				{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
+			}
+
+			partitioner.Partition("/dev/sda", partitions)
+
+			Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
+			Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
+		})
 	})
 
 	Context("when one of the partitions is of type GPT", func() {

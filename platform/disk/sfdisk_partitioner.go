@@ -148,6 +148,11 @@ func (p sfdiskPartitioner) GetPartitions(devicePath string) (partitions []Existi
 	partitionLines := allLines[3 : len(allLines)-1]
 
 	for _, partitionLine := range partitionLines {
+		partitionLine = strings.TrimSpace(partitionLine)
+		if partitionLine == "" {
+			continue
+		}
+
 		partitionPath, partitionType := extractPartitionPathAndType(partitionLine)
 		if partitionType == PartitionTypeGPT {
 			return partitions, deviceFullSizeInBytes, ErrGPTPartitionEncountered
