@@ -72,7 +72,7 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 
 	boshSSHPath := path.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 
-	// this must happen first so unfulfilled prerequistes on windows
+	// this must happen first so that unfulfilled prerequisites on Windows
 	// can stop the creation of new users
 	publicKey, err := a.platform.GetHostPublicKey()
 	if err != nil {
