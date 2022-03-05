@@ -9,9 +9,9 @@ require (
 	github.com/charlievieth/fs v0.0.2
 	github.com/cloudfoundry/bosh-davcli v0.0.48
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.302
+	github.com/cloudfoundry/bosh-utils v0.0.303
 	github.com/cloudfoundry/gosigar v1.3.3
-	github.com/cloudfoundry/socks5-proxy v0.2.44 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.45 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -30,7 +30,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-	golang.org/x/sys v0.0.0-20220224120231-95c6836cb0e7
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
 )
 
 require (
