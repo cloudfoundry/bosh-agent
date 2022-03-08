@@ -12,7 +12,7 @@ require (
 	github.com/cloudfoundry/bosh-utils v0.0.303
 	github.com/cloudfoundry/gosigar v1.3.3
 	github.com/cloudfoundry/socks5-proxy v0.2.45 // indirect
-	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68 // indirect
+	github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -39,6 +39,7 @@ require (
 require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/opencontainers/runtime-spec v1.0.2
+	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 )
 
 require (
