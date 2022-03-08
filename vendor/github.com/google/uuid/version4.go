@@ -14,6 +14,14 @@ func New() UUID {
 	return Must(NewRandom())
 }
 
+// NewString creates a new random UUID and returns it as a string or panics.
+// NewString is equivalent to the expression
+//
+//    uuid.New().String()
+func NewString() string {
+	return Must(NewRandom()).String()
+}
+
 // NewRandom returns a Random (Version 4) UUID.
 //
 // The strength of the UUIDs is based on the strength of the crypto/rand
@@ -30,6 +38,7 @@ func NewRandom() (UUID, error) {
 	return NewRandomFromReader(rander)
 }
 
+// NewRandomFromReader returns a UUID based on bytes read from a given io.Reader.
 func NewRandomFromReader(r io.Reader) (UUID, error) {
 	var uuid UUID
 	_, err := io.ReadFull(r, uuid[:])
@@ -40,4 +49,3 @@ func NewRandomFromReader(r io.Reader) (UUID, error) {
 	uuid[8] = (uuid[8] & 0x3f) | 0x80 // Variant is 10
 	return uuid, nil
 }
-

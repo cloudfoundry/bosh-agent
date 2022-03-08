@@ -88,12 +88,12 @@ func NewNatsHandler(
 	platform boshplatform.Platform,
 ) Handler {
 	return &natsHandler{
-		settingsService:         settingsService,
-		connector:               client,
-		platform:                platform,
-		logger:      logger,
-		logTag:      natsHandlerLogTag,
-		auditLogger: platform.GetAuditLogger(),
+		settingsService: settingsService,
+		connector:       client,
+		platform:        platform,
+		logger:          logger,
+		logTag:          natsHandlerLogTag,
+		auditLogger:     platform.GetAuditLogger(),
 	}
 }
 

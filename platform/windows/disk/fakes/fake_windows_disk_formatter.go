@@ -31,15 +31,16 @@ func (fake *FakeWindowsDiskFormatter) Format(arg1 string, arg2 string) error {
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.FormatStub
+	fakeReturns := fake.formatReturns
 	fake.recordInvocation("Format", []interface{}{arg1, arg2})
 	fake.formatMutex.Unlock()
-	if fake.FormatStub != nil {
-		return fake.FormatStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.formatReturns
 	return fakeReturns.result1
 }
 

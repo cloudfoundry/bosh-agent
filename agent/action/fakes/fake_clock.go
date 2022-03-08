@@ -78,15 +78,16 @@ func (fake *FakeClock) After(arg1 time.Duration) <-chan time.Time {
 	fake.afterArgsForCall = append(fake.afterArgsForCall, struct {
 		arg1 time.Duration
 	}{arg1})
+	stub := fake.AfterStub
+	fakeReturns := fake.afterReturns
 	fake.recordInvocation("After", []interface{}{arg1})
 	fake.afterMutex.Unlock()
-	if fake.AfterStub != nil {
-		return fake.AfterStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.afterReturns
 	return fakeReturns.result1
 }
 
@@ -138,15 +139,16 @@ func (fake *FakeClock) NewTicker(arg1 time.Duration) clock.Ticker {
 	fake.newTickerArgsForCall = append(fake.newTickerArgsForCall, struct {
 		arg1 time.Duration
 	}{arg1})
+	stub := fake.NewTickerStub
+	fakeReturns := fake.newTickerReturns
 	fake.recordInvocation("NewTicker", []interface{}{arg1})
 	fake.newTickerMutex.Unlock()
-	if fake.NewTickerStub != nil {
-		return fake.NewTickerStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.newTickerReturns
 	return fakeReturns.result1
 }
 
@@ -198,15 +200,16 @@ func (fake *FakeClock) NewTimer(arg1 time.Duration) clock.Timer {
 	fake.newTimerArgsForCall = append(fake.newTimerArgsForCall, struct {
 		arg1 time.Duration
 	}{arg1})
+	stub := fake.NewTimerStub
+	fakeReturns := fake.newTimerReturns
 	fake.recordInvocation("NewTimer", []interface{}{arg1})
 	fake.newTimerMutex.Unlock()
-	if fake.NewTimerStub != nil {
-		return fake.NewTimerStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.newTimerReturns
 	return fakeReturns.result1
 }
 
@@ -257,15 +260,16 @@ func (fake *FakeClock) Now() time.Time {
 	ret, specificReturn := fake.nowReturnsOnCall[len(fake.nowArgsForCall)]
 	fake.nowArgsForCall = append(fake.nowArgsForCall, struct {
 	}{})
+	stub := fake.NowStub
+	fakeReturns := fake.nowReturns
 	fake.recordInvocation("Now", []interface{}{})
 	fake.nowMutex.Unlock()
-	if fake.NowStub != nil {
-		return fake.NowStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.nowReturns
 	return fakeReturns.result1
 }
 
@@ -310,15 +314,16 @@ func (fake *FakeClock) Since(arg1 time.Time) time.Duration {
 	fake.sinceArgsForCall = append(fake.sinceArgsForCall, struct {
 		arg1 time.Time
 	}{arg1})
+	stub := fake.SinceStub
+	fakeReturns := fake.sinceReturns
 	fake.recordInvocation("Since", []interface{}{arg1})
 	fake.sinceMutex.Unlock()
-	if fake.SinceStub != nil {
-		return fake.SinceStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.sinceReturns
 	return fakeReturns.result1
 }
 
@@ -369,9 +374,10 @@ func (fake *FakeClock) Sleep(arg1 time.Duration) {
 	fake.sleepArgsForCall = append(fake.sleepArgsForCall, struct {
 		arg1 time.Duration
 	}{arg1})
+	stub := fake.SleepStub
 	fake.recordInvocation("Sleep", []interface{}{arg1})
 	fake.sleepMutex.Unlock()
-	if fake.SleepStub != nil {
+	if stub != nil {
 		fake.SleepStub(arg1)
 	}
 }

@@ -81,15 +81,16 @@ func (fake *FakeScriptParams) HashChange() string {
 	ret, specificReturn := fake.hashChangeReturnsOnCall[len(fake.hashChangeArgsForCall)]
 	fake.hashChangeArgsForCall = append(fake.hashChangeArgsForCall, struct {
 	}{})
+	stub := fake.HashChangeStub
+	fakeReturns := fake.hashChangeReturns
 	fake.recordInvocation("HashChange", []interface{}{})
 	fake.hashChangeMutex.Unlock()
-	if fake.HashChangeStub != nil {
-		return fake.HashChangeStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.hashChangeReturns
 	return fakeReturns.result1
 }
 
@@ -133,15 +134,16 @@ func (fake *FakeScriptParams) JobChange() string {
 	ret, specificReturn := fake.jobChangeReturnsOnCall[len(fake.jobChangeArgsForCall)]
 	fake.jobChangeArgsForCall = append(fake.jobChangeArgsForCall, struct {
 	}{})
+	stub := fake.JobChangeStub
+	fakeReturns := fake.jobChangeReturns
 	fake.recordInvocation("JobChange", []interface{}{})
 	fake.jobChangeMutex.Unlock()
-	if fake.JobChangeStub != nil {
-		return fake.JobChangeStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.jobChangeReturns
 	return fakeReturns.result1
 }
 
@@ -185,15 +187,16 @@ func (fake *FakeScriptParams) JobNextState() (string, error) {
 	ret, specificReturn := fake.jobNextStateReturnsOnCall[len(fake.jobNextStateArgsForCall)]
 	fake.jobNextStateArgsForCall = append(fake.jobNextStateArgsForCall, struct {
 	}{})
+	stub := fake.JobNextStateStub
+	fakeReturns := fake.jobNextStateReturns
 	fake.recordInvocation("JobNextState", []interface{}{})
 	fake.jobNextStateMutex.Unlock()
-	if fake.JobNextStateStub != nil {
-		return fake.JobNextStateStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.jobNextStateReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -240,15 +243,16 @@ func (fake *FakeScriptParams) JobState() (string, error) {
 	ret, specificReturn := fake.jobStateReturnsOnCall[len(fake.jobStateArgsForCall)]
 	fake.jobStateArgsForCall = append(fake.jobStateArgsForCall, struct {
 	}{})
+	stub := fake.JobStateStub
+	fakeReturns := fake.jobStateReturns
 	fake.recordInvocation("JobState", []interface{}{})
 	fake.jobStateMutex.Unlock()
-	if fake.JobStateStub != nil {
-		return fake.JobStateStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.jobStateReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -295,15 +299,16 @@ func (fake *FakeScriptParams) ToStatusParams() drain.ScriptParams {
 	ret, specificReturn := fake.toStatusParamsReturnsOnCall[len(fake.toStatusParamsArgsForCall)]
 	fake.toStatusParamsArgsForCall = append(fake.toStatusParamsArgsForCall, struct {
 	}{})
+	stub := fake.ToStatusParamsStub
+	fakeReturns := fake.toStatusParamsReturns
 	fake.recordInvocation("ToStatusParams", []interface{}{})
 	fake.toStatusParamsMutex.Unlock()
-	if fake.ToStatusParamsStub != nil {
-		return fake.ToStatusParamsStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.toStatusParamsReturns
 	return fakeReturns.result1
 }
 
@@ -347,15 +352,16 @@ func (fake *FakeScriptParams) UpdatedPackages() []string {
 	ret, specificReturn := fake.updatedPackagesReturnsOnCall[len(fake.updatedPackagesArgsForCall)]
 	fake.updatedPackagesArgsForCall = append(fake.updatedPackagesArgsForCall, struct {
 	}{})
+	stub := fake.UpdatedPackagesStub
+	fakeReturns := fake.updatedPackagesReturns
 	fake.recordInvocation("UpdatedPackages", []interface{}{})
 	fake.updatedPackagesMutex.Unlock()
-	if fake.UpdatedPackagesStub != nil {
-		return fake.UpdatedPackagesStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.updatedPackagesReturns
 	return fakeReturns.result1
 }
 

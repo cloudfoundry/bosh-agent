@@ -63,7 +63,7 @@ func NewOpensuseNetManager(
 
 func (net opensuseNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
 
-func (net opensuseNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
+func (net opensuseNetManager) SetupNetworking(networks boshsettings.Networks, mbus string, errCh chan error) error {
 	if networks.IsPreconfigured() {
 		// Note in this case IPs are not broadcasted
 		return net.writeResolvConf(networks)

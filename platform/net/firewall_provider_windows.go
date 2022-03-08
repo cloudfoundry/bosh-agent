@@ -7,6 +7,7 @@ import (
 	gonet "net"
 	gonetURL "net/url"
 	"strconv"
+	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"golang.org/x/sys/windows"
@@ -20,7 +21,7 @@ func SetupNatsFirewall(mbus string) error {
 		return nil
 	}
 	natsURI, err := gonetURL.Parse(mbus)
-	if err != nil || mbusURL.Hostname() == "" {
+	if err != nil || natsURI.Hostname() == "" {
 		return bosherr.WrapError(err, "Error parsing MbusURL")
 	}
 	session, err := wf.New(&wf.Options{

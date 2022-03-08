@@ -93,9 +93,9 @@ func init() {
 				Expect(subj).To(Equal("agent.my-agent-id"))
 
 				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
-				handler(&nats.Msg {
+				handler(&nats.Msg{
 					Subject: "agent.my-agent-id",
-					Data: expectedPayload,
+					Data:    expectedPayload,
 				})
 
 				Expect(receivedRequest).To(Equal(boshhandler.Request{
@@ -148,9 +148,9 @@ func init() {
 				defer handler.Stop()
 
 				_, handler := connection.SubscribeArgsForCall(0)
-				handler(&nats.Msg {
+				handler(&nats.Msg{
 					Subject: "agent.my-agent-id",
-					Data: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
+					Data:    []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 				})
 
 				Expect(connection.PublishCallCount()).To(Equal(0))
@@ -158,7 +158,7 @@ func init() {
 
 			It("responds with an error if the response is bigger than 1MB", func() {
 				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
-					chars := make([]byte, 1024 * 1024)
+					chars := make([]byte, 1024*1024)
 					for i := range chars {
 						chars[i] = 'A'
 					}
@@ -168,9 +168,9 @@ func init() {
 				defer handler.Stop()
 
 				_, handler := connection.SubscribeArgsForCall(0)
-				handler(&nats.Msg {
+				handler(&nats.Msg{
 					Subject: "agent.my-agent-id",
-					Data: []byte(`{"method":"big","arguments":[], "reply_to": "fake-reply-to"}`),
+					Data:    []byte(`{"method":"big","arguments":[], "reply_to": "fake-reply-to"}`),
 				})
 
 				Expect(connection.PublishCallCount()).To(Equal(1))
@@ -197,9 +197,9 @@ func init() {
 				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "fake-reply-to"}`)
 
 				_, handler := connection.SubscribeArgsForCall(0)
-				handler(&nats.Msg {
+				handler(&nats.Msg{
 					Subject: "agent.my-agent-id",
-					Data: expectedPayload,
+					Data:    expectedPayload,
 				})
 
 				// Expected requests received by both handlers
@@ -251,9 +251,9 @@ func init() {
 					defer handler.Stop()
 
 					_, handler := connection.SubscribeArgsForCall(0)
-					handler(&nats.Msg {
+					handler(&nats.Msg{
 						Subject: "agent.my-agent-id",
-						Data: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
+						Data:    []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 					})
 
 					msg := `CEF:0|CloudFoundry|BOSH|1|agent_api|ping|1|duser=reply to me! src=127.0.0.1 spt=1234`
@@ -269,9 +269,9 @@ func init() {
 						defer handler.Stop()
 
 						_, handler := connection.SubscribeArgsForCall(0)
-						handler(&nats.Msg {
+						handler(&nats.Msg{
 							Subject: "agent.my-agent-id",
-							Data: []byte(`bad json`),
+							Data:    []byte(`bad json`),
 						})
 
 						Expect(auditLogger.DebugCallCount()).To(Equal(0))
@@ -292,9 +292,9 @@ func init() {
 						defer handler.Stop()
 
 						_, handler := connection.SubscribeArgsForCall(0)
-						handler(&nats.Msg {
+						handler(&nats.Msg{
 							Subject: "agent.my-agent-id",
-							Data: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
+							Data:    []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 						})
 
 						Expect(auditLogger.DebugCallCount()).To(Equal(0))
@@ -418,7 +418,7 @@ func init() {
 				Expect(connection.PublishCallCount()).To(Equal(1))
 				subj, message := connection.PublishArgsForCall(0)
 				Expect(subj).To(Equal("hm.agent.heartbeat.my-agent-id"))
-				Expect(message).To(Equal([]byte("{\"key1\":\"value1\",\"keyA\":\"valueA\"}"), ))
+				Expect(message).To(Equal([]byte("{\"key1\":\"value1\",\"keyA\":\"valueA\"}")))
 			})
 		})
 	})

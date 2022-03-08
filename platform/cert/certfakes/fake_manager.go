@@ -29,15 +29,16 @@ func (fake *FakeManager) UpdateCertificates(arg1 string) error {
 	fake.updateCertificatesArgsForCall = append(fake.updateCertificatesArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.UpdateCertificatesStub
+	fakeReturns := fake.updateCertificatesReturns
 	fake.recordInvocation("UpdateCertificates", []interface{}{arg1})
 	fake.updateCertificatesMutex.Unlock()
-	if fake.UpdateCertificatesStub != nil {
-		return fake.UpdateCertificatesStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.updateCertificatesReturns
 	return fakeReturns.result1
 }
 

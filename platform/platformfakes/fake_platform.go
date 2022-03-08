@@ -27,18 +27,6 @@ type FakePlatform struct {
 	addUserToGroupsReturnsOnCall map[int]struct {
 		result1 error
 	}
-	AdjustPersistentDiskPartitioningStub        func(settings.DiskSettings, string) error
-	adjustPersistentDiskPartitioningMutex       sync.RWMutex
-	adjustPersistentDiskPartitioningArgsForCall []struct {
-		arg1 settings.DiskSettings
-		arg2 string
-	}
-	adjustPersistentDiskPartitioningReturns struct {
-		result1 error
-	}
-	adjustPersistentDiskPartitioningReturnsOnCall map[int]struct {
-		result1 error
-	}
 	AssociateDiskStub        func(string, settings.DiskSettings) error
 	associateDiskMutex       sync.RWMutex
 	associateDiskArgsForCall []struct {
@@ -180,18 +168,16 @@ type FakePlatform struct {
 	getDirProviderReturnsOnCall map[int]struct {
 		result1 directories.Provider
 	}
-	GetEphemeralDiskPathStub        func(settings.DiskSettings) (string, error)
+	GetEphemeralDiskPathStub        func(settings.DiskSettings) string
 	getEphemeralDiskPathMutex       sync.RWMutex
 	getEphemeralDiskPathArgsForCall []struct {
 		arg1 settings.DiskSettings
 	}
 	getEphemeralDiskPathReturns struct {
 		result1 string
-		result2 error
 	}
 	getEphemeralDiskPathReturnsOnCall map[int]struct {
 		result1 string
-		result2 error
 	}
 	GetFileContentsFromCDROMStub        func(string) ([]byte, error)
 	getFileContentsFromCDROMMutex       sync.RWMutex
@@ -757,68 +743,6 @@ func (fake *FakePlatform) AddUserToGroupsReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.addUserToGroupsReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) AdjustPersistentDiskPartitioning(arg1 settings.DiskSettings, arg2 string) error {
-	fake.adjustPersistentDiskPartitioningMutex.Lock()
-	ret, specificReturn := fake.adjustPersistentDiskPartitioningReturnsOnCall[len(fake.adjustPersistentDiskPartitioningArgsForCall)]
-	fake.adjustPersistentDiskPartitioningArgsForCall = append(fake.adjustPersistentDiskPartitioningArgsForCall, struct {
-		arg1 settings.DiskSettings
-		arg2 string
-	}{arg1, arg2})
-	stub := fake.AdjustPersistentDiskPartitioningStub
-	fakeReturns := fake.adjustPersistentDiskPartitioningReturns
-	fake.recordInvocation("AdjustPersistentDiskPartitioning", []interface{}{arg1, arg2})
-	fake.adjustPersistentDiskPartitioningMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakePlatform) AdjustPersistentDiskPartitioningCallCount() int {
-	fake.adjustPersistentDiskPartitioningMutex.RLock()
-	defer fake.adjustPersistentDiskPartitioningMutex.RUnlock()
-	return len(fake.adjustPersistentDiskPartitioningArgsForCall)
-}
-
-func (fake *FakePlatform) AdjustPersistentDiskPartitioningCalls(stub func(settings.DiskSettings, string) error) {
-	fake.adjustPersistentDiskPartitioningMutex.Lock()
-	defer fake.adjustPersistentDiskPartitioningMutex.Unlock()
-	fake.AdjustPersistentDiskPartitioningStub = stub
-}
-
-func (fake *FakePlatform) AdjustPersistentDiskPartitioningArgsForCall(i int) (settings.DiskSettings, string) {
-	fake.adjustPersistentDiskPartitioningMutex.RLock()
-	defer fake.adjustPersistentDiskPartitioningMutex.RUnlock()
-	argsForCall := fake.adjustPersistentDiskPartitioningArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *FakePlatform) AdjustPersistentDiskPartitioningReturns(result1 error) {
-	fake.adjustPersistentDiskPartitioningMutex.Lock()
-	defer fake.adjustPersistentDiskPartitioningMutex.Unlock()
-	fake.AdjustPersistentDiskPartitioningStub = nil
-	fake.adjustPersistentDiskPartitioningReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakePlatform) AdjustPersistentDiskPartitioningReturnsOnCall(i int, result1 error) {
-	fake.adjustPersistentDiskPartitioningMutex.Lock()
-	defer fake.adjustPersistentDiskPartitioningMutex.Unlock()
-	fake.AdjustPersistentDiskPartitioningStub = nil
-	if fake.adjustPersistentDiskPartitioningReturnsOnCall == nil {
-		fake.adjustPersistentDiskPartitioningReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.adjustPersistentDiskPartitioningReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -1560,7 +1484,7 @@ func (fake *FakePlatform) GetDirProviderReturnsOnCall(i int, result1 directories
 	}{result1}
 }
 
-func (fake *FakePlatform) GetEphemeralDiskPath(arg1 settings.DiskSettings) (string, error) {
+func (fake *FakePlatform) GetEphemeralDiskPath(arg1 settings.DiskSettings) string {
 	fake.getEphemeralDiskPathMutex.Lock()
 	ret, specificReturn := fake.getEphemeralDiskPathReturnsOnCall[len(fake.getEphemeralDiskPathArgsForCall)]
 	fake.getEphemeralDiskPathArgsForCall = append(fake.getEphemeralDiskPathArgsForCall, struct {
@@ -1574,9 +1498,9 @@ func (fake *FakePlatform) GetEphemeralDiskPath(arg1 settings.DiskSettings) (stri
 		return stub(arg1)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
 func (fake *FakePlatform) GetEphemeralDiskPathCallCount() int {
@@ -1585,7 +1509,7 @@ func (fake *FakePlatform) GetEphemeralDiskPathCallCount() int {
 	return len(fake.getEphemeralDiskPathArgsForCall)
 }
 
-func (fake *FakePlatform) GetEphemeralDiskPathCalls(stub func(settings.DiskSettings) (string, error)) {
+func (fake *FakePlatform) GetEphemeralDiskPathCalls(stub func(settings.DiskSettings) string) {
 	fake.getEphemeralDiskPathMutex.Lock()
 	defer fake.getEphemeralDiskPathMutex.Unlock()
 	fake.GetEphemeralDiskPathStub = stub
@@ -1598,30 +1522,27 @@ func (fake *FakePlatform) GetEphemeralDiskPathArgsForCall(i int) settings.DiskSe
 	return argsForCall.arg1
 }
 
-func (fake *FakePlatform) GetEphemeralDiskPathReturns(result1 string, result2 error) {
+func (fake *FakePlatform) GetEphemeralDiskPathReturns(result1 string) {
 	fake.getEphemeralDiskPathMutex.Lock()
 	defer fake.getEphemeralDiskPathMutex.Unlock()
 	fake.GetEphemeralDiskPathStub = nil
 	fake.getEphemeralDiskPathReturns = struct {
 		result1 string
-		result2 error
-	}{result1, result2}
+	}{result1}
 }
 
-func (fake *FakePlatform) GetEphemeralDiskPathReturnsOnCall(i int, result1 string, result2 error) {
+func (fake *FakePlatform) GetEphemeralDiskPathReturnsOnCall(i int, result1 string) {
 	fake.getEphemeralDiskPathMutex.Lock()
 	defer fake.getEphemeralDiskPathMutex.Unlock()
 	fake.GetEphemeralDiskPathStub = nil
 	if fake.getEphemeralDiskPathReturnsOnCall == nil {
 		fake.getEphemeralDiskPathReturnsOnCall = make(map[int]struct {
 			result1 string
-			result2 error
 		})
 	}
 	fake.getEphemeralDiskPathReturnsOnCall[i] = struct {
 		result1 string
-		result2 error
-	}{result1, result2}
+	}{result1}
 }
 
 func (fake *FakePlatform) GetFileContentsFromCDROM(arg1 string) ([]byte, error) {
@@ -4223,8 +4144,6 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.addUserToGroupsMutex.RLock()
 	defer fake.addUserToGroupsMutex.RUnlock()
-	fake.adjustPersistentDiskPartitioningMutex.RLock()
-	defer fake.adjustPersistentDiskPartitioningMutex.RUnlock()
 	fake.associateDiskMutex.RLock()
 	defer fake.associateDiskMutex.RUnlock()
 	fake.createUserMutex.RLock()
