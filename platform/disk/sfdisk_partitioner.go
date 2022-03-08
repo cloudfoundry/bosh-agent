@@ -46,7 +46,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	sfdiskInput := ""
 	for index, partition := range partitions {
 		sfdiskPartitionType := sfdiskPartitionTypes[partition.Type]
-		partitionSize := fmt.Sprintf("%d", ConvertFromBytesToMb(partition.SizeInBytes))
+		partitionSize := fmt.Sprintf("%dMiB", ConvertFromBytesToMb(partition.SizeInBytes))
 
 		if index == len(partitions)-1 {
 			partitionSize = ""
@@ -56,7 +56,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	}
 
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
-		_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
+		_, _, _, err := p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", devicePath)
 		if err != nil {
 			p.logger.Error(p.logTag, "Failed with an error: %s", err)
 			return true, bosherr.WrapError(err, "Shelling out to sfdisk")
@@ -148,6 +148,11 @@ func (p sfdiskPartitioner) GetPartitions(devicePath string) (partitions []Existi
 	partitionLines := allLines[3 : len(allLines)-1]
 
 	for _, partitionLine := range partitionLines {
+		partitionLine = strings.TrimSpace(partitionLine)
+		if partitionLine == "" {
+			continue
+		}
+
 		partitionPath, partitionType := extractPartitionPathAndType(partitionLine)
 		if partitionType == PartitionTypeGPT {
 			return partitions, deviceFullSizeInBytes, ErrGPTPartitionEncountered

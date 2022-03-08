@@ -90,15 +90,12 @@ func toProvider0(a *arena, p *Provider) *fwpmProvider0 {
 // as necessary to correctly cast values.
 func toFilter0(a *arena, r *Rule, lt layerTypes) (*fwpmFilter0, error) {
 	conds, err := toCondition0(a, r.Conditions, lt[r.Layer])
-	fmt.Printf("toCondition0 Current On: %v \n\n", r)
 	if err != nil {
-		fmt.Printf("toCondition0 Error On: %v  \n\n", r)
 		return nil, err
 	}
 
 	typ, val, err := toValue0(a, r.Weight, typeUint64)
 	if err != nil {
-		fmt.Println("tovalue")
 		return nil, err
 	}
 
@@ -183,7 +180,6 @@ func toCondition0(a *arena, ms []*Match, ft fieldTypes) (array *fwpmFilterCondit
 // toValue0 converts v into the component parts of an fwpValue0 or
 // fwpConditionValue0.
 func toValue0(a *arena, v interface{}, ftype reflect.Type) (typ dataType, val uintptr, err error) {
-	
 	mapErr := func() (dataType, uintptr, error) {
 		return 0, 0, fmt.Errorf("cannot map Go type %T to field type %s", v, ftype)
 	}
@@ -282,16 +278,12 @@ func toValue0(a *arena, v interface{}, ftype reflect.Type) (typ dataType, val ui
 		}
 		val = uintptr(unsafe.Pointer(toBytes(a, mac[:])))
 	case typeIP:
-		fmt.Println("hit ip case")
 		switch m := v.(type) {
 		case netaddr.IP:
-			fmt.Println("is netaddr")
 			if m.Is4() {
-				fmt.Println("is v4")
 				typ = dataTypeUint32
 				*(*uint32)(unsafe.Pointer(&val)) = u32FromIPv4(m)
 			} else {
-				fmt.Println("is not v4")
 				typ = dataTypeByteArray16
 				b16 := m.As16()
 				val = uintptr(unsafe.Pointer(toBytes(a, b16[:])))
@@ -305,11 +297,9 @@ func toValue0(a *arena, v interface{}, ftype reflect.Type) (typ dataType, val ui
 				val = uintptr(unsafe.Pointer(toFwpV6AddrAndMask(a, m)))
 			}
 		case netaddr.IPRange:
-			fmt.Println("is range")
 			if !m.Valid() {
 				return 0, 0, fmt.Errorf("invalid IPRange %v", m)
 			}
-			
 			r, err := toRange0(a, Range{m.From, m.To}, ftype)
 			if err != nil {
 				return 0, 0, err
