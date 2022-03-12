@@ -9,9 +9,9 @@ require (
 	github.com/charlievieth/fs v0.0.2
 	github.com/cloudfoundry/bosh-davcli v0.0.48
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.303
+	github.com/cloudfoundry/bosh-utils v0.0.304
 	github.com/cloudfoundry/gosigar v1.3.3
-	github.com/cloudfoundry/socks5-proxy v0.2.45 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.46 // indirect
 	github.com/containerd/cgroups v1.0.3
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible
@@ -30,16 +30,15 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
+	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5
 )
 
 require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/opencontainers/runtime-spec v1.0.2
-	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 )
 
 require (
@@ -49,7 +48,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
-	github.com/godbus/dbus/v5 v5.0.4 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
