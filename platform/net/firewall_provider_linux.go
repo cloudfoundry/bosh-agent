@@ -4,6 +4,7 @@
 package net
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	gonetURL "net/url"
@@ -37,9 +38,18 @@ const (
 func SetupNatsFirewall(mbus string) error {
 	// return early if
 	// we get a https url for mbus. case for create-env
-	// we get an empty string. case for http_metadata_service (responsible to extract the agent-settings.json from the metadata endpoint)s
+	// we get an empty string. case for http_metadata_service (responsible to extract the agent-settings.json from the metadata endpoint)
+	// we find that v1cgroups are not mounted (warden stemcells)
 	if mbus == "" || strings.HasPrefix(mbus, "https://") {
 		return nil
+	}
+	_, err := cgroups.V1()
+	if err != nil {
+		if errors.Is(err, cgroups.ErrMountPointNotExist) {
+			return nil // v1cgroups are not mounted (warden stemcells)
+		} else {
+			return bosherr.WrapError(err, "Error retrieving cgroups mount point")
+		}
 	}
 	mbusURL, err := gonetURL.Parse(mbus)
 	if err != nil || mbusURL.Hostname() == "" {
