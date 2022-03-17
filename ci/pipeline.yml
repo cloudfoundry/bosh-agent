@@ -44,7 +44,7 @@ resources:
     source:
       owner: cloudfoundry
       repository: bosh-cli
-      access_token: ((github_read_only_token))
+      access_token: ((github_public_repo_token))
 
   - name: bosh-ecosystem-concourse
     type: git
