@@ -1,5 +1,5 @@
-//go:build !windows
-// +build !windows
+//go:build linux
+// +build linux
 
 package net
 
@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	// NOTE: "cgroups is only intended to be used/compiled on linux based system"
+	// see: https://github.com/containerd/cgroups/issues/19
 	"github.com/containerd/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
 

@@ -35,10 +35,16 @@ done
 echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk/errcheck/issues/75 is resolved"
 # $bin/test-unhandled-errors
 
-echo -e "\n Running build script for windows to confirm everything compiles..."
+echo -e "\n Running build script for GOOS=linux to confirm everything compiles..."
+GOOS=linux $bin/build
+
+echo -e "\n Running build script for GOOS=windows to confirm everything compiles..."
 GOOS=windows $bin/build
 
-echo -e "\n Running build script to confirm everything compiles..."
+echo -e "\n Running build script for GOOS=darwin to confirm everything compiles..."
+GOOS=darwin $bin/build
+
+echo -e "\n Running build script (for default GOOS) to confirm everything compiles..."
 $bin/build
 
 echo -e "\n Testing packages..."
