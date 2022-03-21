@@ -42,7 +42,7 @@ func (b *BlobstoreDelegatorImpl) Get(digest boshcrypto.Digest, signedURL, blobID
 		return false, nil
 	})
 
-	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(3, 5 * time.Second, getBlobRetryable, b.logger)
+	attemptRetryStrategy := boshretry.NewAttemptRetryStrategy(3, 5*time.Second, getBlobRetryable, b.logger)
 	err = attemptRetryStrategy.Try()
 	if err != nil {
 		return "", err
