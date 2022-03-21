@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -eu -o pipefail
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+DOCKER_IMAGE=${DOCKER_IMAGE-bosh/agent}
+echo "Using docker image: ${DOCKER_IMAGE}"
+
+work_dir="/root/gopath/src/github.com/cloudfoundry/bosh-agent"
+
+docker_run() {
+  local run_command="docker run ${*}"
+  cat <<COMMAND
+Running:
+  ${run_command}
+COMMAND
+
+  command pushd "${ROOT_DIR}" > /dev/null # silence output
+  ${run_command}
+  command popd                > /dev/null # silence output
+}
+
+docker_run --tty --interactive \
+  --volume "${ROOT_DIR}":"${work_dir}" \
+  --workdir "${work_dir}" \
+  "${DOCKER_IMAGE}" \
+  "${@}"
