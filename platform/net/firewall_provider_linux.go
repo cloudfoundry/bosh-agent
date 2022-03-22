@@ -47,9 +47,8 @@ func SetupNatsFirewall(mbus string) error {
 	if err != nil {
 		if errors.Is(err, cgroups.ErrMountPointNotExist) {
 			return nil // v1cgroups are not mounted (warden stemcells)
-		} else {
-			return bosherr.WrapError(err, "Error retrieving cgroups mount point")
 		}
+		return bosherr.WrapError(err, "Error retrieving cgroups mount point")
 	}
 	mbusURL, err := gonetURL.Parse(mbus)
 	if err != nil || mbusURL.Hostname() == "" {
