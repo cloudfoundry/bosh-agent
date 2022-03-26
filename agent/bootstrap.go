@@ -95,7 +95,7 @@ func (boot bootstrap) Run() (err error) {
 		return bosherr.WrapError(err, "Setting up hostname")
 	}
 
-	if err = boot.platform.SetupNetworking(settings.Networks); err != nil {
+	if err = boot.platform.SetupNetworking(settings.Networks, settings.GetMbusURL()); err != nil {
 		return bosherr.WrapError(err, "Setting up networking")
 	}
 

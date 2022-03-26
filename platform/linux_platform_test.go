@@ -3832,7 +3832,7 @@ unit: sectors
 		It("delegates to the NetManager", func() {
 			networks := boshsettings.Networks{}
 
-			err := platform.SetupNetworking(networks)
+			err := platform.SetupNetworking(networks, "")
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(netManager.SetupNetworkingNetworks).To(Equal(networks))

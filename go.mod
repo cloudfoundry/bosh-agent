@@ -9,9 +9,9 @@ require (
 	github.com/charlievieth/fs v0.0.2
 	github.com/cloudfoundry/bosh-davcli v0.0.48
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.305
+	github.com/cloudfoundry/bosh-utils v0.0.306
 	github.com/cloudfoundry/gosigar v1.3.3
-	github.com/cloudfoundry/socks5-proxy v0.2.47 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.48 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -24,13 +24,13 @@ require (
 	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
 	github.com/nats-io/nats.go v1.13.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.18.1
+	github.com/onsi/gomega v1.19.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5
+	github.com/stretchr/testify v1.7.1
+	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
+	golang.org/x/net v0.0.0-20220325170049-de3da57026de
+	golang.org/x/sys v0.0.0-20220325203850-36772127a21f
 )
 
 require (
@@ -46,6 +46,8 @@ require (
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/tools v0.1.1 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
@@ -69,4 +71,6 @@ require (
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6
+	inet.af/wf v0.0.0-20211204062712-86aaea0a7310
 )
