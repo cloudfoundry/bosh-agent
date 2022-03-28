@@ -1,9 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e -o pipefail
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-bin=$(dirname $0)
+"${ROOT_DIR}/bin/lint" # TODO: this should be called in parallel via Concourse
 
-$bin/go get github.com/golang/lint/golint
-
-exec $bin/test-unit
+exec "${ROOT_DIR}/bin/test-unit"

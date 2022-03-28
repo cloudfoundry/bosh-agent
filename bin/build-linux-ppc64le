@@ -1,15 +1,18 @@
-#!/bin/bash 
+#!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e -o pipefail
-
-bin=$(dirname $0)
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 export GOROOT=/usr/local/gccgo
-export PATH=$GOROOT/bin:$PATH
-export LD_LIBRARY_PATH=$GOROOT/lib64
-export build_options="-compiler gccgo -gccgoflags '-static-libgo'"
+
+export PATH=${GOROOT}/bin:${PATH}
+
+export LD_LIBRARY_PATH=${GOROOT}/lib64
 
 # we need following steps to make gccgo work
-cp -f $GOROOT/lib64/libgo.so.7 /lib/powerpc64le-linux-gnu
+cp -f "${LD_LIBRARY_PATH}/libgo.so.7" /lib/powerpc64le-linux-gnu
 
-$bin/go build $build_options -o $bin/../out/bosh-agent github.com/cloudfoundry/bosh-agent/main
+"${ROOT_DIR}/bin/go" build \
+  -compiler gccgo -gccgoflags '-static-libgo' \
+  -o "${ROOT_DIR}/out/bosh-agent" \
+  github.com/cloudfoundry/bosh-agent/main

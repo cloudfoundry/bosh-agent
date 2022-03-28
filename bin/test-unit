@@ -1,52 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e -o pipefail
-
-while getopts ":q:w" opt; do
-  case "$opt" in
-    q) QUIET=true ;;
-    w) WATCH="watch" ;;
-  esac
-done
-shift $(( OPTIND - 1 ))
-
-bin=$(dirname $0)
-
-dir=$bin/..
-if [ -n "$1" ] ; then
-  dir=$1
-fi
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 echo 'Note: if you want to quickly run tests for just one package, do it like this:'
-echo '  % ginkgo path/to/package'
+echo '  % bin/ginkgo path/to/package'
 
+"${ROOT_DIR}/bin/format" # TODO: this should be called in parallel via Concourse
 
-# Travis randomly kills go builds when using -race
-race=$([ "$TRAVIS" != "true" ] && echo "-race")
-
-ignored=(vendor,Tools,bin,ci,docs,gobin,out,test,tmp)
-echo -e "\n Formatting packages, other than: ${ignored[*]}..."
-for i in `ls -1` ; do
-  if [ -d "$i" ] && [[ ! ${ignored[*]} =~ "$i" ]] ; then
-    $bin/go fmt github.com/cloudfoundry/bosh-agent/${i}/...
-  fi
+for os in windows linux; do
+  echo -e "\n lint-ing with GOOS=${os}..."
+  GOOS="${os}" "${ROOT_DIR}/bin/lint" # TODO: this should be called in parallel via Concourse
+  echo -e "\n build-ing with GOOS=${os} to confirm everything compiles..."
+  GOOS="${os}" "${ROOT_DIR}/bin/build" # TODO: this should be called in parallel via Concourse
 done
 
-echo -e "\n Skipping check for unhandled errors until https://github.com/kisielk/errcheck/issues/75 is resolved"
-# $bin/test-unhandled-errors
-
-echo -e "\n Running build script for windows to confirm everything compiles..."
-GOOS=windows $bin/build
-
-echo -e "\n Running build script to confirm everything compiles..."
-$bin/build
-
 echo -e "\n Testing packages..."
-$bin/env go run github.com/onsi/ginkgo/ginkgo $WATCH -r $race -skipPackage="integration,vendor" $dir
-
-if [[ ! "$(go version)" =~ go1.8 ]]; then
-  echo -e "\n Checking with golint..."
-  $bin/golint
-fi
+"${ROOT_DIR}/bin/ginkgo" -skipPackage="integration" "${ROOT_DIR}"
 
 echo -e "\n\033[0;32mSUCCESS\033[0m"
