@@ -12,8 +12,6 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-var DefaultCryptoAlgorithms = []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA1, boshcrypto.DigestAlgorithmSHA512}
-
 type HTTPBlobImpl struct {
 	fs               boshsys.FileSystem
 	createAlgorithms []boshcrypto.Algorithm
@@ -21,6 +19,8 @@ type HTTPBlobImpl struct {
 }
 
 func NewHTTPBlobImpl(fs boshsys.FileSystem, httpClient *http.Client) *HTTPBlobImpl {
+	var DefaultCryptoAlgorithms = []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA1, boshcrypto.DigestAlgorithmSHA512}
+
 	return NewHTTPBlobImplWithDigestAlgorithms(fs, httpClient, DefaultCryptoAlgorithms)
 }
 
@@ -50,7 +50,7 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string, headers map[string]str
 		return boshcrypto.MultipleDigest{}, err
 	}
 
-	req, err := http.NewRequest("PUT", signedURL, file)
+	req, err := http.NewRequest("PUT", signedURL, file) //nolint:noctx
 	if err != nil {
 		defer file.Close()
 		return boshcrypto.MultipleDigest{}, err
@@ -59,10 +59,8 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string, headers map[string]str
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("Expect", "100-continue")
 
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	req.ContentLength = stat.Size()
@@ -84,16 +82,14 @@ func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest, headers m
 		return "", bosherr.WrapError(err, "Creating temporary file")
 	}
 
-	req, err := http.NewRequest("GET", signedURL, strings.NewReader(""))
+	req, err := http.NewRequest("GET", signedURL, strings.NewReader("")) //nolint:noctx
 	if err != nil {
 		defer file.Close()
 		return "", bosherr.WrapError(err, "Creating Get Request")
 	}
 
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	resp, err := h.httpClient.Do(req)

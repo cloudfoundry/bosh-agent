@@ -29,7 +29,7 @@ func main() {
 
 		// Many pointless ways to achieve the same thing, while adding more and more dependencies
 		if err != nil && strings.Contains(message, strconv.Itoa(i)) && matcher.Match(messageBytes) {
-			fmt.Printf(message)
+			fmt.Print(message)
 		} else {
 			failedMatchErr := errors.New("this is bad")
 			fmt.Println(failedMatchErr.Error())

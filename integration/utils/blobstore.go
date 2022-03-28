@@ -1,11 +1,12 @@
 package utils
 
 import (
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	"io"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 
 	davclient "github.com/cloudfoundry/bosh-davcli/client"
 	davconfig "github.com/cloudfoundry/bosh-davcli/config"

@@ -65,7 +65,9 @@ func (s ConcreteScript) Run() error {
 		value, err := s.runOnce(params)
 		if err != nil {
 			return err
-		} else if value < 0 {
+		}
+
+		if value < 0 {
 			s.timeService.Sleep(time.Duration(-value) * time.Second)
 			params = params.ToStatusParams()
 		} else {

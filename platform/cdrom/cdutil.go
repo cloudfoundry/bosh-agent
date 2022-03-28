@@ -61,7 +61,7 @@ func (util cdUtil) GetFilesContents(fileNames []string) ([][]byte, error) {
 			return [][]byte{}, bosherr.WrapError(err, "Reading from CDROM")
 		}
 
-		contents = append(contents, []byte(stringContents))
+		contents = append(contents, stringContents)
 	}
 
 	util.logger.Debug(util.logTag, "Umounting CDROM")

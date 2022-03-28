@@ -110,7 +110,6 @@ func (s *sigarStatsCollector) GetDiskStats(mountedPath string) (stats boshstats.
 }
 
 func (s *sigarStatsCollector) GetUptimeStats() (stats boshstats.UptimeStats, err error) {
-
 	uptime := sigar.Uptime{}
 	err = uptime.Get()
 

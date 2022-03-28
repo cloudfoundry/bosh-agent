@@ -37,34 +37,34 @@ func (udev ConcreteUdevDevice) KickDevice(filePath string) {
 	if err := udev.readByte(filePath); err != nil {
 		udev.logger.Error(udev.logtag, "Failed to read byte from device: %s", err.Error())
 	}
-
-	return
 }
 
-func (udev ConcreteUdevDevice) Settle() (err error) {
+func (udev ConcreteUdevDevice) Settle() error {
 	udev.logger.Debug(udev.logtag, "Settling UdevDevice")
 	switch {
 	case udev.runner.CommandExists("udevadm"):
-		_, _, _, err = udev.runner.RunCommand("udevadm", "settle")
+		_, _, _, err := udev.runner.RunCommand("udevadm", "settle")
+		return err
 	case udev.runner.CommandExists("udevsettle"):
-		_, _, _, err = udev.runner.RunCommand("udevsettle")
+		_, _, _, err := udev.runner.RunCommand("udevsettle")
+		return err
 	default:
-		err = bosherr.Error("can not find udevadm or udevsettle commands")
+		return bosherr.Error("can not find udevadm or udevsettle commands")
 	}
-	return
 }
 
-func (udev ConcreteUdevDevice) Trigger() (err error) {
+func (udev ConcreteUdevDevice) Trigger() error {
 	udev.logger.Debug(udev.logtag, "Triggering UdevDevice")
 	switch {
 	case udev.runner.CommandExists("udevadm"):
-		_, _, _, err = udev.runner.RunCommand("udevadm", "trigger")
+		_, _, _, err := udev.runner.RunCommand("udevadm", "trigger")
+		return err
 	case udev.runner.CommandExists("udevtrigger"):
-		_, _, _, err = udev.runner.RunCommand("udevtrigger")
+		_, _, _, err := udev.runner.RunCommand("udevtrigger")
+		return err
 	default:
-		err = bosherr.Error("can not find udevadm or udevtrigger commands")
+		return bosherr.Error("can not find udevadm or udevtrigger commands")
 	}
-	return
 }
 
 func (udev ConcreteUdevDevice) EnsureDeviceReadable(filePath string) error {
@@ -100,7 +100,7 @@ func (udev ConcreteUdevDevice) readByte(filePath string) error {
 	}()
 	udev.logger.Debug(udev.logtag, "Successfully open file: %s", filePath)
 
-	bytes := make([]byte, 1, 1)
+	bytes := make([]byte, 1)
 	read, err := device.Read(bytes)
 	if err != nil {
 		return err

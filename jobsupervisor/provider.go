@@ -28,7 +28,7 @@ func NewProvider(
 	logger boshlog.Logger,
 	dirProvider boshdir.Provider,
 	handler boshhandler.Handler,
-) (p Provider) {
+) Provider {
 	timeService := clock.NewClock()
 	fs := platform.GetFs()
 	runner := platform.GetRunner()
@@ -47,13 +47,13 @@ func NewProvider(
 		timeService,
 	)
 
-	p.supervisors = map[string]JobSupervisor{
-		"monit":      NewWrapperJobSupervisor(monitJobSupervisor, fs, dirProvider, logger),
-		"dummy":      NewDummyJobSupervisor(),
-		"dummy-nats": NewDummyNatsJobSupervisor(handler),
+	return Provider{
+		supervisors: map[string]JobSupervisor{
+			"monit":      NewWrapperJobSupervisor(monitJobSupervisor, fs, dirProvider, logger),
+			"dummy":      NewDummyJobSupervisor(),
+			"dummy-nats": NewDummyNatsJobSupervisor(handler),
+		},
 	}
-
-	return
 }
 
 func (p Provider) Get(name string) (supervisor JobSupervisor, err error) {

@@ -279,13 +279,13 @@ func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 
 	err = json.Unmarshal(userDataBytes, &userData)
 	if err != nil {
-		userDataBytesWithoutQuotes := strings.Replace(string(userDataBytes), `"`, ``, -1)
+		userDataBytesWithoutQuotes := strings.ReplaceAll(string(userDataBytes), `"`, ``)
 		decodedUserData, err := base64.RawURLEncoding.DecodeString(userDataBytesWithoutQuotes)
 		if err != nil {
 			return userData, bosherr.WrapError(err, "Decoding url encoded user data")
 		}
 
-		err = json.Unmarshal([]byte(decodedUserData), &userData)
+		err = json.Unmarshal(decodedUserData, &userData)
 		if err != nil {
 			return userData, bosherr.WrapErrorf(err, "Unmarshalling url decoded user data '%s'", decodedUserData)
 		}
@@ -316,10 +316,6 @@ func (ms HTTPMetadataService) ensureMinimalNetworkSetup() error {
 	}
 
 	return nil
-}
-
-func (ms HTTPMetadataService) addHeaders() func(*http.Request) {
-	return ms.addHeadersWithToken("")
 }
 
 func (ms HTTPMetadataService) addHeadersWithToken(imdsToken string) func(*http.Request) {
@@ -367,7 +363,6 @@ func (ms HTTPMetadataService) getToken() (token string, err error) {
 	}
 
 	return string(bytes), nil
-
 }
 
 func createRetryClient(delay time.Duration, logger boshlog.Logger) *httpclient.HTTPClient {

@@ -118,7 +118,7 @@ func (s Settings) PersistentDiskSettingsFromHint(diskID string, diskHint interfa
 func (s Settings) EphemeralDiskSettings() DiskSettings {
 	diskSettings := DiskSettings{}
 
-	if s.Disks.Ephemeral != nil {
+	if s.Disks.Ephemeral != nil { //nolint:nestif
 		if hashSettings, ok := s.Disks.Ephemeral.(map[string]interface{}); ok {
 			if path, ok := hashSettings["path"]; ok {
 				diskSettings.Path = path.(string)
@@ -189,7 +189,7 @@ func (s Settings) populatePersistentDiskSettings(diskID string, settingsInfo int
 		ID: diskID,
 	}
 
-	if hashSettings, ok := settingsInfo.(map[string]interface{}); ok {
+	if hashSettings, ok := settingsInfo.(map[string]interface{}); ok { //nolint:nestif
 		if path, ok := hashSettings["path"]; ok {
 			diskSettings.Path = path.(string)
 		}
@@ -266,14 +266,14 @@ func (e Env) GetSwapSizeInBytes() *uint64 {
 		return nil
 	}
 
-	result := uint64(*e.Bosh.SwapSizeInMB * 1024 * 1024)
+	result := *e.Bosh.SwapSizeInMB * 1024 * 1024
 	return &result
 }
 
 func (e Env) GetParallel() *int {
 	result := 5
 	if e.Bosh.Parallel != nil {
-		result = int(*e.Bosh.Parallel)
+		result = *e.Bosh.Parallel
 	}
 	return &result
 }
@@ -520,7 +520,7 @@ func NetmaskToCIDR(netmask string, ipv6 bool) (string, error) {
 	return strconv.Itoa(ones), nil
 }
 
-//{
+// {
 //	"agent_id": "bm-xxxxxxxx",
 //	"blobstore": {
 //		"options": {
@@ -579,4 +579,4 @@ func NetmaskToCIDR(netmask string, ipv6 bool) (string, error) {
 //	"vm": {
 //		"name": "vm-xxxxxxxx"
 //	}
-//}
+// }

@@ -1,16 +1,9 @@
 package net
 
 import (
-	"syscall"
-
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-)
-
-var (
-	modiphlpapi         = syscall.MustLoadDLL("iphlpapi.dll")
-	procGetAdaptersInfo = modiphlpapi.MustFindProc("GetAdaptersInfo")
 )
 
 type windowsRoutesSearcher struct {
@@ -27,11 +20,13 @@ func (s windowsRoutesSearcher) SearchRoutes() ([]Route, error) {
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Running route")
 	}
-	var routes []Route
+
 	defaultGateway, _, _, err := s.cmdRunner.RunCommandQuietly("(Get-NetRoute -DestinationPrefix '0.0.0.0/0').NextHop")
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Running route")
 	}
+
+	routes := make([]Route, 0, len(ifs))
 	for _, fs := range ifs {
 		route := Route{
 			InterfaceName: fs.Name,
@@ -42,8 +37,10 @@ func (s windowsRoutesSearcher) SearchRoutes() ([]Route, error) {
 		}
 		routes = append(routes, route)
 	}
+
 	if len(routes) == 0 {
 		return nil, bosherr.Error("no routes")
 	}
+
 	return routes, nil
 }

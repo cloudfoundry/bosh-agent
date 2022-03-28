@@ -23,6 +23,4 @@ func (a AgentKiller) KillAgent() {
 	// this gives a bit of time for the director to learn about the task
 	time.Sleep(1 * time.Second)
 	os.Exit(0)
-
-	return
 }

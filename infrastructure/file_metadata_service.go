@@ -52,7 +52,7 @@ func (ms fileMetadataService) GetPublicKey() (string, error) {
 		return "", bosherr.WrapError(err, "Reading metadata file")
 	}
 
-	err = json.Unmarshal([]byte(contents), &p)
+	err = json.Unmarshal(contents, &p)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Unmarshalling metadata")
 	}
@@ -68,7 +68,7 @@ func (ms fileMetadataService) GetInstanceID() (string, error) {
 		return "", bosherr.WrapError(err, "Reading metadata file")
 	}
 
-	err = json.Unmarshal([]byte(contents), &metadata)
+	err = json.Unmarshal(contents, &metadata)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Unmarshalling metadata")
 	}
@@ -86,7 +86,7 @@ func (ms fileMetadataService) GetServerName() (string, error) {
 		return "", bosherr.WrapError(err, "Reading user data")
 	}
 
-	err = json.Unmarshal([]byte(contents), &userData)
+	err = json.Unmarshal(contents, &userData)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Unmarshalling user data")
 	}
@@ -106,7 +106,7 @@ func (ms fileMetadataService) GetRegistryEndpoint() (string, error) {
 		return ms.settingsFilePath, nil
 	}
 
-	err = json.Unmarshal([]byte(contents), &userData)
+	err = json.Unmarshal(contents, &userData)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Unmarshalling user data")
 	}
@@ -124,7 +124,7 @@ func (ms fileMetadataService) GetNetworks() (boshsettings.Networks, error) {
 		return nil, bosherr.WrapError(err, "Reading user data")
 	}
 
-	err = json.Unmarshal([]byte(contents), &userData)
+	err = json.Unmarshal(contents, &userData)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Unmarshalling user data")
 	}
@@ -142,7 +142,7 @@ func (ms fileMetadataService) GetSettings() (boshsettings.Settings, error) {
 		return boshsettings.Settings{}, bosherr.WrapError(err, "Reading user data")
 	}
 
-	err = json.Unmarshal([]byte(contents), &userData)
+	err = json.Unmarshal(contents, &userData)
 	if err != nil {
 		return boshsettings.Settings{}, bosherr.WrapError(err, "Unmarshalling user data")
 	}

@@ -76,7 +76,6 @@ func (p *EphemeralDevicePartitioner) matchPartitionNames(existingPartitions []Ex
 		if !strings.HasPrefix(existingPartition.Name, partition.NamePrefix) {
 			return false
 		}
-
 	}
 
 	return true
@@ -88,10 +87,13 @@ func (p EphemeralDevicePartitioner) RemovePartitions(partitions []ExistingPartit
 
 func (p EphemeralDevicePartitioner) ensureGPTPartition(devicePath string) (err error) {
 	stdout, _, _, err := p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Running 'parted'")
+	}
 
 	if !strings.Contains(stdout, "gpt") {
 		p.logger.Debug(p.logTag, "Creating gpt table")
-		stdout, _, _, err = p.cmdRunner.RunCommand(
+		_, _, _, err = p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
 			devicePath,

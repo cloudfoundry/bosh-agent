@@ -113,8 +113,8 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) func(http.Respo
 	}
 }
 
-func (h HTTPSHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *http.Request)) {
-	blobsHandler = func(w http.ResponseWriter, r *http.Request) {
+func (h HTTPSHandler) blobsHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			h.getBlob(w, r)
@@ -124,9 +124,7 @@ func (h HTTPSHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *ht
 			w.WriteHeader(404)
 			h.generateCEFLog(r, 404, "")
 		}
-		return
 	}
-	return
 }
 
 func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
@@ -152,9 +150,7 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 	file, statusCode, err := h.blobManager.Fetch(blobID)
 	if err != nil {
 		h.logger.Error(httpsHandlerLogTag, "Failed to fetch blob: %s", err.Error())
-
 		w.WriteHeader(statusCode)
-
 	} else {
 		defer func() {
 			_ = file.Close()

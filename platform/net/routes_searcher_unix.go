@@ -55,14 +55,14 @@ func parseRoute(ipString string) (Route, error) {
 }
 
 func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
-	var routes []Route
-
 	stdout, _, _, err := s.runner.RunCommandQuietly("ip", "r")
 	if err != nil {
-		return routes, bosherr.WrapError(err, "Running route")
+		return []Route{}, bosherr.WrapError(err, "Running route")
 	}
 
-	for _, routeEntry := range strings.Split(stdout, "\n") {
+	routeEntries := strings.Split(stdout, "\n")
+	routes := make([]Route, 0, len(routeEntries))
+	for _, routeEntry := range routeEntries {
 		if len(routeEntry) == 0 {
 			continue
 		}

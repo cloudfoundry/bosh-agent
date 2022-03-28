@@ -2,12 +2,13 @@ package utils
 
 import (
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 
 	"bytes"
 
@@ -52,7 +53,7 @@ func RetrievePrivateIP(vmName string) (string, error) {
 	}
 	gomega.Eventually(session, 20*time.Second).Should(gexec.Exit(0))
 
-	privateIPMatcher, err := regexp.Compile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
+	privateIPMatcher := regexp.MustCompile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
 	return privateIPMatcher.FindString(stdout.String()), nil
 }
 
@@ -65,7 +66,7 @@ func RetrievePublicIP(vmName string) (string, error) {
 	}
 	gomega.Eventually(session, 20*time.Second).Should(gexec.Exit(0))
 
-	hostnameMatcher, err := regexp.Compile(`HostName\s([a-zA-Z0-9\.-]*)\n`)
+	hostnameMatcher := regexp.MustCompile(`HostName\s([a-zA-Z0-9\.-]*)\n`)
 	return hostnameMatcher.FindStringSubmatch(stdout.String())[1], nil
 }
 
@@ -143,5 +144,9 @@ func GetSSHTunnelClient() (*ssh.Client, error) {
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	return sshClient, nil
 }

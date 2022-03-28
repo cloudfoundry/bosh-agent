@@ -2,6 +2,7 @@ package cert
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"strconv"
@@ -83,7 +84,12 @@ func (c *windowsCertManager) UpdateCertificates(rawCerts string) error {
 	if err != nil {
 		return err
 	}
-	defer c.fs.RemoveAll(tempCertDir)
+	defer func() {
+		err = c.fs.RemoveAll(tempCertDir)
+		if err != nil {
+			log.Printf("Unable to remove %s directory: %s", tempCertDir, err)
+		}
+	}()
 
 	for i, cert := range certs {
 		filename := path.Join(tempCertDir, strconv.Itoa(i))

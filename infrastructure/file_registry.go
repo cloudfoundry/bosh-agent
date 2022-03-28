@@ -28,7 +28,7 @@ func (r *fileRegistry) GetSettings() (boshsettings.Settings, error) {
 		return settings, bosherr.WrapError(err, "Read settings file")
 	}
 
-	err = json.Unmarshal([]byte(contents), &settings)
+	err = json.Unmarshal(contents, &settings)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Unmarshal json settings")
 	}

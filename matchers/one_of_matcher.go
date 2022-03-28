@@ -37,7 +37,7 @@ func (m *OneOfMatcher) NegatedFailureMessage(actual interface{}) (message string
 }
 
 func (m *OneOfMatcher) expectedValues() string {
-	expectedValues := make([]string, len(m.Elements), len(m.Elements))
+	expectedValues := make([]string, len(m.Elements))
 	for i, matcher := range m.Elements {
 		expectedValues[i] = format.Object(matcher, 1)
 	}

@@ -27,10 +27,6 @@ func localAccountNames() ([]string, error) {
 	return nil, ErrNotImplemented
 }
 
-func isServiceRunning(_ string) error {
-	return ErrNotImplemented
-}
-
 func sshEnabled() error {
 	return ErrNotImplemented
 }

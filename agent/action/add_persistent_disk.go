@@ -2,6 +2,7 @@ package action
 
 import (
 	"errors"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )

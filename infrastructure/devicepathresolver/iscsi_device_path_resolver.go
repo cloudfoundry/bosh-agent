@@ -139,12 +139,11 @@ func (ispr iscsiDevicePathResolver) getMappedDevices() ([]string, error) {
 // a "–part1" suffix device based on origin multipath device
 // last mounted disk already have this device, new disk doesn't have this device yet
 func (ispr iscsiDevicePathResolver) getDevicePaths(devices []string, shouldExist bool) ([]string, error) {
+	var partitionRegexp = regexp.MustCompile("-part1")
 	var paths []string
+
 	for _, device := range devices {
-		exist, err := regexp.MatchString("-part1", device)
-		if err != nil {
-			return paths, bosherr.WrapError(err, "There is a problem with your regexp: '-part1'. That is used to find existing device")
-		}
+		exist := partitionRegexp.MatchString(device)
 		if exist == shouldExist {
 			matchedPath := path.Join("/dev/mapper", strings.Split(strings.Fields(device)[0], "-")[0])
 			ispr.logger.Debug(ispr.logTag, "path in device list: '%+v'", matchedPath)

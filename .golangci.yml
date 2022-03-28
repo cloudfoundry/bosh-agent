@@ -1,0 +1,67 @@
+# https://github.com/golangci/golangci-lint#config-file
+run:
+  deadline: 5m
+  skip-dirs:
+    - tmp
+    - integration
+  skip-files:
+    - ".*/fake-.*\\.go$"
+
+linters:
+  disable-all: true
+  enable: &LINTERS
+  # default linters
+  - deadcode
+  - errcheck
+  - gosimple
+  - govet
+  - ineffassign
+  - staticcheck
+  - structcheck
+  - typecheck
+  - unused
+  - varcheck
+
+  # additional linters for this project (we should disable these if they get annoying).
+  - asciicheck
+  - bodyclose
+  - depguard
+  - dogsled
+  - exhaustive
+  - exportloopref
+  - funlen
+  - gochecknoglobals
+  - gochecknoinits
+  - gocritic
+  - gocyclo
+  - goheader
+  - goimports
+  - revive
+  - goprintffuncname
+  - gosec
+  - misspell
+  - nakedret
+  - nestif
+  - noctx
+  - nolintlint
+  - prealloc
+  - rowserrcheck
+  - exportloopref
+  - sqlclosecheck
+  - unconvert
+  - whitespace
+
+issues:
+  exclude-rules:
+  - path: _test\.go
+    linters: *LINTERS
+
+linters-settings:
+  dogsled:
+    max-blank-identifiers: 5
+  funlen:
+    lines: 200
+    statements: 90
+
+output:
+  sort-results: true

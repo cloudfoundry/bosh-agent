@@ -11,8 +11,6 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-const digDNSResolverLogTag = "Dig DNS Resolver"
-
 type DigDNSResolver struct {
 	runner boshsys.CmdRunner
 	logger boshlog.Logger

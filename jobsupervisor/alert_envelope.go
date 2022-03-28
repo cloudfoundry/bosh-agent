@@ -19,11 +19,7 @@ type alertEnvelope struct {
 func (e *alertEnvelope) Write(lineBytes []byte) (err error) {
 	line := strings.TrimSpace(string(lineBytes))
 
-	idRegexp, err := regexp.Compile("^Message-id: <([^>]+)>$")
-	if err != nil {
-		return
-	}
-
+	idRegexp := regexp.MustCompile("^Message-id: <([^>]+)>$")
 	idMatches := idRegexp.FindStringSubmatch(line)
 
 	switch {

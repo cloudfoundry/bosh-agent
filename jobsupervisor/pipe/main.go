@@ -24,11 +24,6 @@ type noopWriter struct{}
 
 func (n noopWriter) Write(p []byte) (int, error) { return len(p), nil }
 
-// set log output to noop writer on program initialization.  We do not
-// want to write any logs to stderr - only the underlying program should
-// write to stderr and stdout.
-func init() { log.SetOutput(noopWriter{}) }
-
 const EnvPrefix = "__PIPE_"
 
 type Config struct {
@@ -127,7 +122,7 @@ func (c *Config) SendEvent(code int) error {
 	if err != nil {
 		return err
 	}
-	res, err := http.Post(c.NotifyHTTP, "application/json", bytes.NewReader(body))
+	res, err := http.Post(c.NotifyHTTP, "application/json", bytes.NewReader(body)) //nolint:noctx
 	if err != nil {
 		return err
 	}
@@ -207,7 +202,10 @@ func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exit
 		return 1, fmt.Errorf("starting command (%s): %s", path, err)
 	}
 	go func() {
-		cmd.Wait()
+		err = cmd.Wait()
+		if err != nil {
+			log.Printf("Waiting for command (%s) returned an error: %s", path, err)
+		}
 		closeChannel(haltCh)
 	}()
 
@@ -246,7 +244,10 @@ func (c *Config) Run(path string, args []string, stdout, stderr io.Writer) (exit
 		for {
 			select {
 			case sig := <-sigCh:
-				cmd.Process.Signal(sig)
+				err = cmd.Process.Signal(sig)
+				if err != nil {
+					log.Printf("Unable to signal process: %s", err)
+				}
 			case <-haltCh:
 				return
 			}
@@ -305,10 +306,11 @@ func ExitCode(cmd *exec.Cmd) (int, error) {
 
 func FindProcess(pid int) error {
 	p, err := os.FindProcess(pid)
-	if err == nil {
-		p.Release() // Close process handle
+	if err != nil {
+		return err
 	}
-	return err
+
+	return p.Release() // Close process handle
 }
 
 type BulletproofWriter struct {
@@ -317,7 +319,10 @@ type BulletproofWriter struct {
 
 func (w *BulletproofWriter) Write(p []byte) (int, error) {
 	if w.w != nil {
-		w.w.Write(p)
+		_, err := w.w.Write(p)
+		if err != nil {
+			log.Printf("BulletproofWriter.Write failed: %s", err)
+		}
 	}
 	return len(p), nil
 }
@@ -336,6 +341,11 @@ func ParseArgs() (path string, args []string, err error) {
 }
 
 func main() {
+	// set log output to noop writer on program initialization.  We do not
+	// want to write any logs to stderr - only the underlying program should
+	// write to stderr and stdout.
+	log.SetOutput(noopWriter{})
+
 	conf := ParseConfig()
 	conf.InitLog()
 	log.Printf("pipe: configuration: %+v", conf)

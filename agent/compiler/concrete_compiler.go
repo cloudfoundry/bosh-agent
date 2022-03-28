@@ -1,10 +1,11 @@
 package compiler
 
 import (
-	"code.cloudfoundry.org/clock"
 	"fmt"
 	"os"
 	"path"
+
+	"code.cloudfoundry.org/clock"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"

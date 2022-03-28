@@ -37,7 +37,6 @@ func (s *RenderedTemplatesArchiveSpec) UnmarshalJSON(data []byte) error {
 	}
 
 	if jsonStruct.BlobstoreID == "" && jsonStruct.Sha1 == "" {
-		s = nil
 		return nil
 	}
 

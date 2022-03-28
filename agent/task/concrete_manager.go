@@ -66,7 +66,7 @@ func (m *concreteManager) GetInfos() ([]Info, error) {
 		return nil, err
 	}
 
-	var r []Info
+	r := make([]Info, 0, len(taskInfos))
 	for _, taskInfo := range taskInfos {
 		r = append(r, taskInfo)
 	}

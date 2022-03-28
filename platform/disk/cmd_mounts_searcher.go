@@ -16,19 +16,19 @@ func NewCmdMountsSearcher(runner boshsys.CmdRunner) MountsSearcher {
 }
 
 func (s cmdMountsSearcher) SearchMounts() ([]Mount, error) {
-	var mounts []Mount
-
 	stdout, _, _, err := s.runner.RunCommand("mount")
 	if err != nil {
-		return mounts, bosherr.WrapError(err, "Running mount")
+		return []Mount{}, bosherr.WrapError(err, "Running mount")
 	}
 
-	// e.g. '/dev/sda on /boot type ext2 (rw)'
-	for _, mountEntry := range strings.Split(stdout, "\n") {
+	mountEntries := strings.Split(stdout, "\n")
+	mounts := make([]Mount, 0, len(mountEntries))
+	for _, mountEntry := range mountEntries {
 		if mountEntry == "" {
 			continue
 		}
 
+		// e.g. '/dev/sda on /boot type ext2 (rw)'
 		mountFields := strings.Fields(mountEntry)
 
 		mounts = append(mounts, Mount{

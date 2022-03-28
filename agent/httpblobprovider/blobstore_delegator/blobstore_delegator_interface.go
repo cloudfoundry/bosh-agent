@@ -1,4 +1,4 @@
-package blobstore_delegator
+package blobstore_delegator //nolint:revive
 
 import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"

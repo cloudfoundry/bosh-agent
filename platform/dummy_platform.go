@@ -253,7 +253,6 @@ func (p dummyPlatform) SetupSharedMemory() error {
 }
 
 func (p dummyPlatform) SetupBlobsDir() error {
-
 	blobsDir := p.dirProvider.BlobsDir()
 	if err := p.fs.MkdirAll(blobsDir, blobsDirPermissions); err != nil {
 		return bosherr.WrapErrorf(err, "Making %s dir", blobsDir)
@@ -302,7 +301,10 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 		return err
 	}
 
-	p.fs.WriteFile(filepath.Join(p.dirProvider.BoshDir(), "formatted_disks.json"), diskJSON)
+	err = p.fs.WriteFile(filepath.Join(p.dirProvider.BoshDir(), "formatted_disks.json"), diskJSON)
+	if err != nil {
+		return err
+	}
 
 	mounts = append(mounts, mount{
 		MountDir:     mountPoint,
@@ -314,7 +316,10 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 		return err
 	}
 
-	p.fs.WriteFileString(managedSettingsPath, diskSettings.ID)
+	err = p.fs.WriteFileString(managedSettingsPath, diskSettings.ID)
+	if err != nil {
+		return err
+	}
 
 	return p.fs.WriteFile(p.mountsPath(), mountsJSON)
 }
@@ -415,7 +420,10 @@ func (p dummyPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskS
 		if err != nil {
 			return false, err
 		}
-		json.Unmarshal(bytes, &formattedDisks)
+		err = json.Unmarshal(bytes, &formattedDisks)
+		if err != nil {
+			return false, err
+		}
 
 		for _, disk := range formattedDisks {
 			if diskSettings.ID == disk.DiskCid {
@@ -441,7 +449,10 @@ func (p dummyPlatform) AssociateDisk(name string, settings boshsettings.DiskSett
 			return bosherr.WrapError(err, "Associating Disk: ")
 		}
 	} else if err == nil {
-		json.Unmarshal(bytes, &diskNames)
+		err = json.Unmarshal(bytes, &diskNames)
+		if err != nil {
+			return err
+		}
 	}
 
 	diskNames = append(diskNames, name)
@@ -483,7 +494,7 @@ func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 		return network, nil
 	}
 
-	err = json.Unmarshal([]byte(contents), &network)
+	err = json.Unmarshal(contents, &network)
 	if err != nil {
 		return network, bosherr.WrapError(err, "Unmarshal json settings")
 	}

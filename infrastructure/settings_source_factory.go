@@ -100,11 +100,10 @@ func (f SettingsSourceFactory) New() (boshsettings.Source, error) {
 }
 
 func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) {
-	var metadataServices []MetadataService
-
 	digDNSResolver := NewDigDNSResolver(f.platform.GetRunner(), f.logger)
 	resolver := NewRegistryEndpointResolver(digDNSResolver)
 
+	metadataServices := make([]MetadataService, 0, len(f.options.Sources))
 	for _, opts := range f.options.Sources {
 		var metadataService MetadataService
 
@@ -158,8 +157,7 @@ func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) 
 }
 
 func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, error) {
-	var settingsSources []boshsettings.Source
-
+	settingsSources := make([]boshsettings.Source, 0, len(f.options.Sources))
 	for _, opts := range f.options.Sources {
 		var settingsSource boshsettings.Source
 

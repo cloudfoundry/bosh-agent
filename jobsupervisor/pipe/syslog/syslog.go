@@ -26,14 +26,15 @@ const (
 
 	// From /usr/include/sys/syslog.h.
 	// These are the same on Linux, BSD, and OS X.
-	LOG_EMERG Priority = iota
-	LOG_ALERT
-	LOG_CRIT
-	LOG_ERR
-	LOG_WARNING
-	LOG_NOTICE
-	LOG_INFO
-	LOG_DEBUG
+
+	LOG_EMERG   Priority = iota //nolint:revive
+	LOG_ALERT                   //nolint:revive
+	LOG_CRIT                    //nolint:revive
+	LOG_ERR                     //nolint:revive
+	LOG_WARNING                 //nolint:revive
+	LOG_NOTICE                  //nolint:revive
+	LOG_INFO                    //nolint:revive
+	LOG_DEBUG                   //nolint:revive
 )
 
 const (
@@ -41,30 +42,31 @@ const (
 
 	// From /usr/include/sys/syslog.h.
 	// These are the same up to LOG_FTP on Linux, BSD, and OS X.
-	LOG_KERN Priority = iota << 3
-	LOG_USER
-	LOG_MAIL
-	LOG_DAEMON
-	LOG_AUTH
-	LOG_SYSLOG
-	LOG_LPR
-	LOG_NEWS
-	LOG_UUCP
-	LOG_CRON
-	LOG_AUTHPRIV
-	LOG_FTP
-	_ // unused
-	_ // unused
-	_ // unused
-	_ // unused
-	LOG_LOCAL0
-	LOG_LOCAL1
-	LOG_LOCAL2
-	LOG_LOCAL3
-	LOG_LOCAL4
-	LOG_LOCAL5
-	LOG_LOCAL6
-	LOG_LOCAL7
+
+	LOG_KERN     Priority = iota << 3 //nolint:revive
+	LOG_USER                          //nolint:revive
+	LOG_MAIL                          //nolint:revive
+	LOG_DAEMON                        //nolint:revive
+	LOG_AUTH                          //nolint:revive
+	LOG_SYSLOG                        //nolint:revive
+	LOG_LPR                           //nolint:revive
+	LOG_NEWS                          //nolint:revive
+	LOG_UUCP                          //nolint:revive
+	LOG_CRON                          //nolint:revive
+	LOG_AUTHPRIV                      //nolint:revive
+	LOG_FTP                           //nolint:revive
+	_                                 // unused
+	_                                 // unused
+	_                                 // unused
+	_                                 // unused
+	LOG_LOCAL0                        //nolint:revive
+	LOG_LOCAL1                        //nolint:revive
+	LOG_LOCAL2                        //nolint:revive
+	LOG_LOCAL3                        //nolint:revive
+	LOG_LOCAL4                        //nolint:revive
+	LOG_LOCAL5                        //nolint:revive
+	LOG_LOCAL6                        //nolint:revive
+	LOG_LOCAL7                        //nolint:revive
 )
 
 const maxBufSize = 1024 * 1024 * 20 // 20MB

@@ -41,7 +41,8 @@ func (a FetchLogsAction) IsLoggable() bool {
 	return true
 }
 
-func (a FetchLogsAction) Run(logType string, filters []string) (value map[string]string, err error) {
+func (a FetchLogsAction) Run(logType string, filters []string) (map[string]string, error) {
+	value := map[string]string{}
 	var logsDir string
 
 	switch logType {
@@ -56,22 +57,19 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 		}
 		logsDir = a.settingsDir.AgentLogsDir()
 	default:
-		err = bosherr.Error("Invalid log type")
-		return
+		return value, bosherr.Error("Invalid log type")
 	}
 
 	tmpDir, err := a.copier.FilteredCopyToTemp(logsDir, filters)
 	if err != nil {
-		err = bosherr.WrapError(err, "Copying filtered files to temp directory")
-		return
+		return value, bosherr.WrapError(err, "Copying filtered files to temp directory")
 	}
 
 	defer a.copier.CleanUp(tmpDir)
 
 	tarball, err := a.compressor.CompressFilesInDir(tmpDir)
 	if err != nil {
-		err = bosherr.WrapError(err, "Making logs tarball")
-		return
+		return value, bosherr.WrapError(err, "Making logs tarball")
 	}
 
 	defer func() {
@@ -80,12 +78,11 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value map[string
 
 	blobID, multidigestSha, err := a.blobstore.Write("", tarball, nil)
 	if err != nil {
-		err = bosherr.WrapError(err, "Create file on blobstore")
-		return
+		return value, bosherr.WrapError(err, "Create file on blobstore")
 	}
 
 	value = map[string]string{"blobstore_id": blobID, "sha1": multidigestSha.String()}
-	return
+	return value, nil
 }
 
 func (a FetchLogsAction) Resume() (interface{}, error) {

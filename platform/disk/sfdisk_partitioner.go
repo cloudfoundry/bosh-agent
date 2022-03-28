@@ -52,7 +52,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 			partitionSize = ""
 		}
 
-		sfdiskInput = sfdiskInput + fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
+		sfdiskInput += fmt.Sprintf(",%s,%s\n", partitionSize, sfdiskPartitionType)
 	}
 
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
@@ -70,7 +70,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	if err != nil {
 		return err
 	}
-	if strings.Contains(devicePath, "/dev/mapper/") {
+	if strings.Contains(devicePath, "/dev/mapper/") { //nolint:nestif
 		_, _, _, err = p.cmdRunner.RunCommand("/etc/init.d/open-iscsi", "restart")
 		if err != nil {
 			return bosherr.WrapError(err, "Shelling out to restart open-iscsi")
@@ -91,14 +91,13 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 				return true, bosherr.Errorf("No devices found")
 			}
 
+			part1Regexp := regexp.MustCompile("-part1")
 			device := strings.TrimPrefix(devicePath, "/dev/mapper/")
 			lines := strings.Split(strings.Trim(output, "\n"), "\n")
 			for i := 0; i < len(lines); i++ {
-				if match, _ := regexp.MatchString("-part1", lines[i]); match {
-					if strings.Contains(lines[i], device) {
-						p.logger.Info(p.logTag, "Succeeded in detecting partition %s", devicePath+"-part1")
-						return false, nil
-					}
+				if part1Regexp.MatchString(lines[i]) && strings.Contains(lines[i], device) {
+					p.logger.Info(p.logTag, "Succeeded in detecting partition %s", devicePath+"-part1")
+					return false, nil
 				}
 			}
 
@@ -206,34 +205,34 @@ func (p sfdiskPartitioner) diskMatchesPartitions(devicePath string, partitionsTo
 			return false, nil
 		}
 
-		remainingDiskSpace = remainingDiskSpace - partitionToMatch.SizeInBytes
+		remainingDiskSpace -= partitionToMatch.SizeInBytes
 	}
 
 	return true, nil
 }
 
-var partitionTypesMap = map[string]PartitionType{
-	"82": PartitionTypeSwap,
-	"83": PartitionTypeLinux,
-	"0":  PartitionTypeEmpty,
-	"ee": PartitionTypeGPT,
-}
+func extractPartitionPathAndType(line string) (string, PartitionType) {
+	var partitionTypesMap = map[string]PartitionType{
+		"82": PartitionTypeSwap,
+		"83": PartitionTypeLinux,
+		"0":  PartitionTypeEmpty,
+		"ee": PartitionTypeGPT,
+	}
 
-func extractPartitionPathAndType(line string) (partitionPath string, partitionType PartitionType) {
 	partitionFields := strings.Fields(line)
-	lastField := partitionFields[len(partitionFields)-1]
 
+	lastField := partitionFields[len(partitionFields)-1]
 	sfdiskPartitionType := strings.Replace(lastField, "Id=", "", 1)
 
-	partitionPath = partitionFields[0]
-	partitionType = partitionTypesMap[sfdiskPartitionType]
-	return
+	partitionPath := partitionFields[0]
+
+	return partitionPath, partitionTypesMap[sfdiskPartitionType]
 }
 
-func (p sfdiskPartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
-	return false, bosherr.WrapError(err, "Resizing partition using sfdisk is not supported")
+func (p sfdiskPartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (bool, error) {
+	return false, bosherr.WrapError(nil, "Resizing partition using sfdisk is not supported")
 }
 
-func (p sfdiskPartitioner) ResizeSinglePartition(devicePath string) (err error) {
-	return bosherr.WrapError(err, "Resizing partition using sfdisk is not supported")
+func (p sfdiskPartitioner) ResizeSinglePartition(devicePath string) error {
+	return bosherr.WrapError(nil, "Resizing partition using sfdisk is not supported")
 }

@@ -124,18 +124,6 @@ func (m *Mgr) iter(fn func(*mgr.Service) error) (first error) {
 	return
 }
 
-func svcStartTypeString(startType uint32) string {
-	switch startType {
-	case mgr.StartManual:
-		return "StartManual"
-	case mgr.StartAutomatic:
-		return "StartAutomatic"
-	case mgr.StartDisabled:
-		return "StartDisabled"
-	}
-	return fmt.Sprintf("Invalid Service StartType: %d", startType)
-}
-
 func SetStartType(s *mgr.Service, startType uint32) error {
 	conf, err := s.Config()
 	if err != nil {
@@ -168,7 +156,7 @@ func querySvc(s *mgr.Service) (svc.Status, error) {
 // If no WaitHint is provided the default of 10 seconds is returned.  As per
 // Microsoft's recommendations he returned interval will be between 1 and 10
 // seconds.
-func calculateWaitHint(status svc.Status) (waitHint, interval time.Duration) {
+func calculateWaitHint(status svc.Status) (time.Duration, time.Duration) {
 	//
 	// This is all a little confusing, so I included the definition of WaitHint
 	// and Microsoft's guidelines on how to use below:
@@ -200,18 +188,20 @@ func calculateWaitHint(status svc.Status) (waitHint, interval time.Duration) {
 	//
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms686315(v=vs.85).aspx
 	//
-	waitHint = time.Duration(status.WaitHint) * time.Millisecond
+	waitHint := time.Duration(status.WaitHint) * time.Millisecond
 	if waitHint == 0 {
 		waitHint = time.Second * 10
 	}
-	interval = waitHint / 10
+	interval := waitHint / 10
+
 	switch {
 	case interval < time.Second:
 		interval = time.Second
 	case interval > time.Second*10:
 		interval = time.Second * 10
 	}
-	return
+
+	return waitHint, interval
 }
 
 // waitPending, waits for service s to transition out of pendingState, which
@@ -250,9 +240,7 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 			break
 		}
 
-		switch {
-		// Exceeded our timeout
-		case time.Since(start) > Timeout:
+		if time.Since(start) > Timeout {
 			err := &TransitionError{
 				Msg:      "timeout waiting for state transition",
 				Name:     s.Name,
@@ -279,7 +267,7 @@ func waitPending(s *mgr.Service, pendingState svc.State) (svc.Status, error) {
 
 func doStart(s *mgr.Service) error {
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383(v=vs.85).aspx
-	const ERROR_SERVICE_ALREADY_RUNNING = syscall.Errno(0x420)
+	const ERROR_SERVICE_ALREADY_RUNNING = syscall.Errno(0x420) //nolint:revive
 
 	// Set start type to manual to enable starting the service.
 	if err := SetStartType(s, mgr.StartManual); err != nil {
@@ -513,13 +501,13 @@ func (s *ServiceStatus) StateString() string {
 	return svcStateString(s.State)
 }
 
-// Status returns the name and status for all of the services monitored.
+// Status returns the name and status for all services monitored.
 func (m *Mgr) Status() ([]ServiceStatus, error) {
 	svcs, err := m.services()
 	if err != nil {
 		return nil, err
 	}
-	defer closeServices(svcs)
+	defer closeServices(svcs) //nolint:errcheck
 
 	sts := make([]ServiceStatus, len(svcs))
 	for i, s := range svcs {

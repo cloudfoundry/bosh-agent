@@ -35,14 +35,14 @@ func NewFactory(
 	specService boshas.V1Service,
 	jobScriptProvider boshscript.JobScriptProvider,
 	logger boshlog.Logger,
-	blobstoreDelegator blobdelegator.BlobstoreDelegator) (factory Factory) {
+	blobstoreDelegator blobdelegator.BlobstoreDelegator) Factory {
 	compressor := platform.GetCompressor()
 	copier := platform.GetCopier()
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
 
-	factory = concreteFactory{
+	return concreteFactory{
 		availableActions: map[string]Action{
 			// API
 			"ping": NewPing(),
@@ -92,7 +92,6 @@ func NewFactory(
 			"sync_dns_with_signed_url": NewSyncDNSWithSignedURL(settingsService, platform, logger, blobstoreDelegator),
 		},
 	}
-	return
 }
 
 func (f concreteFactory) Create(method string) (Action, error) {

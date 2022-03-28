@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -27,10 +29,10 @@ func NewSCSIVolumeIDDevicePathResolver(
 	}
 }
 
-func (devicePathResolver SCSIVolumeIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (realPath string, timedOut bool, err error) {
+func (devicePathResolver SCSIVolumeIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
 	devicePaths, err := devicePathResolver.fs.Glob("/sys/bus/scsi/devices/*:0:0:0/block/*")
 	if err != nil {
-		return
+		return "", false, err
 	}
 
 	var hostID string
@@ -51,13 +53,13 @@ func (devicePathResolver SCSIVolumeIDDevicePathResolver) GetRealDevicePath(diskS
 	}
 
 	if len(hostID) == 0 {
-		return
+		return "", false, bosherr.Error("Zero length hostID")
 	}
 
 	scanPath := fmt.Sprintf("/sys/class/scsi_host/host%s/scan", hostID)
 	err = devicePathResolver.fs.WriteFileString(scanPath, "- - -")
 	if err != nil {
-		return
+		return "", false, err
 	}
 
 	deviceGlobPath := fmt.Sprintf("/sys/bus/scsi/devices/%s:0:%s:0/block/*", hostID, volumeID)
@@ -72,12 +74,16 @@ func (devicePathResolver SCSIVolumeIDDevicePathResolver) GetRealDevicePath(diskS
 		}
 	}
 
-	if err != nil || len(devicePaths) == 0 {
-		return
+	if err != nil {
+		return "", false, err
+	}
+
+	if len(devicePaths) == 0 {
+		return "", false, nil // see infrastructure/devicepathresolver/scsi_volume_id_device_path_resolver_test.go:102
 	}
 
 	basename := path.Base(devicePaths[0])
-	realPath = path.Join("/dev/", basename)
+	realPath := path.Join("/dev/", basename)
 
-	return
+	return realPath, false, nil
 }

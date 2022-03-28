@@ -47,7 +47,7 @@ func NewBootstrap(
 	}
 }
 
-func (boot bootstrap) Run() (err error) {
+func (boot bootstrap) Run() (err error) { //nolint:gocyclo
 	if err = boot.platform.SetupRuntimeConfiguration(); err != nil {
 		return bosherr.WrapError(err, "Setting up runtime configuration")
 	}

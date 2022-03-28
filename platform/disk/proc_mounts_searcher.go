@@ -16,14 +16,14 @@ func NewProcMountsSearcher(fs boshsys.FileSystem) MountsSearcher {
 }
 
 func (s procMountsSearcher) SearchMounts() ([]Mount, error) {
-	var mounts []Mount
-
 	mountInfo, err := s.fs.ReadFileString("/proc/mounts")
 	if err != nil {
-		return mounts, bosherr.WrapError(err, "Reading /proc/mounts")
+		return []Mount{}, bosherr.WrapError(err, "Reading /proc/mounts")
 	}
 
-	for _, mountEntry := range strings.Split(mountInfo, "\n") {
+	mountEntries := strings.Split(mountInfo, "\n")
+	mounts := make([]Mount, 0, len(mountEntries))
+	for _, mountEntry := range mountEntries {
 		if mountEntry == "" {
 			continue
 		}

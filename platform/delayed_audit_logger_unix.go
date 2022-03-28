@@ -5,10 +5,11 @@ package platform
 
 import (
 	"fmt"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	"log"
 	"time"
+
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
 type DelayedAuditLogger struct {

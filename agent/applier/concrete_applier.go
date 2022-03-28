@@ -39,7 +39,8 @@ func NewConcreteApplier(
 }
 
 func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
-	var tasks []func() error
+	tasks := make([]func() error, 0, len(desiredApplySpec.Jobs())+len(desiredApplySpec.Packages()))
+
 	pool := work.Pool{
 		Count: *a.settings.Env.GetParallel(),
 	}

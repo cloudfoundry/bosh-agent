@@ -37,7 +37,7 @@ func (a ReleaseApplySpecAction) Run() (value interface{}, err error) {
 		return
 	}
 
-	err = json.Unmarshal([]byte(specBytes), &value)
+	err = json.Unmarshal(specBytes, &value)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling release apply spec")
 		return
