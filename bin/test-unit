@@ -41,9 +41,6 @@ GOOS=linux $bin/build
 echo -e "\n Running build script for GOOS=windows to confirm everything compiles..."
 GOOS=windows $bin/build
 
-echo -e "\n Running build script for GOOS=darwin to confirm everything compiles..."
-GOOS=darwin $bin/build
-
 echo -e "\n Running build script (for default GOOS) to confirm everything compiles..."
 $bin/build
 
