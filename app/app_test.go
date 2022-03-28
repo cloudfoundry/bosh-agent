@@ -16,7 +16,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-func init() {
+func init() { //nolint:funlen,gochecknoinits
 	Describe("App", func() {
 		var (
 			baseDir       string
@@ -109,12 +109,12 @@ func init() {
 				}
 			}`
 
-			err = ioutil.WriteFile(settingsPath, []byte(settingsJSON), 0640)
+			err = ioutil.WriteFile(settingsPath, []byte(settingsJSON), 0640) //nolint:gosec
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
-			err := ioutil.WriteFile(agentConfPath, []byte(agentConfJSON), 0640)
+			err := ioutil.WriteFile(agentConfPath, []byte(agentConfJSON), 0640) //nolint:gosec
 			Expect(err).ToNot(HaveOccurred())
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
@@ -126,7 +126,8 @@ func init() {
 		})
 
 		AfterEach(func() {
-			os.RemoveAll(baseDir)
+			err := os.RemoveAll(baseDir)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("Sets up device path resolver on platform specific to infrastructure", func() {
@@ -191,9 +192,11 @@ func init() {
 
 			Context("when stemcell version and sha files are present", func() {
 				It("should print out the stemcell version and sha in the logs", func() {
-					fakeFs.WriteFileString(stemcellVersionFilePath, "version-blah")
-					fakeFs.WriteFileString(stemcellSha1FilePath, "sha1-blah")
-					app.Setup(opts)
+					err := fakeFs.WriteFileString(stemcellVersionFilePath, "version-blah")
+					Expect(err).NotTo(HaveOccurred())
+					err = fakeFs.WriteFileString(stemcellSha1FilePath, "sha1-blah")
+					Expect(err).NotTo(HaveOccurred())
+					app.Setup(opts) //nolint:errcheck
 					_, loggedString, _ := logger.InfoArgsForCall(0)
 					Expect(loggedString).To(ContainSubstring("Running on stemcell version 'version-blah' (git: sha1-blah)"))
 				})
@@ -201,8 +204,9 @@ func init() {
 
 			Context("when stemcell version file is NOT present", func() {
 				It("should print out the sha in the logs", func() {
-					fakeFs.WriteFileString(stemcellSha1FilePath, "sha1-blah")
-					app.Setup(opts)
+					err := fakeFs.WriteFileString(stemcellSha1FilePath, "sha1-blah")
+					Expect(err).NotTo(HaveOccurred())
+					app.Setup(opts) //nolint:errcheck
 					_, loggedString, _ := logger.InfoArgsForCall(0)
 					Expect(loggedString).To(ContainSubstring("Running on stemcell version '?' (git: sha1-blah)"))
 				})
@@ -210,9 +214,9 @@ func init() {
 
 			Context("when sha version file is NOT present", func() {
 				It("should print out the stemcell version in the logs", func() {
-					fakeFs.WriteFileString(stemcellVersionFilePath, "version-blah")
-					app.Setup(opts)
-
+					err := fakeFs.WriteFileString(stemcellVersionFilePath, "version-blah")
+					Expect(err).NotTo(HaveOccurred())
+					app.Setup(opts) //nolint:errcheck
 					_, loggedString, _ := logger.InfoArgsForCall(0)
 					Expect(loggedString).To(ContainSubstring("Running on stemcell version 'version-blah' (git: ?)"))
 				})
@@ -220,10 +224,11 @@ func init() {
 
 			Context("when stemcell version file is empty", func() {
 				It("should print out the sha in the logs", func() {
-					fakeFs.WriteFileString(stemcellVersionFilePath, "")
-					fakeFs.WriteFileString(stemcellSha1FilePath, "sha1-blah")
-
-					app.Setup(opts)
+					err := fakeFs.WriteFileString(stemcellVersionFilePath, "")
+					Expect(err).NotTo(HaveOccurred())
+					err = fakeFs.WriteFileString(stemcellSha1FilePath, "sha1-blah")
+					Expect(err).NotTo(HaveOccurred())
+					app.Setup(opts) //nolint:errcheck
 					_, loggedString, _ := logger.InfoArgsForCall(0)
 					Expect(loggedString).To(ContainSubstring("Running on stemcell version '?' (git: sha1-blah)"))
 				})
@@ -231,9 +236,11 @@ func init() {
 
 			Context("when sha version file is empty", func() {
 				It("should print out the stemcell version in the logs", func() {
-					fakeFs.WriteFileString(stemcellVersionFilePath, "version-blah")
-					fakeFs.WriteFileString(stemcellSha1FilePath, "")
-					app.Setup(opts)
+					err := fakeFs.WriteFileString(stemcellVersionFilePath, "version-blah")
+					Expect(err).NotTo(HaveOccurred())
+					err = fakeFs.WriteFileString(stemcellSha1FilePath, "")
+					Expect(err).NotTo(HaveOccurred())
+					app.Setup(opts) //nolint:errcheck
 					_, loggedString, _ := logger.InfoArgsForCall(0)
 					Expect(loggedString).To(ContainSubstring("Running on stemcell version 'version-blah' (git: ?)"))
 				})
@@ -241,7 +248,7 @@ func init() {
 
 			Context("when stemcell version and sha files are NOT present", func() {
 				It("should print unknown version and sha in the logs", func() {
-					app.Setup(opts)
+					app.Setup(opts) //nolint:errcheck
 					_, loggedString, _ := logger.InfoArgsForCall(0)
 					Expect(loggedString).To(ContainSubstring("Running on stemcell version '?' (git: ?)"))
 				})

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	// Change constant for unit test process labels to prevent collisions with
 	// bosh deployed Job Supervisor
 	serviceDescription = fmt.Sprintf("vcap_test_%d", time.Now().UnixNano())

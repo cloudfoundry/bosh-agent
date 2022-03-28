@@ -23,14 +23,16 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 	Describe("MonitorJobFailures", func() {
 		It("monitors job status", func() {
-			dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			Expect(err).NotTo(HaveOccurred())
 			Expect(handler.RegisteredAdditionalFunc).ToNot(BeNil())
 		})
 	})
 
 	Describe("Status", func() {
 		BeforeEach(func() {
-			dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns the received status", func() {
@@ -52,7 +54,8 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 	Describe("Start", func() {
 		BeforeEach(func() {
-			dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("When set_task_fail flag is sent in messagae", func() {
@@ -84,7 +87,8 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 		Context("when a job is failing", func() {
 			BeforeEach(func() {
-				dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+				err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("with 'fail_task'", func() {
@@ -118,7 +122,8 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 		Context("when a job is failing", func() {
 			BeforeEach(func() {
-				dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+				err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("with 'fail_task'", func() {
@@ -142,5 +147,4 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 			})
 		})
 	})
-
 })

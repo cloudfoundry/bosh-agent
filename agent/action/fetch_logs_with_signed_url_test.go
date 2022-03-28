@@ -6,23 +6,21 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
-
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 )
 
 var _ = Describe("FetchLogsWithSignedURLAction", func() {
 	var (
-		compressor    *fakecmd.FakeCompressor
-		copier        *fakecmd.FakeCopier
-		dirProvider   boshdirs.Provider
-		action        FetchLogsWithSignedURLAction
-		blobDelegator *fakeblobdelegator.FakeBlobstoreDelegator
+		compressor                   *fakecmd.FakeCompressor
+		copier                       *fakecmd.FakeCopier
+		dirProvider                  boshdirs.Provider
+		fetchLogsWithSignedURLAction action.FetchLogsWithSignedURLAction
+		blobDelegator                *fakeblobdelegator.FakeBlobstoreDelegator
 	)
 
 	BeforeEach(func() {
@@ -31,15 +29,15 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 		copier = fakecmd.NewFakeCopier()
 		blobDelegator = &fakeblobdelegator.FakeBlobstoreDelegator{}
 
-		action = NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, blobDelegator)
+		fetchLogsWithSignedURLAction = action.NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, blobDelegator)
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(fetchLogsWithSignedURLAction)
+	AssertActionIsNotPersistent(fetchLogsWithSignedURLAction)
+	AssertActionIsLoggable(fetchLogsWithSignedURLAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(fetchLogsWithSignedURLAction)
+	AssertActionIsNotCancelable(fetchLogsWithSignedURLAction)
 
 	Describe("Run", func() {
 		testLogs := func(logType string, filters []string, expectedFilters []string) {
@@ -50,7 +48,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 			sha1 := multidigestSha.String()
 			blobDelegator.WriteReturns("", multidigestSha, nil)
 
-			logs, err := action.Run(FetchLogsWithSignedURLRequest{SignedURL: "foobar", LogType: logType, Filters: filters, BlobstoreHeaders: map[string]string{"key": "value"}})
+			logs, err := fetchLogsWithSignedURLAction.Run(action.FetchLogsWithSignedURLRequest{SignedURL: "foobar", LogType: logType, Filters: filters, BlobstoreHeaders: map[string]string{"key": "value"}})
 			Expect(err).ToNot(HaveOccurred())
 
 			var expectedPath string
@@ -76,7 +74,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 		}
 
 		It("logs errs if given invalid log type", func() {
-			_, err := action.Run(FetchLogsWithSignedURLRequest{LogType: "other-logs", Filters: []string{}})
+			_, err := fetchLogsWithSignedURLAction.Run(action.FetchLogsWithSignedURLRequest{LogType: "other-logs", Filters: []string{}})
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -109,7 +107,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 
 			compressor.CompressFilesInDirTarballPath = "/fake-compressed-logs.tar"
 
-			_, err := action.Run(FetchLogsWithSignedURLRequest{LogType: "job", Filters: []string{}})
+			_, err := fetchLogsWithSignedURLAction.Run(action.FetchLogsWithSignedURLRequest{LogType: "job", Filters: []string{}})
 			Expect(err).ToNot(HaveOccurred())
 
 			// Logs are not cleaned up before blobstore upload

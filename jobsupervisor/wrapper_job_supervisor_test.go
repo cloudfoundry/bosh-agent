@@ -28,7 +28,8 @@ var _ = Describe("WrapperJobSupervisor", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		fs.MkdirAll("/var/vcap/instance", 666)
+		err := fs.MkdirAll("/var/vcap/instance", 0666)
+		Expect(err).NotTo(HaveOccurred())
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider = boshdir.NewProvider("/var/vcap")
 
@@ -43,58 +44,60 @@ var _ = Describe("WrapperJobSupervisor", func() {
 	})
 
 	It("Reload should delegate to the underlying job supervisor", func() {
-		error := errors.New("BOOM")
-		fakeSupervisor.ReloadErr = error
+		boomError := errors.New("BOOM")
+		fakeSupervisor.ReloadErr = boomError
 		err := wrapper.Reload()
 		Expect(fakeSupervisor.Reloaded).To(BeTrue())
-		Expect(err).To(Equal(error))
+		Expect(err).To(Equal(boomError))
 	})
 
 	Describe("Start", func() {
 		It("should delegate to the underlying job supervisor", func() {
-			error := errors.New("BOOM")
-			fakeSupervisor.StartErr = error
+			boomError := errors.New("BOOM")
+			fakeSupervisor.StartErr = boomError
 			err := wrapper.Start()
 			Expect(fakeSupervisor.Started).To(BeTrue())
-			Expect(err).To(Equal(error))
+			Expect(err).To(Equal(boomError))
 		})
 
 		It("write the health json asynchronously", func() {
 			fakeSupervisor.StatusStatus = "running"
-			wrapper.Start()
+			err := wrapper.Start()
+			Expect(err).NotTo(HaveOccurred())
 
 			healthFile := filepath.Join(dirProvider.InstanceDir(), "health.json")
 			healthRaw, err := fs.ReadFile(healthFile)
 			Expect(err).ToNot(HaveOccurred())
 			health := &Health{}
-			json.Unmarshal(healthRaw, health)
+			err = json.Unmarshal(healthRaw, health)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(health.State).To(Equal("running"))
 		})
 	})
 
 	It("Stop should delegate to the underlying job supervisor", func() {
-		error := errors.New("BOOM")
-		fakeSupervisor.StopErr = error
+		boomError := errors.New("BOOM")
+		fakeSupervisor.StopErr = boomError
 		err := wrapper.Stop()
 		Expect(fakeSupervisor.Stopped).To(BeTrue())
-		Expect(err).To(Equal(error))
+		Expect(err).To(Equal(boomError))
 	})
 
 	It("StopAndWait should delegate to the underlying job supervisor", func() {
-		error := errors.New("BOOM")
-		fakeSupervisor.StopErr = error
+		boomError := errors.New("BOOM")
+		fakeSupervisor.StopErr = boomError
 		err := wrapper.StopAndWait()
 		Expect(fakeSupervisor.StoppedAndWaited).To(BeTrue())
-		Expect(err).To(Equal(error))
+		Expect(err).To(Equal(boomError))
 	})
 
 	Describe("Unmointor", func() {
 		It("Unmonitor should delegate to the underlying job supervisor", func() {
-			error := errors.New("BOOM")
-			fakeSupervisor.UnmonitorErr = error
+			boomError := errors.New("BOOM")
+			fakeSupervisor.UnmonitorErr = boomError
 			err := wrapper.Unmonitor()
 			Expect(fakeSupervisor.Unmonitored).To(BeTrue())
-			Expect(err).To(Equal(error))
+			Expect(err).To(Equal(boomError))
 		})
 
 		It("write the health json asynchronously", func() {
@@ -105,7 +108,8 @@ var _ = Describe("WrapperJobSupervisor", func() {
 			healthRaw, err := fs.ReadFile(healthFile)
 			Expect(err).ToNot(HaveOccurred())
 			health := &Health{}
-			json.Unmarshal(healthRaw, health)
+			err = json.Unmarshal(healthRaw, health)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(health.State).To(Equal("stopped"))
 		})
 
@@ -128,8 +132,8 @@ var _ = Describe("WrapperJobSupervisor", func() {
 	})
 
 	It("AddJob should delegate to the underlying job supervisor", func() {
-		error := errors.New("BOOM")
-		fakeSupervisor.StartErr = error
+		boomError := errors.New("BOOM")
+		fakeSupervisor.StartErr = boomError
 		_ = wrapper.AddJob("name", 0, "path")
 		Expect(fakeSupervisor.AddJobArgs).To(Equal([]fakes.AddJobArgs{
 			{

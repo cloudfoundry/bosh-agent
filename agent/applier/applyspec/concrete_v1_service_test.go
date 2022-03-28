@@ -12,7 +12,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	Describe("concreteV1Service", func() {
 		var (
 			fs       *fakesys.FakeFileSystem
@@ -28,7 +28,8 @@ func init() {
 		Describe("Get", func() {
 			Context("when filesystem has a spec file", func() {
 				BeforeEach(func() {
-					fs.WriteFileString(specPath, `{"deployment":"fake-deployment-name"}`)
+					err := fs.WriteFileString(specPath, `{"deployment":"fake-deployment-name"}`)
+					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("reads spec from filesystem", func() {
@@ -123,7 +124,6 @@ func init() {
 						"gateway": "fake-net2-gateway",
 					},
 				}
-
 			})
 
 			Context("when associated network is in settings", func() {

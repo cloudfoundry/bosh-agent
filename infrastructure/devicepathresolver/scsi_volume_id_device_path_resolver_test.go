@@ -42,7 +42,8 @@ var _ = Describe("SCSIVolumeIDDevicePathResolver", func() {
 
 	Describe("GetRealDevicePath", func() {
 		It("rescans the devices attached to the root disks scsi controller", func() {
-			resolver.GetRealDevicePath(diskSettings)
+			_, _, err := resolver.GetRealDevicePath(diskSettings)
+			Expect(err).NotTo(HaveOccurred())
 
 			scanContents, err := fs.ReadFileString("/sys/class/scsi_host/hostfake-host-id/scan")
 			Expect(err).NotTo(HaveOccurred())

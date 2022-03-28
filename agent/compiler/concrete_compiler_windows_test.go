@@ -19,7 +19,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	Describe("concreteCompiler", func() {
 		var (
 			compiler       Compiler
@@ -52,7 +52,8 @@ func init() {
 				fakeClock,
 			)
 
-			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
+			err := fs.MkdirAll("/fake-compile-dir", os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(fs.WriteFileString("/tmp/compressed-compiled-package", "fake-contents")).ToNot(HaveOccurred())
 		})
 

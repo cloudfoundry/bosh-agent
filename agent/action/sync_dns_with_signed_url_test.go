@@ -4,13 +4,12 @@ import (
 	"errors"
 	"path/filepath"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -19,15 +18,15 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-var _ = Describe("SyncDNSWithSignedURL", func() {
+var _ = Describe("action.SyncDNSWithSignedURL", func() {
 	var (
-		action               SyncDNSWithSignedURL
-		fakeSettingsService  *fakesettings.FakeSettingsService
-		fakePlatform         *platformfakes.FakePlatform
-		fakeFileSystem       *fakesys.FakeFileSystem
-		logger               *fakelogger.FakeLogger
-		fakeDNSRecordsString string
-		blobDelegator        *fakeblobdelegator.FakeBlobstoreDelegator
+		syncDNSWithSignedURLAction action.SyncDNSWithSignedURL
+		fakeSettingsService        *fakesettings.FakeSettingsService
+		fakePlatform               *platformfakes.FakePlatform
+		fakeFileSystem             *fakesys.FakeFileSystem
+		logger                     *fakelogger.FakeLogger
+		fakeDNSRecordsString       string
+		blobDelegator              *fakeblobdelegator.FakeBlobstoreDelegator
 	)
 
 	BeforeEach(func() {
@@ -38,15 +37,15 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 		fakeFileSystem = fakesys.NewFakeFileSystem()
 		fakePlatform.GetFsReturns(fakeFileSystem)
 
-		action = NewSyncDNSWithSignedURL(fakeSettingsService, fakePlatform, logger, blobDelegator)
+		syncDNSWithSignedURLAction = action.NewSyncDNSWithSignedURL(fakeSettingsService, fakePlatform, logger, blobDelegator)
 	})
 
-	AssertActionIsNotAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(syncDNSWithSignedURLAction)
+	AssertActionIsNotPersistent(syncDNSWithSignedURLAction)
+	AssertActionIsLoggable(syncDNSWithSignedURLAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(syncDNSWithSignedURLAction)
+	AssertActionIsNotCancelable(syncDNSWithSignedURLAction)
 
 	Context("#Run", func() {
 		var (
@@ -89,7 +88,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 				})
 
 				It("returns with no error and does no writes and no gets to blobstore", func() {
-					_, err := action.Run(SyncDNSWithSignedURLRequest{
+					_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 						SignedURL:   "fake-signed-url",
 						MultiDigest: multiDigest,
 						Version:     2,
@@ -107,7 +106,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 				})
 
 				It("returns error", func() {
-					_, err := action.Run(SyncDNSWithSignedURLRequest{
+					_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 						SignedURL:   "fake-signed-url",
 						MultiDigest: multiDigest,
 						Version:     2,
@@ -119,7 +118,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 		Context("when the version in the blob does not match the version director supplied", func() {
 			It("returns an error", func() {
-				_, err := action.Run(SyncDNSWithSignedURLRequest{
+				_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 					SignedURL:   "fake-signed-url",
 					MultiDigest: multiDigest,
 					Version:     3,
@@ -139,7 +138,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 					headers := map[string]string{
 						"key": "value",
 					}
-					response, err := action.Run(SyncDNSWithSignedURLRequest{
+					response, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 						SignedURL:        "fake-signed-url",
 						MultiDigest:      multiDigest,
 						Version:          2,
@@ -156,7 +155,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 				})
 
 				It("reads the DNS records from the blobstore file", func() {
-					response, err := action.Run(SyncDNSWithSignedURLRequest{
+					response, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 						SignedURL:   "fake-signed-url",
 						MultiDigest: multiDigest,
 						Version:     2,
@@ -168,7 +167,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 				})
 
 				It("saves DNS records to the platform", func() {
-					response, err := action.Run(SyncDNSWithSignedURLRequest{
+					response, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 						SignedURL:   "fake-signed-url",
 						MultiDigest: multiDigest,
 						Version:     2,
@@ -197,7 +196,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 					It("saves DNS records to the platform", func() {
 						Expect(fakeFileSystem.FileExists(stateFilePath)).To(BeFalse())
 
-						response, err := action.Run(SyncDNSWithSignedURLRequest{
+						response, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 							SignedURL:   "fake-signed-url",
 							MultiDigest: multiDigest,
 							Version:     2,
@@ -227,7 +226,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 					})
 
 					It("saves DNS records to the platform", func() {
-						response, err := action.Run(SyncDNSWithSignedURLRequest{
+						response, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 							SignedURL:   "fake-signed-url",
 							MultiDigest: multiDigest,
 							Version:     2,
@@ -255,7 +254,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 					})
 
 					It("saves DNS records to the platform", func() {
-						response, err := action.Run(SyncDNSWithSignedURLRequest{
+						response, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 							SignedURL:   "fake-signed-url",
 							MultiDigest: multiDigest,
 							Version:     2,
@@ -286,7 +285,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 						It("runs successfully and creates a new state file", func() {
 							Expect(fakeFileSystem.FileExists(stateFilePath)).To(BeFalse())
 
-							response, err := action.Run(SyncDNSWithSignedURLRequest{
+							response, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 								SignedURL:   "fake-signed-url",
 								MultiDigest: multiDigest,
 								Version:     2,
@@ -317,7 +316,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 						})
 
 						It("returns an error", func() {
-							_, err := action.Run(SyncDNSWithSignedURLRequest{
+							_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 								SignedURL:   "fake-signed-url",
 								MultiDigest: multiDigest,
 								Version:     2,
@@ -330,11 +329,12 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 				Context("when DNS records is invalid", func() {
 					BeforeEach(func() {
-						fakeFileSystem.WriteFileString("fake-blobstore-file-path", "")
+						err := fakeFileSystem.WriteFileString("fake-blobstore-file-path", "")
+						Expect(err).NotTo(HaveOccurred())
 					})
 
 					It("fails unmarshalling the DNS records from the file", func() {
-						_, err := action.Run(SyncDNSWithSignedURLRequest{
+						_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 							SignedURL:   "fake-signed-url",
 							MultiDigest: multiDigest,
 							Version:     2,
@@ -352,7 +352,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 					})
 
 					It("fails to save DNS records on the platform", func() {
-						_, err := action.Run(SyncDNSWithSignedURLRequest{
+						_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 							SignedURL:   "fake-signed-url",
 							MultiDigest: multiDigest,
 							Version:     2,
@@ -362,7 +362,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 					})
 
 					It("should not update the records.json", func() {
-						_, err := action.Run(SyncDNSWithSignedURLRequest{
+						_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 							SignedURL:   "fake-signed-url",
 							MultiDigest: multiDigest,
 							Version:     2,
@@ -384,7 +384,7 @@ var _ = Describe("SyncDNSWithSignedURL", func() {
 
 				Context("when blobstore returns an error", func() {
 					It("fails with an wrapped error", func() {
-						_, err := action.Run(SyncDNSWithSignedURLRequest{
+						_, err := syncDNSWithSignedURLAction.Run(action.SyncDNSWithSignedURLRequest{
 							SignedURL:   "fake-signed-url",
 							MultiDigest: multiDigest,
 							Version:     2,

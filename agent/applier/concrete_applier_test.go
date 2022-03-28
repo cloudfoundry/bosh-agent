@@ -4,21 +4,20 @@ import (
 	"errors"
 	"path/filepath"
 
-	"github.com/stretchr/testify/assert"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/applier"
+	"github.com/cloudfoundry/bosh-agent/agent/applier"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakejobs "github.com/cloudfoundry/bosh-agent/agent/applier/jobs/jobsfakes"
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 type FakeLogRotateDelegate struct {
@@ -57,7 +56,7 @@ var _ = Describe("concreteApplier", func() {
 		packageApplier    *fakepackages.FakeApplier
 		logRotateDelegate *FakeLogRotateDelegate
 		jobSupervisor     *fakejobsuper.FakeJobSupervisor
-		applier           Applier
+		agentApplier      applier.Applier
 		settingsService   boshsettings.Service
 	)
 
@@ -67,7 +66,7 @@ var _ = Describe("concreteApplier", func() {
 		logRotateDelegate = &FakeLogRotateDelegate{}
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		settingsService = &fakesettings.FakeSettingsService{}
-		applier = NewConcreteApplier(
+		agentApplier = applier.NewConcreteApplier(
 			jobApplier,
 			packageApplier,
 			logRotateDelegate,
@@ -81,7 +80,7 @@ var _ = Describe("concreteApplier", func() {
 		It("prepares each jobs", func() {
 			job := buildJob()
 
-			err := applier.Prepare(
+			err := agentApplier.Prepare(
 				&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
 			)
 			Expect(err).ToNot(HaveOccurred())
@@ -94,7 +93,7 @@ var _ = Describe("concreteApplier", func() {
 
 			jobApplier.PrepareReturns(errors.New("fake-prepare-job-error"))
 
-			err := applier.Prepare(
+			err := agentApplier.Prepare(
 				&fakeas.FakeApplySpec{JobResults: []models.Job{job}},
 			)
 			Expect(err).To(HaveOccurred())
@@ -105,7 +104,7 @@ var _ = Describe("concreteApplier", func() {
 			pkg1 := buildPackage()
 			pkg2 := buildPackage()
 
-			err := applier.Prepare(
+			err := agentApplier.Prepare(
 				&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}},
 			)
 			Expect(err).ToNot(HaveOccurred())
@@ -117,7 +116,7 @@ var _ = Describe("concreteApplier", func() {
 
 			packageApplier.PrepareError = errors.New("fake-prepare-package-error")
 
-			err := applier.Prepare(
+			err := agentApplier.Prepare(
 				&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}},
 			)
 			Expect(err).To(HaveOccurred())
@@ -127,7 +126,7 @@ var _ = Describe("concreteApplier", func() {
 		It("deletes the job source from the blobstore after preparing", func() {
 			job := buildJob()
 
-			err := applier.Prepare(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := agentApplier.Prepare(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(jobApplier.DeleteSourceBlobsCallCount()).To(Equal(1))
@@ -136,9 +135,9 @@ var _ = Describe("concreteApplier", func() {
 
 		It("returns an error when deleting the source blobs fails", func() {
 			job := buildJob()
-			jobApplier.DeleteSourceBlobsReturns(errors.New("boom!"))
+			jobApplier.DeleteSourceBlobsReturns(errors.New("boom"))
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			Expect(err).To(HaveOccurred())
 
 			Expect(jobApplier.DeleteSourceBlobsCallCount()).To(Equal(1))
@@ -152,7 +151,7 @@ var _ = Describe("concreteApplier", func() {
 			job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 			jobs := []models.Job{job1, job2}
 
-			err := applier.ConfigureJobs(&fakeas.FakeApplySpec{JobResults: jobs})
+			err := agentApplier.ConfigureJobs(&fakeas.FakeApplySpec{JobResults: jobs})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(jobSupervisor.Reloaded).To(BeTrue())
@@ -163,7 +162,7 @@ var _ = Describe("concreteApplier", func() {
 			job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 			jobs := []models.Job{job1, job2}
 
-			err := applier.ConfigureJobs(&fakeas.FakeApplySpec{JobResults: jobs})
+			err := agentApplier.ConfigureJobs(&fakeas.FakeApplySpec{JobResults: jobs})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(jobApplier.ConfigureCallCount()).To(Equal(2))
@@ -176,7 +175,7 @@ var _ = Describe("concreteApplier", func() {
 
 	Describe("Apply", func() {
 		It("removes all jobs from job supervisor", func() {
-			err := applier.Apply(&fakeas.FakeApplySpec{})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(jobSupervisor.RemovedAllJobs).To(BeTrue())
@@ -187,18 +186,16 @@ var _ = Describe("concreteApplier", func() {
 			jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
 
 			job := buildJob()
-			applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}}) //nolint:errcheck
 
-			// check that jobs were not applied before removing all other jobs
-
+			// check that jobs were not applied before removing other jobs
 			Expect(jobApplier.ApplyCallCount()).To(Equal(0))
-
 		})
 
 		It("returns error if removing all jobs from job supervisor fails", func() {
 			jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-remove-all-jobs-error"))
 		})
@@ -206,7 +203,7 @@ var _ = Describe("concreteApplier", func() {
 		It("apply applies jobs", func() {
 			job := buildJob()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(jobApplier.ApplyCallCount()).To(Equal(1))
@@ -218,7 +215,7 @@ var _ = Describe("concreteApplier", func() {
 
 			jobApplier.ApplyReturns(errors.New("fake-apply-job-error"))
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-apply-job-error"))
@@ -227,7 +224,7 @@ var _ = Describe("concreteApplier", func() {
 		It("asked jobApplier to keep only the jobs in the desired specs", func() {
 			desiredJob := buildJob()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}})
 
 			Expect(err).ToNot(HaveOccurred())
 
@@ -240,7 +237,7 @@ var _ = Describe("concreteApplier", func() {
 
 			desiredJob := buildJob()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{desiredJob}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 		})
@@ -249,7 +246,7 @@ var _ = Describe("concreteApplier", func() {
 			pkg1 := buildPackage()
 			pkg2 := buildPackage()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(packageApplier.AppliedPackages).To(Equal([]models.Package{pkg1, pkg2}))
 		})
@@ -259,7 +256,7 @@ var _ = Describe("concreteApplier", func() {
 
 			packageApplier.ApplyError = errors.New("fake-apply-package-error")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-apply-package-error"))
 		})
@@ -267,7 +264,7 @@ var _ = Describe("concreteApplier", func() {
 		It("asked packageApplier to keep only the packages in the desired specs", func() {
 			desiredPkg := buildPackage()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(packageApplier.KeptOnlyPackages).To(Equal([]models.Package{desiredPkg}))
 		})
@@ -277,7 +274,7 @@ var _ = Describe("concreteApplier", func() {
 
 			desiredPkg := buildPackage()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 		})
@@ -287,7 +284,7 @@ var _ = Describe("concreteApplier", func() {
 			job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 			jobs := []models.Job{job1, job2}
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(jobApplier.ConfigureCallCount()).To(Equal(0))
@@ -296,16 +293,16 @@ var _ = Describe("concreteApplier", func() {
 		})
 
 		It("apply errs if monitor fails reload", func() {
-			jobs := []models.Job{}
+			var jobs []models.Job
 			jobSupervisor.ReloadErr = errors.New("error reloading monit")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error reloading monit"))
 		})
 
 		It("apply sets up logrotation", func() {
-			err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
 			Expect(err).ToNot(HaveOccurred())
 
 			assert.Equal(GinkgoT(), logRotateDelegate.SetupLogrotateArgs, SetupLogrotateArgs{
@@ -318,7 +315,7 @@ var _ = Describe("concreteApplier", func() {
 		It("apply errs if setup logrotate fails", func() {
 			logRotateDelegate.SetupLogrotateErr = errors.New("fake-set-up-logrotate-error")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-set-up-logrotate-error"))
 		})
@@ -326,7 +323,7 @@ var _ = Describe("concreteApplier", func() {
 		It("deletes the job source from the blobstore after applying", func() {
 			job := buildJob()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(jobApplier.DeleteSourceBlobsCallCount()).To(Equal(1))
@@ -335,9 +332,9 @@ var _ = Describe("concreteApplier", func() {
 
 		It("returns an error when deleting the source blobs fails", func() {
 			job := buildJob()
-			jobApplier.DeleteSourceBlobsReturns(errors.New("boom!"))
+			jobApplier.DeleteSourceBlobsReturns(errors.New("boom"))
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := agentApplier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			Expect(err).To(HaveOccurred())
 
 			Expect(jobApplier.DeleteSourceBlobsCallCount()).To(Equal(1))

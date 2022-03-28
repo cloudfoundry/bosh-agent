@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
@@ -24,7 +24,7 @@ var _ = Describe("GetState", func() {
 		specService     *fakeas.FakeV1Service
 		jobSupervisor   *fakejobsuper.FakeJobSupervisor
 		vitalsService   *vitalsfakes.FakeService
-		action          GetStateAction
+		getStateAction  action.GetStateAction
 	)
 
 	BeforeEach(func() {
@@ -32,15 +32,15 @@ var _ = Describe("GetState", func() {
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		vitalsService = &vitalsfakes.FakeService{}
-		action = NewGetState(settingsService, specService, jobSupervisor, vitalsService)
+		getStateAction = action.NewGetState(settingsService, specService, jobSupervisor, vitalsService)
 	})
 
-	AssertActionIsNotAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(getStateAction)
+	AssertActionIsNotPersistent(getStateAction)
+	AssertActionIsLoggable(getStateAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(getStateAction)
+	AssertActionIsNotCancelable(getStateAction)
 
 	Describe("Run", func() {
 		Context("when current spec can be retrieved", func() {
@@ -55,7 +55,7 @@ var _ = Describe("GetState", func() {
 						Deployment: "fake-deployment",
 					}
 
-					expectedSpec := GetStateV1ApplySpec{
+					expectedSpec := action.GetStateV1ApplySpec{
 						V1ApplySpec: boshas.V1ApplySpec{
 							NetworkSpecs:      map[string]boshas.NetworkSpec{},
 							ResourcePoolSpecs: map[string]interface{}{},
@@ -67,7 +67,7 @@ var _ = Describe("GetState", func() {
 					}
 					expectedSpec.Deployment = "fake-deployment"
 
-					state, err := action.Run()
+					state, err := getStateAction.Run()
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(state.AgentID).To(Equal(expectedSpec.AgentID))
@@ -116,7 +116,7 @@ var _ = Describe("GetState", func() {
 						},
 					}
 
-					state, err := action.Run("full")
+					state, err := getStateAction.Run("full")
 					Expect(err).ToNot(HaveOccurred())
 
 					boshassert.MatchesJSONString(GinkgoT(), state.AgentID, `"my-agent-id"`)
@@ -130,7 +130,7 @@ var _ = Describe("GetState", func() {
 				Describe("non-populated field formatting", func() {
 					It("returns network as empty hash if not set", func() {
 						specService.Spec = boshas.V1ApplySpec{NetworkSpecs: nil}
-						state, err := action.Run("full")
+						state, err := getStateAction.Run("full")
 						Expect(err).ToNot(HaveOccurred())
 						boshassert.MatchesJSONString(GinkgoT(), state.NetworkSpecs, `{}`)
 
@@ -142,33 +142,33 @@ var _ = Describe("GetState", func() {
 								},
 							},
 						}
-						state, err = action.Run("full")
+						state, err = getStateAction.Run("full")
 						Expect(err).ToNot(HaveOccurred())
 						boshassert.MatchesJSONString(GinkgoT(), state.NetworkSpecs, `{"fake-net-name":{"ip":"fake-ip"}}`)
 					})
 
 					It("returns resource_pool as empty hash if not set", func() {
 						specService.Spec = boshas.V1ApplySpec{ResourcePoolSpecs: nil}
-						state, err := action.Run("full")
+						state, err := getStateAction.Run("full")
 						Expect(err).ToNot(HaveOccurred())
 						boshassert.MatchesJSONString(GinkgoT(), state.ResourcePoolSpecs, `{}`)
 
 						// Non-empty ResourcePoolSpecs
 						specService.Spec = boshas.V1ApplySpec{ResourcePoolSpecs: "fake-resource-pool"}
-						state, err = action.Run("full")
+						state, err = getStateAction.Run("full")
 						Expect(err).ToNot(HaveOccurred())
 						boshassert.MatchesJSONString(GinkgoT(), state.ResourcePoolSpecs, `"fake-resource-pool"`)
 					})
 
 					It("returns packages as empty hash if not set", func() {
 						specService.Spec = boshas.V1ApplySpec{PackageSpecs: nil}
-						state, err := action.Run("full")
+						state, err := getStateAction.Run("full")
 						Expect(err).ToNot(HaveOccurred())
 						boshassert.MatchesJSONString(GinkgoT(), state.PackageSpecs, `{}`)
 
 						// Non-empty PackageSpecs
 						specService.Spec = boshas.V1ApplySpec{PackageSpecs: map[string]boshas.PackageSpec{}}
-						state, err = action.Run("full")
+						state, err = getStateAction.Run("full")
 						Expect(err).ToNot(HaveOccurred())
 						boshassert.MatchesJSONString(GinkgoT(), state.PackageSpecs, `{}`)
 					})
@@ -181,7 +181,7 @@ var _ = Describe("GetState", func() {
 				})
 
 				It("returns error", func() {
-					_, err := action.Run("full")
+					_, err := getStateAction.Run("full")
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-vitals-get-error"))
 				})
@@ -192,7 +192,7 @@ var _ = Describe("GetState", func() {
 			It("without current spec", func() {
 				specService.GetErr = errors.New("fake-spec-get-error")
 
-				_, err := action.Run()
+				_, err := getStateAction.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-spec-get-error"))
 			})

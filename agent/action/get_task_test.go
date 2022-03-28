@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
@@ -14,21 +14,21 @@ import (
 
 var _ = Describe("GetTask", func() {
 	var (
-		taskService *faketask.FakeService
-		action      GetTaskAction
+		taskService   *faketask.FakeService
+		getTaskAction action.GetTaskAction
 	)
 
 	BeforeEach(func() {
 		taskService = faketask.NewFakeService()
-		action = NewGetTask(taskService)
+		getTaskAction = action.NewGetTask(taskService)
 	})
 
-	AssertActionIsNotAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(getTaskAction)
+	AssertActionIsNotPersistent(getTaskAction)
+	AssertActionIsLoggable(getTaskAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(getTaskAction)
+	AssertActionIsNotCancelable(getTaskAction)
 
 	It("returns a running task", func() {
 		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
@@ -36,7 +36,7 @@ var _ = Describe("GetTask", func() {
 			State: boshtask.StateRunning,
 		}
 
-		taskValue, err := action.Run("fake-task-id")
+		taskValue, err := getTaskAction.Run("fake-task-id")
 		Expect(err).ToNot(HaveOccurred())
 
 		// Check JSON key casing
@@ -51,7 +51,7 @@ var _ = Describe("GetTask", func() {
 			Error: errors.New("fake-task-error"),
 		}
 
-		taskValue, err := action.Run("fake-task-id")
+		taskValue, err := getTaskAction.Run("fake-task-id")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(Equal("Task fake-task-id result: fake-task-error"))
 		Expect(taskValue).To(BeNil())
@@ -64,7 +64,7 @@ var _ = Describe("GetTask", func() {
 			Value: "some-task-value",
 		}
 
-		taskValue, err := action.Run("fake-task-id")
+		taskValue, err := getTaskAction.Run("fake-task-id")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(taskValue).To(Equal("some-task-value"))
 	})
@@ -72,7 +72,7 @@ var _ = Describe("GetTask", func() {
 	It("returns error when task is not found", func() {
 		taskService.StartedTasks = map[string]boshtask.Task{}
 
-		_, err := action.Run("fake-task-id")
+		_, err := getTaskAction.Run("fake-task-id")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(Equal("Task with id fake-task-id could not be found"))
 	})

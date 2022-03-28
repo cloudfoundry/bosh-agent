@@ -13,8 +13,6 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-const partitionNamePrefix = "bosh-partition"
-
 func bytesOfMiB(sizeInMiB uint64) uint64 {
 	return sizeInMiB * 1024 * 1024
 }

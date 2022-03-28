@@ -13,14 +13,12 @@ type FakeUdevDevice struct {
 	EnsureDeviceReadableError error
 }
 
-func NewFakeUdevDevice() (lowlevel *FakeUdevDevice) {
-	lowlevel = &FakeUdevDevice{}
-	return
+func NewFakeUdevDevice() *FakeUdevDevice {
+	return &FakeUdevDevice{}
 }
 
 func (l *FakeUdevDevice) KickDevice(filePath string) {
 	l.KickDeviceFile = filePath
-	return
 }
 
 func (l *FakeUdevDevice) Settle() (err error) {

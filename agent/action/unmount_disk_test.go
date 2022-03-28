@@ -1,24 +1,23 @@
 package action_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-
-	"errors"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/disk"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("UnmountDiskAction", func() {
 	var (
-		platform *platformfakes.FakePlatform
-		action   UnmountDiskAction
+		platform          *platformfakes.FakePlatform
+		unmountDiskAction action.UnmountDiskAction
 
 		expectedDiskSettings boshsettings.DiskSettings
 		settingsService      *fakesettings.FakeSettingsService
@@ -46,7 +45,7 @@ var _ = Describe("UnmountDiskAction", func() {
 			},
 		}
 
-		action = NewUnmountDisk(settingsService, platform)
+		unmountDiskAction = action.NewUnmountDisk(settingsService, platform)
 
 		expectedDiskSettings = boshsettings.DiskSettings{
 			ID:             "vol-123",
@@ -64,17 +63,17 @@ var _ = Describe("UnmountDiskAction", func() {
 		}
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(unmountDiskAction)
+	AssertActionIsNotPersistent(unmountDiskAction)
+	AssertActionIsLoggable(unmountDiskAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(unmountDiskAction)
+	AssertActionIsNotCancelable(unmountDiskAction)
 
 	It("unmount disk when the disk is mounted", func() {
 		platform.UnmountPersistentDiskReturns(true, nil)
 
-		result, err := action.Run("vol-123")
+		result, err := unmountDiskAction.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
 		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[] Partitioner:}"}`)
 
@@ -85,7 +84,7 @@ var _ = Describe("UnmountDiskAction", func() {
 	It("unmount disk when the disk is not mounted", func() {
 		platform.UnmountPersistentDiskReturns(false, nil)
 
-		result, err := action.Run("vol-123")
+		result, err := unmountDiskAction.Run("vol-123")
 		Expect(err).ToNot(HaveOccurred())
 		boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of {ID:vol-123 DeviceID: VolumeID:2 Lun:0 HostDeviceID:fake-host-device-id Path:/dev/sdf ISCSISettings:{InitiatorName:fake-initiator-name Username:fake-username Target:fake-target Password:fake-password} FileSystemType:ext4 MountOptions:[] Partitioner:} is not mounted"}`)
 
@@ -99,7 +98,7 @@ var _ = Describe("UnmountDiskAction", func() {
 		})
 
 		It("returns error", func() {
-			_, err := action.Run("vol-456")
+			_, err := unmountDiskAction.Run("vol-456")
 			Expect(err).To(HaveOccurred())
 		})
 	})

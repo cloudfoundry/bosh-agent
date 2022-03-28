@@ -1,33 +1,31 @@
 package action_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/agent/utils/utilsfakes"
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"errors"
-
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/utils/utilsfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	"github.com/cloudfoundry/bosh-utils/logger"
-
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	"github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("UpdateSettings", func() {
 	var (
-		action            UpdateSettingsAction
-		agentKiller       utilsfakes.FakeKiller
-		certManager       *certfakes.FakeManager
-		settingsService   *fakesettings.FakeSettingsService
-		log               logger.Logger
-		platform          *platformfakes.FakePlatform
-		newUpdateSettings boshsettings.UpdateSettings
-		fileSystem        *fakesys.FakeFileSystem
+		updateSettingsAction action.UpdateSettingsAction
+		agentKiller          utilsfakes.FakeKiller
+		certManager          *certfakes.FakeManager
+		settingsService      *fakesettings.FakeSettingsService
+		log                  logger.Logger
+		platform             *platformfakes.FakePlatform
+		newUpdateSettings    boshsettings.UpdateSettings
+		fileSystem           *fakesys.FakeFileSystem
 	)
 
 	BeforeEach(func() {
@@ -40,39 +38,40 @@ var _ = Describe("UpdateSettings", func() {
 		fileSystem = fakesys.NewFakeFileSystem()
 		platform.GetFsReturns(fileSystem)
 
-		action = NewUpdateSettings(settingsService, platform, certManager, log, &agentKiller)
+		updateSettingsAction = action.NewUpdateSettings(settingsService, platform, certManager, log, &agentKiller)
 		newUpdateSettings = boshsettings.UpdateSettings{}
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(updateSettingsAction)
+	AssertActionIsPersistent(updateSettingsAction)
+	AssertActionIsLoggable(updateSettingsAction)
 
-	AssertActionIsResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsResumable(updateSettingsAction)
+	AssertActionIsNotCancelable(updateSettingsAction)
 
 	Context("on success", func() {
 		It("returns 'ok'", func() {
-			result, err := action.Run(newUpdateSettings)
+			result, err := updateSettingsAction.Run(newUpdateSettings)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(Equal("ok"))
 		})
 
 		It("writes the updated settings to a file", func() {
-			action.Run(newUpdateSettings)
+			_, err := updateSettingsAction.Run(newUpdateSettings)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(settingsService.SaveUpdateSettingsCallCount).To(Equal(1))
 		})
 	})
 
 	Context("when it fails to save the UpdateSettings", func() {
 		BeforeEach(func() {
-			settingsService.SaveUpdateSettingsErr = errors.New("Fake write error")
+			settingsService.SaveUpdateSettingsErr = errors.New("fake write error")
 		})
 
 		It("returns an error", func() {
-			_, err := action.Run(newUpdateSettings)
+			_, err := updateSettingsAction.Run(newUpdateSettings)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Fake write error"))
+			Expect(err.Error()).To(ContainSubstring("fake write error"))
 		})
 	})
 
@@ -80,19 +79,19 @@ var _ = Describe("UpdateSettings", func() {
 		BeforeEach(func() {
 			log = logger.NewLogger(logger.LevelNone)
 			certManager = new(certfakes.FakeManager)
-			certManager.UpdateCertificatesReturns(errors.New("Error"))
-			action = NewUpdateSettings(settingsService, platform, certManager, log, &agentKiller)
+			certManager.UpdateCertificatesReturns(errors.New("fake error"))
+			updateSettingsAction = action.NewUpdateSettings(settingsService, platform, certManager, log, &agentKiller)
 		})
 
 		It("returns the error", func() {
-			result, err := action.Run(newUpdateSettings)
+			result, err := updateSettingsAction.Run(newUpdateSettings)
 			Expect(err).To(HaveOccurred())
 			Expect(result).To(BeEmpty())
 		})
 	})
 
 	It("loads settings", func() {
-		_, err := action.Run(newUpdateSettings)
+		_, err := updateSettingsAction.Run(newUpdateSettings)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(settingsService.SettingsWereLoaded).To(BeTrue())
 	})
@@ -100,7 +99,7 @@ var _ = Describe("UpdateSettings", func() {
 	Context("when loading the settings fails", func() {
 		It("returns an error", func() {
 			settingsService.LoadSettingsError = errors.New("nope")
-			_, err := action.Run(newUpdateSettings)
+			_, err := updateSettingsAction.Run(newUpdateSettings)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -119,14 +118,14 @@ var _ = Describe("UpdateSettings", func() {
 			newUpdateSettings = boshsettings.UpdateSettings{
 				DiskAssociations: []boshsettings.DiskAssociation{diskAssociation},
 			}
-			settingsService.GetPersistentDiskSettingsError = errors.New("Disk DNE")
+			settingsService.GetPersistentDiskSettingsError = errors.New("disk DNE")
 		})
 
 		It("returns the error", func() {
-			_, err := action.Run(newUpdateSettings)
+			_, err := updateSettingsAction.Run(newUpdateSettings)
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Fetching disk settings: Disk DNE"))
+			Expect(err.Error()).To(Equal("Fetching disk settings: disk DNE"))
 		})
 	})
 
@@ -160,7 +159,7 @@ var _ = Describe("UpdateSettings", func() {
 			DiskCID: "fake-disk-id-2",
 		}
 
-		_, err := action.Run(boshsettings.UpdateSettings{
+		_, err := updateSettingsAction.Run(boshsettings.UpdateSettings{
 			DiskAssociations: []boshsettings.DiskAssociation{
 				diskAssociation,
 				diskAssociation2,
@@ -204,14 +203,14 @@ var _ = Describe("UpdateSettings", func() {
 
 		It("kills the agent", func() {
 			Expect(func() {
-				action.Run(newUpdateSettings)
+				updateSettingsAction.Run(newUpdateSettings) //nolint:errcheck
 			}).To(Panic())
 			Expect(agentKiller.KillAgentCallCount()).To(Equal(1))
 		})
 
 		It("persists the new settings", func() {
 			Expect(func() {
-				action.Run(newUpdateSettings)
+				updateSettingsAction.Run(newUpdateSettings) //nolint:errcheck
 			}).To(Panic())
 
 			updateSettings := settingsService.SaveUpdateSettingsLastArg

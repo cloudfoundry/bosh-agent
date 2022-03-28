@@ -16,13 +16,13 @@ import (
 
 var (
 	// Export for testing
-	UserHomeDirectory    = userHomeDirectory
-	RandomPassword       = randomPassword
-	ValidWindowsPassword = validPassword
-	LocalAccountNames    = localAccountNames
+	UserHomeDirectory    = userHomeDirectory //nolint:gochecknoglobals
+	RandomPassword       = randomPassword    //nolint:gochecknoglobals
+	ValidWindowsPassword = validPassword     //nolint:gochecknoglobals
+	LocalAccountNames    = localAccountNames //nolint:gochecknoglobals
 
 	// Export for test cleanup
-	DeleteLocalUser = deleteLocalUser
+	DeleteLocalUser = deleteLocalUser //nolint:gochecknoglobals
 )
 
 // SetSSHEnabled sets the function called by GetHostPublicKey to determine if

@@ -110,8 +110,9 @@ func writeTgz(path string, files []string) {
 	defer tw.Close()
 
 	for _, file := range files {
-		tw.WriteHeader(&tar.Header{
+		err := tw.WriteHeader(&tar.Header{
 			Name: file,
 		})
+		Expect(err).NotTo(HaveOccurred())
 	}
 }

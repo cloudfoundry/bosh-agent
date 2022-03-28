@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nats-io/nats.go"
 	"net"
 	"net/url"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/nats-io/nats.go"
 
 	"crypto/x509"
 	"time"
@@ -53,7 +54,6 @@ type NatsConnection interface {
 	Close()
 	Publish(subj string, data []byte) error
 	Subscribe(subj string, cb nats.MsgHandler) (*nats.Subscription, error)
-	//Subscribe(subject string, f func(natsMsg *nats.Msg)) (interface{}, error)
 }
 
 type natsHandler struct {
@@ -206,13 +206,13 @@ func (h *natsHandler) Stop() {
 }
 
 func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+	natsBoshInternalsRegexp := regexp.MustCompile(`^[a-zA-Z0-9*\-]*.nats.bosh-internal$`)
 	for _, chain := range verifiedChains {
 		if len(chain) == 0 {
 			continue
 		}
 		commonName := chain[0].Subject.CommonName
-		match, _ := regexp.MatchString("^[a-zA-Z0-9*\\-]*.nats.bosh-internal$", commonName)
-		if match {
+		if natsBoshInternalsRegexp.MatchString(commonName) {
 			return nil
 		}
 	}
@@ -248,16 +248,13 @@ func (h *natsHandler) handleNatsMsg(natsMsg *nats.Msg, handlerFunc boshhandler.F
 func (h *natsHandler) runUntilInterrupted() {
 	defer h.connection.Close()
 
-	keepRunning := true
-
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
+	keepRunning := true
 	for keepRunning {
-		select {
-		case <-c:
-			keepRunning = false
-		}
+		<-c
+		keepRunning = false
 	}
 }
 

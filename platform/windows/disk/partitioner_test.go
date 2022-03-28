@@ -13,16 +13,6 @@ import (
 )
 
 var _ = Describe("Partitioner", func() {
-	const cmdStandardError = `Get-Disk : No MSFT_Disk objects found with property 'Number' equal to '0'.
-Verify the value of the property and retry.
-At line:1 char:1
-+ Get-Disk 0
-+ ~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (0:UInt32) [Get-Disk], CimJobExc
-   eption
-    + FullyQualifiedErrorId : CmdletizationQuery_NotFound_Number,Get-Disk
-`
-
 	var (
 		cmdRunner   *fakes.FakeCmdRunner
 		partitioner *disk.Partitioner

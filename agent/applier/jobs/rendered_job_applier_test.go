@@ -2,13 +2,12 @@ package jobs_test
 
 import (
 	"errors"
-	"io"
 	"os"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 
@@ -32,7 +31,7 @@ var _ = Describe("renderedJobApplier", func() {
 		packageApplierProvider *fakepackages.FakeApplierProvider
 		blobstore              *fakeblobdelegator.FakeBlobstoreDelegator
 		fs                     *fakesys.FakeFileSystem
-		applier                Applier
+		applier                jobs.Applier
 		fixPermissions         *fakeFixer
 	)
 
@@ -46,7 +45,7 @@ var _ = Describe("renderedJobApplier", func() {
 		dirProvider := directories.NewProvider("/fakebasedir")
 		fixPermissions = &fakeFixer{}
 
-		applier = NewRenderedJobApplier(
+		applier = jobs.NewRenderedJobApplier(
 			blobstore,
 			dirProvider,
 			jobsBc,
@@ -378,12 +377,13 @@ var _ = Describe("renderedJobApplier", func() {
 		It("adds job to the job supervisor", func() {
 			job, bundle := buildJob(jobsBc)
 
-			fs.WriteFileString("/path/to/job/monit", "some conf")
+			err := fs.WriteFileString("/path/to/job/monit", "some conf")
+			Expect(err).NotTo(HaveOccurred())
 			fs.SetGlob("/path/to/job/*.monit", []string{"/path/to/job/subjob.monit"})
 
 			bundle.GetDirPath = "/path/to/job"
 
-			err := applier.Configure(job, 0)
+			err = applier.Configure(job, 0)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(len(jobSupervisor.AddJobArgs)).To(Equal(2))
@@ -533,16 +533,6 @@ func (f *fakeFixer) Fix(fs boshsys.FileSystem, path, user, group string) error {
 	f.fakeGroupArg = group
 
 	return f.fakeFixError
-}
-
-type unsupportedAlgo struct{}
-
-func (unsupportedAlgo) Compare(algo boshcrypto.Algorithm) int {
-	return -1
-}
-
-func (unsupportedAlgo) CreateDigest(reader io.Reader) (boshcrypto.Digest, error) {
-	return boshcrypto.MultipleDigest{}, nil
 }
 
 func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) {

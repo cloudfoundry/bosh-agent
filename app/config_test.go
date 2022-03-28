@@ -19,7 +19,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 	})
 
 	It("returns populates config", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Platform": {
 				"Linux": {
 					"UseDefaultTmpDir": true,
@@ -65,6 +65,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
 		config, err := LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).ToNot(HaveOccurred())
@@ -124,49 +125,53 @@ var _ = Describe("LoadConfigFromPath", func() {
 	})
 
 	It("returns error if file cannot be parsed", func() {
-		fs.WriteFileString("/fake-config.conf", `fake-invalid-json`)
+		err := fs.WriteFileString("/fake-config.conf", `fake-invalid-json`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("invalid character"))
 	})
 
 	It("returns an error when the source options type is unknown", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": [{ "Type": "fake-type" }]
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unknown source type 'fake-type'"))
 	})
 
 	It("returns an error when the source options do not have type", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": [{ }]
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Missing source type"))
 	})
 
 	It("returns empty settings sources if no sources are defined", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": []
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
 		config, err := LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).ToNot(HaveOccurred())
@@ -178,19 +183,20 @@ var _ = Describe("LoadConfigFromPath", func() {
 	})
 
 	It("returns an error when the source options do not have type", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": { "Sources": 1 }
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unmarshalling sources"))
 	})
 
 	It("returns errors if failed to decode HTTP source options", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": [{
@@ -200,14 +206,15 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unmarshalling source type 'HTTP'"))
 	})
 
 	It("returns errors if failed to decode InstanceMetadata source options", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": [{
@@ -217,14 +224,15 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unmarshalling source type 'InstanceMetadata'"))
 	})
 
 	It("returns errors if failed to decode ConfigDrive source options", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": [{
@@ -234,14 +242,15 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unmarshalling source type 'ConfigDrive'"))
 	})
 
 	It("returns errors if failed to decode File source options", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": [{
@@ -251,14 +260,15 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unmarshalling source type 'File'"))
 	})
 
 	It("returns errors if failed to decode CDROM source options", func() {
-		fs.WriteFileString("/fake-config.conf", `{
+		err := fs.WriteFileString("/fake-config.conf", `{
 			"Infrastructure": {
 			  "Settings": {
 				  "Sources": [{
@@ -268,8 +278,9 @@ var _ = Describe("LoadConfigFromPath", func() {
 				}
 			}
 		}`)
+		Expect(err).NotTo(HaveOccurred())
 
-		_, err := LoadConfigFromPath(fs, "/fake-config.conf")
+		_, err = LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unmarshalling source type 'CDROM'"))
 	})

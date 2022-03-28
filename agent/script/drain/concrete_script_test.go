@@ -76,7 +76,8 @@ var _ = Describe("ConcreteScript", func() {
 		It("returns bool", func() {
 			Expect(script.Exists()).To(BeFalse())
 
-			fs.WriteFile("/fake/script", []byte{})
+			err := fs.WriteFile("/fake/script", []byte{})
+			Expect(err).NotTo(HaveOccurred())
 			Expect(script.Exists()).To(BeTrue())
 		})
 	})

@@ -67,7 +67,7 @@ var _ = Describe("HTTPSHandler", func() {
 			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
 			handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
 
-			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) { //nolint:errcheck
 				receivedRequest = req
 				return boshhandler.NewValueResponse("expected value")
 			})
@@ -77,7 +77,7 @@ var _ = Describe("HTTPSHandler", func() {
 			authority := x509.NewCertPool()
 			Expect(authority.AppendCertsFromPEM(caCert)).To(BeTrue())
 
-			httpTransport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: authority}}
+			httpTransport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: authority}} //nolint:gosec
 			httpClient = http.Client{Timeout: 5 * time.Second, Transport: httpTransport}
 
 			waitForServerToStart(serverURL, httpClient)
@@ -208,7 +208,7 @@ var _ = Describe("HTTPSHandler", func() {
 						putBody := `Updated data`
 						putPayload := strings.NewReader(putBody)
 
-						httpRequest, err := http.NewRequest("PUT", strings.Replace(serverURL, "pass", "wrong", -1)+"/blobs/a5/123-456-789", putPayload)
+						httpRequest, err := http.NewRequest("PUT", strings.ReplaceAll(serverURL, "pass", "wrong")+"/blobs/a5/123-456-789", putPayload)
 						Expect(err).NotTo(HaveOccurred())
 						httpResponse, err := httpClient.Do(httpRequest)
 						Expect(err).ToNot(HaveOccurred())
@@ -223,7 +223,7 @@ var _ = Describe("HTTPSHandler", func() {
 		})
 
 		Describe("routing and auth", func() {
-			Context("when an incorrect uri is specificed", func() {
+			Context("when an incorrect uri is specified", func() {
 				It("returns a 404", func() {
 					postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 					postPayload := strings.NewReader(postBody)
@@ -241,7 +241,7 @@ var _ = Describe("HTTPSHandler", func() {
 					postBody := `{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`
 					postPayload := strings.NewReader(postBody)
 
-					httpResponse, err := httpClient.Post(strings.Replace(serverURL, "pass", "wrong", -1)+"/agent", "application/json", postPayload)
+					httpResponse, err := httpClient.Post(strings.ReplaceAll(serverURL, "pass", "wrong")+"/agent", "application/json", postPayload)
 					Expect(err).ToNot(HaveOccurred())
 
 					defer httpResponse.Body.Close()
@@ -256,7 +256,7 @@ var _ = Describe("HTTPSHandler", func() {
 
 func waitForServerToStart(serverURL string, httpClient http.Client) {
 	Eventually(func() error {
-		httpResponse, err := httpClient.Get(serverURL + "/healthz")
+		httpResponse, err := httpClient.Get(serverURL + "/healthz") //nolint:noctx
 		if err == nil {
 			httpResponse.Body.Close()
 		}

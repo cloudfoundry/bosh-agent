@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent"
+	"github.com/cloudfoundry/bosh-agent/agent"
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
@@ -18,7 +18,7 @@ import (
 	fakes "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 
-func init() {
+func init() { //nolint:funlen,gochecknoinits
 	Describe("actionDispatcher", func() {
 		var (
 			logger        *fakes.FakeLogger
@@ -26,7 +26,7 @@ func init() {
 			taskManager   *faketask.FakeManager
 			actionFactory *fakeaction.FakeFactory
 			actionRunner  *fakeaction.FakeRunner
-			dispatcher    ActionDispatcher
+			dispatcher    agent.ActionDispatcher
 		)
 
 		BeforeEach(func() {
@@ -35,7 +35,7 @@ func init() {
 			taskManager = faketask.NewFakeManager()
 			actionFactory = fakeaction.NewFakeFactory()
 			actionRunner = &fakeaction.FakeRunner{}
-			dispatcher = NewActionDispatcher(logger, taskService, taskManager, actionFactory, actionRunner)
+			dispatcher = agent.NewActionDispatcher(logger, taskService, taskManager, actionFactory, actionRunner)
 		})
 
 		It("responds with exception when the method is unknown", func() {
@@ -91,7 +91,6 @@ func init() {
 			BeforeEach(func() {
 				runAction = &fakeaction.TestAction{Asynchronous: true}
 				actionFactory.RegisterAction("fake-action", runAction)
-
 			})
 
 			It("passes protocol version zero to IsSynchronous", func() {
@@ -122,7 +121,6 @@ func init() {
 				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(99)))
 				Expect(actionRunner.RunProtocolVersion).To(Equal(action.ProtocolVersion(99)))
 			})
-
 		})
 
 		Context("when request contains protocol version and action is Synchronous", func() {
@@ -151,7 +149,6 @@ func init() {
 				Expect(runAction.ProtocolVersion).To(Equal(action.ProtocolVersion(99)))
 				Expect(actionRunner.RunProtocolVersion).To(Equal(action.ProtocolVersion(99)))
 			})
-
 		})
 
 		Context("when action is synchronous", func() {
@@ -473,7 +470,8 @@ func init() {
 				}
 
 				{ // Check that second task executes second action
-					taskService.StartedTasks["fake-task-id-2"].Func()
+					_, err := taskService.StartedTasks["fake-task-id-2"].Func()
+					Expect(err).NotTo(HaveOccurred())
 					Expect(actionRunner.ResumeAction).To(Equal(secondAction))
 					Expect(string(actionRunner.ResumePayload)).To(Equal("fake-task-payload-2"))
 				}

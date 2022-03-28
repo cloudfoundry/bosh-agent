@@ -29,7 +29,7 @@ func TestIntegration(t *testing.T) {
 
 		err = testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
-		//create a backup of original settings for nats FW tests
+		// create a backup of original settings for nats FW tests
 		_, err = testEnvironment.RunCommand("sudo sh -c \"mkdir -p /settings-backup && cp /var/vcap/bosh/*.json /settings-backup/ \" ")
 		Expect(err).ToNot(HaveOccurred())
 

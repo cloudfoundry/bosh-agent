@@ -1,78 +1,79 @@
 package action_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 )
 
-func AssertActionIsSynchronousForVersion(action Action, version ProtocolVersion) {
+func AssertActionIsSynchronousForVersion(a action.Action, version action.ProtocolVersion) {
 	It("is synchronous for version", func() {
-		Expect(action.IsAsynchronous(version)).To(BeFalse())
+		Expect(a.IsAsynchronous(version)).To(BeFalse())
 	})
 }
 
-func AssertActionIsAsynchronousForVersion(action Action, version ProtocolVersion) {
+func AssertActionIsAsynchronousForVersion(a action.Action, version action.ProtocolVersion) {
 	It("is synchronous for version", func() {
-		Expect(action.IsAsynchronous(version)).To(BeTrue())
+		Expect(a.IsAsynchronous(version)).To(BeTrue())
 	})
 }
 
-func AssertActionIsAsynchronous(action Action) {
+func AssertActionIsAsynchronous(a action.Action) {
 	It("is asynchronous", func() {
-		Expect(action.IsAsynchronous(ProtocolVersion(1))).To(BeTrue())
+		Expect(a.IsAsynchronous(action.ProtocolVersion(1))).To(BeTrue())
 	})
 }
 
-func AssertActionIsNotAsynchronous(action Action) {
+func AssertActionIsNotAsynchronous(a action.Action) {
 	It("is not asynchronous", func() {
-		Expect(action.IsAsynchronous(ProtocolVersion(1))).To(BeFalse())
+		Expect(a.IsAsynchronous(action.ProtocolVersion(1))).To(BeFalse())
 	})
 }
 
-func AssertActionIsPersistent(action Action) {
+func AssertActionIsPersistent(a action.Action) {
 	It("is persistent", func() {
-		Expect(action.IsPersistent()).To(BeTrue())
+		Expect(a.IsPersistent()).To(BeTrue())
 	})
 }
 
-func AssertActionIsNotPersistent(action Action) {
+func AssertActionIsNotPersistent(a action.Action) {
 	It("is not persistent", func() {
-		Expect(action.IsPersistent()).To(BeFalse())
+		Expect(a.IsPersistent()).To(BeFalse())
 	})
 }
 
-func AssertActionIsLoggable(action Action) {
+func AssertActionIsLoggable(a action.Action) {
 	It("is loggable", func() {
-		Expect(action.IsLoggable()).To(BeTrue())
+		Expect(a.IsLoggable()).To(BeTrue())
 	})
 }
 
-func AssertActionIsNotLoggable(action Action) {
+func AssertActionIsNotLoggable(a action.Action) {
 	It("is not loggable", func() {
-		Expect(action.IsLoggable()).To(BeFalse())
+		Expect(a.IsLoggable()).To(BeFalse())
 	})
 }
 
-func AssertActionIsNotCancelable(action Action) {
+func AssertActionIsNotCancelable(a action.Action) {
 	It("cannot be cancelled", func() {
-		err := action.Cancel()
+		err := a.Cancel()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(Equal("not supported"))
 	})
 }
 
-func AssertActionIsResumable(action Action) {
+func AssertActionIsResumable(a action.Action) {
 	It("can be resumed", func() {
-		value, err := action.Resume()
+		value, err := a.Resume()
 		Expect(value).To(Equal("ok"))
 		Expect(err).ToNot(HaveOccurred())
 	})
 }
 
-func AssertActionIsNotResumable(action Action) {
+func AssertActionIsNotResumable(a action.Action) {
 	It("cannot be resumed", func() {
-		_, err := action.Resume()
+		_, err := a.Resume()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(Equal("not supported"))
 	})

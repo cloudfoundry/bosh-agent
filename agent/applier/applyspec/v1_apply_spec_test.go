@@ -128,7 +128,7 @@ var _ = Describe("V1ApplySpec", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			reloadedSpec := V1ApplySpec{}
-			err = json.Unmarshal([]byte(specBytes), &reloadedSpec)
+			err = json.Unmarshal(specBytes, &reloadedSpec)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(reloadedSpec).To(Equal(spec))
@@ -170,7 +170,7 @@ var _ = Describe("V1ApplySpec", func() {
 			specBytes, err := json.Marshal(spec)
 			Expect(err).ToNot(HaveOccurred())
 			reloadedSpec := V1ApplySpec{}
-			err = json.Unmarshal([]byte(specBytes), &reloadedSpec)
+			err = json.Unmarshal(specBytes, &reloadedSpec)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(reloadedSpec).To(Equal(spec))
@@ -274,7 +274,7 @@ var _ = Describe("V1ApplySpec", func() {
 	})
 
 	Describe("Packages", func() {
-		It("retuns packages", func() {
+		It("returns packages", func() {
 			spec := V1ApplySpec{
 				PackageSpecs: map[string]PackageSpec{
 					"fake-package1-name-key": {
@@ -320,7 +320,7 @@ var _ = Describe("V1ApplySpec", func() {
 
 var _ = Describe("NetworkSpec", func() {
 	Describe("PopulateIPInfo", func() {
-		It("populates network spec with ip, netmask and gateway addressess", func() {
+		It("populates network spec with ip, netmask and gateway addresses", func() {
 			networkSpec := NetworkSpec{}
 
 			networkSpec = networkSpec.PopulateIPInfo("fake-ip", "fake-netmask", "fake-gateway")
@@ -334,7 +334,7 @@ var _ = Describe("NetworkSpec", func() {
 			}))
 		})
 
-		It("overwrites network spec with ip, netmask and gateway addressess", func() {
+		It("overwrites network spec with ip, netmask and gateway addresses", func() {
 			networkSpec := NetworkSpec{
 				Fields: map[string]interface{}{
 					"ip":      "fake-old-ip",

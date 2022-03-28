@@ -1,16 +1,20 @@
 package httpblobprovider_test
 
 import (
+	"net/http"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"net/http"
 
 	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-var certificate = `-----BEGIN CERTIFICATE-----
+var _ = Describe("NewBlobstoreHTTPClient", func() {
+	var (
+		options     settings.Blobstore
+		certificate = `-----BEGIN CERTIFICATE-----
 MIIEOjCCAqKgAwIBAgIRALcJj7JFUaQ2sd4gwuIqILcwDQYJKoZIhvcNAQELBQAw
 JjEMMAoGA1UEBhMDVVNBMRYwFAYDVQQKEw1DbG91ZCBGb3VuZHJ5MB4XDTIxMDky
 OTE0MzM0NVoXDTIyMDkyOTE0MzM0NVowJjEMMAoGA1UEBhMDVVNBMRYwFAYDVQQK
@@ -35,10 +39,6 @@ fJo3Mli9ryp1/HRECrSkEDE5zK2SsGbtuciYhA4ALVQB02EQSlhRYL9zXtfnq6d5
 aMaUJX87g3h6U88UGBrIQZE9frYi97wpasdJqrZ8XuROhws3xznrPlM0Debv69/h
 Ia61hX5ccGHhfw1oXlPCqF8jPZgVJpSAv5nsthy9
 -----END CERTIFICATE-----`
-
-var _ = Describe("NewBlobstoreHTTPClient", func() {
-	var (
-		options settings.Blobstore
 	)
 
 	BeforeEach(func() {

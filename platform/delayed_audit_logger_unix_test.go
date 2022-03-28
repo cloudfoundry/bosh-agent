@@ -90,7 +90,7 @@ var _ = Describe("Delayed Audit Logger", func() {
 
 		Context("when there is no debug audit logger available", func() {
 			It("should retry until audit logger is available", func() {
-				auditLoggerProvider.SetDebugLoggerError(errors.New("Problems!"))
+				auditLoggerProvider.SetDebugLoggerError(errors.New("fake error"))
 				delayedAuditLogger.StartLogging()
 
 				Eventually(func() int {
@@ -98,13 +98,13 @@ var _ = Describe("Delayed Audit Logger", func() {
 				}).Should(Equal(1))
 
 				_, err, _ := logger.ErrorArgsForCall(0)
-				Expect(err).To(ContainSubstring("Problems!"))
+				Expect(err).To(ContainSubstring("fake error"))
 			})
 		})
 
 		Context("when there is no error audit logger available", func() {
 			It("should retry until audit logger is available", func() {
-				auditLoggerProvider.SetErrorLoggerError(errors.New("Problems!"))
+				auditLoggerProvider.SetErrorLoggerError(errors.New("fake error"))
 				delayedAuditLogger.StartLogging()
 
 				Eventually(func() int {
@@ -112,7 +112,7 @@ var _ = Describe("Delayed Audit Logger", func() {
 				}).Should(Equal(1))
 
 				_, err, _ := logger.ErrorArgsForCall(0)
-				Expect(err).To(ContainSubstring("Problems!"))
+				Expect(err).To(ContainSubstring("fake error"))
 			})
 		})
 	})

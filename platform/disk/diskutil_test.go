@@ -39,10 +39,13 @@ var _ = Describe("Diskutil", func() {
 
 		Context("when disk path does not exist", func() {
 			BeforeEach(func() {
-				fs.MkdirAll("fake-disk-path", 0700)
+				err := fs.MkdirAll("fake-disk-path", 0700)
+				Expect(err).NotTo(HaveOccurred())
 				fs.TempDirDir = "fake-tempdir"
-				fs.WriteFileString("fake-tempdir/fake-file-path-1", "fake-contents-1")
-				fs.WriteFileString("fake-tempdir/fake-file-path-2", "fake-contents-2")
+				err = fs.WriteFileString("fake-tempdir/fake-file-path-1", "fake-contents-1")
+				Expect(err).NotTo(HaveOccurred())
+				err = fs.WriteFileString("fake-tempdir/fake-file-path-2", "fake-contents-2")
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("mounts disk path to temporary directory", func() {

@@ -28,7 +28,8 @@ var _ = Describe("State", func() {
 	Describe("SaveState", func() {
 		It("saves the state file with the appropriate properties", func() {
 			s.Linux = platform.LinuxState{HostsConfigured: true}
-			s.SaveState()
+			err := s.SaveState()
+			Expect(err).NotTo(HaveOccurred())
 
 			contents, readerr := fs.ReadFile(path)
 
@@ -38,7 +39,8 @@ var _ = Describe("State", func() {
 
 		It("saves the state file with the properties passed in", func() {
 			s.Linux = platform.LinuxState{HostsConfigured: true}
-			s.SaveState()
+			err := s.SaveState()
+			Expect(err).NotTo(HaveOccurred())
 
 			contents, readerr := fs.ReadFile(path)
 
@@ -82,10 +84,11 @@ var _ = Describe("State", func() {
 
 		Context("When the agent cannot read the state file due to a failed disk", func() {
 			It("returns an error and a state object with false properties", func() {
-				fs.WriteFileString(path, `{
+				err := fs.WriteFileString(path, `{
 					"hosts_configured": true,
 					"hostname_configured": true
 				}`)
+				Expect(err).NotTo(HaveOccurred())
 
 				fs.RegisterReadFileError(path, errors.New("ENXIO: disk failed"))
 
@@ -97,7 +100,8 @@ var _ = Describe("State", func() {
 
 		Context("When the agent cannot parse the state file due to malformed JSON", func() {
 			It("returns an error and a state object with false properties", func() {
-				fs.WriteFileString(path, "malformed-JSON")
+				err := fs.WriteFileString(path, "malformed-JSON")
+				Expect(err).NotTo(HaveOccurred())
 
 				_, readerr := platform.NewBootstrapState(fs, path)
 

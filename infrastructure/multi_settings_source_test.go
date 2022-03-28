@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	"github.com/cloudfoundry/bosh-agent/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
@@ -18,7 +18,7 @@ var _ = Describe("MultiSettingsSource", func() {
 
 	Context("when there are no sources", func() {
 		It("returns an error when there are no sources", func() {
-			_, err := NewMultiSettingsSource([]boshsettings.Source{}...)
+			_, err := infrastructure.NewMultiSettingsSource([]boshsettings.Source{}...)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("MultiSettingsSource requires to have at least one source"))
 		})
@@ -50,7 +50,7 @@ var _ = Describe("MultiSettingsSource", func() {
 
 		JustBeforeEach(func() {
 			var err error
-			source, err = NewMultiSettingsSource(source1, source2)
+			source, err = infrastructure.NewMultiSettingsSource(source1, source2)
 			Expect(err).ToNot(HaveOccurred())
 		})
 

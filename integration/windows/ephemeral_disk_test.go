@@ -74,9 +74,9 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
 		agent.StartAgent()
 
-		expectedLogMessage := fmt.Sprintf(
-			"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space",
-		)
+		expectedLogMessage :=
+			"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space"
+
 		Eventually(func() bool {
 			matchingLogOutput := agent.RunPowershellCommand(fmt.Sprintf(
 				`Select-String -Path C:\var\vcap\bosh\log\service_wrapper.err.log -Pattern "%s"`,

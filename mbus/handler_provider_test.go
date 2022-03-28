@@ -1,11 +1,12 @@
 package mbus_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
-	"github.com/nats-io/nats.go"
 	gourl "net/url"
 	"reflect"
 	"time"
+
+	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
+	"github.com/nats-io/nats.go"
 
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
@@ -80,6 +81,7 @@ var _ = Describe("HandlerProvider", func() {
 				logger,
 				auditLogger,
 			)
+			Expect(err).NotTo(HaveOccurred())
 			httpsHandler, ok := handler.(HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(reflect.DeepEqual(httpsHandler, expectedHandler)).To(BeTrue())

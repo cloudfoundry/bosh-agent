@@ -12,7 +12,7 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	Describe("concreteManagerProvider", func() {
 		Describe("NewManager", func() {
 			It("returns manager with tasks.json as its tasks path", func() {

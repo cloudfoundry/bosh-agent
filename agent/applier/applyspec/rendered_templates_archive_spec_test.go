@@ -52,8 +52,8 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 	Context("unmarshalling JSON", func() {
 		DescribeTable("unmarshalling", func(blobstoreID, sha1, errorMsg string, expected *RenderedTemplatesArchiveSpec) {
 			data := []byte(fmt.Sprintf(`{"blobstore_id": "%s", "sha1": "%s"}`, blobstoreID, sha1))
-			var rendered *RenderedTemplatesArchiveSpec
-			rendered = &RenderedTemplatesArchiveSpec{}
+
+			rendered := &RenderedTemplatesArchiveSpec{}
 			err := json.Unmarshal(data, rendered)
 			if errorMsg == "" {
 				Expect(err).NotTo(HaveOccurred())

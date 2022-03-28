@@ -10,7 +10,7 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	Describe("Heartbeat", func() {
 		Context("when all information is available to the heartbeat", func() {
 			It("serializes heartbeat with all fields", func() {

@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
@@ -17,14 +17,14 @@ var _ = Describe("ListDisk", func() {
 		settingsService *fakesettings.FakeSettingsService
 		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
-		action          ListDiskAction
+		listDiskAction  action.ListDiskAction
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		platform = &platformfakes.FakePlatform{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		action = NewListDisk(settingsService, platform, logger)
+		listDiskAction = action.NewListDisk(settingsService, platform, logger)
 
 		platform.IsPersistentDiskMountedStub = func(settings boshsettings.DiskSettings) (bool, error) {
 			if settings.Path == "/dev/sdb" || settings.Path == "/dev/sdc" {
@@ -35,15 +35,15 @@ var _ = Describe("ListDisk", func() {
 		}
 	})
 
-	AssertActionIsSynchronousForVersion(action, 1)
-	AssertActionIsSynchronousForVersion(action, 2)
-	AssertActionIsAsynchronousForVersion(action, 3)
+	AssertActionIsSynchronousForVersion(listDiskAction, 1)
+	AssertActionIsSynchronousForVersion(listDiskAction, 2)
+	AssertActionIsAsynchronousForVersion(listDiskAction, 3)
 
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotPersistent(listDiskAction)
+	AssertActionIsLoggable(listDiskAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(listDiskAction)
+	AssertActionIsNotCancelable(listDiskAction)
 
 	Context("list disk run", func() {
 		Context("persistent disks defined", func() {
@@ -69,7 +69,7 @@ var _ = Describe("ListDisk", func() {
 			})
 
 			It("returns list of mounted disks", func() {
-				value, err := action.Run()
+				value, err := listDiskAction.Run()
 				Expect(err).ToNot(HaveOccurred())
 				values, ok := value.([]string)
 				Expect(ok).To(BeTrue())
@@ -83,7 +83,7 @@ var _ = Describe("ListDisk", func() {
 
 		Context("there are no disks", func() {
 			It("returns an empty array", func() {
-				result, err := action.Run()
+				result, err := listDiskAction.Run()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				Expect(result).To(Equal(make([]string, 0)))
@@ -96,7 +96,7 @@ var _ = Describe("ListDisk", func() {
 			It("should return an error", func() {
 				settingsService.LoadSettingsError = bosherrors.Error("fake loadsettings error")
 
-				_, err := action.Run()
+				_, err := listDiskAction.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Refreshing the settings: fake loadsettings error"))
 			})
@@ -105,7 +105,7 @@ var _ = Describe("ListDisk", func() {
 		Context("when unable to load persistent disk hints", func() {
 			Context("when persistent disk settings file does not exist", func() {
 				It("should not return an error", func() {
-					_, err := action.Run()
+					_, err := listDiskAction.Run()
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -114,7 +114,7 @@ var _ = Describe("ListDisk", func() {
 				It("should return an error", func() {
 					settingsService.GetAllPersistentDiskSettingsError = bosherrors.Error("fake get persistent disk hints error")
 
-					_, err := action.Run()
+					_, err := listDiskAction.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Getting persistent disk settings: fake get persistent disk hints error"))
 				})

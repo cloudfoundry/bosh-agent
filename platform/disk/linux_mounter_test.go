@@ -279,7 +279,8 @@ var _ = Describe("linuxMounter", func() {
 		It("linux swap on", func() {
 			runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: "Filename				Type		Size	Used	Priority\n"})
 
-			mounter.SwapOn("/dev/swap")
+			err := mounter.SwapOn("/dev/swap")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(2).To(Equal(len(runner.RunCommands)))
 			Expect(runner.RunCommands[1]).To(Equal([]string{"swapon", "/dev/swap"}))
 		})
@@ -287,7 +288,8 @@ var _ = Describe("linuxMounter", func() {
 		It("linux swap on when already on", func() {
 			runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: swaponUsageOutput})
 
-			mounter.SwapOn("/dev/swap")
+			err := mounter.SwapOn("/dev/swap")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(1).To(Equal(len(runner.RunCommands)))
 			Expect(runner.RunCommands[0]).To(Equal([]string{"swapon", "-s"}))
 		})
@@ -295,7 +297,8 @@ var _ = Describe("linuxMounter", func() {
 		It("linux swap on when already on other device", func() {
 			runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: swaponUsageOutputWithOtherDevice})
 
-			mounter.SwapOn("/dev/swap")
+			err := mounter.SwapOn("/dev/swap")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(2).To(Equal(len(runner.RunCommands)))
 			Expect(runner.RunCommands[0]).To(Equal([]string{"swapon", "-s"}))
 			Expect(runner.RunCommands[1]).To(Equal([]string{"swapon", "/dev/swap"}))

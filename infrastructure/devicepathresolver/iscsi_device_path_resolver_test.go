@@ -55,7 +55,8 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 
 		// Setup the managed_disk_settings.json
 		managedDiskSettingsPath = filepath.Join(dirProvider.BoshDir(), "managed_disk_settings.json")
-		fs.WriteFileString(managedDiskSettingsPath, "12345678")
+		err := fs.WriteFileString(managedDiskSettingsPath, "12345678")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("GetRealDevicePath", func() {

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
@@ -24,7 +24,7 @@ var _ = Describe("ApplyAction", func() {
 		specService     *fakeas.FakeV1Service
 		settingsService *fakesettings.FakeSettingsService
 		dirProvider     boshdir.Provider
-		action          ApplyAction
+		applyAction     action.ApplyAction
 		fs              boshsys.FileSystem
 	)
 
@@ -34,14 +34,14 @@ var _ = Describe("ApplyAction", func() {
 		settingsService = &fakesettings.FakeSettingsService{}
 		dirProvider = boshdir.NewProvider("/var/vcap")
 		fs = fakesys.NewFakeFileSystem()
-		action = NewApply(applier, specService, settingsService, dirProvider, fs)
+		applyAction = action.NewApply(applier, specService, settingsService, dirProvider, fs)
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
-	AssertActionIsNotCancelable(action)
-	AssertActionIsNotResumable(action)
+	AssertActionIsAsynchronous(applyAction)
+	AssertActionIsNotPersistent(applyAction)
+	AssertActionIsLoggable(applyAction)
+	AssertActionIsNotCancelable(applyAction)
+	AssertActionIsNotResumable(applyAction)
 
 	Describe("Run", func() {
 		settings := boshsettings.Settings{AgentID: "fake-agent-id"}
@@ -63,7 +63,7 @@ var _ = Describe("ApplyAction", func() {
 				})
 
 				It("populates dynamic networks in desired spec", func() {
-					_, err := action.Run(desiredApplySpec)
+					_, err := applyAction.Run(desiredApplySpec)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(specService.PopulateDHCPNetworksSpec).To(Equal(desiredApplySpec))
 					Expect(specService.PopulateDHCPNetworksSettings).To(Equal(settings))
@@ -75,7 +75,7 @@ var _ = Describe("ApplyAction", func() {
 					})
 
 					It("runs applier with populated desired spec", func() {
-						_, err := action.Run(desiredApplySpec)
+						_, err := applyAction.Run(desiredApplySpec)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(applier.Applied).To(BeTrue())
 						Expect(applier.ApplyDesiredApplySpec).To(Equal(populatedDesiredApplySpec))
@@ -84,7 +84,7 @@ var _ = Describe("ApplyAction", func() {
 					Context("when applier succeeds applying desired spec", func() {
 						Context("when saving desires spec as current spec succeeds", func() {
 							It("returns 'applied' after setting populated desired spec as current spec", func() {
-								value, err := action.Run(desiredApplySpec)
+								value, err := applyAction.Run(desiredApplySpec)
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal("applied"))
 
@@ -99,7 +99,7 @@ var _ = Describe("ApplyAction", func() {
 								})
 
 								It("returns 'applied' and writes the id, instance name, deployment name, and az to files in the instance directory", func() {
-									value, err := action.Run(desiredApplySpec)
+									value, err := applyAction.Run(desiredApplySpec)
 									Expect(err).ToNot(HaveOccurred())
 									Expect(value).To(Equal("applied"))
 
@@ -128,7 +128,7 @@ var _ = Describe("ApplyAction", func() {
 							It("returns error because agent was not able to remember that is converged to desired spec", func() {
 								specService.SetErr = errors.New("fake-set-error")
 
-								_, err := action.Run(desiredApplySpec)
+								_, err := applyAction.Run(desiredApplySpec)
 								Expect(err).To(HaveOccurred())
 								Expect(err.Error()).To(ContainSubstring("fake-set-error"))
 							})
@@ -141,13 +141,13 @@ var _ = Describe("ApplyAction", func() {
 						})
 
 						It("returns error", func() {
-							_, err := action.Run(desiredApplySpec)
+							_, err := applyAction.Run(desiredApplySpec)
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("fake-apply-error"))
 						})
 
 						It("does not save desired spec as current spec", func() {
-							_, err := action.Run(desiredApplySpec)
+							_, err := applyAction.Run(desiredApplySpec)
 							Expect(err).To(HaveOccurred())
 							Expect(specService.Spec).To(Equal(currentApplySpec))
 						})
@@ -160,19 +160,19 @@ var _ = Describe("ApplyAction", func() {
 					})
 
 					It("returns error", func() {
-						_, err := action.Run(desiredApplySpec)
+						_, err := applyAction.Run(desiredApplySpec)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-populate-dynamic-networks-err"))
 					})
 
 					It("does not apply desired spec as current spec", func() {
-						_, err := action.Run(desiredApplySpec)
+						_, err := applyAction.Run(desiredApplySpec)
 						Expect(err).To(HaveOccurred())
 						Expect(applier.Applied).To(BeFalse())
 					})
 
 					It("does not save desired spec as current spec", func() {
-						_, err := action.Run(desiredApplySpec)
+						_, err := applyAction.Run(desiredApplySpec)
 						Expect(err).To(HaveOccurred())
 						Expect(specService.Spec).To(Equal(currentApplySpec))
 					})
@@ -194,7 +194,7 @@ var _ = Describe("ApplyAction", func() {
 			}
 
 			It("populates dynamic networks in desired spec", func() {
-				_, err := action.Run(desiredApplySpec)
+				_, err := applyAction.Run(desiredApplySpec)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(specService.PopulateDHCPNetworksSpec).To(Equal(desiredApplySpec))
 				Expect(specService.PopulateDHCPNetworksSettings).To(Equal(settings))
@@ -207,7 +207,7 @@ var _ = Describe("ApplyAction", func() {
 
 				Context("when saving desires spec as current spec succeeds", func() {
 					It("returns 'applied' after setting desired spec as current spec", func() {
-						value, err := action.Run(desiredApplySpec)
+						value, err := applyAction.Run(desiredApplySpec)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(value).To(Equal("applied"))
 
@@ -215,7 +215,7 @@ var _ = Describe("ApplyAction", func() {
 					})
 
 					It("does not try to apply desired spec since it does not have jobs and packages", func() {
-						_, err := action.Run(desiredApplySpec)
+						_, err := applyAction.Run(desiredApplySpec)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(applier.Applied).To(BeFalse())
 					})
@@ -227,13 +227,13 @@ var _ = Describe("ApplyAction", func() {
 					})
 
 					It("returns error because agent was not able to remember that is converged to desired spec", func() {
-						_, err := action.Run(desiredApplySpec)
+						_, err := applyAction.Run(desiredApplySpec)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-set-error"))
 					})
 
 					It("does not try to apply desired spec since it does not have jobs and packages", func() {
-						_, err := action.Run(desiredApplySpec)
+						_, err := applyAction.Run(desiredApplySpec)
 						Expect(err).To(HaveOccurred())
 						Expect(applier.Applied).To(BeFalse())
 					})
@@ -246,19 +246,19 @@ var _ = Describe("ApplyAction", func() {
 				})
 
 				It("returns error", func() {
-					_, err := action.Run(desiredApplySpec)
+					_, err := applyAction.Run(desiredApplySpec)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-populate-dynamic-networks-err"))
 				})
 
 				It("does not apply desired spec as current spec", func() {
-					_, err := action.Run(desiredApplySpec)
+					_, err := applyAction.Run(desiredApplySpec)
 					Expect(err).To(HaveOccurred())
 					Expect(applier.Applied).To(BeFalse())
 				})
 
 				It("does not save desired spec as current spec", func() {
-					_, err := action.Run(desiredApplySpec)
+					_, err := applyAction.Run(desiredApplySpec)
 					Expect(err).To(HaveOccurred())
 					Expect(specService.Spec).ToNot(Equal(desiredApplySpec))
 				})

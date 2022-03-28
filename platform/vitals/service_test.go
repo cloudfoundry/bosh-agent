@@ -122,7 +122,7 @@ var _ = Describe("Vitals service", func() {
 		boshassert.MatchesJSONMap(GinkgoT(), vitals, expectedVitals)
 	})
 
-	Context("when missing stats for ephemeral and peristent disk", func() {
+	Context("when missing stats for ephemeral and persistent disk", func() {
 		BeforeEach(func() {
 			statsCollector.DiskStats = map[string]boshstats.DiskStats{
 				"/": {

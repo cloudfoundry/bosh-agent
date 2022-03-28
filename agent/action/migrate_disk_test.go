@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
@@ -12,25 +12,25 @@ import (
 
 var _ = Describe("Testing with Ginkgo", func() {
 	var (
-		action   MigrateDiskAction
-		platform *platformfakes.FakePlatform
+		migrateDiskAction action.MigrateDiskAction
+		platform          *platformfakes.FakePlatform
 	)
 
 	BeforeEach(func() {
 		platform = &platformfakes.FakePlatform{}
 		dirProvider := boshdirs.NewProvider("/foo")
-		action = NewMigrateDisk(platform, dirProvider)
+		migrateDiskAction = action.NewMigrateDisk(platform, dirProvider)
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(migrateDiskAction)
+	AssertActionIsNotPersistent(migrateDiskAction)
+	AssertActionIsLoggable(migrateDiskAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(migrateDiskAction)
+	AssertActionIsNotCancelable(migrateDiskAction)
 
-	It("migrate disk action run", func() {
-		value, err := action.Run()
+	It("migrate disk migrateDiskAction run", func() {
+		value, err := migrateDiskAction.Run()
 		Expect(err).ToNot(HaveOccurred())
 		boshassert.MatchesJSONString(GinkgoT(), value, "{}")
 

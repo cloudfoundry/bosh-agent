@@ -82,7 +82,8 @@ var _ = Describe("settingsService", func() {
 
 					go func() {
 						for i := 0; i < 100000; i++ {
-							service.LoadSettings()
+							err := service.LoadSettings()
+							Expect(err).NotTo(HaveOccurred())
 						}
 						done <- true
 					}()
@@ -162,10 +163,11 @@ var _ = Describe("settingsService", func() {
 			Context("when a settings file exists", func() {
 				Context("when settings contain at most one dynamic network", func() {
 					BeforeEach(func() {
-						fs.WriteFile("/setting/path.json", []byte(`{
+						err := fs.WriteFile("/setting/path.json", []byte(`{
 								"agent_id":"some-agent-id",
 								"networks": {"fake-net-1": {"type": "dynamic"}}
 							}`))
+						Expect(err).NotTo(HaveOccurred())
 
 						fakePlatformSettingsGetter.GetDefaultNetworkReturns(Network{
 							IP:      "fake-resolved-ip",
@@ -199,9 +201,10 @@ var _ = Describe("settingsService", func() {
 					})
 
 					It("fetches UpdateSettings", func() {
-						fs.WriteFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false), []byte(`{"trusted_certs": "a trusted cert"}`))
+						err := fs.WriteFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false), []byte(`{"trusted_certs": "a trusted cert"}`))
+						Expect(err).NotTo(HaveOccurred())
 
-						err := service.LoadSettings()
+						err = service.LoadSettings()
 						Expect(err).NotTo(HaveOccurred())
 
 						settings := service.GetSettings()
@@ -212,9 +215,10 @@ var _ = Describe("settingsService", func() {
 
 			Context("when non-unmarshallable settings file exists", func() {
 				It("returns any error from the fetcher", func() {
-					fs.WriteFile("/setting/path.json", []byte(`$%^&*(`))
+					err := fs.WriteFile("/setting/path.json", []byte(`$%^&*(`))
+					Expect(err).NotTo(HaveOccurred())
 
-					err := service.LoadSettings()
+					err = service.LoadSettings()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
 
@@ -236,7 +240,8 @@ var _ = Describe("settingsService", func() {
 		Describe("UpdateSettings", func() {
 			Context("when the update_settings.json exists", func() {
 				BeforeEach(func() {
-					fs.WriteFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false), []byte(`{"trusted_certs": "a trusted cert"}`))
+					err := fs.WriteFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false), []byte(`{"trusted_certs": "a trusted cert"}`))
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("populates settings with an UpdateSettings read from the update settings file", func() {
@@ -289,16 +294,6 @@ var _ = Describe("settingsService", func() {
 		})
 
 		Context("disk settings file exists", func() {
-			BeforeEach(func() {
-				err := fs.WriteFileQuietly("/setting/persistent_settings.json", []byte("{}"))
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("loads persistent settings from disk", func() {
-				service.GetPersistentDiskSettings("fake-disk-cid")
-				Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
-			})
-
 			Context("has invalid settings saved on disk", func() {
 				var existingSettingsOnDisk []DiskSettings // The correct format is map[string]DiskSettings but we want to write out an incorrect format.
 
@@ -359,6 +354,7 @@ var _ = Describe("settingsService", func() {
 						},
 					}
 				})
+
 				It("returns disk settings", func() {
 					settings, err := service.GetPersistentDiskSettings("disk-cid")
 					Expect(err).ToNot(HaveOccurred())
@@ -608,9 +604,10 @@ var _ = Describe("settingsService", func() {
 			fakeSettingsSource.SettingsErr = nil
 			service, fs := buildService()
 
-			fs.WriteFile("/setting/path.json", []byte(`{}`))
+			err := fs.WriteFile("/setting/path.json", []byte(`{}`))
+			Expect(err).NotTo(HaveOccurred())
 
-			err := service.InvalidateSettings()
+			err = service.InvalidateSettings()
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fs.FileExists("/setting/path.json")).To(BeFalse())
@@ -737,6 +734,7 @@ var _ = Describe("settingsService", func() {
 			err := service.SaveUpdateSettings(updateSettings)
 			Expect(err).NotTo(HaveOccurred())
 			jsonString, err := json.Marshal(updateSettings)
+			Expect(err).NotTo(HaveOccurred())
 
 			fileContent, err := fs.ReadFile(fakePlatformSettingsGetter.GetUpdateSettingsPath(false))
 			Expect(err).NotTo(HaveOccurred())

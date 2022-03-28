@@ -27,7 +27,7 @@ func runPktSyslog(c net.PacketConn, done chan<- string) {
 		var n int
 		var err error
 
-		c.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+		c.SetReadDeadline(time.Now().Add(100 * time.Millisecond)) //nolint:errcheck
 		n, _, err = c.ReadFrom(buf[:])
 		rcvd += string(buf[:n])
 		if err != nil {
@@ -44,7 +44,7 @@ func runPktSyslog(c net.PacketConn, done chan<- string) {
 	done <- rcvd
 }
 
-var crashy = false
+var crashy = false //nolint:gochecknoglobals
 
 func testableNetwork(network string) bool {
 	return network == "tcp" || network == "udp"
@@ -60,7 +60,7 @@ func runStreamSyslog(l net.Listener, done chan<- string, wg *sync.WaitGroup) {
 		wg.Add(1)
 		go func(c net.Conn) {
 			defer wg.Done()
-			c.SetReadDeadline(time.Now().Add(time.Second))
+			c.SetReadDeadline(time.Now().Add(time.Second)) //nolint:errcheck
 			b := bufio.NewReader(c)
 			for ct := 1; !crashy || ct&7 != 0; ct++ {
 				s, err := b.ReadString('\n')
@@ -74,38 +74,40 @@ func runStreamSyslog(l net.Listener, done chan<- string, wg *sync.WaitGroup) {
 	}
 }
 
-func startServer(n, la string, done chan<- string) (addr string, sock io.Closer, wg *sync.WaitGroup) {
-	if la == "" {
-		la = "127.0.0.1:0"
+func startServer(n, listenAddr string, done chan<- string) (string, io.Closer, *sync.WaitGroup) {
+	if listenAddr == "" {
+		listenAddr = "127.0.0.1:0"
 	}
+	var addr string
+	var closerSocket io.Closer
 
-	wg = new(sync.WaitGroup)
-	if n == "udp" {
-		l, e := net.ListenPacket(n, la)
-		if e != nil {
-			log.Fatalf("startServer failed: %v", e)
+	wg := new(sync.WaitGroup)
+	if n == "udp" { // TODO: can likely be simplified
+		listener, err := net.ListenPacket(n, listenAddr)
+		if err != nil {
+			log.Fatalf("startServer failed: %v", err)
 		}
-		addr = l.LocalAddr().String()
-		sock = l
+		addr = listener.LocalAddr().String()
+		closerSocket = listener
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			runPktSyslog(l, done)
+			runPktSyslog(listener, done)
 		}()
 	} else {
-		l, e := net.Listen(n, la)
-		if e != nil {
-			log.Fatalf("startServer failed: %v", e)
+		listener, err := net.Listen(n, listenAddr)
+		if err != nil {
+			log.Fatalf("startServer failed: %v", err)
 		}
-		addr = l.Addr().String()
-		sock = l
+		addr = listener.Addr().String()
+		closerSocket = listener
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			runStreamSyslog(l, done, wg)
+			runStreamSyslog(listener, done, wg)
 		}()
 	}
-	return
+	return addr, closerSocket, wg
 }
 
 type dialFunc func(tr, addr string) (*Writer, error)
@@ -162,18 +164,18 @@ func TestWithSimulated(t *testing.T) {
 }
 
 func TestFlapTCP(t *testing.T) {
-	const net = "tcp"
-	if !testableNetwork(net) {
-		t.Skipf("skipping on %s/%s; '%s' is not supported", runtime.GOOS, runtime.GOARCH, net)
+	const tcpNetwork = "tcp"
+	if !testableNetwork(tcpNetwork) {
+		t.Skipf("skipping on %s/%s; '%s' is not supported", runtime.GOOS, runtime.GOARCH, tcpNetwork)
 	}
 
 	done := make(chan string)
 
 	// Start server
-	addr, sock, srvWG := startServer(net, "", done)
+	addr, sock, srvWG := startServer(tcpNetwork, "", done)
 	defer sock.Close()
 
-	s, err := Dial(net, addr, LOG_INFO|LOG_USER, "syslog_test")
+	s, err := Dial(tcpNetwork, addr, LOG_INFO|LOG_USER, "syslog_test")
 	if err != nil {
 		t.Fatalf("Dial() failed: %v", err)
 	}
@@ -198,7 +200,7 @@ func TestFlapTCP(t *testing.T) {
 	}
 
 	// restart server
-	addr2, sock2, srvWG2 := startServer(net, addr, done)
+	addr2, sock2, srvWG2 := startServer(tcpNetwork, addr, done)
 	defer srvWG2.Wait()
 	defer sock2.Close()
 	if addr2 != addr {
@@ -217,27 +219,27 @@ func TestFlapTCP(t *testing.T) {
 }
 
 func TestDialHostname(t *testing.T) {
-	net := "tcp"
-	if !testableNetwork(net) {
-		t.Skipf("skipping on %s/%s; '%s' is not supported", runtime.GOOS, runtime.GOARCH, net)
+	tcpNetwork := "tcp"
+	if !testableNetwork(tcpNetwork) {
+		t.Skipf("skipping on %s/%s; '%s' is not supported", runtime.GOOS, runtime.GOARCH, tcpNetwork)
 	}
 	done := make(chan string)
-	addr, sock, srvWG := startServer(net, "", done)
+	addr, sock, srvWG := startServer(tcpNetwork, "", done)
 	defer srvWG.Wait()
 	defer os.Remove(addr)
 	defer sock.Close()
 	if testing.Short() {
 		t.Skip("skipping syslog test during -short")
 	}
-	f, err := DialHostname(net, addr, (LOG_LOCAL7|LOG_DEBUG)+1, "syslog_test", TestHostname)
+	f, err := DialHostname(tcpNetwork, addr, (LOG_LOCAL7|LOG_DEBUG)+1, "syslog_test", TestHostname) //nolint:staticcheck,ineffassign
 	if f != nil {
 		t.Fatalf("Should have trapped bad priority")
 	}
-	f, err = DialHostname(net, addr, -1, "syslog_test", TestHostname)
+	f, err = DialHostname(tcpNetwork, addr, -1, "syslog_test", TestHostname) //nolint:staticcheck,ineffassign
 	if f != nil {
 		t.Fatalf("Should have trapped bad priority")
 	}
-	l, err := DialHostname(net, addr, LOG_USER|LOG_ERR, "syslog_test", TestHostname)
+	l, err := DialHostname(tcpNetwork, addr, LOG_USER|LOG_ERR, "syslog_test", TestHostname)
 	if err != nil {
 		t.Fatalf("Dial() failed: %s", err)
 	}
@@ -249,27 +251,27 @@ func TestDialHostname(t *testing.T) {
 }
 
 func TestDial(t *testing.T) {
-	net := "tcp"
-	if !testableNetwork(net) {
-		t.Skipf("skipping on %s/%s; '%s' is not supported", runtime.GOOS, runtime.GOARCH, net)
+	tcpNetwork := "tcp"
+	if !testableNetwork(tcpNetwork) {
+		t.Skipf("skipping on %s/%s; '%s' is not supported", runtime.GOOS, runtime.GOARCH, tcpNetwork)
 	}
 	done := make(chan string)
-	addr, sock, srvWG := startServer(net, "", done)
+	addr, sock, srvWG := startServer(tcpNetwork, "", done)
 	defer srvWG.Wait()
 	defer os.Remove(addr)
 	defer sock.Close()
 	if testing.Short() {
 		t.Skip("skipping syslog test during -short")
 	}
-	f, err := Dial(net, addr, (LOG_LOCAL7|LOG_DEBUG)+1, "syslog_test")
+	f, err := Dial(tcpNetwork, addr, (LOG_LOCAL7|LOG_DEBUG)+1, "syslog_test") //nolint:ineffassign,staticcheck
 	if f != nil {
 		t.Fatalf("Should have trapped bad priority")
 	}
-	f, err = Dial(net, addr, -1, "syslog_test")
+	f, err = Dial(tcpNetwork, addr, -1, "syslog_test") //nolint:ineffassign,staticcheck
 	if f != nil {
 		t.Fatalf("Should have trapped bad priority")
 	}
-	l, err := Dial(net, addr, LOG_USER|LOG_ERR, "syslog_test")
+	l, err := Dial(tcpNetwork, addr, LOG_USER|LOG_ERR, "syslog_test")
 	if err != nil {
 		t.Fatalf("Dial() failed: %s", err)
 	}
@@ -340,7 +342,6 @@ func TestWrite(t *testing.T) {
 			t.Errorf("s.Info() = '%q', didn't match '%q' (%d %s)", rcvd, test.exp, n, err)
 		}
 	}
-
 }
 
 func TestConcurrentWrite(t *testing.T) {
@@ -372,12 +373,12 @@ func TestConcurrentReconnect(t *testing.T) {
 
 	const N = 10
 	const M = 100
-	net := "tcp"
-	if !testableNetwork(net) {
+	tcpNetwork := "tcp"
+	if !testableNetwork(tcpNetwork) {
 		t.Skipf("skipping on %s/%s; 'tcp' is not supported", runtime.GOOS, runtime.GOARCH)
 	}
 	done := make(chan string, N*M)
-	addr, sock, srvWG := startServer(net, "", done)
+	addr, sock, srvWG := startServer(tcpNetwork, "", done)
 
 	// count all the messages arriving
 	count := make(chan int)
@@ -398,11 +399,11 @@ func TestConcurrentReconnect(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(N)
 	for i := 0; i < N; i++ {
-		go func() {
+		go func() { //nolint:staticcheck
 			defer wg.Done()
-			w, err := Dial(net, addr, LOG_USER|LOG_ERR, "tag")
+			w, err := Dial(tcpNetwork, addr, LOG_USER|LOG_ERR, "tag")
 			if err != nil {
-				t.Fatalf("syslog.Dial() failed: %v", err)
+				t.Fatalf("syslog.Dial() failed: %v", err) //nolint:govet,staticcheck
 			}
 			defer w.Close()
 			for i := 0; i < M; i++ {
@@ -455,6 +456,6 @@ func BenchmarkWrite(b *testing.B) {
 		priority: LOG_INFO,
 	}
 	for i := 0; i < b.N; i++ {
-		w.Write(testString)
+		w.Write(testString) //nolint:errcheck
 	}
 }

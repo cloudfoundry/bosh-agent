@@ -78,8 +78,10 @@ var _ = Describe("monitJobSupervisor", func() {
 			conn, err = smtp.Dial(fmt.Sprintf("localhost:%d", port))
 		}
 
-		conn.Mail("sender@example.org")
-		conn.Rcpt("recipient@example.net")
+		err = conn.Mail("sender@example.org")
+		Expect(err).NotTo(HaveOccurred())
+		err = conn.Rcpt("recipient@example.net")
+		Expect(err).NotTo(HaveOccurred())
 		writeCloser, err := conn.Data()
 		if err != nil {
 			return err
@@ -221,10 +223,12 @@ var _ = Describe("monitJobSupervisor", func() {
 		})
 
 		It("deletes stopped file", func() {
-			fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
-			fs.WriteFileString("/var/vcap/monit/stopped", "")
+			err := fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/var/vcap/monit/stopped", "")
+			Expect(err).NotTo(HaveOccurred())
 
-			err := monit.Start()
+			err = monit.Start()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fs.FileExists("/var/vcap/monit/stopped")).ToNot(BeTrue())
 		})
@@ -268,7 +272,8 @@ var _ = Describe("monitJobSupervisor", func() {
 				resBody := readFixture("monit/test_assets/monit_status_stopped.xml")
 
 				if r.URL.Path == "/_status2" {
-					w.Write(resBody)
+					_, err := w.Write(resBody)
+					Expect(err).NotTo(HaveOccurred())
 				} else {
 					Expect(r.Method).To(Equal("POST"))
 					requestData["action"] = r.PostFormValue("action")
@@ -472,7 +477,8 @@ var _ = Describe("monitJobSupervisor", func() {
 					resBody := readFixture("monit/test_assets/monit_status_errored.xml")
 
 					if r.URL.Path == "/_status2" {
-						w.Write(resBody)
+						_, err := w.Write(resBody)
+						Expect(err).NotTo(HaveOccurred())
 					} else {
 						Expect(r.Method).To(Equal("POST"))
 						requestData["action"] = r.PostFormValue("action")
@@ -522,9 +528,11 @@ var _ = Describe("monitJobSupervisor", func() {
 					if r.URL.Path == "/_status2" {
 						statusRequests++
 						if statusRequests == 1 {
-							w.Write(readFixture("monit/test_assets/monit_status_running.xml"))
+							_, err := w.Write(readFixture("monit/test_assets/monit_status_running.xml"))
+							Expect(err).NotTo(HaveOccurred())
 						} else {
-							w.Write(readFixture("monit/test_assets/monit_status_multiple.xml"))
+							_, err := w.Write(readFixture("monit/test_assets/monit_status_multiple.xml"))
+							Expect(err).NotTo(HaveOccurred())
 						}
 					} else {
 						Expect(r.Method).To(Equal("POST"))
@@ -648,8 +656,10 @@ var _ = Describe("monitJobSupervisor", func() {
 				Services: []boshmonit.Service{},
 			}
 
-			fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
-			fs.WriteFileString("/var/vcap/monit/stopped", "")
+			err := fs.MkdirAll("/var/vcap/monit/stopped", os.FileMode(0755))
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/var/vcap/monit/stopped", "")
+			Expect(err).NotTo(HaveOccurred())
 
 			status := monit.Status()
 			Expect(status).To(Equal("stopped"))
@@ -733,7 +743,10 @@ var _ = Describe("monitJobSupervisor", func() {
 				return
 			}
 
-			go monit.MonitorJobFailures(failureHandler)
+			go func() {
+				err := monit.MonitorJobFailures(failureHandler)
+				Expect(err).NotTo(HaveOccurred())
+			}()
 
 			msg := `Message-id: <1304319946.0@localhost>
  Service: nats
@@ -763,7 +776,10 @@ var _ = Describe("monitJobSupervisor", func() {
 				return
 			}
 
-			go monit.MonitorJobFailures(failureHandler)
+			go func() {
+				err := monit.MonitorJobFailures(failureHandler)
+				Expect(err).NotTo(HaveOccurred())
+			}()
 
 			err := doJobFailureEmail(`fake-other-email`, jobFailuresServerPort)
 			Expect(err).ToNot(HaveOccurred())
@@ -773,7 +789,8 @@ var _ = Describe("monitJobSupervisor", func() {
 
 	Describe("AddJob", func() {
 		BeforeEach(func() {
-			fs.WriteFileString("/some/config/path", "fake-config")
+			err := fs.WriteFileString("/some/config/path", "fake-config")
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when reading configuration from config path succeeds", func() {
@@ -816,9 +833,10 @@ var _ = Describe("monitJobSupervisor", func() {
 			It("does not return error because all jobs are removed from monit", func() {
 				jobsDir := dirProvider.MonitJobsDir()
 				jobBasename := "/0000_router.monitrc"
-				fs.WriteFileString(jobsDir+jobBasename, "fake-added-job")
+				err := fs.WriteFileString(jobsDir+jobBasename, "fake-added-job")
+				Expect(err).NotTo(HaveOccurred())
 
-				err := monit.RemoveAllJobs()
+				err = monit.RemoveAllJobs()
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fs.FileExists(jobsDir)).To(BeFalse())

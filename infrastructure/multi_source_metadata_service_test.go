@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("MultiSourceMetadataService", describeMultiSourceMetadataService)
 
-func describeMultiSourceMetadataService() {
+func describeMultiSourceMetadataService() { //nolint:funlen
 	var (
 		metadataService MetadataService
 		service1        fakeinf.FakeMetadataService
@@ -51,8 +51,8 @@ func describeMultiSourceMetadataService() {
 
 		Describe("IsAvailable", func() {
 			It("is true", func() {
-				availablity := metadataService.IsAvailable()
-				Expect(availablity).To(BeTrue())
+				availability := metadataService.IsAvailable()
+				Expect(availability).To(BeTrue())
 			})
 		})
 
@@ -129,8 +129,7 @@ func describeMultiSourceMetadataService() {
 
 		Describe("IsAvailable", func() {
 			It("is true", func() {
-				availablity := metadataService.IsAvailable()
-				Expect(availablity).To(BeTrue())
+				Expect(metadataService.IsAvailable()).To(BeTrue())
 			})
 		})
 
@@ -183,8 +182,7 @@ func describeMultiSourceMetadataService() {
 
 		Describe("IsAvailable", func() {
 			It("is false", func() {
-				availablity := metadataService.IsAvailable()
-				Expect(availablity).To(BeFalse())
+				Expect(metadataService.IsAvailable()).To(BeFalse())
 			})
 		})
 

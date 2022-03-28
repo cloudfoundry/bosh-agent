@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
@@ -18,8 +18,8 @@ var _ = Describe("RunScript", func() {
 	var (
 		fakeJobScriptProvider *scriptfakes.FakeJobScriptProvider
 		specService           *fakeapplyspec.FakeV1Service
-		action                RunScriptAction
-		options               RunScriptOptions
+		runScriptAction       action.RunScriptAction
+		options               action.RunScriptOptions
 	)
 
 	BeforeEach(func() {
@@ -27,23 +27,23 @@ var _ = Describe("RunScript", func() {
 		specService = fakeapplyspec.NewFakeV1Service()
 		specService.Spec.RenderedTemplatesArchiveSpec = &applyspec.RenderedTemplatesArchiveSpec{}
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		action = NewRunScript(fakeJobScriptProvider, specService, logger)
-		options = RunScriptOptions{
+		runScriptAction = action.NewRunScript(fakeJobScriptProvider, specService, logger)
+		options = action.RunScriptOptions{
 			Env: map[string]string{
 				"FOO": "foo",
 			},
 		}
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(runScriptAction)
+	AssertActionIsNotPersistent(runScriptAction)
+	AssertActionIsLoggable(runScriptAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(runScriptAction)
+	AssertActionIsNotCancelable(runScriptAction)
 
 	Describe("Run", func() {
-		act := func() (map[string]string, error) { return action.Run("run-me", options) }
+		act := func() (map[string]string, error) { return runScriptAction.Run("run-me", options) }
 
 		Context("when current spec can be retrieved", func() {
 			var parallelScript *scriptfakes.FakeCancellableScript

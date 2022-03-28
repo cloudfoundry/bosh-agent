@@ -2,36 +2,35 @@ package action_test
 
 import (
 	"errors"
+	"runtime"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"runtime"
 )
 
 var _ = Describe("RunErrand", func() {
 	var (
-		specService *fakeas.FakeV1Service
-		cmdRunner   *fakesys.FakeCmdRunner
-		action      RunErrandAction
-		errandName  string
-		fullCommand string
+		specService     *fakeas.FakeV1Service
+		cmdRunner       *fakesys.FakeCmdRunner
+		runErrandAction action.RunErrandAction
+		errandName      string
+		fullCommand     string
 	)
 
 	BeforeEach(func() {
 		specService = fakeas.NewFakeV1Service()
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
+		runErrandAction = action.NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
 		errandName = "fake-job-name"
 		if runtime.GOOS == "windows" {
 			fullCommand = "powershell /fake-jobs-dir/fake-job-name/bin/run"
@@ -40,11 +39,11 @@ var _ = Describe("RunErrand", func() {
 		}
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(runErrandAction)
+	AssertActionIsNotPersistent(runErrandAction)
+	AssertActionIsLoggable(runErrandAction)
 
-	AssertActionIsNotResumable(action)
+	AssertActionIsNotResumable(runErrandAction)
 
 	Describe("Run", func() {
 		Context("when apply spec is successfully retrieved", func() {
@@ -63,10 +62,10 @@ var _ = Describe("RunErrand", func() {
 				})
 
 				It("returns errand result without error after running an errand", func() {
-					result, err := action.Run()
+					result, err := runErrandAction.Run()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
-						ErrandResult{
+						action.ErrandResult{
 							Stdout:     "fake-stdout",
 							Stderr:     "fake-stderr",
 							ExitStatus: 0,
@@ -101,10 +100,10 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("returns errand result without error after running an errand", func() {
-						result, err := action.Run(errandName)
+						result, err := runErrandAction.Run(errandName)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
-							ErrandResult{
+							action.ErrandResult{
 								Stdout:     "fake-stdout",
 								Stderr:     "fake-stderr",
 								ExitStatus: 0,
@@ -113,7 +112,7 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("runs errand script with properly configured environment", func() {
-						_, err := action.Run(errandName)
+						_, err := runErrandAction.Run(errandName)
 						Expect(err).ToNot(HaveOccurred())
 						cmd := cmdRunner.RunComplexCommands[0]
 						env := map[string]string{"PATH": boshenv.Path()}
@@ -134,10 +133,10 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("returns errand result without an error", func() {
-						result, err := action.Run(errandName)
+						result, err := runErrandAction.Run(errandName)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(result).To(Equal(
-							ErrandResult{
+							action.ErrandResult{
 								Stdout:     "fake-stdout",
 								Stderr:     "fake-stderr",
 								ExitStatus: 123,
@@ -157,10 +156,10 @@ var _ = Describe("RunErrand", func() {
 					})
 
 					It("returns error because script failed to execute", func() {
-						result, err := action.Run(errandName)
+						result, err := runErrandAction.Run(errandName)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-bosh-error"))
-						Expect(result).To(Equal(ErrandResult{}))
+						Expect(result).To(Equal(action.ErrandResult{}))
 					})
 				})
 			})
@@ -171,13 +170,13 @@ var _ = Describe("RunErrand", func() {
 				})
 
 				It("returns error stating the errand cannot be found", func() {
-					_, err := action.Run(errandName)
+					_, err := runErrandAction.Run(errandName)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Could not find errand fake-job-name"))
 				})
 
 				It("does not run errand script", func() {
-					_, err := action.Run(errandName)
+					_, err := runErrandAction.Run(errandName)
 					Expect(err).To(HaveOccurred())
 					Expect(len(cmdRunner.RunComplexCommands)).To(Equal(0))
 				})
@@ -190,13 +189,13 @@ var _ = Describe("RunErrand", func() {
 			})
 
 			It("returns error stating that job template is required", func() {
-				_, err := action.Run(errandName)
+				_, err := runErrandAction.Run(errandName)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 			})
 
 			It("does not run errand script", func() {
-				_, err := action.Run(errandName)
+				_, err := runErrandAction.Run(errandName)
 				Expect(err).To(HaveOccurred())
 				Expect(len(cmdRunner.RunComplexCommands)).To(Equal(0))
 			})
@@ -220,7 +219,7 @@ var _ = Describe("RunErrand", func() {
 			specService.Spec = currentSpec
 		})
 
-		Context("when action was not cancelled yet", func() {
+		Context("when runErrandAction was not cancelled yet", func() {
 			It("terminates errand nicely giving it 10 secs to exit on its own", func() {
 				process := &fakesys.FakeProcess{
 					TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
@@ -234,10 +233,10 @@ var _ = Describe("RunErrand", func() {
 
 				cmdRunner.AddProcess(fullCommand, process)
 
-				err := action.Cancel()
+				err := runErrandAction.Cancel()
 				Expect(err).ToNot(HaveOccurred())
 
-				_, err = action.Run(errandName)
+				_, err = runErrandAction.Run(errandName)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(process.TerminateNicelyKillGracePeriod).To(Equal(10 * time.Second))
@@ -257,13 +256,13 @@ var _ = Describe("RunErrand", func() {
 				})
 
 				It("returns errand result without error after running an errand", func() {
-					err := action.Cancel()
+					err := runErrandAction.Cancel()
 					Expect(err).ToNot(HaveOccurred())
 
-					result, err := action.Run(errandName)
+					result, err := runErrandAction.Run(errandName)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
-						ErrandResult{
+						action.ErrandResult{
 							Stdout:     "fake-stdout",
 							Stderr:     "fake-stderr",
 							ExitStatus: 0,
@@ -287,13 +286,13 @@ var _ = Describe("RunErrand", func() {
 				})
 
 				It("returns errand result without an error", func() {
-					err := action.Cancel()
+					err := runErrandAction.Cancel()
 					Expect(err).ToNot(HaveOccurred())
 
-					result, err := action.Run(errandName)
+					result, err := runErrandAction.Run(errandName)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(result).To(Equal(
-						ErrandResult{
+						action.ErrandResult{
 							Stdout:     "fake-stdout",
 							Stderr:     "fake-stderr",
 							ExitStatus: 123,
@@ -315,18 +314,18 @@ var _ = Describe("RunErrand", func() {
 				})
 
 				It("returns error because script failed to execute", func() {
-					err := action.Cancel()
+					err := runErrandAction.Cancel()
 					Expect(err).ToNot(HaveOccurred())
 
-					result, err := action.Run(errandName)
+					result, err := runErrandAction.Run(errandName)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-bosh-error"))
-					Expect(result).To(Equal(ErrandResult{}))
+					Expect(result).To(Equal(action.ErrandResult{}))
 				})
 			})
 		})
 
-		Context("when action was cancelled already", func() {
+		Context("when runErrandAction was cancelled already", func() {
 			BeforeEach(func() {
 				cmdRunner.AddProcess(fullCommand, &fakesys.FakeProcess{
 					TerminatedNicelyCallBack: func(p *fakesys.FakeProcess) {
@@ -338,11 +337,11 @@ var _ = Describe("RunErrand", func() {
 				})
 			})
 
-			It("allows to cancel action second time without returning an error", func() {
-				err := action.Cancel()
+			It("allows to cancel runErrandAction second time without returning an error", func() {
+				err := runErrandAction.Cancel()
 				Expect(err).ToNot(HaveOccurred())
 
-				err = action.Cancel()
+				err = runErrandAction.Cancel()
 				Expect(err).ToNot(HaveOccurred()) // returns without waiting
 			})
 		})

@@ -116,9 +116,12 @@ var _ = Describe("Certificate Management", func() {
 		})
 
 		It("only deletes the files with the given prefix", func() {
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.foo", "goodbye")
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/different_file_1.bar", "goodbye")
+			err := fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
+			err = fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.foo", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
+			err = fakeFs.WriteFileString("/path/to/delete/stuff/in/different_file_1.bar", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
 			fakeFs.SetGlob("/path/to/delete/stuff/in/delete_me_*", []string{
 				"/path/to/delete/stuff/in/delete_me_1.foo",
 				"/path/to/delete/stuff/in/delete_me_2.foo",
@@ -130,9 +133,12 @@ var _ = Describe("Certificate Management", func() {
 		})
 
 		It("only deletes the files in the given path", func() {
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.foo", "goodbye")
-			fakeFs.WriteFileString("/path/to/other/things/in/delete_me_3.foo", "goodbye")
+			err := fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
+			err = fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.foo", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
+			err = fakeFs.WriteFileString("/path/to/other/things/in/delete_me_3.foo", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
 			fakeFs.SetGlob("/path/to/delete/stuff/in/delete_me_*", []string{
 				"/path/to/delete/stuff/in/delete_me_1.foo",
 				"/path/to/delete/stuff/in/delete_me_2.foo",
@@ -146,8 +152,10 @@ var _ = Describe("Certificate Management", func() {
 
 		It("returns an error when glob fails", func() {
 			fakeFs.GlobErr = errors.New("couldn't walk")
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.bar", "goodbye")
+			err := fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
+			err = fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.bar", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
 			count, err := cert.DeleteFiles(fakeFs, "/path/to/delete/stuff/in/", "delete_me_")
 			Expect(err).To(HaveOccurred())
 			Expect(count).To(Equal(0))
@@ -157,8 +165,10 @@ var _ = Describe("Certificate Management", func() {
 			fakeFs.RemoveAllStub = func(_ string) error {
 				return errors.New("couldn't delete")
 			}
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
-			fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.bar", "goodbye")
+			err := fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_1.foo", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
+			err = fakeFs.WriteFileString("/path/to/delete/stuff/in/delete_me_2.bar", "goodbye")
+			Expect(err).NotTo(HaveOccurred())
 			fakeFs.SetGlob("/path/to/delete/stuff/in/delete_me_*", []string{
 				"/path/to/delete/stuff/in/delete_me_1.foo",
 				"/path/to/delete/stuff/in/delete_me_2.bar",
@@ -194,16 +204,17 @@ var _ = Describe("Certificate Management", func() {
 			})
 
 			It("deletes all certs when passed an empty string", func() {
-				fakeFs.WriteFileString(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath), "goodbye")
+				err := fakeFs.WriteFileString(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath), "goodbye")
+				Expect(err).NotTo(HaveOccurred())
 				fakeFs.SetGlob(fmt.Sprintf("%s/bosh-trusted-cert-*", certBasePath), []string{
 					fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath),
 				})
-				err := certManager.UpdateCertificates("")
+				err = certManager.UpdateCertificates("")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeFalse())
 			})
 
-			It("deletes exisitng cert files before writing new ones", func() {
+			It("deletes existing cert files before writing new ones", func() {
 				certs := fmt.Sprintf("%s\n%s\n", cert1, cert1)
 				err := certManager.UpdateCertificates(certs)
 				Expect(err).NotTo(HaveOccurred())
@@ -215,7 +226,8 @@ var _ = Describe("Certificate Management", func() {
 					fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath),
 					fmt.Sprintf("%s/bosh-trusted-cert-2.crt", certBasePath),
 				})
-				certManager.UpdateCertificates(cert1)
+				err = certManager.UpdateCertificates(cert1)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeFs.FileExists(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath))).To(BeTrue())
 				Expect(countFiles(fakeFs, certBasePath)).To(Equal(1))
 			})
@@ -230,12 +242,13 @@ var _ = Describe("Certificate Management", func() {
 				fakeFs.RemoveAllStub = func(_ string) error {
 					return errors.New("NOT ALLOW")
 				}
-				fakeFs.WriteFileString(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath), "goodbye")
+				err := fakeFs.WriteFileString(fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath), "goodbye")
+				Expect(err).NotTo(HaveOccurred())
 				fakeFs.SetGlob(fmt.Sprintf("%s/bosh-trusted-cert-*", certBasePath), []string{
 					fmt.Sprintf("%s/bosh-trusted-cert-1.crt", certBasePath),
 				})
 
-				err := certManager.UpdateCertificates("")
+				err = certManager.UpdateCertificates("")
 				Expect(err).To(HaveOccurred())
 			})
 		}
@@ -396,7 +409,7 @@ if (Test-Path %[1]s) {
 
 			AfterEach(func() {
 				for _, thumbprint := range certThumbprints {
-					cmd := exec.Command("powershell", "-Command", fmt.Sprintf(removeCertScript, `Cert:\LocalMachine\Root\`+thumbprint))
+					cmd := exec.Command("powershell", "-Command", fmt.Sprintf(removeCertScript, `Cert:\LocalMachine\Root\`+thumbprint)) //nolint:gosec
 					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 					Expect(err).To(BeNil())
 					Eventually(session).Should(gexec.Exit(0))
@@ -458,12 +471,13 @@ if (Test-Path %[1]s) {
 })
 
 func countFiles(fs system.FileSystem, dir string) (count int) {
-	fs.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if filepath.Join(path) == filepath.Join(dir) {
+	err := fs.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if filepath.Join(path) == filepath.Join(dir) { //nolint:gocritic
 			return nil
 		}
 		count++
 		return nil
 	})
+	Expect(err).NotTo(HaveOccurred())
 	return
 }

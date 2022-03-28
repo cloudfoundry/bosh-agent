@@ -72,7 +72,8 @@ var _ = Describe("FileBundle", func() {
 			decompressPath := fakeCompressor.DecompressFileToDirDirs[len(fakeCompressor.DecompressFileToDirDirs)-1]
 			contents, err := fs.ReadFileString(filepath.Join(sourcePath, "config.go"))
 			Expect(err).NotTo(HaveOccurred())
-			fs.WriteFileString(filepath.Join(decompressPath, "config.go"), contents)
+			err = fs.WriteFileString(filepath.Join(decompressPath, "config.go"), contents)
+			Expect(err).ToNot(HaveOccurred())
 		}
 
 		path, err := fileBundle.Install(sourcePath, "")

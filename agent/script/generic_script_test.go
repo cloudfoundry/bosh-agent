@@ -7,10 +7,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"runtime"
+
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	"runtime"
 )
 
 var _ = Describe("GenericScript", func() {
@@ -66,7 +67,8 @@ var _ = Describe("GenericScript", func() {
 		It("returns bool", func() {
 			Expect(genericScript.Exists()).To(BeFalse())
 
-			fs.WriteFile("/path-to-script", []byte{})
+			err := fs.WriteFile("/path-to-script", []byte{})
+			Expect(err).NotTo(HaveOccurred())
 			Expect(genericScript.Exists()).To(BeTrue())
 		})
 	})

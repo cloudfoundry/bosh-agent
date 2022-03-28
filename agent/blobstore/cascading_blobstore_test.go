@@ -275,7 +275,7 @@ var _ = Describe("cascadingBlobstore", func() {
 							blobManagers = append(blobManagers, blobManager)
 						}
 
-						index := rand.Intn(10)
+						index := rand.Intn(10) //nolint:gosec
 						blobManagers[index].BlobExistsReturns(true)
 						blobManagers[index].GetPathReturns("/path/to-copy/of-blob", nil)
 					})
@@ -295,7 +295,7 @@ var _ = Describe("cascadingBlobstore", func() {
 							blobManagers = append(blobManagers, blobManager)
 						}
 
-						index := rand.Intn(10)
+						index := rand.Intn(10) //nolint:gosec
 						blobManagers[index].BlobExistsReturns(true)
 						blobManagers[index].GetPathReturns("", errors.New("disaster"))
 					})
@@ -359,7 +359,7 @@ var _ = Describe("cascadingBlobstore", func() {
 						blobManagers = append(blobManagers, blobManager)
 					}
 
-					blobManager = blobManagers[rand.Intn(10)]
+					blobManager = blobManagers[rand.Intn(10)] //nolint:gosec
 					blobManager.BlobExistsReturns(true)
 				})
 

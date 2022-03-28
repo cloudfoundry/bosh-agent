@@ -38,7 +38,7 @@ func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBund
 	return pkg, bundle
 }
 
-func init() {
+func init() { //nolint:funlen,gochecknoinits
 	Describe("compiledPackageApplier", func() {
 		var (
 			packagesBc *fakebc.FakeBundleCollection
@@ -350,7 +350,6 @@ func init() {
 
 				ItReturnsErrors()
 			})
-
 		})
 	})
 }

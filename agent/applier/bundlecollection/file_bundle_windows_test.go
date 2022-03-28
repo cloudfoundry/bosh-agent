@@ -4,10 +4,11 @@
 package bundlecollection_test
 
 import (
+	"os"
+
 	"github.com/cloudfoundry/bosh-agent/agent/tarpath/tarpathfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"os"
 
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"

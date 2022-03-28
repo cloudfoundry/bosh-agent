@@ -44,9 +44,12 @@ var _ = Describe("mappedDevicePathResolver", func() {
 
 	Context("when a matching /dev/xvdX device is found", func() {
 		BeforeEach(func() {
-			fs.WriteFile("/dev/xvda", []byte{})
-			fs.WriteFile("/dev/vda", []byte{})
-			fs.WriteFile("/dev/sda", []byte{})
+			err := fs.WriteFile("/dev/xvda", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/dev/vda", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/dev/sda", []byte{})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns the match", func() {
@@ -59,8 +62,10 @@ var _ = Describe("mappedDevicePathResolver", func() {
 
 	Context("when a matching /dev/vdX device is found", func() {
 		BeforeEach(func() {
-			fs.WriteFile("/dev/vda", []byte{})
-			fs.WriteFile("/dev/sda", []byte{})
+			err := fs.WriteFile("/dev/vda", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/dev/sda", []byte{})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns the match", func() {
@@ -73,7 +78,8 @@ var _ = Describe("mappedDevicePathResolver", func() {
 
 	Context("when a matching /dev/sdX device is found", func() {
 		BeforeEach(func() {
-			fs.WriteFile("/dev/sda", []byte{})
+			err := fs.WriteFile("/dev/sda", []byte{})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns the match", func() {
@@ -88,7 +94,8 @@ var _ = Describe("mappedDevicePathResolver", func() {
 		Context("when the timeout has not expired", func() {
 			BeforeEach(func() {
 				time.AfterFunc(time.Second, func() {
-					fs.WriteFile("/dev/xvda", []byte{})
+					err := fs.WriteFile("/dev/xvda", []byte{})
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 
@@ -113,7 +120,8 @@ var _ = Describe("mappedDevicePathResolver", func() {
 	Context("when a path that never needs remapping is passed in", func() {
 		Context("when path exists", func() {
 			BeforeEach(func() {
-				fs.WriteFile("/dev/xvdba", []byte{})
+				err := fs.WriteFile("/dev/xvdba", []byte{})
+				Expect(err).NotTo(HaveOccurred())
 				diskSettings = boshsettings.DiskSettings{
 					Path: "/dev/xvdba",
 				}

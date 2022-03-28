@@ -40,8 +40,10 @@ var _ = Describe("arping", func() {
 
 	Describe("BroadcastMACAddresses", func() {
 		BeforeEach(func() {
-			fs.WriteFile("/sys/class/net/eth0", []byte{})
-			fs.WriteFile("/sys/class/net/eth1", []byte{})
+			err := fs.WriteFile("/sys/class/net/eth0", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/sys/class/net/eth1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("runs arping commands for each interface", func() {
