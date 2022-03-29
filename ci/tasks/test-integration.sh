@@ -56,7 +56,7 @@ ssh_command="ssh ${agent_ip}"
 
 cd ${bosh_agent_dir}
 echo -e "\n Building agent..."
-bin/build
+GOOS=linux bin/build
 
 echo -e "\n Installing agent..."
 ${ssh_command} "sudo sv stop agent" >/dev/null 2>&1
