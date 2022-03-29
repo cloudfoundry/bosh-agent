@@ -3,38 +3,37 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 )
 
 var _ = Describe("prepareConfigureNetworks", func() {
 	var (
-		action          PrepareConfigureNetworksAction
-		platform        *platformfakes.FakePlatform
-		settingsService *fakesettings.FakeSettingsService
+		prepareConfigureNetworksAction action.PrepareConfigureNetworksAction
+		platform                       *platformfakes.FakePlatform
+		settingsService                *fakesettings.FakeSettingsService
 	)
 
 	BeforeEach(func() {
 		platform = &platformfakes.FakePlatform{}
 		settingsService = &fakesettings.FakeSettingsService{}
-		action = NewPrepareConfigureNetworks(platform, settingsService)
+		prepareConfigureNetworksAction = action.NewPrepareConfigureNetworks(platform, settingsService)
 	})
 
-	AssertActionIsNotAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(prepareConfigureNetworksAction)
+	AssertActionIsNotPersistent(prepareConfigureNetworksAction)
+	AssertActionIsLoggable(prepareConfigureNetworksAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(prepareConfigureNetworksAction)
+	AssertActionIsNotCancelable(prepareConfigureNetworksAction)
 
 	Describe("Run", func() {
 		It("invalidates settings so that load settings cannot fall back on old settings", func() {
-			resp, err := action.Run()
+			resp, err := prepareConfigureNetworksAction.Run()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp).To(Equal("ok"))
 
@@ -43,7 +42,7 @@ var _ = Describe("prepareConfigureNetworks", func() {
 
 		Context("when settings invalidation succeeds", func() {
 			It("prepares platform for networking change", func() {
-				resp, err := action.Run()
+				resp, err := prepareConfigureNetworksAction.Run()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp).To(Equal("ok"))
 
@@ -56,7 +55,7 @@ var _ = Describe("prepareConfigureNetworks", func() {
 				})
 
 				It("returns error if preparing for networking change fails", func() {
-					resp, err := action.Run()
+					resp, err := prepareConfigureNetworksAction.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-prepare-error"))
 					Expect(resp).To(Equal(""))
@@ -70,7 +69,7 @@ var _ = Describe("prepareConfigureNetworks", func() {
 			})
 
 			It("returns error early if settings err invalidating", func() {
-				resp, err := action.Run()
+				resp, err := prepareConfigureNetworksAction.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-invalidate-error"))
 
@@ -78,7 +77,7 @@ var _ = Describe("prepareConfigureNetworks", func() {
 			})
 
 			It("does not prepare platform for networking change", func() {
-				_, err := action.Run()
+				_, err := prepareConfigureNetworksAction.Run()
 				Expect(err).To(HaveOccurred())
 
 				Expect(platform.PrepareForNetworkingChangeCallCount()).To(Equal(0))

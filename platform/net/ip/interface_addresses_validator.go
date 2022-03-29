@@ -32,7 +32,7 @@ func (i InterfaceAddressesValidator) Attempt() (bool, error) {
 			return true, bosherr.Errorf("Validating network interface '%s' IP addresses, no interface configured with that name", ifaceName)
 		}
 
-		actualIPs := []string{}
+		var actualIPs []string
 		desiredIP, _ := desiredInterfaceAddress.GetIP()
 		for _, iface := range ifaces {
 			actualIP, _ := iface.GetIP()
@@ -43,14 +43,14 @@ func (i InterfaceAddressesValidator) Attempt() (bool, error) {
 			actualIPs = append(actualIPs, actualIP)
 		}
 
-		return true, bosherr.Errorf("Validating network interface '%s' IP addresses, expected: '%s', actual: [%s]", ifaceName, desiredIP, strings.Join(actualIPs, ", "))
+		return true, bosherr.Errorf("Validating network interface '%s' IP addresses, expected: '%s', actual: [%s]", ifaceName, desiredIP, strings.Join(actualIPs, ", ")) //nolint:staticcheck
 	}
 
 	return false, nil
 }
 
 func (i InterfaceAddressesValidator) findInterfaceByName(ifaceName string, ifaces []InterfaceAddress) []InterfaceAddress {
-	result := []InterfaceAddress{}
+	result := make([]InterfaceAddress, 0, len(ifaces))
 	for _, iface := range ifaces {
 		if iface.GetInterfaceName() == ifaceName {
 			result = append(result, iface)

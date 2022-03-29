@@ -23,7 +23,8 @@ const (
 )
 
 var (
-	HeartbeatRetryInterval = 1 * time.Second
+	// HeartbeatRetryInterval TODO: remove 'nolint:gochecknoglobals' - should be passed in rather than re-defined in agent_test.go
+	HeartbeatRetryInterval = 1 * time.Second //nolint:gochecknoglobals
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StartManager
@@ -119,9 +120,10 @@ func (a Agent) generateHeartbeats(errCh chan error) {
 	// Send initial heartbeat
 	a.sendAndRecordHeartbeat(errCh, false)
 
-	tickChan := time.Tick(a.heartbeatInterval)
+	// Violates staticcheck SA1015 - probably fine since heartbeats are endless
+	tickChan := time.Tick(a.heartbeatInterval) //nolint:staticcheck
 
-	for {
+	for { //nolint:gosimple
 		select {
 		case <-tickChan:
 			a.sendAndRecordHeartbeat(errCh, true)

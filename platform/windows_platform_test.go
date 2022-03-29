@@ -44,19 +44,19 @@ import (
 )
 
 var (
-	modadvapi32   = windows.NewLazySystemDLL("Advapi32.dll")
-	procLogonUser = modadvapi32.NewProc("LogonUserW")
+	modadvapi32   = windows.NewLazySystemDLL("Advapi32.dll") //nolint:gochecknoglobals
+	procLogonUser = modadvapi32.NewProc("LogonUserW")        //nolint:gochecknoglobals
 )
 
-const ERROR_LOGON_FAILURE = syscall.Errno(0x52E)
+const ERROR_LOGON_FAILURE = syscall.Errno(0x52E) //nolint:revive
 
 // Use LogonUser to check if the provided password is correct.
 //
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa378184(v=vs.85).aspx
 //
 func ValidUserPassword(username, password string) error {
-	const LOGON32_LOGON_NETWORK = 3
-	const LOGON32_PROVIDER_DEFAULT = 0
+	const LOGON32_LOGON_NETWORK = 3    //nolint:revive
+	const LOGON32_PROVIDER_DEFAULT = 0 //nolint:revive
 
 	if err := procLogonUser.Find(); err != nil {
 		return err
@@ -84,7 +84,7 @@ func ValidUserPassword(username, password string) error {
 		}
 		return e1
 	}
-	windows.CloseHandle(token)
+	windows.CloseHandle(token) //nolint:errcheck
 	return nil
 }
 
@@ -159,7 +159,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 	Describe("GetFileContentsFromCDROM", func() {
 		It("reads file from D drive", func() {
-			fs.WriteFileString("D:/env", "fake-contents")
+			fs.WriteFileString("D:/env", "fake-contents") //nolint:errcheck
 			contents, err := platform.GetFileContentsFromCDROM("env")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(Equal([]byte("fake-contents")))
@@ -182,7 +182,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
 			Expect(fileStats).NotTo(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 		})
 
 		It("returns error if creating new temp dir errs", func() {
@@ -218,7 +218,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/blobs")
 			Expect(fileStats).NotTo(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 		})
 
 		It("returns error if creating new temp dir errs", func() {
@@ -237,11 +237,11 @@ var _ = Describe("WindowsPlatform", func() {
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/sys/log")
 			Expect(fileStats).NotTo(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 
 			fileStats = fs.GetFileTestStat("/fake-dir/sys")
 			Expect(fileStats).NotTo(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeSymlink)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeSymlink))
 		})
 
 		It("returns error if creating new temp dir errs", func() {
@@ -279,7 +279,7 @@ var _ = Describe("WindowsPlatform", func() {
 	Describe("SetTimeWithNtpServers", func() {
 		It("sets time with ntp servers", func() {
 			servers := []string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}
-			platform.SetTimeWithNtpServers(servers)
+			platform.SetTimeWithNtpServers(servers) //nolint:errcheck
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 			Expect(cmdRunner.RunCommands[0]).To(ContainElement(ContainSubstring("new-netfirewallrule")))
@@ -293,7 +293,7 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 
 		It("sets time with ntp servers is noop when no ntp server provided", func() {
-			platform.SetTimeWithNtpServers([]string{})
+			platform.SetTimeWithNtpServers([]string{}) //nolint:errcheck
 			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 		})
 	})
@@ -380,7 +380,7 @@ var _ = Describe("WindowsPlatform", func() {
 			drive += "\\"
 
 			dirname := filepath.Join(drive, "ProgramData", "ssh")
-			fs.MkdirAll(dirname, 0744)
+			fs.MkdirAll(dirname, 0744) //nolint:errcheck
 			var keyTypes = []string{
 				"dsa",
 				"ecdsa",
@@ -391,9 +391,9 @@ var _ = Describe("WindowsPlatform", func() {
 				name := fmt.Sprintf("ssh_host_%s_key", s)
 				path := filepath.Join(dirname, name)
 
-				fs.WriteFileString(path, fmt.Sprintf("PRIVATE %s KEY", strings.ToUpper(s)))
+				fs.WriteFileString(path, fmt.Sprintf("PRIVATE %s KEY", strings.ToUpper(s))) //nolint:errcheck
 				path += ".pub"
-				fs.WriteFileString(path, fmt.Sprintf("PUBLIC %s KEY", strings.ToUpper(s)))
+				fs.WriteFileString(path, fmt.Sprintf("PUBLIC %s KEY", strings.ToUpper(s))) //nolint:errcheck
 			}
 		}
 
@@ -696,7 +696,7 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 
 		It("returns an error when getting free disk space command fails", func() {
-			expectedError := errors.New("It went wrong")
+			expectedError := errors.New("it went wrong")
 			partitioner.GetFreeSpaceOnDiskReturns(0, expectedError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
@@ -708,7 +708,7 @@ var _ = Describe("WindowsPlatform", func() {
 			diskNumber = "1"
 			partitionNumber = "1"
 
-			partitionCountError := errors.New("Something failed")
+			partitionCountError := errors.New("something failed")
 			partitioner.GetCountOnDiskReturns("", partitionCountError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
@@ -720,7 +720,7 @@ var _ = Describe("WindowsPlatform", func() {
 			diskNumber = "1"
 			partitionNumber = "1"
 
-			initializeDiskError := errors.New("It went wrong")
+			initializeDiskError := errors.New("it went wrong")
 			partitioner.InitializeDiskReturns(initializeDiskError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
@@ -738,7 +738,7 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 
 		It("returns an error when partition disk command fails", func() {
-			partitionDiskError := errors.New("It went wrong")
+			partitionDiskError := errors.New("it went wrong")
 			partitioner.PartitionDiskReturns("", partitionDiskError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
@@ -765,7 +765,7 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 
 		It("returns an error when creating a symlink fails", func() {
-			LinkError := errors.New("It went wrong")
+			LinkError := errors.New("it went wrong")
 			linker.LinkReturns(LinkError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
@@ -774,7 +774,7 @@ var _ = Describe("WindowsPlatform", func() {
 		})
 
 		It("returns an error protecting path command fails", func() {
-			protectPathError := errors.New("Failure")
+			protectPathError := errors.New("failure")
 			protector.ProtectPathReturns(protectPathError)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
@@ -876,7 +876,6 @@ func expectFormatterCalledWithArgs(
 	expectedDiskNumber,
 	expectedPartitionNumber string,
 ) {
-
 	ExpectWithOffset(1, formatter.FormatCallCount()).To(Equal(1))
 	diskNumber, partitionNumber := formatter.FormatArgsForCall(0)
 	ExpectWithOffset(1, diskNumber).To(Equal(expectedDiskNumber))
@@ -895,7 +894,6 @@ func expectAssignDriveLetterCalledWithArgs(
 	expectedDiskNumber,
 	expectedPartitionNumber string,
 ) {
-
 	ExpectWithOffset(1, partitioner.AssignDriveLetterCallCount()).To(Equal(1))
 	diskNumber, partitionNumber := partitioner.AssignDriveLetterArgsForCall(0)
 	Expect(diskNumber).To(Equal(expectedDiskNumber))
@@ -915,11 +913,11 @@ var _ = Describe("BOSH User Commands", func() {
 	)
 
 	BeforeEach(func() {
-		testUsername = fmt.Sprintf("%stest_%s", boshsettings.EphemeralUserPrefix, fmt.Sprintf("%s", uuid.New())[0:8])
+		testUsername = fmt.Sprintf("%stest_%s", boshsettings.EphemeralUserPrefix, uuid.New().String()[0:8])
 
 		deleteUserOnce.Do(func() {
-			DeleteLocalUser(testUsername)
-			DeleteLocalUser("vcap")
+			DeleteLocalUser(testUsername) //nolint:errcheck
+			DeleteLocalUser("vcap")       //nolint:errcheck
 		})
 	})
 
@@ -935,16 +933,15 @@ var _ = Describe("BOSH User Commands", func() {
 	}
 
 	AfterEach(func() {
-		DeleteLocalUser(testUsername)
-		DeleteLocalUser("vcap")
+		DeleteLocalUser(testUsername) //nolint:errcheck
+		DeleteLocalUser("vcap")       //nolint:errcheck
 		Expect(userExists(testUsername)).ToNot(Succeed())
 
-		cmdRunner.RunCommand(powershell.Executable, "-Command", `get-wmiobject -class win32_userprofile | where { $_.LocalPath -like 'C:\Users\bosh*' } | remove-wmiobject`)
-		cmdRunner.RunCommand(powershell.Executable, "-Command", fmt.Sprintf(`Remove-Item C:\Users\%s* -Force -Recurse`, testUsername))
+		cmdRunner.RunCommand(powershell.Executable, "-Command", `get-wmiobject -class win32_userprofile | where { $_.LocalPath -like 'C:\Users\bosh*' } | remove-wmiobject`) //nolint:errcheck
+		cmdRunner.RunCommand(powershell.Executable, "-Command", fmt.Sprintf(`Remove-Item C:\Users\%s* -Force -Recurse`, testUsername))                                       //nolint:errcheck
 	})
 
 	Describe("SSH", func() {
-
 		var platform Platform
 
 		BeforeEach(func() {
@@ -991,7 +988,7 @@ var _ = Describe("BOSH User Commands", func() {
 			if err != nil {
 				return false
 			}
-			defer m.Disconnect()
+			defer m.Disconnect() //nolint:errcheck
 			s, err := m.OpenService("sshd")
 			if err != nil {
 				return false
@@ -1166,11 +1163,11 @@ var _ = Describe("BOSH User Commands", func() {
 
 				Expect(platform.SetUserPassword(boshsettings.VCAPUsername, testPassword)).To(Succeed())
 				Expect(lockFile).To(BeAnExistingFile())
-				fs.RemoveAll(lockFile)
+				fs.RemoveAll(lockFile) //nolint:errcheck
 
 				Expect(platform.SetUserPassword(boshsettings.RootUsername, testPassword)).To(Succeed())
 				Expect(lockFile).To(BeAnExistingFile())
-				fs.RemoveAll(lockFile)
+				fs.RemoveAll(lockFile) //nolint:errcheck
 			})
 
 			It("sets a random password on the Administrator user if it exists", func() {
@@ -1197,7 +1194,7 @@ var _ = Describe("BOSH User Commands", func() {
 						fmt.Sprintf("Testing with Root user: %s", root))
 
 					Expect(lockFile).To(BeAnExistingFile())
-					fs.RemoveAll(lockFile)
+					fs.RemoveAll(lockFile) //nolint:errcheck
 				}
 			})
 

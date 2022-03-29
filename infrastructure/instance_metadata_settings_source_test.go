@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/infrastructure"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -21,7 +21,7 @@ func describeInstanceMetadataSettingsSource() {
 		settingsPath    string
 		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
-		metadataSource  *InstanceMetadataSettingsSource
+		metadataSource  *infrastructure.InstanceMetadataSettingsSource
 	)
 
 	BeforeEach(func() {
@@ -30,7 +30,7 @@ func describeInstanceMetadataSettingsSource() {
 		settingsPath = "/computeMetadata/v1/instance/attributes/bosh_settings"
 		platform = &platformfakes.FakePlatform{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		metadataSource = NewInstanceMetadataSettingsSource("http://fake-metadata-host", metadataHeaders, settingsPath, platform, logger)
+		metadataSource = infrastructure.NewInstanceMetadataSettingsSource("http://fake-metadata-host", metadataHeaders, settingsPath, platform, logger)
 	})
 
 	Describe("PublicSSHKeyForUsername", func() {
@@ -53,17 +53,14 @@ func describeInstanceMetadataSettingsSource() {
 			Expect(r.URL.Path).To(Equal(settingsPath))
 			Expect(r.Header.Get("key")).To(Equal("value"))
 
-			var jsonStr string
-
-			jsonStr = `{"agent_id": "123"}`
-
-			w.Write([]byte(jsonStr))
+			_, err := w.Write([]byte(`{"agent_id": "123"}`))
+			Expect(err).NotTo(HaveOccurred())
 		}
 
 		BeforeEach(func() {
 			handler := http.HandlerFunc(handlerFunc)
 			ts = httptest.NewServer(handler)
-			metadataSource = NewInstanceMetadataSettingsSource(ts.URL, metadataHeaders, settingsPath, platform, logger)
+			metadataSource = infrastructure.NewInstanceMetadataSettingsSource(ts.URL, metadataHeaders, settingsPath, platform, logger)
 		})
 
 		AfterEach(func() {
@@ -77,10 +74,9 @@ func describeInstanceMetadataSettingsSource() {
 		})
 
 		It("returns an error if reading from the instance metadata endpoint fails", func() {
-			metadataSource = NewInstanceMetadataSettingsSourceWithoutRetryDelay("bad-registry-endpoint", metadataHeaders, settingsPath, platform, logger)
+			metadataSource = infrastructure.NewInstanceMetadataSettingsSourceWithoutRetryDelay("bad-registry-endpoint", metadataHeaders, settingsPath, platform, logger)
 			_, err := metadataSource.Settings()
 			Expect(err).To(HaveOccurred())
 		})
-
 	})
 }

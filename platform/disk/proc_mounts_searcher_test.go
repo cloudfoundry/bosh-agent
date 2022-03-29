@@ -24,13 +24,14 @@ var _ = Describe("procMountsSearcher", func() {
 	Describe("SearchMounts", func() {
 		Context("when reading /proc/mounts succeeds", func() {
 			It("returns parsed mount information", func() {
-				fs.WriteFileString(
+				err := fs.WriteFileString(
 					"/proc/mounts",
 					`none /run/lock tmpfs rw,nosuid,nodev,noexec,relatime,size=5120k 0 0
 none /run/shm tmpfs rw,nosuid,nodev,relatime 0 0
 /dev/sda1 /boot ext2 rw,relatime,errors=continue 0 0
 none /tmp/warden/cgroup tmpfs rw,relatime 0 0`,
 				)
+				Expect(err).NotTo(HaveOccurred())
 
 				mounts, err := searcher.SearchMounts()
 				Expect(err).ToNot(HaveOccurred())
@@ -43,13 +44,14 @@ none /tmp/warden/cgroup tmpfs rw,relatime 0 0`,
 			})
 
 			It("ignores empty lines", func() {
-				fs.WriteFileString("/proc/mounts", `
+				err := fs.WriteFileString("/proc/mounts", `
 
 none /run/shm tmpfs rw,nosuid,nodev,relatime 0 0
 
 /dev/sda1 /boot ext2 rw,relatime,errors=continue 0 0
 `,
 				)
+				Expect(err).NotTo(HaveOccurred())
 
 				mounts, err := searcher.SearchMounts()
 				Expect(err).ToNot(HaveOccurred())
@@ -62,7 +64,8 @@ none /run/shm tmpfs rw,nosuid,nodev,relatime 0 0
 
 		Context("when reading /proc/mounts fails", func() {
 			It("returns error", func() {
-				fs.WriteFileString("/proc/mounts", "")
+				err := fs.WriteFileString("/proc/mounts", "")
+				Expect(err).NotTo(HaveOccurred())
 				fs.ReadFileError = errors.New("fake-read-err")
 
 				mounts, err := searcher.SearchMounts()

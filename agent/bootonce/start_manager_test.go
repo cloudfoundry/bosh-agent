@@ -51,7 +51,8 @@ var _ = Describe("checking if the agent can be booted", func() {
 
 		Context("when it is booting subsequent times", func() {
 			BeforeEach(func() {
-				startManager.RegisterStart()
+				err := startManager.RegisterStart()
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("allows the agent to boot", func() {

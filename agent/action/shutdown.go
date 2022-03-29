@@ -29,8 +29,8 @@ func (a ShutdownAction) IsLoggable() bool {
 }
 
 func (a ShutdownAction) Run() (string, error) {
-	a.platform.Shutdown()
-	return "", nil
+	err := a.platform.Shutdown()
+	return "", err
 }
 
 func (a ShutdownAction) Resume() (interface{}, error) {

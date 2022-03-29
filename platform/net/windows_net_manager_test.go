@@ -57,7 +57,7 @@ var _ = Describe("WindowsNetManager", func() {
 		tmpDir, err = ioutil.TempDir("", "bosh-tests-")
 		Expect(err).ToNot(HaveOccurred())
 		dirProvider = boshdirs.NewProvider(tmpDir)
-		err = fs.MkdirAll(filepath.Join(dirProvider.BoshDir()), 0755)
+		err = fs.MkdirAll(filepath.Join(dirProvider.BoshDir()), 0755) //nolint:gocritic
 		Expect(err).ToNot(HaveOccurred())
 
 		netManager = NewWindowsNetManager(

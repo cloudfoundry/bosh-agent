@@ -66,7 +66,8 @@ var _ = Describe("DummyPlatform", func() {
 	Describe("GetDefaultNetwork", func() {
 		It("returns the contents of dummy-defaults-network-settings.json since that's what the dummy cpi writes", func() {
 			settingsFilePath := "/fake-dir/bosh/dummy-default-network-settings.json"
-			fs.WriteFileString(settingsFilePath, `{"IP": "1.2.3.4"}`)
+			err := fs.WriteFileString(settingsFilePath, `{"IP": "1.2.3.4"}`)
+			Expect(err).NotTo(HaveOccurred())
 
 			network, err := platform.GetDefaultNetwork()
 			Expect(err).NotTo(HaveOccurred())
@@ -129,8 +130,10 @@ var _ = Describe("DummyPlatform", func() {
 
 		Context("Device has already been mounted as expected", func() {
 			BeforeEach(func() {
-				fs.WriteFileString(managedSettingsPath, "somediskid")
-				fs.WriteFileString(mountsPath, `[{"MountDir":"/dev/potato","DiskCid":"somediskid"}]`)
+				err := fs.WriteFileString(managedSettingsPath, "somediskid")
+				Expect(err).NotTo(HaveOccurred())
+				err = fs.WriteFileString(mountsPath, `[{"MountDir":"/dev/potato","DiskCid":"somediskid"}]`)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("Does not mount in new location", func() {
@@ -153,7 +156,8 @@ var _ = Describe("DummyPlatform", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				mountsPath := filepath.Join(dirProvider.BoshDir(), "mounts.json")
-				fs.WriteFile(mountsPath, mountsJSON)
+				err = fs.WriteFile(mountsPath, mountsJSON)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("removes one of the disks from the mounts json", func() {
@@ -201,7 +205,8 @@ var _ = Describe("DummyPlatform", func() {
 	Describe("IsPersistentDiskMountable", func() {
 		BeforeEach(func() {
 			formattedDisksPath := filepath.Join(dirProvider.BoshDir(), "formatted_disks.json")
-			fs.WriteFileString(formattedDisksPath, `[{"DiskCid": "my-disk-id"}]`)
+			err := fs.WriteFileString(formattedDisksPath, `[{"DiskCid": "my-disk-id"}]`)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when disk has been formatted", func() {

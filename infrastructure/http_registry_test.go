@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("httpRegistry", describeHTTPRegistry)
 
-func describeHTTPRegistry() {
+func describeHTTPRegistry() { //nolint:funlen
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 
 	var (
@@ -51,7 +51,8 @@ func describeHTTPRegistry() {
 					Expect(r.Method).To(Equal("GET"))
 					Expect(r.URL.Path).To(Equal("/instances/fake-identifier/settings"))
 
-					w.Write([]byte(settingsJSON))
+					_, err := w.Write([]byte(settingsJSON))
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				ts = httptest.NewServer(boshRegistryHandler)
@@ -231,9 +232,9 @@ func describeHTTPRegistry() {
 							"name": "vm-abc-def"
 						}
 					}`
-						settingsJSON = strings.Replace(settingsJSON, `"`, `\"`, -1)
-						settingsJSON = strings.Replace(settingsJSON, "\n", "", -1)
-						settingsJSON = strings.Replace(settingsJSON, "\t", "", -1)
+						settingsJSON = strings.ReplaceAll(settingsJSON, `"`, `\"`)
+						settingsJSON = strings.ReplaceAll(settingsJSON, "\n", "")
+						settingsJSON = strings.ReplaceAll(settingsJSON, "\t", "")
 						settingsJSON = fmt.Sprintf(`{"settings": "%s"}`, settingsJSON)
 
 						expectedSettings := boshsettings.Settings{
@@ -358,7 +359,8 @@ func describeHTTPRegistry() {
 
 					GinkgoRecover()
 
-					w.Write([]byte(settingsJSON))
+					_, err := w.Write([]byte(settingsJSON))
+					Expect(err).NotTo(HaveOccurred())
 				}
 			}
 
@@ -399,7 +401,6 @@ func describeHTTPRegistry() {
 					Expect(err.Error()).To(ContainSubstring("invalid status: 500"))
 				})
 			})
-
 		})
 	})
 }

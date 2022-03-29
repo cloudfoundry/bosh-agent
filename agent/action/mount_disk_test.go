@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
@@ -19,7 +19,7 @@ var _ = Describe("MountDiskAction", func() {
 	var (
 		settingsService *fakesettings.FakeSettingsService
 		platform        *platformfakes.FakePlatform
-		action          MountDiskAction
+		mountDiskAction action.MountDiskAction
 		logger          boshlog.Logger
 	)
 
@@ -28,19 +28,19 @@ var _ = Describe("MountDiskAction", func() {
 		platform = &platformfakes.FakePlatform{}
 		dirProvider := boshdirs.NewProvider("/fake-base-dir")
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		action = NewMountDisk(settingsService, platform, dirProvider, logger)
+		mountDiskAction = action.NewMountDisk(settingsService, platform, dirProvider, logger)
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(mountDiskAction)
+	AssertActionIsNotPersistent(mountDiskAction)
+	AssertActionIsLoggable(mountDiskAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(mountDiskAction)
+	AssertActionIsNotCancelable(mountDiskAction)
 
 	Describe("Run", func() {
 		Context("when settings can be loaded", func() {
-			Context("when a disk hint is NOT passed in the action arguments", func() {
+			Context("when a disk hint is NOT passed in the mountDiskAction arguments", func() {
 				Context("when disk cid can be resolved to a device path from infrastructure settings", func() {
 					BeforeEach(func() {
 						settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
@@ -58,7 +58,7 @@ var _ = Describe("MountDiskAction", func() {
 						})
 
 						It("returns error after trying to adjust partitioning", func() {
-							_, err := action.Run("fake-disk-cid")
+							_, err := mountDiskAction.Run("fake-disk-cid")
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("fake-adjust-persistent-disk-partitioning-err"))
 							Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
@@ -77,7 +77,7 @@ var _ = Describe("MountDiskAction", func() {
 
 					Context("when mounting succeeds", func() {
 						It("returns without an error after mounting store directory", func() {
-							result, err := action.Run("fake-disk-cid")
+							result, err := mountDiskAction.Run("fake-disk-cid")
 							Expect(err).NotTo(HaveOccurred())
 							Expect(result).To(Equal(map[string]string{}))
 
@@ -94,7 +94,7 @@ var _ = Describe("MountDiskAction", func() {
 						})
 
 						It("does not save disk hint", func() {
-							result, err := action.Run("fake-disk-cid")
+							result, err := mountDiskAction.Run("fake-disk-cid")
 							Expect(err).NotTo(HaveOccurred())
 							Expect(result).To(Equal(map[string]string{}))
 							Expect(settingsService.SavePersistentDiskSettingsCallCount).To(Equal(0))
@@ -107,7 +107,7 @@ var _ = Describe("MountDiskAction", func() {
 						})
 
 						It("returns error after trying to mount store directory", func() {
-							_, err := action.Run("fake-disk-cid")
+							_, err := mountDiskAction.Run("fake-disk-cid")
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("fake-mount-persistent-disk-err"))
 							Expect(settingsService.SavePersistentDiskSettingsCallCount).To(Equal(0))
@@ -121,7 +121,7 @@ var _ = Describe("MountDiskAction", func() {
 					})
 
 					It("returns error", func() {
-						_, err := action.Run("fake-unknown-disk-cid")
+						_, err := mountDiskAction.Run("fake-unknown-disk-cid")
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(Equal("Reading persistent disk settings: Persistent disk with volume id 'fake-unknown-disk-cid' could not be found"))
 					})
@@ -133,7 +133,7 @@ var _ = Describe("MountDiskAction", func() {
 			It("returns error", func() {
 				settingsService.LoadSettingsError = errors.New("fake-load-settings-err")
 
-				_, err := action.Run("fake-disk-cid")
+				_, err := mountDiskAction.Run("fake-disk-cid")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-load-settings-err"))
 			})

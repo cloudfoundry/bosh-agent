@@ -50,7 +50,6 @@ func (r defaultNetworkResolver) GetDefaultNetwork() (boshsettings.Network, error
 			Netmask: gonet.IP(ip.Mask).String(),
 			Gateway: route.Gateway,
 		}, nil
-
 	}
 
 	return network, bosherr.Error("Failed to find default route")

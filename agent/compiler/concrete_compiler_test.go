@@ -64,7 +64,7 @@ func getCompileArgs() (Package, []boshmodels.Package) {
 	return pkg, pkgDeps
 }
 
-func init() {
+func init() { //nolint:funlen,gochecknoinits
 	Describe("concreteCompiler", func() {
 		var (
 			compiler       Compiler
@@ -95,8 +95,10 @@ func init() {
 				new(fakebc.FakeClock),
 			)
 
-			fs.MkdirAll("/real-compile-dir", os.ModePerm)
-			fs.Symlink("/real-compile-dir", "/fake-compile-dir")
+			err := fs.MkdirAll("/real-compile-dir", os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.Symlink("/real-compile-dir", "/fake-compile-dir")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(fs.WriteFileString("/tmp/compressed-compiled-package", "fake-contents")).ToNot(HaveOccurred())
 		})
 
@@ -276,7 +278,8 @@ func init() {
 				BeforeEach(func() {
 					compressor.DecompressFileToDirCallBack = func() {
 						filename := "/fake-compile-dir/pkg_name/" + PackagingScriptName
-						fs.WriteFileString(filename, packagingScriptContents)
+						err := fs.WriteFileString(filename, packagingScriptContents)
+						Expect(err).NotTo(HaveOccurred())
 					}
 				})
 

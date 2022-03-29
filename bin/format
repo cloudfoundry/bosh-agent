@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -eu -o pipefail
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+export GOIMPORTS_VERSION="${GOIMPORTS_VERSION:-latest}"
+
+go install -v "golang.org/x/tools/cmd/goimports@${GOIMPORTS_VERSION}"
+
+"${ROOT_DIR}/bin/gofiles" | xargs goimports -w

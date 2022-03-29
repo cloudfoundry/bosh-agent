@@ -74,7 +74,7 @@ var _ = Describe("FileBundle", func() {
 
 			fileStats := fs.GetFileTestStat(installPath)
 			Expect(fileStats).ToNot(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
 			Expect(fileStats.Username).To(Equal("root"))
 			Expect(fileStats.Groupname).To(Equal("vcap"))
@@ -109,14 +109,15 @@ var _ = Describe("FileBundle", func() {
 		})
 
 		It("sets correct permissions on install path", func() {
-			fs.Chmod(sourcePath, os.FileMode(0700))
+			err := fs.Chmod(sourcePath, os.FileMode(0700))
+			Expect(err).ToNot(HaveOccurred())
 
-			_, err := fileBundle.Install(sourcePath, "")
+			_, err = fileBundle.Install(sourcePath, "")
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat(installPath)
 			Expect(fileStats).ToNot(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
 			Expect(fileStats.Username).To(Equal("root"))
 			Expect(fileStats.Groupname).To(Equal("vcap"))
@@ -138,7 +139,8 @@ var _ = Describe("FileBundle", func() {
 				decompressPath := fakeCompressor.DecompressFileToDirDirs[len(fakeCompressor.DecompressFileToDirDirs)-1]
 				contents, err := fs.ReadFileString(filepath.Join(sourcePath, "config.go"))
 				Expect(err).NotTo(HaveOccurred())
-				fs.WriteFileString(filepath.Join(decompressPath, "config.go"), contents)
+				err = fs.WriteFileString(filepath.Join(decompressPath, "config.go"), contents)
+				Expect(err).ToNot(HaveOccurred())
 			}
 
 			path, err := fileBundle.Install(sourcePath, "")
@@ -203,14 +205,15 @@ var _ = Describe("FileBundle", func() {
 		})
 
 		It("sets correct permissions on install path", func() {
-			fs.Chmod(sourcePath, os.FileMode(0700))
+			err := fs.Chmod(sourcePath, os.FileMode(0700))
+			Expect(err).NotTo(HaveOccurred())
 
-			_, err := fileBundle.Install(sourcePath, "")
+			_, err = fileBundle.Install(sourcePath, "")
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat(installPath)
 			Expect(fileStats).ToNot(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
 			Expect(fileStats.Username).To(Equal("root"))
 			Expect(fileStats.Groupname).To(Equal("vcap"))
@@ -279,12 +282,12 @@ var _ = Describe("FileBundle", func() {
 
 				fileStats := fs.GetFileTestStat(enablePath)
 				Expect(fileStats).NotTo(BeNil())
-				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeSymlink)))
+				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeSymlink))
 				Expect(installPath).To(Equal(fileStats.SymlinkTarget))
 
 				fileStats = fs.GetFileTestStat("/") // dir holding symlink
 				Expect(fileStats).NotTo(BeNil())
-				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(fileStats.FileMode).To(Equal(os.FileMode(0750)))
 				Expect(fileStats.Username).To(Equal("root"))
 				Expect(fileStats.Groupname).To(Equal("vcap"))
@@ -412,7 +415,7 @@ var _ = Describe("FileBundle", func() {
 
 				fileStats := fs.GetFileTestStat(enablePath)
 				Expect(fileStats).NotTo(BeNil())
-				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeSymlink)))
+				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeSymlink))
 				Expect(newerInstallPath).To(Equal(fileStats.SymlinkTarget))
 			})
 		})

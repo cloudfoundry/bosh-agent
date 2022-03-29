@@ -182,7 +182,7 @@ func (c httpClient) validateResponse(response *http.Response) error {
 func (c httpClient) makeRequest(client HTTPClient, target url.URL, method, requestBody string) (*http.Response, error) {
 	c.logger.Debug("http-client", "Monit request: url='%s' body='%s'", target.String(), requestBody)
 
-	request, err := http.NewRequest(method, target.String(), strings.NewReader(requestBody))
+	request, err := http.NewRequest(method, target.String(), strings.NewReader(requestBody)) //nolint:noctx
 	if err != nil {
 		return nil, err
 	}

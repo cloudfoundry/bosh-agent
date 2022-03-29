@@ -7,9 +7,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent"
-
 	"code.cloudfoundry.org/clock/fakeclock"
+	"github.com/cloudfoundry/bosh-agent/agent"
 	"github.com/cloudfoundry/bosh-agent/agent/agentfakes"
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
@@ -26,7 +25,7 @@ import (
 	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
-func init() {
+func init() { //nolint:funlen,gochecknoinits
 	Describe("Agent", func() {
 		var (
 			logger           boshlog.Logger
@@ -41,11 +40,11 @@ func init() {
 			vitalService     *vitalsfakes.FakeService
 			startManager     *agentfakes.FakeStartManager
 
-			agent Agent
+			boshAgent agent.Agent
 		)
 
 		BeforeSuite(func() {
-			HeartbeatRetryInterval = 1 * time.Millisecond
+			agent.HeartbeatRetryInterval = 1 * time.Millisecond
 		})
 
 		BeforeEach(func() {
@@ -64,7 +63,7 @@ func init() {
 
 			platform.GetVitalsServiceReturns(vitalService)
 
-			agent = New(
+			boshAgent = agent.New(
 				logger,
 				handler,
 				platform,
@@ -77,19 +76,18 @@ func init() {
 				timeService,
 				startManager,
 			)
-
 		})
 
 		Describe("Run", func() {
 			It("Registers a start with the startManager", func() {
-				err := agent.Run()
+				err := boshAgent.Run()
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(startManager.RegisterStartCallCount()).To(Equal(1))
 			})
 
 			It("lets dispatcher handle requests arriving via handler", func() {
-				err := agent.Run()
+				err := boshAgent.Run()
 				Expect(err).ToNot(HaveOccurred())
 
 				expectedResp := boshhandler.NewValueResponse("pong")
@@ -108,7 +106,7 @@ func init() {
 					resumedBeforeStartingToDispatch = actionDispatcher.ResumedPreviouslyDispatchedTasks
 				}
 
-				err := agent.Run()
+				err := boshAgent.Run()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(resumedBeforeStartingToDispatch).To(BeTrue())
 			})
@@ -139,7 +137,7 @@ func init() {
 				expectedJobName := "fake-job"
 				expectedJobIndex := 1
 				expectedNodeID := "node-id"
-				expectedHb := Heartbeat{
+				expectedHb := agent.Heartbeat{
 					Deployment: "FakeDeployment",
 					Job:        &expectedJobName,
 					Index:      &expectedJobIndex,
@@ -151,7 +149,7 @@ func init() {
 				It("sends initial heartbeat", func() {
 					// Configure periodic heartbeat every 5 hours
 					// so that we are sure that we will not receive it
-					agent = New(
+					boshAgent = agent.New(
 						logger,
 						handler,
 						platform,
@@ -168,7 +166,7 @@ func init() {
 					// Immediately exit after sending initial heartbeat
 					handler.SendErr = errors.New("stop")
 
-					err := agent.Run()
+					err := boshAgent.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("stop"))
 
@@ -198,7 +196,7 @@ func init() {
 						}
 					}
 
-					err := agent.Run()
+					err := boshAgent.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("stop"))
 
@@ -214,39 +212,39 @@ func init() {
 					Expect(jobSupervisor.GetHealthRecorded()).To(BeNumerically(">=", 3))
 				})
 
-				Context("when the agent may not be rebooted", func() {
+				Context("when the boshAgent may not be rebooted", func() {
 					BeforeEach(func() {
 						startManager.CanStartReturns(false)
 					})
 
 					It("stops the boot process and returns an error", func() {
-						err := agent.Run()
+						err := boshAgent.Run()
 						Expect(err).To(HaveOccurred())
 					})
 				})
 			})
 
-			Context("when the agent fails to get job spec for a heartbeat", func() {
+			Context("when the boshAgent fails to get job spec for a heartbeat", func() {
 				BeforeEach(func() {
 					specService.GetErr = errors.New("fake-spec-service-error")
 					handler.KeepOnRunning()
 				})
 
 				It("returns the error", func() {
-					err := agent.Run()
+					err := boshAgent.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-spec-service-error"))
 				})
 			})
 
-			Context("when the agent fails to get vitals for a heartbeat", func() {
+			Context("when the boshAgent fails to get vitals for a heartbeat", func() {
 				BeforeEach(func() {
 					vitalService.GetReturns(boshvitals.Vitals{}, errors.New("fake-vitals-service-error"))
 					handler.KeepOnRunning()
 				})
 
 				It("returns the error", func() {
-					err := agent.Run()
+					err := boshAgent.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-vitals-service-error"))
 				})
@@ -272,7 +270,7 @@ func init() {
 					}
 				}
 
-				err := agent.Run()
+				err := boshAgent.Run()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("stop"))
 

@@ -64,7 +64,7 @@ var _ = Describe("ApplySpec", func() {
 			Expect(applySpecMap).To(Equal(map[string]interface{}{
 				"deployment": "fake-deployment-name",
 				"name":       "fake-instance-name",
-				"index":      0.0, //json.Unmarshal ultimately converts all ints to floats. type must be float for comparisons to work
+				"index":      0.0, // json.Unmarshal ultimately converts all ints to floats. type must be a float for comparisons to work
 				"id":         "this-is-a-node-id",
 				"az":         "this-is-an-availability-zone",
 				"packages": map[string]interface{}{

@@ -6,21 +6,20 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
 )
 
 var _ = Describe("FileRegistry", func() {
 	var (
 		fs           *fakesys.FakeFileSystem
-		fileRegistry Registry
+		fileRegistry infrastructure.Registry
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		fileRegistry = NewFileRegistry("/fake-registry-file-path", fs)
+		fileRegistry = infrastructure.NewFileRegistry("/fake-registry-file-path", fs)
 	})
 
 	Describe("GetSettings", func() {
@@ -36,7 +35,8 @@ var _ = Describe("FileRegistry", func() {
 				settingsJSON, err := json.Marshal(expectedSettings)
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.WriteFile("/fake-registry-file-path", settingsJSON)
+				err = fs.WriteFile("/fake-registry-file-path", settingsJSON)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns the settings", func() {

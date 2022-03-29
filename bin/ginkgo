@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -eu -o pipefail
+
+export ROOT_DIR
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+SLOW_SPEC_THRESHOLD="${SLOW_SPEC_THRESHOLD:-20}"
+
+# shellcheck disable=SC2068
+"${ROOT_DIR}/bin/env" \
+  go run github.com/onsi/ginkgo/ginkgo \
+  -keepGoing \
+  -skipPackage=vendor \
+  -slowSpecThreshold="${SLOW_SPEC_THRESHOLD}" \
+  -race \
+  -r \
+  ${@}

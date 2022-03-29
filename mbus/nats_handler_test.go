@@ -6,10 +6,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
-	"github.com/nats-io/nats.go"
 	"io/ioutil"
 	"time"
+
+	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
+	"github.com/nats-io/nats.go"
 
 	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
@@ -24,7 +25,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-func init() {
+func init() { //nolint:funlen,gochecknoinits
 	Describe("natsHandler", func() {
 		var (
 			settingsService     *fakesettings.FakeSettingsService
@@ -83,10 +84,11 @@ func init() {
 			It("starts", func() {
 				var receivedRequest boshhandler.Request
 
-				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					receivedRequest = req
 					return boshhandler.NewValueResponse("expected value")
 				})
+				Expect(err).NotTo(HaveOccurred())
 				defer handler.Stop()
 
 				Expect(connection.SubscribeCallCount()).To(Equal(1))
@@ -112,9 +114,10 @@ func init() {
 			})
 
 			It("cleans up ip-mac address cache for nats configured with ip address", func() {
-				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					return nil
 				})
+				Expect(err).NotTo(HaveOccurred())
 				defer handler.Stop()
 
 				Expect(platform.DeleteARPEntryWithIPArgsForCall(0)).To(Equal("127.0.0.1"))
@@ -122,9 +125,10 @@ func init() {
 
 			It("does not try to clean up ip-mac address cache for nats configured with hostname", func() {
 				settingsService.Settings.Mbus = "nats://fake-username:fake-password@fake-hostname.com:1234"
-				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					return nil
 				})
+				Expect(err).NotTo(HaveOccurred())
 				defer handler.Stop()
 
 				Expect(platform.DeleteARPEntryWithIPCallCount()).To(Equal(0))
@@ -132,9 +136,10 @@ func init() {
 
 			It("logs error and proceeds if it fails to clean up ip-mac address cache for nats", func() {
 				platform.DeleteARPEntryWithIPReturns(errors.New("failed to run"))
-				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					return nil
 				})
+				Expect(err).NotTo(HaveOccurred())
 				defer handler.Stop()
 
 				Expect(platform.DeleteARPEntryWithIPArgsForCall(0)).To(Equal("127.0.0.1"))
@@ -184,10 +189,11 @@ func init() {
 			It("can add additional handler funcs to receive requests", func() {
 				var firstHandlerReq, secondHandlerRequest boshhandler.Request
 
-				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					firstHandlerReq = req
 					return boshhandler.NewValueResponse("first-handler-resp")
 				})
+				Expect(err).NotTo(HaveOccurred())
 				defer handler.Stop()
 
 				handler.RegisterAdditionalFunc(func(req boshhandler.Request) (resp boshhandler.Response) {
@@ -284,7 +290,7 @@ func init() {
 
 				Context("when NATs handler fails to publish", func() {
 					It("logs to syslog error", func() {
-						connection.PublishReturns(errors.New("Oh noes!"))
+						connection.PublishReturns(errors.New("oh noes"))
 
 						err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 							return boshhandler.NewValueResponse("responding")
@@ -300,7 +306,7 @@ func init() {
 
 						Expect(auditLogger.DebugCallCount()).To(Equal(0))
 						Expect(auditLogger.ErrCallCount()).To(Equal(1))
-						msg := `cs1=Oh noes! cs1Label=statusReason`
+						msg := `cs1=oh noes cs1Label=statusReason`
 						Expect(auditLogger.ErrArgsForCall(0)).To(ContainSubstring(msg))
 					})
 				})
@@ -321,7 +327,8 @@ func init() {
 
 					options := nats.Options{}
 					for _, option := range connectorOptionsArg {
-						option(&options)
+						err := option(&options)
+						Expect(err).NotTo(HaveOccurred())
 					}
 
 					Expect(options.TLSConfig.RootCAs.Subjects()).To(BeEquivalentTo(certPool.Subjects()))
@@ -393,7 +400,8 @@ func init() {
 
 						options := nats.Options{}
 						for _, option := range connectorOptionsArg {
-							option(&options)
+							err := option(&options)
+							Expect(err).NotTo(HaveOccurred())
 						}
 
 						Expect(options.TLSConfig.RootCAs).To(BeNil())
@@ -423,7 +431,6 @@ func init() {
 			})
 		})
 	})
-
 }
 
 func VerifyPeerCertificateCallback(handler boshhandler.Handler, connectorOptionsArg []nats.Option, certPath string, caPath string) error {
@@ -434,10 +441,12 @@ func VerifyPeerCertificateCallback(handler boshhandler.Handler, connectorOptions
 	correctCa, err := ioutil.ReadFile(caPath)
 	Expect(err).NotTo(HaveOccurred())
 
-	certPemBlock, _ := pem.Decode([]byte(correctCnCert))
+	certPemBlock, _ := pem.Decode(correctCnCert)
 	cert, err := x509.ParseCertificate(certPemBlock.Bytes)
-	caPemBlock, _ := pem.Decode([]byte(correctCa))
+	Expect(err).NotTo(HaveOccurred())
+	caPemBlock, _ := pem.Decode(correctCa)
 	ca, err := x509.ParseCertificate(caPemBlock.Bytes)
+	Expect(err).NotTo(HaveOccurred())
 
 	errHandler := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 	Expect(errHandler).ToNot(HaveOccurred())
@@ -445,7 +454,8 @@ func VerifyPeerCertificateCallback(handler boshhandler.Handler, connectorOptions
 
 	options := nats.Options{}
 	for _, option := range connectorOptionsArg {
-		option(&options)
+		err := option(&options)
+		Expect(err).NotTo(HaveOccurred())
 	}
 
 	certPool := x509.NewCertPool()

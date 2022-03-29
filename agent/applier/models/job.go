@@ -1,8 +1,9 @@
 package models
 
 import (
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"os"
+
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type Job struct {
@@ -45,7 +46,7 @@ type JobDirectoryProvider interface {
 
 func (s Job) CreateDirectories(jobDirectoryCreator JobDirectoryCreator, jobDirProvider JobDirectoryProvider) error {
 	if len(s.Name) < 1 {
-		return bosherr.Error("Job name cannot be emtpy")
+		return bosherr.Error("Job name cannot be empty")
 	}
 
 	dirs := []string{

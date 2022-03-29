@@ -62,7 +62,8 @@ func startAgent(logger logger.Logger) error {
 	}
 
 	sigCh := make(chan os.Signal, 8)
-	signal.Notify(sigCh, syscall.SIGTERM, os.Interrupt, os.Kill)
+	// `os.Kill` can not be intercepted on UNIX OS's, possibly necessary for Windows?
+	signal.Notify(sigCh, syscall.SIGTERM, os.Interrupt, os.Kill) //nolint:staticcheck
 	errCh := runAgent(opts, logger)
 	for {
 		select {
@@ -83,7 +84,9 @@ func main() {
 		logger.Error(mainLogTag, "Agent exited with error: %s", err)
 		exitCode = 1
 	}
-	logger.FlushTimeout(time.Minute)
+	if err := logger.FlushTimeout(time.Minute); err != nil {
+		logger.Error(mainLogTag, "Setting logger flush timeout failed: %s", err)
+	}
 	os.Exit(exitCode)
 }
 

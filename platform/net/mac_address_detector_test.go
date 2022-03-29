@@ -28,12 +28,16 @@ var _ = Describe("MacAddressDetector", func() {
 
 		writeNetworkDevice := func(iface string, macAddress string, isPhysical bool, ifalias string) string {
 			interfacePath := fmt.Sprintf("/sys/class/net/%s", iface)
-			fs.WriteFile(interfacePath, []byte{})
+			err := fs.WriteFile(interfacePath, []byte{})
+			Expect(err).NotTo(HaveOccurred())
 			if isPhysical {
-				fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
+				err = fs.WriteFile(fmt.Sprintf("/sys/class/net/%s/device", iface), []byte{})
+				Expect(err).NotTo(HaveOccurred())
 			}
-			fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
-			fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/ifalias", iface), fmt.Sprintf("%s\n", ifalias))
+			err = fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/address", iface), fmt.Sprintf("%s\n", macAddress))
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/ifalias", iface), fmt.Sprintf("%s\n", ifalias))
+			Expect(err).NotTo(HaveOccurred())
 
 			return interfacePath
 		}

@@ -11,12 +11,12 @@ import (
 	"testing"
 )
 
-var pathToPipeCLI string
-var GoSequencePath string
-var PrintPidsPath string
-var ExitRunnerPath string
-var ExitCodePath string
-var echoCmdArgs []string
+var pathToPipeCLI string  //nolint:gochecknoglobals
+var GoSequencePath string //nolint:gochecknoglobals
+var PrintPidsPath string  //nolint:gochecknoglobals
+var ExitRunnerPath string //nolint:gochecknoglobals
+var ExitCodePath string   //nolint:gochecknoglobals
+var echoCmdArgs []string  //nolint:gochecknoglobals
 
 const echoOutput = "hello"
 

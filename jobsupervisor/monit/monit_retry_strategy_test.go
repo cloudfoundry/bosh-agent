@@ -189,7 +189,7 @@ var _ = Describe("MonitRetryStrategy", func() {
 				Expect(retryable.AttemptCallCount()).To(Equal(maxOtherAttempts))
 			})
 
-			Context("when other attempts are all unavailble", func() {
+			Context("when other attempts are all unavailable", func() {
 				It("retries for maxOtherAttempts", func() {
 					retryable.AttemptStub = func() (bool, error) {
 						if retryable.AttemptCallCount() == 1 {

@@ -22,6 +22,7 @@ unit: sectors
 /dev/sda4 : start=        0, size=    0, Id= 0
 `
 
+//nolint:gosec
 const devSdaSfdiskEmptyDumpWhitespace = `# partition table of /dev/sda
 unit: sectors
 
@@ -107,7 +108,8 @@ var _ = Describe("sfdiskPartitioner", func() {
 			{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
 		}
 
-		partitioner.Partition("/dev/sda", partitions)
+		err := partitioner.Partition("/dev/sda", partitions)
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512MiB,S\n,1024MiB,L\n,,L\n", "sfdisk", "/dev/sda"}))
@@ -125,7 +127,8 @@ var _ = Describe("sfdiskPartitioner", func() {
 				{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
 			}
 
-			partitioner.Partition("/dev/sda", partitions)
+			err := partitioner.Partition("/dev/sda", partitions)
+			Expect(err).NotTo(HaveOccurred())
 
 			Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 			Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512MiB,S\n,1024MiB,L\n,,L\n", "sfdisk", "/dev/sda"}))
@@ -155,7 +158,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 		Context("during get partitions", func() {
 			It("raises error", func() {
 				runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 2048*1024)})
-				runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Error: errors.New("Some weird error")})
+				runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Error: errors.New("some weird error")})
 
 				partitions := []Partition{
 					{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
@@ -165,13 +168,13 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Some weird error"))
+				Expect(err.Error()).To(ContainSubstring("some weird error"))
 			})
 		})
 
 		Context("when getting device size", func() {
 			It("raises error", func() {
-				runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Error: errors.New("Another weird error")})
+				runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Error: errors.New("another weird error")})
 
 				partitions := []Partition{
 					{Type: PartitionTypeSwap, SizeInBytes: 512 * 1024 * 1024},
@@ -179,7 +182,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 
 				err := partitioner.Partition("/dev/sda", partitions)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Another weird error"))
+				Expect(err.Error()).To(ContainSubstring("another weird error"))
 			})
 		})
 	})
@@ -194,7 +197,8 @@ var _ = Describe("sfdiskPartitioner", func() {
 			{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
 		}
 
-		partitioner.Partition("/dev/sda", partitions)
+		err := partitioner.Partition("/dev/sda", partitions)
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512MiB,S\n,1024MiB,L\n,,L\n", "sfdisk", "/dev/sda"}))
@@ -209,7 +213,7 @@ var _ = Describe("sfdiskPartitioner", func() {
 			{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
 		}
 
-		partitioner.Partition("/dev/mapper/xxxxxx", partitions)
+		partitioner.Partition("/dev/mapper/xxxxxx", partitions) //nolint:errcheck
 
 		Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512MiB,S\n,1024MiB,L\n,,L\n", "sfdisk", "/dev/mapper/xxxxxx"}))
@@ -240,7 +244,8 @@ var _ = Describe("sfdiskPartitioner", func() {
 			{Type: PartitionTypeLinux, SizeInBytes: 512 * 1024 * 1024},
 		}
 
-		partitioner.Partition("/dev/sda", partitions)
+		err := partitioner.Partition("/dev/sda", partitions)
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(runner.RunCommandsWithInput)).To(Equal(0))
 	})
@@ -255,7 +260,8 @@ var _ = Describe("sfdiskPartitioner", func() {
 			{Type: PartitionTypeLinux, SizeInBytes: 1024 * 1024 * 1024},
 		}
 
-		partitioner.Partition("/dev/mapper/xxxxxx", partitions)
+		err := partitioner.Partition("/dev/mapper/xxxxxx", partitions)
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(runner.RunCommandsWithInput)).To(Equal(0))
 	})
@@ -272,7 +278,8 @@ var _ = Describe("sfdiskPartitioner", func() {
 			{Type: PartitionTypeLinux},
 		}
 
-		partitioner.Partition("/dev/sda", partitions)
+		err := partitioner.Partition("/dev/sda", partitions)
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(len(runner.RunCommandsWithInput)).To(Equal(1))
 		Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",1024MiB,L\n,,L\n", "sfdisk", "/dev/sda"}))
@@ -290,7 +297,8 @@ var _ = Describe("sfdiskPartitioner", func() {
 			{Type: PartitionTypeLinux},
 		}
 
-		partitioner.Partition("/dev/sda", partitions)
+		err := partitioner.Partition("/dev/sda", partitions)
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(0).To(Equal(len(runner.RunCommandsWithInput)))
 	})

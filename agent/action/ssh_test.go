@@ -3,16 +3,14 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -21,7 +19,7 @@ var _ = Describe("SSHAction", func() {
 	var (
 		platform        *platformfakes.FakePlatform
 		settingsService boshsettings.Service
-		action          SSHAction
+		sshAction       action.SSHAction
 	)
 
 	BeforeEach(func() {
@@ -30,21 +28,21 @@ var _ = Describe("SSHAction", func() {
 		platform = &platformfakes.FakePlatform{}
 		dirProvider := boshdirs.NewProvider("/foo")
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		action = NewSSH(settingsService, platform, dirProvider, logger)
+		sshAction = action.NewSSH(settingsService, platform, dirProvider, logger)
 	})
 
-	AssertActionIsNotAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(sshAction)
+	AssertActionIsNotPersistent(sshAction)
+	AssertActionIsLoggable(sshAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(sshAction)
+	AssertActionIsNotCancelable(sshAction)
 
 	Describe("Run", func() {
 		Context("setupSSH", func() {
 			var (
-				response SSHResult
-				params   SSHParams
+				response action.SSHResult
+				params   action.SSHParams
 				err      error
 
 				defaultIP string
@@ -68,15 +66,15 @@ var _ = Describe("SSHAction", func() {
 
 				platform.GetHostPublicKeyReturns(platformPublicKeyValue, platformPublicKeyErr)
 
-				params = SSHParams{
+				params = action.SSHParams{
 					User:      "fake-user",
 					PublicKey: "fake-public-key",
 				}
 
 				dirProvider := boshdirs.NewProvider("/foo")
 				logger := boshlog.NewLogger(boshlog.LevelNone)
-				action = NewSSH(settingsService, platform, dirProvider, logger)
-				response, err = action.Run("setup", params)
+				sshAction = action.NewSSH(settingsService, platform, dirProvider, logger)
+				response, err = sshAction.Run("setup", params)
 			})
 
 			Context("without default ip", func() {
@@ -116,7 +114,7 @@ var _ = Describe("SSHAction", func() {
 			Context("with a host public key available", func() {
 				It("should return SSH Result with HostPublicKey", func() {
 					hostPublicKey, _ := platform.GetHostPublicKey()
-					Expect(response).To(Equal(SSHResult{
+					Expect(response).To(Equal(action.SSHResult{
 						Command:       "setup",
 						Status:        "success",
 						IP:            defaultIP,
@@ -132,7 +130,7 @@ var _ = Describe("SSHAction", func() {
 				})
 
 				It("should return an error", func() {
-					Expect(response).To(Equal(SSHResult{}))
+					Expect(response).To(Equal(action.SSHResult{}))
 					Expect(err).ToNot(BeNil())
 				})
 			})
@@ -140,7 +138,7 @@ var _ = Describe("SSHAction", func() {
 
 		Context("cleanupSSH", func() {
 			It("should delete ephemeral user", func() {
-				response, err := action.Run("cleanup", SSHParams{UserRegex: "^foobar.*"})
+				response, err := sshAction.Run("cleanup", action.SSHParams{UserRegex: "^foobar.*"})
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(platform.DeleteEphemeralUsersMatchingCallCount()).To(Equal(1))

@@ -22,7 +22,6 @@ import (
 
 	"golang.org/x/sys/windows/svc"
 
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monitor"
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
@@ -32,14 +31,15 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-var pipeExePath = "C:\\var\\vcap\\bosh\\bin\\pipe.exe"
-var serviceDescription = "vcap"
+// TODO: stop creating globals and then overriding in tests,
+//  see jobsupervisor/windows_job_supervisor_export_test.go:14, :21
+var pipeExePath = "C:\\var\\vcap\\bosh\\bin\\pipe.exe" //nolint:gochecknoglobals
+var serviceDescription = "vcap"                        //nolint:gochecknoglobals
 
 const (
 	serviceWrapperExeFileName       = "job-service-wrapper.exe"
 	serviceWrapperConfigFileName    = "job-service-wrapper.xml"
 	serviceWrapperAppConfigFileName = "job-service-wrapper.exe.config"
-	serviceWrapperEventJSONFileName = "job-service-wrapper.wrapper.log.json"
 
 	serviceWrapperAppConfigBody = `
 <configuration>
@@ -172,11 +172,9 @@ type windowsJobSupervisor struct {
 	logTag                string
 	machineIP             string
 	msgCh                 chan *windowsServiceEvent
-	monitor               *monitor.Monitor
 	jobFailuresServerPort int
 	cancelServer          chan bool
 
-	// state *state.State
 	state supervisorState
 	mgr   *winsvc.Mgr
 }
@@ -213,11 +211,7 @@ func NewWindowsJobSupervisor(
 		jobFailuresServerPort: jobFailuresServerPort,
 		cancelServer:          cancelChan,
 	}
-	m, err := monitor.New(-1)
-	if err != nil {
-		s.logger.Error(s.logTag, "Initializing monitor.Monitor: %s", err)
-	}
-	s.monitor = m
+
 	s.stateSet(stateEnabled)
 
 	mgr, err := winsvc.Connect(matchService)
@@ -239,7 +233,9 @@ func (w *windowsJobSupervisor) Start() error {
 	//
 	// Do this here, as we know the agent has successfully connected
 	// with the director and is healthy.
-	w.mgr.DisableAgentAutoStart()
+	if err := w.mgr.DisableAgentAutoStart(); err != nil {
+		w.logger.Error(w.logTag, "Running DisableAgentAutoStart %s", err)
+	}
 
 	if err := w.mgr.Start(); err != nil {
 		return bosherr.WrapError(err, "Starting windows job process")
@@ -294,18 +290,16 @@ func (w *windowsJobSupervisor) Status() (status string) {
 	return "running"
 }
 
-var windowsSvcStateMap = map[svc.State]string{
-	svc.Stopped:         "stopped",
-	svc.StartPending:    "starting",
-	svc.StopPending:     "stop_pending",
-	svc.Running:         "running",
-	svc.ContinuePending: "continue_pending",
-	svc.PausePending:    "pause_pending",
-	svc.Paused:          "paused",
-}
-
 func SvcStateString(s svc.State) string {
-	return windowsSvcStateMap[s]
+	return map[svc.State]string{
+		svc.Stopped:         "stopped",
+		svc.StartPending:    "starting",
+		svc.StopPending:     "stop_pending",
+		svc.Running:         "running",
+		svc.ContinuePending: "continue_pending",
+		svc.PausePending:    "pause_pending",
+		svc.Paused:          "paused",
+	}[s]
 }
 
 func (w *windowsJobSupervisor) Processes() ([]Process, error) {
@@ -459,7 +453,10 @@ func (w *windowsJobSupervisor) handleJobFailure(hn JobFailureHandler, wr http.Re
 		Service:     event.ProcessName,
 		Description: fmt.Sprintf("exited with code %d", event.ExitCode),
 	}
-	hn(alert)
+	err = hn(alert)
+	if err != nil {
+		w.logger.Error(w.logTag, "JobFailureHandler: generated an error: %s", err)
+	}
 }
 
 func (w *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {

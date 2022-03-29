@@ -37,7 +37,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	// Make sure we don't use 'vcap' as the service description,
 	// otherwise we may destroy BOSH deployed Concourse workers.
 	//
@@ -52,21 +52,21 @@ const (
 	DefaultMachineIP      = "127.0.0.1"
 	DefaultTimeout        = time.Second * 15
 	DefaultInterval       = time.Millisecond * 500
-	DefaultEventPort      = 2825
 )
 
 var (
-	StartStopExe string
-	HelloExe     string
-	WaitSvcExe   string
-	FlapStartExe string
-	TempDir      string
+	StartStopExe string //nolint:gochecknoglobals
+	HelloExe     string //nolint:gochecknoglobals
+	WaitSvcExe   string //nolint:gochecknoglobals
+	FlapStartExe string //nolint:gochecknoglobals
+	TempDir      string //nolint:gochecknoglobals
 
-	ServiceDescription = GetServiceDescription()
+	ServiceDescription = GetServiceDescription() //nolint:gochecknoglobals
 )
 
 var _ = AfterSuite(func() {
-	os.RemoveAll(TempDir)
+	err := os.RemoveAll(TempDir)
+	Expect(err).NotTo(HaveOccurred())
 	gexec.CleanupBuildArtifacts()
 
 	match := func(s string) bool {
@@ -74,7 +74,7 @@ var _ = AfterSuite(func() {
 	}
 	m, err := winsvc.Connect(match)
 	Expect(err).To(Succeed())
-	defer m.Disconnect()
+	defer m.Disconnect() //nolint:errcheck
 
 	Expect(m.Delete()).To(Succeed())
 })
@@ -162,7 +162,8 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, error) {
 		f, err := ioutil.TempFile(TempDir, "stopfile-")
 		Expect(err).ToNot(HaveOccurred())
 		tmpFileName := f.Name()
-		f.Close()
+		err = f.Close()
+		Expect(err).NotTo(HaveOccurred())
 		procs = []WindowsProcess{
 			{
 				Name:       fmt.Sprintf("stop-executable-1-%d", time.Now().UnixNano()),
@@ -175,7 +176,7 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, error) {
 			},
 		}
 	default:
-		return WindowsProcessConfig{}, fmt.Errorf("Invalid Windows Config Process name: %s", jobName)
+		return WindowsProcessConfig{}, fmt.Errorf("invalid Windows Config Process name: %s", jobName)
 	}
 
 	return WindowsProcessConfig{Processes: procs}, nil
@@ -206,9 +207,10 @@ func concurrentStopConfig() WindowsProcessConfig {
 	createStopFile := func() string {
 		f, err := ioutil.TempFile(TempDir, "stopfile-")
 		Expect(err).ToNot(HaveOccurred())
-		path := f.Name()
-		f.Close()
-		return path
+		stopFilePathName := f.Name()
+		err = f.Close()
+		Expect(err).NotTo(HaveOccurred())
+		return stopFilePathName
 	}
 
 	for i := 0; i < WaitCount; i++ {
@@ -298,12 +300,13 @@ func addFlappingJob(jobSupervisor JobSupervisor, jobDir string, fs boshsys.FileS
 	if err != nil {
 		return nil, err
 	}
-	defer m.Disconnect()
+	defer m.Disconnect() //nolint:errcheck
 
-	var svcs []*mgr.Service
+	var svcs []*mgr.Service //nolint:prealloc
 	defer func() {
 		for _, s := range svcs {
-			s.Close()
+			err := s.Close()
+			Expect(err).NotTo(HaveOccurred())
 		}
 	}()
 
@@ -412,13 +415,16 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			var err error
 			basePath, err = ioutil.TempDir(TempDir, "")
 			Expect(err).ToNot(HaveOccurred())
-			fs.MkdirAll(basePath, 0755)
+			err = fs.MkdirAll(basePath, 0755)
+			Expect(err).NotTo(HaveOccurred())
 
 			binPath := filepath.Join(basePath, "bosh", "bin")
-			fs.MkdirAll(binPath, 0755)
+			err = fs.MkdirAll(binPath, 0755)
+			Expect(err).NotTo(HaveOccurred())
 
 			logDir = path.Join(basePath, "sys", "log")
-			fs.MkdirAll(binPath, 0755)
+			err = fs.MkdirAll(binPath, 0755)
+			Expect(err).NotTo(HaveOccurred())
 
 			exePath = filepath.Join(binPath, "job-service-wrapper.exe")
 
@@ -439,7 +445,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			if err != nil {
 				return 0, err
 			}
-			defer m.Disconnect()
+			defer m.Disconnect() //nolint:errcheck
 			s, err := m.OpenService(serviceName)
 			if err != nil {
 				return 0, err
@@ -457,7 +463,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			if err != nil {
 				return svc.Status{}, mgr.Config{}, err
 			}
-			defer m.Disconnect()
+			defer m.Disconnect() //nolint:errcheck
 
 			s, err := m.OpenService(svcName)
 			if err != nil {
@@ -604,7 +610,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 						Expect(p.State).To(Equal("stopped"))
 						Expect(int(p.CPU.Total)).To(Equal(0))
 						Expect(int(p.CPU.Total)).To(Equal(0))
-						Expect(int(p.Memory.Kb)).To(Equal(0))
+						Expect(p.Memory.Kb).To(Equal(0))
 					}
 				})
 			})
@@ -809,7 +815,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			Context("when the WindowsProcess has syslog environment variables", func() {
 				var ServerConn *net.UDPConn
-				var syslogReceived chan (string)
+				var syslogReceived chan string
 
 				BeforeEach(func() {
 					ServerAddr, err := net.ResolveUDPAddr("udp", ":10202")
@@ -817,7 +823,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					ServerConn, err = net.ListenUDP("udp", ServerAddr)
 					Expect(err).To(Succeed())
 
-					syslogReceived = make(chan (string), 1)
+					syslogReceived = make(chan string, 1)
 					go func() {
 						buf := make([]byte, 1024)
 						for {
@@ -834,7 +840,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				})
 
 				AfterEach(func() {
-					ServerConn.Close()
+					err := ServerConn.Close()
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				// Test that the syslog message s matches pattern:
@@ -850,7 +857,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					s = strings.TrimSpace(s)
 					n, err := fmt.Sscanf(s, tmpl, &timeStamp, &ipAddr, &id, &pid)
 					if n != 4 || err != nil {
-						Expect(fmt.Errorf("Got %q, does not match template %q (%d %s)",
+						Expect(fmt.Errorf("got %q, does not match template %q (%d %s)",
 							s, tmpl, n, err)).To(Succeed())
 					}
 
@@ -887,7 +894,8 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					// notification causes WinSW to think the process is actually
 					// running when it is not.  That is because WinSW monitors
 					// pipe.exe - not the underlying process.
-					os.Setenv("__PIPE_DISABLE_NOTIFY", strconv.FormatBool(true))
+					err := os.Setenv("__PIPE_DISABLE_NOTIFY", strconv.FormatBool(true))
+					Expect(err).NotTo(HaveOccurred())
 					defer os.Unsetenv("__PIPE_DISABLE_NOTIFY")
 
 					conf, err := flappingStartConfig(flapCount, jobCount)
@@ -1024,12 +1032,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			doJobFailureRequest := func(payload string, port int) error {
 				url := fmt.Sprintf("http://localhost:%d", port)
-				_, err := http.Post(url, "application/json", strings.NewReader(payload))
+				_, err := http.Post(url, "application/json", strings.NewReader(payload)) //nolint:gosec
 				return err
 			}
 
-			expectedMonitAlert := func(recieved boshalert.MonitAlert) interface{} {
-				date, err := time.Parse(time.RFC1123Z, recieved.Date)
+			expectedMonitAlert := func(received boshalert.MonitAlert) interface{} {
+				date, err := time.Parse(time.RFC1123Z, received.Date)
 				if err != nil {
 					return err
 				}
@@ -1053,7 +1061,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					return
 				}
 
-				go jobSupervisor.MonitorJobFailures(failureHandler)
+				go func() {
+					err := jobSupervisor.MonitorJobFailures(failureHandler)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				_, err := addFlappingJob(jobSupervisor, jobDir, fs)
 				Expect(err).To(Succeed())
@@ -1070,7 +1081,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					return
 				}
 
-				go jobSupervisor.MonitorJobFailures(failureHandler)
+				go func() {
+					err := jobSupervisor.MonitorJobFailures(failureHandler)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				err := doJobFailureRequest(failureRequest, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
@@ -1085,7 +1099,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					handledAlert.Set(alert)
 					return
 				}
-				go jobSupervisor.MonitorJobFailures(failureHandler)
+				go func() {
+					err := jobSupervisor.MonitorJobFailures(failureHandler)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				// Unmonitor jobs
 				Expect(jobSupervisor.Unmonitor()).To(Succeed())
@@ -1103,7 +1120,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					handledAlert.Set(alert)
 					return
 				}
-				go jobSupervisor.MonitorJobFailures(failureHandler)
+				go func() {
+					err := jobSupervisor.MonitorJobFailures(failureHandler)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				// Unmonitor jobs
 				Expect(jobSupervisor.Unmonitor()).To(Succeed())
@@ -1130,7 +1150,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					atomic.StoreInt32(&didHandleAlert, 1)
 					return
 				}
-				go jobSupervisor.MonitorJobFailures(failureHandler)
+				go func() {
+					err := jobSupervisor.MonitorJobFailures(failureHandler)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				err := doJobFailureRequest(`some bad request`, jobFailuresServerPort)
 				Expect(err).ToNot(HaveOccurred())
@@ -1141,7 +1164,10 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			It("returns an error when it fails to bind", func() {
 				failureHandler := func(alert boshalert.MonitAlert) (err error) { return }
 
-				go jobSupervisor.MonitorJobFailures(failureHandler)
+				go func() {
+					err := jobSupervisor.MonitorJobFailures(failureHandler)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 				time.Sleep(50 * time.Millisecond)
 				err := jobSupervisor.MonitorJobFailures(failureHandler)
 				Expect(err).To(HaveOccurred())
@@ -1201,7 +1227,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				}
 			})
 
-			It("uses 'startargument' instead of 'argment'", func() {
+			It("uses 'startargument' instead of 'arguments'", func() {
 				proc.Stop = &StopCommand{
 					Executable: "STOPPER",
 					Args:       []string{"Stop_1", "Stop_2"},

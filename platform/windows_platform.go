@@ -39,7 +39,7 @@ type WindowsDiskManager interface {
 
 // Administrator user name, this currently exists for testing, but may be useful
 // if we ever change the Admin user name for security reasons.
-var administratorUserName = "Administrator"
+var administratorUserName = "Administrator" //nolint:gochecknoglobals
 
 type WindowsOptions struct {
 	// Feature flag during ephemeral disk support rollout
@@ -293,7 +293,6 @@ func (p WindowsPlatform) GetUpdateSettingsPath(tmpfs bool) string {
 }
 
 func (p WindowsPlatform) SetupSSH(publicKey []string, username string) error {
-
 	if username == boshsettings.VCAPUsername {
 		if !userExists(username) {
 			err := p.CreateUser(username, "")
@@ -342,7 +341,7 @@ func (p WindowsPlatform) SetUserPassword(user, encryptedPwd string) (err error) 
 	return
 }
 
-func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) (err error) {
+func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname string) error {
 	windir := os.Getenv("windir")
 	if windir == "" {
 		return bosherr.Error("SaveDNSRecords: missing %WINDIR% env variable")
@@ -378,7 +377,7 @@ func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, host
 	if err := p.fs.Rename(tmpfile, hostfile); err != nil {
 		return bosherr.WrapErrorf(err, "SaveDNSRecords: renaming %s to %s", tmpfile, hostfile)
 	}
-	return
+	return nil
 }
 
 func (p WindowsPlatform) SetupIPv6(config boshsettings.IPv6) error {
@@ -401,19 +400,17 @@ func (p WindowsPlatform) GetCertManager() (certManager boshcert.Manager) {
 	return p.certManager
 }
 
-func (p WindowsPlatform) SetupLogrotate(groupName, basePath, size string) (err error) {
-	return
+func (p WindowsPlatform) SetupLogrotate(groupName, basePath, size string) error {
+	return nil
 }
 
-func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
+func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) error {
 	if len(servers) == 0 {
-		return
+		return nil
 	}
-	var (
-		stderr string
-	)
+
 	ntpServers := strings.Join(servers, " ")
-	_, stderr, _, err = p.cmdRunner.RunCommand("powershell.exe",
+	_, stderr, _, err := p.cmdRunner.RunCommand("powershell.exe",
 		"new-netfirewallrule",
 		"-displayname", "NTP",
 		"-direction", "outbound",
@@ -421,8 +418,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 		"-protocol", "udp",
 		"-RemotePort", "123")
 	if err != nil {
-		err = bosherr.WrapErrorf(err, "SetTimeWithNtpServers  %s", stderr)
-		return
+		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers  %s", stderr)
 	}
 
 	_, _, _, _ = p.cmdRunner.RunCommand("net", "stop", "w32time")
@@ -434,21 +430,18 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) (err error) {
 		"/syncfromflags:manual",
 		manualPeerList)
 	if err != nil {
-		err = bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
-		return
+		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
 	}
 	_, _, _, _ = p.cmdRunner.RunCommand("net", "start", "w32time")
 	_, stderr, _, err = p.cmdRunner.RunCommand("w32tm", "/config", "/update")
 	if err != nil {
-		err = bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
-		return
+		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
 	}
 	_, stderr, _, err = p.cmdRunner.RunCommand("w32tm", "/resync", "/rediscover")
 	if err != nil {
-		err = bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
-		return
+		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
 	}
-	return
+	return nil
 }
 
 func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64, labelPrefix string) error {
@@ -463,7 +456,7 @@ func (p WindowsPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSw
 
 	protector := p.diskManager.GetProtector()
 	if !protector.CommandExists() {
-		return fmt.Errorf("cannot protect %s. %s cmd does not exist.", dataPath, disk.ProtectCmdlet)
+		return fmt.Errorf("cannot protect %s. %s cmd does not exist", dataPath, disk.ProtectCmdlet)
 	}
 
 	partitioner := p.diskManager.GetPartitioner()
@@ -629,7 +622,7 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 		diskPath = "0"
 	}
 
-	if diskSettings.Path != "" {
+	if diskSettings.Path != "" { //nolint:nestif
 		matchInt, _ := regexp.MatchString(`\d`, diskSettings.Path)
 		if matchInt {
 			diskPath = diskSettings.Path
@@ -637,7 +630,7 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 			alphs := []byte("abcdefghijklmnopq")
 
 			lastChar := diskSettings.Path[len(diskSettings.Path)-1:]
-			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, byte(lastChar[0])))
+			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, lastChar[0]))
 		}
 	} else if diskSettings.DeviceID != "" {
 		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell", "-Command", fmt.Sprintf("Get-Disk -UniqueId %s | Select Number | ConvertTo-Json", strings.ReplaceAll(diskSettings.DeviceID, "-", "")))
@@ -716,7 +709,6 @@ func (p WindowsPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 }
 
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {
-
 	if err := sshEnabled(); err != nil {
 		return "", bosherr.WrapError(err, "OpenSSH is not running")
 	}

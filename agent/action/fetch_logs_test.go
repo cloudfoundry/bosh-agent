@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
@@ -16,11 +16,11 @@ import (
 
 var _ = Describe("FetchLogsAction", func() {
 	var (
-		compressor  *fakecmd.FakeCompressor
-		copier      *fakecmd.FakeCopier
-		blobstore   *fakeblobdelegator.FakeBlobstoreDelegator
-		dirProvider boshdirs.Provider
-		action      FetchLogsAction
+		compressor      *fakecmd.FakeCompressor
+		copier          *fakecmd.FakeCopier
+		blobstore       *fakeblobdelegator.FakeBlobstoreDelegator
+		dirProvider     boshdirs.Provider
+		fetchLogsAction action.FetchLogsAction
 	)
 
 	BeforeEach(func() {
@@ -28,15 +28,15 @@ var _ = Describe("FetchLogsAction", func() {
 		blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
 		dirProvider = boshdirs.NewProvider("/fake/dir")
 		copier = fakecmd.NewFakeCopier()
-		action = NewFetchLogs(compressor, copier, blobstore, dirProvider)
+		fetchLogsAction = action.NewFetchLogs(compressor, copier, blobstore, dirProvider)
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(fetchLogsAction)
+	AssertActionIsNotPersistent(fetchLogsAction)
+	AssertActionIsLoggable(fetchLogsAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(fetchLogsAction)
+	AssertActionIsNotCancelable(fetchLogsAction)
 
 	Describe("Run", func() {
 		testLogs := func(logType string, filters []string, expectedFilters []string) {
@@ -48,7 +48,7 @@ var _ = Describe("FetchLogsAction", func() {
 				return "my-blob-id", multidigestSha, nil
 			}
 
-			logs, err := action.Run(logType, filters)
+			logs, err := fetchLogsAction.Run(logType, filters)
 			Expect(err).ToNot(HaveOccurred())
 
 			var expectedPath string
@@ -72,7 +72,7 @@ var _ = Describe("FetchLogsAction", func() {
 		}
 
 		It("logs errs if given invalid log type", func() {
-			_, err := action.Run("other-logs", []string{})
+			_, err := fetchLogsAction.Run("other-logs", []string{})
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -111,7 +111,7 @@ var _ = Describe("FetchLogsAction", func() {
 				return "my-blob-id", boshcrypto.MultipleDigest{}, nil
 			}
 
-			_, err := action.Run("job", []string{})
+			_, err := fetchLogsAction.Run("job", []string{})
 			Expect(err).ToNot(HaveOccurred())
 
 			// Logs are not cleaned up before blobstore upload

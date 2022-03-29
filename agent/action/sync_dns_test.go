@@ -4,25 +4,22 @@ import (
 	"errors"
 	"path/filepath"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/agent/action"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-
-	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
-
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("SyncDNS", func() {
 	var (
-		action               SyncDNS
+		syncDNSAction        action.SyncDNS
 		fakeBlobstore        *fakeblobdelegator.FakeBlobstoreDelegator
 		fakeSettingsService  *fakesettings.FakeSettingsService
 		fakePlatform         *platformfakes.FakePlatform
@@ -39,15 +36,15 @@ var _ = Describe("SyncDNS", func() {
 		fakeFileSystem = fakesys.NewFakeFileSystem()
 		fakePlatform.GetFsReturns(fakeFileSystem)
 
-		action = NewSyncDNS(fakeBlobstore, fakeSettingsService, fakePlatform, logger)
+		syncDNSAction = action.NewSyncDNS(fakeBlobstore, fakeSettingsService, fakePlatform, logger)
 	})
 
-	AssertActionIsNotAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(syncDNSAction)
+	AssertActionIsNotPersistent(syncDNSAction)
+	AssertActionIsLoggable(syncDNSAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(syncDNSAction)
+	AssertActionIsNotCancelable(syncDNSAction)
 
 	Context("#Run", func() {
 		var (
@@ -90,7 +87,7 @@ var _ = Describe("SyncDNS", func() {
 				})
 
 				It("returns with no error and does no writes and no gets to blobstore", func() {
-					_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -104,7 +101,7 @@ var _ = Describe("SyncDNS", func() {
 				})
 
 				It("returns error", func() {
-					_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).ToNot(HaveOccurred())
 				})
 			})
@@ -112,7 +109,7 @@ var _ = Describe("SyncDNS", func() {
 
 		Context("when the version in the blob does not match the version director supplied", func() {
 			It("returns an error", func() {
-				_, err := action.Run("fake-blobstore-id", multiDigest, 3)
+				_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 3)
 				Expect(err).To(MatchError("version from unpacked dns blob does not match version supplied by director"))
 			})
 		})
@@ -125,7 +122,7 @@ var _ = Describe("SyncDNS", func() {
 
 			Context("when blobstore contains DNS records", func() {
 				It("accesses the blobstore and fetches DNS records", func() {
-					response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
@@ -136,7 +133,7 @@ var _ = Describe("SyncDNS", func() {
 				})
 
 				It("reads the DNS records from the blobstore file", func() {
-					response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
@@ -146,7 +143,7 @@ var _ = Describe("SyncDNS", func() {
 				It("fails reading the DNS records from the blobstore file", func() {
 					fakeFileSystem.RegisterReadFileError("fake-blobstore-file-path", errors.New("fake-error"))
 
-					response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).To(HaveOccurred())
 					Expect(response).To(Equal(""))
 					Expect(err.Error()).To(ContainSubstring("reading fake-blobstore-file-path from blobstore"))
@@ -154,7 +151,7 @@ var _ = Describe("SyncDNS", func() {
 				})
 
 				It("deletes the file once read", func() {
-					_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(fakeFileSystem.FileExists("fake-blobstore-file-path")).To(BeFalse())
@@ -167,7 +164,7 @@ var _ = Describe("SyncDNS", func() {
 						}
 						return nil
 					}
-					_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).ToNot(HaveOccurred())
 
 					tag, message, _ := logger.ErrorArgsForCall(0)
@@ -176,7 +173,7 @@ var _ = Describe("SyncDNS", func() {
 				})
 
 				It("saves DNS records to the platform", func() {
-					response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+					response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(response).To(Equal("synced"))
 
@@ -201,7 +198,7 @@ var _ = Describe("SyncDNS", func() {
 					It("saves DNS records to the platform", func() {
 						Expect(fakeFileSystem.FileExists(stateFilePath)).To(BeFalse())
 
-						response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(response).To(Equal("synced"))
 
@@ -227,7 +224,7 @@ var _ = Describe("SyncDNS", func() {
 					})
 
 					It("saves DNS records to the platform", func() {
-						response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(response).To(Equal("synced"))
 
@@ -251,7 +248,7 @@ var _ = Describe("SyncDNS", func() {
 					})
 
 					It("saves DNS records to the platform", func() {
-						response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(response).To(Equal("synced"))
 
@@ -278,7 +275,7 @@ var _ = Describe("SyncDNS", func() {
 						It("runs successfully and creates a new state file", func() {
 							Expect(fakeFileSystem.FileExists(stateFilePath)).To(BeFalse())
 
-							response, err := action.Run("fake-blobstore-id", multiDigest, 2)
+							response, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 							Expect(err).ToNot(HaveOccurred())
 							Expect(response).To(Equal("synced"))
 
@@ -305,7 +302,7 @@ var _ = Describe("SyncDNS", func() {
 						})
 
 						It("returns an error", func() {
-							_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+							_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("saving local DNS state"))
 						})
@@ -319,7 +316,7 @@ var _ = Describe("SyncDNS", func() {
 					})
 
 					It("fails unmarshalling the DNS records from the file", func() {
-						_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("unmarshalling DNS records"))
 					})
@@ -333,13 +330,13 @@ var _ = Describe("SyncDNS", func() {
 					})
 
 					It("fails to save DNS records on the platform", func() {
-						_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("saving DNS records"))
 					})
 
 					It("should not update the records.json", func() {
-						_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("saving DNS records"))
 
@@ -357,7 +354,7 @@ var _ = Describe("SyncDNS", func() {
 
 				Context("when blobstore returns an error", func() {
 					It("fails with an wrapped error", func() {
-						_, err := action.Run("fake-blobstore-id", multiDigest, 2)
+						_, err := syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("reading fake-blobstore-file-path-does-not-exist from blobstore"))
 					})
@@ -377,7 +374,7 @@ var _ = Describe("SyncDNS", func() {
 
 					Context("when file removal failed", func() {
 						It("logs error", func() {
-							_, _ = action.Run("fake-blobstore-id", multiDigest, 2)
+							_, _ = syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
 							tag, message, _ := logger.ErrorArgsForCall(0)
 							Expect(tag).To(Equal("Sync DNS action"))
 							Expect(message).To(Equal("Failed to remove dns blob file at path 'fake-blobstore-file-path'"))

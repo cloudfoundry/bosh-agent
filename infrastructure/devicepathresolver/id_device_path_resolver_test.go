@@ -38,7 +38,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 
 	Describe("GetRealDevicePath", func() {
 		It("refreshes udev", func() {
-			pathResolver.GetRealDevicePath(diskSettings)
+			pathResolver.GetRealDevicePath(diskSettings) //nolint:errcheck
 			Expect(udev.Triggered).To(Equal(true))
 			Expect(udev.Settled).To(Equal(true))
 		})

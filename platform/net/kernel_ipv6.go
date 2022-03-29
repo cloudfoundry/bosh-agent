@@ -34,7 +34,7 @@ func (net KernelIPv6Impl) Enable(stopCh <-chan struct{}) error {
 	}
 
 	if strings.Contains(grubConf, grubIPv6DisableOpt) {
-		grubConf = strings.Replace(grubConf, grubIPv6DisableOpt, "", -1)
+		grubConf = strings.ReplaceAll(grubConf, grubIPv6DisableOpt, "")
 
 		err = net.fs.WriteFileString(grubConfPath, grubConf)
 		if err != nil {

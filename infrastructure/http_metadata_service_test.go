@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)
 
-func describeHTTPMetadataService() {
+func describeHTTPMetadataService() { //nolint:funlen
 	var (
 		metadataHeaders map[string]string
 		dnsResolver     *fakeinf.FakeDNSResolver
@@ -94,7 +94,8 @@ func describeHTTPMetadataService() {
 					Expect(r.URL.Path).To(Equal("/ssh-keys"))
 					Expect(r.Header.Get("key")).To(Equal("value"))
 
-					w.Write([]byte("fake-public-key"))
+					_, err := w.Write([]byte("fake-public-key"))
+					Expect(err).NotTo(HaveOccurred())
 				})
 				ts = httptest.NewServer(handler)
 			})
@@ -137,7 +138,6 @@ func describeHTTPMetadataService() {
 		Context("when IMDSv2 is required", func() {
 			var tokenCalls int
 			BeforeEach(func() {
-
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					defer GinkgoRecover()
 
@@ -147,7 +147,8 @@ func describeHTTPMetadataService() {
 						Expect(r.Header.Get("X-aws-ec2-metadata-token-ttl-seconds")).To(Equal("300"))
 						tokenCalls++
 
-						w.Write([]byte("this-is-a-token"))
+						_, err := w.Write([]byte("this-is-a-token"))
+						Expect(err).NotTo(HaveOccurred())
 						return
 					}
 
@@ -156,7 +157,8 @@ func describeHTTPMetadataService() {
 					Expect(r.Header.Get("key")).To(Equal("value"))
 					Expect(r.Header.Get("X-aws-ec2-metadata-token")).To(Equal("this-is-a-token"))
 
-					w.Write([]byte("fake-public-key"))
+					_, err := w.Write([]byte("fake-public-key"))
+					Expect(err).NotTo(HaveOccurred())
 				})
 				ts = httptest.NewServer(handler)
 
@@ -173,7 +175,6 @@ func describeHTTPMetadataService() {
 				Expect(publicKey).To(Equal("fake-public-key"))
 			})
 		})
-
 	})
 
 	Describe("GetEmptyPublicKey", func() {
@@ -230,7 +231,8 @@ func describeHTTPMetadataService() {
 					Expect(r.URL.Path).To(Equal("/instanceid"))
 					Expect(r.Header.Get("key")).To(Equal("value"))
 
-					w.Write([]byte("fake-instance-id"))
+					_, err := w.Write([]byte("fake-instance-id"))
+					Expect(err).NotTo(HaveOccurred())
 				})
 				ts = httptest.NewServer(handler)
 			})
@@ -268,13 +270,11 @@ func describeHTTPMetadataService() {
 					Expect(instanceID).To(BeEmpty())
 				})
 			})
-
 		})
 
 		Context("when IMDSv2 is required", func() {
 			var tokenCalls int
 			BeforeEach(func() {
-
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					defer GinkgoRecover()
 
@@ -284,7 +284,8 @@ func describeHTTPMetadataService() {
 						Expect(r.Header.Get("X-aws-ec2-metadata-token-ttl-seconds")).To(Equal("300"))
 						tokenCalls++
 
-						w.Write([]byte("this-is-a-token"))
+						_, err := w.Write([]byte("this-is-a-token"))
+						Expect(err).NotTo(HaveOccurred())
 						return
 					}
 
@@ -293,7 +294,8 @@ func describeHTTPMetadataService() {
 					Expect(r.Header.Get("key")).To(Equal("value"))
 					Expect(r.Header.Get("X-aws-ec2-metadata-token")).To(Equal("this-is-a-token"))
 
-					w.Write([]byte("fake-instance-id"))
+					_, err := w.Write([]byte("fake-instance-id"))
+					Expect(err).NotTo(HaveOccurred())
 				})
 				ts = httptest.NewServer(handler)
 
@@ -309,13 +311,11 @@ func describeHTTPMetadataService() {
 				Expect(tokenCalls).NotTo(BeZero())
 				Expect(instanceID).To(Equal("fake-instance-id"))
 			})
-
 		})
 
 		Context("when a tokenPath is set, but the region does not support IMDSv2 (which could be a thing that could happen, we don't know we can't verify)", func() {
 			var tokenCalls int
 			BeforeEach(func() {
-
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					defer GinkgoRecover()
 
@@ -326,7 +326,8 @@ func describeHTTPMetadataService() {
 						tokenCalls++
 
 						w.WriteHeader(500)
-						w.Write([]byte("ceci-nest-pas-une-token"))
+						_, err := w.Write([]byte("ceci-nest-pas-une-token"))
+						Expect(err).NotTo(HaveOccurred())
 						return
 					}
 
@@ -335,7 +336,8 @@ func describeHTTPMetadataService() {
 					Expect(r.Header.Get("key")).To(Equal("value"))
 					Expect(r.Header.Get("X-aws-ec2-metadata-token")).To(Equal(""))
 
-					w.Write([]byte("fake-instance-id"))
+					_, err := w.Write([]byte("fake-instance-id"))
+					Expect(err).NotTo(HaveOccurred())
 				})
 				ts = httptest.NewServer(handler)
 
@@ -351,7 +353,6 @@ func describeHTTPMetadataService() {
 				Expect(tokenCalls).NotTo(BeZero())
 				Expect(instanceID).To(Equal("fake-instance-id"))
 			})
-
 		})
 	})
 
@@ -376,7 +377,8 @@ func describeHTTPMetadataService() {
 				jsonStr = fmt.Sprintf(`{"server":{"name":"%s"}}`, *serverName)
 			}
 
-			w.Write([]byte(jsonStr))
+			_, err := w.Write([]byte(jsonStr))
+			Expect(err).NotTo(HaveOccurred())
 		}
 
 		BeforeEach(func() {
@@ -446,7 +448,8 @@ func describeHTTPMetadataService() {
 				}`, *registryURL, *dnsServer)
 			}
 
-			w.Write([]byte(jsonStr))
+			_, err := w.Write([]byte(jsonStr))
+			Expect(err).NotTo(HaveOccurred())
 		}
 
 		BeforeEach(func() {
@@ -543,7 +546,8 @@ func describeHTTPMetadataService() {
 					"dns":{"nameserver":["%s"]}
 				}`, *registryURL, *dnsServer)
 				}
-				w.Write([]byte(jsonStr))
+				_, err := w.Write([]byte(jsonStr))
+				Expect(err).NotTo(HaveOccurred())
 			}
 		}
 
@@ -558,7 +562,6 @@ func describeHTTPMetadataService() {
 		})
 
 		Context("when server returns an HTTP Response with status code ==2xx (as defined by the request retryable) within 10 retries", func() {
-
 			BeforeEach(func() {
 				dnsResolver.RegisterRecord(fakeinf.FakeDNSRecord{
 					DNSServers: []string{"fake-dns-server-ip"},
@@ -602,7 +605,8 @@ func describeHTTPMetadataService() {
 			Expect(r.Method).To(Equal("GET"))
 			Expect(r.URL.Path).To(Equal("/user-data"))
 			Expect(r.Header.Get("key")).To(Equal("value"))
-			w.Write([]byte(*jsonStr))
+			_, err := w.Write([]byte(*jsonStr))
+			Expect(err).NotTo(HaveOccurred())
 		}
 
 		BeforeEach(func() {

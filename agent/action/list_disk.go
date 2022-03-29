@@ -27,11 +27,7 @@ func NewListDisk(
 }
 
 func (a ListDiskAction) IsAsynchronous(version ProtocolVersion) bool {
-	if version >= 3 {
-		return true
-	}
-
-	return false
+	return version >= 3
 }
 
 func (a ListDiskAction) IsPersistent() bool {

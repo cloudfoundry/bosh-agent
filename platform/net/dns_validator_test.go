@@ -22,9 +22,10 @@ var _ = Describe("DNSValidator", func() {
 
 	Context("when /etc/resolv.conf contains at least one dns server", func() {
 		BeforeEach(func() {
-			fs.WriteFileString("/etc/resolv.conf", `
+			err := fs.WriteFileString("/etc/resolv.conf", `
 				nameserver 8.8.8.8
 				nameserver 9.9.9.9`)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns nil", func() {
@@ -43,7 +44,8 @@ var _ = Describe("DNSValidator", func() {
 
 	Context("when /etc/resolv.conf does not contain any of the dns servers specified in the manifest", func() {
 		BeforeEach(func() {
-			fs.WriteFileString("/etc/resolv.conf", `nameserver 6.6.6.6`)
+			err := fs.WriteFileString("/etc/resolv.conf", `nameserver 6.6.6.6`)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns error", func() {

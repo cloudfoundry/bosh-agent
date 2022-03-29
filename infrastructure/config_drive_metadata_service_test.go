@@ -19,7 +19,7 @@ import (
 
 var _ = Describe("ConfigDriveMetadataService", describeConfigDriveMetadataService)
 
-func describeConfigDriveMetadataService() {
+func describeConfigDriveMetadataService() { //nolint:funlen
 	var (
 		metadataService MetadataService
 		resolver        *fakeinf.FakeDNSResolver
@@ -65,7 +65,7 @@ func describeConfigDriveMetadataService() {
 			logger,
 		)
 
-		userdataContents := fmt.Sprintf(`{"server":{"name":"fake-server-name"},"registry":{"endpoint":"fake-registry-endpoint"}}`)
+		userdataContents := `{"server":{"name":"fake-server-name"},"registry":{"endpoint":"fake-registry-endpoint"}}`
 		metadataServiceFileContents[1] = []byte(userdataContents)
 
 		metadata := MetadataContentsType{

@@ -2,6 +2,7 @@ package blobstore_delegator_test
 
 import (
 	"errors"
+
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

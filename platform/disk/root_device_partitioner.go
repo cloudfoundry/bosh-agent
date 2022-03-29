@@ -215,17 +215,6 @@ func (p rootDevicePartitioner) roundUp(numToRound, multiple uint64) uint64 {
 	return numToRound + multiple - remainder
 }
 
-func (p rootDevicePartitioner) roundDown(numToRound, multiple uint64) uint64 {
-	if multiple == 0 {
-		return numToRound
-	}
-	remainder := numToRound % multiple
-	if remainder == 0 {
-		return numToRound
-	}
-	return numToRound - remainder
-}
-
 func (p rootDevicePartitioner) SinglePartitionNeedsResize(devicePath string, expectedPartitionType PartitionType) (needsResize bool, err error) {
 	return false, bosherr.WrapError(err, "Resizing the system disk is not supported")
 }

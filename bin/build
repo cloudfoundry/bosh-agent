@@ -1,16 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-agent_dir="$(cd "$(dirname "$0")" && cd .. && pwd)"
-bin=$agent_dir/bin
-
-pushd $agent_dir/main
-  $bin/go build -o $agent_dir/out/bosh-agent
+pushd "${ROOT_DIR}/main"
+  "${ROOT_DIR}/bin/go" build -o "${ROOT_DIR}/out/bosh-agent"
 popd
 
-if [[ $GOOS = 'windows' ]]; then
-  pushd $agent_dir/jobsupervisor/pipe
-    $bin/go build -o $agent_dir/out/bosh-agent-pipe
+if [[ "${GOOS}" = 'windows' ]]; then
+  pushd "${ROOT_DIR}/jobsupervisor/pipe"
+    "${ROOT_DIR}/bin/go" build -o "${ROOT_DIR}/out/bosh-agent-pipe"
   popd
 fi

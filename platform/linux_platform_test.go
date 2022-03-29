@@ -211,6 +211,7 @@ var _ = Describe("LinuxPlatform", func() {
 
 	Describe("DeleteEphemeralUsersMatching", func() {
 		It("deletes users with prefix and regex", func() {
+			//nolint:gosec
 			passwdFile := `bosh_foo:...
 bosh_bar:...
 foo:...
@@ -218,9 +219,10 @@ bar:...
 foobar:...
 bosh_foobar:...`
 
-			fs.WriteFileString("/etc/passwd", passwdFile)
+			err := fs.WriteFileString("/etc/passwd", passwdFile)
+			Expect(err).NotTo(HaveOccurred())
 
-			err := platform.DeleteEphemeralUsersMatching("bar$")
+			err = platform.DeleteEphemeralUsersMatching("bar$")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"userdel", "-rf", "bosh_bar"}))
@@ -252,12 +254,12 @@ bosh_foobar:...`
 		})
 
 		It("returns error if mounting tmpfs fails", func() {
-			mounter.MountTmpfsReturns(errors.New("explosion!"))
+			mounter.MountTmpfsReturns(errors.New("fake error"))
 
 			err := platform.SetupBoshSettingsDisk()
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("explosion!"))
+			Expect(err.Error()).To(ContainSubstring("fake error"))
 		})
 	})
 
@@ -595,7 +597,8 @@ bosh_foobar:...`
 		It("setup ssh with a single key", func() {
 			fs.HomeDirHomePath = "/some/home/dir"
 
-			platform.SetupSSH([]string{"some public key"}, "vcap")
+			err := platform.SetupSSH([]string{"some public key"}, "vcap")
+			Expect(err).NotTo(HaveOccurred())
 
 			sshDirPath := "/some/home/dir/.ssh"
 			sshDirStat := fs.GetFileTestStat(sshDirPath)
@@ -619,7 +622,8 @@ bosh_foobar:...`
 		It("setup ssh with multiple keys", func() {
 			fs.HomeDirHomePath = "/some/home/dir"
 
-			platform.SetupSSH([]string{"some public key", "some other public key"}, "vcap")
+			err := platform.SetupSSH([]string{"some public key", "some other public key"}, "vcap")
+			Expect(err).NotTo(HaveOccurred())
 
 			sshDirPath := "/some/home/dir/.ssh"
 			sshDirStat := fs.GetFileTestStat(sshDirPath)
@@ -644,14 +648,16 @@ bosh_foobar:...`
 
 	Describe("SetUserPassword", func() {
 		It("set user password", func() {
-			platform.SetUserPassword("my-user", "my-encrypted-password")
+			err := platform.SetUserPassword("my-user", "my-encrypted-password")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"usermod", "-p", "my-encrypted-password", "my-user"}))
 		})
 
 		Context("password is empty string", func() {
 			It("sets password to *", func() {
-				platform.SetUserPassword("my-user", "")
+				err := platform.SetUserPassword("my-user", "")
+				Expect(err).NotTo(HaveOccurred())
 				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"usermod", "-p", "*", "my-user"}))
 			})
@@ -671,12 +677,12 @@ ff02::3 ip6-allhosts
 `
 		Context("When running command to get hostname fails", func() {
 			It("returns an error", func() {
-				result := fakesys.FakeCmdResult{Error: errors.New("Oops!")}
+				result := fakesys.FakeCmdResult{Error: errors.New("fake error")}
 				cmdRunner.AddCmdResult("hostname foobar.local", result)
 
 				err := platform.SetupHostname("foobar.local")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Setting hostname: Oops!"))
+				Expect(err.Error()).To(ContainSubstring("Setting hostname: fake error"))
 			})
 		})
 
@@ -712,7 +718,8 @@ ff02::3 ip6-allhosts
 
 		Context("When host files have not yet been configured", func() {
 			It("sets up hostname", func() {
-				platform.SetupHostname("foobar.local")
+				err := platform.SetupHostname("foobar.local")
+				Expect(err).NotTo(HaveOccurred())
 				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"hostname", "foobar.local"}))
 
@@ -728,8 +735,10 @@ ff02::3 ip6-allhosts
 
 		Context("When host files have already been configured", func() {
 			It("skips setting up hostname to prevent overriding changes made by the release author", func() {
-				platform.SetupHostname("foobar.local")
-				platform.SetupHostname("newfoo.local")
+				err := platform.SetupHostname("foobar.local")
+				Expect(err).NotTo(HaveOccurred())
+				err = platform.SetupHostname("newfoo.local")
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"hostname", "foobar.local"}))
@@ -758,7 +767,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 `
 
 		It("sets up logrotate", func() {
-			platform.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
+			err := platform.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
+			Expect(err).NotTo(HaveOccurred())
 
 			logrotateFileContent, err := fs.ReadFileString("/etc/logrotate.d/fake-group-name")
 			Expect(err).NotTo(HaveOccurred())
@@ -771,7 +781,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 
 	Describe("SetTimeWithNtpServers", func() {
 		It("sets time with ntp servers", func() {
-			platform.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
+			err := platform.SetTimeWithNtpServers([]string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"})
+			Expect(err).NotTo(HaveOccurred())
 
 			ntpConfig := fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
 			Expect(ntpConfig.StringContents()).To(Equal("0.north-america.pool.ntp.org 1.north-america.pool.ntp.org"))
@@ -782,7 +793,8 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		})
 
 		It("sets time with ntp servers is noop when no ntp server provided", func() {
-			platform.SetTimeWithNtpServers([]string{})
+			err := platform.SetTimeWithNtpServers([]string{})
+			Expect(err).NotTo(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 
 			ntpConfig := fs.GetFileTestStat("/fake-dir/bosh/etc/ntpserver")
@@ -1122,7 +1134,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						})
 					})
 
-					Context("when getting absolute path suceeds", func() {
+					Context("when getting absolute path succeeds", func() {
 						BeforeEach(func() {
 							cmdRunner.AddCmdResult(
 								"readlink -f /dev/vda1",
@@ -1337,7 +1349,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 						}
 					})
 
-					Context("when getting absolute path suceeds", func() {
+					Context("when getting absolute path succeeds", func() {
 						BeforeEach(func() {
 							cmdRunner.AddCmdResult(
 								"readlink -f /dev/vda2",
@@ -2006,7 +2018,7 @@ Number  Start   End     Size    File system  Name             Flags
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
 			Expect(fileStats).NotTo(BeNil())
-			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
 		})
 
@@ -2100,7 +2112,8 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not create new tmp filesystem", func() {
-						platform.SetupTmpDir()
+						err := platform.SetupTmpDir()
+						Expect(err).NotTo(HaveOccurred())
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -2130,7 +2143,8 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not create new tmp filesystem", func() {
-						platform.SetupTmpDir()
+						err := platform.SetupTmpDir()
+						Expect(err).To(HaveOccurred())
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -2138,7 +2152,8 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not try to mount /tmp", func() {
-						platform.SetupTmpDir()
+						err := platform.SetupTmpDir()
+						Expect(err).To(HaveOccurred())
 						Expect(mounter.MountCallCount()).To(Equal(0))
 					})
 				})
@@ -2193,7 +2208,8 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not create new tmp filesystem", func() {
-						platform.SetupTmpDir()
+						err := platform.SetupTmpDir()
+						Expect(err).NotTo(HaveOccurred())
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -2201,7 +2217,8 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not try to mount root_tmp into /var/tmp", func() {
-						platform.SetupTmpDir()
+						err := platform.SetupTmpDir()
+						Expect(err).NotTo(HaveOccurred())
 						Expect(mounter.MountCallCount()).To(Equal(0))
 					})
 				})
@@ -2223,7 +2240,8 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not create new tmp filesystem", func() {
-						platform.SetupTmpDir()
+						err := platform.SetupTmpDir()
+						Expect(err).To(HaveOccurred())
 						for _, cmd := range cmdRunner.RunCommands {
 							Expect(cmd[0]).ToNot(Equal("truncate"))
 							Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -2231,7 +2249,8 @@ Number  Start   End     Size    File system  Name             Flags
 					})
 
 					It("does not try to mount /var/tmp", func() {
-						platform.SetupTmpDir()
+						err := platform.SetupTmpDir()
+						Expect(err).To(HaveOccurred())
 						Expect(mounter.MountCallCount()).To(Equal(0))
 					})
 				})
@@ -2268,7 +2287,8 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("does not create new tmp filesystem", func() {
-				platform.SetupTmpDir()
+				err := platform.SetupTmpDir()
+				Expect(err).NotTo(HaveOccurred())
 				for _, cmd := range cmdRunner.RunCommands {
 					Expect(cmd[0]).ToNot(Equal("truncate"))
 					Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -2276,7 +2296,8 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("does not try to mount anything", func() {
-				platform.SetupTmpDir()
+				err := platform.SetupTmpDir()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(mounter.MountCallCount()).To(Equal(0))
 			})
 		})
@@ -2451,9 +2472,10 @@ Number  Start   End     Size    File system  Name             Flags
 
 			Context("when the chrony user exists", func() {
 				BeforeEach(func() {
-					fs.WriteFileString("/etc/passwd", `bob:fakeuser
+					err := fs.WriteFileString("/etc/passwd", `bob:fakeuser
 _chrony:somethingfake
 sam:fakeanotheruser`)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("creates the /var/log/chrony directory", func() {
@@ -2468,10 +2490,11 @@ sam:fakeanotheruser`)
 
 			Context("when there is an error reading /etc/passwd", func() {
 				It("acts like there is no chrony user", func() {
-					fs.WriteFileString("/etc/passwd", `_notchrony:somethingfake`)
+					err := fs.WriteFileString("/etc/passwd", `_notchrony:somethingfake`)
+					Expect(err).NotTo(HaveOccurred())
 					fs.RegisterReadFileError("/etc/passwd", fmt.Errorf("boom"))
 
-					err := act()
+					err = act()
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(cmdRunner.RunCommands).ToNot(ContainElement([]string{"mkdir", "-p", "/fake-dir/data/root_log/chrony"}))
@@ -2517,7 +2540,8 @@ sam:fakeanotheruser`)
 				})
 
 				It("does not try to mount root_log into /var/log", func() {
-					act()
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
 			})
@@ -2539,7 +2563,8 @@ sam:fakeanotheruser`)
 				})
 
 				It("does not try to mount /var/log", func() {
-					act()
+					err := act()
+					Expect(err).To(HaveOccurred())
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
 			})
@@ -2604,7 +2629,8 @@ sam:fakeanotheruser`)
 				})
 
 				It("does not try to mount root_var_opt into /var/opt", func() {
-					platform.SetupOptDir()
+					err := platform.SetupOptDir()
+					Expect(err).NotTo(HaveOccurred())
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
 			})
@@ -2626,7 +2652,8 @@ sam:fakeanotheruser`)
 				})
 
 				It("does not try to mount /var/opt", func() {
-					platform.SetupOptDir()
+					err := platform.SetupOptDir()
+					Expect(err).To(HaveOccurred())
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
 			})
@@ -2671,7 +2698,8 @@ sam:fakeanotheruser`)
 				})
 
 				It("does not try to mount root_opt into /opt", func() {
-					platform.SetupOptDir()
+					err := platform.SetupOptDir()
+					Expect(err).NotTo(HaveOccurred())
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
 			})
@@ -2693,7 +2721,8 @@ sam:fakeanotheruser`)
 				})
 
 				It("does not try to mount /opt", func() {
-					platform.SetupOptDir()
+					err := platform.SetupOptDir()
+					Expect(err).To(HaveOccurred())
 					Expect(mounter.MountCallCount()).To(Equal(0))
 				})
 			})
@@ -2941,7 +2970,7 @@ sam:fakeanotheruser`)
 				})
 			})
 
-			Context("when settings specify an unsupported filesysem", func() {
+			Context("when settings specify an unsupported filesystem", func() {
 				BeforeEach(func() {
 					diskSettings.FileSystemType = boshdisk.FileSystemType("blahblah")
 				})
@@ -2954,9 +2983,22 @@ sam:fakeanotheruser`)
 				})
 			})
 
+			Context(`when settings specify a "swap" filesystem`, func() {
+				BeforeEach(func() {
+					diskSettings.FileSystemType = boshdisk.FileSystemSwap
+				})
+
+				It("it errors", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(Equal(`The filesystem type "swap" is not supported`))
+				})
+			})
+
 			Context("when disk could not be formatted", func() {
 				BeforeEach(func() {
-					formatter.FormatError = errors.New("Oh noes!")
+					formatter.FormatError = errors.New("oh noes")
 				})
 
 				It("returns an error", func() {
@@ -2966,7 +3008,7 @@ sam:fakeanotheruser`)
 					)
 
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Formatting partition with xfs: Oh noes!"))
+					Expect(err.Error()).To(Equal("Formatting partition with xfs: oh noes"))
 				})
 			})
 		})
@@ -3201,7 +3243,7 @@ sam:fakeanotheruser`)
 				})
 
 				It("returns an error when updating managed_disk_settings.json fails", func() {
-					fs.WriteFileError = errors.New("Oh noes!")
+					fs.WriteFileError = errors.New("fake error")
 
 					err := platform.MountPersistentDisk(
 						boshsettings.DiskSettings{Path: "fake-volume-id", FileSystemType: boshdisk.FileSystemXFS},
@@ -3209,7 +3251,7 @@ sam:fakeanotheruser`)
 					)
 
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Writing managed_disk_settings.json: Oh noes!"))
+					Expect(err.Error()).To(Equal("Writing managed_disk_settings.json: fake error"))
 				})
 
 				It("mounts the disk", func() {
@@ -3852,7 +3894,8 @@ unit: sectors
 
 	Describe("GetMonitCredentials", func() {
 		It("get monit credentials reads monit file from disk", func() {
-			fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
+			err := fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user:fake-random-password")
+			Expect(err).NotTo(HaveOccurred())
 
 			username, password, err := platform.GetMonitCredentials()
 			Expect(err).NotTo(HaveOccurred())
@@ -3862,14 +3905,16 @@ unit: sectors
 		})
 
 		It("get monit credentials errs when invalid file format", func() {
-			fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user")
+			err := fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user")
+			Expect(err).NotTo(HaveOccurred())
 
-			_, _, err := platform.GetMonitCredentials()
+			_, _, err = platform.GetMonitCredentials()
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("get monit credentials leaves colons in password intact", func() {
-			fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
+			err := fs.WriteFileString("/fake-dir/monit/monit.user", "fake-user:fake:random:password")
+			Expect(err).NotTo(HaveOccurred())
 
 			username, password, err := platform.GetMonitCredentials()
 			Expect(err).NotTo(HaveOccurred())
@@ -3881,9 +3926,10 @@ unit: sectors
 
 	Describe("PrepareForNetworkingChange", func() {
 		It("removes the network persistent rules file", func() {
-			fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
+			err := fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
+			Expect(err).NotTo(HaveOccurred())
 
-			err := platform.PrepareForNetworkingChange()
+			err = platform.PrepareForNetworkingChange()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeFalse())
@@ -3949,7 +3995,9 @@ unit: sectors
 
 	Describe("GetHostPublicKey", func() {
 		It("gets host public key if file exists", func() {
-			fs.WriteFileString("/etc/ssh/ssh_host_rsa_key.pub", "public-key")
+			err := fs.WriteFileString("/etc/ssh/ssh_host_rsa_key.pub", "public-key")
+			Expect(err).NotTo(HaveOccurred())
+
 			hostPublicKey, err := platform.GetHostPublicKey()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(hostPublicKey).To(Equal("public-key"))
@@ -4007,8 +4055,9 @@ unit: sectors
 	Describe("RemoveDevTools", func() {
 		It("removes listed packages", func() {
 			devToolsListPath := path.Join(dirProvider.EtcDir(), "dev_tools_file_list")
-			fs.WriteFileString(devToolsListPath, "dummy-compiler")
-			err := platform.RemoveDevTools(devToolsListPath)
+			err := fs.WriteFileString(devToolsListPath, "dummy-compiler")
+			Expect(err).NotTo(HaveOccurred())
+			err = platform.RemoveDevTools(devToolsListPath)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-rf", "dummy-compiler"}))
@@ -4018,8 +4067,9 @@ unit: sectors
 	Describe("RemoveStaticLibraries", func() {
 		It("removes listed static libraries", func() {
 			staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
-			fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
-			err := platform.RemoveStaticLibraries(staticLibrariesListPath)
+			err := fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
+			Expect(err).NotTo(HaveOccurred())
+			err = platform.RemoveStaticLibraries(staticLibrariesListPath)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cmdRunner.RunCommands).To(HaveLen(2))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"rm", "-rf", "static.a"}))
@@ -4038,8 +4088,9 @@ unit: sectors
 			It("should return an error", func() {
 				cmdRunner.AddCmdResult("rm -rf library.a", fakesys.FakeCmdResult{Error: errors.New("oh noes")})
 				staticLibrariesListPath := path.Join(dirProvider.EtcDir(), "static_libraries_list")
-				fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
-				err := platform.RemoveStaticLibraries(staticLibrariesListPath)
+				err := fs.WriteFileString(staticLibrariesListPath, "static.a\nlibrary.a")
+				Expect(err).NotTo(HaveOccurred())
+				err = platform.RemoveStaticLibraries(staticLibrariesListPath)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("oh noes"))
 				Expect(cmdRunner.RunCommands).To(HaveLen(2))
@@ -4062,7 +4113,7 @@ unit: sectors
 				},
 			}
 
-			defaultEtcHosts = strings.Replace(EtcHostsTemplate, "{{ . }}", "fake-hostname", -1)
+			defaultEtcHosts = strings.ReplaceAll(EtcHostsTemplate, "{{ . }}", "fake-hostname")
 		})
 
 		It("fails generating a UUID", func() {

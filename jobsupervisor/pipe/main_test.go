@@ -26,7 +26,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe/syslog"
 )
 
-const ServiceName = "jimbob"
+const ServiceName = "jim-bob"
 const MachineIP = "1.2.3.4"
 
 func FindOpenPort() (int, error) {
@@ -34,7 +34,7 @@ func FindOpenPort() (int, error) {
 	rand.Seed(time.Now().UnixNano())
 
 	for i := 0; i < 50; i++ {
-		port := Base + rand.Intn(10000)
+		port := Base + rand.Intn(10000) //nolint:gosec
 		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("localhost:%d", port))
 		if err != nil {
 			return 0, err
@@ -77,7 +77,8 @@ var _ = Describe("Main", func() {
 			server.RouteToHandler("POST", "/", func(w http.ResponseWriter, r *http.Request) {
 				b, err := ioutil.ReadAll(r.Body)
 				Expect(err).To(Succeed())
-				r.Body.Close()
+				err = r.Body.Close()
+				Expect(err).NotTo(HaveOccurred())
 				bodyCh <- b
 			})
 		})
@@ -107,8 +108,8 @@ var _ = Describe("Main", func() {
 			Expect(event.ProcessName).To(Equal("foo"))
 		}
 
-		// On Concourse tests on Windows may be ran in a Pipe, which
-		// will already have it's env vars set.  Make sure we don't
+		// On Concourse tests on Windows may be run in a Pipe, which
+		// will already have its env vars set.  Make sure we don't
 		// pass those env vars to the Pipe we are testing.
 		It("overwrites Pipe specific NOTIFY_HTTP env vars during testing", func() {
 			defer invalidatePipeEnvVars()()
@@ -146,7 +147,8 @@ var _ = Describe("Main", func() {
 			Expect(err).To(Succeed())
 		})
 		AfterEach(func() {
-			os.RemoveAll(tempDir)
+			err := os.RemoveAll(tempDir)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("never logs own behaviour to stdout/err", func() {
@@ -196,7 +198,7 @@ var _ = Describe("Main", func() {
 			var invalidLogDir string
 			randString := func() string {
 				b := make([]byte, 8)
-				n, _ := rand.Read(b)
+				n, _ := rand.Read(b) //nolint:gosec
 				return fmt.Sprintf("%X", b[:n])
 			}
 			for i := 0; i < 1000; i++ {
@@ -232,7 +234,7 @@ var _ = Describe("Main", func() {
 		var ServerConn *net.UDPConn
 		var ServerAddr *net.UDPAddr
 		var syslogPort string
-		var syslogReceived chan (string)
+		var syslogReceived chan string
 
 		var done chan struct{}
 		var wg *sync.WaitGroup
@@ -294,7 +296,7 @@ var _ = Describe("Main", func() {
 		}
 
 		It("ignores errors writing to syslog, allowing the app to continue functioning", func() {
-			cmd := exec.Command(pathToPipeCLI, GoSequencePath,
+			cmd := exec.Command(pathToPipeCLI, GoSequencePath, //nolint:gosec
 				"-start", strconv.Itoa(Start),
 				"-end", strconv.Itoa(End),
 				"-int", Interval.String(),
@@ -311,15 +313,17 @@ var _ = Describe("Main", func() {
 			Expect(cmd.Start()).To(Succeed())
 			go func() {
 				time.Sleep((Interval / 2) * 3) // * 1.5
-				ServerConn.Close()
+				err := ServerConn.Close()
+				Expect(err).NotTo(HaveOccurred())
 			}()
 			Expect(cmd.Wait()).To(Succeed())
 
-			checkSequenceOutput(&stdout, Start, End)
+			err := checkSequenceOutput(&stdout, Start, End)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		testStdoutToSyslog := func() {
-			cmd := exec.Command(pathToPipeCLI, GoSequencePath,
+			cmd := exec.Command(pathToPipeCLI, GoSequencePath, //nolint:gosec
 				"-start", strconv.Itoa(Start),
 				"-end", strconv.Itoa(End),
 				"-int", Interval.String(),
@@ -359,7 +363,7 @@ var _ = Describe("Main", func() {
 		})
 
 		It("logs stderr output to syslog", func() {
-			cmd := exec.Command(pathToPipeCLI, GoSequencePath,
+			cmd := exec.Command(pathToPipeCLI, GoSequencePath, //nolint:gosec
 				"-start", strconv.Itoa(Start),
 				"-end", strconv.Itoa(End),
 				"-int", Interval.String(),
@@ -401,7 +405,7 @@ func check(p syslog.Priority, in, out string) error {
 
 	n, err := fmt.Sscanf(out, tmpl, &timestamp, &parsedHostname, &pid)
 	if n != 3 || err != nil || parsedHostname != MachineIP {
-		return fmt.Errorf("Got %q, does not match template %q (%d %s)", out, tmpl, n, err)
+		return fmt.Errorf("got %q, does not match template %q (%d %s)", out, tmpl, n, err)
 	}
 	return nil
 }
@@ -429,7 +433,7 @@ func cmdEnv(envVars ...string) []string {
 
 // invalidatePipeEnvVars stores invalid values in the Pipe specific variables
 // of the current environment and returns a function to the reset any modified
-// varaibles.
+// variables.
 //
 // Example:
 //
@@ -458,7 +462,7 @@ func invalidatePipeEnvVars() (restore func()) {
 	for k := range envVars {
 		os.Setenv(k, "")
 	}
-	// function to reset restore environemnt
+	// function to reset restore environment
 	return func() {
 		for k, v := range envVars {
 			if v.ok {

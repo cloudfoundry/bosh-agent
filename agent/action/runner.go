@@ -88,7 +88,8 @@ func (r concreteRunner) invalidReturnTypes(methodType reflect.Type) (valid bool)
 	return
 }
 
-func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, protocolVersion ProtocolVersion, args []interface{}) (methodArgs []reflect.Value, err error) {
+func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, protocolVersion ProtocolVersion, args []interface{}) ([]reflect.Value, error) {
+	methodArgs := []reflect.Value{}
 	numberOfArgs := runMethodType.NumIn()
 	numberOfReqArgs := numberOfArgs
 
@@ -109,16 +110,14 @@ func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, protocolVe
 	}
 
 	if len(args) < numberOfReqArgs {
-		err = bosherr.Errorf("Not enough arguments, expected %d, got %d", numberOfReqArgs, len(args))
-		return
+		return methodArgs, bosherr.Errorf("Not enough arguments, expected %d, got %d", numberOfReqArgs, len(args))
 	}
 
 	for i, argFromPayload := range args {
 		var rawArgBytes []byte
-		rawArgBytes, err = json.Marshal(argFromPayload)
+		rawArgBytes, err := json.Marshal(argFromPayload)
 		if err != nil {
-			err = bosherr.WrapError(err, "Marshalling action argument")
-			return
+			return methodArgs, bosherr.WrapError(err, "Marshalling action argument")
 		}
 
 		argType, typeFound := r.getMethodArgType(runMethodType, i+argsOffset)
@@ -130,14 +129,13 @@ func (r concreteRunner) extractMethodArgs(runMethodType reflect.Type, protocolVe
 
 		err = json.Unmarshal(rawArgBytes, argValuePtr.Interface())
 		if err != nil {
-			err = bosherr.WrapError(err, "Unmarshalling action argument")
-			return
+			return methodArgs, bosherr.WrapError(err, "Unmarshalling action argument")
 		}
 
 		methodArgs = append(methodArgs, reflect.Indirect(argValuePtr))
 	}
 
-	return
+	return methodArgs, nil
 }
 
 func (r concreteRunner) getMethodArgType(methodType reflect.Type, index int) (argType reflect.Type, found bool) {

@@ -100,7 +100,7 @@ func (p partedPartitioner) partitionsMatch(existingPartitions []ExistingPartitio
 			return false
 		}
 
-		remainingDiskSpace = remainingDiskSpace - partition.SizeInBytes
+		remainingDiskSpace -= partition.SizeInBytes
 	}
 
 	return true
@@ -215,16 +215,15 @@ func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devi
 func (p partedPartitioner) runPartedPrint(devicePath string) (stdout, stderr string, exitStatus int, err error) {
 	stdout, stderr, exitStatus, err = p.cmdRunner.RunCommand("parted", "-m", devicePath, "unit", "B", "print")
 
-	defer p.cmdRunner.RunCommand("udevadm", "settle")
+	defer p.cmdRunner.RunCommand("udevadm", "settle") // nolint:errcheck
 
-	printFields := strings.SplitN(string(stdout), ":", 7)
+	printFields := strings.SplitN(stdout, ":", 7)
 
 	// Create a new partition table if
 	// - there is none, or
 	// - a "loop" partition table is shown (which can mean a valid one was not found)
-	if strings.Contains(fmt.Sprintf("%s\n%s", stdout, stderr), "unrecognised disk label") ||
-		(len(printFields) > 5 && printFields[5] == "loop") {
-
+	containsUnrecognizedDiskLabel := strings.Contains(fmt.Sprintf("%s\n%s", stdout, stderr), "unrecognised disk label")
+	if containsUnrecognizedDiskLabel || (len(printFields) > 5 && printFields[5] == "loop") {
 		stdout, stderr, exitStatus, err = p.getPartitionTable(devicePath)
 		if err != nil {
 			return stdout, stderr, exitStatus, bosherr.WrapErrorf(err, "Parted making label")
@@ -304,7 +303,7 @@ func (p partedPartitioner) createEachPartition(partitions []Partition, deviceFul
 			)
 			if err != nil {
 				p.logger.Error(p.logTag, "Failed with an error: %s", err)
-				//TODO: double check the output here. Does it make sense?
+				// TODO: double check the output here. Does it make sense?
 				return true, bosherr.WrapError(err, "Creating partition using parted")
 			}
 
@@ -314,7 +313,10 @@ func (p partedPartitioner) createEachPartition(partitions []Partition, deviceFul
 				return true, bosherr.WrapError(err, "Creating partition using parted")
 			}
 
-			p.cmdRunner.RunCommand("udevadm", "settle")
+			_, _, _, err = p.cmdRunner.RunCommand("udevadm", "settle")
+			if err != nil {
+				p.logger.Error(p.logTag, "Failed to run udevadm settle: %s", err)
+			}
 
 			p.logger.Info(p.logTag, "Successfully created partition %d on %s", index, devicePath)
 			return false, nil
@@ -353,10 +355,11 @@ func (p partedPartitioner) createMapperPartition(devicePath string) error {
 			return true, bosherr.Errorf("No devices found")
 		}
 
+		part1Regexp := regexp.MustCompile("-part1")
 		device := strings.TrimPrefix(devicePath, "/dev/mapper/")
 		lines := strings.Split(strings.Trim(output, "\n"), "\n")
 		for i := 0; i < len(lines); i++ {
-			if match, _ := regexp.MatchString("-part1", lines[i]); match {
+			if part1Regexp.MatchString(lines[i]) {
 				if strings.Contains(lines[i], device) {
 					p.logger.Info(p.logTag, "Succeeded in detecting partition %s", devicePath+"-part1")
 					return false, nil

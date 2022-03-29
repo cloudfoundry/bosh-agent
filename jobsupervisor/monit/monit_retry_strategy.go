@@ -57,21 +57,21 @@ func (m *monitRetryStrategy) Try() error {
 			break
 		}
 
-		is503 := m.retryable.Response() != nil && m.retryable.Response().StatusCode == 503
+		is503 := m.retryable.Response() != nil && m.retryable.Response().StatusCode == 503 //nolint:bodyclose
 		isCanceled := err != nil && strings.Contains(err.Error(), "request canceled")
 
 		if (is503 || isCanceled) && m.unavailableAttempts < m.maxUnavailableAttempts {
-			m.unavailableAttempts = m.unavailableAttempts + 1
+			m.unavailableAttempts++
 		} else {
 			// once a non-503 error is received, all errors count as 'other' errors
 			m.unavailableAttempts = m.maxUnavailableAttempts + 1
-			m.otherAttempts = m.otherAttempts + 1
+			m.otherAttempts++
 		}
 
 		m.timeService.Sleep(m.delay)
 	}
 
-	if err != nil && m.retryable.Response() != nil {
+	if err != nil && m.retryable.Response() != nil { //nolint:bodyclose
 		_ = m.retryable.Response().Body.Close()
 	}
 

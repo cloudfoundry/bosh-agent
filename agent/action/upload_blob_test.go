@@ -3,37 +3,37 @@ package action_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
-	"github.com/cloudfoundry/bosh-utils/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
+	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("UploadBlobAction", func() {
 
 	var (
-		action          UploadBlobAction
-		fakeBlobManager *FakeBlobManagerInterface
+		uploadBlobAction action.UploadBlobAction
+		fakeBlobManager  *blobstorefakes.FakeBlobManagerInterface
 	)
 
 	BeforeEach(func() {
-		fakeBlobManager = &FakeBlobManagerInterface{}
-		action = NewUploadBlobAction(fakeBlobManager)
+		fakeBlobManager = &blobstorefakes.FakeBlobManagerInterface{}
+		uploadBlobAction = action.NewUploadBlobAction(fakeBlobManager)
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsNotLoggable(action)
+	AssertActionIsAsynchronous(uploadBlobAction)
+	AssertActionIsNotPersistent(uploadBlobAction)
+	AssertActionIsNotLoggable(uploadBlobAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(uploadBlobAction)
+	AssertActionIsNotCancelable(uploadBlobAction)
 
 	Describe("Run", func() {
 		Context("Payload Validation", func() {
 			It("validates the payload using provided Checksum", func() {
-				_, err := action.Run(UploadBlobSpec{
+				_, err := uploadBlobAction.Run(action.UploadBlobSpec{
 					Payload:  "Y2xvdWRmb3VuZHJ5",
 					Checksum: crypto.MustParseMultipleDigest("sha1:e578935e2f0613d68ba6a4fcc0d32754b52d334d"),
 					BlobID:   "id",
@@ -42,17 +42,18 @@ var _ = Describe("UploadBlobAction", func() {
 			})
 
 			It("validates the payload using provided sha256 Checksum", func() {
-				//echo -n 'cloudfoundry' | shasum -a 256
-				_, err := action.Run(UploadBlobSpec{
-					Payload:  "Y2xvdWRmb3VuZHJ5",
-					Checksum: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA256, "2ad453a5a20f9e110c40100c7f8eeb929070dd5abea32d7401ab74779b695e73")),
-					BlobID:   "id",
+				_, err := uploadBlobAction.Run(action.UploadBlobSpec{
+					Payload: "Y2xvdWRmb3VuZHJ5",
+					Checksum: crypto.MustNewMultipleDigest(crypto.NewDigest(crypto.DigestAlgorithmSHA256,
+						// echo -n 'cloudfoundry' | shasum -a 256
+						"2ad453a5a20f9e110c40100c7f8eeb929070dd5abea32d7401ab74779b695e73")),
+					BlobID: "id",
 				})
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("does not validate the payload when the Checksum is incorrect", func() {
-				_, err := action.Run(UploadBlobSpec{
+				_, err := uploadBlobAction.Run(action.UploadBlobSpec{
 					Payload:  "Y2xvdWRmb3VuZHJ5",
 					Checksum: crypto.MustParseMultipleDigest("sha1:badChecksum"),
 					BlobID:   "id",
@@ -63,7 +64,7 @@ var _ = Describe("UploadBlobAction", func() {
 		})
 
 		It("should call the blob manager", func() {
-			_, err := action.Run(UploadBlobSpec{
+			_, err := uploadBlobAction.Run(action.UploadBlobSpec{
 				Payload:  "Y2xvdWRmb3VuZHJ5",
 				Checksum: crypto.MustParseMultipleDigest("sha1:e578935e2f0613d68ba6a4fcc0d32754b52d334d"),
 				BlobID:   "id",
@@ -74,7 +75,7 @@ var _ = Describe("UploadBlobAction", func() {
 
 		It("should return an error if the blob manager fails", func() {
 			fakeBlobManager.WriteReturns(errors.New("blob write error"))
-			_, err := action.Run(UploadBlobSpec{
+			_, err := uploadBlobAction.Run(action.UploadBlobSpec{
 				Payload:  "Y2xvdWRmb3VuZHJ5",
 				Checksum: crypto.MustParseMultipleDigest("sha1:e578935e2f0613d68ba6a4fcc0d32754b52d334d"),
 				BlobID:   "id",

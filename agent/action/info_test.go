@@ -1,30 +1,30 @@
 package action_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 )
 
 var _ = Describe("Info", func() {
 	var (
-		action InfoAction
+		infoAction action.InfoAction
 	)
 
 	BeforeEach(func() {
-		action = NewInfo()
+		infoAction = action.NewInfo()
 	})
 
-	AssertActionIsNotAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotAsynchronous(infoAction)
+	AssertActionIsNotPersistent(infoAction)
+	AssertActionIsLoggable(infoAction)
 
-	AssertActionIsNotResumable(action)
-	AssertActionIsNotCancelable(action)
+	AssertActionIsNotResumable(infoAction)
+	AssertActionIsNotCancelable(infoAction)
 
 	It("returns the api version", func() {
-		infoResponse, err := action.Run()
+		infoResponse, err := infoAction.Run()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(infoResponse.APIVersion).To(Equal(1))
 	})

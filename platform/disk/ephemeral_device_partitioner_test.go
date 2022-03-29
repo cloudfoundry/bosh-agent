@@ -2,6 +2,7 @@ package disk_test
 
 import (
 	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -42,9 +43,10 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 
 		fakeCmdRunner = fakesys.NewFakeCmdRunner()
 		fakefs = fakesys.NewFakeFileSystem()
-		fakefs.WriteFile("/setting/path.json", []byte(`{
+		err := fakefs.WriteFile("/setting/path.json", []byte(`{
 								"agent_id":"fake-agent-id"
 							}`))
+		Expect(err).NotTo(HaveOccurred())
 
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		fakeCmdRunner = fakesys.NewFakeCmdRunner()
@@ -299,7 +301,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 				fakeCmdRunner.AddCmdResult(
 					"parted -m /dev/edx unit B print",
 					fakesys.FakeCmdResult{
-						Stdout: "Some weird error", ExitStatus: 1, Error: errors.New("Some weird error")},
+						Stdout: "some weird error", ExitStatus: 1, Error: errors.New("some weird error")},
 				)
 			})
 

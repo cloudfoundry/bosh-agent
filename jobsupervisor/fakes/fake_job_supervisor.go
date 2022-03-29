@@ -1,9 +1,10 @@
 package fakes
 
 import (
+	"sync"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	"sync"
 )
 
 type FakeJobSupervisor struct {
@@ -107,7 +108,7 @@ func (m *FakeJobSupervisor) MonitorJobFailures(handler boshjobsuper.JobFailureHa
 
 func (m *FakeJobSupervisor) HealthRecorder(status string) {
 	m.HealthRecordedMutex.Lock()
-	m.HealthRecorded += 1
+	m.HealthRecorded++
 	m.HealthRecordedMutex.Unlock()
 }
 

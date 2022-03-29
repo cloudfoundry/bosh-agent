@@ -79,10 +79,9 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Unmonitoring services")
 	}
-	//TODO write health.json
+	// TODO write health.json
 
-	var scripts []boshscript.Script
-
+	scripts := make([]boshscript.Script, 0, len(currentSpec.Jobs()))
 	for _, job := range currentSpec.Jobs() {
 		script := a.jobScriptProvider.NewDrainScript(job.BundleName(), params)
 		scripts = append(scripts, script)

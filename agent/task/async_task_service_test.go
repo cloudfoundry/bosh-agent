@@ -13,7 +13,7 @@ import (
 	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
-func init() {
+func init() { //nolint:funlen,gochecknoinits
 	Describe("asyncTaskService", func() {
 		var (
 			uuidGen *fakeuuid.FakeGenerator
@@ -210,10 +210,12 @@ func init() {
 				Expect(task.ID).To(Equal("fake-uuid"))
 				Expect(task.State).To(Equal(StateRunning))
 
-				task.Func()
+				_, err = task.Func()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(runFuncCalled).To(BeTrue())
 
-				task.CancelFunc(task)
+				err = task.CancelFunc(task)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(cancelFuncCalled).To(BeTrue())
 
 				task.EndFunc(task)
@@ -244,10 +246,12 @@ func init() {
 				Expect(task.ID).To(Equal("fake-task-id"))
 				Expect(task.State).To(Equal(StateRunning))
 
-				task.Func()
+				_, err := task.Func()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(runFuncCalled).To(BeTrue())
 
-				task.CancelFunc(task)
+				err = task.CancelFunc(task)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(cancelFuncCalled).To(BeTrue())
 
 				task.EndFunc(task)

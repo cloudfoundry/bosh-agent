@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
@@ -26,7 +26,7 @@ var _ = Describe("DrainAction", func() {
 		jobScriptProvider *scriptfakes.FakeJobScriptProvider
 		fakeScripts       map[string]*scriptfakes.FakeCancellableScript
 		jobSupervisor     *fakejobsuper.FakeJobSupervisor
-		action            DrainAction
+		drainAction       action.DrainAction
 		logger            boshlog.Logger
 	)
 
@@ -37,7 +37,7 @@ var _ = Describe("DrainAction", func() {
 		specService = fakeas.NewFakeV1Service()
 		jobScriptProvider = &scriptfakes.FakeJobScriptProvider{}
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-		action = NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)
+		drainAction = action.NewDrain(notifier, specService, jobScriptProvider, jobSupervisor, logger)
 	})
 
 	BeforeEach(func() {
@@ -50,11 +50,11 @@ var _ = Describe("DrainAction", func() {
 		}
 	})
 
-	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsAsynchronous(drainAction)
+	AssertActionIsNotPersistent(drainAction)
+	AssertActionIsLoggable(drainAction)
 
-	AssertActionIsNotResumable(action)
+	AssertActionIsNotResumable(drainAction)
 
 	Describe("Run", func() {
 		var (
@@ -87,7 +87,7 @@ var _ = Describe("DrainAction", func() {
 			})
 
 			act := func() (int, error) {
-				return action.Run(DrainTypeUpdate, newSpec)
+				return drainAction.Run(action.DrainTypeUpdate, newSpec)
 			}
 
 			Context("when current agent has a job spec template", func() {
@@ -167,7 +167,7 @@ var _ = Describe("DrainAction", func() {
 
 					Context("when apply spec is not provided", func() {
 						It("returns error", func() {
-							value, err := action.Run(DrainTypeUpdate)
+							value, err := drainAction.Run(action.DrainTypeUpdate)
 							Expect(err).To(HaveOccurred())
 							Expect(err.Error()).To(ContainSubstring("Drain update requires new spec"))
 							Expect(value).To(Equal(0))
@@ -201,7 +201,7 @@ var _ = Describe("DrainAction", func() {
 		})
 
 		Context("when drain shutdown is requested", func() {
-			act := func() (int, error) { return action.Run(DrainTypeShutdown) }
+			act := func() (int, error) { return drainAction.Run(action.DrainTypeShutdown) }
 
 			Context("when current agent has a job spec template", func() {
 				var (
@@ -316,7 +316,7 @@ var _ = Describe("DrainAction", func() {
 		})
 
 		Context("when drain status is requested", func() {
-			act := func() (int, error) { return action.Run(DrainTypeStatus) }
+			act := func() (int, error) { return drainAction.Run(action.DrainTypeStatus) }
 
 			It("returns an error", func() {
 				value, err := act()
@@ -360,12 +360,12 @@ var _ = Describe("DrainAction", func() {
 			specService.Spec = currentSpec
 		})
 
-		Context("when action was not canceled yet", func() {
-			It("cancel action", func() {
-				_, err := action.Run(DrainTypeShutdown, newSpec)
+		Context("when drainAction was not canceled yet", func() {
+			It("cancel drainAction", func() {
+				_, err := drainAction.Run(action.DrainTypeShutdown, newSpec)
 				Expect(err).ToNot(HaveOccurred())
 
-				err = action.Cancel()
+				err = drainAction.Cancel()
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})

@@ -125,7 +125,8 @@ Missing statement body in do loop.
 			BaseCmdRunner: baseCmdRunner,
 		}
 
-		powershellRunner.RunCommandQuietly(powershellCommandArgs[0], powershellCommandArgs[1:]...)
+		_, _, _, err := powershellRunner.RunCommandQuietly(powershellCommandArgs[0], powershellCommandArgs[1:]...)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(baseCmdRunner.RunCommandsQuietly).To(Equal([][]string{strings.Split(expectedCommand, " ")}))
 	})
 
@@ -139,7 +140,8 @@ Missing statement body in do loop.
 		}
 
 		input := "Some stdin"
-		powershellRunner.RunCommandWithInput(input, powershellCommandArgs[0], powershellCommandArgs[1:]...)
+		_, _, _, err := powershellRunner.RunCommandWithInput(input, powershellCommandArgs[0], powershellCommandArgs[1:]...)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(baseCmdRunner.RunCommandsWithInput).To(Equal(
 			[][]string{append([]string{input}, strings.Split(expectedCommand, " ")...)},
 		))
@@ -160,7 +162,8 @@ Missing statement body in do loop.
 			BaseCmdRunner: baseCmdRunner,
 		}
 
-		powershellRunner.RunComplexCommand(complexCommand)
+		_, _, _, err := powershellRunner.RunComplexCommand(complexCommand)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(baseCmdRunner.RunComplexCommands).To(Equal([]system.Command{expectedCommand}))
 	})
 
@@ -184,7 +187,8 @@ Missing statement body in do loop.
 			&fakes.FakeProcess{},
 		)
 
-		powershellRunner.RunComplexCommandAsync(complexCommand)
+		_, err := powershellRunner.RunComplexCommandAsync(complexCommand)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(baseCmdRunner.RunComplexCommands).To(Equal([]system.Command{expectedCommand}))
 	})
 

@@ -1,13 +1,14 @@
-package blobstore_delegator
+package blobstore_delegator //nolint:revive
 
 import (
 	"fmt"
+	"time"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	"time"
 
-	httpblobprovider "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
+	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )

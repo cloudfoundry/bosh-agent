@@ -188,7 +188,6 @@ func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks
 	dnsNetwork, _ := nonVipNetworks.DefaultNetworkFor("dns")
 	dnsServers := dnsNetwork.DNS
 	return staticConfigs, dhcpConfigs, dnsServers, nil
-
 }
 
 func (net WindowsNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
@@ -215,7 +214,6 @@ func (net WindowsNetManager) buildInterfaces(networks boshsettings.Networks) (
 	[]DHCPInterfaceConfiguration,
 	error,
 ) {
-
 	interfacesByMacAddress, err := net.macAddressDetector.DetectMacAddresses()
 	if err != nil {
 		return nil, nil, bosherr.WrapError(err, "Getting network interfaces")

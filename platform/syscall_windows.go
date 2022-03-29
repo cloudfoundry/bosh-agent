@@ -24,19 +24,19 @@ import (
 )
 
 var (
-	userenv  = windows.NewLazySystemDLL("userenv.dll")
-	netapi32 = windows.NewLazySystemDLL("Netapi32.dll")
+	userenv  = windows.NewLazySystemDLL("userenv.dll")  //nolint:gochecknoglobals
+	netapi32 = windows.NewLazySystemDLL("Netapi32.dll") //nolint:gochecknoglobals
 
-	procCreateProfile        = userenv.NewProc("CreateProfile")
-	procDeleteProfile        = userenv.NewProc("DeleteProfileW")
-	procGetProfilesDirectory = userenv.NewProc("GetProfilesDirectoryW")
-	procNetUserEnum          = netapi32.NewProc("NetUserEnum")
+	procCreateProfile        = userenv.NewProc("CreateProfile")         //nolint:gochecknoglobals
+	procDeleteProfile        = userenv.NewProc("DeleteProfileW")        //nolint:gochecknoglobals,unused
+	procGetProfilesDirectory = userenv.NewProc("GetProfilesDirectoryW") //nolint:gochecknoglobals
+	procNetUserEnum          = netapi32.NewProc("NetUserEnum")          //nolint:gochecknoglobals
 )
 
 // createProfile, creates the profile and home directory of the user identified
 // by Security Identifier sid.
 func createProfile(sid, username string) (string, error) {
-	const S_OK = 0x00000000
+	const S_OK = 0x00000000 //nolint:revive
 	if err := procCreateProfile.Find(); err != nil {
 		return "", err
 	}
@@ -69,7 +69,7 @@ func createProfile(sid, username string) (string, error) {
 
 // deleteProfile, deletes the profile and home directory of the user identified
 // by Security Identifier sid.
-func deleteProfile(sid string) error {
+func deleteProfile(sid string) error { //nolint:deadcode,unused
 	if err := procDeleteProfile.Find(); err != nil {
 		return err
 	}
@@ -292,8 +292,8 @@ func deleteLocalUser(username string) error {
 }
 
 func localAccountNames() ([]string, error) {
-	const MAX_PREFERRED_LENGTH = 0xffffffff
-	const FILTER_NORMAL_ACCOUNT = 2
+	const MAX_PREFERRED_LENGTH = 0xffffffff //nolint:revive
+	const FILTER_NORMAL_ACCOUNT = 2         //nolint:revive
 
 	if err := procNetUserEnum.Find(); err != nil {
 		return nil, err
@@ -319,16 +319,16 @@ func localAccountNames() ([]string, error) {
 		if e1 == syscall.ERROR_MORE_DATA {
 			// This shouldn't happen, but in case
 			// it does we need to free the buffer
-			windows.NetApiBufferFree(buf)
+			windows.NetApiBufferFree(buf) //nolint:errcheck
 		}
 		if e1 == 0 {
 			return nil, os.NewSyscallError("NetUserEnum", syscall.EINVAL)
 		}
 		return nil, os.NewSyscallError("NetUserEnum", e1)
 	}
-	defer windows.NetApiBufferFree(buf)
+	defer windows.NetApiBufferFree(buf) //nolint:errcheck
 
-	type USER_INFO_0 struct {
+	type USER_INFO_0 struct { //nolint:revive
 		Name *uint16
 	}
 	type sliceHeader struct {
@@ -361,14 +361,14 @@ func serviceDisabled(s *mgr.Service) bool {
 }
 
 // Make the function called by GetHostPublicKey configurable for testing.
-var sshEnabled func() error = checkSSH
+var sshEnabled func() error = checkSSH //nolint:gochecknoglobals,revive
 
 // checkSSH checks if the sshd service is installed and running.
 //
 // The services are installed during stemcell creation, but are disabled.  The
 // job windows-utilities-release/enable_ssh job is used to enable ssh.
 func checkSSH() error {
-	const ERROR_SERVICE_DOES_NOT_EXIST syscall.Errno = 0x424
+	const ERROR_SERVICE_DOES_NOT_EXIST syscall.Errno = 0x424 //nolint:revive
 
 	const msgFmt = "%s service not running and start type is disabled.  " +
 		"To enable ssh on Windows you must run the enable_ssh job from the " +
@@ -378,7 +378,7 @@ func checkSSH() error {
 	if err != nil {
 		return fmt.Errorf("opening service control manager: %s", err)
 	}
-	defer m.Disconnect()
+	defer m.Disconnect() //nolint:errcheck
 
 	sshd, err := m.OpenService("sshd")
 	if err != nil {
@@ -413,7 +413,7 @@ func disableWindowsUpdates() error {
 	if err != nil {
 		return fmt.Errorf("opening service control manager: %s", err)
 	}
-	defer m.Disconnect()
+	defer m.Disconnect() //nolint:errcheck
 
 	s, err := m.OpenService("wuauserv")
 	if err != nil {

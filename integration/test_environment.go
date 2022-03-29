@@ -126,7 +126,10 @@ sudo mkdir -p /tmp/config-drive/ec2/latest
 		return err
 	}
 
-	t.RunCommand("sudo fuser -km /tmp/config-drive")
+	_, err = t.RunCommand("sudo fuser -km /tmp/config-drive")
+	if err != nil {
+		return err
+	}
 	_, err = t.RunCommand("sudo umount -l /tmp/config-drive")
 	return err
 }
@@ -147,8 +150,14 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
 		if mountPoint != "" {
-			t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
-			t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+			_, err = t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
+			if err != nil {
+				return err
+			}
+			_, err = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -254,8 +263,11 @@ func (t *TestEnvironment) CleanupDataDir() error {
 
 func (t *TestEnvironment) ResetDeviceMap() error {
 	for n, loopDevice := range t.deviceMap {
-		t.DetachLoopDevice(loopDevice)
-		_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
+		err := t.DetachLoopDevice(loopDevice)
+		if err != nil {
+			return err
+		}
+		_, err = t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
 		if err != nil {
 			return err
 		}
@@ -293,7 +305,10 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 
 	// Ensure we have enough space to create the fake loopback devices used in tests
 	if sizeInBytes < 10000000000 {
-		t.RunCommand("sudo swapoff /dev/sda2")
+		_, err = t.RunCommand("sudo swapoff /dev/sda2")
+		if err != nil {
+			return err
+		}
 
 		for i := len(outputLines); i > 1; i-- {
 			_, err = t.RunCommand(fmt.Sprintf("sudo parted /dev/sda rm %d", i))
@@ -302,7 +317,10 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 			}
 		}
 
-		t.RunCommand("sudo udevadm settle")
+		_, err = t.RunCommand("sudo udevadm settle")
+		if err != nil {
+			return err
+		}
 
 		_, err = t.RunCommand("sudo parted /dev/sda ---pretend-input-tty resizepart 1 yes 10000M")
 		if err != nil {
@@ -408,7 +426,10 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 
 		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
 			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" {
-				t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
+				_, err = t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
+				if err != nil {
+					return err
+				}
 			}
 
 			if i > 0 {
@@ -600,7 +621,10 @@ func (t *TestEnvironment) StopAgentTunnel() error {
 		return fmt.Errorf("Not running")
 	}
 	t.sshTunnelProc.Wait()
-	t.sshTunnelProc.TerminateNicely(5 * time.Second)
+	err := t.sshTunnelProc.TerminateNicely(5 * time.Second)
+	if err != nil {
+		return err
+	}
 	t.sshTunnelProc = nil
 	return nil
 }

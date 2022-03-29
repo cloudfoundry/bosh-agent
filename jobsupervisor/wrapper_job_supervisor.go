@@ -1,27 +1,21 @@
 package jobsupervisor
 
 import (
-
-	//boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	//boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	//boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	//boshsys "github.com/cloudfoundry/bosh-utils/system"
 	"encoding/json"
+	"path/filepath"
+
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-utils/system"
-	"path/filepath"
 )
 
 const wrapperJobSupervisorLogTag = "wrapperJobSupervisor"
 
 type wrapperJobSupervisor struct {
-	delegate      JobSupervisor
-	fs            system.FileSystem
-	dirProvider   directories.Provider
-	logger        boshlog.Logger
-	pollRunning   bool
-	pollUnmonitor bool
+	delegate    JobSupervisor
+	fs          system.FileSystem
+	dirProvider directories.Provider
+	logger      boshlog.Logger
 }
 
 func NewWrapperJobSupervisor(delegate JobSupervisor, fs system.FileSystem, dirProvider directories.Provider, logger boshlog.Logger) JobSupervisor {
@@ -37,7 +31,6 @@ func (w *wrapperJobSupervisor) Reload() error {
 	return w.delegate.Reload()
 }
 func (w *wrapperJobSupervisor) Start() error {
-
 	err := w.delegate.Start()
 	w.HealthRecorder(w.delegate.Status())
 
@@ -78,7 +71,6 @@ func (w *wrapperJobSupervisor) MonitorJobFailures(handler JobFailureHandler) err
 }
 
 func (w *wrapperJobSupervisor) HealthRecorder(status string) {
-
 	healthRaw, err := json.Marshal(Health{State: status})
 	if err != nil {
 		w.logger.Error(wrapperJobSupervisorLogTag, err.Error())

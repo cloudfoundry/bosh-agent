@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Signalable logger debug", func() {
-	Describe("when SIGSEGV is recieved", func() {
+var _ = Describe("Signal-able logger debug", func() {
+	Describe("when SIGSEGV is received", func() {
 		It("it dumps all goroutines to the given buffer", func() {
 			outBuf := new(bytes.Buffer)
 			signalChannel := make(chan os.Signal, 1)

@@ -38,7 +38,6 @@ func (a UploadBlobAction) IsLoggable() bool {
 }
 
 func (a UploadBlobAction) Run(content UploadBlobSpec) (string, error) {
-
 	decodedPayload, err := base64.StdEncoding.DecodeString(content.Payload)
 	if err != nil {
 		return content.BlobID, err

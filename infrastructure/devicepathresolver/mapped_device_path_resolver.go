@@ -55,7 +55,7 @@ func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 func (dpr mappedDevicePathResolver) findPossibleDevice(devicePath string) (string, bool, error) {
 	needsMapping := strings.HasPrefix(devicePath, "/dev/sd")
 
-	if needsMapping {
+	if needsMapping { //nolint:nestif
 		pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
 
 		possiblePrefixes := []string{

@@ -49,17 +49,15 @@ func (s ParallelScript) Run() error {
 	var failedScripts, passedScripts []string
 
 	for i := 0; i < len(existingScripts); i++ {
-		select {
-		case r := <-resultsChan:
-			jobName := r.Script.Tag()
+		r := <-resultsChan
+		jobName := r.Script.Tag()
 
-			if r.Error == nil {
-				passedScripts = append(passedScripts, jobName)
-				s.logger.Info(s.logTag, "'%s' script has successfully executed", r.Script.Path())
-			} else {
-				failedScripts = append(failedScripts, jobName)
-				s.logger.Error(s.logTag, "'%s' script has failed with error: %s", r.Script.Path(), r.Error)
-			}
+		if r.Error == nil {
+			passedScripts = append(passedScripts, jobName)
+			s.logger.Info(s.logTag, "'%s' script has successfully executed", r.Script.Path())
+		} else {
+			failedScripts = append(failedScripts, jobName)
+			s.logger.Error(s.logTag, "'%s' script has failed with error: %s", r.Script.Path(), r.Error)
 		}
 	}
 
@@ -73,7 +71,7 @@ func (s ParallelScript) Cancel() error {
 		if script, ok := script.(CancellableScript); ok {
 			err := script.Cancel()
 			if err != nil {
-				bosherr.WrapErrorf(err, "'%s' script did not cancel", s.name)
+				return bosherr.WrapErrorf(err, "'%s' script did not cancel", s.name)
 			}
 		} else {
 			return bosherr.Errorf("Script %s is not cancellable", s.name)

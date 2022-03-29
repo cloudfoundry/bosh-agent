@@ -9,13 +9,14 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"text/template"
 	"time"
+
+	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 
 	"golang.org/x/crypto/ssh"
 

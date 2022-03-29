@@ -56,7 +56,7 @@ func (a RunScriptAction) Run(scriptName string, options RunScriptOptions) (map[s
 		return emptyResults, bosherr.WrapError(err, "Getting current spec")
 	}
 
-	var scripts []boshscript.Script
+	scripts := make([]boshscript.Script, 0, len(currentSpec.Jobs()))
 	for _, job := range currentSpec.Jobs() {
 		script := a.scriptProvider.NewScript(job.BundleName(), scriptName, options.Env)
 		scripts = append(scripts, script)

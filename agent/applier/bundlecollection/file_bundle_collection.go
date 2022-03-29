@@ -111,13 +111,12 @@ func (bc FileBundleCollection) getDigested(definition BundleDefinition) (Bundle,
 }
 
 func (bc FileBundleCollection) List() ([]Bundle, error) {
-	var bundles []Bundle
-
 	bundleInstallPaths, err := bc.fs.Glob(path.Join(bc.installPath, bc.name, "*", "*"))
 	if err != nil {
-		return bundles, bosherr.WrapError(err, "Globbing bundles")
+		return []Bundle{}, bosherr.WrapError(err, "Globbing bundles")
 	}
 
+	bundles := make([]Bundle, 0, len(bundleInstallPaths))
 	for _, path := range bundleInstallPaths {
 		bundle, err := bc.getDigested(newFileBundleDefinition(path))
 		if err != nil {

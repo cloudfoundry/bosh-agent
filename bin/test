@@ -1,21 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e -o pipefail
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 result=0
 
-bin=$(dirname $0)
+"${ROOT_DIR}/bin/test-unit"
+(( result+=$? )) || true
 
-$bin/test-unit -q
-let "result+=$?" || true
+"${ROOT_DIR}/bin/test-integration" # TODO this file does not exist
+(( result+=$? )) || true
 
-$bin/test-integration
-let "result+=$?" || true
-
-if [ $result -eq 0 ]; then
+if [ "${result}" -eq 0 ]; then
   echo -e "\n\033[0;32mSUITE SUCCESS\033[0m"
 else
   echo -e "\n\033[0;31mSUITE FAILURE\033[0m"
 fi
 
-exit $result
+exit "${result}"

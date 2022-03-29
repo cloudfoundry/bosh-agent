@@ -3,12 +3,11 @@ package state_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action/state"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/agent/action/state"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
@@ -16,7 +15,7 @@ import (
 var _ = Describe("SyncDNSState", func() {
 	var (
 		localDNSState     []byte
-		syncDNSState      SyncDNSState
+		syncDNSState      state.SyncDNSState
 		fakeFileSystem    *fakesys.FakeFileSystem
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
 		fakePlatform      *platformfakes.FakePlatform
@@ -32,7 +31,7 @@ var _ = Describe("SyncDNSState", func() {
 
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 		path = "/blobstore-dns-records.json"
-		syncDNSState = NewSyncDNSState(fakePlatform, path, fakeUUIDGenerator)
+		syncDNSState = state.NewSyncDNSState(fakePlatform, path, fakeUUIDGenerator)
 		err = nil
 		localDNSState = []byte(`{
 					"version": 1234,
@@ -61,7 +60,8 @@ var _ = Describe("SyncDNSState", func() {
 
 			Context("when writing to a temp file fails", func() {
 				It("does not override the existing records.json", func() {
-					fakeFileSystem.WriteFile(path, []byte("{}"))
+					err := fakeFileSystem.WriteFile(path, []byte("{}"))
+					Expect(err).ToNot(HaveOccurred())
 
 					fakeUUIDGenerator.GeneratedUUID = "fake-generated-uuid"
 					fakeFileSystem.WriteFileErrors[path+"fake-generated-uuid"] = errors.New("failed to write tmp file")
@@ -151,7 +151,8 @@ var _ = Describe("SyncDNSState", func() {
 
 		Context("when state file exists", func() {
 			BeforeEach(func() {
-				fakeFileSystem.WriteFile(path, []byte(`{"version":1}`))
+				err := fakeFileSystem.WriteFile(path, []byte(`{"version":1}`))
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("returns true when the state file version is less than the supplied version", func() {
@@ -173,7 +174,8 @@ var _ = Describe("SyncDNSState", func() {
 			})
 
 			It("returns true when unmarshalling the version fails", func() {
-				fakeFileSystem.WriteFile(path, []byte(`garbage`))
+				err := fakeFileSystem.WriteFile(path, []byte(`garbage`))
+				Expect(err).ToNot(HaveOccurred())
 
 				Expect(syncDNSState.NeedsUpdate(2)).To(BeTrue())
 			})

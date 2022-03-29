@@ -19,7 +19,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	Describe("provider", func() {
 		var (
 			platform   *platformfakes.FakePlatform
@@ -62,7 +62,6 @@ func init() {
 			} else {
 				jobSupervisorName = "monit"
 			}
-
 		})
 
 		It("provides a monit/windows job supervisor", func() {

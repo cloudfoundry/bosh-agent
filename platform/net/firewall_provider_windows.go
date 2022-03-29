@@ -26,7 +26,7 @@ func SetupNatsFirewall(mbus string) error {
 	}
 	session, err := wf.New(&wf.Options{
 		Name:    "Windows Firewall Session for Bosh Agent",
-		Dynamic: true, //setting this to true will create an ephemeral FW Rule that lasts as long as the Agent Process runs.
+		Dynamic: true, // setting this to true will create an ephemeral FW Rule that lasts as long as the Agent Process runs.
 	})
 	if err != nil {
 		return bosherr.WrapError(err, "Getting windows firewall session")
@@ -54,8 +54,8 @@ func SetupNatsFirewall(mbus string) error {
 		// wf.LayerALEAuthConnectV6,	//#TODO: Do we need v6?
 	}
 
-	// The windows app id will be used to create a conditional exception for the block outgoing nats rule.
-	appID, err := wf.AppID("C:\\bosh\\bosh-agent.exe") //Could this ever be somewhere else?
+	// The Windows app id will be used to create a conditional exception for the block outgoing nats rule.
+	appID, err := wf.AppID("C:\\bosh\\bosh-agent.exe") // Could this ever be somewhere else?
 	if err != nil {
 		return bosherr.WrapError(err, "Getting the windows app id for bosh-agent.exe")
 	}
@@ -93,7 +93,7 @@ func SetupNatsFirewall(mbus string) error {
 				Sublayer: sublayerID,
 				Weight:   1000,
 				Conditions: []*wf.Match{
-					// Block trafic to natsIp:natsPort
+					// Block traffic to natsIp:natsPort
 					{
 						Field: wf.FieldIPRemoteAddress,
 						Op:    wf.MatchTypePrefix,

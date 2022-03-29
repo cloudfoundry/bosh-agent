@@ -1,9 +1,11 @@
-#!/bin/bash 
+#!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e -o pipefail
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 export GOARCH=amd64
 export GOOS=linux
-export GOTOOLDIR=$(go env GOROOT)/pkg/linux_amd64
+export GOTOOLDIR
+GOTOOLDIR=$(go env GOROOT)/pkg/linux_amd64
 
-$(dirname $0)/build
+"${ROOT_DIR}/bin/build"

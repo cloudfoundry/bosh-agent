@@ -3,19 +3,19 @@ package infrastructure_test
 import (
 	"encoding/json"
 
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	"github.com/cloudfoundry/bosh-agent/infrastructure"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("FileSettingsSource", func() {
 	var (
 		fs     *fakesys.FakeFileSystem
-		source *FileSettingsSource
+		source *infrastructure.FileSettingsSource
 		logger boshlog.Logger
 	)
 
@@ -39,7 +39,7 @@ var _ = Describe("FileSettingsSource", func() {
 			)
 			BeforeEach(func() {
 				settingsFileName = "/fake-settings-file-path"
-				source = NewFileSettingsSource(settingsFileName, fs, logger)
+				source = infrastructure.NewFileSettingsSource(settingsFileName, fs, logger)
 			})
 
 			Context("settings have valid format", func() {
@@ -54,7 +54,8 @@ var _ = Describe("FileSettingsSource", func() {
 
 					settingsJSON, err := json.Marshal(expectedSettings)
 					Expect(err).ToNot(HaveOccurred())
-					fs.WriteFile(settingsFileName, settingsJSON)
+					err = fs.WriteFile(settingsFileName, settingsJSON)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns settings read from the file", func() {
@@ -72,7 +73,8 @@ var _ = Describe("FileSettingsSource", func() {
 
 			Context("settings have invalid format", func() {
 				BeforeEach(func() {
-					fs.WriteFileString(settingsFileName, "bad-json")
+					err := fs.WriteFileString(settingsFileName, "bad-json")
+					Expect(err).NotTo(HaveOccurred())
 				})
 				It("returns settings read from the file", func() {
 					_, err := source.Settings()
@@ -84,7 +86,7 @@ var _ = Describe("FileSettingsSource", func() {
 
 		Context("when the registry file does not exist", func() {
 			BeforeEach(func() {
-				source = NewFileSettingsSource(
+				source = infrastructure.NewFileSettingsSource(
 					"/missing-settings-file-path",
 					fs, logger)
 			})

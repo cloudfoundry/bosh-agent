@@ -3,7 +3,6 @@ package action
 import (
 	"errors"
 
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -16,11 +15,10 @@ type diskMounter interface {
 }
 
 type MountDiskAction struct {
-	settingsService    boshsettings.Service
-	diskMounter        diskMounter
-	devicePathResolver boshdpresolv.DevicePathResolver
-	dirProvider        boshdirs.Provider
-	logger             boshlog.Logger
+	settingsService boshsettings.Service
+	diskMounter     diskMounter
+	dirProvider     boshdirs.Provider
+	logger          boshlog.Logger
 }
 
 func NewMountDisk(
@@ -80,13 +78,4 @@ func (a MountDiskAction) Resume() (interface{}, error) {
 
 func (a MountDiskAction) Cancel() error {
 	return errors.New("not supported")
-}
-
-func (a MountDiskAction) pruneNil(hints []interface{}) []interface{} {
-	for i := len(hints) - 1; i >= 0; i-- {
-		if hints[i] == nil {
-			hints = append(hints[:i], hints[i+1:]...)
-		}
-	}
-	return hints
 }

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
@@ -39,12 +39,12 @@ func getCompileActionArguments() (blobID string, multiDigest boshcrypto.Multiple
 var _ = Describe("CompilePackageAction", func() {
 	var (
 		compiler *fakecomp.FakeCompiler
-		action   CompilePackageAction
+		action   boshaction.CompilePackageAction
 	)
 
 	BeforeEach(func() {
 		compiler = fakecomp.NewFakeCompiler()
-		action = NewCompilePackage(compiler)
+		action = boshaction.NewCompilePackage(compiler)
 	})
 
 	AssertActionIsAsynchronous(action)

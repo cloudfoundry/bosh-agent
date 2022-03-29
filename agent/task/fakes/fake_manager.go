@@ -13,7 +13,7 @@ func NewFakeManager() *FakeManager {
 }
 
 func (m *FakeManager) GetInfos() ([]boshtask.Info, error) {
-	var taskInfos []boshtask.Info
+	taskInfos := make([]boshtask.Info, 0, len(m.taskIDToTaskInfo))
 	for _, taskInfo := range m.taskIDToTaskInfo {
 		taskInfos = append(taskInfos, taskInfo)
 	}

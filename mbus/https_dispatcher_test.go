@@ -66,7 +66,7 @@ QgK94NXJDoDd1OZjpUBMPLVa8d20/RdGNW8OMolJpzEPhg0r7Ac=
 -----END RSA PRIVATE KEY-----`
 
 // Confirm the targetURL is valid and can be listened on before running tests.
-func init() {
+func init() { //nolint:gochecknoinits
 	u, err := url.Parse(targetURL)
 	if err != nil {
 		panic(fmt.Sprintf("Invalid target URL: %s", err))
@@ -141,9 +141,9 @@ var _ = Describe("HTTPSDispatcher", func() {
 		dispatcher.AddRoute("/example", handler)
 
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
-			MinVersion:         tls.VersionSSL30,
-			MaxVersion:         tls.VersionSSL30,
+			InsecureSkipVerify: true,             //nolint:gosec
+			MinVersion:         tls.VersionSSL30, //nolint:staticcheck
+			MaxVersion:         tls.VersionSSL30, //nolint:staticcheck
 		}
 		client := getHTTPClientWithConfig(tlsConfig)
 		_, err := client.Get(targetURL + "/example")
@@ -155,7 +155,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		dispatcher.AddRoute("/example", handler)
 
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //nolint:gosec
 			MinVersion:         tls.VersionTLS10,
 			MaxVersion:         tls.VersionTLS10,
 		}
@@ -169,7 +169,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		dispatcher.AddRoute("/example", handler)
 
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //nolint:gosec
 			MinVersion:         tls.VersionTLS11,
 			MaxVersion:         tls.VersionTLS11,
 		}
@@ -183,7 +183,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		dispatcher.AddRoute("/example", handler)
 
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //nolint:gosec
 			MinVersion:         tls.VersionTLS12,
 			MaxVersion:         tls.VersionTLS12,
 		}
@@ -197,7 +197,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		dispatcher.AddRoute("/example", handler)
 
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //nolint:gosec
 			MinVersion:         tls.VersionTLS12,
 			MaxVersion:         tls.VersionTLS12,
 			CipherSuites: []uint16{
@@ -215,7 +215,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		dispatcher.AddRoute("/example", handler)
 
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //nolint:gosec
 			MinVersion:         tls.VersionTLS12,
 			MaxVersion:         tls.VersionTLS12,
 			CipherSuites: []uint16{
@@ -234,7 +234,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 		dispatcher.AddRoute("/example", handler)
 
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, //nolint:gosec
 			CipherSuites: []uint16{
 				tls.TLS_RSA_WITH_AES_128_CBC_SHA,
 				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
@@ -281,7 +281,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 
 func getHTTPClient() http.Client {
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, //nolint:gosec
 		// Both CBC & RC4 ciphers can be exploited
 		// Mozilla's "Modern" recommended settings only overlap with the golang TLS client on these two ciphers
 		CipherSuites: []uint16{

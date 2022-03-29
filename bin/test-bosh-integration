@@ -1,32 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e -o pipefail
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-base=$( cd $(dirname $0)/.. && pwd )
+bosh_dir="${ROOT_DIR}/tmp/bosh"
 
-if [ ! -d $base/tmp/bosh ]; then
+if [ ! -d "${bosh_dir}" ]; then
   echo -e "\n Cloning BOSH..."
-  rm -rf $base/tmp
-  mkdir -p $base/tmp
-  git clone --recursive --depth 1 --branch master https://github.com/cloudfoundry/bosh.git $base/tmp/bosh
+  rm -rf "${bosh_dir}"
+  mkdir -p "${bosh_dir}"
+  git clone --recursive --depth 1 --branch main https://github.com/cloudfoundry/bosh.git "${bosh_dir}"
 else
   echo -e "\n Updating BOSH to origin/master..."
   (
-    cd $base/tmp/bosh
+    cd "${bosh_dir}"
     git clean -dfx
-    git fetch https://github.com/cloudfoundry/bosh.git master
+    git fetch https://github.com/cloudfoundry/bosh.git main
     git reset --hard FETCH_HEAD
   )
 fi
 
-cd $base/tmp/bosh
+cd "${bosh_dir}"
 
 echo -e "\n Installing BOSH dependencies..."
 bundle install
 
 echo -e "\n Linking bosh agent..."
 rm -rf go/src/github.com/cloudfoundry/bosh-agent
-ln -s $base go/src/github.com/cloudfoundry/bosh-agent
+ln -s "${ROOT_DIR}" go/src/github.com/cloudfoundry/bosh-agent
 
 echo -e "\n Running integration tests..."
 bundle exec rake spec:integration

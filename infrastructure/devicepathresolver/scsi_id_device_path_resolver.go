@@ -67,7 +67,7 @@ func (idpr SCSIIDDevicePathResolver) GetRealDevicePath(diskSettings boshsettings
 
 		time.Sleep(100 * time.Millisecond)
 
-		uuid := strings.Replace(diskSettings.DeviceID, "-", "", -1)
+		uuid := strings.ReplaceAll(diskSettings.DeviceID, "-", "")
 		disks, err := idpr.fs.Glob("/dev/disk/by-id/*" + uuid)
 		if err != nil {
 			return "", false, bosherr.WrapError(err, "Could not list disks by id")

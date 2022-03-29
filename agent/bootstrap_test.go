@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/agent"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/agent"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakedevicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
@@ -90,7 +90,7 @@ var _ = Describe("bootstrap", func() {
 		})
 
 		bootstrap := func() error {
-			return NewBootstrap(platform, dirProvider, settingsService, specService, logger).Run()
+			return agent.NewBootstrap(platform, dirProvider, settingsService, specService, logger).Run()
 		}
 
 		It("sets up runtime configuration", func() {
@@ -268,8 +268,7 @@ var _ = Describe("bootstrap", func() {
 		})
 
 		It("sets up ephemeral disk", func() {
-			var swapSize uint64
-			swapSize = 2048
+			var swapSize uint64 = 2048
 			settingsService.Settings.Env.Bosh.SwapSizeInMB = &swapSize
 			settingsService.Settings.Disks = boshsettings.Disks{
 				Ephemeral: "fake-ephemeral-disk-setting",
@@ -553,9 +552,10 @@ var _ = Describe("bootstrap", func() {
 			})
 
 			It("removes development tools", func() {
-				platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "dev_tools_file_list"), "/usr/bin/gfortran")
+				err := platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "dev_tools_file_list"), "/usr/bin/gfortran")
+				Expect(err).NotTo(HaveOccurred())
 
-				err := bootstrap()
+				err = bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.RemoveDevToolsCallCount()).To(Equal(1))
 				Expect(platform.RemoveDevToolsArgsForCall(0)).To(Equal(
@@ -579,7 +579,8 @@ var _ = Describe("bootstrap", func() {
 
 			Context("and the static libraries path exists", func() {
 				BeforeEach(func() {
-					platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "static_libraries_list"), "/usr/lib/libsupp.a")
+					err := platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "static_libraries_list"), "/usr/lib/libsupp.a")
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("removes static libraries", func() {
@@ -691,7 +692,7 @@ var _ = Describe("bootstrap", func() {
 				Context("when the disk associations are not provided as attached disks", func() {
 					BeforeEach(func() {
 						settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{}
-						settingsService.GetPersistentDiskSettingsError = errors.New("Disk not found")
+						settingsService.GetPersistentDiskSettingsError = errors.New("disk not found")
 					})
 
 					It("returns an error", func() {
@@ -778,7 +779,8 @@ var _ = Describe("bootstrap", func() {
 						diskCid := "i-am-a-disk-cid"
 
 						managedDiskSettingsPath = filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
-						fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+						err := fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+						Expect(err).NotTo(HaveOccurred())
 
 						updateSettings := boshsettings.UpdateSettings{
 							DiskAssociations: []boshsettings.DiskAssociation{
@@ -792,7 +794,8 @@ var _ = Describe("bootstrap", func() {
 						Expect(err).ToNot(HaveOccurred())
 
 						updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-						fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
+						err = fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
+						Expect(err).NotTo(HaveOccurred())
 					})
 
 					Context("and the provided disk CID is the same", func() {
@@ -819,14 +822,14 @@ var _ = Describe("bootstrap", func() {
 									ID:   "i-am-a-disk-cid",
 								},
 							}
-							settingsService.GetPersistentDiskSettingsError = errors.New("Disk not found")
+							settingsService.GetPersistentDiskSettingsError = errors.New("disk not found")
 						})
 
 						It("returns an error", func() {
 							err := bootstrap()
 							Expect(err).To(HaveOccurred())
 
-							Expect(err.Error()).To(ContainSubstring("Attached disk disagrees with previous mount: Disk not found"))
+							Expect(err.Error()).To(ContainSubstring("Attached disk disagrees with previous mount: disk not found"))
 						})
 					})
 
@@ -839,7 +842,7 @@ var _ = Describe("bootstrap", func() {
 
 					Context("when reading the managed_disk_settings.json errors", func() {
 						BeforeEach(func() {
-							fileSystem.RegisterReadFileError(managedDiskSettingsPath, errors.New("Oh noes!"))
+							fileSystem.RegisterReadFileError(managedDiskSettingsPath, errors.New("oh noes"))
 						})
 
 						It("returns an error", func() {
@@ -891,7 +894,8 @@ var _ = Describe("bootstrap", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				updateSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "update_settings.json")
-				fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
+				err = fileSystem.WriteFile(updateSettingsPath, updateSettingsBytes)
+				Expect(err).NotTo(HaveOccurred())
 
 				settingsService.PersistentDiskSettings = map[string]boshsettings.DiskSettings{
 					"vol-123": {
@@ -907,16 +911,17 @@ var _ = Describe("bootstrap", func() {
 				BeforeEach(func() {
 					diskCid := "vol-123"
 					managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
-					fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					err := fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					Expect(err).NotTo(HaveOccurred())
 
-					platform.AdjustPersistentDiskPartitioningReturns(errors.New("Grow partition fail"))
+					platform.AdjustPersistentDiskPartitioningReturns(errors.New("grow partition fail"))
 				})
 				It("should return error", func() {
 					err := bootstrap()
 					Expect(err).To(HaveOccurred())
 					Expect(platform.AdjustPersistentDiskPartitioningCallCount()).To(Equal(1))
 					Expect(platform.MountPersistentDiskCallCount()).To(Equal(0))
-					Expect(err.Error()).To(Equal("Mounting last mounted disk: Adjusting persistent disk partitioning: Grow partition fail"))
+					Expect(err.Error()).To(Equal("Mounting last mounted disk: Adjusting persistent disk partitioning: grow partition fail"))
 				})
 			})
 
@@ -924,15 +929,16 @@ var _ = Describe("bootstrap", func() {
 				BeforeEach(func() {
 					diskCid := "vol-123"
 					managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
-					fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					err := fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					Expect(err).NotTo(HaveOccurred())
 
-					platform.MountPersistentDiskReturns(errors.New("Mount fail"))
+					platform.MountPersistentDiskReturns(errors.New("mount fail"))
 				})
 				It("should return error", func() {
 					err := bootstrap()
 					Expect(err).To(HaveOccurred())
 					Expect(platform.MountPersistentDiskCallCount()).To(Equal(1))
-					Expect(err.Error()).To(Equal("Mounting last mounted disk: Mounting persistent disk: Mount fail"))
+					Expect(err.Error()).To(Equal("Mounting last mounted disk: Mounting persistent disk: mount fail"))
 				})
 			})
 
@@ -940,7 +946,8 @@ var _ = Describe("bootstrap", func() {
 				BeforeEach(func() {
 					diskCid := "vol-123"
 					managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
-					fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					err := fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					Expect(err).NotTo(HaveOccurred())
 
 					platform.IsPersistentDiskMountableReturns(false, errors.New("boom"))
 				})
@@ -978,7 +985,8 @@ var _ = Describe("bootstrap", func() {
 				BeforeEach(func() {
 					diskCid := "vol-123"
 					managedDiskSettingsPath := filepath.Join(platform.GetDirProvider().BoshDir(), "managed_disk_settings.json")
-					fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					err := fileSystem.WriteFile(managedDiskSettingsPath, []byte(diskCid))
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("mounts persistent disk", func() {
@@ -1008,7 +1016,7 @@ var _ = Describe("bootstrap", func() {
 
 				Context("and cannot find persistent disk", func() {
 					BeforeEach(func() {
-						settingsService.GetPersistentDiskSettingsError = errors.New("Disk not found")
+						settingsService.GetPersistentDiskSettingsError = errors.New("disk not found")
 					})
 
 					It("returns and error", func() {
@@ -1025,7 +1033,7 @@ var _ = Describe("bootstrap", func() {
 
 				fs                     *fakesys.FakeFileSystem
 				platform               boshplatform.Platform
-				boot                   Bootstrap
+				boot                   agent.Bootstrap
 				defaultNetworkResolver boshsettings.DefaultNetworkResolver
 				logger                 boshlog.Logger
 				dirProvider            boshdirs.Provider
@@ -1105,7 +1113,8 @@ var _ = Describe("bootstrap", func() {
 				logger = boshlog.NewLogger(boshlog.LevelNone)
 				kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
 				fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
-				fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
+				err := fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
+				Expect(err).NotTo(HaveOccurred())
 
 				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, fakeMACAddressDetector, interfaceConfigurationCreator, interfaceAddrsProvider, dnsValidator, arping, kernelIPv6, logger)
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 1, logger)
@@ -1146,7 +1155,8 @@ var _ = Describe("bootstrap", func() {
 
 			JustBeforeEach(func() {
 				var settings boshsettings.Settings
-				json.Unmarshal([]byte(settingsJSON), &settings)
+				err := json.Unmarshal([]byte(settingsJSON), &settings)
+				Expect(err).NotTo(HaveOccurred())
 
 				settingsSource := fakeinf.FakeSettingsSource{
 					PublicKey:     "123",
@@ -1160,7 +1170,7 @@ var _ = Describe("bootstrap", func() {
 					logger,
 				)
 
-				boot = NewBootstrap(
+				boot = agent.NewBootstrap(
 					platform,
 					dirProvider,
 					settingsService,
@@ -1198,7 +1208,7 @@ var _ = Describe("bootstrap", func() {
 
 				Context("and a single physical network interface exists", func() {
 					BeforeEach(func() {
-						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc"}})
+						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}})
 						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
 							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
 						}
@@ -1212,7 +1222,7 @@ var _ = Describe("bootstrap", func() {
 
 				Context("and extra physical network interfaces exist", func() {
 					BeforeEach(func() {
-						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc"}, []string{"eth1", "aa:bb:dd"}})
+						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}, {"eth1", "aa:bb:dd"}})
 						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
 							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
 						}
@@ -1253,7 +1263,7 @@ var _ = Describe("bootstrap", func() {
 
 				Context("and a single physical network interface exists", func() {
 					BeforeEach(func() {
-						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc"}})
+						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}})
 						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
 							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
 						}
@@ -1267,7 +1277,7 @@ var _ = Describe("bootstrap", func() {
 
 				Context("and extra physical network interfaces exist", func() {
 					BeforeEach(func() {
-						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc"}, []string{"eth1", "aa:bb:dd"}})
+						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}, {"eth1", "aa:bb:dd"}})
 						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
 							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
 						}
@@ -1312,7 +1322,7 @@ var _ = Describe("bootstrap", func() {
 
 				Context("and a single physical network interface exists", func() {
 					BeforeEach(func() {
-						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc"}})
+						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}})
 					})
 
 					It("raises an error", func() {
@@ -1324,7 +1334,7 @@ var _ = Describe("bootstrap", func() {
 
 				Context("and two physical network interfaces with matching MAC addresses exist", func() {
 					BeforeEach(func() {
-						stubInterfaces([][]string{[]string{"eth0", "aa:bb:cc"}, []string{"eth1", "aa:bb:dd"}})
+						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}, {"eth1", "aa:bb:dd"}})
 						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
 							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
 							boship.NewSimpleInterfaceAddress("eth1", "3.3.3.3"),

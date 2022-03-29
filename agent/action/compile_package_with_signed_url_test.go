@@ -7,15 +7,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
-func getCompileWithSignedURLActionArguments() CompilePackageWithSignedURLRequest {
-	return CompilePackageWithSignedURLRequest{
+func getCompileWithSignedURLActionArguments() boshaction.CompilePackageWithSignedURLRequest {
+	return boshaction.CompilePackageWithSignedURLRequest{
 		PackageGetSignedURL: "fake/get/url",
 		UploadSignedURL:     "fake/upload/url",
 		Name:                "fake-package-name",
@@ -46,12 +46,12 @@ func getCompileWithSignedURLActionArguments() CompilePackageWithSignedURLRequest
 var _ = Describe("CompilePackageWithSignedURL", func() {
 	var (
 		compiler *fakecomp.FakeCompiler
-		action   CompilePackageWithSignedURL
+		action   boshaction.CompilePackageWithSignedURL
 	)
 
 	BeforeEach(func() {
 		compiler = fakecomp.NewFakeCompiler()
-		action = NewCompilePackageWithSignedURL(compiler)
+		action = boshaction.NewCompilePackageWithSignedURL(compiler)
 	})
 
 	AssertActionIsAsynchronous(action)

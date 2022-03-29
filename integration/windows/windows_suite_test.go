@@ -2,7 +2,6 @@ package windows_test
 
 import (
 	"fmt"
-	"github.com/onsi/gomega/gexec"
 	"io"
 	"io/ioutil"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/onsi/gomega/gexec"
 
 	"net/http"
 
@@ -79,9 +80,10 @@ var _ = BeforeSuite(func() {
 	agent.CleanUpExtraDisks()
 
 	goSourcePath := filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "go", "go1.7.1.windows-amd64.zip")
-	os.RemoveAll(goSourcePath)
-	downloadFile(goSourcePath, "https://dl.google.com/go/go1.7.1.windows-amd64.zip")
-	//agent.RunPowershellCommand("add-content \\ProgramData\\ssh\\sshd_config \"AllowUsers bosh_testuser\"")
+	err = os.RemoveAll(goSourcePath)
+	Expect(err).NotTo(HaveOccurred())
+	err = downloadFile(goSourcePath, "https://dl.google.com/go/go1.7.1.windows-amd64.zip")
+	Expect(err).NotTo(HaveOccurred())
 })
 
 func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {

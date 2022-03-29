@@ -7,7 +7,7 @@ type BundleDefinition interface {
 }
 
 type BundleCollection interface {
-	Get(defintion BundleDefinition) (bundle Bundle, err error)
+	Get(definition BundleDefinition) (bundle Bundle, err error)
 	List() ([]Bundle, error)
 }
 

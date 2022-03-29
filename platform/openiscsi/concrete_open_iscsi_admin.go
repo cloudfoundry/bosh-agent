@@ -28,7 +28,7 @@ func NewConcreteOpenIscsiAdmin(fs boshsys.FileSystem, runner boshsys.CmdRunner, 
 	}
 }
 
-func (iscsi concreteOpenIscsiAdmin) Setup(iqn, username, password string) (err error) {
+func (iscsi concreteOpenIscsiAdmin) Setup(iqn, username, password string) error {
 	iscsi.logger.Info(iscsi.logtag, "Setup Open-iscsi, initializing /etc/iscsi/initiatorname.iscsi,iscsid.conf")
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("Open-iscsi-initiator").Parse(initiatorNameIscsiTemplate))
@@ -37,16 +37,14 @@ func (iscsi concreteOpenIscsiAdmin) Setup(iqn, username, password string) (err e
 		Iqn string
 	}
 
-	err = t.Execute(buffer, initiatorNameArgs{iqn})
+	err := t.Execute(buffer, initiatorNameArgs{iqn})
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating initiatorname.iscsi of Open-iscsi")
-		return
+		return bosherr.WrapError(err, "Generating initiatorname.iscsi of Open-iscsi")
 	}
 
 	err = iscsi.fs.WriteFile(path.Join("/etc/iscsi", "initiatorname.iscsi"), buffer.Bytes())
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing to /etc/iscsi/initiatorname.iscsi")
-		return
+		return bosherr.WrapError(err, "Writing to /etc/iscsi/initiatorname.iscsi")
 	}
 
 	buffer.Reset()
@@ -59,30 +57,27 @@ func (iscsi concreteOpenIscsiAdmin) Setup(iqn, username, password string) (err e
 	t = template.Must(template.New("Open-iscsi-conf").Parse(iscsidConfTemplate))
 	err = t.Execute(buffer, iscsidConfArgs{username, password})
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating iscsid.conf of Open-iscsi")
-		return
+		return bosherr.WrapError(err, "Generating iscsid.conf of Open-iscsi")
 	}
 
 	err = iscsi.fs.WriteFile(path.Join("/etc/iscsi", "iscsid.conf"), buffer.Bytes())
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing to /etc/iscsi/iscsid.conf")
-		return
+		return bosherr.WrapError(err, "Writing to /etc/iscsi/iscsid.conf")
 	}
 
 	buffer.Reset()
 
 	err = iscsi.Restart()
 	if err != nil {
-		err = bosherr.WrapError(err, "Restarting iscsi after modifying the /etc/iscsi/iscsid.conf file")
-		return
+		return bosherr.WrapError(err, "Restarting iscsi after modifying the /etc/iscsi/iscsid.conf file")
 	}
 
 	_, _, _, err = iscsi.runner.RunCommand("/etc/init.d/multipath-tools", "restart")
 	if err != nil {
-		err = bosherr.WrapError(err, "Restarting multipath after restarting open-iscsi")
-		return
+		return bosherr.WrapError(err, "Restarting multipath after restarting open-iscsi")
 	}
-	return
+
+	return nil
 }
 
 // Open-iscsi initiator file - /etc/iscsi/initiatorname.iscsi
@@ -165,10 +160,7 @@ func (iscsi concreteOpenIscsiAdmin) IsLoggedin() (bool, error) {
 		return false, bosherr.WrapError(err, "Checking all current sessions logged in")
 	}
 
-	r, err := regexp.Compile(`^tcp: \[\d+\]`)
-	if err != nil {
-		return false, bosherr.WrapError(err, "There is a problem with your regexp: '^tcp: \\[\\d+\\]'. That is used to check iscsi session(e.g., tcp: [sid] portal target)")
-	}
+	r := regexp.MustCompile(`^tcp: \[\d+\]`)
 	if r.MatchString(stdout) {
 		return true, nil
 	}

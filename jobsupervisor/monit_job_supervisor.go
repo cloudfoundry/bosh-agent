@@ -279,7 +279,6 @@ func (m monitJobSupervisor) Status() (status string) {
 
 	if m.fs.FileExists(m.stoppedFilePath()) {
 		status = "stopped"
-
 	} else {
 		services := monitStatus.ServicesInGroup("vcap")
 		for _, service := range services {
@@ -392,7 +391,6 @@ func (m monitJobSupervisor) filterServices(services []boshmonit.Service, fn func
 }
 
 func (m monitJobSupervisor) checkServices() ([]boshmonit.Service, error) {
-
 	monitStatus, err := m.client.Status()
 	if err != nil {
 		return nil, bosherr.WrapErrorf(err, "Getting monit status")

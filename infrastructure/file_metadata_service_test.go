@@ -34,8 +34,8 @@ var _ = Describe("FileMetadataService", func() {
 	Describe("GetInstanceID", func() {
 		Context("when metadata service file exists", func() {
 			BeforeEach(func() {
-				metadataContents := `{"instance-id":"fake-instance-id"}`
-				fs.WriteFileString("fake-metadata-file-path", metadataContents)
+				err := fs.WriteFileString("fake-metadata-file-path", `{"instance-id":"fake-instance-id"}`)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns instance id", func() {
@@ -54,7 +54,8 @@ var _ = Describe("FileMetadataService", func() {
 
 		Context("when metadata service file has invalid format", func() {
 			BeforeEach(func() {
-				fs.WriteFileString("fake-metadata-file-path", "bad-json")
+				err := fs.WriteFileString("fake-metadata-file-path", "bad-json")
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns an error", func() {
@@ -67,8 +68,8 @@ var _ = Describe("FileMetadataService", func() {
 	Describe("GetServerName", func() {
 		Context("when userdata file exists", func() {
 			BeforeEach(func() {
-				userDataContents := `{"server":{"name":"fake-server-name"}}`
-				fs.WriteFileString("fake-userdata-file-path", userDataContents)
+				err := fs.WriteFileString("fake-userdata-file-path", `{"server":{"name":"fake-server-name"}}`)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns server name", func() {
@@ -96,7 +97,8 @@ var _ = Describe("FileMetadataService", func() {
 						"network_2": {"type": "dynamic", "default": ["dns"], "dns": ["8.8.8.8"], "mac": "fake-mac-address-2"}
 					}
 				}`
-			fs.WriteFileString("fake-userdata-file-path", userDataContents)
+			err := fs.WriteFileString("fake-userdata-file-path", userDataContents)
+			Expect(err).NotTo(HaveOccurred())
 
 			networks, err := metadataService.GetNetworks()
 			Expect(err).ToNot(HaveOccurred())
@@ -121,7 +123,8 @@ var _ = Describe("FileMetadataService", func() {
 
 		It("returns a nil Networks if the settings are missing (from an old CPI version)", func() {
 			userDataContents := `{}`
-			fs.WriteFileString("fake-userdata-file-path", userDataContents)
+			err := fs.WriteFileString("fake-userdata-file-path", userDataContents)
+			Expect(err).NotTo(HaveOccurred())
 
 			networks, err := metadataService.GetNetworks()
 			Expect(err).ToNot(HaveOccurred())
@@ -146,8 +149,11 @@ var _ = Describe("FileMetadataService", func() {
 	Describe("GetRegistryEndpoint", func() {
 		Context("when metadata service file exists", func() {
 			BeforeEach(func() {
-				userDataContents := `{"registry":{"endpoint":"fake-registry-endpoint"}}`
-				fs.WriteFileString("fake-userdata-file-path", userDataContents)
+				err := fs.WriteFileString(
+					"fake-userdata-file-path",
+					`{"registry":{"endpoint":"fake-registry-endpoint"}}`,
+				)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns registry endpoint", func() {
@@ -176,7 +182,8 @@ var _ = Describe("FileMetadataService", func() {
 					"mbus": "Agent-Mbus"
 				}`
 
-				fs.WriteFileString("fake-userdata-file-path", userDataContents)
+				err := fs.WriteFileString("fake-userdata-file-path", userDataContents)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns settings", func() {
@@ -193,7 +200,8 @@ var _ = Describe("FileMetadataService", func() {
 						"mbus": "Agent-Mbus"
 					}`
 
-					fs.WriteFileString("fake-userdata-file-path", userDataContents)
+					err := fs.WriteFileString("fake-userdata-file-path", userDataContents)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns error", func() {
@@ -206,7 +214,8 @@ var _ = Describe("FileMetadataService", func() {
 
 		Context("when metadata service file does not exist", func() {
 			BeforeEach(func() {
-				fs.RemoveAll("fake-settings-file-path")
+				err := fs.RemoveAll("fake-settings-file-path")
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns error", func() {
@@ -226,7 +235,8 @@ var _ = Describe("FileMetadataService", func() {
 							"mbus": "Agent-Mbus"
 					}`
 
-				fs.WriteFileString("fake-userdata-file-path", userDataContents)
+				err := fs.WriteFileString("fake-userdata-file-path", userDataContents)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns error", func() {
@@ -246,7 +256,8 @@ var _ = Describe("FileMetadataService", func() {
 
 		Context("when file exists", func() {
 			BeforeEach(func() {
-				fs.WriteFileString("fake-settings-file-path", ``)
+				err := fs.WriteFileString("fake-settings-file-path", ``)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns true", func() {

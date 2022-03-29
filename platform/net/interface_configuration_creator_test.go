@@ -95,7 +95,7 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 						interfacesByMAC["some-other-mac"] = "static-interface-name"
 					})
 
-					It("retuns an error", func() {
+					It("returns an error", func() {
 						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("No device found"))
@@ -142,7 +142,7 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 						interfacesByMAC = map[string]string{}
 					})
 
-					It("retuns an error", func() {
+					It("returns an error", func() {
 						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("Number of network settings '1' is greater than the number of network devices '0'"))
@@ -310,7 +310,7 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 						interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
 					})
 
-					It("retuns an error", func() {
+					It("returns an error", func() {
 						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
 						Expect(err).To(HaveOccurred())
 					})
@@ -456,7 +456,7 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 				interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
 			})
 
-			It("retuns an error", func() {
+			It("returns an error", func() {
 				_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
 				Expect(err).To(HaveOccurred())
 			})

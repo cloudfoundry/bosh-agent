@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
 )
@@ -14,12 +14,12 @@ import (
 var _ = Describe("CancelTaskAction", func() {
 	var (
 		taskService *faketask.FakeService
-		action      CancelTaskAction
+		action      boshaction.CancelTaskAction
 	)
 
 	BeforeEach(func() {
 		taskService = faketask.NewFakeService()
-		action = NewCancelTask(taskService)
+		action = boshaction.NewCancelTask(taskService)
 	})
 
 	AssertActionIsNotAsynchronous(action)

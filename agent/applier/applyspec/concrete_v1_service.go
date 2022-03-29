@@ -30,7 +30,7 @@ func (s concreteV1Service) Get() (V1ApplySpec, error) {
 		return spec, bosherr.WrapError(err, "Reading json spec file")
 	}
 
-	err = json.Unmarshal([]byte(contents), &spec)
+	err = json.Unmarshal(contents, &spec)
 	if err != nil {
 		return spec, bosherr.WrapError(err, "Unmarshalling json spec file")
 	}

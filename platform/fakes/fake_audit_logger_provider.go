@@ -65,7 +65,7 @@ func (p *FakeAuditLoggerProvider) SetErrorLoggerError(err error) {
 
 func (p *FakeAuditLoggerProvider) GetDebugLogsAt(index int) string {
 	p.debugBufferLock.RLock()
-	debugString := string(p.debugBuffer.Bytes())
+	debugString := p.debugBuffer.String()
 	p.debugBufferLock.RUnlock()
 	return debugString
 }
@@ -88,7 +88,7 @@ func (p *FakeAuditLoggerProvider) ProvideErrorLogger() (*log.Logger, error) {
 
 func (p *FakeAuditLoggerProvider) GetErrorLogsAt(index int) string {
 	p.errorBufferLock.RLock()
-	errorString := string(p.errorBuffer.Bytes())
+	errorString := p.errorBuffer.String()
 	p.errorBufferLock.RUnlock()
 	return errorString
 }
