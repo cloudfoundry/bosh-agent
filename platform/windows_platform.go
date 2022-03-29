@@ -379,8 +379,8 @@ func (p WindowsPlatform) SetupHostname(hostname string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks) (err error) {
-	return p.netManager.SetupNetworking(networks, nil)
+func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks, mbus string) (err error) {
+	return p.netManager.SetupNetworking(networks, mbus, nil)
 }
 
 func (p WindowsPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, err error) {

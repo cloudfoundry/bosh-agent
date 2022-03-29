@@ -114,7 +114,11 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		natsClient.Cleanup()
 	})
-
+	It("blocks outgoing nats access for all other binaries once started", func() {
+		//The FW Rule works on basis of a binary (winAppId). Thus even shelling out from the Agent will not be allowed.
+		output := agent.RunPowershellCommand(fmt.Sprintf("Test-NetConnection -ComputerName %v -Port %v", windowsutils.FakeDirectorIP(), 4222))
+		Expect(output).To(ContainSubstring("TcpTestSucceeded       : False"))
+	})
 	It("responds to 'get_state' message over NATS", func() {
 		getStateSpecAgentID := func() string {
 			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)

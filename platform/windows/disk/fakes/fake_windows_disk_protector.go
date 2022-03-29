@@ -38,15 +38,16 @@ func (fake *FakeWindowsDiskProtector) CommandExists() bool {
 	ret, specificReturn := fake.commandExistsReturnsOnCall[len(fake.commandExistsArgsForCall)]
 	fake.commandExistsArgsForCall = append(fake.commandExistsArgsForCall, struct {
 	}{})
+	stub := fake.CommandExistsStub
+	fakeReturns := fake.commandExistsReturns
 	fake.recordInvocation("CommandExists", []interface{}{})
 	fake.commandExistsMutex.Unlock()
-	if fake.CommandExistsStub != nil {
-		return fake.CommandExistsStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.commandExistsReturns
 	return fakeReturns.result1
 }
 
@@ -91,15 +92,16 @@ func (fake *FakeWindowsDiskProtector) ProtectPath(arg1 string) error {
 	fake.protectPathArgsForCall = append(fake.protectPathArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.ProtectPathStub
+	fakeReturns := fake.protectPathReturns
 	fake.recordInvocation("ProtectPath", []interface{}{arg1})
 	fake.protectPathMutex.Unlock()
-	if fake.ProtectPathStub != nil {
-		return fake.ProtectPathStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.protectPathReturns
 	return fakeReturns.result1
 }
 

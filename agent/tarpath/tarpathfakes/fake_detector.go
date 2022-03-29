@@ -33,15 +33,16 @@ func (fake *FakeDetector) Detect(arg1 string, arg2 string) (bool, error) {
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+	stub := fake.DetectStub
+	fakeReturns := fake.detectReturns
 	fake.recordInvocation("Detect", []interface{}{arg1, arg2})
 	fake.detectMutex.Unlock()
-	if fake.DetectStub != nil {
-		return fake.DetectStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.detectReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

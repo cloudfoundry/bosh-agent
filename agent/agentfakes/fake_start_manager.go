@@ -37,15 +37,16 @@ func (fake *FakeStartManager) CanStart() bool {
 	ret, specificReturn := fake.canStartReturnsOnCall[len(fake.canStartArgsForCall)]
 	fake.canStartArgsForCall = append(fake.canStartArgsForCall, struct {
 	}{})
+	stub := fake.CanStartStub
+	fakeReturns := fake.canStartReturns
 	fake.recordInvocation("CanStart", []interface{}{})
 	fake.canStartMutex.Unlock()
-	if fake.CanStartStub != nil {
-		return fake.CanStartStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.canStartReturns
 	return fakeReturns.result1
 }
 
@@ -89,15 +90,16 @@ func (fake *FakeStartManager) RegisterStart() error {
 	ret, specificReturn := fake.registerStartReturnsOnCall[len(fake.registerStartArgsForCall)]
 	fake.registerStartArgsForCall = append(fake.registerStartArgsForCall, struct {
 	}{})
+	stub := fake.RegisterStartStub
+	fakeReturns := fake.registerStartReturns
 	fake.recordInvocation("RegisterStart", []interface{}{})
 	fake.registerStartMutex.Unlock()
-	if fake.RegisterStartStub != nil {
-		return fake.RegisterStartStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.registerStartReturns
 	return fakeReturns.result1
 }
 

@@ -181,10 +181,9 @@ func (p dummyPlatform) SetupHostname(hostname string) (err error) {
 	return
 }
 
-func (p dummyPlatform) SetupNetworking(networks boshsettings.Networks) (err error) {
+func (p dummyPlatform) SetupNetworking(networks boshsettings.Networks, mbus string) (err error) {
 	return
 }
-
 func (p dummyPlatform) GetConfiguredNetworkInterfaces() (interfaces []string, err error) {
 	return
 }

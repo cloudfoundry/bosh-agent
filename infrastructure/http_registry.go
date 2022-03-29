@@ -85,7 +85,7 @@ func (r httpRegistry) GetSettings() (boshsettings.Settings, error) {
 	}
 
 	if len(networks) > 0 {
-		err = r.platform.SetupNetworking(networks)
+		err = r.platform.SetupNetworking(networks, "")
 		if err != nil {
 			return settings, bosherr.WrapError(err, "Setting up networks")
 		}

@@ -23,6 +23,7 @@ type AuditLoggerProvider interface {
 	ProvideDebugLogger() (*log.Logger, error)
 	ProvideErrorLogger() (*log.Logger, error)
 }
+
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //counterfeiter:generate . Platform
 //counterfeiter:generate . AuditLogger
@@ -52,7 +53,7 @@ type Platform interface {
 	SetupBoshSettingsDisk() (err error)
 	SetupIPv6(boshsettings.IPv6) error
 	SetupHostname(hostname string) (err error)
-	SetupNetworking(networks boshsettings.Networks) (err error)
+	SetupNetworking(networks boshsettings.Networks, mbus string) (err error)
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string) (err error)
 	SetupEphemeralDiskWithPath(devicePath string, desiredSwapSizeInBytes *uint64, labelPrefix string) (err error)

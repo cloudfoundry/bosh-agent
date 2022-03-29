@@ -40,15 +40,16 @@ func (fake *FakeRequestRetryable) Attempt() (bool, error) {
 	ret, specificReturn := fake.attemptReturnsOnCall[len(fake.attemptArgsForCall)]
 	fake.attemptArgsForCall = append(fake.attemptArgsForCall, struct {
 	}{})
+	stub := fake.AttemptStub
+	fakeReturns := fake.attemptReturns
 	fake.recordInvocation("Attempt", []interface{}{})
 	fake.attemptMutex.Unlock()
-	if fake.AttemptStub != nil {
-		return fake.AttemptStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.attemptReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -95,15 +96,16 @@ func (fake *FakeRequestRetryable) Response() *http.Response {
 	ret, specificReturn := fake.responseReturnsOnCall[len(fake.responseArgsForCall)]
 	fake.responseArgsForCall = append(fake.responseArgsForCall, struct {
 	}{})
+	stub := fake.ResponseStub
+	fakeReturns := fake.responseReturns
 	fake.recordInvocation("Response", []interface{}{})
 	fake.responseMutex.Unlock()
-	if fake.ResponseStub != nil {
-		return fake.ResponseStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.responseReturns
 	return fakeReturns.result1
 }
 
