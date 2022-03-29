@@ -691,7 +691,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
 			Expect(err).To(MatchError(
-				fmt.Sprintf("cannot protect %s. %s cmd does not exist.", dataDir, disk.ProtectCmdlet),
+				fmt.Sprintf("cannot protect %s. %s cmd does not exist", dataDir, disk.ProtectCmdlet),
 			))
 		})
 
