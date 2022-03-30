@@ -331,7 +331,7 @@ func init() { //nolint:funlen,gochecknoinits
 						Expect(err).NotTo(HaveOccurred())
 					}
 
-					Expect(options.TLSConfig.RootCAs.Subjects()).To(BeEquivalentTo(certPool.Subjects()))
+					Expect(options.TLSConfig.RootCAs.Subjects()).To(BeEquivalentTo(certPool.Subjects())) //nolint:staticcheck
 					Expect(options.TLSConfig.Certificates[0]).To(Equal(clientCert))
 				})
 

@@ -68,7 +68,7 @@ Ia61hX5ccGHhfw1oXlPCqF8jPZgVJpSAv5nsthy9
 			expectedCertPool, err := boshcrypto.CertPoolFromPEM([]byte(certificate))
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(client.Transport.(*http.Transport).TLSClientConfig.RootCAs.Subjects()).To(Equal(expectedCertPool.Subjects()))
+			Expect(client.Transport.(*http.Transport).TLSClientConfig.RootCAs.Subjects()).To(Equal(expectedCertPool.Subjects())) //nolint:staticcheck
 		})
 
 		Context("when the ca certificate is not valid", func() {

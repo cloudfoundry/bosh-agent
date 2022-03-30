@@ -70,7 +70,7 @@ func ValidUserPassword(username, password string) error {
 		return err
 	}
 	var token windows.Handle
-	r1, _, e1 := syscall.Syscall6(procLogonUser.Addr(), 6,
+	r1, _, e1 := syscall.SyscallN(procLogonUser.Addr(), 6,
 		uintptr(unsafe.Pointer(puser)),  // LPTSTR  lpszUsername,
 		uintptr(0),                      // LPTSTR  lpszDomain,
 		uintptr(unsafe.Pointer(ppass)),  // LPTSTR  lpszPassword,

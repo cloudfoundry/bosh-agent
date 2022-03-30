@@ -49,7 +49,7 @@ func createProfile(sid, username string) (string, error) {
 		return "", err
 	}
 	var pathbuf [260]uint16
-	r1, _, e1 := syscall.Syscall6(procCreateProfile.Addr(), 4,
+	r1, _, e1 := syscall.SyscallN(procCreateProfile.Addr(), 4,
 		uintptr(unsafe.Pointer(psid)),        // _In_  LPCWSTR pszUserSid
 		uintptr(unsafe.Pointer(pusername)),   // _In_  LPCWSTR pszUserName
 		uintptr(unsafe.Pointer(&pathbuf[0])), // _Out_ LPWSTR  pszProfilePath
@@ -77,7 +77,7 @@ func deleteProfile(sid string) error { //nolint:deadcode,unused
 	if err != nil {
 		return err
 	}
-	r1, _, e1 := syscall.Syscall(procDeleteProfile.Addr(), 3,
+	r1, _, e1 := syscall.SyscallN(procDeleteProfile.Addr(), 3,
 		uintptr(unsafe.Pointer(psid)), // _In_     LPCTSTR lpSidString,
 		0,                             // _In_opt_ LPCTSTR lpProfilePath,
 		0,                             // _In_opt_ LPCTSTR lpComputerName
@@ -99,7 +99,7 @@ func getProfilesDirectory() (string, error) {
 	}
 	var buf [syscall.MAX_PATH]uint16
 	n := uint32(len(buf))
-	r1, _, e1 := syscall.Syscall(procGetProfilesDirectory.Addr(), 2,
+	r1, _, e1 := syscall.SyscallN(procGetProfilesDirectory.Addr(), 2,
 		uintptr(unsafe.Pointer(&buf[0])), // _Out_   LPTSTR  lpProfilesDir,
 		uintptr(unsafe.Pointer(&n)),      // _Inout_ LPDWORD lpcchSize
 		0,
@@ -304,7 +304,7 @@ func localAccountNames() ([]string, error) {
 		total  uint32
 		resume uint32
 	)
-	r1, _, e1 := syscall.Syscall9(procNetUserEnum.Addr(), 8,
+	r1, _, e1 := syscall.SyscallN(procNetUserEnum.Addr(), 8,
 		0, // local computer
 		0, // user account names
 		FILTER_NORMAL_ACCOUNT,
