@@ -126,12 +126,17 @@ sudo mkdir -p /tmp/config-drive/ec2/latest
 		return err
 	}
 
-	_, err = t.RunCommand("sudo fuser -km /tmp/config-drive")
-	if err != nil {
-		return err
+	_, ignoredErr := t.RunCommand("sudo fuser -km /tmp/config-drive")
+	if ignoredErr != nil {
+		t.logger.Error("test environment", "SetupConfigDrive error: %s", ignoredErr)
 	}
-	_, err = t.RunCommand("sudo umount -l /tmp/config-drive")
-	return err
+
+	_, ignoredErr = t.RunCommand("sudo umount -l /tmp/config-drive")
+	if ignoredErr != nil {
+		t.logger.Error("test environment", "SetupConfigDrive error: %s", ignoredErr)
+	}
+
+	return nil
 }
 
 type byLen []string
@@ -150,13 +155,13 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
 		if mountPoint != "" {
-			_, err = t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
-			if err != nil {
-				t.logger.Error("test environment", "Unable to DetachDevice: %s", err)
+			_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
+			if ignoredErr != nil {
+				t.logger.Error("test environment", "Unable to DetachDevice: %s", ignoredErr)
 			}
-			_, err = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
-			if err != nil {
-				t.logger.Error("test environment", "Unable to DetachDevice: %s", err)
+			_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+			if ignoredErr != nil {
+				t.logger.Error("test environment", "Unable to DetachDevice: %s", ignoredErr)
 			}
 		}
 	}
