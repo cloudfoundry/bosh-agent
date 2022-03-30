@@ -68,22 +68,14 @@ func SetupNatsFirewall(mbus string) error {
 		return bosherr.WrapError(err, fmt.Sprintf("Error resolving mbus host: %v", host))
 	}
 
-	// default to V4
-	localhostIP := "127.0.0.1"
-	ipVersion := iptables.ProtocolIPv4
-
-	// Check if we're dealing with a V4 Target
-	if addr_array[0].To4() == nil {
-		localhostIP = "0:0:0:0:0:0:0:1"
-		ipVersion = iptables.ProtocolIPv6
-	}
-	ipt, err := iptables.NewWithProtocol(ipVersion)
+	ipt, err := iptables.New()
 	if err != nil {
 		return bosherr.WrapError(err, "Creating Iptables Error")
 	}
-
+	// Even on a V6 VM, Monit will listen to only V4 loopback
+	// First create Monit V4 rules for natsIsolationClassID
 	exists, err := ipt.Exists("mangle", "POSTROUTING",
-		"-d", localhostIP,
+		"-d", "127.0.0.1",
 		"-p", "tcp",
 		"--dport", "2822",
 		"-m", "cgroup",
@@ -95,7 +87,7 @@ func SetupNatsFirewall(mbus string) error {
 	}
 	if !exists {
 		err = ipt.Insert("mangle", "POSTROUTING", 1,
-			"-d", localhostIP,
+			"-d", "127.0.0.1",
 			"-p", "tcp",
 			"--dport", "2822",
 			"-m", "cgroup",
@@ -106,6 +98,18 @@ func SetupNatsFirewall(mbus string) error {
 			return bosherr.WrapError(err, "Iptables Error inserting for monit rule")
 		}
 	}
+
+	// For nats iptables rules we default to V4 unless below dns resolution gives us a V6 target
+	ipVersion := iptables.ProtocolIPv4
+	// Check if we're dealing with a V4 Target
+	if addr_array[0].To4() == nil {
+		ipVersion = iptables.ProtocolIPv6
+	}
+	ipt, err = iptables.NewWithProtocol(ipVersion)
+	if err != nil {
+		return bosherr.WrapError(err, "Creating Iptables Error")
+	}
+
 	err = ipt.AppendUnique("mangle", "POSTROUTING",
 		"-d", host,
 		"-p", "tcp",
@@ -126,6 +130,7 @@ func SetupNatsFirewall(mbus string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Iptables Error inserting for non-agent DROP rule")
 	}
+
 	var isolationClassID = natsIsolationClassID
 	natsAPICgroup, err := cgroups.New(cgroups.SingleSubsystem(cgroups.V1, cgroups.NetCLS), cgroups.StaticPath("/nats-api-access"), &specs.LinuxResources{
 		Network: &specs.LinuxNetwork{
