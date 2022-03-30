@@ -152,11 +152,11 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		if mountPoint != "" {
 			_, err = t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
 			if err != nil {
-				return err
+				t.logger.Error("test environment", "Unable to DetachDevice: %s", err)
 			}
 			_, err = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
 			if err != nil {
-				return err
+				t.logger.Error("test environment", "Unable to DetachDevice: %s", err)
 			}
 		}
 	}
