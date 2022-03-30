@@ -519,7 +519,7 @@ func (t *TestEnvironment) RunCommandChain(commands ...string) error {
 	for _, command := range commands {
 		_, err := t.RunCommand(command)
 		if err != nil {
-			return errors.WrapErrorf(err, "Error running %s", command)
+			return err
 		}
 	}
 	return nil
@@ -689,14 +689,14 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 
 	if err != nil {
 		t.logger.Debug("Remote Cmd Runner", "NEWSESSION FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
-		return "", err
+		return "", errors.WrapError(err, "Unable to establish SSH session: ")
 	}
 	defer s.Close()
 	t.logger.Debug("Remote Cmd Runner", "Running remote command '%s'", command)
 	out, err := s.CombinedOutput(command)
 	if err != nil {
 		t.logger.Debug("COMMAND FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
-		return string(out), err
+		return string(out), errors.WrapErrorf(err, "Error running %s", command)
 	}
 	return string(out), nil
 }
