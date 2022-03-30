@@ -43,19 +43,19 @@ resources:
     source:
       owner: cloudfoundry
       repository: bosh-cli
-      access_token: ((github_read_only_token))
+      access_token: ((github_public_repo_token))
 
   - name: credhub-cli-github-release
     type: github-release
     source:
-      access_token: ((github_read_only_token))
+      access_token: ((github_public_repo_token))
       owner: cloudfoundry-incubator
       repository: credhub-cli
 
   - name: jq-github-release
     type: github-release
     source:
-      access_token: ((github_read_only_token))
+      access_token: ((github_public_repo_token))
       owner: stedolan
       repository: jq
 
