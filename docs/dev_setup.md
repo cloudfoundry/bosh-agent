@@ -41,6 +41,7 @@ A full call might look like:
     bosh-blobstore-custom -c /var/vcap/bosh/etc/blobstore-custom.json get 2340958ddfg /tmp/my-cool-file
 
 ### Set up a workstation for development
+<!-- TODO: This seems wildly out of date and needs to be reworked -->
 
 Note: This guide assumes a few things:
 

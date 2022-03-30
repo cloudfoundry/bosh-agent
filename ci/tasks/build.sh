@@ -2,29 +2,23 @@
 
 set -e
 
-export BASE=$(pwd)
-export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
-export GOPATH=${BASE}/gopath
+CONCOURSE_ROOT=$(pwd)
 
-semver=`cat ${BASE}/version-semver/number`
+semver=$(cat "${CONCOURSE_ROOT}/version-semver/number")
 
-goversion_suffix=""
-if [ ! -z "${GOVERSION}" ]; then
-  goversion_suffix="-${GOVERSION}"
-fi
-
-filename_suffix="${semver}${goversion_suffix}-${GOOS}-${GOARCH}"
+filename_suffix="${semver}-${GOOS}-${GOARCH}"
 if [[ $GOOS = 'windows' ]]; then
   filename_suffix="${filename_suffix}.exe"
 fi
 
-timestamp=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
-go_ver=`go version | cut -d ' ' -f 3`
+timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+go_ver=$(go version | cut -d ' ' -f 3)
 
-cd gopath/src/github.com/cloudfoundry/bosh-agent
+cd bosh-agent
 
-git_rev=`git rev-parse --short HEAD`
+git_rev=$(git rev-parse --short HEAD)
 
+# TODO: We could use a build time variable to pass in the version instead of using sed to edit files.
 version="${semver}-${git_rev}-${timestamp}-${go_ver}"
 sed -i 's/\[DEV BUILD\]/'"$version"'/' main/version.go
 
@@ -32,9 +26,9 @@ bin/build
 
 # output bosh-agent
 shasum -a 256 out/bosh-agent
-cp out/bosh-agent "${BASE}/${DIRNAME}/bosh-agent-${filename_suffix}"
+cp out/bosh-agent "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-${filename_suffix}"
 
 if [[ $GOOS = 'windows' ]]; then
   shasum -a 256 out/bosh-agent-pipe
-  cp out/bosh-agent-pipe "${BASE}/${DIRNAME}/bosh-agent-pipe-${filename_suffix}"
+  cp out/bosh-agent-pipe "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-pipe-${filename_suffix}"
 fi

@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e
+CONCOURSE_ROOT="$(pwd)"
 
-export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
-export GOPATH=$(pwd)/gopath
-chown -R bosh .
-cd gopath/src/github.com/cloudfoundry/bosh-agent
-mkdir -p /home/bosh
-chown bosh:bosh /home/bosh
-su bosh -c "env PATH=$PATH GOPATH=$GOPATH bin/test-unit"
+chown -R bosh "${CONCOURSE_ROOT}"
+cd "${CONCOURSE_ROOT}/bosh-agent"
+
+su bosh -c "env PATH=~bosh/go/bin:$PATH GOPATH=$GOPATH bin/test-unit"

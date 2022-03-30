@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -eu -o pipefail
-
-ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
-
-pushd "${ROOT_DIR}" > /dev/null 2>&1
-  # shellcheck disable=SC2035
-  find * -name '*.go' -and \( -not -path 'vendor/*' \)
-popd > /dev/null 2>&1

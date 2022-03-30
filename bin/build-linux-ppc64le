@@ -12,7 +12,7 @@ export LD_LIBRARY_PATH=${GOROOT}/lib64
 # we need following steps to make gccgo work
 cp -f "${LD_LIBRARY_PATH}/libgo.so.7" /lib/powerpc64le-linux-gnu
 
-"${ROOT_DIR}/bin/go" build \
+go build \
   -compiler gccgo -gccgoflags '-static-libgo' \
   -o "${ROOT_DIR}/out/bosh-agent" \
   github.com/cloudfoundry/bosh-agent/main

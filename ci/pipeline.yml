@@ -228,15 +228,6 @@ jobs:
       - task: test-unit
         file: bosh-agent/ci/tasks/test-unit.yml
 
-  - name: golangci-lint
-    plan:
-      - get: bosh-agent
-        trigger: true
-      - task: golangci-lint
-        file: bosh-agent/ci/tasks/golangci-lint.yml
-        params:
-          GOLANGCI_LINT_VERSION: v1.45.0
-
   - name: test-unit-windows
     serial: true
     plan:

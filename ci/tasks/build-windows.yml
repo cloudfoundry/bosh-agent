@@ -8,7 +8,6 @@ image_resource:
 
 inputs:
 - name: bosh-agent
-  path: gopath/src/github.com/cloudfoundry/bosh-agent
 - name: version-semver
 
 outputs:
@@ -20,4 +19,4 @@ params:
   GOOS:   windows
 
 run:
-  path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/build.sh
+  path: bosh-agent/ci/tasks/build.sh

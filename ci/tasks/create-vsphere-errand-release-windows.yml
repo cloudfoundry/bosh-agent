@@ -8,13 +8,12 @@ image_resource:
 
 inputs:
 - name: bosh-agent
-  path: gopath/src/github.com/cloudfoundry/bosh-agent
 
 outputs:
 - name: vsphere-errand-release
 
 run:
-  path: 'gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/create-vsphere-errand-release-windows.sh'
+  path: 'bosh-agent/ci/tasks/create-vsphere-errand-release-windows.sh'
 
 params:
   DIRECTOR_UUID: replace-me

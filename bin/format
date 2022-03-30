@@ -3,8 +3,11 @@ set -eu -o pipefail
 
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-export GOIMPORTS_VERSION="${GOIMPORTS_VERSION:-latest}"
+pushd "${ROOT_DIR}" > /dev/null 2>&1
+  go install -v golang.org/x/tools/cmd/goimports
 
-"${ROOT_DIR}/bin/env" go install -v "golang.org/x/tools/cmd/goimports@${GOIMPORTS_VERSION}"
-
-"${ROOT_DIR}/bin/gofiles" | xargs goimports -w
+  # shellcheck disable=SC2038
+  # shellcheck disable=SC2035
+  find * -name '*.go' -and \( -not -path 'vendor/*' \) \
+    | xargs goimports -w
+popd > /dev/null 2>&1

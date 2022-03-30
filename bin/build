@@ -3,12 +3,17 @@ set -eu -o pipefail
 
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-pushd "${ROOT_DIR}/main"
-  "${ROOT_DIR}/bin/go" build -o "${ROOT_DIR}/out/bosh-agent"
-popd
+GOOS="${GOOS:-$(go env GOOS)}"
+
+if [[ "$GOOS" != "linux" && "$GOOS" != "windows" ]]; then
+  echo "GOOS=$GOOS is not support. Explicitly set GOOS to linux or windows."
+  exit 1
+fi
+
+go build -o "${ROOT_DIR}/out/bosh-agent" \
+  "${ROOT_DIR}/main"
 
 if [[ "${GOOS}" = 'windows' ]]; then
-  pushd "${ROOT_DIR}/jobsupervisor/pipe"
-    "${ROOT_DIR}/bin/go" build -o "${ROOT_DIR}/out/bosh-agent-pipe"
-  popd
+  go build -o "${ROOT_DIR}/out/bosh-agent-pipe" \
+    "${ROOT_DIR}/jobsupervisor/pipe"
 fi

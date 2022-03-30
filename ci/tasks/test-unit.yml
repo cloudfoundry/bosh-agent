@@ -9,7 +9,6 @@ image_resource:
 
 inputs:
 - name: bosh-agent
-  path: gopath/src/github.com/cloudfoundry/bosh-agent
 
 run:
-  path: gopath/src/github.com/cloudfoundry/bosh-agent/ci/tasks/test-unit.sh
+  path: bosh-agent/ci/tasks/test-unit.sh

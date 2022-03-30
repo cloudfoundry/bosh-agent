@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-export ROOT_DIR
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-export GOPATH="${GOPATH:="${HOME}/go"}"
-export PATH=/usr/local/ruby/bin:/usr/local/go/bin:${GOPATH}/bin:${PATH}
-
-export GOLANGCI_LINT_VERSION="${GOLANGCI_LINT_VERSION-"v1.45.0"}"
-
-go install -v "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}"
+(
+  cd "$ROOT_DIR" && \
+    go install -v github.com/golangci/golangci-lint/cmd/golangci-lint
+)
 
 golangci-lint version
-golangci-lint run "${ROOT_DIR}"/...
+
+for os in windows linux; do
+  echo -e "\n lint-ing with GOOS=${os}..."
+  GOOS="${os}" golangci-lint run "${ROOT_DIR}"/...
+done
