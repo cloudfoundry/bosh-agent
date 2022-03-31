@@ -8,7 +8,7 @@ echo '  % bin/ginkgo path/to/package'
 
 "${ROOT_DIR}/bin/format" # TODO: this should be called in parallel via Concourse
 
-"${ROOT_DIR}/bin/lint" # TODO: this should be called in parallel via Concourse
+# "${ROOT_DIR}/bin/lint" # TODO: this should be called in parallel via Concourse
 
 for os in windows linux; do
   echo -e "\n build-ing with GOOS=${os} to confirm everything compiles..."

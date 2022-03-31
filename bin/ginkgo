@@ -5,13 +5,8 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 SLOW_SPEC_THRESHOLD="${SLOW_SPEC_THRESHOLD:-20}"
 
-(
-  cd "$ROOT_DIR" && \
-    go install -v github.com/onsi/ginkgo/ginkgo
-)
-
 # shellcheck disable=SC2068
-ginkgo \
+go run github.com/onsi/ginkgo/ginkgo \
   -keepGoing \
   -skipPackage=vendor \
   -slowSpecThreshold="${SLOW_SPEC_THRESHOLD}" \
