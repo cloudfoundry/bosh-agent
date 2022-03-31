@@ -4,10 +4,8 @@ set -eu -o pipefail
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 pushd "${ROOT_DIR}" > /dev/null 2>&1
-  go install -v golang.org/x/tools/cmd/goimports
-
   # shellcheck disable=SC2038
   # shellcheck disable=SC2035
   find * -name '*.go' -and \( -not -path 'vendor/*' \) \
-    | xargs goimports -w
+    | xargs go run golang.org/x/tools/cmd/goimports -w
 popd > /dev/null 2>&1

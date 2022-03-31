@@ -6,7 +6,7 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 DOCKER_IMAGE=${DOCKER_IMAGE-bosh/agent}
 echo "Using docker image: ${DOCKER_IMAGE}"
 
-work_dir="/root/bosh-agent"
+work_dir="/root/gopath/src/github.com/cloudfoundry/bosh-agent"
 
 docker_run() {
   local run_command="docker run ${*}"
