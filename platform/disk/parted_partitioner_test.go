@@ -861,7 +861,7 @@ var _ = Describe("PartedPartitioner", func() {
 
 			It("removes partitions", func() {
 				fakeCmdRunner.AddCmdResult(
-					"wipefs -a /dev/sda",
+					"wipefs --force -a /dev/sda",
 					fakesys.FakeCmdResult{Stdout: "", ExitStatus: 0},
 				)
 
@@ -869,14 +869,14 @@ var _ = Describe("PartedPartitioner", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
-					{"wipefs", "-a", "/dev/sda"},
+					{"wipefs", "--force", "-a", "/dev/sda"},
 				}))
 			})
 
 			It("failed to remove partitions when removing device path error", func() {
 				for i := 0; i < 20; i++ {
 					fakeCmdRunner.AddCmdResult(
-						"wipefs -a /dev/sda",
+						"wipefs --force -a /dev/sda",
 						fakesys.FakeCmdResult{Stdout: "", ExitStatus: 2, Error: errors.New("fake-cmd-error")},
 					)
 				}
@@ -885,7 +885,7 @@ var _ = Describe("PartedPartitioner", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Removing device path"))
 
-				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "-a", "/dev/sda"}))
+				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "--force", "-a", "/dev/sda"}))
 			})
 		})
 	})

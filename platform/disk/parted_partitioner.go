@@ -192,6 +192,7 @@ func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devi
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 		_, _, _, err := p.cmdRunner.RunCommand(
 			"wipefs",
+			"--force", // to prevent "wipefs: error: /**: probing initialization failed: Device or resource busy" errors
 			"-a",
 			devicePath,
 		)
