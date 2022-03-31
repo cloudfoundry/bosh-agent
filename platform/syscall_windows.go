@@ -49,13 +49,11 @@ func createProfile(sid, username string) (string, error) {
 		return "", err
 	}
 	var pathbuf [260]uint16
-	r1, _, e1 := syscall.SyscallN(procCreateProfile.Addr(), 4,
+	r1, _, e1 := syscall.SyscallN(procCreateProfile.Addr(),
 		uintptr(unsafe.Pointer(psid)),        // _In_  LPCWSTR pszUserSid
 		uintptr(unsafe.Pointer(pusername)),   // _In_  LPCWSTR pszUserName
 		uintptr(unsafe.Pointer(&pathbuf[0])), // _Out_ LPWSTR  pszProfilePath
 		uintptr(len(pathbuf)),                // _In_  DWORD   cchProfilePath
-		0,                                    // unused
-		0,                                    // unused
 	)
 	if r1 != S_OK {
 		if e1 == 0 {
@@ -77,7 +75,7 @@ func deleteProfile(sid string) error { //nolint:deadcode,unused
 	if err != nil {
 		return err
 	}
-	r1, _, e1 := syscall.SyscallN(procDeleteProfile.Addr(), 3,
+	r1, _, e1 := syscall.SyscallN(procDeleteProfile.Addr(),
 		uintptr(unsafe.Pointer(psid)), // _In_     LPCTSTR lpSidString,
 		0,                             // _In_opt_ LPCTSTR lpProfilePath,
 		0,                             // _In_opt_ LPCTSTR lpComputerName
@@ -99,10 +97,9 @@ func getProfilesDirectory() (string, error) {
 	}
 	var buf [syscall.MAX_PATH]uint16
 	n := uint32(len(buf))
-	r1, _, e1 := syscall.SyscallN(procGetProfilesDirectory.Addr(), 2,
+	r1, _, e1 := syscall.SyscallN(procGetProfilesDirectory.Addr(),
 		uintptr(unsafe.Pointer(&buf[0])), // _Out_   LPTSTR  lpProfilesDir,
 		uintptr(unsafe.Pointer(&n)),      // _Inout_ LPDWORD lpcchSize
-		0,
 	)
 	if r1 == 0 {
 		if e1 == 0 {
@@ -304,7 +301,7 @@ func localAccountNames() ([]string, error) {
 		total  uint32
 		resume uint32
 	)
-	r1, _, e1 := syscall.SyscallN(procNetUserEnum.Addr(), 8,
+	r1, _, e1 := syscall.SyscallN(procNetUserEnum.Addr(),
 		0, // local computer
 		0, // user account names
 		FILTER_NORMAL_ACCOUNT,
@@ -313,7 +310,6 @@ func localAccountNames() ([]string, error) {
 		uintptr(unsafe.Pointer(&read)),
 		uintptr(unsafe.Pointer(&total)),
 		uintptr(unsafe.Pointer(&resume)),
-		0,
 	)
 	if r1 != 0 {
 		if e1 == syscall.ERROR_MORE_DATA {
