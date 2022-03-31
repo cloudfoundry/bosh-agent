@@ -264,11 +264,11 @@ func (t *TestEnvironment) CleanupDataDir() error {
 
 func (t *TestEnvironment) ResetDeviceMap() error {
 	for n, loopDevice := range t.deviceMap {
-		err := t.DetachLoopDevice(loopDevice)
-		if err != nil {
-			return err
+		ignoredErr := t.DetachLoopDevice(loopDevice)
+		if ignoredErr != nil {
+			t.logger.Error("test environment", "ResetDeviceMap: %s", ignoredErr)
 		}
-		_, err = t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
+		_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
 		if err != nil {
 			return err
 		}
@@ -306,9 +306,9 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 
 	// Ensure we have enough space to create the fake loopback devices used in tests
 	if sizeInBytes < 10000000000 {
-		_, err = t.RunCommand("sudo swapoff /dev/sda2")
-		if err != nil {
-			return err
+		_, ignoredErr := t.RunCommand("sudo swapoff /dev/sda2")
+		if ignoredErr != nil {
+			t.logger.Error("test environment", "EnsureRootDeviceIsLargeEnough: %s", ignoredErr)
 		}
 
 		for i := len(outputLines); i > 1; i-- {
@@ -318,9 +318,9 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 			}
 		}
 
-		_, err = t.RunCommand("sudo udevadm settle")
-		if err != nil {
-			return err
+		_, ignoredErr = t.RunCommand("sudo udevadm settle")
+		if ignoredErr != nil {
+			t.logger.Error("test environment", "EnsureRootDeviceIsLargeEnough: %s", ignoredErr)
 		}
 
 		_, err = t.RunCommand("sudo parted /dev/sda ---pretend-input-tty resizepart 1 yes 10000M")
@@ -427,9 +427,9 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 
 		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
 			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" {
-				_, err = t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
-				if err != nil {
-					return err
+				_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
+				if ignoredErr != nil {
+					t.logger.Error("test environment", "DetachPartitionedRootDevice: %s", ignoredErr)
 				}
 			}
 
@@ -622,16 +622,19 @@ func (t *TestEnvironment) StopAgentTunnel() error {
 		return fmt.Errorf("Not running")
 	}
 	t.sshTunnelProc.Wait()
-	err := t.sshTunnelProc.TerminateNicely(5 * time.Second)
-	if err != nil {
-		return err
+	ignoredErr := t.sshTunnelProc.TerminateNicely(5 * time.Second)
+	if ignoredErr != nil {
+		t.logger.Error("test environment", "StopAgentTunnel: %s", ignoredErr)
 	}
 	t.sshTunnelProc = nil
 	return nil
 }
 
 func (t *TestEnvironment) StartBlobstore() error {
-	t.RunCommand("sudo killall -9 fake-blobstore")
+	_, ignoredErr := t.RunCommand("sudo killall -9 fake-blobstore")
+	if ignoredErr != nil {
+		t.logger.Error("test environment", "StartBlobstore: %s", ignoredErr)
+	}
 
 	_, err := t.RunCommand(
 		`nohup /home/agent_test_user/fake-blobstore -host 127.0.0.1 -port 9091 -assets /home/agent_test_user &> /dev/null &`,
