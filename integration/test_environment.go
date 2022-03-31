@@ -131,12 +131,8 @@ sudo mkdir -p /tmp/config-drive/ec2/latest
 		t.logger.Error("test environment", "SetupConfigDrive error: %s", ignoredErr)
 	}
 
-	_, ignoredErr = t.RunCommand("sudo umount -l /tmp/config-drive")
-	if ignoredErr != nil {
-		t.logger.Error("test environment", "SetupConfigDrive error: %s", ignoredErr)
-	}
-
-	return nil
+	_, err = t.RunCommand("sudo umount -l /tmp/config-drive")
+	return err
 }
 
 type byLen []string
