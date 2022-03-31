@@ -5,11 +5,6 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 GOOS="${GOOS:-$(go env GOOS)}"
 
-if [[ "$GOOS" != "linux" && "$GOOS" != "windows" ]]; then
-  echo "GOOS=$GOOS is not support. Explicitly set GOOS to linux or windows."
-  exit 1
-fi
-
 go build -o "${ROOT_DIR}/out/bosh-agent" \
   "${ROOT_DIR}/main"
 
