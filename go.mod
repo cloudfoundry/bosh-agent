@@ -1,6 +1,6 @@
 module github.com/cloudfoundry/bosh-agent
 
-go 1.17
+go 1.18
 
 require (
 	code.cloudfoundry.org/clock v1.0.0
@@ -9,16 +9,16 @@ require (
 	github.com/charlievieth/fs v0.0.2
 	github.com/cloudfoundry/bosh-davcli v0.0.48
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.306
+	github.com/cloudfoundry/bosh-utils v0.0.307
 	github.com/cloudfoundry/gosigar v1.3.3
-	github.com/cloudfoundry/socks5-proxy v0.2.48 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.49 // indirect
 	github.com/containerd/cgroups v1.0.3
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
-	github.com/kevinburke/ssh_config v1.1.0
+	github.com/kevinburke/ssh_config v1.2.0
 	github.com/masterzen/winrm v0.0.0-20211231115050-232efb40349e
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/mitchellh/mapstructure v1.4.3
@@ -30,16 +30,15 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
-	golang.org/x/net v0.0.0-20220325170049-de3da57026de
-	golang.org/x/sys v0.0.0-20220325203850-36772127a21f
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
+	golang.org/x/net v0.0.0-20220401154927-543a649e0bdd
+	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f
 )
 
 require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/golangci/golangci-lint v1.45.2
 	github.com/opencontainers/runtime-spec v1.0.2
-	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	golang.org/x/tools v0.1.10
 )
 

@@ -129,7 +129,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.306
+# github.com/cloudfoundry/bosh-utils v0.0.307
 ## explicit; go 1.17
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -156,8 +156,8 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.48
-## explicit; go 1.17
+# github.com/cloudfoundry/socks5-proxy v0.2.49
+## explicit; go 1.18
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.0.3
 ## explicit; go 1.16
@@ -463,7 +463,7 @@ github.com/jpillora/backoff
 # github.com/julz/importas v0.1.0
 ## explicit; go 1.15
 github.com/julz/importas
-# github.com/kevinburke/ssh_config v1.1.0
+# github.com/kevinburke/ssh_config v1.2.0
 ## explicit
 github.com/kevinburke/ssh_config
 # github.com/kisielk/errcheck v1.6.0
@@ -709,9 +709,6 @@ github.com/quasilyte/gogrep/nodetag
 # github.com/quasilyte/regex/syntax v0.0.0-20200407221936-30656e2c4a95
 ## explicit; go 1.14
 github.com/quasilyte/regex/syntax
-# github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
-## explicit
-github.com/rcrowley/go-metrics
 # github.com/ryancurrah/gomodguard v1.2.3
 ## explicit; go 1.16
 github.com/ryancurrah/gomodguard
@@ -836,7 +833,7 @@ go4.org/intern
 # go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37
 ## explicit; go 1.11
 go4.org/unsafe/assume-no-moving-gc
-# golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
+# golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 ## explicit; go 1.17
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -855,7 +852,7 @@ golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20220325170049-de3da57026de
+# golang.org/x/net v0.0.0-20220401154927-543a649e0bdd
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -867,7 +864,7 @@ golang.org/x/net/proxy
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20220325203850-36772127a21f
+# golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
