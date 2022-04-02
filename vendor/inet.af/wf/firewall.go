@@ -690,10 +690,10 @@ func (s *Session) AddRule(r *Rule) error {
 
 	f, err := toFilter0(&a, r, s.layerTypes)
 	if err != nil {
-		return fmt.Errorf("Add Rule toFilter Err: %s", err)
+		return err
 	}
 	if err := fwpmFilterAdd0(s.handle, f, nil, &f.FilterID); err != nil {
-		return fmt.Errorf("Add Rule fwpmFilterAdd0 Err: %s", err)
+		return err
 	}
 
 	return nil
