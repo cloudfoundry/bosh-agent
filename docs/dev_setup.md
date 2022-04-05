@@ -92,9 +92,10 @@ Run `bin/test-bosh-integration` to run those with your local agent changes.
 However, in order to run the BOSH integrations tests, you will need a copy of the BOSH repo, which this script will do in `./tmp`.
 BOSH uses Ruby for its tests, so you will also need to have that available.
 
-You can run all the tests by running `bin/test`.
-
-There is a stand-alone _BOSH Agent_ integration test to test config-drive using bosh-lite. This can be run locally via `bin/test-integration --provider=virtualbox`. The vagrant provider passed in can be changed to a provider of your choosing if you so desire.
+There is currently no easy way to run the integration tests. The agent is rather hostile to the host system, repartitioning disks
+and modifying the networking. You can see how the integration tests are run in CI by looking at the Concourse pipeline.
+We BOSH deploy a VM, create a new user on the VM, disable the resurrector and then provide credentials for that VM to the
+integration tests.
 
 #### Using IntelliJ with Go and the BOSH Agent
 
