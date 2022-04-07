@@ -449,9 +449,9 @@ func (net UbuntuNetManager) writeResolvConf(dnsServers []string) error {
 
 	if len(dnsServers) > 0 { //nolint:nestif
 		// Write out base so that releases may overwrite head
-		err = net.fs.WriteFile("/etc/resolvconf/resolv.conf.d/base", buffer.Bytes())
+		err = net.fs.WriteFile("/etc/resolvconf/resolv.conf.d/head", buffer.Bytes())
 		if err != nil {
-			return bosherr.WrapError(err, "Writing to /etc/resolvconf/resolv.conf.d/base")
+			return bosherr.WrapError(err, "Writing to /etc/resolvconf/resolv.conf.d/head")
 		}
 	} else {
 		// For the first time before resolv.conf is symlinked to /run/...
