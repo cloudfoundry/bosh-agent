@@ -96,10 +96,11 @@ func describeCentosNetManager() {
 			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
 				boship.NewSimpleInterfaceAddress("ethstatic", "1.2.3.4"),
 			}
-			fs.WriteFileString("/etc/resolv.conf", `
+			err := fs.WriteFileString("/etc/resolv.conf", `
 nameserver 8.8.8.8
 nameserver 9.9.9.9
 `)
+			Expect(err).NotTo(HaveOccurred())
 
 			expectedNetworkConfigurationForStatic = `DEVICE=ethstatic
 BOOTPROTO=static
@@ -319,10 +320,12 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				boship.NewSimpleInterfaceAddress("ethstatic-that-changes", "1.2.3.5"),
 			}
 
-			fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethstatic", expectedNetworkConfigurationForStatic)
-			fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedDhclientConfiguration)
+			err := fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethstatic", expectedNetworkConfigurationForStatic)
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedDhclientConfiguration)
+			Expect(err).NotTo(HaveOccurred())
 
-			err := netManager.SetupNetworking(boshsettings.Networks{
+			err = netManager.SetupNetworking(boshsettings.Networks{
 				"dhcp-network":            dhcpNetwork,
 				"changing-static-network": changingStaticNetwork,
 				"static-network":          staticNetwork,
@@ -340,11 +343,14 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				"ethstatic": staticNetwork,
 			})
 
-			fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethstatic", expectedNetworkConfigurationForStatic)
-			fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethdhcp", expectedNetworkConfigurationForDHCP)
-			fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedDhclientConfiguration)
+			err := fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethstatic", expectedNetworkConfigurationForStatic)
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethdhcp", expectedNetworkConfigurationForDHCP)
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedDhclientConfiguration)
+			Expect(err).NotTo(HaveOccurred())
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
@@ -363,9 +369,10 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				"ethstatic": staticNetwork,
 			})
 
-			fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethstatic", expectedNetworkConfigurationForStatic)
+			err := fs.WriteFileString("/etc/sysconfig/network-scripts/ifcfg-ethstatic", expectedNetworkConfigurationForStatic)
+			Expect(err).NotTo(HaveOccurred())
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-ethstatic")
@@ -465,7 +472,8 @@ request subnet-mask, broadcast-address, time-offset, routers,
 
 		Context("when dns is not properly configured", func() {
 			BeforeEach(func() {
-				fs.WriteFileString("/etc/resolv.conf", "")
+				err := fs.WriteFileString("/etc/resolv.conf", "")
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("fails", func() {
@@ -564,11 +572,12 @@ request subnet-mask, broadcast-address, time-offset, routers,
 					boship.NewSimpleInterfaceAddress("eth0", "10.112.39.113"),
 					boship.NewSimpleInterfaceAddress("eth1", "169.50.68.75"),
 				}
-				fs.WriteFileString("/etc/resolv.conf", `
+				err := fs.WriteFileString("/etc/resolv.conf", `
 nameserver 8.8.8.8
 nameserver 10.0.80.11
 nameserver 10.0.80.12
 `)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			scrubMultipleLines := func(in string) string {
@@ -724,7 +733,8 @@ DNS1=8.8.8.8
 			})
 
 			writeIfcgfFile := func(iface string) {
-				fs.WriteFileString(fmt.Sprintf("/etc/sysconfig/network-scripts/ifcfg-%s", iface), "fake-config")
+				err := fs.WriteFileString(fmt.Sprintf("/etc/sysconfig/network-scripts/ifcfg-%s", iface), "fake-config")
+				Expect(err).NotTo(HaveOccurred())
 			}
 
 			It("returns networks that have ifcfg config present", func() {
