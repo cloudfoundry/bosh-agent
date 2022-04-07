@@ -147,6 +147,45 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			Expect(dhcpConfig.StringContents()).To(Equal(expectedNetworkConfigurationForDHCP))
 		})
 
+		It("doesn't write /etc/resolv.conf with dns servers", func() {
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethdhcp":   dhcpNetwork,
+				"ethstatic": staticNetwork,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
+			Expect(resolvConf).ToNot(BeNil())
+			Expect(resolvConf.StringContents()).To(Equal(`
+nameserver 8.8.8.8
+nameserver 9.9.9.9
+`))
+		})
+
+		It("doesn't write /etc/resolv.conf if there are no dns servers", func() {
+			dhcpNetworkWithoutDNS := boshsettings.Network{
+				Type: "dynamic",
+				Mac:  "fake-dhcp-mac-address",
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethdhcp": dhcpNetworkWithoutDNS,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetworkWithoutDNS}, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
+			Expect(resolvConf).ToNot(BeNil())
+			Expect(resolvConf.StringContents()).To(Equal(`
+nameserver 8.8.8.8
+nameserver 9.9.9.9
+`))
+
+		})
+
 		It("returns errors from writing the network configuration", func() {
 			stubInterfaces(map[string]boshsettings.Network{
 				"dhcp":   dhcpNetwork,

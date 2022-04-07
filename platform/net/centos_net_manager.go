@@ -59,6 +59,13 @@ func NewCentosNetManager(
 func (net centosNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
 
 func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errCh chan error) error {
+	// NOTE: Do not overwrite `/etc/resolv.conf` here, as it is controlled by Network Manager
+	// This is an intentional asymmetry vs `ubuntu_net_manager.go`.
+	// See commit 63548d43c69180b761d96b8e42a699e0762779e2.
+	// See https://ma.ttias.be/centos-7-networkmanager-keeps-overwriting-etcresolv-conf/
+	// See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/manually-configuring-the-etc-resolv-conf-file_configuring-and-managing-networking
+	// See https://wiseindy.com/blog/linux/how-to-set-dns-in-centos-rhel-7-prevent-network-manager-from-overwriting-etc-resolv-conf/
+
 	nonVipNetworks := boshsettings.Networks{}
 	for networkName, networkSettings := range networks {
 		if networkSettings.IsVIP() {
@@ -118,6 +125,10 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, errC
 	if err != nil {
 		return bosherr.WrapError(err, "Validating static network configuration")
 	}
+
+	// NOTE: Do not overwrite `/etc/resolv.conf` here, as it is controlled by Network Manager
+	// This is an intentional asymmetry vs `ubuntu_net_manager.go`.
+	// See the comments at the top of this function for details.
 
 	err = net.dnsValidator.Validate(dnsServers)
 	if err != nil {
