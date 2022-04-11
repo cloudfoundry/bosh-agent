@@ -577,7 +577,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 		err = bosherr.WrapErrorf(err, "Writing to %s", serversFilePath)
 		return
 	}
-	// Make a best effort to sync time now but don't error
+	// Make a best effort to sync time now but don't error or block
 	cmd := cmd.BuildCommand("sync-time")
 	process, err := p.cmdRunner.RunComplexCommandAsync(cmd)
 	go func(process boshsys.Process, logger boshlog.Logger) {
