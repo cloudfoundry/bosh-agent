@@ -118,7 +118,18 @@ func (h *natsHandler) Run(handlerFunc boshhandler.Func) error {
 
 	return nil
 }
+func asyncErrorHandler(natsErrorHandlingChan chan string, logger boshlog.Logger, p boshplatform.Platform, connInfo ConnectionInfo) {
+	logger.Debug(natsHandlerLogTag, "Received async nats log")
+	err := p.DeleteARPEntryWithIP(connInfo.IP)
+	if err != nil {
+		logger.Debug(natsHandlerLogTag, fmt.Sprintf("Delete ArpEntries for %v, Error: %v", connInfo.IP, err.Error()))
+	}
+	for value := range natsErrorHandlingChan {
+		time.Sleep(time.Second)
+		logger.Debug(natsHandlerLogTag, fmt.Sprintf("%v", value))
+	}
 
+}
 func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	h.RegisterAdditionalFunc(handlerFunc)
 
@@ -126,6 +137,8 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Getting connection info")
 	}
+	natsErrorHandlingChan := make(chan string)
+	go asyncErrorHandler(natsErrorHandlingChan, h.logger, h.platform, *connectionInfo)
 
 	h.logger.Info(h.logTag, "Attempting to connect to NATS")
 
@@ -142,6 +155,12 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		nats.ReconnectWait(h.connectRetryInterval),
 		nats.ReconnectJitter(h.maxConnectRetryInterval, h.maxConnectRetryInterval),
 		nats.Secure(connectionInfo.TLSConfig),
+		nats.DisconnectHandler(func(c *nats.Conn) {
+			for c.IsReconnecting() {
+				natsErrorHandlingChan <- fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected())
+			}
+			natsErrorHandlingChan <- "Reconnected to nats"
+		}),
 	}
 
 	connection, err := h.connector(connectionInfo.Addr, natsOptions...)
