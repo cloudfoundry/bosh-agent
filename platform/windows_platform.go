@@ -19,7 +19,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -120,7 +119,7 @@ func (p WindowsPlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.copier
 }
 
-func (p WindowsPlatform) GetDirProvider() (dirProvider boshdir.Provider) {
+func (p WindowsPlatform) GetDirProvider() (dirProvider boshdirs.Provider) {
 	return p.dirProvider
 }
 

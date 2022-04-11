@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/cloudfoundry/bosh-agent/agent/script/cmd"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -19,7 +20,6 @@ import (
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -180,7 +180,7 @@ func (p linux) GetCopier() (runner boshcmd.Copier) {
 	return p.copier
 }
 
-func (p linux) GetDirProvider() (dirProvider boshdir.Provider) {
+func (p linux) GetDirProvider() (dirProvider boshdirs.Provider) {
 	return p.dirProvider
 }
 
@@ -577,9 +577,18 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 		err = bosherr.WrapErrorf(err, "Writing to %s", serversFilePath)
 		return
 	}
-
 	// Make a best effort to sync time now but don't error
-	_, _, _, _ = p.cmdRunner.RunCommand("sync-time")
+	cmd := cmd.BuildCommand("sync-time")
+	process, err := p.cmdRunner.RunComplexCommandAsync(cmd)
+	go func(process boshsys.Process, logger boshlog.Logger) {
+		for processExitedCh := process.Wait(); processExitedCh != nil; {
+			result := <-processExitedCh
+			if result.Error != nil {
+				logger.Debug(logTag, result.Error.Error())
+			}
+		}
+	}(process, p.logger)
+
 	return
 }
 

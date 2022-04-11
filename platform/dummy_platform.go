@@ -13,7 +13,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -44,7 +43,7 @@ type dummyPlatform struct {
 	cmdRunner          boshsys.CmdRunner
 	compressor         boshcmd.Compressor
 	copier             boshcmd.Copier
-	dirProvider        boshdirs.Provider
+	dirProvider        boshdir.Provider
 	vitalsService      boshvitals.Service
 	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
@@ -56,7 +55,7 @@ func NewDummyPlatform(
 	collector boshstats.Collector,
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
-	dirProvider boshdirs.Provider,
+	dirProvider boshdir.Provider,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
 	auditLogger AuditLogger,

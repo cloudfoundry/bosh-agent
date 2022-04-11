@@ -24,7 +24,7 @@ const (
 
 var (
 	// HeartbeatRetryInterval TODO: remove 'nolint:gochecknoglobals' - should be passed in rather than re-defined in agent_test.go
-	HeartbeatRetryInterval = 1 * time.Second //nolint:gochecknoglobals
+	HeartbeatRetryInterval = time.Second
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StartManager
@@ -162,9 +162,11 @@ func (a Agent) sendAndRecordHeartbeat(errCh chan error, retry bool) {
 		heartbeatRetryable,
 		a.logger,
 	)
+
 	err = attemptRetryStrategy.Try()
 
 	if err != nil {
+
 		errCh <- err
 	}
 }

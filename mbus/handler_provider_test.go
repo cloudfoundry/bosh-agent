@@ -3,7 +3,6 @@ package mbus_test
 import (
 	gourl "net/url"
 	"reflect"
-	"time"
 
 	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
 	"github.com/nats-io/nats.go"
@@ -48,7 +47,7 @@ var _ = Describe("HandlerProvider", func() {
 			connector := func(url string, options ...nats.Option) (NatsConnection, error) {
 				return &mbusfakes.FakeNatsConnection{}, nil
 			}
-			expectedHandler := NewNatsHandler(settingsService, connector, logger, platform, time.Second, 1*time.Minute)
+			expectedHandler := NewNatsHandler(settingsService, connector, logger, platform)
 			Expect(reflect.TypeOf(handler)).To(Equal(reflect.TypeOf(expectedHandler)))
 		})
 
