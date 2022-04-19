@@ -159,7 +159,8 @@ var _ = Describe("WindowsPlatform", func() {
 
 	Describe("GetFileContentsFromCDROM", func() {
 		It("reads file from D drive", func() {
-			fs.WriteFileString("D:/env", "fake-contents") //nolint:errcheck
+			err := fs.WriteFileString("D:/env", "fake-contents") //nolint:errcheck
+			Expect(err).NotTo(HaveOccurred())
 			contents, err := platform.GetFileContentsFromCDROM("env")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contents).To(Equal([]byte("fake-contents")))
@@ -391,9 +392,11 @@ var _ = Describe("WindowsPlatform", func() {
 				name := fmt.Sprintf("ssh_host_%s_key", s)
 				path := filepath.Join(dirname, name)
 
-				fs.WriteFileString(path, fmt.Sprintf("PRIVATE %s KEY", strings.ToUpper(s))) //nolint:errcheck
+				err := fs.WriteFileString(path, fmt.Sprintf("PRIVATE %s KEY", strings.ToUpper(s))) //nolint:errcheck
+				Expect(err).NotTo(HaveOccurred())
 				path += ".pub"
-				fs.WriteFileString(path, fmt.Sprintf("PUBLIC %s KEY", strings.ToUpper(s))) //nolint:errcheck
+				err = fs.WriteFileString(path, fmt.Sprintf("PUBLIC %s KEY", strings.ToUpper(s))) //nolint:errcheck
+				Expect(err).NotTo(HaveOccurred())
 			}
 		}
 
