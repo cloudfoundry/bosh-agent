@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"net/url"
 	"os"
@@ -28,12 +29,10 @@ import (
 )
 
 const (
-	responseMaxLength           = 1024 * 1024
-	natsHandlerLogTag           = "NATS Handler"
-	natsConnectionTimeout       = 5 * time.Minute
-	natsConnectionMaxRetries    = 10
-	natsConnectRetryInterval    = 1 * time.Second
-	natsConnectMaxRetryInterval = 1 * time.Minute
+	responseMaxLength        = 1024 * 1024
+	natsHandlerLogTag        = "NATS Handler"
+	natsMinRetryWait         = 2
+	natsConnectionMaxRetries = 10
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -68,9 +67,6 @@ type natsHandler struct {
 	logger      boshlog.Logger
 	auditLogger boshplatform.AuditLogger
 	logTag      string
-
-	connectRetryInterval    time.Duration
-	maxConnectRetryInterval time.Duration
 }
 
 type ConnectionInfo struct {
@@ -91,18 +87,24 @@ func NewNatsHandler(
 	client NatsConnector,
 	logger boshlog.Logger,
 	platform boshplatform.Platform,
-	connectRetryInterval time.Duration,
-	maxConnectRetryInterval time.Duration,
 ) Handler {
 	return &natsHandler{
-		settingsService:         settingsService,
-		connector:               client,
-		platform:                platform,
-		logger:                  logger,
-		logTag:                  natsHandlerLogTag,
-		auditLogger:             platform.GetAuditLogger(),
-		connectRetryInterval:    connectRetryInterval,
-		maxConnectRetryInterval: maxConnectRetryInterval,
+		settingsService: settingsService,
+		connector:       client,
+		platform:        platform,
+		logger:          logger,
+		logTag:          natsHandlerLogTag,
+		auditLogger:     platform.GetAuditLogger(),
+	}
+}
+func (h *natsHandler) arpClean() {
+	connectionInfo, err := h.getConnectionInfo()
+	if err != nil {
+		h.logger.Error(h.logTag, fmt.Sprintf("%v", bosherr.WrapError(err, "Getting connection info")))
+	}
+	err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
+	if err != nil {
+		h.logger.Error(h.logTag, fmt.Sprintf("Cleaning ip-mac address cache for: %s. Error: %v", connectionInfo.IP, err))
 	}
 }
 
@@ -115,20 +117,7 @@ func (h *natsHandler) Run(handlerFunc boshhandler.Func) error {
 	}
 
 	h.runUntilInterrupted()
-
 	return nil
-}
-func asyncErrorHandler(natsErrorHandlingChan chan string, logger boshlog.Logger, p boshplatform.Platform, connInfo ConnectionInfo) {
-	logger.Debug(natsHandlerLogTag, "Received async nats log")
-	err := p.DeleteARPEntryWithIP(connInfo.IP)
-	if err != nil {
-		logger.Debug(natsHandlerLogTag, fmt.Sprintf("Delete ArpEntries for %v, Error: %v", connInfo.IP, err.Error()))
-	}
-	for value := range natsErrorHandlingChan {
-		time.Sleep(time.Second)
-		logger.Debug(natsHandlerLogTag, fmt.Sprintf("%v", value))
-	}
-
 }
 func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	h.RegisterAdditionalFunc(handlerFunc)
@@ -137,30 +126,40 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Getting connection info")
 	}
-	natsErrorHandlingChan := make(chan string)
-	go asyncErrorHandler(natsErrorHandlingChan, h.logger, h.platform, *connectionInfo)
 
 	h.logger.Info(h.logTag, "Attempting to connect to NATS")
 
 	if net.ParseIP(connectionInfo.IP) != nil {
-		err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
-		if err != nil {
-			h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s", connectionInfo.IP)
-		}
+		h.arpClean()
 	}
-
 	var natsOptions = []nats.Option{
-		nats.Timeout(natsConnectionTimeout),
-		nats.MaxReconnects(natsConnectionMaxRetries),
-		nats.ReconnectWait(h.connectRetryInterval),
-		nats.ReconnectJitter(h.maxConnectRetryInterval, h.maxConnectRetryInterval),
-		nats.Secure(connectionInfo.TLSConfig),
 		nats.DisconnectHandler(func(c *nats.Conn) {
 			for c.IsReconnecting() {
-				natsErrorHandlingChan <- fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected())
+				h.arpClean()
+				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected()))
+				time.Sleep(time.Second)
 			}
-			natsErrorHandlingChan <- "Reconnected to nats"
+			h.logger.Debug(natsHandlerLogTag, "Reconnected to nats")
 		}),
+		nats.ClosedHandler(func(c *nats.Conn) {
+			h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Nats closed with %v\nConnected: %v\n Reconnecting: %v", c.LastError(), c.IsConnected(), c.IsReconnecting()))
+			for c.IsReconnecting() {
+				h.arpClean()
+				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected()))
+				time.Sleep(time.Second)
+			}
+			h.logger.Debug(natsHandlerLogTag, "Reconnected to nats")
+		}),
+		nats.ErrorHandler(func(c *nats.Conn, s *nats.Subscription, err error) {
+			h.logger.Debug(natsHandlerLogTag, err.Error())
+		}),
+		nats.CustomReconnectDelay(func(attempts int) time.Duration {
+			reconnectWait := time.Duration(time.Duration(math.Pow(natsMinRetryWait, float64(attempts))) * time.Second)
+			h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Increased reconnect to: %v", reconnectWait))
+			return reconnectWait
+		}),
+		nats.MaxReconnects(natsConnectionMaxRetries),
+		nats.Secure(connectionInfo.TLSConfig),
 	}
 
 	connection, err := h.connector(connectionInfo.Addr, natsOptions...)
@@ -235,7 +234,7 @@ func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains []
 			return nil
 		}
 	}
-	return errors.New("Server Certificate CommonName does not match *.nats.bosh-internal")
+	return errors.New("server Certificate CommonName does not match *.nats.bosh-internal")
 }
 
 func (h *natsHandler) handleNatsMsg(natsMsg *nats.Msg, handlerFunc boshhandler.Func) {
