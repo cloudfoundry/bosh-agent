@@ -339,6 +339,36 @@ var _ = Describe("Certificate Management", func() {
 			})
 		})
 
+		Context("CentOS", func() {
+			BeforeEach(func() {
+				fakeFs = fakesys.NewFakeFileSystem()
+				fakeCmdRunner = fakesys.NewFakeCmdRunner()
+				fakeCmdRunner.AddCmdResult("/usr/bin/update-ca-trust", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "",
+					ExitStatus: 0,
+					Sticky:     true,
+				})
+				certManager = cert.NewCentOSCertManager(fakeFs, fakeCmdRunner, 0, log)
+			})
+
+			SharedLinuxCertManagerExamples("/etc/pki/ca-trust/source/anchors", "/usr/bin/update-ca-trust")
+
+			It("executes update cert command", func() {
+				fakeCmdRunner = fakesys.NewFakeCmdRunner()
+				fakeCmdRunner.AddCmdResult("/usr/bin/update-ca-trust", fakesys.FakeCmdResult{
+					Stdout:     "",
+					Stderr:     "",
+					ExitStatus: 2,
+					Error:      errors.New("command failed"),
+				})
+				certManager = cert.NewCentOSCertManager(fakeFs, fakeCmdRunner, 0, log)
+
+				err := certManager.UpdateCertificates(cert1)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
 		Context("Windows", func() {
 			const validCerts string = `-----BEGIN CERTIFICATE-----
 MIIC0jCCAboCCQCuQJScK+G0WzANBgkqhkiG9w0BAQsFADArMQswCQYDVQQGEwJV
