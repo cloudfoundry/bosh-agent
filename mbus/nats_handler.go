@@ -33,6 +33,7 @@ const (
 	natsHandlerLogTag        = "NATS Handler"
 	natsMinRetryWait         = 2
 	natsConnectionMaxRetries = 10
+	natsMaxReconnectWait     = 120 * time.Second
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -104,8 +105,9 @@ func (h *natsHandler) arpClean() {
 	}
 	err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
 	if err != nil {
-		h.logger.Error(h.logTag, fmt.Sprintf("Cleaning ip-mac address cache for: %s. Error: %v", connectionInfo.IP, err))
+		h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s. Error: %v", connectionInfo.IP, err)
 	}
+	h.logger.Debug(h.logTag, "Cleaned ip-mac address cache for: %s.", connectionInfo.IP)
 }
 
 func (h *natsHandler) Run(handlerFunc boshhandler.Func) error {
@@ -126,37 +128,38 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Getting connection info")
 	}
-
 	h.logger.Info(h.logTag, "Attempting to connect to NATS")
-
 	if net.ParseIP(connectionInfo.IP) != nil {
 		h.arpClean()
 	}
 	var natsOptions = []nats.Option{
-		nats.DisconnectHandler(func(c *nats.Conn) {
+		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
+			h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
+			h.logger.Debug(natsHandlerLogTag, "Attempting to reconnect: %v", c.IsReconnecting())
+			h.arpClean()
 			for c.IsReconnecting() {
-				h.arpClean()
 				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected()))
 				time.Sleep(time.Second)
 			}
-			h.logger.Debug(natsHandlerLogTag, "Reconnected to nats")
+		}),
+		nats.ReconnectHandler(func(c *nats.Conn) {
+			h.logger.Debug(natsHandlerLogTag, "Reconnected to %v", c.ConnectedAddr())
 		}),
 		nats.ClosedHandler(func(c *nats.Conn) {
-			h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Nats closed with %v\nConnected: %v\n Reconnecting: %v", c.LastError(), c.IsConnected(), c.IsReconnecting()))
-			for c.IsReconnecting() {
-				h.arpClean()
-				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected()))
-				time.Sleep(time.Second)
-			}
-			h.logger.Debug(natsHandlerLogTag, "Reconnected to nats")
+			h.logger.Debug(natsHandlerLogTag, "Connection Closed with: %v", c.LastError().Error())
+			h.arpClean()
 		}),
 		nats.ErrorHandler(func(c *nats.Conn, s *nats.Subscription, err error) {
 			h.logger.Debug(natsHandlerLogTag, err.Error())
 		}),
 		nats.CustomReconnectDelay(func(attempts int) time.Duration {
-			reconnectWait := time.Duration(time.Duration(math.Pow(natsMinRetryWait, float64(attempts))) * time.Second)
-			h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Increased reconnect to: %v", reconnectWait))
-			return reconnectWait
+			exponentialReconnectWait := time.Duration(math.Pow(natsMinRetryWait, float64(attempts))) * time.Second
+			if natsMaxReconnectWait > exponentialReconnectWait {
+				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Increased reconnect to: %v", exponentialReconnectWait))
+				return exponentialReconnectWait
+			}
+			h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Increased reconnect to: %v", natsMaxReconnectWait))
+			return natsMaxReconnectWait
 		}),
 		nats.MaxReconnects(natsConnectionMaxRetries),
 		nats.Secure(connectionInfo.TLSConfig),
