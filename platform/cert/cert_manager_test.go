@@ -17,7 +17,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/logger"
-	"github.com/cloudfoundry/bosh-utils/system"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -500,7 +499,7 @@ if (Test-Path %[1]s) {
 	})
 })
 
-func countFiles(fs system.FileSystem, dir string) (count int) {
+func countFiles(fs boshsys.FileSystem, dir string) (count int) {
 	err := fs.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if filepath.Join(path) == filepath.Join(dir) { //nolint:gocritic
 			return nil

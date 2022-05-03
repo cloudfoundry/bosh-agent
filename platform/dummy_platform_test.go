@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/settings"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -161,7 +160,7 @@ var _ = Describe("DummyPlatform", func() {
 			})
 
 			It("removes one of the disks from the mounts json", func() {
-				unmounted, err := platform.UnmountPersistentDisk(settings.DiskSettings{ID: "cid1"})
+				unmounted, err := platform.UnmountPersistentDisk(boshsettings.DiskSettings{ID: "cid1"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(unmounted).To(Equal(true))
 

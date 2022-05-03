@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
@@ -66,9 +65,9 @@ var _ = Describe("DrainAction", func() {
 			jobScriptProvider.NewParallelScriptReturns(parallelScript)
 		})
 
-		addJobTemplate := func(spec *applyspec.JobSpec, name string) {
+		addJobTemplate := func(spec *boshas.JobSpec, name string) {
 			spec.Template = name
-			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, applyspec.JobTemplateSpec{Name: name})
+			spec.JobTemplateSpecs = append(spec.JobTemplateSpecs, boshas.JobTemplateSpec{Name: name})
 		}
 
 		Context("when drain update is requested", func() {
@@ -95,7 +94,7 @@ var _ = Describe("DrainAction", func() {
 
 				BeforeEach(func() {
 					currentSpec = boshas.V1ApplySpec{
-						RenderedTemplatesArchiveSpec: &applyspec.RenderedTemplatesArchiveSpec{},
+						RenderedTemplatesArchiveSpec: &boshas.RenderedTemplatesArchiveSpec{},
 					}
 
 					addJobTemplate(&currentSpec.JobSpec, "foo")
@@ -210,7 +209,7 @@ var _ = Describe("DrainAction", func() {
 
 				BeforeEach(func() {
 					currentSpec = boshas.V1ApplySpec{
-						RenderedTemplatesArchiveSpec: &applyspec.RenderedTemplatesArchiveSpec{}, // todo
+						RenderedTemplatesArchiveSpec: &boshas.RenderedTemplatesArchiveSpec{}, // todo
 					}
 					addJobTemplate(&currentSpec.JobSpec, "foo")
 					addJobTemplate(&currentSpec.JobSpec, "bar")

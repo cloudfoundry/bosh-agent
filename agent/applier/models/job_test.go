@@ -9,7 +9,6 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/crypto"
-	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	"errors"
@@ -49,7 +48,7 @@ var _ = Describe("Job", func() {
 		)
 
 		BeforeEach(func() {
-			fs = fakes.NewFakeFileSystem()
+			fs = fakesys.NewFakeFileSystem()
 			dirProvider = directories.NewProvider("/fakebasedir")
 		})
 

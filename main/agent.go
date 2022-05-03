@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/infrastructure/agentlogger"
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-utils/logger"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -76,7 +75,7 @@ func startAgent(logger logger.Logger) error {
 }
 
 func main() {
-	asyncLog := boshlog.NewAsyncWriterLogger(boshlog.LevelDebug, os.Stderr)
+	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
 	logger := newSignalableLogger(asyncLog)
 
 	exitCode := 0
