@@ -33,7 +33,8 @@ const (
 	natsHandlerLogTag        = "NATS Handler"
 	natsMinRetryWait         = 2
 	natsConnectionMaxRetries = 10
-	natsMaxReconnectWait     = 120 * time.Second
+	//natsMaxReconnectWait should match the setting we have in BOSH for https://github.com/cloudfoundry/bosh/blob/main/src/bosh-director/lib/bosh/director/agent_client.rb#L44. For now defaulting to 45 seconds. We could propagate this value in the settings.json with the other mbus settings.
+	natsMaxReconnectWait = 45 * time.Second
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -136,7 +137,6 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
 			h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
 			h.logger.Debug(natsHandlerLogTag, "Attempting to reconnect: %v", c.IsReconnecting())
-			h.arpClean()
 			for c.IsReconnecting() {
 				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected()))
 				time.Sleep(time.Second)
@@ -147,7 +147,6 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		}),
 		nats.ClosedHandler(func(c *nats.Conn) {
 			h.logger.Debug(natsHandlerLogTag, "Connection Closed with: %v", c.LastError().Error())
-			h.arpClean()
 		}),
 		nats.ErrorHandler(func(c *nats.Conn, s *nats.Subscription, err error) {
 			h.logger.Debug(natsHandlerLogTag, err.Error())
