@@ -12,7 +12,6 @@ import (
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -96,7 +95,7 @@ func (p dummyPlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.copier
 }
 
-func (p dummyPlatform) GetDirProvider() (dirProvider boshdir.Provider) {
+func (p dummyPlatform) GetDirProvider() (dirProvider boshdirs.Provider) {
 	return p.dirProvider
 }
 

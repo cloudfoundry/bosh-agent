@@ -40,7 +40,6 @@ import (
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -53,7 +52,7 @@ var _ = Describe("bootstrap", func() {
 	Describe("Run", func() {
 		var (
 			platform    *platformfakes.FakePlatform
-			dirProvider boshdir.Provider
+			dirProvider boshdirs.Provider
 			fileSystem  *fakesys.FakeFileSystem
 
 			settingsService *fakesettings.FakeSettingsService
@@ -65,7 +64,7 @@ var _ = Describe("bootstrap", func() {
 
 		BeforeEach(func() {
 			platform = &platformfakes.FakePlatform{}
-			dirProvider = boshdir.NewProvider("/var/vcap")
+			dirProvider = boshdirs.NewProvider("/var/vcap")
 			settingsService = &fakesettings.FakeSettingsService{
 				PersistentDiskSettings: make(map[string]boshsettings.DiskSettings),
 			}

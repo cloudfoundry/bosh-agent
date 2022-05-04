@@ -9,19 +9,17 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
 func getLockFilePathForConfiguredInterfaces(dirProvider boshdirs.Provider) string {
 	return filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
 }
 
-func getLockFilePathForRandomizedPasswords(dirProvider boshdir.Provider) string {
+func getLockFilePathForRandomizedPasswords(dirProvider boshdirs.Provider) string {
 	return filepath.Join(dirProvider.BoshDir(), "randomized_passwords")
 }
 
-func getLockFilePathForDNS(dirProvider boshdir.Provider) string {
+func getLockFilePathForDNS(dirProvider boshdirs.Provider) string {
 	return filepath.Join(dirProvider.BoshDir(), "dns")
 }
 
@@ -36,11 +34,11 @@ func LockFileExistsForConfiguredInterfaces(dirProvider boshdirs.Provider) bool {
 	return false
 }
 
-func LockFileExistsForDNS(fs boshsys.FileSystem, dirProvider boshdir.Provider) bool {
+func LockFileExistsForDNS(fs boshsys.FileSystem, dirProvider boshdirs.Provider) bool {
 	return fs.FileExists(getLockFilePathForDNS(dirProvider))
 }
 
-func LockFileExistsForRandomizedPasswords(fs boshsys.FileSystem, dirProvider boshdir.Provider) bool {
+func LockFileExistsForRandomizedPasswords(fs boshsys.FileSystem, dirProvider boshdirs.Provider) bool {
 	return fs.FileExists(getLockFilePathForRandomizedPasswords(dirProvider))
 }
 
@@ -65,14 +63,14 @@ func writeLockFileHelper(path string) error {
 	return f.Close()
 }
 
-func WriteLockFileForDNS(fs boshsys.FileSystem, dirProvider boshdir.Provider) error {
+func WriteLockFileForDNS(fs boshsys.FileSystem, dirProvider boshdirs.Provider) error {
 	if err := fs.WriteFileString(getLockFilePathForDNS(dirProvider), ""); err != nil {
 		return bosherr.WrapError(err, "Writing DNS password file")
 	}
 	return nil
 }
 
-func WriteLockFileForRandomizedPasswords(fs boshsys.FileSystem, dirProvider boshdir.Provider) error {
+func WriteLockFileForRandomizedPasswords(fs boshsys.FileSystem, dirProvider boshdirs.Provider) error {
 	if err := fs.WriteFileString(getLockFilePathForRandomizedPasswords(dirProvider), ""); err != nil {
 		return bosherr.WrapError(err, "Writing randomized password file")
 	}
