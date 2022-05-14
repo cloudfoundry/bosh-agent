@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20211123175040-23cc9f05b6b3
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.2
-	github.com/cloudfoundry/bosh-davcli v0.0.52
+	github.com/cloudfoundry/bosh-davcli v0.0.53
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.312
+	github.com/cloudfoundry/bosh-utils v0.0.313
 	github.com/cloudfoundry/gosigar v1.3.3
 	github.com/containerd/cgroups v1.0.3
 	github.com/coreos/go-iptables v0.6.0
@@ -18,7 +18,7 @@ require (
 	github.com/golangci/golangci-lint v1.45.2
 	github.com/google/uuid v1.3.0
 	github.com/kevinburke/ssh_config v1.2.0
-	github.com/masterzen/winrm v0.0.0-20211231115050-232efb40349e
+	github.com/masterzen/winrm v0.0.0-20220513085036-69f69afcd9e9
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.15.0
@@ -28,9 +28,9 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
-	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
+	golang.org/x/crypto v0.0.0-20220513210258-46612604a0f9
+	golang.org/x/net v0.0.0-20220513224357-95641704303c
+	golang.org/x/sys v0.0.0-20220513210249-45d2b4557a2a
 	golang.org/x/tools v0.1.10
 	inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6
 	inet.af/wf v0.0.0-20211204062712-86aaea0a7310
@@ -62,7 +62,7 @@ require (
 	github.com/charithe/durationcheck v0.0.9 // indirect
 	github.com/chavacava/garif v0.0.0-20210405164556-e8a0a408d6af // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.54 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.55 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/daixiang0/gci v0.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
