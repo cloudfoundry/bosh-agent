@@ -137,7 +137,9 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
 			h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
 			h.logger.Debug(natsHandlerLogTag, "Attempting to reconnect: %v", c.IsReconnecting())
+
 			for c.IsReconnecting() {
+				h.arpClean()
 				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected()))
 				time.Sleep(time.Second)
 			}
