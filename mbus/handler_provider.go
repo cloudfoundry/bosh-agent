@@ -48,7 +48,7 @@ func (p HandlerProvider) Get(
 		f := func(url string, options ...nats.Option) (NatsConnection, error) {
 			return nats.Connect(url, options...)
 		}
-		return NewNatsHandler(p.settingsService, f, p.logger, platform, natsConnectRetryInterval, natsConnectMaxRetryInterval), nil
+		return NewNatsHandler(p.settingsService, f, p.logger, platform), nil
 	case "https":
 		mbusKeyPair := p.settingsService.GetSettings().GetMbusCerts()
 		return NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, p.logger, p.auditLogger), nil

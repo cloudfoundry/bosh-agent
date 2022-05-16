@@ -143,7 +143,6 @@ func (a Agent) sendAndRecordHeartbeat(errCh chan error, retry bool) {
 
 	heartbeatRetryable := boshretry.NewRetryable(func() (bool, error) {
 		a.logger.Info(agentLogTag, "Attempting to send Heartbeat")
-
 		err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Heartbeat, heartbeat)
 		if err != nil {
 			return true, bosherr.WrapError(err, "Sending Heartbeat")

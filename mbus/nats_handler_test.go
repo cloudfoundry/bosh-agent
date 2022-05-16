@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
-	"time"
 
 	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
 	"github.com/nats-io/nats.go"
@@ -77,7 +76,7 @@ func init() { //nolint:funlen,gochecknoinits
 		})
 
 		JustBeforeEach(func() {
-			handler = NewNatsHandler(settingsService, connector, logger, platform, time.Millisecond, time.Millisecond)
+			handler = NewNatsHandler(settingsService, connector, logger, platform)
 		})
 
 		Describe("Start", func() {
@@ -242,7 +241,7 @@ func init() { //nolint:funlen,gochecknoinits
 
 			It("does not err when no username and password", func() {
 				settingsService.Settings.Mbus = "nats://127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, connector, logger, platform, time.Millisecond, time.Millisecond)
+				handler = NewNatsHandler(settingsService, connector, logger, platform)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())
@@ -374,7 +373,7 @@ func init() { //nolint:funlen,gochecknoinits
 						err := VerifyPeerCertificateCallback(handler, connectorOptionsArg, certPath, caPath)
 
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
+						Expect(err.Error()).To(Equal("server Certificate CommonName does not match *.nats.bosh-internal"))
 					})
 
 					It("verify certificate common name is missing", func() {
@@ -383,7 +382,7 @@ func init() { //nolint:funlen,gochecknoinits
 						err := VerifyPeerCertificateCallback(handler, connectorOptionsArg, certPath, caPath)
 
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(Equal("Server Certificate CommonName does not match *.nats.bosh-internal"))
+						Expect(err.Error()).To(Equal("server Certificate CommonName does not match *.nats.bosh-internal"))
 					})
 				})
 
