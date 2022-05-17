@@ -1,0 +1,21 @@
+name: go
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  lint:
+    strategy:
+      matrix:
+        go: [1.18]
+        os: [macos-latest, windows-2019, ubuntu-latest]
+    name: lint
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v3
+      - run: go vet ./...
+      - uses: golangci/golangci-lint-action@v3
