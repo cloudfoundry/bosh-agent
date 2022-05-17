@@ -43,6 +43,10 @@ run:
     - vendor/github.com/maxbrunsfeld/counterfeiter/v6/generator/interface_template.go
     - vendor/github.com/maxbrunsfeld/counterfeiter/v6/generator/package_template.go
 
+linters:
+  enable:
+    - goimports
+
 linters-settings:
   dogsled:
     max-blank-identifiers: 5
