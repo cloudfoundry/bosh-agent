@@ -22,7 +22,7 @@ const centosNetManagerLogTag = "centosNetManager"
 type centosNetManager struct {
 	fs                            boshsys.FileSystem
 	cmdRunner                     boshsys.CmdRunner
-	routesSearcher                RoutesSearcher
+	routesSearcher                RoutesSearcher //nolint:unused
 	ipResolver                    boship.Resolver
 	macAddressDetector            MACAddressDetector
 	interfaceConfigurationCreator InterfaceConfigurationCreator
@@ -124,7 +124,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 		return bosherr.WrapError(err, "There is a problem with your regexp: ':\\d+'. That is used to skip validation of virtual interfaces(e.g., eth0:0, eth0:1)")
 	}
 	for _, addr := range staticAddresses {
-		if r.MatchString(addr.GetInterfaceName()) == true {
+		if r.MatchString(addr.GetInterfaceName()) {
 			continue
 		} else {
 			staticAddressesWithoutVirtual = append(staticAddressesWithoutVirtual, addr)
