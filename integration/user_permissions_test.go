@@ -87,13 +87,17 @@ var _ = Describe("Instance Info", func() {
 
 	Context("on ubuntu when a new user is created", func() {
 		BeforeEach(func() {
-			testEnvironment.RunCommand("sudo groupadd bosh_sudoers")
-			testEnvironment.RunCommand("sudo groupadd bosh_sshers")
-			testEnvironment.RunCommand("sudo userdel -rf username")
+			_, err := testEnvironment.RunCommand("sudo groupadd bosh_sudoers")
+			Expect(err).ToNot(HaveOccurred())
+			_, err = testEnvironment.RunCommand("sudo groupadd bosh_sshers")
+			Expect(err).ToNot(HaveOccurred())
+			_, err = testEnvironment.RunCommand("sudo userdel -rf username")
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
-			testEnvironment.RunCommand("sudo userdel -rf username")
+			_, err := testEnvironment.RunCommand("sudo userdel -rf username")
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should contain the correct home directory permissions", func() {

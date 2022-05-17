@@ -99,6 +99,7 @@ QTETMBEGA1U=
 			Expect(individualCerts).To(Equal("bosh-trusted-cert-1.crt\nbosh-trusted-cert-2.crt\n"))
 
 			processedCerts, err := testEnvironment.RunCommand("grep MIIEJDCCAwygAwIBAgIJAO\\+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV /etc/ssl/certs/ca-certificates.crt")
+			Expect(err).ToNot(HaveOccurred())
 			Expect(processedCerts).To(Equal("MIIEJDCCAwygAwIBAgIJAO+CqgiJnCgpMA0GCSqGSIb3DQEBBQUAMGkxCzAJBgNV\n"))
 		})
 	})

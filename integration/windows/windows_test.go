@@ -25,7 +25,6 @@ import (
 
 const (
 	agentGUID       = "123-456-789"
-	agentID         = "agent." + agentGUID
 	senderID        = "director.987-654-321"
 	DefaultTimeout  = time.Minute
 	DefaultInterval = time.Second
@@ -213,7 +212,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		logsDir, err := fs.TempDir("windows-agent-drain-test")
 		Expect(err).NotTo(HaveOccurred())
-		defer fs.RemoveAll(logsDir)
+		defer fs.RemoveAll(logsDir) //nolint:errcheck
 
 		natsClient.FetchLogs(logsDir)
 
@@ -238,7 +237,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		logsDir, err := fs.TempDir("windows-agent-drain-test")
 		Expect(err).NotTo(HaveOccurred())
-		defer fs.RemoveAll(logsDir)
+		defer fs.RemoveAll(logsDir) //nolint:errcheck
 
 		natsClient.FetchLogs(logsDir)
 
@@ -282,7 +281,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		logsDir, err := fs.TempDir("windows-agent-prestart-test")
 		Expect(err).NotTo(HaveOccurred())
-		defer fs.RemoveAll(logsDir)
+		defer fs.RemoveAll(logsDir) //nolint:errcheck
 
 		natsClient.FetchLogs(logsDir)
 

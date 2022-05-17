@@ -17,9 +17,8 @@ type ARPCache struct {
 
 var _ = Describe("DeleteARPEntries", func() {
 	const (
-		clearedARPCacheState string = "FAILED"
-		testMacAddress       string = "12:34:56:78:9a:cd"
-		testIP               string = "192.168.100.199"
+		testMacAddress string = "12:34:56:78:9a:cd"
+		testIP         string = "192.168.100.199"
 	)
 
 	var (

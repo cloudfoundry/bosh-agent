@@ -17,14 +17,14 @@ func main() {
 	flag.Parse()
 
 	http.HandleFunc("/get_package/", func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer r.Body.Close() //nolint:errcheck
 
 		asset := r.URL.Path[len("/get_package/"):]
 
 		if r.URL.Query().Get("encrypted") != "" {
 			if r.Header.Get("encryption-key") == "" {
 				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte("no headers"))
+				w.Write([]byte("no headers")) //nolint:errcheck
 				return
 			}
 		}
@@ -32,15 +32,15 @@ func main() {
 		f, err := os.Open(filepath.Join(*assets, asset))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(err.Error())) //nolint:errcheck
 			return
 		}
-		defer f.Close()
+		defer f.Close() //nolint:errcheck
 
 		_, err = io.Copy(w, f)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(err.Error())) //nolint:errcheck
 			return
 		}
 
@@ -55,7 +55,7 @@ func main() {
 		f, err := os.Create(filepath.Join(*assets, asset))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(err.Error())) //nolint:errcheck
 			return
 		}
 		defer f.Close()
@@ -63,7 +63,7 @@ func main() {
 		_, err = io.Copy(f, r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(err.Error())) //nolint:errcheck
 			return
 		}
 

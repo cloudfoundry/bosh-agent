@@ -121,7 +121,8 @@ var _ = Describe("EphemeralDisk", func() {
 
 			Context("when ephemeral disk does not exist", func() {
 				BeforeEach(func() {
-					testEnvironment.DetachDevice("/dev/sdh")
+					err := testEnvironment.DetachDevice("/dev/sdh")
+					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("agent fails with error", func() {

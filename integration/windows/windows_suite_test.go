@@ -54,6 +54,7 @@ var _ = BeforeSuite(func() {
 	templateEphemeralDiskSettings(natsIP, `{"path": "/dev/sdc"}`, "third-disk-settings.json")
 
 	sshClient, err := utils.GetSSHTunnelClient()
+	Expect(err).ToNot(HaveOccurred())
 
 	endpoint := winrm.NewEndpoint(utils.AgentIP(), 5985, false, false, nil, nil, nil, 0)
 
@@ -103,11 +104,12 @@ func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename 
 	Expect(err).NotTo(HaveOccurred())
 
 	outputFile, err := os.CreateTemp("", "agent-settings")
-	defer outputFile.Close()
+	defer outputFile.Close() //nolint:errcheck,staticcheck
 	Expect(err).NotTo(HaveOccurred())
 
 	err = settingsTmpl.Execute(outputFile, agentSettings)
-	outputFile.Close()
+	outputFile.Close() //nolint:errcheck
+	Expect(err).ToNot(HaveOccurred())
 
 	command := exec.Command("scp", outputFile.Name(), fmt.Sprintf("%s:/bosh/agent-configuration/%s", utils.AgentIP(), filename))
 	session, err := gexec.Start(command, ioutil.Discard, ioutil.Discard)

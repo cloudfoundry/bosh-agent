@@ -20,7 +20,7 @@ func trimPathPrefix(s, prefix string) string {
 	return strings.TrimLeft(strings.TrimPrefix(s, prefix), "/")
 }
 
-func (t *TarWalker) Walk(path string, fi os.FileInfo, err error) error {
+func (t *TarWalker) Walk(path string, fi os.FileInfo, _ error) error {
 	// If path == root we are adding only the contents of the directory
 	if path == t.root {
 		return nil
@@ -46,10 +46,10 @@ func (t *TarWalker) Walk(path string, fi os.FileInfo, err error) error {
 			return err
 		}
 		if _, err := io.Copy(t.tw, f); err != nil {
-			f.Close()
+			f.Close() //nolint:errcheck
 			return err
 		}
-		f.Close()
+		f.Close() //nolint:errcheck
 	}
 	return nil
 }

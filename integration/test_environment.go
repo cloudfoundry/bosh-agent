@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-utils/errors"
@@ -74,7 +73,6 @@ type TestEnvironment struct {
 	currentDeviceNum int
 	sshTunnelProc    boshsys.Process
 	logger           logger.Logger
-	agentClient      agentclient.AgentClient
 	deviceMap        map[int]string
 	sshClient        *ssh.Client
 }
@@ -167,9 +165,9 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 }
 
 func (t *TestEnvironment) CleanupDataDir() error {
-	_, err := t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`)
+	t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`) //nolint:errcheck
 
-	_, err = t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
+	_, err := t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
 	if err != nil {
 		return err
 	}
@@ -502,7 +500,7 @@ func (t *TestEnvironment) DetachLoopDevice(devicePath string) error {
 }
 
 func (t *TestEnvironment) DetachLoopDevices() error {
-	_, err := t.RunCommand(fmt.Sprintf("sudo losetup -D"))
+	_, err := t.RunCommand("sudo losetup -D")
 	return err
 }
 
@@ -576,7 +574,7 @@ func (t *TestEnvironment) StartAgent() error {
 
 type emptyReader struct{}
 
-func (er emptyReader) Read(p []byte) (int, error) {
+func (er emptyReader) Read(_ []byte) (int, error) {
 	time.Sleep(1 * time.Second)
 	return 0, nil
 }
@@ -660,7 +658,7 @@ func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
 		return err
 	}
 
-	t.RunCommand("sudo killall -9 fake-registry")
+	t.RunCommand("sudo killall -9 fake-registry") //nolint:errcheck
 
 	_, err = t.RunCommand(
 		fmt.Sprintf(
