@@ -6,13 +6,6 @@ linters:
   enable:
     - goimports
 
-linters-settings:
-  dogsled:
-    max-blank-identifiers: 5
-  funlen:
-    lines: 200
-    statements: 90
-
 output:
   # Sort results by: filepath, line and column.
   sort-results: true
