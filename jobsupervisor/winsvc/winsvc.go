@@ -540,17 +540,6 @@ func (m *Mgr) Unmonitor() error {
 	})
 }
 
-// DisableAgentAutoStart sets the start type of the bosh-agent to manual.
-func (m *Mgr) DisableAgentAutoStart() error {
-	const name = "bosh-agent"
-	s, err := m.m.OpenService("bosh-agent")
-	if err != nil {
-		return &ServiceError{"opening service", name, err}
-	}
-	defer s.Close()
-	return SetStartType(s, mgr.StartManual)
-}
-
 func svcStateString(s svc.State) string {
 	switch s {
 	case svc.Stopped:

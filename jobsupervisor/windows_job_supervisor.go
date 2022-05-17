@@ -227,16 +227,6 @@ func (w *windowsJobSupervisor) Reload() error {
 }
 
 func (w *windowsJobSupervisor) Start() error {
-	// Set the starttype of the service running the Agent to 'manual'.
-	// This will prevent the agent from automatically starting if the
-	// machine is rebooted.
-	//
-	// Do this here, as we know the agent has successfully connected
-	// with the director and is healthy.
-	if err := w.mgr.DisableAgentAutoStart(); err != nil {
-		w.logger.Error(w.logTag, "Running DisableAgentAutoStart %s", err)
-	}
-
 	if err := w.mgr.Start(); err != nil {
 		return bosherr.WrapError(err, "Starting windows job process")
 	}
