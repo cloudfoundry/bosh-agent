@@ -18,3 +18,9 @@ jobs:
           go-version: ${{ matrix.go }}
       - uses: actions/checkout@v3
       - uses: golangci/golangci-lint-action@v3
+        if: ${{ matrix.os == 'windows-2019' }}
+      - uses: golangci/golangci-lint-action@v3
+        if: ${{ matrix.os != 'windows-2019' }}
+        with:
+          args: --enable goimports
+
