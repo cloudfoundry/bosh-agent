@@ -91,13 +91,11 @@ var _ = Describe("Instance Info", func() {
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo groupadd -f bosh_sshers")
 			Expect(err).ToNot(HaveOccurred())
-			_, err = testEnvironment.RunCommand("sudo userdel -rf username")
-			Expect(err).ToNot(HaveOccurred())
+			testEnvironment.RunCommand("sudo userdel -rf username") //nolint:errcheck
 		})
 
 		AfterEach(func() {
-			_, err := testEnvironment.RunCommand("sudo userdel -rf username")
-			Expect(err).ToNot(HaveOccurred())
+			testEnvironment.RunCommand("sudo userdel -rf username") //nolint:errcheck
 		})
 
 		It("should contain the correct home directory permissions", func() {
