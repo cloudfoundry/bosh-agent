@@ -87,9 +87,9 @@ var _ = Describe("Instance Info", func() {
 
 	Context("on ubuntu when a new user is created", func() {
 		BeforeEach(func() {
-			_, err := testEnvironment.RunCommand("sudo groupadd bosh_sudoers")
+			_, err := testEnvironment.RunCommand("sudo groupadd -f bosh_sudoers")
 			Expect(err).ToNot(HaveOccurred())
-			_, err = testEnvironment.RunCommand("sudo groupadd bosh_sshers")
+			_, err = testEnvironment.RunCommand("sudo groupadd -f bosh_sshers")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo userdel -rf username")
 			Expect(err).ToNot(HaveOccurred())
