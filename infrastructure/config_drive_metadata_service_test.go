@@ -11,8 +11,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
-	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
@@ -22,7 +20,6 @@ var _ = Describe("ConfigDriveMetadataService", describeConfigDriveMetadataServic
 func describeConfigDriveMetadataService() { //nolint:funlen
 	var (
 		metadataService MetadataService
-		resolver        *fakeinf.FakeDNSResolver
 		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
 
@@ -46,7 +43,6 @@ func describeConfigDriveMetadataService() { //nolint:funlen
 	}
 
 	BeforeEach(func() {
-		resolver = &fakeinf.FakeDNSResolver{}
 		platform = &platformfakes.FakePlatform{}
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		diskPaths := []string{
@@ -57,7 +53,6 @@ func describeConfigDriveMetadataService() { //nolint:funlen
 		metadataServiceFileContents = make([][]byte, 2)
 
 		metadataService = NewConfigDriveMetadataService(
-			resolver,
 			platform,
 			diskPaths,
 			"fake-metadata-path",
@@ -158,7 +153,6 @@ func describeConfigDriveMetadataService() { //nolint:funlen
 		Context("when disk paths are not given", func() {
 			It("returns false", func() {
 				metadataService = NewConfigDriveMetadataService(
-					resolver,
 					platform,
 					[]string{},
 					"fake-metadata-path",
@@ -225,23 +219,23 @@ func describeConfigDriveMetadataService() { //nolint:funlen
 	})
 
 	Describe("GetRegistryEndpoint", func() {
-		It("returns an error if it fails to get registry endpoint", func() {
-			updateUserdata("{}")
+		//	It("returns an error if it fails to get registry endpoint", func() {
+		//		updateUserdata("{}")
 
-			value, err := metadataService.GetRegistryEndpoint()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Failed to load registry endpoint from config drive metadata service"))
+		//		value, err := metadataService.GetRegistryEndpoint()
+		//		Expect(err).To(HaveOccurred())
+		//		Expect(err.Error()).To(ContainSubstring("Failed to load registry endpoint from config drive metadata service"))
 
-			Expect(value).To(Equal(""))
-		})
+		//		Expect(value).To(Equal(""))
+		//	})
 
-		Context("when user_data does not contain a dns server", func() {
-			It("returns registry endpoint", func() {
-				value, err := metadataService.GetRegistryEndpoint()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(value).To(Equal("fake-registry-endpoint"))
-			})
-		})
+		//	Context("when user_data does not contain a dns server", func() {
+		//		It("returns registry endpoint", func() {
+		//			value, err := metadataService.GetRegistryEndpoint()
+		//			Expect(err).ToNot(HaveOccurred())
+		//			Expect(value).To(Equal("fake-registry-endpoint"))
+		//		})
+		//	})
 
 		Context("when user_data contains a dns server", func() {
 			BeforeEach(func() {
@@ -254,34 +248,6 @@ func describeConfigDriveMetadataService() { //nolint:funlen
 				updateUserdata(userdataContents)
 			})
 
-			Context("when registry endpoint is successfully resolved", func() {
-				BeforeEach(func() {
-					resolver.RegisterRecord(fakeinf.FakeDNSRecord{
-						DNSServers: []string{"fake-dns-server-ip"},
-						Host:       "http://fake-registry.com",
-						IP:         "http://fake-registry-ip",
-					})
-				})
-
-				It("returns the successfully resolved registry endpoint", func() {
-					endpoint, err := metadataService.GetRegistryEndpoint()
-					Expect(err).ToNot(HaveOccurred())
-					Expect(endpoint).To(Equal("http://fake-registry-ip"))
-				})
-			})
-
-			Context("when registry endpoint is not successfully resolved", func() {
-				BeforeEach(func() {
-					resolver.LookupHostErr = errors.New("fake-lookup-host-err")
-				})
-
-				It("returns error because it failed to resolve registry endpoint", func() {
-					endpoint, err := metadataService.GetRegistryEndpoint()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-lookup-host-err"))
-					Expect(endpoint).To(BeEmpty())
-				})
-			})
 		})
 	})
 

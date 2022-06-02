@@ -15,8 +15,7 @@
           "Type": "File",
           "SettingsPath": "C:\\bosh\\settings.json"
         }
-      ],
-      "UseRegistry": true
+      ]
     }
   }
 }

@@ -21,12 +21,11 @@ func describeMultiSourceMetadataService() { //nolint:funlen
 
 	BeforeEach(func() {
 		service1 = fakeinf.FakeMetadataService{
-			Available:        false,
-			PublicKey:        "fake-public-key-1",
-			InstanceID:       "fake-instance-id-1",
-			ServerName:       "fake-server-name-1",
-			RegistryEndpoint: "fake-registry-endpoint-1",
-			Networks:         boshsettings.Networks{"net-1": boshsettings.Network{}},
+			Available:  false,
+			PublicKey:  "fake-public-key-1",
+			InstanceID: "fake-instance-id-1",
+			ServerName: "fake-server-name-1",
+			Networks:   boshsettings.Networks{"net-1": boshsettings.Network{}},
 			Settings: boshsettings.Settings{
 				AgentID: "Agent-Foo",
 				Mbus:    "Agent-Mbus",
@@ -34,12 +33,11 @@ func describeMultiSourceMetadataService() { //nolint:funlen
 		}
 
 		service2 = fakeinf.FakeMetadataService{
-			Available:        false,
-			PublicKey:        "fake-public-key-2",
-			InstanceID:       "fake-instance-id-2",
-			ServerName:       "fake-server-name-2",
-			RegistryEndpoint: "fake-registry-endpoint-2",
-			Networks:         boshsettings.Networks{"net-2": boshsettings.Network{}},
+			Available:  false,
+			PublicKey:  "fake-public-key-2",
+			InstanceID: "fake-instance-id-2",
+			ServerName: "fake-server-name-2",
+			Networks:   boshsettings.Networks{"net-2": boshsettings.Network{}},
 		}
 	})
 
@@ -77,14 +75,6 @@ func describeMultiSourceMetadataService() { //nolint:funlen
 				serverName, err := metadataService.GetServerName()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(serverName).To(Equal("fake-server-name-1"))
-			})
-		})
-
-		Describe("GetRegistryEndpoint", func() {
-			It("returns registry endpoint from the available service", func() {
-				registryEndpoint, err := metadataService.GetRegistryEndpoint()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(registryEndpoint).To(Equal("fake-registry-endpoint-1"))
 			})
 		})
 
@@ -157,14 +147,6 @@ func describeMultiSourceMetadataService() { //nolint:funlen
 			})
 		})
 
-		Describe("GetRegistryEndpoint", func() {
-			It("returns registry endpoint from the available service", func() {
-				registryEndpoint, err := metadataService.GetRegistryEndpoint()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(registryEndpoint).To(Equal("fake-registry-endpoint-2"))
-			})
-		})
-
 		Describe("GetNetworks", func() {
 			It("returns network settings from the available service", func() {
 				networks, err := metadataService.GetNetworks()
@@ -205,14 +187,6 @@ func describeMultiSourceMetadataService() { //nolint:funlen
 		Describe("GetServerName", func() {
 			It("returns an error getting the server name", func() {
 				_, err := metadataService.GetServerName()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("services not available"))
-			})
-		})
-
-		Describe("GetRegistryEndpoint", func() {
-			It("returns an error getting the registry endpoint", func() {
-				_, err := metadataService.GetRegistryEndpoint()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("services not available"))
 			})

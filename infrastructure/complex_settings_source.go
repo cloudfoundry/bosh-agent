@@ -6,8 +6,7 @@ import (
 )
 
 type ComplexSettingsSource struct {
-	metadataService  MetadataService
-	registryProvider RegistryProvider
+	metadataService MetadataService
 
 	logTag string
 	logger boshlog.Logger
@@ -15,12 +14,10 @@ type ComplexSettingsSource struct {
 
 func NewComplexSettingsSource(
 	metadataService MetadataService,
-	registryProvider RegistryProvider,
 	logger boshlog.Logger,
 ) ComplexSettingsSource {
 	return ComplexSettingsSource{
-		metadataService:  metadataService,
-		registryProvider: registryProvider,
+		metadataService: metadataService,
 
 		logTag: "ComplexSettingsSource",
 		logger: logger,
@@ -39,13 +36,7 @@ func (s ComplexSettingsSource) Settings() (boshsettings.Settings, error) {
 	}
 
 	s.logger.Debug(s.logTag, "Unable to get settings from metadata service, falling back to registry.")
-
-	registry, err := s.registryProvider.GetRegistry()
-	if err != nil {
-		return boshsettings.Settings{}, err
-	}
-
-	return registry.GetSettings()
+	return boshsettings.Settings{}, err
 }
 
 func (s ComplexSettingsSource) GetMetadataService() MetadataService {

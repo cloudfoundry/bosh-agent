@@ -19,10 +19,7 @@
           "MetaDataPath": "ec2/latest/meta-data.json",
           "UserDataPath": "ec2/latest/user-data.json"
         }
-      ],
-
-      "UseServerName": true,
-      "UseRegistry": true
+      ]
     }
   }
 }

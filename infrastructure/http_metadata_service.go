@@ -24,7 +24,6 @@ type HTTPMetadataService struct {
 	instanceIDPath  string
 	sshKeysPath     string
 	tokenPath       string
-	resolver        DNSResolver
 	platform        boshplat.Platform
 	logTag          string
 	logger          boshlog.Logger
@@ -37,7 +36,6 @@ func NewHTTPMetadataService(
 	instanceIDPath string,
 	sshKeysPath string,
 	tokenPath string,
-	resolver DNSResolver,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
 ) DynamicMetadataService {
@@ -49,7 +47,6 @@ func NewHTTPMetadataService(
 		instanceIDPath:  instanceIDPath,
 		sshKeysPath:     sshKeysPath,
 		tokenPath:       tokenPath,
-		resolver:        resolver,
 		platform:        platform,
 		logTag:          "httpMetadataService",
 		logger:          logger,
@@ -62,7 +59,6 @@ func NewHTTPMetadataServiceWithCustomRetryDelay(
 	userdataPath string,
 	instanceIDPath string,
 	sshKeysPath string,
-	resolver DNSResolver,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
 	retryDelay time.Duration,
@@ -74,7 +70,6 @@ func NewHTTPMetadataServiceWithCustomRetryDelay(
 		userdataPath:    userdataPath,
 		instanceIDPath:  instanceIDPath,
 		sshKeysPath:     sshKeysPath,
-		resolver:        resolver,
 		platform:        platform,
 		logTag:          "httpMetadataService",
 		logger:          logger,
@@ -207,25 +202,6 @@ func (ms HTTPMetadataService) GetServerName() (string, error) {
 	}
 
 	return serverName, nil
-}
-
-func (ms HTTPMetadataService) GetRegistryEndpoint() (string, error) {
-	userData, err := ms.getUserData()
-	if err != nil {
-		return "", bosherr.WrapError(err, "Getting user data")
-	}
-
-	endpoint := userData.Registry.Endpoint
-	nameServers := userData.DNS.Nameserver
-
-	if len(nameServers) > 0 {
-		endpoint, err = ms.resolver.LookupHost(nameServers, endpoint)
-		if err != nil {
-			return "", bosherr.WrapError(err, "Resolving registry endpoint")
-		}
-	}
-
-	return endpoint, nil
 }
 
 func (ms HTTPMetadataService) GetNetworks() (boshsettings.Networks, error) {

@@ -39,6 +39,16 @@ func (s *MultiSettingsSource) PublicSSHKeyForUsername(username string) (string, 
 
 	return "", bosherr.WrapErrorf(err, "Getting public SSH key for '%s'", username)
 }
+func (s *MultiSettingsSource) GetMetadataService() MetadataService {
+
+	for _, source := range s.sources {
+		switch source := source.(type) {
+		case ComplexSettingsSource:
+			return source.GetMetadataService()
+		}
+	}
+	return nil
+}
 
 func (s *MultiSettingsSource) Settings() (boshsettings.Settings, error) {
 	if s.selectedSettingsSource != nil {

@@ -10,7 +10,6 @@ import (
 )
 
 type configDriveMetadataService struct {
-	resolver DNSResolver
 	platform boshplatform.Platform
 
 	diskPaths        []string
@@ -26,7 +25,6 @@ type configDriveMetadataService struct {
 }
 
 func NewConfigDriveMetadataService(
-	resolver DNSResolver,
 	platform boshplatform.Platform,
 	diskPaths []string,
 	metaDataFilePath string,
@@ -34,7 +32,6 @@ func NewConfigDriveMetadataService(
 	logger boshlog.Logger,
 ) MetadataService {
 	return &configDriveMetadataService{
-		resolver: resolver,
 		platform: platform,
 
 		diskPaths:        diskPaths,
@@ -72,28 +69,6 @@ func (ms *configDriveMetadataService) GetServerName() (string, error) {
 
 	ms.logger.Debug(ms.logTag, "Getting server name: %s", ms.userDataContents.Server.Name)
 	return ms.userDataContents.Server.Name, nil
-}
-
-func (ms *configDriveMetadataService) GetRegistryEndpoint() (string, error) {
-	if ms.userDataContents.Registry.Endpoint == "" {
-		return "", bosherr.Error("Failed to load registry endpoint from config drive metadata service")
-	}
-
-	endpoint := ms.userDataContents.Registry.Endpoint
-	nameServers := ms.userDataContents.DNS.Nameserver
-
-	if len(nameServers) == 0 {
-		ms.logger.Debug(ms.logTag, "Getting registry endpoint %s", endpoint)
-		return endpoint, nil
-	}
-
-	resolvedEndpoint, err := ms.resolver.LookupHost(nameServers, endpoint)
-	if err != nil {
-		return "", bosherr.WrapError(err, "Resolving registry endpoint")
-	}
-
-	ms.logger.Debug(ms.logTag, "Registry endpoint %s was resolved to %s", endpoint, resolvedEndpoint)
-	return resolvedEndpoint, nil
 }
 
 func (ms *configDriveMetadataService) GetNetworks() (boshsettings.Networks, error) {

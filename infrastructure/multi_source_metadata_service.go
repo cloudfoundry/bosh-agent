@@ -45,16 +45,6 @@ func (ms *MultiSourceMetadataService) GetServerName() (string, error) {
 	return selectedService.GetServerName()
 }
 
-func (ms *MultiSourceMetadataService) GetRegistryEndpoint() (string, error) {
-	selectedService, err := ms.getSelectedService()
-
-	if err != nil {
-		return "", err
-	}
-
-	return selectedService.GetRegistryEndpoint()
-}
-
 func (ms *MultiSourceMetadataService) GetNetworks() (boshsettings.Networks, error) {
 	selectedService, err := ms.getSelectedService()
 

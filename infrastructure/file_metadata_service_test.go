@@ -156,20 +156,20 @@ var _ = Describe("FileMetadataService", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("returns registry endpoint", func() {
-				registryEndpoint, err := metadataService.GetRegistryEndpoint()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(registryEndpoint).To(Equal("fake-registry-endpoint"))
-			})
+			//		It("returns registry endpoint", func() {
+			//			registryEndpoint, err := metadataService.GetRegistryEndpoint()
+			//			Expect(err).NotTo(HaveOccurred())
+			//			Expect(registryEndpoint).To(Equal("fake-registry-endpoint"))
+			//		})
 		})
 
-		Context("when metadata service file does not exist", func() {
-			It("returns registry endpoint pointing to a settings file", func() {
-				registryEndpoint, err := metadataService.GetRegistryEndpoint()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(registryEndpoint).To(Equal("fake-settings-file-path"))
-			})
-		})
+		//	Context("when metadata service file does not exist", func() {
+		//		It("returns registry endpoint pointing to a settings file", func() {
+		//			registryEndpoint, err := metadataService.GetRegistryEndpoint()
+		//			Expect(err).NotTo(HaveOccurred())
+		//			Expect(registryEndpoint).To(Equal("fake-settings-file-path"))
+		//		})
+		//	})
 	})
 
 	Describe("GetSettings", func() {

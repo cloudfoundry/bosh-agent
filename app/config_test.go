@@ -59,9 +59,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 						"Headers": {"fake": "headers"},
 						"SettingsPath": "/fake-settings-path"
 					  }
-				  ],
-				  "UseServerName": true,
-				  "UseRegistry": true
+				  ]
 				}
 			}
 		}`)
@@ -105,8 +103,6 @@ var _ = Describe("LoadConfigFromPath", func() {
 							SettingsPath: "/fake-settings-path",
 						},
 					},
-					UseServerName: true,
-					UseRegistry:   true,
 				},
 			},
 		}))
