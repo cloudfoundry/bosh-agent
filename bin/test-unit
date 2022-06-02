@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
-
+unset BOSH_ALL_PROXY
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 echo 'Note: if you want to quickly run tests for just one package, do it like this:'
