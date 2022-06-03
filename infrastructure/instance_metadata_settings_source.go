@@ -20,7 +20,7 @@ type InstanceMetadataSettingsSource struct {
 	logger   boshlog.Logger
 
 	logTag          string
-	metadataService DynamicMetadataService
+	metadataService HTTPMetadataService
 }
 
 func NewInstanceMetadataSettingsSource(

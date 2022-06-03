@@ -38,7 +38,7 @@ func NewHTTPMetadataService(
 	tokenPath string,
 	platform boshplat.Platform,
 	logger boshlog.Logger,
-) DynamicMetadataService {
+) HTTPMetadataService {
 	return HTTPMetadataService{
 		client:          createRetryClient(1*time.Second, logger),
 		metadataHost:    metadataHost,
@@ -62,7 +62,7 @@ func NewHTTPMetadataServiceWithCustomRetryDelay(
 	platform boshplat.Platform,
 	logger boshlog.Logger,
 	retryDelay time.Duration,
-) DynamicMetadataService {
+) HTTPMetadataService {
 	return HTTPMetadataService{
 		client:          createRetryClient(retryDelay, logger),
 		metadataHost:    metadataHost,
@@ -80,7 +80,7 @@ func (ms HTTPMetadataService) Load() error {
 	return nil
 }
 
-func (ms HTTPMetadataService) GetPublicKey() (string, error) {
+func (ms HTTPMetadataService) PublicSSHKeyForUsername(s string) (string, error) {
 	if ms.sshKeysPath == "" {
 		return "", nil
 	}
@@ -210,7 +210,7 @@ func (ms HTTPMetadataService) GetNetworks() (boshsettings.Networks, error) {
 
 func (ms HTTPMetadataService) IsAvailable() bool { return true }
 
-func (ms HTTPMetadataService) GetSettings() (boshsettings.Settings, error) {
+func (ms HTTPMetadataService) Settings() (boshsettings.Settings, error) {
 	userData, err := ms.getUserData()
 	if err != nil {
 		return boshsettings.Settings{}, bosherr.WrapError(err, "Getting user data")

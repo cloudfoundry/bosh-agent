@@ -27,7 +27,7 @@ func describeHTTPMetadataService() { //nolint:funlen
 		dnsResolver     *fakeinf.FakeDNSResolver
 		platform        *platformfakes.FakePlatform
 		logger          boshlog.Logger
-		metadataService MetadataService
+		metadataService HTTPMetadataService
 	)
 
 	BeforeEach(func() {
@@ -78,7 +78,7 @@ func describeHTTPMetadataService() { //nolint:funlen
 		})
 	})
 
-	Describe("GetPublicKey", func() {
+	Describe("PublicSSHKeyForUsername", func() {
 		var (
 			ts          *httptest.Server
 			sshKeysPath string
@@ -110,13 +110,13 @@ func describeHTTPMetadataService() { //nolint:funlen
 				})
 
 				It("returns fetched public key", func() {
-					publicKey, err := metadataService.GetPublicKey()
+					publicKey, err := metadataService.PublicSSHKeyForUsername("")
 					Expect(err).NotTo(HaveOccurred())
 					Expect(publicKey).To(Equal("fake-public-key"))
 				})
 
 				ItEnsuresMinimalNetworkSetup(func() (string, error) {
-					return metadataService.GetPublicKey()
+					return metadataService.PublicSSHKeyForUsername("")
 				})
 			})
 
@@ -127,7 +127,7 @@ func describeHTTPMetadataService() { //nolint:funlen
 				})
 
 				It("returns an empty ssh key", func() {
-					publicKey, err := metadataService.GetPublicKey()
+					publicKey, err := metadataService.PublicSSHKeyForUsername("")
 					Expect(err).NotTo(HaveOccurred())
 					Expect(publicKey).To(BeEmpty())
 				})
@@ -168,7 +168,7 @@ func describeHTTPMetadataService() { //nolint:funlen
 				ts.Close()
 			})
 			It("returns fetched public key", func() {
-				publicKey, err := metadataService.GetPublicKey()
+				publicKey, err := metadataService.PublicSSHKeyForUsername("")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(tokenCalls).NotTo(BeZero())
 				Expect(publicKey).To(Equal("fake-public-key"))
@@ -204,13 +204,13 @@ func describeHTTPMetadataService() { //nolint:funlen
 			})
 
 			It("returns empty public key", func() {
-				publicKey, err := metadataService.GetPublicKey()
+				publicKey, err := metadataService.PublicSSHKeyForUsername("")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(publicKey).To(BeEmpty())
 			})
 
 			ItEnsuresMinimalNetworkSetup(func() (string, error) {
-				return metadataService.GetPublicKey()
+				return metadataService.PublicSSHKeyForUsername("")
 			})
 		})
 	})

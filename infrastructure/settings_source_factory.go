@@ -95,15 +95,12 @@ func (f SettingsSourceFactory) New() (boshsettings.Source, error) {
 
 func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, error) {
 	settingsSources := make([]boshsettings.Source, 0, len(f.options.Sources))
-	metadataServices := make([]MetadataService, 0, 1)
-	var metadataSource bool
 	for _, opts := range f.options.Sources {
 		var settingsSource boshsettings.Source
-		var metadataService MetadataService
 
 		switch typedOpts := opts.(type) {
 		case HTTPSourceOptions:
-			metadataService = NewHTTPMetadataService(
+			settingsSource = NewHTTPMetadataService(
 				typedOpts.URI,
 				typedOpts.Headers,
 				typedOpts.UserDataPath,
@@ -113,7 +110,6 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 				f.platform,
 				f.logger,
 			)
-			metadataSource = true
 
 		case ConfigDriveSourceOptions:
 			settingsSource = NewConfigDriveSettingsSource(
@@ -148,14 +144,7 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 			)
 		}
 
-		metadataServices = append(metadataServices, metadataService)
 		settingsSources = append(settingsSources, settingsSource)
-	}
-
-	if metadataSource {
-		metadataService := NewMultiSourceMetadataService(metadataServices...)
-		settingsSource := NewComplexSettingsSource(metadataService, f.logger)
-		return NewMultiSettingsSource(settingsSource)
 	}
 
 	return NewMultiSettingsSource(settingsSources...)

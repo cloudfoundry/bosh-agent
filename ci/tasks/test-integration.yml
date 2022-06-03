@@ -1,5 +1,10 @@
 ---
 platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: bosh/agent
+    tag: latest
 
 inputs:
 - name: agent-info
