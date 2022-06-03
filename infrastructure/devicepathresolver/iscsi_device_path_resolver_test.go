@@ -149,7 +149,8 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 			Context("when the device has never been mounted previously", func() {
 				BeforeEach(func() {
 					// ...that has never been mounted previously...
-					fs.RemoveAll(managedDiskSettingsPath)
+					err := fs.RemoveAll(managedDiskSettingsPath)
+					Expect(err).ToNot(HaveOccurred())
 				})
 
 				Context("when the device is not yet partitioned", func() {
