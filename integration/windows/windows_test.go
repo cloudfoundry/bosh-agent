@@ -109,6 +109,10 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Eventually(getStateSpecAgentID, DefaultTimeout, DefaultInterval).Should(Equal(agentGUID))
 	})
+	It("its windows service is set to start automatically", func() {
+		output := agent.RunPowershellCommand("Get-Service -Name bosh-agent | select -property name,starttype")
+		Expect(output).To(MatchRegexp("bosh-agent *Automatic"))
+	})
 
 	It("cleans up SSH users after session exits", func() {
 		time := strconv.Itoa(int(time.Now().Unix()))
