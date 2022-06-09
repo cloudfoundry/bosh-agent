@@ -29,12 +29,11 @@ import (
 )
 
 const (
-	responseMaxLength        = 1024 * 1024
-	natsHandlerLogTag        = "NATS Handler"
-	natsMinRetryWait         = 2
-	natsConnectionMaxRetries = 10
-	//natsMaxReconnectWait should match the setting we have in BOSH for https://github.com/cloudfoundry/bosh/blob/main/src/bosh-director/lib/bosh/director/agent_client.rb#L44. For now defaulting to 45 seconds. We could propagate this value in the settings.json with the other mbus settings.
-	natsMaxReconnectWait = 45 * time.Second
+	responseMaxLength = 1024 * 1024
+	natsHandlerLogTag = "NATS Handler"
+	natsMinRetryWait  = 2
+	//natsMaxReconnectWait should be lower than the setting we have in BOSH for https://github.com/cloudfoundry/bosh/blob/main/src/bosh-director/lib/bosh/director/agent_client.rb#L44.
+	natsMaxReconnectWait = 10 * time.Second
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -102,12 +101,13 @@ func NewNatsHandler(
 func (h *natsHandler) arpClean() {
 	connectionInfo, err := h.getConnectionInfo()
 	if err != nil {
-		h.logger.Error(h.logTag, fmt.Sprintf("%v", bosherr.WrapError(err, "Getting connection info")))
+		h.logger.Error(h.logTag, "%v", bosherr.WrapError(err, "Getting connection info"))
 	}
 	err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
 	if err != nil {
 		h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s. Error: %v", connectionInfo.IP, err)
 	}
+
 	h.logger.Debug(h.logTag, "Cleaned ip-mac address cache for: %s.", connectionInfo.IP)
 }
 
@@ -134,14 +134,14 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		h.arpClean()
 	}
 	var natsOptions = []nats.Option{
+		nats.RetryOnFailedConnect(true),
 		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
 			h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
 			h.logger.Debug(natsHandlerLogTag, "Attempting to reconnect: %v", c.IsReconnecting())
-
 			for c.IsReconnecting() {
 				h.arpClean()
-				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Waiting to reconnect to nats.. Connected: %v", c.IsConnected()))
-				time.Sleep(time.Second)
+				h.logger.Debug(natsHandlerLogTag, "Waiting to reconnect to nats.. Current attempt: %v, Connected: %v", c.Reconnects, c.IsConnected())
+				time.Sleep(5 * time.Second)
 			}
 		}),
 		nats.ReconnectHandler(func(c *nats.Conn) {
@@ -156,20 +156,22 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		nats.CustomReconnectDelay(func(attempts int) time.Duration {
 			exponentialReconnectWait := time.Duration(math.Pow(natsMinRetryWait, float64(attempts))) * time.Second
 			if natsMaxReconnectWait > exponentialReconnectWait {
-				h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Increased reconnect to: %v", exponentialReconnectWait))
+				h.logger.Debug(natsHandlerLogTag, "Increased reconnect to: %v", exponentialReconnectWait)
 				return exponentialReconnectWait
 			}
-			h.logger.Debug(natsHandlerLogTag, fmt.Sprintf("Increased reconnect to: %v", natsMaxReconnectWait))
+			h.logger.Debug(natsHandlerLogTag, "Increased reconnect to: %v", natsMaxReconnectWait)
 			return natsMaxReconnectWait
 		}),
-		nats.MaxReconnects(natsConnectionMaxRetries),
+		nats.MaxReconnects(-1),
 		nats.Secure(connectionInfo.TLSConfig),
 	}
 
 	connection, err := h.connector(connectionInfo.Addr, natsOptions...)
+	// just log this error. even if currently cannot connect to nats, we can eventually
 	if err != nil {
 		return bosherr.WrapError(err, "Connecting to NATS")
 	}
+
 	h.connection = connection
 
 	settings := h.settingsService.GetSettings()
