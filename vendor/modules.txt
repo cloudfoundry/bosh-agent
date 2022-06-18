@@ -51,7 +51,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.2
 ## explicit; go 1.15
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.57
+# github.com/cloudfoundry/bosh-davcli v0.0.58
 ## explicit; go 1.18
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -59,7 +59,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.317
+# github.com/cloudfoundry/bosh-utils v0.0.318
 ## explicit; go 1.18
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -86,7 +86,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.59
+# github.com/cloudfoundry/socks5-proxy v0.2.60
 ## explicit; go 1.18
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.0.4
@@ -296,13 +296,13 @@ github.com/pmezard/go-difflib/difflib
 # github.com/sirupsen/logrus v1.8.1
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# github.com/stretchr/testify v1.7.1
+# github.com/stretchr/testify v1.7.2
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
-# go4.org/intern v0.0.0-20220301175310-a089fc204883
+# go4.org/intern v0.0.0-20220617035311-6925f38cc365
 ## explicit; go 1.13
 go4.org/intern
-# go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37
+# go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760
 ## explicit; go 1.11
 go4.org/unsafe/assume-no-moving-gc
 # golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
@@ -322,7 +322,7 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 ## explicit; go 1.12
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20220607020251-c690dde0001d
+# golang.org/x/net v0.0.0-20220617184016-355a448f1bc9
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -331,7 +331,7 @@ golang.org/x/net/html/charset
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d
+# golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -423,7 +423,7 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6
+# inet.af/netaddr v0.0.0-20220617031823-097006376321
 ## explicit; go 1.12
 inet.af/netaddr
 # inet.af/wf v0.0.0-20211204062712-86aaea0a7310
