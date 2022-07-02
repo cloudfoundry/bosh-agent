@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.2
-	github.com/cloudfoundry/bosh-davcli v0.0.59
+	github.com/cloudfoundry/bosh-davcli v0.0.60
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.319
+	github.com/cloudfoundry/bosh-utils v0.0.320
 	github.com/cloudfoundry/gosigar v1.3.4
 	github.com/containerd/cgroups v1.0.4
 	github.com/coreos/go-iptables v0.6.0
@@ -27,10 +27,10 @@ require (
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.5
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
-	golang.org/x/sys v0.0.0-20220624220833-87e55d714810
+	golang.org/x/net v0.0.0-20220630215102-69896b714898
+	golang.org/x/sys v0.0.0-20220702020025-31831981b65f
 	golang.org/x/tools v0.1.11-0.20220316014157-77aa08bb151a
 	inet.af/netaddr v0.0.0-20220617031823-097006376321
 	inet.af/wf v0.0.0-20211204062712-86aaea0a7310
@@ -63,7 +63,7 @@ require (
 	github.com/charithe/durationcheck v0.0.9 // indirect
 	github.com/chavacava/garif v0.0.0-20220316182200-5cad0b5181d4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.61 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.62 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/daixiang0/gci v0.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -188,7 +188,7 @@ require (
 	github.com/spf13/viper v1.11.0 // indirect
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
 	github.com/stbenjam/no-sprintf-host-port v0.1.1 // indirect
-	github.com/stretchr/objx v0.1.1 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/sylvia7788/contextcheck v1.0.4 // indirect
 	github.com/tdakkota/asciicheck v0.1.1 // indirect
