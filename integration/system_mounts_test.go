@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("SystemMounts", func() {
 	var (
-		registrySettings boshsettings.Settings
+		fileSettings boshsettings.Settings
 	)
 
 	Context("mounting /tmp", func() {
@@ -27,16 +27,13 @@ var _ = Describe("SystemMounts", func() {
 			err = testEnvironment.CleanupLogFile()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.SetupConfigDrive()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.UpdateAgentConfig("config-drive-agent-no-default-tmp-dir.json")
+			err = testEnvironment.UpdateAgentConfig("file-settings-agent-no-default-tmp-dir.json")
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()
 			Expect(err).ToNot(HaveOccurred())
 
-			registrySettings = boshsettings.Settings{
+			fileSettings = boshsettings.Settings{
 				AgentID: "fake-agent-id",
 				Mbus:    "https://mbus-user:mbus-pass@127.0.0.1:6868",
 				Blobstore: boshsettings.Blobstore{
@@ -50,7 +47,7 @@ var _ = Describe("SystemMounts", func() {
 		})
 
 		JustBeforeEach(func() {
-			err := testEnvironment.StartRegistry(registrySettings)
+			err := testEnvironment.CreateFilesettings(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.StartAgent()
@@ -62,7 +59,7 @@ var _ = Describe("SystemMounts", func() {
 				err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 				Expect(err).ToNot(HaveOccurred())
 
-				registrySettings.Disks = boshsettings.Disks{
+				fileSettings.Disks = boshsettings.Disks{
 					Ephemeral: "/dev/sdh",
 				}
 			})

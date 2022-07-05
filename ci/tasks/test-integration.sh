@@ -62,12 +62,6 @@ echo -e "\n Installing agent..."
 ${ssh_command} "sudo sv stop agent" >/dev/null 2>&1
 copy_to_remote_host ${bosh_agent_dir}/out/bosh-agent /var/vcap/bosh/bin/bosh-agent
 
-echo -e "\n Installing fake registry..."
-pushd ${bosh_agent_dir}/integration/fake-registry
-  go build .
-  copy_to_remote_host ./fake-registry /home/agent_test_user/fake-registry
-popd
-
 echo -e "\n Installing fake blobstore..."
 pushd ${bosh_agent_dir}/integration/fake-blobstore
   go build .

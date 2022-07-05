@@ -15,9 +15,9 @@ import (
 
 var _ = Describe("v1_apply", func() {
 	var (
-		agentClient      *integrationagentclient.IntegrationAgentClient
-		registrySettings settings.Settings
-		applySpec        applyspec.V1ApplySpec
+		agentClient  *integrationagentclient.IntegrationAgentClient
+		fileSettings settings.Settings
+		applySpec    applyspec.V1ApplySpec
 	)
 
 	BeforeEach(func() {
@@ -27,13 +27,10 @@ var _ = Describe("v1_apply", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
-		Expect(err).ToNot(HaveOccurred())
-
-		registrySettings = settings.Settings{
+		fileSettings = settings.Settings{
 			AgentID: "fake-agent-id",
 
 			// note that this SETS the username and password for HTTP message bus access
@@ -59,7 +56,7 @@ var _ = Describe("v1_apply", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartRegistry(registrySettings)
+		err := testEnvironment.CreateFilesettings(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.StartAgent()

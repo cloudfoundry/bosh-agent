@@ -16,16 +16,14 @@ var _ = Describe("ConfigDrive", func() {
 			err := testEnvironment.StopAgent()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.SetupConfigDrive()
-			Expect(err).ToNot(HaveOccurred())
-			registrySettings := boshsettings.Settings{
+			fileSettings := boshsettings.Settings{
 				AgentID: "fake-agent-id",
 			}
 
-			err = testEnvironment.StartRegistry(registrySettings)
+			err = testEnvironment.CreateFilesettings(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
+			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.StartAgent()

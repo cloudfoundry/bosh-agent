@@ -14,8 +14,8 @@ import (
 
 var _ = Describe("Instance Info", func() {
 	var (
-		agentClient      *integrationagentclient.IntegrationAgentClient
-		registrySettings settings.Settings
+		agentClient  *integrationagentclient.IntegrationAgentClient
+		fileSettings settings.Settings
 	)
 
 	BeforeEach(func() {
@@ -31,16 +31,13 @@ var _ = Describe("Instance Info", func() {
 		err = testEnvironment.CleanupSSH()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
 		networks, err := testEnvironment.GetVMNetworks()
 		Expect(err).ToNot(HaveOccurred())
 
-		registrySettings = settings.Settings{
+		fileSettings = settings.Settings{
 			AgentID: "fake-agent-id",
 
 			// note that this SETS the username and password for HTTP message bus access
@@ -62,7 +59,7 @@ var _ = Describe("Instance Info", func() {
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StartRegistry(registrySettings)
+		err = testEnvironment.CreateFilesettings(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

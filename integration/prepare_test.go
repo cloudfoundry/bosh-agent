@@ -14,9 +14,9 @@ import (
 
 var _ = Describe("prepare", func() {
 	var (
-		agentClient      *integrationagentclient.IntegrationAgentClient
-		registrySettings settings.Settings
-		applySpec        applyspec.V1ApplySpec
+		agentClient  *integrationagentclient.IntegrationAgentClient
+		fileSettings settings.Settings
+		applySpec    applyspec.V1ApplySpec
 	)
 
 	BeforeEach(func() {
@@ -26,13 +26,10 @@ var _ = Describe("prepare", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
-		Expect(err).ToNot(HaveOccurred())
-
-		registrySettings = settings.Settings{
+		fileSettings = settings.Settings{
 			AgentID: "fake-agent-id",
 
 			// note that this SETS the username and password for HTTP message bus access
@@ -58,7 +55,7 @@ var _ = Describe("prepare", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartRegistry(registrySettings)
+		err := testEnvironment.CreateFilesettings(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.StartAgent()
@@ -270,7 +267,7 @@ var _ = Describe("prepare", func() {
 
 		Context("when settings tmpfs is enabled", func() {
 			BeforeEach(func() {
-				registrySettings.Env.Bosh.Agent.Settings.TmpFS = true
+				fileSettings.Env.Bosh.Agent.Settings.TmpFS = true
 			})
 
 			It("mounts a tmpfs for /var/vcap/settings", func() {
@@ -302,7 +299,7 @@ var _ = Describe("prepare", func() {
 
 		Context("when job dir tmpfs is enabled", func() {
 			BeforeEach(func() {
-				registrySettings.Env.Bosh.JobDir.TmpFS = true
+				fileSettings.Env.Bosh.JobDir.TmpFS = true
 			})
 
 			It("mounts a tmpfs for /var/vcap/data/jobs", func() {

@@ -22,8 +22,8 @@ var _ = Describe("DeleteARPEntries", func() {
 	)
 
 	var (
-		agentClient      agentclient.AgentClient
-		registrySettings settings.Settings
+		agentClient  agentclient.AgentClient
+		fileSettings settings.Settings
 	)
 
 	var parseARPCacheIntoMap = func() (map[string]ARPCache, error) {
@@ -58,16 +58,13 @@ var _ = Describe("DeleteARPEntries", func() {
 		err := testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
-		Expect(err).ToNot(HaveOccurred())
-
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
-		registrySettings = settings.Settings{
+		fileSettings = settings.Settings{
 			AgentID: "fake-agent-id",
 
 			// note that this SETS the username and password for HTTP message bus access
@@ -88,7 +85,7 @@ var _ = Describe("DeleteARPEntries", func() {
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StartRegistry(registrySettings)
+		err = testEnvironment.CreateFilesettings(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.SetUpDummyNetworkInterface(testIP, testMacAddress)

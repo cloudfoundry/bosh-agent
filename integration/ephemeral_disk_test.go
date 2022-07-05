@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("EphemeralDisk", func() {
 	var (
-		registrySettings boshsettings.Settings
+		fileSettings boshsettings.Settings
 	)
 
 	Context("mounted on /var/vcap/data", func() {
@@ -26,16 +26,13 @@ var _ = Describe("EphemeralDisk", func() {
 			err = testEnvironment.CleanupLogFile()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.SetupConfigDrive()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
+			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()
 			Expect(err).ToNot(HaveOccurred())
 
-			registrySettings = boshsettings.Settings{
+			fileSettings = boshsettings.Settings{
 				AgentID: "fake-agent-id",
 				Mbus:    "https://mbus-user:mbus-pass@127.0.0.1:6868",
 				Blobstore: boshsettings.Blobstore{
@@ -49,7 +46,7 @@ var _ = Describe("EphemeralDisk", func() {
 		})
 
 		JustBeforeEach(func() {
-			err := testEnvironment.StartRegistry(registrySettings)
+			err := testEnvironment.CreateFilesettings(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.StartAgent()
@@ -58,7 +55,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 		Context("when ephemeral disk is provided in settings", func() {
 			BeforeEach(func() {
-				registrySettings.Disks = boshsettings.Disks{
+				fileSettings.Disks = boshsettings.Disks{
 					Ephemeral: "/dev/sdh",
 				}
 			})
@@ -171,7 +168,7 @@ var _ = Describe("EphemeralDisk", func() {
 				Context("when swap size is set to 0", func() {
 					BeforeEach(func() {
 						swapSize := uint64(0)
-						registrySettings.Env = boshsettings.Env{
+						fileSettings.Env = boshsettings.Env{
 							Bosh: boshsettings.BoshEnv{
 								SwapSizeInMB: &swapSize,
 							},

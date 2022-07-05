@@ -91,47 +91,6 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (
 	}, nil
 }
 
-func (t *TestEnvironment) SetupConfigDrive() error {
-	deviceNum, err := t.AttachLoopDevice(10)
-	if err != nil {
-		return err
-	}
-
-	setupConfigDriveTemplate := `
-sudo mkfs -t ext3 -m 1 -v %s
-sudo e2label %s config-2
-sudo udevadm settle
-sudo rm -rf /tmp/config-drive
-sudo mkdir /tmp/config-drive
-sudo mount /dev/disk/by-label/config-2 /tmp/config-drive
-sudo mkdir -p /tmp/config-drive/ec2/latest
-`
-	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, t.deviceMap[deviceNum], t.deviceMap[deviceNum])
-
-	_, err = t.RunCommand(setupConfigDriveScript)
-	if err != nil {
-		return err
-	}
-
-	err = t.CopyFileToPath(filepath.Join(t.AssetsDir(), "meta-data.json"), "/tmp/config-drive/ec2/latest/meta-data.json")
-	if err != nil {
-		return err
-	}
-
-	err = t.CopyFileToPath(filepath.Join(t.AssetsDir(), "user-data.json"), "/tmp/config-drive/ec2/latest/user-data.json")
-	if err != nil {
-		return err
-	}
-
-	_, ignoredErr := t.RunCommand("sudo fuser -km /tmp/config-drive")
-	if ignoredErr != nil {
-		t.logger.Error("test environment", "SetupConfigDrive: %s", ignoredErr)
-	}
-
-	_, err = t.RunCommand("sudo umount -l /tmp/config-drive")
-	return err
-}
-
 type byLen []string
 
 func (a byLen) Len() int           { return len(a) }
@@ -640,7 +599,7 @@ func (t *TestEnvironment) StartBlobstore() error {
 	return err
 }
 
-func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
+func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) error {
 	emptyCert := boshsettings.CertKeyPair{}
 	if settings.Env.Bosh.Mbus.Cert == emptyCert {
 		settings.Env.Bosh.Mbus.Cert.Certificate = agentCert
@@ -651,20 +610,14 @@ func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
 	if err != nil {
 		return err
 	}
-
-	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/settings.json")
+	err = ioutil.WriteFile(filepath.Join(t.AssetsDir(), "test.json"), settingsJSON, 0644)
 	if err != nil {
 		return err
 	}
-
-	t.RunCommand("sudo killall -9 fake-registry") //nolint:errcheck
-
-	_, err = t.RunCommand(
-		fmt.Sprintf(
-			`nohup /home/agent_test_user/fake-registry -user user -password pass -host 127.0.0.1 -port 9090 -instance instance-id -settings %s &> /dev/null &`,
-			strconv.Quote(string(settingsJSON)),
-		),
-	)
+	err = t.CopyFileToPath(filepath.Join(t.AssetsDir(), "test.json"), "/var/vcap/settings.json")
+	if err != nil {
+		return err
+	}
 	return err
 }
 

@@ -43,8 +43,8 @@ func setupDummyJob(agentClient agentclient.AgentClient) {
 
 var _ = Describe("run_script", func() {
 	var (
-		agentClient      agentclient.AgentClient
-		registrySettings settings.Settings
+		agentClient  agentclient.AgentClient
+		fileSettings settings.Settings
 	)
 
 	BeforeEach(func() {
@@ -54,13 +54,10 @@ var _ = Describe("run_script", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
-		Expect(err).ToNot(HaveOccurred())
-
-		registrySettings = settings.Settings{
+		fileSettings = settings.Settings{
 			AgentID: "fake-agent-id",
 
 			// note that this SETS the username and password for HTTP message bus access
@@ -81,7 +78,7 @@ var _ = Describe("run_script", func() {
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StartRegistry(registrySettings)
+		err = testEnvironment.CreateFilesettings(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.StartAgent()

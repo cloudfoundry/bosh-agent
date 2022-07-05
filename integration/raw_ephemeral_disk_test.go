@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("RawEphemeralDisk", func() {
 	var (
-		registrySettings boshsettings.Settings
+		fileSettings boshsettings.Settings
 	)
 
 	BeforeEach(func() {
@@ -24,16 +24,13 @@ var _ = Describe("RawEphemeralDisk", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
 		networks, err := testEnvironment.GetVMNetworks()
 		Expect(err).ToNot(HaveOccurred())
 
-		registrySettings = boshsettings.Settings{
+		fileSettings = boshsettings.Settings{
 			AgentID: "fake-agent-id",
 			Mbus:    "https://127.0.0.1:6868",
 			Blobstore: boshsettings.Blobstore{
@@ -57,12 +54,12 @@ var _ = Describe("RawEphemeralDisk", func() {
 			err = testEnvironment.AttachDevice("/dev/xvdc", 8, 1)
 			Expect(err).ToNot(HaveOccurred())
 
-			registrySettings.Disks = boshsettings.Disks{
+			fileSettings.Disks = boshsettings.Disks{
 				Ephemeral:    "/dev/sdh",
 				RawEphemeral: []boshsettings.DiskSettings{{ID: "1", Path: "/dev/xvdb"}, {ID: "2", Path: "/dev/xvdc"}},
 			}
 
-			err = testEnvironment.StartRegistry(registrySettings)
+			err = testEnvironment.CreateFilesettings(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.StartAgent()
