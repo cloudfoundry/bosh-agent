@@ -219,17 +219,21 @@ func (t *TestEnvironment) CleanupDataDir() error {
 }
 
 func (t *TestEnvironment) ResetDeviceMap() error {
-	for n, loopDevice := range t.deviceMap {
-		ignoredErr := t.DetachLoopDevice(loopDevice)
+	out, err := t.RunCommand("sudo losetup -a | cut -f1 -d:")
+	if err != nil {
+		return err
+	}
+	for _, loopDev := range strings.Split(strings.TrimSuffix(out, "\n"), "\n") {
+		ignoredErr := t.DetachLoopDevice(loopDev)
 		if ignoredErr != nil {
 			t.logger.Error("test environment", "ResetDeviceMap: %s", ignoredErr)
 		}
-		_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
-		if err != nil {
-			return err
-		}
-		t.deviceMap = make(map[int]string)
 	}
+	_, err = t.RunCommand("sudo rm -f /virtualfs-*")
+	if err != nil {
+		return err
+	}
+	t.deviceMap = make(map[int]string)
 	return nil
 }
 

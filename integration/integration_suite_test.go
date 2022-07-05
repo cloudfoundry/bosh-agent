@@ -47,9 +47,6 @@ func TestIntegration(t *testing.T) {
 		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.DetachLoopDevices()
-		Expect(err).ToNot(HaveOccurred())
-
 		err = testEnvironment.ResetDeviceMap()
 		Expect(err).ToNot(HaveOccurred())
 	})
