@@ -387,10 +387,14 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 
 		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
 			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" {
-				_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
-				if ignoredErr != nil {
-					t.logger.Error("test environment", "DetachPartitionedRootDevice: %s", ignoredErr)
+				for _, path := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
+					_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", path))
+					if ignoredErr != nil {
+						t.logger.Error("test environment", "DetachPartitionedRootDevice: %s", ignoredErr)
+					}
+
 				}
+
 			}
 
 			if i > 0 {
