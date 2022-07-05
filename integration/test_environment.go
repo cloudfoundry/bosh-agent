@@ -107,9 +107,11 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
 		if mountPoint != "" {
-			_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
-			if ignoredErr != nil {
-				t.logger.Error("test environment", "DetachDevice: %s", ignoredErr)
+			out, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
+			// running fuser -k also kills the ssh session, this will always produce an error
+			// only print the error if out is not empty.
+			if ignoredErr != nil && out != "" {
+				t.logger.Error("test environment", "DetachDevice: %s, Msg: %s", ignoredErr, out)
 			}
 			_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
 			if ignoredErr != nil {
