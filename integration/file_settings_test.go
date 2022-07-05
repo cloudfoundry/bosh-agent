@@ -1,17 +1,14 @@
 package integration_test
 
 import (
-	"strings"
-	"time"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
-var _ = Describe("ConfigDrive", func() {
-	Context("when vm is using config drive", func() {
+var _ = Describe("FileSettings", func() {
+	Context("when vm is using file settings", func() {
 		BeforeEach(func() {
 			err := testEnvironment.StopAgent()
 			Expect(err).ToNot(HaveOccurred())
@@ -38,7 +35,7 @@ var _ = Describe("ConfigDrive", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("using config drive to get registry URL", func() {
+		It("creates /var/vcap/bosh/settings.json", func() {
 			var settingsJSON string
 			var err error
 			Eventually(func() error {
@@ -46,13 +43,6 @@ var _ = Describe("ConfigDrive", func() {
 				return err
 			}).ShouldNot(HaveOccurred())
 			Expect(settingsJSON).To(ContainSubstring("fake-agent-id"))
-		})
-
-		It("config drive is being unmounted", func() {
-			Eventually(func() int {
-				result, _ := testEnvironment.RunCommand("sudo mount")
-				return strings.Count(result, "/dev/loop2")
-			}, 5*time.Second, 1*time.Second).Should(BeZero())
 		})
 	})
 })
