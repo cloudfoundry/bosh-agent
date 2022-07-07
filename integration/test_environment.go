@@ -631,9 +631,12 @@ func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) err
 		settings.Env.Bosh.Mbus.Cert.Certificate = agentCert
 		settings.Env.Bosh.Mbus.Cert.PrivateKey = agentKey
 	}
-	settings.AgentID = "fake-agent-id"
-	settings.Mbus = "https://mbus-user:mbus-pass@127.0.0.1:6868"
-
+	if settings.AgentID == "" {
+		settings.AgentID = "fake-agent-id"
+	}
+	if settings.Mbus == "" {
+		settings.Mbus = "https://mbus-user:mbus-pass@127.0.0.1:6868"
+	}
 	settingsJSON, err := json.Marshal(settings)
 	if err != nil {
 		return err

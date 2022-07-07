@@ -43,18 +43,20 @@ var _ = Describe("EphemeralDisk", func() {
 
 		Context("when ephemeral disk is provided in settings", func() {
 
+			BeforeEach(func() {
+
+				fileSettings.Disks = settings.Disks{
+					Ephemeral: "/dev/sdh",
+				}
+				err := testEnvironment.CreateFilesettings(fileSettings)
+				Expect(err).ToNot(HaveOccurred())
+
+			})
 			Context("when ephemeral disk exists", func() {
 
 				BeforeEach(func() {
 
 					err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
-					Expect(err).ToNot(HaveOccurred())
-
-					fileSettings.Disks = settings.Disks{
-						Ephemeral: "/dev/sdh",
-					}
-
-					err = testEnvironment.CreateFilesettings(fileSettings)
 					Expect(err).ToNot(HaveOccurred())
 
 				})

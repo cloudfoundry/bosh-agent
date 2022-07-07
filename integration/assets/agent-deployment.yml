@@ -6,6 +6,8 @@ instance_groups:
       - az1
     env:
       bosh:
+        ipv6:
+          enable: true
         authorized_keys: [((ssh_creds.public_key))]
     instances: 1
     jobs: []
