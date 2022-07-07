@@ -7,37 +7,21 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 var _ = Describe("apply", func() {
 	var (
-		agentClient  agentclient.AgentClient
 		fileSettings settings.Settings
 		applySpec    applyspec.ApplySpec
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupLogFile()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+		err := testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -52,7 +36,6 @@ var _ = Describe("apply", func() {
 				Ephemeral: "/dev/sdh",
 			},
 		}
-
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -90,17 +73,21 @@ var _ = Describe("apply", func() {
 				},
 			},
 		}
+		err = testEnvironment.CreateFilesettings(fileSettings)
+		Expect(err).ToNot(HaveOccurred())
+
+	})
+
+	AfterEach(func() {
+		err := testEnvironment.DetachDevice("/dev/sdh")
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.CreateFilesettings(fileSettings)
-		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StartAgent()
+		// StartAgentTunnel also acts as a wait condition for the agent to have fully started. Copying over the blobs before it fully starts, will result in issues because the agent cleans up dirs on start.
+		err := testEnvironment.StartAgentTunnel()
 		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
-		Expect(err).NotTo(HaveOccurred())
 
 		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
@@ -111,21 +98,11 @@ var _ = Describe("apply", func() {
 		Expect(err).NotTo(HaveOccurred())
 		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
 		Expect(err).NotTo(HaveOccurred())
+
 	})
-
-	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
-	})
-
 	It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
-		err := agentClient.Apply(applySpec)
+
+		err := testEnvironment.AgentClient.Apply(applySpec)
 		Expect(err).NotTo(HaveOccurred())
 
 		output, err := testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/run/foobar")

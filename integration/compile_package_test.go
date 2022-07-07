@@ -12,22 +12,17 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	"github.com/cloudfoundry/bosh-agent/agentclient"
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("compile_package", func() {
 	var (
-		agentClient  *integrationagentclient.IntegrationAgentClient
 		fileSettings settings.Settings
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
@@ -37,11 +32,6 @@ var _ = Describe("compile_package", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -63,21 +53,12 @@ var _ = Describe("compile_package", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
+		err := testEnvironment.StartAgentTunnel()
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -106,7 +87,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("compiles and stores it to the blobstore", func() {
-			_, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			_, err := testEnvironment.AgentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				PackageGetSignedURL: dummyPackageSignedURL,
 				UploadSignedURL:     compiledDummyPackagePutURL,
 
@@ -123,7 +104,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("allows passing bare sha1 for legacy support", func() {
-			_, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			_, err := testEnvironment.AgentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				Name:                "fake",
 				Version:             "1",
 				PackageGetSignedURL: dummyPackageSignedURL,
@@ -139,7 +120,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("does not skip verification when digest argument is missing", func() {
-			_, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			_, err := testEnvironment.AgentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				Name:                "fake",
 				Version:             "1",
 				PackageGetSignedURL: dummyPackageSignedURL,
@@ -152,7 +133,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("compiles dependencies and stores them to the blobstore", func() {
-			_, err := agentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
+			_, err := testEnvironment.AgentClient.CompilePackageWithSignedURL(action.CompilePackageWithSignedURLRequest{
 				PackageGetSignedURL: dummyPackageSignedURL,
 				UploadSignedURL:     compiledDummyPackagePutURL,
 				Digest:              multiDigest,
@@ -180,7 +161,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("compiles and stores it to the blobstore", func() {
-			result, err := agentClient.CompilePackage(agentclient.BlobRef{
+			result, err := testEnvironment.AgentClient.CompilePackage(agentclient.BlobRef{
 				Name:        "fake",
 				Version:     "1",
 				BlobstoreID: "123",
@@ -195,7 +176,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("allows passing bare sha1 for legacy support", func() {
-			_, err := agentClient.CompilePackage(agentclient.BlobRef{
+			_, err := testEnvironment.AgentClient.CompilePackage(agentclient.BlobRef{
 				Name:        "fake",
 				Version:     "1",
 				BlobstoreID: "123",
@@ -211,7 +192,7 @@ var _ = Describe("compile_package", func() {
 		})
 
 		It("does not skip verification when digest argument is missing", func() {
-			_, err := agentClient.CompilePackage(agentclient.BlobRef{
+			_, err := testEnvironment.AgentClient.CompilePackage(agentclient.BlobRef{
 				Name:        "fake",
 				Version:     "1",
 				BlobstoreID: "123",

@@ -12,7 +12,7 @@
       "Sources": [
         {
           "Type": "File",
-          "settingsFilePath": "/var/vcap/settings.json"
+          "SettingsPath": "/var/vcap/settings.json"
 
         }
       ]

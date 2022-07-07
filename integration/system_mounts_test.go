@@ -18,24 +18,14 @@ var _ = Describe("SystemMounts", func() {
 	Context("mounting /tmp", func() {
 
 		BeforeEach(func() {
-			err := testEnvironment.StopAgent()
-			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.CleanupDataDir()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.CleanupLogFile()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.UpdateAgentConfig("file-settings-agent-no-default-tmp-dir.json")
+			err := testEnvironment.UpdateAgentConfig("file-settings-agent-no-default-tmp-dir.json")
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()
 			Expect(err).ToNot(HaveOccurred())
 
 			fileSettings = boshsettings.Settings{
-				AgentID: "fake-agent-id",
-				Mbus:    "https://mbus-user:mbus-pass@127.0.0.1:6868",
 				Blobstore: boshsettings.Blobstore{
 					Type: "local",
 					Options: map[string]interface{}{
@@ -46,14 +36,6 @@ var _ = Describe("SystemMounts", func() {
 			}
 		})
 
-		JustBeforeEach(func() {
-			err := testEnvironment.CreateFilesettings(fileSettings)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.StartAgent()
-			Expect(err).ToNot(HaveOccurred())
-		})
-
 		Context("when ephemeral disk exists", func() {
 			BeforeEach(func() {
 				err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
@@ -62,6 +44,9 @@ var _ = Describe("SystemMounts", func() {
 				fileSettings.Disks = boshsettings.Disks{
 					Ephemeral: "/dev/sdh",
 				}
+
+				err = testEnvironment.CreateFilesettings(fileSettings)
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			AfterEach(func() {

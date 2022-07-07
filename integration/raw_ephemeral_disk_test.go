@@ -15,10 +15,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
@@ -31,8 +28,6 @@ var _ = Describe("RawEphemeralDisk", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = boshsettings.Settings{
-			AgentID: "fake-agent-id",
-			Mbus:    "https://127.0.0.1:6868",
 			Blobstore: boshsettings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -61,16 +56,10 @@ var _ = Describe("RawEphemeralDisk", func() {
 
 			err = testEnvironment.CreateFilesettings(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.StartAgent()
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
-			err := testEnvironment.StopAgent()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.DetachDevice("/dev/sdh")
+			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.DetachDevice("/dev/xvdb")

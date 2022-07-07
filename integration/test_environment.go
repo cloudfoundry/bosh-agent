@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
+	"github.com/cloudfoundry/bosh-agent/settings"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
@@ -74,6 +75,11 @@ type TestEnvironment struct {
 	logger           logger.Logger
 	deviceMap        map[int]string
 	sshClient        *ssh.Client
+	AgentClient      *integrationagentclient.IntegrationAgentClient
+	AgentSettings    settings.Settings
+	mbusUser         string
+	mbusPass         string
+	mbusPort         int
 }
 
 func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (*TestEnvironment, error) {
@@ -88,6 +94,9 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (
 		logger:           logger.NewLogger(logLevel),
 		deviceMap:        make(map[int]string),
 		sshClient:        client,
+		mbusUser:         "mbus-user",
+		mbusPass:         "mbus-pass",
+		mbusPort:         6868,
 	}, nil
 }
 
@@ -100,6 +109,8 @@ func (a byLen) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (t *TestEnvironment) DetachDevice(dir string) error {
 	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
 	if err != nil {
+
+		t.logger.Error("test environment", "DetachDevice: %s, Msg: %s", err, mountPoints)
 		return err
 	}
 
@@ -498,6 +509,10 @@ func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
 }
 
 func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
+	_, err := t.RunCommand("sudo rm -f /var/vcap/bosh/agent.json")
+	if err != nil {
+		return err
+	}
 	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), configFile), "/var/vcap/bosh/agent.json")
 }
 
@@ -547,45 +562,46 @@ func (er emptyReader) Read(_ []byte) (int, error) {
 	return 0, nil
 }
 
-func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort int) (*integrationagentclient.IntegrationAgentClient, error) {
+func (t *TestEnvironment) StartAgentTunnel() error {
 	if t.sshTunnelProc != nil {
-		return nil, fmt.Errorf("Already running")
+		return fmt.Errorf("Already running")
 	}
 
 	sshCmd := boshsys.Command{
 		Name: "ssh",
 		Args: []string{
 			"-N",
-			fmt.Sprintf("-L16868:127.0.0.1:%d", mbusPort),
+			fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort),
 			t.agentIP(),
 		},
 		Stdin: emptyReader{},
 	}
 	newTunnelProc, err := t.cmdRunner.RunComplexCommandAsync(sshCmd)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	t.sshTunnelProc = newTunnelProc
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
-	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
-	client := integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
+	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", t.mbusUser, t.mbusPass)
+	t.AgentClient = integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
 
 	for i := 1; i < 90; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
 		time.Sleep(1 * time.Second)
-		_, err = client.Ping()
+		_, err = t.AgentClient.Ping()
 		if err == nil {
-			break
+			return nil
 		}
-		t.logger.Debug("test environment", err.Error())
 	}
-	return client, err
+	t.logger.Error("test environment", err.Error())
+	return err
+
 }
 
 func (t *TestEnvironment) StopAgentTunnel() error {
 	if t.sshTunnelProc == nil {
-		return fmt.Errorf("Not running")
+		return nil
 	}
 	t.sshTunnelProc.Wait()
 	ignoredErr := t.sshTunnelProc.TerminateNicely(5 * time.Second)
@@ -615,6 +631,8 @@ func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) err
 		settings.Env.Bosh.Mbus.Cert.Certificate = agentCert
 		settings.Env.Bosh.Mbus.Cert.PrivateKey = agentKey
 	}
+	settings.AgentID = "fake-agent-id"
+	settings.Mbus = "https://mbus-user:mbus-pass@127.0.0.1:6868"
 
 	settingsJSON, err := json.Marshal(settings)
 	if err != nil {
@@ -624,6 +642,13 @@ func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) err
 	if err != nil {
 		return err
 	}
+	_, err = t.RunCommand("sudo rm -f /var/vcap/settings.json")
+	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/settings.json")
+	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/update_settings.json")
+	if err != nil {
+		return err
+	}
+
 	err = t.CopyFileToPath(filepath.Join(t.AssetsDir(), "test.json"), "/var/vcap/settings.json")
 	if err != nil {
 		return err
@@ -652,7 +677,7 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 	s, err := t.sshClient.NewSession()
 
 	if err != nil {
-		t.logger.Debug("Remote Cmd Runner", "NEWSESSION FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
+		t.logger.Error("Remote Cmd Runner", "NEWSESSION FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
 		return "", errors.WrapError(err, "Unable to establish SSH session: ")
 	}
 	defer s.Close()
@@ -666,6 +691,11 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 }
 
 func (t *TestEnvironment) CreateSensitiveBlobFromAsset(assetPath, blobID string) error {
+	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/sensitive_blobs")
+	if err != nil {
+		return err
+	}
+
 	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), assetPath), fmt.Sprintf("/var/vcap/data/sensitive_blobs/%s", blobID))
 }
 

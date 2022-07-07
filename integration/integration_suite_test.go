@@ -39,16 +39,36 @@ func TestIntegration(t *testing.T) {
 		err = testEnvironment.EnsureRootDeviceIsLargeEnough()
 		Expect(err).ToNot(HaveOccurred())
 
+		output, err := testEnvironment.RunCommand("sudo chmod +x /var/vcap/bosh/bin/bosh-agent && sudo /var/vcap/bosh/bin/bosh-agent -v")
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(output).To(ContainSubstring("[DEV BUILD]"))
+
 		return []byte("done")
 
 	}, func(in []byte) {})
+
+	JustBeforeEach(func() {
+		err := testEnvironment.StartAgent()
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	AfterEach(func() {
 
 		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
+		err = testEnvironment.CleanupLogFile()
+		Expect(err).ToNot(HaveOccurred())
+
 		err = testEnvironment.ResetDeviceMap()
 		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.StopAgentTunnel()
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.StopAgent()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	RunSpecs(t, "Integration Suite")

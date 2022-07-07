@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 
 	"strings"
@@ -14,15 +13,11 @@ import (
 
 var _ = Describe("Instance Info", func() {
 	var (
-		agentClient  *integrationagentclient.IntegrationAgentClient
 		fileSettings settings.Settings
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
@@ -38,11 +33,6 @@ var _ = Describe("Instance Info", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -63,23 +53,14 @@ var _ = Describe("Instance Info", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	JustBeforeEach(func() {
-		err := testEnvironment.StartAgent()
+	AfterEach(func() {
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
-		Expect(err).NotTo(HaveOccurred())
 	})
 
-	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
+	JustBeforeEach(func() {
+		err := testEnvironment.StartAgentTunnel()
 		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("on ubuntu when a new user is created", func() {
@@ -96,7 +77,7 @@ var _ = Describe("Instance Info", func() {
 		})
 
 		It("should contain the correct home directory permissions", func() {
-			err := agentClient.SSH("setup", action.SSHParams{
+			err := testEnvironment.AgentClient.SSH("setup", action.SSHParams{
 				User:      "username",
 				PublicKey: "public-key",
 			})

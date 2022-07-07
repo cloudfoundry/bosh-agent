@@ -11,15 +11,13 @@ import (
 
 var _ = Describe("nats firewall", func() {
 	BeforeEach(func() {
-	})
-
-	It("sets up the outgoing nats firewall", func() {
-		format.MaxLength = 0
 		//restore original settings of bosh from initial deploy of this VM.
 		_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 		Expect(err).ToNot(HaveOccurred())
-		err = testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
+	})
+	It("sets up the outgoing nats firewall", func() {
+		format.MaxLength = 0
+
 		//Wait a maximum of 300 seconds
 		Eventually(func() string {
 			logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current")
@@ -45,13 +43,5 @@ var _ = Describe("nats firewall", func() {
 		`, boshEnv))
 		Expect(out).To(MatchRegexp("INFO.*server_id.*version.*host.*"))
 		Expect(err).To(BeNil())
-
 	})
-
-	AfterEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-	})
-
 })

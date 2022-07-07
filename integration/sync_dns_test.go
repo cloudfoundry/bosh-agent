@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -18,7 +17,6 @@ import (
 
 var _ = Describe("sync_dns", func() {
 	var (
-		agentClient  *integrationagentclient.IntegrationAgentClient
 		fileSettings settings.Settings
 
 		newRecordsVersion uint64
@@ -27,10 +25,7 @@ var _ = Describe("sync_dns", func() {
 	BeforeEach(func() {
 		newRecordsVersion = uint64(time.Now().Unix())
 
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
@@ -40,11 +35,6 @@ var _ = Describe("sync_dns", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -72,21 +62,12 @@ var _ = Describe("sync_dns", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
+		err := testEnvironment.StartAgentTunnel()
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -124,7 +105,7 @@ var _ = Describe("sync_dns", func() {
 
 		It("sends a sync_dns_with_signed_url message to the agent", func() {
 			signedURL := "http://127.0.0.1:9091/get_package/records.json"
-			response, err := agentClient.SyncDNSWithSignedURL(signedURL, blobDigest, newRecordsVersion)
+			response, err := testEnvironment.AgentClient.SyncDNSWithSignedURL(signedURL, blobDigest, newRecordsVersion)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(response).To(Equal("synced"))
 
@@ -182,7 +163,7 @@ var _ = Describe("sync_dns", func() {
 			_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/blobs/new-dns-records")
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = agentClient.SyncDNS("new-dns-records", strings.TrimSpace(blobDigest), newRecordsVersion)
+			_, err = testEnvironment.AgentClient.SyncDNS("new-dns-records", strings.TrimSpace(blobDigest), newRecordsVersion)
 			Expect(err).NotTo(HaveOccurred())
 
 			newEtcHosts, err := testEnvironment.RunCommand("sudo cat /etc/hosts")
@@ -233,7 +214,7 @@ var _ = Describe("sync_dns", func() {
 			_, err = testEnvironment.RunCommand("sudo mv /tmp/new-dns-records /var/vcap/data/new-dns-records")
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = agentClient.SyncDNS("new-dns-records", "", 1)
+			_, err = testEnvironment.AgentClient.SyncDNS("new-dns-records", "", 1)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("No digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
 		})

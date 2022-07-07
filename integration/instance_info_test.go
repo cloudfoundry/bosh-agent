@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/agentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 
 	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
@@ -12,15 +11,11 @@ import (
 
 var _ = Describe("Instance Info", func() {
 	var (
-		agentClient  agentclient.AgentClient
 		fileSettings settings.Settings
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
@@ -30,18 +25,12 @@ var _ = Describe("Instance Info", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
 					"blobstore_path": "/var/vcap/data",
 				},
 			},
-
 			Disks: settings.Disks{
 				Ephemeral: "/dev/sdh",
 			},
@@ -54,29 +43,21 @@ var _ = Describe("Instance Info", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	JustBeforeEach(func() {
-		err := testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
-		Expect(err).NotTo(HaveOccurred())
-	})
-
 	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("on ubuntu", func() {
+
+		JustBeforeEach(func() {
+			err := testEnvironment.StartAgentTunnel()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("apply spec saves instance info to file and is readable by anyone", func() {
 			applySpec := applyspec.ApplySpec{ConfigurationHash: "fake-desired-config-hash", NodeID: "node-id01-123f-r2344", AvailabilityZone: "ex-az", Deployment: "deployment-name", Name: "instance-name"}
-			err := agentClient.Apply(applySpec)
+			err := testEnvironment.AgentClient.Apply(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			verifyFilePermissions("/var/vcap/instance/id", testEnvironment)

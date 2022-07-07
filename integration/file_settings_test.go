@@ -4,35 +4,33 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 var _ = Describe("FileSettings", func() {
 	Context("when vm is using file settings", func() {
 		BeforeEach(func() {
-			err := testEnvironment.StopAgent()
-			Expect(err).ToNot(HaveOccurred())
-
-			fileSettings := boshsettings.Settings{
+			fileSettings := settings.Settings{
 				AgentID: "fake-agent-id",
+				Blobstore: settings.Blobstore{
+					Type: "local",
+					Options: map[string]interface{}{
+						"blobstore_path": "/var/vcap/data",
+					},
+				},
+				Disks: settings.Disks{
+					Ephemeral: "/dev/sdh",
+				},
 			}
 
-			err = testEnvironment.CreateFilesettings(fileSettings)
+			err := testEnvironment.CreateFilesettings(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.StartAgent()
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			err := testEnvironment.CleanupDataDir()
+			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.DetachLoopDevices()
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("creates /var/vcap/bosh/settings.json", func() {
@@ -43,6 +41,11 @@ var _ = Describe("FileSettings", func() {
 				return err
 			}).ShouldNot(HaveOccurred())
 			Expect(settingsJSON).To(ContainSubstring("fake-agent-id"))
+		})
+
+		AfterEach(func() {
+			err := testEnvironment.DetachDevice("/dev/sdh")
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })

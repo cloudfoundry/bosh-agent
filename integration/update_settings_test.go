@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 
 	. "github.com/onsi/ginkgo"
@@ -10,15 +9,11 @@ import (
 
 var _ = Describe("CertManager", func() {
 	var (
-		agentClient  *integrationagentclient.IntegrationAgentClient
 		fileSettings settings.Settings
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
@@ -28,11 +23,6 @@ var _ = Describe("CertManager", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -52,23 +42,14 @@ var _ = Describe("CertManager", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	JustBeforeEach(func() {
-		err := testEnvironment.StartAgent()
+	AfterEach(func() {
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
-		Expect(err).NotTo(HaveOccurred())
 	})
 
-	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
+	JustBeforeEach(func() {
+		err := testEnvironment.StartAgentTunnel()
 		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("on ubuntu", func() {
@@ -87,7 +68,7 @@ QTETMBEGA1U=
 -----END CERTIFICATE-----`
 			settings := settings.UpdateSettings{TrustedCerts: cert}
 
-			err := agentClient.UpdateSettings(settings)
+			err := testEnvironment.AgentClient.UpdateSettings(settings)
 
 			Expect(err).NotTo(HaveOccurred())
 
