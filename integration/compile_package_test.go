@@ -185,10 +185,11 @@ var _ = Describe("compile_package", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 
-			out, err := testEnvironment.RunCommand(`sudo /bin/bash -c "zgrep 'dummy contents of dummy package file' /var/vcap/data/blobs/* | wc -l"`)
+			out, err := testEnvironment.RunCommand(`sudo /bin/bash -c "zgrep 'dummy contents of dummy package file' /var/vcap/data/blobs/* 2>&1 | wc -l"`)
 			Expect(err).NotTo(HaveOccurred(), out)
 			// we expect both the original, uncompiled copy and the compiled copy of the package to exist
 			Expect(strings.Trim(out, "\n")).To(Equal("2"))
+
 		})
 
 		It("does not skip verification when digest argument is missing", func() {

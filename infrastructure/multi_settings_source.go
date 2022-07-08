@@ -21,7 +21,7 @@ func NewMultiSettingsSource(sources ...boshsettings.Source) (boshsettings.Source
 	return &MultiSettingsSource{sources: sources}, err
 }
 
-func (s *MultiSettingsSource) GetSources() []boshsettings.Source{
+func (s *MultiSettingsSource) GetSources() []boshsettings.Source {
 	return s.sources
 }
 
@@ -43,7 +43,6 @@ func (s *MultiSettingsSource) PublicSSHKeyForUsername(username string) (string, 
 
 	return "", bosherr.WrapErrorf(err, "Getting public SSH key for '%s'", username)
 }
-
 
 func (s *MultiSettingsSource) Settings() (boshsettings.Settings, error) {
 	if s.selectedSettingsSource != nil {

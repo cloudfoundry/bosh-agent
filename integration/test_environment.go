@@ -295,12 +295,20 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 		if ignoredErr != nil {
 			t.logger.Error("test environment", "EnsureRootDeviceIsLargeEnough: %s", ignoredErr)
 		}
-
-		_, err = t.RunCommand("sudo parted /dev/sda ---pretend-input-tty resizepart 1 yes 10000M")
+		_, err = t.RunCommand("cat /etc/lsb-release | grep -i jammy")
+		// parteds behaviour changed and providing yes via params stopped working for jammy.
+		// so test if we're running on jammy and adjust parted command
 		if err != nil {
-			return err
+			_, err = t.RunCommand("sudo parted /dev/sda ---pretend-input-tty resizepart 1 yes 10000M")
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = t.RunCommand("yes | sudo parted /dev/sda ---pretend-input-tty resizepart 1 10000M")
+			if err != nil {
+				return err
+			}
 		}
-
 		_, err = t.RunCommand("sudo resize2fs -f /dev/sda1")
 		if err != nil {
 			return err
@@ -646,7 +654,13 @@ func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) err
 		return err
 	}
 	_, err = t.RunCommand("sudo rm -f /var/vcap/settings.json")
+	if err != nil {
+		return err
+	}
 	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/settings.json")
+	if err != nil {
+		return err
+	}
 	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/update_settings.json")
 	if err != nil {
 		return err

@@ -57,7 +57,6 @@ var _ = Describe("SettingsSourceFactory", func() {
 					}
 				})
 
-
 				It("returns a settings source that uses config drive to fetch settings", func() {
 					settingsSource, err := factory.New()
 					Expect(err).ToNot(HaveOccurred())
