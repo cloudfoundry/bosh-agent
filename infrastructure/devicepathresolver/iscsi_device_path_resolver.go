@@ -16,6 +16,13 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+const maxRecentDevices = 10
+
+type recentDevice struct {
+	path     string
+	resolved time.Time
+}
+
 // iscsiDevicePathResolver resolves device path by performing Open-iscsi discovery
 type iscsiDevicePathResolver struct {
 	diskWaitTimeout time.Duration
@@ -25,6 +32,7 @@ type iscsiDevicePathResolver struct {
 	dirProvider     boshdirs.Provider
 	logTag          string
 	logger          boshlog.Logger
+	recentDevices   map[string]recentDevice
 }
 
 func NewIscsiDevicePathResolver(
@@ -43,6 +51,7 @@ func NewIscsiDevicePathResolver(
 		dirProvider:     dirProvider,
 		logTag:          "iscsiResolver",
 		logger:          logger,
+		recentDevices:   make(map[string]recentDevice),
 	}
 }
 
@@ -52,12 +61,17 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 		return "", false, bosherr.WrapError(err, "Checking disk settings")
 	}
 
+	devicePath, found := ispr.getFromCache(diskSettings.ID)
+	if found {
+		ispr.logger.Info(ispr.logTag, "Found remembered path '%s'", devicePath)
+		return devicePath, false, nil
+	}
+
 	// fetch existing path if disk is last mounted
 	lastDiskID, err := ispr.lastMountedCid()
 	if err != nil {
 		return "", false, bosherr.WrapError(err, "Fetching last mounted disk CID")
 	}
-
 	ispr.logger.Debug(ispr.logTag, "Last mounted disk CID: '%s'", lastDiskID)
 
 	mappedDevices, err := ispr.getMappedDevices()
@@ -73,11 +87,33 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 
 	ispr.logger.Debug(ispr.logTag, "Existing real paths '%+v'", existingPaths)
 	if len(existingPaths) > 2 {
+		// KLUDGE (2021-12 review): why should we accept 2 but not 3 attached
+		// (and partitioned) devices here? When migrating from an old disk to
+		// a new one, we'll typically find the old disk here (we know it
+		// because the disk ID is the lat mounted CID that has been written
+		// on disk), and the new one after iSCSI discovery/logout/login in
+		// getDevicePathAfterConnectTarget() below.
+		//
+		// Second concern is that Bosh allows many persistent disks to be
+		// mounted. So, this limitation here seems inappropriate.
+		// See also: https://www.starkandwayne.com/blog/bosh-multiple-disks/
+		//
+		// It really seems that the original implementer have made an invalid
+		// assumption here.
 		return "", false, bosherr.WrapError(err, "More than 2 persistent disks attached")
 	}
 
-	if lastDiskID == diskSettings.ID && len(existingPaths) > 0 {
+	alreadySeen := lastDiskID == diskSettings.ID
+	brandNew := lastDiskID == ""
+	isPartitionned := len(existingPaths) > 0
+	ispr.logger.Debug(ispr.logTag, "Found %d existing paths (alreadySeen:'%+v', brandNew:'%+v', isPartitionned:'%+v')", len(existingPaths), alreadySeen, brandNew, isPartitionned)
+	if (alreadySeen || brandNew) && isPartitionned {
+		// KLUDGE (2021-12 review): when facing 2 devices here, why would we
+		// arbitrarily choose the first one. How do we know this is the right
+		// one matching the disk ID? Practically, this algorithm seems to
+		// work reliably only when mounting one new device at a time.
 		ispr.logger.Info(ispr.logTag, "Found existing path '%s'", existingPaths[0])
+		ispr.putToCache(diskSettings.ID, existingPaths[0])
 		return existingPaths[0], false, nil
 	}
 
@@ -96,6 +132,7 @@ func (ispr iscsiDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 		return "", false, bosherr.WrapError(err, "get device path after connect iSCSI target")
 	}
 
+	ispr.putToCache(diskSettings.ID, realPath)
 	return realPath, false, nil
 }
 
@@ -138,14 +175,20 @@ func (ispr iscsiDevicePathResolver) getMappedDevices() ([]string, error) {
 // getDevicePaths: to find iSCSI device paths
 // a "–part1" suffix device based on origin multipath device
 // last mounted disk already have this device, new disk doesn't have this device yet
-func (ispr iscsiDevicePathResolver) getDevicePaths(devices []string, shouldExist bool) ([]string, error) {
+func (ispr iscsiDevicePathResolver) getDevicePaths(devices []string, alreadyPartitioned bool) ([]string, error) {
 	var partitionRegexp = regexp.MustCompile("-part1")
 	var paths []string
 
 	for _, device := range devices {
-		exist := partitionRegexp.MatchString(device)
-		if exist == shouldExist {
-			matchedPath := path.Join("/dev/mapper", strings.Split(strings.Fields(device)[0], "-")[0])
+		fields := strings.Fields(device)
+		if len(fields) == 0 {
+			ispr.logger.Warn(ispr.logTag, "unexpected device in dmsetup output: '%+v'", device)
+			continue
+		}
+		deviceName := fields[0]
+		firstPartitionExists := partitionRegexp.MatchString(deviceName)
+		if firstPartitionExists == alreadyPartitioned {
+			matchedPath := path.Join("/dev/mapper", strings.Split(deviceName, "-")[0])
 			ispr.logger.Debug(ispr.logTag, "path in device list: '%+v'", matchedPath)
 			paths = append(paths, matchedPath)
 		}
@@ -226,17 +269,49 @@ func (ispr iscsiDevicePathResolver) getDevicePathAfterConnectTarget(existingPath
 
 func (ispr iscsiDevicePathResolver) lastMountedCid() (string, error) {
 	managedDiskSettingsPath := filepath.Join(ispr.dirProvider.BoshDir(), "managed_disk_settings.json")
-	var lastMountedCid string
 
-	if ispr.fs.FileExists(managedDiskSettingsPath) {
-		contents, err := ispr.fs.ReadFile(managedDiskSettingsPath)
-		if err != nil {
-			return "", bosherr.WrapError(err, "Reading managed_disk_settings.json")
-		}
-		lastMountedCid = string(contents)
-
-		return lastMountedCid, nil
+	if !ispr.fs.FileExists(managedDiskSettingsPath) {
+		return "", nil
 	}
 
-	return "", nil
+	contents, err := ispr.fs.ReadFile(managedDiskSettingsPath)
+	if err != nil {
+		return "", bosherr.WrapError(err, "Reading managed_disk_settings.json")
+	}
+
+	return string(contents), nil
+}
+
+func (ispr iscsiDevicePathResolver) putToCache(diskCID, devicePath string) {
+	if diskCID == "" {
+		ispr.logger.Warn(ispr.logTag, "Cannot remember device path '%s' for empty disk CID", devicePath)
+	}
+	for len(ispr.recentDevices) >= maxRecentDevices {
+		var (
+			oldestCID    string
+			oldestDevice recentDevice
+		)
+		// find the oldest entry to evict from cache
+		for cid, device := range ispr.recentDevices {
+			if oldestCID == "" || device.resolved.Before(oldestDevice.resolved) {
+				oldestCID = cid
+				oldestDevice = device
+			}
+		}
+		ispr.logger.Warn(ispr.logTag, "Evicting from cache device ID '%s' with path '%s'", oldestCID, oldestDevice.path)
+		delete(ispr.recentDevices, oldestCID)
+	}
+	ispr.logger.Warn(ispr.logTag, "Remembering device path '%s' for disk CID '%s'", devicePath, diskCID)
+	ispr.recentDevices[diskCID] = recentDevice{
+		path:     devicePath,
+		resolved: time.Now(),
+	}
+}
+
+func (ispr iscsiDevicePathResolver) getFromCache(diskCID string) (string, bool) {
+	device, found := ispr.recentDevices[diskCID]
+	if found {
+		return device.path, found
+	}
+	return "", false
 }
