@@ -28,8 +28,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
-	golang.org/x/net v0.0.0-20220802222814-0bcc04d9c69b
-	golang.org/x/sys v0.0.0-20220803195053-6e608f9ce704
+	golang.org/x/net v0.0.0-20220805013720-a33c5aa5df48
+	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418
 	golang.org/x/tools v0.1.12
 	inet.af/netaddr v0.0.0-20220617031823-097006376321
 	inet.af/wf v0.0.0-20220728202103-50d96caab2f6
@@ -42,7 +42,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.66 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.67 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
