@@ -5,13 +5,13 @@ package net
 
 import (
 	gonet "net"
+	gonetIP "net/netip"
 	gonetURL "net/url"
 	"strconv"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"golang.org/x/sys/windows"
-	"inet.af/netaddr"
 	"inet.af/wf"
 )
 
@@ -71,7 +71,7 @@ func SetupNatsFirewall(mbus string) error {
 		return bosherr.WrapError(err, "Parsing Nats Port from URI")
 	}
 	for _, natsIPString := range natsIPs {
-		natsIP, err := netaddr.ParseIP(natsIPString)
+		natsIP, err := gonetIP.ParseAddr(natsIPString)
 		if err != nil {
 			return bosherr.WrapError(err, "Parsing mbus ip")
 		}
