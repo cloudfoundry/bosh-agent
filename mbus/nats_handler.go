@@ -154,7 +154,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 			h.logger.Debug(natsHandlerLogTag, err.Error())
 		}),
 		nats.CustomReconnectDelay(func(attempts int) time.Duration {
-			reconnectSeconds := natsMinReconnectSeconds * math.Pow(2.0, math.Min(20.0, float64(attempts - 1)))
+			reconnectSeconds := natsMinReconnectSeconds * float64(attempts)
 			if (reconnectSeconds > natsMaxReconnectSeconds || reconnectSeconds <= 0.0) {
 				reconnectSeconds = natsMaxReconnectSeconds
 			}
