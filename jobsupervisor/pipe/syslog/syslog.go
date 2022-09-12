@@ -266,8 +266,7 @@ func itoa(dst []byte, n int) []byte {
 }
 
 // format generates a syslog formatted string. The format is as follows:
-//
-//	<PRI>TIMESTAMP HOSTNAME TAG[PID]: MSG
+// <PRI>TIMESTAMP HOSTNAME TAG[PID]: MSG
 func (w *Writer) format(p Priority, hostname, tag, msg string) []byte {
 	b := w.b[0:0]
 	b = append(b, '<')

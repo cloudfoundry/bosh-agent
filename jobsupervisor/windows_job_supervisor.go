@@ -32,7 +32,7 @@ import (
 )
 
 // TODO: stop creating globals and then overriding in tests,
-//  see jobsupervisor/windows_job_supervisor_export_test.go:14, :21
+// TODO: see jobsupervisor/windows_job_supervisor_export_test.go:14, :21
 var pipeExePath = "C:\\var\\vcap\\bosh\\bin\\pipe.exe" //nolint:gochecknoglobals
 var serviceDescription = "vcap"                        //nolint:gochecknoglobals
 
