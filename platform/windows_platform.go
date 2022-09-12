@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil" //nolint:staticcheck
 	"os"
 	"path/filepath"
 	"regexp"
@@ -188,7 +187,7 @@ func deleteFolderAndContents(path string) error {
 	}
 
 	if inf.IsDir() {
-		childItems, _ := ioutil.ReadDir(path)
+		childItems, _ := os.ReadDir(path)
 
 		for _, item := range childItems {
 			err = deleteFolderAndContents(filepath.Join(path, item.Name()))
