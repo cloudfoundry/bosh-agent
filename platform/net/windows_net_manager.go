@@ -80,7 +80,6 @@ netsh interface ip set address %q static %s %s %s
 // We return all of the network interfaces as we configure DNS for all of the
 // network interfaces.  Apart from DNS, the returned network interfaces may
 // not have been configured.
-//
 func (net WindowsNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 	net.logger.Info(net.logTag, "Getting Configured Network Interfaces...")
 

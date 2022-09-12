@@ -18,5 +18,5 @@ linted_os_list=(windows linux)
 
 for os in ${linted_os_list[*]}; do
   echo -e "\n lint-ing with GOOS=${os}..."
-  GOOS="${os}" golangci-lint run "${ROOT_DIR}"/...
+  GOOS="${os}" golangci-lint run --enable goimports "${ROOT_DIR}"/...
 done
