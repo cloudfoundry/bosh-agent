@@ -2,7 +2,7 @@ package app
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 )
 
 type Options struct {
@@ -18,7 +18,7 @@ func ParseOptions(args []string) (Options, error) {
 	var opts Options
 
 	flagSet := flag.NewFlagSet("bosh-agent-args", flag.ContinueOnError)
-	flagSet.SetOutput(ioutil.Discard)
+	flagSet.SetOutput(io.Discard)
 
 	flagSet.StringVar(&opts.PlatformName, "P", "", "Set Platform")
 

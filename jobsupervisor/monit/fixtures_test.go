@@ -1,7 +1,7 @@
 package monit_test
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	. "github.com/onsi/gomega"
@@ -16,7 +16,7 @@ func readFixture(relativePath string) []byte {
 	filePath, err := filepath.Abs(relativePath)
 	Expect(err).ToNot(HaveOccurred())
 
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	Expect(err).ToNot(HaveOccurred())
 
 	return content

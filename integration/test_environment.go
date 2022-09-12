@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -794,7 +793,7 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, err := ioutil.ReadFile(keyPath)
+	key, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -825,7 +824,7 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		jumpboxKey, err := ioutil.ReadFile(jumpboxKeyPath)
+		jumpboxKey, err := os.ReadFile(jumpboxKeyPath)
 		if err != nil {
 			return nil, err
 		}

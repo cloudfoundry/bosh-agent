@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -116,7 +116,7 @@ func (ms HTTPMetadataService) GetPublicKey() (string, error) {
 		}
 	}()
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Reading ssh key response body")
 	}
@@ -151,7 +151,7 @@ func (ms HTTPMetadataService) GetInstanceID() (string, error) {
 		}
 	}()
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Reading instance id response body")
 	}
@@ -186,7 +186,7 @@ func (ms HTTPMetadataService) GetValueAtPath(path string) (string, error) {
 		}
 	}()
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", bosherr.WrapError(err, fmt.Sprintf("Reading response body from %s", url))
 	}
@@ -272,7 +272,7 @@ func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 		return userData, fmt.Errorf("invalid status from url %s: %d", userDataURL, userDataResp.StatusCode)
 	}
 
-	userDataBytes, err := ioutil.ReadAll(userDataResp.Body)
+	userDataBytes, err := io.ReadAll(userDataResp.Body)
 	if err != nil {
 		return userData, bosherr.WrapError(err, "Reading user data response body")
 	}
@@ -357,7 +357,7 @@ func (ms HTTPMetadataService) getToken() (token string, err error) {
 		return "", nil
 	}
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Reading instance id response body")
 	}

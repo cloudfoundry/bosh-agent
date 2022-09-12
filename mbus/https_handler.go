@@ -3,7 +3,6 @@ package mbus
 import (
 	"bufio"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -61,7 +60,7 @@ func (h HTTPSHandler) Stop() {
 	h.dispatcher.Stop()
 }
 
-func (h HTTPSHandler) RegisterAdditionalFunc(handlerFunc boshhandler.Func) {
+func (h HTTPSHandler) RegisterAdditionalFunc(_handlerFunc boshhandler.Func) {
 	panic("HTTPSHandler does not support registering additional handler funcs")
 }
 
@@ -78,7 +77,7 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.Func) func(http.Respo
 			return
 		}
 
-		rawJSONPayload, err := ioutil.ReadAll(r.Body)
+		rawJSONPayload, err := io.ReadAll(r.Body)
 		if err != nil {
 			err = bosherr.WrapError(err, "Reading http body")
 			h.logger.Error(httpsHandlerLogTag, err.Error())

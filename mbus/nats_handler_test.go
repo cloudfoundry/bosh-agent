@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
 	"github.com/nats-io/nats.go"
@@ -38,9 +38,9 @@ func init() { //nolint:funlen,gochecknoinits
 			auditLogger         *platformfakes.FakeAuditLogger
 			loggerOutBuf        *bytes.Buffer
 		)
-		ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
-		ValidCertificate, _ := ioutil.ReadFile("./test_assets/client-cert.pem")
-		ValidPrivateKey, _ := ioutil.ReadFile("./test_assets/client-pkey.pem")
+		ValidCA, _ := os.ReadFile("./test_assets/ca.pem")
+		ValidCertificate, _ := os.ReadFile("./test_assets/client-cert.pem")
+		ValidPrivateKey, _ := os.ReadFile("./test_assets/client-pkey.pem")
 
 		BeforeEach(func() {
 			settingsService = &fakesettings.FakeSettingsService{
@@ -433,11 +433,11 @@ func init() { //nolint:funlen,gochecknoinits
 }
 
 func VerifyPeerCertificateCallback(handler boshhandler.Handler, connectorOptionsArg []nats.Option, certPath string, caPath string) error {
-	ValidCA, _ := ioutil.ReadFile("./test_assets/ca.pem")
+	ValidCA, _ := os.ReadFile("./test_assets/ca.pem")
 
-	correctCnCert, err := ioutil.ReadFile(certPath)
+	correctCnCert, err := os.ReadFile(certPath)
 	Expect(err).NotTo(HaveOccurred())
-	correctCa, err := ioutil.ReadFile(caPath)
+	correctCa, err := os.ReadFile(caPath)
 	Expect(err).NotTo(HaveOccurred())
 
 	certPemBlock, _ := pem.Decode(correctCnCert)

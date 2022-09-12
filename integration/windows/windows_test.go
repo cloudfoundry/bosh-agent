@@ -3,7 +3,6 @@ package windows_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -315,14 +314,14 @@ var _ = Describe("An Agent running on Windows", func() {
 		path := filepath.Join(tempDir, blobName)
 		Expect(blobstoreClient.Get(result.BlobstoreID, path)).To(Succeed())
 
-		tarPath, err := ioutil.TempDir("", "")
+		tarPath, err := os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.Remove(tarPath)
 
 		err = exec.Command("tar", "xf", path, "-C", tarPath).Run()
 		Expect(err).NotTo(HaveOccurred())
 
-		out, err := ioutil.ReadFile(filepath.Join(tarPath, fileName))
+		out, err := os.ReadFile(filepath.Join(tarPath, fileName))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(out)).To(ContainSubstring(fileContents))
 	})

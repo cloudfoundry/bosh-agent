@@ -3,7 +3,7 @@ package monit_test
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -52,8 +52,8 @@ var _ = Describe("MonitRetryStrategy", func() {
 
 		BeforeEach(func() {
 			lastError = errors.New("last-error")
-			unavailable = &http.Response{StatusCode: 503, Body: ioutil.NopCloser(bytes.NewBufferString(""))}
-			notFound = &http.Response{StatusCode: 404, Body: ioutil.NopCloser(bytes.NewBufferString(""))}
+			unavailable = &http.Response{StatusCode: 503, Body: io.NopCloser(bytes.NewBufferString(""))}
+			notFound = &http.Response{StatusCode: 404, Body: io.NopCloser(bytes.NewBufferString(""))}
 		})
 
 		Context("when all responses are only 503s", func() {

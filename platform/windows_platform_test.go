@@ -6,7 +6,6 @@ package platform_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,7 +52,6 @@ const ERROR_LOGON_FAILURE = syscall.Errno(0x52E) //nolint:revive
 // Use LogonUser to check if the provided password is correct.
 //
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa378184(v=vs.85).aspx
-//
 func ValidUserPassword(username, password string) error {
 	const LOGON32_LOGON_NETWORK = 3    //nolint:revive
 	const LOGON32_PROVIDER_DEFAULT = 0 //nolint:revive
@@ -1019,7 +1017,7 @@ var _ = Describe("BOSH User Commands", func() {
 			Expect(err).To(Succeed())
 
 			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
-			b, err := ioutil.ReadFile(keyPath)
+			b, err := os.ReadFile(keyPath)
 			Expect(err).To(Succeed())
 
 			content := strings.TrimSpace(string(b))
@@ -1047,7 +1045,7 @@ var _ = Describe("BOSH User Commands", func() {
 			Expect(err).To(Succeed())
 
 			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
-			b, err := ioutil.ReadFile(keyPath)
+			b, err := os.ReadFile(keyPath)
 			Expect(err).To(Succeed())
 
 			content := strings.TrimSpace(string(b))
@@ -1068,7 +1066,7 @@ var _ = Describe("BOSH User Commands", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			keyPath := filepath.Join(homedir, ".ssh", "authorized_keys")
-			_, err = ioutil.ReadFile(keyPath)
+			_, err = os.ReadFile(keyPath)
 			Expect(err).NotTo(HaveOccurred())
 
 			userSID, _, _, err := cmdRunner.RunCommand(
@@ -1122,7 +1120,7 @@ var _ = Describe("BOSH User Commands", func() {
 			previousAdmin = SetAdministratorUserName(testUsername)
 
 			var err error
-			tempDir, err = ioutil.TempDir("", "bosh-tests-")
+			tempDir, err = os.MkdirTemp("", "bosh-tests-")
 			Expect(err).ToNot(HaveOccurred())
 
 			var (

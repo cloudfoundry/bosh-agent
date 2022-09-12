@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -81,7 +80,7 @@ var _ = AfterSuite(func() {
 
 var _ = BeforeSuite(func() {
 	var err error
-	TempDir, err = ioutil.TempDir("", "bosh-")
+	TempDir, err = os.MkdirTemp("", "bosh-")
 	Expect(err).ToNot(HaveOccurred())
 
 	StartStopExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/StartStop")
@@ -159,7 +158,7 @@ func testWindowsConfigs(jobName string) (WindowsProcessConfig, error) {
 		}
 	case "stop-executable":
 		// create temp file - used by stop-start jobs
-		f, err := ioutil.TempFile(TempDir, "stopfile-")
+		f, err := os.CreateTemp(TempDir, "stopfile-")
 		Expect(err).ToNot(HaveOccurred())
 		tmpFileName := f.Name()
 		err = f.Close()
@@ -205,7 +204,7 @@ func concurrentStopConfig() WindowsProcessConfig {
 	// Wait config
 
 	createStopFile := func() string {
-		f, err := ioutil.TempFile(TempDir, "stopfile-")
+		f, err := os.CreateTemp(TempDir, "stopfile-")
 		Expect(err).ToNot(HaveOccurred())
 		stopFilePathName := f.Name()
 		err = f.Close()
@@ -246,7 +245,7 @@ func flappingStartConfig(flapCount, jobCount int) (WindowsProcessConfig, error) 
 	}
 
 	for i := 0; i < jobCount; i++ {
-		f, err := ioutil.TempFile(TempDir, "flapping-")
+		f, err := os.CreateTemp(TempDir, "flapping-")
 		if err != nil {
 			return conf, err
 		}
@@ -413,7 +412,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			fs = boshsys.NewOsFileSystem(logger)
 
 			var err error
-			basePath, err = ioutil.TempDir(TempDir, "")
+			basePath, err = os.MkdirTemp(TempDir, "")
 			Expect(err).ToNot(HaveOccurred())
 			err = fs.MkdirAll(basePath, 0755)
 			Expect(err).NotTo(HaveOccurred())
@@ -670,7 +669,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 					fileContains := func(filename, substring string) func() error {
 						return func() error {
-							b, err := ioutil.ReadFile(filename)
+							b, err := os.ReadFile(filename)
 							if err != nil {
 								return err
 							}

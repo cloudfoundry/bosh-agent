@@ -3,7 +3,6 @@ package net_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,7 +53,7 @@ var _ = Describe("WindowsNetManager", func() {
 		fs = boshsys.NewOsFileSystem(logger)
 
 		var err error
-		tmpDir, err = ioutil.TempDir("", "bosh-tests-")
+		tmpDir, err = os.MkdirTemp("", "bosh-tests-")
 		Expect(err).ToNot(HaveOccurred())
 		dirProvider = boshdirs.NewProvider(tmpDir)
 		err = fs.MkdirAll(filepath.Join(dirProvider.BoshDir()), 0755) //nolint:gocritic

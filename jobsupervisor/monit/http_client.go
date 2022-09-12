@@ -2,7 +2,7 @@ package monit
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -169,7 +169,7 @@ func (c httpClient) validateResponse(response *http.Response) error {
 		return nil
 	}
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return bosherr.WrapError(err, "Reading body of failed Monit response")
 	}

@@ -3,7 +3,6 @@ package windows_test
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -112,7 +111,7 @@ func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename 
 	Expect(err).ToNot(HaveOccurred())
 
 	command := exec.Command("scp", outputFile.Name(), fmt.Sprintf("%s:/bosh/agent-configuration/%s", utils.AgentIP(), filename))
-	session, err := gexec.Start(command, ioutil.Discard, ioutil.Discard)
+	session, err := gexec.Start(command, io.Discard, io.Discard)
 	Expect(err).NotTo(HaveOccurred())
 	Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
 }

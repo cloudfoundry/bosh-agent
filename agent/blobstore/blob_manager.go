@@ -3,7 +3,6 @@ package blobstore
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -83,7 +82,7 @@ func (m BlobManager) BlobExists(blobID string) bool {
 }
 
 func (m BlobManager) copyToTmpFile(srcPath string) (string, error) {
-	dest, err := ioutil.TempFile(m.tmpPath(), "blob-manager-copyToTmpFile")
+	dest, err := os.CreateTemp(m.tmpPath(), "blob-manager-copyToTmpFile")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating destination file")
 	}

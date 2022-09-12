@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 
@@ -55,7 +54,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the shortClient to send a start request", func() {
 			client := newFakeClient(shortClient, longClient)
 
-			shortClient.DoReturns(&http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader(nil))}, nil)
+			shortClient.DoReturns(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
 
 			err := client.StartService("test-service")
 			Expect(err).ToNot(HaveOccurred())
@@ -68,7 +67,7 @@ var _ = Describe("httpClient", func() {
 			Expect(req.URL.Path).To(Equal("/test-service"))
 			Expect(req.Method).To(Equal("POST"))
 
-			content, err := ioutil.ReadAll(req.Body)
+			content, err := io.ReadAll(req.Body)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(content)).To(Equal("action=start"))
 		})
@@ -101,7 +100,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the longClient to send a stop request", func() {
 			client := newFakeClient(shortClient, longClient)
 
-			longClient.DoReturns(&http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader(nil))}, nil)
+			longClient.DoReturns(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
 
 			err := client.StopService("test-service")
 			Expect(err).ToNot(HaveOccurred())
@@ -114,7 +113,7 @@ var _ = Describe("httpClient", func() {
 			Expect(req.URL.Path).To(Equal("/test-service"))
 			Expect(req.Method).To(Equal("POST"))
 
-			content, err := ioutil.ReadAll(req.Body)
+			content, err := io.ReadAll(req.Body)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(content)).To(Equal("action=stop"))
 		})
@@ -148,7 +147,7 @@ var _ = Describe("httpClient", func() {
 		It("uses the longClient to send an unmonitor request", func() {
 			client := newFakeClient(shortClient, longClient)
 
-			longClient.DoReturns(&http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader(nil))}, nil)
+			longClient.DoReturns(&http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(nil))}, nil)
 
 			err := client.UnmonitorService("test-service")
 			Expect(err).ToNot(HaveOccurred())
@@ -161,7 +160,7 @@ var _ = Describe("httpClient", func() {
 			Expect(req.URL.Path).To(Equal("/test-service"))
 			Expect(req.Method).To(Equal("POST"))
 
-			content, err := ioutil.ReadAll(req.Body)
+			content, err := io.ReadAll(req.Body)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(content)).To(Equal("action=unmonitor"))
 		})
@@ -213,7 +212,7 @@ var _ = Describe("httpClient", func() {
 
 			shortClient.DoReturns(&http.Response{
 				StatusCode: 200,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(string(readFixture(statusWithMultipleServiceFixturePath)))),
+				Body:       io.NopCloser(bytes.NewBufferString(string(readFixture(statusWithMultipleServiceFixturePath)))),
 			}, nil)
 
 			status, err := client.Status()

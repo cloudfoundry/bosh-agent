@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"time"
 
 	boshplat "github.com/cloudfoundry/bosh-agent/platform"
@@ -105,7 +105,7 @@ func (r httpRegistry) GetSettings() (boshsettings.Settings, error) {
 		return settings, fmt.Errorf("invalid status: %d", wrapperResponse.StatusCode)
 	}
 
-	wrapperBytes, err := ioutil.ReadAll(wrapperResponse.Body)
+	wrapperBytes, err := io.ReadAll(wrapperResponse.Body)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Reading settings response body")
 	}

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -29,7 +28,7 @@ func init() { //nolint:funlen,gochecknoinits
 		BeforeEach(func() {
 			var err error
 
-			baseDir, err = ioutil.TempDir("", "go-agent-test")
+			baseDir, err = os.MkdirTemp("", "go-agent-test")
 			Expect(err).ToNot(HaveOccurred())
 
 			err = os.Mkdir(filepath.Join(baseDir, "bosh"), os.ModePerm)
@@ -109,12 +108,12 @@ func init() { //nolint:funlen,gochecknoinits
 				}
 			}`
 
-			err = ioutil.WriteFile(settingsPath, []byte(settingsJSON), 0640) //nolint:gosec
+			err = os.WriteFile(settingsPath, []byte(settingsJSON), 0640) //nolint:gosec
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
-			err := ioutil.WriteFile(agentConfPath, []byte(agentConfJSON), 0640) //nolint:gosec
+			err := os.WriteFile(agentConfPath, []byte(agentConfJSON), 0640) //nolint:gosec
 			Expect(err).ToNot(HaveOccurred())
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)

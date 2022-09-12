@@ -3,7 +3,7 @@ package mbus_test
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -33,7 +33,7 @@ var _ = Describe("HTTPSHandler", func() {
 
 	BeforeEach(func() {
 		var err error
-		tmpdir, err = ioutil.TempDir("", "mbus-http-handler-test")
+		tmpdir, err = os.MkdirTemp("", "mbus-http-handler-test")
 		Expect(err).NotTo(HaveOccurred())
 
 		serverURL = "https://user:pass@localhost:6900"
@@ -53,9 +53,9 @@ var _ = Describe("HTTPSHandler", func() {
 
 	Context("when the agent creates the handler with custom cert", func() {
 		BeforeEach(func() {
-			configCert, err := ioutil.ReadFile("test_assets/custom_cert.pem")
+			configCert, err := os.ReadFile("test_assets/custom_cert.pem")
 			Expect(err).NotTo(HaveOccurred())
-			configPrivateKey, err := ioutil.ReadFile("test_assets/custom_key.pem")
+			configPrivateKey, err := os.ReadFile("test_assets/custom_key.pem")
 			Expect(err).NotTo(HaveOccurred())
 
 			mbusKeyPair := settings.CertKeyPair{
@@ -72,7 +72,7 @@ var _ = Describe("HTTPSHandler", func() {
 				return boshhandler.NewValueResponse("expected value")
 			})
 
-			caCert, err := ioutil.ReadFile("test_assets/custom_ca.pem")
+			caCert, err := os.ReadFile("test_assets/custom_ca.pem")
 			Expect(err).NotTo(HaveOccurred())
 			authority := x509.NewCertPool()
 			Expect(authority.AppendCertsFromPEM(caCert)).To(BeTrue())
@@ -98,7 +98,7 @@ var _ = Describe("HTTPSHandler", func() {
 			Expect(receivedRequest.Method).To(Equal("ping"))
 			Expect(receivedRequest.GetPayload()).To(Equal([]byte(postBody)))
 
-			httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
+			httpBody, readErr := io.ReadAll(httpResponse.Body)
 			Expect(readErr).ToNot(HaveOccurred())
 			Expect(httpBody).To(Equal([]byte(`{"value":"expected value"}`)))
 		})
@@ -119,7 +119,7 @@ var _ = Describe("HTTPSHandler", func() {
 				Expect(receivedRequest.Method).To(Equal("ping"))
 				Expect(receivedRequest.GetPayload()).To(Equal([]byte(postBody)))
 
-				httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
+				httpBody, readErr := io.ReadAll(httpResponse.Body)
 				Expect(readErr).ToNot(HaveOccurred())
 				Expect(httpBody).To(Equal([]byte(`{"value":"expected value"}`)))
 			})
@@ -143,7 +143,7 @@ var _ = Describe("HTTPSHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 					defer httpResponse.Body.Close()
 
-					httpBody, readErr := ioutil.ReadAll(httpResponse.Body)
+					httpBody, readErr := io.ReadAll(httpResponse.Body)
 					Expect(readErr).ToNot(HaveOccurred())
 					Expect(httpResponse.StatusCode).To(Equal(200))
 					Expect(httpBody).To(Equal([]byte("Some data")))
@@ -195,7 +195,7 @@ var _ = Describe("HTTPSHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 					defer file.Close()
 
-					contents, err := ioutil.ReadAll(file)
+					contents, err := io.ReadAll(file)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(string(contents)).To(Equal("Updated data"))
 				})

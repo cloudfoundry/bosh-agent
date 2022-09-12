@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -110,7 +109,7 @@ func JumpboxKeyPath() string {
 }
 
 func getPemContents(path string) string {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
@@ -130,7 +129,7 @@ func NatsPrivateKey() string {
 }
 
 func GetSSHTunnelClient() (*ssh.Client, error) {
-	key, err := ioutil.ReadFile(JumpboxKeyPath())
+	key, err := os.ReadFile(JumpboxKeyPath())
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,6 @@
 package blobstore_test
 
 import (
-	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -31,7 +30,7 @@ var _ = Describe("Blob Manager", func() {
 		var err error
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fs = boshsys.NewOsFileSystem(logger)
-		basePath, err = ioutil.TempDir("", "blobmanager")
+		basePath, err = os.MkdirTemp("", "blobmanager")
 		Expect(err).NotTo(HaveOccurred())
 
 		blobManager, err = boshagentblobstore.NewBlobManager(basePath)
@@ -122,7 +121,7 @@ var _ = Describe("Blob Manager", func() {
 		blob, err := blobstore.Get(blobID)
 		Expect(err).ToNot(HaveOccurred())
 
-		bs, err := ioutil.ReadFile(blob)
+		bs, err := os.ReadFile(blob)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(bs).To(Equal([]byte("data")))
 	})

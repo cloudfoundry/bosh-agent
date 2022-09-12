@@ -3,7 +3,6 @@ package tarpath_test
 import (
 	"archive/tar"
 	"compress/gzip"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -21,7 +20,7 @@ var _ = Describe("path prefix detection", func() {
 
 	BeforeEach(func() {
 		var err error
-		tmp, err = ioutil.TempDir("", "tarpath")
+		tmp, err = os.MkdirTemp("", "tarpath")
 		Expect(err).NotTo(HaveOccurred())
 
 		detector = tarpath.NewPrefixDetector()

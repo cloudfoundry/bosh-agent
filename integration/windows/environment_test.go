@@ -3,7 +3,7 @@ package windows_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -178,7 +178,7 @@ func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
 func (e *WindowsEnvironment) AgentProcessRunning() bool {
 	exitCode, err := e.Client.Run(
 		winrm.Powershell("Get-Process -ProcessName bosh-agent"),
-		ioutil.Discard, ioutil.Discard,
+		io.Discard, io.Discard,
 	)
 	return exitCode == 0 && err == nil
 }

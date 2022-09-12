@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -583,7 +582,7 @@ func (n *NatsClient) GetNextAlert(timeout time.Duration) (*boshalert.Alert, erro
 
 func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha string, err error) {
 	var dirname string
-	dirname, err = ioutil.TempDir("", "templates")
+	dirname, err = os.MkdirTemp("", "templates")
 	if err != nil {
 		return
 	}
@@ -606,7 +605,7 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha 
 
 func (n *NatsClient) uploadPackage(packageName string) (string, string, error) {
 	var dirname string
-	dirname, err := ioutil.TempDir("", "templates")
+	dirname, err := os.MkdirTemp("", "templates")
 	if err != nil {
 		return "", "", err
 	}

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"net/http"
@@ -75,7 +75,7 @@ var _ = Describe("Main", func() {
 			server = ghttp.NewServer()
 			bodyCh = make(chan []byte, 100)
 			server.RouteToHandler("POST", "/", func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				Expect(err).To(Succeed())
 				err = r.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
@@ -143,7 +143,7 @@ var _ = Describe("Main", func() {
 		var tempDir string
 		BeforeEach(func() {
 			var err error
-			tempDir, err = ioutil.TempDir("", "something")
+			tempDir, err = os.MkdirTemp("", "something")
 			Expect(err).To(Succeed())
 		})
 		AfterEach(func() {
@@ -177,7 +177,7 @@ var _ = Describe("Main", func() {
 			Expect(err).To(Succeed())
 			Expect(files).To(HaveLen(1))
 
-			pipeLog, err := ioutil.ReadFile(files[0])
+			pipeLog, err := os.ReadFile(files[0])
 			Expect(err).To(Succeed())
 			Expect(string(pipeLog)).To(ContainSubstring("pipe:"))
 
@@ -437,9 +437,8 @@ func cmdEnv(envVars ...string) []string {
 //
 // Example:
 //
-//   defer invalidatePipeEnvVars()()
-//   doWork...
-//
+//	defer invalidatePipeEnvVars()()
+//	doWork...
 func invalidatePipeEnvVars() (restore func()) {
 	type val struct {
 		s  string
