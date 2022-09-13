@@ -1,14 +1,12 @@
 name: go
 on:
   push:
-    branches:
-      - main
   pull_request:
 jobs:
   lint:
     strategy:
       matrix:
-        go: [1.18]
+        go: [1.19]
         os: [macos-latest, windows-2019, ubuntu-latest]
     name: lint
     runs-on: ${{ matrix.os }}
@@ -23,4 +21,3 @@ jobs:
         if: ${{ matrix.os != 'windows-2019' }}
         with:
           args: --enable goimports
-
