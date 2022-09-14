@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	"github.com/cloudfoundry/bosh-agent/mbus"
 	"github.com/cloudfoundry/bosh-agent/platform/fakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -25,7 +25,7 @@ var _ = Describe("HTTPSHandler", func() {
 	var (
 		serverURL       string
 		tmpdir          string
-		handler         HTTPSHandler
+		handler         mbus.HTTPSHandler
 		receivedRequest boshhandler.Request
 		httpClient      http.Client
 		blobManager     boshagentblobstore.BlobManagerInterface
@@ -65,7 +65,7 @@ var _ = Describe("HTTPSHandler", func() {
 
 			mbusURL, _ := url.Parse(serverURL)
 			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
-			handler = NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
+			handler = mbus.NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
 
 			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) { //nolint:errcheck
 				receivedRequest = req

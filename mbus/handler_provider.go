@@ -3,13 +3,14 @@ package mbus
 import (
 	"net/url"
 
+	"github.com/nats-io/nats.go"
+
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	"github.com/nats-io/nats.go"
 )
 
 type HandlerProvider struct {

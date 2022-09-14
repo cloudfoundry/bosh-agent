@@ -1,21 +1,20 @@
 package mbus_test
 
 import (
-	gourl "net/url"
+	"net/url"
 	"reflect"
 
-	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
 	"github.com/nats-io/nats.go"
 
-	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	fakeblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
+	"github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
+	"github.com/cloudfoundry/bosh-agent/mbus"
+	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -25,8 +24,8 @@ var _ = Describe("HandlerProvider", func() {
 		platform        *platformfakes.FakePlatform
 		auditLogger     *platformfakes.FakeAuditLogger
 		logger          boshlog.Logger
-		provider        HandlerProvider
-		blobManager     *fakeblobstore.FakeBlobManagerInterface
+		provider        mbus.HandlerProvider
+		blobManager     *blobstorefakes.FakeBlobManagerInterface
 	)
 
 	BeforeEach(func() {
@@ -34,8 +33,8 @@ var _ = Describe("HandlerProvider", func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		platform = &platformfakes.FakePlatform{}
 		auditLogger = &platformfakes.FakeAuditLogger{}
-		provider = NewHandlerProvider(settingsService, logger, auditLogger)
-		blobManager = &fakeblobstore.FakeBlobManagerInterface{}
+		provider = mbus.NewHandlerProvider(settingsService, logger, auditLogger)
+		blobManager = &blobstorefakes.FakeBlobManagerInterface{}
 	})
 
 	Describe("Get", func() {
@@ -44,28 +43,28 @@ var _ = Describe("HandlerProvider", func() {
 			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
 
-			connector := func(url string, options ...nats.Option) (NatsConnection, error) {
+			connector := func(url string, options ...nats.Option) (mbus.NatsConnection, error) {
 				return &mbusfakes.FakeNatsConnection{}, nil
 			}
-			expectedHandler := NewNatsHandler(settingsService, connector, logger, platform)
+			expectedHandler := mbus.NewNatsHandler(settingsService, connector, logger, platform)
 			Expect(reflect.TypeOf(handler)).To(Equal(reflect.TypeOf(expectedHandler)))
 		})
 
 		It("returns https handler when MBUS URL only specified", func() {
-			mbusURL, err := gourl.Parse("https://foo:bar@lol")
+			mbusURL, err := url.Parse("https://foo:bar@lol")
 			Expect(err).ToNot(HaveOccurred())
 
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
 			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
-			expectedHandler := NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, auditLogger)
-			httpsHandler, ok := handler.(HTTPSHandler)
+			expectedHandler := mbus.NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, auditLogger)
+			httpsHandler, ok := handler.(mbus.HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(httpsHandler).To(Equal(expectedHandler))
 		})
 
 		It("returns https handler when MbusEnv are specified", func() {
-			mbusURL, err := gourl.Parse("https://foo:bar@lol")
+			mbusURL, err := url.Parse("https://foo:bar@lol")
 			Expect(err).ToNot(HaveOccurred())
 
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
@@ -73,7 +72,7 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Env.Bosh.Mbus.Cert.PrivateKey = "private-key-pem-block"
 
 			handler, err := provider.Get(platform, blobManager)
-			expectedHandler := NewHTTPSHandler(
+			expectedHandler := mbus.NewHTTPSHandler(
 				mbusURL,
 				settingsService.Settings.Env.Bosh.Mbus.Cert,
 				blobManager,
@@ -81,7 +80,7 @@ var _ = Describe("HandlerProvider", func() {
 				auditLogger,
 			)
 			Expect(err).NotTo(HaveOccurred())
-			httpsHandler, ok := handler.(HTTPSHandler)
+			httpsHandler, ok := handler.(mbus.HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(reflect.DeepEqual(httpsHandler, expectedHandler)).To(BeTrue())
 		})

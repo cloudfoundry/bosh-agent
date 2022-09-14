@@ -8,19 +8,17 @@ import (
 	"errors"
 	"os"
 
-	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
 	"github.com/nats-io/nats.go"
 
-	. "github.com/cloudfoundry/bosh-agent/mbus"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	"github.com/cloudfoundry/bosh-agent/mbus"
+	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -28,7 +26,7 @@ func init() { //nolint:funlen,gochecknoinits
 	Describe("natsHandler", func() {
 		var (
 			settingsService     *fakesettings.FakeSettingsService
-			connector           NatsConnector
+			connector           mbus.NatsConnector
 			connectorURLArg     string
 			connectorOptionsArg []nats.Option
 			connection          *mbusfakes.FakeNatsConnection
@@ -65,7 +63,7 @@ func init() { //nolint:funlen,gochecknoinits
 			logger = boshlog.NewWriterLogger(boshlog.LevelError, loggerOutBuf)
 			connection = &mbusfakes.FakeNatsConnection{}
 
-			connector = func(url string, options ...nats.Option) (NatsConnection, error) {
+			connector = func(url string, options ...nats.Option) (mbus.NatsConnection, error) {
 				connectorURLArg = url
 				connectorOptionsArg = options
 				return connection, nil
@@ -76,7 +74,7 @@ func init() { //nolint:funlen,gochecknoinits
 		})
 
 		JustBeforeEach(func() {
-			handler = NewNatsHandler(settingsService, connector, logger, platform)
+			handler = mbus.NewNatsHandler(settingsService, connector, logger, platform)
 		})
 
 		Describe("Start", func() {
@@ -241,7 +239,7 @@ func init() { //nolint:funlen,gochecknoinits
 
 			It("does not err when no username and password", func() {
 				settingsService.Settings.Mbus = "nats://127.0.0.1:1234"
-				handler = NewNatsHandler(settingsService, connector, logger, platform)
+				handler = mbus.NewNatsHandler(settingsService, connector, logger, platform)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())

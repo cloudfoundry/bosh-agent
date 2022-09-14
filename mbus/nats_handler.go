@@ -1,25 +1,22 @@
 package mbus
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net"
 	"net/url"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"sync"
 	"syscall"
-
-	"github.com/nats-io/nats.go"
-
-	"crypto/x509"
 	"time"
 
-	"crypto/tls"
-	"regexp"
+	"github.com/nats-io/nats.go"
 
 	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
@@ -29,8 +26,8 @@ import (
 )
 
 const (
-	responseMaxLength = 1024 * 1024
-	natsHandlerLogTag = "NATS Handler"
+	responseMaxLength       = 1024 * 1024
+	natsHandlerLogTag       = "NATS Handler"
 	natsMinReconnectSeconds = 2.0
 	//natsMaxReconnectSeconds should be lower than the setting we have in BOSH for https://github.com/cloudfoundry/bosh/blob/main/src/bosh-director/lib/bosh/director/agent_client.rb#L44.
 	natsMaxReconnectSeconds = 10.0
@@ -155,7 +152,7 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		}),
 		nats.CustomReconnectDelay(func(attempts int) time.Duration {
 			reconnectSeconds := natsMinReconnectSeconds * float64(attempts)
-			if (reconnectSeconds > natsMaxReconnectSeconds || reconnectSeconds <= 0.0) {
+			if reconnectSeconds > natsMaxReconnectSeconds || reconnectSeconds <= 0.0 {
 				reconnectSeconds = natsMaxReconnectSeconds
 			}
 			reconnectDelay := time.Duration(reconnectSeconds * float64(time.Second))
