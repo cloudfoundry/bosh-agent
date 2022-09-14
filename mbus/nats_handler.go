@@ -31,9 +31,9 @@ import (
 const (
 	responseMaxLength = 1024 * 1024
 	natsHandlerLogTag = "NATS Handler"
-	natsMinRetryWait  = 2
-	//natsMaxReconnectWait should be lower than the setting we have in BOSH for https://github.com/cloudfoundry/bosh/blob/main/src/bosh-director/lib/bosh/director/agent_client.rb#L44.
-	natsMaxReconnectWait = 10 * time.Second
+	natsMinReconnectSeconds = 2.0
+	//natsMaxReconnectSeconds should be lower than the setting we have in BOSH for https://github.com/cloudfoundry/bosh/blob/main/src/bosh-director/lib/bosh/director/agent_client.rb#L44.
+	natsMaxReconnectSeconds = 10.0
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -154,13 +154,13 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 			h.logger.Debug(natsHandlerLogTag, err.Error())
 		}),
 		nats.CustomReconnectDelay(func(attempts int) time.Duration {
-			exponentialReconnectWait := time.Duration(math.Pow(natsMinRetryWait, float64(attempts))) * time.Second
-			if natsMaxReconnectWait > exponentialReconnectWait {
-				h.logger.Debug(natsHandlerLogTag, "Increased reconnect to: %v", exponentialReconnectWait)
-				return exponentialReconnectWait
+			reconnectSeconds := natsMinReconnectSeconds * float64(attempts)
+			if (reconnectSeconds > natsMaxReconnectSeconds || reconnectSeconds <= 0.0) {
+				reconnectSeconds = natsMaxReconnectSeconds
 			}
-			h.logger.Debug(natsHandlerLogTag, "Increased reconnect to: %v", natsMaxReconnectWait)
-			return natsMaxReconnectWait
+			reconnectDelay := time.Duration(reconnectSeconds * float64(time.Second))
+			h.logger.Debug(natsHandlerLogTag, "Increased reconnect to: %v", reconnectDelay)
+			return reconnectDelay
 		}),
 		nats.MaxReconnects(-1),
 		nats.Secure(connectionInfo.TLSConfig),
