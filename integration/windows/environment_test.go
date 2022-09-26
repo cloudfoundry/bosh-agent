@@ -176,7 +176,7 @@ func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
 }
 
 func (e *WindowsEnvironment) AgentProcessRunning() bool {
-	exitCode, err := e.Client.Run(
+	exitCode, err := e.Client.Run( //nolint:staticcheck
 		winrm.Powershell("Get-Process -ProcessName bosh-agent"),
 		io.Discard, io.Discard,
 	)
@@ -210,7 +210,7 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	exitCode, err := e.Client.Run(winrm.Powershell(fmt.Sprintf(cmd, cmdFmtArgs...)), stdout, stderr)
+	exitCode, err := e.Client.Run(winrm.Powershell(fmt.Sprintf(cmd, cmdFmtArgs...)), stdout, stderr) //nolint:staticcheck
 
 	outString := stdout.String()
 	errString := stderr.String()

@@ -35,9 +35,9 @@ func (r *WinRMCommandRunner) RunComplexCommand(cmd boshsys.Command) (stdout, std
 	powerShellCommand := winrm.Powershell(fmt.Sprintf("%s %s", cmdName, strings.Join(cmdArgs, " ")))
 
 	if cmd.Stdin != nil {
-		exitCode, err = r.Client.RunWithInput(powerShellCommand, outBytes, errBytes, cmd.Stdin)
+		exitCode, err = r.Client.RunWithInput(powerShellCommand, outBytes, errBytes, cmd.Stdin) //nolint:staticcheck
 	} else {
-		exitCode, err = r.Client.Run(winrm.Powershell(powerShellCommand), outBytes, errBytes)
+		exitCode, err = r.Client.Run(winrm.Powershell(powerShellCommand), outBytes, errBytes) //nolint:staticcheck
 	}
 
 	outString := outBytes.String()
