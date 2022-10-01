@@ -97,7 +97,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.74
+# github.com/cloudfoundry/socks5-proxy v0.2.75
 ## explicit; go 1.19
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.0.4
@@ -343,7 +343,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20220921164117-439092de6870
+# golang.org/x/exp/typeparams v0.0.0-20220930202632-ec3f01382ef9
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
@@ -351,7 +351,7 @@ golang.org/x/exp/typeparams
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20220926192436-02166a98028e
+# golang.org/x/net v0.0.0-20220930213112-107f3e3c3b0b
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -360,7 +360,7 @@ golang.org/x/net/html/charset
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20220926163933-8cfa568d3c25
+# golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs

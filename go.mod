@@ -28,8 +28,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
-	golang.org/x/net v0.0.0-20220926192436-02166a98028e
-	golang.org/x/sys v0.0.0-20220926163933-8cfa568d3c25
+	golang.org/x/net v0.0.0-20220930213112-107f3e3c3b0b
+	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec
 	golang.org/x/tools v0.1.12
 	inet.af/wf v0.0.0-20220808030356-2db5c3d6461c
 )
@@ -41,7 +41,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.74 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.75 // indirect
 	github.com/coreos/go-systemd/v22 v22.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -72,7 +72,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20220925034521-797b0c90d8ab // indirect
-	golang.org/x/exp/typeparams v0.0.0-20220921164117-439092de6870 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20220930202632-ec3f01382ef9 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
