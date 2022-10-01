@@ -55,7 +55,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.80
+# github.com/cloudfoundry/bosh-davcli v0.0.81
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -63,7 +63,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.335
+# github.com/cloudfoundry/bosh-utils v0.0.336
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -90,7 +90,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.74
+# github.com/cloudfoundry/socks5-proxy v0.2.75
 ## explicit; go 1.19
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.0.4
@@ -313,13 +313,13 @@ github.com/stretchr/testify/assert
 # go4.org/intern v0.0.0-20220617035311-6925f38cc365
 ## explicit; go 1.13
 go4.org/intern
-# go4.org/netipx v0.0.0-20220922150402-a3c4c4abef03
+# go4.org/netipx v0.0.0-20220925034521-797b0c90d8ab
 ## explicit; go 1.18
 go4.org/netipx
 # go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760
 ## explicit; go 1.11
 go4.org/unsafe/assume-no-moving-gc
-# golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7
+# golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
 ## explicit; go 1.17
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -332,7 +332,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20220921164117-439092de6870
+# golang.org/x/exp/typeparams v0.0.0-20220930202632-ec3f01382ef9
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
@@ -340,7 +340,7 @@ golang.org/x/exp/typeparams
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20220923203811-8be639271d50
+# golang.org/x/net v0.0.0-20220930213112-107f3e3c3b0b
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -349,7 +349,7 @@ golang.org/x/net/html/charset
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
+# golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
