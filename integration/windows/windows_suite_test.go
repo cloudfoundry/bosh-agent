@@ -3,24 +3,21 @@ package windows_test
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"testing"
+	"text/template"
 	"time"
 
-	"github.com/onsi/gomega/gexec"
-
-	"net/http"
-
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	"github.com/masterzen/winrm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 
-	"testing"
-	"text/template"
-
+	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
 	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 )
 
