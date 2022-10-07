@@ -6,15 +6,14 @@ jobs:
   lint:
     strategy:
       matrix:
-        go: [1.19]
         os: [macos-latest, windows-2019, ubuntu-latest]
     name: lint
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go }}
-      - uses: actions/checkout@v3
+          go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v3
         if: ${{ matrix.os == 'windows-2019' }}
       - uses: golangci/golangci-lint-action@v3
