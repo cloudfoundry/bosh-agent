@@ -67,9 +67,11 @@ type JetStream interface {
 	// gone.
 	// * If Durable() option is specified, the library will attempt to lookup a JetStream
 	// consumer with this name, and if found, will bind to it and not attempt to
-	// delete it. However, if not found, the library will send a request to create
-	// such durable JetStream consumer. The library will delete the JetStream consumer
-	// after an Unsubscribe() or Drain().
+	// delete it. However, if not found, the library will send a request to
+	// create such durable JetStream consumer. Note that the library will delete
+	// the JetStream consumer after an Unsubscribe() or Drain() only if it
+	// created the durable consumer while subscribing. If the durable consumer
+	// already existed prior to subscribing it won't be deleted.
 	// * If Bind() option is provided, the library will attempt to lookup the
 	// consumer with the given name, and if successful, bind to it. If the lookup fails,
 	// then the Subscribe() call will return an error.
@@ -1256,6 +1258,9 @@ func (js *js) QueueSubscribeSync(subj, queue string, opts ...SubOpt) (*Subscript
 }
 
 // ChanSubscribe creates channel based Subscription.
+// Using ChanSubscribe without buffered capacity is not recommended since
+// it will be prone to dropping messages with a slow consumer error.  Make sure to give the channel enough
+// capacity to handle bursts in traffic, for example other Subscribe APIs use a default of 512k capacity in comparison.
 // See important note in Subscribe()
 func (js *js) ChanSubscribe(subj string, ch chan *Msg, opts ...SubOpt) (*Subscription, error) {
 	return js.subscribe(subj, _EMPTY_, nil, ch, false, false, opts)
@@ -1420,10 +1425,6 @@ func (js *js) subscribe(subj, queue string, cb MsgHandler, ch chan *Msg, isSync,
 
 	// Some checks for pull subscribers
 	if isPullMode {
-		// Check for bad ack policy
-		if o.cfg.AckPolicy == AckNonePolicy {
-			return nil, fmt.Errorf("nats: invalid ack mode for pull consumers: %s", o.cfg.AckPolicy)
-		}
 		// No deliver subject should be provided
 		if o.cfg.DeliverSubject != _EMPTY_ {
 			return nil, ErrPullSubscribeToPushConsumer
@@ -1938,7 +1939,7 @@ func (sub *Subscription) resetOrderedConsumer(sseq uint64) {
 		nc.mu.Unlock()
 
 		pushErr := func(err error) {
-			nc.handleConsumerSequenceMismatch(sub, err)
+			nc.handleConsumerSequenceMismatch(sub, fmt.Errorf("%w: recreating ordered consumer", err))
 			nc.unsubscribe(sub, 0, true)
 		}
 
@@ -1967,8 +1968,9 @@ func (sub *Subscription) resetOrderedConsumer(sseq uint64) {
 
 		resp, err := nc.Request(js.apiSubj(ccSubj), j, js.opts.wait)
 		if err != nil {
-			if err == ErrNoResponders {
-				err = ErrJetStreamNotEnabled
+			if errors.Is(err, ErrNoResponders) || errors.Is(err, ErrTimeout) {
+				// if creating consumer failed, retry
+				return
 			}
 			pushErr(err)
 			return
@@ -2041,11 +2043,17 @@ func (sub *Subscription) activityCheck() {
 	sub.mu.Unlock()
 
 	if !active {
-		nc.mu.Lock()
-		if errCB := nc.Opts.AsyncErrorCB; errCB != nil {
-			nc.ach.push(func() { errCB(nc, sub, ErrConsumerNotActive) })
+		if !jsi.ordered || nc.Status() != CONNECTED {
+			nc.mu.Lock()
+			if errCB := nc.Opts.AsyncErrorCB; errCB != nil {
+				nc.ach.push(func() { errCB(nc, sub, ErrConsumerNotActive) })
+			}
+			nc.mu.Unlock()
+			return
 		}
-		nc.mu.Unlock()
+		sub.mu.Lock()
+		sub.resetOrderedConsumer(jsi.sseq + 1)
+		sub.mu.Unlock()
 	}
 }
 
