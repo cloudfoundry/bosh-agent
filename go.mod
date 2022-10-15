@@ -7,12 +7,12 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.83
+	github.com/cloudfoundry/bosh-davcli v0.0.84
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.337
+	github.com/cloudfoundry/bosh-utils v0.0.338
 	github.com/cloudfoundry/gosigar v1.3.4
-	github.com/cloudfoundry/socks5-proxy v0.2.76 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.77 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.3.0+incompatible // indirect
 	github.com/golang/mock v1.6.0
 	github.com/kevinburke/ssh_config v1.2.0
@@ -20,15 +20,15 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/jwt v1.2.2 // indirect
 	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
-	github.com/nats-io/nats.go v1.17.0
+	github.com/nats-io/nats.go v1.18.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.21.1
+	github.com/onsi/gomega v1.22.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b
-	golang.org/x/net v0.0.0-20221004154528-8021a29435af
-	golang.org/x/sys v0.0.0-20221006211917-84dc82d7e875
+	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
+	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
+	golang.org/x/sys v0.0.0-20221013171732-95e765b1cc43
 )
 
 require (
@@ -64,5 +64,5 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/sirupsen/logrus v1.7.0 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 )
