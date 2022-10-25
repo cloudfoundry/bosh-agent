@@ -7,11 +7,11 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.84
+	github.com/cloudfoundry/bosh-davcli v0.0.86
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.338
+	github.com/cloudfoundry/bosh-utils v0.0.340
 	github.com/cloudfoundry/gosigar v1.3.4
-	github.com/cloudfoundry/socks5-proxy v0.2.77 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.78 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -28,9 +28,9 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
-	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
-	golang.org/x/sys v0.0.0-20221013171732-95e765b1cc43
+	golang.org/x/crypto v0.1.0
+	golang.org/x/net v0.1.0
+	golang.org/x/sys v0.1.0
 )
 
 require (
@@ -40,7 +40,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.0 // indirect
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
 	github.com/coreos/go-systemd/v22 v22.4.0 // indirect
@@ -61,9 +61,9 @@ require (
 	go4.org/intern v0.0.0-20220617035311-6925f38cc365 // indirect
 	go4.org/netipx v0.0.0-20220925034521-797b0c90d8ab // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20221012211006-4de253d81b95 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/tools v0.1.12 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20221025133541-111beb427cde // indirect
+	golang.org/x/mod v0.6.0 // indirect
+	golang.org/x/tools v0.2.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -83,7 +83,7 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
-	inet.af/wf v0.0.0-20220808030356-2db5c3d6461c
+	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
