@@ -2578,7 +2578,7 @@ sam:fakeanotheruser`)
 
 					mntPt, options = mounter.RemountInPlaceArgsForCall(0)
 					Expect(mntPt).To(Equal("/var/opt"))
-					Expect(options).To(Equal([]string{"nodev", "nosuid"}))
+					Expect(options).To(Equal([]string{"nodev"}))
 				})
 			})
 
@@ -2645,7 +2645,7 @@ sam:fakeanotheruser`)
 
 					mntPt, options = mounter.RemountInPlaceArgsForCall(1)
 					Expect(mntPt).To(Equal("/opt"))
-					Expect(options).To(Equal([]string{"nodev", "nosuid"}))
+					Expect(options).To(Equal([]string{"nodev"}))
 				})
 			})
 

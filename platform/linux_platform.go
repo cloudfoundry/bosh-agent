@@ -938,12 +938,12 @@ func (p linux) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Chmoding root tmp dir")
 	}
 
-	err = p.bindMountDir(boshRootTmpPath, systemTmpDir, false)
+	err = p.bindMountDir(boshRootTmpPath, systemTmpDir, false, false)
 	if err != nil {
 		return err
 	}
 
-	err = p.bindMountDir(boshRootTmpPath, varTmpDir, false)
+	err = p.bindMountDir(boshRootTmpPath, varTmpDir, false, false)
 	if err != nil {
 		return err
 	}
@@ -1030,7 +1030,7 @@ func (p linux) SetupLogDir() error {
 		return err
 	}
 
-	err = p.bindMountDir(boshRootLogPath, logDir, false)
+	err = p.bindMountDir(boshRootLogPath, logDir, false, false)
 	if err != nil {
 		return err
 	}
@@ -1077,7 +1077,7 @@ func (p linux) SetupOptDir() error {
 		return bosherr.WrapError(err, "Chowning root var opt dir")
 	}
 
-	err = p.bindMountDir(boshRootVarOptDirPath, varOptDir, true)
+	err = p.bindMountDir(boshRootVarOptDirPath, varOptDir, true, true)
 	if err != nil {
 		return err
 	}
@@ -1095,7 +1095,7 @@ func (p linux) SetupOptDir() error {
 		return bosherr.WrapError(err, "Chowning root opt dir")
 	}
 
-	err = p.bindMountDir(boshRootOptDirPath, optDir, true)
+	err = p.bindMountDir(boshRootOptDirPath, optDir, true, true)
 	if err != nil {
 		return err
 	}
@@ -1130,7 +1130,7 @@ func (p linux) SetupLoggingAndAuditing() error {
 	return nil
 }
 
-func (p linux) bindMountDir(mountSource, mountPoint string, allowExec bool) error {
+func (p linux) bindMountDir(mountSource, mountPoint string, allowExec bool, allowSuid bool) error {
 	bindMounter := boshdisk.NewLinuxBindMounter(p.diskManager.GetMounter())
 	mounted, err := bindMounter.IsMounted(mountPoint)
 
@@ -1143,7 +1143,10 @@ func (p linux) bindMountDir(mountSource, mountPoint string, allowExec bool) erro
 		return err
 	}
 
-	mountOptions := []string{"nodev", "nosuid"}
+	mountOptions := []string{"nodev"}
+	if !allowSuid {
+		mountOptions = append(mountOptions, "nosuid")
+	}
 	if !allowExec {
 		mountOptions = append(mountOptions, "noexec")
 	}
