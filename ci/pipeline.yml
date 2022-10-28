@@ -225,6 +225,8 @@ jobs:
     plan:
       - get: bosh-agent
         trigger: true
+      - get: bosh-agent-registry-image
+        trigger: true
       - task: test-unit
         file: bosh-agent/ci/tasks/test-unit.yml
 
@@ -232,6 +234,8 @@ jobs:
     serial: true
     plan:
       - get: bosh-agent
+        trigger: true
+      - get: bosh-agent-registry-image
         trigger: true
       - task: test-unit
         file: bosh-agent/ci/tasks/test-unit-windows.yml
@@ -246,6 +250,7 @@ jobs:
             trigger: true
           - get: bosh-ecosystem-concourse
           - get: bosh-agent-registry-image
+            trigger: true
           - get: gcp-stemcell
             trigger: true
       - do:
@@ -362,6 +367,7 @@ jobs:
           trigger: true
         - get: bosh-ecosystem-concourse
         - get: bosh-agent-registry-image
+          trigger: true
         - get: aws-stemcell
         - get: bosh-bosh-release
         - get: bpm-bosh-release
@@ -516,6 +522,13 @@ jobs:
               - test-integration
               - test-unit-windows
               - test-integration-windows
+          - get: bosh-agent-registry-image
+            trigger: true
+            passed:
+              - test-unit
+              - test-integration
+              - test-unit-windows
+              - test-integration-windows
 
       - task: tests
         privileged: true
@@ -529,6 +542,10 @@ jobs:
             passed:
               - bosh-integration-tests
             get: bosh-agent
+          - get: bosh-agent-registry-image
+            trigger: true
+            passed:
+              - bosh-integration-tests
           - get: version-semver
             params:
               bump: minor
@@ -545,8 +562,10 @@ jobs:
           tag_prefix: v
       - in_parallel:
         - task: build-linux
+          image: bosh-agent-registry-image
           file: bosh-agent/ci/tasks/build-linux.yml
         - task: build-windows
+          image: bosh-agent-registry-image
           file: bosh-agent/ci/tasks/build-windows.yml
       - put: bosh-agent-index
         params:
