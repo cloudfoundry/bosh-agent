@@ -5,6 +5,8 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 GOOS="${GOOS:-$(go env GOOS)}"
 
+echo "Building with $(go version)..."
+
 go build -o "${ROOT_DIR}/out/bosh-agent" \
   "${ROOT_DIR}/main"
 
