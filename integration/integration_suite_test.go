@@ -6,14 +6,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/integration"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-
-	. "github.com/cloudfoundry/bosh-agent/integration"
 )
 
 var (
-	testEnvironment *TestEnvironment
+	testEnvironment *integration.TestEnvironment
 )
 
 func TestIntegration(t *testing.T) {
@@ -24,7 +23,7 @@ func TestIntegration(t *testing.T) {
 		logger := boshlog.NewLogger(logLevel)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		var err error
-		testEnvironment, err = NewTestEnvironment(cmdRunner, logLevel)
+		testEnvironment, err = integration.NewTestEnvironment(cmdRunner, logLevel)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.StopAgent()

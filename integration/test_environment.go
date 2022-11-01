@@ -649,7 +649,7 @@ func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) err
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(t.AssetsDir(), "test.json"), settingsJSON, 0644)
+	err = os.WriteFile(filepath.Join(t.AssetsDir(), "test.json"), settingsJSON, 0644)
 	if err != nil {
 		return err
 	}

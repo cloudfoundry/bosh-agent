@@ -1,12 +1,13 @@
 package infrastructure_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/infrastructure"
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"reflect"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/infrastructure"
+	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
