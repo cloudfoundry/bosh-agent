@@ -665,7 +665,11 @@ func (kv *kvs) Delete(key string, opts ...DeleteOpt) error {
 	if kv.useJSPfx {
 		b.WriteString(kv.js.opts.pre)
 	}
-	b.WriteString(kv.pre)
+	if kv.putPre != _EMPTY_ {
+		b.WriteString(kv.putPre)
+	} else {
+		b.WriteString(kv.pre)
+	}
 	b.WriteString(key)
 
 	// DEL op marker. For watch functionality.
@@ -922,7 +926,7 @@ func (kv *kvs) Watch(keys string, opts ...WatchOpt) (KeyWatcher, error) {
 	}
 
 	// Used ordered consumer to deliver results.
-	subOpts := []SubOpt{OrderedConsumer()}
+	subOpts := []SubOpt{BindStream(kv.stream), OrderedConsumer()}
 	if !o.includeHistory {
 		subOpts = append(subOpts, DeliverLastPerSubject())
 	}
@@ -1009,7 +1013,7 @@ func (js *js) KeyValueStoreNames() <-chan string {
 		defer close(ch)
 		for l.Next() {
 			for _, info := range l.Page() {
-				if !strings.HasPrefix(info.Config.Name, "KV_") {
+				if !strings.HasPrefix(info.Config.Name, kvBucketNamePre) {
 					continue
 				}
 				ch <- info.Config.Name
@@ -1029,10 +1033,10 @@ func (js *js) KeyValueStores() <-chan KeyValueStatus {
 		defer close(ch)
 		for l.Next() {
 			for _, info := range l.Page() {
-				if !strings.HasPrefix(info.Config.Name, "KV_") {
+				if !strings.HasPrefix(info.Config.Name, kvBucketNamePre) {
 					continue
 				}
-				ch <- &KeyValueBucketStatus{nfo: info, bucket: strings.TrimPrefix(info.Config.Name, "KV_")}
+				ch <- &KeyValueBucketStatus{nfo: info, bucket: strings.TrimPrefix(info.Config.Name, kvBucketNamePre)}
 			}
 		}
 	}()
