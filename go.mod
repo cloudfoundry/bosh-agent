@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.92
+	github.com/cloudfoundry/bosh-davcli v0.0.94
 	github.com/cloudfoundry/bosh-init v0.0.103
 	github.com/cloudfoundry/bosh-utils v0.0.341
 	github.com/cloudfoundry/gosigar v1.3.4
@@ -20,17 +20,17 @@ require (
 	github.com/masterzen/winrm v0.0.0-20220917170901-b07f6cb0598d
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.19.1
+	github.com/nats-io/nats.go v1.20.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.24.0
+	github.com/onsi/gomega v1.24.1
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/crypto v0.1.0
-	golang.org/x/net v0.1.0
-	golang.org/x/sys v0.1.0
-	golang.org/x/tools v0.2.0
+	golang.org/x/crypto v0.2.0
+	golang.org/x/net v0.2.0
+	golang.org/x/sys v0.2.0
+	golang.org/x/tools v0.3.0
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
 
@@ -41,8 +41,8 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.78 // indirect
-	github.com/coreos/go-systemd/v22 v22.4.0 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.79 // indirect
+	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -72,8 +72,8 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20220925034521-797b0c90d8ab // indirect
-	golang.org/x/exp/typeparams v0.0.0-20221031165847-c99f073a8326 // indirect
-	golang.org/x/mod v0.6.0 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20221111204811-129d8d6c17ab // indirect
+	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
