@@ -82,7 +82,7 @@ resources:
   - name: golang-registry-image
     type: registry-image
     source:
-      repository: bosh/golang-release
+      repository: docker.io/bosh/golang-release
       username: ((docker.username))
       password: ((docker.password))
 
