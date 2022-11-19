@@ -62,7 +62,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.94
+# github.com/cloudfoundry/bosh-davcli v0.0.96
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -70,7 +70,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.341
+# github.com/cloudfoundry/bosh-utils v0.0.342
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -97,7 +97,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.79
+# github.com/cloudfoundry/socks5-proxy v0.2.80
 ## explicit; go 1.19
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.0.4
@@ -330,7 +330,7 @@ go.opencensus.io/trace/tracestate
 # go4.org/netipx v0.0.0-20220925034521-797b0c90d8ab
 ## explicit; go 1.18
 go4.org/netipx
-# golang.org/x/crypto v0.2.0
+# golang.org/x/crypto v0.3.0
 ## explicit; go 1.17
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -343,7 +343,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20221111204811-129d8d6c17ab
+# golang.org/x/exp/typeparams v0.0.0-20221114191408-850992195362
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.7.0

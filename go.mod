@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.94
+	github.com/cloudfoundry/bosh-davcli v0.0.96
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.341
+	github.com/cloudfoundry/bosh-utils v0.0.342
 	github.com/cloudfoundry/gosigar v1.3.4
 	github.com/containerd/cgroups v1.0.4
 	github.com/coreos/go-iptables v0.6.0
@@ -27,7 +27,7 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/crypto v0.2.0
+	golang.org/x/crypto v0.3.0
 	golang.org/x/net v0.2.0
 	golang.org/x/sys v0.2.0
 	golang.org/x/tools v0.3.0
@@ -41,7 +41,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.79 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.80 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -72,7 +72,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20220925034521-797b0c90d8ab // indirect
-	golang.org/x/exp/typeparams v0.0.0-20221111204811-129d8d6c17ab // indirect
+	golang.org/x/exp/typeparams v0.0.0-20221114191408-850992195362 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
