@@ -4,10 +4,14 @@ resource_types:
     type: docker-image
     source:
       repository: cloudfoundry/bosh-deployment-resource
+      username: ((docker.username))
+      password: ((docker.password))
   - name: metalink-resource
     type: registry-image
     source:
       repository: dpb587/metalink-repository-resource
+      username: ((docker.username))
+      password: ((docker.password))
   - name: pivnet
     type: docker-image
     source:
