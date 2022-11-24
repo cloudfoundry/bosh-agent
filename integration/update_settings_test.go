@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 
 	. "github.com/onsi/ginkgo"
@@ -10,32 +9,20 @@ import (
 
 var _ = Describe("CertManager", func() {
 	var (
-		agentClient      *integrationagentclient.IntegrationAgentClient
-		registrySettings settings.Settings
+		fileSettings settings.Settings
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
-		Expect(err).ToNot(HaveOccurred())
-
-		registrySettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
+		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -51,27 +38,18 @@ var _ = Describe("CertManager", func() {
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StartRegistry(registrySettings)
+		err = testEnvironment.CreateFilesettings(fileSettings)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
+		err := testEnvironment.StartAgentTunnel()
 		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("on ubuntu", func() {
@@ -90,7 +68,7 @@ QTETMBEGA1U=
 -----END CERTIFICATE-----`
 			settings := settings.UpdateSettings{TrustedCerts: cert}
 
-			err := agentClient.UpdateSettings(settings)
+			err := testEnvironment.AgentClient.UpdateSettings(settings)
 
 			Expect(err).NotTo(HaveOccurred())
 

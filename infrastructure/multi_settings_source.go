@@ -21,6 +21,10 @@ func NewMultiSettingsSource(sources ...boshsettings.Source) (boshsettings.Source
 	return &MultiSettingsSource{sources: sources}, err
 }
 
+func (s *MultiSettingsSource) GetSources() []boshsettings.Source {
+	return s.sources
+}
+
 func (s *MultiSettingsSource) PublicSSHKeyForUsername(username string) (string, error) {
 	if s.selectedSSHKeySource != nil {
 		return s.selectedSSHKeySource.PublicSSHKeyForUsername(username)

@@ -7,37 +7,21 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("prepare", func() {
 	var (
-		agentClient      *integrationagentclient.IntegrationAgentClient
-		registrySettings settings.Settings
-		applySpec        applyspec.V1ApplySpec
+		fileSettings settings.Settings
+		applySpec    applyspec.V1ApplySpec
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
+		err := testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.CleanupLogFile()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.SetupConfigDrive()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
-		Expect(err).ToNot(HaveOccurred())
-
-		registrySettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
+		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -55,27 +39,32 @@ var _ = Describe("prepare", func() {
 
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
+		err = testEnvironment.CreateFilesettings(fileSettings)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartRegistry(registrySettings)
-		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
+		// StartAgentTunnel also acts as a wait condition for the agent to have fully started. Copying over the blobs before it fully starts, will result in issues because the agent cleans up dirs on start.
 
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
+		err := testEnvironment.StartAgentTunnel()
 		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
+		Expect(err).NotTo(HaveOccurred())
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
+		Expect(err).NotTo(HaveOccurred())
+
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -113,7 +102,7 @@ var _ = Describe("prepare", func() {
 				JobSpec: applyspec.JobSpec{
 					Name: stringPointerFunc("foobar-ig"),
 					JobTemplateSpecs: []applyspec.JobTemplateSpec{
-						applyspec.JobTemplateSpec{
+						{
 							Name:    "foobar",
 							Version: "1234",
 						},
@@ -142,21 +131,13 @@ var _ = Describe("prepare", func() {
 					},
 				},
 			}
-		})
 
-		JustBeforeEach(func() {
-			_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
-			Expect(err).NotTo(HaveOccurred())
-
-			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
-			Expect(err).NotTo(HaveOccurred())
-
-			err = testEnvironment.StartBlobstore()
+			err := testEnvironment.StartBlobstore()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
-			err := agentClient.Prepare(applySpec)
+			err := testEnvironment.AgentClient.Prepare(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := testEnvironment.RunCommand("sudo stat /var/vcap/data/packages")
@@ -202,7 +183,7 @@ var _ = Describe("prepare", func() {
 				JobSpec: applyspec.JobSpec{
 					Name: stringPointerFunc("foobar-ig"),
 					JobTemplateSpecs: []applyspec.JobTemplateSpec{
-						applyspec.JobTemplateSpec{
+						{
 							Name:    "foobar",
 							Version: "1234",
 						},
@@ -229,22 +210,11 @@ var _ = Describe("prepare", func() {
 					},
 				},
 			}
-		})
 
-		JustBeforeEach(func() {
-			_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
-			Expect(err).NotTo(HaveOccurred())
-
-			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
-			Expect(err).NotTo(HaveOccurred())
-			err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
-			Expect(err).NotTo(HaveOccurred())
-			err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
-			err := agentClient.Prepare(applySpec)
+			err := testEnvironment.AgentClient.Prepare(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := testEnvironment.RunCommand("sudo stat /var/vcap/data/packages")
@@ -270,14 +240,16 @@ var _ = Describe("prepare", func() {
 
 		Context("when settings tmpfs is enabled", func() {
 			BeforeEach(func() {
-				registrySettings.Env.Bosh.Agent.Settings.TmpFS = true
+				fileSettings.Env.Bosh.Agent.Settings.TmpFS = true
+				err := testEnvironment.CreateFilesettings(fileSettings)
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("mounts a tmpfs for /var/vcap/settings", func() {
-				err := agentClient.Prepare(applySpec)
+				err := testEnvironment.AgentClient.Prepare(applySpec)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = agentClient.AddPersistentDisk("disk-cid", "/dev/sdf")
+				err = testEnvironment.AgentClient.AddPersistentDisk("disk-cid", "/dev/sdf")
 				Expect(err).NotTo(HaveOccurred())
 
 				output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")
@@ -302,11 +274,13 @@ var _ = Describe("prepare", func() {
 
 		Context("when job dir tmpfs is enabled", func() {
 			BeforeEach(func() {
-				registrySettings.Env.Bosh.JobDir.TmpFS = true
+				fileSettings.Env.Bosh.JobDir.TmpFS = true
+				err := testEnvironment.CreateFilesettings(fileSettings)
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("mounts a tmpfs for /var/vcap/data/jobs", func() {
-				err := agentClient.Prepare(applySpec)
+				err := testEnvironment.AgentClient.Prepare(applySpec)
 				Expect(err).NotTo(HaveOccurred())
 
 				output, err := testEnvironment.RunCommand("sudo cat /proc/mounts")

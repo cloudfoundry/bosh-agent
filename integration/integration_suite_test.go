@@ -6,14 +6,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/integration"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-
-	. "github.com/cloudfoundry/bosh-agent/integration"
 )
 
 var (
-	testEnvironment *TestEnvironment
+	testEnvironment *integration.TestEnvironment
 )
 
 func TestIntegration(t *testing.T) {
@@ -24,7 +23,7 @@ func TestIntegration(t *testing.T) {
 		logger := boshlog.NewLogger(logLevel)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		var err error
-		testEnvironment, err = NewTestEnvironment(cmdRunner, logLevel)
+		testEnvironment, err = integration.NewTestEnvironment(cmdRunner, logLevel)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.StopAgent()
@@ -39,19 +38,36 @@ func TestIntegration(t *testing.T) {
 		err = testEnvironment.EnsureRootDeviceIsLargeEnough()
 		Expect(err).ToNot(HaveOccurred())
 
+		output, err := testEnvironment.RunCommand("sudo chmod +x /var/vcap/bosh/bin/bosh-agent && sudo /var/vcap/bosh/bin/bosh-agent -v")
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(output).To(ContainSubstring("[DEV BUILD]"))
+
 		return []byte("done")
 
 	}, func(in []byte) {})
+
+	JustBeforeEach(func() {
+		err := testEnvironment.StartAgent()
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	AfterEach(func() {
 
 		err := testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.DetachLoopDevices()
+		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.ResetDeviceMap()
 		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.StopAgentTunnel()
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.StopAgent()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	RunSpecs(t, "Integration Suite")

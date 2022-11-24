@@ -16,9 +16,7 @@ type Options struct {
 }
 
 type SettingsOptions struct {
-	Sources       SourceOptionsSlice
-	UseServerName bool
-	UseRegistry   bool
+	Sources SourceOptionsSlice
 }
 
 // SourceOptionsSlice is used for unmarshalling different source types
@@ -92,68 +90,7 @@ func NewSettingsSourceFactory(
 }
 
 func (f SettingsSourceFactory) New() (boshsettings.Source, error) {
-	if f.options.UseRegistry {
-		return f.buildWithRegistry()
-	}
-
 	return f.buildWithoutRegistry()
-}
-
-func (f SettingsSourceFactory) buildWithRegistry() (boshsettings.Source, error) {
-	digDNSResolver := NewDigDNSResolver(f.platform.GetRunner(), f.logger)
-	resolver := NewRegistryEndpointResolver(digDNSResolver)
-
-	metadataServices := make([]MetadataService, 0, len(f.options.Sources))
-	for _, opts := range f.options.Sources {
-		var metadataService MetadataService
-
-		switch typedOpts := opts.(type) {
-		case HTTPSourceOptions:
-			metadataService = NewHTTPMetadataService(
-				typedOpts.URI,
-				typedOpts.Headers,
-				typedOpts.UserDataPath,
-				typedOpts.InstanceIDPath,
-				typedOpts.SSHKeysPath,
-				typedOpts.TokenPath,
-				resolver,
-				f.platform,
-				f.logger,
-			)
-
-		case ConfigDriveSourceOptions:
-			metadataService = NewConfigDriveMetadataService(
-				resolver,
-				f.platform,
-				typedOpts.DiskPaths,
-				typedOpts.MetaDataPath,
-				typedOpts.UserDataPath,
-				f.logger,
-			)
-
-		case FileSourceOptions:
-			metadataService = NewFileMetadataService(
-				typedOpts.MetaDataPath,
-				typedOpts.UserDataPath,
-				typedOpts.SettingsPath,
-				f.platform.GetFs(),
-				f.logger,
-			)
-
-		case CDROMSourceOptions:
-			return nil, bosherr.Error("CDROM source is not supported when registry is used")
-
-		case InstanceMetadataSourceOptions:
-			return nil, bosherr.Error("Instance Metadata source is not supported when registry is used")
-		}
-		metadataServices = append(metadataServices, metadataService)
-	}
-
-	metadataService := NewMultiSourceMetadataService(metadataServices...)
-	registryProvider := NewRegistryProvider(metadataService, f.platform, f.options.UseServerName, f.platform.GetFs(), f.logger)
-	settingsSource := NewComplexSettingsSource(metadataService, registryProvider, f.logger)
-
-	return settingsSource, nil
 }
 
 func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, error) {
@@ -163,13 +100,22 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 
 		switch typedOpts := opts.(type) {
 		case HTTPSourceOptions:
-			return nil, bosherr.Error("HTTP source is not supported without registry")
+			settingsSource = NewHTTPMetadataService(
+				typedOpts.URI,
+				typedOpts.Headers,
+				typedOpts.UserDataPath,
+				typedOpts.InstanceIDPath,
+				typedOpts.SSHKeysPath,
+				typedOpts.TokenPath,
+				f.platform,
+				f.logger,
+			)
 
 		case ConfigDriveSourceOptions:
 			settingsSource = NewConfigDriveSettingsSource(
 				typedOpts.DiskPaths,
 				typedOpts.MetaDataPath,
-				typedOpts.SettingsPath,
+				typedOpts.UserDataPath,
 				f.platform,
 				f.logger,
 			)

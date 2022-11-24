@@ -25,8 +25,6 @@ github.com/cilium/ebpf v0.0.0-20200110133405-4032b1d8aae3/go.mod h1:MA5e5Lr8slmE
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudfoundry/bosh-davcli v0.0.96 h1:8EpQ1fjznBwmhM7Prcw9jLMw9p/OwswUkXs/7HL/3V8=
 github.com/cloudfoundry/bosh-davcli v0.0.96/go.mod h1:ssqwHCnhk+llq/dluzmgMeNOXEVQd4ewWxd7Kcdjcv0=
-github.com/cloudfoundry/bosh-init v0.0.103 h1:LqkD5lTcic8zwhq4HZZRqPoOzSGS0RUq3pMivy6Iqpo=
-github.com/cloudfoundry/bosh-init v0.0.103/go.mod h1:Nb1jizWrJm8O3gg0WHTgs9mbAHtcnwo0Gu0iFxr35Zw=
 github.com/cloudfoundry/bosh-utils v0.0.342 h1:CgppE8JnY1kT1WSGqyIt6J7G0Ypyd4KAFnYTCn0yleM=
 github.com/cloudfoundry/bosh-utils v0.0.342/go.mod h1:FtoztxRfpySJrnLSjVFdcIXAN+Mb6U2XPBr8MF7Qf24=
 github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e h1:FQdRViaoDphGRfgrotl2QGsX1gbloe57dbGBS5CG6KY=

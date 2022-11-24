@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
+	"github.com/cloudfoundry/bosh-agent/settings"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
@@ -74,6 +75,11 @@ type TestEnvironment struct {
 	logger           logger.Logger
 	deviceMap        map[int]string
 	sshClient        *ssh.Client
+	AgentClient      *integrationagentclient.IntegrationAgentClient
+	AgentSettings    settings.Settings
+	mbusUser         string
+	mbusPass         string
+	mbusPort         int
 }
 
 func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (*TestEnvironment, error) {
@@ -88,48 +94,10 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (
 		logger:           logger.NewLogger(logLevel),
 		deviceMap:        make(map[int]string),
 		sshClient:        client,
+		mbusUser:         "mbus-user",
+		mbusPass:         "mbus-pass",
+		mbusPort:         6868,
 	}, nil
-}
-
-func (t *TestEnvironment) SetupConfigDrive() error {
-	deviceNum, err := t.AttachLoopDevice(10)
-	if err != nil {
-		return err
-	}
-
-	setupConfigDriveTemplate := `
-sudo mkfs -t ext3 -m 1 -v %s
-sudo e2label %s config-2
-sudo udevadm settle
-sudo rm -rf /tmp/config-drive
-sudo mkdir /tmp/config-drive
-sudo mount /dev/disk/by-label/config-2 /tmp/config-drive
-sudo mkdir -p /tmp/config-drive/ec2/latest
-`
-	setupConfigDriveScript := fmt.Sprintf(setupConfigDriveTemplate, t.deviceMap[deviceNum], t.deviceMap[deviceNum])
-
-	_, err = t.RunCommand(setupConfigDriveScript)
-	if err != nil {
-		return err
-	}
-
-	err = t.CopyFileToPath(filepath.Join(t.AssetsDir(), "meta-data.json"), "/tmp/config-drive/ec2/latest/meta-data.json")
-	if err != nil {
-		return err
-	}
-
-	err = t.CopyFileToPath(filepath.Join(t.AssetsDir(), "user-data.json"), "/tmp/config-drive/ec2/latest/user-data.json")
-	if err != nil {
-		return err
-	}
-
-	_, ignoredErr := t.RunCommand("sudo fuser -km /tmp/config-drive")
-	if ignoredErr != nil {
-		t.logger.Error("test environment", "SetupConfigDrive: %s", ignoredErr)
-	}
-
-	_, err = t.RunCommand("sudo umount -l /tmp/config-drive")
-	return err
 }
 
 type byLen []string
@@ -141,6 +109,8 @@ func (a byLen) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (t *TestEnvironment) DetachDevice(dir string) error {
 	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
 	if err != nil {
+
+		t.logger.Error("test environment", "DetachDevice: %s, Msg: %s", err, mountPoints)
 		return err
 	}
 
@@ -148,9 +118,11 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
 		if mountPoint != "" {
-			_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
-			if ignoredErr != nil {
-				t.logger.Error("test environment", "DetachDevice: %s", ignoredErr)
+			out, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
+			// running fuser -k also kills the ssh session, this will always produce an error
+			// only print the error if out is not empty.
+			if ignoredErr != nil && out != "" {
+				t.logger.Error("test environment", "DetachDevice: %s, Msg: %s", ignoredErr, out)
 			}
 			_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
 			if ignoredErr != nil {
@@ -260,17 +232,21 @@ func (t *TestEnvironment) CleanupDataDir() error {
 }
 
 func (t *TestEnvironment) ResetDeviceMap() error {
-	for n, loopDevice := range t.deviceMap {
-		ignoredErr := t.DetachLoopDevice(loopDevice)
+	out, err := t.RunCommand("sudo losetup -a | cut -f1 -d:")
+	if err != nil {
+		return err
+	}
+	for _, loopDev := range strings.Split(strings.TrimSuffix(out, "\n"), "\n") {
+		ignoredErr := t.DetachLoopDevice(loopDev)
 		if ignoredErr != nil {
 			t.logger.Error("test environment", "ResetDeviceMap: %s", ignoredErr)
 		}
-		_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
-		if err != nil {
-			return err
-		}
-		t.deviceMap = make(map[int]string)
 	}
+	_, err = t.RunCommand("sudo rm -f /virtualfs-*")
+	if err != nil {
+		return err
+	}
+	t.deviceMap = make(map[int]string)
 	return nil
 }
 
@@ -319,12 +295,20 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 		if ignoredErr != nil {
 			t.logger.Error("test environment", "EnsureRootDeviceIsLargeEnough: %s", ignoredErr)
 		}
-
-		_, err = t.RunCommand("sudo parted /dev/sda ---pretend-input-tty resizepart 1 yes 10000M")
+		_, err = t.RunCommand("cat /etc/lsb-release | grep -i jammy")
+		// parteds behaviour changed and providing yes via params stopped working for jammy.
+		// so test if we're running on jammy and adjust parted command
 		if err != nil {
-			return err
+			_, err = t.RunCommand("sudo parted /dev/sda ---pretend-input-tty resizepart 1 yes 10000M")
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = t.RunCommand("yes | sudo parted /dev/sda ---pretend-input-tty resizepart 1 10000M")
+			if err != nil {
+				return err
+			}
 		}
-
 		_, err = t.RunCommand("sudo resize2fs -f /dev/sda1")
 		if err != nil {
 			return err
@@ -424,10 +408,14 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 
 		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
 			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" {
-				_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
-				if ignoredErr != nil {
-					t.logger.Error("test environment", "DetachPartitionedRootDevice: %s", ignoredErr)
+				for _, path := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
+					_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", path))
+					if ignoredErr != nil {
+						t.logger.Error("test environment", "DetachPartitionedRootDevice: %s", ignoredErr)
+					}
+
 				}
+
 			}
 
 			if i > 0 {
@@ -529,6 +517,10 @@ func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
 }
 
 func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
+	_, err := t.RunCommand("sudo rm -f /var/vcap/bosh/agent.json")
+	if err != nil {
+		return err
+	}
 	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), configFile), "/var/vcap/bosh/agent.json")
 }
 
@@ -578,45 +570,46 @@ func (er emptyReader) Read(_ []byte) (int, error) {
 	return 0, nil
 }
 
-func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort int) (*integrationagentclient.IntegrationAgentClient, error) {
+func (t *TestEnvironment) StartAgentTunnel() error {
 	if t.sshTunnelProc != nil {
-		return nil, fmt.Errorf("Already running")
+		return fmt.Errorf("Already running")
 	}
 
 	sshCmd := boshsys.Command{
 		Name: "ssh",
 		Args: []string{
 			"-N",
-			fmt.Sprintf("-L16868:127.0.0.1:%d", mbusPort),
+			fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort),
 			t.agentIP(),
 		},
 		Stdin: emptyReader{},
 	}
 	newTunnelProc, err := t.cmdRunner.RunComplexCommandAsync(sshCmd)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	t.sshTunnelProc = newTunnelProc
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
-	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", mbusUser, mbusPass)
-	client := integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
+	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", t.mbusUser, t.mbusPass)
+	t.AgentClient = integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
 
 	for i := 1; i < 90; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
 		time.Sleep(1 * time.Second)
-		_, err = client.Ping()
+		_, err = t.AgentClient.Ping()
 		if err == nil {
-			break
+			return nil
 		}
-		t.logger.Debug("test environment", err.Error())
 	}
-	return client, err
+	t.logger.Error("test environment", err.Error())
+	return err
+
 }
 
 func (t *TestEnvironment) StopAgentTunnel() error {
 	if t.sshTunnelProc == nil {
-		return fmt.Errorf("Not running")
+		return nil
 	}
 	t.sshTunnelProc.Wait()
 	ignoredErr := t.sshTunnelProc.TerminateNicely(5 * time.Second)
@@ -640,31 +633,43 @@ func (t *TestEnvironment) StartBlobstore() error {
 	return err
 }
 
-func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
+func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) error {
 	emptyCert := boshsettings.CertKeyPair{}
 	if settings.Env.Bosh.Mbus.Cert == emptyCert {
 		settings.Env.Bosh.Mbus.Cert.Certificate = agentCert
 		settings.Env.Bosh.Mbus.Cert.PrivateKey = agentKey
 	}
-
+	if settings.AgentID == "" {
+		settings.AgentID = "fake-agent-id"
+	}
+	if settings.Mbus == "" {
+		settings.Mbus = "https://mbus-user:mbus-pass@127.0.0.1:6868"
+	}
 	settingsJSON, err := json.Marshal(settings)
 	if err != nil {
 		return err
 	}
-
+	err = os.WriteFile(filepath.Join(t.AssetsDir(), "test.json"), settingsJSON, 0644)
+	if err != nil {
+		return err
+	}
+	_, err = t.RunCommand("sudo rm -f /var/vcap/settings.json")
+	if err != nil {
+		return err
+	}
 	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/settings.json")
 	if err != nil {
 		return err
 	}
+	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/update_settings.json")
+	if err != nil {
+		return err
+	}
 
-	t.RunCommand("sudo killall -9 fake-registry") //nolint:errcheck
-
-	_, err = t.RunCommand(
-		fmt.Sprintf(
-			`nohup /home/agent_test_user/fake-registry -user user -password pass -host 127.0.0.1 -port 9090 -instance instance-id -settings %s &> /dev/null &`,
-			strconv.Quote(string(settingsJSON)),
-		),
-	)
+	err = t.CopyFileToPath(filepath.Join(t.AssetsDir(), "test.json"), "/var/vcap/settings.json")
+	if err != nil {
+		return err
+	}
 	return err
 }
 
@@ -689,7 +694,7 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 	s, err := t.sshClient.NewSession()
 
 	if err != nil {
-		t.logger.Debug("Remote Cmd Runner", "NEWSESSION FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
+		t.logger.Error("Remote Cmd Runner", "NEWSESSION FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
 		return "", errors.WrapError(err, "Unable to establish SSH session: ")
 	}
 	defer s.Close()
@@ -703,6 +708,11 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 }
 
 func (t *TestEnvironment) CreateSensitiveBlobFromAsset(assetPath, blobID string) error {
+	_, err := t.RunCommand("sudo mkdir -p /var/vcap/data/sensitive_blobs")
+	if err != nil {
+		return err
+	}
+
 	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), assetPath), fmt.Sprintf("/var/vcap/data/sensitive_blobs/%s", blobID))
 }
 

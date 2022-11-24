@@ -1,11 +1,10 @@
 {
   "Platform": {
     "Linux": {
-      "CreatePartitionIfNoEphemeralDisk": true,
+      "UseDefaultTmpDir": true,
+      "UsePreformattedPersistentDisk": true,
+      "BindMountPersistentDisk": false,
       "DevicePathResolutionType": "virtio"
-    },
-    "Windows": {
-      "EnableEphemeralDiskMounting": true
     }
   },
   "Infrastructure": {
@@ -13,7 +12,7 @@
       "Sources": [
         {
           "Type": "File",
-          "SettingsPath": "C:\\bosh\\settings.json"
+          "SettingsPath": "/var/vcap/settings.json"
         }
       ]
     }

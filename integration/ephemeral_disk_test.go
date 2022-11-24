@@ -7,38 +7,30 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/settings"
 )
 
 var _ = Describe("EphemeralDisk", func() {
 	var (
-		registrySettings boshsettings.Settings
+		fileSettings settings.Settings
 	)
 
 	Context("mounted on /var/vcap/data", func() {
 		BeforeEach(func() {
-			err := testEnvironment.StopAgent()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.CleanupDataDir()
+			err := testEnvironment.CleanupDataDir()
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.CleanupLogFile()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.SetupConfigDrive()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
+			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()
 			Expect(err).ToNot(HaveOccurred())
 
-			registrySettings = boshsettings.Settings{
-				AgentID: "fake-agent-id",
-				Mbus:    "https://mbus-user:mbus-pass@127.0.0.1:6868",
-				Blobstore: boshsettings.Blobstore{
+			fileSettings = settings.Settings{
+				Blobstore: settings.Blobstore{
 					Type: "local",
 					Options: map[string]interface{}{
 						"blobstore_path": "/var/vcap/data",
@@ -46,27 +38,27 @@ var _ = Describe("EphemeralDisk", func() {
 				},
 				Networks: networks,
 			}
-		})
 
-		JustBeforeEach(func() {
-			err := testEnvironment.StartRegistry(registrySettings)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.StartAgent()
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		Context("when ephemeral disk is provided in settings", func() {
+
 			BeforeEach(func() {
-				registrySettings.Disks = boshsettings.Disks{
+
+				fileSettings.Disks = settings.Disks{
 					Ephemeral: "/dev/sdh",
 				}
-			})
+				err := testEnvironment.CreateFilesettings(fileSettings)
+				Expect(err).ToNot(HaveOccurred())
 
+			})
 			Context("when ephemeral disk exists", func() {
+
 				BeforeEach(func() {
+
 					err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 					Expect(err).ToNot(HaveOccurred())
+
 				})
 
 				AfterEach(func() {
@@ -124,7 +116,6 @@ var _ = Describe("EphemeralDisk", func() {
 					err := testEnvironment.DetachDevice("/dev/sdh")
 					Expect(err).ToNot(HaveOccurred())
 				})
-
 				It("agent fails with error", func() {
 					Eventually(func() bool {
 						return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
@@ -171,11 +162,13 @@ var _ = Describe("EphemeralDisk", func() {
 				Context("when swap size is set to 0", func() {
 					BeforeEach(func() {
 						swapSize := uint64(0)
-						registrySettings.Env = boshsettings.Env{
-							Bosh: boshsettings.BoshEnv{
+						fileSettings.Env = settings.Env{
+							Bosh: settings.BoshEnv{
 								SwapSizeInMB: &swapSize,
 							},
 						}
+						err := testEnvironment.CreateFilesettings(fileSettings)
+						Expect(err).ToNot(HaveOccurred())
 					})
 
 					It("does not partition a swap device", func() {

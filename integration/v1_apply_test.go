@@ -8,37 +8,24 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("v1_apply", func() {
 	var (
-		agentClient      *integrationagentclient.IntegrationAgentClient
-		registrySettings settings.Settings
-		applySpec        applyspec.V1ApplySpec
+		fileSettings settings.Settings
+		applySpec    applyspec.V1ApplySpec
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.StopAgent()
+		err := testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.CleanupLogFile()
+		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.SetupConfigDrive()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig("config-drive-agent.json")
-		Expect(err).ToNot(HaveOccurred())
-
-		registrySettings = settings.Settings{
-			AgentID: "fake-agent-id",
-
-			// note that this SETS the username and password for HTTP message bus access
-			Mbus: "https://mbus-user:mbus-pass@127.0.0.1:6868",
-
+		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
 				Options: map[string]interface{}{
@@ -56,31 +43,39 @@ var _ = Describe("v1_apply", func() {
 
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
-	})
 
-	JustBeforeEach(func() {
-		err := testEnvironment.StartRegistry(registrySettings)
+		err = testEnvironment.CreateFilesettings(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.StartAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		agentClient, err = testEnvironment.StartAgentTunnel("mbus-user", "mbus-pass", 6868)
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
+		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	JustBeforeEach(func() {
+		// StartAgentTunnel also acts as a wait condition for the agent to have fully started. Copying over the blobs before it fully starts, will result in issues because the agent cleans up dirs on start.
+		err := testEnvironment.StartAgentTunnel()
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Context("when configured with a signed urls", func() {
+
 		var (
 			barPackageSignedURL string
 			fooPackageSignedURL string
@@ -117,7 +112,7 @@ var _ = Describe("v1_apply", func() {
 				JobSpec: applyspec.JobSpec{
 					Name: stringPointerFunc("foobar-ig"),
 					JobTemplateSpecs: []applyspec.JobTemplateSpec{
-						applyspec.JobTemplateSpec{
+						{
 							Name:    "foobar",
 							Version: "1234",
 						},
@@ -146,15 +141,11 @@ var _ = Describe("v1_apply", func() {
 					},
 				},
 			}
-		})
 
-		JustBeforeEach(func() {
-			err := testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc")
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
-			err := agentClient.ApplyV1Spec(applySpec)
+			err := testEnvironment.AgentClient.ApplyV1Spec(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/run/foobar")
@@ -246,7 +237,7 @@ var _ = Describe("v1_apply", func() {
 				JobSpec: applyspec.JobSpec{
 					Name: stringPointerFunc("foobar-ig"),
 					JobTemplateSpecs: []applyspec.JobTemplateSpec{
-						applyspec.JobTemplateSpec{
+						{
 							Name:    "foobar",
 							Version: "1234",
 						},
@@ -273,22 +264,11 @@ var _ = Describe("v1_apply", func() {
 					},
 				},
 			}
-		})
 
-		JustBeforeEach(func() {
-			_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
-			Expect(err).NotTo(HaveOccurred())
-
-			err = testEnvironment.CreateSensitiveBlobFromAsset(filepath.Join("release", "jobs/foobar.tgz"), "abc0")
-			Expect(err).NotTo(HaveOccurred())
-			err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/bar.tgz"), "abc1")
-			Expect(err).NotTo(HaveOccurred())
-			err = testEnvironment.CreateBlobFromAsset(filepath.Join("release", "packages/foo.tgz"), "abc2")
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {
-			err := agentClient.ApplyV1Spec(applySpec)
+			err := testEnvironment.AgentClient.ApplyV1Spec(applySpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			output, err := testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/run/foobar")

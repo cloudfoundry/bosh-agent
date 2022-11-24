@@ -16,9 +16,6 @@ type FakeMetadataService struct {
 	ServerName       string
 	GetServerNameErr error
 
-	RegistryEndpoint       string
-	GetRegistryEndpointErr error
-
 	Networks    boshsettings.Networks
 	NetworksErr error
 
@@ -42,10 +39,6 @@ func (ms FakeMetadataService) GetInstanceID() (string, error) {
 
 func (ms FakeMetadataService) GetServerName() (string, error) {
 	return ms.ServerName, ms.GetServerNameErr
-}
-
-func (ms FakeMetadataService) GetRegistryEndpoint() (string, error) {
-	return ms.RegistryEndpoint, ms.GetRegistryEndpointErr
 }
 
 func (ms FakeMetadataService) GetNetworks() (boshsettings.Networks, error) {
