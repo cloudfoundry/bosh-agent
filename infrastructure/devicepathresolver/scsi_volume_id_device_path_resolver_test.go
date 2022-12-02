@@ -57,6 +57,38 @@ var _ = Describe("SCSIVolumeIDDevicePathResolver", func() {
 			Expect(devicePath).To(Equal("/dev/sdf"))
 		})
 
+		Context("when root disk is not on /dev/sda", func() {
+			BeforeEach(func() {
+				fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
+					"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
+					"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sdb",
+				})
+
+				fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:1:0/block/*", []string{
+					"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
+				})
+				fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:0:0/block/*", []string{
+					"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sdb",
+				})
+				diskSettings = boshsettings.DiskSettings{
+					VolumeID: "1",
+				}
+
+			})
+			It("reliably detects the scsi_host", func() {
+				devicePath, _, err := resolver.GetRealDevicePath(diskSettings)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(devicePath).To(Equal("/dev/sda"))
+
+				diskSettingsSystem := boshsettings.DiskSettings{
+					VolumeID: "0",
+				}
+				devicePath, _, err = resolver.GetRealDevicePath(diskSettingsSystem)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(devicePath).To(Equal("/dev/sdb"))
+			})
+		})
+
 		Context("when device does not immediately appear", func() {
 			It("retries detection of device", func() {
 				fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*",

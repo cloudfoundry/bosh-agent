@@ -40,7 +40,7 @@ func (devicePathResolver SCSIVolumeIDDevicePathResolver) GetRealDevicePath(diskS
 	volumeID := diskSettings.VolumeID
 
 	for _, rootDevicePath := range devicePaths {
-		if path.Base(rootDevicePath) == "sda" {
+		if strings.HasPrefix(path.Base(rootDevicePath), "sd") {
 			rootDevicePathSplits := strings.Split(rootDevicePath, "/")
 			if len(rootDevicePathSplits) > 5 {
 				scsiPath := rootDevicePathSplits[5]
