@@ -55,7 +55,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.116
+# github.com/cloudfoundry/bosh-davcli v0.0.118
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -63,7 +63,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.346
+# github.com/cloudfoundry/bosh-utils v0.0.347
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -332,7 +332,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20221217163422-3c43f8badb15
+# golang.org/x/exp/typeparams v0.0.0-20221230185412-738e83a70c30
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.7.0
