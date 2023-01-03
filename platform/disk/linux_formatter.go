@@ -1,6 +1,7 @@
 package disk
 
 import (
+	"os"
 	"regexp"
 	"strings"
 
@@ -9,14 +10,16 @@ import (
 )
 
 type linuxFormatter struct {
-	runner boshsys.CmdRunner
-	fs     boshsys.FileSystem
+	runner  boshsys.CmdRunner
+	fs      boshsys.FileSystem
+	mounter Mounter
 }
 
-func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) Formatter {
+func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem, m Mounter) Formatter {
 	return linuxFormatter{
-		runner: runner,
-		fs:     fs,
+		runner:  runner,
+		fs:      fs,
+		mounter: m,
 	}
 }
 
@@ -31,7 +34,7 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) erro
 			return err
 		}
 		// swap is not user-configured, so we're not concerned about reformatting
-	} else if existingFsType == FileSystemExt4 || existingFsType == FileSystemXFS {
+	} else if existingFsType == FileSystemBTRFS || existingFsType == FileSystemExt4 || existingFsType == FileSystemXFS {
 		// never reformat if it is already formatted in a supported format
 		return err
 	}
@@ -41,6 +44,12 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) erro
 		_, _, _, err = f.runner.RunCommand("mkswap", partitionPath)
 		if err != nil {
 			return bosherr.WrapError(err, "Shelling out to mkswap")
+		}
+
+	case FileSystemBTRFS:
+		_, _, _, err = f.runner.RunCommand("mkfs.btrfs", partitionPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Shelling out to mkfs.btrfs")
 		}
 
 	case FileSystemExt4:
@@ -73,6 +82,26 @@ func (f linuxFormatter) GrowFilesystem(partitionPath string) error {
 	}
 
 	switch existingFsType {
+	case FileSystemBTRFS:
+		// unlike other filesystems, BTRFS requires to be mounted to be resized
+		msg := "Failed to grow BTRFS filesystem"
+		tempDir, err := os.MkdirTemp("", "btrfs-mount")
+		if err != nil {
+			return bosherr.WrapError(err, msg+": failed to create temporary directory")
+		}
+		defer os.RemoveAll(tempDir)
+
+		err = f.mounter.Mount(partitionPath, tempDir)
+		if err != nil {
+			return bosherr.WrapError(err, msg+": failed to mount the partition")
+		}
+		defer f.mounter.Unmount(tempDir)
+
+		_, _, _, err = f.runner.RunCommand("btrfs", "filesystem", "resize", "max", tempDir)
+		if err != nil {
+			return bosherr.WrapError(err, msg)
+		}
+
 	case FileSystemExt4:
 		_, _, _, err := f.runner.RunCommand(
 			"resize2fs",

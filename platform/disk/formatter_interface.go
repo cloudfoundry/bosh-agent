@@ -4,12 +4,14 @@ type FileSystemType string
 
 const (
 	FileSystemSwap    FileSystemType = "swap"
+	FileSystemBTRFS   FileSystemType = "btrfs"
 	FileSystemExt4    FileSystemType = "ext4"
 	FileSystemXFS     FileSystemType = "xfs"
 	FileSystemDefault FileSystemType = ""
 
-	FileSystemExtResizeUtility = "resize2fs"
-	FileSystemXFSResizeUtility = "xfs_growfs"
+	FileSystemBTRFSResizeUtility = "btrfs"
+	FileSystemExtResizeUtility   = "resize2fs"
+	FileSystemXFSResizeUtility   = "xfs_growfs"
 )
 
 type Formatter interface {

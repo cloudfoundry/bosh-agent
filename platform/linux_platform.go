@@ -398,6 +398,9 @@ func (p linux) SetupRootDisk(ephemeralDiskPath string) error {
 	case boshdisk.FileSystemExt4:
 		resizeCmd = boshdisk.FileSystemExtResizeUtility
 		resizeCmdArgs = []string{"-f", rootDevice}
+	case boshdisk.FileSystemBTRFS:
+		resizeCmd = boshdisk.FileSystemBTRFSResizeUtility
+		resizeCmdArgs = []string{"filesystem", "resize", "max", rootDevicePath}
 	default:
 		return bosherr.Errorf("Cannot get filesystem type for root file system")
 	}
@@ -1255,7 +1258,7 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 
 		persistentDiskFS := diskSetting.FileSystemType
 		switch persistentDiskFS {
-		case boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
+		case boshdisk.FileSystemBTRFS, boshdisk.FileSystemExt4, boshdisk.FileSystemXFS:
 		case boshdisk.FileSystemDefault:
 			persistentDiskFS = boshdisk.FileSystemExt4
 		case boshdisk.FileSystemSwap:
@@ -1533,6 +1536,7 @@ func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64, desi
 	return swapSizeInBytes, linuxSizeInBytes, nil
 }
 
+// findRootDevicePathAndNumber return the device path of the / filesystem and it's partition number (ie: /dev/xvda, 1)
 func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 	mounts, err := p.diskManager.GetMountsSearcher().SearchMounts()
 	if err != nil {
@@ -1690,6 +1694,7 @@ func (p linux) RemoveStaticLibraries(staticLibrariesListFilePath string) error {
 	return nil
 }
 
+// partitionPath concatenate a device path and partition number (ie: /dev/sda, 3 → /dev/sda3)
 func (p linux) partitionPath(devicePath string, partitionNumber int) string {
 	switch {
 	case strings.HasPrefix(devicePath, "/dev/nvme"):
