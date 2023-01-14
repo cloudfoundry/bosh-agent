@@ -42,7 +42,7 @@ func FromStdIPRaw(std net.IP) (ip netip.Addr, ok bool) {
 	return netip.AddrFromSlice(std)
 }
 
-// IPNext returns the IP following ip.
+// AddrNext returns the IP following ip.
 // If there is none, it returns the IP zero value.
 //
 // Deprecated: use netip.Addr.Next instead.
@@ -122,7 +122,7 @@ func FromStdIPNet(std *net.IPNet) (prefix netip.Prefix, ok bool) {
 	return netip.PrefixFrom(ip, ones), true
 }
 
-// Range returns the inclusive range of IPs that p covers.
+// RangeOfPrefix returns the inclusive range of IPs that p covers.
 //
 // If p is zero or otherwise invalid, Range returns the zero value.
 func RangeOfPrefix(p netip.Prefix) IPRange {
@@ -133,7 +133,7 @@ func RangeOfPrefix(p netip.Prefix) IPRange {
 	return IPRangeFrom(p.Addr(), PrefixLastIP(p))
 }
 
-// IPNet returns the net.IPNet representation of an netip.Prefix.
+// PrefixIPNet returns the net.IPNet representation of an netip.Prefix.
 // The returned value is always non-nil.
 // Any zone identifier is dropped in the conversion.
 func PrefixIPNet(p netip.Prefix) *net.IPNet {
@@ -142,7 +142,21 @@ func PrefixIPNet(p netip.Prefix) *net.IPNet {
 	}
 	return &net.IPNet{
 		IP:   p.Addr().AsSlice(),
-		Mask: net.CIDRMask(int(p.Bits()), int(p.Addr().BitLen())),
+		Mask: net.CIDRMask(p.Bits(), p.Addr().BitLen()),
+	}
+}
+
+// AddrIPNet returns the net.IPNet representation of an netip.Addr
+// with a mask corresponding to the addresses's bit length.
+// The returned value is always non-nil.
+// Any zone identifier is dropped in the conversion.
+func AddrIPNet(addr netip.Addr) *net.IPNet {
+	if !addr.IsValid() {
+		return &net.IPNet{}
+	}
+	return &net.IPNet{
+		IP:   addr.AsSlice(),
+		Mask: net.CIDRMask(addr.BitLen(), addr.BitLen()),
 	}
 }
 
