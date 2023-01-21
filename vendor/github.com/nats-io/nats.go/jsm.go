@@ -310,7 +310,7 @@ func (js *js) AddConsumer(stream string, cfg *ConsumerConfig, opts ...JSOpt) (*C
 		consumerName = cfg.Durable
 	}
 	if consumerName != _EMPTY_ {
-		consInfo, err := js.ConsumerInfo(stream, consumerName)
+		consInfo, err := js.ConsumerInfo(stream, consumerName, opts...)
 		if err != nil && !errors.Is(err, ErrConsumerNotFound) && !errors.Is(err, ErrStreamNotFound) {
 			return nil, err
 		}
@@ -319,6 +319,8 @@ func (js *js) AddConsumer(stream string, cfg *ConsumerConfig, opts ...JSOpt) (*C
 			sameConfig := checkConfig(&consInfo.Config, cfg)
 			if sameConfig != nil {
 				return nil, fmt.Errorf("%w: creating consumer %q on stream %q", ErrConsumerNameAlreadyInUse, consumerName, stream)
+			} else {
+				return consInfo, nil
 			}
 		}
 	}
