@@ -1080,4 +1080,121 @@ var _ = Describe("AgentClient", func() {
 			})
 		})
 	})
+
+	Describe("SetUpSSH", func() {
+		Context("when the agent responds with a successful response", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value": {"command":"setup","status":"success","ip":"1.2.3.4","host_public_key":"some-key"}}`),
+					ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+						Method: "ssh",
+						Arguments: []interface{}{
+							"setup", map[string]interface{}{
+								"user":       "user",
+								"public_key": "user-key",
+							},
+						},
+						ReplyTo: replyToAddress,
+					}),
+				))
+			})
+
+			It("makes a POST request to the endpoint", func() {
+				_, err := agentClient.SetUpSSH("user", "user-key")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(server.ReceivedRequests()).To(HaveLen(1))
+			})
+
+			It("returns the value", func() {
+				responseValue, err := agentClient.SetUpSSH("user", "user-key")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(responseValue.Command).To(Equal("setup"))
+				Expect(responseValue.Status).To(Equal("success"))
+				Expect(responseValue.Ip).To(Equal("1.2.3.4"))
+				Expect(responseValue.HostPublicKey).To(Equal("some-key"))
+			})
+		})
+
+		Context("when agent does not respond with success", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.RespondWith(200, `{"value": {"command":"setup","status":"failed for some reason"}}`))
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.SetUpSSH("user", "user-key")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("Unable to setup SSH account with the agent, status was: failed for some reason")))
+			})
+		})
+
+		Context("when agent request results in an error", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(disconnectingRequestHandler)
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.SetUpSSH("user", "user-key")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("Performing request")))
+			})
+		})
+	})
+
+	Describe("CleanUpSSH", func() {
+		Context("when the agent responds with a successful response", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value": {"command":"cleanup","status":"success"}}`),
+					ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+						Method: "ssh",
+						Arguments: []interface{}{
+							"cleanup", map[string]interface{}{
+								"user_regex": "^user",
+							},
+						},
+						ReplyTo: replyToAddress,
+					}),
+				))
+			})
+
+			It("makes a POST request to the endpoint", func() {
+				_, err := agentClient.CleanUpSSH("user")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(server.ReceivedRequests()).To(HaveLen(1))
+			})
+
+			It("returns the value", func() {
+				responseValue, err := agentClient.CleanUpSSH("user")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(responseValue.Command).To(Equal("cleanup"))
+				Expect(responseValue.Status).To(Equal("success"))
+			})
+		})
+
+		Context("when agent does not respond with success", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.RespondWith(200, `{"value": {"command":"cleanup","status":"failed for some reason"}}`))
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.CleanUpSSH("user")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("Unable to cleanup SSH account with the agent, status was: failed for some reason")))
+			})
+		})
+
+		Context("when agent request results in an error", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(disconnectingRequestHandler)
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.CleanUpSSH("user")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("Performing request")))
+			})
+		})
+	})
 })

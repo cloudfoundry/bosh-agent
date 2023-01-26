@@ -32,6 +32,19 @@ type FakeAgentClient struct {
 	applyReturnsOnCall map[int]struct {
 		result1 error
 	}
+	CleanUpSSHStub        func(string) (agentclient.SSHResult, error)
+	cleanUpSSHMutex       sync.RWMutex
+	cleanUpSSHArgsForCall []struct {
+		arg1 string
+	}
+	cleanUpSSHReturns struct {
+		result1 agentclient.SSHResult
+		result2 error
+	}
+	cleanUpSSHReturnsOnCall map[int]struct {
+		result1 agentclient.SSHResult
+		result2 error
+	}
 	CompilePackageStub        func(agentclient.BlobRef, []agentclient.BlobRef) (agentclient.BlobRef, error)
 	compilePackageMutex       sync.RWMutex
 	compilePackageArgsForCall []struct {
@@ -149,6 +162,20 @@ type FakeAgentClient struct {
 	}
 	runScriptReturnsOnCall map[int]struct {
 		result1 error
+	}
+	SetUpSSHStub        func(string, string) (agentclient.SSHResult, error)
+	setUpSSHMutex       sync.RWMutex
+	setUpSSHArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	setUpSSHReturns struct {
+		result1 agentclient.SSHResult
+		result2 error
+	}
+	setUpSSHReturnsOnCall map[int]struct {
+		result1 agentclient.SSHResult
+		result2 error
 	}
 	StartStub        func() error
 	startMutex       sync.RWMutex
@@ -321,6 +348,70 @@ func (fake *FakeAgentClient) ApplyReturnsOnCall(i int, result1 error) {
 	fake.applyReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeAgentClient) CleanUpSSH(arg1 string) (agentclient.SSHResult, error) {
+	fake.cleanUpSSHMutex.Lock()
+	ret, specificReturn := fake.cleanUpSSHReturnsOnCall[len(fake.cleanUpSSHArgsForCall)]
+	fake.cleanUpSSHArgsForCall = append(fake.cleanUpSSHArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.CleanUpSSHStub
+	fakeReturns := fake.cleanUpSSHReturns
+	fake.recordInvocation("CleanUpSSH", []interface{}{arg1})
+	fake.cleanUpSSHMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeAgentClient) CleanUpSSHCallCount() int {
+	fake.cleanUpSSHMutex.RLock()
+	defer fake.cleanUpSSHMutex.RUnlock()
+	return len(fake.cleanUpSSHArgsForCall)
+}
+
+func (fake *FakeAgentClient) CleanUpSSHCalls(stub func(string) (agentclient.SSHResult, error)) {
+	fake.cleanUpSSHMutex.Lock()
+	defer fake.cleanUpSSHMutex.Unlock()
+	fake.CleanUpSSHStub = stub
+}
+
+func (fake *FakeAgentClient) CleanUpSSHArgsForCall(i int) string {
+	fake.cleanUpSSHMutex.RLock()
+	defer fake.cleanUpSSHMutex.RUnlock()
+	argsForCall := fake.cleanUpSSHArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeAgentClient) CleanUpSSHReturns(result1 agentclient.SSHResult, result2 error) {
+	fake.cleanUpSSHMutex.Lock()
+	defer fake.cleanUpSSHMutex.Unlock()
+	fake.CleanUpSSHStub = nil
+	fake.cleanUpSSHReturns = struct {
+		result1 agentclient.SSHResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeAgentClient) CleanUpSSHReturnsOnCall(i int, result1 agentclient.SSHResult, result2 error) {
+	fake.cleanUpSSHMutex.Lock()
+	defer fake.cleanUpSSHMutex.Unlock()
+	fake.CleanUpSSHStub = nil
+	if fake.cleanUpSSHReturnsOnCall == nil {
+		fake.cleanUpSSHReturnsOnCall = make(map[int]struct {
+			result1 agentclient.SSHResult
+			result2 error
+		})
+	}
+	fake.cleanUpSSHReturnsOnCall[i] = struct {
+		result1 agentclient.SSHResult
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeAgentClient) CompilePackage(arg1 agentclient.BlobRef, arg2 []agentclient.BlobRef) (agentclient.BlobRef, error) {
@@ -928,6 +1019,71 @@ func (fake *FakeAgentClient) RunScriptReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeAgentClient) SetUpSSH(arg1 string, arg2 string) (agentclient.SSHResult, error) {
+	fake.setUpSSHMutex.Lock()
+	ret, specificReturn := fake.setUpSSHReturnsOnCall[len(fake.setUpSSHArgsForCall)]
+	fake.setUpSSHArgsForCall = append(fake.setUpSSHArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.SetUpSSHStub
+	fakeReturns := fake.setUpSSHReturns
+	fake.recordInvocation("SetUpSSH", []interface{}{arg1, arg2})
+	fake.setUpSSHMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeAgentClient) SetUpSSHCallCount() int {
+	fake.setUpSSHMutex.RLock()
+	defer fake.setUpSSHMutex.RUnlock()
+	return len(fake.setUpSSHArgsForCall)
+}
+
+func (fake *FakeAgentClient) SetUpSSHCalls(stub func(string, string) (agentclient.SSHResult, error)) {
+	fake.setUpSSHMutex.Lock()
+	defer fake.setUpSSHMutex.Unlock()
+	fake.SetUpSSHStub = stub
+}
+
+func (fake *FakeAgentClient) SetUpSSHArgsForCall(i int) (string, string) {
+	fake.setUpSSHMutex.RLock()
+	defer fake.setUpSSHMutex.RUnlock()
+	argsForCall := fake.setUpSSHArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeAgentClient) SetUpSSHReturns(result1 agentclient.SSHResult, result2 error) {
+	fake.setUpSSHMutex.Lock()
+	defer fake.setUpSSHMutex.Unlock()
+	fake.SetUpSSHStub = nil
+	fake.setUpSSHReturns = struct {
+		result1 agentclient.SSHResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeAgentClient) SetUpSSHReturnsOnCall(i int, result1 agentclient.SSHResult, result2 error) {
+	fake.setUpSSHMutex.Lock()
+	defer fake.setUpSSHMutex.Unlock()
+	fake.SetUpSSHStub = nil
+	if fake.setUpSSHReturnsOnCall == nil {
+		fake.setUpSSHReturnsOnCall = make(map[int]struct {
+			result1 agentclient.SSHResult
+			result2 error
+		})
+	}
+	fake.setUpSSHReturnsOnCall[i] = struct {
+		result1 agentclient.SSHResult
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeAgentClient) Start() error {
 	fake.startMutex.Lock()
 	ret, specificReturn := fake.startReturnsOnCall[len(fake.startArgsForCall)]
@@ -1168,6 +1324,8 @@ func (fake *FakeAgentClient) Invocations() map[string][][]interface{} {
 	defer fake.addPersistentDiskMutex.RUnlock()
 	fake.applyMutex.RLock()
 	defer fake.applyMutex.RUnlock()
+	fake.cleanUpSSHMutex.RLock()
+	defer fake.cleanUpSSHMutex.RUnlock()
 	fake.compilePackageMutex.RLock()
 	defer fake.compilePackageMutex.RUnlock()
 	fake.deleteARPEntriesMutex.RLock()
@@ -1188,6 +1346,8 @@ func (fake *FakeAgentClient) Invocations() map[string][][]interface{} {
 	defer fake.removePersistentDiskMutex.RUnlock()
 	fake.runScriptMutex.RLock()
 	defer fake.runScriptMutex.RUnlock()
+	fake.setUpSSHMutex.RLock()
+	defer fake.setUpSSHMutex.RUnlock()
 	fake.startMutex.RLock()
 	defer fake.startMutex.RUnlock()
 	fake.stopMutex.RLock()
