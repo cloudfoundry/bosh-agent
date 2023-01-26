@@ -162,3 +162,26 @@ func (r *TaskResponse) TaskState() (string, error) {
 
 	return "finished", nil
 }
+
+type SSHResponse struct {
+	Value     SSHState
+	Exception *exception
+}
+
+func (r *SSHResponse) ServerError() error {
+	if r.Exception != nil {
+		return bosherr.Errorf("Agent responded with error: %s", r.Exception.Message)
+	}
+	return nil
+}
+
+func (r *SSHResponse) Unmarshal(message []byte) error {
+	return json.Unmarshal(message, r)
+}
+
+type SSHState struct {
+	Command       string `json:"command"`
+	Status        string `json:"status"`
+	Ip            string `json:"ip"`
+	HostPublicKey string `json:"host_public_key"`
+}

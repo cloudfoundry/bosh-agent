@@ -21,6 +21,8 @@ type AgentClient interface {
 	DeleteARPEntries(ips []string) error
 	SyncDNS(blobID, sha1 string, version uint64) (string, error)
 	RunScript(scriptName string, options map[string]interface{}) error
+	SetUpSSH(username string, publicKey string) (SSHResult, error)
+	CleanUpSSH(username string) (SSHResult, error)
 }
 
 type AgentState struct {
@@ -37,4 +39,11 @@ type BlobRef struct {
 	Version     string
 	BlobstoreID string
 	SHA1        string
+}
+
+type SSHResult struct {
+	Command       string
+	Status        string
+	Ip            string
+	HostPublicKey string
 }

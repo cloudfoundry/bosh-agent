@@ -152,6 +152,46 @@ func (c *AgentClient) RunScript(scriptName string, options map[string]interface{
 	return err
 }
 
+func (c *AgentClient) SetUpSSH(user string, publicKey string) (agentclient.SSHResult, error) {
+	var response SSHResponse
+	sshParams := map[string]string{"user": user, "public_key": publicKey}
+	err := c.AgentRequest.Send("ssh", []interface{}{"setup", sshParams}, &response)
+
+	if err != nil {
+		return agentclient.SSHResult{}, err
+	}
+
+	if response.Value.Status != "success" {
+		return agentclient.SSHResult{}, bosherr.Errorf("Unable to setup SSH account with the agent, status was: %s", response.Value.Status)
+	}
+
+	return agentclient.SSHResult{
+		Command:       response.Value.Command,
+		Status:        response.Value.Status,
+		Ip:            response.Value.Ip,
+		HostPublicKey: response.Value.HostPublicKey,
+	}, nil
+}
+
+func (c *AgentClient) CleanUpSSH(user string) (agentclient.SSHResult, error) {
+	var response SSHResponse
+	sshParams := map[string]string{"user_regex": "^" + user}
+	err := c.AgentRequest.Send("ssh", []interface{}{"cleanup", sshParams}, &response)
+
+	if err != nil {
+		return agentclient.SSHResult{}, err
+	}
+
+	if response.Value.Status != "success" {
+		return agentclient.SSHResult{}, bosherr.Errorf("Unable to cleanup SSH account with the agent, status was: %s", response.Value.Status)
+	}
+
+	return agentclient.SSHResult{
+		Command: response.Value.Command,
+		Status:  response.Value.Status,
+	}, nil
+}
+
 func (c *AgentClient) CompilePackage(packageSource agentclient.BlobRef, compiledPackageDependencies []agentclient.BlobRef) (compiledPackageRef agentclient.BlobRef, err error) {
 	dependencies := make(map[string]BlobRef, len(compiledPackageDependencies))
 	for _, dependency := range compiledPackageDependencies {
