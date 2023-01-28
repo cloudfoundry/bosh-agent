@@ -2,8 +2,8 @@
 ## explicit
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
-## explicit; go 1.17
+# code.cloudfoundry.org/tlsconfig v0.0.0-20230125185630-3cc0b1c5221e
+## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
 ## explicit
@@ -62,7 +62,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.131
+# github.com/cloudfoundry/bosh-davcli v0.0.136
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -89,15 +89,15 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.4
-## explicit; go 1.18
+# github.com/cloudfoundry/gosigar v1.3.5
+## explicit; go 1.19
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
 # github.com/cloudfoundry/socks5-proxy v0.2.83
 ## explicit; go 1.19
 github.com/cloudfoundry/socks5-proxy
-# github.com/containerd/cgroups v1.0.4
+# github.com/containerd/cgroups v1.1.0
 ## explicit; go 1.17
 github.com/containerd/cgroups
 github.com/containerd/cgroups/stats/v1
@@ -122,7 +122,7 @@ github.com/go-task/slim-sprig
 # github.com/godbus/dbus/v5 v5.1.0
 ## explicit; go 1.12
 github.com/godbus/dbus/v5
-# github.com/gofrs/uuid v4.3.1+incompatible
+# github.com/gofrs/uuid v4.4.0+incompatible
 ## explicit
 github.com/gofrs/uuid
 # github.com/gogo/protobuf v1.3.2
@@ -279,7 +279,7 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.25.0
+# github.com/onsi/gomega v1.26.0
 ## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -324,7 +324,7 @@ go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
-# go4.org/netipx v0.0.0-20230118030647-987e16ee2705
+# go4.org/netipx v0.0.0-20230125063823-8449b0a6169f
 ## explicit; go 1.18
 go4.org/netipx
 # golang.org/x/crypto v0.5.0
@@ -340,7 +340,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20230118134722-a68e582fa157
+# golang.org/x/exp/typeparams v0.0.0-20230127193734-31bee513bff7
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.7.0

@@ -4,15 +4,15 @@ go 1.19
 
 require (
 	code.cloudfoundry.org/clock v1.0.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20220621140725-0e6fbd869921
+	code.cloudfoundry.org/tlsconfig v0.0.0-20230125185630-3cc0b1c5221e
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.131
+	github.com/cloudfoundry/bosh-davcli v0.0.136
 	github.com/cloudfoundry/bosh-utils v0.0.350
-	github.com/cloudfoundry/gosigar v1.3.4
-	github.com/containerd/cgroups v1.0.4
+	github.com/cloudfoundry/gosigar v1.3.5
+	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
-	github.com/gofrs/uuid v4.3.1+incompatible
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/kevinburke/ssh_config v1.2.0
@@ -21,7 +21,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.23.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.25.0
+	github.com/onsi/gomega v1.26.0
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
@@ -70,8 +70,8 @@ require (
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go4.org/netipx v0.0.0-20230118030647-987e16ee2705 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230118134722-a68e582fa157 // indirect
+	go4.org/netipx v0.0.0-20230125063823-8449b0a6169f // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230127193734-31bee513bff7 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
