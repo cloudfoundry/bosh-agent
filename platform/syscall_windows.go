@@ -144,7 +144,9 @@ func isSpecial(c byte) bool {
 }
 
 // validPassword, checks if password s meets the Windows complexity
-// requirements defined here: https://technet.microsoft.com/en-us/library/hh994562(v=ws.11).aspx
+// requirements defined here:
+//
+//	https://technet.microsoft.com/en-us/library/hh994562(v=ws.11).aspx
 func validPassword(s string) bool {
 	var (
 		digits    bool

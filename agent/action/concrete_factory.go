@@ -35,12 +35,11 @@ func NewFactory(
 	specService boshas.V1Service,
 	jobScriptProvider boshscript.JobScriptProvider,
 	logger boshlog.Logger,
-	blobstoreDelegator blobdelegator.BlobstoreDelegator) Factory {
-	compressor := platform.GetCompressor()
-	copier := platform.GetCopier()
+	blobstoreDelegator blobdelegator.BlobstoreDelegator) (factory Factory) {
 	dirProvider := platform.GetDirProvider()
 	vitalsService := platform.GetVitalsService()
 	certManager := platform.GetCertManager()
+	logsTarProvider := platform.GetLogsTarProvider()
 
 	return concreteFactory{
 		availableActions: map[string]Action{
@@ -54,8 +53,8 @@ func NewFactory(
 
 			// VM admin
 			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
-			"fetch_logs":                 NewFetchLogs(compressor, copier, blobstoreDelegator, dirProvider),
-			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(compressor, copier, dirProvider, blobstoreDelegator),
+			"fetch_logs":                 NewFetchLogs(logsTarProvider, blobstoreDelegator),
+			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(logsTarProvider, blobstoreDelegator),
 			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger, utils.NewAgentKiller()),
 			"shutdown":                   NewShutdown(platform),
 

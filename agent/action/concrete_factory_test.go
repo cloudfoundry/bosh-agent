@@ -7,10 +7,13 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
 	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
@@ -21,7 +24,6 @@ import (
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_clock.go code.cloudfoundry.org/clock.Clock
@@ -107,14 +109,13 @@ var _ = Describe("concreteFactory", func() {
 	It("fetch_logs", func() {
 		action, err := factory.Create("fetch_logs")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(boshaction.NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobDelegator, platform.GetDirProvider())))
+		Expect(action).To(Equal(boshaction.NewFetchLogs(platform.GetLogsTarProvider(), blobDelegator)))
 	})
 
 	It("fetch_logs_with_signed_url", func() {
-		ac, err := factory.Create("fetch_logs_with_signed_url")
+		action, err := factory.Create("fetch_logs_with_signed_url")
 		Expect(err).ToNot(HaveOccurred())
-
-		Expect(ac).To(Equal(boshaction.NewFetchLogsWithSignedURLAction(platform.GetCompressor(), platform.GetCopier(), platform.GetDirProvider(), blobDelegator)))
+		Expect(action).To(Equal(boshaction.NewFetchLogsWithSignedURLAction(platform.GetLogsTarProvider(), blobDelegator)))
 	})
 
 	It("get_task", func() {

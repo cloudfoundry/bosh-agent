@@ -11,6 +11,14 @@ import (
 	"strings"
 	"text/template"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -20,12 +28,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (
@@ -98,6 +100,7 @@ type linux struct {
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver
 	uuidGenerator          boshuuid.Generator
 	auditLogger            AuditLogger
+	logsTarProvider        boshlogstarprovider.LogsTarProvider
 }
 
 func NewLinuxPlatform(
@@ -120,6 +123,7 @@ func NewLinuxPlatform(
 	defaultNetworkResolver boshsettings.DefaultNetworkResolver,
 	uuidGenerator boshuuid.Generator,
 	auditLogger AuditLogger,
+	logsTarProvider boshlogstarprovider.LogsTarProvider,
 ) Platform {
 	return &linux{
 		fs:                     fs,
@@ -141,6 +145,7 @@ func NewLinuxPlatform(
 		defaultNetworkResolver: defaultNetworkResolver,
 		uuidGenerator:          uuidGenerator,
 		auditLogger:            auditLogger,
+		logsTarProvider:        logsTarProvider,
 	}
 }
 
@@ -177,6 +182,10 @@ func (p linux) GetCompressor() (runner boshcmd.Compressor) {
 
 func (p linux) GetCopier() (runner boshcmd.Copier) {
 	return p.copier
+}
+
+func (p linux) GetLogsTarProvider() (logsTarProvider boshlogstarprovider.LogsTarProvider) {
+	return p.logsTarProvider
 }
 
 func (p linux) GetDirProvider() (dirProvider boshdirs.Provider) {

@@ -3,10 +3,11 @@ package action
 import (
 	"errors"
 
-	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+
+	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 )
 
 type FetchLogsWithSignedURLRequest struct {
@@ -21,20 +22,14 @@ type FetchLogsWithSignedURLResponse struct {
 }
 
 type FetchLogsWithSignedURLAction struct {
-	compressor    boshcmd.Compressor
-	copier        boshcmd.Copier
-	settingsDir   boshdirs.Provider
-	blobDelegator blobdelegator.BlobstoreDelegator
+	logsTarProvider logstarprovider.LogsTarProvider
+	blobDelegator   blobdelegator.BlobstoreDelegator
 }
 
 func NewFetchLogsWithSignedURLAction(
-	compressor boshcmd.Compressor,
-	copier boshcmd.Copier,
-	settingsDir boshdirs.Provider,
+	logsTarProvider logstarprovider.LogsTarProvider,
 	blobDelegator blobdelegator.BlobstoreDelegator) (action FetchLogsWithSignedURLAction) {
-	action.compressor = compressor
-	action.copier = copier
-	action.settingsDir = settingsDir
+	action.logsTarProvider = logsTarProvider
 	action.blobDelegator = blobDelegator
 	return
 }
@@ -52,38 +47,13 @@ func (a FetchLogsWithSignedURLAction) IsLoggable() bool {
 }
 
 func (a FetchLogsWithSignedURLAction) Run(request FetchLogsWithSignedURLRequest) (FetchLogsWithSignedURLResponse, error) {
-	var logsDir string
-	filters := request.Filters
-
-	switch request.LogType {
-	case "job":
-		if len(request.Filters) == 0 {
-			filters = []string{"**/*"}
-		}
-		logsDir = a.settingsDir.LogsDir()
-	case "agent":
-		if len(request.Filters) == 0 {
-			filters = []string{"**/*"}
-		}
-		logsDir = a.settingsDir.AgentLogsDir()
-	default:
-		return FetchLogsWithSignedURLResponse{}, bosherr.Error("Invalid log type")
-	}
-
-	tmpDir, err := a.copier.FilteredCopyToTemp(logsDir, filters)
+	tarball, err := a.logsTarProvider.Get(request.LogType, request.Filters)
 	if err != nil {
-		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Copying filtered files to temp directory")
-	}
-
-	defer a.copier.CleanUp(tmpDir)
-
-	tarball, err := a.compressor.CompressFilesInDir(tmpDir)
-	if err != nil {
-		return FetchLogsWithSignedURLResponse{}, bosherr.WrapError(err, "Making logs tarball")
+		return FetchLogsWithSignedURLResponse{}, err
 	}
 
 	defer func() {
-		_ = a.compressor.CleanUp(tarball)
+		_ = a.logsTarProvider.CleanUp(tarball)
 	}()
 
 	_, digest, err := a.blobDelegator.Write(request.SignedURL, tarball, request.BlobstoreHeaders)

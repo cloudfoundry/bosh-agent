@@ -7,16 +7,18 @@ import (
 	"os"
 	"path/filepath"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type mount struct {
@@ -49,6 +51,7 @@ type dummyPlatform struct {
 	logger             boshlog.Logger
 	certManager        boshcert.Manager
 	auditLogger        AuditLogger
+	logsTarProvider    boshlogstarprovider.LogsTarProvider
 }
 
 func NewDummyPlatform(
@@ -59,6 +62,7 @@ func NewDummyPlatform(
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
 	auditLogger AuditLogger,
+	logsTarProvider boshlogstarprovider.LogsTarProvider,
 ) Platform {
 	return &dummyPlatform{
 		fs:                 fs,
@@ -72,6 +76,7 @@ func NewDummyPlatform(
 		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
 		logger:             logger,
 		auditLogger:        auditLogger,
+		logsTarProvider:    logsTarProvider,
 	}
 }
 
@@ -93,6 +98,10 @@ func (p dummyPlatform) GetCompressor() (compressor boshcmd.Compressor) {
 
 func (p dummyPlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.copier
+}
+
+func (p dummyPlatform) GetLogsTarProvider() (logsTarProvider boshlogstarprovider.LogsTarProvider) {
+	return p.logsTarProvider
 }
 
 func (p dummyPlatform) GetDirProvider() (dirProvider boshdirs.Provider) {

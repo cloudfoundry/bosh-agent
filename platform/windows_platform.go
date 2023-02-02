@@ -11,6 +11,13 @@ import (
 	"strings"
 	"syscall"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
@@ -19,11 +26,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_windows_disk_manager.go . WindowsDiskManager
@@ -61,6 +63,7 @@ type WindowsPlatform struct {
 	uuidGenerator          boshuuid.Generator
 	diskManager            WindowsDiskManager
 	logger                 boshlog.Logger
+	logsTarProvider        boshlogstarprovider.LogsTarProvider
 }
 
 func NewWindowsPlatform(
@@ -77,6 +80,7 @@ func NewWindowsPlatform(
 	auditLogger AuditLogger,
 	uuidGenerator boshuuid.Generator,
 	diskManager WindowsDiskManager,
+	logsTarProvider boshlogstarprovider.LogsTarProvider,
 ) Platform {
 	return &WindowsPlatform{
 		fs:                     fs,
@@ -95,6 +99,7 @@ func NewWindowsPlatform(
 		uuidGenerator:          uuidGenerator,
 		diskManager:            diskManager,
 		logger:                 logger,
+		logsTarProvider:        logsTarProvider,
 	}
 }
 
@@ -116,6 +121,10 @@ func (p WindowsPlatform) GetCompressor() (compressor boshcmd.Compressor) {
 
 func (p WindowsPlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.copier
+}
+
+func (p WindowsPlatform) GetLogsTarProvider() (logsTarProvider boshlogstarprovider.LogsTarProvider) {
+	return p.logsTarProvider
 }
 
 func (p WindowsPlatform) GetDirProvider() (dirProvider boshdirs.Provider) {

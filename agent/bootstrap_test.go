@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -21,14 +23,20 @@ import (
 
 	sigar "github.com/cloudfoundry/gosigar"
 
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
 	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/net/netfakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
-	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
 	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
@@ -42,10 +50,6 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 var _ = Describe("bootstrap", func() {
@@ -1097,6 +1101,7 @@ var _ = Describe("bootstrap", func() {
 
 				compressor := boshcmd.NewTarballCompressor(runner, fs)
 				copier := boshcmd.NewGenericCpCopier(fs, logger)
+				logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 
 				sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
@@ -1149,6 +1154,7 @@ var _ = Describe("bootstrap", func() {
 					defaultNetworkResolver,
 					fakeUUIDGenerator,
 					boshplatform.NewDelayedAuditLogger(fakeplatform.NewFakeAuditLoggerProvider(), logger),
+					logsTarProvider,
 				)
 			})
 

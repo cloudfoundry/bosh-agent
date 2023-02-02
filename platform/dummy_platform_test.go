@@ -1,15 +1,20 @@
 package platform_test
 
 import (
+	"encoding/json"
+	"os"
 	"path/filepath"
 
-	. "github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"encoding/json"
+	. "github.com/cloudfoundry/bosh-agent/platform"
 
-	"os"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
@@ -18,9 +23,6 @@ import (
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type mount struct {
@@ -38,6 +40,7 @@ var _ = Describe("DummyPlatform", func() {
 		devicePathResolver boshdpresolv.DevicePathResolver
 		logger             boshlog.Logger
 		auditLogger        AuditLogger
+		logsTarProvider    *logstarproviderfakes.FakeLogsTarProvider
 	)
 
 	BeforeEach(func() {
@@ -48,6 +51,7 @@ var _ = Describe("DummyPlatform", func() {
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		auditLogger = fakes.NewFakeAuditLogger()
+		logsTarProvider = &logstarproviderfakes.FakeLogsTarProvider{}
 	})
 
 	JustBeforeEach(func() {
@@ -59,6 +63,7 @@ var _ = Describe("DummyPlatform", func() {
 			devicePathResolver,
 			logger,
 			auditLogger,
+			logsTarProvider,
 		)
 	})
 

@@ -5,8 +5,16 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 
+	bosherror "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
@@ -19,12 +27,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshwindisk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	bosherror "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (
@@ -132,6 +134,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	}
 
 	uuidGenerator := boshuuid.NewGenerator()
+	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 
 	var centos = func() Platform {
 		return NewLinuxPlatform(
@@ -154,6 +157,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			defaultNetworkResolver,
 			uuidGenerator,
 			auditLogger,
+			logsTarProvider,
 		)
 	}
 
@@ -178,6 +182,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			defaultNetworkResolver,
 			uuidGenerator,
 			auditLogger,
+			logsTarProvider,
 		)
 	}
 
@@ -196,6 +201,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			auditLogger,
 			uuidGenerator,
 			windowsDiskManager,
+			logsTarProvider,
 		)
 	}
 
@@ -208,6 +214,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			devicePathResolver,
 			logger,
 			auditLogger,
+			logsTarProvider,
 		)
 	}
 

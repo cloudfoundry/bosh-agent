@@ -16,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 
+	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/windows/powershell"
 
 	"golang.org/x/sys/windows"
@@ -26,6 +27,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+	"github.com/onsi/gomega/gbytes"
+
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
@@ -35,11 +42,6 @@ import (
 	fakedisk "github.com/cloudfoundry/bosh-agent/platform/windows/disk/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
-	"github.com/onsi/gomega/gbytes"
 )
 
 var (
@@ -101,13 +103,14 @@ var _ = Describe("WindowsPlatform", func() {
 		certManager                *certfakes.FakeManager
 		auditLogger                *fakeplat.FakeAuditLogger
 
-		diskManager *fakeplat.FakeWindowsDiskManager
-		formatter   *fakedisk.FakeWindowsDiskFormatter
-		linker      *fakedisk.FakeWindowsDiskLinker
-		partitioner *fakedisk.FakeWindowsDiskPartitioner
-		protector   *fakedisk.FakeWindowsDiskProtector
-		logger      boshlog.Logger
-		logBuffer   *gbytes.Buffer
+		diskManager     *fakeplat.FakeWindowsDiskManager
+		logsTarProvider *fakelogstarprovider.FakeLogsTarProvider
+		formatter       *fakedisk.FakeWindowsDiskFormatter
+		linker          *fakedisk.FakeWindowsDiskLinker
+		partitioner     *fakedisk.FakeWindowsDiskPartitioner
+		protector       *fakedisk.FakeWindowsDiskProtector
+		logger          boshlog.Logger
+		logBuffer       *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -126,6 +129,7 @@ var _ = Describe("WindowsPlatform", func() {
 		auditLogger = fakeplat.NewFakeAuditLogger()
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 		diskManager = new(fakeplat.FakeWindowsDiskManager)
+		logsTarProvider = &fakelogstarprovider.FakeLogsTarProvider{}
 		formatter = new(fakedisk.FakeWindowsDiskFormatter)
 		linker = new(fakedisk.FakeWindowsDiskLinker)
 		partitioner = new(fakedisk.FakeWindowsDiskPartitioner)
@@ -152,6 +156,7 @@ var _ = Describe("WindowsPlatform", func() {
 			auditLogger,
 			fakeUUIDGenerator,
 			diskManager,
+			logsTarProvider,
 		)
 	})
 
@@ -455,6 +460,7 @@ var _ = Describe("WindowsPlatform", func() {
 				auditLogger,
 				fakeUUIDGenerator,
 				diskManager,
+				logsTarProvider,
 			)
 
 			diskPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
@@ -481,6 +487,7 @@ var _ = Describe("WindowsPlatform", func() {
 				auditLogger,
 				fakeUUIDGenerator,
 				diskManager,
+				logsTarProvider,
 			)
 			cmdRunner.AddCmdResult(
 				"powershell -Command Get-Disk -UniqueId f0015401d | Select Number | ConvertTo-Json",
@@ -581,6 +588,7 @@ var _ = Describe("WindowsPlatform", func() {
 				auditLogger,
 				fakeUUIDGenerator,
 				diskManager,
+				logsTarProvider,
 			)
 		})
 
@@ -798,6 +806,7 @@ var _ = Describe("WindowsPlatform", func() {
 				auditLogger,
 				fakeUUIDGenerator,
 				diskManager,
+				logsTarProvider,
 			)
 
 			err := platform.SetupEphemeralDiskWithPath(diskNumber, nil, labelPrefix)
@@ -956,6 +965,7 @@ var _ = Describe("BOSH User Commands", func() {
 				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
 				dirProvider                = boshdirs.NewProvider("/fake-dir")
 				diskManager                = new(fakeplat.FakeWindowsDiskManager)
+				logsTarProvider            = &fakelogstarprovider.FakeLogsTarProvider{}
 			)
 			platform = NewWindowsPlatform(
 				collector,
@@ -971,6 +981,7 @@ var _ = Describe("BOSH User Commands", func() {
 				auditLogger,
 				fakeUUIDGenerator,
 				diskManager,
+				logsTarProvider,
 			)
 		})
 
@@ -1133,6 +1144,7 @@ var _ = Describe("BOSH User Commands", func() {
 				fakeUUIDGenerator          = fakeuuidgen.NewFakeGenerator()
 				dirProvider                = boshdirs.NewProvider(tempDir)
 				diskManager                = new(fakeplat.FakeWindowsDiskManager)
+				logsTarProvider            = &fakelogstarprovider.FakeLogsTarProvider{}
 			)
 			platform = NewWindowsPlatform(
 				collector,
@@ -1148,6 +1160,7 @@ var _ = Describe("BOSH User Commands", func() {
 				auditLogger,
 				fakeUUIDGenerator,
 				diskManager,
+				logsTarProvider,
 			)
 
 			lockFile = filepath.Join(platform.GetDirProvider().BoshDir(), "randomized_passwords")
