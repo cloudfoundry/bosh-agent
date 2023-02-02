@@ -1,10 +1,11 @@
 package platform
 
 import (
-	"github.com/cloudfoundry/bosh-agent/platform/cert"
-
 	"log"
 
+	"github.com/cloudfoundry/bosh-agent/platform/cert"
+
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
@@ -40,6 +41,7 @@ type Platform interface {
 	GetAgentSettingsPath(tmpfs bool) string
 	GetPersistentDiskSettingsPath(tmpfs bool) string
 	GetUpdateSettingsPath(tmpfs bool) string
+	GetLogsTarProvider() boshlogstarprovider.LogsTarProvider
 
 	// User management
 	CreateUser(username, basePath string) (err error)

@@ -4,8 +4,9 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
@@ -133,6 +134,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	}
 
 	uuidGenerator := boshuuid.NewGenerator()
+	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 
 	var centos = func() Platform {
 		return NewLinuxPlatform(
@@ -155,6 +157,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			defaultNetworkResolver,
 			uuidGenerator,
 			auditLogger,
+			logsTarProvider,
 		)
 	}
 
@@ -179,6 +182,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			defaultNetworkResolver,
 			uuidGenerator,
 			auditLogger,
+			logsTarProvider,
 		)
 	}
 
@@ -197,6 +201,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			auditLogger,
 			uuidGenerator,
 			windowsDiskManager,
+			logsTarProvider,
 		)
 	}
 
@@ -209,6 +214,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			devicePathResolver,
 			logger,
 			auditLogger,
+			logsTarProvider,
 		)
 	}
 
@@ -233,6 +239,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			defaultNetworkResolver,
 			uuidGenerator,
 			auditLogger,
+			logsTarProvider,
 		)
 	}
 

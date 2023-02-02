@@ -4,6 +4,7 @@ package platformfakes
 import (
 	"sync"
 
+	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
@@ -227,6 +228,16 @@ type FakePlatform struct {
 	getHostPublicKeyReturnsOnCall map[int]struct {
 		result1 string
 		result2 error
+	}
+	GetLogsTarProviderStub        func() logstarprovider.LogsTarProvider
+	getLogsTarProviderMutex       sync.RWMutex
+	getLogsTarProviderArgsForCall []struct {
+	}
+	getLogsTarProviderReturns struct {
+		result1 logstarprovider.LogsTarProvider
+	}
+	getLogsTarProviderReturnsOnCall map[int]struct {
+		result1 logstarprovider.LogsTarProvider
 	}
 	GetMonitCredentialsStub        func() (string, string, error)
 	getMonitCredentialsMutex       sync.RWMutex
@@ -1786,6 +1797,59 @@ func (fake *FakePlatform) GetHostPublicKeyReturnsOnCall(i int, result1 string, r
 		result1 string
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakePlatform) GetLogsTarProvider() logstarprovider.LogsTarProvider {
+	fake.getLogsTarProviderMutex.Lock()
+	ret, specificReturn := fake.getLogsTarProviderReturnsOnCall[len(fake.getLogsTarProviderArgsForCall)]
+	fake.getLogsTarProviderArgsForCall = append(fake.getLogsTarProviderArgsForCall, struct {
+	}{})
+	stub := fake.GetLogsTarProviderStub
+	fakeReturns := fake.getLogsTarProviderReturns
+	fake.recordInvocation("GetLogsTarProvider", []interface{}{})
+	fake.getLogsTarProviderMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetLogsTarProviderCallCount() int {
+	fake.getLogsTarProviderMutex.RLock()
+	defer fake.getLogsTarProviderMutex.RUnlock()
+	return len(fake.getLogsTarProviderArgsForCall)
+}
+
+func (fake *FakePlatform) GetLogsTarProviderCalls(stub func() logstarprovider.LogsTarProvider) {
+	fake.getLogsTarProviderMutex.Lock()
+	defer fake.getLogsTarProviderMutex.Unlock()
+	fake.GetLogsTarProviderStub = stub
+}
+
+func (fake *FakePlatform) GetLogsTarProviderReturns(result1 logstarprovider.LogsTarProvider) {
+	fake.getLogsTarProviderMutex.Lock()
+	defer fake.getLogsTarProviderMutex.Unlock()
+	fake.GetLogsTarProviderStub = nil
+	fake.getLogsTarProviderReturns = struct {
+		result1 logstarprovider.LogsTarProvider
+	}{result1}
+}
+
+func (fake *FakePlatform) GetLogsTarProviderReturnsOnCall(i int, result1 logstarprovider.LogsTarProvider) {
+	fake.getLogsTarProviderMutex.Lock()
+	defer fake.getLogsTarProviderMutex.Unlock()
+	fake.GetLogsTarProviderStub = nil
+	if fake.getLogsTarProviderReturnsOnCall == nil {
+		fake.getLogsTarProviderReturnsOnCall = make(map[int]struct {
+			result1 logstarprovider.LogsTarProvider
+		})
+	}
+	fake.getLogsTarProviderReturnsOnCall[i] = struct {
+		result1 logstarprovider.LogsTarProvider
+	}{result1}
 }
 
 func (fake *FakePlatform) GetMonitCredentials() (string, string, error) {
@@ -4180,6 +4244,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.getFsMutex.RUnlock()
 	fake.getHostPublicKeyMutex.RLock()
 	defer fake.getHostPublicKeyMutex.RUnlock()
+	fake.getLogsTarProviderMutex.RLock()
+	defer fake.getLogsTarProviderMutex.RUnlock()
 	fake.getMonitCredentialsMutex.RLock()
 	defer fake.getMonitCredentialsMutex.RUnlock()
 	fake.getPersistentDiskSettingsPathMutex.RLock()

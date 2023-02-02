@@ -1,125 +1,87 @@
 package action_test
 
 import (
-	"path/filepath"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	"errors"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("FetchLogsAction", func() {
 	var (
-		compressor  *fakecmd.FakeCompressor
-		copier      *fakecmd.FakeCopier
-		blobstore   *fakeblobdelegator.FakeBlobstoreDelegator
-		dirProvider boshdirs.Provider
-		action      FetchLogsAction
+		blobstore       *fakeblobdelegator.FakeBlobstoreDelegator
+		logsTarProvider *fakelogstarprovider.FakeLogsTarProvider
+
+		action FetchLogsAction
 	)
 
 	BeforeEach(func() {
-		compressor = fakecmd.NewFakeCompressor()
 		blobstore = &fakeblobdelegator.FakeBlobstoreDelegator{}
-		dirProvider = boshdirs.NewProvider("/fake/dir")
-		copier = fakecmd.NewFakeCopier()
-		action = NewFetchLogs(compressor, copier, blobstore, dirProvider)
+		logsTarProvider = &fakelogstarprovider.FakeLogsTarProvider{}
+
+		action = NewFetchLogs(logsTarProvider, blobstore)
 	})
 
 	AssertActionIsAsynchronous(action)
-	AssertActionIsNotPersistent(action)
 	AssertActionIsLoggable(action)
 
+	AssertActionIsNotPersistent(action)
 	AssertActionIsNotResumable(action)
 	AssertActionIsNotCancelable(action)
 
 	Describe("Run", func() {
-		testLogs := func(logType string, filters []string, expectedFilters []string) {
-			copier.FilteredCopyToTempTempDir = "/fake-temp-dir"
-			compressor.CompressFilesInDirTarballPath = "logs_test.tar"
+		It("logs error if logstarprovider returns one", func() {
+			logsTarProvider.GetReturns("", errors.New("uh-oh"))
+			_, err := action.Run("other-logs", []string{})
+			Expect(err).To(MatchError("uh-oh"))
+		})
+
+		It("invokes logstarprovider properly", func() {
+			_, err := action.Run("job", []string{"foo", "bar"})
+			Expect(err).ToNot(HaveOccurred())
+
+			logType, filters := logsTarProvider.GetArgsForCall(0)
+			Expect(logType).To(Equal("job"))
+			Expect(filters).To(Equal([]string{"foo", "bar"}))
+		})
+
+		It("returns the expected log blob", func() {
 			multidigestSha := boshcrypto.MustNewMultipleDigest(boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "sec_dep_sha1"))
 			sha1 := multidigestSha.String()
-			blobstore.WriteStub = func(signedURL, fileName string, headers map[string]string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
-				return "my-blob-id", multidigestSha, nil
-			}
+			blobstore.WriteReturnsOnCall(0, "my-blob-id", multidigestSha, nil)
 
-			logs, err := action.Run(logType, filters)
+			logsBlob, err := action.Run("job", []string{"foo", "bar"})
 			Expect(err).ToNot(HaveOccurred())
 
-			var expectedPath string
-			switch logType {
-			case "job":
-				expectedPath = filepath.Join("/fake", "dir", "sys", "log")
-			case "agent":
-				expectedPath = filepath.Join("/fake", "dir", "bosh", "log")
+			boshassert.MatchesJSONString(GinkgoT(), logsBlob, `{"blobstore_id":"my-blob-id","sha1":"`+sha1+`"}`)
+		})
+
+		It("logs error if blobstore returns one", func() {
+			blobstore.WriteReturns("", boshcrypto.MultipleDigest{}, errors.New("cloudy"))
+			_, err := action.Run("agent", []string{})
+			Expect(err).To(MatchError(ContainSubstring("Create file on blobstore")))
+			Expect(err).To(MatchError(ContainSubstring("cloudy")))
+		})
+
+		It("cleans up compressed package only after uploading it to blobstore", func() {
+			var beforeCallCount int
+			blobstore.WriteStub = func(string, string, map[string]string) (string, boshcrypto.MultipleDigest, error) {
+				beforeCallCount = logsTarProvider.CleanUpCallCount()
+
+				return "", boshcrypto.MultipleDigest{}, nil
 			}
+			logsTarProvider.GetReturns("/tmp/logs.tar", nil)
 
-			Expect(copier.FilteredCopyToTempDir).To(boshassert.MatchPath(expectedPath))
-			Expect(copier.FilteredCopyToTempFilters).To(Equal(expectedFilters))
+			action.Run("job", []string{})
 
-			Expect(copier.FilteredCopyToTempTempDir).To(Equal(compressor.CompressFilesInDirDir))
-			Expect(copier.CleanUpTempDir).To(Equal(compressor.CompressFilesInDirDir))
-
-			_, compressFilesInTarballPath, _ := blobstore.WriteArgsForCall(0)
-			Expect(compressFilesInTarballPath).To(Equal(compressor.CompressFilesInDirTarballPath))
-
-			boshassert.MatchesJSONString(GinkgoT(), logs, `{"blobstore_id":"my-blob-id","sha1":"`+sha1+`"}`)
-		}
-
-		It("logs errs if given invalid log type", func() {
-			_, err := action.Run("other-logs", []string{})
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("agent logs with filters", func() {
-			filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-			expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-			testLogs("agent", filters, expectedFilters)
-		})
-
-		It("agent logs without filters", func() {
-			filters := []string{}
-			expectedFilters := []string{"**/*"}
-			testLogs("agent", filters, expectedFilters)
-		})
-
-		It("job logs without filters", func() {
-			filters := []string{}
-			expectedFilters := []string{"**/*"}
-			testLogs("job", filters, expectedFilters)
-		})
-
-		It("job logs with filters", func() {
-			filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-			expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
-			testLogs("job", filters, expectedFilters)
-		})
-
-		It("cleans up compressed package after uploading it to blobstore", func() {
-			var beforeCleanUpTarballPath, afterCleanUpTarballPath string
-
-			compressor.CompressFilesInDirTarballPath = "/fake-compressed-logs.tar"
-
-			blobstore.WriteStub = func(signedURL, fileName string, headers map[string]string) (blobID string, digest boshcrypto.MultipleDigest, err error) {
-				beforeCleanUpTarballPath = compressor.CleanUpTarballPath
-
-				return "my-blob-id", boshcrypto.MultipleDigest{}, nil
-			}
-
-			_, err := action.Run("job", []string{})
-			Expect(err).ToNot(HaveOccurred())
-
-			// Logs are not cleaned up before blobstore upload
-			Expect(beforeCleanUpTarballPath).To(Equal(""))
-
-			// Deleted after it was uploaded
-			afterCleanUpTarballPath = compressor.CleanUpTarballPath
-			Expect(afterCleanUpTarballPath).To(Equal("/fake-compressed-logs.tar"))
+			Expect(beforeCallCount).To(BeZero())
+			Expect(logsTarProvider.CleanUpCallCount()).To(Equal(1))
+			Expect(logsTarProvider.CleanUpArgsForCall(0)).To(Equal("/tmp/logs.tar"))
 		})
 	})
 })

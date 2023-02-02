@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
@@ -62,6 +63,7 @@ type WindowsPlatform struct {
 	uuidGenerator          boshuuid.Generator
 	diskManager            WindowsDiskManager
 	logger                 boshlog.Logger
+	logsTarProvider        boshlogstarprovider.LogsTarProvider
 }
 
 func NewWindowsPlatform(
@@ -78,6 +80,7 @@ func NewWindowsPlatform(
 	auditLogger AuditLogger,
 	uuidGenerator boshuuid.Generator,
 	diskManager WindowsDiskManager,
+	logsTarProvider boshlogstarprovider.LogsTarProvider,
 ) Platform {
 	return &WindowsPlatform{
 		fs:                     fs,
@@ -96,6 +99,7 @@ func NewWindowsPlatform(
 		uuidGenerator:          uuidGenerator,
 		diskManager:            diskManager,
 		logger:                 logger,
+		logsTarProvider:        logsTarProvider,
 	}
 }
 
@@ -117,6 +121,10 @@ func (p WindowsPlatform) GetCompressor() (compressor boshcmd.Compressor) {
 
 func (p WindowsPlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.copier
+}
+
+func (p WindowsPlatform) GetLogsTarProvider() (logsTarProvider boshlogstarprovider.LogsTarProvider) {
+	return p.logsTarProvider
 }
 
 func (p WindowsPlatform) GetDirProvider() (dirProvider boshdir.Provider) {

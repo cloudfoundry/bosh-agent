@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
@@ -50,6 +51,7 @@ type dummyPlatform struct {
 	logger             boshlog.Logger
 	certManager        boshcert.Manager
 	auditLogger        AuditLogger
+	logsTarProvider    boshlogstarprovider.LogsTarProvider
 }
 
 func NewDummyPlatform(
@@ -60,6 +62,7 @@ func NewDummyPlatform(
 	devicePathResolver boshdpresolv.DevicePathResolver,
 	logger boshlog.Logger,
 	auditLogger AuditLogger,
+	logsTarProvider boshlogstarprovider.LogsTarProvider,
 ) Platform {
 	return &dummyPlatform{
 		fs:                 fs,
@@ -73,6 +76,7 @@ func NewDummyPlatform(
 		certManager:        boshcert.NewDummyCertManager(fs, cmdRunner, 0, logger),
 		logger:             logger,
 		auditLogger:        auditLogger,
+		logsTarProvider:    logsTarProvider,
 	}
 }
 
@@ -94,6 +98,10 @@ func (p dummyPlatform) GetCompressor() (compressor boshcmd.Compressor) {
 
 func (p dummyPlatform) GetCopier() (copier boshcmd.Copier) {
 	return p.copier
+}
+
+func (p dummyPlatform) GetLogsTarProvider() (logsTarProvider boshlogstarprovider.LogsTarProvider) {
+	return p.logsTarProvider
 }
 
 func (p dummyPlatform) GetDirProvider() (dirProvider boshdir.Provider) {

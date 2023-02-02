@@ -6,6 +6,7 @@ package platform_test
 import (
 	"errors"
 	"fmt"
+	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
 	"os"
 	"path"
 	"path/filepath"
@@ -55,6 +56,7 @@ var _ = Describe("LinuxPlatform", func() {
 		monitRetryStrategy         *fakeretry.FakeRetryStrategy
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		fakeAuditLogger            *fakeplat.FakeAuditLogger
+		fakeLogsTarProvider        *fakelogstarprovider.FakeLogsTarProvider
 
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
 
@@ -90,6 +92,8 @@ var _ = Describe("LinuxPlatform", func() {
 
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 		fakeAuditLogger = fakeplat.NewFakeAuditLogger()
+
+		fakeLogsTarProvider = &fakelogstarprovider.FakeLogsTarProvider{}
 
 		state, stateErr = NewBootstrapState(fs, "/agent-state.json")
 		Expect(stateErr).NotTo(HaveOccurred())
@@ -146,6 +150,7 @@ var _ = Describe("LinuxPlatform", func() {
 			fakeDefaultNetworkResolver,
 			fakeUUIDGenerator,
 			fakeAuditLogger,
+			fakeLogsTarProvider,
 		)
 	})
 
@@ -391,6 +396,7 @@ bosh_foobar:...`
 					fakeDefaultNetworkResolver,
 					fakeUUIDGenerator,
 					fakeAuditLogger,
+					fakeLogsTarProvider,
 				)
 				err := platformWithNoEphemeralDisk.SetupRootDisk("")
 
@@ -552,6 +558,7 @@ bosh_foobar:...`
 						fakeDefaultNetworkResolver,
 						fakeUUIDGenerator,
 						fakeAuditLogger,
+						fakeLogsTarProvider,
 					)
 					err := platformWithNoEphemeralDisk.SetupRootDisk("")
 
@@ -3454,6 +3461,7 @@ from-device-path  dm-0 NETAPP  ,LUN C-Mode
 					fakeDefaultNetworkResolver,
 					fakeUUIDGenerator,
 					fakeAuditLogger,
+					fakeLogsTarProvider,
 				)
 
 				err := platformWithISCSIType.MigratePersistentDisk("/from/path", "/to/path")

@@ -53,7 +53,6 @@ const ERROR_LOGON_FAILURE = syscall.Errno(0x52E)
 // Use LogonUser to check if the provided password is correct.
 //
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa378184(v=vs.85).aspx
-//
 func ValidUserPassword(username, password string) error {
 	const LOGON32_LOGON_NETWORK = 3
 	const LOGON32_PROVIDER_DEFAULT = 0

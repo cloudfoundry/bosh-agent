@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	"os"
 	"path"
 	"path/filepath"
@@ -1061,6 +1062,7 @@ var _ = Describe("bootstrap", func() {
 
 				compressor := boshcmd.NewTarballCompressor(runner, fs)
 				copier := boshcmd.NewGenericCpCopier(fs, logger)
+				logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 
 				sigarCollector := boshsigar.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
@@ -1112,6 +1114,7 @@ var _ = Describe("bootstrap", func() {
 					defaultNetworkResolver,
 					fakeUUIDGenerator,
 					boshplatform.NewDelayedAuditLogger(fakeplatform.NewFakeAuditLoggerProvider(), logger),
+					logsTarProvider,
 				)
 			})
 

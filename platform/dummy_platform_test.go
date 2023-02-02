@@ -1,6 +1,7 @@
 package platform_test
 
 import (
+	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
 	"path/filepath"
 
 	. "github.com/cloudfoundry/bosh-agent/platform"
@@ -39,6 +40,7 @@ var _ = Describe("DummyPlatform", func() {
 		devicePathResolver boshdpresolv.DevicePathResolver
 		logger             boshlog.Logger
 		auditLogger        AuditLogger
+		logsTarProvider    *logstarproviderfakes.FakeLogsTarProvider
 	)
 
 	BeforeEach(func() {
@@ -49,6 +51,7 @@ var _ = Describe("DummyPlatform", func() {
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		auditLogger = fakes.NewFakeAuditLogger()
+		logsTarProvider = &logstarproviderfakes.FakeLogsTarProvider{}
 	})
 
 	JustBeforeEach(func() {
@@ -60,6 +63,7 @@ var _ = Describe("DummyPlatform", func() {
 			devicePathResolver,
 			logger,
 			auditLogger,
+			logsTarProvider,
 		)
 	})
 

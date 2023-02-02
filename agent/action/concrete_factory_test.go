@@ -107,14 +107,13 @@ var _ = Describe("concreteFactory", func() {
 	It("fetch_logs", func() {
 		action, err := factory.Create("fetch_logs")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobDelegator, platform.GetDirProvider())))
+		Expect(action).To(Equal(NewFetchLogs(platform.GetLogsTarProvider(), blobDelegator)))
 	})
 
 	It("fetch_logs_with_signed_url", func() {
-		ac, err := factory.Create("fetch_logs_with_signed_url")
+		action, err := factory.Create("fetch_logs_with_signed_url")
 		Expect(err).ToNot(HaveOccurred())
-
-		Expect(ac).To(Equal(NewFetchLogsWithSignedURLAction(platform.GetCompressor(), platform.GetCopier(), platform.GetDirProvider(), blobDelegator)))
+		Expect(action).To(Equal(NewFetchLogsWithSignedURLAction(platform.GetLogsTarProvider(), blobDelegator)))
 	})
 
 	It("get_task", func() {
