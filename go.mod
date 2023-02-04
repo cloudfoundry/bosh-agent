@@ -4,12 +4,12 @@ go 1.19
 
 require (
 	code.cloudfoundry.org/clock v1.0.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20230125185630-3cc0b1c5221e
+	code.cloudfoundry.org/tlsconfig v0.0.0-20230131191323-96331f8f153d
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.136
-	github.com/cloudfoundry/bosh-utils v0.0.350
-	github.com/cloudfoundry/gosigar v1.3.5
+	github.com/cloudfoundry/bosh-davcli v0.0.141
+	github.com/cloudfoundry/bosh-utils v0.0.351
+	github.com/cloudfoundry/gosigar v1.3.6
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -71,11 +71,11 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20230125063823-8449b0a6169f // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230127193734-31bee513bff7 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230203172020-98cc5a0785f9 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	honnef.co/go/tools v0.3.3 // indirect
+	honnef.co/go/tools v0.4.0 // indirect
 )
