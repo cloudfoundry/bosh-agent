@@ -118,6 +118,12 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(boshaction.NewFetchLogsWithSignedURLAction(platform.GetLogsTarProvider(), blobDelegator)))
 	})
 
+	It("bundle_logs", func() {
+		action, err := factory.Create("bundle_logs")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(boshaction.NewBundleLogs(platform.GetLogsTarProvider())))
+	})
+
 	It("get_task", func() {
 		action, err := factory.Create("get_task")
 		Expect(err).ToNot(HaveOccurred())
