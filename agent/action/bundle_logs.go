@@ -21,7 +21,7 @@ func NewBundleLogs(
 	return
 }
 func (a BundleLogsAction) IsAsynchronous(_ ProtocolVersion) bool {
-	return true
+	return false
 }
 
 func (a BundleLogsAction) IsPersistent() bool {

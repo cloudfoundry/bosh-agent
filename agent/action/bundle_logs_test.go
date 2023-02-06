@@ -24,9 +24,9 @@ var _ = Describe("FetchLogsAction", func() {
 		action = NewBundleLogs(logsTarProvider)
 	})
 
-	AssertActionIsAsynchronous(action)
 	AssertActionIsLoggable(action)
 
+	AssertActionIsNotAsynchronous(action)
 	AssertActionIsNotPersistent(action)
 	AssertActionIsNotResumable(action)
 	AssertActionIsNotCancelable(action)

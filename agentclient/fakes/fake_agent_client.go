@@ -32,6 +32,20 @@ type FakeAgentClient struct {
 	applyReturnsOnCall map[int]struct {
 		result1 error
 	}
+	BundleLogsStub        func(string, []string) (agentclient.BundleLogsResult, error)
+	bundleLogsMutex       sync.RWMutex
+	bundleLogsArgsForCall []struct {
+		arg1 string
+		arg2 []string
+	}
+	bundleLogsReturns struct {
+		result1 agentclient.BundleLogsResult
+		result2 error
+	}
+	bundleLogsReturnsOnCall map[int]struct {
+		result1 agentclient.BundleLogsResult
+		result2 error
+	}
 	CleanUpSSHStub        func(string) (agentclient.SSHResult, error)
 	cleanUpSSHMutex       sync.RWMutex
 	cleanUpSSHArgsForCall []struct {
@@ -234,16 +248,15 @@ func (fake *FakeAgentClient) AddPersistentDisk(arg1 string, arg2 interface{}) er
 		arg1 string
 		arg2 interface{}
 	}{arg1, arg2})
-	stub := fake.AddPersistentDiskStub
-	fakeReturns := fake.addPersistentDiskReturns
 	fake.recordInvocation("AddPersistentDisk", []interface{}{arg1, arg2})
 	fake.addPersistentDiskMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
+	if fake.AddPersistentDiskStub != nil {
+		return fake.AddPersistentDiskStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.addPersistentDiskReturns
 	return fakeReturns.result1
 }
 
@@ -295,16 +308,15 @@ func (fake *FakeAgentClient) Apply(arg1 applyspec.ApplySpec) error {
 	fake.applyArgsForCall = append(fake.applyArgsForCall, struct {
 		arg1 applyspec.ApplySpec
 	}{arg1})
-	stub := fake.ApplyStub
-	fakeReturns := fake.applyReturns
 	fake.recordInvocation("Apply", []interface{}{arg1})
 	fake.applyMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
+	if fake.ApplyStub != nil {
+		return fake.ApplyStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.applyReturns
 	return fakeReturns.result1
 }
 
@@ -350,22 +362,90 @@ func (fake *FakeAgentClient) ApplyReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeAgentClient) BundleLogs(arg1 string, arg2 []string) (agentclient.BundleLogsResult, error) {
+	var arg2Copy []string
+	if arg2 != nil {
+		arg2Copy = make([]string, len(arg2))
+		copy(arg2Copy, arg2)
+	}
+	fake.bundleLogsMutex.Lock()
+	ret, specificReturn := fake.bundleLogsReturnsOnCall[len(fake.bundleLogsArgsForCall)]
+	fake.bundleLogsArgsForCall = append(fake.bundleLogsArgsForCall, struct {
+		arg1 string
+		arg2 []string
+	}{arg1, arg2Copy})
+	fake.recordInvocation("BundleLogs", []interface{}{arg1, arg2Copy})
+	fake.bundleLogsMutex.Unlock()
+	if fake.BundleLogsStub != nil {
+		return fake.BundleLogsStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.bundleLogsReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeAgentClient) BundleLogsCallCount() int {
+	fake.bundleLogsMutex.RLock()
+	defer fake.bundleLogsMutex.RUnlock()
+	return len(fake.bundleLogsArgsForCall)
+}
+
+func (fake *FakeAgentClient) BundleLogsCalls(stub func(string, []string) (agentclient.BundleLogsResult, error)) {
+	fake.bundleLogsMutex.Lock()
+	defer fake.bundleLogsMutex.Unlock()
+	fake.BundleLogsStub = stub
+}
+
+func (fake *FakeAgentClient) BundleLogsArgsForCall(i int) (string, []string) {
+	fake.bundleLogsMutex.RLock()
+	defer fake.bundleLogsMutex.RUnlock()
+	argsForCall := fake.bundleLogsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeAgentClient) BundleLogsReturns(result1 agentclient.BundleLogsResult, result2 error) {
+	fake.bundleLogsMutex.Lock()
+	defer fake.bundleLogsMutex.Unlock()
+	fake.BundleLogsStub = nil
+	fake.bundleLogsReturns = struct {
+		result1 agentclient.BundleLogsResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeAgentClient) BundleLogsReturnsOnCall(i int, result1 agentclient.BundleLogsResult, result2 error) {
+	fake.bundleLogsMutex.Lock()
+	defer fake.bundleLogsMutex.Unlock()
+	fake.BundleLogsStub = nil
+	if fake.bundleLogsReturnsOnCall == nil {
+		fake.bundleLogsReturnsOnCall = make(map[int]struct {
+			result1 agentclient.BundleLogsResult
+			result2 error
+		})
+	}
+	fake.bundleLogsReturnsOnCall[i] = struct {
+		result1 agentclient.BundleLogsResult
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeAgentClient) CleanUpSSH(arg1 string) (agentclient.SSHResult, error) {
 	fake.cleanUpSSHMutex.Lock()
 	ret, specificReturn := fake.cleanUpSSHReturnsOnCall[len(fake.cleanUpSSHArgsForCall)]
 	fake.cleanUpSSHArgsForCall = append(fake.cleanUpSSHArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	stub := fake.CleanUpSSHStub
-	fakeReturns := fake.cleanUpSSHReturns
 	fake.recordInvocation("CleanUpSSH", []interface{}{arg1})
 	fake.cleanUpSSHMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
+	if fake.CleanUpSSHStub != nil {
+		return fake.CleanUpSSHStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.cleanUpSSHReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -426,16 +506,15 @@ func (fake *FakeAgentClient) CompilePackage(arg1 agentclient.BlobRef, arg2 []age
 		arg1 agentclient.BlobRef
 		arg2 []agentclient.BlobRef
 	}{arg1, arg2Copy})
-	stub := fake.CompilePackageStub
-	fakeReturns := fake.compilePackageReturns
 	fake.recordInvocation("CompilePackage", []interface{}{arg1, arg2Copy})
 	fake.compilePackageMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
+	if fake.CompilePackageStub != nil {
+		return fake.CompilePackageStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.compilePackageReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -495,16 +574,15 @@ func (fake *FakeAgentClient) DeleteARPEntries(arg1 []string) error {
 	fake.deleteARPEntriesArgsForCall = append(fake.deleteARPEntriesArgsForCall, struct {
 		arg1 []string
 	}{arg1Copy})
-	stub := fake.DeleteARPEntriesStub
-	fakeReturns := fake.deleteARPEntriesReturns
 	fake.recordInvocation("DeleteARPEntries", []interface{}{arg1Copy})
 	fake.deleteARPEntriesMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
+	if fake.DeleteARPEntriesStub != nil {
+		return fake.DeleteARPEntriesStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.deleteARPEntriesReturns
 	return fakeReturns.result1
 }
 
@@ -556,16 +634,15 @@ func (fake *FakeAgentClient) Drain(arg1 string) (int64, error) {
 	fake.drainArgsForCall = append(fake.drainArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	stub := fake.DrainStub
-	fakeReturns := fake.drainReturns
 	fake.recordInvocation("Drain", []interface{}{arg1})
 	fake.drainMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
+	if fake.DrainStub != nil {
+		return fake.DrainStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.drainReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -619,16 +696,15 @@ func (fake *FakeAgentClient) GetState() (agentclient.AgentState, error) {
 	ret, specificReturn := fake.getStateReturnsOnCall[len(fake.getStateArgsForCall)]
 	fake.getStateArgsForCall = append(fake.getStateArgsForCall, struct {
 	}{})
-	stub := fake.GetStateStub
-	fakeReturns := fake.getStateReturns
 	fake.recordInvocation("GetState", []interface{}{})
 	fake.getStateMutex.Unlock()
-	if stub != nil {
-		return stub()
+	if fake.GetStateStub != nil {
+		return fake.GetStateStub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.getStateReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -675,16 +751,15 @@ func (fake *FakeAgentClient) ListDisk() ([]string, error) {
 	ret, specificReturn := fake.listDiskReturnsOnCall[len(fake.listDiskArgsForCall)]
 	fake.listDiskArgsForCall = append(fake.listDiskArgsForCall, struct {
 	}{})
-	stub := fake.ListDiskStub
-	fakeReturns := fake.listDiskReturns
 	fake.recordInvocation("ListDisk", []interface{}{})
 	fake.listDiskMutex.Unlock()
-	if stub != nil {
-		return stub()
+	if fake.ListDiskStub != nil {
+		return fake.ListDiskStub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.listDiskReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -731,16 +806,15 @@ func (fake *FakeAgentClient) MigrateDisk() error {
 	ret, specificReturn := fake.migrateDiskReturnsOnCall[len(fake.migrateDiskArgsForCall)]
 	fake.migrateDiskArgsForCall = append(fake.migrateDiskArgsForCall, struct {
 	}{})
-	stub := fake.MigrateDiskStub
-	fakeReturns := fake.migrateDiskReturns
 	fake.recordInvocation("MigrateDisk", []interface{}{})
 	fake.migrateDiskMutex.Unlock()
-	if stub != nil {
-		return stub()
+	if fake.MigrateDiskStub != nil {
+		return fake.MigrateDiskStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.migrateDiskReturns
 	return fakeReturns.result1
 }
 
@@ -785,16 +859,15 @@ func (fake *FakeAgentClient) MountDisk(arg1 string) error {
 	fake.mountDiskArgsForCall = append(fake.mountDiskArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	stub := fake.MountDiskStub
-	fakeReturns := fake.mountDiskReturns
 	fake.recordInvocation("MountDisk", []interface{}{arg1})
 	fake.mountDiskMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
+	if fake.MountDiskStub != nil {
+		return fake.MountDiskStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.mountDiskReturns
 	return fakeReturns.result1
 }
 
@@ -845,16 +918,15 @@ func (fake *FakeAgentClient) Ping() (string, error) {
 	ret, specificReturn := fake.pingReturnsOnCall[len(fake.pingArgsForCall)]
 	fake.pingArgsForCall = append(fake.pingArgsForCall, struct {
 	}{})
-	stub := fake.PingStub
-	fakeReturns := fake.pingReturns
 	fake.recordInvocation("Ping", []interface{}{})
 	fake.pingMutex.Unlock()
-	if stub != nil {
-		return stub()
+	if fake.PingStub != nil {
+		return fake.PingStub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.pingReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -902,16 +974,15 @@ func (fake *FakeAgentClient) RemovePersistentDisk(arg1 string) error {
 	fake.removePersistentDiskArgsForCall = append(fake.removePersistentDiskArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	stub := fake.RemovePersistentDiskStub
-	fakeReturns := fake.removePersistentDiskReturns
 	fake.recordInvocation("RemovePersistentDisk", []interface{}{arg1})
 	fake.removePersistentDiskMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
+	if fake.RemovePersistentDiskStub != nil {
+		return fake.RemovePersistentDiskStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.removePersistentDiskReturns
 	return fakeReturns.result1
 }
 
@@ -964,16 +1035,15 @@ func (fake *FakeAgentClient) RunScript(arg1 string, arg2 map[string]interface{})
 		arg1 string
 		arg2 map[string]interface{}
 	}{arg1, arg2})
-	stub := fake.RunScriptStub
-	fakeReturns := fake.runScriptReturns
 	fake.recordInvocation("RunScript", []interface{}{arg1, arg2})
 	fake.runScriptMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
+	if fake.RunScriptStub != nil {
+		return fake.RunScriptStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.runScriptReturns
 	return fakeReturns.result1
 }
 
@@ -1026,16 +1096,15 @@ func (fake *FakeAgentClient) SetUpSSH(arg1 string, arg2 string) (agentclient.SSH
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
-	stub := fake.SetUpSSHStub
-	fakeReturns := fake.setUpSSHReturns
 	fake.recordInvocation("SetUpSSH", []interface{}{arg1, arg2})
 	fake.setUpSSHMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
+	if fake.SetUpSSHStub != nil {
+		return fake.SetUpSSHStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.setUpSSHReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -1089,16 +1158,15 @@ func (fake *FakeAgentClient) Start() error {
 	ret, specificReturn := fake.startReturnsOnCall[len(fake.startArgsForCall)]
 	fake.startArgsForCall = append(fake.startArgsForCall, struct {
 	}{})
-	stub := fake.StartStub
-	fakeReturns := fake.startReturns
 	fake.recordInvocation("Start", []interface{}{})
 	fake.startMutex.Unlock()
-	if stub != nil {
-		return stub()
+	if fake.StartStub != nil {
+		return fake.StartStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.startReturns
 	return fakeReturns.result1
 }
 
@@ -1142,16 +1210,15 @@ func (fake *FakeAgentClient) Stop() error {
 	ret, specificReturn := fake.stopReturnsOnCall[len(fake.stopArgsForCall)]
 	fake.stopArgsForCall = append(fake.stopArgsForCall, struct {
 	}{})
-	stub := fake.StopStub
-	fakeReturns := fake.stopReturns
 	fake.recordInvocation("Stop", []interface{}{})
 	fake.stopMutex.Unlock()
-	if stub != nil {
-		return stub()
+	if fake.StopStub != nil {
+		return fake.StopStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.stopReturns
 	return fakeReturns.result1
 }
 
@@ -1198,16 +1265,15 @@ func (fake *FakeAgentClient) SyncDNS(arg1 string, arg2 string, arg3 uint64) (str
 		arg2 string
 		arg3 uint64
 	}{arg1, arg2, arg3})
-	stub := fake.SyncDNSStub
-	fakeReturns := fake.syncDNSReturns
 	fake.recordInvocation("SyncDNS", []interface{}{arg1, arg2, arg3})
 	fake.syncDNSMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2, arg3)
+	if fake.SyncDNSStub != nil {
+		return fake.SyncDNSStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+	fakeReturns := fake.syncDNSReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -1262,16 +1328,15 @@ func (fake *FakeAgentClient) UnmountDisk(arg1 string) error {
 	fake.unmountDiskArgsForCall = append(fake.unmountDiskArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	stub := fake.UnmountDiskStub
-	fakeReturns := fake.unmountDiskReturns
 	fake.recordInvocation("UnmountDisk", []interface{}{arg1})
 	fake.unmountDiskMutex.Unlock()
-	if stub != nil {
-		return stub(arg1)
+	if fake.UnmountDiskStub != nil {
+		return fake.UnmountDiskStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
+	fakeReturns := fake.unmountDiskReturns
 	return fakeReturns.result1
 }
 
@@ -1324,6 +1389,8 @@ func (fake *FakeAgentClient) Invocations() map[string][][]interface{} {
 	defer fake.addPersistentDiskMutex.RUnlock()
 	fake.applyMutex.RLock()
 	defer fake.applyMutex.RUnlock()
+	fake.bundleLogsMutex.RLock()
+	defer fake.bundleLogsMutex.RUnlock()
 	fake.cleanUpSSHMutex.RLock()
 	defer fake.cleanUpSSHMutex.RUnlock()
 	fake.compilePackageMutex.RLock()

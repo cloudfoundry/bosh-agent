@@ -1197,4 +1197,61 @@ var _ = Describe("AgentClient", func() {
 			})
 		})
 	})
+
+	Describe("BundleLogs", func() {
+		Context("when the agent responds with a successful response", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value": {"logs_tar_path":"/tmp/good-logs-here.tgz"}}`),
+					ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+						Method: "bundle_logs",
+						Arguments: []interface{}{
+							map[string]interface{}{
+								"logType": "job",
+								"filters": []interface{}{"foo", "bar"},
+							},
+						},
+						ReplyTo: replyToAddress,
+					}),
+				))
+			})
+
+			It("makes a POST request to the endpoint", func() {
+				_, err := agentClient.BundleLogs("job", []string{"foo", "bar"})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(server.ReceivedRequests()).To(HaveLen(1))
+			})
+
+			It("returns the value", func() {
+				responseValue, err := agentClient.BundleLogs("job", []string{"foo", "bar"})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(responseValue.LogsTarPath).To(Equal("/tmp/good-logs-here.tgz"))
+			})
+		})
+
+		Context("when agent does not respond with success", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(ghttp.RespondWith(200, `{"value": {"command":"setup","status":"failed for some reason"}}`))
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.SetUpSSH("user", "user-key")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("Unable to setup SSH account with the agent, status was: failed for some reason")))
+			})
+		})
+
+		Context("when agent request results in an error", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(disconnectingRequestHandler)
+			})
+
+			It("returns an error", func() {
+				_, err := agentClient.SetUpSSH("user", "user-key")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(ContainSubstring("Performing request")))
+			})
+		})
+	})
 })
