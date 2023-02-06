@@ -185,3 +185,23 @@ type SSHState struct {
 	Ip            string `json:"ip"`
 	HostPublicKey string `json:"host_public_key"`
 }
+
+type BundleLogsResponse struct {
+	Value     BundleLogsState
+	Exception *exception
+}
+
+func (r *BundleLogsResponse) ServerError() error {
+	if r.Exception != nil {
+		return bosherr.Errorf("Agent responded with error: %s", r.Exception.Message)
+	}
+	return nil
+}
+
+func (r *BundleLogsResponse) Unmarshal(message []byte) error {
+	return json.Unmarshal(message, r)
+}
+
+type BundleLogsState struct {
+	LogsTarPath string `json:"logs_tar_path""`
+}

@@ -192,6 +192,18 @@ func (c *AgentClient) CleanUpSSH(user string) (agentclient.SSHResult, error) {
 	}, nil
 }
 
+func (c *AgentClient) BundleLogs(logType string, filters []string) (agentclient.BundleLogsResult, error) {
+	var response BundleLogsResponse
+	err := c.AgentRequest.Send("bundle_logs", []interface{}{map[string]interface{}{"logType": logType, "filters": filters}}, &response)
+	if err != nil {
+		return agentclient.BundleLogsResult{}, err
+	}
+
+	return agentclient.BundleLogsResult{
+		LogsTarPath: response.Value.LogsTarPath,
+	}, nil
+}
+
 func (c *AgentClient) CompilePackage(packageSource agentclient.BlobRef, compiledPackageDependencies []agentclient.BlobRef) (compiledPackageRef agentclient.BlobRef, err error) {
 	dependencies := make(map[string]BlobRef, len(compiledPackageDependencies))
 	for _, dependency := range compiledPackageDependencies {
