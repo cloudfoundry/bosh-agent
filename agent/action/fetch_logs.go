@@ -36,8 +36,8 @@ func (a FetchLogsAction) IsLoggable() bool {
 	return true
 }
 
-func (a FetchLogsAction) Run(logType string, filters []string) (value map[string]string, err error) {
-	tarball, err := a.logsTarProvider.Get(logType, filters)
+func (a FetchLogsAction) Run(logTypes string, filters []string) (value map[string]string, err error) {
+	tarball, err := a.logsTarProvider.Get(logTypes, filters)
 	if err != nil {
 		return
 	}

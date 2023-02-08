@@ -51,8 +51,8 @@ var _ = Describe("fetch_logs", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("puts the logs in the appropriate blobstore location", func() {
-		_, err := testEnvironment.RunCommand("echo 'foobarbaz' | sudo tee /var/vcap/sys/log/fetch-logs")
+	It("job log fetch works", func() {
+		_, err := testEnvironment.RunCommand("echo 'foobarbaz-job-log-fetch' | sudo tee /var/vcap/sys/log/fetch-logs-job")
 		Expect(err).NotTo(HaveOccurred())
 
 		logsResponse, err := testEnvironment.AgentClient.FetchLogs("job", nil)
@@ -61,8 +61,36 @@ var _ = Describe("fetch_logs", func() {
 		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo zcat /var/vcap/data/blobs/%s", logsResponse["blobstore_id"]))
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(output).To(ContainSubstring("foobarbaz"))
-		Expect(output).To(ContainSubstring("fetch-logs"))
+		Expect(output).To(ContainSubstring("foobarbaz-job-log-fetch"))
+		Expect(output).To(ContainSubstring("fetch-logs-job"))
+	})
+
+	It("agent log fetch works", func() {
+		_, err := testEnvironment.RunCommand("echo 'foobarbaz-agent-log-fetch' | sudo tee /var/vcap/bosh/log/fetch-logs-agent")
+		Expect(err).NotTo(HaveOccurred())
+
+		logsResponse, err := testEnvironment.AgentClient.FetchLogs("agent", nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo zcat /var/vcap/data/blobs/%s", logsResponse["blobstore_id"]))
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("foobarbaz-agent-log-fetch"))
+		Expect(output).To(ContainSubstring("fetch-logs-agent"))
+	})
+
+	It("system log fetch works", func() {
+		_, err := testEnvironment.RunCommand("echo 'foobarbaz-system-log-fetch' | sudo tee /var/log/fetch-logs-system")
+		Expect(err).NotTo(HaveOccurred())
+
+		logsResponse, err := testEnvironment.AgentClient.FetchLogs("system", nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		output, err := testEnvironment.RunCommand(fmt.Sprintf("sudo zcat /var/vcap/data/blobs/%s", logsResponse["blobstore_id"]))
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(output).To(ContainSubstring("foobarbaz-system-log-fetch"))
+		Expect(output).To(ContainSubstring("fetch-logs-system"))
 	})
 
 })

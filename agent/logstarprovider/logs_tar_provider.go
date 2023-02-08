@@ -1,10 +1,12 @@
 package logstarprovider
 
 import (
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	"runtime"
+	"strings"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 )
 
 type logsTarProvider struct {
@@ -24,25 +26,37 @@ func NewLogsTarProvider(
 	}
 }
 
-func (l logsTarProvider) Get(logType string, filters []string) (string, error) {
-	var logsDir string
+func (l logsTarProvider) Get(logTypes string, filters []string) (string, error) {
+	var directoriesAndPrefixes []boshcmd.DirToCopy
+	var err error
 
-	switch logType {
-	case "job":
-		if len(filters) == 0 {
-			filters = []string{"**/*"}
-		}
-		logsDir = l.settingsDir.LogsDir()
-	case "agent":
-		if len(filters) == 0 {
-			filters = []string{"**/*"}
-		}
-		logsDir = l.settingsDir.AgentLogsDir()
-	default:
-		return "", bosherr.Error("Invalid log type")
+	if len(filters) == 0 {
+		filters = []string{"**/*"}
 	}
 
-	tmpDir, err := l.copier.FilteredCopyToTemp(logsDir, filters)
+	for _, logType := range strings.Split(logTypes, ",") {
+		if logType == "job" {
+			directoriesAndPrefixes = append(directoriesAndPrefixes,
+				boshcmd.DirToCopy{Dir: l.settingsDir.LogsDir(), Prefix: ""})
+			continue
+		}
+		if logType == "agent" {
+			directoriesAndPrefixes = append(directoriesAndPrefixes,
+				boshcmd.DirToCopy{Dir: l.settingsDir.AgentLogsDir(), Prefix: ""})
+			continue
+		}
+		if logType == "system" {
+			if runtime.GOOS == "linux" {
+				directoriesAndPrefixes = append(directoriesAndPrefixes,
+					boshcmd.DirToCopy{Dir: "/var/log/", Prefix: "/var/log/"})
+			}
+			continue
+		}
+		err = bosherr.Error("Invalid log type")
+		return "", err
+	}
+
+	tmpDir, err := l.copier.FilteredMultiCopyToTemp(directoriesAndPrefixes, filters)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Copying filtered files to temp directory")
 	}
