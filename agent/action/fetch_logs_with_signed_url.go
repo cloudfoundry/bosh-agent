@@ -2,6 +2,7 @@ package action
 
 import (
 	"errors"
+
 	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 
 	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
