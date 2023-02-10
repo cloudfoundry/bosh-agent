@@ -4,7 +4,7 @@ set -eu -o pipefail
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 GOOS="${GOOS:-$(go env GOOS)}"
-CGO_ENABLED=0
+export CGO_ENABLED=0
 
 echo "Building with $(go version)..."
 
