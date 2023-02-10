@@ -32,7 +32,6 @@ const MachineIP = "1.2.3.4"
 
 func FindOpenPort() (int, error) {
 	const Base = 5000
-	rand.Seed(time.Now().UnixNano())
 
 	for i := 0; i < 50; i++ {
 		port := Base + rand.Intn(10000) //nolint:gosec
