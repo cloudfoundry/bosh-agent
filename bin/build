@@ -2,6 +2,8 @@
 
 set -e
 
+export CGO_ENABLED=0
+
 agent_dir="$(cd "$(dirname "$0")" && cd .. && pwd)"
 pushd ${agent_dir}
   ./bin/go build -o ./out/bosh-agent github.com/cloudfoundry/bosh-agent/main

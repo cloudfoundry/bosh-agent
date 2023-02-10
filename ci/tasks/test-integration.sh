@@ -64,12 +64,14 @@ copy_to_remote_host ${bosh_agent_dir}/out/bosh-agent /var/vcap/bosh/bin/bosh-age
 
 echo -e "\n Installing fake registry..."
 pushd ${bosh_agent_dir}/integration/fake-registry
+  export CGO_ENABLED=0
   go build .
   copy_to_remote_host ./fake-registry /home/agent_test_user/fake-registry
 popd
 
 echo -e "\n Installing fake blobstore..."
 pushd ${bosh_agent_dir}/integration/fake-blobstore
+  export CGO_ENABLED=0
   go build .
   copy_to_remote_host ./fake-blobstore /home/agent_test_user/fake-blobstore
 popd
