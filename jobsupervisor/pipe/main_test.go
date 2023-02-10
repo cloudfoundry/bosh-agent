@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	cryptorand "crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -198,7 +199,7 @@ var _ = Describe("Main", func() {
 			var invalidLogDir string
 			randString := func() string {
 				b := make([]byte, 8)
-				n, _ := rand.Read(b) //nolint:gosec
+				n, _ := cryptorand.Read(b)
 				return fmt.Sprintf("%X", b[:n])
 			}
 			for i := 0; i < 1000; i++ {
