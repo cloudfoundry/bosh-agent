@@ -1,24 +1,24 @@
 module github.com/cloudfoundry/bosh-agent
 
-go 1.19
+go 1.20
 
 require (
 	code.cloudfoundry.org/clock v1.0.0
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230131191323-96331f8f153d
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.141
+	github.com/cloudfoundry/bosh-davcli v0.0.144
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.351
+	github.com/cloudfoundry/bosh-utils v0.0.352
 	github.com/cloudfoundry/gosigar v1.3.6
-	github.com/cloudfoundry/socks5-proxy v0.2.83 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.84 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.1.2-0.20190416172445-c2e93f3ae59f
 	github.com/kevinburke/ssh_config v1.2.0
 	github.com/masterzen/winrm v0.0.0-20220917170901-b07f6cb0598d
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/jwt v1.2.2 // indirect
 	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
@@ -28,9 +28,9 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/crypto v0.5.0
-	golang.org/x/net v0.5.0
-	golang.org/x/sys v0.4.0
+	golang.org/x/crypto v0.6.0
+	golang.org/x/net v0.6.0
+	golang.org/x/sys v0.5.0
 )
 
 require (
@@ -58,12 +58,12 @@ require (
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	go4.org/intern v0.0.0-20220617035311-6925f38cc365 // indirect
+	go4.org/intern v0.0.0-20230205224052-192e9f60865c // indirect
 	go4.org/netipx v0.0.0-20230125063823-8449b0a6169f // indirect
-	go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230203172020-98cc5a0785f9 // indirect
-	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/tools v0.5.0 // indirect
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230209150437-ee73d164e760 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230210204819-062eb4c674ab // indirect
+	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -83,7 +83,7 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )

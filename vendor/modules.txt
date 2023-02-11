@@ -55,7 +55,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.141
+# github.com/cloudfoundry/bosh-davcli v0.0.144
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -63,7 +63,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.351
+# github.com/cloudfoundry/bosh-utils v0.0.352
 ## explicit; go 1.19
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -90,8 +90,8 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.83
-## explicit; go 1.19
+# github.com/cloudfoundry/socks5-proxy v0.2.84
+## explicit; go 1.20
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.1.0
 ## explicit; go 1.17
@@ -209,7 +209,7 @@ github.com/masterzen/simplexml/dom
 ## explicit; go 1.14
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 ## explicit; go 1.17
 github.com/maxbrunsfeld/counterfeiter/v6
 github.com/maxbrunsfeld/counterfeiter/v6/arguments
@@ -310,16 +310,16 @@ github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.8.1
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
-# go4.org/intern v0.0.0-20220617035311-6925f38cc365
+# go4.org/intern v0.0.0-20230205224052-192e9f60865c
 ## explicit; go 1.13
 go4.org/intern
 # go4.org/netipx v0.0.0-20230125063823-8449b0a6169f
 ## explicit; go 1.18
 go4.org/netipx
-# go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760
+# go4.org/unsafe/assume-no-moving-gc v0.0.0-20230209150437-ee73d164e760
 ## explicit; go 1.11
 go4.org/unsafe/assume-no-moving-gc
-# golang.org/x/crypto v0.5.0
+# golang.org/x/crypto v0.6.0
 ## explicit; go 1.17
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -332,15 +332,15 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20230203172020-98cc5a0785f9
+# golang.org/x/exp/typeparams v0.0.0-20230210204819-062eb4c674ab
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
-# golang.org/x/mod v0.7.0
+# golang.org/x/mod v0.8.0
 ## explicit; go 1.17
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.5.0
+# golang.org/x/net v0.6.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/html
@@ -349,7 +349,7 @@ golang.org/x/net/html/charset
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.4.0
+# golang.org/x/sys v0.5.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -359,7 +359,7 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/text v0.6.0
+# golang.org/x/text v0.7.0
 ## explicit; go 1.17
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
@@ -378,7 +378,7 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
-# golang.org/x/tools v0.5.0
+# golang.org/x/tools v0.6.0
 ## explicit; go 1.18
 golang.org/x/tools/go/analysis
 golang.org/x/tools/go/analysis/passes/inspect
@@ -404,6 +404,7 @@ golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/pkgbits
+golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 # google.golang.org/protobuf v1.28.0
