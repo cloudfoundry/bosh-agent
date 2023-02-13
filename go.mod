@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230131191323-96331f8f153d
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.144
-	github.com/cloudfoundry/bosh-utils v0.0.352
-	github.com/cloudfoundry/gosigar v1.3.6
+	github.com/cloudfoundry/bosh-davcli v0.0.146
+	github.com/cloudfoundry/bosh-utils v0.0.353
+	github.com/cloudfoundry/gosigar v1.3.7
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -71,7 +71,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20230125063823-8449b0a6169f // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230210204819-062eb4c674ab // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230212135524-a684f29349b6 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
