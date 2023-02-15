@@ -2,12 +2,20 @@ package action
 
 import (
 	"errors"
-
 	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type BundleLogsAction struct {
 	logsTarProvider logstarprovider.LogsTarProvider
+	fs              boshsys.FileSystem
+}
+
+type BundleLogsRequest struct {
+	OwningUser string `json:"owning_user"`
+
+	LogType string   `json:"log_type"`
+	Filters []string `json:"filters"`
 }
 
 type BundleLogsResponse struct {
@@ -16,8 +24,11 @@ type BundleLogsResponse struct {
 
 func NewBundleLogs(
 	logsTarProvider logstarprovider.LogsTarProvider,
+	fs boshsys.FileSystem,
+
 ) (action BundleLogsAction) {
 	action.logsTarProvider = logsTarProvider
+	action.fs = fs
 	return
 }
 func (a BundleLogsAction) IsAsynchronous(_ ProtocolVersion) bool {
@@ -32,10 +43,17 @@ func (a BundleLogsAction) IsLoggable() bool {
 	return true
 }
 
-func (a BundleLogsAction) Run(logType string, filters []string) (BundleLogsResponse, error) {
-	tarball, err := a.logsTarProvider.Get(logType, filters)
+func (a BundleLogsAction) Run(request BundleLogsRequest) (BundleLogsResponse, error) {
+	tarball, err := a.logsTarProvider.Get(request.LogType, request.Filters)
 	if err != nil {
 		return BundleLogsResponse{}, err
+	}
+
+	if request.OwningUser != "" {
+		err = a.fs.Chown(tarball, request.OwningUser)
+		if err != nil {
+			return BundleLogsResponse{}, err
+		}
 	}
 
 	return BundleLogsResponse{LogsTarPath: tarball}, nil

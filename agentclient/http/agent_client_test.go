@@ -1208,8 +1208,9 @@ var _ = Describe("AgentClient", func() {
 						Method: "bundle_logs",
 						Arguments: []interface{}{
 							map[string]interface{}{
-								"logType": "job",
-								"filters": []interface{}{"foo", "bar"},
+								"owningUser": "bosh-user",
+								"logType":    "job",
+								"filters":    []interface{}{"foo", "bar"},
 							},
 						},
 						ReplyTo: replyToAddress,
@@ -1218,13 +1219,13 @@ var _ = Describe("AgentClient", func() {
 			})
 
 			It("makes a POST request to the endpoint", func() {
-				_, err := agentClient.BundleLogs("job", []string{"foo", "bar"})
+				_, err := agentClient.BundleLogs("bosh-user", "job", []string{"foo", "bar"})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(server.ReceivedRequests()).To(HaveLen(1))
 			})
 
 			It("returns the value", func() {
-				responseValue, err := agentClient.BundleLogs("job", []string{"foo", "bar"})
+				responseValue, err := agentClient.BundleLogs("bosh-user", "job", []string{"foo", "bar"})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(responseValue.LogsTarPath).To(Equal("/tmp/good-logs-here.tgz"))
 			})

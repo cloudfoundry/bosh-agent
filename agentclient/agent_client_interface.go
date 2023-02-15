@@ -23,7 +23,7 @@ type AgentClient interface {
 	RunScript(scriptName string, options map[string]interface{}) error
 	SetUpSSH(username string, publicKey string) (SSHResult, error)
 	CleanUpSSH(username string) (SSHResult, error)
-	BundleLogs(logType string, filters []string) (BundleLogsResult, error)
+	BundleLogs(owningUser string, logType string, filters []string) (BundleLogsResult, error)
 }
 
 type AgentState struct {

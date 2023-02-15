@@ -119,7 +119,7 @@ var _ = Describe("concreteFactory", func() {
 	It("bundle_logs", func() {
 		action, err := factory.Create("bundle_logs")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewBundleLogs(platform.GetLogsTarProvider())))
+		Expect(action).To(Equal(NewBundleLogs(platform.GetLogsTarProvider(), platform.GetFs())))
 	})
 
 	It("get_task", func() {
