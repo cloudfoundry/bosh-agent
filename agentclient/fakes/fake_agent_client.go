@@ -32,11 +32,12 @@ type FakeAgentClient struct {
 	applyReturnsOnCall map[int]struct {
 		result1 error
 	}
-	BundleLogsStub        func(string, []string) (agentclient.BundleLogsResult, error)
+	BundleLogsStub        func(string, string, []string) (agentclient.BundleLogsResult, error)
 	bundleLogsMutex       sync.RWMutex
 	bundleLogsArgsForCall []struct {
 		arg1 string
-		arg2 []string
+		arg2 string
+		arg3 []string
 	}
 	bundleLogsReturns struct {
 		result1 agentclient.BundleLogsResult
@@ -362,22 +363,23 @@ func (fake *FakeAgentClient) ApplyReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeAgentClient) BundleLogs(arg1 string, arg2 []string) (agentclient.BundleLogsResult, error) {
-	var arg2Copy []string
-	if arg2 != nil {
-		arg2Copy = make([]string, len(arg2))
-		copy(arg2Copy, arg2)
+func (fake *FakeAgentClient) BundleLogs(arg1 string, arg2 string, arg3 []string) (agentclient.BundleLogsResult, error) {
+	var arg3Copy []string
+	if arg3 != nil {
+		arg3Copy = make([]string, len(arg3))
+		copy(arg3Copy, arg3)
 	}
 	fake.bundleLogsMutex.Lock()
 	ret, specificReturn := fake.bundleLogsReturnsOnCall[len(fake.bundleLogsArgsForCall)]
 	fake.bundleLogsArgsForCall = append(fake.bundleLogsArgsForCall, struct {
 		arg1 string
-		arg2 []string
-	}{arg1, arg2Copy})
-	fake.recordInvocation("BundleLogs", []interface{}{arg1, arg2Copy})
+		arg2 string
+		arg3 []string
+	}{arg1, arg2, arg3Copy})
+	fake.recordInvocation("BundleLogs", []interface{}{arg1, arg2, arg3Copy})
 	fake.bundleLogsMutex.Unlock()
 	if fake.BundleLogsStub != nil {
-		return fake.BundleLogsStub(arg1, arg2)
+		return fake.BundleLogsStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -392,17 +394,17 @@ func (fake *FakeAgentClient) BundleLogsCallCount() int {
 	return len(fake.bundleLogsArgsForCall)
 }
 
-func (fake *FakeAgentClient) BundleLogsCalls(stub func(string, []string) (agentclient.BundleLogsResult, error)) {
+func (fake *FakeAgentClient) BundleLogsCalls(stub func(string, string, []string) (agentclient.BundleLogsResult, error)) {
 	fake.bundleLogsMutex.Lock()
 	defer fake.bundleLogsMutex.Unlock()
 	fake.BundleLogsStub = stub
 }
 
-func (fake *FakeAgentClient) BundleLogsArgsForCall(i int) (string, []string) {
+func (fake *FakeAgentClient) BundleLogsArgsForCall(i int) (string, string, []string) {
 	fake.bundleLogsMutex.RLock()
 	defer fake.bundleLogsMutex.RUnlock()
 	argsForCall := fake.bundleLogsArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeAgentClient) BundleLogsReturns(result1 agentclient.BundleLogsResult, result2 error) {

@@ -192,9 +192,13 @@ func (c *AgentClient) CleanUpSSH(user string) (agentclient.SSHResult, error) {
 	}, nil
 }
 
-func (c *AgentClient) BundleLogs(logType string, filters []string) (agentclient.BundleLogsResult, error) {
+func (c *AgentClient) BundleLogs(owningUser string, logType string, filters []string) (agentclient.BundleLogsResult, error) {
 	var response BundleLogsResponse
-	err := c.AgentRequest.Send("bundle_logs", []interface{}{map[string]interface{}{"logType": logType, "filters": filters}}, &response)
+	err := c.AgentRequest.Send("bundle_logs", []interface{}{map[string]interface{}{
+		"owningUser": owningUser,
+		"logType":    logType,
+		"filters":    filters,
+	}}, &response)
 	if err != nil {
 		return agentclient.BundleLogsResult{}, err
 	}

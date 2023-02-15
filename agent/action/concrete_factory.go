@@ -53,7 +53,7 @@ func NewFactory(
 
 			// VM admin
 			"ssh":                        NewSSH(settingsService, platform, dirProvider, logger),
-			"bundle_logs":                NewBundleLogs(logsTarProvider),
+			"bundle_logs":                NewBundleLogs(logsTarProvider, platform.GetFs()),
 			"fetch_logs":                 NewFetchLogs(logsTarProvider, blobstoreDelegator),
 			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(logsTarProvider, blobstoreDelegator),
 			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger, utils.NewAgentKiller()),
