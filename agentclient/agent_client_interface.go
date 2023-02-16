@@ -24,6 +24,7 @@ type AgentClient interface {
 	SetUpSSH(username string, publicKey string) (SSHResult, error)
 	CleanUpSSH(username string) (SSHResult, error)
 	BundleLogs(owningUser string, logType string, filters []string) (BundleLogsResult, error)
+	RemoveFile(path string) error
 }
 
 type AgentState struct {

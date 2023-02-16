@@ -1208,9 +1208,9 @@ var _ = Describe("AgentClient", func() {
 						Method: "bundle_logs",
 						Arguments: []interface{}{
 							map[string]interface{}{
-								"owningUser": "bosh-user",
-								"logType":    "job",
-								"filters":    []interface{}{"foo", "bar"},
+								"owning_user": "bosh-user",
+								"log_type":    "job",
+								"filters":     []interface{}{"foo", "bar"},
 							},
 						},
 						ReplyTo: replyToAddress,
@@ -1253,6 +1253,34 @@ var _ = Describe("AgentClient", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(ContainSubstring("Performing request")))
 			})
+		})
+	})
+
+	Describe("RemoveFile", func() {
+		It("sends a remove_file message to the agent", func() {
+			server.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/agent"),
+					ghttp.RespondWith(200, `{"value":""}`),
+					ghttp.VerifyJSONRepresenting(AgentRequestMessage{
+						Method:    "remove_file",
+						Arguments: []interface{}{"/tmp/here-is/the.file"},
+						ReplyTo:   replyToAddress,
+					}),
+				),
+			)
+
+			err := agentClient.RemoveFile("/tmp/here-is/the.file")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(server.ReceivedRequests()).To(HaveLen(1))
+		})
+
+		It("returns an error if an error occurs", func() {
+			server.AppendHandlers(disconnectingRequestHandler)
+
+			err := agentClient.RemoveFile("/tmp/here-is/the.file")
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(ContainSubstring("Post \"%s/agent\": EOF", server.URL())))
 		})
 	})
 })

@@ -58,6 +58,7 @@ func NewFactory(
 			"fetch_logs_with_signed_url": NewFetchLogsWithSignedURLAction(logsTarProvider, blobstoreDelegator),
 			"update_settings":            NewUpdateSettings(settingsService, platform, certManager, logger, utils.NewAgentKiller()),
 			"shutdown":                   NewShutdown(platform),
+			"remove_file":                NewRemoveFile(platform.GetFs()),
 
 			// Job management
 			"prepare":    NewPrepare(applier),
