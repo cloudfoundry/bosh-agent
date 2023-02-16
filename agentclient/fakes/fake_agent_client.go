@@ -155,6 +155,17 @@ type FakeAgentClient struct {
 		result1 string
 		result2 error
 	}
+	RemoveFileStub        func(string) error
+	removeFileMutex       sync.RWMutex
+	removeFileArgsForCall []struct {
+		arg1 string
+	}
+	removeFileReturns struct {
+		result1 error
+	}
+	removeFileReturnsOnCall map[int]struct {
+		result1 error
+	}
 	RemovePersistentDiskStub        func(string) error
 	removePersistentDiskMutex       sync.RWMutex
 	removePersistentDiskArgsForCall []struct {
@@ -970,6 +981,66 @@ func (fake *FakeAgentClient) PingReturnsOnCall(i int, result1 string, result2 er
 	}{result1, result2}
 }
 
+func (fake *FakeAgentClient) RemoveFile(arg1 string) error {
+	fake.removeFileMutex.Lock()
+	ret, specificReturn := fake.removeFileReturnsOnCall[len(fake.removeFileArgsForCall)]
+	fake.removeFileArgsForCall = append(fake.removeFileArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("RemoveFile", []interface{}{arg1})
+	fake.removeFileMutex.Unlock()
+	if fake.RemoveFileStub != nil {
+		return fake.RemoveFileStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.removeFileReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeAgentClient) RemoveFileCallCount() int {
+	fake.removeFileMutex.RLock()
+	defer fake.removeFileMutex.RUnlock()
+	return len(fake.removeFileArgsForCall)
+}
+
+func (fake *FakeAgentClient) RemoveFileCalls(stub func(string) error) {
+	fake.removeFileMutex.Lock()
+	defer fake.removeFileMutex.Unlock()
+	fake.RemoveFileStub = stub
+}
+
+func (fake *FakeAgentClient) RemoveFileArgsForCall(i int) string {
+	fake.removeFileMutex.RLock()
+	defer fake.removeFileMutex.RUnlock()
+	argsForCall := fake.removeFileArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeAgentClient) RemoveFileReturns(result1 error) {
+	fake.removeFileMutex.Lock()
+	defer fake.removeFileMutex.Unlock()
+	fake.RemoveFileStub = nil
+	fake.removeFileReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeAgentClient) RemoveFileReturnsOnCall(i int, result1 error) {
+	fake.removeFileMutex.Lock()
+	defer fake.removeFileMutex.Unlock()
+	fake.RemoveFileStub = nil
+	if fake.removeFileReturnsOnCall == nil {
+		fake.removeFileReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.removeFileReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeAgentClient) RemovePersistentDisk(arg1 string) error {
 	fake.removePersistentDiskMutex.Lock()
 	ret, specificReturn := fake.removePersistentDiskReturnsOnCall[len(fake.removePersistentDiskArgsForCall)]
@@ -1411,6 +1482,8 @@ func (fake *FakeAgentClient) Invocations() map[string][][]interface{} {
 	defer fake.mountDiskMutex.RUnlock()
 	fake.pingMutex.RLock()
 	defer fake.pingMutex.RUnlock()
+	fake.removeFileMutex.RLock()
+	defer fake.removeFileMutex.RUnlock()
 	fake.removePersistentDiskMutex.RLock()
 	defer fake.removePersistentDiskMutex.RUnlock()
 	fake.runScriptMutex.RLock()

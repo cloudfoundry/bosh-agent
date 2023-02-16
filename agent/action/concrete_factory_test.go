@@ -124,6 +124,12 @@ var _ = Describe("concreteFactory", func() {
 		Expect(action).To(Equal(boshaction.NewBundleLogs(platform.GetLogsTarProvider(), platform.GetFs())))
 	})
 
+	It("remove_file", func() {
+		action, err := factory.Create("remove_file")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(action).To(Equal(boshaction.NewRemoveFile(platform.GetFs())))
+	})
+
 	It("get_task", func() {
 		action, err := factory.Create("get_task")
 		Expect(err).ToNot(HaveOccurred())

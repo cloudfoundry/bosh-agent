@@ -195,9 +195,9 @@ func (c *AgentClient) CleanUpSSH(user string) (agentclient.SSHResult, error) {
 func (c *AgentClient) BundleLogs(owningUser string, logType string, filters []string) (agentclient.BundleLogsResult, error) {
 	var response BundleLogsResponse
 	err := c.AgentRequest.Send("bundle_logs", []interface{}{map[string]interface{}{
-		"owningUser": owningUser,
-		"logType":    logType,
-		"filters":    filters,
+		"owning_user": owningUser,
+		"log_type":    logType,
+		"filters":     filters,
 	}}, &response)
 	if err != nil {
 		return agentclient.BundleLogsResult{}, err
@@ -206,6 +206,16 @@ func (c *AgentClient) BundleLogs(owningUser string, logType string, filters []st
 	return agentclient.BundleLogsResult{
 		LogsTarPath: response.Value.LogsTarPath,
 	}, nil
+}
+
+func (c *AgentClient) RemoveFile(path string) error {
+	var response SimpleTaskResponse
+	err := c.AgentRequest.Send("remove_file", []interface{}{path}, &response)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *AgentClient) CompilePackage(packageSource agentclient.BlobRef, compiledPackageDependencies []agentclient.BlobRef) (compiledPackageRef agentclient.BlobRef, err error) {
