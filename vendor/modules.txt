@@ -90,7 +90,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.84
+# github.com/cloudfoundry/socks5-proxy v0.2.85
 ## explicit; go 1.20
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.1.0
@@ -274,7 +274,7 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.26.0
+# github.com/onsi/gomega v1.27.1
 ## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -442,7 +442,7 @@ gopkg.in/tomb.v1
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# honnef.co/go/tools v0.4.1
+# honnef.co/go/tools v0.4.2
 ## explicit; go 1.19
 honnef.co/go/tools/analysis/code
 honnef.co/go/tools/analysis/edit

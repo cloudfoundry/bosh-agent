@@ -11,7 +11,7 @@ require (
 	github.com/cloudfoundry/bosh-init v0.0.103
 	github.com/cloudfoundry/bosh-utils v0.0.354
 	github.com/cloudfoundry/gosigar v1.3.7
-	github.com/cloudfoundry/socks5-proxy v0.2.84 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.85 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -24,7 +24,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
 	github.com/nats-io/nats.go v1.23.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.26.0
+	github.com/onsi/gomega v1.27.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
@@ -67,7 +67,7 @@ require (
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	honnef.co/go/tools v0.4.1 // indirect
+	honnef.co/go/tools v0.4.2 // indirect
 )
 
 require (
