@@ -2,11 +2,11 @@ package http
 
 import (
 	"encoding/json"
-
 	"runtime/debug"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	"github.com/cloudfoundry/bosh-agent/agentclient"
 )
 
 type Response interface {
@@ -203,5 +203,6 @@ func (r *BundleLogsResponse) Unmarshal(message []byte) error {
 }
 
 type BundleLogsState struct {
-	LogsTarPath string `json:"logs_tar_path""`
+	LogsTarPath  string `json:"logs_tar_path""`
+	SHA512Digest string `json:"sha512"`
 }

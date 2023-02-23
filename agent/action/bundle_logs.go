@@ -2,8 +2,11 @@ package action
 
 import (
 	"errors"
-	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 )
 
 type BundleLogsAction struct {
@@ -19,7 +22,8 @@ type BundleLogsRequest struct {
 }
 
 type BundleLogsResponse struct {
-	LogsTarPath string `json:"logs_tar_path"`
+	LogsTarPath  string `json:"logs_tar_path"`
+	SHA512Digest string `json:"sha512"`
 }
 
 func NewBundleLogs(
@@ -56,7 +60,12 @@ func (a BundleLogsAction) Run(request BundleLogsRequest) (BundleLogsResponse, er
 		}
 	}
 
-	return BundleLogsResponse{LogsTarPath: tarball}, nil
+	digest, err := boshcrypto.NewMultipleDigestFromPath(tarball, a.fs, []boshcrypto.Algorithm{boshcrypto.DigestAlgorithmSHA512})
+	if err != nil {
+		return BundleLogsResponse{}, err
+	}
+
+	return BundleLogsResponse{LogsTarPath: tarball, SHA512Digest: digest.String()}, nil
 }
 
 func (a BundleLogsAction) Resume() (interface{}, error) {

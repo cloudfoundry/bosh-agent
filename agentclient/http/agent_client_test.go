@@ -1203,7 +1203,7 @@ var _ = Describe("AgentClient", func() {
 			BeforeEach(func() {
 				server.AppendHandlers(ghttp.CombineHandlers(
 					ghttp.VerifyRequest("POST", "/agent"),
-					ghttp.RespondWith(200, `{"value": {"logs_tar_path":"/tmp/good-logs-here.tgz"}}`),
+					ghttp.RespondWith(200, `{"value": {"logs_tar_path":"/tmp/good-logs-here.tgz","sha512":"goodSHA"}}`),
 					ghttp.VerifyJSONRepresenting(AgentRequestMessage{
 						Method: "bundle_logs",
 						Arguments: []interface{}{
@@ -1228,6 +1228,7 @@ var _ = Describe("AgentClient", func() {
 				responseValue, err := agentClient.BundleLogs("bosh-user", "job", []string{"foo", "bar"})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(responseValue.LogsTarPath).To(Equal("/tmp/good-logs-here.tgz"))
+				Expect(responseValue.SHA512Digest).To(Equal("goodSHA"))
 			})
 		})
 
