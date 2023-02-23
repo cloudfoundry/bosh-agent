@@ -51,5 +51,6 @@ type SSHResult struct {
 }
 
 type BundleLogsResult struct {
-	LogsTarPath string
+	LogsTarPath  string
+	SHA512Digest string
 }

@@ -203,5 +203,6 @@ func (r *BundleLogsResponse) Unmarshal(message []byte) error {
 }
 
 type BundleLogsState struct {
-	LogsTarPath string `json:"logs_tar_path"`
+	LogsTarPath  string `json:"logs_tar_path"`
+	SHA512Digest string `json:"sha512"`
 }

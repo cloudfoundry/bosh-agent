@@ -5,12 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient"
-	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+
+	"github.com/cloudfoundry/bosh-agent/agentclient"
+	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
 )
 
 type AgentClient struct {
@@ -204,7 +205,8 @@ func (c *AgentClient) BundleLogs(owningUser string, logType string, filters []st
 	}
 
 	return agentclient.BundleLogsResult{
-		LogsTarPath: response.Value.LogsTarPath,
+		LogsTarPath:  response.Value.LogsTarPath,
+		SHA512Digest: response.Value.SHA512Digest,
 	}, nil
 }
 

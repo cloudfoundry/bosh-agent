@@ -57,14 +57,15 @@ var _ = Describe("FetchLogsAction", func() {
 			Expect(logsTarProvider.CleanUpCallCount()).To(BeZero())
 		})
 
-		It("returns the expected logs tarball path", func() {
+		It("returns the expected logs tarball path and sha512", func() {
 			logsTarProvider.GetReturns("/tmp/logsinhere.tgz", nil)
 
 			request := BundleLogsRequest{LogType: "job", Filters: []string{"foo", "bar"}}
 			logsPath, err := action.Run(request)
 			Expect(err).ToNot(HaveOccurred())
 
-			boshassert.MatchesJSONString(GinkgoT(), logsPath, `{"logs_tar_path":"/tmp/logsinhere.tgz"}`)
+			const emptyFileSHA512 string = "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e"
+			boshassert.MatchesJSONString(GinkgoT(), logsPath, `{"logs_tar_path":"/tmp/logsinhere.tgz","sha512":"sha512:`+emptyFileSHA512+`"}`)
 		})
 
 		Context("chowning", func() {
