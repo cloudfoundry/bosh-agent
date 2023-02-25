@@ -1,4 +1,4 @@
-// Copyright 2012-2022 The NATS Authors
+// Copyright 2012-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -47,7 +47,7 @@ import (
 
 // Default Constants
 const (
-	Version                   = "1.23.0"
+	Version                   = "1.24.0"
 	DefaultURL                = "nats://127.0.0.1:4222"
 	DefaultPort               = 4222
 	DefaultMaxReconnect       = 60
@@ -139,10 +139,6 @@ var (
 	ErrMaxConnectionsExceeded = errors.New("nats: server maximum connections exceeded")
 	ErrConnectionNotTLS       = errors.New("nats: connection is not tls")
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 // GetDefaultOptions returns default configuration options for the client.
 func GetDefaultOptions() Options {
@@ -475,6 +471,9 @@ type Options struct {
 	// IgnoreAuthErrorAbort - if set to true, client opts out of the default connect behavior of aborting
 	// subsequent reconnect attempts if server returns the same auth error twice (regardless of reconnect policy).
 	IgnoreAuthErrorAbort bool
+
+	// SkipHostLookup skips the DNS lookup for the server hostname.
+	SkipHostLookup bool
 }
 
 const (
@@ -1268,6 +1267,14 @@ func IgnoreAuthErrorAbort() Option {
 	}
 }
 
+// SkipHostLookup is an Option to skip the host lookup when connecting to a server.
+func SkipHostLookup() Option {
+	return func(o *Options) error {
+		o.SkipHostLookup = true
+		return nil
+	}
+}
+
 // Handler processing
 
 // SetDisconnectHandler will set the disconnect event handler.
@@ -1901,7 +1908,7 @@ func (nc *Conn) createConn() (err error) {
 	hosts := []string{}
 	u := nc.current.url
 
-	if net.ParseIP(u.Hostname()) == nil {
+	if !nc.Opts.SkipHostLookup && net.ParseIP(u.Hostname()) == nil {
 		addrs, _ := net.LookupHost(u.Hostname())
 		for _, addr := range addrs {
 			hosts = append(hosts, net.JoinHostPort(addr, u.Port()))

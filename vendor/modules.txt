@@ -62,12 +62,12 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.153
+# github.com/cloudfoundry/bosh-davcli v0.0.155
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.354
+# github.com/cloudfoundry/bosh-utils v0.0.355
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -165,7 +165,7 @@ github.com/jcmturner/gofork/x/crypto/pbkdf2
 # github.com/jcmturner/goidentity/v6 v6.0.1
 ## explicit; go 1.13
 github.com/jcmturner/goidentity/v6
-# github.com/jcmturner/gokrb5/v8 v8.4.3
+# github.com/jcmturner/gokrb5/v8 v8.4.4
 ## explicit; go 1.16
 github.com/jcmturner/gokrb5/v8/asn1tools
 github.com/jcmturner/gokrb5/v8/client
@@ -227,8 +227,8 @@ github.com/maxbrunsfeld/counterfeiter/v6/generator
 github.com/mitchellh/mapstructure
 # github.com/nats-io/nats-server/v2 v2.8.1
 ## explicit; go 1.17
-# github.com/nats-io/nats.go v1.23.0
-## explicit; go 1.18
+# github.com/nats-io/nats.go v1.24.0
+## explicit; go 1.19
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
 github.com/nats-io/nats.go/util
@@ -340,7 +340,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20230213192124-5e25df0256eb
+# golang.org/x/exp/typeparams v0.0.0-20230224173230-c95f2b4c22f2
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.8.0
