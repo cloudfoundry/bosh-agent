@@ -76,7 +76,7 @@ resources:
   - name: gcp-stemcell
     type: pivnet
     source:
-      api_token: ((pivnet_bot_api_token))
+      api_token: ((pivnet-integration-token))
       product_slug: stemcells-ubuntu-xenial
       product_version: 621\..*
 
