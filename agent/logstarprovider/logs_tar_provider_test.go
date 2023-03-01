@@ -39,7 +39,7 @@ var _ = Describe("LogsTarProvider", func() {
 					_, err := provider.Get("job", []string{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempDir).To(Equal("/fake/dir/sys/log"))
+					Expect(copier.FilteredCopyToTempDir).To(Equal(dirProvider.LogsDir()))
 				})
 			})
 
@@ -48,7 +48,7 @@ var _ = Describe("LogsTarProvider", func() {
 					_, err := provider.Get("agent", []string{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempDir).To(Equal("/fake/dir/bosh/log"))
+					Expect(copier.FilteredCopyToTempDir).To(Equal(dirProvider.AgentLogsDir()))
 				})
 			})
 		})
