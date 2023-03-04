@@ -4,13 +4,13 @@ go 1.20
 
 require (
 	code.cloudfoundry.org/clock v1.0.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20230131191323-96331f8f153d
+	code.cloudfoundry.org/tlsconfig v0.0.0-20230225100352-b3e9427a4d77
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.155
+	github.com/cloudfoundry/bosh-davcli v0.0.157
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.355
-	github.com/cloudfoundry/gosigar v1.3.7
+	github.com/cloudfoundry/bosh-utils v0.0.356
+	github.com/cloudfoundry/gosigar v1.3.8
 	github.com/cloudfoundry/socks5-proxy v0.2.85 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -24,7 +24,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
 	github.com/nats-io/nats.go v1.24.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.1
+	github.com/onsi/gomega v1.27.2
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
@@ -59,9 +59,9 @@ require (
 	github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go4.org/intern v0.0.0-20230205224052-192e9f60865c // indirect
-	go4.org/netipx v0.0.0-20230125063823-8449b0a6169f // indirect
+	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230224173230-c95f2b4c22f2 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230303215020-44a13b063f3e // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect

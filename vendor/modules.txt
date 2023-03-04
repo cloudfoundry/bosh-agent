@@ -2,7 +2,7 @@
 ## explicit
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.0.0-20230131191323-96331f8f153d
+# code.cloudfoundry.org/tlsconfig v0.0.0-20230225100352-b3e9427a4d77
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
@@ -55,7 +55,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.155
+# github.com/cloudfoundry/bosh-davcli v0.0.157
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -63,7 +63,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.355
+# github.com/cloudfoundry/bosh-utils v0.0.356
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -85,7 +85,7 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.7
+# github.com/cloudfoundry/gosigar v1.3.8
 ## explicit; go 1.20
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
@@ -274,7 +274,7 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.27.1
+# github.com/onsi/gomega v1.27.2
 ## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -313,7 +313,7 @@ github.com/stretchr/testify/assert
 # go4.org/intern v0.0.0-20230205224052-192e9f60865c
 ## explicit; go 1.13
 go4.org/intern
-# go4.org/netipx v0.0.0-20230125063823-8449b0a6169f
+# go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35
 ## explicit; go 1.18
 go4.org/netipx
 # go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296
@@ -332,7 +332,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20230224173230-c95f2b4c22f2
+# golang.org/x/exp/typeparams v0.0.0-20230303215020-44a13b063f3e
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.8.0
