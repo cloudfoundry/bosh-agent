@@ -62,6 +62,10 @@ echo -e "\n Installing agent..."
 ${ssh_command} "sudo sv stop agent" >/dev/null 2>&1
 copy_to_remote_host ${bosh_agent_dir}/out/bosh-agent /var/vcap/bosh/bin/bosh-agent
 
+
+echo -e "\n Shutting down rsyslog..."
+${ssh_command}  "sudo systemctl disable --now syslog.socket rsyslog.service" >/dev/null 2>&1
+
 echo -e "\n Installing fake blobstore..."
 pushd ${bosh_agent_dir}/integration/fake-blobstore
   export CGO_ENABLED=0
