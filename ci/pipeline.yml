@@ -73,7 +73,7 @@ resources:
     source:
       uri: https://github.com/bosh-packages/golang-release.git
 
-  - name: gcp-stemcell
+  - name: azure-stemcell
     type: pivnet
     source:
       api_token: ((pivnet_linux_stemcell_api_token))
@@ -84,13 +84,13 @@ resources:
     type: bosh-deployment
     source:
       deployment: bosh-agent-integration-2-268-x
-      target: ((iaas_directors_gcp-director_bosh_environment))
-      client: ((iaas_directors_gcp-director_bosh_client.username))
-      client_secret: ((iaas_directors_gcp-director_bosh_client.password))
-      ca_cert: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
-      jumpbox_ssh_key: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
-      jumpbox_username: ((iaas_directors_gcp-director_bosh_jumpbox_username))
-      jumpbox_url: ((iaas_directors_gcp-director_bosh_jumpbox_ip)):22
+      target: ((iaas_directors_azure-director_bosh_environment))
+      client: ((iaas_directors_azure-director_bosh_client.username))
+      client_secret: ((iaas_directors_azure-director_bosh_client.password))
+      ca_cert: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+      jumpbox_ssh_key: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+      jumpbox_username: ((iaas_directors_azure-director_bosh_jumpbox_username))
+      jumpbox_url: ((iaas_directors_azure-director_bosh_jumpbox_ip)):22
 
   - name: version-semver
     type: semver
@@ -148,11 +148,12 @@ jobs:
             trigger: true
           - get: bosh-ecosystem-concourse
           - get: bosh-agent-registry-image
-          - get: gcp-stemcell
+            trigger: true
+          - get: azure-stemcell
             trigger: true
             params:
               globs:
-                - "*google*.tgz"
+                - "*azure*.tgz"
       - do:
           - task: update-resurrection-config
             image: bosh-agent-registry-image
@@ -162,13 +163,13 @@ jobs:
                 - name: bosh-agent
                 - name: bosh-ecosystem-concourse
               params:
-                BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
-                BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
-                BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
-                BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
-                JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
-                JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
-                JUMPBOX_IP: ((iaas_directors_gcp-director_bosh_jumpbox_ip))
+                BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+                BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+                BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+                BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+                JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
               run:
                 path: /bin/bash
                 args:
@@ -181,11 +182,12 @@ jobs:
               cleanup: true
               manifest: "bosh-agent/integration/assets/agent-deployment.yml"
               stemcells:
-                - "gcp-stemcell/*.tgz"
+                - "azure-stemcell/*.tgz"
               vars:
                 deployment_name: bosh-agent-integration-2-268-x
                 stemcell_os: ubuntu-xenial
-
+                az: z1
+                vm_type: root_disk_integration
           - task: get-agent-info
             image: bosh-agent-registry-image
             config:
@@ -196,17 +198,17 @@ jobs:
               outputs:
                 - name: agent-info
               params:
-                BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
-                BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
-                BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
-                BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
-                JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
-                JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
-                JUMPBOX_URL: "((iaas_directors_gcp-director_bosh_jumpbox_ip)):22"
-                CREDHUB_CA_CERT_STRING: ((iaas_directors_gcp-director_bosh_credhub_ca_cert.ca))
-                CREDHUB_CLIENT: ((iaas_directors_gcp-director_bosh_credhub_client.username))
-                CREDHUB_SECRET: ((iaas_directors_gcp-director_bosh_credhub_client.password))
-                CREDHUB_SERVER: ((iaas_directors_gcp-director_bosh_credhub_server))
+                BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+                BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+                BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+                BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+                JUMPBOX_URL: "((iaas_directors_azure-director_bosh_jumpbox_ip)):22"
+                CREDHUB_CA_CERT_STRING: ((iaas_directors_azure-director_bosh_credhub_ca_cert.ca))
+                CREDHUB_CLIENT: ((iaas_directors_azure-director_bosh_credhub_client.username))
+                CREDHUB_SECRET: ((iaas_directors_azure-director_bosh_credhub_client.password))
+                CREDHUB_SERVER: ((iaas_directors_azure-director_bosh_credhub_server))
               run:
                 path: /bin/bash
                 args:
@@ -221,13 +223,13 @@ jobs:
             file: bosh-agent/ci/tasks/test-integration.yml
             params:
               BOSH_DEPLOYMENT: bosh-agent-integration-2-268-x
-              BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
-              BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
-              BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
-              BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
-              JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
-              JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
-              JUMPBOX_IP: ((iaas_directors_gcp-director_bosh_jumpbox_ip))
+              BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+              BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+              BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+              BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+              JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+              JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+              JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
         ensure:
           in_parallel:
             - task: update-resurrection-config
@@ -238,13 +240,13 @@ jobs:
                   - name: bosh-agent
                   - name: bosh-ecosystem-concourse
                 params:
-                  BOSH_ENVIRONMENT: ((iaas_directors_gcp-director_bosh_environment))
-                  BOSH_CA_CERT: ((iaas_directors_gcp-director_bosh_ca_cert.ca))
-                  BOSH_CLIENT: ((iaas_directors_gcp-director_bosh_client.username))
-                  BOSH_CLIENT_SECRET: ((iaas_directors_gcp-director_bosh_client.password))
-                  JUMPBOX_PRIVATE_KEY: ((iaas_directors_gcp-director_bosh_jumpbox_ssh.private_key))
-                  JUMPBOX_USERNAME: ((iaas_directors_gcp-director_bosh_jumpbox_username))
-                  JUMPBOX_IP: ((iaas_directors_gcp-director_bosh_jumpbox_ip))
+                  BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+                  BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+                  BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+                  BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+                  JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                  JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+                  JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
                 run:
                   path: /bin/bash
                   args:
