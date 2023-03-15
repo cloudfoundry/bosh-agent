@@ -75,6 +75,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	agent.CleanUpExtraDisks()
+	agent.CleanUpUpdateSettings()
 
 	goSourcePath := filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "go", "go1.7.1.windows-amd64.zip")
 	err = os.RemoveAll(goSourcePath)

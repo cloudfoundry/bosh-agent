@@ -150,6 +150,10 @@ func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
 	}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 }
 
+func (e *WindowsEnvironment) CleanUpUpdateSettings() {
+	agent.RunPowershellCommand("rm c:\\var\\vcap\\bosh\\update_settings.json")
+}
+
 func (e *WindowsEnvironment) StartAgent() {
 	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe install")
 	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
