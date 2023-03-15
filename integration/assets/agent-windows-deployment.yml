@@ -35,7 +35,7 @@ stemcells:
     os: windows2019
     version: latest
   - alias: linux_stemcell
-    os: ubuntu-bionic
+    os: ubuntu-jammy
     version: latest
 
 update:
