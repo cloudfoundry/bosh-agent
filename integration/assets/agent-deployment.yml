@@ -3,7 +3,7 @@ name: ((deployment_name))
 
 instance_groups:
   - azs:
-      - az1
+      - ((az))
     env:
       bosh:
         ipv6:
@@ -15,7 +15,7 @@ instance_groups:
     networks:
       - name: default
     stemcell: stemcell
-    vm_type: default
+    vm_type: ((vm_type))
 
 releases: []
 
