@@ -103,7 +103,7 @@ resources:
   - name: aws-stemcell
     type: bosh-io-stemcell
     source:
-      name: bosh-aws-xen-hvm-ubuntu-bionic-go_agent
+      name: bosh-aws-xen-hvm-ubuntu-jammy-go_agent
 
   - name: aws-windows-stemcell
     type: bosh-io-stemcell
@@ -113,7 +113,7 @@ resources:
   - name: azure-stemcell
     type: bosh-io-stemcell
     source:
-      name: bosh-azure-hyperv-ubuntu-bionic-go_agent
+      name: bosh-azure-hyperv-ubuntu-jammy-go_agent
 
   - name: integration-vm-deployment
     type: bosh-deployment
@@ -288,7 +288,7 @@ jobs:
                 - "azure-stemcell/*.tgz"
               vars:
                 deployment_name: bosh-agent-integration-main
-                stemcell_os: ubuntu-bionic
+                stemcell_os: ubuntu-jammy
                 az: z1
                 vm_type: root_disk_integration
 
