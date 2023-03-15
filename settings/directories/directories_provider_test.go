@@ -46,7 +46,7 @@ var _ = Describe("Provider", func() {
 	)
 
 	It("cleans the base dir", func() {
-		p := directories.NewProvider(filepath.FromSlash("///././/some/dir"))
+		p := directories.NewProvider(filepath.FromSlash("/././/some/dir"))
 		Expect(p.BaseDir()).To(Equal(filepath.FromSlash("/some/dir")))
 	})
 })
