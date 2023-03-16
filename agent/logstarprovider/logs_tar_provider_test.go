@@ -2,7 +2,10 @@ package logstarprovider
 
 import (
 	"errors"
+
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 
 	. "github.com/onsi/ginkgo"
@@ -37,7 +40,7 @@ var _ = Describe("LogsTarProvider", func() {
 					_, err := provider.Get("job", []string{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempDir).To(Equal("/fake/dir/sys/log"))
+					Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/fake/dir/sys/log"))
 				})
 			})
 
@@ -46,29 +49,51 @@ var _ = Describe("LogsTarProvider", func() {
 					_, err := provider.Get("agent", []string{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempDir).To(Equal("/fake/dir/bosh/log"))
+					Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/fake/dir/bosh/log"))
 				})
+			})
+
+			Context("system logs", func() {
+				It("uses the correct logs dir", func() {
+					_, err := provider.Get("system", []string{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/var/log"))
+				})
+			})
+
+			Context("multiple logs", func() {
+				It("uses the correct logs dirs", func() {
+					_, err := provider.Get("job,agent,system", []string{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(copier.FilteredMultiCopyToTempDirs)).To(Equal(3))
+
+					Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/fake/dir/sys/log"))
+					Expect(copier.FilteredMultiCopyToTempDirs[1].Dir).To(boshassert.MatchPath("/fake/dir/bosh/log"))
+					Expect(copier.FilteredMultiCopyToTempDirs[2].Dir).To(boshassert.MatchPath("/var/log"))
+				})
+
 			})
 		})
 
 		Describe("filters", func() {
-			Context("job logs", func() {
-				BeforeEach(func() {
-					Expect(copier.FilteredCopyToTempFilters).To(BeEmpty())
-				})
+			BeforeEach(func() {
+				Expect(copier.FilteredMultiCopyToTempFilters).To(BeEmpty())
+			})
 
+			Context("job logs", func() {
 				It("uses the filters provided", func() {
 					_, err := provider.Get("job", []string{"foo", "bar"})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempFilters).To(ConsistOf("foo", "bar"))
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("foo", "bar"))
 				})
 
 				It("uses the default filters when none are provided", func() {
 					_, err := provider.Get("job", []string{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempFilters).To(ConsistOf("**/*"))
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("**/*"))
 				})
 			})
 
@@ -77,14 +102,46 @@ var _ = Describe("LogsTarProvider", func() {
 					_, err := provider.Get("agent", []string{"foo", "bar"})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempFilters).To(ConsistOf("foo", "bar"))
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("foo", "bar"))
 				})
 
 				It("uses the default filters when none are provided", func() {
 					_, err := provider.Get("agent", []string{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredCopyToTempFilters).To(ConsistOf("**/*"))
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("**/*"))
+				})
+			})
+
+			Context("system logs", func() {
+				It("uses the filters provided", func() {
+					_, err := provider.Get("system", []string{"foo", "bar"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("foo", "bar"))
+				})
+
+				It("uses the default filters when none are provided", func() {
+					_, err := provider.Get("system", []string{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("**/*"))
+				})
+			})
+
+			Context("multiple log types", func() {
+				It("uses the filters provided, just as it does with one log type", func() {
+					_, err := provider.Get("system,agent,job", []string{"foo", "bar"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("foo", "bar"))
+				})
+
+				It("uses the default filters when none are provided", func() {
+					_, err := provider.Get("agent,system,job", []string{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(copier.FilteredMultiCopyToTempFilters).To(ConsistOf("**/*"))
 				})
 			})
 
@@ -98,7 +155,7 @@ var _ = Describe("LogsTarProvider", func() {
 			Context("copying", func() {
 				Context("error", func() {
 					BeforeEach(func() {
-						copier.FilteredCopyToTempError = errors.New("plagiarization")
+						copier.FilteredMultiCopyToTempError = errors.New("plagiarization")
 					})
 
 					It("returns an error if the copier returns an error", func() {
@@ -109,7 +166,7 @@ var _ = Describe("LogsTarProvider", func() {
 				})
 
 				It("cleans up temp dir", func() {
-					copier.FilteredCopyToTempTempDir = "/tmp/dir"
+					copier.FilteredMultiCopyToTempDir = "/tmp/dir"
 					Expect(copier.CleanUpTempDir).To(BeZero())
 
 					_, err := provider.Get("job", []string{})
