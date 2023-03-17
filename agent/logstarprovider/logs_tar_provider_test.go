@@ -2,6 +2,7 @@ package logstarprovider
 
 import (
 	"errors"
+	"runtime"
 
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
@@ -58,7 +59,11 @@ var _ = Describe("LogsTarProvider", func() {
 					_, err := provider.Get("system", []string{})
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/var/log"))
+					if runtime.GOOS == "linux" {
+						Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/var/log"))
+					} else {
+						Expect(len(copier.FilteredMultiCopyToTempDirs)).To(Equal(0))
+					}
 				})
 			})
 
@@ -66,13 +71,20 @@ var _ = Describe("LogsTarProvider", func() {
 				It("uses the correct logs dirs", func() {
 					_, err := provider.Get("job,agent,system", []string{})
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(copier.FilteredMultiCopyToTempDirs)).To(Equal(3))
 
-					Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/fake/dir/sys/log"))
-					Expect(copier.FilteredMultiCopyToTempDirs[1].Dir).To(boshassert.MatchPath("/fake/dir/bosh/log"))
-					Expect(copier.FilteredMultiCopyToTempDirs[2].Dir).To(boshassert.MatchPath("/var/log"))
+					if runtime.GOOS == "linux" {
+						Expect(len(copier.FilteredMultiCopyToTempDirs)).To(Equal(3))
+
+						Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/fake/dir/sys/log"))
+						Expect(copier.FilteredMultiCopyToTempDirs[1].Dir).To(boshassert.MatchPath("/fake/dir/bosh/log"))
+						Expect(copier.FilteredMultiCopyToTempDirs[2].Dir).To(boshassert.MatchPath("/var/log"))
+					} else {
+						Expect(len(copier.FilteredMultiCopyToTempDirs)).To(Equal(2))
+
+						Expect(copier.FilteredMultiCopyToTempDirs[0].Dir).To(boshassert.MatchPath("/fake/dir/sys/log"))
+						Expect(copier.FilteredMultiCopyToTempDirs[1].Dir).To(boshassert.MatchPath("/fake/dir/bosh/log"))
+					}
 				})
-
 			})
 		})
 
