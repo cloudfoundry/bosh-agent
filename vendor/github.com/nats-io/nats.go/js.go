@@ -1610,6 +1610,8 @@ func (js *js) subscribe(subj, queue string, cb MsgHandler, ch chan *Msg, isSync,
 	if isPullMode {
 		nms = fmt.Sprintf(js.apiSubj(apiRequestNextT), stream, consumer)
 		deliver = nc.NewInbox()
+		// for pull consumers, create a wildcard subscription to differentiate pull requests
+		deliver += ".*"
 	}
 
 	// In case this has a context, then create a child context that
@@ -2192,7 +2194,7 @@ func Description(description string) SubOpt {
 }
 
 // Durable defines the consumer name for JetStream durable subscribers.
-// This function will return ErrInvalidConsumerName in the name contains
+// This function will return ErrInvalidConsumerName if the name contains
 // any dot ".".
 func Durable(consumer string) SubOpt {
 	return subOptFn(func(opts *subOpts) error {
@@ -2629,7 +2631,7 @@ func (sub *Subscription) Fetch(batch int, opts ...PullOpt) ([]*Msg, error) {
 
 	nc := sub.conn
 	nms := sub.jsi.nms
-	rply := sub.jsi.deliver
+	rply, _ := newFetchInbox(jsi.deliver)
 	js := sub.jsi.js
 	pmc := len(sub.mch) > 0
 
@@ -2753,7 +2755,7 @@ func (sub *Subscription) Fetch(batch int, opts ...PullOpt) ([]*Msg, error) {
 					err = sendReq()
 				} else if err == ErrTimeout && len(msgs) == 0 {
 					// If we get a 408, we will bail if we already collected some
-					// messages, otherwise ignore and go back calling NextMsg.
+					// messages, otherwise ignore and go back calling nextMsg.
 					err = nil
 				}
 			}
@@ -2764,6 +2766,28 @@ func (sub *Subscription) Fetch(batch int, opts ...PullOpt) ([]*Msg, error) {
 		return nil, o.checkCtxErr(err)
 	}
 	return msgs, nil
+}
+
+// newFetchInbox returns subject used as reply subject when sending pull requests
+// as well as request ID. For non-wildcard subject, request ID is empty and
+// passed subject is not transformed
+func newFetchInbox(subj string) (string, string) {
+	if !strings.HasSuffix(subj, ".*") {
+		return subj, ""
+	}
+	reqID := nuid.Next()
+	var sb strings.Builder
+	sb.WriteString(subj[:len(subj)-1])
+	sb.WriteString(reqID)
+	return sb.String(), reqID
+}
+
+func subjectMatchesReqID(subject, reqID string) bool {
+	subjectParts := strings.Split(subject, ".")
+	if len(subjectParts) < 2 {
+		return false
+	}
+	return subjectParts[len(subjectParts)-1] == reqID
 }
 
 // MessageBatch provides methods to retrieve messages consumed using [Subscribe.FetchBatch].
@@ -2835,7 +2859,7 @@ func (sub *Subscription) FetchBatch(batch int, opts ...PullOpt) (MessageBatch, e
 
 	nc := sub.conn
 	nms := sub.jsi.nms
-	rply := sub.jsi.deliver
+	rply, reqID := newFetchInbox(sub.jsi.deliver)
 	js := sub.jsi.js
 	pmc := len(sub.mch) > 0
 
@@ -2964,6 +2988,10 @@ func (sub *Subscription) FetchBatch(batch int, opts ...PullOpt) (MessageBatch, e
 			usrMsg, err = checkMsg(msg, true, false)
 			if err != nil {
 				if err == ErrTimeout {
+					if reqID != "" && !subjectMatchesReqID(msg.Subject, reqID) {
+						// ignore timeout message from server if it comes from a different pull request
+						continue
+					}
 					err = nil
 				}
 				break
