@@ -20,7 +20,7 @@ func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	SynchronizedBeforeSuite(func() []byte {
-		logLevel := boshlog.LevelError
+		logLevel := boshlog.LevelDebug
 		logger := boshlog.NewLogger(logLevel)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		var err error
