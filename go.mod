@@ -7,8 +7,8 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.165
-	github.com/cloudfoundry/bosh-utils v0.0.359
+	github.com/cloudfoundry/bosh-davcli v0.0.172
+	github.com/cloudfoundry/bosh-utils v0.0.360
 	github.com/cloudfoundry/gosigar v1.3.9
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
@@ -21,7 +21,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.25.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.5
+	github.com/onsi/gomega v1.27.6
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
