@@ -159,6 +159,9 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 func (t *TestEnvironment) CleanupDataDir() error {
 	_, err := t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`)
 
+	// Explicitly stop rsyslog as it can prevent unmounting and clearing /var/log
+	t.RunCommand("sudo service rsyslog stop")
+
 	_, err = t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
 	if err != nil {
 		return err
