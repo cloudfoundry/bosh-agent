@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 )
 
@@ -473,7 +474,8 @@ func (s *Session) wait(reqs <-chan *Request) error {
 type ExitMissingError struct{}
 
 func (e *ExitMissingError) Error() string {
-	panic("SSH EOF about to happen")
+	os.Exit(1)
+	return ""
 }
 
 func (s *Session) stdin() {
