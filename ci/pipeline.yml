@@ -230,6 +230,7 @@ jobs:
               JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
               JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
               JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
+              GINKGO_SEED: 1680537645
         # ensure:
         #   in_parallel:
         #     - task: update-resurrection-config
