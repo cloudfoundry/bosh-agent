@@ -101,7 +101,7 @@ IdentityFile ${jumpbox_key_path}
 " > integration/ssh-config
 
   export AGENT_IP=${agent_ip}
-  go run github.com/onsi/ginkgo/ginkgo --seed $GINKGO_SEED --slowSpecThreshold=300 --trace --progress integration
+  go run github.com/onsi/ginkgo/ginkgo --seed $GINKGO_SEED --slowSpecThreshold=300 --trace --untilItFails --progress integration
 popd
 
 

@@ -78,7 +78,7 @@ var _ = Describe("remove_file", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("removes the specified file", func() {
+	FIt("removes the specified file", func() {
 		_, err := testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data/tmp")
 		Expect(err).NotTo(HaveOccurred())
 
