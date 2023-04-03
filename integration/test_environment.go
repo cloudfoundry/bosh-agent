@@ -148,7 +148,11 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	for _, mountPoint := range mountPointsSlice {
 		if mountPoint != "" {
 			t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
-			t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+			_, err = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+			if err != nil {
+				out, _ := t.RunCommand(fmt.Sprintf("sudo fuser -m %s", mountPoint))
+				t.logger.Debug("Remote Cmd Runner", "UNABLE TO UMOUNT, fuser output: %s", out)
+			}
 		}
 	}
 
@@ -675,7 +679,7 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 	t.logger.Debug("Remote Cmd Runner", "Running remote command '%s'", command)
 	out, err := s.CombinedOutput(command)
 	if err != nil {
-		t.logger.Debug("COMMAND FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
+		t.logger.Debug("Remote Cmd Runner", "COMMAND FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
 		return string(out), err
 	}
 	return string(out), nil
