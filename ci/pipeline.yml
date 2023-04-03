@@ -25,7 +25,7 @@ resources:
     type: git
     source:
       uri: git@github.com:cloudfoundry/bosh-agent.git
-      branch: 2.268.x
+      branch: debug-ci-failures
       private_key: ((github_deploy_key_bosh-agent.private_key))
 
   - name: bosh-agent-index
@@ -230,36 +230,36 @@ jobs:
               JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
               JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
               JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
-        ensure:
-          in_parallel:
-            - task: update-resurrection-config
-              image: bosh-agent-registry-image
-              config:
-                platform: linux
-                inputs:
-                  - name: bosh-agent
-                  - name: bosh-ecosystem-concourse
-                params:
-                  BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
-                  BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
-                  BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
-                  BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
-                  JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
-                  JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
-                  JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
-                run:
-                  path: /bin/bash
-                  args:
-                    - -c
-                    - |
-                      source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                      bosh -n delete-config --name 2-268-x-resurrection --type resurrection
-            - put: integration-vm-deployment
-              params:
-                cleanup: true
-                delete:
-                  enabled: true
-                  force: true
+        # ensure:
+        #   in_parallel:
+        #     - task: update-resurrection-config
+        #       image: bosh-agent-registry-image
+        #       config:
+        #         platform: linux
+        #         inputs:
+        #           - name: bosh-agent
+        #           - name: bosh-ecosystem-concourse
+        #         params:
+        #           BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+        #           BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+        #           BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+        #           BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+        #           JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+        #           JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+        #           JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
+        #         run:
+        #           path: /bin/bash
+        #           args:
+        #             - -c
+        #             - |
+        #               source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
+        #               bosh -n delete-config --name 2-268-x-resurrection --type resurrection
+        #     - put: integration-vm-deployment
+        #       params:
+        #         cleanup: true
+        #         delete:
+        #           enabled: true
+        #           force: true
 
   - name: bosh-integration-tests
     serial: true
@@ -281,7 +281,7 @@ jobs:
         params:
            DB: postgresql
            DB_VERSION: 15
-           
+
   - name: promote
     serial: true
     plan:

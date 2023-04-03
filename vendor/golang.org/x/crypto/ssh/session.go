@@ -473,7 +473,7 @@ func (s *Session) wait(reqs <-chan *Request) error {
 type ExitMissingError struct{}
 
 func (e *ExitMissingError) Error() string {
-	return "wait: remote command exited without exit status or exit signal"
+	panic("SSH EOF about to happen")
 }
 
 func (s *Session) stdin() {
