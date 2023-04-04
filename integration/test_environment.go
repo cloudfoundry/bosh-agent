@@ -151,8 +151,13 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 			t.logger.Debug("Remote Cmd Runner", "fuser -km output: %s", out)
 			out, _ = t.RunCommand(fmt.Sprintf("sudo fuser -m %s", mountPoint))
 			t.logger.Debug("Remote Cmd Runner", "fuser -m output: %s", out)
-			out, err = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
-			t.logger.Debug("Remote Cmd Runner", "umount output: %s", out)
+			for i := 0; i < 100; i++ {
+				out, err = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+				t.logger.Debug("Remote Cmd Runner", "umount output: %s", out)
+				if err == nil {
+					break
+				}
+			}
 			if err != nil {
 				out, _ := t.RunCommand(fmt.Sprintf("sudo fuser -m %s", mountPoint))
 				t.logger.Debug("Remote Cmd Runner", "UNABLE TO UMOUNT, fuser output: %s", out)
