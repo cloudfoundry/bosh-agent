@@ -28,7 +28,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 		udev = fakeudev.NewFakeUdevDevice()
 		fs = fakesys.NewFakeFileSystem()
 		diskSettings = boshsettings.DiskSettings{
-			ID: "fake-disk-id-include-truncate",
+			ID: "fake-disk-id-include-longname",
 		}
 	})
 
@@ -54,10 +54,10 @@ var _ = Describe("IDDevicePathResolver", func() {
 				err = fs.Symlink("/dev/fake-device-path", "/dev/intermediate/fake-device-path")
 				Expect(err).ToNot(HaveOccurred())
 
-				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
+				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include-longname")
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{"/dev/disk/by-id/virtio-fake-disk-id-include"})
+				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{"/dev/disk/by-id/virtio-fake-disk-id-include-longname"})
 			})
 
 			It("returns fully resolved the path (not potentially relative symlink target)", func() {
@@ -79,14 +79,14 @@ var _ = Describe("IDDevicePathResolver", func() {
 				err = fs.MkdirAll("fake-device-path-2", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
 
-				err = fs.Symlink("fake-device-path-1", "/dev/disk/by-id/virtio-fake-disk-id-include")
+				err = fs.Symlink("fake-device-path-1", "/dev/disk/by-id/virtio-fake-disk-id-include-longname")
 				Expect(err).ToNot(HaveOccurred())
-				err = fs.Symlink("fake-device-path-2", "/dev/disk/by-id/customprefix-fake-disk-id-include")
+				err = fs.Symlink("fake-device-path-2", "/dev/disk/by-id/customprefix-fake-disk-id-include-longname")
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{
-					"/dev/disk/by-id/virtio-fake-disk-id-include",
-					"/dev/disk/by-id/customprefix-fake-disk-id-include",
+				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{
+					"/dev/disk/by-id/virtio-fake-disk-id-include-longname",
+					"/dev/disk/by-id/customprefix-fake-disk-id-include-longname",
 				})
 			})
 			It("returns an error", func() {
@@ -98,14 +98,14 @@ var _ = Describe("IDDevicePathResolver", func() {
 
 		Context("when path does not exist", func() {
 			BeforeEach(func() {
-				err := fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
+				err := fs.Symlink("fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include-longname")
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("returns an error", func() {
 				_, _, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Timed out getting real device path for 'fake-disk-id-include'"))
+				Expect(err.Error()).To(ContainSubstring("Timed out getting real device path for 'fake-disk-id-include-longname'"))
 			})
 		})
 
@@ -113,7 +113,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 			It("returns an error", func() {
 				_, _, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Timed out getting real device path for 'fake-disk-id-include'"))
+				Expect(err.Error()).To(ContainSubstring("Timed out getting real device path for 'fake-disk-id-include-longname'"))
 			})
 		})
 
@@ -126,12 +126,12 @@ var _ = Describe("IDDevicePathResolver", func() {
 					err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
 					Expect(err).ToNot(HaveOccurred())
 
-					err = fs.Symlink("/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include")
+					err = fs.Symlink("/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include-longname")
 					Expect(err).ToNot(HaveOccurred())
 
 					fs.GlobStub = func(pattern string) ([]string, error) {
-						fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include", []string{
-							"/dev/disk/by-id/virtio-fake-disk-id-include",
+						fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{
+							"/dev/disk/by-id/virtio-fake-disk-id-include-longname",
 						})
 
 						fs.GlobStub = nil
