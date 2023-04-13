@@ -53,7 +53,7 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 
 	var realPath string
 
-	diskID := diskSettings.ID[0:20]
+	diskID := diskSettings.ID
 	deviceGlobPattern := fmt.Sprintf("*%s", diskID)
 	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", deviceGlobPattern)
 
