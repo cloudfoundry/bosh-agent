@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.176
-	github.com/cloudfoundry/bosh-utils v0.0.360
-	github.com/cloudfoundry/gosigar v1.3.9
+	github.com/cloudfoundry/bosh-davcli v0.0.178
+	github.com/cloudfoundry/bosh-utils v0.0.361
+	github.com/cloudfoundry/gosigar v1.3.10
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gofrs/uuid v4.4.0+incompatible
