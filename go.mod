@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.178
+	github.com/cloudfoundry/bosh-davcli v0.0.183
 	github.com/cloudfoundry/bosh-init v0.0.103
 	github.com/cloudfoundry/bosh-utils v0.0.361
 	github.com/cloudfoundry/gosigar v1.3.10
@@ -61,7 +61,7 @@ require (
 	go4.org/intern v0.0.0-20230205224052-192e9f60865c // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230321023759-10a507213a29 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230420155640-133eef4313cb // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/tools v0.8.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
