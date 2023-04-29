@@ -55,7 +55,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.183
+# github.com/cloudfoundry/bosh-davcli v0.0.184
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -90,7 +90,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.87
+# github.com/cloudfoundry/socks5-proxy v0.2.88
 ## explicit; go 1.20
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.1.0
@@ -316,7 +316,7 @@ go4.org/intern
 # go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35
 ## explicit; go 1.18
 go4.org/netipx
-# go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296
+# go4.org/unsafe/assume-no-moving-gc v0.0.0-20230426161633-7e06285ff160
 ## explicit; go 1.11
 go4.org/unsafe/assume-no-moving-gc
 # golang.org/x/crypto v0.8.0
@@ -336,7 +336,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20230420155640-133eef4313cb
+# golang.org/x/exp/typeparams v0.0.0-20230425010034-47ecfdc1ba53
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.10.0

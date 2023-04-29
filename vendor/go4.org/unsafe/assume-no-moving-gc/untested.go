@@ -22,5 +22,5 @@ func init() {
 	if os.Getenv(env) == v {
 		return
 	}
-	panic("Something in this program imports go4.org/unsafe/assume-no-moving-gc to declare that it assumes a non-moving garbage collector, but your version of go4.org/unsafe/assume-no-moving-gc hasn't been updated to assert that it's safe against the " + v + " runtime. If you want to risk it, run with environment variable " + env + "=\"" + v + "\" set. Notably, if " + v + " adds a moving garbage collector, this program is unsafe to use.")
+	panic("Something in this program imports go4.org/unsafe/assume-no-moving-gc to declare that it assumes a non-moving garbage collector, but your version of go4.org/unsafe/assume-no-moving-gc hasn't been updated to assert that it's safe against the " + v + " runtime. You can try updating this package by running \"go get go4.org/unsafe/assume-no-moving-gc@latest\". If that doesn't work and you want to risk it, run with environment variable " + env + "=\"" + v + "\" set. Notably, if " + v + " adds a moving garbage collector, this program is unsafe to use.")
 }
