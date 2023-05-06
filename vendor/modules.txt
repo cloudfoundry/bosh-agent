@@ -55,7 +55,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.184
+# github.com/cloudfoundry/bosh-davcli v0.0.191
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -63,7 +63,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.361
+# github.com/cloudfoundry/bosh-utils v0.0.362
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -90,7 +90,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.88
+# github.com/cloudfoundry/socks5-proxy v0.2.89
 ## explicit; go 1.20
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.1.0
@@ -353,7 +353,7 @@ golang.org/x/net/html/charset
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.7.0
+# golang.org/x/sys v0.8.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs

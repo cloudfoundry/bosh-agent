@@ -7,11 +7,11 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.184
+	github.com/cloudfoundry/bosh-davcli v0.0.191
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.361
+	github.com/cloudfoundry/bosh-utils v0.0.362
 	github.com/cloudfoundry/gosigar v1.3.10
-	github.com/cloudfoundry/socks5-proxy v0.2.88 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.89 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -30,7 +30,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.8.0
 	golang.org/x/net v0.9.0
-	golang.org/x/sys v0.7.0
+	golang.org/x/sys v0.8.0
 )
 
 require (
