@@ -7,8 +7,8 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.184
-	github.com/cloudfoundry/bosh-utils v0.0.361
+	github.com/cloudfoundry/bosh-davcli v0.0.191
+	github.com/cloudfoundry/bosh-utils v0.0.362
 	github.com/cloudfoundry/gosigar v1.3.10
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
@@ -28,7 +28,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.8.0
 	golang.org/x/net v0.9.0
-	golang.org/x/sys v0.7.0
+	golang.org/x/sys v0.8.0
 	golang.org/x/tools v0.8.0
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
@@ -40,7 +40,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.88 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.89 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
