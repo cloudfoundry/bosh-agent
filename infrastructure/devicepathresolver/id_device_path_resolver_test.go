@@ -28,7 +28,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 		udev = fakeudev.NewFakeUdevDevice()
 		fs = fakesys.NewFakeFileSystem()
 		diskSettings = boshsettings.DiskSettings{
-			ID: "fake-disk-id-include-longname",
+			ID: "some-fake-disk-id-include-longname",
 		}
 	})
 
@@ -54,21 +54,46 @@ var _ = Describe("IDDevicePathResolver", func() {
 				err = fs.Symlink("/dev/fake-device-path", "/dev/intermediate/fake-device-path")
 				Expect(err).ToNot(HaveOccurred())
 
-				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include-longname")
+				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/virtio-fake_disk_id_include_longname")
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{"/dev/disk/by-id/virtio-fake-disk-id-include-longname"})
+				fs.SetGlob("/dev/disk/by-id/*fake_disk_id_include_longname", []string{"/dev/disk/by-id/virtio-fake_disk_id_include_longname"})
 			})
 
-			It("returns fully resolved the path (not potentially relative symlink target)", func() {
-				path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-				Expect(err).ToNot(HaveOccurred())
+			Context("and disk id has a prefix separated by hyphen", func() {
+				BeforeEach(func() {
+					diskSettings = boshsettings.DiskSettings{
+						ID: "some-fake_disk_id_include_longname",
+					}
+				})
+				It("returns fully resolved the path (not potentially relative symlink target)", func() {
+					path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+					Expect(err).ToNot(HaveOccurred())
 
-				devicePath, err := filepath.Abs("/dev/fake-device-path")
-				Expect(err).ToNot(HaveOccurred())
+					devicePath, err := filepath.Abs("/dev/fake-device-path")
+					Expect(err).ToNot(HaveOccurred())
 
-				Expect(path).To(Equal(devicePath))
-				Expect(timeout).To(BeFalse())
+					Expect(path).To(Equal(devicePath))
+					Expect(timeout).To(BeFalse())
+				})
+			})
+
+			Context("and disk id has no prefix", func() {
+				BeforeEach(func() {
+					diskSettings = boshsettings.DiskSettings{
+						ID: "fake_disk_id_include_longname",
+					}
+				})
+				It("returns fully resolved the path (not potentially relative symlink target)", func() {
+					path, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+					Expect(err).ToNot(HaveOccurred())
+
+					devicePath, err := filepath.Abs("/dev/fake-device-path")
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(path).To(Equal(devicePath))
+					Expect(timeout).To(BeFalse())
+				})
 			})
 		})
 

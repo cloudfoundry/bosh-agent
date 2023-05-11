@@ -3,6 +3,7 @@ package devicepathresolver
 import (
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
@@ -51,9 +52,17 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 	stopAfter := time.Now().Add(idpr.diskWaitTimeout)
 	found := false
 
-	var realPath string
+	var realPath, diskID string
 
-	diskID := diskSettings.ID
+	dashIndex := strings.IndexRune(diskSettings.ID, '-')
+	if dashIndex != -1 {
+		//some disks are mounted without the dash or without the prefix,
+		//we remove it here entirely so the Glob by-id works for all scenarios
+		diskID = diskSettings.ID[dashIndex+1:]
+	} else {
+		diskID = diskSettings.ID
+	}
+
 	deviceGlobPattern := fmt.Sprintf("*%s", diskID)
 	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", deviceGlobPattern)
 
