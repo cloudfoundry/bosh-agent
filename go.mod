@@ -7,11 +7,11 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.191
+	github.com/cloudfoundry/bosh-davcli v0.0.201
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.362
-	github.com/cloudfoundry/gosigar v1.3.10
-	github.com/cloudfoundry/socks5-proxy v0.2.89 // indirect
+	github.com/cloudfoundry/bosh-utils v0.0.363
+	github.com/cloudfoundry/gosigar v1.3.11
+	github.com/cloudfoundry/socks5-proxy v0.2.90 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -28,8 +28,8 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/crypto v0.8.0
-	golang.org/x/net v0.9.0
+	golang.org/x/crypto v0.9.0
+	golang.org/x/net v0.10.0
 	golang.org/x/sys v0.8.0
 )
 
@@ -61,9 +61,9 @@ require (
 	go4.org/intern v0.0.0-20230205224052-192e9f60865c // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230426161633-7e06285ff160 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230425010034-47ecfdc1ba53 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230510235704-dd950f8aeaea // indirect
 	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/tools v0.8.0 // indirect
+	golang.org/x/tools v0.9.1 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
