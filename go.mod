@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.201
-	github.com/cloudfoundry/bosh-utils v0.0.363
-	github.com/cloudfoundry/gosigar v1.3.11
+	github.com/cloudfoundry/bosh-davcli v0.0.204
+	github.com/cloudfoundry/bosh-utils v0.0.364
+	github.com/cloudfoundry/gosigar v1.3.12
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -21,7 +21,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.25.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.27.7
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
@@ -71,7 +71,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230510235704-dd950f8aeaea // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230519143937-03e91628a987 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
