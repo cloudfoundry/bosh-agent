@@ -62,12 +62,12 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.204
+# github.com/cloudfoundry/bosh-davcli v0.0.206
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.364
+# github.com/cloudfoundry/bosh-utils v0.0.365
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -209,6 +209,9 @@ github.com/jpillora/backoff
 # github.com/kevinburke/ssh_config v1.2.0
 ## explicit
 github.com/kevinburke/ssh_config
+# github.com/klauspost/compress v1.16.5
+## explicit; go 1.18
+github.com/klauspost/compress/flate
 # github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786
 ## explicit
 github.com/masterzen/simplexml/dom
@@ -227,10 +230,11 @@ github.com/maxbrunsfeld/counterfeiter/v6/generator
 github.com/mitchellh/mapstructure
 # github.com/nats-io/nats-server/v2 v2.8.1
 ## explicit; go 1.17
-# github.com/nats-io/nats.go v1.25.0
+# github.com/nats-io/nats.go v1.26.0
 ## explicit; go 1.19
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
+github.com/nats-io/nats.go/internal/parser
 github.com/nats-io/nats.go/util
 # github.com/nats-io/nkeys v0.4.4
 ## explicit; go 1.19
@@ -314,8 +318,8 @@ github.com/pmezard/go-difflib/difflib
 # github.com/sirupsen/logrus v1.8.1
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# github.com/stretchr/testify v1.8.2
-## explicit; go 1.13
+# github.com/stretchr/testify v1.8.3
+## explicit; go 1.20
 github.com/stretchr/testify/assert
 # go.opencensus.io v0.23.0
 ## explicit; go 1.13
@@ -344,7 +348,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20230519143937-03e91628a987
+# golang.org/x/exp/typeparams v0.0.0-20230522175609-2e198f4a06a1
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.10.0
