@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.204
+	github.com/cloudfoundry/bosh-davcli v0.0.206
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.364
+	github.com/cloudfoundry/bosh-utils v0.0.365
 	github.com/cloudfoundry/gosigar v1.3.12
 	github.com/cloudfoundry/socks5-proxy v0.2.90 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -22,12 +22,12 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/jwt v1.2.2 // indirect
 	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
-	github.com/nats-io/nats.go v1.25.0
+	github.com/nats-io/nats.go v1.26.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.7
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	golang.org/x/crypto v0.9.0
 	golang.org/x/net v0.10.0
 	golang.org/x/sys v0.8.0
@@ -52,16 +52,17 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
+	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/nats-io/nkeys v0.4.4 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	go4.org/intern v0.0.0-20230205224052-192e9f60865c // indirect
+	go4.org/intern v0.0.0-20230525184215-6c62f75575cb // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
-	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230426161633-7e06285ff160 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230519143937-03e91628a987 // indirect
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230525183740-e7c30c78aeb2 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230522175609-2e198f4a06a1 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
@@ -84,6 +85,6 @@ require (
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
+	inet.af/netaddr v0.0.0-20230525184311-b8eac61e914a
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
