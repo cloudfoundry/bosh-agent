@@ -19,6 +19,11 @@ resource_types:
       tag: latest-final
       username: ((docker.username))
       password: ((docker.password))
+  - name: semver
+    type: docker-image
+    source:
+      repository: concourse/semver-resource
+      tag: 1.6
 
 resources:
   - name: bosh-agent
@@ -40,8 +45,9 @@ resources:
       url_handlers:
         - type: s3
           options:
-            access_key: ((bosh-agent-s3.username))
-            secret_key: ((bosh-agent-s3.password))
+            access_key: ((bosh-agent-s3-assume.username))
+            secret_key: ((bosh-agent-s3-assume.password))
+            role_arn: ((bosh-agent-s3-assume.role_arn))
 
   - name: bosh-cli
     type: github-release
@@ -99,8 +105,9 @@ resources:
       key: agent-2.268-current-version
       bucket: bosh-agent-semver
       region_name: us-east-1
-      access_key_id: ((bosh-agent-s3.username))
-      secret_access_key: ((bosh-agent-s3.password))
+      access_key_id: ((bosh-agent-s3-assume.username))
+      secret_access_key: ((bosh-agent-s3-assume.password))
+      assume_role_arn: ((bosh-agent-s3-assume.role_arn))
 
   - name: weekly
     type: time
