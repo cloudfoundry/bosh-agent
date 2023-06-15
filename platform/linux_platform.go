@@ -78,6 +78,10 @@ type LinuxOptions struct {
 	// Strategy for resolving ephemeral & persistent disk partitioners;
 	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
 	PartitionerType string
+
+	// Regular expression specifying what part of volume ID to strip.
+	// possible values:  valid RE2 regex e.g. "^vol-", "" (default is not to strip)
+	StripVolumeRegex string
 }
 
 type linux struct {

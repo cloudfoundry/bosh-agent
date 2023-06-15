@@ -3,6 +3,7 @@ package devicepathresolver
 import (
 	"fmt"
 	"path"
+	"regexp"
 	"time"
 
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
@@ -12,20 +13,25 @@ import (
 )
 
 type idDevicePathResolver struct {
-	diskWaitTimeout time.Duration
-	udev            boshudev.UdevDevice
-	fs              boshsys.FileSystem
+	diskWaitTimeout     time.Duration
+	udev                boshudev.UdevDevice
+	fs                  boshsys.FileSystem
+	stripVolumeRegex    string
+	stripVolumeCompiled *regexp.Regexp
 }
 
 func NewIDDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	udev boshudev.UdevDevice,
 	fs boshsys.FileSystem,
+	stripVolumeRegex string,
 ) DevicePathResolver {
 	return idDevicePathResolver{
-		diskWaitTimeout: diskWaitTimeout,
-		udev:            udev,
-		fs:              fs,
+		diskWaitTimeout:     diskWaitTimeout,
+		udev:                udev,
+		fs:                  fs,
+		stripVolumeRegex:    stripVolumeRegex,
+		stripVolumeCompiled: nil,
 	}
 }
 
@@ -48,13 +54,20 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 		return "", false, bosherr.WrapError(err, "Running udevadm settle")
 	}
 
+	if idpr.stripVolumeRegex != "" && idpr.stripVolumeCompiled == nil {
+		idpr.stripVolumeCompiled, err = regexp.Compile(idpr.stripVolumeRegex)
+		if err != nil {
+			return "", false, bosherr.WrapError(err, "Compiling stripVolumeRegex")
+		}
+	}
+
 	stopAfter := time.Now().Add(idpr.diskWaitTimeout)
 	found := false
 
 	var realPath string
 
 	diskID := diskSettings.ID
-	deviceGlobPattern := fmt.Sprintf("*%s", diskID)
+	deviceGlobPattern := fmt.Sprintf("*%s", idpr.stripDiskID(diskID))
 	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", deviceGlobPattern)
 
 	for !found {
@@ -86,4 +99,11 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 	}
 
 	return realPath, false, nil
+}
+
+func (idpr idDevicePathResolver) stripDiskID(diskID string) string {
+	if idpr.stripVolumeCompiled != nil {
+		return idpr.stripVolumeCompiled.ReplaceAllLiteralString(diskID, "")
+	}
+	return diskID
 }
