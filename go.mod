@@ -4,33 +4,33 @@ go 1.20
 
 require (
 	code.cloudfoundry.org/clock v1.1.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b
+	code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.215
+	github.com/cloudfoundry/bosh-davcli v0.0.219
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.366
+	github.com/cloudfoundry/bosh-utils v0.0.367
 	github.com/cloudfoundry/gosigar v1.3.13
-	github.com/cloudfoundry/socks5-proxy v0.2.91 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.92 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.1.2-0.20190416172445-c2e93f3ae59f
 	github.com/kevinburke/ssh_config v1.2.0
 	github.com/masterzen/winrm v0.0.0-20220917170901-b07f6cb0598d
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/jwt v1.2.2 // indirect
 	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
-	github.com/nats-io/nats.go v1.26.0
+	github.com/nats-io/nats.go v1.27.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.8
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/crypto v0.9.0
-	golang.org/x/net v0.10.0
-	golang.org/x/sys v0.8.0
+	golang.org/x/crypto v0.10.0
+	golang.org/x/net v0.11.0
+	golang.org/x/sys v0.9.0
 )
 
 require (
@@ -52,7 +52,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
-	github.com/klauspost/compress v1.16.5 // indirect
+	github.com/klauspost/compress v1.16.6 // indirect
 	github.com/nats-io/nkeys v0.4.4 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -63,8 +63,8 @@ require (
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230525183740-e7c30c78aeb2 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230522175609-2e198f4a06a1 // indirect
-	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/tools v0.9.3 // indirect
+	golang.org/x/mod v0.11.0 // indirect
+	golang.org/x/tools v0.10.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -84,7 +84,7 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	inet.af/netaddr v0.0.0-20230525184311-b8eac61e914a
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
