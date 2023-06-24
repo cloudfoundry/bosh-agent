@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.219
-	github.com/cloudfoundry/bosh-utils v0.0.367
-	github.com/cloudfoundry/gosigar v1.3.13
+	github.com/cloudfoundry/bosh-davcli v0.0.226
+	github.com/cloudfoundry/bosh-utils v0.0.369
+	github.com/cloudfoundry/gosigar v1.3.14
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -19,7 +19,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20220917170901-b07f6cb0598d
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.27.0
+	github.com/nats-io/nats.go v1.27.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.8
 	github.com/opencontainers/runtime-spec v1.0.2

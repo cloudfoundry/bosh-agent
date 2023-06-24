@@ -62,12 +62,12 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.219
+# github.com/cloudfoundry/bosh-davcli v0.0.226
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.367
+# github.com/cloudfoundry/bosh-utils v0.0.369
 ## explicit; go 1.20
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -89,7 +89,7 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.13
+# github.com/cloudfoundry/gosigar v1.3.14
 ## explicit; go 1.20
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
@@ -230,7 +230,7 @@ github.com/maxbrunsfeld/counterfeiter/v6/generator
 github.com/mitchellh/mapstructure
 # github.com/nats-io/nats-server/v2 v2.8.1
 ## explicit; go 1.17
-# github.com/nats-io/nats.go v1.27.0
+# github.com/nats-io/nats.go v1.27.1
 ## explicit; go 1.19
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
