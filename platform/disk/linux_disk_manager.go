@@ -82,7 +82,7 @@ func NewLinuxDiskManager(
 	return linuxDiskManager{
 		ephemeralPartitioner:  ephemeralPartitioner,
 		diskUtil:              diskUtil,
-		formatter:             NewLinuxFormatter(runner, fs),
+		formatter:             NewLinuxFormatter(runner, fs, mounter),
 		fs:                    fs,
 		logger:                logger,
 		mounter:               mounter,
