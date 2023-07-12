@@ -77,7 +77,7 @@ resources:
   - name: golang-release
     type: git
     source:
-      uri: https://github.com/bosh-packages/golang-release.git
+      uri: https://github.com/cloudfoundry/bosh-package-golang-release.git
 
   - name: azure-stemcell
     type: pivnet
