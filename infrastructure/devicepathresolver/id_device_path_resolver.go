@@ -3,6 +3,7 @@ package devicepathresolver
 import (
 	"fmt"
 	"path"
+	"regexp"
 	"time"
 
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
@@ -12,24 +13,29 @@ import (
 )
 
 type idDevicePathResolver struct {
-	diskWaitTimeout time.Duration
-	udev            boshudev.UdevDevice
-	fs              boshsys.FileSystem
+	diskWaitTimeout     time.Duration
+	udev                boshudev.UdevDevice
+	fs                  boshsys.FileSystem
+	stripVolumeRegex    string
+	stripVolumeCompiled *regexp.Regexp
 }
 
 func NewIDDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	udev boshudev.UdevDevice,
 	fs boshsys.FileSystem,
+	stripVolumeRegex string,
 ) DevicePathResolver {
-	return idDevicePathResolver{
-		diskWaitTimeout: diskWaitTimeout,
-		udev:            udev,
-		fs:              fs,
+	return &idDevicePathResolver{
+		diskWaitTimeout:     diskWaitTimeout,
+		udev:                udev,
+		fs:                  fs,
+		stripVolumeRegex:    stripVolumeRegex,
+		stripVolumeCompiled: nil,
 	}
 }
 
-func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
 	if diskSettings.ID == "" {
 		return "", false, bosherr.Errorf("Disk ID is not set")
 	}
@@ -54,7 +60,12 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 	var realPath string
 
 	diskID := diskSettings.ID
-	deviceGlobPattern := fmt.Sprintf("*%s", diskID)
+	strippedDiskID, err := idpr.stripVolumeIfRequired(diskID)
+	if err != nil {
+		return "", false, err
+	}
+
+	deviceGlobPattern := fmt.Sprintf("*%s", strippedDiskID)
 	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", deviceGlobPattern)
 
 	for !found {
@@ -86,4 +97,19 @@ func (idpr idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Dis
 	}
 
 	return realPath, false, nil
+}
+
+func (idpr *idDevicePathResolver) stripVolumeIfRequired(diskID string) (string, error) {
+	if idpr.stripVolumeRegex == "" {
+		return diskID, nil
+	}
+
+	if idpr.stripVolumeCompiled == nil {
+		var err error
+		idpr.stripVolumeCompiled, err = regexp.Compile(idpr.stripVolumeRegex)
+		if err != nil {
+			return "", bosherr.WrapError(err, "Compiling stripVolumeRegex")
+		}
+	}
+	return idpr.stripVolumeCompiled.ReplaceAllLiteralString(diskID, ""), nil
 }
