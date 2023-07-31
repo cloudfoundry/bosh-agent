@@ -142,8 +142,11 @@ jobs:
 
   - name: test-unit
     plan:
-      - get: bosh-agent
-        trigger: true
+      - in_parallel:
+        - get: bosh-agent
+          trigger: true
+        - get: bosh-agent-registry-image
+          trigger: true
       - task: test-unit
         file: bosh-agent/ci/tasks/test-unit.yml
 
@@ -282,6 +285,11 @@ jobs:
             passed:
               - test-unit
               - test-integration
+          - get: bosh-agent-registry-image
+            trigger: true
+            passed:
+              - test-unit
+              - test-integration
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -300,6 +308,10 @@ jobs:
           - get: version-semver
             params:
               bump: patch
+          - get: bosh-agent-registry-image
+            trigger: true
+            passed:
+              - bosh-integration-tests
       - task: assert-version-aligns
         file: bosh-agent/ci/tasks/assert-version-aligns.yml
       - put: version-semver
