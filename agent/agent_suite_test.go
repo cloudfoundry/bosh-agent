@@ -1,10 +1,11 @@
 package agent_test
 
 import (
+	"time"
+
 	"github.com/cloudfoundry/bosh-agent/agent"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"time"
 
 	"testing"
 )
