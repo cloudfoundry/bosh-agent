@@ -6,7 +6,7 @@ trap {
 
 cd bosh-agent
 
-go.exe run github.com/onsi/ginkgo/ginkgo -r -race -keepGoing -skipPackage="integration,vendor"
+go.exe run github.com/onsi/ginkgo/v2/ginkgo -r -race --keep-going --skip-package="integration,vendor"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Ginkgo returned non-zero exit code: $LASTEXITCODE"
     Write-Error $_
