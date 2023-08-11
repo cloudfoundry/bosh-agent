@@ -3,7 +3,7 @@ package packages_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"

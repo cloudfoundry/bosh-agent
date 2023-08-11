@@ -3,7 +3,7 @@ package platform_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"

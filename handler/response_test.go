@@ -3,7 +3,7 @@ package handler_test
 import (
 	"errors"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	. "github.com/cloudfoundry/bosh-agent/handler"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"

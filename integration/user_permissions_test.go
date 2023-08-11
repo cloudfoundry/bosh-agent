@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-agent/integration"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

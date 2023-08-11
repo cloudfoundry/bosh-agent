@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gofrs/uuid"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"

@@ -1,7 +1,7 @@
 package app
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"

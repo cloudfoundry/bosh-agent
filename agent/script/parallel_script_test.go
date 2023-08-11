@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"

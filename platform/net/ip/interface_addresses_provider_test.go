@@ -3,7 +3,7 @@ package ip_test
 import (
 	. "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

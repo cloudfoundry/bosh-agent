@@ -3,7 +3,7 @@ package udevdevice_test
 import (
 	. "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	fakes "github.com/cloudfoundry/bosh-utils/system/fakes"

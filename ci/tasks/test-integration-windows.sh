@@ -73,5 +73,5 @@ pushd ${bosh_agent_dir} > /dev/null
   export NATS_CA_PATH=${nats_ca_path}
   export NATS_CERTIFICATE_PATH=${nats_certificate_path}
   export NATS_PRIVATE_KEY_PATH=${nats_private_key_path}
-  go run github.com/onsi/ginkgo/ginkgo -race --slowSpecThreshold=300 -trace integration/windows/
+  go run github.com/onsi/ginkgo/v2/ginkgo --race --trace integration/windows/
 popd > /dev/null

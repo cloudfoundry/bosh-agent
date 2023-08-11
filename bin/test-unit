@@ -15,6 +15,6 @@ for os in windows linux; do
 done
 
 echo -e "\n Testing packages..."
-"${ROOT_DIR}/bin/ginkgo" -skipPackage="integration" "${ROOT_DIR}"
+"${ROOT_DIR}/bin/ginkgo" --skip-package="integration" "${ROOT_DIR}"
 
 echo -e "\n\033[0;32mSUCCESS\033[0m"

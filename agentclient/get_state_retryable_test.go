@@ -6,7 +6,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/agentclient"
 	fakeagentclient "github.com/cloudfoundry/bosh-agent/agentclient/fakes"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

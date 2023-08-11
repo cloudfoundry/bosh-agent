@@ -1,7 +1,7 @@
 package jobsupervisor_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"

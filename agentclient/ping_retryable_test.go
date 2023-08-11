@@ -9,7 +9,7 @@ import (
 	fakeagentclient "github.com/cloudfoundry/bosh-agent/agentclient/fakes"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
