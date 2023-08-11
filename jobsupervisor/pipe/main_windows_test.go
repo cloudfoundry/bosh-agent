@@ -41,6 +41,6 @@ var _ = Describe("Main", func() {
 			Expect(err).To(Succeed())
 
 			close(done)
-		}, 10)
+		})
 	})
 })

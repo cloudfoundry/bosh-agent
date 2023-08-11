@@ -875,7 +875,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					syslogMsg := <-syslogReceived
 					matchSyslogMsg(syslogMsg)
 					close(done)
-				}, 20)
+				})
 			})
 		})
 
