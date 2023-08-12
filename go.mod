@@ -7,9 +7,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.253
-	github.com/cloudfoundry/bosh-utils v0.0.380
-	github.com/cloudfoundry/gosigar v1.3.17
+	github.com/cloudfoundry/bosh-davcli v0.0.256
+	github.com/cloudfoundry/bosh-utils v0.0.383
+	github.com/cloudfoundry/gosigar v1.3.19
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -30,7 +30,7 @@ require (
 	golang.org/x/crypto v0.12.0
 	golang.org/x/net v0.14.0
 	golang.org/x/sys v0.11.0
-	golang.org/x/tools v0.11.1
+	golang.org/x/tools v0.12.0
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
 
@@ -41,7 +41,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.95 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.96 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -53,7 +53,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/pprof v0.0.0-20230728192033-2ba5b33183c6 // indirect
+	github.com/google/pprof v0.0.0-20230811205829-9131a7e9cc17 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
@@ -75,7 +75,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20230728184502-ec4c8b891b28 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20230801115018-d63ba01acd4b // indirect
+	golang.org/x/exp/typeparams v0.0.0-20230811145659-89c5cff77bcb // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
