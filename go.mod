@@ -9,11 +9,11 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.264
+	github.com/cloudfoundry/bosh-davcli v0.0.266
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.388
-	github.com/cloudfoundry/gosigar v1.3.22
-	github.com/cloudfoundry/socks5-proxy v0.2.96 // indirect
+	github.com/cloudfoundry/bosh-utils v0.0.390
+	github.com/cloudfoundry/gosigar v1.3.24
+	github.com/cloudfoundry/socks5-proxy v0.2.98 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
