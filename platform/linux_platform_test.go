@@ -3682,7 +3682,7 @@ sam:fakeanotheruser`)
 			Expect(mounter.RemountAsReadonlyArgsForCall(0)).To(Equal("/from/path"))
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path --xattrs --xattrs-include=*.* -cf - .) | (tar -C /to/path --xattrs --xattrs-include=*.* -xpf -)"}))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path --xattrs --xattrs-include=*.* --sparse -cf - .) | (tar -C /to/path --xattrs --xattrs-include=*.* -xpf -)"}))
 
 			Expect(mounter.UnmountCallCount()).To(Equal(1))
 			Expect(mounter.UnmountArgsForCall(0)).To(Equal("/from/path"))
@@ -3743,7 +3743,7 @@ from-device-path  dm-0 NETAPP  ,LUN C-Mode
 				Expect(mounter.RemountAsReadonlyArgsForCall(0)).To(Equal("/from/path"))
 
 				Expect(len(cmdRunner.RunCommands)).To(Equal(3))
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path --xattrs --xattrs-include=*.* -cf - .) | (tar -C /to/path --xattrs --xattrs-include=*.* -xpf -)"}))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path --xattrs --xattrs-include=*.* --sparse -cf - .) | (tar -C /to/path --xattrs --xattrs-include=*.* -xpf -)"}))
 
 				Expect(mounter.UnmountCallCount()).To(Equal(1))
 				Expect(mounter.UnmountArgsForCall(0)).To(Equal("/from/path"))
