@@ -4,25 +4,25 @@ go 1.21
 
 require (
 	code.cloudfoundry.org/clock v1.1.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227
+	code.cloudfoundry.org/tlsconfig v0.0.0-20230929201433-6cd2b78aba25
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.275
-	github.com/cloudfoundry/bosh-utils v0.0.397
-	github.com/cloudfoundry/gosigar v1.3.27
+	github.com/cloudfoundry/bosh-davcli v0.0.277
+	github.com/cloudfoundry/bosh-utils v0.0.398
+	github.com/cloudfoundry/gosigar v1.3.28
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/kevinburke/ssh_config v1.2.0
-	github.com/masterzen/winrm v0.0.0-20220917170901-b07f6cb0598d
+	github.com/masterzen/winrm v0.0.0-20230926183142-a7fbe840deba
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.30.0
+	github.com/nats-io/nats.go v1.30.2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.12.1
-	github.com/onsi/gomega v1.27.10
+	github.com/onsi/gomega v1.28.0
 	github.com/opencontainers/runtime-spec v1.1.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
@@ -53,7 +53,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/pprof v0.0.0-20230912144702-c363fe2c2ed8 // indirect
+	github.com/google/pprof v0.0.0-20230926050212-f7f687d19a98 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
