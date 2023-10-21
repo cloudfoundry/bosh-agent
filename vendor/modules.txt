@@ -2,7 +2,7 @@
 ## explicit; go 1.20
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.0.0-20230929201433-6cd2b78aba25
+# code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
@@ -55,7 +55,7 @@ github.com/bmatcuk/doublestar
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.284
+# github.com/cloudfoundry/bosh-davcli v0.0.286
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -63,7 +63,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.405
+# github.com/cloudfoundry/bosh-utils v0.0.407
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -85,8 +85,8 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.30
-## explicit; go 1.21
+# github.com/cloudfoundry/gosigar v1.3.32
+## explicit; go 1.21.0
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
@@ -221,11 +221,7 @@ github.com/maxbrunsfeld/counterfeiter/v6/generator
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/nats-io/jwt v1.2.2
-## explicit; go 1.14
-# github.com/nats-io/nats-server/v2 v2.0.0
-## explicit
-# github.com/nats-io/nats.go v1.30.2
+# github.com/nats-io/nats.go v1.31.0
 ## explicit; go 1.20
 github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin

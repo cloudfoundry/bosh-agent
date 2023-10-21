@@ -1,18 +1,18 @@
 module github.com/cloudfoundry/bosh-agent
 
-go 1.21
+go 1.21.0
 
-toolchain go1.21.0
+toolchain go1.21.3
 
 require (
 	code.cloudfoundry.org/clock v1.1.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20230929201433-6cd2b78aba25
+	code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.284
+	github.com/cloudfoundry/bosh-davcli v0.0.286
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.405
-	github.com/cloudfoundry/gosigar v1.3.30
+	github.com/cloudfoundry/bosh-utils v0.0.407
+	github.com/cloudfoundry/gosigar v1.3.32
 	github.com/cloudfoundry/socks5-proxy v0.2.101 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -22,9 +22,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20230926183142-a7fbe840deba
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/jwt v1.2.2 // indirect
-	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
-	github.com/nats-io/nats.go v1.30.2
+	github.com/nats-io/nats.go v1.31.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.28.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
