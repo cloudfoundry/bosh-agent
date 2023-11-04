@@ -1,6 +1,6 @@
 module github.com/cloudfoundry/bosh-agent
 
-go 1.21.0
+go 1.21
 
 toolchain go1.21.3
 
@@ -9,9 +9,9 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.287
-	github.com/cloudfoundry/bosh-utils v0.0.408
-	github.com/cloudfoundry/gosigar v1.3.33
+	github.com/cloudfoundry/bosh-davcli v0.0.288
+	github.com/cloudfoundry/bosh-utils v0.0.409
+	github.com/cloudfoundry/gosigar v1.3.34
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -55,7 +55,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20231023181126-ff6d637d2a7b // indirect
+	github.com/google/pprof v0.0.0-20231101202521-4ca4178f5c7a // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
