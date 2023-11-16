@@ -60,9 +60,11 @@ pushd ${bosh_agent_dir} > /dev/null
   popd > /dev/null
 
   echo -e "\n Installing agent and fixtures..."
-  scp -r ${bosh_agent_dir}/integration/windows/fixtures/* ${agent_ip}:/bosh/ > /dev/null 2>&1
-  ssh ${agent_ip} 'move /Y C:\bosh\pipe.exe C:\var\vcap\bosh\bin\pipe.exe' > /dev/null 2>&1
-  ssh ${agent_ip} 'move /Y C:\bosh\psFixture "C:\Program Files\WindowsPowerShell\Modules\"' > /dev/null 2>&1
+  set -x
+  scp -r ${bosh_agent_dir}/integration/windows/fixtures/* ${agent_ip}:/bosh/
+  ssh ${agent_ip} 'move /Y C:\bosh\pipe.exe C:\var\vcap\bosh\bin\pipe.exe'
+  ssh ${agent_ip} 'move /Y C:\bosh\psFixture "C:\Program Files\WindowsPowerShell\Modules\"'
+  set +x
 
   echo -e "\n Running tests..."
   export AGENT_IP=${agent_ip}
