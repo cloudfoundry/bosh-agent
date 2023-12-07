@@ -1,4 +1,11 @@
-package main
+// Package releasetarball encapsulates procedures to configure and run package
+// compilation on via the BOSH agent executable. It should be invoked by running
+//
+//   bosh-agent compile [flags] [release.tgz...]
+//
+// To iterate on it in context of the executable see the script "bin/docker-run-bosh-agent".
+
+package releasetarball
 
 import (
 	"archive/tar"
@@ -7,7 +14,6 @@ import (
 	"cmp"
 	"compress/gzip"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -30,13 +36,14 @@ import (
 	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
 	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
-	"github.com/cloudfoundry/bosh-agent/app"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	"github.com/cloudfoundry/bosh-cli/release/manifest"
 )
 
 const (
@@ -44,41 +51,31 @@ const (
 	defaultMode             = 0o0644
 )
 
-func main() {
-	var outputDirectory string
-	flag.StringVar(&outputDirectory, "output-directory", "/tmp", "the directory to put the compiled release tarball")
-	flag.Parse()
-
-	if err := os.MkdirAll(outputDirectory, 0o700); err != nil {
-		log.Fatal(err)
-	}
-
-	stemcellSlug, err := readStemcellSlug()
+// NewCompiler can be used for multiple compilations and should be passed to Compile
+// It expects to be used in a stemcell image and has not been tested on non-warden stemcells.
+func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
+	logger := boshlog.New(boshlog.LevelWarn, log.Default())
+	cmdRunner := boshsys.NewExecCmdRunner(logger)
+	filesystem := boshsys.NewOsFileSystem(logger)
+	compressor := boshcmd.NewTarballCompressor(cmdRunner, filesystem)
+	blobstoreProvider := boshblob.NewProvider(filesystem, cmdRunner, dirProvider.EtcDir(), logger)
+	db, err := blobstoreProvider.Get("local", map[string]any{"blobstore_path": dirProvider.BlobsDir()})
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	log.Printf("Compiling with stemcell %s", stemcellSlug)
-
-	dirProvider := directories.NewProvider(app.DefaultBaseDirectory)
-	blobsDirectory := dirProvider.BlobsDir()
-	log.Printf("writing blobs to %s", blobsDirectory)
-	compiler := newCompiler(blobsDirectory, dirProvider)
-
-	if err := os.MkdirAll(blobsDirectory, 0o760); err != nil {
-		log.Fatal(err)
-	}
-	for _, releaseTarballPath := range flag.Args() {
-		compiledReleaseTarballPath, err := compileBOSHRelease(compiler, releaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("Finished archiving compiled tarball %s", compiledReleaseTarballPath)
-	}
+	bd := blobstore_delegator.NewBlobstoreDelegator(httpblobprovider.NewHTTPBlobImpl(filesystem, http.DefaultClient), boshagentblobstore.NewCascadingBlobstore(db, nil, logger), logger)
+	ts := clock.NewClock()
+	packageApplierProvider := boshap.NewCompiledPackageApplierProvider(dirProvider.DataDir(), dirProvider.BaseDir(), dirProvider.JobsDir(), "packages", bd, compressor, filesystem, ts, logger)
+	const truncateLen = 10 * 1024 // 10kb
+	runner := boshrunner.NewFileLoggingCmdRunner(filesystem, cmdRunner, dirProvider.LogsDir(), truncateLen)
+	compiler := boshcomp.NewConcreteCompiler(compressor, bd, filesystem, runner, dirProvider, packageApplierProvider.Root(), packageApplierProvider.RootBundleCollection(), ts)
+	return compiler, nil
 }
 
-func compileBOSHRelease(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug string) (string, error) {
+// Compile expects the compiler returned by NewCompiler and may not work with compilers constructed differently.
+func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug string) (string, error) {
 	log.Printf("Reading BOSH Release Manifest from tarball %s", boshReleaseTarballPath)
-	m, err := readManifest(boshReleaseTarballPath)
+	m, err := Manifest(boshReleaseTarballPath)
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +90,7 @@ func compileBOSHRelease(compiler boshcomp.Compiler, boshReleaseTarballPath, blob
 	log.Printf("Starting packages compilation")
 	start := time.Now()
 	packages := slices.Clone(m.Packages)
-	if err := topologicalSort(packages, func(p ReleasePackage) string { return p.Name }, func(p ReleasePackage) []string { return slices.Clone(p.Dependencies) }); err != nil {
+	if err := topologicalSort(packages, func(p manifest.PackageRef) string { return p.Name }, func(p manifest.PackageRef) []string { return slices.Clone(p.Dependencies) }); err != nil {
 		return "", err
 	}
 	var compiledPackages []boshmodels.Package
@@ -106,28 +103,7 @@ func compileBOSHRelease(compiler boshcomp.Compiler, boshReleaseTarballPath, blob
 	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, compiledPackages)
 }
 
-func newCompiler(localBlobstorePath string, dirProvider directories.Provider) boshcomp.Compiler {
-	logger := boshlog.New(boshlog.LevelWarn, log.Default())
-	cmdRunner := boshsys.NewExecCmdRunner(logger)
-	filesystem := boshsys.NewOsFileSystem(logger)
-	compressor := boshcmd.NewTarballCompressor(cmdRunner, filesystem)
-	blobstoreProvider := boshblob.NewProvider(filesystem, cmdRunner, dirProvider.EtcDir(), logger)
-	if err := os.MkdirAll(localBlobstorePath, 0o766); err != nil {
-		log.Fatal(err)
-	}
-	db, err := blobstoreProvider.Get("local", map[string]any{"blobstore_path": localBlobstorePath})
-	if err != nil {
-		log.Fatal(err)
-	}
-	bd := blobstore_delegator.NewBlobstoreDelegator(httpblobprovider.NewHTTPBlobImpl(filesystem, http.DefaultClient), boshagentblobstore.NewCascadingBlobstore(db, nil, logger), logger)
-	ts := clock.NewClock()
-	packageApplierProvider := boshap.NewCompiledPackageApplierProvider(dirProvider.DataDir(), dirProvider.BaseDir(), dirProvider.JobsDir(), "packages", bd, compressor, filesystem, ts, logger)
-	const truncateLen = 10 * 1024 // 10kb
-	runner := boshrunner.NewFileLoggingCmdRunner(filesystem, cmdRunner, dirProvider.LogsDir(), truncateLen)
-	return boshcomp.NewConcreteCompiler(compressor, bd, filesystem, runner, dirProvider, packageApplierProvider.Root(), packageApplierProvider.RootBundleCollection(), ts)
-}
-
-func compilePackage(p ReleasePackage, blobstoreIDs map[string]string, compiledPackages []boshmodels.Package, compiler boshcomp.Compiler) []boshmodels.Package {
+func compilePackage(p manifest.PackageRef, blobstoreIDs map[string]string, compiledPackages []boshmodels.Package, compiler boshcomp.Compiler) []boshmodels.Package {
 	log.Printf("Compiling package %s/%s", p.Name, p.Version)
 	digest, err := boshcrypto.ParseMultipleDigest(p.SHA1)
 	if err != nil {
@@ -161,17 +137,20 @@ func compilePackage(p ReleasePackage, blobstoreIDs map[string]string, compiledPa
 	})
 }
 
-func extractPackages(m ReleaseManifest, blobsDirectory, releaseTarballPath string) (map[string]string, error) {
+func extractPackages(m manifest.Manifest, blobsDirectory, releaseTarballPath string) (map[string]string, error) {
 	sha1ToFilepath := make(map[string]string, len(m.Packages))
-	if _, err := readTarballFiles(releaseTarballPath, "packages/*.tgz", func(_ string, h *tar.Header, src io.Reader) (bool, error) {
-		pkgIndex := slices.IndexFunc(m.Packages, func(p ReleasePackage) bool {
-			return p.TarballFileName() == path.Base(h.Name)
+	if err := walkTarballFiles(releaseTarballPath, func(name string, h *tar.Header, src io.Reader) (bool, error) {
+		if match, err := path.Match("packages/*.tgz", name); err != nil || !match {
+			return true, err
+		}
+		pkgIndex := slices.IndexFunc(m.Packages, func(p manifest.PackageRef) bool {
+			return p.Name+".tgz" == path.Base(h.Name)
 		})
 		if pkgIndex < 0 {
 			return true, nil
 		}
 		p := m.Packages[pkgIndex]
-		dstFilepath := filepath.Join(blobsDirectory, p.TarballFileName())
+		dstFilepath := filepath.Join(blobsDirectory, p.Name+".tgz")
 		digest, err := boshcrypto.ParseMultipleDigest(p.SHA1)
 		if err != nil {
 			return false, err
@@ -201,19 +180,19 @@ func extractPackages(m ReleaseManifest, blobsDirectory, releaseTarballPath strin
 	return sha1ToFilepath, nil
 }
 
-func writeCompiledRelease(m ReleaseManifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, compiledPackages []boshmodels.Package) (string, error) {
-	m.CompiledPackages = make([]ReleasePackage, 0, len(compiledPackages))
+func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, compiledPackages []boshmodels.Package) (string, error) {
+	m.CompiledPkgs = make([]manifest.CompiledPackageRef, 0, len(compiledPackages))
 	for _, p := range compiledPackages {
-		m.CompiledPackages = append(m.CompiledPackages, ReleasePackage{
-			Name:        p.Name,
-			Version:     p.Version,
-			Fingerprint: p.Source.BlobstoreID,
-			SHA1:        p.Source.Sha1.String(),
-			Stemcell:    stemcellFilenameSuffix,
+		m.CompiledPkgs = append(m.CompiledPkgs, manifest.CompiledPackageRef{
+			Name:          p.Name,
+			Version:       p.Version,
+			Fingerprint:   p.Source.Sha1.String(),
+			SHA1:          p.Source.Sha1.String(),
+			OSVersionSlug: stemcellFilenameSuffix,
 		})
 	}
-	emptyPackagesList := [0]ReleasePackage{}
-	m.Packages = emptyPackagesList[:]
+	empty := [0]manifest.PackageRef{}
+	m.Packages = empty[:]
 
 	releaseManifestBuffer, err := yaml.Marshal(m)
 	if err != nil {
@@ -232,7 +211,7 @@ func writeCompiledRelease(m ReleaseManifest, outputDirectory, stemcellFilenameSu
 	tw := tar.NewWriter(gw)
 	defer closeAndIgnoreErr(tw)
 
-	_, err = readTarballFiles(initialTarball, "", writeCompiledTarballFiles(tw, compiledPackages, releaseManifestBuffer, blobsDirectory))
+	err = walkTarballFiles(initialTarball, writeCompiledTarballFiles(tw, compiledPackages, releaseManifestBuffer, blobsDirectory))
 	if err != nil {
 		return "", errors.Join(err, os.RemoveAll(filePath))
 	}
@@ -252,10 +231,12 @@ func writeCompiledTarballFiles(tw *tar.Writer, compiledPackages []boshmodels.Pac
 			fullPath = "compiled_packages/"
 			h.Name = fullPath
 			if err := writeToTar(tw, h, fullPath, r); err != nil {
-				return false, fmt.Errorf("failed to write compiled_packages directory %s: %w", err)
+				return false, fmt.Errorf("failed to write compiled_packages directory: %w", err)
 			}
 			for _, p := range compiledPackages {
-				if err := copyCompiledTarball(tw, h, blobsDirectory, p); err != nil {
+				pkgOSFilePath := filepath.Join(blobsDirectory, p.Source.BlobstoreID)
+				pkgTGZFilePath := path.Join("compiled_packages", fmt.Sprintf("%s.tgz", p.Name))
+				if err := insertFile(tw, h, pkgTGZFilePath, pkgOSFilePath); err != nil {
 					return false, fmt.Errorf("failed to write compiled package %s: %w", p.Name, err)
 				}
 			}
@@ -271,12 +252,12 @@ func writeCompiledTarballFiles(tw *tar.Writer, compiledPackages []boshmodels.Pac
 	}
 }
 
-func copyCompiledTarball(tw *tar.Writer, dir *tar.Header, blobsDirectory string, p boshmodels.Package) error {
-	pkgFilePath := filepath.Join(blobsDirectory, p.Source.BlobstoreID)
-	f, err := os.Open(pkgFilePath)
+func insertFile(tw *tar.Writer, dir *tar.Header, tgzFilePath, osFilePath string) error {
+	f, err := os.Open(osFilePath)
 	if err != nil {
 		return err
 	}
+	defer closeAndIgnoreErr(f)
 	info, err := f.Stat()
 	if err != nil {
 		return err
@@ -288,74 +269,42 @@ func copyCompiledTarball(tw *tar.Writer, dir *tar.Header, blobsDirectory string,
 	h.Mode = defaultMode
 	clearTimestamps(h)
 	copyUserHeaderFields(h, dir)
-	fullPath := path.Join("compiled_packages", fmt.Sprintf("%s.tgz", p.Name))
-	return writeToTar(tw, h, fullPath, f)
+	return writeToTar(tw, h, tgzFilePath, f)
 }
 
-type ReleaseManifest struct {
-	Name               string           `yaml:"name"`
-	Version            string           `yaml:"version"`
-	CommitHash         string           `yaml:"commit_hash"`
-	UncommittedChanges bool             `yaml:"uncommitted_changes"`
-	Jobs               []ReleaseJob     `yaml:"jobs"`
-	Packages           []ReleasePackage `yaml:"packages,omitempty"`
-	CompiledPackages   []ReleasePackage `yaml:"compiled_packages,omitempty"`
-	License            ReleaseLicense   `yaml:"license"`
-}
-
-func readManifest(releaseFilePath string) (ReleaseManifest, error) {
-	var m ReleaseManifest
-	found, err := readTarballFiles(releaseFilePath, releaseManifestFilename, func(_ string, _ *tar.Header, r io.Reader) (bool, error) {
+func Manifest(releaseFilePath string) (manifest.Manifest, error) {
+	var (
+		m     manifest.Manifest
+		found = false
+	)
+	err := walkTarballFiles(releaseFilePath, func(name string, _ *tar.Header, r io.Reader) (bool, error) {
+		if path.Base(name) != "release.MF" {
+			return true, nil
+		}
+		found = true
 		buf, err := io.ReadAll(r)
 		if err != nil {
 			return false, err
 		}
 		return false, yaml.Unmarshal(buf, &m)
 	})
-	if found < 1 {
+	if !found {
 		return m, fmt.Errorf("failed to find %s in tarball", releaseManifestFilename)
 	}
 	return m, err
 }
 
-type ReleaseLicense struct {
-	Version     string `json:"version"`
-	Fingerprint string `json:"fingerprint"`
-	Sha1        string `json:"sha1"`
-}
-
-type ReleasePackage struct {
-	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	Fingerprint  string   `json:"fingerprint"`
-	SHA1         string   `json:"sha1"`
-	Stemcell     string   `json:"stemcell,omitempty"`
-	Dependencies []string `json:"dependencies"`
-}
-
-func (rp ReleasePackage) TarballFileName() string {
-	return rp.Name + ".tgz"
-}
-
-type ReleaseJob struct {
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	Fingerprint string   `json:"fingerprint"`
-	Sha1        string   `json:"sha1"`
-	Packages    []string `json:"packages"`
-}
-
 type tarballWalkFunc func(fullName string, h *tar.Header, r io.Reader) (bool, error)
 
-func readTarballFiles(releaseFilePath, pattern string, file tarballWalkFunc) (int, error) {
+func walkTarballFiles(releaseFilePath string, file tarballWalkFunc) error {
 	f, err := os.Open(releaseFilePath)
 	if err != nil {
-		return 0, nil
+		return nil
 	}
 	defer closeAndIgnoreErr(f)
 	gr, err := gzip.NewReader(bufio.NewReader(f))
 	if err != nil {
-		return 0, err
+		return err
 	}
 	r := tar.NewReader(gr)
 
@@ -364,22 +313,15 @@ func readTarballFiles(releaseFilePath, pattern string, file tarballWalkFunc) (in
 		h, err := r.Next()
 		if err != nil {
 			if err == io.EOF {
-				return found, nil
+				return nil
 			}
-			return found, err
-		}
-		if pattern != "" {
-			if matches, err := path.Match(pattern, h.Name); err != nil {
-				return found, err
-			} else if !matches || h.Typeflag != tar.TypeReg {
-				continue
-			}
+			return err
 		}
 		found++
 		if keepGoing, err := file(h.Name, cloneHeader(h), r); err != nil {
-			return found, err
+			return err
 		} else if !keepGoing {
-			return found, nil
+			return nil
 		}
 	}
 }

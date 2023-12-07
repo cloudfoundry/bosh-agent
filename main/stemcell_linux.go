@@ -10,32 +10,32 @@ import (
 	"strings"
 )
 
-func readStemcellSlug() (string, error) {
+func readStemcellSlug() (string, string, string, error) {
 	stemcellVersionBuf, err := os.ReadFile("/var/vcap/bosh/etc/stemcell_version")
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 	stemcellVersion := string(stemcellVersionBuf)
 	osReleaseBuf, err := os.ReadFile("/etc/os-release")
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 	osReleaseEnv, err := parseEnvFile(bytes.NewReader(osReleaseBuf))
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 	stemcellCodename, ok := osReleaseEnv["VERSION_CODENAME"]
 	if !ok {
-		return "", fmt.Errorf("VERSION_CODENAME not found in %s", osReleaseBuf)
+		return "", "", "", fmt.Errorf("VERSION_CODENAME not found in %s", osReleaseBuf)
 	}
 	stemcellOS, ok := osReleaseEnv["ID"]
 	if !ok {
-		return "", fmt.Errorf("VERSION_CODENAME not found in %s", osReleaseBuf)
+		return "", "", "", fmt.Errorf("VERSION_CODENAME not found in %s", osReleaseBuf)
 	}
 	stemcellOS = strings.TrimSpace(stemcellOS)
 	stemcellCodename = strings.TrimSpace(stemcellCodename)
 	stemcellVersion = strings.TrimSpace(stemcellVersion)
-	return fmt.Sprintf("%s-%s/%s", stemcellOS, stemcellCodename, stemcellVersion), nil
+	return stemcellOS, stemcellCodename, stemcellVersion, nil
 }
 
 func parseEnvFile(r io.Reader) (map[string]string, error) {

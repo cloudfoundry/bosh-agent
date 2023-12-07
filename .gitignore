@@ -31,3 +31,7 @@ tags
 
 # Ignore symlinks https://github.com/golang/dep/issues/1625 for more context
 vendor/github.com/bmatcuk/doublestar/test/*
+
+# Used in bin/docker-run-bosh-agent
+releases-input
+releases-output

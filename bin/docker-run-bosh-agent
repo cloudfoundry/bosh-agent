@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# This command wraps injects a minimal BOSH Agent command into the Stemcell image and passes arguments to the agent-command.
+# Use it to iterate on the `bosh-agent compile` command.
+#
+# WARNING: remember to clean up images tagged with the name "compile-release-tarballs"!
+#
+# Usage:
+#
+#   ./bin/docker-run-bosh-agent compile --output-directory=/releases-output /releases-input/log-cache-release-3.0.7.tgz
+#
+# Setup:
+#   You need to fetch and tag a "jammy-stemcell-warden" stemcell. The script hard-codes a value in the temporary Dockerfile.
+#
+#   Populating Input Releases:
+#
+#     curl --fail -L 'https://bosh.io/d/github.com/cloudfoundry/log-cache-release?v=3.0.9' -o releases-input/log-cache-release-3.0.7.tgz
+#
+
+set -exo pipefail
+
+rm out/bosh-agent || true
+
+GOOS=linux GOARCH=amd64 go build -o out/bosh-agent ./main
+trap "rm out/bosh-agent || true" EXIT
+
+export TAG
+TAG="compile-release-tarballs:0.0.1-dev.$(date +%s)"
+
+trap "rm compile.Dockerfile || true" EXIT
+cat > compile.Dockerfile <<COMMAND
+FROM jammy-stemcell-warden:1.260
+COPY out/bosh-agent /var/vcap/bosh/bin/bosh-agent
+COMMAND
+
+docker build --platform=linux/amd64 --file=compile.Dockerfile -t "${TAG}" .
+
+mkdir -p releases-{input,output}
+docker run -v "${PWD}/releases-input:/releases-input" -v "${PWD}/releases-output:/releases-output" --platform=linux/amd64 -it --rm "${TAG}" /var/vcap/bosh/bin/bosh-agent "$@"
