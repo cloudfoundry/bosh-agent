@@ -9,10 +9,10 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.295
+	github.com/cloudfoundry/bosh-davcli v0.0.297
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.414
-	github.com/cloudfoundry/gosigar v1.3.36
+	github.com/cloudfoundry/bosh-utils v0.0.416
+	github.com/cloudfoundry/gosigar v1.3.37
 	github.com/cloudfoundry/socks5-proxy v0.2.104 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -42,7 +42,7 @@ require (
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
-	github.com/bodgit/ntlmssp v0.0.0-20231128222409-0a45a2447e7c // indirect
+	github.com/bodgit/ntlmssp v0.0.0-20231207143743-d70777b171a7 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
@@ -67,7 +67,7 @@ require (
 	go4.org/intern v0.0.0-20230525184215-6c62f75575cb // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20231127185646-65229373498e // indirect
+	golang.org/x/exp/typeparams v0.0.0-20231206192017-f3f8817b8deb // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/tools v0.16.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect

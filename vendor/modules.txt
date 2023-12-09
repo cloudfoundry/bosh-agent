@@ -52,7 +52,7 @@ github.com/Microsoft/hcsshim/internal/wclayer
 # github.com/bmatcuk/doublestar v1.3.4
 ## explicit; go 1.12
 github.com/bmatcuk/doublestar
-# github.com/bodgit/ntlmssp v0.0.0-20231128222409-0a45a2447e7c
+# github.com/bodgit/ntlmssp v0.0.0-20231207143743-d70777b171a7
 ## explicit; go 1.18
 github.com/bodgit/ntlmssp
 github.com/bodgit/ntlmssp/http
@@ -62,7 +62,7 @@ github.com/bodgit/windows
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.295
+# github.com/cloudfoundry/bosh-davcli v0.0.297
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -70,7 +70,7 @@ github.com/cloudfoundry/bosh-davcli/signer
 # github.com/cloudfoundry/bosh-init v0.0.103
 ## explicit
 github.com/cloudfoundry/bosh-init/registry
-# github.com/cloudfoundry/bosh-utils v0.0.414
+# github.com/cloudfoundry/bosh-utils v0.0.416
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -92,7 +92,7 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.36
+# github.com/cloudfoundry/gosigar v1.3.37
 ## explicit; go 1.21
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
@@ -352,7 +352,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20231127185646-65229373498e
+# golang.org/x/exp/typeparams v0.0.0-20231206192017-f3f8817b8deb
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.14.0
