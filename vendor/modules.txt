@@ -1,3 +1,13 @@
+# cloud.google.com/go v0.111.0
+## explicit; go 1.19
+# cloud.google.com/go/compute v1.23.3
+## explicit; go 1.19
+# cloud.google.com/go/compute/metadata v0.2.3
+## explicit; go 1.19
+# cloud.google.com/go/iam v1.1.5
+## explicit; go 1.19
+# cloud.google.com/go/storage v1.36.0
+## explicit; go 1.19
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
 code.cloudfoundry.org/clock
@@ -5,6 +15,8 @@ code.cloudfoundry.org/clock/fakeclock
 # code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
+# code.cloudfoundry.org/workpool v0.0.0-20230612151832-b93da105e0e8
+## explicit
 # github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
 ## explicit
 github.com/Azure/go-ntlmssp
@@ -56,6 +68,10 @@ github.com/Microsoft/hcsshim/internal/vmcompute
 github.com/Microsoft/hcsshim/internal/wclayer
 github.com/Microsoft/hcsshim/internal/winapi
 github.com/Microsoft/hcsshim/osversion
+# github.com/VividCortex/ewma v1.2.0
+## explicit; go 1.12
+# github.com/aws/aws-sdk-go v1.49.13
+## explicit; go 1.19
 # github.com/bmatcuk/doublestar v1.3.4
 ## explicit; go 1.12
 github.com/bmatcuk/doublestar
@@ -69,12 +85,31 @@ github.com/bodgit/windows
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
+<<<<<<< HEAD
 # github.com/cloudfoundry/bosh-davcli v0.0.301
+=======
+# github.com/cheggaaa/pb/v3 v3.1.4
+## explicit; go 1.17
+# github.com/cloudfoundry/bosh-cli v6.4.1+incompatible
+## explicit
+# github.com/cloudfoundry/bosh-cli/v7 v7.5.2-0.20231230100148-077d5bd172f2
+## explicit; go 1.21
+github.com/cloudfoundry/bosh-cli/v7/release/manifest
+# github.com/cloudfoundry/bosh-davcli v0.0.300
+>>>>>>> 3fe6fe5f (convert compile command tests to ginkgo style)
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
+<<<<<<< HEAD
 # github.com/cloudfoundry/bosh-utils v0.0.420
+=======
+# github.com/cloudfoundry/bosh-gcscli v0.0.184
+## explicit; go 1.21
+# github.com/cloudfoundry/bosh-s3cli v0.0.247
+## explicit; go 1.21
+# github.com/cloudfoundry/bosh-utils v0.0.419
+>>>>>>> 3fe6fe5f (convert compile command tests to ginkgo style)
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -93,6 +128,8 @@ github.com/cloudfoundry/bosh-utils/system/fakes
 github.com/cloudfoundry/bosh-utils/uuid
 github.com/cloudfoundry/bosh-utils/uuid/fakes
 github.com/cloudfoundry/bosh-utils/work
+# github.com/cloudfoundry/config-server v0.1.161
+## explicit; go 1.21
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
@@ -114,12 +151,22 @@ github.com/coreos/go-iptables/iptables
 # github.com/coreos/go-systemd/v22 v22.5.0
 ## explicit; go 1.12
 github.com/coreos/go-systemd/v22/dbus
-# github.com/davecgh/go-spew v1.1.1
+# github.com/cppforlife/go-patch v0.2.0
+## explicit
+# github.com/cppforlife/go-semi-semantic v0.0.0-20160921010311-576b6af77ae4
+## explicit
+# github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 ## explicit
 github.com/davecgh/go-spew/spew
 # github.com/docker/go-units v0.5.0
 ## explicit
 github.com/docker/go-units
+# github.com/dustin/go-humanize v1.0.1
+## explicit; go 1.16
+# github.com/fatih/color v1.16.0
+## explicit; go 1.17
+# github.com/felixge/httpsnoop v1.0.4
+## explicit; go 1.13
 # github.com/fsnotify/fsnotify v1.7.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
@@ -127,6 +174,8 @@ github.com/fsnotify/fsnotify
 ## explicit; go 1.18
 github.com/go-logr/logr
 github.com/go-logr/logr/funcr
+# github.com/go-logr/stdr v1.2.2
+## explicit; go 1.16
 # github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572
 ## explicit; go 1.13
 github.com/go-task/slim-sprig
@@ -160,12 +209,24 @@ github.com/google/go-cmp/cmp/internal/value
 # github.com/google/pprof v0.0.0-20231229205709-960ae82b1e42
 ## explicit; go 1.19
 github.com/google/pprof/profile
-# github.com/google/uuid v1.3.0
+# github.com/google/s2a-go v0.1.7
+## explicit; go 1.19
+# github.com/google/uuid v1.5.0
 ## explicit
 github.com/google/uuid
+# github.com/googleapis/enterprise-certificate-proxy v0.3.2
+## explicit; go 1.19
+# github.com/googleapis/gax-go/v2 v2.12.0
+## explicit; go 1.19
+# github.com/gopacket/gopacket v1.2.0
+## explicit; go 1.20
+# github.com/hashicorp/errwrap v1.1.0
+## explicit
 # github.com/hashicorp/go-cleanhttp v0.5.2
 ## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
+# github.com/hashicorp/go-multierror v1.1.1
+## explicit; go 1.13
 # github.com/hashicorp/go-uuid v1.0.3
 ## explicit
 github.com/hashicorp/go-uuid
@@ -220,6 +281,10 @@ github.com/jcmturner/gokrb5/v8/types
 ## explicit; go 1.13
 github.com/jcmturner/rpc/v2/mstypes
 github.com/jcmturner/rpc/v2/ndr
+# github.com/jessevdk/go-flags v1.5.0
+## explicit; go 1.15
+# github.com/jmespath/go-jmespath v0.4.0
+## explicit; go 1.14
 # github.com/jpillora/backoff v1.0.0
 ## explicit; go 1.13
 github.com/jpillora/backoff
@@ -236,6 +301,12 @@ github.com/masterzen/simplexml/dom
 ## explicit; go 1.21
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
+# github.com/mattn/go-colorable v0.1.13
+## explicit; go 1.15
+# github.com/mattn/go-isatty v0.0.20
+## explicit; go 1.15
+# github.com/mattn/go-runewidth v0.0.15
+## explicit; go 1.9
 # github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 ## explicit; go 1.19
 github.com/maxbrunsfeld/counterfeiter/v6
@@ -341,12 +412,14 @@ github.com/pivotal/go-smtpd/smtpd
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pmezard/go-difflib v1.0.0
+# github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 ## explicit
 github.com/pmezard/go-difflib/difflib
+# github.com/rivo/uniseg v0.4.4
+## explicit; go 1.18
 # github.com/rogpeppe/go-internal v1.8.1
 ## explicit; go 1.16
-# github.com/sirupsen/logrus v1.8.1
+# github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.8.4
@@ -355,13 +428,25 @@ github.com/stretchr/testify/assert
 # github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde
 ## explicit
 github.com/tidwall/transform
-# go.opencensus.io v0.23.0
+# github.com/vito/go-interact v1.0.1
+## explicit; go 1.12
+# go.opencensus.io v0.24.0
 ## explicit; go 1.13
 go.opencensus.io
 go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
+# go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.1
+## explicit; go 1.20
+# go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.46.1
+## explicit; go 1.20
+# go.opentelemetry.io/otel v1.21.0
+## explicit; go 1.20
+# go.opentelemetry.io/otel/metric v1.21.0
+## explicit; go 1.20
+# go.opentelemetry.io/otel/trace v1.21.0
+## explicit; go 1.20
 # go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 ## explicit; go 1.18
 go4.org/netipx
@@ -399,7 +484,15 @@ golang.org/x/net/html/charset
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
+<<<<<<< HEAD
 # golang.org/x/sys v0.16.0
+=======
+# golang.org/x/oauth2 v0.15.0
+## explicit; go 1.18
+# golang.org/x/sync v0.5.0
+## explicit; go 1.18
+# golang.org/x/sys v0.15.0
+>>>>>>> 3fe6fe5f (convert compile command tests to ginkgo style)
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
@@ -407,6 +500,8 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
+# golang.org/x/term v0.15.0
+## explicit; go 1.18
 # golang.org/x/text v0.14.0
 ## explicit; go 1.18
 golang.org/x/text/encoding
@@ -426,6 +521,8 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
+# golang.org/x/time v0.5.0
+## explicit; go 1.18
 # golang.org/x/tools v0.16.1
 ## explicit; go 1.18
 golang.org/x/tools/cmd/goimports
@@ -457,8 +554,20 @@ golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
-# google.golang.org/protobuf v1.28.0
+# google.golang.org/api v0.154.0
+## explicit; go 1.19
+# google.golang.org/appengine v1.6.8
 ## explicit; go 1.11
+# google.golang.org/genproto v0.0.0-20231212172506-995d672761c0
+## explicit; go 1.19
+# google.golang.org/genproto/googleapis/api v0.0.0-20231212172506-995d672761c0
+## explicit; go 1.19
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20231212172506-995d672761c0
+## explicit; go 1.19
+# google.golang.org/grpc v1.60.1
+## explicit; go 1.19
+# google.golang.org/protobuf v1.32.0
+## explicit; go 1.17
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -489,6 +598,8 @@ google.golang.org/protobuf/types/descriptorpb
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 ## explicit
 gopkg.in/tomb.v1
+# gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3

@@ -29,6 +29,15 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"code.cloudfoundry.org/clock"
+
+	"github.com/cloudfoundry/bosh-cli/v7/release/manifest"
+
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
 	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
 	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
@@ -37,13 +46,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-
-	"github.com/cloudfoundry/bosh-cli/release/manifest"
 )
 
 const (
@@ -77,14 +79,14 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	log.Printf("Reading BOSH Release Manifest from tarball %s", boshReleaseTarballPath)
 	m, err := Manifest(boshReleaseTarballPath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to parse release manifest: %w", err)
 	}
 	log.Printf("Release %s/%s has %d packages", m.Name, m.Version, len(m.Packages))
 
 	log.Printf("Extracting packages")
 	blobstoreIDs, err := extractPackages(m, blobsDirectory, boshReleaseTarballPath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to extract packages from tarball: %w", err)
 	}
 
 	log.Printf("Starting packages compilation")
@@ -95,7 +97,10 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	}
 	var compiledPackages []boshmodels.Package
 	for _, p := range packages {
-		compiledPackages = compilePackage(p, blobstoreIDs, compiledPackages, compiler)
+		compiledPackages, err = compilePackage(compiledPackages, p, blobstoreIDs, compiler)
+		if err != nil {
+			return "", fmt.Errorf("failed to compile package %s/%s: %w", p.Name, p.Version, err)
+		}
 	}
 	log.Printf("Finished packages compilation after %s", time.Since(start))
 
@@ -103,11 +108,11 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, compiledPackages)
 }
 
-func compilePackage(p manifest.PackageRef, blobstoreIDs map[string]string, compiledPackages []boshmodels.Package, compiler boshcomp.Compiler) []boshmodels.Package {
+func compilePackage(compiledPackages []boshmodels.Package, p manifest.PackageRef, blobstoreIDs map[string]string, compiler boshcomp.Compiler) ([]boshmodels.Package, error) {
 	log.Printf("Compiling package %s/%s", p.Name, p.Version)
 	digest, err := boshcrypto.ParseMultipleDigest(p.SHA1)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	pkg := boshcomp.Package{
 		BlobstoreID: path.Base(blobstoreIDs[p.SHA1]),
@@ -124,7 +129,7 @@ func compilePackage(p manifest.PackageRef, blobstoreIDs map[string]string, compi
 	}
 	compiledBlobID, compiledDigest, err := compiler.Compile(pkg, modelsDeps)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	log.Printf("Finished compiling release %s/%s BlobstoreID=%s", p.Name, p.Version, compiledBlobID)
 	return append(compiledPackages, boshmodels.Package{
@@ -134,7 +139,7 @@ func compilePackage(p manifest.PackageRef, blobstoreIDs map[string]string, compi
 			Sha1:        compiledDigest,
 			BlobstoreID: compiledBlobID,
 		},
-	})
+	}), nil
 }
 
 func extractPackages(m manifest.Manifest, blobsDirectory, releaseTarballPath string) (map[string]string, error) {
@@ -147,7 +152,7 @@ func extractPackages(m manifest.Manifest, blobsDirectory, releaseTarballPath str
 			return p.Name+".tgz" == path.Base(h.Name)
 		})
 		if pkgIndex < 0 {
-			return true, nil
+			return true, fmt.Errorf("package not found in release manifest")
 		}
 		p := m.Packages[pkgIndex]
 		dstFilepath := filepath.Join(blobsDirectory, p.Name+".tgz")
@@ -277,21 +282,25 @@ func Manifest(releaseFilePath string) (manifest.Manifest, error) {
 		m     manifest.Manifest
 		found = false
 	)
-	err := walkTarballFiles(releaseFilePath, func(name string, _ *tar.Header, r io.Reader) (bool, error) {
-		if path.Base(name) != "release.MF" {
-			return true, nil
-		}
-		found = true
-		buf, err := io.ReadAll(r)
-		if err != nil {
-			return false, err
-		}
-		return false, yaml.Unmarshal(buf, &m)
-	})
+	err := walkTarballFiles(releaseFilePath, readReleaseManifest(&found, &m))
 	if !found {
 		return m, fmt.Errorf("failed to find %s in tarball", releaseManifestFilename)
 	}
 	return m, err
+}
+
+func readReleaseManifest(found *bool, m *manifest.Manifest) func(string, *tar.Header, io.Reader) (bool, error) {
+	return func(name string, _ *tar.Header, r io.Reader) (bool, error) {
+		if path.Base(name) != "release.MF" {
+			return true, nil
+		}
+		*found = true
+		buf, err := io.ReadAll(r)
+		if err != nil {
+			return false, err
+		}
+		return false, yaml.Unmarshal(buf, m)
+	}
 }
 
 type tarballWalkFunc func(fullName string, h *tar.Header, r io.Reader) (bool, error)
@@ -312,7 +321,7 @@ func walkTarballFiles(releaseFilePath string, file tarballWalkFunc) error {
 	for {
 		h, err := r.Next()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return nil
 			}
 			return err
