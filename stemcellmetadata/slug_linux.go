@@ -1,4 +1,4 @@
-package main
+package stemcellmetadata
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func readStemcellSlug() (string, string, string, error) {
+func SlugParts() (string, string, string, error) {
 	stemcellVersionBuf, err := os.ReadFile("/var/vcap/bosh/etc/stemcell_version")
 	if err != nil {
 		return "", "", "", err

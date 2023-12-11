@@ -10,6 +10,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/app"
 	"github.com/cloudfoundry/bosh-agent/releasetarball"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/stemcellmetadata"
 )
 
 func compileTarball(command string, args []string) {
@@ -22,7 +23,7 @@ func compileTarball(command string, args []string) {
 		log.Fatal(err)
 	}
 
-	stemcellOS, stemcellName, stemcellVersion, err := readStemcellSlug()
+	stemcellOS, stemcellName, stemcellVersion, err := stemcellmetadata.SlugParts()
 	if err != nil {
 		log.Fatal(err)
 	}
