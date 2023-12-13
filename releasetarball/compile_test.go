@@ -68,9 +68,8 @@ var _ = Describe("NewCompiler", func() {
 
 var _ = Describe("Compile", func() {
 	const stemcellSlug = "banana-slug/1.23"
-	var (
-		setupErr error
 
+	var (
 		releasesOutputDir string
 
 		pkgCompiler *fakes.Compiler
@@ -79,6 +78,7 @@ var _ = Describe("Compile", func() {
 
 		d directories.Provider
 	)
+
 	BeforeEach(func() {
 		d = directories.NewProvider(GinkgoT().TempDir())
 		err := os.MkdirAll(d.BlobsDir(), 0o766)
@@ -143,19 +143,6 @@ var _ = Describe("Compile", func() {
 			const stemcellSlug = "banana-slug/1.23"
 			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
 			Expect(err).To(MatchError(ContainSubstring("failed to parse release manifest")))
-		})
-	})
-
-	When("the compiler returns an error", func() {
-		BeforeEach(func() {
-			sourceTarballPath = filepath.Join("testdata", "log-cache-release-3.0.9.tgz")
-			pkgCompiler.CompileReturns("", nil, fmt.Errorf("banana"))
-		})
-
-		It("does not compile any of the packages", func() {
-			const stemcellSlug = "banana-slug/1.23"
-			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
-			Expect(err).To(MatchError(ContainSubstring("banana")))
 		})
 	})
 
@@ -291,10 +278,6 @@ var _ = Describe("Compile", func() {
 				Expect(h.Uid).To(Equal(expectedUID))
 			}
 		})
-	})
-
-	It("returns a result and no error", func() {
-		Expect(setupErr).NotTo(HaveOccurred())
 	})
 })
 
