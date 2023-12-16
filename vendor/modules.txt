@@ -69,12 +69,12 @@ github.com/bodgit/windows
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-davcli v0.0.297
+# github.com/cloudfoundry/bosh-davcli v0.0.298
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.416
+# github.com/cloudfoundry/bosh-utils v0.0.417
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -96,12 +96,12 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.37
+# github.com/cloudfoundry/gosigar v1.3.38
 ## explicit; go 1.21
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.104
+# github.com/cloudfoundry/socks5-proxy v0.2.105
 ## explicit; go 1.21
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.1.0
@@ -157,7 +157,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20231205033806-a5a03c77bf08
+# github.com/google/pprof v0.0.0-20231212022811-ec68065c825e
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/uuid v1.3.0
@@ -232,7 +232,7 @@ github.com/klauspost/compress/flate
 # github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786
 ## explicit
 github.com/masterzen/simplexml/dom
-# github.com/masterzen/winrm v0.0.0-20231128182143-52a9e15d5730
+# github.com/masterzen/winrm v0.0.0-20231215180349-a482b3cc42e7
 ## explicit; go 1.21
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
@@ -382,7 +382,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20231206192017-f3f8817b8deb
+# golang.org/x/exp/typeparams v0.0.0-20231214170342-aacd6d4b4611
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.14.0
@@ -426,7 +426,7 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
-# golang.org/x/tools v0.16.0
+# golang.org/x/tools v0.16.1
 ## explicit; go 1.18
 golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/analysis

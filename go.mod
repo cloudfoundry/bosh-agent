@@ -9,16 +9,16 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.297
-	github.com/cloudfoundry/bosh-utils v0.0.416
-	github.com/cloudfoundry/gosigar v1.3.37
+	github.com/cloudfoundry/bosh-davcli v0.0.298
+	github.com/cloudfoundry/bosh-utils v0.0.417
+	github.com/cloudfoundry/gosigar v1.3.38
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/kevinburke/ssh_config v1.2.0
-	github.com/masterzen/winrm v0.0.0-20231128182143-52a9e15d5730
+	github.com/masterzen/winrm v0.0.0-20231215180349-a482b3cc42e7
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.31.0
@@ -32,7 +32,7 @@ require (
 	golang.org/x/crypto v0.16.0
 	golang.org/x/net v0.19.0
 	golang.org/x/sys v0.15.0
-	golang.org/x/tools v0.16.0
+	golang.org/x/tools v0.16.1
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
 
@@ -45,7 +45,7 @@ require (
 	github.com/bodgit/ntlmssp v0.0.0-20231207143743-d70777b171a7 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.104 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.105 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -57,7 +57,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20231205033806-a5a03c77bf08 // indirect
+	github.com/google/pprof v0.0.0-20231212022811-ec68065c825e // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
@@ -80,7 +80,7 @@ require (
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20231206192017-f3f8817b8deb // indirect
+	golang.org/x/exp/typeparams v0.0.0-20231214170342-aacd6d4b4611 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
