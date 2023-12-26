@@ -30,7 +30,8 @@ func compileTarball(command string, args []string) {
 	log.Printf("Compiling with stemcell %s-%s/%s", stemcellOS, stemcellName, stemcellVersion)
 
 	dirProvider := directories.NewProvider(app.DefaultBaseDirectory)
-	if err := os.MkdirAll(dirProvider.BlobsDir(), 0x766); err != nil {
+	// see platform.blobsDirPermissions
+	if err := os.MkdirAll(dirProvider.BlobsDir(), 0x0700); err != nil {
 		log.Fatal(err)
 	}
 
