@@ -75,6 +75,13 @@ func startAgent(logger logger.Logger) error {
 }
 
 func main() {
+	if len(os.Args) > 1 {
+		switch cmd := os.Args[1]; cmd {
+		case "compile":
+			compileTarball(cmd, os.Args[2:])
+			return
+		}
+	}
 	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
 	logger := newSignalableLogger(asyncLog)
 
