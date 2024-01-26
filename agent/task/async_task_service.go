@@ -22,7 +22,7 @@ func NewAsyncTaskService(uuidGen boshuuid.Generator, logger boshlog.Logger) (ser
 		uuidGen:      uuidGen,
 		logger:       logger,
 		currentTasks: make(map[string]Task),
-		taskChan:     make(chan Task),
+		taskChan:     make(chan Task, 5),
 		taskSem:      make(chan func()),
 	}
 
