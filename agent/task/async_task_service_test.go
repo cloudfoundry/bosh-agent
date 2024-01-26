@@ -182,6 +182,26 @@ func init() {
 					time.Sleep(200 * time.Millisecond)
 				}
 			})
+
+			It("will not block if another task is already started", func(ctx SpecContext) {
+				taskChannel := make(chan bool)
+				task1Func := func() (interface{}, error) {
+					<-taskChannel
+					return nil, nil
+				}
+				task1, _ := service.CreateTask(task1Func, nil, nil)
+				service.StartTask(task1)
+				task2Func := func() (interface{}, error) {
+					return nil, nil
+				}
+				task2, _ := service.CreateTask(task2Func, nil, nil)
+				Eventually(func() bool {
+					service.StartTask(task2)
+					return true
+				}).WithContext(ctx).Should(BeTrue())
+
+				taskChannel <- true
+			}, SpecTimeout(time.Second*5))
 		})
 
 		Describe("CreateTask", func() {
