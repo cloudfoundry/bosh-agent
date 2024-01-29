@@ -183,7 +183,7 @@ func init() {
 				}
 			})
 
-			It("will not block if another task is already started", func(ctx SpecContext) {
+			It("will not block if another task is already started", func() {
 				taskChannel := make(chan bool)
 				task1Func := func() (interface{}, error) {
 					<-taskChannel
@@ -198,10 +198,10 @@ func init() {
 				Eventually(func() bool {
 					service.StartTask(task2)
 					return true
-				}).WithContext(ctx).Should(BeTrue())
+				}).Should(BeTrue())
 
 				taskChannel <- true
-			}, SpecTimeout(time.Second*5))
+			})
 		})
 
 		Describe("CreateTask", func() {
