@@ -72,12 +72,12 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli/v7 v7.5.2
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
-# github.com/cloudfoundry/bosh-davcli v0.0.307
+# github.com/cloudfoundry/bosh-davcli v0.0.311
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.427
+# github.com/cloudfoundry/bosh-utils v0.0.431
 ## explicit; go 1.21
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -99,13 +99,13 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e
 ## explicit
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.44
+# github.com/cloudfoundry/gosigar v1.3.45
 ## explicit; go 1.21
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.108
-## explicit; go 1.21
+# github.com/cloudfoundry/socks5-proxy v0.2.109
+## explicit; go 1.22
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.1.0
 ## explicit; go 1.17
@@ -160,7 +160,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20240130152714-0ed6a68c8d9e
+# github.com/google/pprof v0.0.0-20240207164012-fb44976bdcd5
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/uuid v1.5.0
@@ -229,7 +229,7 @@ github.com/jpillora/backoff
 # github.com/kevinburke/ssh_config v1.2.0
 ## explicit
 github.com/kevinburke/ssh_config
-# github.com/klauspost/compress v1.17.5
+# github.com/klauspost/compress v1.17.6
 ## explicit; go 1.19
 github.com/klauspost/compress/flate
 # github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786
@@ -368,7 +368,7 @@ go.opencensus.io/trace/tracestate
 # go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 ## explicit; go 1.18
 go4.org/netipx
-# golang.org/x/crypto v0.18.0
+# golang.org/x/crypto v0.19.0
 ## explicit; go 1.18
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
@@ -385,15 +385,15 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20240119083558-1b970713d09a
+# golang.org/x/exp/typeparams v0.0.0-20240205201215-2c58cdc269a3
 ## explicit; go 1.18
 golang.org/x/exp/typeparams
-# golang.org/x/mod v0.14.0
+# golang.org/x/mod v0.15.0
 ## explicit; go 1.18
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.20.0
+# golang.org/x/net v0.21.0
 ## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/html
@@ -402,7 +402,7 @@ golang.org/x/net/html/charset
 golang.org/x/net/http2/hpack
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.16.0
+# golang.org/x/sys v0.17.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
