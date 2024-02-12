@@ -572,7 +572,7 @@ func (er emptyReader) Read(_ []byte) (int, error) {
 
 func (t *TestEnvironment) StartAgentTunnel() error {
 	if t.sshTunnelProc != nil {
-		return fmt.Errorf("Already running")
+		return fmt.Errorf("already running")
 	}
 
 	sshCmd := boshsys.Command{
