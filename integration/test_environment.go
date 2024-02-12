@@ -682,12 +682,7 @@ func (t *TestEnvironment) GetVMNetworks() (boshsettings.Networks, error) {
 }
 
 func (t *TestEnvironment) GetFileContents(filePath string) (string, error) {
-	return t.RunCommand(
-		fmt.Sprintf(
-			`sudo cat %s`,
-			filePath,
-		),
-	)
+	return t.RunCommand(fmt.Sprintf("sudo cat %s", filePath))
 }
 
 func (t *TestEnvironment) RunCommand(command string) (string, error) {
