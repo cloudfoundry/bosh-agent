@@ -136,7 +136,10 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 }
 
 func (t *TestEnvironment) CleanupDataDir() error {
-	t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`) //nolint:errcheck
+	_, ignoredErr := t.RunCommand("sudo /var/vcap/bosh/bin/monit stop all")
+	if ignoredErr != nil {
+		t.logger.Error("test environment", "CleanupDataDir: %s", ignoredErr)
+	}
 
 	_, err := t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
 	if err != nil {
