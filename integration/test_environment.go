@@ -288,7 +288,17 @@ func (t *TestEnvironment) LogFileContains(content string) bool {
 }
 
 func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
-	output, err := t.RunCommand("sudo parted -m /dev/sda unit B print")
+	rootPartition, err := t.RunCommand("sudo findmnt -n -o source -T /")
+	if err != nil {
+		return err
+	}
+	rootDevice := rootPartition[:len(rootPartition)-1]
+	rootPartitionNumber, err := strconv.Atoi(rootPartition[len(rootPartition)-1:])
+	if err != nil {
+		return err
+	}
+	swapPartitionNumber := rootPartitionNumber + 1
+	output, err := t.RunCommand(fmt.Sprintf("sudo parted -m %s unit B print", rootDevice))
 	if err != nil {
 		return err
 	}
@@ -301,10 +311,10 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 
 	// Ensure we have enough space to create the fake loopback devices used in tests
 	if sizeInBytes < 10000000000 {
-		t.RunCommand("sudo swapoff /dev/sda2")
+		t.RunCommand(fmt.Sprintf("sudo swapoff %s%d", rootDevice, swapPartitionNumber))
 
 		for i := len(outputLines); i > 1; i-- {
-			_, err = t.RunCommand(fmt.Sprintf("sudo parted /dev/sda rm %d", i))
+			_, err = t.RunCommand(fmt.Sprintf("sudo parted %s rm %d", rootDevice, i))
 			if err != nil {
 				return err
 			}
@@ -312,12 +322,12 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 
 		t.RunCommand("sudo udevadm settle")
 
-		_, err = t.RunCommand("sudo parted /dev/sda ---pretend-input-tty resizepart 1 yes 10000M")
+		_, err = t.RunCommand(fmt.Sprintf("sudo parted %s ---pretend-input-tty resizepart 1 yes 10000M", rootDevice))
 		if err != nil {
 			return err
 		}
 
-		_, err = t.RunCommand("sudo resize2fs -f /dev/sda1")
+		_, err = t.RunCommand(fmt.Sprintf("sudo resize2fs -f %s", rootPartition))
 		if err != nil {
 			return err
 		}
