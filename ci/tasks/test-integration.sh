@@ -9,11 +9,11 @@ set -eu -o pipefail
 # ... probably works ¯\_(ツ)_/¯
 
 function copy_to_remote_host() {
-  local_file=$1
-  remote_path=$2
-  def_arg=""
+  local_file=${1}
+  remote_path=${2}
+  scp_flag=${3:-}
 
-  scp ${3:-$def_arg} ${local_file} ${agent_ip}:/tmp/remote-file > /dev/null 2>&1
+  scp ${scp_flag} "${local_file}" "${agent_ip}:/tmp/remote-file" > /dev/null 2>&1
   ${ssh_command} "sudo mv /tmp/remote-file ${remote_path}" > /dev/null 2>&1
   ${ssh_command} "sudo rm -rf /tmp/remote-file" > /dev/null 2>&1
 }
