@@ -73,7 +73,7 @@ var _ = Describe("apply", func() {
 				},
 			},
 		}
-		err = testEnvironment.CreateFilesettings(fileSettings)
+		err = testEnvironment.CreateSettingsFile(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 
 	})

@@ -75,7 +75,7 @@ var _ = Describe("DeleteARPEntries", func() {
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.CreateFilesettings(fileSettings)
+		err = testEnvironment.CreateSettingsFile(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.SetUpDummyNetworkInterface(testIP, testMacAddress)

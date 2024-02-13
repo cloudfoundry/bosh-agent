@@ -57,7 +57,7 @@ var _ = Describe("sync_dns", func() {
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.CreateFilesettings(fileSettings)
+		err = testEnvironment.CreateSettingsFile(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

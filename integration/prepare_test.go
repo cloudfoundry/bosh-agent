@@ -39,7 +39,7 @@ var _ = Describe("prepare", func() {
 
 		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
-		err = testEnvironment.CreateFilesettings(fileSettings)
+		err = testEnvironment.CreateSettingsFile(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -241,7 +241,7 @@ var _ = Describe("prepare", func() {
 		Context("when settings tmpfs is enabled", func() {
 			BeforeEach(func() {
 				fileSettings.Env.Bosh.Agent.Settings.TmpFS = true
-				err := testEnvironment.CreateFilesettings(fileSettings)
+				err := testEnvironment.CreateSettingsFile(fileSettings)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
@@ -275,7 +275,7 @@ var _ = Describe("prepare", func() {
 		Context("when job dir tmpfs is enabled", func() {
 			BeforeEach(func() {
 				fileSettings.Env.Bosh.JobDir.TmpFS = true
-				err := testEnvironment.CreateFilesettings(fileSettings)
+				err := testEnvironment.CreateSettingsFile(fileSettings)
 				Expect(err).ToNot(HaveOccurred())
 			})
 

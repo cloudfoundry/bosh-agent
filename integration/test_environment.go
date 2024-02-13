@@ -631,7 +631,7 @@ func (t *TestEnvironment) StartBlobstore() error {
 	return err
 }
 
-func (t *TestEnvironment) CreateFilesettings(settings boshsettings.Settings) error {
+func (t *TestEnvironment) CreateSettingsFile(settings boshsettings.Settings) error {
 	emptyCert := boshsettings.CertKeyPair{}
 	if settings.Env.Bosh.Mbus.Cert == emptyCert {
 		settings.Env.Bosh.Mbus.Cert.Certificate = agentCert

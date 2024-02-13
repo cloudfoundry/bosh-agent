@@ -54,7 +54,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 				RawEphemeral: []boshsettings.DiskSettings{{ID: "1", Path: "/dev/xvdb"}, {ID: "2", Path: "/dev/xvdc"}},
 			}
 
-			err = testEnvironment.CreateFilesettings(fileSettings)
+			err = testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 		})
 

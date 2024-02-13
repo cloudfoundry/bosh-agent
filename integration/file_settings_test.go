@@ -23,7 +23,7 @@ var _ = Describe("FileSettings", func() {
 				},
 			}
 
-			err := testEnvironment.CreateFilesettings(fileSettings)
+			err := testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")

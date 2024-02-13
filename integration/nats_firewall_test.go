@@ -65,7 +65,7 @@ var _ = Describe("nats firewall", func() {
 				},
 			}
 
-			err := testEnvironment.CreateFilesettings(fileSettings)
+			err := testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
 			Expect(err).ToNot(HaveOccurred())

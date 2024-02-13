@@ -48,7 +48,7 @@ var _ = Describe("EphemeralDisk", func() {
 				fileSettings.Disks = settings.Disks{
 					Ephemeral: "/dev/sdh",
 				}
-				err := testEnvironment.CreateFilesettings(fileSettings)
+				err := testEnvironment.CreateSettingsFile(fileSettings)
 				Expect(err).ToNot(HaveOccurred())
 
 			})
@@ -167,7 +167,7 @@ var _ = Describe("EphemeralDisk", func() {
 								SwapSizeInMB: &swapSize,
 							},
 						}
-						err := testEnvironment.CreateFilesettings(fileSettings)
+						err := testEnvironment.CreateSettingsFile(fileSettings)
 						Expect(err).ToNot(HaveOccurred())
 					})
 

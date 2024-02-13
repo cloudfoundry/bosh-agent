@@ -45,7 +45,7 @@ var _ = Describe("SystemMounts", func() {
 					Ephemeral: "/dev/sdh",
 				}
 
-				err = testEnvironment.CreateFilesettings(fileSettings)
+				err = testEnvironment.CreateSettingsFile(fileSettings)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
