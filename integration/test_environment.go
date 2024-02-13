@@ -292,6 +292,7 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 	if err != nil {
 		return err
 	}
+	rootPartition = strings.TrimRight(rootPartition, "\n")
 	rootDevice := rootPartition[:len(rootPartition)-1]
 	rootPartitionNumber, err := strconv.Atoi(rootPartition[len(rootPartition)-1:])
 	if err != nil {
