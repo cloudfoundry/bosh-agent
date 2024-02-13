@@ -2,6 +2,12 @@
 
 set -eu -o pipefail
 
+# To run locally set the following:
+#   LOCAL_AGENT_IP
+#   LOCAL_AGENT_VM_KEY_PATH
+#   LOCAL_JUMPBOX_KEY_PATH
+# ... probably works ¯\_(ツ)_/¯
+
 function copy_to_remote_host() {
   local_file=$1
   remote_path=$2
