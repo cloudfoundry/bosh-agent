@@ -250,6 +250,7 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 		return err
 	}
 	t.deviceMap = make(map[int]string)
+
 	return nil
 }
 
@@ -361,12 +362,7 @@ func (t *TestEnvironment) AttachPartitionedRootDevice(devicePath string, sizeInM
 	}
 
 	// Create only first partition, agent will partition the rest for ephemeral disk
-	partitionTemplate := `
-echo '1,%d,L,' | sudo sfdisk -uS %s
-`
-
-	partitionScript := fmt.Sprintf(partitionTemplate, rootPartitionSizeInMB*2048, devicePath)
-	_, err = t.RunCommand(partitionScript)
+	_, err = t.RunCommand(fmt.Sprintf("echo '1,%d,L,' | sudo sfdisk -uS %s", rootPartitionSizeInMB*2048, devicePath))
 	if err != nil {
 		return "", err
 	}
@@ -528,21 +524,13 @@ func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
 }
 
 func (t *TestEnvironment) CopyFileToPath(localPath string, remotePath string) error {
-	_, _, _, err := t.cmdRunner.RunCommand(
-		"scp",
-		localPath,
-		fmt.Sprintf("%s:/tmp/remote-file", t.agentIP()),
-	)
+	_, _, _, err :=
+		t.cmdRunner.RunCommand("scp", localPath, fmt.Sprintf("%s:/tmp/remote-file", t.agentIP()))
 	if err != nil {
 		return err
 	}
 
-	_, err = t.RunCommand(
-		fmt.Sprintf(
-			`sudo mv /tmp/remote-file %s`,
-			remotePath,
-		),
-	)
+	_, err = t.RunCommand(fmt.Sprintf("sudo mv /tmp/remote-file %s", remotePath))
 
 	return err
 }
@@ -595,7 +583,15 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 
 	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
 	mbusURL := fmt.Sprintf("https://%s:%s@localhost:16868", t.mbusUser, t.mbusPass)
-	t.AgentClient = integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
+	t.AgentClient =
+		integrationagentclient.NewIntegrationAgentClient(
+			mbusURL,
+			"fake-director-uuid",
+			1*time.Second,
+			10,
+			httpClient,
+			t.logger,
+		)
 
 	for i := 1; i < 90; i++ {
 		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
@@ -629,9 +625,8 @@ func (t *TestEnvironment) StartBlobstore() error {
 		t.logger.Error("test environment", "StartBlobstore: %s", ignoredErr)
 	}
 
-	_, err := t.RunCommand(
-		`nohup /home/agent_test_user/fake-blobstore -host 127.0.0.1 -port 9091 -assets /home/agent_test_user &> /dev/null &`,
-	)
+	_, err :=
+		t.RunCommand("nohup /home/agent_test_user/fake-blobstore -host 127.0.0.1 -port 9091 -assets /home/agent_test_user &> /dev/null &")
 
 	return err
 }
@@ -692,14 +687,14 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 	s, err := t.sshClient.NewSession()
 
 	if err != nil {
-		t.logger.Error("Remote Cmd Runner", "NEWSESSION FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
+		t.logger.Error("Remote Cmd Runner", "NewSession() FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
 		return "", errors.WrapError(err, "Unable to establish SSH session: ")
 	}
 	defer s.Close()
 	t.logger.Debug("Remote Cmd Runner", "Running remote command '%s'", command)
 	out, err := s.CombinedOutput(command)
 	if err != nil {
-		t.logger.Debug("COMMAND FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
+		t.logger.Debug("CombinedOutput() FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
 		return string(out), errors.WrapErrorf(err, "Error running %s", command)
 	}
 	return string(out), nil
@@ -841,13 +836,14 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 			return nil, err
 		}
 
-		jumpboxClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", jumpboxAddr, "22"), &ssh.ClientConfig{
-			User: jumpboxUser,
-			Auth: []ssh.AuthMethod{
-				ssh.PublicKeys(jumpboxSigner),
-			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		})
+		jumpboxClient, err :=
+			ssh.Dial("tcp", fmt.Sprintf("%s:%s", jumpboxAddr, "22"), &ssh.ClientConfig{
+				User: jumpboxUser,
+				Auth: []ssh.AuthMethod{
+					ssh.PublicKeys(jumpboxSigner),
+				},
+				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			})
 		if err != nil {
 			return nil, err
 		}
@@ -857,7 +853,8 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 			return nil, err
 		}
 
-		proxyClientConnection, proxyClientChannel, proxyClientRequest, err := ssh.NewClientConn(proxyConnection, testVMAddress, testVMSSHConfig)
+		proxyClientConnection, proxyClientChannel, proxyClientRequest, err :=
+			ssh.NewClientConn(proxyConnection, testVMAddress, testVMSSHConfig)
 		if err != nil {
 			return nil, err
 		}
