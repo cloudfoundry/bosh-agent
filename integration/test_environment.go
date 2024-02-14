@@ -3,7 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -73,13 +73,42 @@ type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
 	currentDeviceNum int
 	sshTunnelProc    boshsys.Process
-	logger           logger.Logger
+	writerPrinter    writerPrinter
 	agentClient      agentclient.AgentClient
 	deviceMap        map[int]string
 	sshClient        *ssh.Client
 }
 
-func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (*TestEnvironment, error) {
+type writerPrinter interface {
+	io.Writer
+
+	Print(a ...interface{})
+	Printf(format string, a ...interface{})
+	Println(a ...interface{})
+}
+
+// not needed with Ginkgo v2 since GinkgoWriter in that version implements `writerPrinter`
+type localWriterPrinter struct {
+	writer io.Writer
+}
+
+func (lw *localWriterPrinter) Write(p []byte) (n int, err error) {
+	return lw.writer.Write(p)
+}
+
+func (lw *localWriterPrinter) Print(a ...interface{}) {
+	_, _ = fmt.Fprint(lw.writer, a...)
+}
+
+func (lw *localWriterPrinter) Println(a ...interface{}) {
+	_, _ = fmt.Fprintln(lw.writer, a...)
+}
+
+func (lw *localWriterPrinter) Printf(format string, a ...interface{}) {
+	_, _ = fmt.Fprintf(lw.writer, format, a...)
+}
+
+func NewTestEnvironment(cmdRunner boshsys.CmdRunner, writer io.Writer) (*TestEnvironment, error) {
 	client, err := dialSSHClient(cmdRunner)
 	if err != nil {
 		return nil, err
@@ -88,7 +117,7 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, logLevel logger.LogLevel) (
 	return &TestEnvironment{
 		cmdRunner:        cmdRunner,
 		currentDeviceNum: 2,
-		logger:           logger.NewLogger(logLevel),
+		writerPrinter:    &localWriterPrinter{writer: writer},
 		deviceMap:        make(map[int]string),
 		sshClient:        client,
 	}, nil
@@ -126,7 +155,11 @@ sudo mkdir -p /tmp/config-drive/ec2/latest
 		return err
 	}
 
-	t.RunCommand("sudo fuser -km /tmp/config-drive")
+	_, ignoredErr := t.RunCommand("sudo fuser -km /tmp/config-drive")
+	if ignoredErr != nil {
+		t.writerPrinter.Printf("SetupConfigDrive %s", ignoredErr)
+	}
+
 	_, err = t.RunCommand("sudo umount -l /tmp/config-drive")
 	return err
 }
@@ -147,7 +180,10 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
 		if mountPoint != "" {
-			t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
+			_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
+			if ignoredErr != nil {
+				t.writerPrinter.Printf("DetachDevice %s", ignoredErr)
+			}
 			for i := 0; i < 100; i++ {
 				_, err = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
 				if err == nil {
@@ -165,7 +201,10 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	_, err := t.RunCommand(`sudo /var/vcap/bosh/bin/monit stop all`)
 
 	// Explicitly stop rsyslog as it can prevent unmounting and clearing /var/log
-	t.RunCommand("sudo service rsyslog stop")
+	_, ignoredErr := t.RunCommand("sudo service rsyslog stop")
+	if ignoredErr != nil {
+		t.writerPrinter.Printf("CleanupDataDir %s", ignoredErr)
+	}
 
 	_, err = t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
 	if err != nil {
@@ -262,7 +301,11 @@ func (t *TestEnvironment) CleanupDataDir() error {
 
 func (t *TestEnvironment) ResetDeviceMap() error {
 	for n, loopDevice := range t.deviceMap {
-		t.DetachLoopDevice(loopDevice)
+		ignoredErr := t.DetachLoopDevice(loopDevice)
+		if ignoredErr != nil {
+			t.writerPrinter.Printf("ResetDeviceMap %s", ignoredErr)
+		}
+
 		_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", fmt.Sprintf("/virtualfs-%d", n)))
 		if err != nil {
 			return err
@@ -312,7 +355,10 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 
 	// Ensure we have enough space to create the fake loopback devices used in tests
 	if sizeInBytes < 10000000000 {
-		t.RunCommand(fmt.Sprintf("sudo swapoff %s%d", rootDevice, swapPartitionNumber))
+		_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo swapoff %s%d", rootDevice, swapPartitionNumber))
+		if ignoredErr != nil {
+			t.writerPrinter.Printf("EnsureRootDeviceIsLargeEnough %s", ignoredErr)
+		}
 
 		for i := len(outputLines); i > 1; i-- {
 			_, err = t.RunCommand(fmt.Sprintf("sudo parted %s rm %d", rootDevice, i))
@@ -321,7 +367,10 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 			}
 		}
 
-		t.RunCommand("sudo udevadm settle")
+		_, ignoredErr = t.RunCommand("sudo udevadm settle")
+		if ignoredErr != nil {
+			t.writerPrinter.Printf("EnsureRootDeviceIsLargeEnough %s", ignoredErr)
+		}
 
 		_, err = t.RunCommand(fmt.Sprintf("sudo parted %s ---pretend-input-tty resizepart 1 yes 10000M", rootDevice))
 		if err != nil {
@@ -427,11 +476,17 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 
 		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
 			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" {
-				t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
+				_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", output))
+				if ignoredErr != nil {
+					t.writerPrinter.Printf("DetachPartitionedRootDevice %s", ignoredErr)
+				}
 			}
 
 			if i > 0 {
-				_, _ = t.RunCommand(fmt.Sprintf("sudo parted %s rm %d", devicePath, i))
+				_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo parted %s rm %d", devicePath, i))
+				if ignoredErr != nil {
+					t.writerPrinter.Printf("DetachPartitionedRootDevice %s", ignoredErr)
+				}
 			}
 
 			err = t.DetachLoopDevice(partitionPath)
@@ -599,34 +654,49 @@ func (t *TestEnvironment) StartAgentTunnel(mbusUser, mbusPass string, mbusPort i
 	}
 	t.sshTunnelProc = newTunnelProc
 
-	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, t.logger)
-	mbusURL := fmt.Sprintf("https://%s:%s@127.0.0.1:16868", mbusUser, mbusPass)
-	client := integrationagentclient.NewIntegrationAgentClient(mbusURL, "fake-director-uuid", 1*time.Second, 10, httpClient, t.logger)
+	lgr := logger.NewWriterLogger(logger.LevelDebug, t.writerPrinter)
+
+	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, lgr)
+	client := integrationagentclient.NewIntegrationAgentClient(
+		fmt.Sprintf("https://%s:%s@127.0.0.1:16868", mbusUser, mbusPass),
+		"fake-director-uuid",
+		1*time.Second,
+		10,
+		httpClient,
+		lgr,
+	)
 
 	for i := 1; i < 90; i++ {
-		t.logger.Debug("test environment", "Trying to contact agent via ssh tunnel...")
+		t.writerPrinter.Printf("Trying to contact agent via ssh tunnel... %d", i)
 		time.Sleep(1 * time.Second)
 		_, err = client.Ping()
 		if err == nil {
 			break
 		}
-		t.logger.Debug("test environment", err.Error())
+		t.writerPrinter.Printf("StartAgentTunnel %s", err)
 	}
 	return client, err
 }
 
 func (t *TestEnvironment) StopAgentTunnel() error {
 	if t.sshTunnelProc == nil {
-		return fmt.Errorf("Not running")
+		return fmt.Errorf("not running")
 	}
 	t.sshTunnelProc.Wait()
-	t.sshTunnelProc.TerminateNicely(5 * time.Second)
+	ignoredErr := t.sshTunnelProc.TerminateNicely(5 * time.Second)
+	if ignoredErr != nil {
+		t.writerPrinter.Printf("StopAgentTunnel %s", ignoredErr)
+	}
+
 	t.sshTunnelProc = nil
 	return nil
 }
 
 func (t *TestEnvironment) StartBlobstore() error {
-	t.RunCommand("sudo killall -9 fake-blobstore")
+	_, ignoredErr := t.RunCommand("sudo killall -9 fake-blobstore")
+	if ignoredErr != nil {
+		t.writerPrinter.Printf("StartBlobstore %s", ignoredErr)
+	}
 
 	_, err := t.RunCommand(
 		`nohup /home/agent_test_user/fake-blobstore -host 127.0.0.1 -port 9091 -assets /home/agent_test_user &> /dev/null &`,
@@ -652,7 +722,10 @@ func (t *TestEnvironment) StartRegistry(settings boshsettings.Settings) error {
 		return err
 	}
 
-	t.RunCommand("sudo killall -9 fake-registry")
+	_, ignoredErr := t.RunCommand("sudo killall -9 fake-registry")
+	if ignoredErr != nil {
+		t.writerPrinter.Printf("StartRegistry %s", ignoredErr)
+	}
 
 	_, err = t.RunCommand(
 		fmt.Sprintf(
@@ -684,14 +757,14 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 	s, err := t.sshClient.NewSession()
 
 	if err != nil {
-		t.logger.Debug("Remote Cmd Runner", "NEWSESSION FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
+		t.writerPrinter.Printf("RunComand: sshClient.NewSession() failed: %s", err)
 		return "", err
 	}
 	defer s.Close()
-	t.logger.Debug("Remote Cmd Runner", "Running remote command '%s'", command)
+	t.writerPrinter.Printf("RunComand: Running remote command '%s'", command)
 	out, err := s.CombinedOutput(command)
 	if err != nil {
-		t.logger.Debug("Remote Cmd Runner", "COMMAND FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
+		t.writerPrinter.Printf("RunComand: sshClient.NewSession().CombinedOutput('%s') failed: %s", command, err)
 		return string(out), err
 	}
 	return string(out), nil
@@ -788,7 +861,7 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, err := ioutil.ReadFile(keyPath)
+	key, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -819,7 +892,7 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		jumpboxKey, err := ioutil.ReadFile(jumpboxKeyPath)
+		jumpboxKey, err := os.ReadFile(jumpboxKeyPath)
 		if err != nil {
 			return nil, err
 		}

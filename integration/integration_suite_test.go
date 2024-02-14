@@ -24,7 +24,7 @@ func TestIntegration(t *testing.T) {
 		logger := boshlog.NewLogger(logLevel)
 		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		var err error
-		testEnvironment, err = NewTestEnvironment(cmdRunner, logLevel)
+		testEnvironment, err = NewTestEnvironment(cmdRunner, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.StopAgent()
