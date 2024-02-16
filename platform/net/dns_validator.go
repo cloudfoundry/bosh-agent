@@ -27,21 +27,43 @@ func (d *dnsValidator) Validate(dnsServers []string) error {
 		return nil
 	}
 
-	resolvConfContents, err := d.fs.ReadFileString("/etc/resolv.conf")
+	_, err := d.fs.Stat("/etc/resolvconf/resolv.conf.d/") // only exists for resolveconf
 	if err != nil {
-		return bosherr.WrapError(err, "Reading /etc/resolv.conf")
-	}
-
-	for _, dnsServer := range dnsServers {
-		if strings.Contains(resolvConfContents, dnsServer) {
-			return nil
+		resolvConfContents, err := d.fs.ReadFileString("/etc/systemd/resolved.conf.d/10-bosh.conf")
+		if err != nil {
+			return bosherr.WrapError(err, "Reading /etc/systemd/resolved.conf.d/10-bosh.conf")
 		}
 
-		canonicalIP := gonet.ParseIP(dnsServer)
-
-		if canonicalIP != nil {
-			if strings.Contains(resolvConfContents, canonicalIP.String()) {
+		for _, dnsServer := range dnsServers {
+			if strings.Contains(resolvConfContents, dnsServer) {
 				return nil
+			}
+
+			canonicalIP := gonet.ParseIP(dnsServer)
+
+			if canonicalIP != nil {
+				if strings.Contains(resolvConfContents, canonicalIP.String()) {
+					return nil
+				}
+			}
+		}
+	} else {
+		resolvConfContents, err := d.fs.ReadFileString("/etc/resolv.conf")
+		if err != nil {
+			return bosherr.WrapError(err, "Reading /etc/resolv.conf")
+		}
+
+		for _, dnsServer := range dnsServers {
+			if strings.Contains(resolvConfContents, dnsServer) {
+				return nil
+			}
+
+			canonicalIP := gonet.ParseIP(dnsServer)
+
+			if canonicalIP != nil {
+				if strings.Contains(resolvConfContents, canonicalIP.String()) {
+					return nil
+				}
 			}
 		}
 	}

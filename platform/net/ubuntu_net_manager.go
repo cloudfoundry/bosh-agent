@@ -476,7 +476,7 @@ func (net UbuntuNetManager) writeSystemdResolved(dnsServers []string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Writing to "+systemdResolvedPath)
 	}
-	_, _, _, err = net.cmdRunner.RunCommand("systemctl", "reload", "systemd-resolved")
+	_, _, _, err = net.cmdRunner.RunCommand("systemctl", "restart", "systemd-resolved")
 	if err != nil {
 		return bosherr.WrapError(err, "restarting systemd-resolved")
 	}
