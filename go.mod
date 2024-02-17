@@ -1,19 +1,17 @@
 module github.com/cloudfoundry/bosh-agent
 
-go 1.21
-
-toolchain go1.21.0
+go 1.21.0
 
 require (
 	code.cloudfoundry.org/clock v1.1.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240212155513-9c53d48c26df
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240216143505-4f8d9b753d56
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.321
+	github.com/cloudfoundry/bosh-davcli v0.0.322
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.442
+	github.com/cloudfoundry/bosh-utils v0.0.444
 	github.com/cloudfoundry/gosigar v1.3.47
-	github.com/cloudfoundry/socks5-proxy v0.2.112 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.113 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -22,7 +20,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20231227165926-e811dad5ac77
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.32.0
+	github.com/nats-io/nats.go v1.33.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.31.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
@@ -36,7 +34,7 @@ require (
 require (
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
-	github.com/opencontainers/runtime-spec v1.1.0
+	github.com/opencontainers/runtime-spec v1.2.0
 )
 
 require (
@@ -67,7 +65,7 @@ require (
 	go4.org/intern v0.0.0-20230525184215-6c62f75575cb // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20240205201215-2c58cdc269a3 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20240213143201-ec583247a57a // indirect
 	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
