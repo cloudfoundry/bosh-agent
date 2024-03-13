@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-agent/app"
 	"github.com/cloudfoundry/bosh-agent/releasetarball"
@@ -27,7 +26,9 @@ func compileTarball(command string, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Compiling with stemcell %s-%s/%s", stemcellOS, stemcellName, stemcellVersion)
+	compiledReleaseFileSuffix := fmt.Sprintf("%s-%s/%s", stemcellOS, stemcellName, stemcellVersion)
+
+	log.Printf("Compiling with stemcell %s", compiledReleaseFileSuffix)
 
 	dirProvider := directories.NewProvider(app.DefaultBaseDirectory)
 	// see platform.blobsDirPermissions
@@ -39,7 +40,6 @@ func compileTarball(command string, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	compiledReleaseFileSuffix := strings.Join([]string{stemcellOS, stemcellName, stemcellVersion}, "-")
 	for _, releaseTarballPath := range options.SourceReleases {
 		compiledReleaseTarballPath, err := releasetarball.Compile(compiler, releaseTarballPath, dirProvider.BlobsDir(), options.OutputDirectory, compiledReleaseFileSuffix)
 		if err != nil {
