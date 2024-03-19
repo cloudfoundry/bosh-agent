@@ -182,13 +182,28 @@ var _ = Describe("Compile", func() {
 	})
 
 	When("compiling a release with multiple source packages", func() {
+		var multiplePackageCompiler *fakes.Compiler
 		BeforeEach(func() {
 			sourceTarballPath = filepath.Join("testdata", "log-cache-release-3.0.9.tgz")
+
+			multiplePackageCompiler = new(fakes.Compiler)
+			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "golang-1.20-linux-blob"), []byte("golang-1.20-linux-blob"), 0644)).NotTo(HaveOccurred())
+			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-blob"), []byte("log-cache-blob"), 0644)).NotTo(HaveOccurred())
+			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-cf-auth-proxy-blob"), []byte("log-cache-cf-auth-proxy-blob"), 0644)).NotTo(HaveOccurred())
+			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-gateway-blob"), []byte("log-cache-gateway-blob"), 0644)).NotTo(HaveOccurred())
+			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-syslog-server-blob"), []byte("log-cache-syslog-server-blob"), 0644)).NotTo(HaveOccurred())
+			multiplePackageCompiler.CompileReturnsOnCall(0, "golang-1.20-linux-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "golang-1.20-linux-checksum"), nil)
+			multiplePackageCompiler.CompileReturnsOnCall(1, "log-cache-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-checksum"), nil)
+			multiplePackageCompiler.CompileReturnsOnCall(2, "log-cache-cf-auth-proxy-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-cf-auth-proxy-checksum"), nil)
+			multiplePackageCompiler.CompileReturnsOnCall(3, "log-cache-gateway-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-gateway-checksum"), nil)
+			multiplePackageCompiler.CompileReturnsOnCall(4, "log-cache-syslog-server-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-syslog-server-checksum"), nil)
 		})
 
 		It("writes a compiled release tarball", func() {
-			resultPath, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
+			resultPath, err := releasetarball.Compile(multiplePackageCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(multiplePackageCompiler.CompileCallCount()).To(Equal(5))
 
 			By("generating a useful filename", func() {
 				Expect(resultPath).To(Equal(filepath.Join(releasesOutputDir, "log-cache-3.0.9-banana-slug-1.23.tgz")))
@@ -210,35 +225,11 @@ var _ = Describe("Compile", func() {
 
 				Expect(compiledManifest.CompiledPkgs).To(HaveLen(len(sourceManifest.Packages)), "it should convert all the source packages to compiled packages")
 
-				Expect(compiledManifest.CompiledPkgs[0].Name).To(Equal(sourceManifest.Packages[0].Name))
-				Expect(compiledManifest.CompiledPkgs[0].Version).To(Equal(sourceManifest.Packages[0].Version))
-				Expect(compiledManifest.CompiledPkgs[0].OSVersionSlug).To(Equal(stemcellSlug))
-				Expect(compiledManifest.CompiledPkgs[0].SHA1).NotTo(BeZero())
-				Expect(compiledManifest.CompiledPkgs[0].Dependencies).To(HaveLen(0))
-
-				Expect(compiledManifest.CompiledPkgs[1].Name).To(Equal(sourceManifest.Packages[1].Name))
-				Expect(compiledManifest.CompiledPkgs[1].Version).To(Equal(sourceManifest.Packages[1].Version))
-				Expect(compiledManifest.CompiledPkgs[1].OSVersionSlug).To(Equal(stemcellSlug))
-				Expect(compiledManifest.CompiledPkgs[1].SHA1).NotTo(BeZero())
-				Expect(compiledManifest.CompiledPkgs[1].Dependencies).To(HaveLen(0))
-
-				Expect(compiledManifest.CompiledPkgs[2].Name).To(Equal(sourceManifest.Packages[2].Name))
-				Expect(compiledManifest.CompiledPkgs[2].Version).To(Equal(sourceManifest.Packages[2].Version))
-				Expect(compiledManifest.CompiledPkgs[2].OSVersionSlug).To(Equal(stemcellSlug))
-				Expect(compiledManifest.CompiledPkgs[2].SHA1).NotTo(BeZero())
-				Expect(compiledManifest.CompiledPkgs[2].Dependencies).To(HaveLen(0))
-
-				Expect(compiledManifest.CompiledPkgs[3].Name).To(Equal(sourceManifest.Packages[3].Name))
-				Expect(compiledManifest.CompiledPkgs[3].Version).To(Equal(sourceManifest.Packages[3].Version))
-				Expect(compiledManifest.CompiledPkgs[3].OSVersionSlug).To(Equal(stemcellSlug))
-				Expect(compiledManifest.CompiledPkgs[3].SHA1).NotTo(BeZero())
-				Expect(compiledManifest.CompiledPkgs[3].Dependencies).To(HaveLen(0))
-
-				Expect(compiledManifest.CompiledPkgs[4].Name).To(Equal(sourceManifest.Packages[4].Name))
-				Expect(compiledManifest.CompiledPkgs[4].Version).To(Equal(sourceManifest.Packages[4].Version))
-				Expect(compiledManifest.CompiledPkgs[4].OSVersionSlug).To(Equal(stemcellSlug))
-				Expect(compiledManifest.CompiledPkgs[4].SHA1).NotTo(BeZero())
-				Expect(compiledManifest.CompiledPkgs[4].Dependencies).To(HaveLen(0))
+				assertPackageFields(compiledManifest, sourceManifest, 0, stemcellSlug, "golang-1.20-linux-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 1, stemcellSlug, "log-cache-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 2, stemcellSlug, "log-cache-cf-auth-proxy-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 3, stemcellSlug, "log-cache-gateway-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 4, stemcellSlug, "log-cache-syslog-server-checksum")
 			})
 
 			infos := listFileNamesInTarball(GinkgoT(), resultPath)
@@ -281,6 +272,19 @@ var _ = Describe("Compile", func() {
 	})
 })
 
+func assertPackageFields(compiledManifest, sourceManifest manifest.Manifest, index int, stemcellSlug, expectedSHA string) {
+	GinkgoHelper()
+
+	Expect(compiledManifest.CompiledPkgs[index].Name).To(Equal(sourceManifest.Packages[index].Name))
+	Expect(compiledManifest.CompiledPkgs[index].Version).To(Equal(sourceManifest.Packages[index].Version))
+	Expect(compiledManifest.CompiledPkgs[index].Fingerprint).To(Equal(sourceManifest.Packages[index].Fingerprint))
+	Expect(compiledManifest.CompiledPkgs[index].OSVersionSlug).To(Equal(stemcellSlug))
+	Expect(compiledManifest.CompiledPkgs[index].SHA1).To(Equal(expectedSHA))
+	Expect(compiledManifest.CompiledPkgs[index].Dependencies).To(Equal(sourceManifest.Packages[index].Dependencies))
+
+	Expect(compiledManifest.CompiledPkgs[index].Version).To(Equal(compiledManifest.CompiledPkgs[index].Fingerprint), "this seems to be equal on releases exported from a director")
+}
+
 func closeAndIgnoreError(c io.Closer) {
 	_ = c.Close()
 }
@@ -319,13 +323,14 @@ func simpleFile(name string, content []byte, mode int64) writeTarballFileFunc {
 }
 
 func newSimpleFileHeader(name string, length, mode int64) *tar.Header {
+	t := time.Unix(0, 0).In(time.UTC)
 	return &tar.Header{
 		Typeflag:   tar.TypeReg,
 		Name:       name,
 		Size:       length,
-		ModTime:    time.Time{},
-		AccessTime: time.Time{},
-		ChangeTime: time.Time{},
+		ModTime:    t,
+		AccessTime: t,
+		ChangeTime: t,
 		Mode:       mode,
 	}
 }
