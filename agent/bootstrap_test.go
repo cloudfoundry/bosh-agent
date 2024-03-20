@@ -44,6 +44,7 @@ import (
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
+	boshdnsresolver "github.com/cloudfoundry/bosh-agent/platform/net/dnsresolver"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
@@ -1113,14 +1114,15 @@ var _ = Describe("bootstrap", func() {
 				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
 				interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-				dnsValidator := boshnet.NewDNSValidator(fs)
 				logger = boshlog.NewLogger(boshlog.LevelNone)
 				kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
 				fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 				err := fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
 				Expect(err).NotTo(HaveOccurred())
 
-				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, fakeMACAddressDetector, interfaceConfigurationCreator, interfaceAddrsProvider, dnsValidator, arping, kernelIPv6, logger)
+				dnsResolver := boshdnsresolver.NewResolveConfResolver(fs, runner)
+
+				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, fakeMACAddressDetector, interfaceConfigurationCreator, interfaceAddrsProvider, dnsResolver, arping, kernelIPv6, logger)
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 1, logger)
 
 				monitRetryable := boshplatform.NewMonitRetryable(runner)

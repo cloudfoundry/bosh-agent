@@ -11,6 +11,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
+	fakednsresolver "github.com/cloudfoundry/bosh-agent/platform/net/dnsresolver/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
@@ -51,7 +52,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-		dnsValidator := NewDNSValidator(fs)
+		fakeDnsResolver := &fakednsresolver.FakeDNSResolver{}
 		kernelIPv6 = &fakenet.FakeKernelIPv6{}
 		netManager = NewUbuntuNetManager(
 			fs,
@@ -60,7 +61,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			fakeMACAddressDetector,
 			interfaceConfigurationCreator,
 			interfaceAddrsProvider,
-			dnsValidator,
+			fakeDnsResolver,
 			addressBroadcaster,
 			kernelIPv6,
 			logger,
