@@ -54,8 +54,7 @@ var _ = Describe("NewCompiler", func() {
 			Expect(setupErr).NotTo(HaveOccurred())
 
 			d := directories.NewProvider(temporaryDirectory)
-			err := os.MkdirAll(d.BlobsDir(), 0o766)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(os.MkdirAll(d.BlobsDir(), 0o766)).To(Succeed())
 
 			result, err := releasetarball.NewCompiler(d)
 			Expect(err).NotTo(HaveOccurred())
@@ -81,8 +80,7 @@ var _ = Describe("Compile", func() {
 
 	BeforeEach(func() {
 		d = directories.NewProvider(GinkgoT().TempDir())
-		err := os.MkdirAll(d.BlobsDir(), 0o766)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(os.MkdirAll(d.BlobsDir(), 0o766)).To(Succeed())
 		releasesOutputDir = GinkgoT().TempDir()
 		pkgCompiler = new(fakes.Compiler)
 		pkgCompiler.CompileCalls(fakeCompilation(d))
@@ -170,8 +168,7 @@ var _ = Describe("Compile", func() {
 				simpleFile("packages/a.tgz", nil, 0o0644),
 			)
 			Expect(err).NotTo(HaveOccurred())
-			err = os.WriteFile(sourceTarballPath, tgz, 0o0644)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(os.WriteFile(sourceTarballPath, tgz, 0o0644)).To(Succeed())
 		})
 
 		It("returns a helpful error", func() {
@@ -187,21 +184,22 @@ var _ = Describe("Compile", func() {
 			sourceTarballPath = filepath.Join("testdata", "log-cache-release-3.0.9.tgz")
 
 			multiplePackageCompiler = new(fakes.Compiler)
-			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "golang-1.20-linux-blob"), []byte("golang-1.20-linux-blob"), 0644)).NotTo(HaveOccurred())
-			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-blob"), []byte("log-cache-blob"), 0644)).NotTo(HaveOccurred())
-			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-cf-auth-proxy-blob"), []byte("log-cache-cf-auth-proxy-blob"), 0644)).NotTo(HaveOccurred())
-			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-gateway-blob"), []byte("log-cache-gateway-blob"), 0644)).NotTo(HaveOccurred())
-			Expect(os.WriteFile(filepath.Join(d.BlobsDir(), "log-cache-syslog-server-blob"), []byte("log-cache-syslog-server-blob"), 0644)).NotTo(HaveOccurred())
-			multiplePackageCompiler.CompileReturnsOnCall(0, "golang-1.20-linux-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "golang-1.20-linux-checksum"), nil)
-			multiplePackageCompiler.CompileReturnsOnCall(1, "log-cache-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-checksum"), nil)
-			multiplePackageCompiler.CompileReturnsOnCall(2, "log-cache-cf-auth-proxy-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-cf-auth-proxy-checksum"), nil)
-			multiplePackageCompiler.CompileReturnsOnCall(3, "log-cache-gateway-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-gateway-checksum"), nil)
-			multiplePackageCompiler.CompileReturnsOnCall(4, "log-cache-syslog-server-blob", boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, "log-cache-syslog-server-checksum"), nil)
+			for i, blob := range []string{
+				"golang-1.20-linux-blob",
+				"log-cache-blob",
+				"log-cache-cf-auth-proxy-blob",
+				"log-cache-gateway-blob",
+				"log-cache-syslog-server-blob",
+			} {
+				p := filepath.Join(d.BlobsDir(), blob)
+				Expect(os.WriteFile(p, []byte(blob), 0644)).To(Succeed())
+				multiplePackageCompiler.CompileReturnsOnCall(i, blob, boshcrypto.NewDigest(boshcrypto.DigestAlgorithmSHA1, blob+"-checksum"), nil)
+			}
 		})
 
 		It("writes a compiled release tarball", func() {
 			resultPath, err := releasetarball.Compile(multiplePackageCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(Succeed())
 
 			Expect(multiplePackageCompiler.CompileCallCount()).To(Equal(5))
 
@@ -225,11 +223,11 @@ var _ = Describe("Compile", func() {
 
 				Expect(compiledManifest.CompiledPkgs).To(HaveLen(len(sourceManifest.Packages)), "it should convert all the source packages to compiled packages")
 
-				assertPackageFields(compiledManifest, sourceManifest, 0, stemcellSlug, "golang-1.20-linux-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 1, stemcellSlug, "log-cache-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 2, stemcellSlug, "log-cache-cf-auth-proxy-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 3, stemcellSlug, "log-cache-gateway-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 4, stemcellSlug, "log-cache-syslog-server-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 0, stemcellSlug, "golang-1.20-linux-blob-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 1, stemcellSlug, "log-cache-blob-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 2, stemcellSlug, "log-cache-cf-auth-proxy-blob-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 3, stemcellSlug, "log-cache-gateway-blob-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, 4, stemcellSlug, "log-cache-syslog-server-blob-checksum")
 			})
 
 			infos := listFileNamesInTarball(GinkgoT(), resultPath)
