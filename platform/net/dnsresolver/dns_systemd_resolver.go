@@ -55,7 +55,7 @@ func (d *systemdResolver) Validate(dnsServers []string) error {
 			}
 		}
 	}
-	return bosherr.WrapError(err, "None of the DNS servers that were specified in the manifest were found in /etc/resolv.conf.")
+	return bosherr.WrapError(err, "None of the DNS servers that were specified in the manifest were found in /etc/systemd/resolved.conf.d/10-bosh.conf.")
 }
 
 func (d *systemdResolver) SetupDNS(dnsServers []string) error {
