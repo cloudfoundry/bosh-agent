@@ -33,6 +33,10 @@ func NewSystemdResolver(
 }
 
 func (d *systemdResolver) Validate(dnsServers []string) error {
+	if len(dnsServers) == 0 {
+		return nil
+	}
+
 	resolvConfContents, err := d.fs.ReadFileString("/etc/systemd/resolved.conf.d/10-bosh.conf")
 	if err != nil {
 		return bosherr.WrapError(err, "Reading /etc/systemd/resolved.conf.d/10-bosh.conf")
