@@ -20,6 +20,7 @@ import (
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
+	"github.com/cloudfoundry/bosh-agent/platform/net/dnsresolver"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshiscsi "github.com/cloudfoundry/bosh-agent/platform/openiscsi"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
@@ -82,12 +83,20 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
 	interfaceAddressesProvider := boship.NewSystemInterfaceAddressesProvider()
-	dnsValidator := boshnet.NewDNSValidator(fs)
+
+	var dnsResolver dnsresolver.DNSResolver
+	switch options.Linux.DNSResolverType {
+	case "systemd":
+		dnsResolver = dnsresolver.NewSystemdResolver(fs, runner)
+	default:
+		dnsResolver = dnsresolver.NewResolveConfResolver(fs, runner)
+	}
+
 	kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
 	macAddressDetector := boshnet.NewLinuxMacAddressDetector(fs)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesProvider, dnsValidator, arping, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesProvider, dnsValidator, arping, kernelIPv6, logger)
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesProvider, dnsResolver, arping, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, macAddressDetector, interfaceConfigurationCreator, interfaceAddressesProvider, dnsResolver, arping, kernelIPv6, logger)
 
 	windowsNetManager := boshnet.NewWindowsNetManager(
 		runner,

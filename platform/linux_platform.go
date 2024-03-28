@@ -79,6 +79,10 @@ type LinuxOptions struct {
 	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
 	PartitionerType string
 
+	// Strategy for resolving DNS Resolvers
+	// possible values: systemd, ""
+	DNSResolverType string
+
 	// Regular expression specifying what part of volume ID to strip.
 	// possible values:  valid RE2 regex e.g. "^vol-", "" (default is not to strip)
 	StripVolumeRegex string

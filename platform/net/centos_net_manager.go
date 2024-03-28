@@ -9,6 +9,7 @@ import (
 	"time"
 
 	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
+	boshdnsresolver "github.com/cloudfoundry/bosh-agent/platform/net/dnsresolver"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -27,7 +28,7 @@ type centosNetManager struct {
 	macAddressDetector            MACAddressDetector
 	interfaceConfigurationCreator InterfaceConfigurationCreator
 	interfaceAddrsProvider        boship.InterfaceAddressesProvider
-	dnsValidator                  DNSValidator
+	dnsResolver                   boshdnsresolver.DNSResolver
 	addressBroadcaster            bosharp.AddressBroadcaster
 	logger                        boshlog.Logger
 }
@@ -39,7 +40,7 @@ func NewCentosNetManager(
 	macAddressDetector MACAddressDetector,
 	interfaceConfigurationCreator InterfaceConfigurationCreator,
 	interfaceAddrsProvider boship.InterfaceAddressesProvider,
-	dnsValidator DNSValidator,
+	dnsResolver boshdnsresolver.DNSResolver,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) Manager {
@@ -50,7 +51,7 @@ func NewCentosNetManager(
 		macAddressDetector:            macAddressDetector,
 		interfaceConfigurationCreator: interfaceConfigurationCreator,
 		interfaceAddrsProvider:        interfaceAddrsProvider,
-		dnsValidator:                  dnsValidator,
+		dnsResolver:                   dnsResolver,
 		addressBroadcaster:            addressBroadcaster,
 		logger:                        logger,
 	}
@@ -147,7 +148,7 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 	// This is an intentional asymmetry vs `ubuntu_net_manager.go`.
 	// See the comments at the top of this function for details.
 
-	err = net.dnsValidator.Validate(dnsServers)
+	err = net.dnsResolver.Validate(dnsServers)
 	if err != nil {
 		return bosherr.WrapError(err, "Validating dns configuration")
 	}

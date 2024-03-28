@@ -16,6 +16,7 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
+	fakednsresolver "github.com/cloudfoundry/bosh-agent/platform/net/dnsresolver/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
 	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/net/netfakes"
@@ -55,7 +56,7 @@ func describeCentosNetManager() {
 		fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 		interfaceConfigurationCreator = NewInterfaceConfigurationCreator(logger)
 		interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-		dnsValidator := NewDNSValidator(fs)
+		fakeDnsResolver := &fakednsresolver.FakeDNSResolver{}
 		addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 		netManager = NewCentosNetManager(
 			fs,
@@ -64,7 +65,7 @@ func describeCentosNetManager() {
 			fakeMACAddressDetector,
 			interfaceConfigurationCreator,
 			interfaceAddrsProvider,
-			dnsValidator,
+			fakeDnsResolver,
 			addressBroadcaster,
 			logger,
 		)
@@ -467,34 +468,6 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, "", errCh)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Validating static network configuration"))
-			})
-		})
-
-		Context("when dns is not properly configured", func() {
-			BeforeEach(func() {
-				err := fs.WriteFileString("/etc/resolv.conf", "")
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("fails", func() {
-				staticNetwork = boshsettings.Network{
-					Type:    "manual",
-					IP:      "1.2.3.4",
-					Default: []string{"dns"},
-					DNS:     []string{"8.8.8.8"},
-					Netmask: "255.255.255.0",
-					Gateway: "3.4.5.6",
-					Mac:     "fake-static-mac-address",
-				}
-
-				stubInterfaces(map[string]boshsettings.Network{
-					"ethstatic": staticNetwork,
-				})
-
-				errCh := make(chan error)
-				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, "", errCh)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Validating dns configuration"))
 			})
 		})
 
