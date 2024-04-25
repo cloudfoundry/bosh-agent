@@ -104,6 +104,7 @@ func (p rootDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, 
 	}
 
 	firstPartitionInfo := strings.Split(partitionInfoLines[1], ":")
+	// If EFI partition is used, use the second partition as it is root partition
 	if firstPartitionInfo[4] == "fat16" {
 		firstPartitionInfo = strings.Split(partitionInfoLines[2], ":")
 	}
@@ -169,6 +170,7 @@ func (p rootDevicePartitioner) GetPartitions(devicePath string) (
 			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Parsing existing partitions of `%s'", devicePath)
 		}
 
+		// Saving parition type to detect if we're using EFI partition
 		partitionType := PartitionTypeUnknown
 		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" {
 			partitionType = PartitionTypeLinux
