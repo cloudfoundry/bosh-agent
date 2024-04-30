@@ -2218,6 +2218,10 @@ func (fake *FakePlatform) GetVitalsServiceReturnsOnCall(i int, result1 vitals.Se
 	}{result1}
 }
 
+func (fake *FakePlatform) GetServiceManager() string {
+	return ""
+}
+
 func (fake *FakePlatform) IsMountPoint(arg1 string) (string, bool, error) {
 	fake.isMountPointMutex.Lock()
 	ret, specificReturn := fake.isMountPointReturnsOnCall[len(fake.isMountPointArgsForCall)]

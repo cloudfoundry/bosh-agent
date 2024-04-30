@@ -69,6 +69,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				DelayBetweenCheckTries: 0 * time.Millisecond,
 			},
 			timeService,
+			"",
 		)
 	})
 
@@ -210,6 +211,136 @@ var _ = Describe("monitJobSupervisor", func() {
 		})
 	})
 
+	Describe("Reload with systemd", func() {
+		BeforeEach(func() {
+			monit = NewMonitJobSupervisor(
+				fs,
+				runner,
+				client,
+				logger,
+				dirProvider,
+				jobFailuresServerPort,
+				MonitReloadOptions{
+					MaxTries:               3,
+					MaxCheckTries:          10,
+					DelayBetweenCheckTries: 0 * time.Millisecond,
+				},
+				timeService,
+				"systemd",
+			)
+		})
+
+		It("waits until the job is reloaded", func() {
+			client.Incarnations = []int{1, 1, 1, 2, 3}
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{
+					boshmonit.Service{Monitored: true, Status: "failing"},
+					boshmonit.Service{Monitored: true, Status: "running"},
+				},
+				Incarnation: 1,
+			}
+
+			err := monit.Reload()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(len(runner.RunCommands)).To(Equal(2))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"systemctl", "kill", "monit"}))
+			Expect(runner.RunCommands[1]).To(Equal([]string{"systemctl", "start", "monit"}))
+			Expect(client.StatusCalledTimes).To(Equal(4))
+		})
+
+		It("returns error after monit reloading X times, each time checking incarnation Y times", func() {
+			for i := 0; i < 100; i++ {
+				client.Incarnations = append(client.Incarnations, 1)
+			}
+
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{
+					boshmonit.Service{Monitored: true, Status: "failing"},
+					boshmonit.Service{Monitored: true, Status: "running"},
+				},
+				Incarnation: 1,
+			}
+
+			err := monit.Reload()
+			Expect(err).To(HaveOccurred())
+
+			Expect(len(runner.RunCommands)).To(Equal(6))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"systemctl", "kill", "monit"}))
+			Expect(runner.RunCommands[1]).To(Equal([]string{"systemctl", "start", "monit"}))
+
+			Expect(runner.RunCommands[2]).To(Equal([]string{"systemctl", "kill", "monit"}))
+			Expect(runner.RunCommands[3]).To(Equal([]string{"systemctl", "start", "monit"}))
+
+			Expect(runner.RunCommands[4]).To(Equal([]string{"systemctl", "kill", "monit"}))
+			Expect(runner.RunCommands[5]).To(Equal([]string{"systemctl", "start", "monit"}))
+
+			Expect(client.StatusCalledTimes).To(Equal(1 + 30)) // old incarnation + new incarnation checks
+		})
+
+		It("is successful if the incarnation id is different (does not matter if < or >)", func() {
+			client.Incarnations = []int{2, 2, 1} // different and less than old one
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{
+					boshmonit.Service{Monitored: true, Status: "failing"},
+					boshmonit.Service{Monitored: true, Status: "running"},
+				},
+				Incarnation: 2,
+			}
+
+			err := monit.Reload()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(len(runner.RunCommands)).To(Equal(2))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"systemctl", "kill", "monit"}))
+			Expect(runner.RunCommands[1]).To(Equal([]string{"systemctl", "start", "monit"}))
+			Expect(client.StatusCalledTimes).To(Equal(3))
+		})
+
+		Context("when fetching the incarnation fails", func() {
+			Context("before reloading monit", func() {
+				BeforeEach(func() {
+					client.StatusErr = errors.New("boom")
+				})
+
+				It("returns the error", func() {
+					err := monit.Reload()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("after reloading monit", func() {
+				BeforeEach(func() {
+					client.StatusStub = func() (boshmonit.Status, error) {
+						if client.StatusCalledTimes == 1 {
+							return fakemonit.FakeMonitStatus{Incarnation: 2}, nil
+						}
+
+						return nil, errors.New("boom")
+					}
+				})
+
+				It("continues to retry fetching the incarnation", func() {
+					err := monit.Reload()
+					Expect(err).To(HaveOccurred())
+
+					Expect(len(runner.RunCommands)).To(Equal(6))
+
+					Expect(runner.RunCommands[0]).To(Equal([]string{"systemctl", "kill", "monit"}))
+					Expect(runner.RunCommands[1]).To(Equal([]string{"systemctl", "start", "monit"}))
+
+					Expect(runner.RunCommands[2]).To(Equal([]string{"systemctl", "kill", "monit"}))
+					Expect(runner.RunCommands[3]).To(Equal([]string{"systemctl", "start", "monit"}))
+
+					Expect(runner.RunCommands[4]).To(Equal([]string{"systemctl", "kill", "monit"}))
+					Expect(runner.RunCommands[5]).To(Equal([]string{"systemctl", "start", "monit"}))
+
+					Expect(client.StatusCalledTimes).To(Equal(1 + 30)) // old incarnation + new incarnation checks
+				})
+			})
+		})
+	})
+
 	Describe("Start", func() {
 		It("start starts each monit service in group vcap", func() {
 			client.ServicesInGroupServices = []string{"fake-service"}
@@ -306,6 +437,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					DelayBetweenCheckTries: 0 * time.Millisecond,
 				},
 				timeService,
+				"",
 			)
 
 			err := monit.StopAndWait()
@@ -511,6 +643,7 @@ var _ = Describe("monitJobSupervisor", func() {
 						DelayBetweenCheckTries: 0 * time.Millisecond,
 					},
 					timeService,
+					"",
 				)
 
 				err := monit.StopAndWait()
@@ -562,6 +695,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					jobFailuresServerPort,
 					MonitReloadOptions{},
 					timeService,
+					"",
 				)
 
 				errchan := make(chan error)

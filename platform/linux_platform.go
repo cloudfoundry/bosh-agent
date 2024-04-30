@@ -79,9 +79,9 @@ type LinuxOptions struct {
 	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
 	PartitionerType string
 
-	// Strategy for resolving DNS Resolvers
+	// Strategy for choosing service manager
 	// possible values: systemd, ""
-	DNSResolverType string
+	ServiceManager string
 
 	// Regular expression specifying what part of volume ID to strip.
 	// possible values:  valid RE2 regex e.g. "^vol-", "" (default is not to strip)
@@ -202,6 +202,10 @@ func (p linux) GetDirProvider() (dirProvider boshdirs.Provider) {
 
 func (p linux) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
+}
+
+func (p linux) GetServiceManager() string {
+	return p.options.ServiceManager
 }
 
 func (p linux) GetFileContentsFromCDROM(fileName string) (content []byte, err error) {

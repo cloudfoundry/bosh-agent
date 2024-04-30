@@ -82,6 +82,7 @@ func init() { //nolint:gochecknoinits
 						DelayBetweenCheckTries: 1 * time.Second,
 					},
 					timeService,
+					"",
 				)
 
 				expectedSupervisor := NewWrapperJobSupervisor(

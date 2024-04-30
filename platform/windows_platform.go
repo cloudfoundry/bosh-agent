@@ -135,6 +135,10 @@ func (p WindowsPlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
 }
 
+func (p WindowsPlatform) GetServiceManager() string {
+	return ""
+}
+
 func (p WindowsPlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.devicePathResolver
 }

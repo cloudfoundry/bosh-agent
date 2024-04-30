@@ -38,6 +38,7 @@ type Platform interface {
 	GetVitalsService() boshvitals.Service
 	GetAuditLogger() AuditLogger
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
+	GetServiceManager() string
 	GetAgentSettingsPath(tmpfs bool) string
 	GetPersistentDiskSettingsPath(tmpfs bool) string
 	GetUpdateSettingsPath(tmpfs bool) string

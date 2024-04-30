@@ -85,7 +85,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	interfaceAddressesProvider := boship.NewSystemInterfaceAddressesProvider()
 
 	var dnsResolver dnsresolver.DNSResolver
-	switch options.Linux.DNSResolverType {
+	switch options.Linux.ServiceManager {
 	case "systemd":
 		dnsResolver = dnsresolver.NewSystemdResolver(fs, runner)
 	default:

@@ -45,6 +45,7 @@ func NewProvider(
 			DelayBetweenCheckTries: 1 * time.Second,
 		},
 		timeService,
+		platform.GetServiceManager(),
 	)
 
 	return Provider{

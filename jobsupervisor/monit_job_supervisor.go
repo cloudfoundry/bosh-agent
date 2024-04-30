@@ -28,6 +28,7 @@ type monitJobSupervisor struct {
 	jobFailuresServerPort int
 	reloadOptions         MonitReloadOptions
 	timeService           clock.Clock
+	serviceManager        string
 }
 
 type MonitReloadOptions struct {
@@ -51,6 +52,7 @@ func NewMonitJobSupervisor(
 	jobFailuresServerPort int,
 	reloadOptions MonitReloadOptions,
 	timeService clock.Clock,
+	serviceManager string,
 ) JobSupervisor {
 	return &monitJobSupervisor{
 		fs:                    fs,
@@ -61,6 +63,7 @@ func NewMonitJobSupervisor(
 		jobFailuresServerPort: jobFailuresServerPort,
 		reloadOptions:         reloadOptions,
 		timeService:           timeService,
+		serviceManager:        serviceManager,
 	}
 }
 
@@ -80,7 +83,7 @@ func (m monitJobSupervisor) Reload() error {
 		// it is faster to reload the agent through `sv kill monit`. This is due to
 		// the fact that a reload only occurs after a heartbeat which occurs every
 		// 10 seconds.
-		_, _, _, err := m.runner.RunCommand("sv", "kill", "monit")
+		_, _, _, err := m.runner.RunCommand(m.serviceCommand(), "kill", "monit")
 		if err != nil {
 			m.logger.Error(monitJobSupervisorLogTag, "Failed to kill monit while reloading: %s", err.Error())
 			continue
@@ -88,7 +91,7 @@ func (m monitJobSupervisor) Reload() error {
 
 		// Idempotently start monit to ensure that monit is being started after
 		// `sv kill`.
-		_, _, _, err = m.runner.RunCommand("sv", "start", "monit")
+		_, _, _, err = m.runner.RunCommand(m.serviceCommand(), "start", "monit")
 		if err != nil {
 			m.logger.Error(monitJobSupervisorLogTag, "Failed to start monit while reloading: %s", err.Error())
 			continue
@@ -401,4 +404,11 @@ func (m monitJobSupervisor) checkServices() ([]boshmonit.Service, error) {
 }
 
 func (m monitJobSupervisor) HealthRecorder(status string) {
+}
+
+func (m monitJobSupervisor) serviceCommand() string {
+	if m.serviceManager == "systemd" {
+		return "systemctl"
+	}
+	return "sv"
 }

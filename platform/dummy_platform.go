@@ -112,6 +112,10 @@ func (p dummyPlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
 }
 
+func (p dummyPlatform) GetServiceManager() string {
+	return ""
+}
+
 func (p dummyPlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.devicePathResolver
 }
