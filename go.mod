@@ -4,13 +4,13 @@ go 1.21.0
 
 require (
 	code.cloudfoundry.org/clock v1.1.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240423163804-1b0dcf57fddb
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240427164042-d6180ef19863
 	github.com/Microsoft/hcsshim v0.8.6
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-davcli v0.0.336
+	github.com/cloudfoundry/bosh-davcli v0.0.338
 	github.com/cloudfoundry/bosh-init v0.0.103
-	github.com/cloudfoundry/bosh-utils v0.0.458
-	github.com/cloudfoundry/gosigar v1.3.55
+	github.com/cloudfoundry/bosh-utils v0.0.460
+	github.com/cloudfoundry/gosigar v1.3.56
 	github.com/cloudfoundry/socks5-proxy v0.2.116 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -22,7 +22,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.34.1
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.33.0
+	github.com/onsi/gomega v1.33.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
