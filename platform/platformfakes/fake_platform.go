@@ -9,6 +9,8 @@ import (
 	"github.com/cloudfoundry/bosh-agent/platform"
 	"github.com/cloudfoundry/bosh-agent/platform/cert"
 	"github.com/cloudfoundry/bosh-agent/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
+	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
 	"github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-agent/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
@@ -2218,8 +2220,8 @@ func (fake *FakePlatform) GetVitalsServiceReturnsOnCall(i int, result1 vitals.Se
 	}{result1}
 }
 
-func (fake *FakePlatform) GetServiceManager() string {
-	return ""
+func (fake *FakePlatform) GetServiceManager() servicemanager.ServiceManager {
+	return &servicemanagerfakes.FakeServiceManager{}
 }
 
 func (fake *FakePlatform) IsMountPoint(arg1 string) (string, bool, error) {

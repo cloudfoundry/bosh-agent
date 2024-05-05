@@ -24,6 +24,7 @@ import (
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
@@ -135,8 +136,8 @@ func (p WindowsPlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
 }
 
-func (p WindowsPlatform) GetServiceManager() string {
-	return ""
+func (p WindowsPlatform) GetServiceManager() servicemanager.ServiceManager {
+	return servicemanager.NewDummyServiceManager()
 }
 
 func (p WindowsPlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {

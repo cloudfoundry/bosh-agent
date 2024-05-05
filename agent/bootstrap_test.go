@@ -20,6 +20,7 @@ import (
 	fakedevicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/disk/diskfakes"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
 
 	sigar "github.com/cloudfoundry/gosigar"
 
@@ -1042,6 +1043,7 @@ var _ = Describe("bootstrap", func() {
 				logger                 boshlog.Logger
 				dirProvider            boshdirs.Provider
 				specService            *fakes.FakeV1Service
+				serviceManager         servicemanagerfakes.FakeServiceManager
 
 				interfaceAddrsProvider *fakeip.FakeInterfaceAddressesProvider
 				fakeMACAddressDetector *netfakes.FakeMACAddressDetector
@@ -1061,6 +1063,7 @@ var _ = Describe("bootstrap", func() {
 				specService = fakes.NewFakeV1Service()
 				runner := fakesys.NewFakeCmdRunner()
 				dirProvider = boshdirs.NewProvider("/var/vcap/bosh")
+				serviceManager = servicemanagerfakes.FakeServiceManager{}
 
 				linuxOptions := boshplatform.LinuxOptions{
 					CreatePartitionIfNoEphemeralDisk: true,
@@ -1125,7 +1128,7 @@ var _ = Describe("bootstrap", func() {
 				ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, ipResolver, fakeMACAddressDetector, interfaceConfigurationCreator, interfaceAddrsProvider, dnsResolver, arping, kernelIPv6, logger)
 				ubuntuCertManager := boshcert.NewUbuntuCertManager(fs, runner, 1, logger)
 
-				monitRetryable := boshplatform.NewMonitRetryable(runner)
+				monitRetryable := boshplatform.NewMonitRetryable(&serviceManager)
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
 				devicePathResolver := fakedevicepathresolver.NewFakeDevicePathResolver()
@@ -1157,6 +1160,7 @@ var _ = Describe("bootstrap", func() {
 					fakeUUIDGenerator,
 					boshplatform.NewDelayedAuditLogger(fakeplatform.NewFakeAuditLoggerProvider(), logger),
 					logsTarProvider,
+					&serviceManager,
 				)
 			})
 
