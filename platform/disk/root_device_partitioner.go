@@ -37,25 +37,21 @@ func (p rootDevicePartitioner) Partition(devicePath string, partitions []Partiti
 		return bosherr.Errorf("Missing first partition on `%s'", devicePath)
 	}
 
-	if p.partitionsMatch(existingPartitions[1:], partitions) {
-		p.logger.Info(p.logTag, "Partitions already match, skipping partitioning")
-		return nil
+	// If EFI based stemcells, there is an extra partition. Matching is accounting for it here.
+	indexExistingStart := 1
+	if existingPartitions[0].Type == PartitionTypeEFI {
+		indexExistingStart = 2
 	}
 
-	if len(existingPartitions) > 1 {
-		p.logger.Error(p.logTag,
-			"Failed to create ephemeral partitions on root device `%s'. Expected 1 partition, found %d: %s",
-			devicePath,
-			len(existingPartitions),
-			existingPartitions,
-		)
-		return bosherr.Errorf("Found %d unexpected partitions on `%s'", len(existingPartitions)-1, devicePath)
+	if p.partitionsMatch(existingPartitions[indexExistingStart:], partitions) {
+		p.logger.Info(p.logTag, "Partitions already match, skipping partitioning")
+		return nil
 	}
 
 	// To support optimal reads on HDDs and optimal erasure on SSD: use 1MiB partition alignments.
 	alignmentInBytes := uint64(1048576)
 
-	partitionStart := p.roundUp(existingPartitions[0].EndInBytes+1, alignmentInBytes)
+	partitionStart := p.roundUp(existingPartitions[len(existingPartitions)-1].EndInBytes+1, alignmentInBytes)
 
 	for index, partition := range partitions {
 		partitionEnd := partitionStart + partition.SizeInBytes - 1
@@ -100,7 +96,7 @@ func (p rootDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, 
 		return 0, bosherr.Errorf("Getting remaining size of `%s'", devicePath)
 	}
 
-	partitionInfoLines := allLines[1:3]
+	partitionInfoLines := allLines[1 : len(allLines)-1]
 	deviceInfo := strings.Split(partitionInfoLines[0], ":")
 	deviceFullSizeInBytes, err := strconv.ParseUint(strings.TrimRight(deviceInfo[1], "B"), 10, 64)
 	if err != nil {
@@ -108,6 +104,10 @@ func (p rootDevicePartitioner) GetDeviceSizeInBytes(devicePath string) (uint64, 
 	}
 
 	firstPartitionInfo := strings.Split(partitionInfoLines[1], ":")
+	// If EFI partition is used, use the second partition as it is root partition
+	if firstPartitionInfo[4] == "fat16" {
+		firstPartitionInfo = strings.Split(partitionInfoLines[2], ":")
+	}
 	firstPartitionEndInBytes, err := strconv.ParseUint(strings.TrimRight(firstPartitionInfo[2], "B"), 10, 64)
 	if err != nil {
 		return 0, bosherr.WrapErrorf(err, "Getting remaining size of `%s'", devicePath)
@@ -170,6 +170,16 @@ func (p rootDevicePartitioner) GetPartitions(devicePath string) (
 			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Parsing existing partitions of `%s'", devicePath)
 		}
 
+		// Saving parition type to detect if we're using EFI partition
+		partitionType := PartitionTypeUnknown
+		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" {
+			partitionType = PartitionTypeLinux
+		} else if partitionInfo[4] == "linux-swap(v1)" {
+			partitionType = PartitionTypeSwap
+		} else if partitionInfo[4] == "fat16" {
+			partitionType = PartitionTypeEFI
+		}
+
 		partitions = append(
 			partitions,
 			ExistingPartition{
@@ -177,10 +187,10 @@ func (p rootDevicePartitioner) GetPartitions(devicePath string) (
 				SizeInBytes:  uint64(partitionSizeInBytes),
 				StartInBytes: uint64(partitionStartInBytes),
 				EndInBytes:   uint64(partitionEndInBytes),
+				Type:         partitionType,
 			},
 		)
 	}
-
 	return partitions, deviceFullSizeInBytes, nil
 }
 

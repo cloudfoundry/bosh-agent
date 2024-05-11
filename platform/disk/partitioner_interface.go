@@ -6,6 +6,7 @@ type PartitionType string
 
 const (
 	PartitionTypeSwap    PartitionType = "swap"
+	PartitionTypeEFI     PartitionType = "efi"
 	PartitionTypeLinux   PartitionType = "linux"
 	PartitionTypeEmpty   PartitionType = "empty"
 	PartitionTypeUnknown PartitionType = "unknown"
