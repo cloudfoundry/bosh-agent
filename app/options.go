@@ -29,7 +29,6 @@ func ParseOptions(args []string) (Options, error) {
 	flagSet.StringVar(&opts.ConfigPath, "C", "", "Config path")
 	flagSet.StringVar(&opts.JobSupervisor, "M", "monit", "Set jobsupervisor")
 	flagSet.StringVar(&opts.BaseDirectory, "b", DefaultBaseDirectory, "Set Base Directory")
-	flagSet.StringVar(&opts.BaseDirectory, "b", "/var/vcap", "Set Base Directory")
 	flagSet.BoolVar(&opts.VersionCheck, "v", false, "version")
 
 	// The following two options are accepted but ignored for compatibility with the old agent
