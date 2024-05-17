@@ -17,6 +17,7 @@ import (
 	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
@@ -110,6 +111,10 @@ func (p dummyPlatform) GetDirProvider() (dirProvider boshdirs.Provider) {
 
 func (p dummyPlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
+}
+
+func (p dummyPlatform) GetServiceManager() servicemanager.ServiceManager {
+	return servicemanager.NewDummyServiceManager()
 }
 
 func (p dummyPlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {

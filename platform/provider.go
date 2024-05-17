@@ -27,6 +27,7 @@ import (
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshwindisk "github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
 
@@ -85,7 +86,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	interfaceAddressesProvider := boship.NewSystemInterfaceAddressesProvider()
 
 	var dnsResolver dnsresolver.DNSResolver
-	switch options.Linux.DNSResolverType {
+	switch options.Linux.ServiceManager {
 	case "systemd":
 		dnsResolver = dnsresolver.NewSystemdResolver(fs, runner)
 	default:
@@ -117,7 +118,14 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	routesSearcher := boshnet.NewRoutesSearcher(logger, runner, interfaceManager)
 	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 
-	monitRetryable := NewMonitRetryable(runner)
+	var serviceManager servicemanager.ServiceManager
+	if options.Linux.ServiceManager == "systemd" {
+		serviceManager = servicemanager.NewSystemdServiceManager(runner)
+	} else {
+		serviceManager = servicemanager.NewSvServiceManager(fs, runner)
+	}
+
+	monitRetryable := NewMonitRetryable(serviceManager)
 	monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
 	var devicePathResolver devicepathresolver.DevicePathResolver
@@ -167,6 +175,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			uuidGenerator,
 			auditLogger,
 			logsTarProvider,
+			serviceManager,
 		)
 	}
 
@@ -192,6 +201,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			uuidGenerator,
 			auditLogger,
 			logsTarProvider,
+			serviceManager,
 		)
 	}
 

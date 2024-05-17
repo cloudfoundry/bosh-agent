@@ -26,6 +26,7 @@ import (
 	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
 	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
 )
@@ -79,9 +80,9 @@ type LinuxOptions struct {
 	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
 	PartitionerType string
 
-	// Strategy for resolving DNS Resolvers
+	// Strategy for choosing service manager
 	// possible values: systemd, ""
-	DNSResolverType string
+	ServiceManager string
 
 	// Regular expression specifying what part of volume ID to strip.
 	// possible values:  valid RE2 regex e.g. "^vol-", "" (default is not to strip)
@@ -109,6 +110,7 @@ type linux struct {
 	uuidGenerator          boshuuid.Generator
 	auditLogger            AuditLogger
 	logsTarProvider        boshlogstarprovider.LogsTarProvider
+	serviceManager         servicemanager.ServiceManager
 }
 
 func NewLinuxPlatform(
@@ -132,6 +134,7 @@ func NewLinuxPlatform(
 	uuidGenerator boshuuid.Generator,
 	auditLogger AuditLogger,
 	logsTarProvider boshlogstarprovider.LogsTarProvider,
+	serviceManager servicemanager.ServiceManager,
 ) Platform {
 	return &linux{
 		fs:                     fs,
@@ -154,6 +157,7 @@ func NewLinuxPlatform(
 		uuidGenerator:          uuidGenerator,
 		auditLogger:            auditLogger,
 		logsTarProvider:        logsTarProvider,
+		serviceManager:         serviceManager,
 	}
 }
 
@@ -202,6 +206,10 @@ func (p linux) GetDirProvider() (dirProvider boshdirs.Provider) {
 
 func (p linux) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
+}
+
+func (p linux) GetServiceManager() servicemanager.ServiceManager {
+	return p.serviceManager
 }
 
 func (p linux) GetFileContentsFromCDROM(fileName string) (content []byte, err error) {
@@ -1462,9 +1470,9 @@ func (p linux) IsPersistentDiskMounted(diskSettings boshsettings.DiskSettings) (
 }
 
 func (p linux) StartMonit() error {
-	err := p.fs.Symlink(path.Join("/etc", "sv", "monit"), path.Join("/etc", "service", "monit"))
+	err := p.GetServiceManager().Setup("monit")
 	if err != nil {
-		return bosherr.WrapError(err, "Symlinking /etc/service/monit to /etc/sv/monit")
+		return bosherr.WrapError(err, "Setting up monit")
 	}
 
 	err = p.monitRetryStrategy.Try()

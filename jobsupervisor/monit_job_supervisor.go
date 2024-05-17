@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 	"github.com/pivotal/go-smtpd/smtpd"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
@@ -28,6 +29,7 @@ type monitJobSupervisor struct {
 	jobFailuresServerPort int
 	reloadOptions         MonitReloadOptions
 	timeService           clock.Clock
+	serviceManager        servicemanager.ServiceManager
 }
 
 type MonitReloadOptions struct {
@@ -51,6 +53,7 @@ func NewMonitJobSupervisor(
 	jobFailuresServerPort int,
 	reloadOptions MonitReloadOptions,
 	timeService clock.Clock,
+	serviceManager servicemanager.ServiceManager,
 ) JobSupervisor {
 	return &monitJobSupervisor{
 		fs:                    fs,
@@ -61,6 +64,7 @@ func NewMonitJobSupervisor(
 		jobFailuresServerPort: jobFailuresServerPort,
 		reloadOptions:         reloadOptions,
 		timeService:           timeService,
+		serviceManager:        serviceManager,
 	}
 }
 
@@ -77,10 +81,10 @@ func (m monitJobSupervisor) Reload() error {
 	// because monit incarnation id is just a timestamp with 1 sec resolution.
 	for reloadI := 0; reloadI < m.reloadOptions.MaxTries; reloadI++ {
 		// Due to limitations in the version of monit that we are currently using,
-		// it is faster to reload the agent through `sv kill monit`. This is due to
+		// it is faster to reload the agent through by killing the process. This is due to
 		// the fact that a reload only occurs after a heartbeat which occurs every
 		// 10 seconds.
-		_, _, _, err := m.runner.RunCommand("sv", "kill", "monit")
+		err := m.serviceManager.Kill("monit")
 		if err != nil {
 			m.logger.Error(monitJobSupervisorLogTag, "Failed to kill monit while reloading: %s", err.Error())
 			continue
@@ -88,7 +92,7 @@ func (m monitJobSupervisor) Reload() error {
 
 		// Idempotently start monit to ensure that monit is being started after
 		// `sv kill`.
-		_, _, _, err = m.runner.RunCommand("sv", "start", "monit")
+		err = m.serviceManager.Start("monit")
 		if err != nil {
 			m.logger.Error(monitJobSupervisorLogTag, "Failed to start monit while reloading: %s", err.Error())
 			continue

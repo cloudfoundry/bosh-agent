@@ -20,6 +20,7 @@ import (
 	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
+	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
@@ -35,6 +36,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		jobFailuresServerPort int
 		monit                 JobSupervisor
 		timeService           *fakeclock.FakeClock
+		serviceManager        *servicemanagerfakes.FakeServiceManager
 	)
 
 	var jobFailureServerPort = 5000
@@ -55,6 +57,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		dirProvider = boshdir.NewProvider("/var/vcap")
 		jobFailuresServerPort = getJobFailureServerPort()
 		timeService = fakeclock.NewFakeClock(time.Now())
+		serviceManager = &servicemanagerfakes.FakeServiceManager{}
 
 		monit = NewMonitJobSupervisor(
 			fs,
@@ -69,6 +72,7 @@ var _ = Describe("monitJobSupervisor", func() {
 				DelayBetweenCheckTries: 0 * time.Millisecond,
 			},
 			timeService,
+			serviceManager,
 		)
 	})
 
@@ -112,9 +116,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := monit.Reload()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(runner.RunCommands)).To(Equal(2))
-			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
-			Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
+			Expect(serviceManager.KillCallCount()).To(Equal(1))
+			Expect(serviceManager.StartCallCount()).To(Equal(1))
 			Expect(client.StatusCalledTimes).To(Equal(4))
 		})
 
@@ -134,15 +137,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := monit.Reload()
 			Expect(err).To(HaveOccurred())
 
-			Expect(len(runner.RunCommands)).To(Equal(6))
-			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
-			Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
-
-			Expect(runner.RunCommands[2]).To(Equal([]string{"sv", "kill", "monit"}))
-			Expect(runner.RunCommands[3]).To(Equal([]string{"sv", "start", "monit"}))
-
-			Expect(runner.RunCommands[4]).To(Equal([]string{"sv", "kill", "monit"}))
-			Expect(runner.RunCommands[5]).To(Equal([]string{"sv", "start", "monit"}))
+			Expect(serviceManager.KillCallCount()).To(Equal(3))
+			Expect(serviceManager.StartCallCount()).To(Equal(3))
 
 			Expect(client.StatusCalledTimes).To(Equal(1 + 30)) // old incarnation + new incarnation checks
 		})
@@ -160,9 +156,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := monit.Reload()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(runner.RunCommands)).To(Equal(2))
-			Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
-			Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
+			Expect(serviceManager.KillCallCount()).To(Equal(1))
+			Expect(serviceManager.StartCallCount()).To(Equal(1))
 			Expect(client.StatusCalledTimes).To(Equal(3))
 		})
 
@@ -193,16 +188,8 @@ var _ = Describe("monitJobSupervisor", func() {
 					err := monit.Reload()
 					Expect(err).To(HaveOccurred())
 
-					Expect(len(runner.RunCommands)).To(Equal(6))
-
-					Expect(runner.RunCommands[0]).To(Equal([]string{"sv", "kill", "monit"}))
-					Expect(runner.RunCommands[1]).To(Equal([]string{"sv", "start", "monit"}))
-
-					Expect(runner.RunCommands[2]).To(Equal([]string{"sv", "kill", "monit"}))
-					Expect(runner.RunCommands[3]).To(Equal([]string{"sv", "start", "monit"}))
-
-					Expect(runner.RunCommands[4]).To(Equal([]string{"sv", "kill", "monit"}))
-					Expect(runner.RunCommands[5]).To(Equal([]string{"sv", "start", "monit"}))
+					Expect(serviceManager.KillCallCount()).To(Equal(3))
+					Expect(serviceManager.StartCallCount()).To(Equal(3))
 
 					Expect(client.StatusCalledTimes).To(Equal(1 + 30)) // old incarnation + new incarnation checks
 				})
@@ -306,6 +293,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					DelayBetweenCheckTries: 0 * time.Millisecond,
 				},
 				timeService,
+				serviceManager,
 			)
 
 			err := monit.StopAndWait()
@@ -511,6 +499,7 @@ var _ = Describe("monitJobSupervisor", func() {
 						DelayBetweenCheckTries: 0 * time.Millisecond,
 					},
 					timeService,
+					serviceManager,
 				)
 
 				err := monit.StopAndWait()
@@ -562,6 +551,7 @@ var _ = Describe("monitJobSupervisor", func() {
 					jobFailuresServerPort,
 					MonitReloadOptions{},
 					timeService,
+					serviceManager,
 				)
 
 				errchan := make(chan error)

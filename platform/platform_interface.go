@@ -8,6 +8,7 @@ import (
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
@@ -38,6 +39,7 @@ type Platform interface {
 	GetVitalsService() boshvitals.Service
 	GetAuditLogger() AuditLogger
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
+	GetServiceManager() servicemanager.ServiceManager
 	GetAgentSettingsPath(tmpfs bool) string
 	GetPersistentDiskSettingsPath(tmpfs bool) string
 	GetUpdateSettingsPath(tmpfs bool) string

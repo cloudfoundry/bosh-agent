@@ -27,6 +27,7 @@ import (
 	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
+	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
 	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
@@ -59,6 +60,7 @@ var _ = Describe("LinuxPlatform", func() {
 		fakeDefaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
 		fakeAuditLogger            *fakeplat.FakeAuditLogger
 		fakeLogsTarProvider        *fakelogstarprovider.FakeLogsTarProvider
+		serviceManager             *servicemanagerfakes.FakeServiceManager
 
 		fakeUUIDGenerator *fakeuuidgen.FakeGenerator
 
@@ -90,6 +92,7 @@ var _ = Describe("LinuxPlatform", func() {
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+		serviceManager = &servicemanagerfakes.FakeServiceManager{}
 
 		fakeUUIDGenerator = fakeuuidgen.NewFakeGenerator()
 		fakeAuditLogger = fakeplat.NewFakeAuditLogger()
@@ -154,6 +157,7 @@ var _ = Describe("LinuxPlatform", func() {
 			fakeUUIDGenerator,
 			fakeAuditLogger,
 			fakeLogsTarProvider,
+			serviceManager,
 		)
 	})
 
@@ -471,6 +475,7 @@ bosh_foobar:...`
 					fakeUUIDGenerator,
 					fakeAuditLogger,
 					fakeLogsTarProvider,
+					serviceManager,
 				)
 				err := platformWithNoEphemeralDisk.SetupRootDisk("")
 
@@ -707,6 +712,7 @@ bosh_foobar:...`
 						fakeUUIDGenerator,
 						fakeAuditLogger,
 						fakeLogsTarProvider,
+						serviceManager,
 					)
 					err := platformWithNoEphemeralDisk.SetupRootDisk("")
 
@@ -3734,6 +3740,7 @@ from-device-path  dm-0 NETAPP  ,LUN C-Mode
 					fakeUUIDGenerator,
 					fakeAuditLogger,
 					fakeLogsTarProvider,
+					serviceManager,
 				)
 
 				err := platformWithISCSIType.MigratePersistentDisk("/from/path", "/to/path")
@@ -4007,16 +4014,12 @@ unit: sectors
 	})
 
 	Describe("StartMonit", func() {
-		It("creates a symlink between /etc/service/monit and /etc/sv/monit", func() {
-			err := fs.MkdirAll("/etc/sv/monit", 0750)
+		It("sets up the service", func() {
+			err := platform.StartMonit()
 			Expect(err).NotTo(HaveOccurred())
 
-			err = platform.StartMonit()
-			Expect(err).NotTo(HaveOccurred())
-
-			target, err := fs.ReadAndFollowLink("/etc/service/monit")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(target).To(Equal("/etc/sv/monit"))
+			Expect(serviceManager.SetupCallCount()).To(Equal(1))
+			Expect(serviceManager.SetupArgsForCall(0)).To(Equal("monit"))
 		})
 
 		It("retries to start monit", func() {

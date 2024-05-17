@@ -1,23 +1,23 @@
 package platform
 
 import (
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type monitRetryable struct {
-	cmdRunner boshsys.CmdRunner
+	serviceManager servicemanager.ServiceManager
 }
 
-func NewMonitRetryable(cmdRunner boshsys.CmdRunner) boshretry.Retryable {
+func NewMonitRetryable(serviceManager servicemanager.ServiceManager) boshretry.Retryable {
 	return &monitRetryable{
-		cmdRunner: cmdRunner,
+		serviceManager: serviceManager,
 	}
 }
 
 func (r *monitRetryable) Attempt() (bool, error) {
-	_, _, _, err := r.cmdRunner.RunCommand("sv", "start", "monit")
+	err := r.serviceManager.Start("monit")
 	if err != nil {
 		return true, bosherr.WrapError(err, "Starting monit")
 	}

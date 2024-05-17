@@ -10,6 +10,7 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
 
 	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
 	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
@@ -34,6 +35,7 @@ func init() { //nolint:gochecknoinits
 			provider              Provider
 			timeService           clock.Clock
 			jobSupervisorName     string
+			serviceManager        *servicemanagerfakes.FakeServiceManager
 		)
 
 		BeforeEach(func() {
@@ -46,6 +48,7 @@ func init() { //nolint:gochecknoinits
 			jobFailuresServerPort = 2825
 			handler = &fakembus.FakeHandler{}
 			timeService = clock.NewClock()
+			serviceManager = &servicemanagerfakes.FakeServiceManager{}
 
 			platform.GetFsReturns(fileSystem)
 			platform.GetRunnerReturns(cmdRunner)
@@ -82,6 +85,7 @@ func init() { //nolint:gochecknoinits
 						DelayBetweenCheckTries: 1 * time.Second,
 					},
 					timeService,
+					serviceManager,
 				)
 
 				expectedSupervisor := NewWrapperJobSupervisor(
