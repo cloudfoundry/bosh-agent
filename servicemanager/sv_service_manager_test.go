@@ -1,10 +1,13 @@
 package servicemanager_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
+	"runtime"
+
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/servicemanager"
 )
 
 var _ = Describe("svServiceManager", func() {
@@ -15,6 +18,10 @@ var _ = Describe("svServiceManager", func() {
 	)
 
 	BeforeEach(func() {
+		if runtime.GOOS == "windows" {
+			Skip("Not implemented on Windows")
+		}
+
 		fs = fakesys.NewFakeFileSystem()
 		runner = fakesys.NewFakeCmdRunner()
 		serviceManager = servicemanager.NewSvServiceManager(fs, runner)
