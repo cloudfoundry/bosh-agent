@@ -252,7 +252,7 @@ func (t *TestEnvironment) ensureMonitStopped() error {
 	monitStopped := false
 	begin := time.Now()
 	for i := 0; i < 3; i++ {
-		monitProcessList, err := t.RunCommand("sudo /var/vcap/bosh/bin/monit summary | grep 'Process'")
+		monitProcessList, err := t.RunCommand("sudo /var/vcap/bosh/bin/monit summary | grep 'Process' || true")
 		if err != nil {
 			return err
 		}
