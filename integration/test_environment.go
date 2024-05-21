@@ -11,15 +11,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
-	"github.com/cloudfoundry/bosh-agent/settings"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	"github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	"github.com/kevinburke/ssh_config"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/cloudfoundry/bosh-agent/integration/integrationagentclient"
+	"github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 )
 
 const agentCert = `-----BEGIN CERTIFICATE-----
@@ -118,7 +119,6 @@ func (a byLen) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (t *TestEnvironment) DetachDevice(dir string) error {
 	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
 	if err != nil {
-
 		t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", err, mountPoints)
 		return err
 	}
@@ -150,7 +150,12 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		t.writerPrinter.Printf("CleanupDataDir: %s", ignoredErr)
 	}
 
-	_, err := t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
+	err := t.ensureMonitStopped()
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
 	if err != nil {
 		return err
 	}
@@ -238,6 +243,32 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	_, err = t.RunCommand("sudo chown root:root /opt")
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (t *TestEnvironment) ensureMonitStopped() error {
+	monitStopped := false
+	begin := time.Now()
+	for i := 0; i < 3; i++ {
+		monitProcessList, err := t.RunCommand("sudo /var/vcap/bosh/bin/monit summary | grep 'Process'")
+		if err != nil {
+			return err
+		}
+
+		totalProcessesCount := strings.Count(monitProcessList, "Process")
+		stoppedProcessesCount := strings.Count(monitProcessList, "not monitored")
+		if stoppedProcessesCount == totalProcessesCount {
+			monitStopped = true
+			break
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
+	if !monitStopped {
+		return fmt.Errorf("ensureMonitStopped: monit processes not stopped after %.0f seconds", time.Since(begin).Seconds())
 	}
 
 	return nil
