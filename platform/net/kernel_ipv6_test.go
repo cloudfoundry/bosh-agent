@@ -36,81 +36,107 @@ var _ = Describe("KernelIPv6", func() {
 
 		act := func() error { return kernelIPv6.Enable(stopCh) }
 
-		Context("when grub.cfg disables IPv6", func() {
-			BeforeEach(func() {
-				err := fs.WriteFileString("/boot/grub/grub.cfg", "before ipv6.disable=1 after")
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("removes ipv6.disable=1 from grub.cfg", func() {
-				stopCh <- struct{}{}
-				Expect(act()).ToNot(HaveOccurred())
-				Expect(fs.ReadFileString("/boot/grub/grub.cfg")).To(Equal("before  after"))
-			})
-
-			It("reboots after changing grub.cfg and continue waiting until reboot event succeeds", func() {
-				stopCh <- struct{}{}
-				Expect(act()).ToNot(HaveOccurred())
-				Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
-			})
-
-			It("returns an error if it fails to read grub.cfg", func() {
-				fs.ReadFileError = errors.New("fake-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-err"))
-			})
-
-			It("returns an error if update to grub.cfg fails", func() {
-				fs.WriteFileError = errors.New("fake-err")
-
-				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-err"))
-			})
-
-			It("returns an error if shutdown fails", func() {
-				cmdRunner.AddCmdResult("shutdown -r now", fakesys.FakeCmdResult{
-					Error: errors.New("fake-err"),
+		When("grub.cfg disables IPv6", func() {
+			for _, grubPath := range []string{
+				"/boot/grub/grub.cfg",
+				"/boot/efi/EFI/grub/grub.cfg",
+			} {
+				BeforeEach(func() {
+					err := fs.WriteFileString(grubPath, "before ipv6.disable=1 after")
+					Expect(err).ToNot(HaveOccurred())
 				})
 
+				It("removes ipv6.disable=1 from "+grubPath, func() {
+					stopCh <- struct{}{}
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(fs.ReadFileString(grubPath)).To(Equal("before  after"))
+				})
+
+				It("reboots after changing "+grubPath+" and continue waiting until reboot event succeeds", func() {
+					stopCh <- struct{}{}
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
+				})
+
+				It("returns an error if update to "+grubPath+" fails", func() {
+					fs.WriteFileError = errors.New("fake-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+
+				It("returns an error if shutdown fails", func() {
+					cmdRunner.AddCmdResult("shutdown -r now", fakesys.FakeCmdResult{
+						Error: errors.New("fake-err"),
+					})
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+			}
+		})
+
+		When("/boot/grub/grub.cfg doesn't exist but /boot/efi/EFI/grub/grub.cfg does", func() {
+			BeforeEach(func() {
+				err := fs.WriteFileString("/boot/efi/EFI/grub/grub.cfg", "before ipv6.disable=1 after")
+				Expect(err).ToNot(HaveOccurred())
+			})
+			It("does not return an error if it fails to read /boot/grub/grub.cfg", func() {
+				stopCh <- struct{}{}
 				err := act()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-err"))
+				Expect(err).ToNot(HaveOccurred())
+			})
+			It("removes ipv6.disable=1 from /boot/efi/EFI/grub/grub.cfg", func() {
+				stopCh <- struct{}{}
+				Expect(act()).ToNot(HaveOccurred())
+				Expect(fs.ReadFileString("/boot/efi/EFI/grub/grub.cfg")).To(Equal("before  after"))
 			})
 		})
 
-		Context("when grub.cfg allows IPv6", func() {
-			BeforeEach(func() {
-				err := fs.WriteFileString("/boot/grub/grub.cfg", "before after")
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("does not change grub.cfg", func() {
-				Expect(act()).ToNot(HaveOccurred())
-				Expect(fs.ReadFileString("/boot/grub/grub.cfg")).To(Equal("before after"))
-			})
-
-			It("does not reboot but sets IPv6 sysctl", func() {
-				Expect(act()).ToNot(HaveOccurred())
-				Expect(cmdRunner.RunCommands).To(Equal([][]string{
-					{"sysctl", "net.ipv6.conf.all.accept_ra=1"},
-					{"sysctl", "net.ipv6.conf.default.accept_ra=1"},
-					{"sysctl", "net.ipv6.conf.all.disable_ipv6=0"},
-					{"sysctl", "net.ipv6.conf.default.disable_ipv6=0"},
-				}))
-			})
-
-			It("fails if the underlying sysctl fails", func() {
-				cmdRunner.AddCmdResult("sysctl net.ipv6.conf.all.accept_ra=1", fakesys.FakeCmdResult{
-					Error: errors.New("fake-err"),
-				})
-
+		When("neither /boot/grub/grub.cfg nor /boot/efi/EFI/grub/grub.cfg exists", func() {
+			It("returns an error", func() {
 				err := act()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-err"))
 			})
 		})
+
+		for _, grubPath := range []string{
+			"/boot/grub/grub.cfg",
+			"/boot/efi/EFI/grub/grub.cfg",
+		} {
+			When(grubPath+" allows IPv6", func() {
+				BeforeEach(func() {
+					err := fs.WriteFileString(grubPath, "before after")
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("does not change "+grubPath, func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(fs.ReadFileString(grubPath)).To(Equal("before after"))
+				})
+
+				It("does not reboot but sets IPv6 sysctl", func() {
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(cmdRunner.RunCommands).To(Equal([][]string{
+						{"sysctl", "net.ipv6.conf.all.accept_ra=1"},
+						{"sysctl", "net.ipv6.conf.default.accept_ra=1"},
+						{"sysctl", "net.ipv6.conf.all.disable_ipv6=0"},
+						{"sysctl", "net.ipv6.conf.default.disable_ipv6=0"},
+					}))
+				})
+
+				It("fails if the underlying sysctl fails", func() {
+					cmdRunner.AddCmdResult("sysctl net.ipv6.conf.all.accept_ra=1", fakesys.FakeCmdResult{
+						Error: errors.New("fake-err"),
+					})
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+			})
+		}
 	})
 })
