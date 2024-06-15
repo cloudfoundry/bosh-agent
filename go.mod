@@ -4,13 +4,13 @@ go 1.21.0
 
 require (
 	code.cloudfoundry.org/clock v1.1.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240606172222-82aa02bc07ea
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240613173017-075d5b187a0d
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.6.1
-	github.com/cloudfoundry/bosh-davcli v0.0.347
-	github.com/cloudfoundry/bosh-utils v0.0.471
-	github.com/cloudfoundry/gosigar v1.3.60
+	github.com/cloudfoundry/bosh-davcli v0.0.348
+	github.com/cloudfoundry/bosh-utils v0.0.472
+	github.com/cloudfoundry/gosigar v1.3.61
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -20,7 +20,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20231227165926-e811dad5ac77
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.35.0
+	github.com/nats-io/nats.go v1.36.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
@@ -67,7 +67,7 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
@@ -79,7 +79,7 @@ require (
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20240604190554-fc45aab8b7f8 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20240613232115-7f521ea00fb8 // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
