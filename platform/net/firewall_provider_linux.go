@@ -142,7 +142,7 @@ func SetupNFTables(host, port string) error {
 	// Function to convert port to bytes
 	portToBytes := func(port string) []byte {
 		// Convert port from string to int
-		portInt, err := strconv.Atoi(port)
+		portInt, err := strconv.ParseInt(port, 10, 16)
 		if err != nil {
 			// return error if conversion fails
 			return nil // TODO: handle log error case
