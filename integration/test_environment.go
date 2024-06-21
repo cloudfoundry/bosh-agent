@@ -133,7 +133,12 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 			if ignoredErr != nil && out != "" {
 				t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", ignoredErr, out)
 			}
-			_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+
+			if mountPoint == "/var/log" {
+				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount --lazy %s", mountPoint))
+			} else {
+				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
+			}
 			if ignoredErr != nil {
 				t.writerPrinter.Printf("DetachDevice: %s", ignoredErr)
 			}
