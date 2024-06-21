@@ -127,7 +127,7 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
 		if mountPoint != "" {
-			out, ignoredErr := t.RunCommand(fmt.Sprintf("sudo nohup fuser -km %s > /dev/null", mountPoint))
+			out, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
 			// running fuser -k also kills the ssh session, this will always produce an error
 			// only print the error if out is not empty.
 			if ignoredErr != nil && out != "" {
