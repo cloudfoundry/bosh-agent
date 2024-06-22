@@ -24,12 +24,12 @@ github.com/charlievieth/fs v0.0.3 h1:3lZQXTj4PbE81CVPwALSn+JoyCNXkZgORHN6h2XHGlg
 github.com/charlievieth/fs v0.0.3/go.mod h1:hD4sRzto1Hw8zCua76tNVKZxaeZZr1RiKftjAJQRLLo=
 github.com/cloudfoundry/bosh-cli/v7 v7.6.1 h1:DwiFiCUockBByzdTREznHvTokzx/ldspppmUMf0byqw=
 github.com/cloudfoundry/bosh-cli/v7 v7.6.1/go.mod h1:NaqQ8b8nbIdm89eual5I50JJAwQNbLnhIXD5SKnkIm4=
-github.com/cloudfoundry/bosh-davcli v0.0.348 h1:JX48L4u2q/Y+IfVB1WEcSxl8M39neK+LDdadWS/fBWQ=
-github.com/cloudfoundry/bosh-davcli v0.0.348/go.mod h1:e7Ik+rESYUkUi2hh+5qV0fKFAkfItr2JJUdCDD9VXTk=
+github.com/cloudfoundry/bosh-davcli v0.0.349 h1:gLj1I1ul00JtPrhCBd9rBCvAdBDXWh9PMYszM26XMaU=
+github.com/cloudfoundry/bosh-davcli v0.0.349/go.mod h1:io4OkDzib9AC0dF4KqQjsBvbvEkUCaIyqA1ghDoS7VQ=
 github.com/cloudfoundry/bosh-init v0.0.103 h1:LqkD5lTcic8zwhq4HZZRqPoOzSGS0RUq3pMivy6Iqpo=
 github.com/cloudfoundry/bosh-init v0.0.103/go.mod h1:Nb1jizWrJm8O3gg0WHTgs9mbAHtcnwo0Gu0iFxr35Zw=
-github.com/cloudfoundry/bosh-utils v0.0.472 h1:CSmn16L4KlfTxUcWvOygSIcTB8lfEu0wUGx0i4nNaxE=
-github.com/cloudfoundry/bosh-utils v0.0.472/go.mod h1:kpbQUfdM+jqwFFBx0/mZfRNVtzVAx0AlZCIJlOj1Nlo=
+github.com/cloudfoundry/bosh-utils v0.0.473 h1:3FESmznEHov7q+irbiMC9gXNahmWU+HFaoMGKN/e2aU=
+github.com/cloudfoundry/bosh-utils v0.0.473/go.mod h1:R4F+5u9OFSmgs9zIrUIk1LLhJT8Zv9D+jFJoS1sq38w=
 github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e h1:FQdRViaoDphGRfgrotl2QGsX1gbloe57dbGBS5CG6KY=
 github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e/go.mod h1:PXmcacyJB/pJjSxEl15IU6rEIKXrhZQRzsr0UTkgNNs=
 github.com/cloudfoundry/gosigar v1.3.61 h1:Ztn9UBhjyQl7ViAoiEZFpaFdwJzogWtuxD0VsLPvDHQ=
