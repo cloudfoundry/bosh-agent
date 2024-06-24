@@ -174,7 +174,7 @@ func SetupNFTables(host, port string) error {
 		log.Fatalf("Expected unit64 value for ControlGroupId, got %T", prop.Value.Value())
 	}
 
-	// TODO: handle ipv6 case there is a funcation 'iPv46' in the nftables package
+	// TODO: handle ipv6 case there is a funcation 'iPv46' in the nftables package. if we are going to support ipv6 communication from director to agent
 
 	// Define the rule expressions
 	rules := []struct {
