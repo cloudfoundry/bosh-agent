@@ -53,7 +53,7 @@ var _ = Describe("Nftables Rules", func() {
 
 	Describe("Adding Nftables Rules", func() {
 		Context("With different rule expressions", func() {
-			FIt("Should add rules for cgroup match", func() {
+			It("Should add rules for cgroup match", func() {
 				// this tests needs the bosh-agent cgroup to be created and nftables to be installed
 				err := SetupNFTables("1.2.3.4", "1234")
 				Expect(err).ToNot(HaveOccurred(), "Failed to setup nftables")
