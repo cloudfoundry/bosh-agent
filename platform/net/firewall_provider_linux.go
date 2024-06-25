@@ -54,18 +54,7 @@ func SetupNatsFirewall(mbus string) error {
 	if mbus == "" || strings.HasPrefix(mbus, "https://") {
 		return nil
 	}
-	// NOBLE_TODO: check if warden does not hit this cgroup v2 code path
-	var cgroupV2 bool
-	if cgroups.Mode() == cgroups.Unified {
-		cgroupV2 = true
-	}
-	_, err := cgroups.V1()
-	if err != nil && !cgroupV2 {
-		if errors.Is(err, cgroups.ErrMountPointNotExist) {
-			return nil // v1cgroups are not mounted (warden stemcells)
-		}
-		return bosherr.WrapError(err, "Error retrieving cgroups mount point")
-	}
+
 	mbusURL, err := gonetURL.Parse(mbus)
 	if err != nil || mbusURL.Hostname() == "" {
 		return bosherr.WrapError(err, "Error parsing MbusURL")
@@ -84,7 +73,7 @@ func SetupNatsFirewall(mbus string) error {
 		return bosherr.WrapError(err, fmt.Sprintf("Error resolving mbus host: %v", host))
 	}
 
-	if cgroupV2 {
+	if cgroups.Mode() == cgroups.Unified {
 		return SetupNFTables(host, port)
 	} else {
 		return SetupIptables(host, port, addr_array)
@@ -92,6 +81,7 @@ func SetupNatsFirewall(mbus string) error {
 }
 
 func SetupNFTables(host, port string) error {
+	// NOBLE_TODO: check if warden does not hit this cgroup v2 code path
 	conn := &nftables.Conn{}
 
 	// Create or get the table
@@ -256,6 +246,14 @@ func SetupNFTables(host, port string) error {
 }
 
 func SetupIptables(host, port string, addr_array []net.IP) error {
+	_, err := cgroups.V1()
+	if err != nil {
+		if errors.Is(err, cgroups.ErrMountPointNotExist) {
+			return nil // v1cgroups are not mounted (warden stemcells)
+		}
+		return bosherr.WrapError(err, "Error retrieving cgroups mount point")
+	}
+
 	ipt, err := iptables.New()
 	if err != nil {
 		return bosherr.WrapError(err, "Creating Iptables Error")
