@@ -8,9 +8,9 @@ require (
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.6.1
-	github.com/cloudfoundry/bosh-davcli v0.0.349
-	github.com/cloudfoundry/bosh-utils v0.0.473
-	github.com/cloudfoundry/gosigar v1.3.61
+	github.com/cloudfoundry/bosh-davcli v0.0.350
+	github.com/cloudfoundry/bosh-utils v0.0.474
+	github.com/cloudfoundry/gosigar v1.3.62
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -57,7 +57,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240618054019-d3b898a103f8 // indirect
+	github.com/google/pprof v0.0.0-20240625030939-27f56978b8b0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
