@@ -8,9 +8,9 @@ require (
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.6.2
-	github.com/cloudfoundry/bosh-davcli v0.0.354
-	github.com/cloudfoundry/bosh-utils v0.0.478
-	github.com/cloudfoundry/gosigar v1.3.64
+	github.com/cloudfoundry/bosh-davcli v0.0.355
+	github.com/cloudfoundry/bosh-utils v0.0.479
+	github.com/cloudfoundry/gosigar v1.3.65
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -79,7 +79,7 @@ require (
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20240707233637-46b078467d37 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
