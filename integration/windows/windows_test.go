@@ -9,17 +9,16 @@ import (
 	"strconv"
 	"time"
 
+	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/cloudfoundry/bosh-agent/agent/action"
 	"github.com/cloudfoundry/bosh-agent/integration/utils"
 	windowsutils "github.com/cloudfoundry/bosh-agent/integration/windows/utils"
-	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 const (
@@ -121,7 +120,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Expect(setupResult.Status).To(Equal("success"))
 
-		output := agent.RunPowershellCommand(`get-wmiobject -class win32_userprofile | Where { $_.LocalPath -eq 'C:\Users\%s'}`, sshTestUser)
+		output := agent.RunPowershellCommand(fmt.Sprintf(`get-wmiobject -class win32_userprofile | Where { $_.LocalPath -eq 'C:\Users\%s'}`, sshTestUser))
 		Expect(output).To(MatchRegexp(sshTestUser))
 
 		tunnelClient, err := windowsutils.GetSSHTunnelClient()
@@ -149,10 +148,10 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Expect(cleanupResult.Status).To(Equal("success"))
 
-		_, _, exitCode, _ := agent.RunPowershellCommandWithResponses(`NET.exe USER %s`, sshTestUser)
+		_, _, exitCode, _ := agent.RunPowershellCommandWithResponses(fmt.Sprintf(`NET.exe USER %s`, sshTestUser))
 		Expect(exitCode).To(Equal(1))
 
-		deletableUserProfileContent := agent.RunPowershellCommand(`Get-ChildItem -force -recurse -attributes !Directory -Exclude 'ntuser.dat*' , 'usrclass.dat*' /users/%s`, sshTestUser)
+		deletableUserProfileContent := agent.RunPowershellCommand(fmt.Sprintf(`Get-ChildItem -force -recurse -attributes !Directory -Exclude 'ntuser.dat*' , 'usrclass.dat*' /users/%s`, sshTestUser))
 		Expect(deletableUserProfileContent).To(BeEmpty())
 	})
 

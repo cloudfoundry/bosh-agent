@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/masterzen/winrm"
+	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
-	. "github.com/onsi/gomega"
 )
 
 const dataDir = `C:\var\vcap\data\`
@@ -114,8 +114,7 @@ func (e *WindowsEnvironment) CleanUpExtraDisks() {
 	for i := partitions; i > cDrivePartition; i-- {
 		e.RunPowershellCommandWithOffset(
 			1,
-			"Remove-Partition -DiskNumber 0 -PartitionNumber %d -Confirm:0",
-			i,
+			fmt.Sprintf("Remove-Partition -DiskNumber 0 -PartitionNumber %d -Confirm:0", i),
 		)
 	}
 }
@@ -171,7 +170,7 @@ func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
 }
 
 func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
-	testPathOutput := e.RunPowershellCommandWithOffset(1, "Test-Path -Path %s", dataDir)
+	testPathOutput := e.RunPowershellCommandWithOffset(1, fmt.Sprintf("Test-Path -Path %s", dataDir))
 
 	exists := strings.TrimSpace(testPathOutput) == "True"
 	if exists {
@@ -187,34 +186,28 @@ func (e *WindowsEnvironment) AgentProcessRunning() bool {
 	return exitCode == 0 && err == nil
 }
 
-func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string, cmdFmtArgs ...interface{}) string {
-	outString, errString, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd, cmdFmtArgs...)
-	formattedCmd := fmt.Sprintf(cmd, cmdFmtArgs...)
+func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string) string {
+	outString, errString, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd)
 
 	ExpectWithOffset(offset+1, err).NotTo(
 		HaveOccurred(),
-		fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, formattedCmd, outString, errString),
+		fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, outString, errString),
 	)
 	ExpectWithOffset(offset+1, exitCode).To(
 		BeZero(),
 		fmt.Sprintf(
-			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, formattedCmd, exitCode, outString, errString,
+			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, outString, errString,
 		),
 	)
 
 	return outString
 }
 
-func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(
-	offset int,
-	cmd string,
-	cmdFmtArgs ...interface{},
-) (string, string, int, error) {
-
+func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(_offset int, cmd string) (string, string, int, error) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	exitCode, err := e.Client.Run(winrm.Powershell(fmt.Sprintf(cmd, cmdFmtArgs...)), stdout, stderr) //nolint:staticcheck
+	exitCode, err := e.Client.Run(winrm.Powershell(cmd), stdout, stderr) //nolint:staticcheck
 
 	outString := stdout.String()
 	errString := stderr.String()
@@ -222,19 +215,19 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(
 	return outString, errString, exitCode, err
 }
 
-func (e *WindowsEnvironment) RunPowershellCommandWithResponses(cmd string, cmdFmtArgs ...interface{}) (string, string, int, error) {
-	return e.RunPowershellCommandWithOffsetAndResponses(1, cmd, cmdFmtArgs...)
+func (e *WindowsEnvironment) RunPowershellCommandWithResponses(cmd string) (string, string, int, error) {
+	return e.RunPowershellCommandWithOffsetAndResponses(1, cmd)
 }
 
-func (e *WindowsEnvironment) RunPowershellCommand(cmd string, cmdFmtArgs ...interface{}) string {
-	return e.RunPowershellCommandWithOffset(1, cmd, cmdFmtArgs...)
+func (e *WindowsEnvironment) RunPowershellCommand(cmd string) string {
+	return e.RunPowershellCommandWithOffset(1, cmd)
 }
 
 func (e *WindowsEnvironment) AssertDataACLed() {
 	testFile := filepath.Join(dataDir + "testfile")
 
-	e.RunPowershellCommandWithOffset(1, "echo 'content' >> %s", testFile)
-	checkACLsOutput := e.RunPowershellCommandWithOffset(1, "Check-Acls %s", dataDir)
+	e.RunPowershellCommandWithOffset(1, fmt.Sprintf("echo 'content' >> %s", testFile))
+	checkACLsOutput := e.RunPowershellCommandWithOffset(1, fmt.Sprintf("Check-Acls %s", dataDir))
 	aclErrsCount := strings.Count(checkACLsOutput, "Error")
 	ExpectWithOffset(1, aclErrsCount == 0).To(
 		BeTrue(),
@@ -249,8 +242,7 @@ func (e *WindowsEnvironment) PartitionCount(diskNumber string) int {
 func (e *WindowsEnvironment) PartitionCountWithOffset(offset int, diskNumber string) int {
 	partitionCountOutput := e.RunPowershellCommandWithOffset(
 		offset+1,
-		"Get-Disk -Number %s | Select -ExpandProperty NumberOfPartitions",
-		diskNumber,
+		fmt.Sprintf("Get-Disk -Number %s | Select -ExpandProperty NumberOfPartitions", diskNumber),
 	)
 
 	partitionCount, err := strconv.Atoi(strings.TrimSpace(partitionCountOutput))
@@ -261,7 +253,7 @@ func (e *WindowsEnvironment) PartitionCountWithOffset(offset int, diskNumber str
 
 func (e *WindowsEnvironment) EnsureDiskClearedWithOffset(offset int, diskNumber string) {
 	if e.PartitionCountWithOffset(offset+1, diskNumber) > 0 {
-		e.RunPowershellCommandWithOffset(offset+1, "Clear-Disk -Number %s -Confirm:$false -RemoveData", diskNumber)
+		e.RunPowershellCommandWithOffset(offset+1, fmt.Sprintf("Clear-Disk -Number %s -Confirm:$false -RemoveData", diskNumber))
 	}
 }
 
