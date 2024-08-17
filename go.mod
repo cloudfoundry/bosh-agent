@@ -3,14 +3,14 @@ module github.com/cloudfoundry/bosh-agent
 go 1.21.0
 
 require (
-	code.cloudfoundry.org/clock v1.2.0
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240808182450-b1b581e211a2
+	code.cloudfoundry.org/clock v1.3.0
+	code.cloudfoundry.org/tlsconfig v0.1.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.6.2
-	github.com/cloudfoundry/bosh-davcli v0.0.358
-	github.com/cloudfoundry/bosh-utils v0.0.482
-	github.com/cloudfoundry/gosigar v1.3.67
+	github.com/cloudfoundry/bosh-cli/v7 v7.7.0
+	github.com/cloudfoundry/bosh-davcli v0.0.359
+	github.com/cloudfoundry/bosh-utils v0.0.483
+	github.com/cloudfoundry/gosigar v1.3.68
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -20,7 +20,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.36.0
+	github.com/nats-io/nats.go v1.37.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.20.0
 	github.com/onsi/gomega v1.34.1
@@ -86,5 +86,5 @@ require (
 	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	honnef.co/go/tools v0.4.7 // indirect
+	honnef.co/go/tools v0.5.0-0.dev // indirect
 )

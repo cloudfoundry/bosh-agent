@@ -14,6 +14,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"golang.org/x/exp/typeparams"
 )
 
 // EnclosingFunction returns the function that contains the syntax
@@ -168,7 +170,7 @@ func (prog *Program) packageLevelValue(obj types.Object) Value {
 // TODO(adonovan): check the invariant that obj.Type() matches the
 // result's Signature, both in the params/results and in the receiver.
 func (prog *Program) FuncValue(obj *types.Func) *Function {
-	obj = obj.Origin()
+	obj = typeparams.OriginMethod(obj)
 	fn, _ := prog.packageLevelValue(obj).(*Function)
 	return fn
 }

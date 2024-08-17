@@ -122,8 +122,6 @@ func flattenFields(T *types.Struct, path []int, seen map[types.Type]bool) []Fiel
 		if field.Anonymous() {
 			if s, ok := Dereference(field.Type()).Underlying().(*types.Struct); ok {
 				out = append(out, flattenFields(s, np, seen)...)
-			} else {
-				out = append(out, Field{field, tag, np})
 			}
 		} else {
 			out = append(out, Field{field, tag, np})

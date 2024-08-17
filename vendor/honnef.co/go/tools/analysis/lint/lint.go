@@ -8,7 +8,6 @@ import (
 	"go/ast"
 	"go/build"
 	"go/token"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -207,28 +206,21 @@ func (v *VersionFlag) String() string {
 	return fmt.Sprintf("1.%d", *v)
 }
 
-var goVersionRE = regexp.MustCompile(`^(?:go)?1.(\d+).*$`)
-
-// ParseGoVersion parses Go versions of the form 1.M, 1.M.N, or 1.M.NrcR, with an optional "go" prefix. It assumes that
-// versions have already been verified and are valid.
-func ParseGoVersion(s string) (int, bool) {
-	m := goVersionRE.FindStringSubmatch(s)
-	if m == nil {
-		return 0, false
-	}
-	n, err := strconv.Atoi(m[1])
-	if err != nil {
-		return 0, false
-	}
-	return n, true
-}
-
 func (v *VersionFlag) Set(s string) error {
-	n, ok := ParseGoVersion(s)
-	if !ok {
+	if len(s) < 3 {
 		return fmt.Errorf("invalid Go version: %q", s)
 	}
-	*v = VersionFlag(n)
+	if s[0] != '1' {
+		return fmt.Errorf("invalid Go version: %q", s)
+	}
+	if s[1] != '.' {
+		return fmt.Errorf("invalid Go version: %q", s)
+	}
+	i, err := strconv.Atoi(s[2:])
+	if err != nil {
+		return fmt.Errorf("invalid Go version: %q", s)
+	}
+	*v = VersionFlag(i)
 	return nil
 }
 

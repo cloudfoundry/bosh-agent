@@ -114,11 +114,7 @@ func CheckNames(pass *analysis.Pass) (interface{}, error) {
 				return
 			}
 
-			if code.IsInTest(pass, v) &&
-				(strings.HasPrefix(v.Name.Name, "Example") ||
-					strings.HasPrefix(v.Name.Name, "Test") ||
-					strings.HasPrefix(v.Name.Name, "Benchmark") ||
-					strings.HasPrefix(v.Name.Name, "Fuzz")) {
+			if code.IsInTest(pass, v) && (strings.HasPrefix(v.Name.Name, "Example") || strings.HasPrefix(v.Name.Name, "Test") || strings.HasPrefix(v.Name.Name, "Benchmark")) {
 				return
 			}
 
