@@ -3,13 +3,13 @@ module github.com/cloudfoundry/bosh-agent
 go 1.21.0
 
 require (
-	code.cloudfoundry.org/clock v1.3.0
+	code.cloudfoundry.org/clock v1.5.0
 	code.cloudfoundry.org/tlsconfig v0.1.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.7.0
-	github.com/cloudfoundry/bosh-davcli v0.0.359
-	github.com/cloudfoundry/bosh-utils v0.0.483
+	github.com/cloudfoundry/bosh-davcli v0.0.360
+	github.com/cloudfoundry/bosh-utils v0.0.484
 	github.com/cloudfoundry/gosigar v1.3.68
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.7.0
@@ -22,7 +22,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.37.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/ginkgo/v2 v2.20.0
+	github.com/onsi/ginkgo/v2 v2.20.1
 	github.com/onsi/gomega v1.34.1
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
@@ -79,8 +79,8 @@ require (
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
-	golang.org/x/exp/typeparams v0.0.0-20240808152545-0cdaa3abc0fa // indirect
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
