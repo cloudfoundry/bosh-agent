@@ -8,11 +8,11 @@ require (
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.7.0
-	github.com/cloudfoundry/bosh-davcli v0.0.360
-	github.com/cloudfoundry/bosh-utils v0.0.484
-	github.com/cloudfoundry/gosigar v1.3.68
+	github.com/cloudfoundry/bosh-davcli v0.0.361
+	github.com/cloudfoundry/bosh-utils v0.0.485
+	github.com/cloudfoundry/gosigar v1.3.69
 	github.com/containerd/cgroups v1.1.0
-	github.com/coreos/go-iptables v0.7.0
+	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
@@ -44,8 +44,8 @@ require (
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/bodgit/ntlmssp v0.0.0-20240506230425-31973bb52d9b // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.121 // indirect
+	github.com/cloudfoundry/go-socks5 v0.0.0-20240831012420-2590b55236ee // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.122 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/docker/go-units v0.5.0 // indirect
