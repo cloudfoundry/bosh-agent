@@ -2113,7 +2113,7 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(mounter.RemountInPlaceCallCount()).To(Equal(1))
 				mntPt, options = mounter.RemountInPlaceArgsForCall(0)
 				Expect(mntPt).To(Equal("/home"))
-				Expect(options).To(Equal([]string{"nodev"}))
+				Expect(options).To(Equal([]string{"nodev", "nosuid"}))
 			})
 
 			It("return error if it cannot mount", func() {
