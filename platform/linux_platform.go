@@ -902,7 +902,7 @@ func (p linux) SetupHomeDir() error {
 		if err != nil {
 			return bosherr.WrapError(err, "Setup home dir, mounting home")
 		}
-		err = mounter.RemountInPlace("/home", "nodev")
+		err = mounter.RemountInPlace("/home", "nodev", "nosuid")
 		if err != nil {
 			return bosherr.WrapError(err, "Setup home dir, remount in place")
 		}
