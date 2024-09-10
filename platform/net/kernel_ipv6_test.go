@@ -37,10 +37,8 @@ var _ = Describe("KernelIPv6", func() {
 		act := func() error { return kernelIPv6.Enable(stopCh) }
 
 		When("grub.cfg disables IPv6", func() {
-			for _, grubPath := range []string{
-				"/boot/grub/grub.cfg",
-				"/boot/efi/EFI/grub/grub.cfg",
-			} {
+			When("grub path is /boot/grub/grub.cfg", func() {
+				const grubPath = "/boot/grub/grub.cfg"
 				BeforeEach(func() {
 					err := fs.WriteFileString(grubPath, "before ipv6.disable=1 after")
 					Expect(err).ToNot(HaveOccurred())
@@ -57,7 +55,6 @@ var _ = Describe("KernelIPv6", func() {
 					Expect(act()).ToNot(HaveOccurred())
 					Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
 				})
-
 				It("returns an error if update to "+grubPath+" fails", func() {
 					fs.WriteFileError = errors.New("fake-err")
 
@@ -75,7 +72,43 @@ var _ = Describe("KernelIPv6", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-err"))
 				})
-			}
+			})
+			When("grub path is /boot/efi/EFI/grub/grub.cfg", func() {
+				const grubPath = "/boot/efi/EFI/grub/grub.cfg"
+				BeforeEach(func() {
+					err := fs.WriteFileString(grubPath, "before ipv6.disable=1 after")
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("removes ipv6.disable=1 from "+grubPath, func() {
+					stopCh <- struct{}{}
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(fs.ReadFileString(grubPath)).To(Equal("before  after"))
+				})
+
+				It("reboots after changing "+grubPath+" and continue waiting until reboot event succeeds", func() {
+					stopCh <- struct{}{}
+					Expect(act()).ToNot(HaveOccurred())
+					Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
+				})
+				It("returns an error if update to "+grubPath+" fails", func() {
+					fs.WriteFileError = errors.New("fake-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+
+				It("returns an error if shutdown fails", func() {
+					cmdRunner.AddCmdResult("shutdown -r now", fakesys.FakeCmdResult{
+						Error: errors.New("fake-err"),
+					})
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-err"))
+				})
+			})
 		})
 
 		When("/boot/grub/grub.cfg doesn't exist but /boot/efi/EFI/grub/grub.cfg does", func() {
