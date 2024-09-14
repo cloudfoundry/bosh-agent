@@ -1,8 +1,8 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-code.cloudfoundry.org/clock v1.12.0 h1:281cHkSdznhaEBMfx+sVFF4vTT4kyRrCRaNpzSsYToM=
-code.cloudfoundry.org/clock v1.12.0/go.mod h1:334lEJ3CzdaQLu9f5AHvMLj3zBhuHQVDecBfJrZ6Igs=
-code.cloudfoundry.org/tlsconfig v0.4.0 h1:yPk995C/KPW7Ck57VqS6chJAKnzTdE/QnXjHLOrrFOw=
-code.cloudfoundry.org/tlsconfig v0.4.0/go.mod h1:AUJ2Wk4VsDw+VDtu7/bK49hbgjy7gScv8ocPTDPKRhw=
+code.cloudfoundry.org/clock v1.13.0 h1:cXtygQ9nD+uVtzjamX9puLvdkvgJsBpCgxlRPqP5Wh4=
+code.cloudfoundry.org/clock v1.13.0/go.mod h1:vRE++3mqcB+fAoY4Dd9ru2Tp+6tmGqdGrp6qP92QKwE=
+code.cloudfoundry.org/tlsconfig v0.5.0 h1:wkdwdVPMPUowUyR4jzl7EttWD6j3Y8uQKcc2VxBh+Nk=
+code.cloudfoundry.org/tlsconfig v0.5.0/go.mod h1:hwoQOMSbbpu1doDFFDK8h5EpM/cWREyWMXEo0H1MFeA=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358 h1:mFRzDkZVAjdal+s7s0MwaRv9igoPqLRdzOLzw/8Xvq8=
@@ -38,8 +38,8 @@ github.com/cloudfoundry/go-socks5 v0.0.0-20240831012420-2590b55236ee h1:88ruSYvC
 github.com/cloudfoundry/go-socks5 v0.0.0-20240831012420-2590b55236ee/go.mod h1:72EEm1oq5oXqGfu9XGtaRPWEcAFYd/P10cMNln0QhA8=
 github.com/cloudfoundry/gosigar v1.3.70 h1:LEp6mHJzwwGKn34kWbuSMRx5b7tz058B0MLiL0XXYnM=
 github.com/cloudfoundry/gosigar v1.3.70/go.mod h1:QD0kxi8L+GXZPsHPr4er3+FBKrdn1Omkr8ukWpESozQ=
-github.com/cloudfoundry/socks5-proxy v0.2.123 h1:8+4eWzz6Z+Ao1M1cOxeGBjPFqgzCr2MKyNV8SBEkTuU=
-github.com/cloudfoundry/socks5-proxy v0.2.123/go.mod h1:Wu7EyUFshLHy8e0bI/1HLIKAGt9LxWoqLcK3Dd+w7EQ=
+github.com/cloudfoundry/socks5-proxy v0.2.124 h1:lg8ZlqMC7W4u5yVlB91+P6/qWPF168WDTomULeZVpck=
+github.com/cloudfoundry/socks5-proxy v0.2.124/go.mod h1:EsINZ1fC6k9D46I/AAopu8I8+gt7BBH0w0g21UA5aeQ=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59/go.mod h1:pA0z1pT8KYB3TCXK/ocprsh7MAkoW8bZVzPdih9snmM=
 github.com/containerd/cgroups v1.1.0 h1:v8rEWFl6EoqHB+swVNjVoCJE8o3jX7e8nqBGPLaDFBM=
@@ -116,8 +116,8 @@ github.com/google/go-cmp v0.5.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.3/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/google/pprof v0.0.0-20240903155634-a8630aee4ab9 h1:q5g0N9eal4bmJwXHC5z0QCKs8qhS35hFfq0BAYsIwZI=
-github.com/google/pprof v0.0.0-20240903155634-a8630aee4ab9/go.mod h1:vavhavw2zAxS5dIdcRluK6cSGGPlZynqzFM8NdvU144=
+github.com/google/pprof v0.0.0-20240910150728-a0b0bb1d4134 h1:c5FlPPgxOn7kJz3VoPLkQYQXGBS3EklQ4Zfi57uOuqQ=
+github.com/google/pprof v0.0.0-20240910150728-a0b0bb1d4134/go.mod h1:vavhavw2zAxS5dIdcRluK6cSGGPlZynqzFM8NdvU144=
 github.com/google/uuid v1.1.2/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
@@ -166,8 +166,8 @@ github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 h1:2ZKn+w/BJeL
 github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786/go.mod h1:kCEbxUJlNDEBNbdQMkPSp6yaKcRXVI6f4ddk8Riv4bc=
 github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085 h1:PiQLLKX4vMYlJImDzJYtQScF2BbQ0GAjPIHCDqzHHHs=
 github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085/go.mod h1:JajVhkiG2bYSNYYPYuWG7WZHr42CTjMTcCjfInRNCqc=
-github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 h1:NicmruxkeqHjDv03SfSxqmaLuisddudfP3h5wdXFbhM=
-github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1/go.mod h1:eyp4DdUJAKkr9tvxR3jWhw2mDK7CWABMG5r9uyaKC7I=
+github.com/maxbrunsfeld/counterfeiter/v6 v6.9.0 h1:ERhc+PJKEyqWQnKu7/K0frSVGFihYYImqNdqP5r0cN0=
+github.com/maxbrunsfeld/counterfeiter/v6 v6.9.0/go.mod h1:tU2wQdIyJ7fib/YXxFR0dgLlFz3yl4p275UfUKmDFjk=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/nats-io/nats.go v1.37.0 h1:07rauXbVnnJvv1gfIyghFEo6lUcYRY0WXc3x7x0vUxE=
@@ -247,8 +247,8 @@ github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5t
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.24.0 h1:y73uSU6J157QMP2kn2r30vwW1A2W2WFwSCGnAVxeaD0=
 go.opencensus.io v0.24.0/go.mod h1:vNK8G9p7aAivkbmorf4v+7Hgx+Zs0yY+0fOtgBfjQKo=
-go.step.sm/crypto v0.51.2 h1:5EiCGIMg7IvQTGmJrwRosbXeprtT80OhoS/PJarg60o=
-go.step.sm/crypto v0.51.2/go.mod h1:QK7czLjN2k+uqVp5CHXxJbhc70kVRSP+0CQF3zsR5M0=
+go.step.sm/crypto v0.52.0 h1:3blUzFm0S4tPrijcvcP47tvd7VmEEGJnvzblE+sg5LI=
+go.step.sm/crypto v0.52.0/go.mod h1:GcT4hMILsNiiN3dIXH/Df5fLVs/KIwGZva85faw7lYw=
 go4.org/netipx v0.0.0-20231129151722-fdeea329fbba h1:0b9z3AuHCjxk0x/opv64kcgZLBseWJUpBw5I82+2U4M=
 go4.org/netipx v0.0.0-20231129151722-fdeea329fbba/go.mod h1:PLyyIXexvUFg3Owu6p/WfdlivPbZJsZdgWZlrGope/Y=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
