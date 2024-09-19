@@ -4,29 +4,19 @@
 package net
 
 import (
-	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"net"
 	gonetURL "net/url"
 	"os"
-	"strconv"
 	"strings"
-	"time"
-
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	// NOTE: "cgroups is only intended to be used/compiled on linux based system"
 	// see: https://github.com/containerd/cgroups/issues/19
 	"github.com/containerd/cgroups"
-	"github.com/google/nftables"
-	"github.com/google/nftables/binaryutil"
-	"github.com/google/nftables/expr"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/coreos/go-systemd/v22/dbus"
 )
 
 const (
@@ -47,6 +37,13 @@ const (
 
 // SetupNatsFirewall will setup the outgoing cgroup based rule that prevents everything except the agent to open connections to the nats api
 func SetupNatsFirewall(mbus string) error {
+	// We have decided to remove the NATS firewall starting with Noble because we have
+	// ephemeral NATS credentials implemented in the Bosh Director which is a better solution
+	// to the problem. This allows us to remove all of this code after Jammy support ends
+	if cgroups.Mode() == cgroups.Unified {
+		return nil
+	}
+
 	// return early if
 	// we get a https url for mbus. case for create-env
 	// we get an empty string. case for http_metadata_service (responsible to extract the agent-settings.json from the metadata endpoint)
@@ -73,176 +70,7 @@ func SetupNatsFirewall(mbus string) error {
 		return bosherr.WrapError(err, fmt.Sprintf("Error resolving mbus host: %v", host))
 	}
 
-	if cgroups.Mode() == cgroups.Unified {
-		return SetupNFTables(host, port)
-	} else {
-		return SetupIptables(host, port, addr_array)
-	}
-}
-
-func SetupNFTables(host, port string) error {
-	// NOBLE_TODO: check if warden does not hit this cgroup v2 code path
-	conn := &nftables.Conn{}
-
-	// Create or get the table
-	table := &nftables.Table{
-		Family: nftables.TableFamilyINet,
-		Name:   "filter",
-	}
-	conn.AddTable(table)
-
-	// Create the nats_postrouting chain
-	// TODO: not sure if we still need a postrouting chain
-	priority := nftables.ChainPriority(0)
-	policy := nftables.ChainPolicyAccept
-	postroutingChain := &nftables.Chain{
-		Name:     "nats_postrouting",
-		Table:    table,
-		Type:     nftables.ChainTypeFilter,
-		Hooknum:  nftables.ChainHookPostrouting,
-		Priority: &priority,
-		Policy:   &policy,
-	}
-
-	conn.AddChain(postroutingChain)
-
-	// Create the nats_output chain
-	outputChain := &nftables.Chain{
-		Name:     "nats_output",
-		Table:    table,
-		Hooknum:  nftables.ChainHookOutput,
-		Priority: nftables.ChainPriorityFilter,
-		Type:     nftables.ChainTypeFilter,
-		Policy:   &policy,
-	}
-	conn.AddChain(outputChain)
-
-	// Flush the chain
-	conn.FlushChain(outputChain)
-
-	// Function to convert IP to bytes
-	ipToBytes := func(ipStr string) []byte {
-		ip := net.ParseIP(ipStr).To4() //TODO: what if ip ipv6
-		if ip == nil {
-			return nil // TODO: handle log error case
-		}
-		return ip
-	}
-
-	// Function to convert port to bytes
-	portToBytes := func(port string) []byte {
-		// Convert port from string to int
-		portInt, err := strconv.ParseInt(port, 10, 16)
-		if err != nil {
-			// return error if conversion fails
-			return nil // TODO: handle log error case
-		}
-
-		b := make([]byte, 2)
-		binary.BigEndian.PutUint16(b, uint16(portInt))
-		return b
-	}
-
-	// Create a context with a timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	connd, err := dbus.NewWithContext(ctx)
-	if err != nil {
-		log.Fatalf("Failed to connect to systemd: %v", err)
-	}
-	defer connd.Close()
-
-	unitName := "bosh-agent.service"
-	prop, err := connd.GetUnitTypePropertyContext(ctx, unitName, "Service", "ControlGroupId")
-	if err != nil {
-		log.Fatalf("Failed to get property: %v", err)
-	}
-	// Assuming prop.Value is of type dbus.Variant and contains a string
-	unitControlGroupId, ok := prop.Value.Value().(uint64)
-	if !ok {
-		log.Fatalf("Expected unit64 value for ControlGroupId, got %T", prop.Value.Value())
-	}
-
-	// TODO: handle ipv6 case there is a funcation 'iPv46' in the nftables package. if we are going to support ipv6 communication from director to agent
-
-	// Define the rule expressions
-	rules := []struct {
-		chain *nftables.Chain
-		exprs []expr.Any
-	}{
-		{ // Rule 1: cgroup match
-			// the folowing rule is created with chatgpt from the following nft command
-			// `nft add rule inet filter nats_output socket cgroupv2 level 2 "system.slice/bosh-agent.service" ip daddr $host tcp dport $port log prefix "\"Matched cgroup bosh-agent nats rule: \"" accept`
-			chain: outputChain,
-			exprs: []expr.Any{
-				&expr.Socket{Key: expr.SocketKeyCgroupv2, Level: 2, Register: 1},
-				&expr.Cmp{Register: 1, Op: expr.CmpOpEq, Data: binaryutil.NativeEndian.PutUint64(unitControlGroupId)},
-				&expr.Meta{Key: expr.MetaKeyNFPROTO, Register: 1},
-				&expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: []byte{2}},
-				&expr.Payload{OperationType: expr.PayloadLoad, Base: expr.PayloadBaseNetworkHeader, Offset: 16, Len: 4, DestRegister: 2},
-				&expr.Cmp{Register: 2, Op: expr.CmpOpEq, Data: ipToBytes(host)},
-				&expr.Meta{Key: expr.MetaKeyL4PROTO, Register: 1},
-				&expr.Cmp{Op: 0, Register: 1, Data: []byte{6}},
-				&expr.Payload{OperationType: expr.PayloadLoad, Base: expr.PayloadBaseTransportHeader, Offset: 2, Len: 2, DestRegister: 3},
-				&expr.Cmp{Register: 3, Op: expr.CmpOpEq, Data: portToBytes(port)},
-				&expr.Log{Level: 4, Key: 36, Data: []byte("Matched cgroup bosh-agent nats rule: ")},
-				&expr.Verdict{Kind: expr.VerdictAccept},
-			},
-		},
-		{ // Rule 2: skuid match
-			// `nft add rule inet filter nats_output skuid 0 ip daddr $host tcp dport $port log prefix "\"Matched skuid director nats rule: \"" accept`
-			chain: outputChain,
-			exprs: []expr.Any{
-				&expr.Meta{Key: expr.MetaKeySKUID, Register: 1},
-				&expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: []byte{0, 0, 0, 0}},
-				&expr.Meta{Key: expr.MetaKeyNFPROTO, Register: 1},
-				&expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: []byte{2}},
-				&expr.Payload{OperationType: expr.PayloadLoad, Base: expr.PayloadBaseNetworkHeader, Offset: 16, Len: 4, DestRegister: 2},
-				&expr.Cmp{Op: expr.CmpOpEq, Register: 2, Data: ipToBytes(host)},
-				&expr.Meta{Key: expr.MetaKeyL4PROTO, Register: 1},
-				&expr.Cmp{Op: 0, Register: 1, Data: []byte{6}},
-				&expr.Payload{OperationType: expr.PayloadLoad, Base: expr.PayloadBaseTransportHeader, Offset: 2, Len: 2, DestRegister: 3},
-				&expr.Cmp{Op: expr.CmpOpEq, Register: 3, Data: portToBytes(port)},
-				&expr.Log{Level: 4, Key: 36, Data: []byte("Matched skuid director nats rule: ")},
-				&expr.Verdict{Kind: expr.VerdictAccept},
-			},
-		},
-		{ // Rule 3: generic IP and port match
-			// `nft add rule inet filter nats_output ip daddr $host tcp dport $port log prefix "\"dropped nats rule: \"" drop`
-			chain: outputChain,
-			exprs: []expr.Any{
-				&expr.Meta{Key: expr.MetaKeyNFPROTO, Register: 1},
-				&expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: []byte{2}},
-				&expr.Payload{OperationType: expr.PayloadLoad, Base: expr.PayloadBaseNetworkHeader, Offset: 16, Len: 4, DestRegister: 1},
-				&expr.Cmp{Register: 1, Op: expr.CmpOpEq, Data: ipToBytes(host)},
-				&expr.Meta{Key: expr.MetaKeyL4PROTO, Register: 1},
-				&expr.Cmp{Op: 0, Register: 1, Data: []byte{6}},
-				&expr.Payload{OperationType: expr.PayloadLoad, Base: expr.PayloadBaseTransportHeader, Offset: 2, Len: 2, DestRegister: 2},
-				&expr.Cmp{Register: 2, Op: expr.CmpOpEq, Data: portToBytes(port)},
-				&expr.Log{Level: 4, Key: 36, Data: []byte("dropped nats rule: ")},
-				&expr.Verdict{Kind: expr.VerdictDrop},
-			},
-		},
-	}
-
-	// Add the new rules
-	for _, r := range rules {
-		// Add the new rule
-		rule := &nftables.Rule{
-			Table: table,
-			Chain: r.chain,
-			Exprs: r.exprs,
-		}
-		conn.AddRule(rule)
-	}
-
-	// Apply the changes
-	if err := conn.Flush(); err != nil {
-		return bosherr.WrapError(err, "Failed to apply nftables changes")
-	}
-
-	return nil
+	return SetupIptables(host, port, addr_array)
 }
 
 func SetupIptables(host, port string, addr_array []net.IP) error {
