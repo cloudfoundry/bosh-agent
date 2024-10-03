@@ -6,17 +6,15 @@ package net
 import (
 	"errors"
 	"fmt"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"net"
 	gonetURL "net/url"
 	"os"
 	"strings"
-	// NOTE: "cgroups is only intended to be used/compiled on linux based system"
-	// see: https://github.com/containerd/cgroups/issues/19
-	"github.com/containerd/cgroups"
-	"github.com/opencontainers/runtime-spec/specs-go"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/containerd/cgroups" // NOTE: linux only; see: https://github.com/containerd/cgroups/issues/19
 	"github.com/coreos/go-iptables/iptables"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 const (
