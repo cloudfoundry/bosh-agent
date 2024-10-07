@@ -12,12 +12,9 @@ import (
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	// NOTE: "cgroups is only intended to be used/compiled on linux based system"
-	// see: https://github.com/containerd/cgroups/issues/19
-	"github.com/containerd/cgroups"
-	"github.com/opencontainers/runtime-spec/specs-go"
-
+	"github.com/containerd/cgroups" // NOTE: linux only; see: https://github.com/containerd/cgroups/issues/19
 	"github.com/coreos/go-iptables/iptables"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 const (
@@ -38,6 +35,13 @@ const (
 
 // SetupNatsFirewall will setup the outgoing cgroup based rule that prevents everything except the agent to open connections to the nats api
 func SetupNatsFirewall(mbus string) error {
+	// We have decided to remove the NATS firewall starting with Noble because we have
+	// ephemeral NATS credentials implemented in the Bosh Director which is a better solution
+	// to the problem. This allows us to remove all of this code after Jammy support ends
+	if cgroups.Mode() == cgroups.Unified {
+		return nil
+	}
+
 	// return early if
 	// we get a https url for mbus. case for create-env
 	// we get an empty string. case for http_metadata_service (responsible to extract the agent-settings.json from the metadata endpoint)
@@ -45,13 +49,7 @@ func SetupNatsFirewall(mbus string) error {
 	if mbus == "" || strings.HasPrefix(mbus, "https://") {
 		return nil
 	}
-	_, err := cgroups.V1()
-	if err != nil {
-		if errors.Is(err, cgroups.ErrMountPointNotExist) {
-			return nil // v1cgroups are not mounted (warden stemcells)
-		}
-		return bosherr.WrapError(err, "Error retrieving cgroups mount point")
-	}
+
 	mbusURL, err := gonetURL.Parse(mbus)
 	if err != nil || mbusURL.Hostname() == "" {
 		return bosherr.WrapError(err, "Error parsing MbusURL")
@@ -68,6 +66,18 @@ func SetupNatsFirewall(mbus string) error {
 	addr_array, err := net.LookupIP(host)
 	if err != nil {
 		return bosherr.WrapError(err, fmt.Sprintf("Error resolving mbus host: %v", host))
+	}
+
+	return SetupIptables(host, port, addr_array)
+}
+
+func SetupIptables(host, port string, addr_array []net.IP) error {
+	_, err := cgroups.V1()
+	if err != nil {
+		if errors.Is(err, cgroups.ErrMountPointNotExist) {
+			return nil // v1cgroups are not mounted (warden stemcells)
+		}
+		return bosherr.WrapError(err, "Error retrieving cgroups mount point")
 	}
 
 	ipt, err := iptables.New()
