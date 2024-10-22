@@ -17,6 +17,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/kevinburke/ssh_config v1.2.0
+	github.com/klauspost/pgzip v1.2.6
 	github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.9.0
 	github.com/mitchellh/mapstructure v1.5.0
@@ -27,6 +28,7 @@ require (
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
+	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.29.0
 	golang.org/x/net v0.31.0
@@ -68,7 +70,6 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
-	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
