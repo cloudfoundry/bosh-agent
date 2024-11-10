@@ -90,6 +90,20 @@ var _ = Describe("mappedDevicePathResolver", func() {
 		})
 	})
 
+	Context("when a matching /dev/nvmeXn1 device is found", func() {
+		BeforeEach(func() {
+			err := fs.WriteFile("/dev/nvme0n1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns the match", func() {
+			realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(timedOut).To(BeFalse())
+			Expect(realPath).To(Equal("/dev/nvme0n1"))
+		})
+	})
+
 	Context("when no matching device is found the first time", func() {
 		Context("when the timeout has not expired", func() {
 			BeforeEach(func() {
