@@ -7,8 +7,8 @@ import (
 	"runtime"
 )
 
-const Version = "2024.1.1"
-const MachineVersion = "0.5.1"
+const Version = "devel"
+const MachineVersion = "devel"
 
 // version returns a version descriptor and reports whether the
 // version is a known release.

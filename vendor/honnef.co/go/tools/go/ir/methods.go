@@ -11,6 +11,8 @@ import (
 	"go/types"
 
 	"honnef.co/go/tools/analysis/lint"
+
+	"golang.org/x/exp/typeparams"
 )
 
 // MethodValue returns the Function implementing method sel, building
@@ -27,7 +29,7 @@ func (prog *Program) MethodValue(sel *types.Selection) *Function {
 		panic(fmt.Sprintf("MethodValue(%s) kind != MethodVal", sel))
 	}
 	T := sel.Recv()
-	if types.IsInterface(T) {
+	if isInterface(T) {
 		return nil // abstract method
 	}
 	if prog.mode&LogSource != 0 {
@@ -116,7 +118,7 @@ func (prog *Program) RuntimeTypes() []types.Type {
 // declaredFunc returns the concrete function/method denoted by obj.
 // Panic ensues if there is none.
 func (prog *Program) declaredFunc(obj *types.Func) *Function {
-	if origin := obj.Origin(); origin != obj {
+	if origin := typeparams.OriginMethod(obj); origin != obj {
 		// Calling method on instantiated type, create a wrapper that calls the generic type's method
 		base := prog.packageLevelValue(origin)
 		return makeInstance(prog, base.(*Function), obj.Type().(*types.Signature), nil)
@@ -165,7 +167,7 @@ func (prog *Program) needMethods(T types.Type, skip bool) {
 
 	tmset := prog.MethodSets.MethodSet(T)
 
-	if !skip && !types.IsInterface(T) && tmset.Len() > 0 {
+	if !skip && !isInterface(T) && tmset.Len() > 0 {
 		// Create methods of T.
 		mset := prog.createMethodSet(T)
 		if !mset.complete {
@@ -234,9 +236,6 @@ func (prog *Program) needMethods(T types.Type, skip bool) {
 		for i, n := 0, t.Len(); i < n; i++ {
 			prog.needMethods(t.At(i).Type(), false)
 		}
-
-	case *types.Alias:
-		prog.needMethods(types.Unalias(t), false)
 
 	default:
 		lint.ExhaustiveTypeSwitch(T)
