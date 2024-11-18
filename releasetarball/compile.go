@@ -59,7 +59,7 @@ func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
 	logger := boshlog.New(boshlog.LevelWarn, log.Default())
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
 	filesystem := boshsys.NewOsFileSystem(logger)
-	compressor := boshcmd.NewTarballCompressor(cmdRunner, filesystem)
+	compressor := boshcmd.NewTarballCompressor(filesystem)
 	blobstoreProvider := boshblob.NewProvider(filesystem, cmdRunner, dirProvider.EtcDir(), logger)
 	db, err := blobstoreProvider.Get("local", map[string]any{"blobstore_path": dirProvider.BlobsDir()})
 	if err != nil {

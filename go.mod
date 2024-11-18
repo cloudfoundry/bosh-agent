@@ -3,14 +3,14 @@ module github.com/cloudfoundry/bosh-agent
 go 1.22.0
 
 require (
-	code.cloudfoundry.org/clock v1.20.0
-	code.cloudfoundry.org/tlsconfig v0.8.0
+	code.cloudfoundry.org/clock v1.21.0
+	code.cloudfoundry.org/tlsconfig v0.9.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.8.2
-	github.com/cloudfoundry/bosh-davcli v0.0.374
-	github.com/cloudfoundry/bosh-utils v0.0.500
-	github.com/cloudfoundry/gosigar v1.3.75
+	github.com/cloudfoundry/bosh-davcli v0.0.379
+	github.com/cloudfoundry/bosh-utils v0.0.502
+	github.com/cloudfoundry/gosigar v1.3.76
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -38,7 +38,7 @@ require (
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358 // indirect
-	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6 // indirect
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
@@ -68,6 +68,7 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
@@ -85,5 +86,5 @@ require (
 	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	honnef.co/go/tools v0.5.0-0.dev // indirect
+	honnef.co/go/tools v0.5.1 // indirect
 )

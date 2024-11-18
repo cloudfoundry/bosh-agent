@@ -1103,7 +1103,7 @@ var _ = Describe("bootstrap", func() {
 				linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 				linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
 
-				compressor := boshcmd.NewTarballCompressor(runner, fs)
+				compressor := boshcmd.NewTarballCompressor(fs)
 				copier := boshcmd.NewGenericCpCopier(fs, logger)
 				logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 

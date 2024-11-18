@@ -70,7 +70,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 	linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
 
-	compressor := boshcmd.NewTarballCompressor(runner, fs)
+	compressor := boshcmd.NewTarballCompressor(fs)
 	copier := boshcmd.NewGenericCpCopier(fs, logger)
 
 	// Kick of stats collection as soon as possible
