@@ -1,14 +1,16 @@
 package fileutil
 
 import (
-	"os"
-	"io"
 	"fmt"
+	"io"
 	"io/fs"
-	"strings"
+	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 
 	"archive/tar"
+
 	"github.com/klauspost/pgzip"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -68,10 +70,10 @@ func (c tarballCompressor) CompressSpecificFilesInDir(dir string, files []string
 				return bosherr.WrapError(err, "Resovling relative tar path")
 			}
 
-			if fi.IsDir() {
-				relPath = relPath + "/"
+			header.Name = relPath
+			if runtime.GOOS == "windows" {
+				header.Name = strings.ReplaceAll(relPath, "\\", "/")
 			}
-			header.Name = filepath.FromSlash(relPath)
 
 			if err := tw.WriteHeader(header); err != nil {
 				return bosherr.WrapError(err, "Writing tar header")

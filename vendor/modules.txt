@@ -2,7 +2,7 @@
 ## explicit; go 1.22.0
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.9.0
+# code.cloudfoundry.org/tlsconfig v0.10.0
 ## explicit; go 1.22
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
@@ -77,7 +77,7 @@ github.com/cloudfoundry/bosh-cli/v7/release/manifest
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.502
+# github.com/cloudfoundry/bosh-utils v0.0.503
 ## explicit; go 1.22.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore

@@ -4,12 +4,12 @@ go 1.22.0
 
 require (
 	code.cloudfoundry.org/clock v1.21.0
-	code.cloudfoundry.org/tlsconfig v0.9.0
+	code.cloudfoundry.org/tlsconfig v0.10.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.8.2
 	github.com/cloudfoundry/bosh-davcli v0.0.379
-	github.com/cloudfoundry/bosh-utils v0.0.502
+	github.com/cloudfoundry/bosh-utils v0.0.503
 	github.com/cloudfoundry/gosigar v1.3.76
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
