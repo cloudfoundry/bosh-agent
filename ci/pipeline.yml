@@ -201,16 +201,17 @@ jobs:
           input_repo: bosh-agent
         output_mapping:
           output_repo: bumped-bosh-agent
-      - task: test-unit
-        file: bosh-agent/ci/tasks/test-unit.yml
-        input_mapping:
-          bosh-agent: bumped-bosh-agent
-      - task: test-unit-windows
-        file: bosh-agent/ci/tasks/test-unit-windows.yml
-        input_mapping:
-          bosh-agent: bumped-bosh-agent
-        tags:
-          - windows-nimbus
+      - in_parallel:
+        - task: test-unit
+          file: bosh-agent/ci/tasks/test-unit.yml
+          input_mapping:
+            bosh-agent: bumped-bosh-agent
+        - task: test-unit-windows
+          file: bosh-agent/ci/tasks/test-unit-windows.yml
+          input_mapping:
+            bosh-agent: bumped-bosh-agent
+          tags:
+            - windows-nimbus
       - put: bosh-agent
         params:
           repository: bumped-bosh-agent
