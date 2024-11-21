@@ -105,10 +105,17 @@ resources:
       username: ((docker.username))
       password: ((docker.password))
 
-  - name: bosh-src
+  - name: bosh
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
+
+  - name: bosh-ci
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      paths:
+        - ci
 
   - name: golang-release
     type: git
@@ -541,7 +548,8 @@ jobs:
     serial: true
     plan:
       - in_parallel:
-          - get: bosh-src
+          - get: bosh
+          - get: bosh-ci
           - get: config-server
           - get: bosh-cli
             params:
@@ -564,7 +572,8 @@ jobs:
 
       - task: tests
         privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
+        file: bosh/ci/tasks/test-integration.yml
+
         params:
           DB: postgresql
           DB_VERSION: 15
