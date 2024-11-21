@@ -12,7 +12,6 @@ import (
 	"bufio"
 	"bytes"
 	"cmp"
-	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +24,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/klauspost/pgzip"
 
 	"gopkg.in/yaml.v3"
 
@@ -220,7 +221,7 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 		return "", err
 	}
 	defer closeAndIgnoreErr(outputFile)
-	gw := gzip.NewWriter(outputFile)
+	gw := pgzip.NewWriter(outputFile)
 	defer closeAndIgnoreErr(gw)
 	tw := tar.NewWriter(gw)
 	defer closeAndIgnoreErr(tw)
@@ -320,7 +321,7 @@ func walkTarballFiles(releaseFilePath string, file tarballWalkFunc) error {
 		return nil
 	}
 	defer closeAndIgnoreErr(f)
-	gr, err := gzip.NewReader(bufio.NewReader(f))
+	gr, err := pgzip.NewReader(bufio.NewReader(f))
 	if err != nil {
 		return err
 	}
