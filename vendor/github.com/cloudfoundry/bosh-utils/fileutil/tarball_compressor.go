@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"archive/tar"
 	"fmt"
 	"io"
 	"io/fs"
@@ -9,16 +10,16 @@ import (
 	"runtime"
 	"strings"
 
-	"archive/tar"
-
 	"github.com/klauspost/pgzip"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+const forwardSlash string = "/"
+
 type tarballCompressor struct {
-	fs        boshsys.FileSystem
+	fs boshsys.FileSystem
 }
 
 func NewTarballCompressor(
@@ -72,7 +73,7 @@ func (c tarballCompressor) CompressSpecificFilesInDir(dir string, files []string
 
 			header.Name = relPath
 			if runtime.GOOS == "windows" {
-				header.Name = strings.ReplaceAll(relPath, "\\", "/")
+				header.Name = strings.ReplaceAll(relPath, "\\", forwardSlash)
 			}
 
 			if err := tw.WriteHeader(header); err != nil {
@@ -98,7 +99,7 @@ func (c tarballCompressor) CompressSpecificFilesInDir(dir string, files []string
 		return "", bosherr.WrapError(err, "Creating tgz")
 	}
 
-        if err = tw.Close(); err != nil {
+	if err = tw.Close(); err != nil {
 		return "", bosherr.WrapError(err, "Closing tar writer")
 	}
 
@@ -140,13 +141,13 @@ func (c tarballCompressor) DecompressFileToDir(tarballPath string, dir string, o
 
 		if options.PathInArchive != "" && !strings.HasPrefix(
 			filepath.Clean(header.Name), filepath.Clean(options.PathInArchive)) {
-				continue
+			continue
 		}
 
 		fullName := filepath.Join(dir, filepath.FromSlash(header.Name))
 
 		if options.StripComponents > 0 {
-			components := strings.Split(filepath.Clean(header.Name), string(filepath.Separator))
+			components := strings.Split(header.Name, forwardSlash)
 			if len(components) <= options.StripComponents {
 				continue
 			}
@@ -171,12 +172,12 @@ func (c tarballCompressor) DecompressFileToDir(tarballPath string, dir string, o
 			}
 
 		case tar.TypeLink:
-                        if err := c.fs.Symlink(header.Linkname, fullName); err != nil {
+			if err := c.fs.Symlink(header.Linkname, fullName); err != nil {
 				return bosherr.WrapError(err, "Decompressing link")
 			}
 
-                case tar.TypeSymlink:
-                        if err := c.fs.Symlink(header.Linkname, fullName); err != nil {
+		case tar.TypeSymlink:
+			if err := c.fs.Symlink(header.Linkname, fullName); err != nil {
 				return bosherr.WrapError(err, "Decompressing symlink")
 			}
 
