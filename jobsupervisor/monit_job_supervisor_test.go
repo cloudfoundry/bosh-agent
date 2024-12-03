@@ -734,6 +734,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			}
 
 			go func() {
+				defer GinkgoRecover()
+
 				err := monit.MonitorJobFailures(failureHandler)
 				Expect(err).NotTo(HaveOccurred())
 			}()
@@ -767,6 +769,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			}
 
 			go func() {
+				defer GinkgoRecover()
+
 				err := monit.MonitorJobFailures(failureHandler)
 				Expect(err).NotTo(HaveOccurred())
 			}()
