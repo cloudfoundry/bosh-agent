@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.8.2
 	github.com/cloudfoundry/bosh-davcli v0.0.383
-	github.com/cloudfoundry/bosh-utils v0.0.508
+	github.com/cloudfoundry/bosh-utils v0.0.509
 	github.com/cloudfoundry/gosigar v1.3.78
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
@@ -29,9 +29,9 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/crypto v0.29.0
-	golang.org/x/net v0.31.0
-	golang.org/x/sys v0.27.0
+	golang.org/x/crypto v0.30.0
+	golang.org/x/net v0.32.0
+	golang.org/x/sys v0.28.0
 	golang.org/x/tools v0.27.0
 	gopkg.in/yaml.v3 v3.0.1
 	inet.af/wf v0.0.0-20221017222439-36129f591884
@@ -82,8 +82,8 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/exp/typeparams v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	honnef.co/go/tools v0.5.0-0.dev // indirect

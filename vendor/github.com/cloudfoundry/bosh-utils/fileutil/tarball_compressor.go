@@ -162,6 +162,11 @@ func (c tarballCompressor) DecompressFileToDir(tarballPath string, dir string, o
 			}
 
 		case tar.TypeReg:
+			directoryPath := filepath.Dir(fullName)
+			if err := c.fs.MkdirAll(directoryPath, fs.FileMode(0755)); err != nil {
+				return bosherr.WrapError(err, "Creating directory for decompressed file")
+			}
+
 			outFile, err := c.fs.OpenFile(fullName, os.O_CREATE|os.O_WRONLY, fs.FileMode(header.Mode))
 			if err != nil {
 				return bosherr.WrapError(err, "Creating decompressed file")
