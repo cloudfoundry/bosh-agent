@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.8.2
 	github.com/cloudfoundry/bosh-davcli v0.0.383
-	github.com/cloudfoundry/bosh-utils v0.0.509
+	github.com/cloudfoundry/bosh-utils v0.0.510
 	github.com/cloudfoundry/gosigar v1.3.78
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
@@ -32,7 +32,7 @@ require (
 	golang.org/x/crypto v0.30.0
 	golang.org/x/net v0.32.0
 	golang.org/x/sys v0.28.0
-	golang.org/x/tools v0.27.0
+	golang.org/x/tools v0.28.0
 	gopkg.in/yaml.v3 v3.0.1
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
@@ -80,7 +80,7 @@ require (
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20241108190413-2d47ceb2692f // indirect
+	golang.org/x/exp/typeparams v0.0.0-20241204233417-43b7b7cde48d // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/text v0.21.0 // indirect

@@ -76,6 +76,14 @@ func (c tarballCompressor) CompressSpecificFilesInDir(dir string, files []string
 				header.Name = strings.ReplaceAll(relPath, "\\", forwardSlash)
 			}
 
+			if fi.IsDir() && header.Name[len(header.Name)-1:] != forwardSlash {
+				header.Name = header.Name + forwardSlash
+			}
+
+			if len(header.Name) < 2 || header.Name[0:2] != fmt.Sprintf(".%s", forwardSlash) {
+				header.Name = fmt.Sprintf(".%s%s", forwardSlash, header.Name)
+			}
+
 			if err := tw.WriteHeader(header); err != nil {
 				return bosherr.WrapError(err, "Writing tar header")
 			}
