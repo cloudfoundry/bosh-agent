@@ -104,7 +104,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.133
+# github.com/cloudfoundry/socks5-proxy v0.2.134
 ## explicit; go 1.22.0
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups v1.1.0
@@ -161,7 +161,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20241203143554-1e3fdc7de467
+# github.com/google/pprof v0.0.0-20241206021119-61a79c692802
 ## explicit; go 1.22
 github.com/google/pprof/profile
 # github.com/google/uuid v1.6.0
