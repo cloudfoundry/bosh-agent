@@ -100,7 +100,9 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 }
 
 func (idpr *idDevicePathResolver) stripVolumeIfRequired(diskID string) (string, error) {
+	fmt.Println("DEBUG: stripVolumeRegex called with diskID:", diskID)
 	if idpr.stripVolumeRegex == "" {
+		fmt.Println("DEBUG: stripVolumeRegex is empty, returning diskID as is")
 		return diskID, nil
 	}
 
@@ -111,5 +113,16 @@ func (idpr *idDevicePathResolver) stripVolumeIfRequired(diskID string) (string, 
 			return "", bosherr.WrapError(err, "Compiling stripVolumeRegex")
 		}
 	}
+
+	// Ugly ducktape code to strip diskID from all the prefixes so we can later re-add them from agent.json
+	re := regexp.MustCompile(`^[^-]+-([0-9a-fA-F-]+)$`)
+	matches := re.FindStringSubmatch(diskID)
+	fmt.Println("DEBUG: all matches found:", matches)
+	if len(matches) > 1 {
+		fmt.Println("DEBUG: matches found:", idpr.stripVolumeRegex+matches[1])
+		strippedDiskID := matches[1]
+		return idpr.stripVolumeRegex + strippedDiskID, nil
+	}
+	fmt.Println("DEBUG: no matches found, returning diskID as is")
 	return idpr.stripVolumeCompiled.ReplaceAllLiteralString(diskID, ""), nil
 }
