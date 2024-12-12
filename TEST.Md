@@ -31,7 +31,7 @@ contents of `persistent_disk_hints.json`
 }
 ```
 
-files listed in /dev/disk/by-id
+files listed in `/dev/disk/by-id`
 ```
 google-disk-69e53b13-76b3-4400-4437-633782a5cbb5
 google-disk-69e53b13-76b3-4400-4437-633782a5cbb5-part1
@@ -47,6 +47,55 @@ scsi-0Google_PersistentDisk_persistent-disk-0-part1
 scsi-0Google_PersistentDisk_persistent-disk-0-part2
 scsi-0Google_PersistentDisk_persistent-disk-0-part3
 scsi-0Google_PersistentDisk_persistent-disk-0-part4
+```
+
+## AWS
+contents of `persistent_disk_hints.json`
+```
+{
+  "vol-04b2a40747d7e9625": {
+    "ID": "vol-04b2a40747d7e9625",
+    "DeviceID": "",
+    "VolumeID": "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol04b2a40747d7e9625",
+    "Lun": "",
+    "HostDeviceID": "",
+    "Path": "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol04b2a40747d7e9625",
+    "ISCSISettings": {
+      "InitiatorName": "",
+      "Username": "",
+      "Target": "",
+      "Password": ""
+    },
+    "FileSystemType": "",
+    "MountOptions": null,
+    "Partitioner": ""
+  }
+}
+```
+
+files listed in `/dev/disk/by-id`
+```
+nvme-Amazon_Elastic_Block_Store_vol04b2a40747d7e9625
+nvme-Amazon_Elastic_Block_Store_vol04b2a40747d7e9625_1
+nvme-Amazon_Elastic_Block_Store_vol04b2a40747d7e9625_1-part1
+nvme-Amazon_Elastic_Block_Store_vol04b2a40747d7e9625-part1
+nvme-Amazon_Elastic_Block_Store_vol0c2ee6da5d33b8f8b
+nvme-Amazon_Elastic_Block_Store_vol0c2ee6da5d33b8f8b_1
+nvme-Amazon_Elastic_Block_Store_vol0c2ee6da5d33b8f8b_1-part1
+nvme-Amazon_Elastic_Block_Store_vol0c2ee6da5d33b8f8b_1-part2
+nvme-Amazon_Elastic_Block_Store_vol0c2ee6da5d33b8f8b-part1
+nvme-Amazon_Elastic_Block_Store_vol0c2ee6da5d33b8f8b-part2
+nvme-Amazon_Elastic_Block_Store_vol0c67d3300b92fe851
+nvme-Amazon_Elastic_Block_Store_vol0c67d3300b92fe851_1
+nvme-Amazon_Elastic_Block_Store_vol0c67d3300b92fe851_1-part1
+nvme-Amazon_Elastic_Block_Store_vol0c67d3300b92fe851-part1
+nvme-nvme.1d0f-766f6c3034623261343037343764376539363235-416d617a6f6e20456c617374696320426c6f636b2053746f7265-00000001
+nvme-nvme.1d0f-766f6c3034623261343037343764376539363235-416d617a6f6e20456c617374696320426c6f636b2053746f7265-00000001-part1
+nvme-nvme.1d0f-766f6c3063326565366461356433336238663862-416d617a6f6e20456c617374696320426c6f636b2053746f7265-00000001
+nvme-nvme.1d0f-766f6c3063326565366461356433336238663862-416d617a6f6e20456c617374696320426c6f636b2053746f7265-00000001-part1
+nvme-nvme.1d0f-766f6c3063326565366461356433336238663862-416d617a6f6e20456c617374696320426c6f636b2053746f7265-00000001-part2
+nvme-nvme.1d0f-766f6c3063363764333330306239326665383531-416d617a6f6e20456c617374696320426c6f636b2053746f7265-00000001
+nvme-nvme.1d0f-766f6c3063363764333330306239326665383531-416d617a6f6e20456c617374696320426c6f636b2053746f7265-00000001-part1
 ```
 
 ## OpenStack:
@@ -73,7 +122,7 @@ contents of `persistent_disk_hints.json`
 }
 ```
 
-files listed in /dev/disk/by-id
+files listed in `/dev/disk/by-id`
 ```
 scsi-305c185c6e8a34216ab301f5cf7d17f0d
 scsi-305c185c6e8a34216ab301f5cf7d17f0d-part1
@@ -112,7 +161,7 @@ contents of `persistent_disk_hints.json`
   }
 }
 ```
-files listed in /dev/disk/by-id
+files listed in `/dev/disk/by-id`
 ```
 scsi-3600224802f9637138f32cc2d44e8c34e
 scsi-3600224802f9637138f32cc2d44e8c34e-part1
@@ -153,7 +202,7 @@ contents of `persistent_disk_hints.json`
   }
 }
 ```
-files listed in /dev/disk/by-id
+files listed in `/dev/disk/by-id`
 ```
 virtio-gw8a1q0dqyqmcjrnetpj
 virtio-gw8a1q0dqyqmcjrnetpj-part1
