@@ -5,6 +5,29 @@ ideas so far
 
 IDS are coming from `/var/vcap/bosh/persistent_disk_hints.json`
 
+# agent.json
+the agent json regex
+#### GCP
+```
+"DiskIDTransformPatern" "^(disk-.+)$",
+"DiskIDTransformReplacement": "google-${1}"
+```
+#### AWS:
+```
+"DiskIDTransformPatern": "^(vol-(.+))$",
+"DiskIDTransformReplacement": "nvme-Amazon_Elastic_Block_Store_vol${2}"
+```
+#### OpenStack:
+```
+"DiskIDTransformPatern": "^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$",
+"DiskIDTransformReplacement": "scsi-${1}${2}${3}${4}${5}"
+```
+#### AliCloud:
+```
+"DiskIDTransformPatern": "^d-(.+)$",
+"DiskIDTransformReplacement": "virtio-${1}"
+```
+
 # IAAS
 
 ## GCP:
