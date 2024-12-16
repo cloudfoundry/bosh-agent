@@ -9,10 +9,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
-	. "github.com/cloudfoundry/bosh-agent/agentclient/http"
+	. "github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient"
-	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
 
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"

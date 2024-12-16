@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
-	. "github.com/cloudfoundry/bosh-agent/notification"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
+	fakembus "github.com/cloudfoundry/bosh-agent/v2/mbus/fakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/notification"
 )
 
 var _ = Describe("concreteNotifier", func() {

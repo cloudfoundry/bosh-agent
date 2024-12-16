@@ -1,7 +1,7 @@
 package jobsupervisor
 
 import (
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 )
 
 type Process struct {

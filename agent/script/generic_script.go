@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-agent/agent/script/cmd"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/script/cmd"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 

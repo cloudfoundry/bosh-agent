@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
+	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 

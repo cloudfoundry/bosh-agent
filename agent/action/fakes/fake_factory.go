@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
+	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
 )
 
 type FakeFactory struct {

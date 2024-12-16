@@ -1,9 +1,9 @@
 package packages
 
 import (
-	bc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
+	bc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
+	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"

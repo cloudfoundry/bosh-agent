@@ -9,11 +9,11 @@ import (
 
 	"runtime"
 
-	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
-	"github.com/cloudfoundry/bosh-agent/agent/script/drain/drainfakes"
-	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
+	fakeaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/script/drain/drainfakes"
+	boshenv "github.com/cloudfoundry/bosh-agent/v2/agent/script/pathenv"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"

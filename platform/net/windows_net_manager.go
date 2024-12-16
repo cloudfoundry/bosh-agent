@@ -8,8 +8,8 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"

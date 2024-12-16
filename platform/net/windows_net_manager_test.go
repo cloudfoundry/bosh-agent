@@ -13,14 +13,14 @@ import (
 
 	"code.cloudfoundry.org/clock/fakeclock"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/net"
-	"github.com/cloudfoundry/bosh-agent/platform/net/netfakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/net/netfakes"
 )
 
 var _ = Describe("WindowsNetManager", func() {

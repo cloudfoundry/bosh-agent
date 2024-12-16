@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 var _ = Describe("apply", func() {

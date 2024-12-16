@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/platform/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
 	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -8,7 +8,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )

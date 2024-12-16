@@ -5,10 +5,10 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )

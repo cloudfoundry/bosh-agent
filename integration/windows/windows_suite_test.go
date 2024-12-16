@@ -17,8 +17,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/integration/windows/utils"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
 )
 
 var (

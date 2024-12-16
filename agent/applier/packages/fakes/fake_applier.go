@@ -3,7 +3,7 @@ package fakes
 import (
 	"sync"
 
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 type FakeApplier struct {

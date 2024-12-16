@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"time"
 
-	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )

@@ -1,7 +1,7 @@
 package devicepathresolver
 
 import (
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type DevicePathResolver interface {

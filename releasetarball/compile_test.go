@@ -23,11 +23,11 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	"gopkg.in/yaml.v3"
 
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/agent/compiler"
-	"github.com/cloudfoundry/bosh-agent/releasetarball"
-	"github.com/cloudfoundry/bosh-agent/releasetarball/internal/fakes"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
+	"github.com/cloudfoundry/bosh-agent/v2/releasetarball"
+	"github.com/cloudfoundry/bosh-agent/v2/releasetarball/internal/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 func TestSuite(t *testing.T) {
@@ -63,7 +63,7 @@ var _ = Describe("NewCompiler", func() {
 	})
 })
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -fake-name Compiler -o internal/fakes/compiler.go github.com/cloudfoundry/bosh-agent/agent/compiler.Compiler
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -fake-name Compiler -o internal/fakes/compiler.go github.com/cloudfoundry/bosh-agent/v2/agent/compiler.Compiler
 
 var _ = Describe("Compile", func() {
 	const stemcellSlug = "banana-slug/1.23"

@@ -3,7 +3,7 @@ package agent_test
 import (
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agent"
+	"github.com/cloudfoundry/bosh-agent/v2/agent"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 

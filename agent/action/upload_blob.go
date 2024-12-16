@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 
-	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"

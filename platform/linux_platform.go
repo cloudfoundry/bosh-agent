@@ -18,17 +18,17 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
-	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	"github.com/cloudfoundry/bosh-agent/platform/cdrom"
-	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
-	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
-	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
+	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 const (

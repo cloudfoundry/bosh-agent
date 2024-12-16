@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
-	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
+	fakeip "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip/fakes"
 )
 
 var _ = Describe("InterfaceAddressesValidator", func() {

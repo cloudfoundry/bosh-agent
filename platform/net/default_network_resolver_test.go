@@ -7,10 +7,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/net"
-	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
-	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
+	fakeip "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 var _ = Describe("defaultNetworkResolver", func() {

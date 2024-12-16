@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/agent/tarpath"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/fileutil"

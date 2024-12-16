@@ -1,15 +1,15 @@
 package jobsupervisor_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 
 	"encoding/json"
 	"errors"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-agent/agent/alert"
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"

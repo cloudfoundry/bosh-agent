@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 )
 
 var _ = Describe("svServiceManager", func() {

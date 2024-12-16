@@ -5,9 +5,9 @@ import (
 
 	sigar "github.com/cloudfoundry/gosigar"
 
-	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 

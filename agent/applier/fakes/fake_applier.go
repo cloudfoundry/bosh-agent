@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 type FakeApplier struct {

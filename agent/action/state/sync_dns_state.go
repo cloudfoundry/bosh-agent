@@ -3,7 +3,7 @@ package state
 import (
 	"encoding/json"
 
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"

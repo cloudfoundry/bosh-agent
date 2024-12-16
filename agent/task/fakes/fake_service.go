@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 )
 
 type FakeService struct {

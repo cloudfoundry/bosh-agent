@@ -6,10 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 )
 
 var _ = Describe("SCSIVolumeIDDevicePathResolver", func() {

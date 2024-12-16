@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/stats"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 )
 
 func init() { // nolint:gochecknoinits

@@ -14,8 +14,8 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"github.com/cloudfoundry/bosh-agent/platform/cert"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"

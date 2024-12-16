@@ -1,10 +1,10 @@
 package integration_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient/applyspec"
-	"github.com/cloudfoundry/bosh-agent/integration"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

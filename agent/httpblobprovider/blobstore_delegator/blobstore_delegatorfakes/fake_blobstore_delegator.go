@@ -4,7 +4,7 @@ package blobstore_delegatorfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 

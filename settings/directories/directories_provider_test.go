@@ -3,7 +3,7 @@ package directories_test
 import (
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

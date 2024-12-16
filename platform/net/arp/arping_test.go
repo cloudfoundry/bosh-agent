@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/net/arp"
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )

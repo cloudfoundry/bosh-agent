@@ -9,8 +9,8 @@ import (
 
 	"runtime"
 
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshenv "github.com/cloudfoundry/bosh-agent/agent/script/pathenv"
+	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
+	boshenv "github.com/cloudfoundry/bosh-agent/v2/agent/script/pathenv"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 

@@ -3,11 +3,11 @@ package action
 import (
 	"errors"
 
-	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 
-	blobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
 )
 
 type FetchLogsWithSignedURLRequest struct {

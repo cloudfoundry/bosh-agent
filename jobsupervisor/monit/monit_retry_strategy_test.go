@@ -9,13 +9,13 @@ import (
 
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 
-	fakeboshaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
+	fakeboshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/monitfakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
+	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit/monitfakes"
 )
 
 var _ = Describe("MonitRetryStrategy", func() {

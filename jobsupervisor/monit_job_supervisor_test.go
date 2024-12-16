@@ -16,12 +16,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
-	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
+	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
+	fakemonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )

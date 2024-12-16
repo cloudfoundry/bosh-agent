@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/agent/tarpath"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"

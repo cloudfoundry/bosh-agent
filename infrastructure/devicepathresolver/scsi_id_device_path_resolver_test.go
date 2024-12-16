@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 )
 
 var _ = Describe("ScsiIDDevicePathResolver", func() {

@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	fakeappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier/fakes"
 )
 
 var _ = Describe("PrepareAction", func() {

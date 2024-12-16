@@ -3,9 +3,9 @@ package action
 import (
 	"errors"
 
-	boshappl "github.com/cloudfoundry/bosh-agent/agent/applier"
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	boshappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 

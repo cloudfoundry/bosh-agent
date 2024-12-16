@@ -4,7 +4,7 @@ import (
 	"errors"
 	"runtime"
 
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"

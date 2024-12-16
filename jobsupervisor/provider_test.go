@@ -4,19 +4,19 @@ import (
 	"runtime"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
 
-	fakemonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit/fakes"
-	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
+	fakemonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit/fakes"
+	fakembus "github.com/cloudfoundry/bosh-agent/v2/mbus/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 

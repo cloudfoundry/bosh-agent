@@ -4,7 +4,7 @@ package mbusfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/mbus"
+	"github.com/cloudfoundry/bosh-agent/v2/mbus"
 	nats "github.com/nats-io/nats.go"
 )
 

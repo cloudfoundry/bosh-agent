@@ -9,12 +9,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
-	"github.com/cloudfoundry/bosh-agent/mbus"
-	"github.com/cloudfoundry/bosh-agent/mbus/mbusfakes"
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	"github.com/cloudfoundry/bosh-agent/settings"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/blobstore/blobstorefakes"
+	"github.com/cloudfoundry/bosh-agent/v2/mbus"
+	"github.com/cloudfoundry/bosh-agent/v2/mbus/mbusfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 

@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
+	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/winsvc"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"

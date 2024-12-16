@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 
-	. "github.com/cloudfoundry/bosh-agent/handler"
+	. "github.com/cloudfoundry/bosh-agent/v2/handler"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 

@@ -1,8 +1,8 @@
 package fakes
 
 import (
-	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	boshpackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
+	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
+	boshpackages "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
 )
 
 type FakeApplierProvider struct {

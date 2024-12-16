@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
+	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 )
 
 type FakePartitioner struct {

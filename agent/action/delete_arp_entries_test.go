@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 )
 
 var _ = Describe("Delete ARP Entries", func() {

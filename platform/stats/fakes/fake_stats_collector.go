@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 )
 
 type FakeCollector struct {

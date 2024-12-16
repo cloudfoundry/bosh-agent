@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 )
 
 func init() { //nolint:gochecknoinits

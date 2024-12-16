@@ -5,12 +5,12 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"

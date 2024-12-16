@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 	"github.com/pivotal/go-smtpd/smtpd"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"

@@ -8,8 +8,8 @@ import (
 
 	"encoding/json"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
