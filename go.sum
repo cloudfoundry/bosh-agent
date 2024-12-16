@@ -32,8 +32,8 @@ github.com/cloudfoundry/bosh-cli/v7 v7.8.3 h1:IVi2Oyo69WLxJuBpqcHJUTkoy1JDM0y5xx
 github.com/cloudfoundry/bosh-cli/v7 v7.8.3/go.mod h1:beOLxNr/c16x5hTFWyheVVNBIhLdE14r/zkBxuEI3HE=
 github.com/cloudfoundry/bosh-davcli v0.0.384 h1:dL0SjRVLrYfZQx8GeyX8ygiHZd0N8UgYNqqy4AS4w9c=
 github.com/cloudfoundry/bosh-davcli v0.0.384/go.mod h1:gTVXrUtySvUqqp4U++OxtBhfMKw2prKlonTmNrzFXa0=
-github.com/cloudfoundry/bosh-utils v0.0.513 h1:PV3qhdX5ZcAB8870hqeB9TB/4pEkRsefig9vLtBUZP4=
-github.com/cloudfoundry/bosh-utils v0.0.513/go.mod h1:GCh00+zqULOUWDhIeYYjXP0vghoQgi1uX+RzC8q9rMU=
+github.com/cloudfoundry/bosh-utils v0.0.515 h1:hAQlg5mGVjHf3f4DKTyIA/wT4l91q7FOb3uIlj+KM3o=
+github.com/cloudfoundry/bosh-utils v0.0.515/go.mod h1:Yl7mT/Fy99deXXwaZZVUTf9VC878kUuoTS3h1F9Dzho=
 github.com/cloudfoundry/go-socks5 v0.0.0-20240831012420-2590b55236ee h1:88ruSYvCUKX2YcF2CMYVTmPGITvNdRbzaBRk2c/iMds=
 github.com/cloudfoundry/go-socks5 v0.0.0-20240831012420-2590b55236ee/go.mod h1:72EEm1oq5oXqGfu9XGtaRPWEcAFYd/P10cMNln0QhA8=
 github.com/cloudfoundry/gosigar v1.3.79 h1:ut3L/8A7rj4QYo8114MVDTToLFQgGlzHRVGXAWQNIMI=
@@ -153,8 +153,6 @@ github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.17.11 h1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IXrJmUc=
 github.com/klauspost/compress v1.17.11/go.mod h1:pMDklpSncoRMuLFrf1W9Ss9KT+0rH90U12bZKk7uwG0=
-github.com/klauspost/pgzip v1.2.6 h1:8RXeL5crjEUFnR2/Sn6GJNWtSQ3Dk8pq4CL3jvdDyjU=
-github.com/klauspost/pgzip v1.2.6/go.mod h1:Ch1tH69qFZu15pkjo5kYi6mth2Zzwzt50oCQKQE9RUs=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

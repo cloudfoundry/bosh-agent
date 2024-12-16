@@ -69,7 +69,7 @@ func NewDummyPlatform(
 		fs:                 fs,
 		cmdRunner:          cmdRunner,
 		collector:          collector,
-		compressor:         boshcmd.NewTarballCompressor(fs),
+		compressor:         boshcmd.NewTarballCompressor(cmdRunner, fs),
 		copier:             boshcmd.NewGenericCpCopier(fs, logger),
 		dirProvider:        dirProvider,
 		devicePathResolver: devicePathResolver,

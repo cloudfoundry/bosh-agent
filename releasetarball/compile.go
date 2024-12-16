@@ -12,6 +12,7 @@ import (
 	"bufio"
 	"bytes"
 	"cmp"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -24,8 +25,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-
-	"github.com/klauspost/pgzip"
 
 	"gopkg.in/yaml.v3"
 
@@ -60,7 +59,7 @@ func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
 	logger := boshlog.New(boshlog.LevelWarn, log.Default())
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
 	filesystem := boshsys.NewOsFileSystem(logger)
-	compressor := boshcmd.NewTarballCompressor(filesystem)
+	compressor := boshcmd.NewTarballCompressor(cmdRunner, filesystem)
 	blobstoreProvider := boshblob.NewProvider(filesystem, cmdRunner, dirProvider.EtcDir(), logger)
 	db, err := blobstoreProvider.Get("local", map[string]any{"blobstore_path": dirProvider.BlobsDir()})
 	if err != nil {
@@ -221,7 +220,7 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 		return "", err
 	}
 	defer closeAndIgnoreErr(outputFile)
-	gw := pgzip.NewWriter(outputFile)
+	gw := gzip.NewWriter(outputFile)
 	defer closeAndIgnoreErr(gw)
 	tw := tar.NewWriter(gw)
 	defer closeAndIgnoreErr(tw)
@@ -321,7 +320,7 @@ func walkTarballFiles(releaseFilePath string, file tarballWalkFunc) error {
 		return nil
 	}
 	defer closeAndIgnoreErr(f)
-	gr, err := pgzip.NewReader(bufio.NewReader(f))
+	gr, err := gzip.NewReader(bufio.NewReader(f))
 	if err != nil {
 		return err
 	}

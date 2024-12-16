@@ -19,6 +19,10 @@ import (
 
 	. "github.com/cloudfoundry/bosh-agent/platform"
 
+	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
 	fakecdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom/fakes"
 	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
@@ -28,17 +32,15 @@ import (
 	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
 	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
 	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
-	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
 	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 var _ = Describe("LinuxPlatform", func() {
@@ -85,7 +87,7 @@ var _ = Describe("LinuxPlatform", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		cdutil = fakecdrom.NewFakeCDUtil()
-		compressor = boshcmd.NewTarballCompressor(fs)
+		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewGenericCpCopier(fs, logger)
 		netManager = &fakenet.FakeManager{}
 		certManager = new(certfakes.FakeManager)

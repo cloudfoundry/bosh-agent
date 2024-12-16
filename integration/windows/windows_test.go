@@ -66,8 +66,9 @@ var _ = Describe("An Agent running on Windows", func() {
 		blobstoreClient = utils.NewBlobstore(windowsutils.BlobstoreURI())
 
 		logger := boshlog.NewLogger(boshlog.LevelNone)
+		cmdRunner := boshsys.NewExecCmdRunner(logger)
 		fs = boshsys.NewOsFileSystem(logger)
-		compressor := boshfileutil.NewTarballCompressor(fs)
+		compressor := boshfileutil.NewTarballCompressor(cmdRunner, fs)
 
 		natsClient = utils.NewNatsClient(compressor, blobstoreClient, windowsutils.FakeDirectorIP())
 		err := natsClient.Setup()
