@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.8.3
 	github.com/cloudfoundry/bosh-davcli v0.0.384
-	github.com/cloudfoundry/bosh-utils v0.0.513
+	github.com/cloudfoundry/bosh-utils v0.0.515
 	github.com/cloudfoundry/gosigar v1.3.79
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
@@ -17,7 +17,6 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/kevinburke/ssh_config v1.2.0
-	github.com/klauspost/pgzip v1.2.6
 	github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.9.0
 	github.com/mitchellh/mapstructure v1.5.0
