@@ -6,7 +6,7 @@ import (
 
 	"strings"
 
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
 	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -1,7 +1,7 @@
 package agent
 
 import (
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 )
 
 // NodeID is no longer being used by the director as of completion of

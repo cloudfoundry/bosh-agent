@@ -8,11 +8,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/platform/disk/diskfakes"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
-	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
-	. "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/disk/diskfakes"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
+	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 

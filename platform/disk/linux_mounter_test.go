@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/disk"
-	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 

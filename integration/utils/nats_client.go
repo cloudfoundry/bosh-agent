@@ -15,13 +15,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
+	"github.com/cloudfoundry/bosh-agent/v2/integration/windows/utils"
 
 	"golang.org/x/crypto/ssh"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	"github.com/cloudfoundry/bosh-agent/agentclient/http"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
 	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
 	"github.com/nats-io/nats.go"
 

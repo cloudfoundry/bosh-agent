@@ -8,12 +8,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent"
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
-	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
-	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	"github.com/cloudfoundry/bosh-agent/v2/agent"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	fakeaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
+	faketask "github.com/cloudfoundry/bosh-agent/v2/agent/task/fakes"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	fakes "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )

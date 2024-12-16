@@ -6,7 +6,7 @@ import (
 
 	"github.com/pivotal/go-smtpd/smtpd"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 )
 
 type alertEnvelope struct {

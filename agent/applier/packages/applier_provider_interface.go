@@ -1,7 +1,7 @@
 package packages
 
 import (
-	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 )
 
 type ApplierProvider interface {

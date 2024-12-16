@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 )
 
 type FakeRequestRetryable struct {

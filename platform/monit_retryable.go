@@ -1,7 +1,7 @@
 package platform
 
 import (
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )

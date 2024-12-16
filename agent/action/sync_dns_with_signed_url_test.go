@@ -7,14 +7,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 

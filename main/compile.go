@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/cloudfoundry/bosh-agent/app"
-	"github.com/cloudfoundry/bosh-agent/releasetarball"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
-	"github.com/cloudfoundry/bosh-agent/stemcellmetadata"
+	"github.com/cloudfoundry/bosh-agent/v2/app"
+	"github.com/cloudfoundry/bosh-agent/v2/releasetarball"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/stemcellmetadata"
 )
 
 func compileTarball(command string, args []string) {

@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 

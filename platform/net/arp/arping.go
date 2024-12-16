@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )

@@ -3,8 +3,8 @@ package net
 import (
 	gonet "net"
 
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 

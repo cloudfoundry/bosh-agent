@@ -3,10 +3,10 @@ package action
 import (
 	"errors"
 
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 

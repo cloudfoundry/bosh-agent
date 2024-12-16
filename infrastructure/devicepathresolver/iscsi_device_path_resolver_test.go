@@ -9,10 +9,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	"github.com/cloudfoundry/bosh-agent/platform/openiscsi/openiscsifakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/openiscsi/openiscsifakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -269,7 +269,7 @@ var _ = Describe("iscsiDevicePathResolver", func() {
 		Context("when performing a disk migration", func() {
 			BeforeEach(func() {
 				// NOTE: this test setup is based on the traces provided in
-				// https://github.com/cloudfoundry/bosh-agent/issues/252#issuecomment-977712657
+				// https://github.com/cloudfoundry/bosh-agent/v2/issues/252#issuecomment-977712657
 				dmsetupOutputForPartitionedDisk = fakesys.FakeCmdResult{Stdout: buildDmsetupOutput(
 					[]dmsetupDevice{
 						{Name: "3600a098038305679445d523053437757", MajMinNum: "(253:0)"},

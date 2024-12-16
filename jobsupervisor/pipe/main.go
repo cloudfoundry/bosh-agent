@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe/syslog"
+	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/pipe/syslog"
 )
 
 type noopWriter struct{}

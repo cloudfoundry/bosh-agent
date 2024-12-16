@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
+	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 )
 
 type FakeRoutesSearcher struct {

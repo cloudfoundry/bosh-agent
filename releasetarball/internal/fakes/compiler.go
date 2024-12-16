@@ -4,8 +4,8 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/agent/compiler"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 

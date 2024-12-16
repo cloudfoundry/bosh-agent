@@ -9,8 +9,8 @@ import (
 
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 

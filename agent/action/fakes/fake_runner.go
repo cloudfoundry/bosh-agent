@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
+	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
 )
 
 type FakeRunner struct {

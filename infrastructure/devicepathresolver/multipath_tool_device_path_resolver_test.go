@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 

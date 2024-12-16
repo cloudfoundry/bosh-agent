@@ -5,24 +5,24 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	"github.com/cloudfoundry/bosh-agent/platform/fakes"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
-	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
+	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 type mount struct {

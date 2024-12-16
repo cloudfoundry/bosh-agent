@@ -23,13 +23,13 @@ import (
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	"github.com/cloudfoundry/bosh-agent/jobsupervisor/winsvc"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/winsvc"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -83,16 +83,16 @@ var _ = BeforeSuite(func() {
 	TempDir, err = os.MkdirTemp("", "bosh-")
 	Expect(err).ToNot(HaveOccurred())
 
-	StartStopExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/StartStop")
+	StartStopExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/testdata/StartStop")
 	Expect(err).ToNot(HaveOccurred())
 
-	HelloExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/Hello")
+	HelloExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/testdata/Hello")
 	Expect(err).ToNot(HaveOccurred())
 
-	FlapStartExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/FlapStart")
+	FlapStartExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/testdata/FlapStart")
 	Expect(err).ToNot(HaveOccurred())
 
-	WaitSvcExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/testdata/WaitSvc")
+	WaitSvcExe, err = gexec.Build("github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/testdata/WaitSvc")
 	Expect(err).ToNot(HaveOccurred())
 })
 
@@ -267,7 +267,7 @@ func flappingStartConfig(flapCount, jobCount int) (WindowsProcessConfig, error) 
 }
 
 func buildPipeExe() error {
-	pathToPipeCLI, err := gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
+	pathToPipeCLI, err := gexec.Build("github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/pipe")
 	if err != nil {
 		return err
 	}

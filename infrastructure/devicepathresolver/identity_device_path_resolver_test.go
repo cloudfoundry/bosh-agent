@@ -1,9 +1,9 @@
 package devicepathresolver_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

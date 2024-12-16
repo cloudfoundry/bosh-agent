@@ -14,13 +14,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/net"
-	fakearp "github.com/cloudfoundry/bosh-agent/platform/net/arp/fakes"
-	fakednsresolver "github.com/cloudfoundry/bosh-agent/platform/net/dnsresolver/fakes"
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
-	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
-	"github.com/cloudfoundry/bosh-agent/platform/net/netfakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	fakearp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp/fakes"
+	fakednsresolver "github.com/cloudfoundry/bosh-agent/v2/platform/net/dnsresolver/fakes"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
+	fakeip "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/net/netfakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
@@ -208,7 +208,7 @@ nameserver 9.9.9.9
 				"ethstatic": staticNetwork,
 			})
 
-			staticNetwork.Netmask = "not an ip" //will cause InterfaceConfigurationCreator to fail
+			staticNetwork.Netmask = "not an ip" // will cause InterfaceConfigurationCreator to fail
 			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, "", nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Creating interface configurations"))

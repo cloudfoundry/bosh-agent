@@ -16,9 +16,9 @@ import (
 	. "github.com/onsi/gomega"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/integration/utils"
-	windowsutils "github.com/cloudfoundry/bosh-agent/integration/windows/utils"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	"github.com/cloudfoundry/bosh-agent/v2/integration/utils"
+	windowsutils "github.com/cloudfoundry/bosh-agent/v2/integration/windows/utils"
 )
 
 const (
@@ -88,7 +88,7 @@ var _ = Describe("An Agent running on Windows", func() {
 		agent.EnsureAgentServiceStopped()
 	})
 	It("blocks outgoing nats access for all other binaries once started", func() {
-		//The FW Rule works on basis of a binary (winAppId). Thus even shelling out from the Agent will not be allowed.
+		// The FW Rule works on basis of a binary (winAppId). Thus even shelling out from the Agent will not be allowed.
 		output := agent.RunPowershellCommand(fmt.Sprintf("Test-NetConnection -ComputerName %v -Port %v", windowsutils.FakeDirectorIP(), 4222))
 		Expect(output).To(ContainSubstring("TcpTestSucceeded       : False"))
 	})

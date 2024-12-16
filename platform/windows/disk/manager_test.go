@@ -1,8 +1,8 @@
 package disk_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
-	"github.com/cloudfoundry/bosh-agent/platform/windows/powershell"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 	"github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"

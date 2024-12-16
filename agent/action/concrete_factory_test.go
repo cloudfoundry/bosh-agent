@@ -4,26 +4,26 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/script/scriptfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
-	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
-	fakeagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
-	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
-	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
-	fakenotif "github.com/cloudfoundry/bosh-agent/notification/fakes"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
+	fakeappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier/fakes"
+	fakeagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore/blobstorefakes"
+	fakecomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
+	faketask "github.com/cloudfoundry/bosh-agent/v2/agent/task/fakes"
+	fakejobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
+	fakenotif "github.com/cloudfoundry/bosh-agent/v2/notification/fakes"
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_clock.go code.cloudfoundry.org/clock.Clock

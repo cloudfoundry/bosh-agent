@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeaction "github.com/cloudfoundry/bosh-agent/agent/action/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	fakeaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
 	"github.com/stretchr/testify/assert"
 )
 

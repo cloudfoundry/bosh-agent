@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/integration/windows/utils"
+	"github.com/cloudfoundry/bosh-agent/v2/integration/windows/utils"
 
 	davclient "github.com/cloudfoundry/bosh-davcli/client"
 	davconfig "github.com/cloudfoundry/bosh-davcli/config"

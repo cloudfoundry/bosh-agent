@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Applier

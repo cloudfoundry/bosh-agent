@@ -3,7 +3,7 @@ package fakes
 import (
 	"sync"
 
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 )
 
 type FakeHandler struct {

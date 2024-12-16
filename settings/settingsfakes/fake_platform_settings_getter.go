@@ -4,7 +4,7 @@ package settingsfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type FakePlatformSettingsGetter struct {

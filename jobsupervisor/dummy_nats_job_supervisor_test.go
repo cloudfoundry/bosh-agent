@@ -4,10 +4,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	. "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	fakembus "github.com/cloudfoundry/bosh-agent/mbus/fakes"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
+	fakembus "github.com/cloudfoundry/bosh-agent/v2/mbus/fakes"
 )
 
 var _ = Describe("dummyNatsJobSupervisor", func() {

@@ -16,13 +16,13 @@ import (
 
 	"github.com/google/uuid"
 
-	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
-	"github.com/cloudfoundry/bosh-agent/platform/windows/powershell"
+	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc/mgr"
 
-	. "github.com/cloudfoundry/bosh-agent/platform"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -33,15 +33,15 @@ import (
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 	"github.com/onsi/gomega/gbytes"
 
-	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
-	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
-	fakedisk "github.com/cloudfoundry/bosh-agent/platform/windows/disk/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cert/certfakes"
+	fakeplat "github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
+	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
+	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
+	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 var (

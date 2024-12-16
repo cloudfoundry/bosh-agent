@@ -3,7 +3,7 @@ package action
 import (
 	"errors"
 
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 )
 
 type DeleteARPEntriesActionArgs struct {

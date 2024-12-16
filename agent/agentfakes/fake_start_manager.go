@@ -4,7 +4,7 @@ package agentfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent"
+	"github.com/cloudfoundry/bosh-agent/v2/agent"
 )
 
 type FakeStartManager struct {

@@ -4,7 +4,7 @@ package scriptfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/script"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/script"
 )
 
 type FakeCancellableScript struct {

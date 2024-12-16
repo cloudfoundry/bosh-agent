@@ -1,7 +1,7 @@
 package applyspec
 
 import (
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 
 	"encoding/json"

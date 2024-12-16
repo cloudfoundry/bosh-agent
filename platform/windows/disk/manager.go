@@ -1,7 +1,7 @@
 package disk
 
 import (
-	"github.com/cloudfoundry/bosh-agent/platform/windows/powershell"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 	"github.com/cloudfoundry/bosh-utils/system"
 )
 

@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/mbus"
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/mbus"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 

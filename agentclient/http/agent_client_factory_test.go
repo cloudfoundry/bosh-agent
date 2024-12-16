@@ -3,7 +3,7 @@ package http_test
 import (
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agentclient/http"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/onsi/ginkgo/v2"

@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/infrastructure"
-	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/infrastructure"
+	fakeinf "github.com/cloudfoundry/bosh-agent/v2/infrastructure/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 var _ = Describe("MultiSettingsSource", func() {

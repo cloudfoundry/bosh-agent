@@ -13,7 +13,7 @@ import (
 	"github.com/masterzen/winrm"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
 )
 
 const dataDir = `C:\var\vcap\data\`

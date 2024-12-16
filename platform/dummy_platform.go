@@ -12,14 +12,14 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
-	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 type mount struct {

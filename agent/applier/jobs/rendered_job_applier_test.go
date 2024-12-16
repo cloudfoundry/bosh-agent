@@ -7,20 +7,20 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/jobs"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 
-	boshbc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
-	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
-	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
+	fakebc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
+	fakepackages "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages/fakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
+	fakejobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 

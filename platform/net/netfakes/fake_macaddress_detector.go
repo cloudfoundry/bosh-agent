@@ -4,7 +4,7 @@ package netfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/net"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/net"
 )
 
 type FakeMACAddressDetector struct {

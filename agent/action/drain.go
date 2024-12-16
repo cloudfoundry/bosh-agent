@@ -3,11 +3,11 @@ package action
 import (
 	"errors"
 
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
-	boshnotif "github.com/cloudfoundry/bosh-agent/notification"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
+	boshdrain "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
+	boshnotif "github.com/cloudfoundry/bosh-agent/v2/notification"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )

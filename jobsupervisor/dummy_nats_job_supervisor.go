@@ -3,8 +3,8 @@ package jobsupervisor
 import (
 	"encoding/json"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	bosherror "github.com/cloudfoundry/bosh-utils/errors"
 )
 

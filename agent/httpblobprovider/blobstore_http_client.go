@@ -4,7 +4,7 @@ import (
 	"crypto/x509"
 	"net/http"
 
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"

@@ -1,8 +1,8 @@
 package bundlecollection_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
-	"github.com/cloudfoundry/bosh-agent/agent/tarpath/tarpathfakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath/tarpathfakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -12,7 +12,7 @@ import (
 
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
 	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"

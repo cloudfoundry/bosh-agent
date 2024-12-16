@@ -38,14 +38,14 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
-	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
-	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	boshap "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
+	boshrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
+	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 const (

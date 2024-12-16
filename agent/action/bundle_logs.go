@@ -6,7 +6,7 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
-	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 )
 
 type BundleLogsAction struct {

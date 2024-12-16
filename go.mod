@@ -1,4 +1,4 @@
-module github.com/cloudfoundry/bosh-agent
+module github.com/cloudfoundry/bosh-agent/v2
 
 go 1.22.0
 

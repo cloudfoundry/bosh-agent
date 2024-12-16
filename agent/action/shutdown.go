@@ -3,7 +3,7 @@ package action
 import (
 	"errors"
 
-	"github.com/cloudfoundry/bosh-agent/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/platform"
 )
 
 type ShutdownAction struct {

@@ -6,7 +6,7 @@ import (
 
 	sigar "github.com/cloudfoundry/gosigar"
 
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 

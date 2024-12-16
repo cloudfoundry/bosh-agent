@@ -3,7 +3,7 @@ package action
 import (
 	"errors"
 
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 

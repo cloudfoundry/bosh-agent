@@ -8,8 +8,8 @@ import (
 
 	"errors"
 
-	"github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	fakeagentblob "github.com/cloudfoundry/bosh-agent/agent/blobstore/blobstorefakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
+	fakeagentblob "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore/blobstorefakes"
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
 	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"

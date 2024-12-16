@@ -4,7 +4,7 @@ package diskfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 )
 
 type FakeMounter struct {

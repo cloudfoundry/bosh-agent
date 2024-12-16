@@ -3,7 +3,7 @@ package drain
 import (
 	"sort"
 
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . ScriptParams

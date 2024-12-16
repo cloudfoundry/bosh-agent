@@ -1,8 +1,8 @@
 package action
 
 import (
-	"github.com/cloudfoundry/bosh-agent/settings"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"

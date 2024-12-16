@@ -6,13 +6,13 @@ import (
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
+	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/action"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/action"
 )
 
 var _ = Describe("FetchLogsAction", func() {

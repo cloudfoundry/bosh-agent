@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
-	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )

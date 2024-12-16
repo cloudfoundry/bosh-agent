@@ -6,10 +6,10 @@ package jobsupervisor
 import (
 	"os"
 
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
-	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
+	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
