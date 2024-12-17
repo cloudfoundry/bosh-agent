@@ -86,7 +86,7 @@ type LinuxOptions struct {
 
 	// Regular expression specifying what part of disk ID to strip and transform
 	// example: "pattern": "^(disk-.+)$", "replacement": "google-${1}",
-	DiskIDTransformPatern string
+	DiskIDTransformPattern string
 	DiskIDTransformReplacement string
 }
 

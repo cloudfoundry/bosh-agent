@@ -16,7 +16,7 @@ type idDevicePathResolver struct {
 	diskWaitTimeout            time.Duration
 	udev                       boshudev.UdevDevice
 	fs                         boshsys.FileSystem
-	DiskIDTransformPatern      string
+	DiskIDTransformPattern     string
 	DiskIDTransformReplacement string
 }
 
@@ -24,14 +24,14 @@ func NewIDDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	udev boshudev.UdevDevice,
 	fs boshsys.FileSystem,
-	DiskIDTransformPatern string,
+	DiskIDTransformPattern string,
 	DiskIDTransformReplacement string,
 ) DevicePathResolver {
 	return &idDevicePathResolver{
 		diskWaitTimeout:            diskWaitTimeout,
 		udev:                       udev,
 		fs:                         fs,
-		DiskIDTransformPatern:      DiskIDTransformPatern,
+		DiskIDTransformPattern:     DiskIDTransformPattern,
 		DiskIDTransformReplacement: DiskIDTransformReplacement,
 	}
 }
@@ -100,13 +100,13 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 }
 
 func (idpr *idDevicePathResolver) TransformDiskID(diskID string) (string, error) {
-	if idpr.DiskIDTransformPatern == "" {
+	if idpr.DiskIDTransformPattern == "" {
 		fmt.Println("DEBUG: DiskIDTransformRules is empty, returning diskID as is")
 		return diskID, nil
 	}
 
 	transformed := diskID
-	re := regexp.MustCompile(idpr.DiskIDTransformPatern)
+	re := regexp.MustCompile(idpr.DiskIDTransformPattern)
 	if re.MatchString(transformed) {
 		transformed = re.ReplaceAllString(transformed, idpr.DiskIDTransformReplacement)
 	}
