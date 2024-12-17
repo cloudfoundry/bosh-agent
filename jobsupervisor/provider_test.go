@@ -4,20 +4,18 @@ import (
 	"runtime"
 	"time"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
+	"code.cloudfoundry.org/clock"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
-	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
-
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	fakemonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit/fakes"
 	fakembus "github.com/cloudfoundry/bosh-agent/v2/mbus/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-
+	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() { //nolint:gochecknoinits
@@ -52,6 +50,7 @@ func init() { //nolint:gochecknoinits
 
 			platform.GetFsReturns(fileSystem)
 			platform.GetRunnerReturns(cmdRunner)
+			platform.GetServiceManagerReturns(serviceManager)
 
 			provider = NewProvider(
 				platform,
