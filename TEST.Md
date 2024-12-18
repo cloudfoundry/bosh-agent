@@ -9,22 +9,22 @@ IDS are coming from `/var/vcap/bosh/persistent_disk_hints.json`
 the agent json regex
 #### GCP
 ```
-"DiskIDTransformPatern" "^(disk-.+)$",
+"DiskIDTransformPattern" "^(disk-.+)$",
 "DiskIDTransformReplacement": "google-${1}"
 ```
 #### AWS:
 ```
-"DiskIDTransformPatern": "^(vol-(.+))$",
+"DiskIDTransformPattern": "^(vol-(.+))$",
 "DiskIDTransformReplacement": "nvme-Amazon_Elastic_Block_Store_vol${2}"
 ```
 #### OpenStack:
 ```
-"DiskIDTransformPatern": "^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$",
+"DiskIDTransformPattern": "^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$",
 "DiskIDTransformReplacement": "scsi-${1}${2}${3}${4}${5}"
 ```
 #### AliCloud:
 ```
-"DiskIDTransformPatern": "^d-(.+)$",
+"DiskIDTransformPattern": "^d-(.+)$",
 "DiskIDTransformReplacement": "virtio-${1}"
 ```
 

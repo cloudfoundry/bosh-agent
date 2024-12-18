@@ -59,7 +59,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include-longname")
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{"/dev/disk/by-id/virtio-fake-disk-id-include-longname"})
+				fs.SetGlob("/dev/disk/by-id/fake-disk-id-include-longname", []string{"/dev/disk/by-id/virtio-fake-disk-id-include-longname"})
 			})
 
 			It("returns fully resolved the path (not potentially relative symlink target)", func() {
@@ -86,7 +86,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 				err = fs.Symlink("fake-device-path-2", "/dev/disk/by-id/customprefix-fake-disk-id-include-longname")
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{
+				fs.SetGlob("/dev/disk/by-id/fake-disk-id-include-longname", []string{
 					"/dev/disk/by-id/virtio-fake-disk-id-include-longname",
 					"/dev/disk/by-id/customprefix-fake-disk-id-include-longname",
 				})
@@ -132,7 +132,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					fs.GlobStub = func(pattern string) ([]string, error) {
-						fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{
+						fs.SetGlob("/dev/disk/by-id/fake-disk-id-include-longname", []string{
 							"/dev/disk/by-id/virtio-fake-disk-id-include-longname",
 						})
 
