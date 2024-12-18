@@ -18,11 +18,12 @@ import (
 
 var _ = Describe("IDDevicePathResolver", func() {
 	var (
-		fs               *fakesys.FakeFileSystem
-		udev             *fakeudev.FakeUdevDevice
-		diskSettings     boshsettings.DiskSettings
-		pathResolver     DevicePathResolver
-		stripVolumeRegex string
+		fs                         *fakesys.FakeFileSystem
+		udev                       *fakeudev.FakeUdevDevice
+		diskSettings               boshsettings.DiskSettings
+		pathResolver               DevicePathResolver
+		DiskIDTransformPattern     string
+		DiskIDTransformReplacement string
 	)
 
 	BeforeEach(func() {
@@ -34,7 +35,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 	})
 
 	JustBeforeEach(func() {
-		pathResolver = NewIDDevicePathResolver(500*time.Millisecond, udev, fs, stripVolumeRegex)
+		pathResolver = NewIDDevicePathResolver(500*time.Millisecond, udev, fs, DiskIDTransformPattern, DiskIDTransformReplacement)
 	})
 
 	Describe("GetRealDevicePath", func() {
@@ -211,17 +212,18 @@ var _ = Describe("IDDevicePathResolver", func() {
 				diskSettings = boshsettings.DiskSettings{
 					ID: "vol-fake-disk-id-include-longname",
 				}
-				stripVolumeRegex = "^vol-"
+				DiskIDTransformPattern = "^(vol-.+)$"
+				DiskIDTransformReplacement = "test-${1}"
 				err := fs.MkdirAll("/dev/fake-device-path", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
 
 				err = fs.Symlink("/dev/fake-device-path", "/dev/intermediate/fake-device-path")
 				Expect(err).ToNot(HaveOccurred())
 
-				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/virtio-fake-disk-id-include-longname")
+				err = fs.Symlink("/dev/intermediate/fake-device-path", "/dev/disk/by-id/test-vol-fake-disk-id-include-longname")
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.SetGlob("/dev/disk/by-id/*fake-disk-id-include-longname", []string{"/dev/disk/by-id/virtio-fake-disk-id-include-longname"})
+				fs.SetGlob("/dev/disk/by-id/test-vol-fake-disk-id-include-longname", []string{"/dev/disk/by-id/test-vol-fake-disk-id-include-longname"})
 			})
 
 			It("removes prefix and returns fully resolved path", func() {
