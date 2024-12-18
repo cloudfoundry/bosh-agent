@@ -1,7 +1,6 @@
 package devicepathresolver
 
 import (
-	"fmt"
 	"path"
 	"regexp"
 	"time"
@@ -13,25 +12,26 @@ import (
 )
 
 type idDevicePathResolver struct {
-	diskWaitTimeout     time.Duration
-	udev                boshudev.UdevDevice
-	fs                  boshsys.FileSystem
-	stripVolumeRegex    string
-	stripVolumeCompiled *regexp.Regexp
+	diskWaitTimeout            time.Duration
+	udev                       boshudev.UdevDevice
+	fs                         boshsys.FileSystem
+	DiskIDTransformPattern     string
+	DiskIDTransformReplacement string
 }
 
 func NewIDDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	udev boshudev.UdevDevice,
 	fs boshsys.FileSystem,
-	stripVolumeRegex string,
+	DiskIDTransformPattern string,
+	DiskIDTransformReplacement string,
 ) DevicePathResolver {
 	return &idDevicePathResolver{
-		diskWaitTimeout:     diskWaitTimeout,
-		udev:                udev,
-		fs:                  fs,
-		stripVolumeRegex:    stripVolumeRegex,
-		stripVolumeCompiled: nil,
+		diskWaitTimeout:            diskWaitTimeout,
+		udev:                       udev,
+		fs:                         fs,
+		DiskIDTransformPattern:     DiskIDTransformPattern,
+		DiskIDTransformReplacement: DiskIDTransformReplacement,
 	}
 }
 
@@ -60,13 +60,12 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 	var realPath string
 
 	diskID := diskSettings.ID
-	strippedDiskID, err := idpr.stripVolumeIfRequired(diskID)
+	TransformedDiskID, err := idpr.TransformDiskID(diskID)
 	if err != nil {
 		return "", false, err
 	}
 
-	deviceGlobPattern := fmt.Sprintf("*%s", strippedDiskID)
-	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", deviceGlobPattern)
+	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", TransformedDiskID)
 
 	for !found {
 		if time.Now().After(stopAfter) {
@@ -99,17 +98,15 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 	return realPath, false, nil
 }
 
-func (idpr *idDevicePathResolver) stripVolumeIfRequired(diskID string) (string, error) {
-	if idpr.stripVolumeRegex == "" {
+func (idpr *idDevicePathResolver) TransformDiskID(diskID string) (string, error) {
+	if idpr.DiskIDTransformPattern == "" {
 		return diskID, nil
 	}
 
-	if idpr.stripVolumeCompiled == nil {
-		var err error
-		idpr.stripVolumeCompiled, err = regexp.Compile(idpr.stripVolumeRegex)
-		if err != nil {
-			return "", bosherr.WrapError(err, "Compiling stripVolumeRegex")
-		}
+	transformed := diskID
+	re := regexp.MustCompile(idpr.DiskIDTransformPattern)
+	if re.MatchString(transformed) {
+		transformed = re.ReplaceAllString(transformed, idpr.DiskIDTransformReplacement)
 	}
-	return idpr.stripVolumeCompiled.ReplaceAllLiteralString(diskID, ""), nil
+	return transformed, nil
 }
