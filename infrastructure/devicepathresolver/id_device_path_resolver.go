@@ -1,7 +1,6 @@
 package devicepathresolver
 
 import (
-	"fmt"
 	"path"
 	"regexp"
 	"time"
@@ -101,7 +100,6 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 
 func (idpr *idDevicePathResolver) TransformDiskID(diskID string) (string, error) {
 	if idpr.DiskIDTransformPattern == "" {
-		fmt.Println("DEBUG: DiskIDTransformRules is empty, returning diskID as is")
 		return diskID, nil
 	}
 
@@ -110,6 +108,5 @@ func (idpr *idDevicePathResolver) TransformDiskID(diskID string) (string, error)
 	if re.MatchString(transformed) {
 		transformed = re.ReplaceAllString(transformed, idpr.DiskIDTransformReplacement)
 	}
-	fmt.Printf("DEBUG: DiskIDTransformRules: Original: %s -> Transformed: %s\n", diskID, transformed)
 	return transformed, nil
 }
