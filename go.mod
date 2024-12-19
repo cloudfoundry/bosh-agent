@@ -3,14 +3,14 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.22.0
 
 require (
-	code.cloudfoundry.org/clock v1.24.0
-	code.cloudfoundry.org/tlsconfig v0.12.0
+	code.cloudfoundry.org/clock v1.25.0
+	code.cloudfoundry.org/tlsconfig v0.13.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.8.3
-	github.com/cloudfoundry/bosh-davcli v0.0.384
-	github.com/cloudfoundry/bosh-utils v0.0.515
-	github.com/cloudfoundry/gosigar v1.3.79
+	github.com/cloudfoundry/bosh-cli/v7 v7.8.5
+	github.com/cloudfoundry/bosh-davcli v0.0.385
+	github.com/cloudfoundry/bosh-utils v0.0.516
+	github.com/cloudfoundry/gosigar v1.3.80
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -18,9 +18,9 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/kevinburke/ssh_config v1.2.0
 	github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.9.0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.37.0
+	github.com/nats-io/nats.go v1.38.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
@@ -29,7 +29,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.31.0
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 	golang.org/x/sys v0.28.0
 	golang.org/x/tools v0.28.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -79,11 +79,11 @@ require (
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20241210194714-1829a127f884 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20241217172543-b2144cdd0a67 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	google.golang.org/protobuf v1.36.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	honnef.co/go/tools v0.5.0-0.dev // indirect
 )
