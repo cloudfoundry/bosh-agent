@@ -6,9 +6,13 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 GOOS="${GOOS:-$(go env GOOS)}"
 export CGO_ENABLED=0
 
+default_version='[DEV BUILD]'
+VERSION_LABEL="${VERSION_LABEL:-${default_version}}"
+
 echo "Building with $(go version)..."
 
-go build -o "${ROOT_DIR}/out/bosh-agent" \
+go build -o "${ROOT_DIR}/out/bosh-agent" -mod=mod \
+  -ldflags="-X 'main.VersionLabel=${VERSION_LABEL}'" \
   "${ROOT_DIR}/main"
 
 if [[ "${GOOS}" = 'windows' ]]; then
