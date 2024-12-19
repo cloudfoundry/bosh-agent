@@ -126,10 +126,6 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 }
 
 func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
-	if !networks.HasInterfaceAlias() && len(interfacesByMAC) < len(networks) {
-		return nil, nil, bosherr.Errorf("Number of network settings '%d' is greater than the number of network devices '%d'", len(networks), len(interfacesByMAC))
-	}
-
 	// In cases where we only have one network and it has no MAC address (either because the IAAS doesn't give us one or
 	// it's an old CPI), if we only have one interface, we should map them
 	if len(networks) == 1 && len(interfacesByMAC) == 1 {
