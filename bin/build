@@ -11,7 +11,7 @@ VERSION_LABEL="${VERSION_LABEL:-${default_version}}"
 
 echo "Building with $(go version)..."
 
-go build -o "${ROOT_DIR}/out/bosh-agent" -mod=mod \
+go build -o "${ROOT_DIR}/out/bosh-agent" \
   -ldflags="-X 'main.VersionLabel=${VERSION_LABEL}'" \
   "${ROOT_DIR}/main"
 
