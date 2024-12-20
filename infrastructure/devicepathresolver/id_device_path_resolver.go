@@ -1,6 +1,7 @@
 package devicepathresolver
 
 import (
+	"fmt"
 	"path"
 	"regexp"
 	"time"
@@ -71,7 +72,12 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 		return "", false, err
 	}
 
-	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", TransformedDiskID)
+	deviceGlobPattern := TransformedDiskID
+	if idpr.DiskIDTransformPattern == "" {
+		deviceGlobPattern = fmt.Sprintf("*%s", TransformedDiskID)
+	}
+
+	deviceIDPathGlobPattern := path.Join("/", "dev", "disk", "by-id", deviceGlobPattern)
 
 	for !found {
 		if time.Now().After(stopAfter) {
