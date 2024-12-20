@@ -30,4 +30,8 @@ cp out/bosh-agent "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-${filename_suffix}"
 if [[ $GOOS = 'windows' ]]; then
   shasum -a 256 out/bosh-agent-pipe
   cp out/bosh-agent-pipe "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-pipe-${filename_suffix}"
+  shasum -a 256 integration/windows/fixtures/service_wrapper.xml
+  cp integration/windows/fixtures/service_wrapper.xml "${CONCOURSE_ROOT}/${DIRNAME}"
+
+  git rev-parse HEAD > "${CONCOURSE_ROOT}/${DIRNAME}/git-sha"
 fi
