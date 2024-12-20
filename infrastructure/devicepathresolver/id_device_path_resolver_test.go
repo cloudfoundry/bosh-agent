@@ -208,7 +208,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 			})
 		})
 
-		Context("when stripVolumeRegex option is used to remove mismatched disk ID prefix", func() {
+		Context("when DiskIDTransformRules are used to match and transform the diskid", func() {
 			BeforeEach(func() {
 				diskSettings = boshsettings.DiskSettings{
 					ID: "vol-fake-disk-id-include-longname",
