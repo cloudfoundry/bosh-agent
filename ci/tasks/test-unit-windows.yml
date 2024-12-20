@@ -3,6 +3,7 @@ platform: windows
 
 inputs:
 - name: bosh-agent
+- name: bosh-agent-ci
 
 run:
   path: powershell
@@ -10,4 +11,4 @@ run:
   - "-ExecutionPolicy"
   - "Bypass"
   - "-File"
-  - bosh-agent/ci/tasks/test-unit.ps1
+  - bosh-agent-ci/ci/tasks/test-unit.ps1

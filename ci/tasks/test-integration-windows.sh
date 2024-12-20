@@ -2,25 +2,24 @@
 
 set -eu -o pipefail
 
-script_dir=$(dirname "$0")
-bosh_agent_dir=$( cd "${script_dir}"/../.. && pwd )
-workspace_dir=$( cd "${bosh_agent_dir}"/.. && pwd )
+CONCOURSE_ROOT=$(pwd)
 
-agent_vm_key_path="${workspace_dir}/agent-info/agent-creds.pem"
-agent_ip_path="${workspace_dir}/agent-info/agent_ip"
-fake_director_ip_path="${workspace_dir}/agent-info/fake_director_ip"
-jumpbox_key_path="${workspace_dir}/jumpbox-key.pem"
-nats_ca_path="${workspace_dir}/agent-info/nats-ca.pem"
-nats_certificate_path="${workspace_dir}/agent-info/nats-certificate.pem"
-nats_private_key_path="${workspace_dir}/agent-info/nats-private-key.pem"
+bosh_agent_dir="${CONCOURSE_ROOT}/bosh-agent"
+agent_vm_key_path="${CONCOURSE_ROOT}/agent-info/agent-creds.pem"
+agent_ip_path="${CONCOURSE_ROOT}/agent-info/agent_ip"
+fake_director_ip_path="${CONCOURSE_ROOT}/agent-info/fake_director_ip"
+jumpbox_key_path="${CONCOURSE_ROOT}/jumpbox-key.pem"
+nats_ca_path="${CONCOURSE_ROOT}/agent-info/nats-ca.pem"
+nats_certificate_path="${CONCOURSE_ROOT}/agent-info/nats-certificate.pem"
+nats_private_key_path="${CONCOURSE_ROOT}/agent-info/nats-private-key.pem"
 
 mkdir -p ~/.ssh
 
-echo "${JUMPBOX_PRIVATE_KEY}" > ${jumpbox_key_path}
-chmod 600 ${jumpbox_key_path}
+echo "${JUMPBOX_PRIVATE_KEY}" > "${jumpbox_key_path}"
+chmod 600 "${jumpbox_key_path}"
 
-agent_ip="$(cat ${agent_ip_path})"
-fake_director_ip="$(cat ${fake_director_ip_path})"
+agent_ip="$(cat "${agent_ip_path}")"
+fake_director_ip="$(cat "${fake_director_ip_path}")"
 
 echo "
 Host ${JUMPBOX_IP}
@@ -33,21 +32,21 @@ Host ${agent_ip}
   ProxyJump ${JUMPBOX_IP}
 " > ~/.ssh/config
 
-ssh-keyscan -H ${JUMPBOX_IP} >> ~/.ssh/known_hosts 2>/dev/null
-ssh ${JUMPBOX_USERNAME}@${JUMPBOX_IP} "ssh-keyscan -H ${agent_ip}" >> ~/.ssh/known_hosts 2>/dev/null
+ssh-keyscan -H "${JUMPBOX_IP}" >> ~/.ssh/known_hosts 2>/dev/null
+ssh "${JUMPBOX_USERNAME}@${JUMPBOX_IP}" "ssh-keyscan -H ${agent_ip}" >> ~/.ssh/known_hosts 2>/dev/null
 
 echo -e "\n Enabling WinRM and setting vcap password..."
-ssh ${agent_ip} "powershell.exe -noprofile -command Enable-WinRM" > /dev/null 2>&1
-ssh ${agent_ip} "NET.exe USER vcap Agent-test-password1" > /dev/null 2>&1
+ssh "${agent_ip}" "powershell.exe -noprofile -command Enable-WinRM" > /dev/null 2>&1
+ssh "${agent_ip}" "NET.exe USER vcap Agent-test-password1" > /dev/null 2>&1
 
 echo -e "\n Stopping running agent processes..."
-ssh ${agent_ip} "c:\bosh\service_wrapper.exe stop" > /dev/null 2>&1
-ssh ${agent_ip} "c:\bosh\service_wrapper.exe uninstall" > /dev/null 2>&1
-ssh ${agent_ip} "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-healthcheck-windows" > /dev/null 2>&1
-ssh ${agent_ip} "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-nameserverconfig-windows" > /dev/null 2>&1
-ssh ${agent_ip} "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-windows" > /dev/null 2>&1
+ssh "${agent_ip}" "c:\bosh\service_wrapper.exe stop" > /dev/null 2>&1
+ssh "${agent_ip}" "c:\bosh\service_wrapper.exe uninstall" > /dev/null 2>&1
+ssh "${agent_ip}" "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-healthcheck-windows" > /dev/null 2>&1
+ssh "${agent_ip}" "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-nameserverconfig-windows" > /dev/null 2>&1
+ssh "${agent_ip}" "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-windows" > /dev/null 2>&1
 
-pushd ${bosh_agent_dir} > /dev/null
+pushd "${bosh_agent_dir}" > /dev/null
   echo -e "\n Building agent..."
   agent_output_path="${bosh_agent_dir}/integration/windows/fixtures/bosh-agent.exe"
   pipe_output_path="${bosh_agent_dir}/integration/windows/fixtures/pipe.exe"
@@ -61,9 +60,9 @@ pushd ${bosh_agent_dir} > /dev/null
 
   echo -e "\n Installing agent and fixtures..."
   set -x
-  scp -r ${bosh_agent_dir}/integration/windows/fixtures/* ${agent_ip}:/bosh/
-  ssh ${agent_ip} 'move /Y C:\bosh\pipe.exe C:\var\vcap\bosh\bin\pipe.exe'
-  ssh ${agent_ip} 'move /Y C:\bosh\psFixture "C:\Program Files\WindowsPowerShell\Modules\"'
+  scp -r "${bosh_agent_dir}"/integration/windows/fixtures/* "${agent_ip}":/bosh/
+  ssh "${agent_ip}" 'move /Y C:\bosh\pipe.exe C:\var\vcap\bosh\bin\pipe.exe'
+  ssh "${agent_ip}" 'move /Y C:\bosh\psFixture "C:\Program Files\WindowsPowerShell\Modules\"'
   set +x
 
   echo -e "\n Running tests..."

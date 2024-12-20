@@ -8,9 +8,10 @@ image_resource:
 
 inputs:
 - name: bosh-agent
+- name: bosh-agent-ci
 - name: version-semver
 
 params: {}
 
 run:
-  path: bosh-agent/ci/tasks/assert-version-aligns.sh
+  path: bosh-agent-ci/ci/tasks/assert-version-aligns.sh

@@ -4,17 +4,17 @@ set -e -x
 
 
 cd vsphere-errand-release
-bosh init release $RELEASE_NAME
+bosh init release "${RELEASE_NAME}"
 
-pushd $RELEASE_NAME
-  bosh generate job $JOB_NAME
+pushd "${RELEASE_NAME}"
+  bosh generate job "${JOB_NAME}"
 
-  cat > ./jobs/$JOB_NAME/templates/run.ps1 <<EOF
+  cat > "./jobs/${JOB_NAME}/templates/run.ps1" <<EOF
 Write-Host "I am executing a simple bosh errand"
 Get-ChildItem
 EOF
 
-  cat > ./jobs/$JOB_NAME/spec <<EOF
+  cat > "./jobs/${JOB_NAME}/spec" <<EOF
 ---
 name: $JOB_NAME
 description: "This is a simple errand"
@@ -22,7 +22,7 @@ templates:
   run.ps1: bin/run.ps1
 EOF
 
-   bosh create release --name $RELEASE_NAME --force --with-tarball --timestamp-version
+   bosh create release --name "${RELEASE_NAME}" --force --with-tarball --timestamp-version
 popd
 
 

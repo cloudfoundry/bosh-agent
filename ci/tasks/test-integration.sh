@@ -18,14 +18,13 @@ function copy_to_remote_host() {
   ${ssh_command} "sudo rm -rf /tmp/remote-file" > /dev/null 2>&1
 }
 
-script_dir=$(dirname "$0")
-bosh_agent_dir=$( cd "${script_dir}"/../.. && pwd )
-workspace_dir=$( cd "${bosh_agent_dir}"/.. && pwd )
-agent_ip_path="${workspace_dir}/agent-info/agent_ip"
+CONCOURSE_ROOT=$(pwd)
+bosh_agent_dir="${CONCOURSE_ROOT}/bosh-agent"
+agent_ip_path="${CONCOURSE_ROOT}/agent-info/agent_ip"
 
 agent_ip="${LOCAL_AGENT_IP:-$(cat "${agent_ip_path}")}"
-agent_vm_key_path=${LOCAL_AGENT_VM_KEY_PATH:-"${workspace_dir}/agent-info/agent-creds.pem"}
-jumpbox_key_path=${LOCAL_JUMPBOX_KEY_PATH:-"${workspace_dir}/jumpbox-key.pem"}
+agent_vm_key_path=${LOCAL_AGENT_VM_KEY_PATH:-"${CONCOURSE_ROOT}/agent-info/agent-creds.pem"}
+jumpbox_key_path=${LOCAL_JUMPBOX_KEY_PATH:-"${CONCOURSE_ROOT}/jumpbox-key.pem"}
 
 mkdir -p ~/.ssh
 

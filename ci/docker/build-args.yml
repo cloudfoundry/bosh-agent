@@ -2,13 +2,14 @@
 platform: linux
 
 inputs:
-  - name: bosh-cli-github-release
-  - name: bosh-agent
-  - name: credhub-cli-github-release
-  - name: jq-github-release
+- name: bosh-cli-github-release
+- name: bosh-agent
+- name: bosh-agent-ci
+- name: credhub-cli-github-release
+- name: jq-github-release
 
 outputs:
-  - name: docker-build-args
+- name: docker-build-args
 
 run:
-  path: bosh-agent/ci/docker/build-args.sh
+  path: bosh-agent-ci/ci/docker/build-args.sh

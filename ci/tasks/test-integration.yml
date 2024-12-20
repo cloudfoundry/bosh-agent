@@ -9,6 +9,7 @@ image_resource:
 inputs:
 - name: agent-info
 - name: bosh-agent
+- name: bosh-agent-ci
 
 params:
   BOSH_CA_CERT:
@@ -22,5 +23,5 @@ params:
   GOOS: linux
 
 run:
-  path: bosh-agent/ci/tasks/test-integration.sh
+  path: bosh-agent-ci/ci/tasks/test-integration.sh
 

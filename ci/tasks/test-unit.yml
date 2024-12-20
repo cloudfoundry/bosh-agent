@@ -9,6 +9,7 @@ image_resource:
 
 inputs:
 - name: bosh-agent
+- name: bosh-agent-ci
 
 run:
-  path: bosh-agent/ci/tasks/test-unit.sh
+  path: bosh-agent-ci/ci/tasks/test-unit.sh

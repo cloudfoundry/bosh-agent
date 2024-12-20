@@ -33,6 +33,14 @@ resources:
       branch: main
       private_key: ((github_deploy_key_bosh-agent.private_key))
 
+  - name: bosh-agent-ci
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-agent.git
+      branch: main
+      paths:
+        - ci
+
   - name: config-server
     type: git
     source:
@@ -201,6 +209,7 @@ jobs:
         - get: weekly
           trigger: true
         - get: bosh-agent
+        - get: bosh-agent-ci
         - get: golang-release
       - task: bump-deps
         file: golang-release/ci/tasks/shared/bump-deps.yml
@@ -210,11 +219,11 @@ jobs:
           output_repo: bumped-bosh-agent
       - in_parallel:
         - task: test-unit
-          file: bosh-agent/ci/tasks/test-unit.yml
+          file: bosh-agent-ci/ci/tasks/test-unit.yml
           input_mapping:
             bosh-agent: bumped-bosh-agent
         - task: test-unit-windows
-          file: bosh-agent/ci/tasks/test-unit-windows.yml
+          file: bosh-agent-ci/ci/tasks/test-unit-windows.yml
           input_mapping:
             bosh-agent: bumped-bosh-agent
           tags:
@@ -228,6 +237,7 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-agent
+          - get: bosh-agent-ci
           - get: bosh-agent-registry-image
           - get: bosh-cli-github-release
             resource: bosh-cli
@@ -248,31 +258,33 @@ jobs:
           - get: golang-registry-image
             trigger: true
       - task: build-docker-args
-        file: bosh-agent/ci/docker/build-args.yml
+        file: bosh-agent-ci/ci/docker/build-args.yml
         image: bosh-agent-registry-image
       - put: bosh-agent-docker-image
         params:
-          build: bosh-agent/ci/docker/
+          build: bosh-agent-ci/ci/docker/
           build_args_file: docker-build-args/docker-build-args.json
 
   - name: test-unit
     plan:
       - get: bosh-agent
         trigger: true
+      - get: bosh-agent-ci
       - get: bosh-agent-registry-image
         trigger: true
       - task: test-unit
-        file: bosh-agent/ci/tasks/test-unit.yml
+        file: bosh-agent-ci/ci/tasks/test-unit.yml
 
   - name: test-unit-windows
     serial: true
     plan:
       - get: bosh-agent
         trigger: true
+      - get: bosh-agent-ci
       - get: bosh-agent-registry-image
         trigger: true
       - task: test-unit
-        file: bosh-agent/ci/tasks/test-unit-windows.yml
+        file: bosh-agent-ci/ci/tasks/test-unit-windows.yml
         tags:
           - windows-nimbus
 
@@ -282,6 +294,7 @@ jobs:
       - in_parallel:
           - get: bosh-agent
             trigger: true
+          - get: bosh-agent-ci
           - get: bosh-ecosystem-concourse
             tags: [ broadcom ]
           - get: bosh-agent-registry-image
@@ -355,7 +368,7 @@ jobs:
                     chmod 600 agent-info/agent-creds.pem
           - task: test-integration
             image: bosh-agent-registry-image
-            file: bosh-agent/ci/tasks/test-integration.yml
+            file: bosh-agent-ci/ci/tasks/test-integration.yml
             params:
               BOSH_DEPLOYMENT: bosh-agent-integration-main
               BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
@@ -402,6 +415,7 @@ jobs:
       - in_parallel:
         - get: bosh-agent
           trigger: true
+        - get: bosh-agent-ci
         - get: bosh-ecosystem-concourse
           tags: [ broadcom ]
         - get: bosh-agent-registry-image
@@ -495,7 +509,7 @@ jobs:
             vars_files:
               - "agent-info/fake_director_ip_vars"
         - task: test-integration
-          file: bosh-agent/ci/tasks/test-integration-windows.yml
+          file: bosh-agent-ci/ci/tasks/test-integration-windows.yml
           image: bosh-agent-registry-image
           params:
             AGENT_GATEWAY: 10.0.16.1
@@ -562,6 +576,7 @@ jobs:
               - test-integration
               - test-unit-windows
               - test-integration-windows
+          - get: bosh-agent-ci
           - get: bosh-agent-registry-image
             trigger: true
             passed:
@@ -583,10 +598,11 @@ jobs:
     serial: true
     plan:
       - in_parallel:
-          - trigger: true
+          - get: bosh-agent
+            trigger: true
             passed:
               - bosh-integration-tests
-            get: bosh-agent
+          - get: bosh-agent-ci
           - get: bosh-agent-registry-image
             trigger: true
             passed:
@@ -595,7 +611,7 @@ jobs:
             params:
               bump: minor
       - task: assert-version-aligns
-        file: bosh-agent/ci/tasks/assert-version-aligns.yml
+        file: bosh-agent-ci/ci/tasks/assert-version-aligns.yml
       - put: version-semver
         params:
           file: version-semver/number
@@ -608,10 +624,10 @@ jobs:
       - in_parallel:
         - task: build-linux
           image: bosh-agent-registry-image
-          file: bosh-agent/ci/tasks/build-linux.yml
+          file: bosh-agent-ci/ci/tasks/build-linux.yml
         - task: build-windows
           image: bosh-agent-registry-image
-          file: bosh-agent/ci/tasks/build-windows.yml
+          file: bosh-agent-ci/ci/tasks/build-windows.yml
       - put: bosh-agent-index
         params:
           files:

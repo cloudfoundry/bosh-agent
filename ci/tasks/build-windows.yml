@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
 - name: bosh-agent
+- name: bosh-agent-ci
 - name: version-semver
 
 outputs:
@@ -19,4 +20,4 @@ params:
   GOOS:   windows
 
 run:
-  path: bosh-agent/ci/tasks/build.sh
+  path: bosh-agent-ci/ci/tasks/build.sh

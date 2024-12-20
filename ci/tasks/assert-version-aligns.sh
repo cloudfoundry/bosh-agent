@@ -2,12 +2,12 @@
 
 set -e
 
-export BASE=$(pwd)
+CONCOURSE_ROOT=$(pwd)
 
-semver=`cat ${BASE}/version-semver/number`
+semver=$(cat "${CONCOURSE_ROOT}/version-semver/number")
 
-pushd "${BASE}/bosh-agent"
-  git_branch=`git branch --list -r --contains HEAD | grep -v 'origin/HEAD' | cut -d'/' -f2`
+pushd "${CONCOURSE_ROOT}/bosh-agent"
+  git_branch=$(git branch --list -r --contains HEAD | grep -v 'origin/HEAD' | cut -d'/' -f2)
 popd
 
 echo "detected bosh-agent will build from branch $git_branch ..."
@@ -28,4 +28,3 @@ if ! [[ $semver =~ $version_must_match ]]; then
 fi
 
 echo "version $semver is appropriate for branch $git_branch -- promote will continue"
-

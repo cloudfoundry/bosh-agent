@@ -4,9 +4,10 @@ platform: linux
 inputs:
 - name: agent-info
 - name: bosh-agent
+- name: bosh-agent-ci
 
 run:
-  path: bosh-agent/ci/tasks/test-integration-windows.sh
+  path: bosh-agent-ci/ci/tasks/test-integration-windows.sh
 
 params:
   JUMPBOX_IP:
