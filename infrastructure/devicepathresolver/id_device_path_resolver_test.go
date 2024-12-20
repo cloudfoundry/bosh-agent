@@ -8,6 +8,7 @@ import (
 
 	fakeudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -35,7 +36,7 @@ var _ = Describe("IDDevicePathResolver", func() {
 	})
 
 	JustBeforeEach(func() {
-		pathResolver = NewIDDevicePathResolver(500*time.Millisecond, udev, fs, DiskIDTransformPattern, DiskIDTransformReplacement)
+		pathResolver = NewIDDevicePathResolver(500*time.Millisecond, udev, fs, DiskIDTransformPattern, DiskIDTransformReplacement, boshlog.NewLogger(boshlog.LevelNone))
 	})
 
 	Describe("GetRealDevicePath", func() {

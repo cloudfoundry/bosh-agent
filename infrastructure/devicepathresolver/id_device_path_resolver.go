@@ -8,6 +8,7 @@ import (
 	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
 	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -17,6 +18,8 @@ type idDevicePathResolver struct {
 	fs                         boshsys.FileSystem
 	DiskIDTransformPattern     string
 	DiskIDTransformReplacement string
+	logTag                     string
+	logger                     boshlog.Logger
 }
 
 func NewIDDevicePathResolver(
@@ -25,6 +28,7 @@ func NewIDDevicePathResolver(
 	fs boshsys.FileSystem,
 	DiskIDTransformPattern string,
 	DiskIDTransformReplacement string,
+	logger boshlog.Logger,
 ) DevicePathResolver {
 	return &idDevicePathResolver{
 		diskWaitTimeout:            diskWaitTimeout,
@@ -32,6 +36,8 @@ func NewIDDevicePathResolver(
 		fs:                         fs,
 		DiskIDTransformPattern:     DiskIDTransformPattern,
 		DiskIDTransformReplacement: DiskIDTransformReplacement,
+		logTag:                     "IdDevicePathResolver",
+		logger:                     logger,
 	}
 }
 
@@ -100,12 +106,14 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 
 func (idpr *idDevicePathResolver) TransformDiskID(diskID string) (string, error) {
 	if idpr.DiskIDTransformPattern == "" {
+		idpr.logger.Debug(idpr.logTag, "DiskIDTransformRules is empty, returning diskID as is")
 		return diskID, nil
 	}
 
 	transformed := diskID
 	re := regexp.MustCompile(idpr.DiskIDTransformPattern)
 	if re.MatchString(transformed) {
+		idpr.logger.Debug(idpr.logTag, "DiskIDTransformRules: Original: '%+v' -> Transformed: '%+v'\n", diskID, transformed)
 		transformed = re.ReplaceAllString(transformed, idpr.DiskIDTransformReplacement)
 	}
 	return transformed, nil
