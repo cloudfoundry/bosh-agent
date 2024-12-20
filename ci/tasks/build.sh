@@ -11,27 +11,27 @@ if [[ $GOOS = 'windows' ]]; then
   filename_suffix="${filename_suffix}.exe"
 fi
 
-timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-go_ver=$(go version | cut -d ' ' -f 3)
-
 cd bosh-agent
 
 git_rev=$(git rev-parse --short HEAD)
-
+timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+go_ver=$(go version | cut -d ' ' -f 3)
 version="${semver}-${git_rev}-${timestamp}-${go_ver}"
+
 export VERSION_LABEL="${version}"
 
 bin/build
 
 # output bosh-agent
 shasum -a 256 out/bosh-agent
-cp out/bosh-agent "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-${filename_suffix}"
+cp out/bosh-agent "${CONCOURSE_ROOT}/${OUTPUT_DIR}/bosh-agent-${filename_suffix}"
 
 if [[ $GOOS = 'windows' ]]; then
   shasum -a 256 out/bosh-agent-pipe
-  cp out/bosh-agent-pipe "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-pipe-${filename_suffix}"
-  shasum -a 256 integration/windows/fixtures/service_wrapper.xml
-  cp integration/windows/fixtures/service_wrapper.xml "${CONCOURSE_ROOT}/${DIRNAME}"
+  cp out/bosh-agent-pipe "${CONCOURSE_ROOT}/${OUTPUT_DIR}/bosh-agent-pipe-${filename_suffix}"
 
-  git rev-parse HEAD > "${CONCOURSE_ROOT}/${DIRNAME}/git-sha"
+  shasum -a 256 integration/windows/fixtures/service_wrapper.xml
+  cp integration/windows/fixtures/service_wrapper.xml "${CONCOURSE_ROOT}/${OUTPUT_DIR}"
+
+  echo "${git_rev}" > "${CONCOURSE_ROOT}/${OUTPUT_DIR}/git-sha"
 fi
