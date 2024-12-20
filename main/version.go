@@ -1,3 +1,3 @@
 package main
 
-const VersionLabel = "[DEV BUILD]"
+var VersionLabel = "[DEV BUILD]"

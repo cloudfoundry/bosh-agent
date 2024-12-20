@@ -7,11 +7,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	"github.com/cloudfoundry/bosh-agent/agent/bootonce"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/bootonce"
 )
 
 var _ = Describe("checking if the agent can be booted", func() {

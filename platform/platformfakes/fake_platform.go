@@ -4,15 +4,14 @@ package platformfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
-	"github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	"github.com/cloudfoundry/bosh-agent/platform"
-	"github.com/cloudfoundry/bosh-agent/platform/cert"
-	"github.com/cloudfoundry/bosh-agent/platform/vitals"
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
-	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
-	"github.com/cloudfoundry/bosh-agent/settings"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
 	"github.com/cloudfoundry/bosh-utils/system"
 )
@@ -289,6 +288,16 @@ type FakePlatform struct {
 	}
 	getRunnerReturnsOnCall map[int]struct {
 		result1 system.CmdRunner
+	}
+	GetServiceManagerStub        func() servicemanager.ServiceManager
+	getServiceManagerMutex       sync.RWMutex
+	getServiceManagerArgsForCall []struct {
+	}
+	getServiceManagerReturns struct {
+		result1 servicemanager.ServiceManager
+	}
+	getServiceManagerReturnsOnCall map[int]struct {
+		result1 servicemanager.ServiceManager
 	}
 	GetUpdateSettingsPathStub        func(bool) string
 	getUpdateSettingsPathMutex       sync.RWMutex
@@ -2106,6 +2115,59 @@ func (fake *FakePlatform) GetRunnerReturnsOnCall(i int, result1 system.CmdRunner
 	}{result1}
 }
 
+func (fake *FakePlatform) GetServiceManager() servicemanager.ServiceManager {
+	fake.getServiceManagerMutex.Lock()
+	ret, specificReturn := fake.getServiceManagerReturnsOnCall[len(fake.getServiceManagerArgsForCall)]
+	fake.getServiceManagerArgsForCall = append(fake.getServiceManagerArgsForCall, struct {
+	}{})
+	stub := fake.GetServiceManagerStub
+	fakeReturns := fake.getServiceManagerReturns
+	fake.recordInvocation("GetServiceManager", []interface{}{})
+	fake.getServiceManagerMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetServiceManagerCallCount() int {
+	fake.getServiceManagerMutex.RLock()
+	defer fake.getServiceManagerMutex.RUnlock()
+	return len(fake.getServiceManagerArgsForCall)
+}
+
+func (fake *FakePlatform) GetServiceManagerCalls(stub func() servicemanager.ServiceManager) {
+	fake.getServiceManagerMutex.Lock()
+	defer fake.getServiceManagerMutex.Unlock()
+	fake.GetServiceManagerStub = stub
+}
+
+func (fake *FakePlatform) GetServiceManagerReturns(result1 servicemanager.ServiceManager) {
+	fake.getServiceManagerMutex.Lock()
+	defer fake.getServiceManagerMutex.Unlock()
+	fake.GetServiceManagerStub = nil
+	fake.getServiceManagerReturns = struct {
+		result1 servicemanager.ServiceManager
+	}{result1}
+}
+
+func (fake *FakePlatform) GetServiceManagerReturnsOnCall(i int, result1 servicemanager.ServiceManager) {
+	fake.getServiceManagerMutex.Lock()
+	defer fake.getServiceManagerMutex.Unlock()
+	fake.GetServiceManagerStub = nil
+	if fake.getServiceManagerReturnsOnCall == nil {
+		fake.getServiceManagerReturnsOnCall = make(map[int]struct {
+			result1 servicemanager.ServiceManager
+		})
+	}
+	fake.getServiceManagerReturnsOnCall[i] = struct {
+		result1 servicemanager.ServiceManager
+	}{result1}
+}
+
 func (fake *FakePlatform) GetUpdateSettingsPath(arg1 bool) string {
 	fake.getUpdateSettingsPathMutex.Lock()
 	ret, specificReturn := fake.getUpdateSettingsPathReturnsOnCall[len(fake.getUpdateSettingsPathArgsForCall)]
@@ -2218,10 +2280,6 @@ func (fake *FakePlatform) GetVitalsServiceReturnsOnCall(i int, result1 vitals.Se
 	fake.getVitalsServiceReturnsOnCall[i] = struct {
 		result1 vitals.Service
 	}{result1}
-}
-
-func (fake *FakePlatform) GetServiceManager() servicemanager.ServiceManager {
-	return &servicemanagerfakes.FakeServiceManager{}
 }
 
 func (fake *FakePlatform) IsMountPoint(arg1 string) (string, bool, error) {
@@ -4339,6 +4397,8 @@ func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
 	fake.getRunnerMutex.RLock()
 	defer fake.getRunnerMutex.RUnlock()
+	fake.getServiceManagerMutex.RLock()
+	defer fake.getServiceManagerMutex.RUnlock()
 	fake.getUpdateSettingsPathMutex.RLock()
 	defer fake.getUpdateSettingsPathMutex.RUnlock()
 	fake.getVitalsServiceMutex.RLock()

@@ -4,7 +4,7 @@ package utilsfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/utils"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 )
 
 type FakeKiller struct {

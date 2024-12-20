@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
@@ -14,14 +14,14 @@ var _ = Describe("nats firewall", func() {
 
 	Context("ipv4", func() {
 		BeforeEach(func() {
-			//restore original settings of bosh from initial deploy of this VM.
+			// restore original settings of bosh from initial deploy of this VM.
 			_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 			Expect(err).ToNot(HaveOccurred())
 		})
 		It("sets up the outgoing nats firewall", func() {
 			format.MaxLength = 0
 
-			//Wait a maximum of 300 seconds
+			// Wait a maximum of 300 seconds
 			Eventually(func() string {
 				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current")
 				return logs
@@ -29,13 +29,13 @@ var _ = Describe("nats firewall", func() {
 
 			output, err := testEnvironment.RunCommand("sudo iptables -t mangle -L")
 			Expect(err).To(BeNil())
-			//Check iptables for inclusion of the nats_cgroup_id
+			// Check iptables for inclusion of the nats_cgroup_id
 			Expect(output).To(MatchRegexp("ACCEPT *tcp  --  anywhere.*tcp dpt:4222 cgroup 2958295042"))
 			Expect(output).To(MatchRegexp("DROP *tcp  --  anywhere.*tcp dpt:4222"))
 
 			boshEnv := os.Getenv("BOSH_ENVIRONMENT")
 
-			//check that we cannot access the director nats, -w2 == timeout 2 seconds
+			// check that we cannot access the director nats, -w2 == timeout 2 seconds
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc %v 4222 -w2 -v", boshEnv))
 			Expect(err).NotTo(BeNil())
 			Expect(out).To(ContainSubstring("port 4222 (tcp) timed out"))
@@ -76,7 +76,7 @@ var _ = Describe("nats firewall", func() {
 		It("sets up the outgoing nats for firewall  ipv6 ", func() {
 			format.MaxLength = 0
 
-			//Wait a maximum of 300 seconds
+			// Wait a maximum of 300 seconds
 			Eventually(func() string {
 				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current")
 				return logs
@@ -85,7 +85,7 @@ var _ = Describe("nats firewall", func() {
 			output, err := testEnvironment.RunCommand("sudo ip6tables -t mangle -L")
 			Expect(err).To(BeNil())
 
-			//Check iptables for inclusion of the nats_cgroup_id
+			// Check iptables for inclusion of the nats_cgroup_id
 			Expect(output).To(MatchRegexp("ACCEPT *tcp *anywhere *2001:db8::1 *tcp dpt:http-alt cgroup 2958295042"))
 			Expect(output).To(MatchRegexp("DROP *tcp *anywhere *2001:db8::1 *tcp dpt:http-alt"))
 

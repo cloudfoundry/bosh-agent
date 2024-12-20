@@ -5,8 +5,8 @@ import (
 
 	"crypto/x509"
 
-	. "github.com/cloudfoundry/bosh-agent/agentclient"
-	fakeagentclient "github.com/cloudfoundry/bosh-agent/agentclient/fakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/agentclient"
+	fakeagentclient "github.com/cloudfoundry/bosh-agent/v2/agentclient/fakes"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	. "github.com/onsi/ginkgo/v2"

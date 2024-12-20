@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
-	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
+	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
+	faketask "github.com/cloudfoundry/bosh-agent/v2/agent/task/fakes"
 )
 
 var _ = Describe("CancelTaskAction", func() {

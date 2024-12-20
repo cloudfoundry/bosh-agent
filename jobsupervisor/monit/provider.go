@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"

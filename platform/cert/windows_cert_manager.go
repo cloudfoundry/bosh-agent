@@ -7,7 +7,7 @@ import (
 	"path"
 	"strconv"
 
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )

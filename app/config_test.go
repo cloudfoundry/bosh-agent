@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshinf "github.com/cloudfoundry/bosh-agent/infrastructure"
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
+	boshinf "github.com/cloudfoundry/bosh-agent/v2/infrastructure"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 

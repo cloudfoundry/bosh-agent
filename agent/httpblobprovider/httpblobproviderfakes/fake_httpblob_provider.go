@@ -4,7 +4,7 @@ package httpblobproviderfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 

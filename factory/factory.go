@@ -1,7 +1,7 @@
 package factory
 
 import (
-	settings "github.com/cloudfoundry/bosh-agent/settings"
+	settings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type Network struct {

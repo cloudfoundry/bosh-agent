@@ -9,10 +9,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	"github.com/cloudfoundry/bosh-agent/agentclient"
-	"github.com/cloudfoundry/bosh-agent/settings"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 

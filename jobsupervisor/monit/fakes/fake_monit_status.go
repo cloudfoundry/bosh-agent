@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshmonit "github.com/cloudfoundry/bosh-agent/jobsupervisor/monit"
+	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 )
 
 type FakeMonitStatus struct {

@@ -1,7 +1,7 @@
 package udevdevice_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

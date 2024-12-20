@@ -4,8 +4,8 @@ package jobsfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/applier/jobs"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/jobs"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 type FakeApplier struct {

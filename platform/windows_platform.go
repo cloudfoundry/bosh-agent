@@ -17,16 +17,16 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
-	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
-	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	"github.com/cloudfoundry/bosh-agent/platform/windows/disk"
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_windows_disk_manager.go . WindowsDiskManager
@@ -87,7 +87,7 @@ func NewWindowsPlatform(
 		fs:                     fs,
 		cmdRunner:              cmdRunner,
 		collector:              collector,
-		compressor:             boshcmd.NewTarballCompressor(fs),
+		compressor:             boshcmd.NewTarballCompressor(cmdRunner, fs),
 		copier:                 boshcmd.NewGenericCpCopier(fs, logger),
 		dirProvider:            dirProvider,
 		netManager:             netManager,

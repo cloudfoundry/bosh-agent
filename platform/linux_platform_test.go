@@ -12,33 +12,31 @@ import (
 	"strconv"
 	"strings"
 
-	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider/logstarproviderfakes"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform"
-
-	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	fakecdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom/fakes"
-	"github.com/cloudfoundry/bosh-agent/platform/cert/certfakes"
-	"github.com/cloudfoundry/bosh-agent/platform/disk/diskfakes"
-	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
-	fakeplat "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
-	fakestats "github.com/cloudfoundry/bosh-agent/platform/stats/fakes"
-	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakeretry "github.com/cloudfoundry/bosh-utils/retrystrategy/fakes"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 
-	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
+	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform"
+	fakecdrom "github.com/cloudfoundry/bosh-agent/v2/platform/cdrom/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cert/certfakes"
+	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/disk/diskfakes"
+	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk/fakes"
+	fakeplat "github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
+	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
+	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 var _ = Describe("LinuxPlatform", func() {
@@ -85,7 +83,7 @@ var _ = Describe("LinuxPlatform", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		dirProvider = boshdirs.NewProvider("/fake-dir")
 		cdutil = fakecdrom.NewFakeCDUtil()
-		compressor = boshcmd.NewTarballCompressor(fs)
+		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewGenericCpCopier(fs, logger)
 		netManager = &fakenet.FakeManager{}
 		certManager = new(certfakes.FakeManager)

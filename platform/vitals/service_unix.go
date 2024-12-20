@@ -6,7 +6,7 @@ package vitals
 import (
 	"fmt"
 
-	boshstats "github.com/cloudfoundry/bosh-agent/platform/stats"
+	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 )
 
 func createLoadVitals(loadStats boshstats.CPULoad) []string {

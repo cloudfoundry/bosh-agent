@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
-	faketask "github.com/cloudfoundry/bosh-agent/agent/task/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
+	faketask "github.com/cloudfoundry/bosh-agent/v2/agent/task/fakes"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 

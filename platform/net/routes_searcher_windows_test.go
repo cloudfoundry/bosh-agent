@@ -1,8 +1,8 @@
 package net_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/platform/net"
-	fakenet "github.com/cloudfoundry/bosh-agent/platform/net/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
 	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 

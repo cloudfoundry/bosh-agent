@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/platform/stats"
-	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
+	boshsigar "github.com/cloudfoundry/bosh-agent/v2/sigar"
 	sigar "github.com/cloudfoundry/gosigar"
 	fakesigar "github.com/cloudfoundry/gosigar/fakes"
 )

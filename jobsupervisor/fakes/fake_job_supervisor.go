@@ -3,8 +3,8 @@ package fakes
 import (
 	"sync"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/agent/alert"
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor"
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 )
 
 type FakeJobSupervisor struct {

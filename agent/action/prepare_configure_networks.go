@@ -3,8 +3,8 @@ package action
 import (
 	"errors"
 
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 

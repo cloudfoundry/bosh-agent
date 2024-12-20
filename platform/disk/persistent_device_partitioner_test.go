@@ -3,8 +3,8 @@ package disk_test
 import (
 	"errors"
 
-	"github.com/cloudfoundry/bosh-agent/platform/disk"
-	"github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/disk/fakes"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

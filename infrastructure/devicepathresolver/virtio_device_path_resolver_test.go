@@ -3,14 +3,14 @@ package devicepathresolver_test
 import (
 	"errors"
 
-	fakedpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 )
 
 var _ = Describe("VirtioDevicePathResolver", func() {

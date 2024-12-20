@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshcmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
+	boshcmdrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 

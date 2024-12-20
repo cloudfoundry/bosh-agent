@@ -13,7 +13,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
-	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
 )
 
 var _ = Describe("Blob Manager", func() {

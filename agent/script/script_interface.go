@@ -1,7 +1,7 @@
 package script
 
 import (
-	boshdrain "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	boshdrain "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate

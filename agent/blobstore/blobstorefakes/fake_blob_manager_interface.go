@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/blobstore"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 	"github.com/cloudfoundry/bosh-utils/system"
 )

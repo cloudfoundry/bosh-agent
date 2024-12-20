@@ -23,7 +23,7 @@ const echoOutput = "hello"
 func TestWinswPipe(t *testing.T) {
 	BeforeSuite(func() {
 		var err error
-		pathToPipeCLI, err = gexec.Build("github.com/cloudfoundry/bosh-agent/jobsupervisor/pipe")
+		pathToPipeCLI, err = gexec.Build("github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/pipe")
 		Expect(err).To(Succeed())
 
 		GoSequencePath, err = gexec.Build("./testdata/gosequence/gosequence.go")

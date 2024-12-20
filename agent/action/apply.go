@@ -5,12 +5,12 @@ import (
 	"os"
 	"path"
 
-	boshappl "github.com/cloudfoundry/bosh-agent/agent/applier"
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 

@@ -3,8 +3,8 @@ package bootonce
 import (
 	"path/filepath"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 

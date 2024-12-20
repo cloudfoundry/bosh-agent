@@ -10,13 +10,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action/fakes"
-	"github.com/cloudfoundry/bosh-agent/agent/tarpath/tarpathfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath/tarpathfakes"
 	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	. "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 )
 
 var _ = Describe("FileBundle", func() {

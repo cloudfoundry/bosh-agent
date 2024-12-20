@@ -6,10 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	fakeas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	fakeappl "github.com/cloudfoundry/bosh-agent/agent/applier/fakes"
-	fakejobsuper "github.com/cloudfoundry/bosh-agent/jobsupervisor/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
+	fakeappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier/fakes"
+	fakejobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
 )
 
 var _ = Describe("Start", func() {

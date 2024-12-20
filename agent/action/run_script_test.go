@@ -6,11 +6,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent/action"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	fakeapplyspec "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	boshscript "github.com/cloudfoundry/bosh-agent/agent/script"
-	"github.com/cloudfoundry/bosh-agent/agent/script/scriptfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	fakeapplyspec "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
+	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/script/scriptfakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 

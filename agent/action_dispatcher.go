@@ -1,9 +1,9 @@
 package agent
 
 import (
-	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshtask "github.com/cloudfoundry/bosh-agent/agent/task"
-	boshhandler "github.com/cloudfoundry/bosh-agent/handler"
+	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )

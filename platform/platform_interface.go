@@ -3,14 +3,14 @@ package platform
 import (
 	"log"
 
-	"github.com/cloudfoundry/bosh-agent/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 
-	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
-	boshdpresolv "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdir "github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )

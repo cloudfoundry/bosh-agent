@@ -1,7 +1,7 @@
 package packages
 
 import (
-	models "github.com/cloudfoundry/bosh-agent/agent/applier/models"
+	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 type Applier interface {

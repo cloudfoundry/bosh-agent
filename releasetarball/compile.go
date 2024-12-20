@@ -12,6 +12,7 @@ import (
 	"bufio"
 	"bytes"
 	"cmp"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -25,8 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/klauspost/pgzip"
-
 	"gopkg.in/yaml.v3"
 
 	"code.cloudfoundry.org/clock"
@@ -39,14 +38,14 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
-	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	boshap "github.com/cloudfoundry/bosh-agent/agent/applier/packages"
-	boshagentblobstore "github.com/cloudfoundry/bosh-agent/agent/blobstore"
-	boshrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner"
-	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider"
-	"github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator"
-	"github.com/cloudfoundry/bosh-agent/settings/directories"
+	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	boshap "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
+	boshrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
+	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 const (
@@ -60,7 +59,7 @@ func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
 	logger := boshlog.New(boshlog.LevelWarn, log.Default())
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
 	filesystem := boshsys.NewOsFileSystem(logger)
-	compressor := boshcmd.NewTarballCompressor(filesystem)
+	compressor := boshcmd.NewTarballCompressor(cmdRunner, filesystem)
 	blobstoreProvider := boshblob.NewProvider(filesystem, cmdRunner, dirProvider.EtcDir(), logger)
 	db, err := blobstoreProvider.Get("local", map[string]any{"blobstore_path": dirProvider.BlobsDir()})
 	if err != nil {
@@ -221,7 +220,7 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 		return "", err
 	}
 	defer closeAndIgnoreErr(outputFile)
-	gw := pgzip.NewWriter(outputFile)
+	gw := gzip.NewWriter(outputFile)
 	defer closeAndIgnoreErr(gw)
 	tw := tar.NewWriter(gw)
 	defer closeAndIgnoreErr(tw)
@@ -321,7 +320,7 @@ func walkTarballFiles(releaseFilePath string, file tarballWalkFunc) error {
 		return nil
 	}
 	defer closeAndIgnoreErr(f)
-	gr, err := pgzip.NewReader(bufio.NewReader(f))
+	gr, err := gzip.NewReader(bufio.NewReader(f))
 	if err != nil {
 		return err
 	}

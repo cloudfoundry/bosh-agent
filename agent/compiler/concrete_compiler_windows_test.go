@@ -8,12 +8,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	fakebc "github.com/cloudfoundry/bosh-agent/agent/applier/bundlecollection/fakes"
-	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	fakepackages "github.com/cloudfoundry/bosh-agent/agent/applier/packages/fakes"
-	fakecmdrunner "github.com/cloudfoundry/bosh-agent/agent/cmdrunner/fakes"
-	. "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
+	fakebc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
+	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	fakepackages "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages/fakes"
+	fakecmdrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner/fakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
+	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"

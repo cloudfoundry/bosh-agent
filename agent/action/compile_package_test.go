@@ -7,10 +7,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshaction "github.com/cloudfoundry/bosh-agent/agent/action"
-	boshmodels "github.com/cloudfoundry/bosh-agent/agent/applier/models"
-	boshcomp "github.com/cloudfoundry/bosh-agent/agent/compiler"
-	fakecomp "github.com/cloudfoundry/bosh-agent/agent/compiler/fakes"
+	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
+	fakecomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler/fakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 

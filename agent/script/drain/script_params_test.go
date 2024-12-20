@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshas "github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	. "github.com/cloudfoundry/bosh-agent/agent/script/drain"
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 )
 

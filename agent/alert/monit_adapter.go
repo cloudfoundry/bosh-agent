@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type MonitAdapter interface {

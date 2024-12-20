@@ -9,49 +9,49 @@ import (
 	"path/filepath"
 	"time"
 
-	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/agent"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/agent/applier/applyspec/fakes"
-	fakedevicepathresolver "github.com/cloudfoundry/bosh-agent/infrastructure/devicepathresolver/fakes"
-	"github.com/cloudfoundry/bosh-agent/platform/disk/diskfakes"
-	"github.com/cloudfoundry/bosh-agent/platform/platformfakes"
-	"github.com/cloudfoundry/bosh-agent/servicemanager/servicemanagerfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
+	fakedevicepathresolver "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/disk/diskfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
 
 	sigar "github.com/cloudfoundry/gosigar"
 
 	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	fakeinf "github.com/cloudfoundry/bosh-agent/infrastructure/fakes"
-	fakedisk "github.com/cloudfoundry/bosh-agent/platform/disk/fakes"
-	fakeplatform "github.com/cloudfoundry/bosh-agent/platform/fakes"
-	fakeip "github.com/cloudfoundry/bosh-agent/platform/net/ip/fakes"
-	"github.com/cloudfoundry/bosh-agent/platform/net/netfakes"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	fakeinf "github.com/cloudfoundry/bosh-agent/v2/infrastructure/fakes"
+	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk/fakes"
+	fakeplatform "github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
+	fakeip "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/net/netfakes"
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
-	boshplatform "github.com/cloudfoundry/bosh-agent/platform"
-	boshcdrom "github.com/cloudfoundry/bosh-agent/platform/cdrom"
-	boshcert "github.com/cloudfoundry/bosh-agent/platform/cert"
-	boshdisk "github.com/cloudfoundry/bosh-agent/platform/disk"
-	boshnet "github.com/cloudfoundry/bosh-agent/platform/net"
-	bosharp "github.com/cloudfoundry/bosh-agent/platform/net/arp"
-	boshdnsresolver "github.com/cloudfoundry/bosh-agent/platform/net/dnsresolver"
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
-	boshudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice"
-	boshvitals "github.com/cloudfoundry/bosh-agent/platform/vitals"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/settings/directories"
-	boshsigar "github.com/cloudfoundry/bosh-agent/sigar"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshcdrom "github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
+	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	bosharp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp"
+	boshdnsresolver "github.com/cloudfoundry/bosh-agent/v2/platform/net/dnsresolver"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
+	boshudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice"
+	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
+	boshsigar "github.com/cloudfoundry/bosh-agent/v2/sigar"
 )
 
 var _ = Describe("bootstrap", func() {
@@ -1103,7 +1103,7 @@ var _ = Describe("bootstrap", func() {
 				linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 				linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
 
-				compressor := boshcmd.NewTarballCompressor(fs)
+				compressor := boshcmd.NewTarballCompressor(runner, fs)
 				copier := boshcmd.NewGenericCpCopier(fs, logger)
 				logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 

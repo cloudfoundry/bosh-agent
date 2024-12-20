@@ -18,9 +18,8 @@ cd bosh-agent
 
 git_rev=$(git rev-parse --short HEAD)
 
-# TODO: We could use a build time variable to pass in the version instead of using sed to edit files.
 version="${semver}-${git_rev}-${timestamp}-${go_ver}"
-sed -i 's/\[DEV BUILD\]/'"$version"'/' main/version.go
+export VERSION_LABEL="${version}"
 
 bin/build
 
@@ -31,4 +30,8 @@ cp out/bosh-agent "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-${filename_suffix}"
 if [[ $GOOS = 'windows' ]]; then
   shasum -a 256 out/bosh-agent-pipe
   cp out/bosh-agent-pipe "${CONCOURSE_ROOT}/${DIRNAME}/bosh-agent-pipe-${filename_suffix}"
+  shasum -a 256 integration/windows/fixtures/service_wrapper.xml
+  cp integration/windows/fixtures/service_wrapper.xml "${CONCOURSE_ROOT}/${DIRNAME}"
+
+  git rev-parse HEAD > "${CONCOURSE_ROOT}/${DIRNAME}/git-sha"
 fi

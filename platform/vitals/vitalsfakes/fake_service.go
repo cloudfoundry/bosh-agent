@@ -4,7 +4,7 @@ package vitalsfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/platform/vitals"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 )
 
 type FakeService struct {

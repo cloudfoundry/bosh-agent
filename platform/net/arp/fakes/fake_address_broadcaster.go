@@ -3,7 +3,7 @@ package fakes
 import (
 	"sync"
 
-	boship "github.com/cloudfoundry/bosh-agent/platform/net/ip"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
 type FakeAddressBroadcaster struct {

@@ -4,7 +4,7 @@ package logstarproviderfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 )
 
 type FakeLogsTarProvider struct {

@@ -4,7 +4,7 @@ package servicemanagerfakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/servicemanager"
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 )
 
 type FakeServiceManager struct {

@@ -7,10 +7,10 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/clock/fakeclock"
-	. "github.com/cloudfoundry/bosh-agent/agent/alert"
-	fakesettings "github.com/cloudfoundry/bosh-agent/settings/fakes"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 func buildMonitAlert() MonitAlert {
