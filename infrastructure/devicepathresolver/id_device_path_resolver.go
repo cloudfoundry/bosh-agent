@@ -119,8 +119,8 @@ func (idpr *idDevicePathResolver) TransformDiskID(diskID string) (string, error)
 	transformed := diskID
 	re := regexp.MustCompile(idpr.DiskIDTransformPattern)
 	if re.MatchString(transformed) {
-		idpr.logger.Debug(idpr.logTag, "DiskIDTransformRules: Original: '%+v' -> Transformed: '%+v'\n", diskID, transformed)
 		transformed = re.ReplaceAllString(transformed, idpr.DiskIDTransformReplacement)
+		idpr.logger.Debug(idpr.logTag, "DiskIDTransformRules: Original: '%+v' -> Transformed: '%+v'\n", diskID, transformed)
 	}
 	return transformed, nil
 }
