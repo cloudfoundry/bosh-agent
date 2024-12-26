@@ -1067,6 +1067,10 @@ var _ = Describe("BOSH User Commands", func() {
 		})
 
 		It("can delete a user, and any files in the user home directory which aren't in use by the registry", func() {
+			if os.Getenv("GITHUB_ACTIONS") == "true" {
+				Skip("User deletion does not appear to be supported on Github Action windows workers")
+			}
+
 			Expect(platform.CreateUser(testUsername, "")).To(Succeed())
 			Expect(userExists(testUsername)).To(Succeed())
 
