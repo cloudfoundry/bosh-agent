@@ -14,11 +14,12 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
-	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 const cert1 string = `-----BEGIN CERTIFICATE-----
@@ -427,6 +428,9 @@ if (Test-Path %[1]s) {
 				if runtime.GOOS != "windows" {
 					Skip("Only run on Windows")
 				}
+				if os.Getenv("GITHUB_ACTIONS") == "true" {
+					Skip("`cert.UpdateCertificates()` does not appear to be supported on Github Action windows workers")
+				}
 
 				fs = boshsys.NewOsFileSystem(log)
 				var err error
@@ -448,7 +452,6 @@ if (Test-Path %[1]s) {
 
 			It("should create the tmpDir if doesn't exist", func() {
 				_, err := os.Stat(dirProvider.TmpDir())
-				fmt.Println("BEfore", dirProvider.TmpDir(), err)
 				missing := os.IsNotExist(err)
 				Expect(missing).To(BeTrue())
 				err = certManager.UpdateCertificates(validCerts)
@@ -462,6 +465,7 @@ if (Test-Path %[1]s) {
 					err := fs.MkdirAll(dirProvider.TmpDir(), os.FileMode(0777))
 					Expect(err).To(BeNil())
 				})
+
 				It("adds certs to the trusted cert chain", func() {
 					err := certManager.UpdateCertificates(validCerts)
 					Expect(err).To(BeNil())
@@ -494,7 +498,6 @@ if (Test-Path %[1]s) {
 					Eventually(session.Out).Should(gbytes.Say("0"))
 				})
 			})
-
 		})
 	})
 })
