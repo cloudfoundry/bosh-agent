@@ -3,14 +3,14 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.22.0
 
 require (
-	code.cloudfoundry.org/clock v1.25.0
-	code.cloudfoundry.org/tlsconfig v0.13.0
+	code.cloudfoundry.org/clock v1.26.0
+	code.cloudfoundry.org/tlsconfig v0.14.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.8.5
-	github.com/cloudfoundry/bosh-davcli v0.0.385
-	github.com/cloudfoundry/bosh-utils v0.0.516
-	github.com/cloudfoundry/gosigar v1.3.80
+	github.com/cloudfoundry/bosh-cli/v7 v7.8.6
+	github.com/cloudfoundry/bosh-davcli v0.0.386
+	github.com/cloudfoundry/bosh-utils v0.0.518
+	github.com/cloudfoundry/gosigar v1.3.82
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -23,7 +23,7 @@ require (
 	github.com/nats-io/nats.go v1.38.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.22.1
-	github.com/onsi/gomega v1.36.1
+	github.com/onsi/gomega v1.36.2
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
@@ -83,7 +83,7 @@ require (
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/protobuf v1.36.0 // indirect
+	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	honnef.co/go/tools v0.5.0-0.dev // indirect
 )
