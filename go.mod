@@ -3,12 +3,12 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.22.0
 
 require (
-	code.cloudfoundry.org/clock v1.26.0
+	code.cloudfoundry.org/clock v1.27.0
 	code.cloudfoundry.org/tlsconfig v0.14.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.8.6
-	github.com/cloudfoundry/bosh-davcli v0.0.386
+	github.com/cloudfoundry/bosh-davcli v0.0.387
 	github.com/cloudfoundry/bosh-utils v0.0.518
 	github.com/cloudfoundry/gosigar v1.3.82
 	github.com/containerd/cgroups v1.1.0
@@ -22,7 +22,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.38.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/ginkgo/v2 v2.22.1
+	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
@@ -45,7 +45,7 @@ require (
 	github.com/bodgit/ntlmssp v0.0.0-20240506230425-31973bb52d9b // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20240831012420-2590b55236ee // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.136 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.137 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -79,7 +79,7 @@ require (
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20241217172543-b2144cdd0a67 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20250103183323-7d7fa50e5329 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
