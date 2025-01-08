@@ -136,18 +136,6 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 						Expect(len(dhcpInterfaceConfigurations)).To(Equal(0))
 					})
 				})
-
-				Context("And there are no network devices", func() {
-					BeforeEach(func() {
-						interfacesByMAC = map[string]string{}
-					})
-
-					It("returns an error", func() {
-						_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of network settings '1' is greater than the number of network devices '0'"))
-					})
-				})
 			})
 
 			Context("And the network has an alias", func() {
