@@ -93,16 +93,16 @@ resources:
       password: ((svc-bosh-ecosystem-ghe-personal-access-token))
 
   - name: bosh-agent-docker-image
-    type: docker-image
+    type: registry-image
     source:
-      repository: bosh/agent
+      repository: docker.io/bosh/agent
       username: ((docker.username))
       password: ((docker.password))
 
   - name: bosh-agent-registry-image
     type: registry-image
     source:
-      repository: bosh/agent
+      repository: docker.io/bosh/agent
       username: ((docker.username))
       password: ((docker.password))
 
@@ -110,6 +110,14 @@ resources:
     type: registry-image
     source:
       repository: docker.io/bosh/golang-release
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: integration-postgres-15-image
+    type: registry-image
+    source:
+      repository: docker.io/bosh/main-postgres-15
+      tag: main
       username: ((docker.username))
       password: ((docker.password))
 
@@ -584,15 +592,16 @@ jobs:
               - test-integration
               - test-unit-windows
               - test-integration-windows
+          - get: integration-postgres-15-image
 
       - task: tests
         privileged: true
-        file: bosh/ci/tasks/test-integration.yml
-
+        file: bosh-ci/ci/tasks/test-rake-task.yml
+        image: integration-postgres-15-image
         params:
           DB: postgresql
-          DB_VERSION: 15
-          DB_TLS: true
+          RAKE_TASK: "spec:integration"
+          COVERAGE: false
 
   - name: promote
     serial: true
