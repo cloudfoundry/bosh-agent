@@ -84,9 +84,10 @@ type LinuxOptions struct {
 	// possible values: systemd, ""
 	ServiceManager string
 
-	// Regular expression specifying what part of volume ID to strip.
-	// possible values:  valid RE2 regex e.g. "^vol-", "" (default is not to strip)
-	StripVolumeRegex string
+	// Regular expression specifying what part of disk ID to strip and transform
+	// example: "pattern": "^(disk-.+)$", "replacement": "google-${1}",
+	DiskIDTransformPattern     string
+	DiskIDTransformReplacement string
 }
 
 type linux struct {
