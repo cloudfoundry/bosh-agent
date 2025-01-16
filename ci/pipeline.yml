@@ -93,7 +93,7 @@ resources:
       password: ((svc-bosh-ecosystem-ghe-personal-access-token))
 
   - name: bosh-agent-docker-image
-    type: registry-image
+    type: docker-image
     source:
       repository: docker.io/bosh/agent
       username: ((docker.username))
