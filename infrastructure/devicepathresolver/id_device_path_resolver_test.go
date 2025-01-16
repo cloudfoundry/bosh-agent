@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	fakeudev "github.com/cloudfoundry/bosh-agent/platform/udevdevice/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/settings"
+	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
