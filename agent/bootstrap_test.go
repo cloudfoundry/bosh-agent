@@ -1099,6 +1099,7 @@ var _ = Describe("bootstrap", func() {
 					fakesys.FakeCmdResult{Stdout: "/dev/vda1"},
 				)
 
+				logger = boshlog.NewLogger(boshlog.LevelNone)
 				udev := boshudev.NewConcreteUdevDevice(runner, logger)
 				linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 				linuxCdutil := boshcdrom.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom, logger)
@@ -1117,7 +1118,6 @@ var _ = Describe("bootstrap", func() {
 				interfaceConfigurationCreator := boshnet.NewInterfaceConfigurationCreator(logger)
 
 				interfaceAddrsProvider = &fakeip.FakeInterfaceAddressesProvider{}
-				logger = boshlog.NewLogger(boshlog.LevelNone)
 				kernelIPv6 := boshnet.NewKernelIPv6Impl(fs, runner, logger)
 				fakeMACAddressDetector = &netfakes.FakeMACAddressDetector{}
 				err := fs.WriteFileString("/etc/resolv.conf", "8.8.8.8 4.4.4.4")
@@ -1318,6 +1318,9 @@ var _ = Describe("bootstrap", func() {
 				Context("and a single physical network interface exists", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}})
+						interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+							boship.NewSimpleInterfaceAddress("eth0", "2.2.2.2"),
+						}
 					})
 
 					It("succeeds", func() {
