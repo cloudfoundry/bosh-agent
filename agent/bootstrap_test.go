@@ -1209,14 +1209,6 @@ var _ = Describe("bootstrap", func() {
 							}`
 				})
 
-				Context("and no physical network interfaces exist", func() {
-					It("raises an error", func() {
-						err := boot.Run()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of network settings '1' is greater than the number of network devices '0"))
-					})
-				})
-
 				Context("and a single physical network interface exists", func() {
 					BeforeEach(func() {
 						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}})
@@ -1262,14 +1254,6 @@ var _ = Describe("bootstrap", func() {
 									}
 								}
 							}`
-				})
-
-				Context("and no physical network interfaces exist", func() {
-					It("raises an error", func() {
-						err := boot.Run()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of network settings '1' is greater than the number of network devices '0"))
-					})
 				})
 
 				Context("and a single physical network interface exists", func() {
@@ -1336,10 +1320,9 @@ var _ = Describe("bootstrap", func() {
 						stubInterfaces([][]string{{"eth0", "aa:bb:cc"}})
 					})
 
-					It("raises an error", func() {
+					It("succeeds", func() {
 						err := boot.Run()
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("Number of network settings '2' is greater than the number of network devices '1"))
+						Expect(err).ToNot(HaveOccurred())
 					})
 				})
 
