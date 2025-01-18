@@ -8,9 +8,9 @@ require (
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.8.6
-	github.com/cloudfoundry/bosh-davcli v0.0.388
-	github.com/cloudfoundry/bosh-utils v0.0.520
-	github.com/cloudfoundry/gosigar v1.3.83
+	github.com/cloudfoundry/bosh-davcli v0.0.391
+	github.com/cloudfoundry/bosh-utils v0.0.522
+	github.com/cloudfoundry/gosigar v1.3.84
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
