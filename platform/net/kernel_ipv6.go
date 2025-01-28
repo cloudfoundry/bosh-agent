@@ -24,10 +24,29 @@ func NewKernelIPv6Impl(fs boshsys.FileSystem, cmdRunner boshsys.CmdRunner, logge
 
 func (net KernelIPv6Impl) Enable(stopCh <-chan struct{}) error {
 	const (
-		grubConfPathBIOS   = "/boot/grub/grub.cfg"
-		grubConfPathEFI    = "/boot/efi/EFI/grub/grub.cfg"
-		grubIPv6DisableOpt = "ipv6.disable=1"
+		grubConfPathBIOS            = "/boot/grub/grub.cfg"
+		grubConfPathEFI             = "/boot/efi/EFI/grub/grub.cfg"
+		grubIPv6DisableOpt          = "ipv6.disable=1"
+		boshSysctlPath              = "/etc/sysctl.d/60-bosh-sysctl.conf"
+		sysctlIpv6AllDisableOpt     = "net.ipv6.conf.all.disable_ipv6=1"
+		sysctlIpv6DefaultDisableOpt = "net.ipv6.conf.default.disable_ipv6=1"
+		sysctlIpv6AllEnableOpt      = "net.ipv6.conf.all.disable_ipv6=0"
+		sysctlIpv6DefaultEnableOpt  = "net.ipv6.conf.default.disable_ipv6=0"
 	)
+
+	boshSysctl, err := net.fs.ReadFileString(boshSysctlPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Reading boshSysctl")
+	}
+
+	if strings.Contains(boshSysctl, sysctlIpv6AllDisableOpt) {
+		boshSysctl = strings.ReplaceAll(boshSysctl, sysctlIpv6AllDisableOpt, sysctlIpv6AllEnableOpt)
+		boshSysctl = strings.ReplaceAll(boshSysctl, sysctlIpv6DefaultDisableOpt, sysctlIpv6DefaultEnableOpt)
+		err = net.fs.WriteFileString(boshSysctlPath, boshSysctl)
+		if err != nil {
+			return bosherr.WrapError(err, "Writing boshSysctl")
+		}
+	}
 
 	grubConfPath := grubConfPathBIOS
 
