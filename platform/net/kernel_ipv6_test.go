@@ -38,9 +38,14 @@ var _ = Describe("KernelIPv6", func() {
 
 		When("grub.cfg disables IPv6", func() {
 			When("grub path is /boot/grub/grub.cfg", func() {
+				const boshSysctlPath = "/etc/sysctl.d/60-bosh-sysctl.conf"
 				const grubPath = "/boot/grub/grub.cfg"
+
 				BeforeEach(func() {
-					err := fs.WriteFileString(grubPath, "before ipv6.disable=1 after")
+					err := fs.WriteFileString(boshSysctlPath, "net.ipv6.conf.all.disable_ipv6=1\nnet.ipv6.conf.default.disable_ipv6=1")
+					Expect(err).ToNot(HaveOccurred())
+
+					err = fs.WriteFileString(grubPath, "before ipv6.disable=1 after")
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -55,6 +60,7 @@ var _ = Describe("KernelIPv6", func() {
 					Expect(act()).ToNot(HaveOccurred())
 					Expect(cmdRunner.RunCommands).To(Equal([][]string{{"shutdown", "-r", "now"}}))
 				})
+
 				It("returns an error if update to "+grubPath+" fails", func() {
 					fs.WriteFileError = errors.New("fake-err")
 
@@ -72,11 +78,45 @@ var _ = Describe("KernelIPv6", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-err"))
 				})
+
+				When("60-bosh-sysctl.conf disables IPv6", func() {
+					It("changes net.ipv6.conf.all.disable_ipv6=1 to net.ipv6.conf.all.disable_ipv6=0 from "+boshSysctlPath, func() {
+						stopCh <- struct{}{}
+						Expect(act()).ToNot(HaveOccurred())
+						Expect(fs.ReadFileString(boshSysctlPath)).To(Equal("net.ipv6.conf.all.disable_ipv6=0\nnet.ipv6.conf.default.disable_ipv6=0"))
+					})
+				})
+
+				When("60-bosh-sysctl.conf enables IPv6", func() {
+					BeforeEach(func() {
+						err := fs.WriteFileString(boshSysctlPath, "net.ipv6.conf.all.disable_ipv6=0\nnet.ipv6.conf.default.disable_ipv6=0")
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("does not change "+boshSysctlPath, func() {
+						stopCh <- struct{}{}
+						Expect(act()).ToNot(HaveOccurred())
+						Expect(fs.ReadFileString(boshSysctlPath)).To(Equal("net.ipv6.conf.all.disable_ipv6=0\nnet.ipv6.conf.default.disable_ipv6=0"))
+					})
+				})
 			})
+
+			When("60-bosh-sysctl.conf does not exist", func() {
+				It("returns an error", func() {
+					err := act()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
 			When("grub path is /boot/efi/EFI/grub/grub.cfg", func() {
+				const boshSysctlPath = "/etc/sysctl.d/60-bosh-sysctl.conf"
 				const grubPath = "/boot/efi/EFI/grub/grub.cfg"
+
 				BeforeEach(func() {
-					err := fs.WriteFileString(grubPath, "before ipv6.disable=1 after")
+					err := fs.WriteFileString(boshSysctlPath, "net.ipv6.conf.all.disable_ipv6=1\nnet.ipv6.conf.default.disable_ipv6=1")
+					Expect(err).ToNot(HaveOccurred())
+
+					err = fs.WriteFileString(grubPath, "before ipv6.disable=1 after")
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -112,8 +152,13 @@ var _ = Describe("KernelIPv6", func() {
 		})
 
 		When("/boot/grub/grub.cfg doesn't exist but /boot/efi/EFI/grub/grub.cfg does", func() {
+			const boshSysctlPath = "/etc/sysctl.d/60-bosh-sysctl.conf"
+
 			BeforeEach(func() {
-				err := fs.WriteFileString("/boot/efi/EFI/grub/grub.cfg", "before ipv6.disable=1 after")
+				err := fs.WriteFileString(boshSysctlPath, "net.ipv6.conf.all.disable_ipv6=1\nnet.ipv6.conf.default.disable_ipv6=1")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = fs.WriteFileString("/boot/efi/EFI/grub/grub.cfg", "before ipv6.disable=1 after")
 				Expect(err).ToNot(HaveOccurred())
 			})
 			It("does not return an error if it fails to read /boot/grub/grub.cfg", func() {
@@ -129,8 +174,13 @@ var _ = Describe("KernelIPv6", func() {
 		})
 
 		When("neither /boot/grub/grub.cfg nor /boot/efi/EFI/grub/grub.cfg exists", func() {
+			const boshSysctlPath = "/etc/sysctl.d/60-bosh-sysctl.conf"
+
 			It("returns an error", func() {
-				err := act()
+				err := fs.WriteFileString(boshSysctlPath, "net.ipv6.conf.all.disable_ipv6=1\nnet.ipv6.conf.default.disable_ipv6=1")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = act()
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -140,8 +190,13 @@ var _ = Describe("KernelIPv6", func() {
 			"/boot/efi/EFI/grub/grub.cfg",
 		} {
 			When(grubPath+" allows IPv6", func() {
+				const boshSysctlPath = "/etc/sysctl.d/60-bosh-sysctl.conf"
+
 				BeforeEach(func() {
-					err := fs.WriteFileString(grubPath, "before after")
+					err := fs.WriteFileString(boshSysctlPath, "net.ipv6.conf.all.disable_ipv6=1\nnet.ipv6.conf.default.disable_ipv6=1")
+					Expect(err).ToNot(HaveOccurred())
+
+					err = fs.WriteFileString(grubPath, "before after")
 					Expect(err).ToNot(HaveOccurred())
 				})
 
