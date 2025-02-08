@@ -83,8 +83,8 @@ func (net KernelIPv6Impl) Enable(stopCh <-chan struct{}) error {
 	ipv6Sysctls := []string{
 		"net.ipv6.conf.all.accept_ra=1",
 		"net.ipv6.conf.default.accept_ra=1",
-		"net.ipv6.conf.all.disable_ipv6=0",
-		"net.ipv6.conf.default.disable_ipv6=0",
+		sysctlIpv6AllEnableOpt,
+		sysctlIpv6DefaultEnableOpt,
 	}
 
 	for _, sysctl := range ipv6Sysctls {
