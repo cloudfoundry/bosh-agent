@@ -23,11 +23,12 @@ import (
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/winsvc"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 
