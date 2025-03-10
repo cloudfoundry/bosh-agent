@@ -869,12 +869,11 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					Expect(pid).ToNot(Equal(0))
 				}
 
-				It("reports the logs", func(done Done) {
+				It("reports the logs", func() {
 					Expect(jobSupervisor.Start()).To(Succeed())
 
 					syslogMsg := <-syslogReceived
 					matchSyslogMsg(syslogMsg)
-					close(done)
 				})
 			})
 		})

@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Main", func() {
 	Context("when parent exits", func() {
-		It("kills children and exits", func(done Done) {
+		It("kills children and exits", func() {
 			cmd := exec.Command(ExitRunnerPath, pathToPipeCLI, PrintPidsPath)
 			cmd.Env = append(os.Environ(),
 				joinEnv("SERVICE_NAME", ServiceName),
@@ -39,8 +39,6 @@ var _ = Describe("Main", func() {
 
 			_, err = childProc.Wait()
 			Expect(err).To(Succeed())
-
-			close(done)
 		})
 	})
 })
