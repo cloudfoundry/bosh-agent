@@ -3,14 +3,14 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.23.0
 
 require (
-	code.cloudfoundry.org/clock v1.29.0
-	code.cloudfoundry.org/tlsconfig v0.20.0
+	code.cloudfoundry.org/clock v1.30.0
+	code.cloudfoundry.org/tlsconfig v0.21.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.9.3
+	github.com/cloudfoundry/bosh-cli/v7 v7.9.4
 	github.com/cloudfoundry/bosh-davcli v0.0.404
-	github.com/cloudfoundry/bosh-utils v0.0.534
-	github.com/cloudfoundry/gosigar v1.3.88
+	github.com/cloudfoundry/bosh-utils v0.0.535
+	github.com/cloudfoundry/gosigar v1.3.89
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -54,7 +54,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20250302191652-9094ed2288e7 // indirect
+	github.com/google/pprof v0.0.0-20250315033105-103756e64e1d // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
