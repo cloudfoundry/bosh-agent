@@ -31,7 +31,7 @@ if [[ $GOOS = 'windows' ]]; then
   cp out/bosh-agent-pipe "${CONCOURSE_ROOT}/${OUTPUT_DIR}/bosh-agent-pipe-${filename_suffix}"
 
   shasum -a 256 "integration/windows/fixtures/service_wrapper-${semver}.xml"
-  cp integration/windows/fixtures/service_wrapper.xml "${CONCOURSE_ROOT}/${OUTPUT_DIR}"
+  cp "integration/windows/fixtures/service_wrapper-${semver}.xml" "${CONCOURSE_ROOT}/${OUTPUT_DIR}"
 
   echo "${git_rev}" > "${CONCOURSE_ROOT}/${OUTPUT_DIR}/git-sha-${semver}"
 fi
