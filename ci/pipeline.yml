@@ -29,9 +29,10 @@ resources:
   - name: bosh-agent
     type: git
     source:
-      uri: git@github.com:cloudfoundry/bosh-agent.git
+      uri: https://github.com/cloudfoundry/bosh-agent.git
       branch: main
-      private_key: ((github_deploy_key_bosh-agent.private_key))
+      username: bosh-admin-bot
+      password: ((github_public_repo_token))
 
   - name: bosh-agent-ci
     type: git
@@ -44,9 +45,10 @@ resources:
   - name: config-server
     type: git
     source:
-      uri: git@github.com:cloudfoundry/config-server.git
+      uri: https://github.com/cloudfoundry/config-server.git
       branch: develop
-      private_key: ((github_deploy_key_config-server.private_key))
+      username: bosh-admin-bot
+      password: ((github_public_repo_token))
 
   - name: bosh-agent-index
     type: metalink-resource
@@ -86,7 +88,6 @@ resources:
 
   - name: bosh-ecosystem-concourse
     type: git
-    tags: [ broadcom ]
     source:
       uri: https://github.gwd.broadcom.net/TNZ/bosh-ecosystem-concourse.git
       username: svc.bosh-ecosystem@broadcom.net
@@ -304,7 +305,6 @@ jobs:
             trigger: true
           - get: bosh-agent-ci
           - get: bosh-ecosystem-concourse
-            tags: [ broadcom ]
           - get: bosh-agent-registry-image
             trigger: true
           - get: azure-stemcell
@@ -425,7 +425,6 @@ jobs:
           trigger: true
         - get: bosh-agent-ci
         - get: bosh-ecosystem-concourse
-          tags: [ broadcom ]
         - get: bosh-agent-registry-image
           trigger: true
         - get: aws-stemcell
