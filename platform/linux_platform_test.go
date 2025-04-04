@@ -3663,7 +3663,7 @@ sam:fakeanotheruser`)
 		Context("when real device path was resolved without an error", func() {
 			It("returns real device path and true", func() {
 				devicePathResolver.RealDevicePath = "fake-real-device-path"
-				realPath, _ := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"})
+				realPath, _ := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"}) //nolint:errcheck
 				Expect(realPath).To(Equal("fake-real-device-path"))
 			})
 		})
@@ -3671,7 +3671,7 @@ sam:fakeanotheruser`)
 		Context("when real device path was not resolved without an error", func() {
 			It("returns real device path and true", func() {
 				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
-				realPath, _ := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"})
+				realPath, _ := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"}) //nolint:errcheck
 				Expect(realPath).To(Equal(""))
 			})
 		})

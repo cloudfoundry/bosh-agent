@@ -3,9 +3,10 @@ package net
 import (
 	gonet "net"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type defaultNetworkResolver struct {

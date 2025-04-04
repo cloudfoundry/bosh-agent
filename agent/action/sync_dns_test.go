@@ -7,14 +7,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("SyncDNS", func() {
@@ -374,7 +375,7 @@ var _ = Describe("SyncDNS", func() {
 
 					Context("when file removal failed", func() {
 						It("logs error", func() {
-							_, _ = syncDNSAction.Run("fake-blobstore-id", multiDigest, 2)
+							_, _ = syncDNSAction.Run("fake-blobstore-id", multiDigest, 2) //nolint:errcheck
 							tag, message, _ := logger.ErrorArgsForCall(0)
 							Expect(tag).To(Equal("Sync DNS action"))
 							Expect(message).To(Equal("Failed to remove dns blob file at path 'fake-blobstore-file-path'"))

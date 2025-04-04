@@ -7,6 +7,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
@@ -14,8 +17,6 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ApplyAction", func() {

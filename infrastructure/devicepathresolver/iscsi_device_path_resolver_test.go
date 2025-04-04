@@ -9,12 +9,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/openiscsi/openiscsifakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type dmsetupDevice struct {

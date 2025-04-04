@@ -8,12 +8,13 @@ import (
 	"strings"
 	"time"
 
-	boshopeniscsi "github.com/cloudfoundry/bosh-agent/v2/platform/openiscsi"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshopeniscsi "github.com/cloudfoundry/bosh-agent/v2/platform/openiscsi"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 const maxRecentDevices = 10

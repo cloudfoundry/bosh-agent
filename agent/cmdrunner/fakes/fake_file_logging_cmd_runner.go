@@ -1,8 +1,9 @@
 package fakes
 
 import (
-	boshcmdrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshcmdrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
 )
 
 type FakeFileLoggingCmdRunner struct {

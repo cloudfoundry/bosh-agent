@@ -26,13 +26,13 @@ func (n *PrefixDetector) Detect(tgz string, path string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	gr, err := gzip.NewReader(f)
 	if err != nil {
 		return false, err
 	}
-	defer gr.Close()
+	defer gr.Close() //nolint:errcheck
 
 	tr := tar.NewReader(gr)
 

@@ -5,10 +5,11 @@ import (
 
 	mapstruc "github.com/mitchellh/mapstructure"
 
-	boshplat "github.com/cloudfoundry/bosh-agent/v2/platform"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	boshplat "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type Options struct {
@@ -163,7 +164,7 @@ func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {
 			var err error
 			var opts SourceOptions
 
-			switch {
+			switch { //nolint:staticcheck
 			case optType == "HTTP":
 				var o HTTPSourceOptions
 				err, opts = mapstruc.Decode(m, &o), o

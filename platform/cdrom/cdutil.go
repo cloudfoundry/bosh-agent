@@ -1,10 +1,9 @@
 package cdrom
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
-
-	"errors"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"

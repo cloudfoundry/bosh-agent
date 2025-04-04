@@ -19,7 +19,6 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/cloudfoundry/bosh-agent/v2/integration/integrationagentclient"
-	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -78,7 +77,7 @@ type TestEnvironment struct {
 	deviceMap        map[int]string
 	sshClient        *ssh.Client
 	AgentClient      *integrationagentclient.IntegrationAgentClient
-	AgentSettings    settings.Settings
+	AgentSettings    boshsettings.Settings
 	mbusUser         string
 	mbusPass         string
 	mbusPort         int
@@ -465,7 +464,7 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 		}
 
 		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
-			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" {
+			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" { //nolint:errcheck
 				for _, path := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
 					_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", path))
 					if ignoredErr != nil {
@@ -477,7 +476,7 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 			}
 
 			if i > 0 {
-				_, _ = t.RunCommand(fmt.Sprintf("sudo parted %s rm %d", devicePath, i))
+				_, _ = t.RunCommand(fmt.Sprintf("sudo parted %s rm %d", devicePath, i)) //nolint:errcheck
 			}
 
 			err = t.DetachLoopDevice(partitionPath)
@@ -748,7 +747,7 @@ func (t *TestEnvironment) RunCommand(command string) (string, error) {
 		t.writerPrinter.Println("Remote Cmd Runner", "NewSession() FAILED TO EXECUTE: %s ERROR: %s\n", command, err)
 		return "", errors.WrapError(err, "Unable to establish SSH session: ")
 	}
-	defer s.Close()
+	defer s.Close() //nolint:errcheck
 	t.writerPrinter.Println("Remote Cmd Runner", "Running remote command '%s'", command)
 	out, err := s.CombinedOutput(command)
 	if err != nil {
@@ -812,7 +811,7 @@ func (t *TestEnvironment) CreateBlobFromStringInActualBlobstore(contents, blobst
 }
 
 func (t *TestEnvironment) agentDir() string {
-	integrationPath, _ := os.Getwd()
+	integrationPath, _ := os.Getwd() //nolint:errcheck
 	agentDir, _ := filepath.Split(integrationPath)
 	return agentDir
 }

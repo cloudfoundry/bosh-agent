@@ -1,12 +1,13 @@
 package packages
 
 import (
-	bc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
-	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	bc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
+	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
 )
 
 const logTag = "compiledPackageApplier"

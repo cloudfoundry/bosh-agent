@@ -3,17 +3,16 @@ package powershell_test
 import (
 	"errors"
 	"fmt"
-
-	"strings"
-
 	"os"
 	"os/exec"
+	"strings"
 
-	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 	"github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 )
 
 var _ = Describe("Runner", func() {

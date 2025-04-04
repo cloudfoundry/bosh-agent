@@ -1,6 +1,9 @@
 package action
 
 import (
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	boshagentblob "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
@@ -13,8 +16,6 @@ import (
 	boshnotif "github.com/cloudfoundry/bosh-agent/v2/notification"
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type concreteFactory struct {

@@ -8,6 +8,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/clock/fakeclock"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/agentfakes"
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
@@ -21,8 +24,6 @@ import (
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/vitals/vitalsfakes"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 )
 
 func init() { //nolint:funlen,gochecknoinits

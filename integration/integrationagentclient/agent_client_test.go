@@ -9,11 +9,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
+	"github.com/cloudfoundry/bosh-utils/httpclient"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	agentclienthttp "github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
 	"github.com/cloudfoundry/bosh-agent/v2/integration/integrationagentclient"
-	"github.com/cloudfoundry/bosh-utils/httpclient"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("AgentClient", func() {

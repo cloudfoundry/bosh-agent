@@ -126,7 +126,7 @@ func (c *Config) SendEvent(code int) error {
 	if err != nil {
 		return err
 	}
-	res.Body.Close()
+	res.Body.Close() //nolint:errcheck
 	return nil
 }
 

@@ -6,13 +6,14 @@ import (
 	"path"
 	"path/filepath"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type Bootstrap interface {
@@ -223,17 +224,17 @@ func (boot bootstrap) comparePersistentDisk() error {
 	for _, diskAssociation := range updateSettings.DiskAssociations {
 		_, err := boot.settingsService.GetPersistentDiskSettings(diskAssociation.DiskCID)
 		if err != nil {
-			return fmt.Errorf("Disk %s is not attached", diskAssociation.DiskCID)
+			return fmt.Errorf("Disk %s is not attached", diskAssociation.DiskCID) //nolint:staticcheck
 		}
 	}
 
 	allSettings, err := boot.settingsService.GetAllPersistentDiskSettings()
 	if err != nil {
-		return errors.New("Reading all persistent disk settings")
+		return errors.New("Reading all persistent disk settings") //nolint:staticcheck
 	}
 
 	if len(allSettings) > 1 && len(allSettings) > len(updateSettings.DiskAssociations) {
-		return errors.New("Unexpected disk attached")
+		return errors.New("Unexpected disk attached") //nolint:staticcheck
 	}
 
 	return nil
@@ -245,13 +246,13 @@ func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 	if !env.GetKeepRootPassword() {
 		err := boot.platform.SetUserPassword(boshsettings.RootUsername, password)
 		if err != nil {
-			return bosherr.WrapError(err, "Setting root password")
+			return bosherr.WrapError(err, "Setting root password") //nolint:staticcheck
 		}
 	}
 
 	err := boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
 	if err != nil {
-		return bosherr.WrapError(err, "Setting vcap password")
+		return bosherr.WrapError(err, "Setting vcap password") //nolint:staticcheck
 	}
 
 	return nil

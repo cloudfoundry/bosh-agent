@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
-	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
-	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type IntegrationAgentClient struct {

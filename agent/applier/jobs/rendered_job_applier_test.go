@@ -11,17 +11,19 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 
-	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
+	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
+
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	fakebc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
 	fakepackages "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages/fakes"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("renderedJobApplier", func() {

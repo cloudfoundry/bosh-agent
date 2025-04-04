@@ -10,10 +10,11 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
-	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
-	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
+	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 )
 
 const httpsHandlerLogTag = "https_handler"
@@ -152,7 +153,7 @@ func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(statusCode)
 	} else {
 		defer func() {
-			_ = file.Close()
+			_ = file.Close() //nolint:errcheck
 		}()
 		reader := bufio.NewReader(file)
 		if _, wErr := io.Copy(w, reader); wErr != nil {

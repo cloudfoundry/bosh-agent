@@ -69,7 +69,7 @@ func getAdaptersInfo() (*windows.IpAdapterInfo, error) {
 	for n := 4096; n < 65536; n *= 2 {
 		bufLen := uint32(n)
 		buf := make([]byte, n)
-		r0, _, _ := syscall.SyscallN(procGetAdaptersInfo.Addr(),
+		r0, _, _ := syscall.SyscallN(procGetAdaptersInfo.Addr(), //nolint:errcheck
 			uintptr(unsafe.Pointer(&buf[0])),
 			uintptr(unsafe.Pointer(&bufLen)),
 		)

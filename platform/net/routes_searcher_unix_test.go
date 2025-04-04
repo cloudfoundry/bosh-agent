@@ -9,9 +9,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 )
 
 var _ = Describe("cmdRoutesSeacher", func() {

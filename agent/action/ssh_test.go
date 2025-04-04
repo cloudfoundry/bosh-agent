@@ -6,13 +6,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("SSHAction", func() {
@@ -113,7 +114,7 @@ var _ = Describe("SSHAction", func() {
 
 			Context("with a host public key available", func() {
 				It("should return SSH Result with HostPublicKey", func() {
-					hostPublicKey, _ := platform.GetHostPublicKey()
+					hostPublicKey, _ := platform.GetHostPublicKey() //nolint:errcheck
 					Expect(response).To(Equal(action.SSHResult{
 						Command:       "setup",
 						Status:        "success",

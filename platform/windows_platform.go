@@ -201,7 +201,7 @@ func deleteFolderAndContents(path string) error {
 	}
 
 	if inf.IsDir() {
-		childItems, _ := os.ReadDir(path)
+		childItems, _ := os.ReadDir(path) //nolint:errcheck
 
 		for _, item := range childItems {
 			err = deleteFolderAndContents(filepath.Join(path, item.Name()))
@@ -380,10 +380,11 @@ func (p WindowsPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, host
 		fmt.Fprintf(&buf, "%s %s\n", rec[0], rec[1])
 	}
 	if _, err := buf.WriteTo(f); err != nil {
-		f.Close()
+		f.Close() //nolint:errcheck
 		return bosherr.WrapErrorf(err, "SaveDNSRecords: writing DNS records to: %s", tmpfile)
 	}
-	f.Close() // Explicitly close before renaming - required to release handle
+	// Explicitly close before renaming - required to release handle
+	f.Close() //nolint:errcheck
 
 	hostfile := filepath.Join(etcdir, "hosts")
 	if err := p.fs.Rename(tmpfile, hostfile); err != nil {
@@ -433,7 +434,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) error {
 		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers  %s", stderr)
 	}
 
-	_, _, _, _ = p.cmdRunner.RunCommand("net", "stop", "w32time")
+	_, _, _, _ = p.cmdRunner.RunCommand("net", "stop", "w32time") //nolint:errcheck
 	manualPeerList := fmt.Sprintf("/manualpeerlist:\"%s\"", ntpServers)
 	_, stderr, _, err = p.cmdRunner.RunCommand(
 		"powershell.exe",
@@ -444,7 +445,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) error {
 	if err != nil {
 		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
 	}
-	_, _, _, _ = p.cmdRunner.RunCommand("net", "start", "w32time")
+	_, _, _, _ = p.cmdRunner.RunCommand("net", "start", "w32time") //nolint:errcheck
 	_, stderr, _, err = p.cmdRunner.RunCommand("w32tm", "/config", "/update")
 	if err != nil {
 		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
@@ -635,7 +636,7 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 	}
 
 	if diskSettings.Path != "" { //nolint:nestif
-		matchInt, _ := regexp.MatchString(`\d`, diskSettings.Path)
+		matchInt, _ := regexp.MatchString(`\d`, diskSettings.Path) //nolint:errcheck
 		if matchInt {
 			diskPath = diskSettings.Path
 		} else {

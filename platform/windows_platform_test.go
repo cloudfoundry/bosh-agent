@@ -176,8 +176,8 @@ var _ = Describe("WindowsPlatform", func() {
 			OrigTEMP = os.Getenv("TEMP")
 		)
 		AfterEach(func() {
-			os.Setenv("TMP", OrigTMP)
-			os.Setenv("TEMP", OrigTEMP)
+			os.Setenv("TMP", OrigTMP)   //nolint:errcheck
+			os.Setenv("TEMP", OrigTEMP) //nolint:errcheck
 		})
 
 		It("creates new temp dir", func() {
@@ -412,9 +412,9 @@ var _ = Describe("WindowsPlatform", func() {
 
 		It("reads the host key stored in %SYSTEMDRIVE%\\ProgramData\\ssh", func() {
 			oldSys := os.Getenv("SYSTEMDRIVE")
-			defer os.Setenv("SYSTEMDRIVE", oldSys)
+			defer os.Setenv("SYSTEMDRIVE", oldSys) //nolint:errcheck
 			newSys := "K:"
-			os.Setenv("SYSTEMDRIVE", newSys)
+			os.Setenv("SYSTEMDRIVE", newSys) //nolint:errcheck
 
 			setupHostKeys(newSys)
 
@@ -1005,7 +1005,7 @@ var _ = Describe("BOSH User Commands", func() {
 			if err != nil {
 				return false
 			}
-			s.Close()
+			s.Close() //nolint:errcheck
 			return true
 		}
 
@@ -1172,7 +1172,7 @@ var _ = Describe("BOSH User Commands", func() {
 
 		AfterEach(func() {
 			SetAdministratorUserName(previousAdmin)
-			os.RemoveAll(tempDir)
+			os.RemoveAll(tempDir) //nolint:errcheck
 		})
 
 		Context("Called on vcap or root user", func() {

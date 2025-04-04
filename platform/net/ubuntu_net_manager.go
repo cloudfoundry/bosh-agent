@@ -11,14 +11,15 @@ import (
 	"text/template"
 	"time"
 
-	bosharp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp"
-	boshdnsresolver "github.com/cloudfoundry/bosh-agent/v2/platform/net/dnsresolver"
-	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	bosharp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp"
+	boshdnsresolver "github.com/cloudfoundry/bosh-agent/v2/platform/net/dnsresolver"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	ini "github.com/cloudfoundry/bosh-agent/v2/ini"
 )

@@ -2,11 +2,10 @@ package action_test
 
 import (
 	"runtime"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"testing"
 )
 
 const Windows = runtime.GOOS == "windows"

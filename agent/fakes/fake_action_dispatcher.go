@@ -6,9 +6,8 @@ import (
 
 type FakeActionDispatcher struct {
 	ResumedPreviouslyDispatchedTasks bool
-
-	DispatchReq  boshhandler.Request
-	DispatchResp boshhandler.Response
+	DispatchReq                      boshhandler.Request
+	DispatchResp                     boshhandler.Response
 }
 
 func (dispatcher *FakeActionDispatcher) ResumePreviouslyDispatchedTasks() {

@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/cloudfoundry/bosh-utils/system"
+
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 const wrapperJobSupervisorLogTag = "wrapperJobSupervisor"

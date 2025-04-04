@@ -1,6 +1,8 @@
 package action
 
-import "errors"
+import (
+	"errors"
+)
 
 type InfoAction struct{}
 

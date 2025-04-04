@@ -4,9 +4,10 @@ import (
 	"runtime"
 	"strings"
 
-	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 type logsTarProvider struct {

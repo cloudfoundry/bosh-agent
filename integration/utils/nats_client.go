@@ -19,11 +19,12 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
+	"github.com/nats-io/nats.go"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 	"github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
-	boshfileutil "github.com/cloudfoundry/bosh-utils/fileutil"
-	"github.com/nats-io/nats.go"
 
 	"github.com/onsi/gomega"
 )
@@ -231,7 +232,7 @@ func (n *NatsClient) tlsConfig() *tls.Config {
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 	tlsConfig.RootCAs = x509.NewCertPool()
 	tlsConfig.RootCAs.AppendCertsFromPEM([]byte(utils.NatsCA()))
-	clientCertificate, _ := tls.X509KeyPair([]byte(utils.NatsCertificate()), []byte(utils.NatsPrivateKey()))
+	clientCertificate, _ := tls.X509KeyPair([]byte(utils.NatsCertificate()), []byte(utils.NatsPrivateKey())) //nolint:errcheck
 	tlsConfig.Certificates = []tls.Certificate{clientCertificate}
 	return tlsConfig
 }
@@ -421,7 +422,7 @@ func (n *NatsClient) RunDrain() error {
 		return err
 	}
 
-	taskResponse, _ := n.WaitForTask(drainResponse["value"]["agent_task_id"], DefaultTaskTimeout)
+	taskResponse, _ := n.WaitForTask(drainResponse["value"]["agent_task_id"], DefaultTaskTimeout) //nolint:errcheck
 	magicNumber, ok := taskResponse.Value.(float64)
 	if !ok {
 		return fmt.Errorf("RunDrain got invalid taskResponse %s", reflect.TypeOf(taskResponse.Value))
@@ -492,7 +493,7 @@ func (n *NatsClient) RunErrand() (map[string]map[string]string, error) {
 
 func (n *NatsClient) FetchLogs(destinationDir string) {
 	message := fmt.Sprintf(fetchLogsTemplate, senderID)
-	fetchLogsResponse, _ := n.SendMessage(message)
+	fetchLogsResponse, _ := n.SendMessage(message) //nolint:errcheck
 	var fetchLogsResult map[string]string
 
 	fetchLogsCheckFunc := func() (map[string]string, error) {
@@ -586,7 +587,7 @@ func (n *NatsClient) uploadJob(jobName string) (templateID, renderedTemplateSha 
 	if err != nil {
 		return
 	}
-	defer os.RemoveAll(dirname)
+	defer os.RemoveAll(dirname) //nolint:errcheck
 
 	tarfile := filepath.Join(dirname, jobName+".tgz")
 	chdir := "fixtures/templates"
@@ -609,7 +610,7 @@ func (n *NatsClient) uploadPackage(packageName string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	defer os.RemoveAll(dirname)
+	defer os.RemoveAll(dirname) //nolint:errcheck
 
 	tarfile := filepath.Join(dirname, packageName+".tgz")
 	dir := filepath.Join("fixtures/templates", packageName)

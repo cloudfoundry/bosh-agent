@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/clock/fakeclock"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 

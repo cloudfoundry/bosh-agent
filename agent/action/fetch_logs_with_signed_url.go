@@ -53,7 +53,7 @@ func (a FetchLogsWithSignedURLAction) Run(request FetchLogsWithSignedURLRequest)
 	}
 
 	defer func() {
-		_ = a.logsTarProvider.CleanUp(tarball)
+		_ = a.logsTarProvider.CleanUp(tarball) //nolint:errcheck
 	}()
 
 	_, digest, err := a.blobDelegator.Write(request.SignedURL, tarball, request.BlobstoreHeaders)

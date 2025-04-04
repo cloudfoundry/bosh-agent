@@ -9,13 +9,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/blobstore/blobstorefakes"
 	"github.com/cloudfoundry/bosh-agent/v2/mbus"
 	"github.com/cloudfoundry/bosh-agent/v2/mbus/mbusfakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("HandlerProvider", func() {

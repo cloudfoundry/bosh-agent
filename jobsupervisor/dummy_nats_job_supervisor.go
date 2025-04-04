@@ -3,9 +3,10 @@ package jobsupervisor
 import (
 	"encoding/json"
 
+	bosherror "github.com/cloudfoundry/bosh-utils/errors"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
-	bosherror "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type dummyNatsJobSupervisor struct {
@@ -132,8 +133,8 @@ func (d *dummyNatsJobSupervisor) statusHandler(req boshhandler.Request) boshhand
 
 		d.status = body["status"]
 
-		if d.status == "failing" && d.jobFailureHandler != nil {
-			_ = d.jobFailureHandler(boshalert.MonitAlert{
+		if d.status == "failing" && d.jobFailureHandler != nil { //nolint:errcheck
+			_ = d.jobFailureHandler(boshalert.MonitAlert{ //nolint:errcheck
 				ID:          "fake-monit-alert",
 				Service:     "fake-monit-service",
 				Event:       "failing",

@@ -100,35 +100,35 @@ var _ = Describe("DummyPlatform", func() {
 		})
 
 		It("Mounts a persistent disk", func() {
-			mountsContent, _ := fs.ReadFileString(mountsPath)
+			mountsContent, _ := fs.ReadFileString(mountsPath) //nolint:errcheck
 			Expect(mountsContent).To(Equal(""))
 
 			err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
 			Expect(err).NotTo(HaveOccurred())
 
-			mountsContent, _ = fs.ReadFileString(mountsPath)
+			mountsContent, _ = fs.ReadFileString(mountsPath) //nolint:errcheck
 			Expect(mountsContent).To(Equal(`[{"MountDir":"/dev/potato","MountOptions":["mountOption1","mountOption2"],"DiskCid":"somediskid"}]`))
 		})
 
 		It("Updates the managed disk settings", func() {
-			lastMountedCid, _ := fs.ReadFileString(managedSettingsPath)
+			lastMountedCid, _ := fs.ReadFileString(managedSettingsPath) //nolint:errcheck
 			Expect(lastMountedCid).To(Equal(""))
 
 			err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
 			Expect(err).NotTo(HaveOccurred())
 
-			lastMountedCid, _ = fs.ReadFileString(managedSettingsPath)
+			lastMountedCid, _ = fs.ReadFileString(managedSettingsPath) //nolint:errcheck
 			Expect(lastMountedCid).To(Equal("somediskid"))
 		})
 
 		It("Updates the formatted disks", func() {
-			formattedDisks, _ := fs.ReadFileString(formattedDisksPath)
+			formattedDisks, _ := fs.ReadFileString(formattedDisksPath) //nolint:errcheck
 			Expect(formattedDisks).To(Equal(""))
 
 			err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
 			Expect(err).NotTo(HaveOccurred())
 
-			formattedDisks, _ = fs.ReadFileString(formattedDisksPath)
+			formattedDisks, _ = fs.ReadFileString(formattedDisksPath) //nolint:errcheck
 			Expect(formattedDisks).To(Equal(`[{"DiskCid":"somediskid"}]`))
 		})
 
@@ -144,7 +144,7 @@ var _ = Describe("DummyPlatform", func() {
 				err := platform.MountPersistentDisk(diskSettings, "/dev/potato")
 				Expect(err).NotTo(HaveOccurred())
 
-				mountsContent, _ := fs.ReadFileString(mountsPath)
+				mountsContent, _ := fs.ReadFileString(mountsPath) //nolint:errcheck
 				Expect(mountsContent).To(Equal(`[{"MountDir":"/dev/potato","DiskCid":"somediskid"}]`))
 			})
 		})

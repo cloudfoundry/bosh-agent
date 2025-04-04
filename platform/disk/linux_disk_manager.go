@@ -107,7 +107,7 @@ func (m linuxDiskManager) GetPersistentDevicePartitioner(partitionerType string)
 	case "":
 		return m.persistentPartitioner, nil
 	default:
-		return nil, fmt.Errorf("Unknown partitioner type '%s'", partitionerType)
+		return nil, fmt.Errorf("Unknown partitioner type '%s'", partitionerType) //nolint:staticcheck
 	}
 }
 

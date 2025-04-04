@@ -1,13 +1,13 @@
 package agent_test
 
 import (
+	"testing"
 	"time"
 
-	"github.com/cloudfoundry/bosh-agent/v2/agent"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"testing"
+	"github.com/cloudfoundry/bosh-agent/v2/agent"
 )
 
 func TestAgent(t *testing.T) {

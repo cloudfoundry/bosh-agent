@@ -46,7 +46,7 @@ func (util diskUtil) GetFilesContents(diskPath string, fileNames []string) ([][]
 	}
 
 	defer func() {
-		_ = util.fs.RemoveAll(tempDir)
+		_ = util.fs.RemoveAll(tempDir) //nolint:errcheck
 	}()
 
 	err = util.mounter.Mount(diskPath, tempDir)

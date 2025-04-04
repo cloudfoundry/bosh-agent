@@ -4,10 +4,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
-	fakecdrom "github.com/cloudfoundry/bosh-agent/v2/platform/cdrom/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
+	fakecdrom "github.com/cloudfoundry/bosh-agent/v2/platform/cdrom/fakes"
 )
 
 var _ = Describe("Cdutil", func() {

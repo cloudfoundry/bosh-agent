@@ -1,9 +1,10 @@
 package devicepathresolver
 
 import (
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type multipathDevicePathResolver struct {

@@ -8,14 +8,15 @@ import (
 	"text/template"
 	"time"
 
-	bosharp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp"
-	boshdnsresolver "github.com/cloudfoundry/bosh-agent/v2/platform/net/dnsresolver"
-	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	bosharp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp"
+	boshdnsresolver "github.com/cloudfoundry/bosh-agent/v2/platform/net/dnsresolver"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 const centosNetManagerLogTag = "centosNetManager"
@@ -236,7 +237,7 @@ func (net centosNetManager) writeNetworkInterfaces(dhcpConfigs []DHCPInterfaceCo
 	for i := range staticConfigs {
 		staticConfig.StaticInterfaceConfiguration = &staticConfigs[i]
 
-		changed, err := net.writeIfcfgFile(staticConfig.StaticInterfaceConfiguration.Name, staticTemplate, staticConfig)
+		changed, err := net.writeIfcfgFile(staticConfig.StaticInterfaceConfiguration.Name, staticTemplate, staticConfig) //nolint:staticcheck
 		if err != nil {
 			return false, bosherr.WrapError(err, "Writing static config")
 		}

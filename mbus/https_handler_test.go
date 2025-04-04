@@ -13,12 +13,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshagentblobstore "github.com/cloudfoundry/bosh-agent/v2/agent/blobstore"
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	"github.com/cloudfoundry/bosh-agent/v2/mbus"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("HTTPSHandler", func() {
@@ -63,7 +64,7 @@ var _ = Describe("HTTPSHandler", func() {
 				PrivateKey:  string(configPrivateKey),
 			}
 
-			mbusURL, _ := url.Parse(serverURL)
+			mbusURL, _ := url.Parse(serverURL) //nolint:errcheck
 			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
 			handler = mbus.NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
 
@@ -92,7 +93,7 @@ var _ = Describe("HTTPSHandler", func() {
 				httpResponse, err = httpClient.Post(serverURL+"/agent", "application/json", postPayload)
 			}
 
-			defer httpResponse.Body.Close()
+			defer httpResponse.Body.Close() //nolint:errcheck
 
 			Expect(receivedRequest.ReplyTo).To(Equal("reply to me!"))
 			Expect(receivedRequest.Method).To(Equal("ping"))
@@ -113,7 +114,7 @@ var _ = Describe("HTTPSHandler", func() {
 					httpResponse, err = httpClient.Post(serverURL+"/agent", "application/json", postPayload)
 				}
 
-				defer httpResponse.Body.Close()
+				defer httpResponse.Body.Close() //nolint:errcheck
 
 				Expect(receivedRequest.ReplyTo).To(Equal("reply to me!"))
 				Expect(receivedRequest.Method).To(Equal("ping"))
@@ -141,7 +142,7 @@ var _ = Describe("HTTPSHandler", func() {
 
 					httpResponse, err := httpClient.Get(serverURL + "/blobs/123-456-789")
 					Expect(err).ToNot(HaveOccurred())
-					defer httpResponse.Body.Close()
+					defer httpResponse.Body.Close() //nolint:errcheck
 
 					httpBody, readErr := io.ReadAll(httpResponse.Body)
 					Expect(readErr).ToNot(HaveOccurred())
@@ -157,7 +158,7 @@ var _ = Describe("HTTPSHandler", func() {
 						httpResponse, err := httpClient.Post(serverURL+"/blobs/123", "application/json", postPayload)
 						Expect(err).ToNot(HaveOccurred())
 
-						defer httpResponse.Body.Close()
+						defer httpResponse.Body.Close() //nolint:errcheck
 
 						Expect(httpResponse.StatusCode).To(Equal(404))
 					})
@@ -168,7 +169,7 @@ var _ = Describe("HTTPSHandler", func() {
 						httpResponse, err := httpClient.Get(serverURL + "/blobs/a-file-that-does-not-exist")
 						Expect(err).ToNot(HaveOccurred())
 
-						defer httpResponse.Body.Close()
+						defer httpResponse.Body.Close() //nolint:errcheck
 						Expect(httpResponse.StatusCode).To(Equal(404))
 					})
 				})
@@ -188,12 +189,12 @@ var _ = Describe("HTTPSHandler", func() {
 					httpResponse, err := httpClient.Do(request)
 					Expect(err).ToNot(HaveOccurred())
 
-					defer httpResponse.Body.Close()
+					defer httpResponse.Body.Close() //nolint:errcheck
 					Expect(httpResponse.StatusCode).To(Equal(201))
 
 					file, _, err := blobManager.Fetch("123-456-789")
 					Expect(err).NotTo(HaveOccurred())
-					defer file.Close()
+					defer file.Close() //nolint:errcheck
 
 					contents, err := io.ReadAll(file)
 					Expect(err).ToNot(HaveOccurred())
@@ -213,7 +214,7 @@ var _ = Describe("HTTPSHandler", func() {
 						httpResponse, err := httpClient.Do(httpRequest)
 						Expect(err).ToNot(HaveOccurred())
 
-						defer httpResponse.Body.Close()
+						defer httpResponse.Body.Close() //nolint:errcheck
 
 						Expect(httpResponse.StatusCode).To(Equal(401))
 						Expect(httpResponse.Header.Get("WWW-Authenticate")).To(Equal(`Basic realm=""`))
@@ -230,7 +231,7 @@ var _ = Describe("HTTPSHandler", func() {
 					httpResponse, err := httpClient.Post(serverURL+"/bad_url", "application/json", postPayload)
 					Expect(err).ToNot(HaveOccurred())
 
-					defer httpResponse.Body.Close()
+					defer httpResponse.Body.Close() //nolint:errcheck
 
 					Expect(httpResponse.StatusCode).To(Equal(404))
 				})
@@ -244,7 +245,7 @@ var _ = Describe("HTTPSHandler", func() {
 					httpResponse, err := httpClient.Post(strings.ReplaceAll(serverURL, "pass", "wrong")+"/agent", "application/json", postPayload)
 					Expect(err).ToNot(HaveOccurred())
 
-					defer httpResponse.Body.Close()
+					defer httpResponse.Body.Close() //nolint:errcheck
 
 					Expect(httpResponse.StatusCode).To(Equal(401))
 					Expect(httpResponse.Header.Get("WWW-Authenticate")).To(Equal(`Basic realm=""`))
@@ -258,7 +259,7 @@ func waitForServerToStart(serverURL string, httpClient http.Client) {
 	Eventually(func() error {
 		httpResponse, err := httpClient.Get(serverURL + "/healthz") //nolint:noctx
 		if err == nil {
-			httpResponse.Body.Close()
+			httpResponse.Body.Close() //nolint:errcheck
 		}
 		return err
 	}, time.Second*5).Should(Succeed())

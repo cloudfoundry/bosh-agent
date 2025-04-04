@@ -13,13 +13,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	"github.com/cloudfoundry/bosh-agent/v2/mbus"
 	"github.com/cloudfoundry/bosh-agent/v2/mbus/mbusfakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 func init() { //nolint:funlen,gochecknoinits
@@ -36,9 +37,9 @@ func init() { //nolint:funlen,gochecknoinits
 			auditLogger         *platformfakes.FakeAuditLogger
 			loggerOutBuf        *bytes.Buffer
 		)
-		ValidCA, _ := os.ReadFile("./test_assets/ca.pem")
-		ValidCertificate, _ := os.ReadFile("./test_assets/client-cert.pem")
-		ValidPrivateKey, _ := os.ReadFile("./test_assets/client-pkey.pem")
+		ValidCA, _ := os.ReadFile("./test_assets/ca.pem")                   //nolint:errcheck
+		ValidCertificate, _ := os.ReadFile("./test_assets/client-cert.pem") //nolint:errcheck
+		ValidPrivateKey, _ := os.ReadFile("./test_assets/client-pkey.pem")  //nolint:errcheck
 
 		BeforeEach(func() {
 			settingsService = &fakesettings.FakeSettingsService{
@@ -431,7 +432,7 @@ func init() { //nolint:funlen,gochecknoinits
 }
 
 func VerifyPeerCertificateCallback(handler boshhandler.Handler, connectorOptionsArg []nats.Option, certPath string, caPath string) error {
-	ValidCA, _ := os.ReadFile("./test_assets/ca.pem")
+	ValidCA, _ := os.ReadFile("./test_assets/ca.pem") //nolint:errcheck
 
 	correctCnCert, err := os.ReadFile(certPath)
 	Expect(err).NotTo(HaveOccurred())

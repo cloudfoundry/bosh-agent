@@ -1,8 +1,9 @@
 package disk
 
 import (
-	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 	"github.com/cloudfoundry/bosh-utils/system"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate

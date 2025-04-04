@@ -1,15 +1,12 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/masterzen/winrm"
-
-	"bytes"
-
-	"fmt"
-
-	"strings"
 
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -47,7 +44,7 @@ func (r *WinRMCommandRunner) RunComplexCommand(cmd boshsys.Command) (stdout, std
 }
 
 func (r *WinRMCommandRunner) RunComplexCommandAsync(cmd boshsys.Command) (boshsys.Process, error) {
-	return nil, errors.New("Asynchronous commands not supported with this winRM implementation")
+	return nil, errors.New("Asynchronous commands not supported with this winRM implementation") //nolint:staticcheck
 }
 
 func (r *WinRMCommandRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, exitStatus int, err error) {

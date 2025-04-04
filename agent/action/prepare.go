@@ -3,9 +3,10 @@ package action
 import (
 	"errors"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 	boshappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type PrepareAction struct {

@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	tlsconfig "code.cloudfoundry.org/tlsconfig"
 )
@@ -31,7 +32,7 @@ type HTTPSDispatcher struct {
 type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
 func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) *HTTPSDispatcher {
-	tlsConfig, _ := tlsconfig.Build(tlsconfig.WithInternalServiceDefaults()).Server()
+	tlsConfig, _ := tlsconfig.Build(tlsconfig.WithInternalServiceDefaults()).Server() //nolint:errcheck
 
 	httpServer := &http.Server{
 		TLSConfig: tlsConfig,
@@ -80,7 +81,7 @@ func (h *HTTPSDispatcher) Start() error {
 
 func (h *HTTPSDispatcher) Stop() {
 	if h.listener != nil {
-		_ = h.listener.Close()
+		_ = h.listener.Close() //nolint:errcheck
 		h.listener = nil
 	}
 }

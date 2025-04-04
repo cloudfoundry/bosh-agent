@@ -11,6 +11,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/factory"
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp/fakes"
@@ -20,8 +23,6 @@ import (
 	fakeip "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/net/netfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ubuntuNetManager", func() {

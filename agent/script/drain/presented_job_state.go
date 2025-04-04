@@ -3,8 +3,9 @@ package drain
 import (
 	"encoding/json"
 
-	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 )
 
 // presentedJobState exposes only limited subset of apply spec to drain scripts.

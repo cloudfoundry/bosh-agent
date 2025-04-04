@@ -378,7 +378,7 @@ func writeToTar(tw *tar.Writer, h *tar.Header, fullPath string, r io.Reader) err
 }
 
 func closeAndIgnoreErr(c io.Closer) {
-	_ = c.Close()
+	_ = c.Close() //nolint:errcheck
 }
 
 func topologicalSort[T any, ID cmp.Ordered, IDFunc func(T) ID, EdgeFunc func(T) []ID](elements []T, elementID IDFunc, elementEdges EdgeFunc) error {

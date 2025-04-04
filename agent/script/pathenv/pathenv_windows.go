@@ -1,6 +1,8 @@
 package pathenv
 
-import "os"
+import (
+	"os"
+)
 
-// Path returns the PATH environement variable for scripts.
+// Path returns the PATH environment variable for scripts.
 func Path() string { return os.Getenv("PATH") }

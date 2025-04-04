@@ -1,8 +1,9 @@
 package applyspec
 
 import (
-	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	"github.com/cloudfoundry/bosh-utils/crypto"
+
+	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 type PackageSpec struct {

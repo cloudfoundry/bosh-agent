@@ -3,10 +3,11 @@ package action
 import (
 	"errors"
 
-	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
-	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
 )
 
 type RunScriptOptions struct {

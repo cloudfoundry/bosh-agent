@@ -7,11 +7,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/fakes"
 	. "github.com/cloudfoundry/bosh-agent/v2/settings"
 	"github.com/cloudfoundry/bosh-agent/v2/settings/settingsfakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("settingsService", func() {

@@ -170,9 +170,9 @@ func (p rootDevicePartitioner) GetPartitions(devicePath string) (
 			return partitions, deviceFullSizeInBytes, bosherr.WrapErrorf(err, "Parsing existing partitions of `%s'", devicePath)
 		}
 
-		// Saving parition type to detect if we're using EFI partition
+		// Saving partition type to detect if we're using EFI partition
 		partitionType := PartitionTypeUnknown
-		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" {
+		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" { //nolint:staticcheck
 			partitionType = PartitionTypeLinux
 		} else if partitionInfo[4] == "linux-swap(v1)" {
 			partitionType = PartitionTypeSwap

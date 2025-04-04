@@ -1,14 +1,15 @@
 package applier
 
 import (
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/work"
+
 	as "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/jobs"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	"github.com/cloudfoundry/bosh-utils/work"
 )
 
 type concreteApplier struct {

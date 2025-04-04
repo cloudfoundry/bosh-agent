@@ -8,12 +8,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
-	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
-	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath/tarpathfakes"
 	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath/tarpathfakes"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_clock.go code.cloudfoundry.org/clock.Clock

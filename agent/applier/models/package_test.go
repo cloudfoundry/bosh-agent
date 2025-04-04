@@ -4,8 +4,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	"github.com/cloudfoundry/bosh-utils/crypto"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 var _ = Describe("Package", func() {

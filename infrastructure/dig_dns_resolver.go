@@ -37,7 +37,7 @@ func (res DigDNSResolver) LookupHost(dnsServers []string, host string) (string, 
 	var ipString string
 
 	if len(dnsServers) == 0 {
-		err = errors.New("No DNS servers provided")
+		err = errors.New("No DNS servers provided") //nolint:staticcheck
 	}
 
 	for _, dnsServer := range dnsServers {
@@ -66,7 +66,7 @@ func (res DigDNSResolver) lookupHostWithDNSServer(dnsServer string, host string)
 	ipString = strings.Split(stdout, "\n")[0]
 	ip := net.ParseIP(ipString)
 	if ip == nil {
-		return "", errors.New("Resolving host")
+		return "", errors.New("Resolving host") //nolint:staticcheck
 	}
 
 	return ipString, nil

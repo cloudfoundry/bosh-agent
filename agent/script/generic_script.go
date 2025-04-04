@@ -4,8 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-agent/v2/agent/script/cmd"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/script/cmd"
 )
 
 const (
@@ -69,7 +70,7 @@ func (s GenericScript) Run() error {
 		return err
 	}
 	defer func() {
-		_ = stdoutFile.Close()
+		_ = stdoutFile.Close() //nolint:errcheck
 	}()
 
 	stderrFile, err := s.fs.OpenFile(s.stderrLogPath, fileOpenFlag, fileOpenPerm)
@@ -77,7 +78,7 @@ func (s GenericScript) Run() error {
 		return err
 	}
 	defer func() {
-		_ = stderrFile.Close()
+		_ = stderrFile.Close() //nolint:errcheck
 	}()
 
 	command := cmd.BuildCommand(s.path)
@@ -88,7 +89,7 @@ func (s GenericScript) Run() error {
 		command.Env[key] = val
 	}
 
-	_, _, _, err = s.runner.RunComplexCommand(command)
+	_, _, _, err = s.runner.RunComplexCommand(command) //nolint:errcheck
 
 	return err
 }

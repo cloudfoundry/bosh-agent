@@ -75,7 +75,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 				It("it is being mounted", func() {
 					Eventually(func() string {
-						result, _ := testEnvironment.RunCommand("sudo mount | grep /dev/sdh | grep -c /var/vcap/data")
+						result, _ := testEnvironment.RunCommand("sudo mount | grep /dev/sdh | grep -c /var/vcap/data") //nolint:errcheck
 						return strings.TrimSpace(result)
 					}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 				})
@@ -88,7 +88,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 					JustBeforeEach(func() {
 						Eventually(func() string {
-							result, _ := testEnvironment.RunCommand("{ sudo findmnt /var/tmp; sudo findmnt /tmp; } | grep -c '/dev/sdh2\\[/root_tmp\\]'")
+							result, _ := testEnvironment.RunCommand("{ sudo findmnt /var/tmp; sudo findmnt /tmp; } | grep -c '/dev/sdh2\\[/root_tmp\\]'") //nolint:errcheck
 							return strings.TrimSpace(result)
 						}, 2*time.Minute, 1*time.Second).Should(Equal("2"))
 					})

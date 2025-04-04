@@ -48,7 +48,7 @@ var _ = Describe("Blob Manager", func() {
 	getBlob := func(id string) string {
 		file, status, err := blobManager.Fetch(id)
 		Expect(err).NotTo(HaveOccurred())
-		defer file.Close()
+		defer file.Close() //nolint:errcheck
 		Expect(status).To(Equal(200))
 
 		contents, err := fs.ReadFileString(file.Name())

@@ -9,8 +9,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 )
 
 var _ = Describe("status", func() {

@@ -43,7 +43,7 @@ func (f *File) WriteTo(w io.Writer) (int64, error) {
 		buf.WriteString("[" + section.Name + "]\n")
 
 		for _, key := range section.Keys {
-			buf.WriteString(fmt.Sprintf("%s=%s\n", key.Name, key.Value))
+			buf.WriteString(fmt.Sprintf("%s=%s\n", key.Name, key.Value)) //nolint:staticcheck
 		}
 
 		buf.WriteString("\n")

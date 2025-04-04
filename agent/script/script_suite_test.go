@@ -1,10 +1,10 @@
 package script_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"testing"
 )
 
 func TestScriptRunner(t *testing.T) {

@@ -16,14 +16,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	fakemonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("monitJobSupervisor", func() {
@@ -91,7 +92,7 @@ var _ = Describe("monitJobSupervisor", func() {
 			return err
 		}
 
-		defer writeCloser.Close()
+		defer writeCloser.Close() //nolint:errcheck
 
 		buf := bytes.NewBufferString(fmt.Sprintf("%s\r\n", email))
 		_, err = buf.WriteTo(writeCloser)

@@ -7,9 +7,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk/fakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 type changingMountsSearcher struct {

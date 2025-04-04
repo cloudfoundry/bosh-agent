@@ -6,9 +6,10 @@ import (
 
 	"path/filepath"
 
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("prepare", func() {

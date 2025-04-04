@@ -45,13 +45,13 @@ func (b BlobClient) Get(uuid string, destinationPath string) error {
 	if err != nil {
 		return err
 	}
-	defer readCloser.Close()
+	defer readCloser.Close() //nolint:errcheck
 
 	targetFile, err := os.Create(destinationPath)
 	if err != nil {
 		return err
 	}
-	defer targetFile.Close()
+	defer targetFile.Close() //nolint:errcheck
 
 	_, err = io.Copy(targetFile, readCloser)
 
@@ -61,7 +61,7 @@ func (b BlobClient) Get(uuid string, destinationPath string) error {
 func NewBlobstore(uri string) BlobClient {
 	config := davconfig.Config{Endpoint: uri, User: "agent", Password: "password"}
 	logger := boshlog.NewLogger(boshlog.LevelNone)
-	tunnelClient, _ := utils.GetSSHTunnelClient()
+	tunnelClient, _ := utils.GetSSHTunnelClient() //nolint:errcheck
 
 	httpClient := &http.Client{
 		Transport: &http.Transport{

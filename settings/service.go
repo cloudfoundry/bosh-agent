@@ -2,7 +2,6 @@ package settings
 
 import (
 	"encoding/json"
-
 	"sync"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"

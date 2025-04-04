@@ -6,6 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-utils/crypto"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
@@ -14,8 +17,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/agent/script/scriptfakes"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
 	fakenotif "github.com/cloudfoundry/bosh-agent/v2/notification/fakes"
-	"github.com/cloudfoundry/bosh-utils/crypto"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("DrainAction", func() {
@@ -131,7 +132,7 @@ var _ = Describe("DrainAction", func() {
 							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
 								Expect(params).To(Equal(boshdrain.NewUpdateParams(currentSpec, newSpec)))
 
-								if jobName == "foo" {
+								if jobName == "foo" { //nolint:staticcheck
 									return fooScript
 								} else if jobName == "bar" {
 									return barScript
@@ -244,7 +245,7 @@ var _ = Describe("DrainAction", func() {
 							jobScriptProvider.NewDrainScriptStub = func(jobName string, params boshdrain.ScriptParams) boshscript.CancellableScript {
 								Expect(params).To(Equal(boshdrain.NewShutdownParams(currentSpec, nil)))
 
-								if jobName == "foo" {
+								if jobName == "foo" { //nolint:staticcheck
 									return fooScript
 								} else if jobName == "bar" {
 									return barScript
@@ -325,12 +326,12 @@ var _ = Describe("DrainAction", func() {
 			})
 
 			It("does not unmonitor services ", func() {
-				_, _ = act()
+				_, _ = act() //nolint:errcheck
 				Expect(jobSupervisor.Unmonitored).To(BeFalse())
 			})
 
 			It("does not notify of job shutdown", func() {
-				_, _ = act()
+				_, _ = act() //nolint:errcheck
 				Expect(notifier.NotifiedShutdown).To(BeFalse())
 			})
 		})

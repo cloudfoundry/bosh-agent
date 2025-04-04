@@ -6,13 +6,14 @@ import (
 
 	"os"
 
+	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
 	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("compiledPackageApplierProvider", func() {

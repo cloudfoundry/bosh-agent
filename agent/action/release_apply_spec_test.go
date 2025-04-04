@@ -4,9 +4,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ReleaseApplySpec", func() {

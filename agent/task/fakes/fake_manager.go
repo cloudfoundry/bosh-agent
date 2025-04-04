@@ -1,6 +1,8 @@
 package fakes
 
-import boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
+import (
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
+)
 
 type FakeManager struct {
 	taskIDToTaskInfo map[string]boshtask.Info

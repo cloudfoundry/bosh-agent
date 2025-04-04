@@ -4,10 +4,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("Testing with Ginkgo", func() {

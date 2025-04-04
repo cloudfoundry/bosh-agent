@@ -3,9 +3,10 @@ package devicepathresolver_test
 import (
 	"errors"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

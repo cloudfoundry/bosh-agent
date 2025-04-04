@@ -11,9 +11,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/mbus"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
-	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 
 const targetURL = "https://user:pass@127.0.0.1:7789"
@@ -75,7 +76,7 @@ func init() { //nolint:gochecknoinits
 	if err != nil {
 		panic(fmt.Sprintf("Unable to listen on address (%s): %s", targetURL, err))
 	}
-	ln.Close()
+	ln.Close() //nolint:errcheck
 }
 
 var _ = Describe("HTTPSDispatcher", func() {
@@ -103,7 +104,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 
 		Eventually(func() *http.Response {
 			client := getHTTPClient()
-			response, _ := client.Get(targetURL + "/example")
+			response, _ := client.Get(targetURL + "/example") //nolint:errcheck
 			return response
 		}, 5*time.Second).ShouldNot(BeNil())
 	})

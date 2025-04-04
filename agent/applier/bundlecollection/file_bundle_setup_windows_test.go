@@ -1,21 +1,21 @@
 package bundlecollection_test
 
 import (
+	"errors"
+	"os"
+	"time"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath/tarpathfakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"errors"
-	"os"
-
-	"time"
-
-	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
 	fakefileutil "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
 )
 
 var _ = Describe("FileBundle uninstallation", func() {

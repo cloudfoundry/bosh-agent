@@ -11,9 +11,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit/monitfakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("httpClient", func() {

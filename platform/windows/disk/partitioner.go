@@ -2,10 +2,8 @@ package disk
 
 import (
 	"fmt"
-
-	"strings"
-
 	"strconv"
+	"strings"
 
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -54,7 +52,7 @@ func (p *Partitioner) GetFreeSpaceOnDisk(diskNumber string) (int, error) {
 	freeSpace, err := strconv.Atoi(stdoutTrimmed)
 
 	if err != nil {
-		return 0, fmt.Errorf(
+		return 0, fmt.Errorf( //nolint:staticcheck
 			"Failed to convert output of \"%s\" command in to number. Output was: \"%s\"",
 			getFreeSpaceCommand,
 			stdoutTrimmed,

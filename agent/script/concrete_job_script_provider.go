@@ -7,10 +7,11 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
-	boshdrain "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
-	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshdrain "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 type ConcreteJobScriptProvider struct {

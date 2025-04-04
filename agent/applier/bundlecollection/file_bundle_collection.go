@@ -1,19 +1,19 @@
 package bundlecollection
 
 import (
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
-	"os"
-
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
 )
 
 const fileBundleCollectionLogTag = "FileBundleCollection"

@@ -8,13 +8,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
 	boshenv "github.com/cloudfoundry/bosh-agent/v2/agent/script/pathenv"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("RunErrand", func() {

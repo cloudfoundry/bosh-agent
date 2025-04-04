@@ -3,10 +3,11 @@ package action
 import (
 	"errors"
 
-	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
-	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
 )
 
 type CompilePackageAction struct {

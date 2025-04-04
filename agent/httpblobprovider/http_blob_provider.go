@@ -46,13 +46,13 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string, headers map[string]str
 
 	stat, err := h.fs.Stat(filepath)
 	if err != nil {
-		defer file.Close()
+		defer file.Close() //nolint:errcheck
 		return boshcrypto.MultipleDigest{}, err
 	}
 
 	req, err := http.NewRequest("PUT", signedURL, file) //nolint:noctx
 	if err != nil {
-		defer file.Close()
+		defer file.Close() //nolint:errcheck
 		return boshcrypto.MultipleDigest{}, err
 	}
 
@@ -70,7 +70,7 @@ func (h *HTTPBlobImpl) Upload(signedURL, filepath string, headers map[string]str
 		return boshcrypto.MultipleDigest{}, err
 	}
 	if !isSuccess(resp) {
-		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT for %s, response was %d", file.Name(), resp.StatusCode)
+		return boshcrypto.MultipleDigest{}, fmt.Errorf("Error executing PUT for %s, response was %d", file.Name(), resp.StatusCode) //nolint:staticcheck
 	}
 
 	return digest, nil
@@ -84,7 +84,7 @@ func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest, headers m
 
 	req, err := http.NewRequest("GET", signedURL, strings.NewReader("")) //nolint:noctx
 	if err != nil {
-		defer file.Close()
+		defer file.Close() //nolint:errcheck
 		return "", bosherr.WrapError(err, "Creating Get Request")
 	}
 
@@ -94,26 +94,26 @@ func (h *HTTPBlobImpl) Get(signedURL string, digest boshcrypto.Digest, headers m
 
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
-		return file.Name(), bosherr.WrapError(err, "Excuting GET request")
+		return file.Name(), bosherr.WrapError(err, "Excuting GET request") //nolint:staticcheck
 	}
 
 	if !isSuccess(resp) {
-		return file.Name(), fmt.Errorf("Error executing GET, response was %d", resp.StatusCode)
+		return file.Name(), fmt.Errorf("Error executing GET, response was %d", resp.StatusCode) //nolint:staticcheck
 	}
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return file.Name(), bosherr.WrapError(err, "Copying response to tempfile")
+		return file.Name(), bosherr.WrapError(err, "Copying response to tempfile") //nolint:staticcheck
 	}
 
 	_, err = file.Seek(0, io.SeekStart)
 	if err != nil {
-		return file.Name(), bosherr.WrapErrorf(err, "Rewinding file pointer to beginning")
+		return file.Name(), bosherr.WrapErrorf(err, "Rewinding file pointer to beginning") //nolint:staticcheck
 	}
 
 	err = digest.Verify(file)
 	if err != nil {
-		return file.Name(), bosherr.WrapErrorf(err, "Checking downloaded blob digest")
+		return file.Name(), bosherr.WrapErrorf(err, "Checking downloaded blob digest") //nolint:staticcheck
 	}
 
 	return file.Name(), nil

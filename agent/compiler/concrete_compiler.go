@@ -7,15 +7,16 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
 	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
 	boshcmdrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const PackagingScriptName = "packaging"
@@ -118,7 +119,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 	}
 
 	defer func() {
-		_ = c.compressor.CleanUp(tmpPackageTar)
+		_ = c.compressor.CleanUp(tmpPackageTar) //nolint:errcheck
 	}()
 
 	uploadedBlobID, digest, err := c.blobstore.Write(pkg.UploadSignedURL, tmpPackageTar, pkg.BlobstoreHeaders)

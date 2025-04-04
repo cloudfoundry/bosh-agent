@@ -72,7 +72,7 @@ func (m *monitRetryStrategy) Try() error {
 	}
 
 	if err != nil && m.retryable.Response() != nil { //nolint:bodyclose
-		_ = m.retryable.Response().Body.Close()
+		_ = m.retryable.Response().Body.Close() //nolint:errcheck
 	}
 
 	return err

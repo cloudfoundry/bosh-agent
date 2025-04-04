@@ -7,8 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 )
 
 var _ = Describe("Linux Formatter", func() {

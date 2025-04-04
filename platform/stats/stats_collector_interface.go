@@ -1,6 +1,8 @@
 package stats
 
-import "time"
+import (
+	"time"
+)
 
 type CPULoad struct {
 	One     float64

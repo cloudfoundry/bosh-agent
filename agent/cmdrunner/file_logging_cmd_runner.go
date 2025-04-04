@@ -82,7 +82,7 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 		return nil, bosherr.WrapErrorf(err, "Opening stdout for task %s", taskName)
 	}
 	defer func() {
-		_ = stdoutFile.Close()
+		_ = stdoutFile.Close() //nolint:errcheck
 	}()
 
 	cmd.Stdout = stdoutFile
@@ -92,7 +92,7 @@ func (f FileLoggingCmdRunner) RunCommand(jobName string, taskName string, cmd bo
 		return nil, bosherr.WrapErrorf(err, "Opening stderr for task %s", taskName)
 	}
 	defer func() {
-		_ = stderrFile.Close()
+		_ = stderrFile.Close() //nolint:errcheck
 	}()
 
 	cmd.Stderr = stderrFile
@@ -166,7 +166,7 @@ func (f FileLoggingCmdRunner) truncateUntilToken(data []byte, dataLossLimit int6
 	} else {
 		// Make sure we don't break inside UTF encoded rune
 		for {
-			if len(data) < 1 {
+			if len(data) < 1 { //nolint:staticcheck
 				break
 			}
 

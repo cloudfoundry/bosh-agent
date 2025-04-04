@@ -1,9 +1,10 @@
 package fakes
 
 import (
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+
 	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 type FakeCompiler struct {

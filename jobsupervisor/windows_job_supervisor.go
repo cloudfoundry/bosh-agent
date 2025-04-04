@@ -24,11 +24,12 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/winsvc"
 
-	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
-	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 // TODO: stop creating globals and then overriding in tests,
@@ -412,7 +413,7 @@ func (h *handlerFunc) ServeHTTP(wr http.ResponseWriter, req *http.Request) {
 }
 
 func (w *windowsJobSupervisor) handleJobFailure(hn JobFailureHandler, wr http.ResponseWriter, req *http.Request) {
-	defer req.Body.Close()
+	defer req.Body.Close() //nolint:errcheck
 
 	if w.stateIs(stateDisabled) {
 		wr.WriteHeader(http.StatusOK)
@@ -471,7 +472,7 @@ func (w *windowsJobSupervisor) MonitorJobFailures(handler JobFailureHandler) err
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Listening on TCP address: %s", laddr.String())
 	}
-	defer listener.Close()
+	defer listener.Close() //nolint:errcheck
 
 	errCh := make(chan error, 1)
 	go func() {

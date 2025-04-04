@@ -48,7 +48,7 @@ func main() {
 	})
 
 	http.HandleFunc("/upload_package/", func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer r.Body.Close() //nolint:errcheck
 
 		asset := r.URL.Path[len("/upload_package/"):]
 
@@ -58,7 +58,7 @@ func main() {
 			w.Write([]byte(err.Error())) //nolint:errcheck
 			return
 		}
-		defer f.Close()
+		defer f.Close() //nolint:errcheck
 
 		_, err = io.Copy(f, r.Body)
 		if err != nil {

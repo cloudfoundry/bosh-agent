@@ -13,11 +13,12 @@ import (
 
 	"code.cloudfoundry.org/clock/fakeclock"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/net/netfakes"
@@ -71,7 +72,7 @@ var _ = Describe("WindowsNetManager", func() {
 	})
 
 	AfterEach(func() {
-		os.RemoveAll(tmpDir)
+		os.RemoveAll(tmpDir) //nolint:errcheck
 	})
 
 	setupNetworking := func(networks boshsettings.Networks) error {

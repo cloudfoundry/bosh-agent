@@ -1,17 +1,17 @@
 package models_test
 
 import (
+	"errors"
+	"os"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"os"
-
-	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
-	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/crypto"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
-	"errors"
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
+	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 var _ = Describe("Job", func() {

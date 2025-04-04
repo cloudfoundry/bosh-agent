@@ -8,9 +8,10 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 
-	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-utils/blobstore"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 )
 
 type BlobstoreDelegatorImpl struct {
@@ -30,7 +31,7 @@ func NewBlobstoreDelegator(hp httpblobprovider.HTTPBlobProvider, bp blobstore.Di
 func (b *BlobstoreDelegatorImpl) Get(digest boshcrypto.Digest, signedURL, blobID string, headers map[string]string) (fileName string, err error) {
 	if signedURL == "" {
 		if blobID == "" {
-			return "", fmt.Errorf("Both signedURL and blobID are blank which is invalid")
+			return "", fmt.Errorf("Both signedURL and blobID are blank which is invalid") //nolint:staticcheck
 		}
 		return b.b.Get(blobID, digest)
 	}

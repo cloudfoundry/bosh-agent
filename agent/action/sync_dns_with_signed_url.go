@@ -7,14 +7,15 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/cloudfoundry/bosh-agent/v2/agent/action/state"
-	blobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
-	boshplat "github.com/cloudfoundry/bosh-agent/v2/platform"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/action/state"
+	blobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
+	boshplat "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type SyncDNSWithSignedURLRequest struct {

@@ -6,9 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("ConfigDriveSettingsSource", func() {

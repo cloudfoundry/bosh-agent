@@ -5,13 +5,15 @@ import (
 	"os"
 	"path"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 	boshappl "github.com/cloudfoundry/bosh-agent/v2/agent/applier"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const (

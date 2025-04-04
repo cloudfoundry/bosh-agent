@@ -3,9 +3,10 @@ package applyspec_test
 import (
 	"encoding/json"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
 )
 
 var _ = Describe("ApplySpec", func() {
