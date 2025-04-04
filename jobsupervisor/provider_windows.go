@@ -6,12 +6,13 @@ package jobsupervisor
 import (
 	"os"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const jobSupervisorListenPort = 2825
@@ -33,7 +34,7 @@ func NewProvider(
 	network, err := platform.GetDefaultNetwork()
 	var machineIP string
 	if err != nil {
-		machineIP, _ = os.Hostname()
+		machineIP, _ = os.Hostname() //nolint:errcheck
 		logger.Debug("providerWindows", "Initializing jobsupervisor.provider_windows: %s, using hostname \"%s\"instead of IP", err, machineIP)
 	} else {
 		machineIP = network.IP

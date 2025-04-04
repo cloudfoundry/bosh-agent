@@ -27,7 +27,7 @@ var _ = Describe("path prefix detection", func() {
 	})
 
 	AfterEach(func() {
-		os.RemoveAll(tmp)
+		os.RemoveAll(tmp) //nolint:errcheck
 	})
 
 	Context("when the files in the tarball do not have leading slashes", func() {
@@ -99,14 +99,14 @@ var _ = Describe("path prefix detection", func() {
 func writeTgz(path string, files []string) {
 	f, err := os.Create(path)
 	Expect(err).NotTo(HaveOccurred())
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	gw, err := gzip.NewWriterLevel(f, gzip.BestSpeed)
 	Expect(err).NotTo(HaveOccurred())
-	defer gw.Close()
+	defer gw.Close() //nolint:errcheck
 
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
+	defer tw.Close() //nolint:errcheck
 
 	for _, file := range files {
 		err := tw.WriteHeader(&tar.Header{

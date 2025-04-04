@@ -3,9 +3,10 @@ package action_test
 import (
 	"errors"
 
-	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
 
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"

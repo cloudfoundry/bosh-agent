@@ -5,14 +5,15 @@ import (
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 
+	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 type AuditLogger interface {

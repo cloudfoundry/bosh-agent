@@ -3,12 +3,13 @@ package action
 import (
 	"errors"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/logger"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	"github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type UpdateSettingsAction struct {

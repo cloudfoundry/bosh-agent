@@ -6,11 +6,12 @@ import (
 	"path/filepath"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
 )
 
 const (
@@ -56,11 +57,11 @@ func (b FileBundle) InstallWithoutContents() (string, error) {
 		return "", bosherr.WrapError(err, "Creating parent installation directory")
 	}
 	if err := b.fs.Chown(path.Dir(b.installPath), "root:vcap"); err != nil {
-		_ = b.Uninstall()
+		_ = b.Uninstall() //nolint:errcheck
 		return "", bosherr.WrapError(err, "Setting ownership on parent installation directory")
 	}
 	if err := b.fs.Chown(b.installPath, "root:vcap"); err != nil {
-		_ = b.Uninstall()
+		_ = b.Uninstall() //nolint:errcheck
 		return "", bosherr.WrapError(err, "Setting ownership on installation directory")
 	}
 
@@ -88,7 +89,7 @@ func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
 		var err error
 		hasSlash, err := b.detector.Detect(sourcePath, pathInBundle)
 		if err != nil {
-			_ = b.Uninstall()
+			_ = b.Uninstall() //nolint:errcheck
 			return "", bosherr.WrapError(err, "Detecting prefix of package files")
 		}
 
@@ -109,7 +110,7 @@ func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
 		fileutil.CompressorOptions{PathInArchive: pathInBundle, StripComponents: stripComponents},
 	)
 	if err != nil {
-		_ = b.Uninstall()
+		_ = b.Uninstall() //nolint:errcheck
 		return "", bosherr.WrapError(err, "Decompressing package files")
 	}
 
@@ -118,12 +119,12 @@ func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
 }
 
 func (b FileBundle) GetInstallPath() (string, error) {
-	path := b.installPath
-	if !b.fs.FileExists(path) {
+	installPath := b.installPath
+	if !b.fs.FileExists(installPath) {
 		return "", bosherr.Error("install dir does not exist")
 	}
 
-	return path, nil
+	return installPath, nil
 }
 
 func (b FileBundle) IsInstalled() (bool, error) {

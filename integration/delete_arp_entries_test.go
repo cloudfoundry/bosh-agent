@@ -81,7 +81,7 @@ var _ = Describe("DeleteARPEntries", func() {
 		err = testEnvironment.SetUpDummyNetworkInterface(testIP, testMacAddress)
 		Expect(err).ToNot(HaveOccurred())
 
-		cache, _ := parseARPCacheIntoMap()
+		cache, _ := parseARPCacheIntoMap() //nolint:errcheck
 		macOfTestIP := cache[testIP].MACAddr
 		Expect(macOfTestIP).To(Equal(testMacAddress))
 	})
@@ -105,7 +105,7 @@ var _ = Describe("DeleteARPEntries", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ARPCache {
-				ARPCache, _ := parseARPCacheIntoMap()
+				ARPCache, _ := parseARPCacheIntoMap() //nolint:errcheck
 				return ARPCache[testIP]
 			}, 10, 1).Should(Equal(ARPCache{}))
 		})

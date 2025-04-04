@@ -6,9 +6,10 @@ import (
 
 	"strings"
 
-	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 )
 
 var _ = Describe("Instance Info", func() {

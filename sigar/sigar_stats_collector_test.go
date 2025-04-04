@@ -3,13 +3,13 @@ package sigar_test
 import (
 	"time"
 
+	sigar "github.com/cloudfoundry/gosigar"
+	fakesigar "github.com/cloudfoundry/gosigar/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	boshsigar "github.com/cloudfoundry/bosh-agent/v2/sigar"
-	sigar "github.com/cloudfoundry/gosigar"
-	fakesigar "github.com/cloudfoundry/gosigar/fakes"
 )
 
 var _ = Describe("sigarStatsCollector", func() {
@@ -54,7 +54,7 @@ var _ = Describe("sigarStatsCollector", func() {
 			collector.StartCollecting(1*time.Millisecond, latestGotUpdated)
 			<-latestGotUpdated
 
-			stats, _ := collector.GetCPUStats()
+			stats, _ := collector.GetCPUStats() //nolint:errcheck
 			Expect(stats).To(Equal(CPUStats{
 				User:  uint64(10),
 				Nice:  uint64(20),
@@ -72,7 +72,7 @@ var _ = Describe("sigarStatsCollector", func() {
 
 			<-latestGotUpdated
 
-			stats, _ = collector.GetCPUStats()
+			stats, _ = collector.GetCPUStats() //nolint:errcheck
 			Expect(stats).To(Equal(CPUStats{
 				User:  uint64(100),
 				Nice:  uint64(200),

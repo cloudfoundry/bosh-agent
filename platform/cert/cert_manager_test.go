@@ -407,7 +407,7 @@ SDRQj6MXyyS4LBMZA56DYXaXyR6pDTpmvBUNQ4FR0UgYm1GeGWo1kOUPjfs7sUQz
 aAzOWRDC
 -----END CERTIFICATE-----`
 
-			var certThumbprints []string = []string{
+			var certThumbprints = []string{
 				"23AC7706D032651BE146388FA8DF7B0B2DD7CFA6",
 				"73C0BFD7BB53EC299B289CB86A010AE485F6D49B",
 			}
@@ -447,7 +447,7 @@ if (Test-Path %[1]s) {
 					Expect(err).To(BeNil())
 					Eventually(session).Should(gexec.Exit(0))
 				}
-				os.RemoveAll(tempDir)
+				os.RemoveAll(tempDir) //nolint:errcheck
 			})
 
 			It("should create the tmpDir if doesn't exist", func() {

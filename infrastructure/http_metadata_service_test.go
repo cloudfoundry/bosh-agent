@@ -7,16 +7,18 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure"
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 
 	fakeinf "github.com/cloudfoundry/bosh-agent/v2/infrastructure/fakes"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 var _ = Describe("HTTPMetadataService", describeHTTPMetadataService)

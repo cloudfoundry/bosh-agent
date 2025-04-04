@@ -5,10 +5,11 @@ import (
 
 	sigar "github.com/cloudfoundry/gosigar"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Service

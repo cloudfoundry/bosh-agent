@@ -1,8 +1,8 @@
+package syslog
+
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
-package syslog
 
 import (
 	"errors"
@@ -95,7 +95,7 @@ type netConn struct {
 // writer sends a log message with the given facility, severity and
 // tag.
 func Dial(network, raddr string, priority Priority, tag string) (*Writer, error) {
-	hostname, _ := os.Hostname()
+	hostname, _ := os.Hostname() //nolint:errcheck
 	return DialHostname(network, raddr, priority, tag, hostname)
 }
 
@@ -131,7 +131,7 @@ func DialHostname(network, raddr string, priority Priority, tag, hostname string
 func (w *Writer) connect() (err error) {
 	if w.conn != nil {
 		// ignore err from close, it makes sense to continue anyway
-		w.conn.close()
+		w.conn.close() //nolint:errcheck
 		w.conn = nil
 	}
 

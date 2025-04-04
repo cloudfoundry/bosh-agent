@@ -3,9 +3,10 @@ package action
 import (
 	"errors"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type MigrateDiskAction struct {

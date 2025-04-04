@@ -6,10 +6,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/v2/agent/task/fakes"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("GetTask", func() {

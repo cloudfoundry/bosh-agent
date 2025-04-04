@@ -7,11 +7,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-agent/v2/platform"
-	"github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
 	"github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
 )
 
 var _ = Describe("Delayed Audit Logger", func() {

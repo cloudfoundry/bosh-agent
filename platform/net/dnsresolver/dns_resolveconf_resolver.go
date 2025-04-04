@@ -3,7 +3,7 @@ package dnsresolver
 import (
 	"bytes"
 	"html/template"
-	gonet "net"
+	"net"
 	"path/filepath"
 	"strings"
 
@@ -47,7 +47,7 @@ func (d *resolveConfResolver) Validate(dnsServers []string) error {
 			return nil
 		}
 
-		canonicalIP := gonet.ParseIP(dnsServer)
+		canonicalIP := net.ParseIP(dnsServer)
 
 		if canonicalIP != nil {
 			if strings.Contains(resolvConfContents, canonicalIP.String()) {

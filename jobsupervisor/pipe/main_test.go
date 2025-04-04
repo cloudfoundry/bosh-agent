@@ -43,7 +43,7 @@ func FindOpenPort() (int, error) {
 		if err != nil {
 			continue
 		}
-		l.Close()
+		l.Close() //nolint:errcheck
 		return port, nil
 	}
 	return 0, errors.New("could not find open port to listen on")
@@ -198,7 +198,7 @@ var _ = Describe("Main", func() {
 			var invalidLogDir string
 			randString := func() string {
 				b := make([]byte, 8)
-				n, _ := cryptorand.Read(b)
+				n, _ := cryptorand.Read(b) //nolint:errcheck
 				return fmt.Sprintf("%X", b[:n])
 			}
 			for i := 0; i < 1000; i++ {
@@ -271,7 +271,7 @@ var _ = Describe("Main", func() {
 			}()
 		})
 		AfterEach(func() {
-			ServerConn.Close()
+			ServerConn.Close() //nolint:errcheck
 			close(done)
 			wg.Wait()
 		})
@@ -459,15 +459,15 @@ func invalidatePipeEnvVars() (restore func()) {
 	}
 	// set empty env vars
 	for k := range envVars {
-		os.Setenv(k, "")
+		os.Setenv(k, "") //nolint:errcheck
 	}
 	// function to reset restore environment
 	return func() {
 		for k, v := range envVars {
 			if v.ok {
-				os.Setenv(k, v.s)
+				os.Setenv(k, v.s) //nolint:errcheck
 			} else {
-				os.Unsetenv(k)
+				os.Unsetenv(k) //nolint:errcheck
 			}
 		}
 	}

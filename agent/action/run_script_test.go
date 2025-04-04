@@ -6,12 +6,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	fakeapplyspec "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/script/scriptfakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("RunScript", func() {
@@ -71,7 +72,7 @@ var _ = Describe("RunScript", func() {
 					Expect(scriptName).To(Equal("run-me"))
 					Expect(scriptEnv["FOO"]).To(Equal("foo"))
 
-					if jobName == "fake-job-1" {
+					if jobName == "fake-job-1" { //nolint:staticcheck
 						return script1
 					} else if jobName == "fake-job-2" {
 						return script2

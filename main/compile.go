@@ -59,7 +59,8 @@ func newCompileTarballOptions(command string, args []string) (CompileTarballOpti
 	flags := flag.NewFlagSet(command, flag.ExitOnError)
 	flags.StringVar(&options.OutputDirectory, "output-directory", "/tmp", "the directory to put the compiled release tarball")
 	flags.Usage = func() {
-		_, _ = fmt.Fprintf(flags.Output(), `The BOSH Agent %[1]s command creates BOSH Release tarballs with compiled packages from tarballs with source packages.
+		_, _ = fmt.Fprintf(flags.Output(), //nolint:errcheck
+			`The BOSH Agent %[1]s command creates BOSH Release tarballs with compiled packages from tarballs with source packages.
 
 Usage:
 

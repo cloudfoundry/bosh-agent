@@ -164,7 +164,7 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 		}
 
 		partitionType := PartitionTypeUnknown
-		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" {
+		if partitionInfo[4] == "ext4" || partitionInfo[4] == "xfs" { //nolint:staticcheck
 			partitionType = PartitionTypeLinux
 		} else if partitionInfo[4] == "linux-swap(v1)" {
 			partitionType = PartitionTypeSwap

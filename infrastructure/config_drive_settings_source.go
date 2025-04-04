@@ -3,10 +3,11 @@ package infrastructure
 import (
 	"encoding/json"
 
-	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type MetadataContentsType struct {

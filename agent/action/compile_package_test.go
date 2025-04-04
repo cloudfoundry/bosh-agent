@@ -7,11 +7,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+
 	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
 	fakecomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler/fakes"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 func getCompileActionArguments() (blobID string, multiDigest boshcrypto.MultipleDigest, name, version string, deps boshcomp.Dependencies) {

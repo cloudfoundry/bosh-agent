@@ -7,9 +7,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
 	fakeblobprovider "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/httpblobproviderfakes"
-	fakeblobstore "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )

@@ -5,16 +5,17 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 const (
@@ -123,7 +124,7 @@ func (a Agent) generateHeartbeats(errCh chan error) {
 	// Violates staticcheck SA1015 - probably fine since heartbeats are endless
 	tickChan := time.Tick(a.heartbeatInterval) //nolint:staticcheck
 
-	for { //nolint:gosimple
+	for { //nolint:staticcheck
 		select {
 		case <-tickChan:
 			a.sendAndRecordHeartbeat(errCh, true)

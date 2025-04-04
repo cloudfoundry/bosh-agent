@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
+
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 

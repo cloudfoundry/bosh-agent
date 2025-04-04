@@ -10,12 +10,13 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
 	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 
-	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
-	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 )
 
 const logTag = "renderedJobApplier"

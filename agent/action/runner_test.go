@@ -6,9 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	fakeaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
-	"github.com/stretchr/testify/assert"
 )
 
 type valueType struct {

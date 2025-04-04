@@ -7,11 +7,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
 	boshapp "github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/agentlogger"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
-	"github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const mainLogTag = "main"

@@ -1,16 +1,16 @@
 package applyspec_test
 
 import (
+	"encoding/json"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"encoding/json"
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("RenderedTemplatesArchive", func() {

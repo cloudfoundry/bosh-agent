@@ -119,7 +119,7 @@ func (d windowsMacAddressDetector) DetectMacAddresses() (map[string]string, erro
 
 func adapterVisible(netAdapters []netAdapter, macAddress string, adapterName string) bool {
 	for _, adapter := range netAdapters {
-		adapterMac, _ := gonet.ParseMAC(adapter.MacAddress)
+		adapterMac, _ := gonet.ParseMAC(adapter.MacAddress) //nolint:errcheck
 		if adapter.Name == adapterName && adapterMac.String() == macAddress {
 			return true
 		}

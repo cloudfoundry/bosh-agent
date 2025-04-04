@@ -1,10 +1,11 @@
 package action
 
 import (
-	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
+
+	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
 )
 
 var _ = Describe("RemovePersistentDiskAction", func() {

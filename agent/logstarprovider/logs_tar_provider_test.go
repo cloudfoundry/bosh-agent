@@ -4,8 +4,9 @@ import (
 	"errors"
 	"runtime"
 
-	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 
 	fakecmd "github.com/cloudfoundry/bosh-utils/fileutil/fakes"
 
@@ -216,7 +217,7 @@ var _ = Describe("LogsTarProvider", func() {
 	Describe("Cleanup", func() {
 		It("invokes the compressor's cleanup function", func() {
 			Expect(compressor.CleanUpTarballPath).To(BeZero())
-			_ = provider.CleanUp("/tmp/logs.tar")
+			_ = provider.CleanUp("/tmp/logs.tar") //nolint:errcheck
 			Expect(compressor.CleanUpTarballPath).To(Equal("/tmp/logs.tar"))
 		})
 

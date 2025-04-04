@@ -4,15 +4,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	fakeaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
 	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/script/drain/drainfakes"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/script/scriptfakes"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("ConcreteJobScriptProvider", func() {

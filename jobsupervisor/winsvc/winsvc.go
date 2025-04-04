@@ -83,13 +83,13 @@ func (m *Mgr) services() ([]*mgr.Service, error) {
 		}
 		desc, err := serviceDescription(s)
 		if err != nil {
-			s.Close()
-			continue // ignore - likely access denied
+			s.Close() //nolint:errcheck
+			continue  // ignore - likely access denied
 		}
 		if m.match(desc) {
 			svcs = append(svcs, s)
 		} else {
-			s.Close()
+			s.Close() //nolint:errcheck
 		}
 	}
 	return svcs, nil
@@ -110,7 +110,7 @@ func (m *Mgr) iter(fn func(*mgr.Service) error) (first error) {
 	for _, s := range svcs {
 		go func(s *mgr.Service) {
 			defer wg.Done()
-			defer s.Close()
+			defer s.Close() //nolint:errcheck
 			if err := fn(s); err != nil {
 				mu.Lock()
 				if first == nil {
@@ -450,7 +450,8 @@ func (m *Mgr) doDelete(s *mgr.Service) error {
 		return &ServiceError{"deleting service", s.Name, err}
 	}
 	name := s.Name
-	s.Close() // Close the service otherwise it won't be deleted
+	// Close the service otherwise it won't be deleted
+	s.Close() //nolint:errcheck
 
 	// Wait for the service to be deleted - be careful to hold service
 	// handle for the shortest duration possible - as this will prevent
@@ -460,7 +461,7 @@ func (m *Mgr) doDelete(s *mgr.Service) error {
 	// iteration to give the SCM time to remove the services.
 	interval := time.Second
 
-	// Sleep briefy before the first check, ideally this is long enough
+	// Sleep briefly before the first check, ideally this is long enough
 	// for the service to be deleted on the first check.
 	time.Sleep(time.Millisecond * 100)
 
@@ -470,7 +471,7 @@ func (m *Mgr) doDelete(s *mgr.Service) error {
 		if err != nil {
 			break
 		}
-		s.Close()
+		s.Close() //nolint:errcheck
 		if d := time.Since(start); d > Timeout {
 			return &ServiceError{"deleting service", name, &TimeoutError{Timeout, d}}
 		}

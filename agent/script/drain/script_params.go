@@ -55,7 +55,7 @@ func NewUpdateParams(oldSpec, newSpec boshas.V1ApplySpec) ScriptParams {
 		p.jobChange = "job_changed"
 	}
 
-	switch {
+	switch { //nolint:staticcheck
 	case oldSpec.ConfigurationHash == "":
 		p.hashChange = "hash_new"
 	case oldSpec.ConfigurationHash == newSpec.ConfigurationHash:

@@ -144,7 +144,7 @@ func (e *WindowsEnvironment) WaitForLink(path string) {
 
 func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
 	EventuallyWithOffset(offset+1, func() bool {
-		target, _ := e.Linker.LinkTarget(path)
+		target, _ := e.Linker.LinkTarget(path) //nolint:errcheck
 		return target != ""
 	}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 }

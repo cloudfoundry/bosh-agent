@@ -8,9 +8,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/script/scriptfakes"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("ParallelScript", func() {

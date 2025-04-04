@@ -6,8 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	platform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	platform "github.com/cloudfoundry/bosh-agent/v2/platform"
 )
 
 var _ = Describe("State", func() {

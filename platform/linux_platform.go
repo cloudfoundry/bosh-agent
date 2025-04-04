@@ -515,7 +515,7 @@ func (p linux) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostname strin
 	}
 
 	for _, dnsRecord := range dnsRecords.Records {
-		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s\n", dnsRecord[0], dnsRecord[1]))
+		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s\n", dnsRecord[0], dnsRecord[1])) //nolint:staticcheck
 	}
 
 	uuid, err := p.uuidGenerator.Generate()
@@ -595,8 +595,7 @@ func (p linux) SetupLogrotate(groupName, basePath, size string) (err error) {
 		return
 	}
 
-	_, _, _, _ = p.cmdRunner.RunCommand("/var/vcap/bosh/bin/setup-logrotate.sh")
-
+	_, _, _, _ = p.cmdRunner.RunCommand("/var/vcap/bosh/bin/setup-logrotate.sh") //nolint:errcheck
 	return
 }
 
@@ -626,7 +625,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 	}
 
 	// Make a best effort to sync time now but don't error
-	_, _, _, _ = p.cmdRunner.RunCommand("sync-time")
+	_, _, _, _ = p.cmdRunner.RunCommand("sync-time") //nolint:errcheck
 	return
 }
 
@@ -1383,7 +1382,7 @@ func (p linux) IsPersistentDiskMountable(diskSettings boshsettings.DiskSettings)
 		return false, bosherr.WrapErrorf(err, "Validating path: %s", diskSettings.Path)
 	}
 
-	stdout, stderr, _, _ := p.cmdRunner.RunCommand("sfdisk", "-d", realPath)
+	stdout, stderr, _, _ := p.cmdRunner.RunCommand("sfdisk", "-d", realPath) //nolint:errcheck
 	if strings.Contains(stderr, "unrecognized partition table type") {
 		return false, nil
 	}

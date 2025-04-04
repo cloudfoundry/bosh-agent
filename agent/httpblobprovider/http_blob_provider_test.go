@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"os"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	"github.com/cloudfoundry/bosh-utils/system"
@@ -86,7 +87,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 				conn, _, err := w.(http.Hijacker).Hijack()
 				Expect(err).NotTo(HaveOccurred())
 
-				conn.Close()
+				conn.Close() //nolint:errcheck
 			})
 
 			server.RouteToHandler("GET", "/get-disconnecting-handler", disconnectingRequestHandler)
@@ -159,7 +160,7 @@ var _ = Describe("HTTPBlobImpl", func() {
 				conn, _, err := w.(http.Hijacker).Hijack()
 				Expect(err).NotTo(HaveOccurred())
 
-				conn.Close()
+				conn.Close() //nolint:errcheck
 			})
 
 			server.RouteToHandler("PUT", "/disconnecting-handler", disconnectingRequestHandler)

@@ -1,6 +1,8 @@
 package settings
 
-import "reflect"
+import (
+	"reflect"
+)
 
 type UpdateSettings struct {
 	Blobstores       []Blobstore      `json:"blobstores"`

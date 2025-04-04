@@ -6,15 +6,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+
 	boshbc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection"
 	fakebc "github.com/cloudfoundry/bosh-agent/v2/agent/applier/bundlecollection/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	. "github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
 	fakeblobdelegator "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator/blobstore_delegatorfakes"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 )
 
 func buildPkg(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBundle) {

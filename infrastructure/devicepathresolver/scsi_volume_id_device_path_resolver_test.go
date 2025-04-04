@@ -6,8 +6,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 )

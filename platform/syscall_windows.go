@@ -67,7 +67,7 @@ func createProfile(sid, username string) (string, error) {
 
 // deleteProfile, deletes the profile and home directory of the user identified
 // by Security Identifier sid.
-func deleteProfile(sid string) error { //nolint:deadcode,unused
+func deleteProfile(sid string) error { ///nolint:staticcheck,unused
 	if err := procDeleteProfile.Find(); err != nil {
 		return err
 	}
@@ -382,7 +382,7 @@ func checkSSH() error {
 		}
 		return fmt.Errorf("opening service sshd: %s", err)
 	}
-	defer sshd.Close()
+	defer sshd.Close() //nolint:errcheck
 
 	st, err := sshd.Query()
 	if err != nil {
@@ -390,7 +390,7 @@ func checkSSH() error {
 	}
 	if st.State != svc.Running {
 		if serviceDisabled(sshd) {
-			return fmt.Errorf(msgFmt, "sshd")
+			return fmt.Errorf(msgFmt, "sshd") //nolint:staticcheck
 		}
 		return errors.New("sshd service is not running")
 	}
@@ -414,7 +414,7 @@ func disableWindowsUpdates() error {
 	if err != nil {
 		return fmt.Errorf("opening Windows Update service: %s", err)
 	}
-	defer s.Close()
+	defer s.Close() //nolint:errcheck
 
 	if err := winsvc.SetStartType(s, mgr.StartDisabled); err != nil {
 		return fmt.Errorf("disabling Windows Update service: %s", err)
@@ -452,7 +452,7 @@ func disableWindowsUpdates() error {
 	default:
 		return fmt.Errorf("opening registry key (%s): %s", path2016, err)
 	}
-	defer key.Close()
+	defer key.Close() //nolint:errcheck
 
 	for k, v := range values {
 		if err := key.SetDWordValue(k, v); err != nil {

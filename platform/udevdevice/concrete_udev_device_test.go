@@ -1,14 +1,12 @@
 package udevdevice_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice"
-
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	fakes "github.com/cloudfoundry/bosh-utils/system/fakes"
-
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice"
 )
 
 var _ = Describe("ConcreteUdevDevice", func() {

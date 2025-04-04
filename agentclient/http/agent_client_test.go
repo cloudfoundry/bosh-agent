@@ -9,13 +9,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
+	"github.com/cloudfoundry/bosh-utils/httpclient"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agentclient"
 	"github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
-
-	"github.com/cloudfoundry/bosh-utils/httpclient"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	. "github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
 )
 
 var _ = Describe("AgentClient", func() {
@@ -47,7 +46,7 @@ var _ = Describe("AgentClient", func() {
 		conn, _, err := w.(http.Hijacker).Hijack()
 		Expect(err).NotTo(HaveOccurred())
 
-		conn.Close()
+		conn.Close() //nolint:errcheck
 	})
 
 	Describe("get_task", func() {

@@ -6,13 +6,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("MountDiskAction", func() {

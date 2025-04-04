@@ -103,7 +103,7 @@ var _ = Describe("Compile", func() {
 			releaseInputDir := GinkgoT().TempDir()
 			sourceTarballPath = filepath.Join(releaseInputDir, "banana.tgz")
 
-			releaseMF, _ := yaml.Marshal(manifest.Manifest{
+			releaseMF, _ := yaml.Marshal(manifest.Manifest{ //nolint:errcheck
 				Packages: []manifest.PackageRef{
 					{Name: "A", Dependencies: []string{"B"}},
 					{Name: "B", Dependencies: []string{"C"}},
@@ -161,7 +161,7 @@ var _ = Describe("Compile", func() {
 		BeforeEach(func() {
 			releaseInputDir := GinkgoT().TempDir()
 			sourceTarballPath = filepath.Join(releaseInputDir, "banana.tgz")
-			releaseMF, _ := yaml.Marshal(manifest.Manifest{})
+			releaseMF, _ := yaml.Marshal(manifest.Manifest{}) //nolint:errcheck
 
 			tgz, err := createTGZ(
 				simpleFile("release.MF", releaseMF, 0o0644),
@@ -284,7 +284,7 @@ func assertPackageFields(compiledManifest, sourceManifest manifest.Manifest, ind
 }
 
 func closeAndIgnoreError(c io.Closer) {
-	_ = c.Close()
+	_ = c.Close() //nolint:errcheck
 }
 
 type writeTarballFileFunc func(tw *tar.Writer) error
@@ -356,7 +356,7 @@ func listFileNamesInTarball(t GinkgoTInterface, filePath string) []tar.Header {
 		cp := *h
 		cp.PAXRecords = maps.Clone(h.PAXRecords)
 		infos = append(infos, cp)
-		_, _ = io.Copy(io.Discard, tr)
+		_, _ = io.Copy(io.Discard, tr) //nolint:errcheck
 	}
 	return infos
 }

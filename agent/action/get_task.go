@@ -3,8 +3,9 @@ package action
 import (
 	"errors"
 
-	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 )
 
 type GetTaskAction struct {

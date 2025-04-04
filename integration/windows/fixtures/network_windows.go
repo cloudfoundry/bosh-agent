@@ -11,7 +11,7 @@ import (
 const NetworkName = "integration-test"
 
 func main() {
-	if os.Args[1] == "create" {
+	if os.Args[1] == "create" { //nolint:staticcheck
 		if err := create(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)

@@ -3,13 +3,14 @@ package action
 import (
 	"errors"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
 	boshdrain "github.com/cloudfoundry/bosh-agent/v2/agent/script/drain"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	boshnotif "github.com/cloudfoundry/bosh-agent/v2/notification"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type DrainAction struct {

@@ -8,12 +8,13 @@ import (
 
 	"code.cloudfoundry.org/clock"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const jobSupervisorListenPort = 2825

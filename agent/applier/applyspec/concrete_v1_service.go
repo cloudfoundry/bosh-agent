@@ -3,9 +3,10 @@ package applyspec
 import (
 	"encoding/json"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type concreteV1Service struct {

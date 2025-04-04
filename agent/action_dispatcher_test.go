@@ -8,14 +8,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+	fakes "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	fakeaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
 	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 	faketask "github.com/cloudfoundry/bosh-agent/v2/agent/task/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
-	fakes "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 )
 
 func init() { //nolint:funlen,gochecknoinits
@@ -264,7 +265,7 @@ func init() { //nolint:funlen,gochecknoinits
 
 				It("does not add task to task manager since it should not be resumed if agent is restarted", func() {
 					dispatcher.Dispatch(req)
-					taskInfos, _ := taskManager.GetInfos()
+					taskInfos, _ := taskManager.GetInfos() //nolint:errcheck
 					Expect(taskInfos).To(BeEmpty())
 				})
 
@@ -327,8 +328,8 @@ func init() { //nolint:funlen,gochecknoinits
 				ItAllowsToCancelTask()
 
 				It("adds task to task manager before task starts so that it could be resumed if agent is restarted", func() {
-					dispatcher.Dispatch(req)
-					taskInfos, _ := taskManager.GetInfos()
+					dispatcher.Dispatch(req)               //nolint:errcheck
+					taskInfos, _ := taskManager.GetInfos() //nolint:errcheck
 					Expect(taskInfos).To(Equal([]boshtask.Info{
 						boshtask.Info{
 							TaskID:  "fake-generated-task-id",
@@ -342,7 +343,7 @@ func init() { //nolint:funlen,gochecknoinits
 					dispatcher.Dispatch(req)
 					taskService.StartedTasks["fake-generated-task-id"].EndFunc(boshtask.Task{ID: "fake-generated-task-id"})
 
-					taskInfos, _ := taskManager.GetInfos()
+					taskInfos, _ := taskManager.GetInfos() //nolint:errcheck
 					Expect(taskInfos).To(BeEmpty())
 				})
 

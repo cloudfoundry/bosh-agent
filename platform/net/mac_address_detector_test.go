@@ -9,8 +9,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 )
 
 var _ = Describe("MacAddressDetector", func() {
@@ -121,7 +122,7 @@ var _ = Describe("MacAddressDetector", func() {
 
 		BeforeEach(func() {
 			runner = fakesys.NewFakeCmdRunner()
-			macAddress, _ = gonet.ParseMAC("12:34:56:78:9a:bc")
+			macAddress, _ = gonet.ParseMAC("12:34:56:78:9a:bc") //nolint:errcheck
 			fakeInterfacesFunction := func() ([]gonet.Interface, error) {
 				if interfacesFunctionError != nil {
 					return nil, interfacesFunctionError

@@ -45,7 +45,7 @@ func BlobstoreURI() string {
 }
 
 func AgentDir() string {
-	windowsIntegrationPath, _ := os.Getwd()
+	windowsIntegrationPath, _ := os.Getwd() //nolint:errcheck
 	integrationPath := filepath.Dir(windowsIntegrationPath)
 	agentDir := filepath.Dir(integrationPath)
 	return agentDir

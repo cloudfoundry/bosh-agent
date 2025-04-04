@@ -1,8 +1,8 @@
+package syslog
+
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
-package syslog
 
 import (
 	"bufio"
@@ -40,7 +40,7 @@ func runPktSyslog(c net.PacketConn, done chan<- string) {
 			break
 		}
 	}
-	c.Close()
+	c.Close() //nolint:errcheck
 	done <- rcvd
 }
 
@@ -69,7 +69,7 @@ func runStreamSyslog(l net.Listener, done chan<- string, wg *sync.WaitGroup) {
 				}
 				done <- s
 			}
-			c.Close()
+			c.Close() //nolint:errcheck
 		}(c)
 	}
 }
@@ -119,7 +119,7 @@ func testSimulated(t *testing.T, transport string, dialFn dialFunc, checkFn chec
 	done := make(chan string)
 	addr, sock, srvWG := startServer(transport, "", done)
 	defer srvWG.Wait()
-	defer sock.Close()
+	defer sock.Close() //nolint:errcheck
 
 	s, err := dialFn(transport, addr)
 	if err != nil {
@@ -130,7 +130,7 @@ func testSimulated(t *testing.T, transport string, dialFn dialFunc, checkFn chec
 	}
 
 	checkFn(t, msg, <-done)
-	s.Close()
+	s.Close() //nolint:errcheck
 }
 
 func TestWithSimulated(t *testing.T) {
@@ -173,7 +173,7 @@ func TestFlapTCP(t *testing.T) {
 
 	// Start server
 	addr, sock, srvWG := startServer(tcpNetwork, "", done)
-	defer sock.Close()
+	defer sock.Close() //nolint:errcheck
 
 	s, err := Dial(tcpNetwork, addr, LOG_INFO|LOG_USER, "syslog_test")
 	if err != nil {
@@ -189,7 +189,7 @@ func TestFlapTCP(t *testing.T) {
 	check(t, msg, <-done)
 
 	// Stop server
-	sock.Close()
+	sock.Close() //nolint:errcheck
 	srvWG.Wait()
 
 	// Send while server down
@@ -202,7 +202,7 @@ func TestFlapTCP(t *testing.T) {
 	// restart server
 	addr2, sock2, srvWG2 := startServer(tcpNetwork, addr, done)
 	defer srvWG2.Wait()
-	defer sock2.Close()
+	defer sock2.Close() //nolint:errcheck
 	if addr2 != addr {
 		t.Fatalf("syslog server did not start on same port: %s", addr)
 	}
@@ -215,7 +215,7 @@ func TestFlapTCP(t *testing.T) {
 	}
 	check(t, msg, <-done)
 
-	s.Close()
+	s.Close() //nolint:errcheck
 }
 
 func TestDialHostname(t *testing.T) {
@@ -226,8 +226,8 @@ func TestDialHostname(t *testing.T) {
 	done := make(chan string)
 	addr, sock, srvWG := startServer(tcpNetwork, "", done)
 	defer srvWG.Wait()
-	defer os.Remove(addr)
-	defer sock.Close()
+	defer os.Remove(addr) //nolint:errcheck
+	defer sock.Close()    //nolint:errcheck
 	if testing.Short() {
 		t.Skip("skipping syslog test during -short")
 	}
@@ -243,7 +243,7 @@ func TestDialHostname(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Dial() failed: %s", err)
 	}
-	l.Close()
+	l.Close() //nolint:errcheck
 	_, err = DialHostname("", "", LOG_USER|LOG_ERR, "syslog_test", TestHostname)
 	if err == nil {
 		t.Fatalf("Should have returned an error for empty network addresses: %s", err)
@@ -258,8 +258,8 @@ func TestDial(t *testing.T) {
 	done := make(chan string)
 	addr, sock, srvWG := startServer(tcpNetwork, "", done)
 	defer srvWG.Wait()
-	defer os.Remove(addr)
-	defer sock.Close()
+	defer os.Remove(addr) //nolint:errcheck
+	defer sock.Close()    //nolint:errcheck
 	if testing.Short() {
 		t.Skip("skipping syslog test during -short")
 	}
@@ -275,7 +275,7 @@ func TestDial(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Dial() failed: %s", err)
 	}
-	l.Close()
+	l.Close() //nolint:errcheck
 	_, err = Dial("", "", LOG_USER|LOG_ERR, "syslog_test")
 	if err == nil {
 		t.Fatalf("Should have returned an error for empty network addresses: %s", err)
@@ -283,7 +283,7 @@ func TestDial(t *testing.T) {
 }
 
 func check(t *testing.T, in, out string) {
-	hostname, _ := os.Hostname()
+	hostname, _ := os.Hostname() //nolint:errcheck
 	if hostname == "" {
 		t.Fatal("Error retrieving hostname")
 	}
@@ -315,7 +315,7 @@ func TestWrite(t *testing.T) {
 		{LOG_USER | LOG_ERR, "syslog_test", "write test 2\n", "%s %s syslog_test[%d]: write test 2\n"},
 	}
 
-	hostname, _ := os.Hostname()
+	hostname, _ := os.Hostname() //nolint:errcheck
 	if hostname == "" {
 		t.Fatal("Error retrieving hostname")
 	}
@@ -324,12 +324,12 @@ func TestWrite(t *testing.T) {
 		done := make(chan string)
 		addr, sock, srvWG := startServer("udp", "", done)
 		defer srvWG.Wait()
-		defer sock.Close()
+		defer sock.Close() //nolint:errcheck
 		l, err := Dial("udp", addr, test.pri, test.pre)
 		if err != nil {
 			t.Fatalf("syslog.Dial() failed: %v", err)
 		}
-		defer l.Close()
+		defer l.Close() //nolint:errcheck
 		_, err = io.WriteString(l, test.msg)
 		if err != nil {
 			t.Fatalf("WriteString() failed: %v", err)
@@ -347,7 +347,7 @@ func TestWrite(t *testing.T) {
 func TestConcurrentWrite(t *testing.T) {
 	addr, sock, srvWG := startServer("udp", "", make(chan string, 1))
 	defer srvWG.Wait()
-	defer sock.Close()
+	defer sock.Close() //nolint:errcheck
 	w, err := Dial("udp", addr, LOG_USER|LOG_ERR, "how's it going?")
 	if err != nil {
 		t.Fatalf("syslog.Dial() failed: %v", err)
@@ -405,7 +405,7 @@ func TestConcurrentReconnect(t *testing.T) {
 			if err != nil {
 				t.Fatalf("syslog.Dial() failed: %v", err) //nolint:govet,staticcheck
 			}
-			defer w.Close()
+			defer w.Close() //nolint:errcheck
 			for i := 0; i < M; i++ {
 				err := w.Info("test")
 				if err != nil {
@@ -416,7 +416,7 @@ func TestConcurrentReconnect(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	sock.Close()
+	sock.Close() //nolint:errcheck
 	srvWG.Wait()
 	close(done)
 

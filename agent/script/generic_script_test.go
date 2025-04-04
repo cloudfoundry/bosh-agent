@@ -3,15 +3,15 @@ package script_test
 import (
 	"errors"
 	"path/filepath"
+	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"runtime"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
 	boshenv "github.com/cloudfoundry/bosh-agent/v2/agent/script/pathenv"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("GenericScript", func() {

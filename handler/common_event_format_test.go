@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/cloudfoundry/bosh-agent/v2/handler"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/v2/handler"
 )
 
 var _ = Describe("CommonEventFormat", func() {

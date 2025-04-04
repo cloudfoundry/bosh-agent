@@ -43,7 +43,7 @@ func (a FetchLogsAction) Run(logTypes string, filters []string) (value map[strin
 	}
 
 	defer func() {
-		_ = a.logsTarProvider.CleanUp(tarball)
+		_ = a.logsTarProvider.CleanUp(tarball) //nolint:errcheck
 	}()
 
 	blobID, multidigestSha, err := a.blobstore.Write("", tarball, nil)

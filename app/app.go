@@ -2,12 +2,18 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/clock"
 
-	"os"
+	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	sigar "github.com/cloudfoundry/gosigar"
 
 	boshagent "github.com/cloudfoundry/bosh-agent/v2/agent"
 	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
@@ -33,12 +39,6 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshsigar "github.com/cloudfoundry/bosh-agent/v2/sigar"
-	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
-	sigar "github.com/cloudfoundry/gosigar"
 )
 
 type App interface {

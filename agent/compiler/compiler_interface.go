@@ -1,8 +1,9 @@
 package compiler
 
 import (
-	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+
+	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
 
 type Compiler interface {

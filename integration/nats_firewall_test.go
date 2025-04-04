@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
+
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 var _ = Describe("nats firewall", func() {
@@ -23,7 +24,7 @@ var _ = Describe("nats firewall", func() {
 
 			// Wait a maximum of 300 seconds
 			Eventually(func() string {
-				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current")
+				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
 				return logs
 			}, 300).Should(ContainSubstring("UbuntuNetManager"))
 
@@ -78,7 +79,7 @@ var _ = Describe("nats firewall", func() {
 
 			// Wait a maximum of 300 seconds
 			Eventually(func() string {
-				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current")
+				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
 				return logs
 			}, 300).Should(ContainSubstring("UbuntuNetManager"))
 

@@ -91,9 +91,9 @@ func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename 
 		AgentIP:             utils.AgentIP(),
 		AgentNetmask:        utils.AgentNetmask(),
 		AgentGateway:        utils.AgentGateway(),
-		NatsCA:              strings.Replace(utils.NatsCA(), "\n", "\\n", -1),
-		NatsCertificate:     strings.Replace(utils.NatsCertificate(), "\n", "\\n", -1),
-		NatsPrivateKey:      strings.Replace(utils.NatsPrivateKey(), "\n", "\\n", -1),
+		NatsCA:              strings.Replace(utils.NatsCA(), "\n", "\\n", -1),          //nolint:staticcheck
+		NatsCertificate:     strings.Replace(utils.NatsCertificate(), "\n", "\\n", -1), //nolint:staticcheck
+		NatsPrivateKey:      strings.Replace(utils.NatsPrivateKey(), "\n", "\\n", -1),  //nolint:staticcheck
 	}
 	settingsTmpl, err := template.ParseFiles(
 		filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "agent-configuration", "settings.json.tmpl"),
@@ -119,13 +119,13 @@ func downloadFile(localPath, sourceURL string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	res, err := http.Get(sourceURL)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() //nolint:errcheck
 	if _, err := io.Copy(f, res.Body); err != nil {
 		return err
 	}

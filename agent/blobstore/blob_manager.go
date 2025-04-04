@@ -40,7 +40,7 @@ func (m BlobManager) Write(blobID string, r io.Reader) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Opening blob store file")
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	_, err = io.Copy(file, r)
 	if err != nil {
@@ -63,7 +63,7 @@ func (m BlobManager) GetPath(blobID string, digest boshcrypto.Digest) (string, e
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	if err := digest.Verify(file); err != nil {
 		return "", bosherr.WrapError(err, fmt.Sprintf("Checking blob '%s'", blobID))
@@ -86,16 +86,16 @@ func (m BlobManager) copyToTmpFile(srcPath string) (string, error) {
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating destination file")
 	}
-	defer dest.Close()
+	defer dest.Close() //nolint:errcheck
 
 	src, err := os.Open(srcPath)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Opening source file")
 	}
-	defer src.Close()
+	defer src.Close() //nolint:errcheck
 
 	if _, err := io.Copy(dest, src); err != nil {
-		os.RemoveAll(dest.Name())
+		os.RemoveAll(dest.Name()) //nolint:errcheck
 		return "", bosherr.WrapError(err, "Copying file")
 	}
 

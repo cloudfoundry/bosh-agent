@@ -7,6 +7,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier"
 	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
 	fakejobs "github.com/cloudfoundry/bosh-agent/v2/agent/applier/jobs/jobsfakes"
@@ -16,8 +19,6 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 type FakeLogRotateDelegate struct {

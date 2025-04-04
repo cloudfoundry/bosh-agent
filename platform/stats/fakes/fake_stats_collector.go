@@ -48,7 +48,7 @@ func (c *FakeCollector) GetSwapStats() (usage boshstats.Usage, err error) {
 func (c *FakeCollector) GetDiskStats(devicePath string) (stats boshstats.DiskStats, err error) {
 	stats, found := c.DiskStats[devicePath]
 	if !found {
-		err = errors.New("Disk not found")
+		err = errors.New("Disk not found") //nolint:staticcheck
 	}
 	return
 }

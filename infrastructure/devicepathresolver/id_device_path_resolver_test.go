@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"time"
 
-	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

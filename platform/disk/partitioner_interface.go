@@ -1,6 +1,8 @@
 package disk
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type PartitionType string
 

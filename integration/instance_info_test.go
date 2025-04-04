@@ -3,10 +3,11 @@ package integration_test
 import (
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
-	"github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
-	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 )
 
 var _ = Describe("Instance Info", func() {

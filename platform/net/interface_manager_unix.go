@@ -3,7 +3,9 @@
 
 package net
 
-import "errors"
+import (
+	"errors"
+)
 
 type unixInterfaceManager struct{}
 
@@ -12,5 +14,5 @@ func NewInterfaceManager() InterfaceManager {
 }
 
 func (unixInterfaceManager) GetInterfaces() ([]Interface, error) {
-	return nil, errors.New("Not implemented on unix")
+	return nil, errors.New("Not implemented on unix") //nolint:staticcheck
 }

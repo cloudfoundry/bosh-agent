@@ -8,9 +8,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakeuuid "github.com/cloudfoundry/bosh-utils/uuid/fakes"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 )
 
 func init() { //nolint:funlen,gochecknoinits
@@ -189,12 +190,12 @@ func init() { //nolint:funlen,gochecknoinits
 					<-taskChannel
 					return nil, nil
 				}
-				task1, _ := service.CreateTask(task1Func, nil, nil)
+				task1, _ := service.CreateTask(task1Func, nil, nil) //nolint:errcheck
 				service.StartTask(task1)
 				task2Func := func() (interface{}, error) {
 					return nil, nil
 				}
-				task2, _ := service.CreateTask(task2Func, nil, nil)
+				task2, _ := service.CreateTask(task2Func, nil, nil) //nolint:errcheck
 				Eventually(func() bool {
 					service.StartTask(task2)
 					return true

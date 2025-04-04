@@ -7,9 +7,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 )
 
 func init() { //nolint:gochecknoinits

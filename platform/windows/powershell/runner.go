@@ -28,12 +28,12 @@ func (c *Runner) RunCommand(cmdName string, args ...string) (stdout, stderr stri
 		commandRan := strings.Join(append([]string{Executable}, powershellArgs...), " ")
 
 		if exitStatus == -1 {
-			wrappedErr := fmt.Errorf("Failed to run command \"%s\": %s", commandRan, err.Error())
+			wrappedErr := fmt.Errorf("Failed to run command \"%s\": %s", commandRan, err.Error()) //nolint:staticcheck
 			return stdout, stderr, exitStatus, wrappedErr
 		}
 
 		if exitStatus > 0 {
-			wrappedErr := fmt.Errorf("Command \"%s\" exited with failure: %s", commandRan, stderr)
+			wrappedErr := fmt.Errorf("Command \"%s\" exited with failure: %s", commandRan, stderr) //nolint:staticcheck
 			return stdout, stderr, exitStatus, wrappedErr
 		}
 	}
@@ -50,7 +50,7 @@ func (c *Runner) RunCommandWithInput(input, cmdName string, args ...string) (std
 }
 
 func (c *Runner) CommandExists(cmdName string) (exists bool) {
-	_, _, exitStatus, _ := c.RunCommand("Get-Command", cmdName)
+	_, _, exitStatus, _ := c.RunCommand("Get-Command", cmdName) //nolint:errcheck
 	return exitStatus == 0
 }
 

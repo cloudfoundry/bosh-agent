@@ -93,7 +93,7 @@ func (m linuxMounter) Remount(fromMountPoint, toMountPoint string, mountOptions 
 }
 
 func (m linuxMounter) SwapOn(partitionPath string) (err error) {
-	out, _, _, _ := m.runner.RunCommand("swapon", "-s")
+	out, _, _, _ := m.runner.RunCommand("swapon", "-s") //nolint:errcheck
 
 	for i, swapOnLines := range strings.Split(out, "\n") {
 		swapOnFields := strings.Fields(swapOnLines)

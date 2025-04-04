@@ -148,7 +148,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Expect(cleanupResult.Status).To(Equal("success"))
 
-		_, _, exitCode, _ := agent.RunPowershellCommandWithResponses(fmt.Sprintf(`NET.exe USER %s`, sshTestUser))
+		_, _, exitCode, _ := agent.RunPowershellCommandWithResponses(fmt.Sprintf(`NET.exe USER %s`, sshTestUser)) //nolint:errcheck
 		Expect(exitCode).To(Equal(1))
 
 		deletableUserProfileContent := agent.RunPowershellCommand(fmt.Sprintf(`Get-ChildItem -force -recurse -attributes !Directory -Exclude 'ntuser.dat*' , 'usrclass.dat*' /users/%s`, sshTestUser))
@@ -315,7 +315,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		tarPath, err := os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
-		defer os.Remove(tarPath)
+		defer os.Remove(tarPath) //nolint:errcheck
 
 		err = exec.Command("tar", "xf", path, "-C", tarPath).Run()
 		Expect(err).NotTo(HaveOccurred())

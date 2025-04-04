@@ -3,11 +3,12 @@ package cdrom_test
 import (
 	"errors"
 
-	. "github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
-	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
+	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
 )
 
 var _ = Describe("LinuxCdrom", func() {

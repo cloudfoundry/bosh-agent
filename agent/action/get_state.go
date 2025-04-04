@@ -3,11 +3,12 @@ package action
 import (
 	"errors"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 )
 
 type GetStateAction struct {

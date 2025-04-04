@@ -4,9 +4,10 @@ import (
 	"os"
 	"time"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -83,7 +84,7 @@ var _ = Describe("SCSILunDevicePathResolver", func() {
 				Expect(timeout).To(BeFalse())
 
 				for _, host := range hosts {
-					str, _ := fs.ReadFileString(host)
+					str, _ := fs.ReadFileString(host) //nolint:errcheck
 					Expect(str).To(Equal("- - -"))
 				}
 			})

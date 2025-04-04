@@ -155,7 +155,7 @@ func (p dummyPlatform) SaveDNSRecords(dnsRecords boshsettings.DNSRecords, hostna
 
 	dnsRecordsContents := bytes.NewBuffer([]byte{})
 	for _, dnsRecord := range dnsRecords.Records {
-		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s\n", dnsRecord[0], dnsRecord[1]))
+		dnsRecordsContents.WriteString(fmt.Sprintf("%s %s\n", dnsRecord[0], dnsRecord[1])) //nolint:staticcheck
 	}
 
 	return p.fs.WriteFileString(etcHostsPath, dnsRecordsContents.String())
@@ -379,11 +379,11 @@ func (p dummyPlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string
 	diskMigrationsPath := filepath.Join(p.dirProvider.BoshDir(), "disk_migrations.json")
 	var diskMigrations []diskMigration
 	if p.fs.FileExists(diskMigrationsPath) {
-		bytes, err := p.fs.ReadFile(diskMigrationsPath)
+		b, err := p.fs.ReadFile(diskMigrationsPath)
 		if err != nil {
 			return err
 		}
-		err = json.Unmarshal(bytes, &diskMigrations)
+		err = json.Unmarshal(b, &diskMigrations)
 		if err != nil {
 			return err
 		}
@@ -429,11 +429,11 @@ func (p dummyPlatform) IsPersistentDiskMountable(diskSettings boshsettings.DiskS
 	var formattedDisks []formattedDisk
 	formattedDisksPath := filepath.Join(p.dirProvider.BoshDir(), "formatted_disks.json")
 	if p.fs.FileExists(formattedDisksPath) {
-		bytes, err := p.fs.ReadFile(formattedDisksPath)
+		b, err := p.fs.ReadFile(formattedDisksPath)
 		if err != nil {
 			return false, err
 		}
-		err = json.Unmarshal(bytes, &formattedDisks)
+		err = json.Unmarshal(b, &formattedDisks)
 		if err != nil {
 			return false, err
 		}
@@ -453,7 +453,7 @@ func (p dummyPlatform) AssociateDisk(name string, settings boshsettings.DiskSett
 
 	diskNames := []string{}
 
-	bytes, err := p.fs.ReadFile(diskAssocsPath)
+	b, err := p.fs.ReadFile(diskAssocsPath)
 	if err != nil {
 		err, ok := err.(bosherr.ComplexError)
 		if !ok {
@@ -462,7 +462,7 @@ func (p dummyPlatform) AssociateDisk(name string, settings boshsettings.DiskSett
 			return bosherr.WrapError(err, "Associating Disk: ")
 		}
 	} else if err == nil {
-		err = json.Unmarshal(bytes, &diskNames)
+		err = json.Unmarshal(b, &diskNames)
 		if err != nil {
 			return err
 		}

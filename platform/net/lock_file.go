@@ -5,10 +5,11 @@ import (
 	"path/filepath"
 
 	"github.com/charlievieth/fs"
-	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 func getLockFilePathForConfiguredInterfaces(dirProvider boshdirs.Provider) string {

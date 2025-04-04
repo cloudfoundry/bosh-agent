@@ -1,19 +1,19 @@
 package jobsupervisor_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
-
 	"encoding/json"
 	"errors"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-agent/v2/agent/alert"
-	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
-	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	. "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
+	"github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
+	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
 var _ = Describe("WrapperJobSupervisor", func() {
@@ -102,7 +102,7 @@ var _ = Describe("WrapperJobSupervisor", func() {
 
 		It("write the health json asynchronously", func() {
 			fakeSupervisor.StatusStatus = "stopped"
-			_ = wrapper.Unmonitor()
+			_ = wrapper.Unmonitor() //nolint:errcheck
 
 			healthFile := filepath.Join(dirProvider.InstanceDir(), "health.json")
 			healthRaw, err := fs.ReadFile(healthFile)
@@ -134,7 +134,7 @@ var _ = Describe("WrapperJobSupervisor", func() {
 	It("AddJob should delegate to the underlying job supervisor", func() {
 		boomError := errors.New("BOOM")
 		fakeSupervisor.StartErr = boomError
-		_ = wrapper.AddJob("name", 0, "path")
+		_ = wrapper.AddJob("name", 0, "path") //nolint:errcheck
 		Expect(fakeSupervisor.AddJobArgs).To(Equal([]fakes.AddJobArgs{
 			{
 				Name:       "name",
@@ -155,7 +155,7 @@ var _ = Describe("WrapperJobSupervisor", func() {
 		var testAlert *alert.MonitAlert
 
 		fakeSupervisor.JobFailureAlert = &alert.MonitAlert{ID: "test-alert"}
-		_ = wrapper.MonitorJobFailures(func(a alert.MonitAlert) error {
+		_ = wrapper.MonitorJobFailures(func(a alert.MonitAlert) error { //nolint:errcheck
 			testAlert = &a
 
 			return nil

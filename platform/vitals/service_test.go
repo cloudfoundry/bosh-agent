@@ -8,12 +8,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+
 	"github.com/cloudfoundry/bosh-agent/v2/platform/disk/diskfakes"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 const Windows = runtime.GOOS == "windows"

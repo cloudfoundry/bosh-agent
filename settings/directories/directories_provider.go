@@ -1,6 +1,8 @@
 package directories
 
-import "path/filepath"
+import (
+	"path/filepath"
+)
 
 type Provider struct {
 	baseDir string

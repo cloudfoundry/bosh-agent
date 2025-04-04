@@ -8,8 +8,9 @@ import (
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 const maxScanRetries = 30

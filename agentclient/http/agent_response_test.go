@@ -1,9 +1,10 @@
 package http_test
 
 import (
-	. "github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/agentclient/http"
 )
 
 var _ = Describe("AgentResponse", func() {

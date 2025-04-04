@@ -1,9 +1,8 @@
 package disk
 
 import (
-	"strings"
-
 	"fmt"
+	"strings"
 
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )

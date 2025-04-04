@@ -6,9 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+
 	httpblobprovider "github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 )
 
 var _ = Describe("NewBlobstoreHTTPClient", func() {

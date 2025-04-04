@@ -4,11 +4,12 @@ import (
 	"errors"
 	"path"
 
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	boshdirs "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 type SSHAction struct {
@@ -64,7 +65,7 @@ func (a SSHAction) Run(cmd string, params SSHParams) (SSHResult, error) {
 		return a.cleanupSSH(params)
 	}
 
-	return SSHResult{}, errors.New("Unknown command for SSH method")
+	return SSHResult{}, errors.New("Unknown command for SSH method") //nolint:staticcheck
 }
 
 func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
@@ -91,14 +92,14 @@ func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
 
 	err = a.platform.SetupSSH([]string{params.PublicKey}, params.User)
 	if err != nil {
-		return result, bosherr.WrapError(err, "Setting ssh public key")
+		return result, bosherr.WrapError(err, "Setting ssh public key") //nolint:staticcheck
 	}
 
 	settings := a.settingsService.GetSettings()
 
 	defaultIP, found := settings.Networks.DefaultIP()
 	if !found {
-		return result, errors.New("No default ip could be found")
+		return result, errors.New("No default ip could be found") //nolint:staticcheck
 	}
 
 	result = SSHResult{

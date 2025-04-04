@@ -6,6 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshassert "github.com/cloudfoundry/bosh-utils/assert"
+
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
@@ -15,7 +17,6 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform/vitals/vitalsfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
-	boshassert "github.com/cloudfoundry/bosh-utils/assert"
 )
 
 var _ = Describe("GetState", func() {

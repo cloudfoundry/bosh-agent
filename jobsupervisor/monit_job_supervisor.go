@@ -7,15 +7,17 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 	"github.com/pivotal/go-smtpd/smtpd"
+
+	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
+
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
 	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
 const monitJobSupervisorLogTag = "monitJobSupervisor"

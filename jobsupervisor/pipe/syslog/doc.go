@@ -1,3 +1,5 @@
+package syslog
+
 // Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -9,4 +11,3 @@
 // Only one call to Dial is necessary. On write failures,
 // the syslog client will attempt to reconnect to the server
 // and write again.
-package syslog

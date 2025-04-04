@@ -1,11 +1,12 @@
 package agent
 
 import (
+	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
 	boshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshtask "github.com/cloudfoundry/bosh-agent/v2/agent/task"
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
-	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 const actionDispatcherLogTag = "Action Dispatcher"

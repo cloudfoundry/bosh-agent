@@ -1,6 +1,8 @@
 package disk
 
-import "strings"
+import (
+	"strings"
+)
 
 type Mount struct {
 	PartitionPath string

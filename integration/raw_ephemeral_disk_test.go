@@ -71,7 +71,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 
 		It("labels the raw ephemeral paths for unpartitioned disks", func() {
 			Eventually(func() string {
-				stdout, _ := testEnvironment.RunCommand("find /dev/disk/by-partlabel | sort")
+				stdout, _ := testEnvironment.RunCommand("find /dev/disk/by-partlabel | sort") //nolint:errcheck
 
 				return stdout
 			}, 5*time.Minute, 1*time.Second).Should(ContainSubstring(`/dev/disk/by-partlabel/raw-ephemeral-0

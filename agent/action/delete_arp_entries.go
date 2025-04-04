@@ -35,7 +35,7 @@ func (a DeleteARPEntriesAction) IsLoggable() bool {
 func (a DeleteARPEntriesAction) Run(args DeleteARPEntriesActionArgs) (interface{}, error) {
 	addresses := args.Ips
 	for _, address := range addresses {
-		_ = a.platform.DeleteARPEntryWithIP(address)
+		_ = a.platform.DeleteARPEntryWithIP(address) //nolint:errcheck
 	}
 
 	return map[string]interface{}{}, nil

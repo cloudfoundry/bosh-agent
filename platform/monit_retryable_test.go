@@ -6,9 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/platform"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
-	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 )
 
 var _ = Describe("MonitRetryable", func() {

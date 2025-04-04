@@ -5,11 +5,12 @@ import (
 	"path"
 	"time"
 
-	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
-	"github.com/cloudfoundry/bosh-agent/v2/agent/script/cmd"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/script/cmd"
 )
 
 const runErrandActionLogTag = "runErrandAction"

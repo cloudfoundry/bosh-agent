@@ -1,8 +1,9 @@
 package infrastructure
 
 import (
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type MultiSettingsSource struct {

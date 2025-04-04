@@ -250,7 +250,7 @@ func flappingStartConfig(flapCount, jobCount int) (WindowsProcessConfig, error) 
 		if err != nil {
 			return conf, err
 		}
-		defer f.Close()
+		defer f.Close() //nolint:errcheck
 
 		if _, err := f.WriteString(strconv.Itoa(flapCount)); err != nil {
 			return conf, err
@@ -450,7 +450,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			if err != nil {
 				return 0, err
 			}
-			defer s.Close()
+			defer s.Close() //nolint:errcheck
 			st, err := s.Query()
 			if err != nil {
 				return 0, err
@@ -469,7 +469,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			if err != nil {
 				return svc.Status{}, mgr.Config{}, err
 			}
-			defer s.Close()
+			defer s.Close() //nolint:errcheck
 
 			status, err := s.Query()
 			if err != nil {
@@ -895,7 +895,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 					// pipe.exe - not the underlying process.
 					err := os.Setenv("__PIPE_DISABLE_NOTIFY", strconv.FormatBool(true))
 					Expect(err).NotTo(HaveOccurred())
-					defer os.Unsetenv("__PIPE_DISABLE_NOTIFY")
+					defer os.Unsetenv("__PIPE_DISABLE_NOTIFY") //nolint:errcheck
 
 					conf, err := flappingStartConfig(flapCount, jobCount)
 					Expect(err).ToNot(HaveOccurred())

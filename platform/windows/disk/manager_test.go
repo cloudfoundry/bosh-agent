@@ -1,12 +1,13 @@
 package disk_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
-	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 	"github.com/cloudfoundry/bosh-utils/system"
 	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/powershell"
 )
 
 var _ = Describe("Manager", func() {

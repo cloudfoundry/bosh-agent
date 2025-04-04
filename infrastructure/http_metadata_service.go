@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
-	boshplat "github.com/cloudfoundry/bosh-agent/v2/platform"
-	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+
+	boshplat "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 type HTTPMetadataService struct {
@@ -156,7 +157,7 @@ func (ms HTTPMetadataService) GetInstanceID() (string, error) {
 
 func (ms HTTPMetadataService) GetValueAtPath(path string) (string, error) {
 	if path == "" {
-		return "", fmt.Errorf("Can not retrieve metadata value for empty path")
+		return "", fmt.Errorf("Can not retrieve metadata value for empty path") //nolint:staticcheck
 	}
 
 	err := ms.ensureMinimalNetworkSetup()
@@ -242,7 +243,7 @@ func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 	if err != nil {
 		return userData, bosherr.WrapErrorf(err, "request failed from url %s", userDataURL)
 	}
-	defer userDataResp.Body.Close()
+	defer userDataResp.Body.Close() //nolint:errcheck
 
 	if !isSuccessful(userDataResp) {
 		return userData, fmt.Errorf("invalid status from url %s: %d", userDataURL, userDataResp.StatusCode)

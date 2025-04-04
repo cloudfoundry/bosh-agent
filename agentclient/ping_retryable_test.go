@@ -1,16 +1,16 @@
 package agentclient_test
 
 import (
+	"crypto/x509"
 	"errors"
 
-	"crypto/x509"
-
-	. "github.com/cloudfoundry/bosh-agent/v2/agentclient"
-	fakeagentclient "github.com/cloudfoundry/bosh-agent/v2/agentclient/fakes"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/bosh-agent/v2/agentclient"
+	fakeagentclient "github.com/cloudfoundry/bosh-agent/v2/agentclient/fakes"
 )
 
 var _ = Describe("PingRetryable", func() {

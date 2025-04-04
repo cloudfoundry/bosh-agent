@@ -14,6 +14,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	fakearp "github.com/cloudfoundry/bosh-agent/v2/platform/net/arp/fakes"
 	fakednsresolver "github.com/cloudfoundry/bosh-agent/v2/platform/net/dnsresolver/fakes"
@@ -21,8 +24,6 @@ import (
 	fakeip "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/net/netfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-	boshlog "github.com/cloudfoundry/bosh-utils/logger"
-	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 )
 
 var _ = Describe("centosNetManager", describeCentosNetManager)
@@ -554,7 +555,7 @@ nameserver 10.0.80.12
 			})
 
 			scrubMultipleLines := func(in string) string {
-				return strings.Replace(in, "\n\n\n", "\n\n", -1)
+				return strings.Replace(in, "\n\n\n", "\n\n", -1) //nolint:staticcheck
 			}
 
 			It("succeeds", func() {

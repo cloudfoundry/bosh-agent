@@ -3,10 +3,11 @@ package app
 import (
 	"encoding/json"
 
-	boshinf "github.com/cloudfoundry/bosh-agent/v2/infrastructure"
-	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshinf "github.com/cloudfoundry/bosh-agent/v2/infrastructure"
+	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
 )
 
 type Config struct {

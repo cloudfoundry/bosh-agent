@@ -27,7 +27,7 @@ func (s simpleInterfaceAddress) GetInterfaceName() string { return s.interfaceNa
 func (s simpleInterfaceAddress) GetIP() (string, error) {
 	ip2 := net.ParseIP(s.ip)
 	if ip2 == nil {
-		return "", fmt.Errorf("Cannot parse IP '%s'", s.ip)
+		return "", fmt.Errorf("Cannot parse IP '%s'", s.ip) //nolint:staticcheck
 	}
 
 	return fmtIP(ip2), nil
