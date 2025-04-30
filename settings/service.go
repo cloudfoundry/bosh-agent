@@ -254,13 +254,17 @@ func (s *settingsService) GetSettings() Settings {
 		if !network.IsDHCP() {
 			continue
 		}
+		// TODO: check if the n/w has a prefix, check if it is 32, 128, or nothing we resolve the network, if not we do resolved n/w= n/w
 
-		resolvedNetwork, err := s.resolveNetwork(network)
-		if err != nil {
-			break
+		if network.Prefix == "32" || network.Prefix == "128" || network.Prefix == "" {
+			resolvedNetwork, err := s.resolveNetwork(network)
+			if err != nil {
+				break
+			}
+			settingsCopy.Networks[networkName] = resolvedNetwork
+		} else {
+			settingsCopy.Networks[networkName] = network
 		}
-
-		settingsCopy.Networks[networkName] = resolvedNetwork
 	}
 	return settingsCopy
 }
@@ -275,6 +279,7 @@ func (s *settingsService) InvalidateSettings() error {
 }
 
 func (s *settingsService) resolveNetwork(network Network) (Network, error) {
+	// TODO: check if the n/w has a prefix, check if it is ipv4 or 6, curl metadata server for the user-data
 	// Ideally this would be GetNetworkByMACAddress(mac string)
 	// Currently, we are relying that if the default network does not contain
 	// the MAC adddress the InterfaceConfigurationCreator will fail.

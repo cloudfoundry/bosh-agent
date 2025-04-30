@@ -361,6 +361,7 @@ type Network struct {
 
 	Default []string `json:"default"`
 	DNS     []string `json:"dns"`
+	Prefix  string   `json:"prefix"`
 
 	Mac string `json:"mac"`
 
