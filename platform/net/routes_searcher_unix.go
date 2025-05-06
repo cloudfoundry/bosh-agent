@@ -76,3 +76,26 @@ func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
 
 	return routes, nil
 }
+
+func (s cmdRoutesSearcher) SearchIPv6Routes() ([]Route, error) {
+	stdout, _, _, err := s.runner.RunCommandQuietly("ip", "-6", "r")
+	if err != nil {
+		return []Route{}, bosherr.WrapError(err, "Running route")
+	}
+
+	routeEntries := strings.Split(stdout, "\n")
+	routes := make([]Route, 0, len(routeEntries))
+	for _, routeEntry := range routeEntries {
+		if len(routeEntry) == 0 {
+			continue
+		}
+		route, err := parseRoute(routeEntry)
+		if err != nil {
+			s.logger.Warn("SearchRoutes", "parseRoute error for route '%s': %s", routeEntry, err.Error())
+			continue
+		}
+		routes = append(routes, route)
+	}
+
+	return routes, nil
+}

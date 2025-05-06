@@ -254,7 +254,6 @@ func (s *settingsService) GetSettings() Settings {
 		if !network.IsDHCP() {
 			continue
 		}
-		// TODO: check if the n/w has a prefix, check if it is 32, 128, or nothing we resolve the network, if not we do resolved n/w= n/w
 
 		if network.Prefix == "32" || network.Prefix == "128" || network.Prefix == "" {
 			resolvedNetwork, err := s.resolveNetwork(network)
