@@ -32,7 +32,7 @@ resources:
       uri: https://github.com/cloudfoundry/bosh-agent.git
       branch: main
       username: bosh-admin-bot
-      password: ((github_public_repo_token))
+      password: ((github_read_write_token))
 
   - name: bosh-agent-ci
     type: git
@@ -92,6 +92,7 @@ resources:
       uri: https://github.gwd.broadcom.net/TNZ/bosh-ecosystem-concourse.git
       username: svc.bosh-ecosystem@broadcom.net
       password: ((svc-bosh-ecosystem-ghe-personal-access-token))
+    tags: [ broadcom ]
 
   - name: bosh-agent-docker-image
     type: docker-image
@@ -305,6 +306,7 @@ jobs:
             trigger: true
           - get: bosh-agent-ci
           - get: bosh-ecosystem-concourse
+            tags: [ broadcom ]
           - get: bosh-agent-registry-image
             trigger: true
           - get: azure-stemcell
@@ -425,6 +427,7 @@ jobs:
           trigger: true
         - get: bosh-agent-ci
         - get: bosh-ecosystem-concourse
+          tags: [ broadcom ]
         - get: bosh-agent-registry-image
           trigger: true
         - get: aws-stemcell
