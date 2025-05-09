@@ -26,8 +26,14 @@ func NewDefaultNetworkResolver(
 
 func (r defaultNetworkResolver) GetDefaultNetwork() (boshsettings.Network, error) {
 	network := boshsettings.Network{}
-
-	routes, err := r.routesSearcher.SearchRoutes()
+	// TODO: [SD] check what kind of ip
+	var routes []Route
+	var err error
+	if network.Prefix == "128" {
+		routes, err = r.routesSearcher.SearchIPv6Routes()
+	} else {
+		routes, err = r.routesSearcher.SearchRoutes()
+	}
 	if err != nil {
 		return network, bosherr.WrapError(err, "Searching routes")
 	}
@@ -40,8 +46,14 @@ func (r defaultNetworkResolver) GetDefaultNetwork() (boshsettings.Network, error
 		if !route.IsDefault() {
 			continue
 		}
-
-		ip, err := r.ipResolver.GetPrimaryIPv4(route.InterfaceName)
+		// TODO: [SD] check for ipv6
+		var ip *gonet.IPNet
+		if network.Prefix == "128" {
+			ip, err = r.ipResolver.GetPrimaryIPv6(route.InterfaceName)
+		} else {
+			ip, err = r.ipResolver.GetPrimaryIPv4(route.InterfaceName)
+		}
+		// ip, err := r.ipResolver.GetPrimaryIPv4(route.InterfaceName) ||
 		if err != nil {
 			return network, bosherr.WrapErrorf(err, "Getting primary IPv4 for interface '%s'", route.InterfaceName)
 		}
