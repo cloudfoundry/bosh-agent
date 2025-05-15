@@ -313,10 +313,10 @@ var _ = Describe("An Agent running on Windows", func() {
 		prestartStdoutContents, err := fs.ReadFileString(filepath.Join(logsDir, "check-temp-dir", "pre-start.stdout.log"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(prestartStdoutContents).To(ContainSubstring("TMP = C:\\var\\vcap\\data\\tmp"))
-		Expect(prestartStdoutContents).To(ContainSubstring("TEMP = C:\\var\\vcap\\data\\tmp"))
-		Expect(prestartStdoutContents).To(ContainSubstring("SystemTemp = C:\\var\\vcap\\data\\tmp"))
-		Expect(prestartStdoutContents).ToNot(ContainSubstring("C:\\Windows\\SystemTemp"))
+		Expect(prestartStdoutContents).To(ContainSubstring("TMP = \\var\\vcap\\data\\tmp"))
+		Expect(prestartStdoutContents).To(ContainSubstring("TEMP = \\var\\vcap\\data\\tmp"))
+		Expect(prestartStdoutContents).To(ContainSubstring("SystemTemp = \\var\\vcap\\data\\tmp"))
+		Expect(prestartStdoutContents).ToNot(ContainSubstring("\\Windows\\SystemTemp"))
 	})
 
 	It("can compile packages", func() {
