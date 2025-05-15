@@ -197,13 +197,14 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
 
-		It("sets TMP and TEMP environment variable so that children of this process will use new temp dir", func() {
+		It("sets TMP, TEMP, and SystemTemp environment variables so that children of this process will use new temp dir", func() {
 			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			fakeTmpDir := filepath.FromSlash("/fake-dir/data/tmp")
 			Expect(os.Getenv("TMP")).To(Equal(fakeTmpDir))
 			Expect(os.Getenv("TEMP")).To(Equal(fakeTmpDir))
+			Expect(os.Getenv("SystemTemp")).To(Equal(fakeTmpDir))
 		})
 
 		It("returns error if setting TMPDIR errs", func() {

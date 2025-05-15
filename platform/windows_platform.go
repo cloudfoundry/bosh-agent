@@ -592,6 +592,11 @@ func (p WindowsPlatform) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Setting TEMP")
 	}
 
+	err = os.Setenv("SystemTemp", boshTmpDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Setting SystemTemp")
+	}
+
 	return nil
 }
 

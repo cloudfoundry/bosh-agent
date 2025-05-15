@@ -298,6 +298,27 @@ var _ = Describe("An Agent running on Windows", func() {
 		Expect(prestartStderrContents).To(ContainSubstring("Hello from stderr"))
 	})
 
+	It("runs arbitrary scripts using a temp directory on the ephemeral drive", func() {
+		natsClient.PrepareJob("check-temp-dir")
+
+		err := natsClient.RunScript("pre-start")
+		Expect(err).NotTo(HaveOccurred())
+
+		logsDir, err := fs.TempDir("check-temp-dir-logs")
+		Expect(err).NotTo(HaveOccurred())
+		defer fs.RemoveAll(logsDir) //nolint:errcheck
+
+		natsClient.FetchLogs(logsDir)
+
+		prestartStdoutContents, err := fs.ReadFileString(filepath.Join(logsDir, "check-temp-dir", "pre-start.stdout.log"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(prestartStdoutContents).To(ContainSubstring("TMP = C:\\var\\vcap\\data\\tmp"))
+		Expect(prestartStdoutContents).To(ContainSubstring("TEMP = C:\\var\\vcap\\data\\tmp"))
+		Expect(prestartStdoutContents).To(ContainSubstring("SystemTemp = C:\\var\\vcap\\data\\tmp"))
+		Expect(prestartStdoutContents).ToNot(ContainSubstring("C:\\Windows\\SystemTemp"))
+	})
+
 	It("can compile packages", func() {
 		const (
 			blobName     = "blob.tar"
