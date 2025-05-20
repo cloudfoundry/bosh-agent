@@ -2,6 +2,7 @@ package applyspec
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
@@ -90,6 +91,7 @@ func (s NetworkSpec) PopulateIPInfo(ip, netmask, gateway string) NetworkSpec {
 	s.Fields["ip"] = ip
 	s.Fields["netmask"] = netmask
 	s.Fields["gateway"] = gateway
+	fmt.Println(s.Fields, ": PopulateIPInfo")
 	return s
 }
 
