@@ -92,7 +92,7 @@ type Platform interface {
 	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)
 
 	// Network misc
-	GetDefaultNetwork() (boshsettings.Network, error)
+	GetDefaultNetwork(is_ipv6 bool) (boshsettings.Network, error)
 	GetConfiguredNetworkInterfaces() ([]string, error)
 	PrepareForNetworkingChange() error
 	DeleteARPEntryWithIP(ip string) error
