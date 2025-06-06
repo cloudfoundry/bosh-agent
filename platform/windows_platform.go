@@ -582,6 +582,12 @@ func (p WindowsPlatform) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Creating temp dir")
 	}
 
+	systemTemp := os.TempDir()
+	err = p.fs.Symlink(boshTmpDir, systemTemp)
+	if err != nil {
+		return bosherr.WrapError(err, fmt.Sprintf("Creating symlink from %s to %s", systemTemp, boshTmpDir))
+	}
+
 	err = os.Setenv("TMP", boshTmpDir)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting TMP")
@@ -590,11 +596,6 @@ func (p WindowsPlatform) SetupTmpDir() error {
 	err = os.Setenv("TEMP", boshTmpDir)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting TEMP")
-	}
-
-	err = os.Setenv("SystemTemp", boshTmpDir)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting SystemTemp")
 	}
 
 	return nil

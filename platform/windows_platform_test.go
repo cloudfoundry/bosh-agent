@@ -172,9 +172,14 @@ var _ = Describe("WindowsPlatform", func() {
 
 	Describe("SetupTmpDir", func() {
 		var (
-			OrigTMP  = os.Getenv("TMP")
-			OrigTEMP = os.Getenv("TEMP")
+			OrigTMP    = os.Getenv("TMP")
+			OrigTEMP   = os.Getenv("TEMP")
+			systemTemp = os.TempDir()
 		)
+		BeforeEach(func() {
+			err := fs.MkdirAll(systemTemp, 0755)
+			Expect(err).NotTo(HaveOccurred())
+		})
 		AfterEach(func() {
 			os.Setenv("TMP", OrigTMP)   //nolint:errcheck
 			os.Setenv("TEMP", OrigTEMP) //nolint:errcheck
@@ -197,14 +202,28 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
 
-		It("sets TMP, TEMP, and SystemTemp environment variables so that children of this process will use new temp dir", func() {
+		It("sets TMP, TEMP environment variables so that children of this process will use new temp dir", func() {
 			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			fakeTmpDir := filepath.FromSlash("/fake-dir/data/tmp")
 			Expect(os.Getenv("TMP")).To(Equal(fakeTmpDir))
 			Expect(os.Getenv("TEMP")).To(Equal(fakeTmpDir))
-			Expect(os.Getenv("SystemTemp")).To(Equal(fakeTmpDir))
+		})
+
+		It("symlinks os.TempDir to $base-dir/data/tmp", func() {
+			fileStats := fs.GetFileTestStat(systemTemp)
+			Expect(fileStats).NotTo(BeNil())
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
+
+			err := platform.SetupTmpDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			fileStats = fs.GetFileTestStat(systemTemp)
+			Expect(fileStats).NotTo(BeNil())
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileTypeSymlink))
+
+			Expect(fileStats.SymlinkTarget).To(Equal("/fake-dir/data/tmp"))
 		})
 
 		It("returns error if setting TMPDIR errs", func() {
