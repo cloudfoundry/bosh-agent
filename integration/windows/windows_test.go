@@ -315,8 +315,7 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Expect(prestartStdoutContents).To(ContainSubstring("TMP = \\var\\vcap\\data\\tmp"))
 		Expect(prestartStdoutContents).To(ContainSubstring("TEMP = \\var\\vcap\\data\\tmp"))
-		Expect(prestartStdoutContents).To(ContainSubstring("SystemTemp = \\var\\vcap\\data\\tmp"))
-		Expect(prestartStdoutContents).ToNot(ContainSubstring("\\Windows\\SystemTemp"))
+		Expect(prestartStdoutContents).To(ContainSubstring("SystemTempSymlink = \\var\\vcap\\data\\tmp"))
 	})
 
 	It("can compile packages", func() {
