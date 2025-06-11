@@ -45,7 +45,7 @@ type settingsService struct {
 type DefaultNetworkResolver interface {
 	// Ideally we would find a network based on a MAC address
 	// but current CPI implementations do not include it
-	GetDefaultNetwork() (Network, error)
+	GetDefaultNetwork(ipv6 bool) (Network, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . PlatformSettingsGetter
@@ -255,12 +255,19 @@ func (s *settingsService) GetSettings() Settings {
 			continue
 		}
 
-		resolvedNetwork, err := s.resolveNetwork(network)
-		if err != nil {
-			break
-		}
+		s.logger.Debug(settingsServiceLogTag, "DEBUGGING NAME%s", networkName)
+		s.logger.Debug(settingsServiceLogTag, "DEBUGGING NETWORK%s", network)
+		s.logger.Debug(settingsServiceLogTag, "DEBUGGING PREFIX%s", network.Prefix)
 
-		settingsCopy.Networks[networkName] = resolvedNetwork
+		if network.Prefix == "32" || network.Prefix == "128" || network.Prefix == "" {
+			resolvedNetwork, err := s.resolveNetwork(network)
+			if err != nil {
+				break
+			}
+			settingsCopy.Networks[networkName] = resolvedNetwork
+		} else {
+			settingsCopy.Networks[networkName] = network
+		}
 	}
 	return settingsCopy
 }
@@ -278,7 +285,13 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	// Ideally this would be GetNetworkByMACAddress(mac string)
 	// Currently, we are relying that if the default network does not contain
 	// the MAC adddress the InterfaceConfigurationCreator will fail.
-	resolvedNetwork, err := s.platform.GetDefaultNetwork()
+	ipv6 := false
+
+	if network.Prefix == "128" {
+		s.logger.Debug(settingsServiceLogTag, "DEBUGGING IPv6")
+		ipv6 = true
+	}
+	resolvedNetwork, err := s.platform.GetDefaultNetwork(ipv6)
 	if err != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())
 		return Network{}, bosherr.WrapError(err, "Failed retrieving default network")
