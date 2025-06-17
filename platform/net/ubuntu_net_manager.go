@@ -512,7 +512,6 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(config DHCPInterf
 	matchSection.AddKey("Name", config.Name)
 	file.AppendSection(matchSection)
 
-
 	// Network Section
 	networkSection := &ini.Section{Name: "Network"}
 	networkSection.AddKey("DHCP", "yes")
