@@ -54,10 +54,19 @@ func parseRoute(ipString string) (Route, error) {
 	}, nil
 }
 
-func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
-	stdout, _, _, err := s.runner.RunCommandQuietly("ip", "r")
-	if err != nil {
-		return []Route{}, bosherr.WrapError(err, "Running route")
+func (s cmdRoutesSearcher) SearchRoutes(ipv6 bool) ([]Route, error) {
+	var stdout string
+	var err error
+	if ipv6 {
+		stdout, _, _, err = s.runner.RunCommandQuietly("ip", "-6", "r")
+		if err != nil {
+			return []Route{}, bosherr.WrapError(err, "Running IPv6 route")
+		}
+	} else {
+		stdout, _, _, err = s.runner.RunCommandQuietly("ip", "r")
+		if err != nil {
+			return []Route{}, bosherr.WrapError(err, "Running IPv4 route")
+		}
 	}
 
 	routeEntries := strings.Split(stdout, "\n")

@@ -356,6 +356,7 @@ type Network struct {
 	IP       string `json:"ip"`
 	Netmask  string `json:"netmask"`
 	Gateway  string `json:"gateway"`
+	Prefix   string `json:"prefix"`
 	Resolved bool   `json:"resolved"` // was resolved via DHCP
 	UseDHCP  bool   `json:"use_dhcp"`
 
