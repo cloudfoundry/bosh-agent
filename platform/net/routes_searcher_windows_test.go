@@ -35,7 +35,7 @@ var _ = Describe("Windows Route Searcher", func() {
 				Stdout: `10.0.16.1`,
 			})
 
-			routes, err := searcher.SearchRoutes()
+			routes, err := searcher.SearchRoutes(false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(routes).To(HaveLen(2))
 
