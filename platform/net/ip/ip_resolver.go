@@ -48,10 +48,8 @@ func (r ipResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPN
 			continue
 		}
 
-		if ip.IP.To16() != nil && is_ipv6 {
-			if ip.IP.IsGlobalUnicast() {
-				return ip, nil
-			}
+		if ip.IP.To16() != nil && ip.IP.IsGlobalUnicast() && is_ipv6 {
+			return ip, nil
 		}
 
 		if ip.IP.To4() != nil && !is_ipv6 {
