@@ -51,7 +51,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 	Describe("GetIP", func() {
 		Context("when IP was not yet resolved", func() {
 			BeforeEach(func() {
-				ipResolver.GetPrimaryIPv4IPNet = &gonet.IPNet{
+				ipResolver.GetPrimaryIPNet = &gonet.IPNet{
 					IP:   gonet.ParseIP("127.0.0.1"),
 					Mask: gonet.CIDRMask(16, 32),
 				}
@@ -62,11 +62,11 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("127.0.0.1"))
 
-				Expect(ipResolver.GetPrimaryIPv4InterfaceName).To(Equal("fake-iface-name"))
+				Expect(ipResolver.GetPrimaryIPInterfaceName).To(Equal("fake-iface-name"))
 			})
 
 			It("resolves the IP and returns fully formatted IPv6", func() {
-				ipResolver.GetPrimaryIPv6IPNet = &gonet.IPNet{
+				ipResolver.GetPrimaryIPNet = &gonet.IPNet{
 					IP:   gonet.ParseIP("ff00:f8::"),
 					Mask: gonet.CIDRMask(64, 128),
 				}
@@ -75,11 +75,11 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("ff00:00f8:0000:0000:0000:0000:0000:0000"))
 
-				Expect(ipResolver.GetPrimaryIPv6InterfaceName).To(Equal("fake-iface-name"))
+				Expect(ipResolver.GetPrimaryIPInterfaceName).To(Equal("fake-iface-name"))
 			})
 
 			It("returns error if resolving IP fails", func() {
-				ipResolver.GetPrimaryIPv4Err = errors.New("fake-get-primary-ipv4-err")
+				ipResolver.GetPrimaryIPErr = errors.New("fake-get-primary-ipv4-err")
 
 				ip, err := interfaceAddress.GetIP(false)
 				Expect(err).To(HaveOccurred())
@@ -90,7 +90,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 
 		Context("when IP was already resolved", func() {
 			BeforeEach(func() {
-				ipResolver.GetPrimaryIPv4IPNet = &gonet.IPNet{
+				ipResolver.GetPrimaryIPNet = &gonet.IPNet{
 					IP:   gonet.ParseIP("127.0.0.1"),
 					Mask: gonet.CIDRMask(16, 32),
 				}
@@ -100,13 +100,13 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 			})
 
 			It("does not attempt to resolve IP again", func() {
-				ipResolver.GetPrimaryIPv4InterfaceName = ""
+				ipResolver.GetPrimaryIPInterfaceName = ""
 
 				ip, err := interfaceAddress.GetIP(false)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("127.0.0.1"))
 
-				Expect(ipResolver.GetPrimaryIPv4InterfaceName).To(Equal(""))
+				Expect(ipResolver.GetPrimaryIPInterfaceName).To(Equal(""))
 			})
 		})
 	})

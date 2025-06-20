@@ -45,7 +45,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 
 			Context("when primary IPv4 exists for the found route", func() {
 				BeforeEach(func() {
-					ipResolver.GetPrimaryIPv4IPNet = &gonet.IPNet{
+					ipResolver.GetPrimaryIPNet = &gonet.IPNet{
 						IP:   gonet.ParseIP("127.0.0.1"),
 						Mask: gonet.CIDRMask(16, 32),
 					}
@@ -64,7 +64,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 
 			Context("when primary IPv4 does not exist for the found route", func() {
 				BeforeEach(func() {
-					ipResolver.GetPrimaryIPv4Err = errors.New("fake-get-primary-ipv4-err")
+					ipResolver.GetPrimaryIPErr = errors.New("fake-get-primary-ipv4-err")
 				})
 
 				It("returns error", func() {
