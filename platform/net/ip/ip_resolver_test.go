@@ -50,6 +50,7 @@ var _ = Describe("ipResolver", func() {
 					NotIPNet{},
 					&gonet.IPNet{IP: gonet.IPv6linklocalallrouters},
 					&gonet.IPNet{IP: gonet.ParseIP("ff::"), Mask: gonet.CIDRMask(64, 128)},
+					&gonet.IPNet{IP: gonet.ParseIP("127.0.0.1"), Mask: gonet.CIDRMask(16, 32)},
 					&gonet.IPNet{IP: gonet.ParseIP("10.0.0.1"), Mask: gonet.CIDRMask(16, 32)},
 				}
 

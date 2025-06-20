@@ -1,6 +1,7 @@
 package ip
 
 import (
+	"net"
 	gonet "net"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -41,6 +42,8 @@ func (r ipResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPN
 		return nil, bosherr.Errorf("No addresses found for interface '%s'", interfaceName)
 	}
 
+	var foundNonGlobalUniCast *net.IPNet
+
 	for _, addr := range addrs {
 		ip, ok := addr.(*gonet.IPNet)
 
@@ -53,13 +56,23 @@ func (r ipResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPN
 		}
 
 		if ip.IP.To4() != nil && !is_ipv6 {
-			return ip, nil
+			if ip.IP.IsGlobalUnicast() {
+				return ip, nil
+			} else {
+				if foundNonGlobalUniCast == nil {
+					foundNonGlobalUniCast = ip
+				}
+			}
 		}
-
 	}
+
 	ipVersion := 4
 	if is_ipv6 {
 		ipVersion = 6
+	}
+
+	if foundNonGlobalUniCast != nil {
+		return foundNonGlobalUniCast, nil
 	}
 
 	return nil, bosherr.Errorf("Failed to find primary address IPv%d for interface '%s'", ipVersion, interfaceName)
