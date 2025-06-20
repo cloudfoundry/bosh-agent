@@ -53,10 +53,6 @@ func (r defaultNetworkResolver) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Ne
 			return network, bosherr.WrapErrorf(err, "Getting primary IPv%d for interface '%s'", ipVersion, route.InterfaceName)
 		}
 
-		if ip == nil {
-			return network, bosherr.Errorf("Getting primary IPv%d for interface '%s'", ipVersion, route.InterfaceName)
-		}
-
 		return boshsettings.Network{
 			IP:      ip.IP.String(),
 			Netmask: gonet.IP(ip.Mask).String(),
