@@ -2,6 +2,7 @@ package ip_test
 
 import (
 	"errors"
+	"fmt"
 	gonet "net"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -71,7 +72,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 					Mask: gonet.CIDRMask(64, 128),
 				}
 
-				ip, err := interfaceAddress.GetIP(true)
+				ip, err := interfaceAddress.GetIP(false)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("ff00:00f8:0000:0000:0000:0000:0000:0000"))
 
@@ -108,6 +109,26 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 
 				Expect(ipResolver.GetPrimaryIPInterfaceName).To(Equal(""))
 			})
+		})
+
+		Context("when GetIP was called with true or false", func() {
+
+			BeforeEach(func() {
+				ipResolver.GetPrimaryIPNet = &gonet.IPNet{
+					IP:   gonet.ParseIP("127.0.0.1"),
+					Mask: gonet.CIDRMask(16, 32),
+				}
+			})
+
+			for _, value := range []bool{true, false} {
+				valueStr := fmt.Sprintf("%t", value)
+				It("it should have been called ipResolver with same value: "+valueStr, func() {
+					_, err := interfaceAddress.GetIP(value)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(ipResolver.GetPrimaryIPCalledWith).To(Equal([]string{"fake-iface-name", valueStr}))
+				})
+			}
+
 		})
 	})
 })

@@ -86,7 +86,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 			})
 
 			It("returns error", func() {
-				network, err := resolver.GetDefaultNetwork(true)
+				network, err := resolver.GetDefaultNetwork(false)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Failed to find default route"))
 				Expect(network).To(Equal(boshsettings.Network{}))
@@ -99,7 +99,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 			})
 
 			It("returns error if there are no routes", func() {
-				network, err := resolver.GetDefaultNetwork(true)
+				network, err := resolver.GetDefaultNetwork(false)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("No routes"))
 				Expect(network).To(Equal(boshsettings.Network{}))
@@ -112,7 +112,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 			})
 
 			It("returns error if searching routes fails", func() {
-				network, err := resolver.GetDefaultNetwork(true)
+				network, err := resolver.GetDefaultNetwork(false)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-search-routes-err"))
 				Expect(network).To(Equal(boshsettings.Network{}))
