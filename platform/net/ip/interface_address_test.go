@@ -66,7 +66,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 			})
 
 			It("resolves the IP and returns fully formatted IPv6", func() {
-				ipResolver.GetPrimaryIPv4IPNet = &gonet.IPNet{
+				ipResolver.GetPrimaryIPv6IPNet = &gonet.IPNet{
 					IP:   gonet.ParseIP("ff00:f8::"),
 					Mask: gonet.CIDRMask(64, 128),
 				}
@@ -75,7 +75,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("ff00:00f8:0000:0000:0000:0000:0000:0000"))
 
-				Expect(ipResolver.GetPrimaryIPv4InterfaceName).To(Equal("fake-iface-name"))
+				Expect(ipResolver.GetPrimaryIPv6InterfaceName).To(Equal("fake-iface-name"))
 			})
 
 			It("returns error if resolving IP fails", func() {

@@ -109,8 +109,6 @@ func (net UbuntuNetManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan st
 }
 
 func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus string, errCh chan error) error {
-	_, _, _, err := net.cmdRunner.RunCommand("ip", "a")
-
 	if networks.IsPreconfigured() {
 		// Note in this case IPs are not broadcast
 		dnsNetwork, _ := networks.DefaultNetworkFor("dns")
