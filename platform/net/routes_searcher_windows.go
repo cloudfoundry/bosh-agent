@@ -45,7 +45,7 @@ func (s windowsRoutesSearcher) SearchRoutes(ipv6 bool) ([]Route, error) {
 		}
 		if fs.Gateway == defaultGateway {
 			if ipv6 {
-				route.Destination = "::/0" // Default route for IPv6
+				route.Destination = "::" // Default route for IPv6
 			} else {
 				route.Destination = "0.0.0.0" // Default route for IPv4
 			}
