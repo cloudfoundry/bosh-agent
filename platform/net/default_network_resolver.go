@@ -38,7 +38,7 @@ func (r defaultNetworkResolver) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Ne
 	}
 
 	for _, route := range routes {
-		if !route.IsDefault() {
+		if !route.IsDefault(is_ipv6) {
 			continue
 		}
 
@@ -46,7 +46,6 @@ func (r defaultNetworkResolver) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Ne
 
 		if err != nil {
 			ipVersion := 4
-
 			if is_ipv6 {
 				ipVersion = 6
 			}

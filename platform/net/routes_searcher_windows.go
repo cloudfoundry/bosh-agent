@@ -16,18 +16,22 @@ func NewRoutesSearcher(_ boshlog.Logger, cmdRunner boshsys.CmdRunner, interfaceM
 }
 
 func (s windowsRoutesSearcher) SearchRoutes(ipv6 bool) ([]Route, error) {
+	var err error
+
 	ifs, err := s.interfaceManager.GetInterfaces()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Running route")
 	}
 
+	var defaultGateway string
+
 	if ipv6 {
-		defaultGateway, _, _, err := s.cmdRunner.RunCommandQuietly("(Get-NetRoute -DestinationPrefix '::/0').NextHop")
+		defaultGateway, _, _, err = s.cmdRunner.RunCommandQuietly("(Get-NetRoute -DestinationPrefix '::/0').NextHop")
 		if err != nil {
 			return nil, bosherr.WrapError(err, "Running IPv6 route")
 		}
 	} else {
-		defaultGateway, _, _, err := s.cmdRunner.RunCommandQuietly("(Get-NetRoute -DestinationPrefix '0.0.0.0/0').NextHop")
+		defaultGateway, _, _, err = s.cmdRunner.RunCommandQuietly("(Get-NetRoute -DestinationPrefix '0.0.0.0/0').NextHop")
 		if err != nil {
 			return nil, bosherr.WrapError(err, "Running IPv4 route")
 		}
@@ -41,7 +45,7 @@ func (s windowsRoutesSearcher) SearchRoutes(ipv6 bool) ([]Route, error) {
 		}
 		if fs.Gateway == defaultGateway {
 			if ipv6 {
-				route.Destination = "::/0" // Default route for IPv6
+				route.Destination = "::" // Default route for IPv6
 			} else {
 				route.Destination = "0.0.0.0" // Default route for IPv4
 			}

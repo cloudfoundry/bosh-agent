@@ -12,7 +12,11 @@ type RoutesSearcher interface {
 }
 
 const DefaultAddress = `0.0.0.0`
+const DefaultAddressIpv6 = `::`
 
-func (r Route) IsDefault() bool {
+func (r Route) IsDefault(isIpv6 bool) bool {
+	if isIpv6 {
+		return r.Destination == DefaultAddressIpv6
+	}
 	return r.Destination == DefaultAddress
 }

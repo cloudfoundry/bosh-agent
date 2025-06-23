@@ -128,7 +128,7 @@ func (fake *FakePlatformSettingsGetter) GetAgentSettingsPathReturnsOnCall(i int,
 	}{result1}
 }
 
-func (fake *FakePlatformSettingsGetter) GetDefaultNetwork() (settings.Network, error) {
+func (fake *FakePlatformSettingsGetter) GetDefaultNetwork(isIpV6 bool) (settings.Network, error) {
 	fake.getDefaultNetworkMutex.Lock()
 	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
 	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {
