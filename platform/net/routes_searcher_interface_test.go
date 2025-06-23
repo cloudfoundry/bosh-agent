@@ -10,12 +10,16 @@ import (
 var _ = Describe("Route", func() {
 	Describe("IsDefault", func() {
 		It("returns true if destination is 0.0.0.0", func() {
-			Expect(Route{Destination: "0.0.0.0"}.IsDefault()).To(BeTrue())
+			Expect(Route{Destination: "0.0.0.0"}.IsDefault(false)).To(BeTrue())
+		})
+
+		It("returns true if destination is ::", func() {
+			Expect(Route{Destination: "::"}.IsDefault(true)).To(BeTrue())
 		})
 
 		It("returns false if destination is not 0.0.0.0", func() {
-			Expect(Route{}.IsDefault()).To(BeFalse())
-			Expect(Route{Destination: "1.1.1.1"}.IsDefault()).To(BeFalse())
+			Expect(Route{}.IsDefault(false)).To(BeFalse())
+			Expect(Route{Destination: "1.1.1.1"}.IsDefault(false)).To(BeFalse())
 		})
 	})
 })

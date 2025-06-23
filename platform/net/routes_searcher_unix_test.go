@@ -65,9 +65,22 @@ blackhole 10.200.115.192/26  proto bird
 				}))
 			})
 
-			It("ignores empty lines", func() {
+			It("ignores empty lines for ipv4", func() {
 				runner.AddCmdResult("ip r", fakesys.FakeCmdResult{
 					Stdout: `
+					
+`,
+				})
+
+				routes, err := searcher.SearchRoutes(false)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(routes).To(BeEmpty())
+			})
+
+			It("ignores empty lines for ipv6", func() {
+				runner.AddCmdResult("ip -6 r", fakesys.FakeCmdResult{
+					Stdout: `
+
 `,
 				})
 
@@ -75,6 +88,27 @@ blackhole 10.200.115.192/26  proto bird
 				Expect(err).ToNot(HaveOccurred())
 				Expect(routes).To(BeEmpty())
 			})
+
+			It("returns parsed routes information for ipv6", func() {
+				runner.AddCmdResult("ip -6 r", fakesys.FakeCmdResult{
+					Stdout: `
+::1 dev lo proto kernel metric 256 pref medium
+2600:1f18:58fb:2009::/64 dev eth0 proto ra metric 1024 pref medium
+fe80::/64 dev eth0 proto kernel metric 256 pref medium
+default via fe80::ceb:d3ff:fef9:fa93 dev eth0 proto ra metric 1024 expires 1796sec pref medium
+`,
+				})
+
+				routes, err := searcher.SearchRoutes(true)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(routes).To(Equal([]Route{
+					Route{Destination: "::1", Gateway: "::", InterfaceName: "lo"},
+					Route{Destination: "2600:1f18:58fb:2009::", Gateway: "::", InterfaceName: "eth0"},
+					Route{Destination: "fe80::", Gateway: "::", InterfaceName: "eth0"},
+					Route{Destination: "::", Gateway: "fe80::ceb:d3ff:fef9:fa93", InterfaceName: "eth0"},
+				}))
+			})
+
 		})
 
 		Context("when running ip command fails", func() {
