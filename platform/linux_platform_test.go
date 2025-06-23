@@ -4141,10 +4141,10 @@ unit: sectors
 			It(title, func() {
 				defaultNetwork := boshsettings.Network{}
 				fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
-				network, err := platform.GetDefaultNetwork(true)
+				network, err := platform.GetDefaultNetwork(value)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(network).To(Equal(defaultNetwork))
-				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(true))
+				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(value))
 			})
 		}
 	})

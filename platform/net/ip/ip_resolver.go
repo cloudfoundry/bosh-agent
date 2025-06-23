@@ -20,7 +20,6 @@ func NetworkInterfaceToAddrsFunc(interfaceName string) ([]gonet.Addr, error) {
 type Resolver interface {
 	// GetPrimaryIP always returns error unless IPNet is found for given interface
 	GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPNet, error)
-	// GetPrimaryIPv4(interfaceName string) (*gonet.IPNet, error)
 }
 
 type ipResolver struct {
