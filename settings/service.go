@@ -255,10 +255,6 @@ func (s *settingsService) GetSettings() Settings {
 			continue
 		}
 
-		s.logger.Debug(settingsServiceLogTag, "DEBUGGING NAME%s", networkName)
-		s.logger.Debug(settingsServiceLogTag, "DEBUGGING NETWORK%s", network)
-		s.logger.Debug(settingsServiceLogTag, "DEBUGGING PREFIX%s", network.Prefix)
-
 		if network.Prefix == "32" || network.Prefix == "128" || network.Prefix == "" {
 			resolvedNetwork, err := s.resolveNetwork(network)
 			if err != nil {
@@ -288,7 +284,6 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	ipv6 := false
 
 	if network.Prefix == "128" {
-		s.logger.Debug(settingsServiceLogTag, "DEBUGGING IPv6")
 		ipv6 = true
 	}
 	resolvedNetwork, err := s.platform.GetDefaultNetwork(ipv6)
