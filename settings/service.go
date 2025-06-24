@@ -281,11 +281,7 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	// Ideally this would be GetNetworkByMACAddress(mac string)
 	// Currently, we are relying that if the default network does not contain
 	// the MAC adddress the InterfaceConfigurationCreator will fail.
-	ipv6 := false
-
-	if network.Prefix == "128" {
-		ipv6 = true
-	}
+	ipv6 := network.Prefix == "128"
 	resolvedNetwork, err := s.platform.GetDefaultNetwork(ipv6)
 	if err != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())
