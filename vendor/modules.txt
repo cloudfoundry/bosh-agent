@@ -2,7 +2,7 @@
 ## explicit; go 1.23.0
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.29.0
+# code.cloudfoundry.org/tlsconfig v0.30.0
 ## explicit; go 1.23.0
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
@@ -99,7 +99,7 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851
 ## explicit; go 1.21.0
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.93
+# github.com/cloudfoundry/gosigar v1.3.94
 ## explicit; go 1.23.0
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
@@ -352,7 +352,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20250606033433-dcc06ee1d476
+# golang.org/x/exp/typeparams v0.0.0-20250620022241-b7579e27df2b
 ## explicit; go 1.23.0
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.25.0

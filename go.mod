@@ -4,13 +4,13 @@ go 1.23.0
 
 require (
 	code.cloudfoundry.org/clock v1.40.0
-	code.cloudfoundry.org/tlsconfig v0.29.0
+	code.cloudfoundry.org/tlsconfig v0.30.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.7
 	github.com/cloudfoundry/bosh-davcli v0.0.423
 	github.com/cloudfoundry/bosh-utils v0.0.545
-	github.com/cloudfoundry/gosigar v1.3.93
+	github.com/cloudfoundry/gosigar v1.3.94
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -76,7 +76,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20250606033433-dcc06ee1d476 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
