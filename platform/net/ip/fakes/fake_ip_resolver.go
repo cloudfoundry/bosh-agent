@@ -1,16 +1,20 @@
 package fakes
 
 import (
+	"fmt"
 	gonet "net"
 )
 
 type FakeResolver struct {
-	GetPrimaryIPv4InterfaceName string
-	GetPrimaryIPv4IPNet         *gonet.IPNet
-	GetPrimaryIPv4Err           error
+	GetPrimaryIPInterfaceName string
+	GetPrimaryIPNet           *gonet.IPNet
+	GetPrimaryIPErr           error
+	GetPrimaryIPCalledWith    []string
 }
 
-func (r *FakeResolver) GetPrimaryIPv4(interfaceName string) (*gonet.IPNet, error) {
-	r.GetPrimaryIPv4InterfaceName = interfaceName
-	return r.GetPrimaryIPv4IPNet, r.GetPrimaryIPv4Err
+func (r *FakeResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPNet, error) {
+	r.GetPrimaryIPInterfaceName = interfaceName
+	r.GetPrimaryIPCalledWith = append(r.GetPrimaryIPCalledWith, interfaceName)
+	r.GetPrimaryIPCalledWith = append(r.GetPrimaryIPCalledWith, fmt.Sprintf("%t", is_ipv6))
+	return r.GetPrimaryIPNet, r.GetPrimaryIPErr
 }

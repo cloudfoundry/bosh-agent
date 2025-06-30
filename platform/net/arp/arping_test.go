@@ -19,7 +19,7 @@ type failingInterfaceAddress struct{}
 
 func (ia failingInterfaceAddress) GetInterfaceName() string { return "eth0" }
 
-func (ia failingInterfaceAddress) GetIP() (string, error) {
+func (ia failingInterfaceAddress) GetIP(IsVersion6 bool) (string, error) {
 	return "", errors.New("fake-get-ip-err")
 }
 

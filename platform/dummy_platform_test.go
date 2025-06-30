@@ -73,7 +73,7 @@ var _ = Describe("DummyPlatform", func() {
 			err := fs.WriteFileString(settingsFilePath, `{"IP": "1.2.3.4"}`)
 			Expect(err).NotTo(HaveOccurred())
 
-			network, err := platform.GetDefaultNetwork()
+			network, err := platform.GetDefaultNetwork(false)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(network.IP).To(Equal("1.2.3.4"))

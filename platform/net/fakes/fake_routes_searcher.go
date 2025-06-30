@@ -9,6 +9,6 @@ type FakeRoutesSearcher struct {
 	SearchRoutesErr    error
 }
 
-func (s *FakeRoutesSearcher) SearchRoutes() ([]boshnet.Route, error) {
+func (s *FakeRoutesSearcher) SearchRoutes(ipv6 bool) ([]boshnet.Route, error) {
 	return s.SearchRoutesRoutes, s.SearchRoutesErr
 }
