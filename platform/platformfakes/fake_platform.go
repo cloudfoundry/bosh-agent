@@ -1420,7 +1420,7 @@ func (fake *FakePlatform) GetCopierReturnsOnCall(i int, result1 fileutil.Copier)
 	}{result1}
 }
 
-func (fake *FakePlatform) GetDefaultNetwork() (settings.Network, error) {
+func (fake *FakePlatform) GetDefaultNetwork(isIpv6 bool) (settings.Network, error) {
 	fake.getDefaultNetworkMutex.Lock()
 	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
 	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {

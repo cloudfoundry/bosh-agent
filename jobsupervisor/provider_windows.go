@@ -31,7 +31,7 @@ func NewProvider(
 	fs := platform.GetFs()
 	runner := platform.GetRunner()
 
-	network, err := platform.GetDefaultNetwork()
+	network, err := platform.GetDefaultNetwork(false)
 	var machineIP string
 	if err != nil {
 		machineIP, _ = os.Hostname() //nolint:errcheck

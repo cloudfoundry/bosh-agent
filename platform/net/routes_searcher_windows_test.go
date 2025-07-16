@@ -35,17 +35,39 @@ var _ = Describe("Windows Route Searcher", func() {
 				Stdout: `10.0.16.1`,
 			})
 
-			routes, err := searcher.SearchRoutes()
+			routes, err := searcher.SearchRoutes(false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(routes).To(HaveLen(2))
 
 			Expect(routes[0].InterfaceName).To(Equal("some-created-interface"))
 			Expect(routes[0].Gateway).To(Equal("172.30.0.1"))
-			Expect(routes[0].IsDefault()).To(BeFalse())
+			Expect(routes[0].IsDefault(false)).To(BeFalse())
 
 			Expect(routes[1].InterfaceName).To(Equal("some-default-interface"))
 			Expect(routes[1].Gateway).To(Equal("10.0.16.1"))
-			Expect(routes[1].IsDefault()).To(BeTrue())
+			Expect(routes[1].IsDefault(false)).To(BeTrue())
+		})
+
+		It("returns default and non-default routes for existing interfaces", func() {
+			interfaceManager.GetInterfacesInterfaces = []net.Interface{
+				{Name: "some-created-interface", Gateway: "2600:1000::1"},
+				{Name: "some-default-interface", Gateway: "10.0.16.1"},
+			}
+			runner.AddCmdResult("(Get-NetRoute -DestinationPrefix '::/0').NextHop", fakesys.FakeCmdResult{
+				Stdout: `2600:1000::1`,
+			})
+
+			routes, err := searcher.SearchRoutes(true)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(routes).To(HaveLen(2))
+
+			Expect(routes[0].InterfaceName).To(Equal("some-created-interface"))
+			Expect(routes[0].Gateway).To(Equal("2600:1000::1"))
+			Expect(routes[0].IsDefault(true)).To(BeTrue())
+
+			Expect(routes[1].InterfaceName).To(Equal("some-default-interface"))
+			Expect(routes[1].Gateway).To(Equal("10.0.16.1"))
+			Expect(routes[1].IsDefault(false)).To(BeFalse())
 		})
 	})
 })

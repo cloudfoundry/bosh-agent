@@ -498,7 +498,7 @@ func (p dummyPlatform) DeleteARPEntryWithIP(ip string) error {
 	return nil
 }
 
-func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
+func (p dummyPlatform) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Network, error) {
 	var network boshsettings.Network
 
 	networkPath := filepath.Join(p.dirProvider.BoshDir(), "dummy-default-network-settings.json")

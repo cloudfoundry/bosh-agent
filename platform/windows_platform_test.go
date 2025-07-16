@@ -289,15 +289,17 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("GetDefaultNetwork", func() {
-		It("delegates to the defaultNetworkResolver", func() {
-			defaultNetwork := boshsettings.Network{IP: "1.2.3.4"}
-			fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
-
-			network, err := platform.GetDefaultNetwork()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(network).To(Equal(defaultNetwork))
-		})
+		for _, value := range []bool{true, false} {
+			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %t", value)
+			It(title, func() {
+				defaultNetwork := boshsettings.Network{}
+				fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
+				network, err := platform.GetDefaultNetwork(value)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(network).To(Equal(defaultNetwork))
+				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(value))
+			})
+		}
 	})
 
 	Describe("SetTimeWithNtpServers", func() {

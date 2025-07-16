@@ -22,7 +22,7 @@ var _ = Describe("InterfaceAddressesProvider", func() {
 
 		var loopBackInterface InterfaceAddress
 		for _, iface := range ifaces {
-			ip, err := iface.GetIP()
+			ip, err := iface.GetIP(false)
 			Expect(err).ToNot(HaveOccurred())
 
 			if ip == "127.0.0.1" {

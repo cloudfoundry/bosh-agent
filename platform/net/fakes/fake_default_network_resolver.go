@@ -5,12 +5,14 @@ import (
 )
 
 type FakeDefaultNetworkResolver struct {
-	GetDefaultNetworkNetwork boshsettings.Network
-	GetDefaultNetworkErr     error
-	GetDefaultNetworkCalled  bool
+	GetDefaultNetworkNetwork    boshsettings.Network
+	GetDefaultNetworkErr        error
+	GetDefaultNetworkCalled     bool
+	GetDefaultNetworkCalledWith bool
 }
 
-func (r *FakeDefaultNetworkResolver) GetDefaultNetwork() (boshsettings.Network, error) {
+func (r *FakeDefaultNetworkResolver) GetDefaultNetwork(isIpv6 bool) (boshsettings.Network, error) {
 	r.GetDefaultNetworkCalled = true
+	r.GetDefaultNetworkCalledWith = isIpv6
 	return r.GetDefaultNetworkNetwork, r.GetDefaultNetworkErr
 }
